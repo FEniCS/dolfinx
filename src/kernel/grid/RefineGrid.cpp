@@ -18,7 +18,7 @@ void RefineGrid::refine()
 
   _create_edges = dolfin_get("create edges"); 
 
-  GlobalRegularRefinement();
+  globalRegularRefinement();
 }
 //-----------------------------------------------------------------------------
 
@@ -26,30 +26,10 @@ void RefineGrid::refine()
 Refinement::GlobalRefinement()
 {
 }
-
-Refinement::EvaluateMarks()
-{
-}
-
-Refinement::CloseGrid()
-{
-}
-
-Refinement::CloseElement()
-{
-}
-
-Refinement::UnrefineGrid()
-{
-}
-
-Refinement::RefineGrid()
-{
-}
 */
 
 
-void RefineGrid::GlobalRegularRefinement()
+void RefineGrid::globalRegularRefinement()
 {
   // Regular refinement: 
   // (1) Triangles: 1 -> 4 
@@ -63,7 +43,7 @@ void RefineGrid::GlobalRegularRefinement()
     cells.add(c);
   
   for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
-    RegularRefinement((*c.pointer()));
+    regularRefinement((*c.pointer()));
   }
   
   //  cout << "new no elms = " << grid.noCells() << endl;
@@ -71,7 +51,7 @@ void RefineGrid::GlobalRegularRefinement()
 }
 
 
-void RefineGrid::EvaluateMarks(int grid_level)
+void RefineGrid::evaluateMarks(int grid_level)
 {
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
@@ -109,7 +89,20 @@ void RefineGrid::EvaluateMarks(int grid_level)
   }
 }
 
-void RefineGrid::CloseGrid(int grid_level)
+
+void RefineGrid::unrefineGrid(int grid_level)
+{
+  
+}
+
+void RefineGrid::refineGrid(int grid_level)
+{
+  
+}
+
+
+
+void RefineGrid::closeGrid(int grid_level)
 {
   bool marked_for_ref_by_cell;
   List<Cell *> cells;
@@ -131,45 +124,121 @@ void RefineGrid::CloseGrid(int grid_level)
     }
   }
 
+  List<Cell *> new_cells;
+  bool cell_is_member;
+  while (cells.size() > 0){
+    
+    new_cells = closeCell((*cells.pointer(0)));
+    //    cells.remove(cells(0));
 
-  
+    for (List<Cell *>::Iterator cn(&new_cells); !cn.end(); ++cn){
+      cell_is_member = false;      
+      for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+	if ((*cn.pointer())->id() == (*c.pointer())->id()){
+	  cell_is_member = true;
+	  break;
+	}
+      }
+      if (!cell_is_member) cells.add((*cn.pointer()));
+    }
 
-
-
-}
-
-
-void RefineGrid::CloseCell(Cell *parent)
-{
-  switch(parent->noMarkedEdges()){ 
-  case 6: 
-    RegularRefinementTetrahedron(parent);
-    break;
-  case 5: 
-    RegularRefinementTetrahedron(parent);
-    break;
-  case 4: 
-    RegularRefinementTetrahedron(parent);
-    break;
-  case 3: 
-    if (parent->markedEdgesOnSameFace()) IrrRef1(parent);
-    else RegularRefinementTetrahedron(parent);    
-    break;
-  case 2: 
-    if (parent->markedEdgesOnSameFace()) IrrRef3(parent);
-    else IrrRef4(parent);  
-    break;
-  case 1: 
-    IrrRef2(parent);  
-    break;
-  default:
-    dolfin_error("wrong number of marked edges");
   }
 }
 
 
+List<Cell *> RefineGrid::closeCell(Cell *parent)
+{
+  List<Cell *> new_ref_cells;
 
-void RefineGrid::RegularRefinement(Cell* parent)
+  int non_marked_edge;
+  int non_marked_edges[3];
+
+  int cnt;
+  switch(parent->noMarkedEdges()){ 
+  case 6: 
+    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
+    break;
+  case 5: 
+    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
+    for (int i=0;i<parent->noEdges();i++){    
+      if (!parent->edge(i)->marked()){
+	non_marked_edge = i;
+	break;
+      }
+    }
+
+    for (int i=0;i<parent->noNodes();i++){    
+      for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
+	for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
+	  if (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edge)->id()) 
+	    new_ref_cells.add(parent->node(i)->cell(j));
+	}
+      }
+    }
+
+    break;
+  case 4: 
+    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
+    cnt = 0;
+    for (int i=0;i<parent->noEdges();i++){    
+      if (!parent->edge(i)->marked()){
+	non_marked_edges[cnt++] = i;
+      }
+    }
+
+    for (int i=0;i<parent->noNodes();i++){    
+      for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
+	for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
+	  if ( (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[0])->id()) ||  
+	       (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[1])->id()) )
+	    new_ref_cells.add(parent->node(i)->cell(j));
+	}
+      }
+    }
+
+    break;
+  case 3: 
+    if (parent->markedEdgesOnSameFace()){
+      parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1);
+    } else{
+      parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
+      cnt = 0;
+      for (int i=0;i<parent->noEdges();i++){    
+	if (!parent->edge(i)->marked()){
+	  non_marked_edges[cnt++] = i;
+	}
+      }
+      
+      for (int i=0;i<parent->noNodes();i++){    
+	for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
+	  for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
+	    if ( (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[0])->id()) ||  
+		 (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[1])->id()) ||  
+		 (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[2])->id()) )
+	      new_ref_cells.add(parent->node(i)->cell(j));
+	  }
+	}
+      }
+      
+    }
+    break;
+  case 2: 
+    if (parent->markedEdgesOnSameFace()) parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3);
+    else parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4);
+    break;
+  case 1: 
+    parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4); 
+    break;
+  default:
+    dolfin_error("wrong number of marked edges");
+  }
+
+  return new_ref_cells;
+}
+
+
+
+void RefineGrid::regularRefinement(Cell* parent)
 {
   // Regular refinement: 
   // (1) Triangles: 1 -> 4 
@@ -177,10 +246,10 @@ void RefineGrid::RegularRefinement(Cell* parent)
 
   switch (parent->type()) {
   case Cell::TETRAHEDRON: 
-    RegularRefinementTetrahedron(parent);
+    regularRefinementTetrahedron(parent);
     break;
   case Cell::TRIANGLE: 
-    RegularRefinementTriangle(parent);
+    regularRefinementTriangle(parent);
     break;
   default: 
     dolfin_error("Cell type not implemented.");
@@ -189,7 +258,7 @@ void RefineGrid::RegularRefinement(Cell* parent)
 }
 
 
-void RefineGrid::RegularRefinementTetrahedron(Cell* parent)
+void RefineGrid::regularRefinementTetrahedron(Cell* parent)
 {
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges. 
@@ -240,7 +309,7 @@ void RefineGrid::RegularRefinementTetrahedron(Cell* parent)
   }
 }
 
-void RefineGrid::RegularRefinementTriangle(Cell* parent)
+void RefineGrid::regularRefinementTriangle(Cell* parent)
 {
   // Refine 1 triangle into 4 new ones, introducing new nodes 
   // at the midpoints of the edges. 
@@ -274,28 +343,28 @@ void RefineGrid::RegularRefinementTriangle(Cell* parent)
   }
 }
 
-void RefineGrid::LocalIrregularRefinement(Cell *parent)
+void RefineGrid::localIrregularRefinement(Cell *parent)
 {
   switch(parent->noMarkedEdges()){ 
   case 6: 
-    RegularRefinementTetrahedron(parent);
+    regularRefinementTetrahedron(parent);
     break;
   case 5: 
-    RegularRefinementTetrahedron(parent);
+    regularRefinementTetrahedron(parent);
     break;
   case 4: 
-    RegularRefinementTetrahedron(parent);
+    regularRefinementTetrahedron(parent);
     break;
   case 3: 
-    if (parent->markedEdgesOnSameFace()) IrrRef1(parent);
-    else RegularRefinementTetrahedron(parent);    
+    if (parent->markedEdgesOnSameFace()) irrRef1(parent);
+    else regularRefinementTetrahedron(parent);    
     break;
   case 2: 
-    if (parent->markedEdgesOnSameFace()) IrrRef3(parent);
-    else IrrRef4(parent);  
+    if (parent->markedEdgesOnSameFace()) irrRef3(parent);
+    else irrRef4(parent);  
     break;
   case 1: 
-    IrrRef2(parent);  
+    irrRef2(parent);  
     break;
   default:
     dolfin_error("wrong number of marked edges");
@@ -303,7 +372,7 @@ void RefineGrid::LocalIrregularRefinement(Cell *parent)
 }
 
 
-void RefineGrid::IrrRef1(Cell* parent)
+void RefineGrid::irrRef1(Cell* parent)
 {
   // 3 edges are marked on the same face: 
   // insert 3 new nodes at the midpoints on the marked edges, connect the 
@@ -428,7 +497,7 @@ void RefineGrid::IrrRef1(Cell* parent)
 }
 
 
-void RefineGrid::IrrRef2(Cell* parent)
+void RefineGrid::irrRef2(Cell* parent)
 {
   // 1 edge is marked:
   // Insert 1 new node at the midpoint of the marked edge, then connect 
@@ -477,7 +546,7 @@ void RefineGrid::IrrRef2(Cell* parent)
   }
 }
 
-void RefineGrid::IrrRef3(Cell* parent)
+void RefineGrid::irrRef3(Cell* parent)
 {
   // 2 edges are marked, on the same face 
   // (here there are 2 possibilities, and the chosen 
@@ -605,7 +674,7 @@ void RefineGrid::IrrRef3(Cell* parent)
   parent->neighbor(face_neighbor)->refineByFaceRule(true);
 }
 
-void RefineGrid::IrrRef4(Cell* parent)
+void RefineGrid::irrRef4(Cell* parent)
 {
   // 2 edges are marked, opposite to each other: 
   // insert 2 new nodes at the midpoints of the marked edges, 

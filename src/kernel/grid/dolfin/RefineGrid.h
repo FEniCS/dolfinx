@@ -15,30 +15,31 @@ namespace dolfin {
 	 
 	 RefineGrid(Grid &grid_) : grid(grid_) {}
 	 
-	 void GlobalRegularRefinement();
+	 void globalRegularRefinement();
 
-	 void EvaluateMarks(int grid_level);
-	 void CloseGrid(int grid_level);
-	 void CloseCell(Cell *parent);
+	 void evaluateMarks(int grid_level);
+	 void closeGrid(int grid_level);
+	 List<Cell *> closeCell(Cell *parent);
 
-	 void RegularRefinement(Cell* parent);
+	 void refineGrid(int grid_level);
+	 void unrefineGrid(int grid_level);
 
-	 void RegularRefinementTetrahedron(Cell* parent);
-	 void RegularRefinementTriangle(Cell* parent);
+	 void regularRefinement(Cell* parent);
+
+	 void regularRefinementTetrahedron(Cell* parent);
+	 void regularRefinementTriangle(Cell* parent);
 	 
-	 void LocalIrregularRefinement(Cell *parent);
+	 void localIrregularRefinement(Cell *parent);
 
-	 void IrrRef1(Cell *parent);
-	 void IrrRef2(Cell *parent);
-	 void IrrRef3(Cell *parent);
-	 void IrrRef4(Cell *parent);
+	 void irrRef1(Cell *parent);
+	 void irrRef2(Cell *parent);
+	 void irrRef3(Cell *parent);
+	 void irrRef4(Cell *parent);
 
 	 void refine();
 	 
   private:
 
-	 void IrrRef1(Cell* parent, ShortList<Edge*> marked_edges);
-	 
 	 Grid& grid;
 
 	 bool _create_edges;

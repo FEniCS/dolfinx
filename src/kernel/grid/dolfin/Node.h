@@ -33,6 +33,7 @@ namespace dolfin{
     int level() const;
     Node* child();
     Edge* edge(int i);
+    Cell* cell(int i); 
     int   boundary() const;
     bool  neighbor(Node* n);
     
