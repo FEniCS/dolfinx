@@ -1,0 +1,7 @@
+Put the following in your ~/.cvsrc file:
+
+update -P
+checkout -P
+
+In this way, you prevent old (removed) directories from
+showing up in the source tree.
