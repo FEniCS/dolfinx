@@ -60,7 +60,7 @@ POST_UNINSTALL = :
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -g -O2 -DDEBUG=1
+CXXFLAGS = -g -O2
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-ode -ldolfin-poisson -ldolfin-template -ldolfin-tanganyika -ldolfin-io -ldolfin-grid -ldolfin-fem -ldolfin-elements -ldolfin-quadrature -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-math -ldolfin-common -ldolfin-settings -ldolfin-log -ldolfin-settings -ldolfin-common -ldolfin-main -ldolfin-tanganyika 
 LN_S = ln -s
 MAINT = #
