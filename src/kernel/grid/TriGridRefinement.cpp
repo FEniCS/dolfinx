@@ -113,14 +113,14 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // at the midpoints of the edges. 
 
   // Create new nodes with the same coordinates as the previous nodes in cell  
-  Node& n0 = grid.createNode(cell.coord(0));
-  Node& n1 = grid.createNode(cell.coord(1));
-  Node& n2 = grid.createNode(cell.coord(2));
+  Node& n0 = createNode(cell.node(0), grid, cell);
+  Node& n1 = createNode(cell.node(1), grid, cell);
+  Node& n2 = createNode(cell.node(2), grid, cell);
 
   // Create new nodes with the new coordinates 
-  Node& n01 = grid.createNode(cell.node(0).midpoint(cell.node(1)));
-  Node& n02 = grid.createNode(cell.node(0).midpoint(cell.node(2)));
-  Node& n12 = grid.createNode(cell.node(1).midpoint(cell.node(2)));
+  Node& n01 = createNode(cell.node(0).midpoint(cell.node(1)), grid, cell);
+  Node& n02 = createNode(cell.node(0).midpoint(cell.node(2)), grid, cell);
+  Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), grid, cell);
 
   // Create new cells 
   grid.createCell(n0,  n01, n02);
@@ -146,16 +146,16 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node& n0 = grid.createNode(nodes(0)->coord());
-  Node& n1 = grid.createNode(nodes(1)->coord());
-  Node& nn = grid.createNode(nodes(2)->coord()); // Not marked
+  Node& n0 = createNode(*nodes(0), grid, cell);
+  Node& n1 = createNode(*nodes(1), grid, cell);
+  Node& nn = createNode(*nodes(2), grid, cell); // Not marked
 
   // Find edge
   Edge* e = cell.findEdge(*nodes(0), *nodes(1));
   dolfin_assert(e);
 
   // Create new node on marked edge 
-  Node& ne = grid.createNode(e->midpoint());
+  Node& ne = createNode(e->midpoint(), grid, cell);
   
   // Create new cells 
   grid.createCell(ne, nn, n0);
@@ -179,9 +179,9 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm = grid.createNode(nodes(0)->coord());
-  Node& n_m0 = grid.createNode(nodes(1)->coord());
-  Node& n_m1 = grid.createNode(nodes(2)->coord());
+  Node& n_dm = createNode(*nodes(0), grid, cell);
+  Node& n_m0 = createNode(*nodes(1), grid, cell);
+  Node& n_m1 = createNode(*nodes(2), grid, cell);
 
   // Find the edges
   Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
@@ -190,8 +190,8 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   dolfin_assert(e1);
 
   // Create new nodes on marked edges 
-  Node& n_e0 = grid.createNode(e0->midpoint());
-  Node& n_e1 = grid.createNode(e1->midpoint());
+  Node& n_e0 = createNode(e0->midpoint(), grid, cell);
+  Node& n_e1 = createNode(e1->midpoint(), grid, cell);
 
   // Create new cells 
   grid.createCell(n_dm, n_e0, n_e1);

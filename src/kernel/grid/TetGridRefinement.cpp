@@ -139,10 +139,10 @@ void TetGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   dolfin_assert(cell.marker() == Cell::marked_for_no_ref);
   
   // Create new nodes with the same coordinates as existing nodes
-  Node& n0 = grid.createNode(cell.coord(0));
-  Node& n1 = grid.createNode(cell.coord(1));
-  Node& n2 = grid.createNode(cell.coord(2));
-  Node& n3 = grid.createNode(cell.coord(3));
+  Node& n0 = createNode(cell.node(0), grid, cell);
+  Node& n1 = createNode(cell.node(1), grid, cell);
+  Node& n2 = createNode(cell.node(2), grid, cell);
+  Node& n3 = createNode(cell.node(3), grid, cell);
 
   // Create a new cell
   grid.createCell(n0, n1, n2, n3);
@@ -163,18 +163,18 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
   
   // Create new nodes with the same coordinates as existing nodes
-  Node& n0 = grid.createNode(cell.coord(0));
-  Node& n1 = grid.createNode(cell.coord(1));
-  Node& n2 = grid.createNode(cell.coord(2));
-  Node& n3 = grid.createNode(cell.coord(3));
+  Node& n0 = createNode(cell.node(0), grid, cell);
+  Node& n1 = createNode(cell.node(1), grid, cell);
+  Node& n2 = createNode(cell.node(2), grid, cell);
+  Node& n3 = createNode(cell.node(3), grid, cell);
 
   // Create new nodes with the new coordinates 
-  Node& n01 = grid.createNode(cell.node(0).midpoint(cell.node(1)));
-  Node& n02 = grid.createNode(cell.node(0).midpoint(cell.node(2)));
-  Node& n03 = grid.createNode(cell.node(0).midpoint(cell.node(3)));
-  Node& n12 = grid.createNode(cell.node(1).midpoint(cell.node(2)));
-  Node& n13 = grid.createNode(cell.node(1).midpoint(cell.node(3)));
-  Node& n23 = grid.createNode(cell.node(2).midpoint(cell.node(3)));
+  Node& n01 = createNode(cell.node(0).midpoint(cell.node(1)), grid, cell);
+  Node& n02 = createNode(cell.node(0).midpoint(cell.node(2)), grid, cell);
+  Node& n03 = createNode(cell.node(0).midpoint(cell.node(3)), grid, cell);
+  Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), grid, cell);
+  Node& n13 = createNode(cell.node(1).midpoint(cell.node(3)), grid, cell);
+  Node& n23 = createNode(cell.node(2).midpoint(cell.node(3)), grid, cell);
 
   // Create new cells 
   grid.createCell(n0,  n01, n02, n03);
@@ -208,10 +208,10 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   sortNodes(cell,nodes);
   
   // Create new nodes with the same coordinates as the old nodes
-  Node& n0 = grid.createNode(nodes(0)->coord());
-  Node& n1 = grid.createNode(nodes(1)->coord());
-  Node& n2 = grid.createNode(nodes(2)->coord());
-  Node& nn = grid.createNode(nodes(3)->coord()); // Not marked
+  Node& n0 = createNode(*nodes(0), grid, cell);
+  Node& n1 = createNode(*nodes(1), grid, cell);
+  Node& n2 = createNode(*nodes(2), grid, cell);
+  Node& nn = createNode(*nodes(3), grid, cell); // Not marked
        
   // Find edges
   Edge* e01 = cell.findEdge(*nodes(0), *nodes(1));
@@ -222,9 +222,9 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   dolfin_assert(e12);
 
   // Create new nodes on the edges of the marked face
-  Node& n01 = grid.createNode(e01->midpoint());
-  Node& n02 = grid.createNode(e02->midpoint());
-  Node& n12 = grid.createNode(e12->midpoint());
+  Node& n01 = createNode(e01->midpoint(), grid, cell);
+  Node& n02 = createNode(e02->midpoint(), grid, cell);
+  Node& n12 = createNode(e12->midpoint(), grid, cell);
   
   // Create new cells 
   grid.createCell(nn, n01, n02, n12);
@@ -253,17 +253,17 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node& n0  = grid.createNode(nodes(0)->coord());
-  Node& n1  = grid.createNode(nodes(1)->coord());
-  Node& nn0 = grid.createNode(nodes(2)->coord()); // Not marked
-  Node& nn1 = grid.createNode(nodes(3)->coord()); // Not marked
+  Node& n0  = createNode(*nodes(0), grid, cell);
+  Node& n1  = createNode(*nodes(1), grid, cell);
+  Node& nn0 = createNode(*nodes(2), grid, cell); // Not marked
+  Node& nn1 = createNode(*nodes(3), grid, cell); // Not marked
 
   // Find the marked edge
   Edge* e = cell.findEdge(*nodes(0), *nodes(1));
   dolfin_assert(e);
 
   // Create new node on marked edge 
-  Node& ne = grid.createNode(e->midpoint());
+  Node& ne = createNode(e->midpoint(), grid, cell);
   
   // Create new cells 
   grid.createCell(ne, nn0, nn1, n0);
@@ -302,10 +302,10 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm  = grid.createNode(nodes(0)->coord());
-  Node& n_m0  = grid.createNode(nodes(1)->coord());
-  Node& n_m1  = grid.createNode(nodes(2)->coord());
-  Node& n_nm  = grid.createNode(nodes(3)->coord());
+  Node& n_dm  = createNode(*nodes(0), grid, cell);
+  Node& n_m0  = createNode(*nodes(1), grid, cell);
+  Node& n_m1  = createNode(*nodes(2), grid, cell);
+  Node& n_nm  = createNode(*nodes(3), grid, cell);
 
   // Find the edges
   Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
@@ -318,8 +318,8 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   dolfin_assert(common_face);
 
   // Create new node on marked edge 
-  Node& n_e0 = grid.createNode(e0->midpoint());
-  Node& n_e1 = grid.createNode(e1->midpoint());
+  Node& n_e0 = createNode(e0->midpoint(), grid, cell);
+  Node& n_e1 = createNode(e1->midpoint(), grid, cell);
 
   // Create new cells 
   Cell& c1 = grid.createCell(n_dm, n_e0, n_e1, n_nm);
@@ -387,14 +387,14 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
     if (e->marked()) marked_edges(cnt++) = e;
 
   // Create new nodes with the same coordinates as the old nodes
-  Node& n00 = grid.createNode(marked_edges(0)->node(0).coord());
-  Node& n01 = grid.createNode(marked_edges(0)->node(1).coord());
-  Node& n10 = grid.createNode(marked_edges(1)->node(0).coord());
-  Node& n11 = grid.createNode(marked_edges(1)->node(1).coord());
+  Node& n00 = createNode(marked_edges(0)->node(0), grid, cell);
+  Node& n01 = createNode(marked_edges(0)->node(1), grid, cell);
+  Node& n10 = createNode(marked_edges(1)->node(0), grid, cell);
+  Node& n11 = createNode(marked_edges(1)->node(1), grid, cell);
 
   // Create new node on marked edge 
-  Node& n_e0 = grid.createNode(marked_edges(0)->midpoint());
-  Node& n_e1 = grid.createNode(marked_edges(1)->midpoint());
+  Node& n_e0 = createNode(marked_edges(0)->midpoint(), grid, cell);
+  Node& n_e1 = createNode(marked_edges(1)->midpoint(), grid, cell);
 
   // Create new cells 
   grid.createCell(n_e0, n_e1, n00, n10);

@@ -81,6 +81,9 @@ namespace dolfin {
     /// Create a new node (if it doesn't exist) and set parent-child info
     static Node& createNode(Node& node, Grid& grid, const Cell& cell);
     
+    /// Create a new node (if it doesn't exist)
+    static Node& createNode(const Point& p, Grid& grid, const Cell& cell);
+    
   };
 
 }

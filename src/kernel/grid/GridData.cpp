@@ -37,16 +37,6 @@ Node& GridData::createNode(Point p)
 //-----------------------------------------------------------------------------
 Node& GridData::createNode(real x, real y, real z)
 {
-  // If a node exists with coordinates (x,y,z) then return a pointer to that 
-  // node, else create a new node and return a pointer to that node.   
-
-  // FIXME: Is this necessary?
-  for (Table<Node>::Iterator n(nodes); !n.end(); ++n){
-    Point p = n->coord();
-    if ( p.dist(x,y,z) < DOLFIN_EPS )
-      return *n;
-  }
-
   int id;
   Node& n = nodes.create(id);
   n.set(x,y,z);  

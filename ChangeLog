@@ -1,3 +1,4 @@
+ - Change from pointers to references for Node, Cell, Edge, Face
  - Update writexml.m
  - Add new grid files and rename old grid files
 0.3.11

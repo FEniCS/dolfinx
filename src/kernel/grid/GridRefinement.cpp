@@ -384,25 +384,29 @@ int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
 //-----------------------------------------------------------------------------
 Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 {
+  // Create the node
+  Node& n = createNode(node.coord(), grid, cell);
+
+  // Set parent-child info
+  n.setParent(node);
+  node.setChild(n);
+
+  return n;
+}
+//-----------------------------------------------------------------------------
+Node& GridRefinement::createNode(const Point& p, Grid& grid, const Cell& cell)
+{
   // First check with the children of the neighbors of the cell if the
   // node already exists
-  Node* n = 0;
   for (CellIterator c(cell); !c.end(); ++c) {
     for (int i = 0; i < c->noChildren(); i++) {
-      n = c->child(i)->findNode(node.coord());
-      if ( n ) break;
+      Node* n = c->child(i)->findNode(p);
+      if ( n )
+	return *n;
     }
-    if ( n ) break;
   }
 
   // Create node if it doesn't exist
-  if ( !n )
-    n = &grid.createNode(node.coord());
-
-  // Set parent-child info
-  n->setParent(node);
-  node.setChild(*n);
-
-  return *n;
+  return grid.createNode(p);
 }
 //-----------------------------------------------------------------------------
