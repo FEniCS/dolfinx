@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(unsigned int N) : N(N), T(1.0), sparsity(N)
+ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), transpose(N)
 {
   // Choose method
   string method = dolfin_get("method");
@@ -32,7 +32,21 @@ ODE::~ODE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ODE::dfdu(const Vector& u, real t, unsigned int i, unsigned int j)
+real ODE::f(real u[], real t, uint i)
+{
+  dolfin_error("Not implemented");
+
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real ODE::f(const Vector& u, real t, uint i)
+{
+  dolfin_error("Not implemented");
+  
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real ODE::dfdu(const Vector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
 
@@ -63,17 +77,17 @@ real ODE::dfdu(const Vector& u, real t, unsigned int i, unsigned int j)
   return (f2 - f1) / dU;
 }
 //-----------------------------------------------------------------------------
-Element::Type ODE::method(unsigned int i)
+Element::Type ODE::method(uint i)
 {
   return default_method;
 }
 //-----------------------------------------------------------------------------
-unsigned int ODE::order(unsigned int i)
+dolfin::uint ODE::order(uint i)
 {
   return default_order;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(unsigned int i)
+real ODE::timestep(uint i)
 {
   return default_timestep;
 }
@@ -93,7 +107,12 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int ODE::size() const
+void ODE::save(NewSample& sample)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::uint ODE::size() const
 {
   return N;  
 }

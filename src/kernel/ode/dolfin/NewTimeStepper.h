@@ -3,21 +3,18 @@
 //
 // Modified by Johan Jansson 2003, 2004.
 
-#ifndef __TIME_STEPPER_H
-#define __TIME_STEPPER_H
+#ifndef __NEW_TIME_STEPPER_H
+#define __NEW_TIME_STEPPER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/Partition.h>
-#include <dolfin/Adaptivity.h>
-#include <dolfin/RHS.h>
-#include <dolfin/Solution.h>
 #include <dolfin/File.h>
-#include <dolfin/FixedPointIteration.h>
+#include <dolfin/NewTimeSlab.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class ODE;
-  class TimeSlab;
+  class Function;
 
   /// TimeStepper computes the solution of a given ODE. This is where
   /// the real work takes place (most of it takes place in the time
@@ -37,17 +34,18 @@ namespace dolfin {
   ///   timeStepper.step();
   ///   timeStepper.step();
 
-  class TimeStepper {
+  class NewTimeStepper
+  {
   public:
 
     /// Constructor
-    TimeStepper(ODE& ode, Function& function);
+    NewTimeStepper(ODE& ode, Function& u);
 
     /// Destructor
-    ~TimeStepper();
+    ~NewTimeStepper();
     
     /// Solve given ODE
-    static void solve(ODE& ode, Function& function);
+    static void solve(ODE& ode, Function& u);
 
     /// Step solution, return current time
     real step();
@@ -57,26 +55,14 @@ namespace dolfin {
 
   private:
 
-    // Create the first time slab
-    bool createFirstTimeSlab();
-
-    // Create a standard (recursive) time slab
-    bool createGeneralTimeSlab();
-
-    // Prepare for next time slab
-    void shift();
-
     // Save interpolated solution (when necessary)
-    void save(TimeSlab& timeslab);
+    void save();
 
     // Save at fixed sample points
-    void saveFixedSamples(TimeSlab& timeslab);
+    void saveFixedSamples();
     
     // Save using adaptive samples
-    void saveAdaptiveSamples(TimeSlab& timeslab);
-
-    // Stabilize using a sequence of small time steps
-    void stabilize(real K);
+    void saveAdaptiveSamples();
     
     //--- Time-stepping data ---
 
@@ -89,26 +75,14 @@ namespace dolfin {
     // End time of computation
     real T;
 
-    // Partition of components into small and large time steps
-    Partition partition;
-
-    // Adaptivity, including regulation of the time step
-    Adaptivity adaptivity;
-
-    // A function representing the solution being computed
-    Function& function;
-
-    // The solution being computed
-    Solution u;
-
     // The ODE being solved
     ODE& ode;
 
-    // The right-hand side
-    RHS f;
+    // The solution being computed
+    Function& u;
 
-    // Damped fixed point iteration
-    FixedPointIteration fixpoint;
+    // The time slab
+    NewTimeSlab timeslab;
 
     // Storing the computed solution
     File file;

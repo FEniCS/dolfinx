@@ -114,6 +114,13 @@ void File::operator>>(Sample& sample)
   *file >> sample;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(NewSample& sample)
+{
+  file->read();
+  
+  *file >> sample;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(ParameterList& parameters)
 {
   file->read();
@@ -157,6 +164,13 @@ void File::operator<<(Function::Vector& u)
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Sample& sample)
+{
+  file->write();
+  
+  *file << sample;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(NewSample& sample)
 {
   file->write();
   

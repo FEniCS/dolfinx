@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/LobattoQuadrature.h>
 #include <dolfin/Vector.h>
@@ -15,7 +17,19 @@ cGqMethod::cGqMethod(unsigned int q) : Method(q)
   if ( q < 1 )
     dolfin_error("Polynomial order q must be at least 1 for the cG(q) method.");
 
+  m = q;
+
   init();
+}
+//-----------------------------------------------------------------------------
+real cGqMethod::timestep(real r, real tol, real kmax) const
+{
+  // FIXME: Missing stability factor and interpolation constant
+
+  if ( fabs(r) < DOLFIN_EPS )
+    return kmax;
+
+  return pow(tol / fabs(r), 1.0 / static_cast<real>(q));
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::show() const

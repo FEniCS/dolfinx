@@ -3,8 +3,8 @@
 //
 // Updates by Anders Logg, 2003, 2004
 
-#ifndef __NEWARRAY_H
-#define __NEWARRAY_H
+#ifndef __NEW_ARRAY_H
+#define __NEW_ARRAY_H
 
 #include <dolfin/constants.h>
 #include <vector>

@@ -37,6 +37,9 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
+o Implement NewMatrix and NewMatrix PETSc wrappers
+o Implement wrappers for PETSc solvers
+
 o [foufas] Wrapper for LAPACK
 o [erik] Matrix-matrix multiplication
 o [erik] Algebraic multigrid
@@ -73,6 +76,9 @@ o [foufas] Finance module
 
 General
 -------
+
+* Replace ::show() with ::disp() for all classes (?)
+* Replace unsigned int with uint (?)
 
 * Replace Array and List with NewArray and NewList
 * Use libtool?

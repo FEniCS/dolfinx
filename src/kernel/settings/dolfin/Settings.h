@@ -48,8 +48,9 @@ namespace dolfin {
       add(Parameter::BOOL, "debug time steps", false);
       add(Parameter::BOOL, "debug iterations", false);
       add(Parameter::BOOL, "automatic modeling", false);
+      add(Parameter::BOOL, "use new ode solver", false);
 
-      add(Parameter::INT, "number of samples", 100);
+      add(Parameter::INT, "number of samples", 101);
       add(Parameter::INT, "sample density", 1);
       add(Parameter::INT, "element cache size", 32);
       add(Parameter::INT, "maximum iterations", 100);

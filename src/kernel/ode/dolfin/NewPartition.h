@@ -11,8 +11,7 @@
 namespace dolfin
 {
   
-  class Adaptivity;
-  class Regulator;
+  class NewAdaptivity;
 
   /// Partition is used in the recursive construction of time slabs
   /// and contains a list of component indices. The order of these
@@ -35,30 +34,30 @@ namespace dolfin
     uint index(uint pos) const;
 
     /// Update partition (reorder components starting at offset)
-    real update(uint offset, uint& end, const Adaptivity& adaptivity);
+    real update(uint offset, uint& end, NewAdaptivity& adaptivity);
+
+    /// Debug partition
+    void debug(uint offset, uint end) const;
 
   private:
 
-    // Debug partitioning
-    void debug(uint offset, uint end, Adaptivity& adaptivity) const;
-
     // Compute time step for partitioning
-    real maxstep(uint offset, Adaptivity& adaptivity) const;
+    real maxstep(uint offset, NewAdaptivity& adaptivity) const;
 
     // Compute largest time step
-    real maximum(uint offset, const Adaptivity& adaptivity) const;
+    real maximum(uint offset, NewAdaptivity& adaptivity) const;
 
     // Compute smallest time step
-    real minimum(uint offset, Adaptivity& adaptivity, int end) const;
+    real minimum(uint offset, uint end, NewAdaptivity& adaptivity) const;
     
     // Comparison operator for the partition
     struct Less : public std::unary_function<uint, bool> 
     {
-      Less(real& K, Adaptivity& adaptivity);
+      Less(real& K, NewAdaptivity& adaptivity);
       bool operator()(uint index) const;
       
       real K;
-      Adaptivity& adaptivity;
+      NewAdaptivity& adaptivity;
     };
 
     // List of component indices

@@ -14,6 +14,7 @@ namespace dolfin {
   class Mesh;
   class Function;
   class Sample;
+  class NewSample;
   
   class MFile : public GenericFile {
   public:
@@ -31,6 +32,7 @@ namespace dolfin {
     void operator<< (Function& u);
     void operator<< (Function::Vector& u);
     void operator<< (Sample& sample);
+    void operator<< (NewSample& sample);
 
   };
   

@@ -1,8 +1,8 @@
 // Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __NEWLIST_H
-#define __NEWLIST_H
+#ifndef __NEW_LIST_H
+#define __NEW_LIST_H
 
 #include <list>
 #include <iterator>

@@ -14,8 +14,9 @@ namespace dolfin {
   class Mesh;
   class Function;
   class Function::Vector;
-  class ParameterList;
   class Sample;
+  class NewSample;
+  class ParameterList;
   
   class GenericFile {
   public:
@@ -31,6 +32,7 @@ namespace dolfin {
     virtual void operator>> (Function& u);
     virtual void operator>> (Function::Vector& u);
     virtual void operator>> (Sample& sample);
+    virtual void operator>> (NewSample& sample);
     virtual void operator>> (ParameterList& parameters);
     
     // Output
@@ -41,6 +43,7 @@ namespace dolfin {
     virtual void operator<< (Function& u);
     virtual void operator<< (Function::Vector& u);
     virtual void operator<< (Sample& sample);
+    virtual void operator<< (NewSample& sample);
     virtual void operator<< (ParameterList& parameters);
     
     void read();

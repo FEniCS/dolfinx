@@ -71,8 +71,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
 {
-  cout << "stepping" << endl;
-
   if ( t == 0.0 )
   {
     dolfin_warning("ODE solver is EXPERIMENTAL.");
@@ -81,7 +79,7 @@ real TimeStepper::step()
     tic();
 
     // Create first time slab
-    while ( !createFirstTimeSlab() );
+    while ( !createFirstTimeSlab() );    
 
     cout << "Created first time slab." << endl;
   }
@@ -156,13 +154,9 @@ bool TimeStepper::createFirstTimeSlab()
 //-----------------------------------------------------------------------------
 bool TimeStepper::createGeneralTimeSlab()
 {
-  cout << "Creating time slab" << endl;
-
   // Create the time slab
   RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
-
-  cout << "Created time slab" << endl;
-
+  
   // Try to solve the system using fixed point iteration
   if ( !fixpoint.iterate(timeslab) )
   {
@@ -210,13 +204,11 @@ bool TimeStepper::createGeneralTimeSlab()
 //-----------------------------------------------------------------------------
 void TimeStepper::shift()
 {
-  cout << "shift" << endl;
   // Shift adaptivity
   adaptivity.shift(u, f);
 
   // Shift solution
   u.shift(t);
-  cout << "shift done" << endl;
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab)

@@ -1,14 +1,17 @@
 EXTRA_DIST = dolfin_tanganyika.h \
              cGqElement.h \
              cGqMethod.h \
+             NewcGqMethod.h \
              cGqMethods.h \
              dGqElement.h \
              dGqMethod.h \
+             NewdGqMethod.h \
              dGqMethods.h \
              AdaptiveIterationLevel1.h \
              AdaptiveIterationLevel2.h \
              AdaptiveIterationLevel3.h \
              Adaptivity.h \
+             NewAdaptivity.h \
              Alloc.h \
              Component.h \
              Dual.h \
@@ -20,9 +23,11 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementIterator.h \
              ElementTmpFile.h \
              FixedPointIteration.h \
+             FixedPointSolver.h \
              Iteration.h \
              JacobianMatrix.h \
              Method.h \
+             NewMethod.h \
              NonStiffIteration.h \
              ODE.h \
              ODESolver.h \
@@ -34,9 +39,12 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ReducedModel.h \
              Regulator.h \
              Sample.h \
+             NewSample.h \
              SimpleTimeSlab.h \
              Solution.h \
              Sparsity.h \
              TimeSlab.h \
              NewTimeSlab.h \
-             TimeStepper.h
+             TimeSlabSolver.h \
+             TimeStepper.h \
+             NewTimeStepper.h

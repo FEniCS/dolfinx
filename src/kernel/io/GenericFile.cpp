@@ -57,6 +57,11 @@ void GenericFile::operator>>(Sample& sample)
   read_not_impl("Sample");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator>>(NewSample& sample)
+{
+  read_not_impl("NewSample");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(ParameterList& parameters)
 {
   read_not_impl("ParameterList");
@@ -90,6 +95,11 @@ void GenericFile::operator<<(Function::Vector& u)
 void GenericFile::operator<<(Sample& sample)
 {
   write_not_impl("Sample");
+}
+//-­---------------------------------------------------------------------------
+void GenericFile::operator<<(NewSample& sample)
+{
+  write_not_impl("NewSample");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(ParameterList& parameters)

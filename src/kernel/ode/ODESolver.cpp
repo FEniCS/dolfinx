@@ -7,6 +7,7 @@
 #include <dolfin/Dual.h>
 #include <dolfin/Function.h>
 #include <dolfin/TimeStepper.h>
+#include <dolfin/NewTimeStepper.h>
 #include <dolfin/ODESolver.h>
 
 using namespace dolfin;
@@ -55,7 +56,10 @@ void ODESolver::solvePrimal(ODE& ode, Function& u)
   u.rename("u", "primal");
   
   // Solve primal problem
-  TimeStepper::solve(ode, u);
+  if ( dolfin_get("use new ode solver") )
+    NewTimeStepper::solve(ode, u);
+  else
+    TimeStepper::solve(ode, u);
 
   dolfin_end();
 }
@@ -72,7 +76,10 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   phi.rename("phi", "dual");
   
   // Solve dual problem
-  TimeStepper::solve(dual, phi);
+  if ( dolfin_get("use new ode solver") )
+    NewTimeStepper::solve(dual, phi);
+  else
+    TimeStepper::solve(dual, phi);
 
   dolfin_end();
 }

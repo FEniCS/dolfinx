@@ -2,14 +2,17 @@ SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/cGqElement.h \
                           dolfin/cGqMethod.h \
+                          dolfin/NewcGqMethod.h \
                           dolfin/cGqMethods.h \
                           dolfin/dGqElement.h \
                           dolfin/dGqMethod.h \
+                          dolfin/NewdGqMethod.h \
                           dolfin/dGqMethods.h \
                           dolfin/AdaptiveIterationLevel1.h \
                           dolfin/AdaptiveIterationLevel2.h \
                           dolfin/AdaptiveIterationLevel3.h \
                           dolfin/Adaptivity.h \
+                          dolfin/NewAdaptivity.h \
                           dolfin/Alloc.h \
                           dolfin/Component.h \
                           dolfin/Dual.h \
@@ -22,9 +25,11 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementIterator.h \
                           dolfin/ElementTmpFile.h \
                           dolfin/FixedPointIteration.h \
+                          dolfin/FixedPointSolver.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
                           dolfin/Method.h \
+                          dolfin/NewMethod.h \
                           dolfin/NewtonIteration.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
@@ -37,24 +42,30 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Regulator.h \
                           dolfin/RHS.h \
                           dolfin/Sample.h \
+                          dolfin/NewSample.h \
                           dolfin/SimpleTimeSlab.h \
                           dolfin/Solution.h \
                           dolfin/Sparsity.h \
                           dolfin/TimeSlab.h \
                           dolfin/NewTimeSlab.h \
-                          dolfin/TimeStepper.h
+                          dolfin/TimeSlabSolver.h \
+                          dolfin/TimeStepper.h \
+                          dolfin/NewTimeStepper.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
 libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           cGqMethod.cpp \
+                          NewcGqMethod.cpp \
                           cGqMethods.cpp \
                           dGqElement.cpp \
                           dGqMethod.cpp \
+                          NewdGqMethod.cpp \
                           dGqMethods.cpp \
                           AdaptiveIterationLevel1.cpp \
                           AdaptiveIterationLevel2.cpp \
                           AdaptiveIterationLevel3.cpp \
                           Adaptivity.cpp \
+                          NewAdaptivity.cpp \
                           Alloc.cpp \
                           Component.cpp \
                           Dual.cpp \
@@ -67,9 +78,11 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \
                           FixedPointIteration.cpp \
+                          FixedPointSolver.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
                           Method.cpp \
+                          NewMethod.cpp \
                           NewtonIteration.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
@@ -82,9 +95,12 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Regulator.cpp \
                           RHS.cpp \
                           Sample.cpp \
+                          NewSample.cpp \
                           SimpleTimeSlab.cpp \
                           Solution.cpp \
                           Sparsity.cpp \
                           TimeSlab.cpp \
                           NewTimeSlab.cpp \
-                          TimeStepper.cpp
+                          TimeSlabSolver.cpp \
+                          TimeStepper.cpp \
+                          NewTimeStepper.cpp

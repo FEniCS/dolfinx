@@ -8,6 +8,7 @@
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/Sample.h>
+#include <dolfin/NewSample.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Function.h>
 #include <dolfin/Solution.h>
@@ -31,28 +32,31 @@ namespace dolfin
   public:
     
     /// Constructor
-    ODE(unsigned int N);
+    ODE(uint N);
     
     /// Destructor
     virtual ~ODE();
 
     /// Initial value
-    virtual real u0(unsigned int i) = 0;
+    virtual real u0(uint i) = 0;
 
-    /// Right-hand side
-    virtual real f(const Vector& u, real t, unsigned int i) = 0;
+    /// Right-hand side (new version, will be made abstract)
+    virtual real f(real u[], real t, uint i);
+
+    /// Right-hand side (old version, will be removed)
+    virtual real f(const Vector& u, real t, uint i);
 
     /// Jacobian (optional)
-    virtual real dfdu(const Vector& u, real t, unsigned int i, unsigned int j);
+    virtual real dfdu(const Vector& u, real t, uint i, uint j);
 
     /// Method to use for given component (optional)
-    virtual Element::Type method(unsigned int i);
+    virtual Element::Type method(uint i);
 
     /// Order to use for given component (optional)
-    virtual unsigned int order(unsigned int i);
+    virtual uint order(uint i);
 
     /// Time step to use for given component (optional)
-    virtual real timestep(unsigned int i);
+    virtual real timestep(uint i);
 
     /// Update ODE (optional)
     virtual void update(RHS& f, Function& u, real t);
@@ -60,11 +64,14 @@ namespace dolfin
     /// Update ODE (optional)
     virtual void update(Solution& u, Adaptivity& adaptivity, real t);
 
-    /// Save sample (optional)
+    /// Save sample (old version, will be removed)
     virtual void save(Sample& sample);
 
+    /// Save sample (optional)
+    virtual void save(NewSample& sample);
+
     /// Number of components N
-    unsigned int size() const;
+    uint size() const;
 
     /// End time (final time)
     real endtime() const;
@@ -87,13 +94,14 @@ namespace dolfin
     /// Friends
     friend class Dual;
     friend class RHS;
+    friend class NewTimeSlab;
     friend class ReducedModel;
     friend class JacobianMatrix;
 
   protected:
     
     // Number of components
-    unsigned int N;
+    uint N;
     
     // Final time
     real T;
@@ -101,10 +109,13 @@ namespace dolfin
     // Sparsity
     Sparsity sparsity;
 
+    // Transpose of sparsity
+    Sparsity transpose;
+
   private:
 
     Element::Type default_method;
-    unsigned int default_order;
+    uint default_order;
     real default_timestep;
 
   };

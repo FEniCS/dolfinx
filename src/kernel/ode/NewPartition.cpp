@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Regulator.h>
-#include <dolfin/Adaptivity.h>
+#include <dolfin/NewAdaptivity.h>
 #include <dolfin/NewPartition.h>
 
 using namespace dolfin;
@@ -29,18 +29,18 @@ NewPartition::~NewPartition()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uint NewPartition::size() const
+dolfin::uint NewPartition::size() const
 {
   return indices.size();
 }
 //-----------------------------------------------------------------------------
-uint NewPartition::index(uint i) const
+dolfin::uint NewPartition::index(uint i) const
 {
   dolfin_assert(i < indices.size());  
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-uint NewPartition::update(uint offset, uint& end, const Adaptivity& adaptivity)
+real NewPartition::update(uint offset, uint& end, NewAdaptivity& adaptivity)
 {
   // Compute time steps for partition. We partition the components into two
   // groups, one group with k < K and one with k >= K.
@@ -65,47 +65,42 @@ uint NewPartition::update(uint offset, uint& end, const Adaptivity& adaptivity)
   return K;
 }
 //-----------------------------------------------------------------------------
-void NewPartition::debug(uint offset, uint end, 
-		      Adaptivity& adaptivity) const
+void NewPartition::debug(uint offset, uint end) const
 {
-  // This function can be used to debug the partitioning.
-  
-  cout << endl;
+  cout << "Partition:";
+
   for (uint i = 0; i < indices.size(); i++)
   {
-    if ( i == offset )
-      cout << "--------------------------- offset" << endl;
+    if ( i == offset || i == end )
+      cout << " |";
 
-    if ( i == end )
-      cout << "--------------------------- end" << endl;
-
-    cout << i << ": index = " << indices[i] 
-	 << " k = " << adaptivity.regulator(indices[i]).timestep() << endl;
+    cout << " " << indices[i];
   }
+
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-real NewPartition::maximum(uint offset, const Adaptivity& adaptivity) const
+real NewPartition::maximum(uint offset, NewAdaptivity& adaptivity) const
 {
   real K = 0.0;
 
   for (uint i = offset; i < indices.size(); i++)
-    K = max(adaptivity.regulator(indices[i]).timestep(), K);
+    K = max(adaptivity.timestep(indices[i]), K);
 
   return K;
 }
 //-----------------------------------------------------------------------------
-real NewPartition::minimum(uint offset, uint end, Adaptivity& adaptivity) const
+real NewPartition::minimum(uint offset, uint end, NewAdaptivity& adaptivity) const
 {
-  real k = adaptivity.regulator(indices[offset]).timestep();
+  real k = adaptivity.timestep(indices[offset]);
 
   for (uint i = offset + 1; i < end; i++)
-    k = min(adaptivity.regulator(indices[i]).timestep(), k);
+    k = min(adaptivity.timestep(indices[i]), k);
 
   return k;
 }
 //-----------------------------------------------------------------------------
-NewPartition::Less::Less(real& K, Adaptivity& adaptivity) : 
+NewPartition::Less::Less(real& K, NewAdaptivity& adaptivity) : 
   K(K), adaptivity(adaptivity)
 {
   // Do nothing
@@ -113,6 +108,6 @@ NewPartition::Less::Less(real& K, Adaptivity& adaptivity) :
 //-----------------------------------------------------------------------------
 bool NewPartition::Less::operator()(uint index) const
 {
-  return adaptivity.regulator(index).timestep() >= K;
+  return adaptivity.timestep(index) >= K;
 }
 //-----------------------------------------------------------------------------

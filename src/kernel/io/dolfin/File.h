@@ -15,6 +15,7 @@ namespace dolfin {
   class Function;
   class Function::Vector;
   class Sample;
+  class NewSample;
   class ParameterList;
   class GenericFile;
   
@@ -35,6 +36,7 @@ namespace dolfin {
     void operator>> (Function& u);
     void operator>> (Function::Vector& u);
     void operator>> (Sample& sample);
+    void operator>> (NewSample& sample);
     void operator>> (ParameterList& parameters);
     
     // Output
@@ -45,6 +47,7 @@ namespace dolfin {
     void operator<< (Function& u);
     void operator<< (Function::Vector& u);
     void operator<< (Sample& sample);
+    void operator<< (NewSample& sample);
     void operator<< (ParameterList& parameters);
     
   private:

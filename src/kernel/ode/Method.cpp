@@ -10,6 +10,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Method::Method(unsigned int q)
 {
+  m = 0; // Assigned by sub class
   this->q = q;
   n = q + 1;
 
