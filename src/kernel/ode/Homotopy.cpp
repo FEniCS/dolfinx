@@ -112,6 +112,20 @@ void Homotopy::solve()
   dolfin_info("Total number of solutions found: %d.", nroots);
 }
 //-----------------------------------------------------------------------------
+complex Homotopy::z0(uint i)
+{
+  const real pp = static_cast<real>(degree(i));
+  const real mm = static_cast<real>(mi[i]);
+  const complex c = ci[i];
+  
+  // Pick root number m of equation z_i^(p + 1) = c_i
+  real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
+  real a = std::arg(c) / (pp + 1.0);
+  complex z = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
+  
+  return z;
+}
+//-----------------------------------------------------------------------------
 void Homotopy::G(const complex z[], complex y[])
 {
   // Implement default starting system if not supplied by user

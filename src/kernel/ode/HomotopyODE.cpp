@@ -24,17 +24,10 @@ HomotopyODE::~HomotopyODE()
 //-----------------------------------------------------------------------------
 complex HomotopyODE::z0(unsigned int i)
 {
-  const real pp = static_cast<real>(homotopy.degree(i));
-  const real mm = static_cast<real>(homotopy.mi[i]);
-  const complex c = homotopy.ci[i];
+  const complex z = homotopy.z0(i);
 
-  // Pick root number m of equation z_i^(p + 1) = c_i
-  real r = std::pow(std::abs(c), 1.0/(pp + 1.0));
-  real a = std::arg(c) / (pp + 1.0);
-  complex z = std::polar(r, a + mm/(pp + 1.0)*2.0*DOLFIN_PI);
-    
   cout << "Starting point: z = " << z << endl;
-  
+
   return z;
 }
 //-----------------------------------------------------------------------------  
@@ -136,18 +129,6 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
 HomotopyODE::State HomotopyODE::state()
 {
   return _state;
-}
-//-----------------------------------------------------------------------------
-complex HomotopyODE::Gi(complex zi, uint i) const
-{
-  // Compute G_i(z_i) = z_i^(p_i + 1) - c_i
-  const uint p = homotopy.degree(i);
-  const complex ci = homotopy.ci[i];
-  complex tmp = zi;
-  for (uint j = 0; j < p; j++)
-    tmp *= zi;
-  
-  return tmp - ci;
 }
 //-----------------------------------------------------------------------------
 void HomotopyODE::monitor(const complex z[], real t)

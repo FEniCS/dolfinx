@@ -32,24 +32,21 @@ namespace dolfin
     complex z0(unsigned int i);
 
     /// Evaluate right-hand side
-    virtual void f(const complex z[], real t, complex y[]);
+    void f(const complex z[], real t, complex y[]);
     
     /// Compute product y = Mx for implicit system
-    virtual void M(const complex x[], complex y[], const complex z[], real t);
+    void M(const complex x[], complex y[], const complex z[], real t);
 
     /// Compute product y = Jx for Jacobian J
-    virtual void J(const complex x[], complex y[], const complex u[], real t);
+    void J(const complex x[], complex y[], const complex u[], real t);
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const complex z[], real t, bool end);
+    bool update(const complex z[], real t, bool end);
 
     /// Get state, solving ODE or playing end game
     State state();
 
   private:
-
-    // Compute G_i(z) = G_i(z_i)
-    complex Gi(complex zi, uint i) const;
 
     // Monitor homotopy
     void monitor(const complex z[], real t);

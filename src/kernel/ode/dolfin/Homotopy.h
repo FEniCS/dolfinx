@@ -29,6 +29,9 @@ namespace dolfin
     /// Solve homotopy
     void solve();
 
+    /// Return initial value (solution of G(z) = 0), optional
+    virtual complex z0(uint i);
+
     /// Compute y = F(z)
     virtual void F(const complex z[], complex y[]) = 0;
 
