@@ -1,11 +1,5 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
-
-// A couple of comments:
-//
-//   - Return List<Cell *> from closeCell() won't work?
-//   - Rename refineGrid(int level) and unrefineGrid(int level) to refine(int level) and unrefine(int level)?
-//   - Should there be an unrefine()?
+// Licensed under the GNU GPL Version
 
 #ifndef __GRID_REFINEMENT_H
 #define __GRID_REFINEMENT_H
@@ -15,14 +9,10 @@
 namespace dolfin {
 
   class Grid;
-  class Edge;
   class Cell;
   class GridHierarchy;
 
   /// Algorithm for the refinement of a triangular or tetrahedral grid.
-  ///
-  /// Based on the algorithm described in the paper "Tetrahedral Grid Refinement"
-  /// by Jürgen Bey, in Computing 55, pp. 355-378 (1995).
   
   class GridRefinement {
   public:
@@ -62,37 +52,11 @@ namespace dolfin {
     // Close a cell
     static void closeCell(Cell& cell, List<Cell*>& cells);
 
-    // Check which refinement rule applies
-    static bool checkRuleRegular    (Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular1 (Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular2 (Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular3 (Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular4 (Cell& cell, int no_marked_edges);
-
-    // Refine a cell regularly
-    static void regularRefinement    (Cell& cell, Grid& grid);
-    static void regularRefinementTri (Cell& cell, Grid& grid);
-    static void regularRefinementTet (Cell& cell, Grid& grid);
-
-    // Refine a cell irregularly by rule 1
-    static void irregularRefinementRule1    (Cell& c, Grid& grid);
-    static void irregularRefinementRule1Tri (Cell& c, Grid& grid);
-    static void irregularRefinementRule1Tet (Cell& c, Grid& grid);
-
-    // Refine a cell irregularly by rule 2
-    static void irregularRefinementRule2    (Cell& c, Grid& grid);
-    static void irregularRefinementRule2Tri (Cell& c, Grid& grid);
-    static void irregularRefinementRule2Tet (Cell& c, Grid& grid);
+    /// Check refinement rule for given cell
+    static bool checkRule(Cell& cell, int no_marked_edges);
     
-    // Refine a cell irregularly by rule 3
-    static void irregularRefinementRule3    (Cell& c, Grid& grid);
-    static void irregularRefinementRule3Tri (Cell& c, Grid& grid);
-    static void irregularRefinementRule3Tet (Cell& c, Grid& grid);
-    
-    // Refine a cell irregularly by rule 4
-    static void irregularRefinementRule4    (Cell& c, Grid& grid);
-    static void irregularRefinementRule4Tri (Cell& c, Grid& grid);
-    static void irregularRefinementRule4Tet (Cell& c, Grid& grid);
+    // Refine cell according to refinement rule
+    static void refine(Cell& cell, Grid& grid);
     
     ///--- A couple of special functions, placed here rather than in Cell ---
 
@@ -104,15 +68,6 @@ namespace dolfin {
 
     /// Check if the cell has at least one edge marked by another cell (but not the cell itself)
     static bool edgeMarkedByOther(Cell& cell);
-    
-
- 
-
-    /*
-    void localIrregularRefinement(Cell *parent);
-    */
-    
-    
 
   };
 

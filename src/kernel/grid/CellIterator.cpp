@@ -96,6 +96,16 @@ bool CellIterator::operator!=(const CellIterator& c) const
   return this->c->pointer() != c.c->pointer();
 }
 //-----------------------------------------------------------------------------
+bool CellIterator::operator==(const Cell& c) const
+{
+  return this->c->pointer() == &c;
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::operator!=(const Cell& c) const
+{
+  return this->c->pointer() != &c;
+}
+//-----------------------------------------------------------------------------
 // CellIterator::GridCellIterator
 //-----------------------------------------------------------------------------
 CellIterator::GridCellIterator::GridCellIterator(const Grid &grid)

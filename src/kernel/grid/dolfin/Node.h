@@ -94,6 +94,8 @@ namespace dolfin{
     /// Friends
     friend class Grid;
     friend class GridRefinement;
+    friend class TriGridRefinement;
+    friend class TetGridRefinement;
     friend class Triangle;
     friend class Tetrahedron;
     friend class GridData;

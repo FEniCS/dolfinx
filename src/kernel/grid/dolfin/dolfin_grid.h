@@ -8,6 +8,8 @@
 #include <dolfin/GridInit.h>
 #include <dolfin/GridRefinement.h>
 #include <dolfin/GridRefinementData.h>
+#include <dolfin/TriGridRefinement.h>
+#include <dolfin/TetGridRefinement.h>
 
 #include <dolfin/CellRefData.h>
 #include <dolfin/EdgeRefData.h>

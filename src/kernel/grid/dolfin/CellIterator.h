@@ -42,6 +42,8 @@ namespace dolfin {
     Cell* operator->() const;
     bool  operator==(const CellIterator& c) const;
     bool  operator!=(const CellIterator& c) const;
+    bool  operator==(const Cell& c) const;
+    bool  operator!=(const Cell& c) const;
 	 
     // Base class for cell iterators
     class GenericCellIterator {

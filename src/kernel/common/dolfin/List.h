@@ -41,7 +41,7 @@ namespace dolfin {
     void remove(const T& element);
 
     /// Get first element in the list and remove it
-    T pop() const;
+    T pop();
     
     /// Iterator for the List class. Should be used as follows:
     ///
@@ -164,7 +164,7 @@ namespace dolfin {
     dolfin_error("Element is not in the list.");
   }
   //---------------------------------------------------------------------------
-  template <class T> T List<T>::pop() const
+  template <class T> T List<T>::pop()
   {
     T first = l.front();
     l.pop_front();

@@ -82,6 +82,14 @@ namespace dolfin {
     
     /// Friends
     friend class GenericCell;
+    friend class XMLGrid;
+    friend class GridInit;
+    friend class GridRefinement;
+    friend class TriGridRefinement;
+    friend class TetGridRefinement;
+    friend class GridHierarchy;
+    friend class Boundary;
+    friend class BoundaryInit;
     friend class NodeIterator::GridNodeIterator;
     friend class NodeIterator::BoundaryNodeIterator;
     friend class CellIterator::GridCellIterator;
@@ -89,12 +97,6 @@ namespace dolfin {
     friend class EdgeIterator::BoundaryEdgeIterator;
     friend class FaceIterator::GridFaceIterator;
     friend class FaceIterator::BoundaryFaceIterator;
-    friend class XMLGrid;
-    friend class GridInit;
-    friend class GridRefinement;
-    friend class GridHierarchy;
-    friend class Boundary;
-    friend class BoundaryInit;
     
   private:
     

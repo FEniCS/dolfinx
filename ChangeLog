@@ -1,3 +1,4 @@
+ - New classes TriGridRefinement and TetGridRefinement
  - Add iterators for faces and edges on a boundary
  - New class GridHierarchy
 0.3.10

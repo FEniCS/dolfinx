@@ -21,5 +21,7 @@ EXTRA_DIST = dolfin_grid.h \
              Node.h \
              NodeIterator.h \
              Point. h\
+             TetGridRefinement.h \
              Tetrahedron.h \
+             TriGridRefinement.h \
              Triangle.h

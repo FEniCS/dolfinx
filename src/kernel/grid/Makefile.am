@@ -22,7 +22,9 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/Node.h \
                            dolfin/NodeIterator.h \
                            dolfin/Point.h \
+                           dolfin/TetGridRefinement.h \
                            dolfin/Tetrahedron.h \
+                           dolfin/TriGridRefinement.h \
                            dolfin/Triangle.h
 INCLUDES                 = @MODULE_INCLUDES@
 lib_LIBRARIES            = libdolfin-grid.a
@@ -47,5 +49,7 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            Node.cpp \
                            NodeIterator.cpp \
                            Point.cpp \
+                           TetGridRefinement.cpp \
                            Tetrahedron.cpp \
+                           TriGridRefinement.cpp \
                            Triangle.cpp

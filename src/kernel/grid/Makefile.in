@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_grid.h                            dolfin/Boundary.h                            dolfin/BoundaryData.h                            dolfin/BoundaryInit.h                            dolfin/Cell.h                            dolfin/CellIterator.h                            dolfin/CellRefData.h                            dolfin/Edge.h                            dolfin/EdgeIterator.h                            dolfin/EdgeRefData.h                            dolfin/Face.h                            dolfin/FaceIterator.h                            dolfin/GenericCell.h                            dolfin/Grid.h                            dolfin/GridData.h                            dolfin/GridHierarchy.h                            dolfin/GridInit.h                            dolfin/GridIterator.h                            dolfin/GridRefinement.h                            dolfin/GridRefinementData.h                            dolfin/Node.h                            dolfin/NodeIterator.h                            dolfin/Point.h                            dolfin/Tetrahedron.h                            dolfin/Triangle.h
+include_HEADERS = dolfin/dolfin_grid.h                            dolfin/Boundary.h                            dolfin/BoundaryData.h                            dolfin/BoundaryInit.h                            dolfin/Cell.h                            dolfin/CellIterator.h                            dolfin/CellRefData.h                            dolfin/Edge.h                            dolfin/EdgeIterator.h                            dolfin/EdgeRefData.h                            dolfin/Face.h                            dolfin/FaceIterator.h                            dolfin/GenericCell.h                            dolfin/Grid.h                            dolfin/GridData.h                            dolfin/GridHierarchy.h                            dolfin/GridInit.h                            dolfin/GridIterator.h                            dolfin/GridRefinement.h                            dolfin/GridRefinementData.h                            dolfin/Node.h                            dolfin/NodeIterator.h                            dolfin/Point.h                            dolfin/TetGridRefinement.h                            dolfin/Tetrahedron.h                            dolfin/TriGridRefinement.h                            dolfin/Triangle.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-grid.a
-libdolfin_grid_a_SOURCES = Boundary.cpp                            BoundaryData.cpp                            BoundaryInit.cpp                            Cell.cpp                            CellIterator.cpp                            Edge.cpp                            EdgeIterator.cpp                            EdgeRefData.cpp                            Face.cpp                            FaceIterator.cpp                            GenericCell.cpp                            Grid.cpp                            GridData.cpp                            GridHierarchy.cpp                            GridInit.cpp                            GridIterator.cpp                            GridRefinement.cpp                            GridRefinementData.cpp                            Node.cpp                            NodeIterator.cpp                            Point.cpp                            Tetrahedron.cpp                            Triangle.cpp
+libdolfin_grid_a_SOURCES = Boundary.cpp                            BoundaryData.cpp                            BoundaryInit.cpp                            Cell.cpp                            CellIterator.cpp                            Edge.cpp                            EdgeIterator.cpp                            EdgeRefData.cpp                            Face.cpp                            FaceIterator.cpp                            GenericCell.cpp                            Grid.cpp                            GridData.cpp                            GridHierarchy.cpp                            GridInit.cpp                            GridIterator.cpp                            GridRefinement.cpp                            GridRefinementData.cpp                            Node.cpp                            NodeIterator.cpp                            Point.cpp                            TetGridRefinement.cpp                            Tetrahedron.cpp                            TriGridRefinement.cpp                            Triangle.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -102,7 +102,8 @@ libdolfin_grid_a_OBJECTS =  Boundary.o BoundaryData.o BoundaryInit.o \
 Cell.o CellIterator.o Edge.o EdgeIterator.o EdgeRefData.o Face.o \
 FaceIterator.o GenericCell.o Grid.o GridData.o GridHierarchy.o \
 GridInit.o GridIterator.o GridRefinement.o GridRefinementData.o Node.o \
-NodeIterator.o Point.o Tetrahedron.o Triangle.o
+NodeIterator.o Point.o TetGridRefinement.o Tetrahedron.o \
+TriGridRefinement.o Triangle.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -122,7 +123,8 @@ DEP_FILES =  .deps/Boundary.P .deps/BoundaryData.P .deps/BoundaryInit.P \
 .deps/GenericCell.P .deps/Grid.P .deps/GridData.P .deps/GridHierarchy.P \
 .deps/GridInit.P .deps/GridIterator.P .deps/GridRefinement.P \
 .deps/GridRefinementData.P .deps/Node.P .deps/NodeIterator.P \
-.deps/Point.P .deps/Tetrahedron.P .deps/Triangle.P
+.deps/Point.P .deps/TetGridRefinement.P .deps/Tetrahedron.P \
+.deps/TriGridRefinement.P .deps/Triangle.P
 SOURCES = $(libdolfin_grid_a_SOURCES)
 OBJECTS = $(libdolfin_grid_a_OBJECTS)
 
