@@ -113,7 +113,7 @@ public:
 
   real f(real u[], real t, unsigned int i)
   {
-    //return 0.0;
+    return 0.0;
 
     switch ( i ) {
     case 0:
@@ -139,7 +139,7 @@ public:
 
   real timestep(unsigned int i)
   {
-    //return 0.16;
+    return 0.16;
 
     switch ( i ) {
     case 0:
@@ -159,6 +159,7 @@ int main()
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
   dolfin_set("fixed time step", true);
+  dolfin_set("maximum time step", 1.0);
   dolfin_set("method", "cg");
   dolfin_set("order", 2);
 

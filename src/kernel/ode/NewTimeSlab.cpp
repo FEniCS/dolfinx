@@ -104,9 +104,10 @@ void NewTimeSlab::shift()
     // Get last element of component
     const int e = elast[i];
     dolfin_assert(e != -1);
+    dolfin_assert(sb[es[e]] == _b);
     
     // Get end-time value of component
-    u[i] = jx[ej[e + method->nsize() - 1]];
+    u[i] = jx[ej[e] + method->nsize() - 1];
   }
 
   // Compute residual and new time step for each component
