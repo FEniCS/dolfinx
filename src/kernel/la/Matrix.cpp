@@ -24,7 +24,7 @@ Matrix::Matrix(Type type = SPARSE)
 //-----------------------------------------------------------------------------
 Matrix::Matrix(int m, int n, Type type = SPARSE)
 {
-  if ( type = DENSE )
+  if ( type == DENSE )
     A = new DenseMatrix(m,n);
   else
     A = new SparseMatrix(m,n);
@@ -253,6 +253,8 @@ LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
 {
   if ( A.type() == Matrix::DENSE )
     stream << *((DenseMatrix *) A.A);
+  else
+    stream << *((SparseMatrix *) A.A);
 
   return stream;
 }

@@ -18,7 +18,7 @@ namespace dolfin {
 	 
     Vector();
     Vector(int size);
-    Vector(const Vector &vector);
+    Vector(const Vector& x);
     Vector(real x0);
     Vector(real x0, real x1);
     Vector(real x0, real x1, real x2);
@@ -32,19 +32,19 @@ namespace dolfin {
     real& operator()(int i);
     real  operator()(int i) const;
     
-    void operator=(const Vector &vector);
+    void operator=(const Vector& x);
     void operator=(real scalar);
     
-    void operator+=(const Vector &vector);
-    void operator+=(real scalar);	 
-    void operator*=(real scalar);
-    void operator-=(const Vector &vector);
+    void operator+=(const Vector& x);
+    void operator+=(real a);	 
+    void operator*=(real a);
+    void operator-=(const Vector& x);
     
-    real operator*(const Vector &vector);
+    real operator*(const Vector& x);
     
     real norm () const;
     real norm (int i) const;
-    void add(real scalar, Vector &vector);
+    void add(real a, Vector& x);
     
     // Output
     void show() const;

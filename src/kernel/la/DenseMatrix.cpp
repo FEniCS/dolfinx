@@ -12,16 +12,17 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix()
 {
-  m = 0;
-  n = 0;
-  
   values = 0;
   permutation = 0;
+  m = 0;
+  n = 0;
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(int m, int n)
 {
   values = 0;
+  this->m = 0;
+  this->n = 0;
   permutation = 0;
   
   init(m,n);
@@ -31,6 +32,8 @@ DenseMatrix::DenseMatrix(const DenseMatrix& A)
 {
   values = 0;
   permutation = 0;
+  this->m = 0;
+  this->n = 0;
 
   init(A.m, A.n);
   
@@ -43,6 +46,8 @@ DenseMatrix::DenseMatrix(const SparseMatrix& A)
 {
   values = 0;
   permutation = 0;
+  this->m = 0;
+  this->n = 0;
 
   init(A.size(0), A.size(1));
   

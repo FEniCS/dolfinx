@@ -28,8 +28,8 @@ int main(int argc, char** argv)
     
     RadauQuadrature q(n);
     dolfin::cout << q << dolfin:: endl;
-
-  }
+    
+  } 
   else if ( strcasecmp(argv[1], "lobatto") == 0 ) {
 
      LobattoQuadrature q(n);
@@ -40,6 +40,6 @@ int main(int argc, char** argv)
     dolfin::cout << "Unknown quadrature rule." << dolfin::endl;
     return 1;
   }
-
+  
   return 0;
 }

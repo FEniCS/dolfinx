@@ -319,7 +319,7 @@ real SparseMatrix::mult(Vector& x, int i) const
   real sum = 0.0;
   for (int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
     sum += values[i][pos] * x(columns[i][pos]);
-  
+
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -435,6 +435,9 @@ int SparseMatrix::perm(int i) const
 //-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
+  cout << "Sparse matrix" << endl;
+
+
   for (int i = 0; i < m; i++) {
     cout << "| ";
     for (int j = 0; j < n; j++){

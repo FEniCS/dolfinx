@@ -13,28 +13,35 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Vector::Vector() : Variable("x", "A vector")
 {
-  n = 0;
+  dolfin_info("vector constructor: adress = 0x%x", this);
+
   values = 0;
+  n = 0;
 }
 //-----------------------------------------------------------------------------
 Vector::Vector(int size) : Variable("x", "A vector")
 {
   values = 0;
+  n = 0;
   
   init(size);
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector& vector) : Variable(vector.name(), vector.label())
+Vector::Vector(const Vector& x) : Variable(x.name(), x.label())
 {
-  n = vector.n;
-  values = new real[n];
+  values = 0;
+  n = 0;
+
+  init(x.size());
+
   for (int i = 0; i < n; i++)
-    values[i] = vector.values[i];
+    values[i] = x.values[i];
 }
 //-----------------------------------------------------------------------------
 Vector::Vector(real x0) : Variable("x", "A vector")
 {
   values = 0;
+  n = 0;
   
   init(1);
   values[0] = x0;
@@ -43,6 +50,7 @@ Vector::Vector(real x0) : Variable("x", "A vector")
 Vector::Vector(real x0, real x1) : Variable("x", "A vector")
 {
   values = 0;
+  n = 0;
   
   init(2);
   values[0] = x0;
@@ -52,6 +60,7 @@ Vector::Vector(real x0, real x1) : Variable("x", "A vector")
 Vector::Vector(real x0, real x1, real x2) : Variable("x", "A vector")
 {
   values = 0;
+  n = 0;
   
   init(3);
   values[0] = x0;
@@ -66,6 +75,9 @@ Vector::~Vector()
 //-----------------------------------------------------------------------------
 void Vector::init(int size)
 {
+  dolfin_debug1("adress = 0x%x", this);
+  dolfin_debug1("values = 0x%x", values);
+
   if ( size <= 0 )
     dolfin_error("Size must be positive.");
   
@@ -76,7 +88,7 @@ void Vector::init(int size)
   //
   // Otherwise do nothing
   
-  if ( n != size ) {
+  if ( values && n != size ) {
     clear();      
     alloc(size);
   }
@@ -113,50 +125,50 @@ real Vector::operator()(int i) const
   return values[i];
 }
 //-----------------------------------------------------------------------------
-void Vector::operator=(const Vector &vector)
+void Vector::operator=(const Vector& x)
 {
-  if(size() != vector.size())
-    init(vector.size());
+  init(x.size());
+
   for (int i = 0; i < n; i++)
-	 values[i] = vector.values[i];    
+    values[i] = x.values[i];    
 }
 //-----------------------------------------------------------------------------
-void Vector::operator=(real scalar)
+void Vector::operator=(real a)
 {
   for (int i = 0; i < n; i++)
-	 values[i] = scalar;    
+    values[i] = a;    
 }
 //-----------------------------------------------------------------------------
-void Vector::operator+=(real scalar) 
+void Vector::operator+=(real a) 
 {
-  for (int i = 0;i < n; i++)
-	 values[i] += scalar;
+  for (int i = 0; i < n; i++)
+    values[i] += a;
 }
 //-----------------------------------------------------------------------------
-void Vector::operator+=(const Vector &vector)
+void Vector::operator+=(const Vector& x)
+{
+  for (int i = 0; i < n; i++)
+    values[i] += x.values[i];
+}
+//-----------------------------------------------------------------------------
+void Vector::operator-=(const Vector& x)
+{
+  for (int i = 0; i < n; i++)
+    values[i] -= x.values[i];
+}
+//-----------------------------------------------------------------------------
+void Vector::operator*=(real a)
 {
   for (int i=0;i<n;i++)
-	 values[i] += vector.values[i];
+    values[i] *= a; 
 }
 //-----------------------------------------------------------------------------
-void Vector::operator-=(const Vector &vector)
-{
-  for (int i=0;i<n;i++)
-	 values[i] -= vector.values[i];
-}
-//-----------------------------------------------------------------------------
-void Vector::operator*=(real scalar)
-{
-  for (int i=0;i<n;i++)
-	 values[i] *= scalar; 
-}
-//-----------------------------------------------------------------------------
-real Vector::operator*(const Vector &vector)
+real Vector::operator*(const Vector& x)
 {
   real sum = 0.0;
   for (int i=0;i<n;i++)
-	 sum += values[i] * vector.values[i];
-
+    sum += values[i] * x.values[i];
+  
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -196,10 +208,10 @@ real Vector::norm(int i) const
 
 }
 //-----------------------------------------------------------------------------
-void Vector::add(real scalar, Vector &vector)
+void Vector::add(real a, Vector& x)
 {
   for (int i = 0; i < n; i++)
-    values[i] += scalar * vector.values[i];  
+    values[i] += a * x.values[i];  
 }
 //-----------------------------------------------------------------------------
 void Vector::show() const
@@ -210,12 +222,12 @@ void Vector::show() const
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& vector)
+dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
 {
-  stream << "[ Vector of size " << vector.size()
+  stream << "[ Vector of size " << x.size()
 	 << ", approximatetly ";
   
-  int bytes = vector.bytes();
+  int bytes = x.bytes();
   
   if ( bytes > 1024*1024 )
     stream << bytes/1024 << " Mb. ]";

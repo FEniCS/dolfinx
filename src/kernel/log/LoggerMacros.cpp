@@ -4,6 +4,7 @@
 // Thanks to Jim Tilander for many helpful hints.
 
 #include <stdarg.h>
+#include <signal.h>
 #include <dolfin/LoggerMacros.h>
 
 using namespace dolfin;
@@ -32,5 +33,11 @@ void dolfin::dolfin_quit()
 bool dolfin::dolfin_finished()
 {
   return LogManager::log.finished();
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_segfault()
+{
+  dolfin_info("Deliberately raising a segmentation fault.");
+  raise(SIGSEGV);
 }
 //-----------------------------------------------------------------------------

@@ -34,8 +34,8 @@ void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   
   cout << "Using Krylov solver for linear system of " << b.size() << " unknowns." << endl;
   
-  // Check if we need to resize x
-  if (x.size() != b.size()) x.init(b.size());
+  // Resize x
+  x.init(b.size());
 
   // Check if b=0 => x=0
   if (b.norm() < DOLFIN_EPS){
@@ -315,7 +315,7 @@ void KrylovSolver::applyPxu(const Matrix& A, Vector& x, Vector& u)
     return;
     break;
   default:
-	 dolfin_error("Unknown preconditioner.");
+    dolfin_error("Unknown preconditioner.");
   }
 
   sisolver.setNoSweeps(no_pc_sweeps);
@@ -399,6 +399,8 @@ real KrylovSolver::residual(const Matrix& A, Vector& x, const Vector& b)
   real norm_r = 0.0;
   for (int i = 0; i < A.size(0); i++)
     norm_r += sqr(b(i) - A.mult(x,i));
+
+  cout << "r = " << norm_r  << endl;
 
   return sqrt(norm_r);
 }

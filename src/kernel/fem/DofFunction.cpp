@@ -18,6 +18,9 @@ DofFunction::DofFunction(Grid& grid, Vector& dofs, int dim, int size) :
 {
   // FIXME: assumes nodal basis
   x.init(grid.noNodes());
+
+  dolfin_debug1("adress = 0x%x", &x);
+  x(0) = 0.0;
 }
 //-----------------------------------------------------------------------------
 void DofFunction::update(FunctionSpace::ElementFunction &v,
@@ -32,6 +35,11 @@ void DofFunction::update(FunctionSpace::ElementFunction &v,
 real DofFunction::operator() (const Node& n, real t)  const
 {
   // FIXME: assumes nodal basis
+  dolfin_debug1("adress = 0x%x", &x);
+  dolfin_debug1("size   = %d", x.size());
+  dolfin_debug1("index  = %d", n.id()*size + dim);
+  x(1) = 0.0;
+
   return x(n.id()*size + dim);
 }
 //-----------------------------------------------------------------------------

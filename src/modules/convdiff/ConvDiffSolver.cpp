@@ -25,6 +25,8 @@ void ConvDiffSolver::solve()
 {
   Matrix A;
   Vector x0, x1, b;
+
+  dolfin_info("convdiff: adress = 0x%x", &x1);
   
   Function u0(grid, x0);
   Function u1(grid, x1);

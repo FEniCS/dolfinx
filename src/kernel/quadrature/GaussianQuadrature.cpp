@@ -3,8 +3,8 @@
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/Legendre.h>
 #include <dolfin/GaussianQuadrature.h>
 
