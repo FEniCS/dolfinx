@@ -9,6 +9,9 @@
 #include <dolfin/Function.h>
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/BoundaryCondition.h>
+#include <dolfin/DxMatrix.h>
+#include <dolfin/DyMatrix.h>
+#include <dolfin/DzMatrix.h>
 #include <dolfin/FEM.h>
 #include <dolfin/NewFEM.h>
 #include <dolfin/FiniteElement.h>

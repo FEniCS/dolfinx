@@ -224,7 +224,12 @@ real* SparseMatrix::operator[](unsigned int i)
 real SparseMatrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
 {
   j = columns[i][pos];
-  
+  return values[i][pos];
+}
+//-----------------------------------------------------------------------------
+real& SparseMatrix::operator()(unsigned int i, unsigned int& j, unsigned int pos)
+{
+  j = columns[i][pos];  
   return values[i][pos];
 }
 //-----------------------------------------------------------------------------

@@ -103,6 +103,9 @@ namespace dolfin {
     /// Index operator (only sparse, quick access)
     virtual real operator()(unsigned int i, unsigned int& j, unsigned int pos) const;
 
+    /// Index operator (only sparse, quick access)
+    virtual real& operator()(unsigned int i, unsigned int& j, unsigned int pos);
+
     /// Assignment from scalar (affects only already non-zero elements for sparse)
     virtual void operator=(real a);
 

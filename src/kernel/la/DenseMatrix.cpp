@@ -46,11 +46,8 @@ DenseMatrix::DenseMatrix(const DenseMatrix& A):
       values[i][j] = A.values[i][j];
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(const SparseMatrix& A) :
-  values(0),
-  permutation(0)
+DenseMatrix::DenseMatrix(const SparseMatrix& A) : values(0), permutation(0)
 {
-
   this->m = 0;
   this->n = 0;
 
@@ -61,7 +58,7 @@ DenseMatrix::DenseMatrix(const SparseMatrix& A) :
   
   for (unsigned int i = 0; i < m; i++)
     for (unsigned int pos = 0; pos < A.rowsize(i); pos++) {
-      value = A(i,j,pos);
+      value = A(i, j, pos);
       values[i][j] = value;
     }  
 }
@@ -160,6 +157,14 @@ real* DenseMatrix::operator[](unsigned int i)
 }
 //-----------------------------------------------------------------------------
 real DenseMatrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
+{
+  dolfin_warning("Using sparse quick-access operator for dense matrix.");
+
+  j = pos;
+  return values[i][j];
+}
+//-----------------------------------------------------------------------------
+real& DenseMatrix::operator()(unsigned int i, unsigned int& j, unsigned int pos)
 {
   dolfin_warning("Using sparse quick-access operator for dense matrix.");
 

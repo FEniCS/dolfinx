@@ -80,6 +80,12 @@ real GenericMatrix:: operator()(unsigned int i, unsigned int& j, unsigned int po
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+real& GenericMatrix:: operator()(unsigned int i, unsigned int& j, unsigned int pos)
+{
+  dolfin_error("This function is not implemented");
+  return *(new real);
+}
+//-----------------------------------------------------------------------------
 void GenericMatrix::operator= (real a)
 {
   dolfin_error("This function is not implemented");

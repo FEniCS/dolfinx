@@ -29,6 +29,7 @@ namespace dolfin {
     virtual real  operator()(unsigned int i, unsigned int j) const;    
     virtual real* operator[](unsigned int i);
     virtual real  operator()(unsigned int i, unsigned int& j, unsigned int pos) const;
+    virtual real& operator()(unsigned int i, unsigned int& j, unsigned int pos);
 
     virtual void operator=  (real a);
     virtual void operator=  (const DenseMatrix& A);

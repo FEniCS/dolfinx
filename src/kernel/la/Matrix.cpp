@@ -155,7 +155,12 @@ Matrix::Column Matrix::operator()(Range i, Index j)
 //-----------------------------------------------------------------------------
 real Matrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
 {
-  return (*A)(i,j,pos);
+  return (*A)(i, j, pos);
+}
+//-----------------------------------------------------------------------------
+real& Matrix::operator()(unsigned int i, unsigned int& j, unsigned int pos)
+{
+  return (*A)(i, j, pos);
 }
 //-----------------------------------------------------------------------------
 real* Matrix::operator[](unsigned int i) const

@@ -1,6 +1,9 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/BoundaryCondition.h \
+                          dolfin/DxMatrix.h \
+                          dolfin/DyMatrix.h \
+                          dolfin/DzMatrix.h \
                           dolfin/FEM.h \
                           dolfin/FiniteElement.h \
                           dolfin/FiniteElementMethod.h \
@@ -12,7 +15,10 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/StiffnessMatrix.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = FiniteElement.cpp \
+libdolfin_fem_a_SOURCES = DxMatrix.cpp \
+                          DyMatrix.cpp \
+                          DzMatrix.cpp \
+                          FiniteElement.cpp \
                           FEM.cpp \
                           FiniteElementMethod.cpp \
                           FunctionSpace.cpp \

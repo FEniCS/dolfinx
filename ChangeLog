@@ -1,4 +1,6 @@
- - Added check of matrix dimensions for ODE sparsity pattern
+ - Add non-const version of quick-access of sparse matrices
+ - Add linear mappings for simple computation of derivatives
+ - Add check of matrix dimensions for ODE sparsity pattern
  - Include missing cmath in Function.cpp
 0.5.0
  - First prototype of new form evaluation system

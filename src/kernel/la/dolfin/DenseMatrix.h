@@ -34,6 +34,7 @@ namespace dolfin {
     real  operator()(unsigned int i, unsigned int j) const;
     real* operator[](unsigned int i);
     real  operator()(unsigned int i, unsigned int& j, unsigned int pos) const;
+    real& operator()(unsigned int i, unsigned int& j, unsigned int pos);
 
     void operator=  (real a);
     void operator=  (const DenseMatrix& A);

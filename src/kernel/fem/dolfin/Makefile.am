@@ -1,5 +1,8 @@
 EXTRA_DIST = dolfin_fem.h \
              BoundaryCondition.h \
+             DxMatrix.h \
+             DyMatrix.h \
+             DzMatrix.h \
              FEM.h \
              FiniteElement.h \
              FiniteElementMethod.h \
