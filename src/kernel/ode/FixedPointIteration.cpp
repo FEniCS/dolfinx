@@ -284,6 +284,8 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   delete state;
   state = 0;
 
+  // Testar
+
   // Initialize new state
   switch ( newstate ) {
   case Iteration::nonstiff:
