@@ -2,5 +2,5 @@
 
 NAME     = "poisson"
 KEYWORD  = "poisson"
-PROBLEM  = "ProblemPoisson"
+SOLVER   = "SolverPoisson"
 SETTINGS = "SettingsPoisson"
