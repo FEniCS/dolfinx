@@ -20,7 +20,7 @@ void mybc(BoundaryCondition& bc)
   bc.set(BoundaryCondition::DIRICHLET, 0.0);
 }
 
-int main(int argc, char **argv)
+int main()
 {
   Mesh mesh("trimesh-32.xml.gz");
   Problem wave("wave", mesh);

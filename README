@@ -1,10 +1,9 @@
 Contents
 
 	1. Installation
-	2. Testing
-	3. License
-	4. Feedback
-	5. About
+	2. License
+	3. Feedback
+	4. About
 
 -------------------------------------------------------------------------------
 1. Installation
@@ -54,17 +53,14 @@ A note for Solaris users: You probably need to disable curses and use gmake:
 	gmake
 
 -------------------------------------------------------------------------------
-2. Testing
-
--------------------------------------------------------------------------------
-3. Feed back
+2. Feed back
 
 Feed back, patches, and comments should be sent to
 
 	dolfin@math.chalmers.se	
 
 ------------------------------------------------------------------------------
-4. License
+3. License
 
 DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
 
