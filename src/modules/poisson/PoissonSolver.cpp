@@ -11,14 +11,26 @@
 // FIXME: Should not be needed
 #include <dolfin/NewGMRES.h>
 
-#include "Poisson.h"
-#include "PoissonSolver.h"
+#include <dolfin/Mesh.h>
+#include <dolfin/NewVector.h>
+#include <dolfin/NewMatrix.h>
+#include <dolfin/NewFEM.h>
+#include <dolfin/NewBoundaryCondition.h>
+#include <dolfin/File.h>
+#include <dolfin/Parameter.h>
+#include <dolfin.h>
+
+#include "dolfin/Poisson.h"
+#include "dolfin/PoissonSolver.h"
 
 // FIXME: Remove when working
-#include "PoissonOld.h"
+#include "dolfin/PoissonOld.h"
+#include "dolfin/KrylovSolver.h"
+#include "dolfin/FEM.h"
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
 class MyBC : public NewBoundaryCondition
 {
   const BoundaryValue operator() (const Point& p)
@@ -32,7 +44,8 @@ class MyBC : public NewBoundaryCondition
 };
 
 //-----------------------------------------------------------------------------
-PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
+//PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
+PoissonSolver::PoissonSolver(Mesh& mesh) : mesh(mesh)
 {
   // FIXME: Remove when working
   dolfin_parameter(Parameter::FUNCTION, "source", 0);

@@ -14,6 +14,7 @@
 //
 //     u(x,y,z) = sin(pi x) sin(2pi y) sin(3pi z).
 
+#include <dolfin/PoissonSolver.h>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -45,10 +46,11 @@ int main()
 {
   Mesh mesh("mesh.xml.gz");
   
-  Problem poisson("poisson", mesh);
+  //Problem poisson("poisson", mesh);
+  PoissonSolver poisson(mesh);
 
-  poisson.set("source", f);  
-  poisson.set("boundary condition", mybc);
+  //poisson.set("source", f);  
+  //poisson.set("boundary condition", mybc);
  
   poisson.solve();
   
