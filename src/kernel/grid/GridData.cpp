@@ -96,6 +96,50 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
   return c;
 }
 //-----------------------------------------------------------------------------
+Edge* GridData::createEdge(int n0, int n1)
+{
+  // If an edge exists with nodes n0 and n1 then return a pointer to that 
+  // edge, else create a new edge and return a pointer to that edge.   
+  int en0,en1;
+  for (List<Edge>::Iterator e(&edges); !e.end(); ++e){
+    en0 = (e.pointer())->node(0)->id();
+    en1 = (e.pointer())->node(1)->id();
+    if ( n0 == en0 ){
+      if ( n1 == en1 ) return (e.pointer());
+    }
+    if ( n0 == en1 ){
+      if ( n1 == en0 ) return (e.pointer());
+    }
+  }
+  int id;
+  Edge *e = edges.create(&id);
+  e->setID(id);
+  e->set(getNode(n0),getNode(n1));
+  return e;
+}
+//-----------------------------------------------------------------------------
+Edge* GridData::createEdge(Node* n0, Node* n1)
+{
+  // If an edge exists with nodes n0 and n1 then return a pointer to that 
+  // edge, else create a new edge and return a pointer to that edge.   
+  int en0,en1;
+  for (List<Edge>::Iterator e(&edges); !e.end(); ++e){
+    en0 = (e.pointer())->node(0)->id();
+    en1 = (e.pointer())->node(1)->id();
+    if ( n0->id() == en0 ){
+      if ( n1->id() == en1 ) return (e.pointer());
+    }
+    if ( n0->id() == en1 ){
+      if ( n1->id() == en0 ) return (e.pointer());
+    }
+  }
+  int id;
+  Edge *e = edges.create(&id);
+  e->setID(id);
+  e->set(n0,n1);
+  return e;
+}
+//-----------------------------------------------------------------------------
 Node* GridData::getNode(int id)
 {
   return nodes.pointer(id);
@@ -106,6 +150,11 @@ Cell* GridData::getCell(int id)
   return cells.pointer(id);
 }
 //-----------------------------------------------------------------------------
+Edge* GridData::getEdge(int id)
+{
+  return edges.pointer(id);
+}
+//-----------------------------------------------------------------------------
 int GridData::noNodes() const
 {
   return nodes.size();
@@ -114,5 +163,10 @@ int GridData::noNodes() const
 int GridData::noCells() const
 {
   return cells.size();
+}
+//-----------------------------------------------------------------------------
+int GridData::noEdges() const
+{
+  return edges.size();
 }
 //-----------------------------------------------------------------------------

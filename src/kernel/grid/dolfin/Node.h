@@ -9,6 +9,7 @@
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
+#include <dolfin/EdgeIterator.h>
 #include <dolfin/ShortList.h>
 
 namespace dolfin{

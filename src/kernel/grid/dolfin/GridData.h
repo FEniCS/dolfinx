@@ -7,6 +7,7 @@
 #include <dolfin/List.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>
+#include <dolfin/Edge.h>
 
 namespace dolfin {
 
@@ -17,6 +18,7 @@ namespace dolfin {
   ///
   ///    a list of all nodes
   ///    a list of all cells
+  ///    a list of all edges
 
   class GridData {
   public:
@@ -30,20 +32,28 @@ namespace dolfin {
 	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
 	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
 
+	 Edge* createEdge();
+	 Edge* createEdge(int n0, int n1);
+	 Edge* createEdge(Node* n0, Node* n1);
+
 	 Node* getNode(int id);
 	 Cell* getCell(int id);
+	 Edge* getEdge(int id);
 
 	 int noNodes() const;
 	 int noCells() const;
+	 int noEdges() const;
 	 
 	 // Friends
 	 friend class NodeIterator::GridNodeIterator;
 	 friend class CellIterator::GridCellIterator;
+	 friend class EdgeIterator::GridEdgeIterator;
 	 
   private:
 	 
 	 List<Node> nodes;
 	 List<Cell> cells;
+	 List<Edge> edges;
 	 
   };
   

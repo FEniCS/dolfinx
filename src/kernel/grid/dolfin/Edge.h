@@ -4,6 +4,11 @@
 #ifndef __EDGE_HH
 #define __EDGE_HH
 
+#include <dolfin/dolfin_log.h>
+#include <dolfin/CellIterator.h>
+#include <dolfin/NodeIterator.h>
+#include <dolfin/EdgeIterator.h>
+
 namespace dolfin {
 
   class Node;
@@ -38,15 +43,28 @@ namespace dolfin {
       /// Compute and return midpoint of the edge 
       Point computeMidpoint();
     
-      /// Give access to the special functions below
+      // Friends
       friend class Grid;
       friend class Node;
-  
+      friend class GridData;
+      friend class InitGrid;
+      friend class NodeIterator::CellNodeIterator;
+      friend class CellIterator::CellCellIterator;
+      friend class EdgeIterator::CellEdgeIterator;
+      friend class Triangle;
+      friend class Tetrahedron;
+	 
   protected:
   
   private:
 	
-      ShortList<Node*> end_nodes;
+      // Global edge number
+      int _id;
+      void setID(int id);
+
+      // End nodes
+      Node* _en0;
+      Node* _en1;
 
       bool marked_for_refinement;
 

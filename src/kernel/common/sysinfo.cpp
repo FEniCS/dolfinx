@@ -94,6 +94,6 @@ void dolfin::sysinfo_vers(char* string)
 //-----------------------------------------------------------------------------
 void dolfin::sysinfo_dolfin(char* string)
 {
-  sprintf(string, "%s", DOLFIN_VERSION);
+  //sprintf(string, "%s", DOLFIN_VERSION);
 }
 //-----------------------------------------------------------------------------

@@ -12,38 +12,49 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Edge::Edge()
 {
-  end_nodes.init(2);
-
-  end_nodes(0) = 0;
-  end_nodes(1) = 0;
+  _en0 = 0;
+  _en1 = 0;
 
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
 Edge::Edge(Node *en1, Node *en2)
 {
-  end_nodes.init(2);
-
-  end_nodes(0) = en1;
-  end_nodes(1) = en2;
+  _en0 = en1;
+  _en1 = en2;
 
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
+Edge::~Edge()
+{
+}
+//-----------------------------------------------------------------------------
 void Edge::set(Node *en1, Node *en2)
 {
-  end_nodes.init(2);
 
-  end_nodes(0) = en1;
-  end_nodes(1) = en2;
+  cout << "check0" << endl;
+  cout << (*en1) << endl;
+  cout << "check1" << endl;
+  _en0 = en1;
+  cout << "check1.5" << endl;
+  _en1 = en2;
+  cout << "check2" << endl;
+}
+//-----------------------------------------------------------------------------
+void Edge::setID(int id)
+{
+  _id = id;
 }
 //-----------------------------------------------------------------------------
 Node* Edge::node(int node)
 {
   if ( (node<0) || (node>=2) )
     dolfin_error("Illegal node.");
-  
-  return end_nodes(node);
+
+  if ( node == 0 ) return _en0;
+  if ( node == 1 ) return _en1;
+  dolfin_error("edge end node must be 0 or 1");
 }
 //-----------------------------------------------------------------------------
 Point Edge::coord(int node)
@@ -51,7 +62,9 @@ Point Edge::coord(int node)
   if ( (node<0) || (node>=2) )
     dolfin_error("Illegal node.");
   
-  return end_nodes(node)->coord();
+  if ( node == 0 ) return _en0->coord();
+  if ( node == 1 ) return _en1->coord();
+  dolfin_error("edge end node must be 0 or 1");
 }
 //-----------------------------------------------------------------------------
 bool Edge::marked()
@@ -72,8 +85,8 @@ void Edge::unmark()
 real Edge::computeLength()
 {
   // Get the coordinates
-  Point p1 = end_nodes(0)->coord();
-  Point p2 = end_nodes(1)->coord();
+  Point p1 = _en0->coord();
+  Point p2 = _en1->coord();
 
   return p1.dist(p2);
 }
@@ -81,8 +94,8 @@ real Edge::computeLength()
 Point Edge::computeMidpoint()
 {
   // Get the coordinates
-  Point p1 = end_nodes(0)->coord();
-  Point p2 = end_nodes(1)->coord();
+  Point p1 = _en0->coord();
+  Point p2 = _en1->coord();
 
   // Make sure we get full precision
   real x1, x2, y1, y2, z1, z2;

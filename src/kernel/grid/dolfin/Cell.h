@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/NodeIterator.h>
+#include <dolfin/EdgeIterator.h>
 
 namespace dolfin {  
 
@@ -69,6 +70,7 @@ namespace dolfin {
 	 friend class InitGrid;
 	 friend class NodeIterator::CellNodeIterator;
 	 friend class CellIterator::CellCellIterator;
+	 friend class EdgeIterator::CellEdgeIterator;
 	 friend class Triangle;
 	 friend class Tetrahedron;
 	 
