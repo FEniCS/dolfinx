@@ -18,3 +18,4 @@ General
 - General boundary conditions
 - Multigrid
 - Grid generation (octree) from given CAD model
+- Vector valued PDE
