@@ -635,9 +635,6 @@ void SparseMatrix::settransp(const DenseMatrix& A)
 //-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
-  cout << "Sparse matrix" << endl;
-
-
   for (unsigned int i = 0; i < m; i++) {
     cout << "| ";
     for (unsigned int j = 0; j < n; j++){
