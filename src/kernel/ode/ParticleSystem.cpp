@@ -132,13 +132,13 @@ real ParticleSystem::f(const Vector& u, real t, unsigned int i)
   // Compute force
   switch (i % dim) {
   case 0:
-    return Fx(i /dim, t);
+    return Fx(i/dim, t) / mass(i/dim, t);
     break;
   case 1:
-    return Fy(i/dim, t);
+    return Fy(i/dim, t) / mass(i/dim, t);
     break;
   case 2:
-    return Fz(i/dim, t);
+    return Fz(i/dim, t) / mass(i/dim, t);
     break;
   default:
     dolfin_error("Illegal dimension.");

@@ -1,4 +1,5 @@
 0.4.10
+ - Fix bug in ParticleSystem (divide by mass)
  - Improve control of integration (add function ODE::update())
  - Load/save parameters in XML-format
  - Add assembly test
