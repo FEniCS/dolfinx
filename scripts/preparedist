@@ -19,6 +19,17 @@ echo '- Edit ChangeLog'
 sleep 1
 /usr/bin/nano ChangeLog
 
+echo '- Recompiling'
+sleep 1
+scripts/preconfigure
+./configure CXXFLAGS='-O2'
+make clean
+make
+
+echo '- Running benchmark problem'
+sleep 1
+src/demo/bench/dolfin-bench >> src/demo/bench/bench.log
+
 echo '- Commiting changes to cvs'
 sleep 1
 /usr/bin/cvs commit

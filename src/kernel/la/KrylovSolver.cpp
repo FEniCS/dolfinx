@@ -369,8 +369,6 @@ bool KrylovSolver::reorthog(const Matrix& A, Matrix& v, Vector &x, int k)
   real delta = 1.0e-3;
   real norm_Av = Av.norm();
 
-  if ( ((norm_Av + delta*x.norm()) - norm_Av) < DOLFIN_EPS ) return true; 
-  else return false;
+  return ((norm_Av + delta*x.norm()) - norm_Av) < DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
-

@@ -6,7 +6,7 @@
 using namespace dolfin;
 
 // Sparse matrix size
-#define NS 50000
+#define NS 100000
 
 // Dense matrix size
 #define ND 1000
