@@ -83,3 +83,9 @@ General
 * Use symbolic links for meshes, see example src/demo/fem
 * Automatically load parameters from dolfin.xml
 * Change int --> unsigned int where appropriate
+
+Some suggestions for PETSc
+--------------------------
+
+Use namespaces, don't define macros like restrict which prevents
+users of PETSc to declare functions with that name.

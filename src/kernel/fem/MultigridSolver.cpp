@@ -114,7 +114,7 @@ void MultigridSolver::fullVCycle(Vector& x, const Vector& r_fine,
    
   for (int level = noLevels - 2; level >=  0; level--) {
     tmp = r[level+1];  // we need tmp not to destroy r[level+1]
-    restrict(tmp, meshes, level+1);
+    restr(tmp, meshes, level+1);
     r[level] = tmp;
   }
   
@@ -125,7 +125,7 @@ void MultigridSolver::fullVCycle(Vector& x, const Vector& r_fine,
   // Compute correction
   for (unsigned int level = 1; level < noLevels ; level++)
   {
-    interpolate(z, meshes, level-1);
+    interp(z, meshes, level-1);
     vCycle(z, r[level], meshes, A, level);
   }
   
@@ -152,9 +152,9 @@ void MultigridSolver::vCycle(Vector& x, const Vector& rhs,
     A[level].mult(x,r);
     r-=rhs;  
     
-    restrict(r, meshes, level);
+    restr(r, meshes, level);
     vCycle(r, zeros, meshes, A, level-1);
-    interpolate(r , meshes, level-1 );
+    interp(r , meshes, level-1 );
     x-=r; 
 
     smooth(x, rhs, noPostSmooth, A, level);    
@@ -184,7 +184,7 @@ void MultigridSolver::smooth(Vector& x, const Vector& rhs,
   }	
 }
 //----------------------------------------------------------------------------
-void MultigridSolver::restrict(Vector& xf, const MeshHierarchy& meshes,
+void MultigridSolver::restr(Vector& xf, const MeshHierarchy& meshes,
                                unsigned int level)
 {
   // Restrict from i -> i-1
@@ -217,8 +217,8 @@ void MultigridSolver::restrict(Vector& xf, const MeshHierarchy& meshes,
   xf = xc;
 }
 //----------------------------------------------------------------------------
-void MultigridSolver::interpolate(Vector& xc, const MeshHierarchy& meshes, 
-			          unsigned int level)
+void MultigridSolver::interp(Vector& xc, const MeshHierarchy& meshes, 
+			     unsigned int level)
 {
   unsigned int k=0;
   real tmp=0;

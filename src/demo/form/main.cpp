@@ -18,7 +18,7 @@ real testOld(Mesh& mesh)
   Poisson poisson;
   Matrix A;
   tic();
-  for(unsigned int i = 0; i < N; i++)
+  for (unsigned int i = 0; i < N; i++)
   {
     A = 0.0;
     FEM::assemble(poisson, mesh, A);
@@ -36,7 +36,7 @@ real testOptimized(Mesh& mesh)
   OptimizedPoissonBilinearForm a(element);
   Matrix A;
   tic();
-  for(unsigned int i = 0; i < N; i++)
+  for (unsigned int i = 0; i < N; i++)
   {
     A = 0.0;
     NewFEM::assemble(a, mesh, A);
@@ -54,7 +54,7 @@ real testFFC(Mesh& mesh)
   FFCPoissonBilinearForm a(element);
   Matrix A;
   tic();
-  for(unsigned int i = 0; i < N; i++)
+  for (unsigned int i = 0; i < N; i++)
   {
     A = 0.0;
     NewFEM::assemble(a, mesh, A);
@@ -72,7 +72,14 @@ real testFFCPETSc(Mesh& mesh)
   
   FFCPoissonFiniteElement element;
   FFCPoissonBilinearForm a(element);
-  NewFEM::testPETSc(a, mesh);
+  NewMatrix A;
+
+  tic();
+  for (unsigned int i = 0; i < N; i++)
+  {
+    A = 0.0;
+    NewFEM::testPETSc(a, mesh, A);
+  }
 
   return toc();
 }

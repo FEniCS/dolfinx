@@ -82,6 +82,7 @@ AC_CHECK_PROG(mpi_found, mpirun, yes, no)
 if test $mpi_found = yes; then
     # FIXME: Do correct test
     MPI_CFLAGS='-I/usr/include/mpi'
+    AC_SUBST(MPI_CFLAGS)
 else
     echo "*** Unable to find MPI on your system."
     echo "*** Perhaps you need to install the package mpich?"

@@ -60,10 +60,10 @@ namespace dolfin
 		       const Matrices& A, unsigned int level);
     
     /// Restrict the residual to a coarser mesh.
-    static void restrict(Vector& x, const MeshHierarchy& meshes, unsigned int level);
+    static void restr(Vector& x, const MeshHierarchy& meshes, unsigned int level);
 
     /// Interpolate the residual to a finer mesh using linear interpolation.
-    static void interpolate(Vector& x, const MeshHierarchy& meshes, unsigned int level);
+    static void interp(Vector& x, const MeshHierarchy& meshes, unsigned int level);
 
   };
   

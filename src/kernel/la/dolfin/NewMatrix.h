@@ -5,6 +5,7 @@
 #define __NEW_MATRIX_H
 
 #include <petsc/petscmat.h>
+#include <dolfin/constants.h>
 
 namespace dolfin
 {
@@ -20,13 +21,28 @@ namespace dolfin
   public:
 
     /// Constructor
-    NewMatrix(unsigned int m, unsigned int n);
+    NewMatrix();
+
+    /// Constructor
+    NewMatrix(uint m, uint n);
 
     /// Destructor
     ~NewMatrix();
 
+    /// Initialize matrix with given number of rows and columns
+    void init(uint m, uint n);
+
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    unsigned int size(unsigned int dim) const;
+    uint size(uint dim) const;
+
+    /// Set all entries to zero
+    NewMatrix& operator= (real zero);
+
+    /// Add block of values
+    void add(real block[], uint rows[], uint m, uint cols[], uint n);
+
+    /// Apply changes to matrix
+    void apply();
 
     /// Return PETSc Mat pointer
     Mat mat();

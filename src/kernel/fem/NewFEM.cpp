@@ -276,9 +276,62 @@ void NewFEM::freeElementVector(real*& bK, const NewFiniteElement& element)
   bK = 0;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh)
+void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
 {
-  NewMatrix A(10, 10);
-  cout << "Size of matrix: " << A.size(0) << " " << A.size(1) << endl;
+  // Start a progress session
+  Progress p("Assembling matrix (interior contribution)", mesh.noCells());
+
+  // Initialize finite element and element matrix
+  const NewFiniteElement& element = a.element;
+  real** AK = allocElementMatrix(element);
+
+  unsigned int n = element.spacedim();
+  real* block = new real[n*n];
+  uint* dofs = new uint[n];
+
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update form
+    a.update(*cell);
+    
+    // Compute element matrix
+    // FIXME: Doesn't look very nice, change this
+    bool result = a.interior(AK);
+
+    // Check if we should skip the remaining cells
+    if ( !result )
+    {
+      dolfin_info("Form does not contain a contribution from interior of domain.");
+      dolfin_info("Skipping remaining cells.");
+      p = 1.0;
+      break;
+    }
+    
+    // Copy values to one array
+    unsigned int pos = 0;
+    for (unsigned int i = 0; i < n; i++)
+      for (unsigned int j = 0; j < n; j++)
+	block[pos++] = AK[i][j];
+
+    // Compute mapping from local to global degrees of freedom
+    for (unsigned int i = 0; i < n; i++)
+      dofs[i] = element.dof(i, *cell);
+    
+    // Add element matrix to global matrix
+    A.add(block, dofs, n, dofs, n);
+
+    // Update progress
+    p++;
+  }
+  
+  // Complete assembly
+  A.apply();
+
+  delete [] block;
+  delete [] dofs;
+
+  // Delete element matrix
+  freeElementMatrix(AK, element);
 }
 //-----------------------------------------------------------------------------
