@@ -24,7 +24,8 @@ NewtonIteration::NewtonIteration(Solution& u, RHS& f,
 				 unsigned int maxiter,
 				 real maxdiv, real maxconv, real tol,
 				 unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth), J(f)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth), 
+  J(f), t0(0), njac(0)
 {
   // Do nothing
 }
@@ -43,14 +44,18 @@ void NewtonIteration::start(ElementGroupList& list)
 {
   // Get the first element
   ElementIterator element(list);
-
+  t0 = element->starttime();
+  
   // Compute Jacobian at current time
-  J.update(element->endtime());
+  J.update(t0);
+  njac++;
 
   // Initialize data
   unsigned int dof = J.update(list);
   r.init(dof);
   dx.init(dof);
+  
+  //J.show();
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::start(ElementGroup& group)
@@ -65,16 +70,6 @@ void NewtonIteration::start(Element& element)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroupList& list, Increments& d)
 {
-
-  // Decide when to do J.update(). Only compute a new Jacobian when
-  // necessary. Perhaps we can keep the Jacobian for some time. At
-  // least for one time slab? Use GMRES::solve(J, dx, F) to solve.
-
-
-  // Assume only dG0 for now
-
-  cout << "Newton slab" << endl;
-
   // Compute element residuals for all elements
   unsigned int dof = 0;
   for (ElementIterator element(list); !element.end(); ++element)
@@ -84,20 +79,32 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
   }
   
   // Solve linear system
+  //dolfin_log(false);
   KrylovSolver solver;
   solver.solve(J, dx, r);
+  //dolfin_log(true);
 
+  cout << "dx = ";
+  dx.show();
+  
   // Set values
   dof = 0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
-    element->set(r.values + dof);
+    // Subtract increment
+    element->sub(dx.values + dof);
+
+    // Update initial data, using r to store the data
+    real& u0 = r(element->index());
+    if ( element->starttime() != t0 )
+      element->update(u0);
+    u0 = element->endval();
+
+    // Jump to next degree of freedom
     dof += element->size();
   }
 
-
-  //for (ElementIterator element(list); !element.end(); ++element)
-  //  init(*element);
+  cout << "Increment: " << dx.norm() << endl;
 
   // l2 norm of increment
   d = dx.norm();
@@ -105,12 +112,18 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)
 {
-  dolfin_error("Not implemented.");
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
+  for (ElementIterator element(group); !element.end(); ++element)
+    increment += sqr(fixpoint.iterate(*element));
+  
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(Element& element, Increments& d)
 {
-  cout << "Newton element" << endl;
+  // Local Newton update of element
+  d = fabs(element.updateLocalNewton(f));
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::stabilize(ElementGroupList& list,
@@ -132,12 +145,12 @@ void NewtonIteration::stabilize(Element& element,
 }
 //-----------------------------------------------------------------------------
 bool NewtonIteration::converged(ElementGroupList& list,
-				  const Increments& d, unsigned int n)
+				const Increments& d, unsigned int n)
 {
   // First check increment
-  //if ( d.d2 > tol || n == 0 )
-  //return false;
-
+  if ( d.d2 > tol || n == 0 )
+    return false;
+  
   // If increment is small, then check residual
   return residual(list) < tol;
 }
@@ -145,8 +158,7 @@ bool NewtonIteration::converged(ElementGroupList& list,
 bool NewtonIteration::converged(ElementGroup& group,
 				  const Increments& d, unsigned int n)
 {
-  //return d.d2 < tol && n > 0;
-  return residual(group) < tol && n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NewtonIteration::converged(Element& element,
@@ -177,5 +189,6 @@ void NewtonIteration::report() const
 {
   cout << "System is stiff, solution computed with "
        << "Newton's method." << endl;
+  cout << "Computed the Jacobian " << njac << " times." << endl;
 }
 //-----------------------------------------------------------------------------

@@ -236,6 +236,12 @@ void dGqElement::set(const real* const values)
     this->values[i] = values[i];
 }
 //-----------------------------------------------------------------------------
+void dGqElement::sub(const real* const values)
+{
+  for (unsigned int i = 0; i <= q; i++)
+    this->values[i] -= values[i];
+}
+//-----------------------------------------------------------------------------
 void dGqElement::get(real* const values) const
 {
   for (unsigned int i = 0; i <= q; i++)
@@ -284,7 +290,7 @@ void dGqElement::computeElementResidual(RHS& f, real* r)
 
   // Compute element residuals
   for (unsigned int i = 0; i <= q; i++)
-    r[i] = values[i] - values[0] - integral(i);
+    r[i] = values[i] - u0 - integral(i);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)

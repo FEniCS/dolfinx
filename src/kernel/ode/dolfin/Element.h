@@ -84,6 +84,9 @@ namespace dolfin {
     /// Set element values to given values (not including initial data)
     virtual void set(const real* const values) = 0;
 
+    /// Subtract given values from element (not including initial data)
+    virtual void sub(const real* const values) = 0;
+
     /// Get element values (not including initial data)
     virtual void get(real* const values) const = 0;
 

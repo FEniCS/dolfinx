@@ -38,6 +38,9 @@ namespace dolfin
     /// Update Jacobian for time slab and compute the number of unknowns
     unsigned int update(ElementGroupList& elements);
 
+    /// Show Jacobian of the system of equations on the time slab
+    void show() const;
+
   private:
 
     /// Multiplication for cG(q) elements

@@ -37,6 +37,7 @@ namespace dolfin {
 
     void set(real u0);
     void set(const real* const values);
+    void sub(const real* const values);
     void get(real* const values) const;
 
     bool accept(real TOL, real r);

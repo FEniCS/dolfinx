@@ -235,6 +235,12 @@ void cGqElement::set(const real* const values)
     this->values[i] = values[i-1];
 }
 //-----------------------------------------------------------------------------
+void cGqElement::sub(const real* const values)
+{
+  for (unsigned int i = 1; i <= q; i++)
+    this->values[i] -= values[i-1];
+}
+//-----------------------------------------------------------------------------
 void cGqElement::get(real* const values) const
 {
   for (unsigned int i = 1; i <= q; i++)

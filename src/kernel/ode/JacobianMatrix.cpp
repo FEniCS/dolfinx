@@ -56,10 +56,6 @@ unsigned int JacobianMatrix::size(unsigned int dim) const
 //-----------------------------------------------------------------------------
 void JacobianMatrix::update(real t)
 {
-  // Recompute the Jacobian of the right-hand side at given time
-
-  cout << "Updating Jacobian at time t = " << t << endl;
-
   // Update the right-hand side to given time
   f.update(t);
 
@@ -94,6 +90,28 @@ unsigned int JacobianMatrix::update(ElementGroupList& elements)
   return n;
 }
 //-----------------------------------------------------------------------------
+void JacobianMatrix::show() const
+{
+  // Since we don't really have the matrix, we create the matrix by
+  // performing multiplication with unit vectors. Used only for debugging.
+
+  Matrix A(n, n, Matrix::dense);
+  Vector x(n), y(n);
+  x = 0.0;
+  
+  for (unsigned int j = 0; j < n; j++)
+  {
+    x(j) = 1.0;
+    x.show();
+    mult(x, y);
+    for (unsigned int i = 0; i < n; i++)
+      A(i, j) = y(i);
+    x(j) = 0.0;
+  }
+
+  A.show();
+}
+//-----------------------------------------------------------------------------
 void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
 {
   // Perform the multiplication by iterating over all elements in the slab.
@@ -109,6 +127,9 @@ void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
   if ( !elements )
     dolfin_error("Elements of the time slab not supplied.");
   
+  // Reset the output vector
+  Ax = 0.0;
+
   unsigned int dof = 0;
   for (ElementIterator element(*elements); !element.end(); ++element)
   { 
@@ -161,7 +182,7 @@ unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
       {
 	// Derivative w.r.t. internal degrees of freedom on the element
 	for (unsigned int n = 0; n < q; n++)
-	  y -= df*cG(q).weight(m + 1, n)*x(dof + n);
+	  y -= df*cG(q).weight(m + 1, n + 1)*x(dof + n);
       }
       else
       {
@@ -182,7 +203,57 @@ unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
 				    unsigned int dof,
 				    const dolfin::Element& element) const
 {
-  //return dof + q + 1;
-  return 0;
+  // Get the component index
+  const unsigned int i = element.index();
+
+  // Get the degree
+  const unsigned int q = element.order();
+
+  // Get the time step
+  const real k = element.timestep();
+
+  // Check if the element has a predecessor within the slab
+  const bool predecessor = element.starttime() > t0;
+
+  // Iterate over local degrees of freedom
+  for (unsigned int m = 0; m <= q; m++)
+  {
+    // Global number of current degree of freedom
+    const unsigned int current = dof + m;
+
+    // Derivative w.r.t. the current degree of freedom
+    real y = x(current);
+
+    // Derivative w.r.t. the end-time value of the previous element
+    if ( predecessor )
+      y -= x(latest[i]);
+    
+    // Iterate over dependencies
+    unsigned int j;
+    for (unsigned int pos = 0; !dfdu.endrow(i, pos); ++pos)
+    {
+      // Get derivative
+      const real df = k*dfdu(i, j, pos);
+
+      // Check if the component depends on itself
+      if ( i == j )
+      {
+	// Derivative w.r.t. internal degrees of freedom on the element
+	for (unsigned int n = 0; n <= q; n++)
+	  y -= df*dG(q).weight(m, n)*x(dof + n);
+      }
+      else
+      {
+	// Derivative w.r.t. the latest degree of freedom for other component
+	y -= df*dG(q).weightsum(m)*x(latest[j]);
+      }
+    }
+
+    // Update value of product
+    Ax(current) = y;
+  }
+
+  // Increase the degree of freedom
+  return dof + q + 1;
 }
 //-----------------------------------------------------------------------------

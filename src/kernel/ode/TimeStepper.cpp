@@ -80,6 +80,8 @@ real TimeStepper::step()
 
     // Create first time slab
     while ( !createFirstTimeSlab() );
+
+    cout << "Created first time slab." << endl;
   }
   else
   {
@@ -88,6 +90,8 @@ real TimeStepper::step()
   
     // Create time slab
     while ( !createGeneralTimeSlab() );
+
+    cout << "Created time slab." << endl;
   }
 
   return t;

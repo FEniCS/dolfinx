@@ -54,9 +54,13 @@ namespace dolfin
 
   private:
 
-    JacobianMatrix J; // Jacobian of time slab
-    Vector r;         // Discrete residual
-    Vector dx;        // Increment
+    void propagate();
+
+    JacobianMatrix J;  // Jacobian of time slab
+    Vector r;          // Discrete residual
+    Vector dx;         // Increment
+    real t0;           // Start time for the slab
+    unsigned int njac; // Number of Jacobians computed
 
   };
 

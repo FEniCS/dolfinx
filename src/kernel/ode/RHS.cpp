@@ -61,8 +61,6 @@ real RHS::operator() (unsigned int index)
 //-----------------------------------------------------------------------------
 real RHS::dfdu(unsigned int i, unsigned int j, real t)
 {
-  cout << "Computing derivative " << i << " " << j << endl;
-
   // Update u(j) in case f(i) does not depend on u(j)
   u(j) = 0.0;
 
