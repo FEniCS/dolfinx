@@ -176,6 +176,8 @@ void Logger::init()
     log = new TerminalLogger();
   else if ( type == "curses" )
     log = new CursesLogger();
+  else if ( type == "silent" )
+    log = new SilentLogger();
   else {
     log = new CursesLogger();
     dolfin_warning1("Unknown output type \"%s\".", type.c_str());

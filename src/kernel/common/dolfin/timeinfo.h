@@ -8,10 +8,17 @@
 
 namespace dolfin {
 
+  /// Return a string containing current date and time
   const char* date();
 
+  /// Start timing
   void tic();
+
+  /// Return elapsed time
   real toc();
+
+  /// Return and display elapsed time
+  real tocd();
 
 }
 

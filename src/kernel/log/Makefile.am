@@ -8,6 +8,7 @@ include_HEADERS         = dolfin/dolfin_log.h \
                           dolfin/LogManager.h \
                           dolfin/LogStream.h \
                           dolfin/Progress.h \
+                          dolfin/SilentLogger.h \
                           dolfin/TerminalLogger.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-log.a
@@ -19,4 +20,5 @@ libdolfin_log_a_SOURCES = Buffer.cpp \
                           LogManager.cpp \
                           LogStream.cpp \
                           Progress.cpp \
+                          SilentLogger.cpp \
                           TerminalLogger.cpp

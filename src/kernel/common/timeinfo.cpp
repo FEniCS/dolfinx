@@ -36,6 +36,13 @@ real dolfin::toc()
 
   double elapsed_time = ((double) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
 
+  return elapsed_time;
+}
+//-----------------------------------------------------------------------------
+real dolfin::tocd()
+{
+  double elapsed_time = toc();
+
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;
