@@ -26,19 +26,20 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementIterator.h \
                           dolfin/ElementTmpFile.h \
                           dolfin/FixedPointIteration.h \
-                          dolfin/FixedPointSolver.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
-                          dolfin/NewJacobianMatrix.h \
                           dolfin/Method.h \
+                          dolfin/MultiAdaptiveFixedPointSolver.h \
+                          dolfin/MultiAdaptiveJacobian.h \
+                          dolfin/MultiAdaptiveNewtonSolver.h \
+                          dolfin/MultiAdaptivePreconditioner.h \
+                          dolfin/MultiAdaptiveTimeSlab.h \
                           dolfin/NewMethod.h \
                           dolfin/NewtonIteration.h \
-                          dolfin/NewtonSolver.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
                           dolfin/ParticleSystem.h \
-                          dolfin/PropagatingPreconditioner.h \
                           dolfin/NewParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/NewPartition.h \
@@ -84,19 +85,20 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \
                           FixedPointIteration.cpp \
-                          FixedPointSolver.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
-                          NewJacobianMatrix.cpp \
                           Method.cpp \
+                          MultiAdaptiveFixedPointSolver.cpp \
+                          MultiAdaptiveJacobian.cpp \
+                          MultiAdaptiveNewtonSolver.cpp \
+                          MultiAdaptivePreconditioner.cpp \
+                          MultiAdaptiveTimeSlab.cpp \
                           NewMethod.cpp \
                           NewtonIteration.cpp \
-                          NewtonSolver.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
                           ParticleSystem.cpp \
-                          PropagatingPreconditioner.cpp \
                           NewParticleSystem.cpp \
                           Partition.cpp \
                           NewPartition.cpp \

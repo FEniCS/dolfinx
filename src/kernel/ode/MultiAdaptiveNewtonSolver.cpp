@@ -6,27 +6,28 @@
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewMatrix.h>
-#include <dolfin/NewTimeSlab.h>
 #include <dolfin/NewMethod.h>
-#include <dolfin/NewtonSolver.h>
+#include <dolfin/MultiAdaptiveTimeSlab.h>
+#include <dolfin/MultiAdaptiveNewtonSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method)
-  : TimeSlabSolver(ode, timeslab, method), f(0), A(ode, timeslab, method)
+MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
+(MultiAdaptiveTimeSlab& timeslab)
+  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab, ode, method), f(0)
 {
   // Initialize local array
   f = new real[method.qsize()];
 }
 //-----------------------------------------------------------------------------
-NewtonSolver::~NewtonSolver()
+MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
 {
   // Delete local array
   if ( f ) delete [] f;
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::start()
+void MultiAdaptiveNewtonSolver::start()
 {
   // Get size of system
   int nj = static_cast<int>(ts.nj);
@@ -47,7 +48,7 @@ void NewtonSolver::start()
   //A.disp();
 }
 //-----------------------------------------------------------------------------
-real NewtonSolver::iteration()
+real MultiAdaptiveNewtonSolver::iteration()
 {
   // Evaluate b = -F(x) at current x
   beval();
@@ -84,7 +85,7 @@ real NewtonSolver::iteration()
   return max_increment;
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::beval()
+void MultiAdaptiveNewtonSolver::beval()
 {
   // Get array of values for b (assumes uniprocessor case)
   real* bvals = b.array();
@@ -133,7 +134,7 @@ void NewtonSolver::beval()
   b.restore(bvals);
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::debug()
+void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
   NewMatrix B(n, n);

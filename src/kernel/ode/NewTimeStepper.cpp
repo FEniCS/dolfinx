@@ -10,7 +10,7 @@
 #include <dolfin/ODE.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/NewSample.h>
-#include <dolfin/NewTimeSlab.h>
+#include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/NewTimeStepper.h>
 
 using namespace dolfin;
@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewTimeStepper::NewTimeStepper(ODE& ode, Function& u) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), u(u), timeslab(ode), file(u.label() + ".m"), p("Time-stepping"), 
+  ode(ode), u(u), timeslab(0), file(u.label() + ".m"), p("Time-stepping"), 
   _finished(false), save_solution(dolfin_get("save solution")),
   solve_dual(dolfin_get("solve dual problem")),
   adaptive_samples(dolfin_get("adaptive samples")),
@@ -26,11 +26,13 @@ NewTimeStepper::NewTimeStepper(ODE& ode, Function& u) :
   sample_density(dolfin_get("sample density"))
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
+
+  timeslab = new MultiAdaptiveTimeSlab(ode);
 }
 //-----------------------------------------------------------------------------
 NewTimeStepper::~NewTimeStepper()
 {
-  // Do nothing
+  if ( timeslab ) delete timeslab;
 }
 //-----------------------------------------------------------------------------
 void NewTimeStepper::solve(ODE& ode, Function& u)
@@ -70,18 +72,18 @@ void NewTimeStepper::solve(ODE& ode, Function& u)
 real NewTimeStepper::step()
 {
   // Build time slab
-  t = timeslab.build(t, T);
+  t = timeslab->build(t, T);
   
-  //timeslab.disp();
+  //timeslab->disp();
   
   // Solve time slab system
-  timeslab.solve();
+  timeslab->solve();
 
   // Save solution
   save();
 
   // Update for next time slab
-  timeslab.shift();
+  timeslab->shift();
 
   // Update progress
   p = t / T;
@@ -110,13 +112,13 @@ void NewTimeStepper::save()
 void NewTimeStepper::saveFixedSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab.starttime();
-  real t1 = timeslab.endtime();
+  real t0 = timeslab->starttime();
+  real t1 = timeslab->endtime();
 
   // Save initial value
   if ( t0 == 0.0 )
   {
-    NewSample sample(timeslab, 0.0, u.name(), u.label());
+    NewSample sample(*timeslab, 0.0, u.name(), u.label());
     file << sample;
     ode.save(sample);
   }
@@ -139,7 +141,7 @@ void NewTimeStepper::saveFixedSamples()
     if ( fabs(t - t1) < DOLFIN_EPS )
       t = t1;
 
-    NewSample sample(timeslab, t, u.name(), u.label());
+    NewSample sample(*timeslab, t, u.name(), u.label());
     file << sample;
     ode.save(sample);
   }
@@ -148,13 +150,13 @@ void NewTimeStepper::saveFixedSamples()
 void NewTimeStepper::saveAdaptiveSamples()
 {
   // Get start time and end time of time slab
-  real t0 = timeslab.starttime();
-  real t1 = timeslab.endtime();
+  real t0 = timeslab->starttime();
+  real t1 = timeslab->endtime();
 
   // Save initial value
   if ( t0 == 0.0 )
   {
-    NewSample sample(timeslab, 0.0, u.name(), u.label());
+    NewSample sample(*timeslab, 0.0, u.name(), u.label());
     file << sample;
     ode.save(sample);
   }
@@ -172,7 +174,7 @@ void NewTimeStepper::saveAdaptiveSamples()
       t = t1;
     
     // Create and save the sample
-    NewSample sample(timeslab, t, u.name(), u.label());
+    NewSample sample(*timeslab, t, u.name(), u.label());
     file << sample;
     ode.save(sample);
   }

@@ -16,7 +16,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    TimeSlabSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method);
+    TimeSlabSolver(NewTimeSlab& timeslab);
 
     /// Destructor
     virtual ~TimeSlabSolver();
@@ -35,11 +35,16 @@ namespace dolfin
     /// Make an iteration
     virtual real iteration() = 0;
 
+    // The ODE
     ODE& ode;
-    NewTimeSlab& ts;
+
+    // The method
     const NewMethod& method;
     
+    // Tolerance for iterations (max-norm)
     real tol;
+
+    // Maximum number of iterations
     uint maxiter;
 
   };

@@ -4,16 +4,16 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewVector.h>
-#include <dolfin/NewTimeSlab.h>
 #include <dolfin/NewMethod.h>
-#include <dolfin/NewJacobianMatrix.h>
+#include <dolfin/MultiAdaptiveTimeSlab.h>
+#include <dolfin/MultiAdaptiveJacobian.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewJacobianMatrix::NewJacobianMatrix(ODE& ode, NewTimeSlab& timeslab,
-				     const NewMethod& method) :
-  ode(ode), ts(timeslab), method(method), Jvalues(0), Jindices(0)
+MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab,
+					     ODE& ode, const NewMethod& method)
+  : ts(timeslab), ode(ode), method(method), Jvalues(0), Jindices(0)
 {
   // Allocate Jacobian row indices
   Jindices = new uint[ode.size()];
@@ -42,14 +42,14 @@ NewJacobianMatrix::NewJacobianMatrix(ODE& ode, NewTimeSlab& timeslab,
   dolfin_info("Generated Jacobian data structure for %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
-NewJacobianMatrix::~NewJacobianMatrix()
+MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
 {
   delete [] Jindices;
   delete [] Jvalues;
   delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::mult(const NewVector& x, NewVector& y) const
+void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
 {
   // We iterate over all degrees of freedom j in the time slab and compute
   // y_j = (Ax)_j for each degree of freedom of the system. Note that this
@@ -74,7 +74,7 @@ void NewJacobianMatrix::mult(const NewVector& x, NewVector& y) const
   y.restore(yy);
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::update()
+void MultiAdaptiveJacobian::update()
 {
   // Compute Jacobian at the beginning of the slab
   real t = ts.starttime();
@@ -93,7 +93,7 @@ void NewJacobianMatrix::update()
   }
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::cGmult(const real x[], real y[]) const
+void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -290,7 +290,7 @@ void NewJacobianMatrix::cGmult(const real x[], real y[]) const
   }
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::dGmult(const real x[], real y[]) const
+void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
 {
   // Reset current sub slab
   int s0 = -1;

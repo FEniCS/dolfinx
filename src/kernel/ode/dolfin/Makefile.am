@@ -24,17 +24,19 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementIterator.h \
              ElementTmpFile.h \
              FixedPointIteration.h \
-             FixedPointSolver.h \
              Iteration.h \
              JacobianMatrix.h \
-             NewJacobianMatrix.h \
              Method.h \
+             MultiAdaptiveFixedPointSolver.h \
+             MultiAdaptiveJacobian.h \
+             MultiAdaptiveNewtonSolver.h \
+             MultiAdaptivePreconditioner.h \
+             MultiAdaptiveTimeSlab.h \
              NewMethod.h \
              NonStiffIteration.h \
              ODE.h \
              ODESolver.h \
              ParticleSystem.h \
-             PropagatingPreconditioner.h \
              NewParticleSystem.h \
              Partition.h \
              NewPartition.h \
@@ -49,7 +51,6 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Sparsity.h \
              TimeSlab.h \
              NewTimeSlab.h \
-             NewtonSolver.h \
              TimeSlabSolver.h \
              TimeStepper.h \
              NewTimeStepper.h

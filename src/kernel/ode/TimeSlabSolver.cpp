@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/NewTimeSlab.h>
 #include <dolfin/TimeSlabSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabSolver::TimeSlabSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method)
-  : ode(ode), ts(timeslab), method(method), tol(0.0), maxiter(0)
+TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
+  : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0)
 {
   // Get tolerance
   tol = dolfin_get("tolerance");

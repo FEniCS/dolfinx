@@ -8,13 +8,13 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/File.h>
-#include <dolfin/NewTimeSlab.h>
 
 namespace dolfin
 {
 
   class ODE;
   class Function;
+  class NewTimeSlab;
 
   /// TimeStepper computes the solution of a given ODE. This is where
   /// the real work takes place (most of it takes place in the time
@@ -82,7 +82,7 @@ namespace dolfin
     Function& u;
 
     // The time slab
-    NewTimeSlab timeslab;
+    NewTimeSlab* timeslab;
 
     // Storing the computed solution
     File file;

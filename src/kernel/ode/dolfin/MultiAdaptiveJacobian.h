@@ -1,8 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __NEW_JACOBIAN_MATRIX_H
-#define __NEW_JACOBIAN_MATRIX_H
+#ifndef __MULTI_ADAPTIVE_JACOBIAN_H
+#define __MULTI_ADAPTIVE_JACOBIAN_H
 
 #include <dolfin/VirtualMatrix.h>
 
@@ -10,21 +10,21 @@ namespace dolfin
 {
   
   class ODE;
-  class NewTimeSlab;
+  class MultiAdaptiveTimeSlab;
   class NewMethod;
     
   /// This class represents the Jacobian matrix of the system of
-  /// equations defined on a time slab.
+  /// equations defined on a multi-adaptive time slab.
 
-  class NewJacobianMatrix : public VirtualMatrix
+  class MultiAdaptiveJacobian : public VirtualMatrix
   {
   public:
 
     /// Constructor
-    NewJacobianMatrix(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method);
+    MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab, ODE& ode, const NewMethod& method);
 
     /// Destructor
-    ~NewJacobianMatrix();
+    ~MultiAdaptiveJacobian();
 
     /// Compute product y = Ax
     void mult(const NewVector& x, NewVector& y) const;
@@ -33,7 +33,7 @@ namespace dolfin
     void update();
 
     /// Friends
-    friend class PropagatingPreconditioner;
+    friend class MultiAdaptivePreconditioner;
 
   private:
 
@@ -43,12 +43,12 @@ namespace dolfin
     // Compute product for mdG(q)
     void dGmult(const real x[], real y[]) const;
 
+    // The time slab
+    MultiAdaptiveTimeSlab& ts;
+    
     // The ODE
     ODE& ode;
 
-    // The time slab
-    NewTimeSlab& ts;
-    
     // Method, mcG(q) or mdG(q)
     const NewMethod& method;
 
