@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modifications by Georgios Foufas 2002, 2003
+// Contributions by: Georgios Foufas 2002, 2003
 
 #include <iostream>
 #include <dolfin/Vector.h>
@@ -391,7 +391,7 @@ void Matrix::mult(Vector &x, Vector &Ax)
 //-----------------------------------------------------------------------------
 void Matrix::show()
 {
-  for (int i = 0; i < n; i++){
+  for (int i = 0; i < m; i++) {
 	 if ( i == 0 )
 		std::cout << "| ";
 	 else
