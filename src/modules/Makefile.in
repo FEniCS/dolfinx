@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-SUBDIRS = template           poisson           heat           convdiff           navierstokes           odesolver           wave           wave-vector           elasticity           elasticity-stationary
+SUBDIRS = convdiff           elasticity           elasticity-stationary           euler           heat           navierstokes           odesolver           poisson           template           wave           wave-vector
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

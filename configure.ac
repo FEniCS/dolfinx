@@ -167,6 +167,7 @@ AC_OUTPUT( Makefile \
            src/modules/template/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \
+           src/modules/euler/Makefile \
            src/modules/heat/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/odesolver/Makefile \
