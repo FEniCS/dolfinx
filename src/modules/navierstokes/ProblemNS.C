@@ -1369,7 +1369,7 @@ void ProblemNS::SetTolerances()
   NL_max_tol = 1000.0;
   UP_max_tol = 1000.0;
 
-  max_no_UP_iter = 3;
+  max_no_UP_iter = 1;
   max_no_NL_iter = 100;  
 
   UP_conv = true;
