@@ -207,7 +207,7 @@ void OpenDXFile::writeSeries(FILE* fp, Function& u)
 
   // Write the time series
   fprintf(fp,"# Time series for [%s]\n", u.label().c_str());
-  fprintf(fp,"object \"Time series\" class series\n", u.label().c_str());
+  fprintf(fp,"object \"Time series\" class series\n");
   
   for (unsigned int i = 0; i < frames.size(); i++)
   {
