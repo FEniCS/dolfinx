@@ -41,12 +41,13 @@ public:
 class Bistable : public ODE {
 public:
 
-  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), file("solution.dx")
+  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), 
+			 ufile("solution.dx"), kfile("timesteps.dx")
   {
     // Parameters
-    T = 10.0;
+    T = 20.0;
     real epsilon = 0.001;
-
+    
     Galerkin fem;
     
     // Assemble stiffness matrix
@@ -76,23 +77,32 @@ public:
   void save(Sample& sample)
   {
     // Create a mesh-dependent function from the sample
-    Vector x(N);
-    Function u(mesh, x);
+    Vector ux(N);
+    Vector kx(N);
+    Function u(mesh, ux);
+    Function k(mesh, kx);
     u.rename("u", "Solution of the bistable equation");
+    u.rename("k", "Time steps for the bistable equation");
 
     // Get the degrees of freedom and set current time
     u.update(sample.t());
+    k.update(sample.t());
     for (unsigned int i = 0; i < N; i++)
-      x(i) = sample.u(i);
+    {
+      ux(i) = sample.u(i);
+      kx(i) = sample.k(i);
+    }
 
     // Save solution to file
-    file << u;
+    ufile << u;
+    kfile << k;
   }
   
 private:
 
   Mesh& mesh; // The mesh
-  File file;  // OpenDX file for the solution
+  File ufile;  // OpenDX file for the solution
+  File kfile;  // OpenDX file for the time steps
   Matrix A;   // Stiffness matrix
   Vector m;   // Lumped mass matrix
   Vector b;   // Weights for right-hand side
@@ -105,11 +115,11 @@ int main()
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);
-  dolfin_set("number of samples", 50);
+  dolfin_set("number of samples", 100);
   dolfin_set("progress step", 0.01);
 
   // Number of refinements
-  unsigned int refinements = 3;
+  unsigned int refinements = 5;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");
