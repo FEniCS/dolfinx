@@ -36,20 +36,33 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   if ( !data )
   {
     /// FIXME: Replace with "element" function, given by FFC  
-    /*
-    if (data->no_comp > 1)
+    if ( element.rank() > 0 )
     {
-      for (uint i = 0; i < element.spacedim(); i++)
-      for (int j = 0; j < data->no_comp; j++)
-      /// FIXME: Same ordering as in FFC? 
-      c[i*data->no_comp+j] = (*this)(element.coord(i, cell, cell.mesh()),j);
-    }
-    */
-    
-    for (uint i = 0; i < element.spacedim(); i++)
-      c[i] = (*this)(element.coord(i, cell, cell.mesh()));
+      // Only works for vector-valued elements at this point
+      if ( element.rank() > 0 )
+	dolfin_error("Cannot handle tensor valued functions.");
+      
+      // FIXME: This is just a temporary fix for Lagrange elements until
+      // FIXME: FFC can generate general projections
 
-    return;
+      for (uint i = 0; i < element.spacedim(); i++)
+      {
+	const uint component = i / element.spacedim();
+	c[i] = (*this)(element.coord(i, cell, cell.mesh()), component);
+      }
+
+      return;
+    }
+    else
+    {
+      // FIXME: This is just a temporary fix for Lagrange elements until
+      // FIXME: FFC can generate general projections
+
+      for (uint i = 0; i < element.spacedim(); i++)
+	c[i] = (*this)(element.coord(i, cell, cell.mesh()));
+
+      return;
+    }
   }
 
   // Check if we're computing the projection onto a cell of the same
@@ -83,7 +96,7 @@ real NewFunction::operator()(const Point& p) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real NewFunction::operator()(const Point& p, int i) const
+real NewFunction::operator()(const Point& p, uint i) const
 {
   dolfin_error("User-defined function evaluation not implemented.");
   return 0.0;

@@ -48,7 +48,7 @@ namespace dolfin
     virtual real operator() (const Point& p) const;
 
     /// Evaluate vector-valued function at given point
-    virtual real operator() (const Point& p, int i) const;
+    virtual real operator() (const Point& p, uint i) const;
 
   private:
 
