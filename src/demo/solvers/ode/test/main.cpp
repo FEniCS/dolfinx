@@ -90,7 +90,7 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("partitioning threshold", 1.0);
   dolfin_set("interval threshold", 0.9);
-  dolfin_set("number of samples", 1000);
+  dolfin_set("number of samples", 100);
   dolfin_set("element cache size", 32);
   dolfin_set("maximum iterations", 100);
 

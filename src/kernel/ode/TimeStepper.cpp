@@ -57,13 +57,8 @@ void TimeStepper::solve(ODE& ode, Function& function)
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
     
-    // FIXME: Make an automatic, or at least scientific, choice of the discrete
-    // residual tolerance
+    // Solve system using damped fixed point iteration
     fixpoint.iterate(*timeslab);
-
-    // Iterate a couple of times on the time slab
-    //for (int i = 0; i < 2; i++)
-    //  timeslab->update(u, f);
 
     // Update time
     t = timeslab->endtime();
@@ -86,6 +81,7 @@ void TimeStepper::solve(ODE& ode, Function& function)
 
     // Update progress
     p = t / T;
+
   }
 
 }

@@ -82,21 +82,25 @@ bool FixedPointIteration::converged(TimeSlab& timeslab)
   // FIXME: Convergence should be determined by the error control
 
   // Compute maximum discrete residual
-  r0 = r1;
-  r1 = timeslab.computeMaxRd(u, f);
+  r1 = r2;
+  r2 = timeslab.computeMaxRd(u, f);
 
-  cout << "Checking convergence: " << r0 << " --> " << r1 << endl;
+  // Save initial discrete residual
+  if ( n == 0 )
+    r0 = r2;
 
-  return r1 < 1e-3;
+  cout << "Checking convergence: " << r1 << " --> " << r2 << endl;
+
+  return r2 < 1e-3;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(TimeSlab& timeslab)
 {
   // Update time slab
-  d0 = d1;
-  d1 = timeslab.update(*this);
+  d1 = d2;
+  d2 = timeslab.update(*this);
   
-  cout << "Updating time slab: " << d0 << " --> " << d1 << endl;
+  cout << "Updating time slab: " << d1 << " --> " << d2 << endl;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(TimeSlab& timeslab)
@@ -104,8 +108,9 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab)
   cout << "Checking if we need to stabilize" << endl;
 
   // Compute convergence rate
-  dolfin_assert(d0 > DOLFIN_EPS); 
-  real rho = d1 / d0;
+  dolfin_assert(d1 > DOLFIN_EPS);
+  dolfin_assert(r1 > DOLFIN_EPS);
+  real rho = std::max(d2 / d1, r2 / r1);
 
   cout << "  rho = " << rho << endl;
 
@@ -113,11 +118,17 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab)
   case undamped:
     stabilizeUndamped(timeslab, rho);
     break;
-  case scalar_damping:
-    stabilizeScalar(timeslab, rho);
+  case scalar_small:
+    stabilizeScalarSmall(timeslab, rho);
     break;
-  case diagonal_damping:
-    stabilizeDiagonal(timeslab, rho);
+  case scalar_increasing:
+    stabilizeScalarIncreasing(timeslab, rho);
+    break;
+  case diagonal_small:
+    stabilizeDiagonalSmall(timeslab, rho);
+    break;
+  case diagonal_increasing:
+    stabilizeDiagonalIncreasing(timeslab, rho);
     break;
   default:
     dolfin_error("Unknown state.");
@@ -128,97 +139,108 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab, real rho)
 {
-  // Don't stabilize if solution is converging
-  if ( r1 < r0 )
+  if ( rho < 0.5 )
     return;
 
-  cout << "  Need to stabilize: " << r0 << " --> " << r1 << endl;
-
-  // Make sure that rho > 1 if solution is diverging
-  if ( rho <= 1 )
-  {
-    dolfin_assert(r0 > DOLFIN_EPS);
-    rho = r1 / r0;
-  }
-
+  cout << "  Need to stabilize: " << r1 << " --> " << r2 << endl;   
+  
   // Compute stabilization
-  real c = 0.99;  
-  alpha = c / (1 + rho);    
+  alpha = computeDamping(rho);
+  m = computeDampingSteps(rho);
   
-  // Compute number of iterations with small alpha
-  m = 2*ceil_int(log(rho));
+  // Reset time slab to initial values 
+  if ( r2 > 10.0 * r0 )
+    timeslab.reset(u);
   
-  // Reset time slab to initial values (doesn't seem to be a good idea)
-  //timeslab.reset(u);
-
   // Change state
-  state = scalar_damping;
+  state = scalar_small;
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeScalar(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab, real rho)
 {
   // Decrease the remaining number of iterations with small alpha
-  if ( m > 0 )
-    m--;
+  m--;
 
-  cout << "  m = " << m << endl;
-  
-  if ( r1 < r0 )
+  // Adjust alpha if the solution diverges
+  if ( r2 > r1 )
   {
-    if ( m == 0 )
-    {
-      cout << "  Done with small alpha" << endl;
+    // Decrease alpha
+    alpha /= 2.0;
 
-      // Start increasing alpha after the first m iterations
-      alpha *= 2.0;
-
-      // If we reached alpha = 1, return to undamped state
-      if ( alpha >= 1.0 )
-      {
-	alpha = 1.0;
-	state = undamped;
-	cout << "  Returning to undamped iteration" << endl;
-      }
-    }
+    // Reset time slab to initial values 
+    if ( r2 > 10.0 * r0 )
+      timeslab.reset(u);
   }
-  else
-  {
-    // Make sure that rho > 1 if solution is diverging
-    if ( rho <= 1 )
-    {
-      dolfin_assert(r0 > DOLFIN_EPS);
-      rho = r1 / r0;
-    }
-    
-    // Compensate for old alpha
-    rho /= alpha;
 
-    // Compute stabilization
-    real c = 0.99;  
-    alpha = c / (1.0 + rho);    
-    
-    // Compute number of iterations with small alpha
-    m = 2*ceil_int(log(rho));
+  // Check if we're done
+  if ( m == 0 )
+  {
+    alpha *= 2.0;
+    state = scalar_increasing;
   }
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonal(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab, real rho)
+{
+  // Increase alpha
+  alpha *= 2.0;
+
+  // Check if the solution diverges
+  if ( r2 > r1 )
+  {    
+    // Compute stabilization
+    alpha = computeDamping(rho/alpha);
+    m = computeDampingSteps(rho);
+    
+    // Reset time slab to initial values 
+    if ( r2 > 10.0 * r0 )
+      timeslab.reset(u);
+    
+    // Change state
+    state = scalar_small;
+  }
+
+  // Check if we're done
+  if ( alpha >= 1.0 )
+  {
+    alpha = 1.0;
+    state = undamped;
+  }
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::stabilizeDiagonalSmall(TimeSlab& timeslab, real rho)
 {
   dolfin_error("Diagonal damping not implemented.");
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::stabilizeDiagonalIncreasing(TimeSlab& timeslab, real rho)
+{
+  dolfin_error("Diagonal damping not implemented.");
+}
+//-----------------------------------------------------------------------------
+real FixedPointIteration::computeDamping(real rho)
+{
+  return 0.99 / (1 + rho);    
+}
+//-----------------------------------------------------------------------------
+unsigned int FixedPointIteration::computeDampingSteps(real rho)
+{
+  return 2*ceil_int(log(rho));
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::clear()
 {
   n = 0;
   state = undamped;
-  
+
   alpha = 1.0;
   m = 0;
 
-  d0 = 0.0;
   d1 = 0.0;
+  d2 = 0.0;
 
   r0 = 0.0;
   r1 = 0.0;
+  r2 = 0.0;
 }
 //-----------------------------------------------------------------------------

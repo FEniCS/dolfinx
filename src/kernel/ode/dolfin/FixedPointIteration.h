@@ -35,7 +35,7 @@ namespace dolfin
   private:
 
     // States
-    enum State { undamped, scalar_damping, diagonal_damping };
+    enum State { undamped, scalar_small, scalar_increasing, diagonal_small, diagonal_increasing };
 
     // Check if the time slab has converged
     bool converged(TimeSlab& timeslab);
@@ -49,11 +49,23 @@ namespace dolfin
     // Compute stabilization for undamped state
     void stabilizeUndamped(TimeSlab& timeslab, real rho);
 
-    // Compute stabilization for scalar damping
-    void stabilizeScalar(TimeSlab& timeslab, real rho);
+    // Compute stabilization for scalar damping with small alpha
+    void stabilizeScalarSmall(TimeSlab& timeslab, real rho);
 
-    // Compute stabilization for diagonal damping
-    void stabilizeDiagonal(TimeSlab& timeslab, real rho);
+    // Compute stabilization for scalar damping with increasing alpha
+    void stabilizeScalarIncreasing(TimeSlab& timeslab, real rho);
+
+    // Compute stabilization for diagonal damping with small alpha
+    void stabilizeDiagonalSmall(TimeSlab& timeslab, real rho);
+
+    // Compute stabilization for diagonal damping with increasing alpha
+    void stabilizeDiagonalIncreasing(TimeSlab& timeslab, real rho);
+
+    // Compute alpha
+    real computeDamping(real rho);
+
+    // Compute m
+    unsigned int computeDampingSteps(real rho);
 
     // Clear data from previous iteration
     void clear();
@@ -82,10 +94,10 @@ namespace dolfin
     unsigned int m;
     
     // Increments
-    real d0, d1;
+    real d1, d2;
 
     // Discrete residuals
-    real r0, r1;
+    real r0, r1, r2;
 
   };
 
