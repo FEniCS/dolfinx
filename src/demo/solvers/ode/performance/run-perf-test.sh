@@ -22,9 +22,8 @@ function runsingle()
 function run()
 {
     #n="10 20 40 100 200 400 1000 2000 4000 10000 20000 50000 100000"
-    #n="10 20 40 100 200 400 1000"
-    n="10 20"
-
+    n="10 20 40 100 200 400 1000"
+    
     if [ "$1" = "" ]; then
 	M=100
     else
@@ -43,7 +42,7 @@ function run()
     echo
 
     echo "n = [ " $n "];" > timings.m
-    echo -n "t = [" >> timings.m
+    echo -n "t1 = [" >> timings.m
 
     # Run multi-adaptive test
     echo "Running multi-adaptive performance test"
@@ -56,10 +55,10 @@ function run()
     done
 
     echo "];" >> timings.m
-    echo "k = " $( echo "timings; lsquares(n, t)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
-    echo "m = " $( echo "timings; lsquares(n, t)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "k1 = " $( echo "timings; lsquares(n, t1)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "m1 = " $( echo "timings; lsquares(n, t1)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
     echo
-    echo -n "t = [" >> timings.m
+    echo -n "t2 = [" >> timings.m
 
     # Run mono-adaptive test
     echo "Running mono-adaptive performance test"
@@ -72,8 +71,8 @@ function run()
     done
 
     echo "];" >> timings.m
-    echo "k = " $( echo "timings; lsquares(n, t)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
-    echo "m = " $( echo "timings; lsquares(n, t)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "k2 = " $( echo "timings; lsquares(n, t2)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "m2 = " $( echo "timings; lsquares(n, t2)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
 
 }
 
