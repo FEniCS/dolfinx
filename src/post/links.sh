@@ -3,28 +3,34 @@
 cd ../../
 TOPLEVEL=`pwd`
 
-# Create symbolic links
-# Make a sub function for linking the Octave scripts
+# Function for creating symbolic links to Octave scripts
+link_octave() {
+    ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m $1
+    ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m $1
+    ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m $1
+}
 
-ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m src/demo/solvers/convdiff/
-ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m src/demo/solvers/convdiff/
-ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m src/demo/solvers/convdiff/
+# Function for creating symbolic links to OpenDX programs
+link_dx() {
+    ln -sf $TOPLEVEL/src/utils/opendx/dolfin.net $1
+    ln -sf $TOPLEVEL/src/utils/opendx/dolfin.cfg $1
+}
 
-ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m src/demo/solvers/wave/
-ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m src/demo/solvers/wave/
-ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m src/demo/solvers/wave/
+# Function for creating symbolic link to plotslab.m
+link_plotslab() {
+    ln -sf $TOPLEVEL/src/utils/matlab/plotslab.m $1
+}
 
-ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m src/demo/solvers/wave-vector/
-ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m src/demo/solvers/wave-vector/
-ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m src/demo/solvers/wave-vector/
+# Create links to Octave scripts
+link_octave src/demo/solvers/convdiff/
+link_octave src/demo/solvers/wave/
+link_octave src/demo/solvers/wave-vector/
+link_octave src/demo/solvers/elasticity/
+link_octave src/demo/solvers/elasticity-stationary/
 
-ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m src/demo/solvers/elasticity/
-ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m src/demo/solvers/elasticity/
-ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m src/demo/solvers/elasticity/
+# Creat links to OpenDX programs
+link_dx src/demo/solvers/ode/bistable/
 
-ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m src/demo/solvers/elasticity-stationary/
-ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m src/demo/solvers/elasticity-stationary/
-ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m src/demo/solvers/elasticity-stationary/
-
-ln -sf $TOPLEVEL/src/utils/matlab/plotslab.m src/demo/solvers/ode/test/
-ln -sf $TOPLEVEL/src/utils/matlab/plotslab.m src/demo/solvers/ode/stiff/testproblems/
+# Create links to plotslab.m
+link_plotslab src/demo/solvers/ode/test/
+link_plotslab src/demo/solvers/ode/stiff/testproblems/

@@ -8,7 +8,7 @@ using namespace dolfin;
 class Stiffness : public PDE {
 public:
   
-  Stiffness(real epsilon) : PDE(2), epsilon(epsilon) {}
+  Stiffness(real epsilon) : PDE(3), epsilon(epsilon) {}
   
   real lhs(const ShapeFunction& u, const ShapeFunction& v)
   {
@@ -29,7 +29,7 @@ private:
 class Mass : public PDE {
 public:
   
-  Mass() : PDE(2) {}
+  Mass() : PDE(3) {}
 
   real lhs(const ShapeFunction& u, const ShapeFunction& v)
   {
@@ -44,7 +44,7 @@ public:
   Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh)
   {
     // Parameters
-    T = 50.0;
+    T = 10.0;
     real epsilon = 0.001;
 
     Galerkin fem;
@@ -65,11 +65,6 @@ public:
   
   real u0(unsigned int i)
   {
-    // Initial data specified in Computer Session E4
-    //Point p = mesh.node(i).coord();
-    //return cos(2.0*DOLFIN_PI*p.x*p.x)*cos(2.0*DOLFIN_PI*p.y*p.y);
-
-    // Random initial data
     return 2.0*(dolfin::rand() - 0.5);
   }
   
@@ -97,7 +92,7 @@ int main()
   dolfin_set("progress step", 0.01);
 
   // Number of refinements
-  unsigned int refinements = 5;
+  unsigned int refinements = 2;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");
@@ -105,7 +100,7 @@ int main()
     mesh.refineUniformly();
 
   // Save mesh to file
-  File file("mesh.m");
+  File file("mesh.dx");
   file << mesh;
 
   // Solve equation

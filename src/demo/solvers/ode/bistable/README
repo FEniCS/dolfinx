@@ -1,0 +1,7 @@
+Running the program:
+
+	./dolfin-ode-bistable
+
+To visualize the solution:
+
+	dx -edit dolfin

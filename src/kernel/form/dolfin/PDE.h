@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Fredrik Bengzon and Johan Jansson, 2004.
 
 #ifndef __PDE_H
 #define __PDE_H
@@ -14,32 +16,32 @@
 
 namespace dolfin {
   
-  //class FiniteElement;
-  //class FiniteElement::Vector;
-  
   typedef FunctionSpace::ShapeFunction ShapeFunction;
   typedef FunctionSpace::Product Product;
   typedef FunctionSpace::ElementFunction ElementFunction;
   
   class PDE {
   public:
-    
+ 
+    /// Constructor for PDE with given space dimension and system size
     PDE(int dim, int noeq = 1);
+
+    /// Destructor
     virtual ~PDE();
     
-    // Variational formulation, left-hand side
+    /// Variational formulation, left-hand side
     virtual real lhs(const ShapeFunction &u, const ShapeFunction &v)
     {
       return 0.0;
     }
 
-    // Variational formulation, right-hand side
+    /// Variational formulation, right-hand side
     virtual real rhs(const ShapeFunction &v)
     {
       return 0.0;
     }
     
-    // Variational formulation for systems, left-hand side
+    /// Variational formulation for systems, left-hand side
     virtual real lhs(ShapeFunction::Vector &u,
  		     ShapeFunction::Vector &v)
     {
@@ -47,28 +49,28 @@ namespace dolfin {
     }
     
     
-    // Variational formulation for systems, right-hand side
+    /// Variational formulation for systems, right-hand side
     virtual real rhs(ShapeFunction::Vector &v)
     {
       return rhs(v(0));
     }
     
-    // Update before computation of left-hand side
+    /// Update before computation of left-hand side
     void updateLHS(FiniteElement::Vector* element,
                    const Cell* cell,
                    const Map* mapping,
                    const Quadrature* quadrature);
     
-    // Update before computation of right-hand side
+    /// Update before computation of right-hand side
     void updateRHS(FiniteElement::Vector* element,
                    const Cell* cell,
                    const Map* mapping,
                    const Quadrature* quadrature);
 
-    // Number of equations
+    /// Return number of equations
     int size();
 
-    // Public data
+    ///Public data
     real h; // Mesh size
     real t; // Time
     real k; // Time step
