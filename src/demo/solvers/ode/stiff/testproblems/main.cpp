@@ -3,6 +3,8 @@
 //
 // Stiff test problems for the multi-adaptive solver.
 
+#include <string>
+#include <iostream>
 #include <stdlib.h>
 #include <dolfin.h>
 #include "TestProblem1.h"
@@ -112,7 +114,7 @@ int main(int argc, char* argv[])
   dolfin_set("tolerance", 0.1);
   dolfin_set("adaptive samples", true);
   dolfin_set("solve dual problem", false);
-    
+
   // Choose test problem
   switch (n) {
   case 1:

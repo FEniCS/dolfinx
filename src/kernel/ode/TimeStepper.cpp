@@ -31,17 +31,12 @@ TimeStepper::TimeStepper(ODE& ode, Function& function) :
   sample_density(dolfin_get("sample density"))
 				 
 {
-  dolfin_warning("ODE solver is EXPERIMENTAL.");
-
-  // Start timing
-  tic();
+  //Do nothing
 }
 //-----------------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
-   // Display status report
-  cout << "Solution computed in " << toc() << " seconds." << endl;
-  fixpoint.report();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, Function& function)
@@ -70,7 +65,15 @@ bool TimeStepper::finished() const
 bool TimeStepper::createTimeSlab()
 {
   if ( t == 0.0 )
+  {
+    dolfin_warning("ODE solver is EXPERIMENTAL.");
+
+    // Start timing
+    tic();
+
+    // Create first time slab
     return createFirstTimeSlab();
+  }
   else
     return createGeneralTimeSlab();
 }
@@ -117,6 +120,8 @@ bool TimeStepper::createFirstTimeSlab()
   {
     _finished = true;
     p = 1.0;
+    cout << "Solution computed in " << toc() << " seconds." << endl;
+    fixpoint.report();
   }
 
   return true;
@@ -163,6 +168,8 @@ bool TimeStepper::createGeneralTimeSlab()
   {
     _finished = true;
     p = 1.0;
+    cout << "Solution computed in " << toc() << " seconds." << endl;
+    fixpoint.report();
   }
 
   return true;

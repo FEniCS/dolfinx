@@ -1,3 +1,4 @@
+ - Display status report also when using step()
  - Improve adaptive damping for stiff problems (remove spikes)
  - Modify Octave/Matlab format for solution data (speed improvement)
  - Adaptive sampling of solution (optional)
