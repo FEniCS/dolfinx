@@ -67,7 +67,7 @@ MAKEINFO = makeinfo
 MODULE_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
 PACKAGE = dolfin
 RANLIB = ranlib
-VERSION = 0.2.10-1
+VERSION = 0.2.11-1
 
 INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
 lib_LIBRARIES = libdolfin-convdiff.a
