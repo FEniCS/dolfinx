@@ -292,7 +292,7 @@ void Matrix::resizeRow(int i, int rowsize)
   rowsizes[i] = rowsize;
 }
 //-----------------------------------------------------------------------------
-int Matrix::rowSize(int i)
+int Matrix::rowSize(int i) const
 {
   if ( i < 0 || i >= m )
     cout << "Matrix::rowSize(): Illegal row index" << endl;

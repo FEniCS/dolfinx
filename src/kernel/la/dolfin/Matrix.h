@@ -77,7 +77,7 @@ namespace dolfin {
 	 /// Set number of nonzero entries in a row (keeping old values)
 	 void resizeRow(int i, int rowsize);
 	 /// Returns size of row i
-	 int rowSize(int i);
+	 int rowSize(int i) const;
 	 
 	 /// Indexing: fast alternative
 	 real operator()(int i, int *j, int pos) const;
