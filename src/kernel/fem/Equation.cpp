@@ -199,7 +199,7 @@ void Equation::FunctionPair::operator= (int zero)
 {
   // FIXME: Use logging system
   if ( zero != 0 ) {
-	 cout << "Assignment to int must be zero." << endl;
+	 std::cout << "Assignment to int must be zero." << std::endl;
 	 exit(1);
   }
   

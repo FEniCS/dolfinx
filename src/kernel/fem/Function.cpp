@@ -57,7 +57,7 @@ void Function::update(FunctionSpace::ElementFunction& v,
 	 break;
   default:
 	 // FIXME: Use logging system
-	 cout << "Error: Unknown representation of function." << endl;
+	 std::cout << "Error: Unknown representation of function." << std::endl;
 	 exit(1);
   }
 }

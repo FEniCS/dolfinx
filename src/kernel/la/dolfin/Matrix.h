@@ -98,7 +98,7 @@ namespace dolfin {
 
 	 /// Output
 	 void show();
-	 friend ostream& operator << (ostream& output, Matrix& sparseMatrix);
+	 friend std::ostream& operator << (std::ostream& output, Matrix& sparseMatrix);
 
   protected:
 

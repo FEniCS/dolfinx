@@ -74,7 +74,7 @@ void XMLFile::parseFile()
   // Check that we got the data
   // FIXME: Temporary until we get the logsystem working  
   if ( !xmlObject->dataOK() ){
-	 cout << "Unable to find data in XML file" << endl;
+	 std::cout << "Unable to find data in XML file" << std::endl;
 	 exit(1);
   }
 

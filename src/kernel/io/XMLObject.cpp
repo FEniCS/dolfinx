@@ -17,12 +17,12 @@ bool XMLObject::dataOK()
 }
 //-----------------------------------------------------------------------------
 void XMLObject::parseIntegerRequired(const xmlChar *name, const xmlChar **attrs,
-											  const char *attribute, int *value)
+												 const char *attribute, int *value)
 {
   // Check that we got the data
   if ( !attrs ){
   	 // FIXME: Temporary until we get the logsystem working
-	 cout << "Missing attributes for <" << name << "> in XML file." << endl;
+	 std::cout << "Missing attributes for <" << name << "> in XML file." << std::endl;
 	 exit(1);
   }
   
@@ -33,7 +33,8 @@ void XMLObject::parseIntegerRequired(const xmlChar *name, const xmlChar **attrs,
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
 		if ( !attrs[i+1] ){
 		  // FIXME: Temporary until we get the logsystem working
-		  cout << "Value for attribute \"" << attribute << "\" in <" << name << "> is missing in XML file ." << endl;
+		  std::cout << "Value for attribute \"" << attribute << "\" in <"
+						<< name << "> is missing in XML file ." << std::endl;
 		  exit(1);
 		}
 		*value = atoi( (char *) attrs[i+1] );
@@ -44,7 +45,8 @@ void XMLObject::parseIntegerRequired(const xmlChar *name, const xmlChar **attrs,
   
   // Didn't get the value
   // FIXME: Temporary until we get the logsystem working
-  cout << "Missing attribute \"" << attribute << "\" for <" << name << "> in XML file." << endl;
+  std::cout << "Missing attribute \"" << attribute << "\" for <"
+				<< name << "> in XML file." << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------
@@ -62,7 +64,8 @@ void XMLObject::parseIntegerOptional(const xmlChar *name, const xmlChar **attrs,
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
 		if ( !attrs[i+1] ){
 		  // FIXME: Temporary until we get the logsystem working
-		  cout << "Value for attribute \"" << attribute << "\" in <" << name << "> is missing in XML file ." << endl;
+		  std::cout << "Value for attribute \"" << attribute << "\" in <"
+						<< name << "> is missing in XML file ." << std::endl;
 		  exit(1);
 		}
 		*value = atoi( (char *) attrs[i+1] );
@@ -79,7 +82,8 @@ void XMLObject::parseRealRequired(const xmlChar *name, const xmlChar **attrs,
   // Check that we got the data
   if ( !attrs ){
   	 // FIXME: Temporary until we get the logsystem working
-	 cout << "Missing attributes for <" << name << "> in XML file." << endl;
+	 std::cout << "Missing attributes for <"
+				  << name << "> in XML file." << std::endl;
 	 exit(1);
   }
   
@@ -90,7 +94,8 @@ void XMLObject::parseRealRequired(const xmlChar *name, const xmlChar **attrs,
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
 		if ( !attrs[i+1] ){
 		  // FIXME: Temporary until we get the logsystem working
-		  cout << "Value for attribute \"" << attribute << "\" in <" << name << "> is missing in XML file ." << endl;
+		  std::cout << "Value for attribute \"" << attribute << "\" in <"
+						<< name << "> is missing in XML file ." << std::endl;
 		  exit(1);
 		}
 		*value = (real) atof( (char *) attrs[i+1] );
@@ -101,7 +106,8 @@ void XMLObject::parseRealRequired(const xmlChar *name, const xmlChar **attrs,
   
   // Didn't get the value
   // FIXME: Temporary until we get the logsystem working
-  cout << "Missing attribute \"" << attribute << "\" for <" << name << "> in XML file." << endl;
+  std::cout << "Missing attribute \"" << attribute << "\" for <"
+				<< name << "> in XML file." << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------
@@ -119,7 +125,8 @@ void XMLObject::parseRealOptional(const xmlChar *name, const xmlChar **attrs,
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
 		if ( !attrs[i+1] ){
 		  // FIXME: Temporary until we get the logsystem working
-		  cout << "Value for attribute \"" << attribute << "\" in <" << name << "> is missing in XML file ." << endl;
+		  std::cout << "Value for attribute \"" << attribute << "\" in <"
+						<< name << "> is missing in XML file ." << std::endl;
 		  exit(1);
 		}
 		*value = (real) atof( (char *) attrs[i+1] );

@@ -43,7 +43,7 @@ real Point::dist(Point p)
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-ostream& dolfin::operator << (ostream& output, const Point& p)
+std::ostream& dolfin::operator << (std::ostream& output, const Point& p)
 {
   output << "[ Point x = " << p.x << " y = " << p.y << " z = " << p.z << " ]";
   return output;

@@ -44,7 +44,7 @@ void TriLinMapping::update(const Cell& cell)
   // Check that cell type is correct
   if ( cell.type() != Cell::TRIANGLE ) {
 	 // FIXME: Use logging system
-	 cout << "Error: Wrong cell type for mapping (must be a triangle)." << endl;
+	 std::cout << "Error: Wrong cell type for mapping (must be a triangle)." << std::endl;
 	 exit(1);
   }
   
@@ -67,7 +67,7 @@ void TriLinMapping::update(const Cell& cell)
   // Check determinant
   if ( fabs(d) < DOLFIN_EPS ) {
 	 // FIXME: Use logging system
-	 cout << "Error: mapping from reference element is singular." << endl;
+	 std::cout << "Error: mapping from reference element is singular." << std::endl;
 	 exit(1);
   }
   

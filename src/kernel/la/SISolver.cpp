@@ -20,16 +20,16 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
 {
   // Solve linear system of equations Ax=b, using a stationary iterative (SI) method 
   if ( A.size(0) != A.size(1) ) {
-    cout << "Must be a square matrix." << endl;
+    std::cout << "Must be a square matrix." << std::endl;
     exit(1);
   }
   if ( A.size(0) != b.size() ) {
-    cout << "Not compatible matrix and vector sizes." << endl;
+    std::cout << "Not compatible matrix and vector sizes." << std::endl;
     exit(1);
   }
   if ( x.size() != b.size() ) x.init(b.size());
   
-  cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << endl;
+  std::cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << std::endl;
   
   // Check if b=0 => x=0
   real norm_b = b.norm();
@@ -56,13 +56,13 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
       iterateSOR(A,x,b);
       break;
     default:
-      cout << "Unknown stationary iterative method" << endl;
+      std::cout << "Unknown stationary iterative method" << std::endl;
       exit(1);
     }
     
     if (iteration == (max_no_iterations - 1)){
       break;
-      //cout << "SI iterations did not converge: residual = " << norm_r << endl;
+      //std::cout << "SI iterations did not converge: residual = " << norm_r << std::endl;
       //exit(1);
     }
     norm_r = getResidual(A,x,b);
@@ -70,25 +70,25 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   
   switch(method){ 
   case richardson:
-    cout << "Richardson";
+    std::cout << "Richardson";
     break;
   case jacobi:
-    cout << "Jacobi";
+    std::cout << "Jacobi";
     break;
   case gauss_seidel:
-    cout << "Gauss-Seidel";
+    std::cout << "Gauss-Seidel";
     break;
   case sor:
-    cout << "SOR";
+    std::cout << "SOR";
     break;
   default:
-    cout << "Unknown stationary iterative method" << endl;
+    std::cout << "Unknown stationary iterative method" << std::endl;
     exit(1);
   }
   if (norm_r < tol*norm_b){
-    cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << endl;
+    std::cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << std::endl;
   } else{
-    cout << " iterations did not converge: residual = " << norm_r << endl;
+    std::cout << " iterations did not converge: residual = " << norm_r << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

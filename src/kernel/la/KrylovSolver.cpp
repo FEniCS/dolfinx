@@ -28,15 +28,15 @@ void KrylovSolver::setMethod(Krylov_method method)
 void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 {
   if ( A.size(0) != A.size(1) ) {
-    cout << "Must be a square matrix." << endl;
+    std::cout << "Must be a square matrix." << std::endl;
     exit(1);
   }
   if ( A.size(0) != b.size() ) {
-    cout << "Not compatible matrix and vector sizes." << endl;
+    std::cout << "Not compatible matrix and vector sizes." << std::endl;
     exit(1);
   }
   
-  cout << "Using Krylov solver for linear system of " << b.size() << " unknowns" << endl;
+  std::cout << "Using Krylov solver for linear system of " << b.size() << " unknowns" << std::endl;
   
   // Check if we need to resize x
   if (x.size() != b.size()) x.init(b.size());
@@ -56,7 +56,7 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
     solveCG(A,x,b);
     break;
   default:
-    cout << "Krylov method not implemented" << endl;
+    std::cout << "Krylov method not implemented" << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
@@ -71,13 +71,13 @@ void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
     no_iterations = restartedGMRES(A,x,b,k_max);
     norm_residual = getResidual(A,x,b);
     if (norm_residual < (tol*b.norm())){
-      if ( i > 0 ) cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
-      else cout << "GMRES converged after " << no_iterations << " iterations";
-      cout << " (residual = " << norm_residual << ")." << endl;
+      if ( i > 0 ) std::cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
+      else std::cout << "GMRES converged after " << no_iterations << " iterations";
+      std::cout << " (residual = " << norm_residual << ")." << std::endl;
       break;
     }
     if (i == max_no_restarts-1) {
-      cout << "GMRES iterations did not converge: residual = " << norm_residual << endl;
+      std::cout << "GMRES iterations did not converge: residual = " << norm_residual << std::endl;
       exit(1);
     }
   }
@@ -132,8 +132,6 @@ int KrylovSolver::restartedGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
     mat_v(i, 0) = r(i)/norm_residual;
 
   real rho  = norm_residual;
-
-  real beta = rho;
 
   vec_g = 0.0;
   vec_g(0) = rho;
@@ -281,7 +279,7 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
 
     if (k == k_max-1){
       norm_residual = getResidual(A,x,b);
-      cout << "CG iterations did not converge: residual = " << norm_residual << endl;
+      std::cout << "CG iterations did not converge: residual = " << norm_residual << std::endl;
       exit(1);
     }
 
@@ -289,8 +287,8 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
   }
 
   norm_residual = getResidual(A,x,b);
-  cout << "CG converged after " << k << " iterations" 
-       << " (residual = " << norm_residual << ")." << endl;
+  std::cout << "CG converged after " << k << " iterations" 
+       << " (residual = " << norm_residual << ")." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::applyPxu(Matrix &A, Vector &x, Vector &u)
@@ -316,7 +314,7 @@ void KrylovSolver::applyPxu(Matrix &A, Vector &x, Vector &u)
     return;
     break;
   default:
-    cout << "Unknown preconditioner" << endl;
+    std::cout << "Unknown preconditioner" << std::endl;
     exit(1);
   }
 
@@ -347,7 +345,7 @@ void KrylovSolver::solvePxu(Matrix &A, Vector &x, Vector &u)
     return;
     break;
   default:
-    cout << "Unknown preconditioner" << endl;
+    std::cout << "Unknown preconditioner" << std::endl;
     exit(1);
   }
 
@@ -378,7 +376,7 @@ void KrylovSolver::solvePxv(Matrix &A, Vector &x, DenseMatrix &v, int k)
     return;
     break;
   default:
-    cout << "Unknown preconditioner" << endl;
+    std::cout << "Unknown preconditioner" << std::endl;
     exit(1);
   }
 

@@ -97,14 +97,14 @@ void XMLGrid::endElement(const xmlChar *name)
 
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::reading(string filename)
+void XMLGrid::reading(std::string filename)
 {
-  cout << "Reading grid from file \"" << filename << "\"." << endl;
+  std::cout << "Reading grid from file \"" << filename << "\"." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::done()
 {
-  cout << grid << endl;
+  std::cout << grid << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)

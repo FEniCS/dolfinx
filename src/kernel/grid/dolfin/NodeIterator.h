@@ -40,8 +40,6 @@ namespace dolfin {
 	 Node& operator*() const;
 	 Node* operator->() const;
 
-  private:
-
 	 // Base class for node iterators
 	 class GenericNodeIterator {
 	 public:
@@ -115,6 +113,8 @@ namespace dolfin {
 		
 	 };
 	 
+  private:
+
 	 GenericNodeIterator *n;
 	 
   };

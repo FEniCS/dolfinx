@@ -1,3 +1,4 @@
+ - Fix code to compile with g++-3.2 -Wall -Werror
  - New operators for Matrix
  - New and faster GMRES solver (speedup factor 4)
  - Changed name from SparseMatrix to Matrix

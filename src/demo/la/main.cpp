@@ -3,6 +3,7 @@
 
 #include <dolfin.h>
 
+using namespace std;
 using namespace dolfin;
 
 int main(int argc, char **argv)

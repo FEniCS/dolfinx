@@ -20,13 +20,13 @@ void System::update()
   sysinfo_name(_name);
   sysinfo_vers(_vers);
   
-  cout << "Reading system info:" << endl;
-  cout << "  user    = " << _user;
-  cout << "  date    = " << _date;
-  cout << "  host    = " << _host;
-  cout << "  machine = " << _mach;
-  cout << "  sysname = " << _name;
-  cout << "  version = " << _vers;
+  std::cout << "Reading system info:" << std::endl;
+  std::cout << "  user    = " << _user << std::endl;
+  std::cout << "  date    = " << _date << std::endl;
+  std::cout << "  host    = " << _host << std::endl;
+  std::cout << "  machine = " << _mach << std::endl;
+  std::cout << "  sysname = " << _name << std::endl;
+  std::cout << "  version = " << _vers << std::endl;
 }
 //-----------------------------------------------------------------------------
 const char* System::user() const

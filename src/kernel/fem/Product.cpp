@@ -323,7 +323,8 @@ FunctionSpace::ElementFunction dolfin::operator*
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-ostream& dolfin::operator << (ostream& output, const FunctionSpace::Product &v)
+std::ostream& dolfin::operator << (std::ostream& output,
+											  const FunctionSpace::Product &v)
 {
   output << "[ Product with " << v.n << " factors: ";
   

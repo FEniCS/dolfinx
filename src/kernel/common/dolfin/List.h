@@ -70,7 +70,7 @@ public:
 		  if ( !b->next )
 			 break;
 		}
-		cout << "List::create(): Cannot find an empty position" << endl;
+		std::cout << "List::create(): Cannot find an empty position" << std::endl;
 	 }
 	 
 	 // Use next empty position
@@ -171,9 +171,9 @@ public:
 		
 		// Allocate memory for this block
 		if ( !(data = new T[BLOCK_SIZE]) )
-		  cout << "Out of memory" << endl;
+		  std::cout << "Out of memory" << std::endl;
 		if ( !(empty = new bool[BLOCK_SIZE]) )
-		  cout << "Out of memory" << endl;
+		  std::cout << "Out of memory" << std::endl;
 		for (int i=0;i<BLOCK_SIZE;i++)
 		  empty[i] = true;
 		pos = 0;
@@ -219,7 +219,7 @@ public:
 
 		// Check if the list is full
 		if ( used == BLOCK_SIZE )
-		  cout << "Block::create(): Block is full" << endl;
+		  std::cout << "Block::create(): Block is full" << std::endl;
 		
 		// Check if there is an empty position
 		if ( used != pos ){
@@ -230,7 +230,7 @@ public:
 				*id = number*BLOCK_SIZE + i;
 				return data + i;
 			 }
-		  cout << "Block::create(): Unable to find an empty position" << endl;
+		  std::cout << "Block::create(): Unable to find an empty position" << std::endl;
 		}
 		
 		// Use next available position
@@ -394,7 +394,7 @@ protected:
 	 }
 
 	 // Something strange happened
-	 cout << "List::iterator_start(): Unable to find first object in list" << endl;
+	 std::cout << "List::iterator_start(): Unable to find first object in list" << std::endl;
   }
   
   // Step iterator to the next position in the list

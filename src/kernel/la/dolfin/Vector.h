@@ -42,7 +42,7 @@ namespace dolfin {
 	 
 	 // Output
 	 void show() const;
-	 friend ostream& operator << (ostream& output, Vector& vector);
+	 friend std::ostream& operator << (std::ostream& output, Vector& vector);
 	 
 	 // Friends
 	 friend class DirectSolver;

@@ -3,6 +3,9 @@
 
 #include <dolfin.h>
 
+using namespace std;
+using namespace dolfin;
+
 int main()
 {
   cout << "This is just an empty template." << endl;

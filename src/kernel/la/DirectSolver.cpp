@@ -28,7 +28,7 @@ void DirectSolver::LU(DenseMatrix &A)
   
   // Check that the matrix is square
   if ( A.size(0) != A.size(1) ) {
-	 cout << "DenseMatrix::LU(): Matrix is not square." << endl;
+	 std::cout << "DenseMatrix::LU(): Matrix is not square." << std::endl;
 	 exit(1);
   }
 	 
@@ -59,7 +59,7 @@ void DirectSolver::LU(DenseMatrix &A)
 	 for (j=1;j<=n;j++)
 		if ((temp=fabs(a[i-1][j-1])) > big) big=temp;
 	 if (big == 0.0) {
-		cout << "DirectSolver::LU(): Matrix is singular." << endl;
+		std::cout << "DirectSolver::LU(): Matrix is singular." << std::endl;
 		exit(1);
 	 }
 	 vv[i-1]=1.0/big;
@@ -119,7 +119,7 @@ void DirectSolver::solveLU(DenseMatrix &LU, Vector &x, Vector &b)
   if ( LU.size(0) != x.size() )
 	 x.init(LU.size(0));
   if ( LU.size(1) != b.size() ) {
-	 cout << "DenseMatrix::LU(): Matrix is not square." << endl;
+	 std::cout << "DenseMatrix::LU(): Matrix is not square." << std::endl;
 	 exit(1);
   }
   

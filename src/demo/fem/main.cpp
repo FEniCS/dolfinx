@@ -3,6 +3,7 @@
 
 #include <dolfin.h>
 
+using namespace std;
 using namespace dolfin;
 
 real f0(real x, real y, real z, real t) { return 1 - x - y; }

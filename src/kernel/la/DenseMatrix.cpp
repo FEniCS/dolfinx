@@ -9,7 +9,7 @@ using namespace dolfin;
 DenseMatrix::DenseMatrix(int m, int n)
 {
   if ( (m<=0) || (n<=0) ) {
-	 cout << "DenseMatrix::DenseMatrix(): Illegal dimensions" << endl;
+	 std::cout << "DenseMatrix::DenseMatrix(): Illegal dimensions" << std::endl;
 	 exit(1);
   }
   
@@ -37,7 +37,7 @@ DenseMatrix::DenseMatrix(Matrix& A)
 void DenseMatrix::init(int m, int n)
 {
   if ( m <= 0 || n <= 0 ) {
-	 cout << "DenseMatrix::init(): Illegal dimensions" << endl;
+	 std::cout << "DenseMatrix::init(): Illegal dimensions" << std::endl;
 	 exit(1);
   }
  

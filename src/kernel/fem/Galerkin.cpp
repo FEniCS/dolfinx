@@ -78,8 +78,8 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   alloc(A, grid);
 
   // Write a message
-  cout << "Assembling: system size is ";
-  cout << A.size(0) << " x " << A.size(1) << "." << endl;
+  std::cout << "Assembling: system size is ";
+  std::cout << A.size(0) << " x " << A.size(1) << "." << std::endl;
 
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
@@ -101,7 +101,7 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   A.resize();
 
   // Write a message
-  cout << "Assembling: " << A << endl;
+  std::cout << "Assembling: " << A << std::endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
@@ -128,12 +128,12 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   }
   
   // Write a message
-  cout << "Assembling: " << b << endl;
+  std::cout << "Assembling: " << b << std::endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 {
-  cout << "Setting boundary condition: Works only for nodal basis." << endl;
+  std::cout << "Setting boundary condition: Works only for nodal basis." << std::endl;
   
   BoundaryCondition bc;
   bcfunction bcf;
@@ -144,7 +144,7 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 
   // Write a message
   if ( !bcf )
-	 cout << "Boundary conditions not specified." << endl;
+	 std::cout << "Boundary conditions not specified." << std::endl;
   
   // Iterate over all cells in the grid
   for (NodeIterator node(grid); !node.end(); ++node) {
@@ -165,13 +165,13 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 	 case BoundaryCondition::NEUMANN:
 		if ( bc.val() != 0.0 ) {
 		  // FIXME: Use logging system
-		  cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << endl;
+		  std::cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << std::endl;
 		  exit(1);
 		}
 		break;
 	 default:
 		// FIXME: Use logging system
-		cout << "Error: Unknown boundary condition." << endl;
+		std::cout << "Error: Unknown boundary condition." << std::endl;
 		break;
 	 }
 	 
@@ -188,20 +188,20 @@ void Galerkin::init(Grid &grid)
   // Create default finite element
   switch ( grid.type() ) {
   case Cell::TRIANGLE:
-	 cout << "Using standard piecewise linears on triangles." << endl;
+	 std::cout << "Using standard piecewise linears on triangles." << std::endl;
 	 element    = new P1TriElement();
 	 mapping    = new TriLinMapping();
 	 quadrature = new TriangleMidpointQuadrature();
 	 break;
   case Cell::TETRAHEDRON:
-	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
+	 std::cout << "Using standard piecewise linears on tetrahedrons." << std::endl;
 	 element    = new P1TetElement();
 	 mapping    = new TetLinMapping();
 	 quadrature = new TetrahedronMidpointQuadrature();
 	 break;
   default:
 	 // FIXME: Use logging system
-	 cout << "Error: No default spaces for this type of cells." << endl;
+	 std::cout << "Error: No default spaces for this type of cells." << std::endl;
 	 exit(1);
   }
   

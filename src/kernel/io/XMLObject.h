@@ -20,7 +20,7 @@ namespace dolfin {
 	 virtual void endElement   (const xmlChar *name) = 0;
 
 	 // Write message before and after reading file
-	 virtual void reading(string filename) {};
+	 virtual void reading(std::string filename) {};
 	 virtual void done() {};
 	 
 	 bool dataOK();

@@ -81,7 +81,7 @@ namespace dolfin {
 	 bool operator! () const;
 	 
 	 // Output
-	 friend ostream& operator << (ostream& output, const ShapeFunction &v);
+	 friend std::ostream& operator << (std::ostream& output, const ShapeFunction &v);
 	 
   private:
 

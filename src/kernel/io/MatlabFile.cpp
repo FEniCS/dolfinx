@@ -18,19 +18,19 @@ using namespace dolfin;
 void MatlabFile::operator>>(Vector& x)
 {
   // FIXME: Use logging system
-  cout << "Warning: Cannot read vectors from Matlab files." << endl;
+  std::cout << "Warning: Cannot read vectors from Matlab files." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Matrix& A)
 {
   // FIXME: Use logging system
-  cout << "Warning: Cannot read matrices from Matlab files." << endl;
+  std::cout << "Warning: Cannot read matrices from Matlab files." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Grid& grid)
 {
   // FIXME: Use logging system
-  cout << "Warning: Cannot read grids from Matlab files." << endl;
+  std::cout << "Warning: Cannot read grids from Matlab files." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Vector& x)
@@ -71,6 +71,6 @@ void MatlabFile::operator<<(const Matrix& A)
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Grid& Grid)
 {
-  cout << "Warning: Cannot save grids to Matlab files." << endl;
+  std::cout << "Warning: Cannot save grids to Matlab files." << std::endl;
 }
 //-----------------------------------------------------------------------------

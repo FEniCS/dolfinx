@@ -27,7 +27,7 @@ namespace dolfin {
 	 real y;
 	 real z;
 
-	 friend ostream& operator << (ostream& output, const Point& p);
+	 friend std::ostream& operator << (std::ostream& output, const Point& p);
 	 
   };
 

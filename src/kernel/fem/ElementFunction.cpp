@@ -595,15 +595,15 @@ FunctionSpace::ElementFunction dolfin::operator*
   return v * a;
 }
 //-----------------------------------------------------------------------------
-ostream& dolfin::operator << (ostream& output,
-										const FunctionSpace::ElementFunction &v)
+std::ostream& dolfin::operator << (std::ostream& output,
+											  const FunctionSpace::ElementFunction &v)
 {
-  output << "[ ElementFunction with " << v.n << " terms ]" << endl;
+  output << "[ ElementFunction with " << v.n << " terms ]" << std::endl;
   
   for (int  i = 0; i < v.n; i++) {
 	 output << "  " << v.a[i] << " * " << v.v[i];
 	 if ( i < (v.n - 1) )
-		output << endl;
+		output << std::endl;
   }
   
   return output;

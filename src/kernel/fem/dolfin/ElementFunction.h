@@ -94,7 +94,7 @@ namespace dolfin {
 	 real operator* (Integral::Measure &dm) const;
 
 	 // Output
-	 friend ostream& operator << (ostream& output, const ElementFunction &v);
+	 friend std::ostream& operator << (std::ostream& output, const ElementFunction &v);
 
 	 // Friends
 	 friend class Function;

@@ -96,7 +96,7 @@ void Parameter::set(const char *identifier, va_list aptr)
 	 break;
 	 
   default:
-	 cout << "Unknown type for parameter \"" << identifier << "\"." << endl;
+	 std::cout << "Unknown type for parameter \"" << identifier << "\"." << std::endl;
   }
   
   // Save the identifier
@@ -132,7 +132,7 @@ void Parameter::get(va_list aptr)
 	 
 	 p_string = va_arg(aptr,char *);
 	 if ( !p_string ){
-		cout << "Parameter:Get(): Unable to write parameter to null pointer." << endl;
+		std::cout << "Parameter:get(): Unable to write parameter to null pointer." << std::endl;
 		return;
 	 }
 	 sprintf(p_string,"%s",val_string);
@@ -151,7 +151,7 @@ void Parameter::get(va_list aptr)
 	 break;
 	 
   default:
-	 cout << "Unknown type for parameter \"" << identifier << "\"." << endl;
+	 std::cout << "Unknown type for parameter \"" << identifier << "\"." << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ void Parameter::operator= (int zero)
 {
   // FIXME: Use logging system
   if ( zero != 0 ) {
-	 cout << "Assignment to int must be zero." << endl;
+	 std::cout << "Assignment to int must be zero." << std::endl;
 	 exit(1);
   }
   clear();

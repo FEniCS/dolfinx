@@ -81,7 +81,7 @@ namespace dolfin {
 	 real operator* (Integral::Measure &dm) const;
 
 	 // Output
-	 friend ostream& operator << (ostream& output, const Product &v);
+	 friend std::ostream& operator << (std::ostream& output, const Product &v);
 	 
   private:
 	 

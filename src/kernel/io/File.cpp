@@ -19,7 +19,7 @@ File::File(const std::string& filename)
 	 file = new MatlabFile(filename);
   else{
 	 file = 0;
-	 cout << "Unknown type for file " << filename << endl;
+	 std::cout << "Unknown type for file " << filename << std::endl;
 	 exit(1);
   }
 }

@@ -63,7 +63,7 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   // Check values
   if ( size < 0 ) {
 	 // FIXME: Temporary until we get the logsystem working
-	 cout << "Error reading XML data: size of vector must be positive." << endl;
+	 std::cout << "Error reading XML data: size of vector must be positive." << std::endl;
 	 exit(1);
   }
 
@@ -84,9 +84,9 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   // Check values
   if ( row < 0 || row >= x.size() ) {
 	 // FIXME: Temporary until we get the logsystem working
-	 cout << "Error reading XML data: row index " << row
-			<< " for vector out of range (0 - " << x.size()
-			<< ")" << endl;
+	 std::cout << "Error reading XML data: row index " << row
+				  << " for vector out of range (0 - " << x.size()
+				  << ")" << std::endl;
 	 exit(1);
   }
   

@@ -137,7 +137,7 @@ real Vector::norm(int i)
     return sqrt(norm);
     break;
   default:
-	 cout << "Unknown vector norm" << endl;
+	 std::cout << "Unknown vector norm" << std::endl;
 	 exit(1);
   }  
 
@@ -151,15 +151,15 @@ void Vector::add(real scalar, Vector &vector)
 //-----------------------------------------------------------------------------
 void Vector::show() const
 {
-  cout << "[ ";
+  std::cout << "[ ";
   for (int i = 0; i < n; i++)
-	 cout << values[i] << " ";
-  cout << "]" << endl;
+	 std::cout << values[i] << " ";
+  std::cout << "]" << std::endl;
 }
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-ostream& dolfin::operator << (ostream& output, Vector& vector)
+std::ostream& dolfin::operator << (std::ostream& output, Vector& vector)
 {
   output << "[ Vector of size " << vector.size()
 			<< ", approximatetly ";

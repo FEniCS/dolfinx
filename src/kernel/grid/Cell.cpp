@@ -122,7 +122,7 @@ int Cell::nodeID(int i) const
 int Cell::edgeID(int i) const
 {
   // FIXME: Use logging system
-  cout << "Cell::edgeID() is not implemented." << endl;
+  std::cout << "Cell::edgeID() is not implemented." << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ void Cell::set(Node *n0, Node *n1, Node *n2)
 {
   if ( cn.size() != 3 ) {
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Wrong number of nodes for this cell type." << endl;
+	 std::cout << "Wrong number of nodes for this cell type." << std::endl;
 	 exit(1);
   }
 
@@ -143,7 +143,7 @@ void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
   if ( cn.size() != 4 ) {
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Wrong number of nodes for this cell type." << endl;
+	 std::cout << "Wrong number of nodes for this cell type." << std::endl;
 	 exit(1);
   }
 
@@ -172,7 +172,7 @@ void Cell::init(Type type)
 	 break;
   default:
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Unknown cell type" << endl;
+	 std::cout << "Unknown cell type" << std::endl;
 	 exit(1);
   }
   
@@ -206,7 +206,7 @@ std::ostream& dolfin::operator << (std::ostream& output, const Cell& cell)
 	 break;
   default:
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Unknown cell type" << endl;
+	 std::cout << "Unknown cell type" << std::endl;
 	 exit(1);
   }	 
   

@@ -14,25 +14,25 @@ void dolfin::sysinfo()
 {
   char string[DOLFIN_WORDLENGTH];
 
-  cout << "- System info:" << endl;
+  std::cout << "- System info:" << std::endl;
   
   sysinfo_user(string);
-  cout << "- User:    " << string << endl;
+  std::cout << "- User:    " << string << std::endl;
   
   sysinfo_date(string);
-  cout << "- Date:    " << string << endl;
+  std::cout << "- Date:    " << string << std::endl;
   
   sysinfo_host(string);
-  cout << "- Host:    " << string << endl;
+  std::cout << "- Host:    " << string << std::endl;
   
   sysinfo_mach(string);
-  cout << "- Machine: " << string << endl;
+  std::cout << "- Machine: " << string << std::endl;
   
   sysinfo_name(string);
-  cout << "- System:  " << string << endl;
+  std::cout << "- System:  " << string << std::endl;
   
   sysinfo_vers(string);
-  cout << "- Version: " << string << endl;
+  std::cout << "- Version: " << string << std::endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::sysinfo_user(char* string)

@@ -120,9 +120,9 @@ void Integral::Measure::init()
 //-----------------------------------------------------------------------------
 void Integral::Measure::resize(int new_order, int new_n)
 {
-  cout << "Resizing integral table." << endl;
-  cout << "Number of factors:   " << new_order << endl;
-  cout << "Number of functions: " << new_n << endl;
+  std::cout << "Resizing integral table." << std::endl;
+  std::cout << "Number of factors:   " << new_order << std::endl;
+  std::cout << "Number of functions: " << new_n << std::endl;
   
   // Create a new table
   Tensor<Value> **new_table = new (Tensor<Value> *)[new_order];

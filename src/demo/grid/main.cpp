@@ -3,6 +3,7 @@
 
 #include <dolfin.h>
 
+using namespace std;
 using namespace dolfin;
 
 int main()
@@ -13,7 +14,7 @@ int main()
   file >> grid;
 
   cout << grid << endl;
-
+  
   grid.show();
 
   return 0;

@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream.h>
+#include <iostream>
 #include <stdio.h>
 #include <math.h>
 #include <strings.h>
@@ -71,21 +71,21 @@ Cell::Type Grid::type()
 //-----------------------------------------------------------------------------
 void Grid::show()
 {
-  cout << "-------------------------------------------------------------------------------" << endl;
-  cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells:" << endl;
-  cout << endl;
+  std::cout << "-------------------------------------------------------------------------------" << std::endl;
+  std::cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells:" << std::endl;
+  std::cout << std::endl;
 
   for (NodeIterator n(this); !n.end(); ++n)
-	 cout << "  " << *n << endl;
+	 std::cout << "  " << *n << std::endl;
 
-  cout << endl;
+  std::cout << std::endl;
   
   for (CellIterator c(this); !c.end(); ++c)
-	 cout << "  " << *c << endl;
+	 std::cout << "  " << *c << std::endl;
   
-  cout << endl;
+  std::cout << std::endl;
   
-  cout << "-------------------------------------------------------------------------------" << endl;
+  std::cout << "-------------------------------------------------------------------------------" << std::endl;
 }
 //-----------------------------------------------------------------------------
 Node* Grid::createNode()

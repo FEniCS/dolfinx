@@ -170,7 +170,7 @@ void FunctionSpace::ShapeFunction::operator= (int zero)
 {
   // FIXME: Use logging system
   if ( zero != 0 ) {
-	 cout << "Assignment to int must be zero." << endl;
+	 std::cout << "Assignment to int must be zero." << std::endl;
 	 exit(1);
   }
   
@@ -190,8 +190,8 @@ FunctionSpace::ElementFunction dolfin::operator*
   return v * a;
 }
 //-----------------------------------------------------------------------------
-ostream& dolfin::operator << (ostream& output,
-										const FunctionSpace::ShapeFunction &v)
+std::ostream& dolfin::operator << (std::ostream& output,
+											  const FunctionSpace::ShapeFunction &v)
 {
   output << "[ ShapeFunction with id = " << v._id << " ]";
   

@@ -1,7 +1,7 @@
+#include <iostream>
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
-#include <iostream.h>
 #include <time.h>
 #include <sys/utsname.h>
 #include <stdlib.h>
@@ -50,7 +50,7 @@ void ParameterList::set_aptr(const char *identifier, va_list aptr)
   }
 
   // Couldn't find the parameter
-  cout << "Warning: Trying to set value of unknown parameter \"" << identifier << "\"." << endl;
+  std::cout << "Warning: Trying to set value of unknown parameter \"" << identifier << "\"." << std::endl;
 }
 //----------------------------------------------------------------------------
 void ParameterList::get(const char *identifier, ...)
@@ -73,7 +73,7 @@ void ParameterList::get_aptr(const char *identifier, va_list aptr)
   }
   
   // Couldn't find the parameter
-  cout << "Warning: Unknown parameter \"" << identifier << "\"" << endl;
+  std::cout << "Warning: Unknown parameter \"" << identifier << "\"" << std::endl;
 }
 //----------------------------------------------------------------------------
 bool ParameterList::changed(const char *identifier)
@@ -83,7 +83,7 @@ bool ParameterList::changed(const char *identifier)
   if ( index >= 0 )
 	 return list(index).changed();
 
-  cout << "Error: Status for unknown parameter <" << identifier << "> not available." << endl;
+  std::cout << "Error: Status for unknown parameter <" << identifier << "> not available." << std::endl;
   exit(1);
 }
 //----------------------------------------------------------------------------

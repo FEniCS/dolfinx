@@ -40,8 +40,6 @@ namespace dolfin {
 	 Cell& operator*() const;
 	 Cell* operator->() const;
 
-  private:
-
 	 // Base class for cell iterators
 	 class GenericCellIterator {
 	 public:
@@ -113,6 +111,8 @@ namespace dolfin {
 		
 	 };
 
+  private:
+	 
 	 GenericCellIterator *c;
 	 
   };
