@@ -316,7 +316,7 @@ real Integral::BoundaryMeasure::integral(const FunctionSpace::Product& v)
   // Compute integral using the quadrature rule
   real I = 0.0;
   for (int i = 0; i < q->size(); i++)
-    I += q->weight(i) * v(q->point(i));
+    I += q->weight(i) * v((*m)(q->point(i), boundary));
   
   // Set value
   table[boundary][v.size() - 1](v.id()).set(I);
