@@ -36,6 +36,8 @@ grid on
 xlabel('t')
 ylabel('k')
 
+print -depsc solution_1.eps
+
 disp('Press any key to continue')
 pause
 
@@ -71,6 +73,8 @@ axis([-5e-3 0.1 1e-5 2])
 grid on
 xlabel('t')
 ylabel('k')
+
+print -depsc solution_2.eps
 
 disp('Press any key to continue')
 pause
@@ -108,6 +112,8 @@ grid on
 xlabel('t')
 ylabel('k')
 
+print -depsc solution_3.eps
+
 disp('Press any key to continue')
 pause
 
@@ -144,6 +150,8 @@ grid on
 xlabel('t')
 ylabel('k')
 
+print -depsc solution_4.eps
+
 disp('Press any key to continue')
 pause
 
@@ -156,7 +164,7 @@ figure(1); clf
 
 subplot(2,2,1)
 plot(t',u')
-axis([-5 180 -0.02 0.45])
+axis([-5 180 -0.02 0.5])
 xlabel('t')
 ylabel('u')
 
@@ -179,6 +187,8 @@ axis([-2e-1 5 5e-3 2])
 grid on
 xlabel('t')
 ylabel('k')
+
+print -depsc solution_5.eps
 
 disp('Press any key to continue')
 pause
@@ -216,6 +226,8 @@ grid on
 xlabel('t')
 ylabel('k')
 
+print -depsc solution_6.eps
+
 disp('Press any key to continue')
 pause
 
@@ -238,6 +250,8 @@ axis([-0.01 1 5e-6 2])
 grid on
 xlabel('t')
 ylabel('k')
+
+print -depsc solution_7.eps
 
 disp('Press any key to continue')
 pause
@@ -274,6 +288,8 @@ grid on
 xlabel('t')
 ylabel('k')
 
+print -depsc solution_8.eps
+
 disp('Press any key to continue')
 pause
 
@@ -302,3 +318,5 @@ axis([-0.25 30 -0.05 1.05])
 grid on
 xlabel('t')
 ylabel('k')
+
+print -depsc solution_9.eps

@@ -12,7 +12,7 @@ public:
   
   TestProblem5() : ODE(6)
   {
-    dolfin_info("The Akzo-Nobel problem.");
+    dolfin_info("The Chemical Akzo-Nobel problem.");
 
     // Final time
     T = 180;
@@ -24,6 +24,7 @@ public:
     k4  = 0.42;
     K   = 34.4;
     klA = 3.3;
+    Ks  = 115.83;
     p   = 0.9;
     H   = 737.0;
 
@@ -35,17 +36,17 @@ public:
   {
     switch (i) {
     case 0:
-      return 0.437;
+      return 0.444;
     case 1:
       return 0.00123;
     case 2:
       return 0.0;
     case 3:
-      return 0.0;
+      return 0.007;
     case 4:
       return 0.0;
     default:
-      return 0.367;
+      return 0.36;
     }
   }
 
@@ -63,7 +64,7 @@ public:
     case 4:
       return r2(u) - r3(u) + r5(u);
     default:
-      return -r5(u);
+      return Ks*u(0)*u(3) - u(5);
     }
   }
 
@@ -99,6 +100,6 @@ private:
     return klA * (p/H - u(1));
   }
 
-  real k1, k2, k3, k4, K, klA, p, H;
+  real k1, k2, k3, k4, K, klA, Ks, p, H;
 
 };

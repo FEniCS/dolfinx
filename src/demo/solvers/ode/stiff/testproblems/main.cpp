@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     dolfin_info("  2 - the test system");
     dolfin_info("  3 - a non-normal test problem");
     dolfin_info("  4 - the HIRES problem");
-    dolfin_info("  5 - the Akzo-Nobel problem");
+    dolfin_info("  5 - the Chemical Akzo-Nobel problem");
     dolfin_info("  6 - Van der Pol's equation");
     dolfin_info("  7 - the heat equation");
     dolfin_info("  8 - a chemical reaction test problem");
