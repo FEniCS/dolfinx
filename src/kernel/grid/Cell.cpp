@@ -9,9 +9,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Cell::Cell()
 {
-  cn.init(noNodes());
-
-  c = 0;
+  _id = -1;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -59,10 +57,7 @@ int Cell::noBoundaries()
 //-----------------------------------------------------------------------------
 int Cell::id() const
 {
-  if ( c )
-	 return c->id();
-
-  return -1;
+  return _id;
 }
 //-----------------------------------------------------------------------------
 Cell::Type Cell::type() const
@@ -102,8 +97,7 @@ void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
 //-----------------------------------------------------------------------------
 void Cell::setID(int id)
 {
-  if ( c )
-	 c->setID(id);
+  _id = id;
 }
 //-----------------------------------------------------------------------------
 void Cell::init(Type type)
@@ -123,13 +117,8 @@ void Cell::init(Type type)
 	 cout << "Unknown cell type" << endl;
 	 exit(1);
   }
-
-}
-//-----------------------------------------------------------------------------
-void Cell::clear()
-{
-  if ( c )
-	 c->clear();
+  
+  cn.init(noNodes());
 }
 //-----------------------------------------------------------------------------
 bool Cell::neighbor(Cell &cell)
@@ -147,10 +136,16 @@ namespace dolfin {
   {
 	 switch ( cell.type() ){
 	 case Cell::TRIANGLE:
-		output << *( (Triangle *) cell.c );
+		output << "[Cell (triangle) with nodes ( ";
+		for (NodeIterator n(cell); !n.end(); ++n)
+		  output << n->id() << " ";
+		output << "]";
 		break;
 	 case Cell::TETRAHEDRON:
-		output << *( (Tetrahedron *) cell.c );
+		output << "[Cell (tetrahedron) with nodes ( ";
+		for (NodeIterator n(cell); !n.end(); ++n)
+		  output << n->id() << " ";
+		output << "]";
 		break;
 	 default:
 		// FIXME: Temporary until we fix the log system

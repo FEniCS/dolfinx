@@ -15,7 +15,6 @@ lib_LIBRARIES            = libdolfin-grid.a
 include_HEADERS          = 
 libdolfin_grid_a_SOURCES = Cell.cpp \
                            CellIterator.cpp \
-                           GenericCell.cpp \
                            Grid.cpp \
                            GridData.h \
                            GridData.cpp \

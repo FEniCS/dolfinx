@@ -168,7 +168,7 @@ void LocalField::Update(FiniteElement *element, real t)
   Resize(element->GetFunctionSpace());
 
   // Update the degrees of freedom
-  globalfield->GetLocalDof(element->GetCellNumber(),t,dof,component);
+  globalfield->GetLocalDof(element->cell(),t,dof,component);
 
   // Compute gradient
   ComputeGradient();

@@ -29,12 +29,14 @@ void InitGrid::clear(Grid *grid)
   cout << "Clearing connections" << endl;
 
   // Clear connectivity for nodes
-  for (NodeIterator n(grid); !n.end(); ++n)
-	 n->clear();
+  for (NodeIterator n(grid); !n.end(); ++n){
+	 n->nn.clear();
+	 n->nc.clear();
+  }
 	 
   // Clear connectivity for cells
   for (CellIterator c(grid); !c.end(); ++c)
-	 c->clear();
+	 c->cc.clear();
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initNodeCell(Grid *grid)

@@ -9,32 +9,32 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // NodeIterator
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(Grid &grid)
+NodeIterator::NodeIterator(const Grid &grid)
 {
   n = new GridNodeIterator(grid);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(Grid *grid)
+NodeIterator::NodeIterator(const Grid *grid)
 {
   n = new GridNodeIterator(*grid);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(Node &node)
+NodeIterator::NodeIterator(const Node &node)
 {
   n = new NodeNodeIterator(node);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(NodeIterator &nodeIterator)
+NodeIterator::NodeIterator(const NodeIterator &nodeIterator)
 {
   n = new NodeNodeIterator(*nodeIterator);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(Cell &cell)
+NodeIterator::NodeIterator(const Cell &cell)
 {
   n = new CellNodeIterator(cell);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(CellIterator &cellIterator)
+NodeIterator::NodeIterator(const CellIterator &cellIterator)
 {
   n = new CellNodeIterator(*cellIterator);
 }
@@ -73,7 +73,7 @@ Node* NodeIterator::operator->() const
 //-----------------------------------------------------------------------------
 // NodeIterator::GridNodeIterator
 //-----------------------------------------------------------------------------
-NodeIterator::GridNodeIterator::GridNodeIterator(Grid& grid)
+NodeIterator::GridNodeIterator::GridNodeIterator(const Grid& grid)
 {
   node_iterator = grid.grid_data->nodes.begin();
   at_end = grid.grid_data->nodes.end();
@@ -106,7 +106,7 @@ Node* NodeIterator::GridNodeIterator::pointer() const
 //-----------------------------------------------------------------------------
 // NodeIterator::CellNodeIterator
 //-----------------------------------------------------------------------------
-NodeIterator::CellNodeIterator::CellNodeIterator(Cell &cell)
+NodeIterator::CellNodeIterator::CellNodeIterator(const Cell &cell)
 {
   node_iterator = cell.cn.begin();
 }
@@ -138,7 +138,7 @@ Node* NodeIterator::CellNodeIterator::pointer() const
 //-----------------------------------------------------------------------------
 // NodeIterator::NodeNodeIterator
 //-----------------------------------------------------------------------------
-NodeIterator::NodeNodeIterator::NodeNodeIterator(Node &node)
+NodeIterator::NodeNodeIterator::NodeNodeIterator(const Node &node)
 {
   node_iterator = node.nn.begin();
 }

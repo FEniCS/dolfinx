@@ -1,1 +1,1 @@
-SUBDIRS = common grid io la main
+SUBDIRS = fem common grid io la main

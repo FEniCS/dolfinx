@@ -1,24 +1,11 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/Cell.h>
 #include <dolfin/Triangle.h>
-#include <dolfin/Node.h>
-#include <dolfin/Grid.h>
-#include <utils.h>
-#include <dolfin/Display.h>
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-Triangle::Triangle()
-{
-
-}
-//-----------------------------------------------------------------------------
-Triangle::~Triangle()
-{
-
-}
 //-----------------------------------------------------------------------------
 int Triangle::noNodes()
 {
@@ -45,31 +32,7 @@ Cell::Type Triangle::type()
   return Cell::TRIANGLE;
 }
 //-----------------------------------------------------------------------------
-void Triangle::set(Node *n0, Node *n1, Node *n2)
-{
-
-}
-//-----------------------------------------------------------------------------
-void Triangle::Set(Node *n1, Node *n2, Node *n3, int material)
-{
-
-}
-//----------------------------------------------------------------------------
-int Triangle::GetSize()
-{
-  return 3;
-}
-//-----------------------------------------------------------------------------
-Node* Triangle::GetNode(int node)
-{
-  if ( (node<0) || (node>=3) ){
-    int *tst;
-    tst[2638231] = 0;
-	 display->InternalError("Triangle::GetNode()","Illegal node: %d",node);
-  }
-  
-  return nodes[node];
-}
+/*
 //-----------------------------------------------------------------------------
 real Triangle::ComputeVolume(Grid *grid)
 {
@@ -124,61 +87,7 @@ real Triangle::ComputeCircumRadius(Grid *grid, real volume)
   return ( R );
 }
 //-----------------------------------------------------------------------------
-void Triangle::CountCell(Node *node_list)
-{
-  node_list[nodes[0]->GetNodeNo()]._nc += 1;
-  node_list[nodes[1]->GetNodeNo()]._nc += 1;
-  node_list[nodes[2]->GetNodeNo()]._nc += 1;
-}
-//-----------------------------------------------------------------------------
-void Triangle::AddCell(Node *node_list, int *current, int thiscell)
-{
-  int pos, n;
-  n=nodes[0]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[1]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[2]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-}
-//-----------------------------------------------------------------------------
-void Triangle::AddNodes(int exclude_node, int *new_nodes, int *pos)
-{
-  int n;
-
-  if ( (n = nodes[0]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-  if ( (n = nodes[1]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) )	new_nodes[(*pos)++] = n;
-  if ( (n = nodes[2]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) )	new_nodes[(*pos)++] = n;
-}
-//-----------------------------------------------------------------------------
-void Triangle::ComputeCellNeighbors(Node *node_list, int thiscell)
-{
-  // Although triangles on the boundary have only 2 neighbors, allocate
-  // for 3 neighbors (data will be moved to another location anyway).
-  if ( !neighbor_cells )
-	 neighbor_cells = new int[3];
-
-  int c;
-  
-  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-  if ( node_list[nodes[1]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-
-}
-//-----------------------------------------------------------------------------
-Node* Triangle::getNode(int i)
-{
-  return nodes[i];
-}
+*/
 //-----------------------------------------------------------------------------
 bool Triangle::neighbor(ShortList<Node *> &cn, Cell &cell)
 {
@@ -198,21 +107,5 @@ bool Triangle::neighbor(ShortList<Node *> &cn, Cell &cell)
 		  count++;
   
   return count == 2 || count == 3;
-}
-//-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  std::ostream& operator << (std::ostream& output, const Triangle& t)
-  {
-	 output << "[ Triangle: id = " << t.id() << " " << "  nodes = ("
-			  << t.nodes[0]->id() << ","
-			  << t.nodes[1]->id() << ","
-			  << t.nodes[2]->id() << ") ]";
-
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
 }
 //-----------------------------------------------------------------------------

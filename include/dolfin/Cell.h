@@ -10,9 +10,11 @@
 
 namespace dolfin {  
 
+  class Grid;
   class Node;
-  class GenericCell;
-   
+  class Triangle;
+  class Tetrahedron;
+  
   class Cell {
   public:
 
@@ -49,9 +51,11 @@ namespace dolfin {
 
 	 void setID(int id);
 	 void init(Type type);
-	 void clear();
 	 bool neighbor(Cell &cell);
 
+	 // Global cell number
+	 int _id;
+	 
 	 // The cell
 	 GenericCell *c;
 	 

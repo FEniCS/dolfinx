@@ -44,6 +44,11 @@ public:
 	 return _size;
   }
 
+  int getsize() const
+  {
+	 return _size;
+  }
+
   /// Adds the element to the next available position
   void add(T element)
   {
@@ -125,7 +130,7 @@ public:
   }
   
   /// Returns an iterator to the beginning of the list
-  Iterator begin()
+  Iterator begin() const
   {
 	 return Iterator(*this);
   }
@@ -145,7 +150,7 @@ public:
 	 }
 	 
 	 /// Creates an iterator positioned at the beginning of the list
-	 Iterator(ShortList<T> &list)
+	 Iterator(const ShortList<T> &list)
 	 {
 		if ( list._size > 0 ){
 		  element = list.list;

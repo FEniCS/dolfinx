@@ -20,14 +20,14 @@ namespace dolfin {
   class NodeIterator {
   public:
 	 
-	 NodeIterator(Grid &grid);
-	 NodeIterator(Grid *grid);
+	 NodeIterator(const Grid &grid);
+	 NodeIterator(const Grid *grid);
 
-	 NodeIterator(Node &node);
-	 NodeIterator(NodeIterator &nodeIterator);
+	 NodeIterator(const Node &node);
+	 NodeIterator(const NodeIterator &nodeIterator);
 	 
-	 NodeIterator(Cell &cell);
-	 NodeIterator(CellIterator &cellIterator);
+	 NodeIterator(const Cell &cell);
+	 NodeIterator(const CellIterator &cellIterator);
 	 
 	 ~NodeIterator();
 
@@ -58,7 +58,7 @@ namespace dolfin {
 	 class GridNodeIterator : public GenericNodeIterator {
 	 public:
 		
-		GridNodeIterator(Grid &grid); 
+		GridNodeIterator(const Grid &grid); 
 		
 		void operator++();
 		bool end();
@@ -76,7 +76,7 @@ namespace dolfin {
 	 class NodeNodeIterator : public GenericNodeIterator {
 	 public:
 
-		NodeNodeIterator(Node &node);
+		NodeNodeIterator(const Node &node);
 		void operator++();
 		bool end();
 
@@ -94,7 +94,7 @@ namespace dolfin {
 	 class CellNodeIterator : public GenericNodeIterator {
 	 public:
 
-		CellNodeIterator(Cell &cell);
+		CellNodeIterator(const Cell &cell);
 		void operator++();
 		bool end();
 

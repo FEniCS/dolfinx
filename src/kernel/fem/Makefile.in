@@ -73,10 +73,10 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/Galerkin.hh
+include_HEADERS = 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = Equation.hh                           EquationSystem.hh                           GlobalField.cpp                           GlobalField.hh                           FiniteElement.hh                           FunctionSpace.hh                           LocalField.hh                           ShapeFunction.hh                           TetLinFunction.hh                           TetLinSpace.hh                           TriLinFunction.hh                           TriLinFunction.hh
+libdolfin_fem_a_SOURCES = Equation.hh                           EquationSystem.h                           GlobalField.cpp                           GlobalField.h                           FiniteElement.h                           FunctionSpace.h                           LocalField.h                           ShapeFunction.h                           TetLinFunction.h                           TetLinSpace.h                           TriLinFunction.h                           TriLinFunction.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

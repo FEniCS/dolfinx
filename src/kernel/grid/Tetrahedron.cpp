@@ -1,22 +1,11 @@
-#include <utils.h>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Tetrahedron.h>
-#include <dolfin/Node.h>
-#include <dolfin/Grid.h>
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-Tetrahedron::Tetrahedron()
-{
-  
-}
-//-----------------------------------------------------------------------------
-Tetrahedron::~Tetrahedron()
-{
-  
-}
 //-----------------------------------------------------------------------------
 int Tetrahedron::noNodes()
 {
@@ -43,36 +32,7 @@ Cell::Type Tetrahedron::type()
   return Cell::TETRAHEDRON;
 }
 //-----------------------------------------------------------------------------
-void Tetrahedron::set(Node *n0, Node *n1, Node *n2, Node *n3)
-{
-
-
-  
-}
-//-----------------------------------------------------------------------------
-void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
-{
-  nodes[0] = n1;
-  nodes[1] = n2;
-  nodes[2] = n3;
-  nodes[3] = n4;
-  
-  this->material = material;
-}
-//-----------------------------------------------------------------------------
-int Tetrahedron::GetSize()
-{
-  return 4;
-}
-//-----------------------------------------------------------------------------
-Node* Tetrahedron::GetNode(int node)
-{
-  if ( (node<0) || (node>=4) )
-	 display->InternalError("Tetrahedron::GetNode()","Illegal node: %d",node);
-  
-  return nodes[node];
-}
-//-----------------------------------------------------------------------------
+/*
 real Tetrahedron::ComputeVolume(Grid *grid)
 {
   // Get the coordinates
@@ -148,74 +108,7 @@ real Tetrahedron::ComputeCircumRadius(Grid *grid, real volume)
 
   return ( R );
 }
-//-----------------------------------------------------------------------------
-void Tetrahedron::CountCell(Node *node_list)
-{
-  node_list[nodes[0]->GetNodeNo()]._nc += 1;
-  node_list[nodes[1]->GetNodeNo()]._nc += 1;
-  node_list[nodes[2]->GetNodeNo()]._nc += 1;
-  node_list[nodes[3]->GetNodeNo()]._nc += 1;
-}
-//-----------------------------------------------------------------------------
-void Tetrahedron::AddCell(Node *node_list, int *current, int thiscell)
-{
-  int pos, n;
-  n=nodes[0]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[1]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[2]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[3]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-}
-//-----------------------------------------------------------------------------
-void Tetrahedron::AddNodes(int exclude_node, int *new_nodes, int *pos)
-{
-  int n;
-
-  if ( (n = nodes[0]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-  if ( (n = nodes[1]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) )	new_nodes[(*pos)++] = n;
-  if ( (n = nodes[2]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-  if ( (n = nodes[3]->GetNodeNo()) != exclude_node )
-	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-}
-//-----------------------------------------------------------------------------
-void Tetrahedron::ComputeCellNeighbors(Node *node_list, int thiscell)
-{
-  // Although tetrahedrons on the boundary have only 3 neighbors, allocate
-  // for 4 neighbors (data will be moved to another location anyway).
-  if ( !neighbor_cells )
-	 neighbor_cells = new int[4];
-  
-  int c;
-  
-  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],
-																	&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],
-						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){	 
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],
-						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-  if ( node_list[nodes[1]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],
-						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[_nc] = c;
-	 _nc += 1;
-  }
-
-}
-//-----------------------------------------------------------------------------
-Node* Tetrahedron::getNode(int i)
-{
-  return nodes[i];
-}
+*/
 //-----------------------------------------------------------------------------
 bool Tetrahedron::neighbor(ShortList<Node *> &cn, Cell &cell)
 {
@@ -235,22 +128,5 @@ bool Tetrahedron::neighbor(ShortList<Node *> &cn, Cell &cell)
 		  count++;
   
   return count == 3 || count == 4;
-}
-//-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  std::ostream& operator << (std::ostream& output, const Tetrahedron &t)
-  {
-	 output << "[ Tetrahedron: id = " << t.id() << "  nodes = ("
-			  << t.nodes[0]->id() << ","
-			  << t.nodes[1]->id() << ","
-			  << t.nodes[2]->id() << ","
-			  << t.nodes[3]->id() << ") ]";
-	 
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-  
 }
 //-----------------------------------------------------------------------------

@@ -1,14 +1,14 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "GlobalField.hh"
-#include <dolfin/Display.hh>
-#include <Settings.hh>
-#include <dolfin/Grid.hh>
-#include <Vector.hh>
-#include <Output.hh>
+#include "GlobalField.h"
+#include <dolfin/Display.h>
+#include <Settings.h>
+#include <dolfin/Grid.h>
+#include <dolfin/Vector.h>
+#include <Output.h>
 
-using namespace Dolfin;
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 GlobalField::GlobalField(Grid *grid, real constant)
@@ -28,12 +28,12 @@ GlobalField::GlobalField(Grid *grid, Vector *x, int nvd = 1)
   representation = NODAL;
   dof_values     = x;
   
-  no_dof = x->Size()/nvd;
+  no_dof = x->size()/nvd;
   this->nvd = nvd;
 
-  if ( x->Size() % nvd != 0 )
+  if ( x->size() % nvd != 0 )
 	 display->InternalError("GlobalField:GlobalField",
-									"Vector dimension (%d) does not match length of vector (%d).",nvd,x->Size());
+									"Vector dimension (%d) does not match length of vector (%d).",nvd,x->size());
 }
 //-----------------------------------------------------------------------------
 GlobalField::GlobalField(Grid *grid, const char *field)
@@ -148,15 +148,18 @@ int GlobalField::GetVectorDim()
   return nvd;
 }
 //-----------------------------------------------------------------------------
-int GlobalField::GetDim(int cell)
-{
-  // FIXME: no shapefunctions does not have to be same as no nodes 
-  return ( grid->GetCell(cell)->GetSize() );
-}
+//int GlobalField::GetDim(int cell)
+//{
+//  // FIXME: no shapefunctions does not have to be same as no nodes 
+//  return ( grid->GetCell(cell)->GetSize() );
+//}
 //-----------------------------------------------------------------------------
-void GlobalField::GetLocalDof(int cell, real t, real *local_dof, int component = 0)
+void GlobalField::GetLocalDof(Cell *cell, real t, real *local_dof, int component = 0)
 {
-  // FIXME: no shapefunctions does not have to be same as no nodes 
+  cout << "This function does not work yet" << endl;
+  
+  /*
+  
   Cell *c = grid->GetCell(cell);
   int local_dim = c->GetSize();
 
@@ -195,6 +198,8 @@ void GlobalField::GetLocalDof(int cell, real t, real *local_dof, int component =
   default:
     display->InternalError("GlobalField::GetLocalDof()","Unknown representation for GlobalField: %d",representation);
   }
+
+  */
   
 }
 //-----------------------------------------------------------------------------
@@ -205,6 +210,10 @@ void GlobalField::Save()
 //-----------------------------------------------------------------------------
 void GlobalField::Save(real t)
 {
+  cout << "This function does not work yet" << endl;
+
+  /*
+  
   // If Output is not initialised, assume the simplest possible
   if ( !output )
 	 output = new Output(1,nvd);
@@ -233,6 +242,7 @@ void GlobalField::Save(real t)
 	 display->InternalError("GlobalField:Save()",
 									"Output only implemented for nodal representation (possibly collections).");
   }
+  */
   
 }
 //-----------------------------------------------------------------------------
