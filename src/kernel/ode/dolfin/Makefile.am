@@ -9,6 +9,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              AdaptiveIterationLevel2.h \
              AdaptiveIterationLevel3.h \
              Adaptivity.h \
+             Alloc.h \
              Component.h \
              Dual.h \
              Element.h \
@@ -36,4 +37,5 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Solution.h \
              Sparsity.h \
              TimeSlab.h \
+             NewTimeSlab.h \
              TimeStepper.h

@@ -10,6 +10,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/AdaptiveIterationLevel2.h \
                           dolfin/AdaptiveIterationLevel3.h \
                           dolfin/Adaptivity.h \
+                          dolfin/Alloc.h \
                           dolfin/Component.h \
                           dolfin/Dual.h \
                           dolfin/Element.h \
@@ -39,6 +40,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Solution.h \
                           dolfin/Sparsity.h \
                           dolfin/TimeSlab.h \
+                          dolfin/NewTimeSlab.h \
                           dolfin/TimeStepper.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
@@ -52,6 +54,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           AdaptiveIterationLevel2.cpp \
                           AdaptiveIterationLevel3.cpp \
                           Adaptivity.cpp \
+                          Alloc.cpp \
                           Component.cpp \
                           Dual.cpp \
                           Element.cpp \
@@ -81,4 +84,5 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Solution.cpp \
                           Sparsity.cpp \
                           TimeSlab.cpp \
+                          NewTimeSlab.cpp \
                           TimeStepper.cpp

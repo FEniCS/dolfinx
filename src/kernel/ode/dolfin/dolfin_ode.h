@@ -36,6 +36,8 @@
 #include <dolfin/Sample.h>
 #include <dolfin/Solution.h>
 #include <dolfin/Sparsity.h>
+#include <dolfin/TimeSlab.h>
+#include <dolfin/NewTimeSlab.h>
 #include <dolfin/TimeStepper.h>
 
 #endif

@@ -4,17 +4,20 @@
 // Modified by Anders Logg, 2004.
 
 #include <cmath>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_common.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Solver.h>
 #include <dolfin/Vector.h>
+#include <dolfin/FEM.h>
 #include <dolfin/dolfin_mesh.h>
 #include <dolfin/MeshHierarchy.h>
-#include <dolfin/MultigridSolver.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/Variable.h>
 #include <dolfin/General.h>
+#include <dolfin/PDE.h>
+#include <dolfin/MultigridSolver.h>
 
 using namespace dolfin;
 
