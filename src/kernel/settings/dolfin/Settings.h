@@ -39,14 +39,17 @@ namespace dolfin {
       add(Parameter::INT, "number of samples", 100);
       add(Parameter::INT, "element cache size", 32);
       add(Parameter::INT, "maximum iterations", 100);
-       
+      add(Parameter::INT, "order", 1);
+      
       add(Parameter::REAL, "initial time step", 0.01);
       add(Parameter::REAL, "maximum time step", 1.0);
       add(Parameter::REAL, "partitioning threshold", 1.0);
       add(Parameter::REAL, "interval threshold", 0.9);
       add(Parameter::REAL, "sparsity check increment", 0.01);
+      
+      add(Parameter::STRING, "method", "cg");
 
-    }
+     }
     
   };
   

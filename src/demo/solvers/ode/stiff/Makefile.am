@@ -1,1 +1,1 @@
-SUBDIRS = reaction
+SUBDIRS = simple reaction

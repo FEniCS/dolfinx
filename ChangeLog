@@ -1,3 +1,8 @@
+ - Fix bug (delete old block) in ElementData
+ - Add parameters for method and order
+ - Stabilization of multi-adaptive solver (experimental)
+ - New test problem reaction
+ - New class FixedPointIteration
  - Fix bug in grid refinement
 0.4.2
  - Fix bug in computation of residual (divide by k)

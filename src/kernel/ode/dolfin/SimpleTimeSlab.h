@@ -4,11 +4,11 @@
 #ifndef __SIMPLE_TIME_SLAB_H
 #define __SIMPLE_TIME_SLAB_H
 
+#include <dolfin/Element.h>
 #include <dolfin/TimeSlab.h>
 
 namespace dolfin {
 
-  class Element;
   class Adaptivity;
   class RHS;
   class Solution;
@@ -20,7 +20,8 @@ namespace dolfin {
   public:
     
     /// Create time slab, including one iteration
-    SimpleTimeSlab(real t0, real t1, Solution& u, Adaptivity& adaptivity);
+    SimpleTimeSlab(Element::Type type, unsigned int q,
+		   real t0, real t1, Solution& u, Adaptivity& adaptivity);
     
     /// Destructor
     ~SimpleTimeSlab();
@@ -37,7 +38,7 @@ namespace dolfin {
   private:
     
     // Create new time slab
-    void create(Solution& u, Adaptivity& adaptivity);
+    void create(Element::Type type, unsigned int q, Solution& u, Adaptivity& adaptivity);
     
   };
 

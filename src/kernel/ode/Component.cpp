@@ -29,10 +29,12 @@ Component::~Component()
   }
 }
 //-----------------------------------------------------------------------------
-Element* Component::createElement(const Element::Type type, 
+Element* Component::createElement(Element::Type type, 
 				  unsigned int q, unsigned int index,
 				  real t0, real t1)
 {
+  cout << "type = " << type << endl;
+
   Element* element = 0;
 
   // Create element

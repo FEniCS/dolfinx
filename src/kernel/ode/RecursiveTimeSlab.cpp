@@ -16,14 +16,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RecursiveTimeSlab::RecursiveTimeSlab(real t0, real t1, Solution& u, RHS& f,
+RecursiveTimeSlab::RecursiveTimeSlab(Element::Type type, unsigned int q,
+				     real t0, real t1, Solution& u, RHS& f,
 				     Adaptivity& adaptivity,
 				     FixedPointIteration& fixpoint,
 				     Partition& partition, int offset) :
   TimeSlab(t0, t1)
 {
   // Create the time slab
-  create(u, f, adaptivity, fixpoint, partition, offset);
+  create(type, q, u, f, adaptivity, fixpoint, partition, offset);
 }
 //-----------------------------------------------------------------------------
 RecursiveTimeSlab::~RecursiveTimeSlab()
@@ -68,7 +69,8 @@ real RecursiveTimeSlab::computeMaxRd(Solution& u, RHS& f)
   return std::max(rs, re);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::create(Solution& u, RHS& f,
+void RecursiveTimeSlab::create(Element::Type type, unsigned int q,
+			       Solution& u, RHS& f,
 			       Adaptivity& adaptivity,
 			       FixedPointIteration& fixpoint,
 			       Partition& partition, int offset)
@@ -84,13 +86,14 @@ void RecursiveTimeSlab::create(Solution& u, RHS& f,
 
   // Create time slabs for the components with small time steps
   if (end < partition.size())
-    createTimeSlabs(u, f, adaptivity, fixpoint, partition, end);
+    createTimeSlabs(type, q, u, f, adaptivity, fixpoint, partition, end);
 
   // Create elements for the components with large time steps
-  createElements(u, f, adaptivity, fixpoint, partition, offset, end);
+  createElements(type, q, u, f, adaptivity, fixpoint, partition, offset, end);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f, 
+void RecursiveTimeSlab::createTimeSlabs(Element::Type type, unsigned int q,
+					Solution& u, RHS& f, 
 					Adaptivity& adaptivity,
 					FixedPointIteration& fixpoint,
 					Partition& partition, int offset)
@@ -103,7 +106,8 @@ void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f,
   {
     // Create a new time slab
     TimeSlab* timeslab = 
-      new RecursiveTimeSlab(t, t1, u, f, adaptivity, fixpoint, partition, offset);
+      new RecursiveTimeSlab(type, q, t, t1, u, f, adaptivity, fixpoint, 
+			    partition, offset);
     
     // Add the new time slab to the list
     timeslabs.push_back(timeslab);
@@ -117,17 +121,14 @@ void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f,
   }
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
+void RecursiveTimeSlab::createElements(Element::Type type, unsigned int q,
+				       Solution& u, RHS& f,
 				       Adaptivity& adaptivity,
 				       FixedPointIteration& fixpoint,
 				       Partition& partition,
 				       int offset, int end)
 
 {
-  // FIXME: choose element and order here
-  Element::Type type = Element::cg;
-  int q = 1;
-
   // Create elements
   for (int i = offset; i < end; i++) {
 

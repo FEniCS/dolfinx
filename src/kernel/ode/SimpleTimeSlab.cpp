@@ -4,7 +4,6 @@
 #include <iostream>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Element.h>
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
@@ -13,10 +12,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, Solution& u, 
+SimpleTimeSlab::SimpleTimeSlab(Element::Type type, unsigned int q,
+			       real t0, real t1, Solution& u, 
 			       Adaptivity& adaptivity) : TimeSlab(t0, t1)
 {
-  create(u, adaptivity);
+  create(type, q, u, adaptivity);
 }
 //-----------------------------------------------------------------------------
 SimpleTimeSlab::~SimpleTimeSlab()
@@ -39,12 +39,9 @@ real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)
   return computeMaxRdElements(u, f);
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
+void SimpleTimeSlab::create(Element::Type type, unsigned int q,
+			    Solution& u, Adaptivity& adaptivity)
 {
-  // FIXME: choose element and order here
-  Element::Type type = Element::cg;
-  int q = 1;
-
   // Get initial time step (same for all components)
   real k = adaptivity.regulator(0).timestep();
 
