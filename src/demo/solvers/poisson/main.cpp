@@ -36,7 +36,9 @@ real f(real x, real y, real z, real t)
 // Boundary conditions
 void mybc(BoundaryCondition& bc)
 {
-  bc.set(BoundaryCondition::DIRICHLET, 0.0);
+  const Point p = bc.node().coord();
+  if ( fabs(p.x - 0.0) < DOLFIN_EPS || fabs(p.x - 1.0) < DOLFIN_EPS )
+    bc.set(BoundaryCondition::DIRICHLET, 0.0);
 }
 
 int main()

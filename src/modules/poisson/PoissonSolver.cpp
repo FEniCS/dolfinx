@@ -56,9 +56,15 @@ void PoissonSolver::solve()
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
 
+  //cout << "Before BC:" << endl;
+  //A.disp(false);
+
   // Set boundary conditions
   dirichletBC(A, b, mesh);
   
+  //cout << "After BC:" << endl;
+  //A.disp(false);
+
   x.init(b.size());
   x = 0.0;
 
@@ -67,20 +73,25 @@ void PoissonSolver::solve()
   NewGMRES solver;
   solver.solve(A, x, b);
 
-  A.disp(false);
-  b.disp();
+  //A.disp(false);
+  //b.disp();
+
+  cout << "New solution x:" << endl;
   x.disp();
     
   Vector xold(b.size());
   for(uint i = 0; i < x.size(); i++)
     xold(i) = x(i);
 
+  cout << "Copied new solution x:" << endl;
+  xold.show();
+
   // Save the solution
   // FIXME: Implement output for NewFunction
   //NewFunction u(mesh, element, x);
   //u.rename("u", "temperature");
 
-  Function uold(mesh, xold, 1);
+  Function uold(mesh, xold);
   uold.rename("u", "temperature");
   File file("poisson.m");
   file << uold;
@@ -101,11 +112,11 @@ void PoissonSolver::solveOld()
   // Discretise
   FEM::assemble(poisson, mesh, A, b);
 
-  cout << "Old matrix A:" << endl;
-  A.show();
+  //cout << "Old matrix A:" << endl;
+  //A.show();
 
-  cout << "Old vector b:" << endl;
-  b.show();
+  //cout << "Old vector b:" << endl;
+  //b.show();
 
   // Solve the linear system
   solver.solve(A, x, b);
@@ -147,7 +158,8 @@ void PoissonSolver::dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh)
   cout << "node id = " ;
   for (int i=0;i<mesh.noNodes();i++){
     if (bndNodes[i] == 1){
-      bndIdx[cnt] = i+1; // Different numbering for Petsc: starting at 1 (instead of 0)
+      //bndIdx[cnt] = i+1; // Different numbering for Petsc: starting at 1 (instead of 0)
+      bndIdx[cnt] = i; // why does this work then?
       cnt++;
       cout << i << ", ";
     }
