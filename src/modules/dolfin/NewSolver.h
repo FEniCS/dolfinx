@@ -9,9 +9,9 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/File.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/NewVector.h>
-#include <dolfin/NewMatrix.h>
-#include <dolfin/NewGMRES.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/GMRES.h>
 #include <dolfin/NewFunction.h>
 #include <dolfin/NewBoundaryCondition.h>
 #include <dolfin/NewFEM.h>

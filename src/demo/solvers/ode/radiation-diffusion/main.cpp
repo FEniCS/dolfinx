@@ -10,6 +10,8 @@ using namespace dolfin;
 /// Verwer and Sommeijer, published in SIAM J. Scientific Computing
 /// (2004).
 
+/*
+
 class RadiationDiffusion : public ODE
 {
 public:
@@ -319,8 +321,15 @@ private:
   Function u1, u2, k1, k2;   // Sample of solution (functions)  
 };
 
+*/
+
 int main()
 {
+  // FIXME: BROKEN
+  dolfin_error("Broken, needs to be updated.");
+  
+  /*
+
   // Settings
   //dolfin_set("output", "plain text");
   dolfin_set("fixed time step", true);
@@ -349,6 +358,8 @@ int main()
   // Solve equation
   RadiationDiffusion ode(mesh);
   ode.solve();
+
+  */
 
   return 0;
 }

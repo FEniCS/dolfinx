@@ -1,6 +1,5 @@
 EXTRA_DIST = dolfin_la.h \
              GMRES.h \
-             KrylovSolver.h \
              LinearSolver.h \
              LU.h \
              Matrix.h \

@@ -86,7 +86,7 @@ mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_la.h                          dolfin/GMRES.h                          dolfin/KrylovSolver.h                          dolfin/LinearSolver.h                          dolfin/LU.h                          dolfin/Matrix.h                          dolfin/PETScManager.h                          dolfin/Preconditioner.h                          dolfin/Vector.h                          dolfin/VirtualMatrix.h 
+include_HEADERS = dolfin/dolfin_la.h                          dolfin/GMRES.h                          dolfin/LinearSolver.h                          dolfin/LU.h                          dolfin/Matrix.h                          dolfin/PETScManager.h                          dolfin/Preconditioner.h                          dolfin/Vector.h                          dolfin/VirtualMatrix.h 
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-la.a

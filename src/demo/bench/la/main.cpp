@@ -13,6 +13,11 @@ using namespace dolfin;
 
 int main()
 {
+  // FIXME: BROKEN
+
+  /*
+
+
   dolfin_set("output", "plain text");
 
   sysinfo();
@@ -96,4 +101,7 @@ int main()
 
   dolfin_info("");
   dolfin_info("--------------------------------------------------------");
+
+
+  */
 }

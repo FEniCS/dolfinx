@@ -31,7 +31,10 @@ public:
   
   real f(const Vector& u, real t, unsigned int i)
   {
-    return -A.mult(u, i);
+    // FIXME: BROKEN
+    dolfin_error("Broken, needs to be updated.");
+    //    return -A.mult(u, i);
+    return 0.0;
   }
 
 private:

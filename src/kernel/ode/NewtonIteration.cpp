@@ -13,7 +13,6 @@
 #include <dolfin/ElementGroupList.h>
 #include <dolfin/ElementGroupIterator.h>
 #include <dolfin/FixedPointIteration.h>
-#include <dolfin/KrylovSolver.h>
 #include <dolfin/NewtonIteration.h>
 
 using namespace dolfin;

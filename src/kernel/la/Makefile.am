@@ -1,7 +1,6 @@
 SUBDIRS                = dolfin
 include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/GMRES.h \
-                         dolfin/KrylovSolver.h \
                          dolfin/LinearSolver.h \
                          dolfin/LU.h \
                          dolfin/Matrix.h \

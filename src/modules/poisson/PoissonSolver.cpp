@@ -23,12 +23,12 @@ void PoissonSolver::solve()
   Poisson::LinearForm L(f);
 
   // Discretize
-  NewMatrix A;
-  NewVector x, b;
+  Matrix A;
+  Vector x, b;
   NewFEM::assemble(a, L, A, b, mesh, bc);
 
   // Solve the linear system
-  NewGMRES solver;
+  GMRES solver;
   solver.solve(A, x, b);
 
   // Save function to file

@@ -5,6 +5,8 @@
 
 using namespace dolfin;
 
+/*
+
 class Bistable : public ODE {
 public:
 
@@ -69,8 +71,16 @@ private:
 
 };
 
+*/
+
+
 int main()
 {
+  // FIXME: BROKEN
+  dolfin_error("Broken, needs to be updated.");
+  
+  /*
+
   // Settings
   dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
@@ -94,6 +104,8 @@ int main()
   // Solve equation
   Bistable bistable(mesh);
   bistable.solve();
+
+  */
 
   return 0;
 }

@@ -5,7 +5,7 @@
 #include <dolfin/NewFiniteElement.h>
 #include <dolfin/LinearTriElement.h>
 #include <dolfin/LinearTetElement.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/NewFunction.h>
 
 using namespace dolfin;
@@ -16,7 +16,7 @@ NewFunction::NewFunction() : data(0), default_element(0), t(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(Mesh& mesh, NewVector& x,
+NewFunction::NewFunction(Mesh& mesh, Vector& x,
 			 const NewFiniteElement& element) 
   : data(0), default_element(0), t(0)
 {
@@ -27,7 +27,7 @@ NewFunction::NewFunction(Mesh& mesh, NewVector& x,
   rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(Mesh& mesh, NewVector& x)
+NewFunction::NewFunction(Mesh& mesh, Vector& x)
 {
   // Chose default element
   if ( mesh.type() == Mesh::triangles )
