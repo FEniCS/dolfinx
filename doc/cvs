@@ -1,7 +1,9 @@
 Put the following in your ~/.cvsrc file:
 
-update -P
+update -d -P
 checkout -P
 
 In this way, you prevent old (removed) directories from
-showing up in the source tree.
+showing up in the source tree (option -P), and new directories
+that have been added to the repository since last checkout
+will be added on update (option -d).
