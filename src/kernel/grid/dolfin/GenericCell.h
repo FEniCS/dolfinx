@@ -45,8 +45,14 @@ namespace dolfin {
 
     void mark(Cell* cell);
     
+    /// Parent-child functions
+    Cell* parent();
+    Cell* child(int i);
+    int   noChildren();
+
     // Friends
     friend class Cell;
+    friend class GridRefinement;
     friend class Triangle;
     friend class Tetrahedron;
     friend class GridInit;
@@ -60,6 +66,10 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
+    // Set parent-child info
+    void setParent(Cell* parent);
+    void setChild(Cell* child);
+
     // Check if given cell is a neighbor
     bool neighbor(GenericCell* cell) const;
 
@@ -93,9 +103,11 @@ namespace dolfin {
     Array<Edge*> ce;
     Array<Face*> cf;
 
-    // FIXME: Remove?
-    Array<Cell*> children;    
-    
+    /// Parent-child info
+    Cell* _parent;
+    Array<Cell*> _children;
+    int _no_children;
+
   };
 
 }

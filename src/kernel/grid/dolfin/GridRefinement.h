@@ -58,13 +58,13 @@ namespace dolfin {
     static void closeCell(Cell& cell);
 
     // Refine a cell regularly
-    static void regularRefinement(Cell& cell);
+    static void regularRefinement(Cell& cell, Grid& grid);
     
     // Refine a triangle regularly
-    static void regularRefinementTri(Cell& cell);
+    static void regularRefinementTri(Cell& cell, Grid& grid);
 
     // Refine a tetrahedron regularly
-    static void regularRefinementTet(Cell& cell);
+    static void regularRefinementTet(Cell& cell, Grid& grid);
 
 
     

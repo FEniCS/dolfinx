@@ -69,6 +69,10 @@ namespace dolfin{
     /// Return boundary number for node
     int boundary() const;
 
+    /// Parent-child functions
+    Node* parent();
+    Node* child();
+
     /// Comparison based on the node id
 
     bool operator== (int id) const;
@@ -104,6 +108,10 @@ namespace dolfin{
     // Specify global node number
     int setID(int id, Grid* grid);
     
+    // Set parent-child info
+    void setParent(Node* parent);
+    void setChild(Node* child);
+
     // Specify coordinate
     void set(real x, real y, real z);
     
@@ -121,19 +129,20 @@ namespace dolfin{
     Array<Cell*> nc;
     Array<Edge*> ne;
 
+    // Parent-child info
+    Node* _parent;
+    Node* _child;
+
 
 
 
 
     // FIXME: Remove?
     int _boundary;
-    Node* _child;    
 
     int level() const;
-    Node* child();
     void setMarkedForReUse(bool re_use);
     bool markedForReUse();
-    void setChild(Node* child);
 
     // FIXME: Remove?
     // Refinement level in grid hierarchy, coarsest grid is level = 0

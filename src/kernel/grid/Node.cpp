@@ -115,6 +115,16 @@ int Node::boundary() const
   return _boundary;
 }
 //-----------------------------------------------------------------------------
+Node* Node::parent() 
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+Node* Node::child() 
+{
+  return _child;
+}
+//-----------------------------------------------------------------------------
 bool Node::operator== (int id) const
 {
   return _id == id;
@@ -182,6 +192,20 @@ int Node::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void Node::setParent(Node* parent)
+{
+  // Set parent node: a node is parent to if it has the same coordinates 
+  // and is contained in the next coarser grid 
+  this->_parent = parent;
+}
+//-----------------------------------------------------------------------------
+void Node::setChild(Node* child)
+{
+  // Set child node: a node is child to if it has the same coordinates 
+  // and is contained in the next finer grid 
+  this->_child = child;
+}
+//-----------------------------------------------------------------------------
 void Node::set(real x, real y, real z)
 {
   p.x = x;
@@ -216,16 +240,5 @@ int Node::level() const
 void Node::setLevel(int level)
 {
   _level = level;
-}
-//-----------------------------------------------------------------------------
-
-Node* Node::child() 
-{
-  return _child;
-}
-//-----------------------------------------------------------------------------
-void Node::setChild(Node* child) 
-{
-  _child = child;
 }
 //-----------------------------------------------------------------------------

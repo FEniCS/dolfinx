@@ -104,7 +104,7 @@ void GridRefinement::closeCell(Cell& cell)
 
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::regularRefinement(Cell& cell)
+void GridRefinement::regularRefinement(Cell& cell, Grid& grid)
 {
   // Regular refinement:
   //
@@ -113,10 +113,10 @@ void GridRefinement::regularRefinement(Cell& cell)
 
   switch (cell.type()) {
   case Cell::triangle: 
-    regularRefinementTri(cell);
+    regularRefinementTri(cell,grid);
     break;
   case Cell::tetrahedron: 
-    regularRefinementTet(cell);
+    regularRefinementTet(cell,grid);
     break;
   default: 
     dolfin_error("Unknown cell type, unable to refine cell.");
@@ -127,101 +127,451 @@ void GridRefinement::regularRefinement(Cell& cell)
   //    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::regularRefinementTri(Cell& cell)
+void GridRefinement::regularRefinementTri(Cell& cell, Grid& grid)
 {
   // Refine 1 triangle into 4 new ones, introducing new nodes 
   // at the midpoints of the edges. 
 
-  Node *n0 = g.createNode(cell->coord(0));
-  Node *n1 = g.createNode(cell->coord(1));
-  Node *n2 = g.createNode(cell->coord(2));
+  // Create new nodes with the same coordinates as the previous nodes in cell  
+  Node *n0 = grid.createNode(cell.coord(0));
+  Node *n1 = grid.createNode(cell.coord(1));
+  Node *n2 = grid.createNode(cell.coord(2));
 
-  parent->node(0)->setChild(n0);
-  parent->node(1)->setChild(n1);
-  parent->node(2)->setChild(n2);
+  // Update parent-child info 
+  n0->setParent(cell.node(0));
+  n1->setParent(cell.node(1));
+  n2->setParent(cell.node(2));
 
-  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+  cell.node(0)->setParent(n0);
+  cell.node(1)->setParent(n1);
+  cell.node(2)->setParent(n2);
 
-  Cell *t1 = g.createCell(n0, n01,n02);
-  Cell *t2 = g.createCell(n01,n1, n12);
-  Cell *t3 = g.createCell(n02,n12,n2 );
-  Cell *t4 = g.createCell(n01,n12,n02);
+  // Create new nodes with the new coordinates 
+  Node *n01 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(1)->coord()));
+  Node *n02 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(2)->coord()));
+  Node *n12 = grid.createNode(cell.node(1)->coord().midpoint(cell.node(2)->coord()));
 
-  /*
-  parent->addChild(t1);
-  parent->addChild(t2);
-  parent->addChild(t3);
-  parent->addChild(t4);
+  // Create new cells 
+  Cell *t1 = grid.createCell(n0, n01,n02);
+  Cell *t2 = grid.createCell(n01,n1, n12);
+  Cell *t3 = grid.createCell(n02,n12,n2 );
+  Cell *t4 = grid.createCell(n01,n12,n02);
 
-  if (_create_edges){
-    grid.createEdges(t1);
-    grid.createEdges(t2);
-    grid.createEdges(t3);
-    grid.createEdges(t4);
-  }
-  */
+  // Update parent-child info 
+  t1->setParent(&cell);
+  t2->setParent(&cell);
+  t3->setParent(&cell);
+  t4->setParent(&cell);
+  
+  cell.setChild(t1);
+  cell.setChild(t2);
+  cell.setChild(t3);
+  cell.setChild(t4);
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::regularRefinementTet(Cell& cell)
+void GridRefinement::regularRefinementTet(Cell& cell, Grid& grid)
 {
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges.
   
-  Node *n0 = g.createNode(cell->coord(0));
-  Node *n1 = g.createNode(cell->coord(1));
-  Node *n2 = g.createNode(cell->coord(2));
-  Node *n3 = g.createNode(cell->coord(3));
+  // Create new nodes with the same coordinates as the previous nodes in cell  
+  Node *n0 = grid.createNode(cell.coord(0));
+  Node *n1 = grid.createNode(cell.coord(1));
+  Node *n2 = grid.createNode(cell.coord(2));
+  Node *n3 = grid.createNode(cell.coord(3));
 
-  parent->node(0)->setChild(n0);
-  parent->node(1)->setChild(n1);
-  parent->node(2)->setChild(n2);
-  parent->node(3)->setChild(n3);
+  // Update parent-child info 
+  n0->setParent(cell.node(0));
+  n1->setParent(cell.node(1));
+  n2->setParent(cell.node(2));
+  n3->setParent(cell.node(3));
+
+  // Create new nodes with the new coordinates 
+  Node *n01 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(1)->coord()));
+  Node *n02 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(2)->coord()));
+  Node *n03 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(3)->coord()));
+  Node *n12 = grid.createNode(cell.node(1)->coord().midpoint(cell.node(2)->coord()));
+  Node *n13 = grid.createNode(cell.node(1)->coord().midpoint(cell.node(3)->coord()));
+  Node *n23 = grid.createNode(cell.node(2)->coord().midpoint(cell.node(3)->coord()));
+
+  // Create new cells 
+  Cell *t1 = grid.createCell(n0, n01,n02,n03);
+  Cell *t2 = grid.createCell(n01,n1, n12,n13);
+  Cell *t3 = grid.createCell(n02,n12,n2, n23);
+  Cell *t4 = grid.createCell(n03,n13,n23,n3 );
+  Cell *t5 = grid.createCell(n01,n02,n03,n13);
+  Cell *t6 = grid.createCell(n01,n02,n12,n13);
+  Cell *t7 = grid.createCell(n02,n03,n13,n23);
+  Cell *t8 = grid.createCell(n02,n12,n13,n23);
+
+  // Update parent-child info 
+  t1->setParent(&cell);
+  t2->setParent(&cell);
+  t3->setParent(&cell);
+  t4->setParent(&cell);
+  t5->setParent(&cell);
+  t6->setParent(&cell);
+  t7->setParent(&cell);
+  t8->setParent(&cell);
   
-  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n03 = g.createNode(parent->node(0)->coord().midpoint(parent->node(3)->coord()));
-  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
-  Node *n13 = g.createNode(parent->node(1)->coord().midpoint(parent->node(3)->coord()));
-  Node *n23 = g.createNode(parent->node(2)->coord().midpoint(parent->node(3)->coord()));
+  cell.setChild(t1);
+  cell.setChild(t2);
+  cell.setChild(t3);
+  cell.setChild(t4);
+  cell.setChild(t5);
+  cell.setChild(t6);
+  cell.setChild(t7);
+  cell.setChild(t8);
+}
+//-----------------------------------------------------------------------------
+/*
+void GridRefinement::irregularRefinementBy1(Cell& cell, Grid& grid)
+{
+  // 3 edges are marked on the same face: 
+  // insert 3 new nodes at the midpoints on the marked edges, connect the 
+  // new nodes to each other, as well as to the node that is not on the 
+  // marked face. This gives 4 new tetrahedrons. 
 
-  Cell *t1 = g.createCell(n0, n01,n02,n03);
-  Cell *t2 = g.createCell(n01,n1, n12,n13);
-  Cell *t3 = g.createCell(n02,n12,n2, n23);
-  Cell *t4 = g.createCell(n03,n13,n23,n3 );
-  Cell *t5 = g.createCell(n01,n02,n03,n13);
-  Cell *t6 = g.createCell(n01,n02,n12,n13);
-  Cell *t7 = g.createCell(n02,n03,n13,n23);
-  Cell *t8 = g.createCell(n02,n12,n13,n23);
+  if (cell.noMarkedEdges() != 3) dolfin_error("wrong size of refinement edges");
+  if (!cell.markedEdgesOnSameFace()) dolfin_error("marked edges not on the same face");
+  
+  int marked_nodes[3];
+  int marked_edges[3];
+  marked_nodes[0] = marked_nodes[1] = marked_nodes[2] = -1;
+  marked_edges[0] = marked_edges[1] = marked_edges[2] = -1;
+  int cnt_1 = 0;
+  int cnt_2 = 0;
 
-  /*
-  parent->addChild(t1);
-  parent->addChild(t2);
-  parent->addChild(t3);
-  parent->addChild(t4);
-  parent->addChild(t5);
-  parent->addChild(t6);
-  parent->addChild(t7);
-  parent->addChild(t8);
-  */
-
-  /*
-  if (_create_edges){
-    g.createEdges(t1);
-    g.createEdges(t2);
-    g.createEdges(t3);
-    g.createEdges(t4);
-    g.createEdges(t5);
-    g.createEdges(t6);
-    g.createEdges(t7);
-    g.createEdges(t8);
+  bool taken;
+  for (int i=0;i<cell.noEdges();i++){
+    if (cell.edge(i)->marked()){
+      marked_edges[cnt_1++] = i;
+      for (int j=0;j<cell.noNodes();j++){
+	if ( cell.edge(i)->node(0)->id() == cell.node(j)->id() ){
+	  taken = false;
+	  for (int k=0;k<3;k++){
+	    if ( marked_nodes[k] == j ) taken = true;
+	  }
+	  if (!taken) marked_nodes[cnt_2++] = j; 	
+	}
+	if ( cell.edge(i)->node(1)->id() == cell.node(j)->id() ){
+	  taken = false;
+	  for (int k=0;k<3;k++){
+	    if ( marked_nodes[k] == j ) taken = true;
+	  }
+	  if (!taken) marked_nodes[cnt_2++] = j; 	
+	}
+      }
+    }
   }
-  */
+
+  int face_node;
+  for (int i=0;i<4;i++){
+    taken = false;
+    for (int j=0;j<3;j++){
+      if (marked_nodes[j] == i) taken = true;
+    }
+    if (!taken){
+      face_node = i;
+      break;
+    } 
+  }
+  
+  Node *nf = grid.createNode(cell.node(face_node)->coord());
+  Node *n0 = grid.createNode(cell.node(marked_nodes[0])->coord());
+  Node *n1 = grid.createNode(cell.node(marked_nodes[1])->coord());
+  Node *n2 = grid.createNode(cell.node(marked_nodes[2])->coord());
+
+  cell.node(face_node)->setChild(nf);
+  cell.node(marked_nodes[0])->setChild(n0);
+  cell.node(marked_nodes[1])->setChild(n1);
+  cell.node(marked_nodes[2])->setChild(n2);
+
+  Array<Node*> edge_nodes(3);
+  edge_nodes(0) = grid.createNode(cell.edge(marked_edges[0])->midpoint());
+  edge_nodes(1) = grid.createNode(cell.edge(marked_edges[1])->midpoint());
+  edge_nodes(2) = grid.createNode(cell.edge(marked_edges[2])->midpoint());
+
+  Array<Cell*> new_cell(4);
+  for (int i=0;i<3;i++){
+    for (int j=0;j<3;j++){
+      if ( (cell.node(marked_nodes[i])->id() != cell.edge(marked_edges[j])->node(0)->id()) &&
+	   (cell.node(marked_nodes[i])->id() != cell.edge(marked_edges[j])->node(1)->id()) ){
+	if (j == 0){
+	  new_cell(i) = grid.createCell(n0,edge_nodes(1),edge_nodes(2),nf);
+	}
+	if (j == 1){
+	  new_cell(i) = grid.createCell(n1,edge_nodes(0),edge_nodes(2),nf);
+	}
+	if (j == 2){
+	  new_cell(i) = grid.createCell(n2,edge_nodes(0),edge_nodes(1),nf);
+	}
+      }
+    }
+  }
+
+  new_cell(3) = grid.createCell(edge_nodes(0),edge_nodes(1),edge_nodes(2),nf);
+  
+  cell.addChild(new_cell(0));
+  cell.addChild(new_cell(1));
+  cell.addChild(new_cell(2));
+  cell.addChild(new_cell(3));
+
+  if (_create_edges){
+    grid.createEdges(new_cell(0));
+    grid.createEdges(new_cell(1));
+    grid.createEdges(new_cell(2));
+    grid.createEdges(new_cell(3));
+  }
+
+  cell.setStatus(Cell::REFINED_IRREGULAR_BY_1);
+  if (cell.marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1) 
+    cell.mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementBy2(Cell* parent)
+{
+  // 1 edge is marked:
+  // Insert 1 new node at the midpoint of the marked edge, then connect 
+  // this new node to the 2 nodes not on the marked edge. This gives 2 new 
+  // tetrahedrons. 
+  
+  cout << "parent = " << cell.id() << endl;
+
+  //  cell.markEdge(2);
+
+  if (cell.noMarkedEdges() != 1) dolfin_error("wrong size of refinement edges");
+
+  Node *nnew;
+  Node *ne0;
+  Node *ne1;
+  ShortList<Node*> nold(2);
+  Cell* cnew1;
+  Cell* cnew2;
+  int cnt = 0;
+  for (int i=0;i<cell.noEdges();i++){
+    if (cell.edge(i)->marked()){
+      nnew = grid.createNode(cell.edge(i)->midpoint());
+      ne0  = grid.createNode(cell.edge(i)->node(0)->coord());
+      ne1  = grid.createNode(cell.edge(i)->node(1)->coord());
+      cell.edge(i)->node(0)->setChild(ne0);
+      cell.edge(i)->node(1)->setChild(ne1);
+      for (int j=0;j<cell.noNodes();j++){
+	if ( (cell.edge(i)->node(0)->id() != j) && (cell.edge(i)->node(1)->id() != j) ){
+	  nold(cnt) = grid.createNode(cell.node(j)->coord());
+	  cell.node(j)->setChild(nold(cnt));
+	  cnt++;
+	}
+      }
+      cnew1 = grid.createCell(nnew,ne0,nold(0),nold(1));
+      cnew2 = grid.createCell(nnew,ne1,nold(0),nold(1));
+      break;
+    }
+  }
+
+  cell.addChild(cnew1);
+  cell.addChild(cnew2);
+
+  if (_create_edges){
+    grid.createEdges(cnew1);
+    grid.createEdges(cnew2);
+  }
+
+  cell.setStatus(Cell::REFINED_IRREGULAR_BY_2);
+  if (cell.marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2) 
+    cell.mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementBy3(Cell* parent)
+{
+  // 2 edges are marked, on the same face 
+  // (here there are 2 possibilities, and the chosen 
+  // alternative must match the corresponding face 
+  // of the neighbor tetrahedron): 
+  // insert 2 new nodes at the midpoints of the marked edges, 
+  // insert 3 new edges by connecting the two new nodes to each 
+  // other and the node opposite the face of the 2 marked edges, 
+  // and insert 1 new edge by 
+  // alt.1: connecting new node 1 with the endnode of marked edge 2, 
+  // that is not common with marked edge 1, or 
+  // alt.2: connecting new node 2 with the endnode of marked edge 1, 
+  // that is not common with marked edge 2.
+
+  cout << "parent = " << cell.id() << endl;
+
+  // cell.markEdge(0);  
+  // cell.markEdge(4);
+
+  if (cell.noMarkedEdges() != 2) dolfin_error("wrong size of refinement edges");
+  if (!cell.markedEdgesOnSameFace()) dolfin_error("marked edges not on the same face");
+
+  if (cell.refinedByFaceRule()){
+    cell.refineByFaceRule(false);
+    return;
+  }
+
+  int cnt = 0;
+  int marked_edge[2];
+  for (int i=0;i<cell.noEdges();i++){
+    if (cell.edge(i)->marked()){
+      marked_edge[cnt++] = i;
+    }
+  }
+
+  int face_node;
+  int enoded;
+  int enode1;
+  int enode2;
+  int cnt1,cnt2;
+  for (int i=0;i<4;i++){
+    cnt1 = cnt2 = 0;
+    for (int j=0;j<2;j++){
+      if (cell.edge(marked_edge[0])->node(j)->id() == cell.node(i)->id()) cnt1++;
+      if (cell.edge(marked_edge[1])->node(j)->id() == cell.node(i)->id()) cnt2++;
+    }
+    cout << "cnt1 = " << cnt1 << ", cnt2 = " << cnt2 << endl;
+    if ( (cnt1 == 0) && (cnt2 == 0) ) face_node = i;
+    else if ( (cnt1 == 1) && (cnt2 == 1) ) enoded = i;	 
+    else if ( (cnt1 == 1) && (cnt2 == 0) ) enode1 = i;	 
+    else if ( (cnt1 == 0) && (cnt2 == 1) ) enode2 = i;	 
+    else dolfin_error("impossible node");
+  }
+
+  Node *nf = grid.createNode(cell.node(face_node)->coord());
+  Node *nd = grid.createNode(cell.node(enoded)->coord());
+  Node *n1 = grid.createNode(cell.node(enode1)->coord());
+  Node *n2 = grid.createNode(cell.node(enode2)->coord());
+
+  cell.node(face_node)->setChild(nf);
+  cell.node(enoded)->setChild(nd);
+  cell.node(enode1)->setChild(n1);
+  cell.node(enode2)->setChild(n2);
+
+  Node *midnode1 = grid.createNode(cell.edge(marked_edge[0])->midpoint());
+  Node *midnode2 = grid.createNode(cell.edge(marked_edge[1])->midpoint());
+  
+  // Find element with common face (enoded,enode1,enode2) 
+  // (search neighbors of parent)
+  int face_neighbor;
+  for (int i=0;i<cell.noCellNeighbors();i++){
+    for (int j=0;j<cell.neighbor(i)->noNodes();j++){
+      if (cell.neighbor(i)->node(j)->id() == cell.node(enoded)->id()){
+	for (int k=0;k<cell.neighbor(i)->noNodes();k++){
+	  if (k != j){
+	    if (cell.neighbor(i)->node(k)->id() == cell.node(enode1)->id()){
+	      for (int l=0;l<cell.neighbor(i)->noNodes();l++){
+		if ( (l != j) && (l != k) && (cell.neighbor(i)->node(l)->id() == cell.node(enode2)->id()) ){
+		  face_neighbor = i;
+		}
+	      }
+	    }		  
+	  }
+	} 
+      }
+    }
+  }   
+
+
+  Cell *c1 = grid.createCell(nd,midnode1,midnode2,nf);
+  Cell *c2 = grid.createCell(n1,midnode1,midnode2,nf);
+  Cell *c3 = grid.createCell(n1,n2,midnode2,nf);
+  
+  int neighbor_face_node;
+  for (int i=0;i<4;i++){
+    if ( (nd->id() != cell.neighbor(face_neighbor)->node(i)->id()) && 
+	 (n1->id() != cell.neighbor(face_neighbor)->node(i)->id()) && 
+	 (n2->id() != cell.neighbor(face_neighbor)->node(i)->id()) ) neighbor_face_node = i;
+  }
+
+  Node *nnf = grid.createNode(cell.neighbor(face_neighbor)->node(neighbor_face_node)->coord());
+  
+  Cell *nc1 = grid.createCell(nd,midnode1,midnode2,nnf);
+  Cell *nc2 = grid.createCell(n1,midnode1,midnode2,nnf);
+  Cell *nc3 = grid.createCell(n1,n2,midnode2,nnf);
+
+  cell.addChild(c1);
+  cell.addChild(c2);
+  cell.addChild(c3);
+  cell.addChild(nc1);
+  cell.addChild(nc2);
+  cell.addChild(nc3);
+
+  if (_create_edges){
+    grid.createEdges(c1);
+    grid.createEdges(c2);
+    grid.createEdges(c3);
+    grid.createEdges(nc1);
+    grid.createEdges(nc2);
+    grid.createEdges(nc3);
+  }
+
+  cell.neighbor(face_neighbor)->refineByFaceRule(true);
+
+  cell.setStatus(Cell::REFINED_IRREGULAR_BY_3);
+  if (cell.marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3) 
+    cell.mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementBy4(Cell* parent)
+{
+  // 2 edges are marked, opposite to each other: 
+  // insert 2 new nodes at the midpoints of the marked edges, 
+  // insert 4 new edges by connecting the new nodes to the 
+  // endpoints of the opposite edges of the respectively new nodes. 
+
+  if (cell.noMarkedEdges() != 2) dolfin_error("wrong size of refinement edges");
+  if (cell.markedEdgesOnSameFace()) dolfin_error("marked edges on the same face");
+
+  cout << "parent = " << cell.id() << endl;
+
+  //cell.markEdge(0);
+  //cell.markEdge(2);
+
+  int cnt = 0;
+  int marked_edge[2];
+  for (int i=0;i<cell.noEdges();i++){
+    if (cell.edge(i)->marked()){
+      marked_edge[cnt++] = i;
+    }
+  }
+
+  Node *e1n1 = grid.createNode(cell.edge(marked_edge[0])->node(0)->coord());
+  Node *e1n2 = grid.createNode(cell.edge(marked_edge[0])->node(1)->coord());
+  Node *e2n1 = grid.createNode(cell.edge(marked_edge[1])->node(0)->coord());
+  Node *e2n2 = grid.createNode(cell.edge(marked_edge[1])->node(1)->coord());
+
+  cell.edge(marked_edge[0])->node(0)->setChild(e1n1);
+  cell.edge(marked_edge[0])->node(1)->setChild(e1n2);
+  cell.edge(marked_edge[1])->node(0)->setChild(e2n1);
+  cell.edge(marked_edge[1])->node(1)->setChild(e2n2);
+
+  Node *midnode1 = grid.createNode(cell.edge(marked_edge[0])->midpoint());
+  Node *midnode2 = grid.createNode(cell.edge(marked_edge[1])->midpoint());
+
+  Cell *c1 = grid.createCell(e1n1,midnode1,midnode2,e2n1);
+  Cell *c2 = grid.createCell(e1n1,midnode1,midnode2,e2n2);
+  Cell *c3 = grid.createCell(e1n2,midnode1,midnode2,e2n1);
+  Cell *c4 = grid.createCell(e1n2,midnode1,midnode2,e2n2);
+
+  cell.addChild(c1);
+  cell.addChild(c2);
+  cell.addChild(c3);
+  cell.addChild(c4);
+
+  if (_create_edges){
+    grid.createEdges(c1);
+    grid.createEdges(c2);
+    grid.createEdges(c3);
+    grid.createEdges(c4);
+  }
+
+  cell.setStatus(Cell::REFINED_IRREGULAR_BY_4);
+  if (cell.marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4) 
+    cell.mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 //-----------------------------------------------------------------------------
 
-
+*/
 
 
 /*
@@ -621,19 +971,19 @@ void GridRefinement::irregularRefinementBy1(Cell* parent)
       if ( (parent->node(marked_nodes[i])->id() != parent->edge(marked_edges[j])->node(0)->id()) &&
 	   (parent->node(marked_nodes[i])->id() != parent->edge(marked_edges[j])->node(1)->id()) ){
 	if (j == 0){
-	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n0,edge_nodes(1),edge_nodes(2),nf);
+	  new_cell(i) = grid.createCell(parent->level()+1,n0,edge_nodes(1),edge_nodes(2),nf);
 	}
 	if (j == 1){
-	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,edge_nodes(0),edge_nodes(2),nf);
+	  new_cell(i) = grid.createCell(parent->level()+1,n1,edge_nodes(0),edge_nodes(2),nf);
 	}
 	if (j == 2){
-	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n2,edge_nodes(0),edge_nodes(1),nf);
+	  new_cell(i) = grid.createCell(parent->level()+1,n2,edge_nodes(0),edge_nodes(1),nf);
 	}
       }
     }
   }
 
-  new_cell(3) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,edge_nodes(0),edge_nodes(1),edge_nodes(2),nf);
+  new_cell(3) = grid.createCell(parent->level()+1,edge_nodes(0),edge_nodes(1),edge_nodes(2),nf);
   
   parent->addChild(new_cell(0));
   parent->addChild(new_cell(1));
@@ -687,8 +1037,8 @@ void GridRefinement::irregularRefinementBy2(Cell* parent)
 	  cnt++;
 	}
       }
-      cnew1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nnew,ne0,nold(0),nold(1));
-      cnew2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nnew,ne1,nold(0),nold(1));
+      cnew1 = grid.createCell(parent->level()+1,nnew,ne0,nold(0),nold(1));
+      cnew2 = grid.createCell(parent->level()+1,nnew,ne1,nold(0),nold(1));
       break;
     }
   }
@@ -796,9 +1146,9 @@ void GridRefinement::irregularRefinementBy3(Cell* parent)
   }   
 
 
-  Cell *c1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nd,midnode1,midnode2,nf);
-  Cell *c2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,midnode1,midnode2,nf);
-  Cell *c3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,n2,midnode2,nf);
+  Cell *c1 = grid.createCell(parent->level()+1,nd,midnode1,midnode2,nf);
+  Cell *c2 = grid.createCell(parent->level()+1,n1,midnode1,midnode2,nf);
+  Cell *c3 = grid.createCell(parent->level()+1,n1,n2,midnode2,nf);
   
   int neighbor_face_node;
   for (int i=0;i<4;i++){
@@ -809,9 +1159,9 @@ void GridRefinement::irregularRefinementBy3(Cell* parent)
 
   Node *nnf = grid.createNode(parent->level()+1,parent->neighbor(face_neighbor)->node(neighbor_face_node)->coord());
   
-  Cell *nc1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nd,midnode1,midnode2,nnf);
-  Cell *nc2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,midnode1,midnode2,nnf);
-  Cell *nc3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,n2,midnode2,nnf);
+  Cell *nc1 = grid.createCell(parent->level()+1,nd,midnode1,midnode2,nnf);
+  Cell *nc2 = grid.createCell(parent->level()+1,n1,midnode1,midnode2,nnf);
+  Cell *nc3 = grid.createCell(parent->level()+1,n1,n2,midnode2,nnf);
 
   parent->addChild(c1);
   parent->addChild(c2);
@@ -872,10 +1222,10 @@ void GridRefinement::irregularRefinementBy4(Cell* parent)
   Node *midnode1 = grid.createNode(parent->level()+1,parent->edge(marked_edge[0])->midpoint());
   Node *midnode2 = grid.createNode(parent->level()+1,parent->edge(marked_edge[1])->midpoint());
 
-  Cell *c1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,e1n1,midnode1,midnode2,e2n1);
-  Cell *c2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,e1n1,midnode1,midnode2,e2n2);
-  Cell *c3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,e1n2,midnode1,midnode2,e2n1);
-  Cell *c4 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,e1n2,midnode1,midnode2,e2n2);
+  Cell *c1 = grid.createCell(parent->level()+1,e1n1,midnode1,midnode2,e2n1);
+  Cell *c2 = grid.createCell(parent->level()+1,e1n1,midnode1,midnode2,e2n2);
+  Cell *c3 = grid.createCell(parent->level()+1,e1n2,midnode1,midnode2,e2n1);
+  Cell *c4 = grid.createCell(parent->level()+1,e1n2,midnode1,midnode2,e2n2);
 
   parent->addChild(c1);
   parent->addChild(c2);

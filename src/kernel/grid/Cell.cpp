@@ -185,6 +185,22 @@ int Cell::setID(int id, Grid* grid)
   return c->setID(id, grid);
 }
 //-----------------------------------------------------------------------------
+void Cell::setParent(Cell* parent)
+{
+  // Set parent cell: a cell is parent if the current cell is created through 
+  // refinement of the parent cell. 
+  dolfin_assert(c);
+  return c->setParent(parent);
+}
+//-----------------------------------------------------------------------------
+void Cell::setChild(Cell* child)
+{
+  // Set the child cell if Cell not already contains the child cell: a cell 
+  // is child if it is created through refinement of the current cell.  
+  dolfin_assert(c);
+  return c->setChild(child);
+}
+//-----------------------------------------------------------------------------
 void Cell::set(Node* n0, Node* n1, Node* n2)
 {
   if ( c )

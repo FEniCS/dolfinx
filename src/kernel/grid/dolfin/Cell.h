@@ -143,6 +143,10 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
+    // Set parent-child info
+    void setParent(Cell* parent);
+    void setChild(Cell* child);
+
     // Clear data and create a new triangle
     void set(Node* n0, Node* n1, Node* n2);
 

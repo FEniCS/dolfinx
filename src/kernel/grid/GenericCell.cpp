@@ -14,6 +14,7 @@ GenericCell::GenericCell()
 {
   grid = 0;
   _id = -1;
+  _no_children = 0;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
@@ -85,6 +86,23 @@ int GenericCell::setID(int id, Grid* grid)
 {
   this->grid = grid;
   return _id = id;
+}
+//-----------------------------------------------------------------------------
+void GenericCell::setParent(Cell* parent)
+{
+  // Set parent cell: a cell is parent if the current cell is created through 
+  // refinement of the parent cell. 
+  this->_parent = parent;
+}
+//-----------------------------------------------------------------------------
+void GenericCell::setChild(Cell* child)
+{
+  // Set the child cell if Cell not already contains the child cell: a cell 
+  // is child if it is created through refinement of the current cell.  
+  if (!(this->_children.contains(child))){
+    this->_children.add(child);
+    this->_no_children++; 
+  }
 }
 //-----------------------------------------------------------------------------
 bool GenericCell::neighbor(GenericCell* cell) const
@@ -161,5 +179,20 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
 	return *f;
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+Cell* GenericCell::parent()
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+Cell* GenericCell::child(int i)
+{
+  return _children(i);
+}
+//-----------------------------------------------------------------------------
+int GenericCell::noChildren()
+{
+  return _no_children;
 }
 //-----------------------------------------------------------------------------
