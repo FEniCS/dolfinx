@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -DNO_CURSES=1
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-template -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -96,7 +96,7 @@ LIBRARIES =  $(lib_LIBRARIES)
 DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.4.2\" -DPACKAGE_STRING=\"dolfin\ 0.4.2\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
-LIBS = 
+LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
 libdolfin_fem_a_OBJECTS =  FiniteElement.o FunctionSpace.o Galerkin.o
 AR = ar
