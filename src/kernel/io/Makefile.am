@@ -2,9 +2,7 @@ SUBDIRS           = dolfin
 include_HEADERS   = 
 INCLUDES          = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES     = libdolfin-io.a
-libdolfin_io_a_SOURCES = DataInfo.cpp \
-                         DataInfo.h \
-                         File.cpp \
+libdolfin_io_a_SOURCES = File.cpp \
                          File.h \
                          GenericFile.cpp \
                          GenericFile.h \

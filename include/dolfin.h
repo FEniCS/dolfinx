@@ -7,8 +7,9 @@
 #include <dolfin/dolfin_io.h>
 #include <dolfin/dolfin_la.h>
 #include <dolfin/dolfin_fem.h>
+#include <dolfin/dolfin_quadrature.h>
 
-// Temporary: FIXME
-Display *display = new Terminal(0);
+#include <dolfin/Problem.h>
+#include <dolfin/constants.h>
 
 #endif
