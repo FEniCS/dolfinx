@@ -8,28 +8,28 @@
 #include <dolfin/Point.h>
 
 namespace dolfin {
-
+  
   class Quadrature {
   public:
+    
+    Quadrature(int n);
+    ~Quadrature();
+    
+    int size() const;
 
-	 Quadrature(int n);
-	 ~Quadrature();
-
-	 int size() const;
-	 
-	 const Point& point(int i) const; // Get quadrature point
-	 real  weight(int i) const;       // Get quadrature weight
-	 real  measure() const;           // Sum of weights (area, volume)
-
+    const Point& point(int i) const; // Get quadrature point
+    real  weight(int i) const;       // Get quadrature weight
+    real  measure() const;           // Sum of weights (area, volume)
+    
   protected:
-
-	 int n;    // Number of quadrature points
-	 Point *p; // Quadrature points
-	 real *w;  // Quadrature weights
-	 real m;   // Sum of weights
-	 
+    
+    int n;    // Number of quadrature points
+    Point* p; // Quadrature points
+    real* w;  // Quadrature weights
+    real m;   // Sum of weights
+    
   };
-
+  
 }
 
 #endif

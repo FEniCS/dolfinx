@@ -28,7 +28,7 @@ Integral::Measure::Measure(const Mapping& mapping,
   // Save mapping and quadrature
   m = &mapping;
   q = &quadrature;
-
+  
   // Initialise
   init();
 }
@@ -63,7 +63,7 @@ real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
   // Check if the size of the function list has increased
   if ( FunctionList::size() > n )
     resize(order, FunctionList::size());
-
+  
   // Get value
   Value value = (*(table[0]))(id);
   
@@ -112,11 +112,11 @@ void Integral::Measure::init()
 
   // Check how many different shape functions we need.
   n = FunctionList::size();
-
+  
   // Initialise the table
   table = new (Tensor<Value> *)[order];
   for (int i = 0; i < order; i++)
-	 table[i] = new Tensor<Value>(i+1, n);
+    table[i] = new Tensor<Value>(i+1, n);
 }
 //-----------------------------------------------------------------------------
 void Integral::Measure::resize(int new_order, int new_n)
@@ -128,17 +128,17 @@ void Integral::Measure::resize(int new_order, int new_n)
   // Create a new table
   Tensor<Value> **new_table = new (Tensor<Value> *)[new_order];
   for (int i = 0; i < new_order; i++)
-	 new_table[i] = new Tensor<Value>(i+1, new_n);
-
+    new_table[i] = new Tensor<Value>(i+1, new_n);
+  
   // Copy the old values
   for (int i = 0; i < new_order & i < order; i++)
-	 new_table[i]->copy(*(table[i]));
-
+    new_table[i]->copy(*(table[i]));
+  
   // Delete old table
   for (int i = 0; i < order; i++)
-	 delete table[i];
+    delete table[i];
   delete [] table;
-
+  
   // Use the new table
   table = new_table;
   order = new_order;

@@ -8,7 +8,7 @@
 #include <dolfin/constants.h>
 
 namespace dolfin {
-  
+
   class Point {
   public:
     
@@ -16,15 +16,19 @@ namespace dolfin {
     Point(real x);
     Point(real x, real y);
     Point(real x, real y, real z);
+
+    /// Return distance to given point p
+    real dist(Point p) const;
     
-    real dist(Point p);
+    /// Return midpoint on line to given point p
+    Point midpoint(Point p) const;
     
-    Point midpoint(Point p);
-    
+    /// The three coordinates
     real x;
     real y;
     real z;
     
+    /// Output
     friend LogStream& operator<<(LogStream& stream, const Point& p);
     
   };

@@ -35,7 +35,7 @@ Point::Point(real x, real y, real z)
   this->z = z;
 }
 //-----------------------------------------------------------------------------
-real Point::dist(Point p)
+real Point::dist(Point p) const
 {
   real dx = x - p.x;
   real dy = y - p.y;
@@ -44,7 +44,7 @@ real Point::dist(Point p)
   return sqrt( dx*dx + dy*dy + dz*dz );
 }
 //-----------------------------------------------------------------------------
-Point Point::midpoint(Point p)
+Point Point::midpoint(Point p) const
 {
   real mx = 0.5*(x + p.x);
   real my = 0.5*(y + p.y);
