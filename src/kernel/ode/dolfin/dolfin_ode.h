@@ -23,6 +23,9 @@
 #include <dolfin/ElementGroup.h>
 #include <dolfin/ElementIterator.h>
 #include <dolfin/FixedPointIteration.h>
+#include <dolfin/Homotopy.h>
+#include <dolfin/HomotopyJacobian.h>
+#include <dolfin/HomotopyODE.h>
 #include <dolfin/Iteration.h>
 #include <dolfin/JacobianMatrix.h>
 #include <dolfin/Method.h>

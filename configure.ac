@@ -89,8 +89,8 @@ fi
 
 # Handle option --with-petsc-dir=<path>
 if test x$PETSC_DIR = x; then
-    echo "assuming path to PETSc is /usr/lib/petsc"
-    PETSC_DIR="/usr/lib/petsc/"
+    echo "assuming path to PETSc is /usr/local/lib/petsc"
+    PETSC_DIR="/usr/local/lib/petsc/"
 else
     echo "using PETSC_DIR=$PETSC_DIR"
 fi
@@ -104,10 +104,10 @@ else
 fi
 
 # Handle option --with-petsc-version=<version>. If not supplied,
-# we assume the version is 2.2.0. We can only handle 2.2.0 or 2.2.1.
+# we assume the version is 2.2.1. We can only handle 2.2.0 or 2.2.1.
 if test x$PETSC_VERSION = x; then
-    echo "assuming PETSc version is 2.2.0"
-    PETSC_VERSION="2.2.0"
+    echo "assuming PETSc version is 2.2.1"
+    PETSC_VERSION="2.2.1"
 elif test $PETSC_VERSION = "2.2.0"; then
     echo "using PETSc version $PETSC_VERSION"
 elif test $PETSC_VERSION = "2.2.1"; then

@@ -1,10 +1,11 @@
-/* $Id: pcimpl.h,v 1.1 2005/02/11 08:06:58 johanjan Exp $ */
+// Copyright (C) 2005 Johan Jansson.
+// Licensed under the GNU GPL Version 2.
 
-#ifndef _PCIMPL
-#define _PCIMPL
+#ifndef __PCIMPL_H
+#define __PCIMPL_H
 
-#include <petsc/petscksp.h>
-#include <petsc/petscpc.h>
+#include <petscksp.h>
+#include <petscpc.h>
 
 typedef struct _PCOps *PCOps;
 struct _PCOps {

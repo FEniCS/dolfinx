@@ -86,6 +86,9 @@ namespace dolfin
     // Progress bar
     Progress p;
 
+    // True if solution has been stopped
+    bool stopped;
+
     // True if we have reached the given end time
     bool _finished;
 

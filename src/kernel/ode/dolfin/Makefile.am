@@ -25,6 +25,9 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementIterator.h \
              ElementTmpFile.h \
              FixedPointIteration.h \
+             Homotopy.h \
+             HomotopyJacobian.h \
+             HomotopyODE.h \
              Iteration.h \
              JacobianMatrix.h \
              Method.h \

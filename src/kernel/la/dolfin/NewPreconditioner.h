@@ -4,8 +4,7 @@
 #ifndef __NEW_PRECONDITIONER_H
 #define __NEW_PRECONDITIONER_H
 
-#include <petsc/petscpc.h>
-/* #include <dolfin/pcimpl.h> */
+#include <petscpc.h>
 
 namespace dolfin
 {

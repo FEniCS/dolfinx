@@ -181,9 +181,9 @@ real ODE::timestep(uint i)
   return timestep();
 }
 //-----------------------------------------------------------------------------
-void ODE::update(const real u[], real t)
+bool ODE::update(const real u[], real t, bool end)
 {
-  // Do nothing
+  return false;
 }
 //-----------------------------------------------------------------------------
 void ODE::update(RHS& f, Function& u, real t)

@@ -190,6 +190,56 @@ const NewVector& NewVector::operator= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+const NewVector& NewVector::operator+= (const NewVector& x)
+{
+  const real a = 1.0;
+  VecAXPY(&a, x.x, this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector& NewVector::operator-= (const NewVector& x)
+{
+  const real a = -1.0;
+  VecAXPY(&a, x.x, this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector& NewVector::operator*= (real a)
+{
+  VecScale(&a, x);
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector& NewVector::operator/= (real a)
+{
+  dolfin_assert(a != 0.0);
+  const real b = 1.0 / a;
+  VecScale(&b, x);
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
+real NewVector::norm(NormType type) const
+{
+  real value = 0.0;
+
+  switch (type) {
+  case l1:
+    VecNorm(x, NORM_1, &value);
+    break;
+  case l2:
+    VecNorm(x, NORM_2, &value);
+    break;
+  default:
+    VecNorm(x, NORM_INFINITY, &value);
+  }
+  
+  return value;
+}
+//-----------------------------------------------------------------------------
 void NewVector::disp() const
 {
   // FIXME: Maybe this could be an option?

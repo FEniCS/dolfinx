@@ -10,75 +10,26 @@
 
 using namespace dolfin;
 
-class Homotopy : public ComplexODE
+class Simple : public Homotopy
 {
 public:
-  
-  Homotopy(unsigned int m) : ComplexODE(1), 
-			     m(static_cast<real>(m)),
-			     p(static_cast<real>(3)),
-			     c(0.00143289, 0.982727),
-			     active(true)
+
+  Simple() : Homotopy(1) {}
+
+  void F(const complex z[], complex y[])
   {
-    T = 1.0;
+    y[0] = 1.0 - z[0]*z[0];
   }
   
-  complex z0(unsigned int i)
+  void JF(const complex z[], const complex x[], complex y[])
   {
-    real r = std::pow(std::abs(c), 1.0/p);
-    real a = std::arg(c) / p;
-
-    complex z = std::polar(r, a + m/p*2.0*DOLFIN_PI);
-
-    return z;
-  }
-  
-  complex f(const complex z[], real t, unsigned int i)
-  {
-    if ( active )
-      return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
-    else
-      return 0.0;
+    y[0] = - 2.0*z[0]*x[0];
   }
 
-  void M(const complex x[], complex y[], const complex z[], real t)
+  unsigned int degree(unsigned int i) const
   {
-    y[0] = (3.0*(1.0 - t)*z[0]*z[0] - 2.0*t*z[0]) * x[0];
-    //cout << "Product at t = " << t << ": " << y[0] << " = M * " << x[0] << endl;
+    return 2;
   }
-
-  void J(const complex x[], complex y[], const complex z[], real t)
-  {
-    y[0] = (3.0*z[0]*z[0] + 2.0*z[0]) * x[0];
-  }
-
-  void update(const complex z[], real t)
-  {
-    real r = std::abs((1 - t) * (z[0]*z[0]*z[0] - c));
-    cout << "checking: r = " << r << endl;
-    // This is a temporary test to see if the solution is diverging
-    if ( r > 1.0 )
-    {
-      cout << "Solution is diverging, inactivating." << endl;
-      active = false;
-    }
-
-    cout << "Updating at t = " << t << ": z = " << z[0] << endl;
-  }
-
-private:
-
-  // Which root to start at, m = 0, 1, 2
-  real m;
-
-  // Degree of homotopy
-  real p;
-
-  // Parameter for start root, x^3 = c
-  complex c;
-
-  // True if active (inactivated if divergent)
-  bool active;
 
 };
 
@@ -86,31 +37,11 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  dolfin_set("solve dual problem", false);
-  dolfin_set("use new ode solver", true);
   dolfin_set("method", "cg");
-  dolfin_set("order", 1);
-  dolfin_set("implicit", true);
+  dolfin_set("order", 2);
 
-  //dolfin_set("initial time step", 0.1);
-  //dolfin_set("fixed time step", true);
-  //dolfin_set("tolerance", 1e-1);
-
-  // Iterate over the different starting points
-  char filename[64];
-  for (unsigned int i = 0; i < 3; i++)
-  {
-    sprintf(filename, "primal_%d.m", i);
-    dolfin_set("file name", filename);
-
-
-    Homotopy homotopy(i);
-
-    cout << "Solving homotopy for starting point " << i << ": z = " 
-	 << homotopy.z0(0) << endl;
-
-    homotopy.solve();
-  }
+  Simple simple;
+  simple.solve();
 
   return 0;
 }

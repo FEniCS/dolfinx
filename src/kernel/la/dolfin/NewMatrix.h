@@ -6,7 +6,7 @@
 #ifndef __NEW_MATRIX_H
 #define __NEW_MATRIX_H
 
-#include <petsc/petscmat.h>
+#include <petscmat.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Matrix.h>

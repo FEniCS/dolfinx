@@ -41,7 +41,7 @@ void ComplexODE::feval(const complex z[], real t, complex f[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
-  
+ 
   for (uint i = 0; i < n; i++)
     f[i] = this->f(z, t, i);
 }
@@ -68,9 +68,9 @@ real ComplexODE::k(uint i)
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::update(const complex z[], real t)
+bool ComplexODE::update(const complex z[], real t, bool end)
 {
-  // Do nothing
+  return true;
 }
 //-----------------------------------------------------------------------------
 real ComplexODE::u0(uint i)
@@ -197,7 +197,7 @@ real ComplexODE::timestep(uint i)
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::update(const real u[], real t)
+bool ComplexODE::update(const real u[], real t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -207,6 +207,6 @@ void ComplexODE::update(const real u[], real t)
   }
 
   // Call user-supplied function update(z, t)
-  update(zvalues, t);
+  return update(zvalues, t, end);
 }
 //-----------------------------------------------------------------------------

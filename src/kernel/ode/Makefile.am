@@ -27,6 +27,9 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementIterator.h \
                           dolfin/ElementTmpFile.h \
                           dolfin/FixedPointIteration.h \
+                          dolfin/Homotopy.h \
+                          dolfin/HomotopyJacobian.h \
+                          dolfin/HomotopyODE.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
                           dolfin/Method.h \
@@ -94,6 +97,9 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \
                           FixedPointIteration.cpp \
+                          Homotopy.cpp \
+                          HomotopyJacobian.cpp \
+                          HomotopyODE.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
                           Method.cpp \

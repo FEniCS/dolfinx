@@ -41,7 +41,7 @@ namespace dolfin
     /// Destructor
     virtual ~ODE();
 
-    /// Initial value
+    /// Return initial value for given component
     virtual real u0(uint i) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
@@ -78,8 +78,8 @@ namespace dolfin
     /// Time step to use for given component (optional)
     virtual real timestep(uint i);
 
-    /// Update ODE (optional)
-    virtual void update(const real u[], real t);
+    /// Update ODE, return false to stop (optional)
+    virtual bool update(const real u[], real t, bool end);
 
     /// Update ODE (old version, will be removed)
     virtual void update(RHS& f, Function& u, real t);

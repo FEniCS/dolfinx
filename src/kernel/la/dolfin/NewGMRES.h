@@ -7,8 +7,8 @@
 #ifndef __NEW_GMRES_H
 #define __NEW_GMRES_H
 
+#include <petscksp.h>
 #include <dolfin/constants.h>
-#include <petsc/petscksp.h>
 #include <dolfin/NewPreconditioner.h>
 
 namespace dolfin
@@ -65,11 +65,17 @@ namespace dolfin
      
   private:
 
+    // Create preconditioner matrix for virtual matrix
+    void createVirtualPreconditioner(const VirtualMatrix& A);
+
     // True if we should report the number of iterations
     bool report;
 
     // PETSc solver pointer
     KSP ksp;
+
+    // Diagonal matrix used for preconditioning with virtual matrix
+    Mat B;
 
   };
 

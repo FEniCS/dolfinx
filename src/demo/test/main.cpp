@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <iostream>
-#include <petsc/petsc.h>
+#include <petsc.h>
 #include <dolfin.h>
 
 using namespace dolfin;

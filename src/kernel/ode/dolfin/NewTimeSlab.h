@@ -31,7 +31,7 @@ namespace dolfin
     virtual void solve() = 0;
 
     /// Shift time slab (prepare for next time slab)
-    virtual void shift() = 0;
+    virtual bool shift() = 0;
 
     /// Prepare sample at time t
     virtual void sample(real t) = 0;

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
-#include <petsc/petsc.h>
+#include <petsc.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>

@@ -89,7 +89,7 @@ void MultiAdaptiveTimeSlab::solve()
   // }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::shift()
+bool MultiAdaptiveTimeSlab::shift()
 {
   // Cover end time
   cover(_b);
@@ -137,11 +137,15 @@ void MultiAdaptiveTimeSlab::shift()
   }
 
   // Let user update ODE
-  ode.update(u, _b);
+  const bool end = (_b + DOLFIN_EPS) > ode.T;
+  if ( !ode.update(u, _b, end) )
+    return false;
 
   // Set initial value to end-time value (needs to be done last)
   for (uint i = 0; i < N; i++)
     u0[i] = u[i];
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::sample(real t)

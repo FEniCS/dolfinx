@@ -4,7 +4,7 @@
 #ifndef __VIRTUAL_MATRIX_H
 #define __VIRTUAL_MATRIX_H
 
-#include <petsc/petscmat.h>
+#include <petscmat.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 

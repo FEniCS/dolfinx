@@ -6,7 +6,7 @@
 #ifndef __NEW_VECTOR_H
 #define __NEW_VECTOR_H
 
-#include <petsc/petscvec.h>
+#include <petscvec.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -93,6 +93,22 @@ namespace dolfin
 
     /// Assignment of all elements to a single scalar value
     const NewVector& operator= (real a);
+
+    /// Add vector x
+    const NewVector& operator+= (const NewVector& x);
+
+    /// Subtract vector x
+    const NewVector& operator-= (const NewVector& x);
+
+    /// Multiply vector with scalar
+    const NewVector& operator*= (real a);
+
+    /// Divide vector by scalar
+    const NewVector& operator/= (real a);
+
+    /// Compute norm of vector
+    enum NormType { l1, l2, linf };
+    real norm(NormType type = l2) const;
 
     /// Display vector
     void disp() const;

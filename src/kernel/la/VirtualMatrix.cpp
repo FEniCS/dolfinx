@@ -1,6 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewVector.h>

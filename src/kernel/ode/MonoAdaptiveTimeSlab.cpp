@@ -84,7 +84,7 @@ void MonoAdaptiveTimeSlab::solve()
   solver->solve();
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveTimeSlab::shift()
+bool MonoAdaptiveTimeSlab::shift()
 {
   // Get array
   real* xx = x.array();
@@ -118,7 +118,12 @@ void MonoAdaptiveTimeSlab::shift()
   adaptivity.update(rmax, *method);
   
   // Let user update ODE
-  ode.update(xx + xoffset, _b);
+  const bool end = (_b + DOLFIN_EPS) > ode.T;
+  if ( !ode.update(xx + xoffset, _b, end) )
+  {
+    x.restore(xx);
+    return false;
+  }
 
   // Set initial value to end-time value
   for (uint i = 0; i < N; i++)
@@ -133,6 +138,8 @@ void MonoAdaptiveTimeSlab::shift()
 
   // Restore array
   x.restore(xx);
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::sample(real t)

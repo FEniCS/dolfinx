@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <math.h>
+#include <petscksp.h>
+#include <petscerror.h>
 #include <dolfin.h>
 #include <dolfin/NewGMRES.h>
-#include <petsc/petscksp.h>
-#include <petsc/petscerror.h>
 
 using namespace dolfin;
 

@@ -21,7 +21,7 @@ using namespace dolfin;
 NewTimeStepper::NewTimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
   ode(ode), timeslab(0), file(dolfin_get("file name")),
-  p("Time-stepping"), _finished(false),
+  p("Time-stepping"), stopped(false), _finished(false),
   save_solution(dolfin_get("save solution")),
   solve_dual(dolfin_get("solve dual problem")),
   adaptive_samples(dolfin_get("adaptive samples")),
@@ -73,7 +73,7 @@ void NewTimeStepper::solve(ODE& ode)
     NewTimeStepper timeStepper(ode);
     
     // Do time stepping
-    while ( !timeStepper.finished() )
+    while ( !timeStepper.finished() && !timeStepper.stopped )
       timeStepper.step();
   }
 
@@ -95,7 +95,11 @@ real NewTimeStepper::step()
   save();
 
   // Update for next time slab
-  timeslab->shift();
+  if ( !timeslab->shift() )
+  {
+    dolfin_info("ODE solver stopped on user's request.");
+    stopped = true;
+  }
 
   // Update progress
   p = t / T;

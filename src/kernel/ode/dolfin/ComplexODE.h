@@ -1,8 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __COMPLEX_ODE
-#define __COMPLEX_ODE
+#ifndef __COMPLEX_ODE_H
+#define __COMPLEX_ODE_H
 
 #include <dolfin/constants.h>
 #include <dolfin/ODE.h>
@@ -40,7 +40,7 @@ namespace dolfin
     /// Destructor
     ~ComplexODE();
     
-    /// Initial value
+    /// Return initial value for given component
     virtual complex z0(uint i) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
@@ -58,8 +58,8 @@ namespace dolfin
     /// Return time step for component i (optional)
     virtual real k(uint i);
 
-    /// Update ODE (optional)
-    virtual void update(const complex z[], real t);
+    /// Update ODE, return false to stop (optional)
+    virtual bool update(const complex z[], real t, bool end);
 
     /// Return initial value for real-valued ODE
     real u0(uint i);
@@ -79,8 +79,8 @@ namespace dolfin
     /// Return time step for real-valued ODE
     real timestep(uint i);
 
-    /// Update for real-valued ODE (optional)
-    void update(const real u[], real t);
+    /// Update for real-valued ODE
+    bool update(const real u[], real t, bool end);
 
   protected:
 

@@ -38,7 +38,7 @@ namespace dolfin
     void solve();
 
     /// Shift time slab (prepare for next time slab)
-    void shift();
+    bool shift();
 
     /// Prepare sample at time t
     void sample(real t);

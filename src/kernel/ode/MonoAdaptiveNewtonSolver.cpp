@@ -30,6 +30,9 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 
   // Make GMRES solver not report the number iterations
   solver.setReport(false);
+
+  // Set tolerances for GMRES solver
+  solver.setAtol(0.01*tol); // FIXME: Is this a good choice?
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
@@ -65,13 +68,42 @@ void MonoAdaptiveNewtonSolver::start()
 real MonoAdaptiveNewtonSolver::iteration()
 {
   // Evaluate b = -F(x) at current x
+  //real bmax = beval();
   beval();
 
   //cout << "b = ";
   //b.disp();
-  
-  // Solve linear system F for dx
+
+  // If the increment of the fixed-point iteration is small enough, then
+  // we don't have to solve the linear system. This avoids problems with
+  // the GMRES solver for small values of the right-hand side b.
+  /*
+  if ( bmax < tol )
+  {
+    // Get arrays of values for x and b
+    real* xx = ts.x.array();
+    real* bb = b.array();
+
+    // Update solution x -> x + b
+    for (uint j = 0; j < ts.nj; j++)
+      xx[j] += bb[j];
+   
+    // Restore arrays
+    ts.x.restore(xx);
+    b.restore(bb);
+ 
+    return bmax;
+  }
+  */
+
+  //solver.setAtol(tol);
+
+  // Solve linear system, seems like we need to scale the right-hand
+  // side to make it work with the PETSc GMRES solver
+  const real r = b.norm(NewVector::linf) + DOLFIN_EPS;
+  b /= r;
   solver.solve(A, dx, b);
+  dx *= r;
 
   //cout << "dx = ";
   //dx.disp();
@@ -100,18 +132,17 @@ real MonoAdaptiveNewtonSolver::iteration()
   return max_increment;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::beval()
+real MonoAdaptiveNewtonSolver::beval()
 {
   if ( implicit )
-    bevalImplicit();
+    return bevalImplicit();
   else
-    bevalExplicit();
+    return bevalExplicit();
 
-  //cout << "Evaluated right-hand side F:" << endl;
-  //b.disp();
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::bevalExplicit()
+real MonoAdaptiveNewtonSolver::bevalExplicit()
 {
   // Get arrays of values for x and b (assumes uniprocessor case)
   real* bb = b.array();
@@ -147,12 +178,23 @@ void MonoAdaptiveNewtonSolver::bevalExplicit()
   for (uint j = 0; j < ts.nj; j++)
     bb[j] -= xx[j];
 
+  // Compute maximum
+  real bmax = 0.0;
+  for (uint j = 0; j < ts.nj; j++)
+  {
+    const real bj = bb[j];
+    if ( bj > bmax )
+      bmax = bj;
+  }
+
   // Restore arrays
   b.restore(bb);
   ts.x.restore(xx);
+
+  return bmax;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::bevalImplicit()
+real MonoAdaptiveNewtonSolver::bevalImplicit()
 {
   // Get arrays of values for x and b (assumes uniprocessor case)
   real* bb = b.array();
@@ -207,9 +249,20 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
       bb[noffset + i] -= z[i];
   }
 
+  // Compute maximum
+  real bmax = 0.0;
+  for (uint j = 0; j < ts.nj; j++)
+  {
+    const real bj = bb[j];
+    if ( bj > bmax )
+      bmax = bj;
+  }
+
   // Restore arrays
   b.restore(bb);
   ts.x.restore(xx);
+
+  return bmax;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()
