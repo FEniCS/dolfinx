@@ -114,8 +114,8 @@ bool NodeIterator::operator!=(const Node& n) const
 //-----------------------------------------------------------------------------
 NodeIterator::MeshNodeIterator::MeshNodeIterator(const Mesh& mesh)
 {
-  node_iterator = mesh.gd->nodes.begin();
-  at_end = mesh.gd->nodes.end();
+  node_iterator = mesh.md->nodes.begin();
+  at_end = mesh.md->nodes.end();
 }
 //-----------------------------------------------------------------------------
 void NodeIterator::MeshNodeIterator::operator++()

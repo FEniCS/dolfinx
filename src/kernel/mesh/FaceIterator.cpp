@@ -103,8 +103,8 @@ bool FaceIterator::operator!=(const Face& f) const
 //-----------------------------------------------------------------------------
 FaceIterator::MeshFaceIterator::MeshFaceIterator(const Mesh& mesh)
 {
-  face_iterator = mesh.gd->faces.begin();
-  at_end = mesh.gd->faces.end();
+  face_iterator = mesh.md->faces.begin();
+  at_end = mesh.md->faces.end();
 }
 //-----------------------------------------------------------------------------
 void FaceIterator::MeshFaceIterator::operator++()

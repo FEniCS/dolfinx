@@ -27,7 +27,7 @@ namespace dolfin {
     /// Clear face data
     void clear();
 
-    /// Return id of cell
+    /// Return id of face
     int id() const;
 
     /// Return the number of edges
@@ -35,6 +35,9 @@ namespace dolfin {
 
     /// Return edge number i
     Edge& edge(int i) const;
+
+    /// Return cell neighbor number i
+    Cell& cell(int i) const;
 
     /// Check if face consists of the given edges
     bool equals(const Edge& e0, const Edge& e1, const  Edge& e2) const;

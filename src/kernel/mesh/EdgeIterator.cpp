@@ -106,8 +106,8 @@ bool EdgeIterator::operator!=(const EdgeIterator& e) const
 //-----------------------------------------------------------------------------
 EdgeIterator::MeshEdgeIterator::MeshEdgeIterator(const Mesh& mesh)
 {
-  edge_iterator = mesh.gd->edges.begin();
-  at_end = mesh.gd->edges.end();
+  edge_iterator = mesh.md->edges.begin();
+  at_end = mesh.md->edges.end();
 }
 //-----------------------------------------------------------------------------
 void EdgeIterator::MeshEdgeIterator::operator++()

@@ -13,6 +13,7 @@
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/File.h>
+#include <dolfin/Boundary.h>
 #include <dolfin/MeshHierarchy.h>
 #include <dolfin/MeshInit.h>
 #include <dolfin/MeshRefinement.h>
@@ -23,7 +24,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Mesh::Mesh()
 {
-  gd = new MeshData(*this);
+  md = new MeshData(*this);
   bd = new BoundaryData(*this);
   _parent = 0;
 
@@ -33,7 +34,7 @@ Mesh::Mesh()
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const char* filename)
 {
-  gd = new MeshData(*this);
+  md = new MeshData(*this);
   bd = new BoundaryData(*this);
   _parent = 0;
 
@@ -47,7 +48,7 @@ Mesh::Mesh(const char* filename)
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
 {
-  gd = new MeshData(*this);
+  md = new MeshData(*this);
   bd = new BoundaryData(*this);
   _parent = 0;
 
@@ -79,9 +80,9 @@ Mesh::~Mesh()
 {
   clear();
 
-  if ( gd )
-    delete gd;
-  gd = 0;
+  if ( md )
+    delete md;
+  md = 0;
 
   if ( bd )
     delete bd;
@@ -90,7 +91,7 @@ Mesh::~Mesh()
 //-----------------------------------------------------------------------------
 void Mesh::clear()
 {
-  gd->clear();
+  md->clear();
   bd->clear();
 
   _type = triangles;
@@ -104,22 +105,22 @@ void Mesh::clear()
 //-----------------------------------------------------------------------------
 int Mesh::noNodes() const
 {
-  return gd->noNodes();
+  return md->noNodes();
 }
 //-----------------------------------------------------------------------------
 int Mesh::noCells() const
 {
-  return gd->noCells();
+  return md->noCells();
 }
 //-----------------------------------------------------------------------------
 int Mesh::noEdges() const
 {
-  return gd->noEdges();
+  return md->noEdges();
 }
 //-----------------------------------------------------------------------------
 int Mesh::noFaces() const
 {
-  return gd->noFaces();
+  return md->noFaces();
 }
 //-----------------------------------------------------------------------------
 Mesh::Type Mesh::type() const
@@ -129,22 +130,28 @@ Mesh::Type Mesh::type() const
 //-----------------------------------------------------------------------------
 Node& Mesh::node(unsigned int id)
 {
-  return gd->node(id);
+  return md->node(id);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::cell(unsigned int id)
 {
-  return gd->cell(id);
+  return md->cell(id);
 }
 //-----------------------------------------------------------------------------
 Edge& Mesh::edge(unsigned int id)
 {
-  return gd->edge(id);
+  return md->edge(id);
 }
 //-----------------------------------------------------------------------------
 Face& Mesh::face(unsigned int id)
 {
-  return gd->face(id);
+  return md->face(id);
+}
+//-----------------------------------------------------------------------------
+Boundary Mesh::boundary()
+{
+  Boundary boundary(*this);
+  return boundary;
 }
 //-----------------------------------------------------------------------------
 void Mesh::refine()
@@ -166,9 +173,9 @@ void Mesh::refine()
   // same time, we store the data structures of the current mesh in the
   // newly created finest mesh, which becomes the next finest mesh:
   //
-  // Before refinement:  g0 <-> g1 <-> g2 <-> ... <-> *this(gd)
-  // After refinement:   g0 <-> g1 <-> g2 <-> ... <-> *this(gd) <-> new(ngd)
-  // After swap:         g0 <-> g1 <-> g2 <-> ... <-> new(gd)   <-> *this(ngd)
+  // Before refinement:  g0 <-> g1 <-> g2 <-> ... <-> *this(md)
+  // After refinement:   g0 <-> g1 <-> g2 <-> ... <-> *this(md) <-> new(nmd)
+  // After swap:         g0 <-> g1 <-> g2 <-> ... <-> new(md)   <-> *this(nmd)
 
   // Get pointer to new mesh
   Mesh* new_mesh = &(meshes.fine());
@@ -267,12 +274,12 @@ Mesh& Mesh::createChild()
 //-----------------------------------------------------------------------------
 Node& Mesh::createNode(Point p)
 {
-  return gd->createNode(p);
+  return md->createNode(p);
 }
 //-----------------------------------------------------------------------------
 Node& Mesh::createNode(real x, real y, real z)
 {
-  return gd->createNode(x, y, z);
+  return md->createNode(x, y, z);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::createCell(int n0, int n1, int n2)
@@ -280,7 +287,7 @@ Cell& Mesh::createCell(int n0, int n1, int n2)
   // Warning: mesh type will be type of last added cell
   _type = triangles;
   
-  return gd->createCell(n0, n1, n2);
+  return md->createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::createCell(int n0, int n1, int n2, int n3)
@@ -288,7 +295,7 @@ Cell& Mesh::createCell(int n0, int n1, int n2, int n3)
   // Warning: mesh type will be type of last added cell
   _type = tetrahedrons;
   
-  return gd->createCell(n0, n1, n2, n3);
+  return md->createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2)
@@ -296,7 +303,7 @@ Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2)
   // Warning: mesh type will be type of last added cell
   _type = triangles;
   
-  return gd->createCell(n0, n1, n2);
+  return md->createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
@@ -304,47 +311,47 @@ Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
   // Warning: mesh type will be type of last added cell
   _type = tetrahedrons;
   
-  return gd->createCell(n0, n1, n2, n3);
+  return md->createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
 Edge& Mesh::createEdge(int n0, int n1)
 {
-  return gd->createEdge(n0, n1);
+  return md->createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
 Edge& Mesh::createEdge(Node& n0, Node& n1)
 {
-  return gd->createEdge(n0, n1);
+  return md->createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
 Face& Mesh::createFace(int e0, int e1, int e2)
 {
-  return gd->createFace(e0, e1, e2);
+  return md->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
 Face& Mesh::createFace(Edge& e0, Edge& e1, Edge& e2)
 {
-  return gd->createFace(e0, e1, e2);
+  return md->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Node& node)
 {
-  gd->remove(node);
+  md->remove(node);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Cell& cell)
 {
-  gd->remove(cell);
+  md->remove(cell);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Edge& edge)
 {
-  gd->remove(edge);
+  md->remove(edge);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Face& face)
 {
-  gd->remove(face);
+  md->remove(face);
 }
 //-----------------------------------------------------------------------------
 void Mesh::init()
@@ -355,29 +362,29 @@ void Mesh::init()
 void Mesh::swap(Mesh& mesh)
 {
   // Swap data
-  MeshData*           tmp_gd     = this->gd;
+  MeshData*           tmp_md     = this->md;
   BoundaryData*       tmp_bd     = this->bd;
   Mesh*               tmp_parent = this->_parent;
   Mesh*               tmp_child  = this->_child;
   Type                tmp_type   = this->_type;
 
-  this->gd      = mesh.gd;
+  this->md      = mesh.md;
   this->bd      = mesh.bd;
   this->_parent = mesh._parent;
   this->_child  = mesh._child;
   this->_type   = mesh._type;
 
-  mesh.gd      = tmp_gd;
+  mesh.md      = tmp_md;
   mesh.bd      = tmp_bd;
   mesh._parent = tmp_parent;
   mesh._child  = tmp_child;
   mesh._type   = tmp_type;
 
   // Change mesh reference in all data structures
-  mesh.gd->setMesh(mesh);
+  mesh.md->setMesh(mesh);
   mesh.bd->setMesh(mesh);
 
-  this->gd->setMesh(*this);
+  this->md->setMesh(*this);
   this->bd->setMesh(*this);
 }
 //-----------------------------------------------------------------------------

@@ -69,6 +69,9 @@ namespace dolfin {
     /// Return given face (can also use a face iterator)
     Face& face(unsigned int id);
 
+    /// Return boundary 
+    Boundary boundary();
+
     ///--- Mesh refinement ---
 
     /// Mark cell for refinement
@@ -157,7 +160,7 @@ namespace dolfin {
     //--- Mesh data ---
 
     // Mesh data
-    MeshData* gd;
+    MeshData* md;
 
     // Boundary data
     BoundaryData* bd;

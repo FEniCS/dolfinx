@@ -110,8 +110,8 @@ bool CellIterator::operator!=(const Cell& c) const
 //-----------------------------------------------------------------------------
 CellIterator::MeshCellIterator::MeshCellIterator(const Mesh &mesh)
 {
-  cell_iterator = mesh.gd->cells.begin();
-  at_end = mesh.gd->cells.end();
+  cell_iterator = mesh.md->cells.begin();
+  at_end = mesh.md->cells.end();
 }
 //-----------------------------------------------------------------------------
 void CellIterator::MeshCellIterator::operator++()

@@ -54,13 +54,13 @@ namespace dolfin {
       return rhs(v(0));
     }
     
-    /// Update before computation of left-hand side
+    /// Update by cell before computation of left-hand side
     void updateLHS(FiniteElement::Vector& element,
                    const Cell& cell,
                    const Map& mapping,
                    const Quadrature& quadrature);
     
-    /// Update before computation of right-hand side
+    /// Update by cell before computation of right-hand side
     void updateRHS(FiniteElement::Vector& element,
                    const Cell& cell,
                    const Map& mapping,

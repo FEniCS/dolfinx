@@ -90,7 +90,73 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
     // Update progress
     p++;
   }
-  
+
+  /*
+  // Create boundary object 
+  Boundary boundary(mesh);
+
+  // Iterate over boundary 
+  if (mesh.type() == tetrahedrons){
+
+    // Start a progress session
+    Progress p("Adding boundary conditions weakly", boundary.noFaces());  
+    
+    // Iterate over all faces in the boundary 
+    for (FaceIterator face(boundary); !face.end(); ++face)
+      {
+	// Update map
+	map.update(face.cell(0),face);
+	
+	// Update element
+	for (unsigned int i = 0; i < element.size(); ++i)
+	  element(i)->update(map);
+	
+	// Update equation
+	pde.updateLHS(element, face.cell(0), map, quadrature);
+	
+	// Iterate over test and trial functions
+	for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+	  for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
+	    A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+	
+	// Update progress
+	p++;
+      }
+
+  } else if (mesh.type() == triangles){
+
+    // Start a progress session
+    Progress p("Adding boundary conditions weakly", boundary.noEdges());  
+    
+    // Iterate over all edges in the boundary
+    for (EdgeIterator edge(mesh.boundary); !edge.end(); ++edge)
+      {
+	// Update map
+	map.update(edge.cell(0),edge);
+	
+	// Update element
+	for (unsigned int i = 0; i < element.size(); ++i)
+	  element(i)->update(map);
+	
+	// Update equation
+	pde.updateLHS(element, edge.cell(0), map, quadrature);
+	
+	// Iterate over test and trial functions
+	for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+	  for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
+	    A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+	
+	// Update progress
+	p++;
+      }
+
+  } else{
+
+    dolfin_error("Cell type not implemented.");
+
+  }    
+  */
+
   // Clear unused elements
   A.resize();
 

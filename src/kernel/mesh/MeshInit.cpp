@@ -55,10 +55,10 @@ void MeshInit::renumber(Mesh& mesh)
 void MeshInit::clear(Mesh& mesh)
 {  
   // Clear edges
-  mesh.gd->edges.clear();
+  mesh.md->edges.clear();
 
   // Clear faces
-  mesh.gd->faces.clear();
+  mesh.md->faces.clear();
 
   // Clear boundary data for mesh
   mesh.bd->clear();
@@ -77,6 +77,10 @@ void MeshInit::clear(Mesh& mesh)
     c->c->cf.clear();
   }
 
+  // Clear connectivity for edges 
+  for (EdgeIterator e(mesh); !e.end(); ++e) {
+    e->ec.clear();
+  }
   // Clear connectivity for faces 
   for (FaceIterator f(mesh); !f.end(); ++f) {
     f->fc.clear();
@@ -105,7 +109,10 @@ void MeshInit::initConnectivity(Mesh& mesh)
   // Compute faces [6]
   initFaces(mesh);
 
-  // Compute f-c connections [7]
+  // Compute e-c connections [7]
+  initEdgeCell(mesh);
+
+  // Compute f-c connections [8]
   initFaceCell(mesh);
 }
 //-----------------------------------------------------------------------------
@@ -245,6 +252,30 @@ void MeshInit::initNodeNode(Mesh& mesh)
 	n->nn(i+1) = &e->node(1);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void MeshInit::initEdgeCell(Mesh& mesh)
+{
+  // Go through all cells and add each cell as a neighbour to all its edges.
+  // This is done in three steps:
+  //
+  //   1. Count the number of cell neighbors for each edge  
+  //   2. Allocate memory for each edge
+  //   3. Add the cell neighbors
+  
+  // Count the number of cells the edge appears in
+  for (CellIterator c(mesh); !c.end(); ++c)
+    for (EdgeIterator e(c); !e.end(); ++e)
+      e->ec.setsize(e->ec.size()+1);
+  
+  // Allocate memory for the cell lists
+  for (EdgeIterator e(mesh); !e.end(); ++e)
+    e->ec.init();
+
+  // Add the cells to the cell lists
+  for (CellIterator c(mesh); !c.end(); ++c)
+    for (EdgeIterator e(c); !e.end(); ++e)
+      e->ec.add(c);
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initFaceCell(Mesh& mesh)

@@ -41,12 +41,12 @@ namespace dolfin {
   ///   (x) c-f (the faces within a cell)       [6, from 0 and 2]
   ///
   ///   (x) e-n (the nodes within an edge)      [3, from 0 and 2]
-  ///       e-c (the cell neighbors of an edge)
+  ///   (x) e-c (the cell neighbors of an edge) [7, from 3
   ///       e-e (the edge neighbors of an edge)
   ///       e-f (the face neighbors of an edge)
   ///
   ///       f-n (the nodes within a face)
-  ///   (x) f-c (the cell neighbors of a face)  [7, from 6]
+  ///   (x) f-c (the cell neighbors of a face)  [8, from 6]
   ///   (x) f-e (the edges within a face)       [6, from 1 and 3]
   ///       f-f (the face neighbors of a face)
   ///

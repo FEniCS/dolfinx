@@ -39,6 +39,9 @@ namespace dolfin {
     /// Get end node number i
     Node& node(int i) const;
 
+    /// Return cell neighbor number i
+    Cell& cell(int i) const;
+
     /// Get coordinates of node number i
     Point& coord(int i) const;
     
@@ -112,6 +115,9 @@ namespace dolfin {
     // Nodes
     Node* n0;
     Node* n1;
+
+    // Connectivity
+    Array<Cell*> ec;
 
     // Mesh refinement data
     EdgeRefData* rd;

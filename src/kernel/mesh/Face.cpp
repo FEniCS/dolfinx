@@ -39,6 +39,11 @@ Edge& Face::edge(int i) const
   return *fe(i);
 }
 //-----------------------------------------------------------------------------
+Cell& Face::cell(int i) const
+{
+  return *fc(i);
+}
+//-----------------------------------------------------------------------------
 bool Face::equals(const Edge& e0, const Edge& e1, const Edge& e2) const
 {
   dolfin_assert(fe.size() == 3);
