@@ -1,3 +1,4 @@
+ - New class MechanicalSystem for simulating mechanical systems
  - Save debug info from primal and dual (plotslab.m)
  - Fix bug in progress bar
  - Add missing include file in Components.h (kakr)

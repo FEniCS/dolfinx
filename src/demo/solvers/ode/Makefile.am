@@ -1,1 +1,1 @@
-SUBDIRS = test lorenz stiff
+SUBDIRS = test lorenz stiff mechanical

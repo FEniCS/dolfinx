@@ -1,9 +1,7 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
-#include <dolfin/Partition.h>
-#include <dolfin/TimeSlab.h>
 
 using namespace dolfin;
 
