@@ -223,6 +223,18 @@ void Node::setChild(Node& child)
   this->_child = &child;
 }
 //-----------------------------------------------------------------------------
+void Node::removeParent(Node& parent)
+{
+  // Remove parent
+  this->_parent = 0;
+}
+//-----------------------------------------------------------------------------
+void Node::removeChild(Node& child)
+{
+  // Reove child 
+  this->_child = 0;
+}
+//-----------------------------------------------------------------------------
 void Node::set(real x, real y, real z)
 {
   p.x = x;

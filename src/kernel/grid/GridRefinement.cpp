@@ -219,14 +219,14 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   for (NodeIterator n(*child); !n.end(); ++n)
     if ( !reuse_node(n->id()) ) {
       cout << "Removing node" << endl;
-      child->remove(*n);
+      removeNode(*n,*child);
     }
   
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
     if ( !reuse_cell(c->id()) ) {
       cout << "Removing cell" << endl;
-      child->remove(*c);
+      removeCell(*c,*child);
     }
 
 }
@@ -380,6 +380,28 @@ int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
   // Didn't find the node
   dolfin_error("Unable to find node within cell.");
   return -1;
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::removeNode(Node& node, Grid& grid)
+{
+  // Update parent-child info for parent
+  node.parent()->removeChild(node);
+
+  // Remove node
+  grid.remove(node);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::removeCell(Cell& cell, Grid& grid)
+{
+  // Update parent-child info for parent
+  cell.parent()->removeChild(cell);
+
+  // Update status 
+  if ( cell.parent()->noChildren() == 0 )
+    cell.parent()->status() = Cell::unref; 
+
+  // Remove node
+  grid.remove(cell);
 }
 //-----------------------------------------------------------------------------
 Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)

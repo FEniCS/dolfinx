@@ -84,6 +84,12 @@ namespace dolfin {
     /// Create a new node (if it doesn't exist)
     static Node& createNode(const Point& p, Grid& grid, const Cell& cell);
     
+    /// Remove node 
+    static void removeNode(Node& node, Grid& grid);
+
+    /// Remove cell 
+    static void removeCell(Cell& cell, Grid& grid);
+
   };
 
 }

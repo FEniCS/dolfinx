@@ -162,11 +162,17 @@ namespace dolfin {
     // Set parent cell
     void setParent(Cell& parent);
 
+    // Remove parent cell
+    void removeParent(Cell& parent);
+
     // Set number of children
     void initChildren(int n);
 
     // Set child cell
     void addChild(Cell& child);
+
+    // Remove child cell
+    void removeChild(Cell& child);
 
     // Clear data and create a new triangle
     void set(Node& n0, Node& n1, Node& n2);

@@ -229,6 +229,12 @@ void Cell::setParent(Cell& parent)
   c->setParent(parent);
 }
 //-----------------------------------------------------------------------------
+void Cell::removeParent(Cell& parent)
+{
+  dolfin_assert(c);
+  c->removeParent(parent);
+}
+//-----------------------------------------------------------------------------
 void Cell::initChildren(int n)
 {
   dolfin_assert(c);
@@ -239,6 +245,12 @@ void Cell::addChild(Cell& child)
 {
   dolfin_assert(c);
   c->addChild(child);
+}
+//-----------------------------------------------------------------------------
+void Cell::removeChild(Cell& child)
+{
+  dolfin_assert(c);
+  c->removeChild(child);
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node& n0, Node& n1, Node& n2)

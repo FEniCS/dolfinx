@@ -133,6 +133,12 @@ namespace dolfin{
     // Set child node
     void setChild(Node& child);
 
+    // Remove parent node
+    void removeParent(Node& parent);
+
+    // Remove child node
+    void removeChild(Node& child);
+
     // Specify coordinate
     void set(real x, real y, real z);
 

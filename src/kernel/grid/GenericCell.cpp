@@ -122,6 +122,12 @@ void GenericCell::setParent(Cell& parent)
   this->_parent = &parent;
 }
 //-----------------------------------------------------------------------------
+void GenericCell::removeParent(Cell& parent)
+{
+  // Remove parent cell
+  this->_parent = 0;
+}
+//-----------------------------------------------------------------------------
 void GenericCell::initChildren(int n)
 {
   children.init(n);
@@ -133,6 +139,12 @@ void GenericCell::addChild(Cell& child)
   // Set the child cell: a cell is child if it is created through
   // refinement of the current cell.
   children.add(&child);
+}
+//-----------------------------------------------------------------------------
+void GenericCell::removeChild(Cell& child)
+{
+  // Remove the child cell
+  children.remove(&child);
 }
 //-----------------------------------------------------------------------------
 bool GenericCell::neighbor(GenericCell& cell) const

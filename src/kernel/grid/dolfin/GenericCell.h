@@ -74,11 +74,17 @@ namespace dolfin {
     // Set parent cell
     void setParent(Cell& parent);
 
+    // Remove parent cell
+    void removeParent(Cell& parent);
+
     // Set number of children
     void initChildren(int n);
 
     // Set child cell
     void addChild(Cell& child);
+
+    // Remove child cell
+    void removeChild(Cell& child);
 
     // Check if given cell is a neighbor
     bool neighbor(GenericCell& cell) const;
