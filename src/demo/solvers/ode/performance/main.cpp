@@ -18,7 +18,7 @@ class Benchmark : public ParticleSystem
 public:
   
   Benchmark(unsigned int n, unsigned int M, real b) :
-    ParticleSystem(n, 1), b(b), M(M)
+    ParticleSystem(n, 1), k(10*M), b(b), M(M)
   {
     if ( n < 2 )
       dolfin_error("System must have at least 2 particles.");
@@ -28,9 +28,6 @@ public:
 
     // Final time
     T = 1.0;
-    
-    // Spring constant
-    k = 1.0;
     
     // Grid size
     h = 0.1;
@@ -55,16 +52,16 @@ public:
   real Fx(unsigned int i, real t)
   {
     if ( i == 0 )
-      return - 100.0*x(i) + k*(x(i+1) - x(i) - h);
+      return - k*x(i) + (x(i+1) - x(i) - h);
     
     if ( i == 1 )
-      return - k*(x(i) - x(i-1) - h) + k*(x(i+1) - x(i) - h) +
+      return - (x(i) - x(i-1) - h) + (x(i+1) - x(i) - h) +
 	b * (vx(i+1) - vx(i));
     
     if ( i == (n-1) )
-      return - k*(x(i) - x(i-1) - h) - b * (vx(i) - vx(i-1));
+      return - (x(i) - x(i-1) - h) - b * (vx(i) - vx(i-1));
     
-    return - k*(x(i) - x(i-1) - h) + k*(x(i+1)  - x(i) - h) -
+    return - (x(i) - x(i-1) - h) + (x(i+1)  - x(i) - h) -
       b*(vx(i) - vx(i-1)) + b*(vx(i+1) - vx(i));
   }
 
@@ -107,8 +104,8 @@ protected:
 
   real k;
   real b;
-  real h;
   real M;
+  real h;
   
 };
 
@@ -162,7 +159,7 @@ int main(int argC, char* argV[])
   dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.1);
   dolfin_set("solve dual problem", false);
-  dolfin_set("save solution", false);
+  //dolfin_set("save solution", false);
   dolfin_set("partitioning threshold", 0.99);
   dolfin_set("fixed time step", true);  
   dolfin_set("maximum iterations", 20000);

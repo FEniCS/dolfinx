@@ -203,21 +203,17 @@ void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
   real t = ceil(timeslab.starttime()/K) * K;
-  
+
   // Save samples
-  while ( (t + DOLFIN_EPS) < timeslab.endtime() )
+  while ( (t - DOLFIN_EPS) < timeslab.endtime() )
   {
+    if ( fabs(t - timeslab.endtime()) < DOLFIN_EPS )
+      t = timeslab.endtime();
+
     Sample sample(u, f, t);
     file << sample;
     ode.save(sample);
     t += K;
-  }
-  
-  // Save end time value
-  if ( timeslab.finished() ) {
-    Sample sample(u, f, timeslab.endtime());
-    file << sample;
-    ode.save(sample);
   }
 }
 //-----------------------------------------------------------------------------
