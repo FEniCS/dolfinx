@@ -28,6 +28,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ODESolver.h \
              ParticleSystem.h \
              Partition.h \
+             NewPartition.h \
              RHS.h \
              RecursiveTimeSlab.h \
              ReducedModel.h \

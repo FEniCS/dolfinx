@@ -1,11 +1,12 @@
 // Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// - Updates by Anders Logg, 2003
+// Updates by Anders Logg, 2003, 2004
 
 #ifndef __NEWARRAY_H
 #define __NEWARRAY_H
 
+#include <dolfin/constants.h>
 #include <vector>
 
 namespace dolfin {
@@ -25,14 +26,13 @@ namespace dolfin {
     NewArray() : std::vector<T>() {}
     
     /// Constructor
-    NewArray(int n) : std::vector<T>(n) {}
+    NewArray(uint n) : std::vector<T>(n) {}
 
     /// Assign to all elements in the array
     const NewArray& operator=(const T& element)
     {
-      for (unsigned int i = 0; i < std::vector<T>::size(); i++)
+      for (uint i = 0; i < std::vector<T>::size(); i++)
 	(*this)[i] = element;
-      
       return *this;
     }
 

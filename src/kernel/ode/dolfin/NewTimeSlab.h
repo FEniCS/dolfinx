@@ -6,10 +6,15 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
+#include <dolfin/NewPartition.h>
 #include <dolfin/Alloc.h>
 
 namespace dolfin
 {
+
+  class ODE;
+  class Method;
+  class Adaptivity;
   
   /// A NewTimeSlab holds the degrees of freedom for the solution
   /// of an ODE between two synchronized time levels t0 and t1.
@@ -22,21 +27,21 @@ namespace dolfin
   {
   public:
 
-    /// Create time slab with given synchronized time levels (t1 may change)
-    NewTimeSlab(real t0, real t1);
+    /// Constructor
+    NewTimeSlab(const ODE& ode, const Method& method);
 
     /// Destructor
     ~NewTimeSlab();
     
-    /// Build time slab
-    void build();
+    /// Build time slab, return end time
+    real build(real t0, real t1, Adaptivity& adaptivity);
 
-    /// Return start time
+    /// Return start time of time slab
     real starttime() const;
     
-    /// Return end time
+    /// Return end time of time slab
     real endtime() const;
-    
+
     /// Return length of time slab
     real length() const;
 
@@ -46,49 +51,56 @@ namespace dolfin
   private:
 
     // Create time slab
-    void createTimeSlab();
-    void createElements();
+    real createTimeSlab(real t0, real t1, Adaptivity& adaptivity, uint offset);
 
     // Create time slab data
-    void createDofs();
-    void createElement();
-    void createStages();
-    void createSubSlab();
+    void createSubSlab (real t0, uint offset, uint end);
+    void createElement (uint index);
+    void createDofs    (uint index);
+    void createDeps    ();
 
     // Reallocate data
-    void reallocDofs(uint newsize);
-    void reallocElements(uint newsize);
-    void reallocStages(uint newsize);
-    void reallocSubSlabs(uint newsize);
+    void allocData     (real t0, real t1, Adaptivity& adaptivity);
+    void allocSubSlabs (uint newsize);
+    void allocElements (uint newsize);
+    void allocDofs     (uint newsize);
+    void allocDeps     (uint newsize);
+
+    // Compute length of time slab
+    real computeEndTime(real t0, real t1, Adaptivity& adaptivity,
+			uint offset, uint& end);
 
     // Compute size of data
-    void computeSize(uint& nj, uint& ne, uint& nl, uint& ns) const;
+    real computeDataSize(uint& ns, uint& ne, uint& nj,
+			 real t0, real t1,
+			 Adaptivity& adaptivity, uint offset);
     
     //--- Time slab data ---
 
-    real* jx;  // Mapping j --> value of dof j
-    uint* je;  // Mapping j --> element of dof j
-    uint* jl;  // Mapping j --> stage of dof j
-    uint* jd;  // Mapping j --> dependencies of dof j
+    uint* se; // Mapping s --> first element e of sub slab s
+    real* st; // Mapping s --> start time t of sub slab s
+    
+    uint* ej; // Mapping e --> first dof j of element e
+    uint* ei; // Mapping e --> component index i of element e
 
-    uint* ei;  // Mapping e --> index of element e
-    uint* es;  // Mapping e --> sub slab of element e
-    real* ej;  // Mapping e --> initial dof of element e
+    real* jx; // Mapping j --> value of dof j
+    uint* jd; // Mapping j --> first dependency d of dof j
 
-    real* lt;  // Mapping l --> time at stage l
-    real* lw;  // Mapping l --> weights at stage l
+    uint* de; // Mapping d --> element e of dependency d
 
-    real* sk;  // Mapping s --> time step of sub slab s
-    uint* sn;  // Mapping s --> number of stages of sub slab s
-    uint* sm;  // Mapping s --> method of sub slab s
+    //--- Auxiliary data ---
 
-    Alloc alloc_j; // Allocation data for dofs j
-    Alloc alloc_e; // Allocation data for elements e
-    Alloc alloc_l; // Allocation data for stages l
     Alloc alloc_s; // Allocation data for sub slabs s
+    Alloc alloc_e; // Allocation data for elements e
+    Alloc alloc_j; // Allocation data for dofs j
+    Alloc alloc_d; // Allocation data for dependencies d
 
-    real t0; // Start time of time slab
-    real t1; // End time of time slab
+    const ODE& ode;         // The ODE
+    const Method& method;   // Method, mcG(q) or mdG(q)
+    NewPartition partition; // Time step partitioning 
+
+    real _t0; // Start time of time slab
+    real _t1; // End time of time slab
 
   };
 

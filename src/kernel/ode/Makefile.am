@@ -31,6 +31,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ODESolver.h \
                           dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
+                          dolfin/NewPartition.h \
                           dolfin/RecursiveTimeSlab.h \
                           dolfin/ReducedModel.h \
                           dolfin/Regulator.h \
@@ -75,6 +76,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ODESolver.cpp \
                           ParticleSystem.cpp \
                           Partition.cpp \
+                          NewPartition.cpp \
                           RecursiveTimeSlab.cpp \
                           ReducedModel.cpp \
                           Regulator.cpp \
