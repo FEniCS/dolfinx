@@ -141,45 +141,45 @@ real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
     for (int i = 0;i<A.size(0);i++) mat_v.set(i,k+1,vec_tmp2(i));
 
     for (int j=0;j<k+1;j++){
-      mat_H.set(j,k,0.0);
-      for (int i=0;i<n;i++) mat_H.set(j,k,mat_H.get(j,k) + mat_v.get(i,k+1) * mat_v.get(i,j));
-      for (int i=0;i<n;i++) mat_v.set(i,k+1,mat_v.get(i,k+1) - mat_H.get(j,k) * mat_v.get(i,j));
+      mat_H(j,k) = 0.0;
+      for (int i=0;i<n;i++) mat_H(j,k) += mat_v(i,k+1) * mat_v(i,j);
+      for (int i=0;i<n;i++) mat_v(i,k+1) -= mat_H(j,k) * mat_v(i,j);
     }
     
     norm_v = 0.0;
-    for (int i=0;i<n;i++) norm_v += sqr(mat_v.get(i,k+1));
+    for (int i=0;i<n;i++) norm_v += sqr(mat_v(i,k+1));
     norm_v = sqrt(norm_v);
     
-    mat_H.set(k+1,k,norm_v);
+    mat_H(k+1,k) = norm_v;
     
-    // Test for non orthogonality and reorthogonalise if necessary
-    //if ( !TestForOrthogonality(mat_v) ){
+    // FIXME: Test for non orthogonality and reorthogonalise if necessary
+    // if ( !TestForOrthogonality(mat_v) ){ 
     if ( true ){
       for (int j=0; j < k+1; j++){
-	for (int i=0;i<n;i++) htmp = mat_v.get(i,k+1) * mat_v.get(i,j);
-	mat_H.set(j,k,mat_H.get(j,k) + htmp);
-	for (int i=0;i<n;i++) mat_v.set(i,k+1,mat_v.get(i,k+1) - htmp*mat_v.get(i,j));
+	for (int i=0;i<n;i++) htmp = mat_v(i,k+1) * mat_v(i,j);
+	mat_H(j,k) += htmp;
+	for (int i=0;i<n;i++) mat_v(i,k+1) -= htmp*mat_v(i,j);
       }	  
     }
     
-    for (int i=0;i<n;i++) mat_v.set(i,k+1,mat_v.get(i,k+1)/norm_v);
+    for (int i=0;i<n;i++) mat_v(i,k+1) /= norm_v;
 	 
     if ( k > 0 ){
       for (int j=0;j<k;j++){
 	tmp1 = mat_H.get(j,k);
 	tmp2 = mat_H.get(j+1,k);
-	mat_H.set(j,k,vec_c(j)*tmp1 - vec_s(j)*tmp2);
-	mat_H.set(j+1,k,vec_s(j)*tmp1 + vec_c(j)*tmp2);
+	mat_H(j,k) = vec_c(j)*tmp1 - vec_s(j)*tmp2;
+	mat_H(j+1,k) = vec_s(j)*tmp1 + vec_c(j)*tmp2;
       }
     }
     
-    nu = sqrt( sqr(mat_H.get(k,k)) + sqr(mat_H.get(k+1,k)) );
+    nu = sqrt( sqr(mat_H(k,k)) + sqr(mat_H(k+1,k)) );
     
-    vec_c(k) = mat_H.get(k,k) / nu;
-    vec_s(k) = - mat_H.get(k+1,k) / nu;
+    vec_c(k) = mat_H(k,k) / nu;
+    vec_s(k) = - mat_H(k+1,k) / nu;
     
-    mat_H.set(k,k,vec_c(k)*mat_H.get(k,k) - vec_s(k)*mat_H.get(k+1,k));
-    mat_H.set(k+1,k,0.0);
+    mat_H(k,k) = vec_c(k)*mat_H(k,k) - vec_s(k)*mat_H(k+1,k);
+    mat_H(k+1,k) = 0.0;
     
     tmp = vec_c(k)*vec_g(k) - vec_s(k)*vec_g(k+1);
     vec_g(k+1) = vec_s(k)*vec_g(k) + vec_c(k)*vec_g(k+1);
@@ -204,21 +204,21 @@ real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
   for (int i=0;i<k+1;i++){ 
     vec_w(i)= vec_g(i);
     for (int j=0;j<k+1;j++){ 
-      mat_r.set(i,j,mat_H.get(i,j));
+      mat_r(i,j) = mat_H(i,j);
     }
   } 
 
   // Solve triangular system ry = w
-  vec_y(k) = vec_w(k)/mat_r.get(k,k);
+  vec_y(k) = vec_w(k)/mat_r(k,k);
   for (int i=1;i<k+1;i++){
     vec_y(k-i) = vec_w(k-i);
-    for (int j=0;j<i;j++) vec_y(k-i) -= mat_r.get(k-i,k-j)*vec_y(k-j);
-    vec_y(k-i) /= mat_r.get(k-i,k-i);
+    for (int j=0;j<i;j++) vec_y(k-i) -= mat_r(k-i,k-j)*vec_y(k-j);
+    vec_y(k-i) /= mat_r(k-i,k-i);
   }
   
   tmpvec = 0.0;
   for (int i=0;i<n;i++){
-    for (int j=0;j<k+1;j++) tmpvec(i) += mat_v.get(i,j)*vec_y(j);
+    for (int j=0;j<k+1;j++) tmpvec(i) += mat_v(i,j)*vec_y(j);
   }
 
   /*
