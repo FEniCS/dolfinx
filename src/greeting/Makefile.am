@@ -1,2 +1,6 @@
+TMPFILE="var.tmp"
+
 all:
-	cat greeting.txt
+	rm -f $(TMPFILE)
+	echo "VERSION=\"$(PACKAGE_VERSION)\"" >> $(TMPFILE)
+	sh greeting.sh

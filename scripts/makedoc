@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# This script uses doxygen to create documentation.
+
+# Simple test to see where we are
+CHECK=`echo $0 | cut -d'/' -f1`
+if [ "$CHECK" != "scripts" ]; then
+    echo "This script must be run from the top level directory."
+    exit 1
+fi
+
+# Run doxygen
+doxygen doc/html/Doxyfile

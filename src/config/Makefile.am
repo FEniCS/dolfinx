@@ -11,7 +11,7 @@ dolfin-config:
 	echo "COMPILER=\"$(CXX)\"" >> $(TMPFILE)
 	echo "CFLAGS_DOLFIN=\"$(CXXFLAGS)\"" >> $(TMPFILE)
 	echo "LIBS_DOLFIN=\"$(DOLFIN_LFLAGS) $(LFLAGS) $(XML2_LFLAGS) -lncurses\"" >> $(TMPFILE)
-	echo "PACKAGE=\"$(PACKAGE)\"" >> $(TMPFILE)
-	echo "VERSION=\"$(VERSION)\"" >> $(TMPFILE)
+	echo "PACKAGE=\"$(PACKAGE_NAME)\"" >> $(TMPFILE)
+	echo "VERSION=\"$(PACKAGE_VERSION)\"" >> $(TMPFILE)
 	echo "PREFIX=\"$(prefix)\"" >> $(TMPFILE)
 	sh config.sh

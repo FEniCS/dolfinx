@@ -76,6 +76,10 @@ for f in $DIRS; do
 done
 AC_SUBST(DOLFIN_LFLAGS)
 
+dnl Export variables to makefiles
+AC_SUBST(PACKAGE_VERSION)
+AC_SUBST(PACKAGE_NAME)
+
 dnl Create Makefiles
 dnl Seems like automake cannot handle a variable containing the
 dnl list of files, so this cannot be done automatically. We have
@@ -116,4 +120,5 @@ AC_OUTPUT( Makefile \
            src/demo/Makefile \
            src/demo/solvers/Makefile \
            src/utils/Makefile \
-           src/utils/inp2dx/Makefile )
+           src/utils/inp2dx/Makefile \
+           src/greeting/Makefile )
