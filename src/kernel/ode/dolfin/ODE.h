@@ -102,6 +102,9 @@ namespace dolfin
     friend class Dual;
     friend class RHS;
     friend class NewTimeSlab;
+    friend class TimeSlabJacobian;
+    friend class MonoAdaptiveTimeSlab;
+    friend class MonoAdaptiveJacobian;
     friend class MultiAdaptiveTimeSlab;
     friend class MultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;

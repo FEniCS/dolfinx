@@ -11,42 +11,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab,
-					     ODE& ode, const NewMethod& method)
-  : ts(timeslab), ode(ode), method(method), Jvalues(0), Jindices(0)
+MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab)
+  : TimeSlabJacobian(timeslab), ts(timeslab)
 {
-  // Allocate Jacobian row indices
-  Jindices = new uint[ode.size()];
-
-  // Compute total and maximum number of dependencies
-  uint sum = 0;
+  // Compute maximum number of dependencies
   uint maxsize = 0;
   for (uint i = 0; i < ode.size(); i++)
   {
-    Jindices[i] = sum;
-
     const uint size = ode.dependencies[i].size();
-    sum += size;
     if ( size > maxsize )
       maxsize = size;
   }
 
-  // Allocate Jacobian values
-  Jvalues = new real[sum];
-  for (uint pos = 0; pos < sum; pos++)
-    Jvalues[pos] = 0.0;
-
   // Allocate lookup table for dependencies to components with small time steps
   Jlookup = new real[max(1, maxsize - 1)];
-  
-  dolfin_info("Generated Jacobian data structure for %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
 {
-  delete [] Jindices;
-  delete [] Jvalues;
-  delete [] Jlookup;
+  if ( Jlookup ) delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
@@ -72,25 +55,6 @@ void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Restore PETSc data arrays
   x.restore(xx);
   y.restore(yy);
-}
-//-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::update()
-{
-  // Compute Jacobian at the beginning of the slab
-  real t = ts.starttime();
-  dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
-
-  // Update vector u to values at the left end-point
-  for (uint i = 0; i < ode.size(); i++)
-    ts.u[i] = ts.u0[i];
- 
-  // Compute Jacobian
-  for (uint i = 0; i < ode.size(); i++)
-  {
-    const NewArray<uint>& deps = ode.dependencies[i];
-    for (uint pos = 0; pos < deps.size(); pos++)
-      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u, t, i, deps[pos]);
-  }
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const

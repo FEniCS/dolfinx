@@ -1,34 +1,31 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __MULTI_ADAPTIVE_JACOBIAN_H
-#define __MULTI_ADAPTIVE_JACOBIAN_H
+#ifndef __MONO_ADAPTIVE_JACOBIAN_H
+#define __MONO_ADAPTIVE_JACOBIAN_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
 namespace dolfin
 {
   
-  class MultiAdaptiveTimeSlab;
+  class MonoAdaptiveTimeSlab;
     
   /// This class represents the Jacobian matrix of the system of
-  /// equations defined on a multi-adaptive time slab.
+  /// equations defined on a mono-adaptive time slab.
 
-  class MultiAdaptiveJacobian : public TimeSlabJacobian
+  class MonoAdaptiveJacobian : public TimeSlabJacobian
   {
   public:
 
     /// Constructor
-    MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab);
+    MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab);
 
     /// Destructor
-    ~MultiAdaptiveJacobian();
+    ~MonoAdaptiveJacobian();
 
     /// Compute product y = Ax
     void mult(const NewVector& x, NewVector& y) const;
-
-    /// Friends
-    friend class MultiAdaptivePreconditioner;
 
   private:
 
@@ -39,10 +36,7 @@ namespace dolfin
     void dGmult(const real x[], real y[]) const;
 
     // The time slab
-    MultiAdaptiveTimeSlab& ts;
-    
-    // Lookup table for dependencies to components with smaller time steps
-    real* Jlookup;
+    MonoAdaptiveTimeSlab& ts;
     
   };
 

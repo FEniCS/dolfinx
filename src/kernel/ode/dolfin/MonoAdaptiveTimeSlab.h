@@ -63,7 +63,6 @@ namespace dolfin
 
     TimeSlabSolver* solver; // The solver
     uint nj;                // Number of dofs
-    real* u0;               // Initial values
     NewVector u;            // Degrees of freedom for the solution
 
   };

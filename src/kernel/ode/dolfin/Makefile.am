@@ -27,6 +27,9 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Iteration.h \
              JacobianMatrix.h \
              Method.h \
+             MonoAdaptiveFixedPointSolver.h \
+             MonoAdaptiveJacobian.h \
+             MonoAdaptiveNewtonSolver.h \
              MonoAdaptiveTimeSlab.h \
              MultiAdaptiveFixedPointSolver.h \
              MultiAdaptiveJacobian.h \
@@ -52,6 +55,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Sparsity.h \
              TimeSlab.h \
              NewTimeSlab.h \
+             TimeSlabJacobian.h \
              TimeSlabSolver.h \
              TimeStepper.h \
              NewTimeStepper.h

@@ -64,6 +64,7 @@ namespace dolfin
     friend LogStream& operator<<(LogStream& stream, const NewTimeSlab& timeslab);
 
     /// Friends
+    friend class TimeSlabJacobian;
     friend class TimeSlabSolver;
 
   protected:
@@ -74,6 +75,7 @@ namespace dolfin
     
     ODE& ode;                 // The ODE
     const NewMethod* method;  // Method, mcG(q) or mdG(q)  
+    real* u0;                 // Initial values
 
   };
 

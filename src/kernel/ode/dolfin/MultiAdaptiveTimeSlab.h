@@ -141,7 +141,6 @@ namespace dolfin
     NewAdaptivity adaptivity; // Adaptive time step selection
     NewPartition partition;   // Time step partitioning 
     NewArray<int> elast;      // Last element for each component
-    real* u0;                 // Initial values
     real* u;                  // Interpolated solution vector
     uint emax;                // Last covered element for sample
 

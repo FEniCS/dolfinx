@@ -29,6 +29,9 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
                           dolfin/Method.h \
+                          dolfin/MonoAdaptiveFixedPointSolver.h \
+                          dolfin/MonoAdaptiveJacobian.h \
+                          dolfin/MonoAdaptiveNewtonSolver.h \
                           dolfin/MonoAdaptiveTimeSlab.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
@@ -55,6 +58,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Sparsity.h \
                           dolfin/TimeSlab.h \
                           dolfin/NewTimeSlab.h \
+                          dolfin/TimeSlabJacobian.h \
                           dolfin/TimeSlabSolver.h \
                           dolfin/TimeStepper.h \
                           dolfin/NewTimeStepper.h
@@ -89,6 +93,9 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
                           Method.cpp \
+                          MonoAdaptiveFixedPointSolver.cpp \
+                          MonoAdaptiveJacobian.cpp \
+                          MonoAdaptiveNewtonSolver.cpp \
                           MonoAdaptiveTimeSlab.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
@@ -115,6 +122,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Sparsity.cpp \
                           TimeSlab.cpp \
                           NewTimeSlab.cpp \
+                          TimeSlabJacobian.cpp \
                           TimeSlabSolver.cpp \
                           TimeStepper.cpp \
                           NewTimeStepper.cpp

@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
-  : NewTimeSlab(ode), solver(0), nj(0), u0(0)
+  : NewTimeSlab(ode), solver(0), nj(0)
 {
   // Choose solver
   // not implemented
@@ -19,20 +19,13 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   // Compute the number of dofs
   nj = N * method->nsize();
 
-  // Initialize initial data
-  u0 = new real[N];
-
-  // Get initial data
-  for (uint i = 0; i < N; i++)
-    u0[i] = ode.u0(i);
-
   // Initialize solution
   u.init(nj);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 {
-  if ( u0 ) delete [] u0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab:: build(real a, real b)

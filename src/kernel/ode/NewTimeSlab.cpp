@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewTimeSlab::NewTimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0)
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0)
 {
   // Choose method
   std::string m = dolfin_get("method");
@@ -20,11 +20,19 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
     method = new NewcGqMethod(q);
   else
     method = new NewdGqMethod(q);
+
+  // Initialize initial data
+  u0 = new real[N];
+
+  // Get initial data
+  for (uint i = 0; i < N; i++)
+    u0[i] = ode.u0(i);
 }
 //-----------------------------------------------------------------------------
 NewTimeSlab::~NewTimeSlab()
 {
   if ( method ) delete method;
+  if ( u0 ) delete [] u0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewTimeSlab::size() const

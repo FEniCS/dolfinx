@@ -8,9 +8,12 @@ namespace dolfin
 {
 
   class ODE;
-  class NewTimeSlab;
   class NewMethod;
+  class NewTimeSlab;
   
+  /// This is the base class for solvers of the system of equations
+  /// defined on time slabs.
+
   class TimeSlabSolver
   {
   public:
