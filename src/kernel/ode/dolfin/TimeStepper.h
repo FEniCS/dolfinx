@@ -26,14 +26,14 @@ namespace dolfin {
   class TimeStepper {
   public:
 
-    /// Solve given ODE on the interval (t0, t1]
-    static void solve(ODE& ode, real t0, real t1);
+    /// Solve given ODE
+    static void solve(ODE& ode);
 
   private:
 
     // Save solution (when necessary)
     static void save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f, 
-		     File& file, real t0, real t1, unsigned int no_samples);
+		     File& file, real T, unsigned int no_samples);
 
   };
 

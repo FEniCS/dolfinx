@@ -4,6 +4,7 @@
 #ifndef __SOLUTION_H
 #define __SOLUTION_H
 
+#include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
 
 namespace dolfin {
@@ -30,6 +31,9 @@ namespace dolfin {
     /// Evaluation
     real operator() (unsigned int i, real t);
 
+    /// Prepare for next time slab (propagate values)
+    void shift(real t0);
+
   private:
 
     // Element data
@@ -38,6 +42,11 @@ namespace dolfin {
     // Initival values (propagated values)
     NewArray<real> u0;
 
+    // Time where current initial values are specified
+    real t0;
+
   };
 
 }
+
+#endif

@@ -22,7 +22,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    TimeSteppingData(ODE& ode, ElementData& elmdata, real t0);
+    TimeSteppingData(ODE& ode, ElementData& elmdata);
 
     /// Destructor
     ~TimeSteppingData();

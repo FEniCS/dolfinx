@@ -45,7 +45,7 @@ Element* ElementData::element(unsigned int i, real t)
   // Special case: t = t0
   if ( t == t0 )
     return first(i);
-
+  
   // Find a block which *could* contain the element
   ElementBlock* block = findBlock(t);
   if ( block )

@@ -1,13 +1,15 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/ODE.h>
+#include <dolfin/ElementData.h>
 #include <dolfin/Solution.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Solution::Solution(const ODE& ode, ElementData& elmdata) : 
-  elmdata(elmdata), u0(ode.size())
+Solution::Solution(const ODE& ode, ElementData& elmdata) :
+  elmdata(elmdata), u0(ode.size()), t0(0)
 {
   // Set initial data
   for (unsigned int i = 0; i < u0.size(); i++)
@@ -39,5 +41,22 @@ real Solution::operator() (unsigned int i, real t)
 
   // If we couldn't find the element return initial value (extrapolation)
   return u0[i];
+}
+//-----------------------------------------------------------------------------
+void Solution::shift(real t0)
+{
+  for (unsigned int i = 0; i < elmdata.size(); i++)
+  {
+    // Get last element
+    Element* element = elmdata.last(i);
+    dolfin_assert(element);
+    dolfin_assert(element->endtime() == t0);
+
+    // Update initial value
+    u0[i] = element->endval();
+  }
+  
+  // Update time for initial values
+  this->t0 = t0;
 }
 //-----------------------------------------------------------------------------

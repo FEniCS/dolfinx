@@ -18,7 +18,7 @@ void ODESolver::solve(ODE& ode)
 
   dolfin_start("Solving ODE");
 
-  TimeStepper::solve(ode, 0.0, ode.endtime());
+  TimeStepper::solve(ode);
 
   dolfin_end();
 }

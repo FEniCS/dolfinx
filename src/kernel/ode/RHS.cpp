@@ -2,19 +2,17 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Sparsity.h>
-#include <dolfin/Component.h>
 #include <dolfin/ODE.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RHS::RHS(ODE& ode, TimeSteppingData& data) : ode(ode), data(data)
+RHS::RHS(ODE& ode, Solution& solution) :
+  ode(ode), solution(solution), u(ode.size())
 {
-  // Initialize the solution vector
-  u.init(ode.size());
-  u = 0.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 RHS::~RHS()
@@ -39,7 +37,7 @@ void RHS::update(unsigned int index, unsigned int node, real t)
   // FIXME: Use nodal values if possible
 
   for (Sparsity::Iterator i(index, ode.sparsity); !i.end(); ++i) 
-    u(i) = data.u(i,t);
+    u(i) = solution(i,t);
 }
 //-----------------------------------------------------------------------------
 unsigned int RHS::size() const

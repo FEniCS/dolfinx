@@ -12,8 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSteppingData::TimeSteppingData(ODE& ode, ElementData& elmdata, real t0) : 
-  elmdata(elmdata), regulators(ode.size()), initval(ode.size()), t0(t0)
+TimeSteppingData::TimeSteppingData(ODE& ode, ElementData& elmdata) : 
+  elmdata(elmdata), regulators(ode.size()), initval(ode.size()), t0(0)
 {
   // Get parameters
   TOL                = dolfin_get("tolerance");

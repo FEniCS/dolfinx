@@ -21,26 +21,26 @@
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSteppingData.h>
 #include <dolfin/Sample.h>
+#include <dolfin/Solution.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode, real t0, real t1)
+void TimeStepper::solve(ODE& ode)
 {
-  // Get parameters
   unsigned int no_samples = dolfin_get("number of samples");
-
-  // Get size of system
   unsigned int N = ode.size();
+  real T = ode.endtime();
+  real t = 0.0;
 
   // Create data for time-stepping
-  ElementData elmdata(N);
   Partition partition(N);
-  TimeSteppingData data(ode, elmdata, t0);
-  RHS f(ode, data);
+  ElementData elmdata(N);
+  Solution solution(ode, elmdata);
+  TimeSteppingData data(ode, elmdata);
+  RHS f(ode, solution);
   TimeSlab* timeslab = 0;
-  real t = t0;
 
   // Create file for storing the solution
   File file("solution.m");
@@ -50,10 +50,10 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   while ( true ) {
     
     // Create a new time slab
-    if ( t == t0 )
-      timeslab = new SimpleTimeSlab(t, t1, f, data);
+    if ( t == 0.0 )
+      timeslab = new SimpleTimeSlab(t, T, f, data);
     else
-      timeslab = new RecursiveTimeSlab(t, t1, f, data, partition, 0);
+      timeslab = new RecursiveTimeSlab(t, T, f, data, partition, 0);
     
     //cout << "Created a time slab: " << *timeslab << endl;
     
@@ -62,16 +62,18 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
       timeslab->update(f, data);
 
     // Save solution
-    save(*timeslab, data, f, file, t0, t1, no_samples);
+    save(*timeslab, data, f, file, T, no_samples);
 
     // Update time
     t = timeslab->endtime();
 
     // Update progress
-    p = (t - t0) / (t1 - t0);
+    p = t / T;
 
     // Prepare for next time slab
     data.shift(*timeslab, f);
+    
+    solution.shift(t);
 
     // Check if we are done
     if ( timeslab->finished() )
@@ -87,11 +89,11 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f,
-		       File& file, real t0, real t1, unsigned int no_samples)
+		       File& file, real T, unsigned int no_samples)
 {
   // Compute time of first sample within time slab
-  real K = (t1 - t0) / static_cast<real>(no_samples);
-  real t =  t0 + ceil((timeslab.starttime()-t0)/K) * K;
+  real K = T / static_cast<real>(no_samples);
+  real t = ceil(timeslab.starttime()/K) * K;
 
   // Save samples
   while ( t < timeslab.endtime() )

@@ -10,7 +10,7 @@
 namespace dolfin {
 
   class ODE;
-  class TimeSteppingData;
+  class Solution;
 
   /// RHS takes care of evaluating the right-hand side f(u,t)
   /// for a given component at a given time. The vector u is
@@ -21,7 +21,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    RHS(ODE& ode, TimeSteppingData& data);
+    RHS(ODE& ode, Solution& solution);
 
     /// Destructor
     ~RHS();
@@ -40,8 +40,8 @@ namespace dolfin {
     // The ODE
     ODE& ode;
 
-    // Element data
-    TimeSteppingData& data;
+    // Solution
+    Solution& solution;
 
     // Solution vector
     Vector u;
