@@ -63,8 +63,8 @@ o [jj, logg] Automatic local reduction of time steps when stabilization doesn't 
 Modules
 -------
 
-o [hoffman] Navier-Stokes solver
-o [harald] Euler solver
+o [hoffman] Navier-Stokes module
+o [harald] Euler module
 o [foufas] Finance module
 
 General
