@@ -10,6 +10,8 @@
 #ifndef __GRID_REFINEMENT_H
 #define __GRID_REFINEMENT_H
 
+#include <dolfin/List.h>
+
 namespace dolfin {
 
   class Grid;
@@ -58,7 +60,14 @@ namespace dolfin {
     ///--- Algorithms working on a given cell ---
     
     // Close a cell
-    static void closeCell(Cell& cell);
+    static void closeCell(Cell& cell, List<Cell*>& cells);
+
+    // Check which refinement rule applies
+    static bool checkRuleRegular    (Cell& cell, int no_marked_edges);
+    static bool checkRuleIrregular1 (Cell& cell, int no_marked_edges);
+    static bool checkRuleIrregular2 (Cell& cell, int no_marked_edges);
+    static bool checkRuleIrregular3 (Cell& cell, int no_marked_edges);
+    static bool checkRuleIrregular4 (Cell& cell, int no_marked_edges);
 
     // Refine a cell regularly
     static void regularRefinement    (Cell& cell, Grid& grid);

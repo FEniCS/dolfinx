@@ -127,7 +127,7 @@ void GridRefinement::closeGrid(Grid& grid)
     Cell* cell = cells.pop();
 
     // Close cell
-    closeCell(*cell);
+    closeCell(*cell, cells);
 
   }
   
@@ -171,7 +171,7 @@ void GridRefinement::refineGrid(Grid& grid)
       // Do nothing
       break;
     default:
-      // We should not rearch this case, cannot be
+      // We should not rearch this case, cell cannot be
       // marked_for_coarsening or marked_according_to_ref
       dolfin_error("Inconsistent cell markers.");
     }
@@ -188,13 +188,112 @@ void GridRefinement::unrefineGrid(Grid& grid)
   
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::closeCell(Cell& cell)
+void GridRefinement::closeCell(Cell& cell, List<Cell*>& cell)
 {
-  // Close a cell, either by regular or irregular refinement.
+  // Close a cell, either by regular or irregular refinement. We check all
+  // edges of the cell and try to find a matching refinement rule. This rule
+  // is then assigned to the cell's marker for later refinement of the cell.
   // This is algorithm CloseElement() in Bey's paper.
+  
+  // First count the number of marked edges in the cell
+  int no_marked_edges = 0;
+  for (EdgeIterator e(c); !e.end(); ++e)
+    if ( e->marked() )
+      no_marked_edges++;
 
+  // Check for regular refinement
+  if ( checkRuleRegular(cell, no_marked_edges) )
+    return;
+
+  // Check irregular refinement rule 1
+  if ( checkRule1(cell, no_marked_edges) )
+    return;
+
+  // Check irregular refinement rule 2
+  if ( checkRule2(cell, no_marked_edges) )
+    return;
+
+  // Check irregular refinement rule 3
+  if ( checkRule3(cell, no_marked_edges) )
+    return;
+
+  // Check irregular refinement rule 4
+  if ( checkRule4(cell, no_marked_edges) )
+    return;
+
+  // If we didn't find a matching refinement rule, mark cell for regular
+  // refinement and add cells containing the previously unmarked edges
+  // to the list of cells that need to be closed.
 
   
+
+  
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
+{
+  // Check if cell should be regularly refined
+
+  if ( no_marked_edges != 6 )
+    return false;
+
+  cell.mark() = marked_for_reg_ref;
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::checkIrregularRule1(Cell& cell, int no_marked_edges)
+{
+  // Check if cell matches irregular refinement rule 1
+
+  if ( no_marked_edges != 3 )
+    return false;
+
+  if ( !edgesOnSameFace(cell) )
+    return false;
+
+  cell.mark() = marked_for_irr_ref_1;
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::checkIrregularRule2(Cell& cell, int no_marked_edges)
+{
+  // Check if cell matches irregular refinement rule 2
+
+  if ( no_marked_edges != 1 )
+    return false;
+
+  cell.mark() = marked_for_irr_ref_2;
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::checkIrregularRule3(Cell& cell, int no_marked_edges)
+{
+  // Check if cell matches irregular refinement rule 3
+
+  if ( no_marked_edges != 2 )
+    return false;
+
+  if ( !edgesOnSameFace(cell) )
+    return false;
+
+  cell.mark() = marked_for_irr_ref_3;
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::checkIrregularRule4(Cell& cell, int no_marked_edges)
+{
+  // Check if cell matches irregular refinement rule 4
+
+  if ( no_marked_edges != 3 )
+    return false;
+
+  // Note that this has already been checked by checkRule3(), but this
+  // way the algorithm is a little cleaner.
+  if ( edgesOnSameFace(cell) )
+    return false;
+
+  cell.mark() = marked_for_irr_ref_4;
+  return true;
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::regularRefinement(Cell& cell, Grid& grid)
@@ -629,84 +728,7 @@ List<Cell *> GridRefinement::closeCell(Cell *parent)
   int non_marked_edges[3];
 
   int cnt;
-  switch(parent->noMarkedEdges()){ 
-  case 6: 
-    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
-    break;
-  case 5: 
-    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
-    for (int i=0;i<parent->noEdges();i++){    
-      if (!parent->edge(i)->marked()){
-	non_marked_edge = i;
-	break;
-      }
-    }
 
-    for (int i=0;i<parent->noNodes();i++){    
-      for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
-	for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
-	  if (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edge)->id()) 
-	    new_ref_cells.add(parent->node(i)->cell(j));
-	}
-      }
-    }
-
-    break;
-  case 4: 
-    parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
-    cnt = 0;
-    for (int i=0;i<parent->noEdges();i++){    
-      if (!parent->edge(i)->marked()){
-	non_marked_edges[cnt++] = i;
-      }
-    }
-
-    for (int i=0;i<parent->noNodes();i++){    
-      for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
-	for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
-	  if ( (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[0])->id()) ||  
-	       (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[1])->id()) )
-	    new_ref_cells.add(parent->node(i)->cell(j));
-	}
-      }
-    }
-
-    break;
-  case 3: 
-    if (parent->markedEdgesOnSameFace()){
-      parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1);
-    } else{
-      parent->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
-      cnt = 0;
-      for (int i=0;i<parent->noEdges();i++){    
-	if (!parent->edge(i)->marked()){
-	  non_marked_edges[cnt++] = i;
-	}
-      }
-      
-      for (int i=0;i<parent->noNodes();i++){    
-	for (int j=0;j<parent->node(i)->noCellNeighbors();j++){    
-	  for (int k=0;k<parent->node(i)->cell(j)->noEdges();k++){    
-	    if ( (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[0])->id()) ||  
-		 (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[1])->id()) ||  
-		 (parent->node(i)->cell(j)->edge(k)->id() == parent->edge(non_marked_edges[2])->id()) )
-	      new_ref_cells.add(parent->node(i)->cell(j));
-	  }
-	}
-      }
-      
-    }
-    break;
-  case 2: 
-    if (parent->markedEdgesOnSameFace()) parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3);
-    else parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4);
-    break;
-  case 1: 
-    parent->mark(Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4); 
-    break;
-  default:
-    dolfin_error("wrong number of marked edges");
-  }
 
   return new_ref_cells;
 }
