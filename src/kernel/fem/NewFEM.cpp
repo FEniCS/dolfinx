@@ -22,25 +22,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 real** NewFEM::allocElementMatrix(const NewFiniteElement& element)
 {
-  unsigned int ncomponents = 0;
-
-  if(element.rank() == 0)
-  {
-    ncomponents = 1;
-  }
-  else if(element.rank() == 1)
-  {
-    ncomponents = element.tensordim(0);
-  }
-
   // Allocate element matrix
-  real** AK = new real*[element.spacedim() * ncomponents];
-  for (unsigned int i = 0; i < element.spacedim() * ncomponents; i++)
-    AK[i] = new real [element.spacedim() * ncomponents];
+  real** AK = new real*[element.spacedim()];
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    AK[i] = new real [element.spacedim()];
   
   // Set all entries to zero                                                    
-  for (unsigned int i = 0; i < element.spacedim() * ncomponents; i++)
-    for (unsigned int j = 0; j < element.spacedim() * ncomponents; j++)
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    for (unsigned int j = 0; j < element.spacedim(); j++)
       AK[i][j] = 0.0;
 
   return AK;
@@ -92,11 +81,17 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L, Mesh& mesh,
   // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
   // minimize memory requirements. 
+
   unsigned int N = size(mesh, element);
-  A.init(N, N, element.spacedim());
+  A.init(N, N);
   A = 0.0;
   b.init(N);
   b = 0.0;
+
+  // Debug
+
+//   cout << "A inside:" << endl;
+//   A.disp();
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -165,9 +160,17 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
   // minimize memory requirements. 
+
   unsigned int N = size(mesh, element);
-  A.init(N, N, element.spacedim());
+  A.init(N, N, 1);
   A = 0.0;
+
+  // Debug
+
+//   A.apply();
+
+//   cout << "A inside:" << endl;
+//   A.disp();
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -177,6 +180,17 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
     
     // Compute element matrix
     a.interior(AK);
+
+    // Debug
+
+//     Matrix Ael(n, n);
+    
+//     for (unsigned int i = 0; i < n; i++)
+//       for (unsigned int j = 0; j < n; j++)
+// 	Ael(i, j) = AK[i][j];
+
+//     cout << "Ael: " << endl;
+//     Ael.show();
 
     // Copy values to one array
     unsigned int pos = 0;
@@ -262,6 +276,7 @@ void NewFEM::assemble(LinearForm& L, Mesh& mesh, NewVector& b)
 dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
 {
   // Count the degrees of freedom (check maximum index)
+
   uint dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -272,6 +287,7 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
 	dofmax = dof;
     }
   }
+
   return dofmax + 1;
 }
 //-----------------------------------------------------------------------------

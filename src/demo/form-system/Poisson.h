@@ -42,7 +42,7 @@ public:
   // FIXME: Only works for nodal basis
   unsigned int dof(unsigned int i, const Cell& cell) const
   {
-    return cell.nodeID(i);
+    return cell.id() * spacedim() + i;
   }
 
   // FIXME: Only works for nodal basis

@@ -72,6 +72,6 @@ int main(int argc, char **argv)
   convdiff.set("time step", 0.1);
 
   convdiff.solve();
-  
+
   return 0;
 }

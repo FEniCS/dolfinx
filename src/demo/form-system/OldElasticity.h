@@ -147,17 +147,28 @@ namespace dolfin {
       sigma(0, 1) = mu * epsilon(0, 1);
       sigma(1, 0) = sigma(0, 1);
 
+//       return
+// 	(sigma(0, 0) * epsilonv(0, 0) +
+// 	 sigma(0, 1) * epsilonv(0, 1) +
+// 	 sigma(0, 2) * epsilonv(0, 2) +
+// 	 sigma(1, 0) * epsilonv(1, 0) +
+// 	 sigma(1, 1) * epsilonv(1, 1) +
+// 	 sigma(1, 2) * epsilonv(1, 2) +
+// 	 sigma(2, 0) * epsilonv(2, 0) +
+// 	 sigma(2, 1) * epsilonv(2, 1) +
+// 	 sigma(2, 2) * epsilonv(2, 2)) *
+// 	dx;
       return
-	(sigma(0, 0) * epsilonv(0, 0) +
-	 sigma(0, 1) * epsilonv(0, 1) +
-	 sigma(0, 2) * epsilonv(0, 2) +
-	 sigma(1, 0) * epsilonv(1, 0) +
-	 sigma(1, 1) * epsilonv(1, 1) +
-	 sigma(1, 2) * epsilonv(1, 2) +
-	 sigma(2, 0) * epsilonv(2, 0) +
-	 sigma(2, 1) * epsilonv(2, 1) +
-	 sigma(2, 2) * epsilonv(2, 2)) *
-	dx;
+	(u(0).ddx() * v(0).ddx() +
+	 u(0).ddy() * v(0).ddy() +
+	 u(0).ddz() * v(0).ddz() +
+	 u(1).ddx() * v(1).ddx() +
+	 u(1).ddy() * v(1).ddy() +
+	 u(1).ddz() * v(1).ddz() +
+	 u(2).ddx() * v(2).ddx() +
+	 u(2).ddy() * v(2).ddy() +
+	 u(2).ddz() * v(2).ddz()) * dx;
+
       //*/
     }
     

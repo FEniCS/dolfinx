@@ -13,7 +13,7 @@
 
 using namespace dolfin;
 
-/*
+///*
 
 #define N 1 // Number of times to do the assembly
 #define M 1 // Number of times to refine the mesh 
@@ -45,14 +45,14 @@ real testFFC(Mesh& mesh)
 
   PoissonFiniteElement element;
   PoissonBilinearForm a(element);
-  Matrix A;
+  NewMatrix A;
   tic();
 
   for (unsigned int i = 0; i < N; i++)
     NewFEM::assemble(a, mesh, A);
 
   cout << "A scalar: " << endl;
-  A.show();
+  A.disp();
 
   return toc();
 }
@@ -66,14 +66,14 @@ real testFFCSystem(Mesh& mesh)
 
   PoissonSystemFiniteElement element;
   PoissonSystemBilinearForm a(element);
-  Matrix A;
+  NewMatrix A;
   tic();
 
   for (unsigned int i = 0; i < N; i++)
     NewFEM::assemble(a, mesh, A);
 
   cout << "A system: " << endl;
-  A.show();
+  A.disp();
 
   return toc();
 }
@@ -87,14 +87,14 @@ real testElasticity(Mesh& mesh)
 
   ElasticityFiniteElement element;
   ElasticityBilinearForm a(element);
-  Matrix A;
+  NewMatrix A;
   tic();
 
   for (unsigned int i = 0; i < N; i++)
     NewFEM::assemble(a, mesh, A);
 
   cout << "A elasticity: " << endl;
-  A.show();
+  A.disp();
 
   return toc();
 }
@@ -124,7 +124,7 @@ int testAssembly(Mesh& mesh)
   real t1 = testFFC(mesh);
   real t2 = testOldPoisson(mesh);
   real t3 = testFFCSystem(mesh);
-  real t4 = testElasticity(mesh);
+  //real t4 = testElasticity(mesh);
   real t5 = testOldElasticity(mesh);
 
   //dolfin_log(true);
@@ -134,14 +134,14 @@ int testAssembly(Mesh& mesh)
   cout << "DOLFIN + FFC:    " << t1 << endl;
   cout << "DOLFIN + FFC (OldPoisson):    " << t2 << endl;
   cout << "DOLFIN + FFC (System):    " << t3 << endl;
-  cout << "DOLFIN + FFC (Elasticity):    " << t4 << endl;
+  //cout << "DOLFIN + FFC (Elasticity):    " << t4 << endl;
   cout << "DOLFIN + FFC (OldElasticity):    " << t5 << endl;
   cout << "---------------------------------------------" << endl;
 
   return 0;
 }
 
-*/
+//*/
 
 int main()
 {
@@ -155,7 +155,7 @@ int main()
   
   //Mesh mesh("mesh.xml.gz");
   Mesh mesh("minimal.xml.gz");
-  //testAssembly(mesh);
+  testAssembly(mesh);
   /*
   for (unsigned int i = 0; i < M; i++)
   {
