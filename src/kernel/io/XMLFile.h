@@ -10,7 +10,7 @@
 #include "GenericFile.h"
 
 namespace dolfin {
-
+  
   class Vector;
   class Matrix;
   class Grid;
@@ -19,39 +19,39 @@ namespace dolfin {
   
   class XMLFile : public GenericFile {
   public:
-
-	 XMLFile(const std::string filename);
-	 ~XMLFile();
-	 
-	 // Input
-	 
-	 void operator>> (Vector& x);
-	 void operator>> (Matrix& A);
-	 void operator>> (Grid& grid);
-	 void operator>> (Function& u);
-	 
-	 // Output
-	 
-	 void operator<< (const Vector& x);
-	 void operator<< (const Matrix& A);
-	 void operator<< (const Grid& grid);
-	 void operator<< (const Function& u);
-
-	 // Friends
-	 
-	 friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
-	 friend void sax_end_element   (void *ctx, const xmlChar *name);
-
+    
+    XMLFile(const std::string filename);
+    ~XMLFile();
+    
+    // Input
+    
+    void operator>> (Vector& x);
+    void operator>> (Matrix& A);
+    void operator>> (Grid& grid);
+    void operator>> (Function& u);
+    
+    // Output
+    
+    void operator<< (Vector& x);
+    void operator<< (Matrix& A);
+    void operator<< (Grid& grid);
+    void operator<< (Function& u);
+    
+    // Friends
+    
+    friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
+    friend void sax_end_element   (void *ctx, const xmlChar *name);
+    
   private:
-
-	 void parseFile();
-	 void parseSAX();
-
-	 // Data
-	 XMLObject* xmlObject;
-	 
+    
+    void parseFile();
+    void parseSAX();
+    
+    // Data
+    XMLObject* xmlObject;
+    
   };
-
+  
   // Callback functions for the SAX interface
   
   void sax_start_document (void *ctx);

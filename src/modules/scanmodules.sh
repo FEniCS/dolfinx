@@ -64,19 +64,11 @@ for d in `cat $MODULES | grep -v '#'`; do
 		exit 1
  	fi
 
-	# Find SETTINGS from config file
-	SETTINGS=`cat $d/$d.module | grep SETTINGS | cut -d'"' -f2`
-	if [ 'x'$SETTINGS = 'x' ]; then
-		echo "Unable to find keyword SETTINGS for module $d in file src/modules/$d/$d.module"
-		exit 1
-	fi
-
 	# Write a nice message
 	echo "    - $NAME ($KEYWORD)"
 	 
 	# Include files
 	echo "#include \"$SOLVER.h\"" >> $HEADER
-	echo "#include \"$SETTINGS.h\"" >> $HEADER
 done
 
 echo "" >> $HEADER
@@ -169,37 +161,6 @@ echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
 echo "" >> $HEADER
 
-# Generate function dolfin_module_settings
-echo "dolfin::Settings* dolfin_module_settings(const char *problem)" >> $HEADER
-echo "{" >> $HEADER
-for d in `cat $MODULES | grep -v '#'`; do
- 
-	# Find KEYWORD from config file
-	KEYWORD=`cat $d/$d.module | grep KEYWORD | cut -d'"' -f2`
-	CHECK=`echo $KEYWORD | awk '{ print $1 }'`
-	if [ 'x'$CHECK = 'x' ]; then
-		echo "Unable to find keyword KEYWORD for module $d in file src/modules/$d/$d.module"
-		exit 1
-	fi
-
-	# Find SETTINGS from config file
-	SETTINGS=`cat $d/$d.module | grep SETTINGS | cut -d'"' -f2`
-	if [ 'x'$SETTINGS = 'x' ]; then
-		echo "Unable to find keyword SETTINGS for module $d in file src/modules/$d/$d.module"
-		exit 1
-	fi
-
-	echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
-	echo "        return new dolfin::$SETTINGS();" >> $HEADER
-done
-
-echo "" >> $HEADER
-echo "    dolfin_error1(\"Unable to find matching settings for problem \\\"%s\\\".\", problem);" >> $HEADER
-echo "    return new dolfin::Settings();" >> $HEADER
-
-echo "" >> $HEADER
-echo "}" >> $HEADER
-echo "" >> $HEADER
 echo "#endif" >> $HEADER
 
 echo " "

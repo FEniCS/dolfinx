@@ -3,12 +3,12 @@ AC_INIT(README)
 
 dnl Settings
 PACKAGE=dolfin
-VERSION=0.3.2
+VERSION=0.3.3
 DOLFIN_MAIN="main"
 
 dnl Note: need to be in the correct order, and some are needed twice.
 dnl Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="io grid fem elements quadrature io la math common log common"
+DOLFIN_KERNEL="io grid fem elements quadrature io la math common settings log common"
 
 dnl Find modules
 cd src/modules
@@ -108,6 +108,8 @@ AC_OUTPUT( Makefile \
            src/kernel/quadrature/dolfin/Makefile \
            src/kernel/log/Makefile \
            src/kernel/log/dolfin/Makefile \
+           src/kernel/settings/Makefile \
+           src/kernel/settings/dolfin/Makefile \
            src/modules/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \

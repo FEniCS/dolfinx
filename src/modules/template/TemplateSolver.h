@@ -10,11 +10,11 @@ namespace dolfin {
   
   class TemplateSolver : public Solver {
   public:
-	 
-	 TemplateSolver(Grid &grid) : Solver(grid) {}	 
-	 
-	 const char *description();
-	 void solve();
+    
+    TemplateSolver(Grid& grid);
+    
+    const char* description();
+    void solve();
     
   };
 

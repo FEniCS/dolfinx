@@ -16,33 +16,33 @@ namespace dolfin {
   
   class File {
   public:
-
-	 enum Type { XML, MATLAB, OCTAVE };
-	 
-	 File(const std::string& filename);
-	 File(const std::string& filename, Type type);
-	 ~File();
-
-	 // Input
-	 
-	 void operator>> (Vector& x);
-	 void operator>> (Matrix& A);
-	 void operator>> (Grid& grid);
-	 void operator>> (Function& u);
-	 
-	 // Output
-
-	 void operator<< (const Vector& x);
-	 void operator<< (const Matrix& A);
-	 void operator<< (const Grid& grid);
-	 void operator<< (const Function& u);
-	 
+    
+    enum Type { XML, MATLAB, OCTAVE };
+    
+    File(const std::string& filename);
+    File(const std::string& filename, Type type);
+    ~File();
+    
+    // Input
+    
+    void operator>> (Vector& x);
+    void operator>> (Matrix& A);
+    void operator>> (Grid& grid);
+    void operator>> (Function& u);
+    
+    // Output
+    
+    void operator<< (Vector& x);
+    void operator<< (Matrix& A);
+    void operator<< (Grid& grid);
+    void operator<< (Function& u);
+    
   private:
-
-	 GenericFile* file;
-	 
+    
+    GenericFile* file;
+    
   };
-
+  
 }
 
 #endif

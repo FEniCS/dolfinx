@@ -1,96 +1,80 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemConvDiff.h"
-#include "EquationConvDiff_cG1dG0.h"
-#include "EquationConvDiff2d_cG1dG0.h"
-#include <stdlib.h>
+#include "ConvDiffSolver.h"
+#include "ConvDiff.h"
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const char *ConvDiffSolver::Description()
+ConvDiffSolver::ConvDiffSolver(Grid& grid) : Solver(grid)
 {
-  if ( space_dimension == 2 )
-	 return "Convection-Diffusion equation (2D)";
-  else
-	 return "Convection-Diffusion equation (3D)";
+  dolfin_parameter(Parameter::REAL,      "final time",  1.0);
+  dolfin_parameter(Parameter::REAL,      "time step",   0.1);
+  dolfin_parameter(Parameter::FUNCTION,  "source",      0);
+  dolfin_parameter(Parameter::FUNCTION,  "diffusivity", 0);
+  dolfin_parameter(Parameter::VFUNCTION, "convection",  0);
+}
+//-----------------------------------------------------------------------------
+const char* ConvDiffSolver::description()
+{
+  return "Convection-diffusion";
 }
 //-----------------------------------------------------------------------------
 void ConvDiffSolver::solve()
 {
-  ConvDiff *equation;
-  SparseMatrix A;
-  Vector b;
-  Vector u(no_nodes);
-  Vector up(no_nodes);
+  Matrix A;
+  Vector x0, x1, b;
+  
+  Function u0(grid, x0);
+  Function u1(grid, x1);
+  Function f(grid, "source");
+  Function a(grid, "diffusivity");
+  Function::Vector beta(grid, "convection");
+  
+  Galerkin     fem;
+  ConvDiff     convdiff(f, u0, a, beta);
   KrylovSolver solver;
-  real T0,T;
+  File         file("convdiff.m");
   
-  // Choose equation
-  if ( space_dimension == 2 )
-	 equation = new EquationConvDiff2d_cG1dG0();
-  else
-	 equation = new EquationConvDiff_cG1dG0();
-  
-  // Global fields
-  GlobalField Up(grid,&up);
-  GlobalField U(grid,&u);
-  GlobalField f(grid,"source");
-  GlobalField eps(grid,"diffusivity");
-  GlobalField bx(grid,"x-convection");
-  GlobalField by(grid,"y-convection");
-  GlobalField bz(grid,"z-convection");
-  
-  // Attach fields to equation
-  equation->AttachField(0,&Up);
-  equation->AttachField(1,&eps);
-  equation->AttachField(2,&f);
-  equation->AttachField(3,&bx);
-  equation->AttachField(4,&by);
-  if ( space_dimension == 3 )
-	 equation->AttachField(5,&bz);
-  
-  // Set up the discretiser
-  Discretiser discretiser(grid,equation);
+  real t = 0.0;
+  real T = dolfin_get("final time");
+  real k = dolfin_get("time step");
 
-  // Prepare time stepping
-  settings->Get("start time",&T0);
-  settings->Get("final time",&T);
-  int time_step = 0;
-  real t        = T0;
-  real dt       = grid->GetSmallestDiameter();
-  
   // Save initial value
-  U.SetLabel("u","Temperature");
-  U.Save(t);
+  u1.rename("u", "temperature");
+  file << u1;
   
-  // Start time stepping
-  while (t < T){
+  // Start a progress session
+  Progress p("Time-stepping");
 
-    time_step++;
-	 t += dt;
+  // Start time-stepping
+  while ( t < T ) {
+    
+    // Make time step
+    t += k;
+    
+    // Update progress
+    p = t / T;
     
     // Set solution to previous solution
-    up.CopyFrom(&u);
-
-	 // Write info
-    display->Progress(0,(t-T0)/(T-T0),"i=%i t=%f",time_step,t);
-    display->Message(0,"||u0||= %f ||u1|| = %f",up.Norm(),u.Norm());
-
-	 // Set time and time-step
-	 equation->SetTime(t);
-	 equation->SetTimeStep(dt);
-	 
+    x0 = x1;
+    
+    // Set time step and time for equation
+    convdiff.k = k;
+    convdiff.t = t;
+    
     // Discretise equation
-    discretiser.Assemble(&A,&b);
-	 
+    fem.assemble(convdiff, grid, A, b);
+    
     // Solve the linear system
-    solver.Solve(&A,&u,&b);
-	 
+    solver.solve(A, x1, b);
+    
     // Save the solution
-	 U.Save(t);
+    u1.t = t;
+    file << u1;
+
   }
 
-  // Clean up
-  delete equation;
 }
 //-----------------------------------------------------------------------------

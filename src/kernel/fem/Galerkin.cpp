@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_elements.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/utils.h>
@@ -12,7 +13,6 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
-#include <dolfin/Settings.h>
 #include <dolfin/bcfunction.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
@@ -154,47 +154,39 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
   Point p;
   
   // Get boundary condition function
-  Settings::get("boundary condition", &bcf);
+  bcf = dolfin_get("boundary condition");
 
-  // Write a message
-  if ( !bcf )
-	 cout << "Boundary conditions not specified." << endl;
-  
   // Iterate over all nodes on the boundary
   for (NodeIterator node(grid); !node.end(); ++node) {
-
-	 // Only set boundary condition for nodes on the boundary
-	 if ( node->boundary() == -1 )
-		continue;
-	 
-	 // Get coordinate
-	 p = node->coord();
-	 
-	 // Get boundary condition
-	 bc.update(p);
-	 bcf(bc);
-
-	 // Set boundary condition
-	 switch ( bc.type() ) {
-	 case BoundaryCondition::DIRICHLET:
-		A.ident(node->id());
-		b(node->id()) = bc.val();
-		break;
-	 case BoundaryCondition::NEUMANN:
-		if ( bc.val() != 0.0 ) {
-		  // FIXME: Use logging system
-		  cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << endl;
-		  exit(1);
-		}
-		break;
-	 default:
-		// FIXME: Use logging system
-		cout << "Error: Unknown boundary condition." << endl;
-		break;
-	 }
-	 
+    
+    // Only set boundary condition for nodes on the boundary
+    if ( node->boundary() == -1 )
+      continue;
+    
+    // Get coordinate
+    p = node->coord();
+    
+    // Get boundary condition
+    bc.update(p);
+    bcf(bc);
+    
+    // Set boundary condition
+    switch ( bc.type() ) {
+    case BoundaryCondition::DIRICHLET:
+      A.ident(node->id());
+      b(node->id()) = bc.val();
+      break;
+    case BoundaryCondition::NEUMANN:
+      if ( bc.val() != 0.0 )
+	dolfin_error("Inhomogeneous Neumann boundary conditions not implemented.");
+      break;
+    default:
+      dolfin_error("Unknown boundary condition.");
+      break;
+    }
+    
   }
-
+  
 }
 //-----------------------------------------------------------------------------
 void Galerkin::init(Grid &grid)
@@ -206,23 +198,20 @@ void Galerkin::init(Grid &grid)
   // Create default finite element
   switch ( grid.type() ) {
   case Grid::TRIANGLES:
-	 cout << "Using standard piecewise linears on triangles." << endl;
-	 element    = new P1TriElement();
-	 mapping    = new TriLinMapping();
-	 quadrature = new TriangleMidpointQuadrature();
-	 break;
+    cout << "Using standard piecewise linears on triangles." << endl;
+    element    = new P1TriElement();
+    mapping    = new TriLinMapping();
+    quadrature = new TriangleMidpointQuadrature();
+    break;
   case Grid::TETRAHEDRONS:
-	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
-	 element    = new P1TetElement();
-	 mapping    = new TetLinMapping();
-	 quadrature = new TetrahedronMidpointQuadrature();
-	 break;
+    cout << "Using standard piecewise linears on tetrahedrons." << endl;
+    element    = new P1TetElement();
+    mapping    = new TetLinMapping();
+    quadrature = new TetrahedronMidpointQuadrature();
+    break;
   default:
-	 // FIXME: Use logging system
-	 cout << "Error: No default spaces for this type of cells." << endl;
-	 exit(1);
+    dolfin_error("No default spaces for this type of cell.");
   }
-  
 }
 //-----------------------------------------------------------------------------
 void Galerkin::alloc(Matrix &A, Grid &grid)
@@ -234,24 +223,24 @@ void Galerkin::alloc(Matrix &A, Grid &grid)
   int i,j;
 
   for (CellIterator cell(grid); !cell.end(); ++cell) {
-
-	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-		if ( (i = v.dof(cell)) > imax )
-		  imax = i;
-
-	 for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
-		if ( (j = u.dof(cell)) > jmax )
-		  jmax = j;
-		  
+    
+    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+      if ( (i = v.dof(cell)) > imax )
+	imax = i;
+    
+    for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
+      if ( (j = u.dof(cell)) > jmax )
+	jmax = j;
+    
   }
-
+  
   // Size of the matrix
   int m = imax + 1;
   int n = jmax + 1;
   
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
-	 A.init(m, n);
+    A.init(m, n);
 }
 //-----------------------------------------------------------------------------
 void Galerkin::alloc(Vector &b, Grid &grid)
@@ -261,17 +250,17 @@ void Galerkin::alloc(Vector &b, Grid &grid)
   int i;
   
   for (CellIterator cell(grid); !cell.end(); ++cell)
-	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-		if ( (i = v.dof(cell)) > imax )
-		  imax = i;
-
+    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+      if ( (i = v.dof(cell)) > imax )
+	imax = i;
+  
   // Size of vector
   int m = imax + 1;
   
   // Initialise vector
   if ( b.size() != m )
-	 b.init(m);
-
+    b.init(m);
+  
   // Set all entries to zero
   b = 0.0;
 }

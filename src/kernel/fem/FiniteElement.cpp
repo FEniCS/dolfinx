@@ -23,24 +23,24 @@ void FiniteElement::update(const Mapping* mapping)
 // FiniteElement::TrialFunctionIterator
 //-----------------------------------------------------------------------------
 FiniteElement::TrialFunctionIterator::TrialFunctionIterator
-(const FiniteElement &element) : e(element), v(element.P)
+(const FiniteElement& element) : e(element), v(element.P)
 {
   
 }
 //-----------------------------------------------------------------------------
 FiniteElement::TrialFunctionIterator::TrialFunctionIterator
-(const FiniteElement *element) : e(*element), v(element->P)
+(const FiniteElement* element) : e(*element), v(element->P)
 {
   
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::TrialFunctionIterator::dof(const Cell &cell) const
+int FiniteElement::TrialFunctionIterator::dof(const Cell& cell) const
 {
   return v.dof(cell);
 }
 //-----------------------------------------------------------------------------
 real FiniteElement::TrialFunctionIterator::dof
-(const Cell &cell, function f, real t) const
+(const Cell &cell, const ExpressionFunction& f, real t) const
 {
   return v.dof(cell, f, t);
 }
@@ -81,24 +81,24 @@ FiniteElement::TrialFunctionIterator::operator->() const
 // FiniteElement::TestFunctionIterator
 //-----------------------------------------------------------------------------
 FiniteElement::TestFunctionIterator::TestFunctionIterator
-(const FiniteElement &element) : e(element), v(element.Q)
+(const FiniteElement& element) : e(element), v(element.Q)
 {
 
 }
 //-----------------------------------------------------------------------------
 FiniteElement::TestFunctionIterator::TestFunctionIterator
-(const FiniteElement *element) : e(*element), v(element->Q)
+(const FiniteElement* element) : e(*element), v(element->Q)
 {
 
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::TestFunctionIterator::dof(const Cell &cell) const
+int FiniteElement::TestFunctionIterator::dof(const Cell& cell) const
 {
   return v.dof(cell);
 }
 //-----------------------------------------------------------------------------
 real FiniteElement::TestFunctionIterator::dof
-(const Cell &cell, function f, real t) const
+(const Cell& cell, const ExpressionFunction& f, real t) const
 {
   return v.dof(cell, f, t);
 }

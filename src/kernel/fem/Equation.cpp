@@ -21,41 +21,31 @@ Equation::Equation(int dim)
 //-----------------------------------------------------------------------------
 Equation::~Equation()
 {
-
+  
 }
 //-----------------------------------------------------------------------------
 void Equation::updateLHS(const FiniteElement* element,
-								 const Cell*          cell,
-								 const Mapping*       mapping,
-								 const Quadrature*    quadrature)
+			 const Cell*          cell,
+			 const Mapping*       mapping,
+			 const Quadrature*    quadrature)
 {
   // Common update for LHS and RHS
   update(element, cell, mapping, quadrature);
-
+  
   // Local update of LHS
   updateLHS();
 }
 //-----------------------------------------------------------------------------
 void Equation::updateRHS(const FiniteElement* element,
-								 const Cell*          cell,
-								 const Mapping*       mapping,
-								 const Quadrature*    quadrature)
+			 const Cell*          cell,
+			 const Mapping*       mapping,
+			 const Quadrature*    quadrature)
 {
   // Common update for LHS and RHS
   update(element, cell, mapping, quadrature);
 
   // Local update of RHS
   updateRHS();
-}
-//-----------------------------------------------------------------------------
-void Equation::setTime(real t)
-{
-  this->t = t;
-}
-//-----------------------------------------------------------------------------
-void Equation::setTimeStep(real k)
-{
-  this->k = k;
 }
 //-----------------------------------------------------------------------------
 real Equation::dx(real a) const
@@ -138,27 +128,33 @@ const ElementFunction Equation::dt(const ElementFunction &v) const
   return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::Vector<ElementFunction>
+const FunctionSpace::ElementFunction::Vector
 Equation::grad(const ShapeFunction &v)
 {
-  FunctionSpace::Vector<ElementFunction> w(v.dx(), v.dy(), v.dz());
-
+  FunctionSpace::ElementFunction::Vector w(v.dx(), v.dy(), v.dz());
   return w;
 }
 //-----------------------------------------------------------------------------
-void Equation::add(ElementFunction &v, Function &f)
+void Equation::add(ElementFunction& v, Function& f)
 {
   FunctionPair p(v, f);
   if ( functions.add(p) == -1 ) {
-	 functions.resize(functions.size() + 1);
-	 functions.add(p);
+    functions.resize(functions.size() + 1);
+    functions.add(p);
   }
 }
 //-----------------------------------------------------------------------------
+void Equation::add(ElementFunction::Vector& v, Function::Vector& f)
+{
+  add(v(0), f(0));
+  add(v(1), f(1));
+  add(v(2), f(2));
+}
+//-----------------------------------------------------------------------------
 void Equation::update(const FiniteElement* element,
-							 const Cell*          cell,
-							 const Mapping*       mapping,
-							 const Quadrature*    quadrature)
+		      const Cell*          cell,
+		      const Mapping*       mapping,
+		      const Quadrature*    quadrature)
 {
   // Update element functions
   for (ShortList<FunctionPair>::Iterator p(functions); !p.end(); ++p)

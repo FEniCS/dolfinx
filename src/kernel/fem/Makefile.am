@@ -14,10 +14,12 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/Integral.h \
                           dolfin/Mapping.h \
                           dolfin/Product.h \
+                          dolfin/ScalarExpressionFunction.h \
                           dolfin/ShapeFunction.h \
                           dolfin/Solver.h \
                           dolfin/TetLinMapping.h \
-                          dolfin/TriLinMapping.h
+                          dolfin/TriLinMapping.h \
+                          dolfin/VectorExpressionFunction.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = DofFunction.cpp \
@@ -29,10 +31,13 @@ libdolfin_fem_a_SOURCES = DofFunction.cpp \
                           Function.cpp \
                           FunctionList.cpp \
                           FunctionSpace.cpp \
+                          GenericFunction.cpp \
                           Galerkin.cpp \
                           Integral.cpp \
                           Mapping.cpp \
                           Product.cpp \
+                          ScalarExpressionFunction.cpp \
                           ShapeFunction.cpp \
                           TetLinMapping.cpp \
-                          TriLinMapping.cpp
+                          TriLinMapping.cpp \
+                          VectorExpressionFunction.cpp

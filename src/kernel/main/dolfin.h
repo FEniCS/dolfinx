@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_grid.h>
 #include <dolfin/dolfin_la.h>
 #include <dolfin/dolfin_fem.h>

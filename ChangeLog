@@ -1,3 +1,11 @@
+ - Make OctaveFile and MatlabFile subclasses of MFile
+ - Add classes ScalarExpressionFunction and VectorExpressionFunction
+ - Make progress bars work cleaner
+ - Get ctrl-c in curses logger
+ - Remove <Problem>Settings-classes and use dolfin_parameter()
+ - Redesign settings to match the structure of the log system
+ - Add vector functions: Function::Vector
+ - Add vector element functions: ElementFunction::Vector
 0.3.3
  - Increased functionality of curses-based interface
  - Add progress bars to log system

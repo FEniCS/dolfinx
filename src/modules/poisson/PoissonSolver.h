@@ -10,12 +10,12 @@ namespace dolfin {
   
   class PoissonSolver : public Solver {
   public:
-	 
-	 PoissonSolver(Grid &grid) : Solver(grid) {}
-
-	 const char *description();
-	 void solve();
-
+    
+    PoissonSolver(Grid& grid);
+    
+    const char* description();
+    void solve();
+    
   };
 
 }

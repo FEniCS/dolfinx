@@ -15,8 +15,8 @@ using namespace dolfin;
 FunctionSpace::FunctionSpace(int dim)
 {
   if ( dim <= 0 )
-	 dolfin_error("Dimension of function space must be positive");
-
+    dolfin_error("Dimension of function space must be positive");
+  
   _dim = dim;
   
   // Initialise the list of shape functions
@@ -44,23 +44,23 @@ void FunctionSpace::add(ShapeFunction v, ElementFunction dx, ElementFunction dy)
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v,
-							  ElementFunction dx, ElementFunction dy, ElementFunction dz)
+			ElementFunction dx, ElementFunction dy, ElementFunction dz)
 {
   add(v, dx, dy, dz, 0.0);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v,
-								ElementFunction dx,
-								ElementFunction dy,
-								ElementFunction dz,
-								ElementFunction dt)
+			ElementFunction dx,
+			ElementFunction dy,
+			ElementFunction dz,
+			ElementFunction dt)
 {
   // Set derivatives of shape function
   v.set(dx, dy, dz, dt);
   
   // Add shape function
   if ( this->v.add(v) == -1 )
-	 dolfin_error("Function space is full.");
+    dolfin_error("Function space is full.");
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v, real dx)
@@ -81,10 +81,10 @@ void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz)
 void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
 {
   add(v,
-		ElementFunction(dx),
-		ElementFunction(dy),
-		ElementFunction(dz),
-		ElementFunction(dt));
+      ElementFunction(dx),
+      ElementFunction(dy),
+      ElementFunction(dz),
+      ElementFunction(dt));
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::dim() const
@@ -95,7 +95,7 @@ int FunctionSpace::dim() const
 void FunctionSpace::update(const Mapping& mapping)
 {
   for (Iterator v(*this); !v.end(); ++v)
-	 v->update(mapping);
+    v->update(mapping);
 }
 //-----------------------------------------------------------------------------
 // FunctionSpace::Iterator
@@ -106,12 +106,13 @@ FunctionSpace::Iterator::Iterator
   v = V.v.begin();
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::Iterator::dof(const Cell &cell) const
+int FunctionSpace::Iterator::dof(const Cell& cell) const
 {
   return V.dof(v.index(), cell);
 }
 //-----------------------------------------------------------------------------
-real FunctionSpace::Iterator::dof(const Cell &cell, function f, real t) const
+real FunctionSpace::Iterator::dof
+(const Cell& cell, const ExpressionFunction& f, real t) const
 {
   return V.dof(v.index(), cell, f, t);
 }

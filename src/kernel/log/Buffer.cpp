@@ -10,12 +10,14 @@ using namespace dolfin;
 Buffer::Buffer()
 {
   buffer = 0;
+  types = 0;
   clear();
 }
 //-----------------------------------------------------------------------------
 Buffer::Buffer(int lines, int cols)
 {
   buffer = 0;
+  types = 0;
   init(lines, cols);
 }
 //-----------------------------------------------------------------------------
@@ -30,9 +32,9 @@ void Buffer::init(int lines, int cols)
     dolfin_error("Number of lines must be positive.");
   if ( cols <= 0 )
     dolfin_error("Number of columns must be positive.");
- 
+  
   clear();
- 
+  
   this->lines = lines;
   this->cols = cols;
   
@@ -45,9 +47,13 @@ void Buffer::init(int lines, int cols)
     buffer[i] = new char[cols+1];
     buffer[i][0] = '\0';
   }
+  
+  types = new Type[lines];
+  for (int i = 0; i < lines; i++)
+    types[i] = INFO;
 }
 //-----------------------------------------------------------------------------
-int Buffer::size()
+int Buffer::size() const
 {
   if ( full )
     return lines;
@@ -55,7 +61,7 @@ int Buffer::size()
   return last - first + 1;
 }
 //-----------------------------------------------------------------------------
-void Buffer::add(const char* msg)
+void Buffer::add(const char* msg, Type type)
 {
   // Step last
   last++;
@@ -77,9 +83,12 @@ void Buffer::add(const char* msg)
     buffer[last][i] = msg[i];
   }
   buffer[last][i] = '\0';
+
+  // Save the type
+  types[last] = type;
 }
 //-----------------------------------------------------------------------------
-const char* Buffer::get(int line)
+const char* Buffer::get(int line) const
 {
   if ( line < 0 )
     dolfin_error("Line number must be non-negative.");
@@ -87,6 +96,16 @@ const char* Buffer::get(int line)
     dolfin_error1("Line number too large: %d.", line);
 
   return buffer[(first + line) % lines];
+}
+//-----------------------------------------------------------------------------
+Buffer::Type Buffer::type(int line) const
+{
+  if ( line < 0 )
+    dolfin_error("Line number must be non-negative.");
+  if ( line >= lines )
+    dolfin_error1("Line number too large: %d.", line);
+
+  return types[line];
 }
 //-----------------------------------------------------------------------------
 void Buffer::clear()
@@ -97,6 +116,10 @@ void Buffer::clear()
     delete [] buffer;
   }
   buffer = 0;
+
+  if ( types )
+    delete [] types;
+  types = 0;
 
   lines = 0;
   cols = 0;

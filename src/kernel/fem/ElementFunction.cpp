@@ -690,7 +690,7 @@ real FunctionSpace::ElementFunction::operator* (Integral::Measure &dm) const
   // The integral is linear
   real sum = c * dm;
   for (int i = 0; i < n; i++)
-	 sum += a[i] * ( dm * v[i] );
+    sum += a[i] * ( dm * v[i] );
   
   return sum;
 }
@@ -709,14 +709,69 @@ void FunctionSpace::ElementFunction::init(int size)
   v = new Product[n]();
 
   for (int i = 0; i < n; i++)
-	 a[i] = 0.0;
+    a[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::ElementFunction::set(int i, const ShapeFunction &v,
-													  real value)
+					 real value)
 {
   a[i] = value;
   this->v[i] = v;
+}
+//-----------------------------------------------------------------------------
+// Vector element function
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::Vector::Vector(int size)
+{
+  v = new ElementFunction[size];
+  _size = size;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::Vector::Vector(const Vector& v)
+{
+  _size = v._size;
+  this->v = new ElementFunction[_size];
+  for (int i = 0; i < _size; i++)
+    this->v[i] = v.v[i];
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::Vector::Vector(const ElementFunction& v0,
+					       const ElementFunction& v1,
+					       const ElementFunction& v2)
+{
+  _size = 3;
+  v = new ElementFunction[_size];
+
+  v[0] = v0;
+  v[1] = v1;
+  v[2] = v2;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::Vector::~Vector()
+{
+  delete [] v;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction&
+FunctionSpace::ElementFunction::Vector::operator() (int i)
+{
+  return v[i];
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction
+FunctionSpace::ElementFunction::Vector::operator, (const Vector& v) const
+{
+  if ( _size != 3 || v._size != 3 )
+    dolfin_error("Vector dimension must be 3 for scalar product.");
+
+  ElementFunction w(this->v[0], this->v[1], this->v[2],
+		    v.v[0], v.v[1], v.v[2]);
+  return w;
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::ElementFunction::Vector::size() const
+{
+  return _size;
 }
 //-----------------------------------------------------------------------------
 // Additional operators
@@ -728,7 +783,7 @@ FunctionSpace::ElementFunction dolfin::operator*
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,
-												  const FunctionSpace::ElementFunction &v)
+				      const FunctionSpace::ElementFunction &v)
 {
   stream << "[ ElementFunction with " << v.n
 			<< " terms and offset = " << v.c << " ]";

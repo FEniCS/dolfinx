@@ -9,15 +9,18 @@ namespace dolfin {
   class Buffer {
   public:
 
+    enum Type { INFO, DEBUG, WARNING, ERROR };
+
     Buffer();
     Buffer(int lines, int cols);
     ~Buffer();
 
     void init(int lines, int cols);
     
-    int size();
-    void add(const char* msg);
-    const char* get(int line);
+    int size() const;
+    void add(const char* msg, Type type = INFO);
+    const char* get(int line) const;
+    Type type(int line) const;
 
   private:
 
@@ -31,6 +34,7 @@ namespace dolfin {
     bool full;     // True if the buffer is full
 
     char** buffer; // The buffer
+    Type*  types;  // Line types
     
   };
 

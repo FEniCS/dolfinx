@@ -5,10 +5,12 @@
 #include <dolfin/Mapping.h>
 #include <dolfin/FunctionList.h>
 
-using namespace dolfin;
+namespace dolfin {
+  real zero (real x, real y, real z, real t) { return 0.0; }
+  real one  (real x, real y, real z, real t) { return 1.0; }
+}
 
-real zero (real x, real y, real z, real t) { return 0.0; }
-real one  (real x, real y, real z, real t) { return 1.0; }
+using namespace dolfin;
 
 // Initialise static data
 ShortList<FunctionList::FunctionData> FunctionList::list(DOLFIN_PARAMSIZE);
@@ -28,8 +30,8 @@ int FunctionList::add(function f)
   int id = list.add(FunctionData(f));
   
   if ( id == -1 ) {
-	 list.resize(2*list.size());
-	 id = list.add(FunctionData(f));
+    list.resize(2*list.size());
+    id = list.add(FunctionData(f));
   }
 
   // Increase size of list. Note that _size <= list.size()
@@ -39,10 +41,10 @@ int FunctionList::add(function f)
 }
 //-----------------------------------------------------------------------------
 void FunctionList::set(int id,
-							  FunctionSpace::ElementFunction dX,
-							  FunctionSpace::ElementFunction dY,
-							  FunctionSpace::ElementFunction dZ,
-							  FunctionSpace::ElementFunction dT)
+		       FunctionSpace::ElementFunction dX,
+		       FunctionSpace::ElementFunction dY,
+		       FunctionSpace::ElementFunction dZ,
+		       FunctionSpace::ElementFunction dT)
 {
   list(id).dX = dX;
   list(id).dY = dY;
@@ -51,7 +53,7 @@ void FunctionList::set(int id,
 }
 //-----------------------------------------------------------------------------
 void FunctionList::update(const FunctionSpace::ShapeFunction& v,
-								  const Mapping& mapping)
+			  const Mapping& mapping)
 {
   list(v.id()).dx = mapping.dx(v);
   list(v.id()).dy = mapping.dy(v);
@@ -134,7 +136,7 @@ FunctionList::FunctionData::FunctionData(function f)
 void FunctionList::FunctionData::operator= (int zero)
 {
   if ( zero != 0 )
-	 dolfin_error("Assignment to int must be zero.");
+    dolfin_error("Assignment to int must be zero.");
   
   f = 0;
 }

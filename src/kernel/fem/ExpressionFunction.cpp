@@ -10,28 +10,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ExpressionFunction::ExpressionFunction(function f)
+ExpressionFunction::ExpressionFunction(int dim, int size) :
+  GenericFunction(dim, size)
 {
-  this->f = f;
-}
-//-----------------------------------------------------------------------------
-void ExpressionFunction::update(FunctionSpace::ElementFunction &v,
-										  const FiniteElement &element,
-										  const Cell &cell,
-										  real t) const
-{
-  for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-	 v.set(phi.index(), phi, phi.dof(cell, f, t));
-}
-//-----------------------------------------------------------------------------
-real ExpressionFunction::operator() (const Node& n, real t)  const
-{
-  Point p = n.coord();
-  return f(p.x, p.y, p.z, t);
-}
-//-----------------------------------------------------------------------------
-real ExpressionFunction::operator() (const Point& p, real t) const
-{
-  return f(p.x, p.y, p.z, t);
+
 }
 //-----------------------------------------------------------------------------

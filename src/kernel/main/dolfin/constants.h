@@ -10,6 +10,7 @@
 #define DOLFIN_PI            3.141592653589793238462
 #define DOLFIN_PROGRESS_STEP 0.1
 #define DOLFIN_PROGRESS_BARS 4
+#define DOLFIN_PROGRESS_WAIT 2
 
 typedef double real;
 

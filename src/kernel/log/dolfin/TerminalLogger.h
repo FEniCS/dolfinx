@@ -22,6 +22,7 @@ namespace dolfin {
     void progress(const char* title, const char* label, real p);
     
     void update();
+    void quit();
     bool finished();
     
     void progress_add    (Progress* p);

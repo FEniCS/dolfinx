@@ -15,7 +15,8 @@ GenericFile::GenericFile(const std::string filename)
 
   opened_read = false;
   opened_write = false;
-  
+
+  check_header = false;
 }
 //-----------------------------------------------------------------------------
 GenericFile::~GenericFile()
@@ -31,8 +32,8 @@ void GenericFile::read()
 void GenericFile::write()
 {
   if ( !opened_write ) {
-	 FILE* fp = fopen(filename.c_str(), "w");
-	 fclose(fp);
+    FILE* fp = fopen(filename.c_str(), "w");
+    fclose(fp);
   }
   
   opened_write = true;

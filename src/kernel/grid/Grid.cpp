@@ -188,7 +188,18 @@ void Grid::init()
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Grid& grid)
 {
   stream << "[ Grid with " << grid.noNodes() << " nodes and "
-			<< grid.noCells() << " cells. ]";
+	 << grid.noCells() << " cells ";
+
+  switch ( grid.type() ) {
+  case Grid::TRIANGLES:
+    stream << "(triangles). ]";
+    break;
+  case Grid::TETRAHEDRONS:
+    stream << "(tetrahedrons). ]";
+    break;
+  default:
+    stream << "(unknown type). ]";
+  }
 
   return stream;
 }

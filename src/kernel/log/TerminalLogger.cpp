@@ -71,6 +71,11 @@ void TerminalLogger::update()
   // FIXME: Maybe we should flush the output?
 }
 //-----------------------------------------------------------------------------
+void TerminalLogger::quit()
+{
+  // FIXME: What should be done here?
+}
+//-----------------------------------------------------------------------------
 bool TerminalLogger::finished()
 {
   return false;

@@ -32,6 +32,13 @@ void sigalarm(int i)
     alarm(1);
 }
 
+// Signal handler, ctrl-c
+void sigctrlc(int i)
+{
+  // Quit (will reach CursesLogger::quit())
+  dolfin_quit();
+}
+
 //-----------------------------------------------------------------------------
 CursesLogger::CursesLogger() : GenericLogger()
 {
@@ -40,6 +47,9 @@ CursesLogger::CursesLogger() : GenericLogger()
 
   // Computation still running
   running = true;
+
+  // Not updating
+  updating = false;
 
   // Not waiting for input
   waiting = false;
@@ -74,6 +84,11 @@ CursesLogger::CursesLogger() : GenericLogger()
   for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
     pbars[i] = 0;
 
+  // Initialise time to display progress bars (will remain for a few seconds after removed)
+  ptimes = new int[DOLFIN_PROGRESS_BARS];
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    ptimes[i] = -1;
+
   // Initialise the buffer
   buffer.init(lines, cols);
   offset = 1;
@@ -107,16 +122,25 @@ CursesLogger::~CursesLogger()
   redraw();
 
   // Wait for 'q'
-  update();
+  updateInternal();
 
   // End curses
   endwin();
 
   // Clear gui message
-  delete [] guiinfo;
+  if ( guiinfo )
+    delete [] guiinfo;
+  guiinfo = 0;
 
   // Clear progress bars
-  delete [] pbars;
+  if ( pbars )
+    delete [] pbars;
+  pbars = 0;
+
+  // Clear remaing times for progress bars
+  if ( ptimes )
+    delete [] ptimes;
+  ptimes = 0;
 
   // Write a message in plain text
   std::cout << "DOLFIN finished at " << date() << "." << std::endl;
@@ -130,30 +154,136 @@ void CursesLogger::info(const char* msg)
 //-----------------------------------------------------------------------------
 void CursesLogger::debug(const char* msg, const char* location)
 {
-  //std::cout << "DOLFIN debug [" << location << "]: " << msg << std::endl;
+  buffer.add(msg, Buffer::DEBUG);
+  buffer.add(location, Buffer::DEBUG);
+  redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::warning(const char* msg, const char* location)
 {
-  //std::cout << "DOLFIN warning [" << location << "]: " << msg << std::endl;
+  buffer.add(msg, Buffer::WARNING);
+  buffer.add(location, Buffer::WARNING);
+  redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::error(const char* msg, const char* location)
 {
-  //std::cout << "DOLFIN error [" << location << "]: " << msg << std::endl;
-  exit(1);
+  buffer.add(msg, Buffer::ERROR);
+  buffer.add(location, Buffer::ERROR);
+  setInfo("Press any key to quit.");
+  state = ERROR;
+  updateInternal();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::progress(const char* title, const char* label, real p)
 {
-  update();
+  updateInternal();
 }
 //----------------------------------------------------------------------------- 
 void CursesLogger::update()
 {
+  // Updates that should be done periodically
+  progress_flush();
+  
+  // Other updates
+  updateInternal();
+}
+//----------------------------------------------------------------------------- 
+void CursesLogger::quit()
+{
+  endwin();
+  std::cout << "DOLFIN stopped at " << date() << "." << std::endl;
+  kill(getpid(), SIGKILL);
+}
+//-----------------------------------------------------------------------------
+bool CursesLogger::finished()
+{
+  return state == FINISHED;
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::progress_add(Progress* p)
+{
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    if ( ptimes[i] != -1 ) { // Use an old one that we should remove
+      pbars[i] = p;
+      ptimes[i] = -1;
+      redraw();
+      return;
+    }
+    else if ( pbars[i] == 0 ) { // Create a new progress bar
+      pbars[i] = p;
+      ptimes[i] = -1;
+      offset += 2;
+      redraw();
+      return;
+    }
+  
+  dolfin_warning("Too many progress bars.");
+  redraw();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::progress_remove(Progress *p)
+{ 
+  // Find the progress bar in the list and schedule to be removed after
+  // DOLFIN_PROGRESS_WAIT seconds
+
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    if ( pbars[i] == p ) {
+      pbars[i] = 0;
+      ptimes[i] = DOLFIN_PROGRESS_WAIT;
+      return;
+    }
+  
+  dolfin_warning("Removing unknown  progress.bar.");
+  redraw();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::progress_flush()
+{
+  // Remove any progress bars scheduled to be removed
+  
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS;) {
+
+    // Check if we should skip this progress bar
+    if ( ptimes[i] == -1 ) {
+      i++;
+      continue;
+    }
+    
+    // Decrease the number of remaining seconds
+    ptimes[i] -= 1;
+    
+    // Check if the progress bar should be removed
+    if ( ptimes[i] == 0 ) {
+      for (int j = i + 1; j < DOLFIN_PROGRESS_BARS; j++) {
+	pbars[j-1] = pbars[j];
+	ptimes[j-1] = ptimes[j];
+      }
+      pbars[DOLFIN_PROGRESS_BARS - 1] = 0;
+      ptimes[DOLFIN_PROGRESS_BARS - 1] = -1;
+      offset -= 2;
+      continue;
+    }
+
+    // Jump to next progress bar
+    i++;
+    
+  }
+
+}
+//----------------------------------------------------------------------------- 
+void CursesLogger::updateInternal()
+{
   // Ignore call if we're waiting for input
   if ( waiting )
     return;
+
+  // Ignore call if we're already updating
+  if ( updating )
+    return;
+
+  // Block other calls to this function
+  updating = true;
 
   while ( true ) {
     
@@ -168,6 +298,9 @@ void CursesLogger::update()
 	break;
       case PAUSED:
 	updatePaused(c);
+	break;
+      case ERROR:
+	updateError(c);
 	break;
       case ABOUT:
 	updateAbout(c);
@@ -191,41 +324,9 @@ void CursesLogger::update()
     delay(0.01);
 
   }
-}
-//-----------------------------------------------------------------------------
-bool CursesLogger::finished()
-{
-  return state == FINISHED;
-}
-//-----------------------------------------------------------------------------
-void CursesLogger::progress_add(Progress* p)
-{
-  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
-    if ( pbars[i] == 0 ) {
-      pbars[i] = p;
-      offset += 2;
-      redraw();
-      return;
-    }
 
-  dolfin_warning("Too many progress bars.");
-  redraw();
-}
-//-----------------------------------------------------------------------------
-void CursesLogger::progress_remove(Progress *p)
-{
-  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
-    if ( pbars[i] == p ) {
-      for (int j = i + 1; j < DOLFIN_PROGRESS_BARS; j++)
-	pbars[j-1] = pbars[j];
-      pbars[DOLFIN_PROGRESS_BARS - 1] = 0;
-      offset -= 2;
-      redraw();
-      return;
-    }
-  
-  dolfin_warning("Removing unknown  progress.bar.");
-  redraw();
+  // Remove block to this function
+  updating = false;
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::updateRunning(char c)
@@ -301,6 +402,13 @@ void CursesLogger::updatePaused(char c)
   default:
     setInfo("Unknown command.");
   }
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updateError(char c)
+{
+  endwin();
+  std::cout << "DOLFIN stopped at " << date() << "." << std::endl;
+  kill(getpid(), SIGKILL);
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::updateAbout(char c)
@@ -435,8 +543,14 @@ void CursesLogger::setSignals()
   struct sigaction act;
   
   // Set the signal handler for alarm
+  sigaction(SIGALRM, 0, &act);
   act.sa_handler = sigalarm;
   sigaction(SIGALRM, &act, 0);
+
+  // Set signal handler for ctrl-c
+  sigaction(SIGALRM, 0, &act);
+  act.sa_handler = sigctrlc;
+  sigaction(SIGINT, &act, 0);
 
   // Set alarm
   alarm(1);
@@ -452,6 +566,12 @@ void CursesLogger::setInfo(const char *msg)
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::clearLines()
+{
+  for (int i = 1; i < (lines - 2); i++)
+    clearLine(i,0);
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::clearBuffer()
 {
   for (int i = offset; i < (lines - 2); i++)
     clearLine(i,0);
@@ -502,6 +622,9 @@ bool CursesLogger::getYesNo()
 //-----------------------------------------------------------------------------
 void CursesLogger::getAnyKey()
 {
+  // Notify that we are waiting for input
+  waiting = true;
+
   // Wait for input
   nodelay(win, false);
 
@@ -522,37 +645,47 @@ void CursesLogger::drawTitle()
 //-----------------------------------------------------------------------------
 void CursesLogger::drawProgress()
 {
-  attron(A_NORMAL);
-  attron(COLOR_PAIR(6));
+  attroff(A_BOLD);
+  attron(COLOR_PAIR(4));
   int line = 0;
   int n = 0;
+  real p = 0.0;
 
   for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++) {    
 
-    if ( pbars[i] == 0 )
-      return;
+    // Skip if not in use
+    if ( pbars[i] == 0 && ptimes[i] == -1 )
+      continue;
+
+    // Get value if not removed
+    if ( pbars[i] != 0 )
+      p = pbars[i]->value();
+    else
+      p = 1.0;
    
     line = 1 + 2*i;
     
     // Draw title
-    clearLine(line, 0);
-    printw("| %s", pbars[i]->title());
-    move(line, cols - 1);
-    printw("|");
+    if ( pbars[i] != 0 ) {
+      clearLine(line, 0);
+      printw("%s", pbars[i]->title());
+    }
 
     // Draw progress bar
-    n = (int) (pbars[i]->value() * ((real) cols));
+    n = (int) (p * ((real) cols));
     clearLine(line + 1, 0);
-    printw("|");
     for (int j = 0; j < n; j++)
       printw("=");
-    printw("|");
-    move(line + 1, cols - 1);
-    printw("|");
-
+    if ( n < cols )
+      printw("|");
+    for (int j = n + 1; j < cols; j++)
+      printw("-");
+    
     // Draw progress value
-    move(line, cols - 6);
-    printw("%2.1f%%", 100.0 * pbars[i]->value());
+    move(line, cols - 5);
+    printw("%2.1f", 100.0 * p);
+    move(line, cols - 1);
+    printw("%%");
 
   }
 
@@ -562,7 +695,7 @@ void CursesLogger::drawBuffer()
 {
   attroff(A_BOLD);
   attron(COLOR_PAIR(6));
-  clearLines();
+  clearBuffer();
   
   int line = offset + buffer.size() - 1;
   if ( line > (lines - 3) )
@@ -570,6 +703,21 @@ void CursesLogger::drawBuffer()
 
   for (int i = buffer.size() - 1; i >= 0; i--) {
     
+    // Set color
+    switch ( buffer.type(i) ) {
+    case Buffer::INFO:
+      attron(COLOR_PAIR(6));
+      break;
+    case Buffer::DEBUG:
+      attron(COLOR_PAIR(1));
+      break;
+    case Buffer::WARNING:
+      attron(COLOR_PAIR(2));
+      break;
+    default: // ERROR
+      attron(COLOR_PAIR(3));
+    }
+
     // Print line from the buffer
     clearLine(line, 0);
     printw(buffer.get(i));
@@ -589,23 +737,17 @@ void CursesLogger::drawAbout()
   attron(COLOR_PAIR(6));
   clearLines();
   
-  int line = 0;
+  int line = 2;
   
-  move(line + 1, 2);  printw(" ___   ___  _    ___ ___ _  _ ");
-  move(line + 2, 2);  printw("|   \\ / _ \\| |  | __|_ _| \\| |");
-  move(line + 3, 2);  printw("| () | (_) | |__| _| | ||  ` |");
-  move(line + 4, 2);  printw("|___/ \\___/|____|_| |___|_|\\_|");
-
-  move(line + 6, 2);  printw("DOLFIN is written and maintained by");
-  move(line + 8, 2);  printw("Johan Hoffman (hoffman@cims.nyu.edu)");
-  move(line + 9, 2);  printw("Anders Logg   (logg@math.chalmers.se)");
+  move(line +  0, 2);  printw("DOLFIN is written and maintained by");
+  move(line +  1, 2);  printw("Johan Hoffman (hoffman@cims.nyu.edu)");
+  move(line +  2, 2);  printw("Anders Logg   (logg@math.chalmers.se)");
   
-  move(line + 11, 2); printw("For a complete list of author/contributors, see");
-  move(line + 12, 2); printw("the file AUTHORS in the source distribution.");
+  move(line +  4, 2); printw("For a complete list of author/contributors, see");
+  move(line +  5, 2); printw("the file AUTHORS in the source distribution.");
 
-  move(line + 14, 2); printw("For more information about DOLFIN, please visit");
-  move(line + 15, 2); printw("the web page at");
-  move(line + 17, 2); printw("http://www.phi.chalmers.se/dolfin/");
+  move(line +  7, 2); printw("For more information about DOLFIN, please visit");
+  move(line +  8, 2); printw("the web page at http://www.phi.chalmers.se/dolfin/");
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::drawHelp()

@@ -9,7 +9,7 @@
 
 
 namespace dolfin {
-
+  
   class Vector;
   class Matrix;
   class Grid;
@@ -17,36 +17,38 @@ namespace dolfin {
   
   class GenericFile {
   public:
-	 
-	 GenericFile(const std::string filename);
-	 virtual ~GenericFile();
-	 
-	 // Input
-	 
-	 virtual void operator>> (Vector& x)   = 0;
-	 virtual void operator>> (Matrix& A)   = 0;
-	 virtual void operator>> (Grid& grid)  = 0;
-	 virtual void operator>> (Function& u) = 0;
-	 
-	 // Output
-	 
-	 virtual void operator<< (const Vector& x)   = 0;
-	 virtual void operator<< (const Matrix& A)   = 0;
-	 virtual void operator<< (const Grid& grid)  = 0;
-	 virtual void operator<< (const Function& u) = 0;
-
-	 void read();
-	 void write();
-	 
+    
+    GenericFile(const std::string filename);
+    virtual ~GenericFile();
+    
+    // Input
+    
+    virtual void operator>> (Vector& x)   = 0;
+    virtual void operator>> (Matrix& A)   = 0;
+    virtual void operator>> (Grid& grid)  = 0;
+    virtual void operator>> (Function& u) = 0;
+    
+    // Output
+    
+    virtual void operator<< (Vector& x)   = 0;
+    virtual void operator<< (Matrix& A)   = 0;
+    virtual void operator<< (Grid& grid)  = 0;
+    virtual void operator<< (Function& u) = 0;
+    
+    void read();
+    void write();
+    
   protected:
-	 
-	 std::string filename;
-	 
-	 bool opened_read;
-	 bool opened_write;
-	 
-  };
+    
+    std::string filename;
+    
+    bool opened_read;
+    bool opened_write;
 
+    bool  check_header;     // True if we have written a header
+    
+  };
+  
 }
 
 #endif

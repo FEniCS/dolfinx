@@ -8,6 +8,8 @@ libdolfin_io_a_SOURCES = File.cpp \
                          GenericFile.h \
                          MatlabFile.cpp \
                          MatlabFile.h \
+                         MFile.cpp \
+                         MFile.h \
                          OctaveFile.cpp \
                          OctaveFile.h \
                          XMLFile.cpp \

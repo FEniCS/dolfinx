@@ -23,62 +23,62 @@ namespace dolfin {
   
   class Grid : public Variable {
   public:
-
-	 enum Type { TRIANGLES, TETRAHEDRONS };
-	 
-	 Grid();
-	 Grid(const char *filename);
-	 ~Grid();
-
-	 void operator = ( const Grid& grid );
-
-	 void clear();
-	 void refine();
-	 
-	 int  noNodes() const;
-	 int  noCells() const;
-	 Type type() const;
-
-	 /// Output
-	 void show();
-	 friend LogStream& operator<< (LogStream& stream, const Grid& grid);
-	 
-	 /// Friends
-	 friend class NodeIterator::GridNodeIterator;
-	 friend class CellIterator::GridCellIterator;
-	 friend class XMLGrid;
-	 friend class RefineGrid;
- 
+    
+    enum Type { TRIANGLES, TETRAHEDRONS };
+    
+    Grid();
+    Grid(const char *filename);
+    ~Grid();
+    
+    void operator = ( const Grid& grid );
+    
+    void clear();
+    void refine();
+    
+    int  noNodes() const;
+    int  noCells() const;
+    Type type() const;
+    
+    /// Output
+    void show();
+    friend LogStream& operator<< (LogStream& stream, const Grid& grid);
+    
+    /// Friends
+    friend class NodeIterator::GridNodeIterator;
+    friend class CellIterator::GridCellIterator;
+    friend class XMLGrid;
+    friend class RefineGrid;
+    
   private:
-	 
- 	 Node* createNode();
-	 Cell* createCell(int level, Cell::Type type);
-
- 	 Node* createNode(Point p);
-
-	 Node* createNode(real x, real y, real z);
-	 Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2);
-	 Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3);
-	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
-	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
-
-	 Node* getNode(int id);
-	 Cell* getCell(int id);
-
-	 void init();
-	 
-	 /// Grid data
-	 GridData *gd;
-
-	 /// Grid type
-	 Type _type;
-	 
-	 /// Algorithms
-	 InitGrid initGrid;
-	 RefineGrid refineGrid;
-	 
+    
+    Node* createNode();
+    Cell* createCell(int level, Cell::Type type);
+    
+    Node* createNode(Point p);
+    
+    Node* createNode(real x, real y, real z);
+    Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2);
+    Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3);
+    Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
+    Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
+    
+    Node* getNode(int id);
+    Cell* getCell(int id);
+    
+    void init();
+    
+    /// Grid data
+    GridData *gd;
+    
+    /// Grid type
+    Type _type;
+    
+    /// Algorithms
+    InitGrid initGrid;
+    RefineGrid refineGrid;
+    
   };
-
+  
 }
 
 #endif

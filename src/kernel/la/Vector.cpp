@@ -11,36 +11,54 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Vector::Vector()
+Vector::Vector() : Variable("x", "A vector")
 {
   n = 0;
   values = 0;
-
-  rename("x", "A vector");
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(int size)
+Vector::Vector(int size) : Variable("x", "A vector")
 {
   values = 0;
-
+  
   init(size);
-
-  rename("x", "A vector");
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector &vector)
+Vector::Vector(const Vector& vector) : Variable(vector.name(), vector.label())
 {
   n = vector.n;
   values = new real[n];
   for (int i = 0; i < n; i++)
-	 values[i] = vector.values[i];
-
-  rename(vector.name(), vector.label());
+    values[i] = vector.values[i];
 }
 //-----------------------------------------------------------------------------
-int Vector::bytes() const
+Vector::Vector(real x0) : Variable("x", "A vector")
 {
-  return sizeof(Vector) + n*sizeof(real);
+  values = 0;
+  
+  init(1);
+  values[0] = x0;
+}
+//-----------------------------------------------------------------------------
+Vector::Vector(real x0, real x1) : Variable("x", "A vector")
+{
+  values = 0;
+  
+  init(2);
+  values[0] = x0;
+  values[1] = x1;
+}
+//-----------------------------------------------------------------------------
+Vector::Vector(real x0, real x1, real x2) : Variable("x", "A vector")
+{
+  values = 0;
+  
+  init(3);
+  values[0] = x0;
+  values[1] = x1;
+  values[2] = x2;
+  
+  std::cout << "Initialising vector of length 3" << std::endl;
 }
 //-----------------------------------------------------------------------------
 Vector::~Vector()
@@ -51,19 +69,24 @@ Vector::~Vector()
 void Vector::init(int size)
 {
   if ( values )
-	 delete [] values;
-
+    delete [] values;
+  
   n = size;
-
+  
   values = new real[n];
-
+  
   for (int i=0;i<n;i++)
-	 values[i] = 0.0;
+    values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 int Vector::size() const
 {
   return n;
+}
+//-----------------------------------------------------------------------------
+int Vector::bytes() const
+{
+  return sizeof(Vector) + n*sizeof(real);
 }
 //-----------------------------------------------------------------------------
 real& Vector::operator()(int i)

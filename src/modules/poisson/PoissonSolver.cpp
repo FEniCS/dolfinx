@@ -7,6 +7,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+PoissonSolver::PoissonSolver(Grid& grid) : Solver(grid)
+{
+  dolfin_parameter(Parameter::FUNCTION, "source", 0);
+}
+//-----------------------------------------------------------------------------
 const char* PoissonSolver::description()
 {
   return "Poisson's equation";

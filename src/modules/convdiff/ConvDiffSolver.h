@@ -4,20 +4,20 @@
 #ifndef __CONV_DIFF_SOLVER_H
 #define __CONV_DIFF_SOLVER_H
 
-#include "Solver.h"
+#include <dolfin/Solver.h>
 
 namespace dolfin {
   
   class ConvDiffSolver : public Solver {
   public:
-	 
-	 ConvDiffSolver(Grid &grid) : Solver(grid) {}
-	 
-	 const char *description();
-	 void solve();
-	 
+    
+    ConvDiffSolver(Grid& grid);
+    
+    const char* description();
+    void solve();
+    
   };
-
+  
 }
 
 #endif

@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/basic.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/SISolver.h>
-#include <dolfin/Settings.h>
 #include <dolfin/KrylovSolver.h>
 #include <cmath>
 
@@ -60,8 +60,8 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
 {
   int k_max,max_no_restarts;
-  Settings::get("max no krylov restarts", &max_no_restarts); // max no restarts
-  Settings::get("max no stored krylov vectors", &k_max); // no iterations before restart
+  max_no_restarts = dolfin_get("max no krylov restarts"); // max no restarts
+  k_max = dolfin_get("max no stored krylov vectors"); // no iterations before restart
 
   int no_iterations;
 
@@ -240,7 +240,7 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
 
   int n = x.size();
   int k_max;
-  Settings::get("max no cg iterations", &k_max); // max no iterations
+  k_max = dolfin_get("max no cg iterations"); // max no iterations
   
   real norm_b = b.norm();
   

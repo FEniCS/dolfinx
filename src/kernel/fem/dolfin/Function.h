@@ -10,38 +10,58 @@
 #include <dolfin/ElementFunction.h>
 
 namespace dolfin {
-
+  
   class Cell;
   class Grid;
   class GenericFunction;
   
   class Function : public Variable {
   public:
+    
+    Function(Grid& grid, dolfin::Vector& x, int dim = 0, int size = 1);
+    Function(Grid& grid, const char* name,  int dim = 0, int size = 1);
+    
+    // Update values of element function
+    void update(FunctionSpace::ElementFunction& v,
+		const FiniteElement& element, const Cell& cell, real t) const;
+    
+    // Evaluation of function
+    real operator() (const Node&  n, real t = 0.0) const;
+    real operator() (const Point& p, real t = 0.0) const;
+    
+    // Get grid
+    Grid& grid() const;
 
-	 Function(Grid &grid, Vector &x);
-	 Function(Grid &grid, const char *name);
+    // Time value
+    real t;
 
-	 // Update values of element function
-	 void update(FunctionSpace::ElementFunction &v,
-					 const FiniteElement &element, const Cell &cell, real t) const;
-
-	 // Evaluation of function
-	 real operator() (const Node&  n, real t = 0.0) const;
-	 real operator() (const Point& p, real t = 0.0) const;
-	 
-	 // Get grid
-	 const Grid& grid() const;
+    // Vector function
+    class Vector {
+    public:
+      
+      Vector(Grid& grid, dolfin::Vector& x, int size = 3);
+      Vector(Grid& grid, const char* name,  int size = 3);
+      ~Vector();
+      
+      int size() const;
+      
+      Function& operator() (int i);
+      
+    private:
+      Function** f;
+      int _size;
+    };
 
   private:
-
-	 // Grid
-	 Grid& _grid;
-
-	 // Function
-	 GenericFunction* f;
+    
+    // Grid
+    Grid& _grid;
+    
+    // Function
+    GenericFunction* f;
 
   };
-
+  
 }
 
 #endif

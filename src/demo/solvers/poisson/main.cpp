@@ -16,7 +16,6 @@
 
 #include <dolfin.h>
 
-using namespace std;
 using namespace dolfin;
 
 // Source term

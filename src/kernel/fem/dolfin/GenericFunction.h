@@ -15,19 +15,26 @@ namespace dolfin {
   
   class GenericFunction {
   public:
-	 
-	 // Update values of element function
-	 virtual void update(FunctionSpace::ElementFunction &v,
-								const FiniteElement &element,
-								const Cell &cell,
-								real t) const = 0;
+    
+    GenericFunction(int dim, int size);
 
-	 // Evaluation of function
-	 virtual real operator() (const Node&  n, real t) const = 0;
-	 virtual real operator() (const Point& p, real t) const = 0;
-	 
+    // Update values of element function
+    virtual void update(FunctionSpace::ElementFunction &v,
+			const FiniteElement &element,
+			const Cell &cell,
+			real t) const = 0;
+    
+    // Evaluation of function
+    virtual real operator() (const Node&  n, real t) const = 0;
+    virtual real operator() (const Point& p, real t) const = 0;
+
+  protected:
+
+    int dim;
+    int size;
+    
   };
-
+  
 }
 
 #endif

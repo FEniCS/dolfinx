@@ -17,14 +17,14 @@ using namespace dolfin;
 File::File(const std::string& filename)
 {
   if ( filename.rfind(".xml") != filename.npos )
-	 file = new XMLFile(filename);
+    file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
-	 file = new XMLFile(filename);
+    file = new XMLFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
-	 file = new MatlabFile(filename);
+    file = new MatlabFile(filename);
   else{
-	 file = 0;
-	 dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
+    file = 0;
+    dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -32,17 +32,17 @@ File::File(const std::string& filename, Type type)
 {
   switch ( type ) {
   case XML:
-	 file = new XMLFile(filename);
-	 break;
+    file = new XMLFile(filename);
+    break;
   case MATLAB:
-	 file = new MatlabFile(filename);
-	 break;
+    file = new MatlabFile(filename);
+    break;
   case OCTAVE:
-	 file = new OctaveFile(filename);
-	 break;
+    file = new OctaveFile(filename);
+    break;
   default:
-	 file = 0;
-	 dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
+    file = 0;
+    dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -81,28 +81,28 @@ void File::operator>>(Function& u)
   *file >> u;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Vector& x)
+void File::operator<<(Vector& x)
 {
   file->write();
   
   *file << x;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Matrix& A)
+void File::operator<<(Matrix& A)
 {
   file->write();
 	 
   *file << A;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Grid& grid)
+void File::operator<<(Grid& grid)
 {
   file->write();
   
   *file << grid;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Function& u)
+void File::operator<<(Function& u)
 {
   file->write();
   

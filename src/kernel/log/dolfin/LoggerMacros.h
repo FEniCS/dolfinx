@@ -14,6 +14,9 @@ namespace dolfin { void dolfin_info(const char *msg, ...); }
 // Update (force refresh of curses interface)
 namespace dolfin { void dolfin_update(); }
 
+// Stop program
+namespace dolfin { void dolfin_quit(); }
+
 // Check if the computation is still running
 namespace dolfin { bool dolfin_finished(); }
 

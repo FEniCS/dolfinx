@@ -11,22 +11,22 @@ namespace dolfin {
   
   class Point {
   public:
-	 
-	 Point();
-	 Point(real x);
-	 Point(real x, real y);
-	 Point(real x, real y, real z);
-	 
-	 real dist(Point p);
-
-	 Point midpoint(Point p);
-	 
-	 real x;
-	 real y;
-	 real z;
-
-	 friend LogStream& operator<<(LogStream& stream, const Point& p);
-	 
+    
+    Point();
+    Point(real x);
+    Point(real x, real y);
+    Point(real x, real y, real z);
+    
+    real dist(Point p);
+    
+    Point midpoint(Point p);
+    
+    real x;
+    real y;
+    real z;
+    
+    friend LogStream& operator<<(LogStream& stream, const Point& p);
+    
   };
 
 }

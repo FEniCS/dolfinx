@@ -1,31 +1,25 @@
 # With DOLFIN installed system-wide
 #CFLAGS  = `dolfin-config --cflags`
-#LFLAGS  = `dolfin-config --lflags`
+#LIBS    = `dolfin-config --libs`
 #CXX     = `dolfin-config --compiler`
 
 # For demo programs in the DOLFIN source tree
-CFLAGS  = `../../../config/dolfin-config --cflags_insource`
-LFLAGS  = `../../../config/dolfin-config --lflags_insource`
+CFLAGS  = `../../../config/dolfin-config --cflags_dolfin`
+LIBS    = `../../../config/dolfin-config --libs_dolfin`
 CXX     = `../../../config/dolfin-config --compiler`
 
-#OPTFLAGS = -O6 -finline-functions -funroll-loops -fstrict-aliasing -felide-constructors
-#OPTFLAGS = -O2
-#OPTFLAGS = -p
-OPTFLAGS = -g
-
-CXXFLAGS = $(CFLAGS) $(OPTFLAGS)
-DEST     = dolfin-convdiff
-OBJECTS  = main.o
-
-CXXLINK  = $(CXX) -o $@
+DEST    = dolfin-convdiff
+OBJECTS = main.o
 
 all: $(DEST)
+
+install:	
 
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
 $(DEST): $(OBJECTS)
-	 $(CXXLINK) $(OBJECTS) $(CXXFLAGS) $(LFLAGS)
+	 $(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
 
-.C.o:
-	$(CXX) $(CXXFLAGS) -c $<
+.cpp.o:
+	$(CXX) $(CFLAGS) -c $<

@@ -55,22 +55,22 @@ void XMLFile::operator>>(Function& u)
   dolfin_warning("Cannot read functions from XML files.");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const Vector& x)
+void XMLFile::operator<<(Vector& x)
 {
   dolfin_warning("Cannot write vectors to XML files.");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const Matrix& A)
+void XMLFile::operator<<(Matrix& A)
 {
   dolfin_warning("Cannot write matrices to XML files.");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const Grid& Grid)
+void XMLFile::operator<<(Grid& Grid)
 {
   dolfin_warning("Cannot write grids to XML files.");
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const Function& u)
+void XMLFile::operator<<(Function& u)
 {
   dolfin_warning("Cannot write functions to XML files.");
 }

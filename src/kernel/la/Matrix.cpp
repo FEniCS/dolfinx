@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix()
+Matrix::Matrix() : Variable("A", "A sparse matrix")
 {
   m = 0;
   n = 0;
@@ -21,11 +21,9 @@ Matrix::Matrix()
   values   = 0;
 
   allocsize = 1;
-
-  rename("A", "A sparse matrix");
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(int m, int n)
+Matrix::Matrix(int m, int n) : Variable("A", "A sparse matrix")
 {
   this->m = m;
   this->n = n;
@@ -37,8 +35,6 @@ Matrix::Matrix(int m, int n)
   allocsize = 1;
   
   init(m,n);
-
-  rename("A", "A sparse matrix");
 }
 //-----------------------------------------------------------------------------
 Matrix::~Matrix()
