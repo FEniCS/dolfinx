@@ -68,7 +68,7 @@ namespace dolfin {
 
       // Parameters for multgrid solver
 
-      add(Parameter::REAL, "multigrid tolerance", 0.001);
+      add(Parameter::REAL, "multigrid tolerance", 1.0e-10);
       add(Parameter::INT,  "multigrid pre-smoothing", 9);
       add(Parameter::INT,  "multigrid post-smoothing", 9);
       add(Parameter::INT,  "multigrid iterations", 100);

@@ -166,6 +166,7 @@ AC_OUTPUT( Makefile \
            src/modules/Makefile \
            src/modules/template/Makefile \
            src/modules/poisson/Makefile \
+           src/modules/poisson-multigrid/Makefile \
            src/modules/convdiff/Makefile \
            src/modules/euler/Makefile \
            src/modules/heat/Makefile \

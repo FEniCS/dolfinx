@@ -19,8 +19,8 @@
 
 using namespace dolfin;
 
-unsigned int noPreSmooth  = dolfin_get("no smoothings before");
-unsigned int noPostSmooth = dolfin_get("no smoothings after");
+unsigned int noPreSmooth  = dolfin_get("multigrid pre-smoothing");
+unsigned int noPostSmooth = dolfin_get("multigrid post-smoothing");
 
 //-----------------------------------------------------------------------------
 void MultigridSolver::solve(PDE& pde, Vector& x, MeshHierarchy& meshes) 
@@ -64,7 +64,7 @@ void MultigridSolver::mainIteration(PDE& pde, Vector& x,
   // Here is the work common for all different versions of solve().
   
   unsigned int noLevels = meshes.size();
-  unsigned int max_it = dolfin_get("maximum multigrid iterations");
+  unsigned int max_it = dolfin_get("multigrid iterations");
   real tol = dolfin_get("multigrid tolerance");
   
   Matrices A(noLevels); // Matrices, and vectors for the A's and b's
@@ -74,6 +74,7 @@ void MultigridSolver::mainIteration(PDE& pde, Vector& x,
   Galerkin fem;
 
   // Assemble the matrices
+  dolfin_info("Assembling for multigrid");
   for (unsigned int i=0; i < noLevels ; i++)
     fem.assemble(pde, meshes(i), A[i], b[i]);   
  
@@ -86,21 +87,24 @@ void MultigridSolver::mainIteration(PDE& pde, Vector& x,
   A[noLevels-1].mult(x,rfine); // computes residual on finest mesh using
   rfine-=b[noLevels-1];        // the initial guess x.
  
-  for (unsigned int i=0; i < max_it; i++) {	   
+  int unsigned i = 0;
+  for (; i < max_it; i++)
+  {   
     fullVCycle(x, rfine, meshes, A);
     
     A[noLevels-1].mult(x,rfine);
     rfine-=b[noLevels-1];  	
     R(i) = rfine.norm(2);
     
-    dolfin_info("i = %d, Residual = %f", i, R(i));
+    dolfin_info("Multigrid V-cycle iteration %d: residual = %e", i, R(i));
     if (R(i) < tol)
       break;
   }
   
+  dolfin_info("Multigrid converged in %d iterations.", i + 1);
+
   tocd();
 }
-
 //-----------------------------------------------------------------------------
 void MultigridSolver::fullVCycle(Vector& x, const Vector& r_fine,
 				 const MeshHierarchy& meshes,

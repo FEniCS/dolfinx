@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "poisson-multigrid"
+KEYWORD  = "poisson with multigrid"
+SOLVER   = "PoissonSolverMultigrid"
+NEEDS    = "mesh"

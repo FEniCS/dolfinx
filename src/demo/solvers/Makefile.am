@@ -6,6 +6,7 @@ SUBDIRS = convdiff \
           navierstokes \
           ode \
           poisson \
+          poisson-multigrid \
           template \
           wave \
           wave-vector
