@@ -89,7 +89,8 @@ petsc_found = @petsc_found@
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-poisson.a
 include_HEADERS = 
-libdolfin_poisson_a_SOURCES = FFCPoisson.h                               PoissonSolver.h                               PoissonSolver.cpp 
+libdolfin_poisson_a_SOURCES = FFCPoisson.h                               PoissonSolver.h                               PoissonSolver.cpp
+
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)

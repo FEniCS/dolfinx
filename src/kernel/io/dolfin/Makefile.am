@@ -6,6 +6,7 @@ EXTRA_DIST = dolfin_io.h \
              OpenDXFile.h \
              MatlabFile.h \
              OctaveFile.h \
+             TecplotFile.h \
              XMLFile.h \
              XMLMatrix.h \
              XMLMesh.h \
