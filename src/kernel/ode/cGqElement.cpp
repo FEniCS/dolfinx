@@ -50,9 +50,11 @@ void cGqElement::update(real u0)
   // supplied to the constructor? Maybe the difference between the new
   // initial value and the previous should be added to all values?
 
+  values[0] = u0;
+
   // Update nodal values
-  for (int i = 0; i <= q; i++)
-    values[i] = u0;
+  //for (int i = 0; i <= q; i++)
+  //values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 void cGqElement::update(RHS& f)

@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Element.h>
@@ -60,9 +62,10 @@ bool TimeSlab::within(real t) const
   // a round-off error may cause the next interval to be chosen,
   // which is not what we want, at least not for dG.
 
-  t -= DOLFIN_EPS;
+  //t -= DOLFIN_EPS;
 
-  return (t0 <= t) && (t <= t1);
+  //return (t0 <= t) && (t <= t1);
+  return (t0 < t) && (t <= t1);
 }
 //-----------------------------------------------------------------------------
 bool TimeSlab::finished() const
@@ -170,7 +173,10 @@ void TimeSlab::createElements(RHS& f, TimeSlabData& data,
 
   // FIXME: choose element and order here
   Element::Type type = Element::cg;
+  //Element::Type type = Element::dg;
+
   int q = 1;
+  //int q = 0;
 
   dolfin_debug1("slab: %p", this);
   
@@ -204,43 +210,86 @@ void TimeSlab::updateElements(RHS& f, TimeSlabData& data)
   dolfin_debug1("elements: %d", elements.size());
   dolfin_debug2("timeslab: %lf-%lf", starttime(), endtime());
 
-  for(std::vector<Element *>::iterator it = elements.begin();
-      it != elements.end(); it++)
+  updateu0(data);
+
+
+  for(int i = 0; i < 3; i++)
   {
-    Element *e = *it;
-
-    //if(e->starttime() == data
-    // Update u0 (from the end values of previous slabs)
-    //Component &c = data.component(e->index);
-    //real u0 = c(e->starttime());
-
-    //e->update(u0);
-
-    /// Iterate over element
-
-    for(int i = 0; i < 3; i++)
+    dolfin::cout << "iteration: " << i << dolfin::endl;
+    
+    for(std::vector<Element *>::iterator it = elements.begin();
+	it != elements.end(); it++)
     {
-      dolfin::cout << "iteration: " << i << dolfin::endl;
-
+      Element *e = *it;
+      
+      //if(e->starttime() == data
+      // Update u0 (from the end values of previous slabs)
+      //Component &c = data.component(e->index);
+      //real u0 = c(e->starttime());
+      
+      //e->update(u0);
+      
+      /// Iterate over element
+      
+      
       e->update(f);
-      real value;
+      real value, residual;
+      
+      residual = e->computeResidual(f);
+      
       value = e->eval(e->starttime());
       dolfin::cout << "element value at starttime: " << value << dolfin::endl;
       value = e->eval(e->endtime());
       dolfin::cout << "element value at endtime: " << value << dolfin::endl;
+      dolfin::cout << "element residual at endtime: " <<
+	residual << dolfin::endl;
     }
   }
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::setsize(real K)
 {
+  real t0K = t0 + K;
+
+
+  /*
+  dolfin_debug("K:");
+  dolfin_debug1("%.200lf", K);
+  dolfin_debug("t0:");
+  dolfin_debug1("%.200lf", t0);
+  dolfin_debug("t1:");
+  dolfin_debug1("%.200lf", t1);
+  dolfin_debug("t0K:");
+  dolfin_debug1("%.200lf", t0K);
+  dolfin_debug("t0K - t1:");
+  dolfin_debug1("%.200lf", t0K - t1);
+  dolfin_debug("t0K >= t1:");
+  dolfin_debug1("%d", t0K >= t1);
+  */
+
+
+
   // Make sure that we don't go beyond t1
-  if ( (t0 + K + DOLFIN_EPS) > t1 ) {
+  //if ( (t0 + K + DOLFIN_EPS) > t1 ) {
+  if(t0K >= t1 ) {
     K = t1 - t0;
+    t1 = t0 + K;
     reached_endtime = true;
   }
   else
+  {
+    //dolfin_debug("t1:");
+    //dolfin_debug1("%.200lf", t1);
+    //dolfin_debug("t0K:");
+    //dolfin_debug1("%.200lf", t0K);
+    //dolfin_debug("t0K - t1:");
+    //dolfin_debug1("%.200lf", t0K - t1);
+    
+
     t1 = t0 + K;
+  }
+  //dolfin_debug1("re: %d", reached_endtime);
+
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::add(TimeSlab* timeslab)
@@ -261,14 +310,18 @@ void TimeSlab::add(TimeSlab* timeslab)
   timeslabs.push_back(timeslab);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateu0(TimeSlab &prevslab)
+void TimeSlab::updateu0(TimeSlabData &data)
 {
   for(int i = 0; i < elements.size(); i++)
   {
     Element *e = elements[i];
-    Element *preve = prevslab.elements[i];
+    //Element *preve = prevslab.elements[i];
 
-    real u0 = preve->eval(preve->endtime());
+    real u0 = data.component(e->index)(e->starttime());
+
+    dolfin_debug3("u0(%d, %lf): %lf", e->index, e->starttime(), u0);
+
+    //real u0 = preve->eval(preve->endtime());
     e->update(u0);
   }
 }

@@ -14,12 +14,11 @@ Multi-adaptive solver
 General
 -------
 
-- Use libtool 
-- Optimize form evaluation 
-- Save edges in matlab format
-- General boundary conditions
-- Multigrid
-- Vector valued PDE
-- General function representations
-- i/o for functions, in particular in OpenDX format
-- Use stl containers (inherit) in Array and List
+- Use libtool: anyone?
+- Optimize form evaluation: Hoffman, Logg
+- Save edges in matlab format: Svensson?
+- General boundary conditions: Kraft?
+- Multigrid: Svensson, Målqvist?
+- Vector valued PDE: Hoffman, Logg (Bengzon, Jansson ?)
+- General function representations: Hoffman, Logg, Jansson
+- i/o for functions, in particular in OpenDX format: Logg

@@ -36,7 +36,7 @@ namespace dolfin {
     void update(RHS& f, TimeSlabData& data);
     
     /// Update time slab (iteration)
-    void updateu0(TimeSlab &prevslab);
+    void updateu0(TimeSlabData &data);
     
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -53,6 +53,9 @@ namespace dolfin {
     /// Return length of time slab
     real length() const;
     
+    // List of time slabs within this time slab
+    std::vector<TimeSlab *> timeslabs;
+
   private:
     
     // Create new time slab
@@ -90,8 +93,6 @@ namespace dolfin {
     // List of elements within this time slab
     std::vector<Element*> elements;
     
-    // List of time slabs within this time slab
-    std::vector<TimeSlab*> timeslabs;
 
     // List of elements within this time slab
     //Table<Element>::Iterator first;

@@ -8,6 +8,8 @@
 #include <dolfin/General.h>
 
 namespace dolfin {
+  
+  /// DON'T USE ARRAY. USE NEWARRAY INSTEAD. WILL REPLACE ARRAY IN FUTURE VERSIONS.
 
   /// An Array is a list of constant size that can be used to
   /// store (often short) sets of data.

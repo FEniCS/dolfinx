@@ -47,9 +47,12 @@ void Partition::update(TimeSlabData& data, int offset)
     real k;
 
     if(index == 0)
-      k = 0.2;
-    else
       k = 0.1;
+    else if(index == 1)
+      k = 0.01;
+      //k = 0.1;
+    else if(index == 2)
+      k = 0.5;
     /*
       if(data.component(index).size() != 0)
       {
@@ -79,10 +82,10 @@ void Partition::partition(int offset, int& end, real& K)
   for (int i = offset; i < components.size(); i++)
      dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
 
-  lessComponents foo(K);
+  lessComponents less(K);
 
   std::vector<Component>::iterator middle =
-    std::partition(components.begin(), components.end(), foo);
+    std::partition(components.begin() + offset, components.end(), less);
 
   end = middle - components.begin();
 

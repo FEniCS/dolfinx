@@ -30,10 +30,10 @@ Component::~Component()
 //-----------------------------------------------------------------------------
 real Component::operator() (int node, real t, TimeSlab* timeslab)
 {
-  dolfin_debug("foo");
+  //dolfin_debug("foo");
 
   //dolfin::cout << "node: " << node << dolfin::endl;
-  dolfin::cout << "t: " << t << dolfin::endl;
+  //dolfin::cout << "t: " << t << dolfin::endl;
 
   // Step to correct position
   //Element& element = findpos(t);
@@ -49,17 +49,17 @@ real Component::operator() (int node, real t, TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 real Component::operator()(real t)
 {
-  dolfin_debug("foo");
+  //dolfin_debug("foo");
 
   //dolfin::cout << "node: " << node << dolfin::endl;
-  dolfin::cout << "Looking for t: " << t << dolfin::endl;
+  //dolfin::cout << "Looking for t: " << t << dolfin::endl;
 
   if(elements.size() > 0)
   {
     real t0 = elements.front()->starttime();
     real t1 = elements.back()->endtime();
 
-    dolfin::cout << "Component range: " << t0 << "-" << t1 << dolfin::endl;
+    //dolfin::cout << "Component range: " << t0 << "-" << t1 << dolfin::endl;
 
     if(t == t0)
     {
@@ -109,7 +109,7 @@ Element* Component::createElement(const Element::Type type, int q, int index,
     element = new cGqElement(q, index, timeslab);
     break;
   case Element::dg:
-    element = new cGqElement(q, index, timeslab);
+    element = new dGqElement(q, index, timeslab);
     break;
   default:
     dolfin_error1("Unknown element type: %d.", type);

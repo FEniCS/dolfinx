@@ -18,7 +18,7 @@ install:
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
-$(DEST): $(OBJECTS)
+$(DEST): $(OBJECTS) ../../../../../lib/libdolfin-ode.a
 	 $(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
 
 .cpp.o:

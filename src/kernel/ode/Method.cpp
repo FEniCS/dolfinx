@@ -93,7 +93,7 @@ int Method::degree() const
 //-----------------------------------------------------------------------------
 real Method::point(int i) const
 {
-  dolfin_debug2("i = %d n = %d", i, n);
+  //dolfin_debug2("i = %d n = %d", i, n);
 
   dolfin_assert(i >= 0);
   dolfin_assert(i < n);

@@ -10,6 +10,8 @@
 
 namespace dolfin {
 
+  /// DON'T USE LIST. USE NEWLIST INSTEAD. WILL REPLACE LIST IN FUTURE VERSIONS.
+
   /// A List is used to store variable-sized sets of data and is implemented
   /// using a double linked list (std::list).
 

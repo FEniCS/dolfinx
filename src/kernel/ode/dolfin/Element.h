@@ -63,6 +63,12 @@ namespace dolfin {
     /// Component index
     int index;
 
+    // Compute residual
+    real computeResidual(RHS& f);
+
+    // Compute new time step
+    virtual real computeTimeStep() const = 0;
+
   protected:
 
     // Evaluate the right-hand side
@@ -70,12 +76,6 @@ namespace dolfin {
 
     // Compute integral for degree of freedom i using quadrature
     virtual real integral(int i) const = 0;
-
-    // Compute residual
-    real computeResidual(RHS& f);
-
-    // Compute new time step
-    virtual real computeTimeStep() const = 0;
 
     // Temporary storage for function evaluations (common to all elements).
     static Vector f;

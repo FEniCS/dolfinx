@@ -50,12 +50,18 @@ void dGqElement::update(real u0)
 //-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f)
 {
+  dolfin_debug4("Updating dG(%d) element: %d, %lf-%lf",
+		q, index, starttime(), endtime());
+
+  dolfin::cout << "values[0]: " << values[0] << dolfin::endl;
+
   // Evaluate right-hand side
   feval(f);
 
   // Update nodal values
   for (int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
+    //values[i] = values[0] + integral(i);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)

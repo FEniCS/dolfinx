@@ -16,6 +16,41 @@
 
 using namespace dolfin;
 
+void storeSolution(TimeSlab &slab, TimeSlabData &data,
+		   std::vector<std::pair<real, Vector> > &solution)
+{
+  Vector Ui(data.size());
+
+  if(slab.timeslabs.size() == 0)
+  {
+    real t = slab.endtime();
+
+    for (int i = 0; i < data.size(); i++)
+    {
+      Component &c = data.component(i);
+
+      real value = c(t);
+      dolfin::cout << "U(" << t << ", " << i << "): " << value << dolfin::endl;
+
+      Ui(i) = value;
+    }
+
+    solution.push_back(std::pair<real, Vector>(t, Ui));
+    
+  }
+  else
+  {
+    for(std::vector<TimeSlab *>::iterator it = slab.timeslabs.begin();
+	it != slab.timeslabs.end(); it++)
+    {
+      TimeSlab *s = *it;
+
+      storeSolution(*s, data, solution);
+    }
+  }
+}
+
+
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, real t0, real t1)
 {
@@ -43,14 +78,20 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   Progress p("Time-stepping");
   while ( true ) {
 
-    dolfin_debug("stepping");
+    dolfin_debug("stepping2");
 
     // Create time slab
     TimeSlab timeslab(t, t1, f, data, partition, 0);
 
+    dolfin_debug2("Built Slab: %lf-%lf",
+		  timeslab.starttime(), timeslab.endtime());
+
     // Iterate a couple of times on the time slab
     for (int i = 0; i < 3; i++)
       timeslab.update(f, data);
+
+    // Store solution
+    storeSolution(timeslab, data, solution);
 
     // Check if we are done
     if ( timeslab.finished() )
@@ -62,6 +103,8 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     // Update partition with new time steps
     //partition.update(data, 0);
 
+
+    /*
     dolfin_debug("solution");
     for (int i = 0; i < data.size(); i++)
     {
@@ -74,6 +117,8 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     }
 
     solution.push_back(std::pair<real, Vector>(t, Ui));
+    */
+
 
     data.shift();
   }

@@ -45,12 +45,10 @@ void RHS::update(int index, int node, real t, TimeSlab* timeslab)
   // Update the solution vector for all components that influence the
   // current component.
 
-  dolfin_debug1("t: %lf", t);
-
   for (Sparsity::Iterator i(index, ode->sparsity); !i.end(); ++i)
   {
     u(i) = data->component(i)(node, t, timeslab);
-    dolfin::cout << "u(" << i << "): " << u(i) << dolfin::endl;
+    dolfin_debug3("u(%d, %lf): %lf", (int)i, t, u(i));
   }
 }
 //-----------------------------------------------------------------------------

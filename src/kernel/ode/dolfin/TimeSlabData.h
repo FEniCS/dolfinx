@@ -50,6 +50,12 @@ namespace dolfin {
     // List of components
     std::vector<Component> components;
 
+    // Initial residuals
+    std::vector<real> residuals_initial;
+
+    // Latest residuals
+    std::vector<real> residuals_latest;
+
     // Top level time slab
     TimeSlab* topslab;
 

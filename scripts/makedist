@@ -24,7 +24,6 @@ sleep 1
 # Create the directory
 DISTDIR=dolfin-$VERSION
 echo 'Creating directory '$DISTDIR
-rm -rf $DISTDIR
 mkdir $DISTDIR
 
 # Copy files
