@@ -1,7 +1,7 @@
 //
-// time: Wed Mar  3 07:49:23 2004
+// time: Wed Mar  3 16:34:40 2004
 //
-// version: 3.1.2 (format), 4.2.0 (DX)
+// version: 3.2.0 (format), 4.3.0 (DX)
 //
 //
 // MODULE main
@@ -21,91 +21,16 @@
 // page assignment: Streamlines	order=7, windowed=0, showing=0
 // page assignment: Variable	order=3, windowed=0, showing=0
 // page assignment: Vorticity	order=8, windowed=0, showing=0
-// workspace: width = 309, height = 527
+// workspace: width = 718, height = 589
 // layout: snap = 1, width = 20, height = 31, align = UL
 //
 macro main(
 ) -> (
 ) {
     // 
-    // node Colormap[1]: x = 20, y = 310, inputs = 19, label = Colormap
-    // input[1]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] }
-    // input[2]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
-    // input[3]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
-    // input[4]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
-    // input[5]: defaulting = 0, visible = 0, type = 32, value = "Colormap_1"
-    // input[7]: defaulting = 1, visible = 0, type = 5, value = -1.1
-    // input[8]: defaulting = 1, visible = 0, type = 5, value = 1.1
-    // input[9]: defaulting = 1, visible = 0, type = 1, value = 20
-    // input[12]: defaulting = 0, visible = 0, type = 16777221, value = { -1.1 1.1 }
-    // input[17]: defaulting = 0, visible = 0, type = 5, value = NULL
-    // input[18]: defaulting = 0, visible = 0, type = 5, value = NULL
-    // page group: Colorslice
-    // window: position = (0.3711,0.3854), size = 0.5078x0.4688
-    //
-main_Colormap_1_out_1[cache: 2],
-main_Colormap_1_out_2[cache: 2] = 
-    Colormap(
-    main_Colormap_1_in_1,
-    main_Colormap_1_in_2,
-    main_Colormap_1_in_3,
-    main_Colormap_1_in_4,
-    main_Colormap_1_in_5,
-    main_Colormap_1_in_6,
-    main_Colormap_1_in_7,
-    main_Colormap_1_in_8,
-    main_Colormap_1_in_9,
-    main_Colormap_1_in_10,
-    main_Colormap_1_in_11,
-    main_Colormap_1_in_12,
-    main_Colormap_1_in_13,
-    main_Colormap_1_in_14,
-    main_Colormap_1_in_15,
-    main_Colormap_1_in_16,
-    main_Colormap_1_in_17,
-    main_Colormap_1_in_18,
-    main_Colormap_1_in_19
-    ) [instance: 1, cache: 1];
-    // 
-    // node ColorBar[2]: x = 140, y = 403, inputs = 16, label = ColorBar
-    // input[2]: defaulting = 1, visible = 1, type = 8, value = NULL
-    // input[6]: defaulting = 1, visible = 0, type = 5, value = -1.0
-    // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.0
-    // page group: Colorslice
-    //
-main_ColorBar_2_out_1 = 
-    ColorBar(
-    main_Colormap_1_out_1,
-    main_ColorBar_2_in_2,
-    main_ColorBar_2_in_3,
-    main_ColorBar_2_in_4,
-    main_ColorBar_2_in_5,
-    main_ColorBar_2_in_6,
-    main_ColorBar_2_in_7,
-    main_ColorBar_2_in_8,
-    main_ColorBar_2_in_9,
-    main_ColorBar_2_in_10,
-    main_ColorBar_2_in_11,
-    main_ColorBar_2_in_12,
-    main_ColorBar_2_in_13,
-    main_ColorBar_2_in_14,
-    main_ColorBar_2_in_15,
-    main_ColorBar_2_in_16
-    ) [instance: 2, cache: 1];
-    // 
-    // node Transmitter[26]: x = 140, y = 465, inputs = 1, label = Colorbar
-    // page group: Colorslice
-    //
-Colorbar = main_ColorBar_2_out_1;
-    // 
-    // node Receiver[28]: x = 40, y = 217, inputs = 1, label = Colorbar
-    // page group: Image
-    //
-main_Receiver_28_out_1[cache: 0] = Colorbar;
-    // 
     // node FileSelector[3]: x = 20, y = 93, inputs = 0, label = FileSelector
-    // output[1]: visible = 1, type = 32, value = "/home/logg/work/src/dolfin/dolfin/src/demo/solvers/ode/bistable/solution.dx"
-    // output[2]: visible = 1, type = 32, value = "solution.dx"
+    // output[1]: visible = 1, type = 32, value = "/home/logg/work/results/bistable/2004-03-03/timesteps.dx"
+    // output[2]: visible = 1, type = 32, value = "timesteps.dx"
     // page group: Import
     //
     // 
@@ -301,46 +226,146 @@ Field = main_Switch_7_out_1;
     //
 main_Receiver_6_out_1[cache: 0] = Field;
     // 
-    // node MapToPlane[1]: x = 20, y = 217, inputs = 3, label = MapToPlane
+    // node Vector[9]: x = 60, y = 186, inputs = 11, label = Vector
+    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_9"
+    // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 0.5 0.5 0.5 ]
+    // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
+    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000.0 1000000.0 1000000.0 ]
+    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
+    // input[9]: defaulting = 1, visible = 0, type = 8, value = [ 5.0 5.0 5.0 ]
+    // output[1]: visible = 1, type = 8, value = [ 0.5 0.5 0.5 ]
+    // page group: Colorslice
+    //
+    // 
+    // node Vector[10]: x = 120, y = 186, inputs = 11, label = Vector
+    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_10"
+    // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 1 0 0 ]
+    // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
+    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000.0 1000000.0 1000000.0 ]
+    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
+    // input[9]: defaulting = 1, visible = 0, type = 8, value = [ 5.0 5.0 5.0 ]
+    // output[1]: visible = 1, type = 8, value = [ 1 0 0 ]
+    // page group: Colorslice
+    //
+    // 
+    // node MapToPlane[1]: x = 20, y = 248, inputs = 3, label = MapToPlane
     // page group: Colorslice
     //
 main_MapToPlane_1_out_1 = 
     MapToPlane(
     main_Receiver_6_out_1,
-    main_MapToPlane_1_in_2,
-    main_MapToPlane_1_in_3
+    main_Vector_9_out_1,
+    main_Vector_10_out_1
     ) [instance: 1, cache: 1];
     // 
-    // node Color[4]: x = 20, y = 403, inputs = 5, label = Color
+    // node AutoColor[5]: x = 240, y = 341, inputs = 10, label = AutoColor
     // page group: Colorslice
     //
-main_Color_4_out_1 = 
-    Color(
+main_AutoColor_5_out_1,
+main_AutoColor_5_out_2 = 
+    AutoColor(
     main_MapToPlane_1_out_1,
-    main_Colormap_1_out_1,
-    main_Colormap_1_out_2,
-    main_Color_4_in_4,
-    main_Color_4_in_5
-    ) [instance: 4, cache: 1];
+    main_AutoColor_5_in_2,
+    main_AutoColor_5_in_3,
+    main_AutoColor_5_in_4,
+    main_AutoColor_5_in_5,
+    main_AutoColor_5_in_6,
+    main_AutoColor_5_in_7,
+    main_AutoColor_5_in_8,
+    main_AutoColor_5_in_9,
+    main_AutoColor_5_in_10
+    ) [instance: 5, cache: 1];
     // 
-    // node Transmitter[12]: x = 20, y = 465, inputs = 1, label = Colorslice
+    // node Transmitter[26]: x = 100, y = 527, inputs = 1, label = Colorbar1
     // page group: Colorslice
     //
-Colorslice = main_Color_4_out_1;
+Colorbar1 = main_AutoColor_5_out_2;
     // 
-    // node Receiver[9]: x = 160, y = 93, inputs = 1, label = Colorslice
+    // node Receiver[28]: x = 20, y = 279, inputs = 1, label = Colorbar1
     // page group: Image
     //
-main_Receiver_9_out_1[cache: 0] = Colorslice;
+main_Receiver_28_out_1[cache: 0] = Colorbar1;
     // 
-    // node Collect[1]: x = 220, y = 217, inputs = 3, label = Collect
+    // node Transmitter[12]: x = 20, y = 527, inputs = 1, label = Colorslice1
+    // page group: Colorslice
+    //
+Colorslice1 = main_AutoColor_5_out_1;
+    // 
+    // node Receiver[9]: x = 160, y = 93, inputs = 1, label = Colorslice1
+    // page group: Image
+    //
+main_Receiver_9_out_1[cache: 0] = Colorslice1;
+    // 
+    // node Vector[11]: x = 460, y = 186, inputs = 11, label = Vector
+    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_11"
+    // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 0.5 0.5 0.5 ]
+    // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
+    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000.0 1000000.0 1000000.0 ]
+    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
+    // input[9]: defaulting = 1, visible = 0, type = 8, value = [ 5.0 5.0 5.0 ]
+    // output[1]: visible = 1, type = 8, value = [ 0.5 0.5 0.5 ]
+    // page group: Colorslice
+    //
+    // 
+    // node Vector[12]: x = 520, y = 186, inputs = 11, label = Vector
+    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_12"
+    // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 0 1 0 ]
+    // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
+    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000.0 1000000.0 1000000.0 ]
+    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
+    // input[9]: defaulting = 1, visible = 0, type = 8, value = [ 5.0 5.0 5.0 ]
+    // output[1]: visible = 1, type = 8, value = [ 0 1 0 ]
+    // page group: Colorslice
+    //
+    // 
+    // node MapToPlane[4]: x = 420, y = 248, inputs = 3, label = MapToPlane
+    // page group: Colorslice
+    //
+main_MapToPlane_4_out_1 = 
+    MapToPlane(
+    main_Receiver_6_out_1,
+    main_Vector_11_out_1,
+    main_Vector_12_out_1
+    ) [instance: 4, cache: 1];
+    // 
+    // node AutoColor[6]: x = 640, y = 341, inputs = 10, label = AutoColor
+    // page group: Colorslice
+    //
+main_AutoColor_6_out_1,
+main_AutoColor_6_out_2 = 
+    AutoColor(
+    main_MapToPlane_4_out_1,
+    main_AutoColor_6_in_2,
+    main_AutoColor_6_in_3,
+    main_AutoColor_6_in_4,
+    main_AutoColor_6_in_5,
+    main_AutoColor_6_in_6,
+    main_AutoColor_6_in_7,
+    main_AutoColor_6_in_8,
+    main_AutoColor_6_in_9,
+    main_AutoColor_6_in_10
+    ) [instance: 6, cache: 1];
+    // 
+    // node Transmitter[28]: x = 420, y = 527, inputs = 1, label = Colorslice2
+    // page group: Colorslice
+    //
+Colorslice2 = main_AutoColor_6_out_1;
+    // 
+    // node Receiver[29]: x = 260, y = 93, inputs = 1, label = Colorslice2
+    // page group: Image
+    //
+main_Receiver_29_out_1[cache: 0] = Colorslice2;
+    // 
+    // node Collect[1]: x = 220, y = 217, inputs = 5, label = Collect
     // page group: Image
     //
 main_Collect_1_out_1 = 
     Collect(
     main_Receiver_28_out_1,
     main_Receiver_9_out_1,
-    main_Collect_1_in_3
+    main_Receiver_29_out_1,
+    main_Collect_1_in_4,
+    main_Collect_1_in_5
     ) [instance: 1, cache: 1];
     // 
     // node AutoCamera[1]: x = 340, y = 372, inputs = 9, label = AutoCamera
@@ -686,8 +711,8 @@ main_Receiver_8_out_1[cache: 0] = Variable;
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Scalar_2"
     // input[3]: defaulting = 0, visible = 0, type = 5, value = 0.5 
     // input[4]: defaulting = 1, visible = 1, type = 3, value = 0
-    // input[5]: defaulting = 1, visible = 0, type = 5, value = -1.0449772
-    // input[6]: defaulting = 1, visible = 0, type = 5, value = 1.04985
+    // input[5]: defaulting = 1, visible = 0, type = 5, value = -1.0573459
+    // input[6]: defaulting = 1, visible = 0, type = 5, value = 1.0578315
     // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.0
     // input[9]: defaulting = 1, visible = 0, type = 1, value = 2
     // output[1]: visible = 1, type = 5, value = 0.5 
@@ -734,6 +759,160 @@ main_Color_2_out_1 =
     main_Color_2_in_5
     ) [instance: 2, cache: 1];
     // 
+    // node Colormap[1]: x = 100, y = 341, inputs = 19, label = Colormap
+    // input[1]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] }
+    // input[2]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[3]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[4]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[5]: defaulting = 0, visible = 0, type = 32, value = "Colormap_1"
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = -1.1
+    // input[8]: defaulting = 1, visible = 0, type = 5, value = 1.1
+    // input[9]: defaulting = 1, visible = 0, type = 1, value = 20
+    // input[12]: defaulting = 0, visible = 0, type = 16777221, value = { -1.1 1.1 }
+    // input[17]: defaulting = 0, visible = 0, type = 5, value = NULL
+    // input[18]: defaulting = 0, visible = 0, type = 5, value = NULL
+    // page group: Colorslice
+    // window: position = (0.3711,0.3854), size = 0.5078x0.4688
+    //
+main_Colormap_1_out_1[cache: 2],
+main_Colormap_1_out_2[cache: 2] = 
+    Colormap(
+    main_Colormap_1_in_1,
+    main_Colormap_1_in_2,
+    main_Colormap_1_in_3,
+    main_Colormap_1_in_4,
+    main_Colormap_1_in_5,
+    main_Colormap_1_in_6,
+    main_Colormap_1_in_7,
+    main_Colormap_1_in_8,
+    main_Colormap_1_in_9,
+    main_Colormap_1_in_10,
+    main_Colormap_1_in_11,
+    main_Colormap_1_in_12,
+    main_Colormap_1_in_13,
+    main_Colormap_1_in_14,
+    main_Colormap_1_in_15,
+    main_Colormap_1_in_16,
+    main_Colormap_1_in_17,
+    main_Colormap_1_in_18,
+    main_Colormap_1_in_19
+    ) [instance: 1, cache: 1];
+    // 
+    // node Color[4]: x = 20, y = 434, inputs = 5, label = Color
+    // page group: Colorslice
+    //
+main_Color_4_out_1 = 
+    Color(
+    main_MapToPlane_1_out_1,
+    main_Colormap_1_out_1,
+    main_Colormap_1_out_2,
+    main_Color_4_in_4,
+    main_Color_4_in_5
+    ) [instance: 4, cache: 1];
+    // 
+    // node Colormap[2]: x = 500, y = 341, inputs = 19, label = Colormap
+    // input[1]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] }
+    // input[2]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[3]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[4]: defaulting = 0, visible = 0, type = 16777224, value = { [0.0 1.0] [1.0 1.0] }
+    // input[5]: defaulting = 0, visible = 0, type = 32, value = "Colormap_2"
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = -1.1
+    // input[8]: defaulting = 1, visible = 0, type = 5, value = 1.1
+    // input[9]: defaulting = 1, visible = 0, type = 1, value = 20
+    // input[12]: defaulting = 0, visible = 0, type = 16777221, value = { -1.1 1.1 }
+    // input[17]: defaulting = 0, visible = 0, type = 5, value = NULL
+    // input[18]: defaulting = 0, visible = 0, type = 5, value = NULL
+    // page group: Colorslice
+    // window: position = (0.3711,0.3854), size = 0.5078x0.4688
+    //
+main_Colormap_2_out_1[cache: 2],
+main_Colormap_2_out_2[cache: 2] = 
+    Colormap(
+    main_Colormap_2_in_1,
+    main_Colormap_2_in_2,
+    main_Colormap_2_in_3,
+    main_Colormap_2_in_4,
+    main_Colormap_2_in_5,
+    main_Colormap_2_in_6,
+    main_Colormap_2_in_7,
+    main_Colormap_2_in_8,
+    main_Colormap_2_in_9,
+    main_Colormap_2_in_10,
+    main_Colormap_2_in_11,
+    main_Colormap_2_in_12,
+    main_Colormap_2_in_13,
+    main_Colormap_2_in_14,
+    main_Colormap_2_in_15,
+    main_Colormap_2_in_16,
+    main_Colormap_2_in_17,
+    main_Colormap_2_in_18,
+    main_Colormap_2_in_19
+    ) [instance: 2, cache: 1];
+    // 
+    // node Color[5]: x = 420, y = 434, inputs = 5, label = Color
+    // page group: Colorslice
+    //
+main_Color_5_out_1 = 
+    Color(
+    main_MapToPlane_4_out_1,
+    main_Colormap_2_out_1,
+    main_Colormap_2_out_2,
+    main_Color_5_in_4,
+    main_Color_5_in_5
+    ) [instance: 5, cache: 1];
+    // 
+    // node ColorBar[2]: x = 100, y = 434, inputs = 16, label = ColorBar
+    // input[2]: defaulting = 1, visible = 1, type = 8, value = NULL
+    // input[6]: defaulting = 1, visible = 0, type = 5, value = -1.0
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.0
+    // page group: Colorslice
+    //
+main_ColorBar_2_out_1 = 
+    ColorBar(
+    main_Colormap_1_out_1,
+    main_ColorBar_2_in_2,
+    main_ColorBar_2_in_3,
+    main_ColorBar_2_in_4,
+    main_ColorBar_2_in_5,
+    main_ColorBar_2_in_6,
+    main_ColorBar_2_in_7,
+    main_ColorBar_2_in_8,
+    main_ColorBar_2_in_9,
+    main_ColorBar_2_in_10,
+    main_ColorBar_2_in_11,
+    main_ColorBar_2_in_12,
+    main_ColorBar_2_in_13,
+    main_ColorBar_2_in_14,
+    main_ColorBar_2_in_15,
+    main_ColorBar_2_in_16
+    ) [instance: 2, cache: 1];
+    // 
+    // node ColorBar[3]: x = 500, y = 434, inputs = 16, label = ColorBar
+    // input[2]: defaulting = 1, visible = 1, type = 8, value = NULL
+    // input[6]: defaulting = 1, visible = 0, type = 5, value = -1.0
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.0
+    // page group: Colorslice
+    //
+main_ColorBar_3_out_1 = 
+    ColorBar(
+    main_Colormap_2_out_1,
+    main_ColorBar_3_in_2,
+    main_ColorBar_3_in_3,
+    main_ColorBar_3_in_4,
+    main_ColorBar_3_in_5,
+    main_ColorBar_3_in_6,
+    main_ColorBar_3_in_7,
+    main_ColorBar_3_in_8,
+    main_ColorBar_3_in_9,
+    main_ColorBar_3_in_10,
+    main_ColorBar_3_in_11,
+    main_ColorBar_3_in_12,
+    main_ColorBar_3_in_13,
+    main_ColorBar_3_in_14,
+    main_ColorBar_3_in_15,
+    main_ColorBar_3_in_16
+    ) [instance: 3, cache: 1];
+    // 
     // node Reset[1]: x = 280, y = 372, inputs = 6, label = Reset
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "main_Reset_1_out_1"
     // input[2]: defaulting = 0, visible = 0, type = 29, value = 0
@@ -749,12 +928,12 @@ main_Color_2_out_1 =
     // input[1]: defaulting = 0, visible = 0, type = 67108863, value = "Image_1"
     // input[4]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[5]: defaulting = 0, visible = 0, type = 8, value = [0.5 0.5 0.5]
-    // input[6]: defaulting = 0, visible = 0, type = 8, value = [-0.267221 -2.44204 -2.61441]
-    // input[7]: defaulting = 1, visible = 0, type = 5, value = 2.33248
-    // input[8]: defaulting = 0, visible = 0, type = 1, value = 804
-    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.758
-    // input[10]: defaulting = 0, visible = 0, type = 8, value = [-0.0891674 0.734913 -0.672273]
-    // input[11]: defaulting = 0, visible = 0, type = 5, value = 30.0002
+    // input[6]: defaulting = 0, visible = 0, type = 8, value = [2.13426 -2.1896 -2.50656]
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = 2.3325
+    // input[8]: defaulting = 0, visible = 0, type = 1, value = 843
+    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.861
+    // input[10]: defaulting = 0, visible = 0, type = 8, value = [0.926758 0.240962 0.288195]
+    // input[11]: defaulting = 0, visible = 0, type = 5, value = 30.0001
     // input[12]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[14]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[15]: defaulting = 0, visible = 0, type = 32, value = "none"
@@ -773,12 +952,12 @@ main_Color_2_out_1 =
     // input[31]: defaulting = 0, visible = 0, type = 1, value = 15
     // input[34]: defaulting = 0, visible = 0, type = 3, value = 1
     // input[39]: defaulting = 0, visible = 0, type = 5, value = 1.0
-    // input[41]: defaulting = 0, visible = 0, type = 32, value = "rotate"
+    // input[41]: defaulting = 0, visible = 0, type = 32, value = "none"
     // input[42]: defaulting = 0, visible = 0, type = 32, value = "Basic3D"
     // page group: Image
     // title: value = Basic3D
     // depth: value = 24
-    // window: position = (0.2883,0.1271), size = 0.6391x0.6802
+    // window: position = (0.2891,0.0719), size = 0.6695x0.7990
     // internal caching: 1
     //
 main_Image_1_out_1,
@@ -903,7 +1082,7 @@ main_Switch_11_out_1 =
     //
 Isosurface = main_Switch_11_out_1;
     // 
-    // node Receiver[7]: x = 240, y = 93, inputs = 1, label = Isosurface
+    // node Receiver[7]: x = 360, y = 93, inputs = 1, label = Isosurface
     // page group: Image
     //
 main_Receiver_7_out_1[cache: 0] = Isosurface;
@@ -913,7 +1092,7 @@ main_Receiver_7_out_1[cache: 0] = Isosurface;
     //
 Streamlines = main_AutoColor_1_out_1;
     // 
-    // node Receiver[13]: x = 380, y = 93, inputs = 1, label = Streamlines
+    // node Receiver[13]: x = 440, y = 93, inputs = 1, label = Streamlines
     // page group: Image
     //
 main_Receiver_13_out_1[cache: 0] = Streamlines;
@@ -946,7 +1125,7 @@ main_Receiver_19_out_1[cache: 0] = Mesh;
     //
 Arrows = main_AutoColor_3_out_1;
     // 
-    // node Receiver[23]: x = 320, y = 93, inputs = 1, label = Arrows
+    // node Receiver[23]: x = 520, y = 155, inputs = 1, label = Arrows
     // page group: Image
     //
 main_Receiver_23_out_1[cache: 0] = Arrows;
@@ -956,7 +1135,7 @@ main_Receiver_23_out_1[cache: 0] = Arrows;
     //
 Vorticity = main_AutoColor_4_out_1;
     // 
-    // node Receiver[25]: x = 480, y = 93, inputs = 1, label = Vorticity
+    // node Receiver[25]: x = 440, y = 155, inputs = 1, label = Vorticity
     // page group: Image
     //
 main_Receiver_25_out_1[cache: 0] = Vorticity;
@@ -981,27 +1160,15 @@ Boundary = main_ShowBoundary_1_out_1;
     //
 main_Receiver_27_out_1[cache: 0] = Boundary;
     // 
-    // node Vector[9]: x = 140, y = 155, inputs = 11, label = Vector
-    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_9"
-    // input[3]: defaulting = 0, visible = 0, type = 8, value = [0 0 0 ]
-    // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
-    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000.0 1000000.0 1000000.0 ]
-    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
-    // input[9]: defaulting = 1, visible = 0, type = 8, value = [ 5.0 5.0 5.0 ]
-    // output[1]: visible = 1, type = 8, value = [ 2.7108496e-312 0 0 ]
+    // node Transmitter[27]: x = 500, y = 527, inputs = 1, label = Colorbar2
     // page group: Colorslice
     //
+Colorbar2 = main_AutoColor_6_out_2;
     // 
-    // node Vector[10]: x = 200, y = 155, inputs = 11, label = Vector
-    // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_10"
-    // input[3]: defaulting = 1, visible = 0, type = 8, value = [ 0 0 0 ]
-    // input[5]: defaulting = 1, visible = 0, type = 8, value = [-1000000 -1000000 -1000000]
-    // input[6]: defaulting = 1, visible = 0, type = 8, value = [ 1000000  1000000  1000000]
-    // input[7]: defaulting = 1, visible = 0, type = 8, value = [       1        1        1]
-    // input[9]: defaulting = 1, visible = 0, type = 8, value = [       5        5        5]
-    // output[1]: visible = 1, type = 8, value = [ 0 0 0 ]
-    // page group: Colorslice
+    // node Receiver[30]: x = 20, y = 372, inputs = 1, label = Colorbar2
+    // page group: Image
     //
+main_Receiver_30_out_1[cache: 0] = Colorbar2;
     //
     // decorator Annotate	pos=(20,31) size=358x44 style(Label), font=bold, value = <NULL>
     // annotation user_begin: 86
@@ -1079,46 +1246,7 @@ main_Receiver_27_out_1[cache: 0] = Boundary;
 // network: end of macro body
 CacheScene(main_Image_1_in_1, main_Image_1_out_1, main_Image_1_out_2);
 }
-main_Colormap_1_in_1 = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] };
-main_Colormap_1_in_2 = { [0.0 1.0] [1.0 1.0] };
-main_Colormap_1_in_3 = { [0.0 1.0] [1.0 1.0] };
-main_Colormap_1_in_4 = { [0.0 1.0] [1.0 1.0] };
-main_Colormap_1_in_5 = "Colormap_1";
-main_Colormap_1_in_6 = NULL;
-main_Colormap_1_in_7 = NULL;
-main_Colormap_1_in_8 = NULL;
-main_Colormap_1_in_9 = NULL;
-main_Colormap_1_in_10 = NULL;
-main_Colormap_1_in_11 = NULL;
-main_Colormap_1_in_12 = { -1.1 1.1 };
-main_Colormap_1_in_13 = NULL;
-main_Colormap_1_in_14 = NULL;
-main_Colormap_1_in_15 = NULL;
-main_Colormap_1_in_16 = NULL;
-main_Colormap_1_in_17 = NULL;
-main_Colormap_1_in_18 = NULL;
-main_Colormap_1_in_19 = NULL;
-main_Colormap_1_out_1 = NULL;
-main_Colormap_1_out_2 = NULL;
-main_ColorBar_2_in_2 = NULL;
-main_ColorBar_2_in_3 = NULL;
-main_ColorBar_2_in_4 = NULL;
-main_ColorBar_2_in_5 = NULL;
-main_ColorBar_2_in_6 = NULL;
-main_ColorBar_2_in_7 = NULL;
-main_ColorBar_2_in_8 = NULL;
-main_ColorBar_2_in_9 = NULL;
-main_ColorBar_2_in_10 = NULL;
-main_ColorBar_2_in_11 = NULL;
-main_ColorBar_2_in_12 = NULL;
-main_ColorBar_2_in_13 = NULL;
-main_ColorBar_2_in_14 = NULL;
-main_ColorBar_2_in_15 = NULL;
-main_ColorBar_2_in_16 = NULL;
-main_ColorBar_2_out_1 = NULL;
-main_Transmitter_26_out_1 = NULL;
-main_Receiver_28_out_1 = NULL;
-main_FileSelector_3_out_1 = "/home/logg/work/src/dolfin/dolfin/src/demo/solvers/ode/bistable/solution.dx";
+main_FileSelector_3_out_1 = "/home/logg/work/results/bistable/2004-03-03/timesteps.dx";
 main_StringList_1_out_1 = { "Mesh", "u", "Time series" };
 main_Selector_3_in_1 = "Selector_3";
 main_Selector_3_in_2 = "Time series" ;
@@ -1172,15 +1300,86 @@ main_Select_2_out_1 = NULL;
 main_Switch_7_out_1 = NULL;
 main_Transmitter_10_out_1 = NULL;
 main_Receiver_6_out_1 = NULL;
-main_MapToPlane_1_in_2 = NULL;
-main_MapToPlane_1_in_3 = NULL;
+main_Vector_9_in_1 = "Vector_9";
+main_Vector_9_in_2 = NULL;
+main_Vector_9_in_3 = [ 0.5 0.5 0.5 ];
+main_Vector_9_in_4 = NULL;
+main_Vector_9_in_5 = NULL;
+main_Vector_9_in_6 = NULL;
+main_Vector_9_in_7 = NULL;
+main_Vector_9_in_8 = NULL;
+main_Vector_9_in_9 = NULL;
+main_Vector_9_in_10 = NULL;
+main_Vector_9_in_11 = NULL;
+main_Vector_9_out_1 = [ 0.5 0.5 0.5 ];
+main_Vector_10_in_1 = "Vector_10";
+main_Vector_10_in_2 = NULL;
+main_Vector_10_in_3 = [ 1 0 0 ];
+main_Vector_10_in_4 = NULL;
+main_Vector_10_in_5 = NULL;
+main_Vector_10_in_6 = NULL;
+main_Vector_10_in_7 = NULL;
+main_Vector_10_in_8 = NULL;
+main_Vector_10_in_9 = NULL;
+main_Vector_10_in_10 = NULL;
+main_Vector_10_in_11 = NULL;
+main_Vector_10_out_1 = [ 1 0 0 ];
 main_MapToPlane_1_out_1 = NULL;
-main_Color_4_in_4 = NULL;
-main_Color_4_in_5 = NULL;
-main_Color_4_out_1 = NULL;
+main_AutoColor_5_in_2 = NULL;
+main_AutoColor_5_in_3 = NULL;
+main_AutoColor_5_in_4 = NULL;
+main_AutoColor_5_in_5 = NULL;
+main_AutoColor_5_in_6 = NULL;
+main_AutoColor_5_in_7 = NULL;
+main_AutoColor_5_in_8 = NULL;
+main_AutoColor_5_in_9 = NULL;
+main_AutoColor_5_in_10 = NULL;
+main_AutoColor_5_out_1 = NULL;
+main_AutoColor_5_out_2 = NULL;
+main_Transmitter_26_out_1 = NULL;
+main_Receiver_28_out_1 = NULL;
 main_Transmitter_12_out_1 = NULL;
 main_Receiver_9_out_1 = NULL;
-main_Collect_1_in_3 = NULL;
+main_Vector_11_in_1 = "Vector_11";
+main_Vector_11_in_2 = NULL;
+main_Vector_11_in_3 = [ 0.5 0.5 0.5 ];
+main_Vector_11_in_4 = NULL;
+main_Vector_11_in_5 = NULL;
+main_Vector_11_in_6 = NULL;
+main_Vector_11_in_7 = NULL;
+main_Vector_11_in_8 = NULL;
+main_Vector_11_in_9 = NULL;
+main_Vector_11_in_10 = NULL;
+main_Vector_11_in_11 = NULL;
+main_Vector_11_out_1 = [ 0.5 0.5 0.5 ];
+main_Vector_12_in_1 = "Vector_12";
+main_Vector_12_in_2 = NULL;
+main_Vector_12_in_3 = [ 0 1 0 ];
+main_Vector_12_in_4 = NULL;
+main_Vector_12_in_5 = NULL;
+main_Vector_12_in_6 = NULL;
+main_Vector_12_in_7 = NULL;
+main_Vector_12_in_8 = NULL;
+main_Vector_12_in_9 = NULL;
+main_Vector_12_in_10 = NULL;
+main_Vector_12_in_11 = NULL;
+main_Vector_12_out_1 = [ 0 1 0 ];
+main_MapToPlane_4_out_1 = NULL;
+main_AutoColor_6_in_2 = NULL;
+main_AutoColor_6_in_3 = NULL;
+main_AutoColor_6_in_4 = NULL;
+main_AutoColor_6_in_5 = NULL;
+main_AutoColor_6_in_6 = NULL;
+main_AutoColor_6_in_7 = NULL;
+main_AutoColor_6_in_8 = NULL;
+main_AutoColor_6_in_9 = NULL;
+main_AutoColor_6_in_10 = NULL;
+main_AutoColor_6_out_1 = NULL;
+main_AutoColor_6_out_2 = NULL;
+main_Transmitter_28_out_1 = NULL;
+main_Receiver_29_out_1 = NULL;
+main_Collect_1_in_4 = NULL;
+main_Collect_1_in_5 = NULL;
 main_Collect_1_out_1 = NULL;
 main_AutoCamera_1_in_2 = "off-front";
 main_AutoCamera_1_in_3 = NULL;
@@ -1379,6 +1578,82 @@ main_Color_2_in_3 = .3;
 main_Color_2_in_4 = NULL;
 main_Color_2_in_5 = NULL;
 main_Color_2_out_1 = NULL;
+main_Colormap_1_in_1 = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] };
+main_Colormap_1_in_2 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_1_in_3 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_1_in_4 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_1_in_5 = "Colormap_1";
+main_Colormap_1_in_6 = NULL;
+main_Colormap_1_in_7 = NULL;
+main_Colormap_1_in_8 = NULL;
+main_Colormap_1_in_9 = NULL;
+main_Colormap_1_in_10 = NULL;
+main_Colormap_1_in_11 = NULL;
+main_Colormap_1_in_12 = { -1.1 1.1 };
+main_Colormap_1_in_13 = NULL;
+main_Colormap_1_in_14 = NULL;
+main_Colormap_1_in_15 = NULL;
+main_Colormap_1_in_16 = NULL;
+main_Colormap_1_in_17 = NULL;
+main_Colormap_1_in_18 = NULL;
+main_Colormap_1_in_19 = NULL;
+main_Colormap_1_out_1 = NULL;
+main_Colormap_1_out_2 = NULL;
+main_Color_4_in_4 = NULL;
+main_Color_4_in_5 = NULL;
+main_Colormap_2_in_1 = { [0.0 0.666667] [0.0 0.83157895] [1.0 0.0] };
+main_Colormap_2_in_2 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_2_in_3 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_2_in_4 = { [0.0 1.0] [1.0 1.0] };
+main_Colormap_2_in_5 = "Colormap_2";
+main_Colormap_2_in_6 = NULL;
+main_Colormap_2_in_7 = NULL;
+main_Colormap_2_in_8 = NULL;
+main_Colormap_2_in_9 = NULL;
+main_Colormap_2_in_10 = NULL;
+main_Colormap_2_in_11 = NULL;
+main_Colormap_2_in_12 = { -1.1 1.1 };
+main_Colormap_2_in_13 = NULL;
+main_Colormap_2_in_14 = NULL;
+main_Colormap_2_in_15 = NULL;
+main_Colormap_2_in_16 = NULL;
+main_Colormap_2_in_17 = NULL;
+main_Colormap_2_in_18 = NULL;
+main_Colormap_2_in_19 = NULL;
+main_Colormap_2_out_1 = NULL;
+main_Colormap_2_out_2 = NULL;
+main_Color_5_in_4 = NULL;
+main_Color_5_in_5 = NULL;
+main_ColorBar_2_in_2 = NULL;
+main_ColorBar_2_in_3 = NULL;
+main_ColorBar_2_in_4 = NULL;
+main_ColorBar_2_in_5 = NULL;
+main_ColorBar_2_in_6 = NULL;
+main_ColorBar_2_in_7 = NULL;
+main_ColorBar_2_in_8 = NULL;
+main_ColorBar_2_in_9 = NULL;
+main_ColorBar_2_in_10 = NULL;
+main_ColorBar_2_in_11 = NULL;
+main_ColorBar_2_in_12 = NULL;
+main_ColorBar_2_in_13 = NULL;
+main_ColorBar_2_in_14 = NULL;
+main_ColorBar_2_in_15 = NULL;
+main_ColorBar_2_in_16 = NULL;
+main_ColorBar_3_in_2 = NULL;
+main_ColorBar_3_in_3 = NULL;
+main_ColorBar_3_in_4 = NULL;
+main_ColorBar_3_in_5 = NULL;
+main_ColorBar_3_in_6 = NULL;
+main_ColorBar_3_in_7 = NULL;
+main_ColorBar_3_in_8 = NULL;
+main_ColorBar_3_in_9 = NULL;
+main_ColorBar_3_in_10 = NULL;
+main_ColorBar_3_in_11 = NULL;
+main_ColorBar_3_in_12 = NULL;
+main_ColorBar_3_in_13 = NULL;
+main_ColorBar_3_in_14 = NULL;
+main_ColorBar_3_in_15 = NULL;
+main_ColorBar_3_in_16 = NULL;
 main_Reset_1_in_1 = "main_Reset_1_out_1";
 main_Reset_1_in_2 = 0;
 main_Reset_1_in_3 = 0;
@@ -1702,12 +1977,12 @@ main_Image_1_in_1 = "Image_1";
 main_Image_1_in_3 = "X24,,Basic3D";
 main_Image_1_in_4 = 1;
 main_Image_1_in_5 = [0.5 0.5 0.5];
-main_Image_1_in_6 = [-0.267221 -2.44204 -2.61441];
+main_Image_1_in_6 = [2.13426 -2.1896 -2.50656];
 main_Image_1_in_7 = NULL;
-main_Image_1_in_8 = 804;
-main_Image_1_in_9 = 0.758;
-main_Image_1_in_10 = [-0.0891674 0.734913 -0.672273];
-main_Image_1_in_11 = 30.0002;
+main_Image_1_in_8 = 843;
+main_Image_1_in_9 = 0.861;
+main_Image_1_in_10 = [0.926758 0.240962 0.288195];
+main_Image_1_in_11 = 30.0001;
 main_Image_1_in_12 = 1;
 main_Image_1_in_13 = NULL;
 main_Image_1_in_14 = 1;
@@ -1734,7 +2009,7 @@ main_Image_1_in_37 = NULL;
 main_Image_1_in_38 = NULL;
 main_Image_1_in_39 = 1.0;
 main_Image_1_in_40 = NULL;
-main_Image_1_in_41 = "rotate";
+main_Image_1_in_41 = "none";
 main_Image_1_in_42 = "Basic3D";
 main_Image_1_in_43 = NULL;
 main_Image_1_in_44 = NULL;
@@ -1765,29 +2040,8 @@ main_Transmitter_24_out_1 = NULL;
 main_ShowBoundary_1_in_2 = NULL;
 main_ShowBoundary_1_out_1 = NULL;
 main_Transmitter_25_out_1 = NULL;
-main_Vector_9_in_1 = "Vector_9";
-main_Vector_9_in_2 = NULL;
-main_Vector_9_in_3 = [ 0 0 0 ];
-main_Vector_9_in_4 = NULL;
-main_Vector_9_in_5 = NULL;
-main_Vector_9_in_6 = NULL;
-main_Vector_9_in_7 = NULL;
-main_Vector_9_in_8 = NULL;
-main_Vector_9_in_9 = NULL;
-main_Vector_9_in_10 = NULL;
-main_Vector_9_in_11 = NULL;
-main_Vector_10_in_1 = "Vector_10";
-main_Vector_10_in_2 = NULL;
-main_Vector_10_in_3 = NULL;
-main_Vector_10_in_4 = NULL;
-main_Vector_10_in_5 = NULL;
-main_Vector_10_in_6 = NULL;
-main_Vector_10_in_7 = NULL;
-main_Vector_10_in_8 = NULL;
-main_Vector_10_in_9 = NULL;
-main_Vector_10_in_10 = NULL;
-main_Vector_10_in_11 = NULL;
-Executive("product version 4 2 0");
+main_Transmitter_27_out_1 = NULL;
+Executive("product version 4 3 0");
 $sync
 
 sequence main();
