@@ -1,4 +1,4 @@
-FILENAME='dolfin_manual'
+FILENAME='dolfin-user-manual'
 
 all:
 	latex $(FILENAME).tex
