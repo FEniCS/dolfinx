@@ -30,7 +30,7 @@ namespace dolfin {
     /// Assign to all elements in the array
     const NewArray& operator=(const T& element)
     {
-      for (unsigned int i = 0; i < size(); i++)
+      for (unsigned int i = 0; i < std::vector<T>::size(); i++)
 	(*this)[i] = element;
       
       return *this;

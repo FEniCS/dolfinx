@@ -122,7 +122,7 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
 
   // Start a progress session
   Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
-    
+  
   // Initialize element matrix
   real** AK;
   alloc(pde, AK);

@@ -121,7 +121,7 @@ public:
 	//cout << "sigma on cell " << cell_->id() << ": " << endl;
 	//sigma.show();
       
-	Matrix *sigma0, *sigma1, *vsigma1;
+	Matrix *sigma0, *sigma1; // *vsigma1;
 	
 	sigma0 = sigma0array[cell_->id()];
 	sigma1 = sigma1array[cell_->id()];
