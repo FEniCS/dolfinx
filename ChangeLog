@@ -1,3 +1,4 @@
+ - Fix bug in GridInit (eriksv)
  - Add output to OpenDX format for 3D grids
  - Clean up ShortList class
  - Clean up List class
