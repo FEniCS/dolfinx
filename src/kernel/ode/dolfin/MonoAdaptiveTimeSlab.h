@@ -6,11 +6,12 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
+#include <dolfin/NewVector.h>
 #include <dolfin/NewTimeSlab.h>
 
 namespace dolfin
 {
-
+  
   class ODE;
   class NewMethod;
   class TimeSlabSolver;
@@ -60,7 +61,10 @@ namespace dolfin
 
   private:
 
-    TimeSlabSolver* solver;   // The solver
+    TimeSlabSolver* solver; // The solver
+    uint nj;                // Number of dofs
+    real* u0;               // Initial values
+    NewVector u;            // Degrees of freedom for the solution
 
   };
 

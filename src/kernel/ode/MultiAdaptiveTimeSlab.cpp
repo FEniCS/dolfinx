@@ -18,13 +18,16 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   NewTimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
-  elast(N), u0(N), u(0), emax(0)
+  elast(N), u0(0), u(0), emax(0)
 {
   cout << "Multi-adaptive time slab: creating" << endl;
 
   // Choose solver
   //solver = new MultiAdaptiveFixedPointSolver(*this);
   solver = new MultiAdaptiveNewtonSolver(*this);
+
+  // Initialize initial data
+  u0 = new real[N];
 
   // Get initial data
   for (uint i = 0; i < N; i++)
@@ -52,6 +55,7 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 
   if ( solver ) delete solver;
 
+  if ( u0 ) delete [] u0;
   if ( u ) delete [] u;
 }
 //-----------------------------------------------------------------------------
