@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
 #include <dolfin/cGqMethods.h>
@@ -119,45 +120,21 @@ void cGqElement::get(real* const values) const
     values[i-1] = this->values[i];
 }
 //-----------------------------------------------------------------------------
+bool cGqElement::accept(real TOL, real r)
+{
+  real error = pow(timestep(), static_cast<real>(q)) * fabs(r);
+  return error <= TOL;
+}
+//-----------------------------------------------------------------------------
 real cGqElement::computeTimeStep(real TOL, real r, real kmax) const
 {
   // Compute new time step based on residual
 
-  if ( abs(r) < DOLFIN_EPS )
+  if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  // FIXME: Missing stability factor, interpolation constant, power
-
-  //dolfin_debug1("k: %100.100lf", TOL / abs(r));
-  //dolfin_debug1("r: %100.100lf", abs(r));
-
-  return TOL / abs(r);
-}
-//-----------------------------------------------------------------------------
-void cGqElement::feval(RHS& f)
-{
-  // The right-hand side is evaluated once, before the nodal values
-  // are updated, to avoid repeating the evaluation for each degree of
-  // freedom. The local iterations are thus more of Jacobi type than
-  // Gauss-Seidel.  This is probably more efficient, at least for
-  // higher order methods (where we have more degrees of freedom) and
-  // when function evaluations are expensive.
-
-  real k = t1 - t0;
-
-  for (unsigned int i = 0; i <= q; i++)
-    this->f(i) = f(_index, i, t0 + cG(q).point(i)*k);
-}
-//-----------------------------------------------------------------------------
-real cGqElement::integral(unsigned int i) const
-{
-  real k = t1 - t0;
-
-  real sum = 0.0;
-  for (unsigned int j = 0; j <= q; j++)
-    sum += cG(q).weight(i, j) * f(j);
-
-  return k * sum;
+  // FIXME: Missing stability factor and interpolation constant
+  return pow(TOL / fabs(r), 1.0 / static_cast<real>(q));
 }
 //-----------------------------------------------------------------------------
 real cGqElement::computeDiscreteResidual(RHS& f)
@@ -176,5 +153,31 @@ real cGqElement::computeElementResidual(RHS& f)
 
   // Compute element residual
   return values[q] - values[0] - integral(q);
+}
+//-----------------------------------------------------------------------------
+void cGqElement::feval(RHS& f)
+{
+  // The right-hand side is evaluated once, before the nodal values
+  // are updated, to avoid repeating the evaluation for each degree of
+  // freedom. The local iterations are thus more of Jacobi type than
+  // Gauss-Seidel. This is probably more efficient, at least for
+  // higher order methods (where we have more degrees of freedom) and
+  // when function evaluations are expensive.
+
+  real k = t1 - t0;
+
+  for (unsigned int i = 0; i <= q; i++)
+    this->f(i) = f(_index, i, t0 + cG(q).point(i)*k);
+}
+//-----------------------------------------------------------------------------
+real cGqElement::integral(unsigned int i) const
+{
+  real k = t1 - t0;
+
+  real sum = 0.0;
+  for (unsigned int j = 0; j <= q; j++)
+    sum += cG(q).weight(i, j) * f(j);
+
+  return k * sum;
 }
 //-----------------------------------------------------------------------------

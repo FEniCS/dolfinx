@@ -35,7 +35,7 @@ namespace dolfin {
     
     /// Check if the time slab reached the given end time
     bool finished() const;
-
+    
     /// Return start time
     real starttime() const;
     
@@ -44,6 +44,9 @@ namespace dolfin {
     
     /// Return length of time slab
     real length() const;
+
+    /// Check if time slab can be accepted for given tolerance
+    virtual bool accept(RHS& f, real TOL) = 0;
 
     /// Count the number of element groups contained in the time slab
     virtual void countElementGroups(unsigned int& size) = 0;

@@ -30,6 +30,9 @@ namespace dolfin {
     
     /// Destructor
     ~RecursiveTimeSlab();
+
+    /// Check if time slab can be accepted for given tolerance
+    bool accept(RHS& f, real TOL);
     
     /// Count the number of element groups contained in the time slab
     void countElementGroups(unsigned int& size);

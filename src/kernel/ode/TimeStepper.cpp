@@ -79,37 +79,11 @@ bool TimeStepper::createFirstTimeSlab()
     return false;
   }
 
-  // Update time
-  t = timeslab.endtime();
-  
-  // Save solution
-  save(timeslab);
-  
-  // Prepare for next time slab
-  shift();
-  
-  // Update progress
-  p = t / T;
-
-  // Check if we are done
-  if ( timeslab.finished() )
+  // Check if the residual is small enough
+  if ( !adaptivity.accept(timeslab, f) )
   {
-    _finished = true;
-    p = 1.0;
-  }
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TimeStepper::createGeneralTimeSlab()
-{
-  // Create the time slab
-  RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
-   
-  // Try to solve the system using fixed point iteration
-  if ( !fixpoint.iterate(timeslab) )
-  {
-    stabilize(timeslab.length());
+    cout << "Residual is too large, creating a new time slab." << endl;
+    adaptivity.shift(u, f);
     u.reset();
     return false;
   }
@@ -136,34 +110,59 @@ bool TimeStepper::createGeneralTimeSlab()
   return true;
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::shift()
+bool TimeStepper::createGeneralTimeSlab()
 {
-  real TOL = adaptivity.tolerance();
-  real kmax = adaptivity.maxstep();
-  real kfixed = adaptivity.fixed();
+  // Create the time slab
+  RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
 
-  // Update residuals and time steps
-  for (unsigned int i = 0; i < u.size(); i++)
+  // Try to solve the system using fixed point iteration
+  if ( !fixpoint.iterate(timeslab) )
   {
-    // Get last element
-    Element* element = u.last(i);
-    dolfin_assert(element);
-
-    // Compute residual
-    real r = element->computeResidual(f);
-
-    // Compute new time step
-    real k = element->computeTimeStep(TOL, r, kmax);
-
-    // Update regulator
-    adaptivity.regulator(i).update(k, kmax, kfixed);
+    stabilize(timeslab.length());
+    u.reset();
+    return false;
   }
   
+  /*
+  // Check if the residual is small enough
+  if ( !adaptivity.accept(timeslab, f) )
+  {
+    cout << "Residual is too large, creating a new time slab." << endl;
+    adaptivity.shift(u, f);
+    u.reset();
+    return false;
+  }
+  */
+
+  // Update time
+  t = timeslab.endtime();
+  
+  // Save solution
+  save(timeslab);
+  
+  // Prepare for next time slab
+  shift();
+  
+  // Update progress
+  p = t / T;
+
+  // Check if we are done
+  if ( timeslab.finished() )
+  {
+    _finished = true;
+    p = 1.0;
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::shift()
+{
+  // Shift adaptivity
+  adaptivity.shift(u, f);
+
   // Shift solution
   u.shift(t);
-  
-  // Shift adaptivity
-  adaptivity.shift();
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab)

@@ -90,6 +90,7 @@ real Element::timestep() const
 //-----------------------------------------------------------------------------
 real Element::computeResidual(RHS& f)
 {
+  // FIXME: Include jumps for dG(q)
   return dx() - f(_index, q, t1);
 }
 //-----------------------------------------------------------------------------

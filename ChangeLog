@@ -1,3 +1,6 @@
+ - Initialization of first time step
+ - Improve time step regulation (threshold)
+ - Improve stabilization
  - Improve TimeStepper interface (Ko Project)
  - Use iterators instead of recursively calling TimeSlab::update()
  - Clean up ODESolver

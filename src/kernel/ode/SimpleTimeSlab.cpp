@@ -9,6 +9,7 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
+#include <dolfin/ElementIterator.h>
 #include <dolfin/SimpleTimeSlab.h>
 
 using namespace dolfin;
@@ -23,6 +24,22 @@ SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, Solution& u,
 SimpleTimeSlab::~SimpleTimeSlab()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+bool SimpleTimeSlab::accept(RHS& f, real TOL)
+{
+  // Check local error estimate for all elements
+  for (ElementIterator element(group); !element.end(); ++element)
+  {
+    // Compute residual
+    real r = element->computeResidual(f);
+
+    // Check element
+    if ( !element->accept(TOL, r) )
+      return false;
+  }
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::countElementGroups(unsigned int& size)
@@ -61,6 +78,9 @@ void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
     // Create element
     Element *element = u.createElement(u.method(i), u.order(i), i, t0, t1);
     
+    // Update regulator for element
+    adaptivity.regulator(i).init(kmin);
+
     // Write debug info
     u.debug(*element, Solution::create);
 

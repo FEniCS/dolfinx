@@ -92,6 +92,9 @@ namespace dolfin {
     // Compute continuous residual
     real computeResidual(RHS& f);
 
+    /// Check if element can be accepted for given tolerance
+    virtual bool accept(real TOL, real r) = 0;
+
     // Compute discrete residual
     virtual real computeDiscreteResidual(RHS& f) = 0;
 

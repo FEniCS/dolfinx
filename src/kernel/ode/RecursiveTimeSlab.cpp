@@ -39,6 +39,27 @@ RecursiveTimeSlab::~RecursiveTimeSlab()
   }
 }
 //-----------------------------------------------------------------------------
+bool RecursiveTimeSlab::accept(RHS& f, real TOL)
+{
+  // Check time slabs
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    if ( !timeslabs[i]->accept(f, TOL) )
+      return false;
+
+  // Check elements
+  for (ElementIterator element(group); !element.end(); ++element)
+  {
+    // Compute residual
+    real r = element->computeResidual(f);
+
+    // Check element
+    if ( !element->accept(TOL, r) )
+      return false;
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 void RecursiveTimeSlab::countElementGroups(unsigned int& size)
 {
   // Count number of element groups for time slabs
@@ -134,6 +155,9 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
 				       int offset, int end)
 
 {
+  // Get length of this time slab
+  real k = length();
+
   // Create elements
   for (int i = offset; i < end; i++)
   {
@@ -142,6 +166,9 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
     Element* element = u.createElement(u.method(index), u.order(index), 
 				       index, t0, t1);
     
+    // Update regulator for element
+    adaptivity.regulator(index).init(k);
+
     // Write debug info
     u.debug(*element, Solution::create);
     

@@ -120,6 +120,12 @@ void dGqElement::get(real* const values) const
     values[i] = this->values[i];
 }
 //-----------------------------------------------------------------------------
+bool dGqElement::accept(real TOL, real r)
+{
+  real error = pow(timestep(), static_cast<real>(q+1)) * fabs(r);
+  return error <= TOL;
+}
+//-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
 {
   // Compute new time step based on residual
@@ -127,9 +133,26 @@ real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
   if ( abs(r) < DOLFIN_EPS )
     return kmax;
 
-  // FIXME: Missing stability factor, interpolation constant, power
+  // FIXME: Missing stability factor and interpolation constant
+  return pow(TOL / fabs(r), 1.0 / static_cast<real>(q+1));
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeDiscreteResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
 
-  return TOL / abs(r);
+  // Compute discrete residual
+  return (values[q] - u0 - integral(q)) / timestep();
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeElementResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute element residual
+  return values[q] - u0 - integral(q);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)
@@ -151,23 +174,5 @@ real dGqElement::integral(unsigned int i) const
     sum += dG(q).weight(i, j) * f(j);
 
   return k * sum;
-}
-//-----------------------------------------------------------------------------
-real dGqElement::computeDiscreteResidual(RHS& f)
-{
-  // Evaluate right-hand side
-  feval(f);
-
-  // Compute discrete residual
-  return (values[q] - u0 - integral(q)) / timestep();
-}
-//-----------------------------------------------------------------------------
-real dGqElement::computeElementResidual(RHS& f)
-{
-  // Evaluate right-hand side
-  feval(f);
-
-  // Compute element residual
-  return values[q] - u0 - integral(q);
 }
 //-----------------------------------------------------------------------------

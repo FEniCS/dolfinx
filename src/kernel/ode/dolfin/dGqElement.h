@@ -34,6 +34,8 @@ namespace dolfin {
     void set(const real* const values);
     void get(real* const values) const;
 
+    bool accept(real TOL, real r);
+
     real computeTimeStep(real TOL, real r, real kmax) const;
     real computeDiscreteResidual(RHS& f);
     real computeElementResidual(RHS& f);

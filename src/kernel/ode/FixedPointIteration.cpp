@@ -71,7 +71,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       if ( converged(list, r, n) )
       {
 	cout << "Time slab containing " << list.size()
-	     << " elements converged in " << n << " iterations" << endl;
+	     << " element groups converged in " << n << " iterations" << endl;
 	//dolfin_end("Time slab iteration converged in %d iterations", n);
 	end(list);
 	return true;
@@ -98,7 +98,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
   }
 
   cout << "Time slab containing " << list.size()
-       << " elements did not converge" << endl;
+       << " element groups did not converge" << endl;
   //dolfin_end("Time slab did not converge");
 
   return false;

@@ -10,6 +10,9 @@
 namespace dolfin {
 
   class ODE;
+  class TimeSlab;
+  class Solution;
+  class RHS;
 
   /// Adaptivity controls the adaptive time-stepping.
 
@@ -50,7 +53,10 @@ namespace dolfin {
     unsigned int size() const;
 
     /// Prepare for next time slab
-    void shift();
+    void shift(Solution& u, RHS& f);
+
+    /// Check if the time slab can be accepted
+    bool accept(TimeSlab& timeslab, RHS& f);
 
   private:
 
