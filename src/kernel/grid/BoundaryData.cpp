@@ -10,9 +10,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryData::BoundaryData(Grid* grid)
+BoundaryData::BoundaryData(Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
 BoundaryData::~BoundaryData()
@@ -27,22 +27,22 @@ void BoundaryData::clear()
   faces.clear();
 }
 //-----------------------------------------------------------------------------
-void BoundaryData::add(Node* node)
+void BoundaryData::add(Node& node)
 {
-  //cout << "Adding node to boundary: " << *node << endl;
-  nodes.add(node);
+  //cout << "Adding node to boundary: " << node << endl;
+  nodes.add(&node);
 }
 //-----------------------------------------------------------------------------
-void BoundaryData::add(Edge* edge)
+void BoundaryData::add(Edge& edge)
 {
-  //cout << "Adding edge to boundary: " << *edge << endl;
-  edges.add(edge);
+  //cout << "Adding edge to boundary: " << edge << endl;
+  edges.add(&edge);
 }
 //-----------------------------------------------------------------------------
-void BoundaryData::add(Face* face)
+void BoundaryData::add(Face& face)
 {
-  //cout << "Adding face to boundary: " << *face << endl;
-  faces.add(face);
+  //cout << "Adding face to boundary: " << face << endl;
+  faces.add(&face);
 }
 //-----------------------------------------------------------------------------
 bool BoundaryData::empty()

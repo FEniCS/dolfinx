@@ -9,9 +9,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GridRefinementData::GridRefinementData(Grid* grid)
+GridRefinementData::GridRefinementData(Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
 GridRefinementData::~GridRefinementData()
@@ -26,9 +26,9 @@ void GridRefinementData::clear()
   edge_markers.clear();
 }
 //-----------------------------------------------------------------------------
-void GridRefinementData::mark(Cell* cell)
+void GridRefinementData::mark(Cell& cell)
 {
-  marked_cells.add(cell);
+  marked_cells.add(&cell);
 }
 //-----------------------------------------------------------------------------
 int GridRefinementData::noMarkedCells() const

@@ -44,24 +44,24 @@ int GenericCell::noChildren() const
   return children.size();
 }
 //-----------------------------------------------------------------------------
-Node* GenericCell::node(int i) const
+Node& GenericCell::node(int i) const
 {
-  return cn(i);
+  return *cn(i);
 }
 //-----------------------------------------------------------------------------
-Edge* GenericCell::edge(int i) const
+Edge& GenericCell::edge(int i) const
 {
-  return ce(i);
+  return *ce(i);
 }
 //-----------------------------------------------------------------------------
-Face* GenericCell::face(int i) const
+Face& GenericCell::face(int i) const
 {
-  return cf(i);
+  return *cf(i);
 }
 //-----------------------------------------------------------------------------
-Cell* GenericCell::neighbor(int i) const
+Cell& GenericCell::neighbor(int i) const
 {
-  return cc(i);
+  return *cc(i);
 }
 //-----------------------------------------------------------------------------
 Cell* GenericCell::parent() const
@@ -74,7 +74,7 @@ Cell* GenericCell::child(int i) const
   return children(i);
 }
 //-----------------------------------------------------------------------------
-Point GenericCell::coord(int i) const
+Point& GenericCell::coord(int i) const
 {
   return cn(i)->coord();
 }
@@ -96,7 +96,7 @@ int GenericCell::nodeID(int i) const
   return cn(i)->id();
 }
 //-----------------------------------------------------------------------------
-void GenericCell::mark(Cell* cell)
+void GenericCell::mark(Cell& cell)
 {
   if ( !grid )
     dolfin_error("You cannot mark a cell that does not belong to grid.");
@@ -104,9 +104,9 @@ void GenericCell::mark(Cell* cell)
   grid->mark(cell);
 }
 //-----------------------------------------------------------------------------
-int GenericCell::setID(int id, Grid* grid)
+int GenericCell::setID(int id, Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
@@ -115,33 +115,30 @@ void GenericCell::setGrid(Grid& grid)
   this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::setParent(Cell* parent)
+void GenericCell::setParent(Cell& parent)
 {
   // Set parent cell: a cell is parent if the current cell is created through 
   // refinement of the parent cell. 
-  this->_parent = parent;
+  this->_parent = &parent;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::addChild(Cell* child)
+void GenericCell::addChild(Cell& child)
 {
   // Set the child cell if Cell not already contains the child cell: a cell 
   // is child if it is created through refinement of the current cell.  
-  if ( !children.contains(child) )
-    children.add(child);
+  if ( !children.contains(&child) )
+    children.add(&child);
 }
 //-----------------------------------------------------------------------------
-bool GenericCell::neighbor(GenericCell* cell) const
+bool GenericCell::neighbor(GenericCell& cell) const
 {
   // Two cells are neighbors if they have a common edge or if they are
   // the same cell, i.e. if they have 2 or 3 common nodes.
 
-  if ( !cell )
-    return false;
-
   int count = 0;
   for (int i = 0; i < cn.size(); i++)
-    for (int j = 0; j < cell->cn.size(); j++)
-      if ( cn(i) == cell->cn(j) )
+    for (int j = 0; j < cell.cn.size(); j++)
+      if ( cn(i) == cell.cn(j) )
 	count++;
   
   return count >= 2;
@@ -163,7 +160,7 @@ bool GenericCell::haveEdge(Edge& edge) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::createEdge(Node* n0, Node* n1)
+void GenericCell::createEdge(Node& n0, Node& n1)
 {
   Edge* edge = 0;
 
@@ -176,14 +173,14 @@ void GenericCell::createEdge(Node* n0, Node* n1)
 
   // Create the new edge if it doesn't exist
   if ( !edge )
-    edge = grid->createEdge(n0, n1);
+    edge = &grid->createEdge(n0, n1);
 
 
   // Add the edge at the first empty position
   ce.add(edge);
 }
 //-----------------------------------------------------------------------------
-void GenericCell::createFace(Edge* e0, Edge* e1, Edge* e2)
+void GenericCell::createFace(Edge& e0, Edge& e1, Edge& e2)
 {
   Face* face = 0;
   
@@ -196,13 +193,22 @@ void GenericCell::createFace(Edge* e0, Edge* e1, Edge* e2)
 
   // Create the new face if it doesn't exist
   if ( !face )
-    face = grid->createFace(e0, e1, e2);
+    face = &grid->createFace(e0, e1, e2);
 
   // Add the face at the first empty position
   cf.add(face);
 }
 //-----------------------------------------------------------------------------
-Edge* GenericCell::findEdge(Node* n0, Node* n1)
+Node* GenericCell::findNode(const Point& p) const
+{
+  for (Array<Node*>::Iterator n(cn); !n.end(); ++n)
+    if ( (*n)->dist(p) < DOLFIN_EPS )
+      return *n;
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+Edge* GenericCell::findEdge(Node& n0, Node& n1)
 {
   for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e )
@@ -212,7 +218,7 @@ Edge* GenericCell::findEdge(Node* n0, Node* n1)
   return 0;
 }
 //-----------------------------------------------------------------------------
-Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
+Face* GenericCell::findFace(Edge& e0, Edge& e1, Edge& e2)
 {
   for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
@@ -222,7 +228,7 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return 0;
 }
 //-----------------------------------------------------------------------------
-Face* GenericCell::findFace(Edge* e0, Edge* e1)
+Face* GenericCell::findFace(Edge& e0, Edge& e1)
 {
   for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )

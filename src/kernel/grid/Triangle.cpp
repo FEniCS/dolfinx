@@ -10,13 +10,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Triangle::Triangle(Node* n0, Node* n1, Node* n2) : GenericCell()
+Triangle::Triangle(Node& n0, Node& n1, Node& n2) : GenericCell()
 {
   cn.init(noNodes());
 
-  cn(0) = n0;
-  cn(1) = n1;
-  cn(2) = n2;
+  cn(0) = &n0;
+  cn(1) = &n1;
+  cn(2) = &n2;
 }
 //-----------------------------------------------------------------------------
 int Triangle::noNodes() const
@@ -81,9 +81,9 @@ void Triangle::createEdges()
   ce.init(3);
   ce.reset();
 
-  createEdge(cn(0), cn(1));
-  createEdge(cn(1), cn(2));
-  createEdge(cn(2), cn(0));
+  createEdge(*cn(0), *cn(1));
+  createEdge(*cn(1), *cn(2));
+  createEdge(*cn(2), *cn(0));
 }
 //-----------------------------------------------------------------------------
 void Triangle::createFaces()

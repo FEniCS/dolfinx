@@ -5,23 +5,25 @@
 
 using namespace dolfin;
 
-void refine2D();
-void refine3D();
+void refine2D(int refinements);
+void refine3D(int refinements);
 
 int main()
 {
   dolfin_set("output", "plain text");
 
+  int refinements = 1;
+
   // Refine 2D grid
-  refine2D();
+  refine2D(refinements);
 
   // Refine 3D grid
-  refine3D();
+  refine3D(refinements);
 
   return 0;
 }
 
-void refine2D()
+void refine2D(int refinements)
 {
   cout << "Refining 2D grid" << endl;
   cout << "----------------" << endl;  
@@ -33,13 +35,18 @@ void refine2D()
   File unref("grid2D_unrefined.m");
   unref << grid;
 
-  // Mark nodes for refinement
-  for (CellIterator cell(grid); !cell.end(); ++cell)
-    if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
-      cell->mark();
-  
-  // Refine grid
-  grid.refine();
+  // Refine a couple of times
+  for (int i = 0; i < refinements; i++) {
+    
+    // Mark nodes for refinement
+    for (CellIterator cell(grid); !cell.end(); ++cell)
+      if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
+	cell->mark();
+    
+    // Refine grid
+    grid.refine();
+
+  }
 
   // Save refined grid in Matlab format
   File ref("grid2D_refined.m");
@@ -48,7 +55,7 @@ void refine2D()
   cout << endl;
 }
 
-void refine3D()
+void refine3D(int refinements)
 {
   cout << "Refining 3D grid" << endl;
   cout << "----------------" << endl;  
@@ -60,13 +67,18 @@ void refine3D()
   File unref("grid3D_unrefined.dx");
   unref << grid;
 
-  // Mark nodes for refinement
-  for (CellIterator cell(grid); !cell.end(); ++cell)
-    if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
-      cell->mark();
-  
-  // Refine grid
-  grid.refine();
+  // Refine a couple of times
+  for (int i = 0; i < refinements; i++) {
+    
+    // Mark nodes for refinement
+    for (CellIterator cell(grid); !cell.end(); ++cell)
+      if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
+	cell->mark();
+    
+    // Refine grid
+    grid.refine();
+
+  }
 
   // Save refined grid in OpenDX format
   File ref("grid3D_refined.dx");

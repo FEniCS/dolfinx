@@ -15,7 +15,7 @@ namespace dolfin {
   class Tetrahedron : public GenericCell {
   public:
 
-    Tetrahedron(Node* n0, Node* n1, Node* n2, Node* n3);
+    Tetrahedron(Node& n0, Node& n1, Node& n2, Node& n3);
 	 
     int noNodes() const;
     int noEdges() const;

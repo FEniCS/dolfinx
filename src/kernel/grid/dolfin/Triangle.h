@@ -15,7 +15,7 @@ namespace dolfin {
   class Triangle : public GenericCell {
   public:
     
-    Triangle(Node* n0, Node* n1, Node* n2);
+    Triangle(Node& n0, Node& n1, Node& n2);
 
     int noNodes() const;
     int noEdges() const;

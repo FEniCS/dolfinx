@@ -49,19 +49,22 @@ namespace dolfin{
     int noEdgeNeighbors() const;
 
     /// Return node neighbor number i
-    Node* node(int i) const;
+    Node& node(int i) const;
 
     /// Return cell neighbor number i
-    Cell* cell(int i) const;
+    Cell& cell(int i) const;
 
     /// Return edge neighbor number i
-    Edge* edge(int i) const;
+    Edge& edge(int i) const;
 
-    /// Return parent node
+    /// Return parent node (null if no parent)
     Node* parent() const;
 
-    /// Return child node
+    /// Return child node (null if no child)
     Node* child() const;
+
+    /// Return node coordinate
+    Point& coord();
 
     /// Return node coordinate
     Point coord() const;
@@ -71,9 +74,18 @@ namespace dolfin{
 
     /// Return distance to given node
     real dist(const Node& n) const;    
+
+    /// Return distance to given point
+    real dist(const Point& p) const;    
     
     /// Check if given node is a neighbor
-    bool neighbor(Node* n);
+    bool neighbor(const Node& n) const;
+
+    /// Comparison with another node
+    bool operator==(const Node& node) const;
+
+    /// Comparison with another node
+    bool operator!=(const Node& node) const;
 
     /// Comparison based on the node id
 
@@ -110,16 +122,16 @@ namespace dolfin{
   private:
 
     // Specify global node number
-    int setID(int id, Grid* grid);
+    int setID(int id, Grid& grid);
     
     // Set the grid pointer
     void setGrid(Grid& grid);
 
     // Set parent node
-    void setParent(Node* parent);
+    void setParent(Node& parent);
 
     // Set child node
-    void setChild(Node* child);
+    void setChild(Node& child);
 
     // Specify coordinate
     void set(real x, real y, real z);

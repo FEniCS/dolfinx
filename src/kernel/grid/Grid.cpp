@@ -23,9 +23,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Grid::Grid()
 {
-  gd = new GridData(this);
-  bd = new BoundaryData(this);
-  rd = new GridRefinementData(this);
+  gd = new GridData(*this);
+  bd = new BoundaryData(*this);
+  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -34,9 +34,9 @@ Grid::Grid()
 //-----------------------------------------------------------------------------
 Grid::Grid(const char* filename)
 {
-  gd = new GridData(this);
-  bd = new BoundaryData(this);
-  rd = new GridRefinementData(this);
+  gd = new GridData(*this);
+  bd = new BoundaryData(*this);
+  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -49,9 +49,9 @@ Grid::Grid(const char* filename)
 //-----------------------------------------------------------------------------
 Grid::Grid(const Grid& grid)
 {
-  gd = new GridData(this);
-  bd = new BoundaryData(this);
-  rd = new GridRefinementData(this);
+  gd = new GridData(*this);
+  bd = new BoundaryData(*this);
+  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -135,7 +135,7 @@ Grid::Type Grid::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-void Grid::mark(Cell* cell)
+void Grid::mark(Cell& cell)
 {
   rd->mark(cell);
 }
@@ -233,7 +233,7 @@ void Grid::show()
   cout << "----------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
-Grid* Grid::createChild()
+Grid& Grid::createChild()
 {
   // Make sure that we have not already created a child
   dolfin_assert(!_child);
@@ -246,20 +246,20 @@ Grid* Grid::createChild()
   new_grid->_parent = this;
 
   // Return the new grid
-  return new_grid;
+  return *new_grid;
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(Point p)
+Node& Grid::createNode(Point p)
 {
   return gd->createNode(p);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(real x, real y, real z)
+Node& Grid::createNode(real x, real y, real z)
 {
   return gd->createNode(x, y, z);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(int n0, int n1, int n2)
+Cell& Grid::createCell(int n0, int n1, int n2)
 {
   // Warning: grid type will be type of last added cell
   _type = triangles;
@@ -267,7 +267,7 @@ Cell* Grid::createCell(int n0, int n1, int n2)
   return gd->createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(int n0, int n1, int n2, int n3)
+Cell& Grid::createCell(int n0, int n1, int n2, int n3)
 {
   // Warning: grid type will be type of last added cell
   _type = tetrahedrons;
@@ -275,7 +275,7 @@ Cell* Grid::createCell(int n0, int n1, int n2, int n3)
   return gd->createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(Node* n0, Node* n1, Node* n2)
+Cell& Grid::createCell(Node& n0, Node& n1, Node& n2)
 {
   // Warning: grid type will be type of last added cell
   _type = triangles;
@@ -283,7 +283,7 @@ Cell* Grid::createCell(Node* n0, Node* n1, Node* n2)
   return gd->createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(Node* n0, Node* n1, Node* n2, Node* n3)
+Cell& Grid::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
 {
   // Warning: grid type will be type of last added cell
   _type = tetrahedrons;
@@ -291,42 +291,42 @@ Cell* Grid::createCell(Node* n0, Node* n1, Node* n2, Node* n3)
   return gd->createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::createEdge(int n0, int n1)
+Edge& Grid::createEdge(int n0, int n1)
 {
   return gd->createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::createEdge(Node* n0, Node* n1)
+Edge& Grid::createEdge(Node& n0, Node& n1)
 {
   return gd->createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
-Face* Grid::createFace(int e0, int e1, int e2)
+Face& Grid::createFace(int e0, int e1, int e2)
 {
   return gd->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-Face* Grid::createFace(Edge* e0, Edge* e1, Edge* e2)
+Face& Grid::createFace(Edge& e0, Edge& e1, Edge& e2)
 {
   return gd->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::getNode(int id)
+Node& Grid::getNode(int id)
 {
   return gd->getNode(id);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::getCell(int id)
+Cell& Grid::getCell(int id)
 {
   return gd->getCell(id);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::getEdge(int id)
+Edge& Grid::getEdge(int id)
 {
   return gd->getEdge(id);
 }
 //-----------------------------------------------------------------------------
-Face* Grid::getFace(int id)
+Face& Grid::getFace(int id)
 {
   return gd->getFace(id);
 }

@@ -31,19 +31,19 @@ namespace dolfin {
     void clear();
 
     /// Create a new element in the table
-    T* create();
+    T& create();
 
     /// Create a new element in the table
-    T* create(int* id);
+    T& create(int& id);
 	 
     /// Add an element to the table
-    T* add(T x);
+    T& add(T x);
 	 
-    /// Return a pointer to the element with the given id
-    T* pointer(int id);
+    /// Return element with given id
+    T& operator() (int id);
 		
     /// Remove element at given address
-    void remove(T* x);
+    void remove(T& x);
  
     /// Return the size of the table
     int size() const;
@@ -150,8 +150,8 @@ namespace dolfin {
       bool full();
       int first_pos();
       int next_pos(int start);
-      T* create(int* id);
-      bool remove(T* x);
+      T& create(int& id);
+      bool remove(T& x);
       
     private:
 		
@@ -242,14 +242,14 @@ namespace dolfin {
     _empty = 0;  
   }
   //---------------------------------------------------------------------------
-  template <class T> T* Table<T>::create()
+  template <class T> T& Table<T>::create()
   {
     int dummy;
-    T* t = create(&dummy);
+    T& t = create(&dummy);
     return t;
   }
   //---------------------------------------------------------------------------
-  template <class T> T* Table<T>::create(int* id)
+  template <class T> T& Table<T>::create(int& id)
   {
     // Create a new block if there are no blocks
     if ( !_first_block ){
@@ -288,25 +288,26 @@ namespace dolfin {
     return _current_block->create(id);
   }
   //---------------------------------------------------------------------------
-  template <class T> T* Table<T>::add(T x)
+  template <class T> T& Table<T>::add(T x)
   {
-    T *new_x = create();
-    *new_x = x;
+    T& new_x = create();
+    new_x = x;
+    return *new_x;
   }
   //---------------------------------------------------------------------------
-  template <class T> T* Table<T>::pointer(int id)
+  template <class T> T& Table<T>::operator() (int id)
   {
     // Check current block
     if ( id >= _current_block->number*DOLFIN_BLOCK_SIZE && 
 	 id < (_current_block->number+1)*DOLFIN_BLOCK_SIZE )
-      return _current_block->pointer(id);
+      return *_current_block->pointer(id);
     
     // Check all blocks
     for (Block *b = _first_block;; b = b->next){
       
       if ( id >= b->number*DOLFIN_BLOCK_SIZE && 
 	   id < (b->number+1)*DOLFIN_BLOCK_SIZE )
-	return b->pointer(id);
+	return *b->pointer(id);
       
       if ( !b->next )
 	break;
@@ -314,10 +315,11 @@ namespace dolfin {
     }
     
     // No element with given id
-    return 0;
+    dolfin_error("No element in table with given id.");
+    return *_current_block->data;
   }
   //---------------------------------------------------------------------------	 
-  template <class T> void Table<T>::remove(T* x)
+  template <class T> void Table<T>::remove(T& x)
   {
     // Check current block
     if ( _current_block->remove(x) )
@@ -633,7 +635,7 @@ namespace dolfin {
     return -1;
   }
   //---------------------------------------------------------------------------
-  template <class T> T* Table<T>::Block::create(int* id)
+  template <class T> T& Table<T>::Block::create(int& id)
   {
     // Check if the table is full
     if ( used == DOLFIN_BLOCK_SIZE )
@@ -645,23 +647,24 @@ namespace dolfin {
 	if ( empty[i] ){
 	  empty[i] = false;
 	  used += 1;
-	  *id = number*DOLFIN_BLOCK_SIZE + i;
-	  return data + i;
+	  id = number*DOLFIN_BLOCK_SIZE + i;
+	  return data[i];
 	}
       dolfin_error("Unable to find an empty position.");
     }
     
     // Use next available position
     empty[pos] = false;
-    *id = number*DOLFIN_BLOCK_SIZE + pos;
+    id = number*DOLFIN_BLOCK_SIZE + pos;
     pos += 1;
     used += 1;
-    return data + pos - 1;
+    
+    return data[pos-1];
   }
   //---------------------------------------------------------------------------
-  template <class T> bool Table<T>::Block::remove(T* x)
+  template <class T> bool Table<T>::Block::remove(T& x)
   {
-    int pos = x - data;
+    int pos = &x - data;
     
     if ( pos < 0 )
       return false;

@@ -68,19 +68,19 @@ int Node::noEdgeNeighbors() const
   return ne.size();
 }
 //-----------------------------------------------------------------------------
-Node* Node::node(int i) const
+Node& Node::node(int i) const
 {
-  return nn(i);
+  return *nn(i);
 }
 //-----------------------------------------------------------------------------
-Cell* Node::cell(int i) const
+Cell& Node::cell(int i) const
 {
-  return nc(i);
+  return *nc(i);
 }
 //-----------------------------------------------------------------------------
-Edge* Node::edge(int i) const
+Edge& Node::edge(int i) const
 {
-  return ne(i);
+  return *ne(i);
 }
 //-----------------------------------------------------------------------------
 Node* Node::parent() const 
@@ -91,6 +91,11 @@ Node* Node::parent() const
 Node* Node::child() const
 {
   return _child;
+}
+//-----------------------------------------------------------------------------
+Point& Node::coord()
+{
+  return p;
 }
 //-----------------------------------------------------------------------------
 Point Node::coord() const
@@ -108,13 +113,28 @@ real Node::dist(const Node& n) const
   return p.dist(n.p);
 }
 //-----------------------------------------------------------------------------
-bool Node::neighbor(Node* n)
+real Node::dist(const Point& p) const
+{
+  return this->p.dist(p);
+}
+//-----------------------------------------------------------------------------
+bool Node::neighbor(const Node& n) const
 {
   for (NodeIterator neighbor(*this); !neighbor.end(); ++neighbor)
-    if ( n == neighbor )
+    if ( &n == neighbor )
       return true;
   
   return false;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator==(const Node& node) const
+{
+  return this == &node;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator!=(const Node& node) const
+{
+  return this != &node;
 }
 //-----------------------------------------------------------------------------
 bool Node::operator== (int id) const
@@ -170,7 +190,7 @@ bool dolfin::operator>= (int id, const Node& node)
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Node& node)
 {
   int id = node.id();
-  Point p = node.coord();
+  const Point p = node.coord();
   
   stream << "[ Node: id = " << id
 	 << " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
@@ -178,9 +198,9 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Node& node)
   return stream;
 }
 //-----------------------------------------------------------------------------
-int Node::setID(int id, Grid* grid)
+int Node::setID(int id, Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
@@ -189,18 +209,18 @@ void Node::setGrid(Grid& grid)
   this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
-void Node::setParent(Node* parent)
+void Node::setParent(Node& parent)
 {
   // Set parent node: a node is parent to if it has the same coordinates 
   // and is contained in the next coarser grid 
-  this->_parent = parent;
+  this->_parent = &parent;
 }
 //-----------------------------------------------------------------------------
-void Node::setChild(Node* child)
+void Node::setChild(Node& child)
 {
   // Set child node: a node is child to if it has the same coordinates 
   // and is contained in the next finer grid 
-  this->_child = child;
+  this->_child = &child;
 }
 //-----------------------------------------------------------------------------
 void Node::set(real x, real y, real z)

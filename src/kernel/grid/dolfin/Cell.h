@@ -37,10 +37,10 @@ namespace dolfin {
     Cell();
 
     /// Create cell (triangle) from three given nodes
-    Cell(Node* n0, Node* n1, Node* n2);
+    Cell(Node& n0, Node& n1, Node& n2);
 
     /// Create cell (tetrahedron) from four given nodes
-    Cell(Node* n0, Node* n1, Node* n2, Node* n3);
+    Cell(Node& n0, Node& n1, Node& n2, Node& n3);
 
     /// Destructor
     ~Cell();
@@ -75,25 +75,25 @@ namespace dolfin {
     int noChildren() const;
 
     /// Return node number i
-    Node* node(int i) const;
+    Node& node(int i) const;
 
     /// Return edge number i
-    Edge* edge(int i) const;
+    Edge& edge(int i) const;
 
     /// Return face number i
-    Face* face(int i) const;
+    Face& face(int i) const;
 
     /// Return cell neighbor number i
-    Cell* neighbor(int i) const;
+    Cell& neighbor(int i) const;
 
-    /// Return parent cell
+    /// Return parent cell (null if no parent)
     Cell* parent() const;
 
-    /// Return child cell
+    /// Return child cell (null if no child)
     Cell* child(int i) const;
 
     /// Return coordinate for node i
-    Point coord(int i) const;
+    Point& coord(int i) const;
 
     /// Return midpoint of cell
     Point midpoint() const;
@@ -106,6 +106,12 @@ namespace dolfin {
 
     // Compute and return volume / area
     real diameter() const;
+
+    /// Comparison with another cell
+    bool operator==(const Cell& cell) const;
+
+    /// Comparison with another cell
+    bool operator!=(const Cell& cell) const;
     
     ///--- Grid refinement ---
 
@@ -148,31 +154,31 @@ namespace dolfin {
 		  unref };                   // Unrefined
     
     // Specify global cell number
-    int setID(int id, Grid* grid);
+    int setID(int id, Grid& grid);
     
     // Set the grid pointer
     void setGrid(Grid& grid);
 
     // Set parent cell
-    void setParent(Cell* parent);
+    void setParent(Cell& parent);
 
     // Set child cell
-    void addChild(Cell* child);
+    void addChild(Cell& child);
 
     // Clear data and create a new triangle
-    void set(Node* n0, Node* n1, Node* n2);
+    void set(Node& n0, Node& n1, Node& n2);
 
     // Clear data and create a new tetrahedron
-    void set(Node* n0, Node* n1, Node* n2, Node* n3);
+    void set(Node& n0, Node& n1, Node& n2, Node& n3);
 
     // Check if given cell is a neighbor
     bool neighbor(Cell& cell) const;
 
-    // Check if given edge is contained in the cell
-    bool haveEdge(Edge& edge) const;
-
     // Check if given node is contained in the cell
     bool haveNode(Node& node) const;
+
+    // Check if given edge is contained in the cell
+    bool haveEdge(Edge& edge) const;
 
     // Create edges for the cell
     void createEdges();
@@ -181,17 +187,20 @@ namespace dolfin {
     void createFaces();
 
     // Create a given edge
-    void createEdge(Node* n0, Node* n1);
+    void createEdge(Node& n0, Node& n1);
 
     // Create a given face
-    void createFace(Edge* e0, Edge* e1, Edge* e2);
-       
-    // Find edge within cell
-    Edge* findEdge(Node* n0, Node* n1);
+    void createFace(Edge& e0, Edge& e1, Edge& e2);
 
-    // Find face within cell
-    Face* findFace(Edge* e0, Edge* e1, Edge* e2);
-    Face* findFace(Edge* e0, Edge* e1);
+    // Find node with given coordinates (null if not found)
+    Node* findNode(const Point& p) const;
+       
+    // Find edge within cell (null if not found)
+    Edge* findEdge(Node& n0, Node& n1);
+
+    // Find face within cell (null if not found)
+    Face* findFace(Edge& e0, Edge& e1, Edge& e2);
+    Face* findFace(Edge& e0, Edge& e1);
 
     // Return cell marker
     Marker& marker();

@@ -38,19 +38,19 @@ namespace dolfin {
     int noNodeNeighbors() const;
     int noChildren() const;
 
-    Node* node(int i) const;
-    Edge* edge(int i) const;
-    Face* face(int i) const;
-    Cell* neighbor(int i) const;
+    Node& node(int i) const;
+    Edge& edge(int i) const;
+    Face& face(int i) const;
+    Cell& neighbor(int i) const;
     Cell* parent() const;
     Cell* child(int i) const;
-    Point coord(int i) const;
+    Point& coord(int i) const;
     Point midpoint() const;
     int   nodeID(int i) const;
     virtual real volume() const = 0;
     virtual real diameter() const = 0;
 
-    void mark(Cell* cell);
+    void mark(Cell& cell);
 
     // Friends
     friend class Cell;
@@ -66,19 +66,19 @@ namespace dolfin {
   private:
 
     // Specify global cell number
-    int setID(int id, Grid* grid);
+    int setID(int id, Grid& grid);
     
     // Set grid pointer
     void setGrid(Grid& grid);
 
     // Set parent cell
-    void setParent(Cell* parent);
+    void setParent(Cell& parent);
 
     // Set child cell
-    void addChild(Cell* child);
+    void addChild(Cell& child);
 
     // Check if given cell is a neighbor
-    bool neighbor(GenericCell* cell) const;
+    bool neighbor(GenericCell& cell) const;
 
     // Check if given node is contained in the cell
     bool haveNode(Node& node) const;
@@ -93,17 +93,20 @@ namespace dolfin {
     virtual void createFaces() = 0;
 
     // Create a given edge
-    void createEdge(Node* n0, Node* n1);
+    void createEdge(Node& n0, Node& n1);
 
     // Create a given face
-    void createFace(Edge* e0, Edge* e1, Edge* e2);
+    void createFace(Edge& e0, Edge& e1, Edge& e2);
 
-    // Find edge within cell
-    Edge* findEdge(Node* n0, Node* n1);
+    // Find node with given coordinates (null if not found)
+    Node* findNode(const Point& p) const;
 
-    // Find face within cell
-    Face* findFace(Edge* e0, Edge* e1, Edge* e2);
-    Face* findFace(Edge* e0, Edge* e1);
+    // Find edge within cell (null if not found)
+    Edge* findEdge(Node& n0, Node& n1);
+
+    // Find face within cell (null if not found)
+    Face* findFace(Edge& e0, Edge& e1, Edge& e2);
+    Face* findFace(Edge& e0, Edge& e1);
 
     // Initialize marker (if not already done)
     void initMarker();

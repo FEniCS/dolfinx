@@ -18,7 +18,7 @@ namespace dolfin {
   public:
     
     // Create an empty set of boundary data
-    BoundaryData(Grid* grid);
+    BoundaryData(Grid& grid);
 
     /// Destructor
     ~BoundaryData();
@@ -27,13 +27,13 @@ namespace dolfin {
     void clear();
 
     /// Add node to the boundary
-    void add(Node* node);
+    void add(Node& node);
 
     /// Add edge to the boundary
-    void add(Edge* edge);
+    void add(Edge& edge);
 
     /// Add face to the boundary
-    void add(Face* face);
+    void add(Face& face);
 
     /// Check if the boundary is empty
     bool empty();

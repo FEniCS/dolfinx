@@ -20,13 +20,13 @@ Edge::Edge()
   n1 = 0;
 }
 //-----------------------------------------------------------------------------
-Edge::Edge(Node* n0, Node* n1)
+Edge::Edge(Node& n0, Node& n1)
 {
   grid = 0;
   _id = -1;
 
-  this->n0 = n0;
-  this->n1 = n1;
+  this->n0 = &n0;
+  this->n1 = &n1;
 }
 //-----------------------------------------------------------------------------
 Edge::~Edge()
@@ -39,20 +39,19 @@ int Edge::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-Node* Edge::node(int i) const
+Node& Edge::node(int i) const
 {
   if ( i == 0 )
-    return n0;
+    return *n0;
 
   if ( i == 1 )
-    return n1;
+    return *n1;
 
   dolfin_error("Node number must 0 or 1.");
-
-  return 0;
+  return *n0;
 }
 //-----------------------------------------------------------------------------
-Point Edge::coord(int i) const
+Point& Edge::coord(int i) const
 {
   if ( i == 0 )
     return n0->coord();
@@ -61,8 +60,7 @@ Point Edge::coord(int i) const
     return n1->coord();
 
   dolfin_error("Node number must 0 or 1.");
-
-  return 0;
+  return n0->coord();
 }
 //-----------------------------------------------------------------------------
 real Edge::length() const
@@ -79,20 +77,20 @@ Point Edge::midpoint() const
   return p;
 }
 //-----------------------------------------------------------------------------
-bool Edge::equals(Node* n0, Node* n1) const
+bool Edge::equals(const Node& n0, const Node& n1) const
 {
-  if ( this->n0 == n0 && this->n1 == n1 )
+  if ( this->n0 == &n0 && this->n1 == &n1 )
     return true;
 
-  if ( this->n0 == n1 && this->n1 == n0 )
+  if ( this->n0 == &n1 && this->n1 == &n0 )
     return true;
 
   return false;
 }
 //-----------------------------------------------------------------------------
-bool Edge::contains(Node* n) const
+bool Edge::contains(const Node& n) const
 {
-  if ( this->n0 == n || this->n1 == n )
+  if ( this->n0 == &n || this->n1 == &n )
     return true;
 
   return false;
@@ -101,15 +99,15 @@ bool Edge::contains(Node* n) const
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
 {
   stream << "[ Edge: id = " << edge.id()
-	 << " n0 = " << edge.node(0)->id()
-	 << " n1 = " << edge.node(1)->id() << " ]";
+	 << " n0 = " << edge.node(0).id()
+	 << " n1 = " << edge.node(1).id() << " ]";
   
   return stream;
 }
 //-----------------------------------------------------------------------------
-int Edge::setID(int id, Grid* grid)
+int Edge::setID(int id, Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
@@ -118,10 +116,10 @@ void Edge::setGrid(Grid& grid)
   this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
-void Edge::set(Node* n0, Node* n1)
+void Edge::set(Node& n0, Node& n1)
 {
-  this->n0 = n0;
-  this->n1 = n1;
+  this->n0 = &n0;
+  this->n1 = &n1;
 }
 //-----------------------------------------------------------------------------
 void Edge::mark(Cell& cell)

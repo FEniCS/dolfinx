@@ -65,7 +65,7 @@ namespace dolfin {
   public:
     
     /// Create an empty set of grid data
-    GridData(Grid* grid);
+    GridData(Grid& grid);
 
     /// Destructor
     ~GridData();
@@ -73,24 +73,24 @@ namespace dolfin {
     /// Clear all data
     void clear();
 
-    Node* createNode(Point p);
-    Node* createNode(real x, real y, real z);
+    Node& createNode(Point p);
+    Node& createNode(real x, real y, real z);
     
-    Cell* createCell(int n0, int n1, int n2);
-    Cell* createCell(int n0, int n1, int n2, int n3);
-    Cell* createCell(Node* n0, Node* n1, Node* n2);
-    Cell* createCell(Node* n0, Node* n1, Node* n2, Node* n3);
+    Cell& createCell(int n0, int n1, int n2);
+    Cell& createCell(int n0, int n1, int n2, int n3);
+    Cell& createCell(Node& n0, Node& n1, Node& n2);
+    Cell& createCell(Node& n0, Node& n1, Node& n2, Node& n3);
 
-    Edge* createEdge(int n0, int n1);
-    Edge* createEdge(Node* n0, Node* n1);
+    Edge& createEdge(int n0, int n1);
+    Edge& createEdge(Node& n0, Node& n1);
 
-    Face* createFace(int e0, int e1, int e2);
-    Face* createFace(Edge* e0, Edge* e1, Edge* e2);
+    Face& createFace(int e0, int e1, int e2);
+    Face& createFace(Edge& e0, Edge& e1, Edge& e2);
     
-    Node* getNode(int id);
-    Cell* getCell(int id);
-    Edge* getEdge(int id);
-    Face* getFace(int id);
+    Node& getNode(int id);
+    Cell& getCell(int id);
+    Edge& getEdge(int id);
+    Face& getFace(int id);
 
     void remove(Node& node);
     void remove(Cell& cell);

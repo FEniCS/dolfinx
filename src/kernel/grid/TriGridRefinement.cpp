@@ -93,20 +93,12 @@ void TriGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   dolfin_assert(cell.marker() == Cell::marked_for_no_ref);
   
   // Create new nodes with the same coordinates as existing nodes
-  Node* n0 = grid.createNode(cell.coord(0));
-  Node* n1 = grid.createNode(cell.coord(1));
-  Node* n2 = grid.createNode(cell.coord(2));
-
-  // Update parent-child info 
-  n0->setParent(cell.node(0)); cell.node(0)->setChild(n0);
-  n1->setParent(cell.node(1)); cell.node(1)->setChild(n1);
-  n2->setParent(cell.node(2)); cell.node(2)->setChild(n2);
+  Node& n0 = createNode(cell.node(0), grid, cell);
+  Node& n1 = createNode(cell.node(1), grid, cell);
+  Node& n2 = createNode(cell.node(2), grid, cell);
 
   // Create a new cell
-  Cell* c = grid.createCell(n0, n1, n2);
-
-  // Update parent-child info
-  c->setParent(&cell); cell.addChild(c);
+  grid.createCell(n0, n1, n2);
 
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -121,37 +113,21 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // at the midpoints of the edges. 
 
   // Create new nodes with the same coordinates as the previous nodes in cell  
-  Node* n0 = grid.createNode(cell.coord(0));
-  Node* n1 = grid.createNode(cell.coord(1));
-  Node* n2 = grid.createNode(cell.coord(2));
+  Node& n0 = grid.createNode(cell.coord(0));
+  Node& n1 = grid.createNode(cell.coord(1));
+  Node& n2 = grid.createNode(cell.coord(2));
 
-  // Update parent-child info 
-  n0->setParent(cell.node(0)); cell.node(0)->setChild(n0);
-  n1->setParent(cell.node(1)); cell.node(1)->setChild(n1);
-  n2->setParent(cell.node(2)); cell.node(2)->setChild(n2);
-  
   // Create new nodes with the new coordinates 
-  Node* n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
-  Node* n02 = grid.createNode(cell.node(0)->midpoint(*cell.node(2)));
-  Node* n12 = grid.createNode(cell.node(1)->midpoint(*cell.node(2)));
+  Node& n01 = grid.createNode(cell.node(0).midpoint(cell.node(1)));
+  Node& n02 = grid.createNode(cell.node(0).midpoint(cell.node(2)));
+  Node& n12 = grid.createNode(cell.node(1).midpoint(cell.node(2)));
 
   // Create new cells 
-  Cell* t1 = grid.createCell(n0,  n01, n02);
-  Cell* t2 = grid.createCell(n01, n1,  n12);
-  Cell* t3 = grid.createCell(n02, n12, n2 );
-  Cell* t4 = grid.createCell(n01, n12, n02);
-
-  // Update parent-child info 
-  t1->setParent(&cell);
-  t2->setParent(&cell);
-  t3->setParent(&cell);
-  t4->setParent(&cell);
-
-  cell.addChild(t1);
-  cell.addChild(t2);
-  cell.addChild(t3);
-  cell.addChild(t4);
-
+  grid.createCell(n0,  n01, n02);
+  grid.createCell(n01, n1,  n12);
+  grid.createCell(n02, n12, n2 );
+  grid.createCell(n01, n12, n02);
+  
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
 
@@ -166,37 +142,25 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   // the marked edge. This gives 2 new triangles.
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes(3);
+  Array<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node* n0 = grid.createNode(nodes(0)->coord());
-  Node* n1 = grid.createNode(nodes(1)->coord());
-  Node* nn = grid.createNode(nodes(2)->coord()); // Not marked
-
-  // Update parent-child info
-  n0->setParent(nodes(0)); nodes(0)->setChild(n0);
-  n1->setParent(nodes(1)); nodes(1)->setChild(n1);
-  nn->setParent(nodes(2)); nodes(2)->setChild(nn);
+  Node& n0 = grid.createNode(nodes(0)->coord());
+  Node& n1 = grid.createNode(nodes(1)->coord());
+  Node& nn = grid.createNode(nodes(2)->coord()); // Not marked
 
   // Find edge
-  Edge* e = cell.findEdge(nodes(0), nodes(1));
+  Edge* e = cell.findEdge(*nodes(0), *nodes(1));
   dolfin_assert(e);
 
   // Create new node on marked edge 
-  Node* ne = grid.createNode(e->midpoint());
+  Node& ne = grid.createNode(e->midpoint());
   
   // Create new cells 
-  Cell* t1 = grid.createCell(ne, nn, n0);
-  Cell* t2 = grid.createCell(ne, nn, n1);
+  grid.createCell(ne, nn, n0);
+  grid.createCell(ne, nn, n1);
   
-  // Update parent-child info
-  t1->setParent(&cell);
-  t2->setParent(&cell);
-  
-  cell.addChild(t1);
-  cell.addChild(t2);
-
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
 
@@ -211,43 +175,29 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // of the nodes on the unmarked edge. This gives 3 new triangles.
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes(3);
+  Array<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node* n_dm = grid.createNode(nodes(0)->coord());
-  Node* n_m0 = grid.createNode(nodes(1)->coord());
-  Node* n_m1 = grid.createNode(nodes(2)->coord());
-
-  // Update parent-child info
-  n_dm->setParent(nodes(0)); nodes(0)->setChild(n_dm);
-  n_m0->setParent(nodes(1)); nodes(1)->setChild(n_m0);
-  n_m1->setParent(nodes(2)); nodes(2)->setChild(n_m1);
+  Node& n_dm = grid.createNode(nodes(0)->coord());
+  Node& n_m0 = grid.createNode(nodes(1)->coord());
+  Node& n_m1 = grid.createNode(nodes(2)->coord());
 
   // Find the edges
-  Edge* e0 = cell.findEdge(nodes(0), nodes(1));
-  Edge* e1 = cell.findEdge(nodes(0), nodes(2));
+  Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
+  Edge* e1 = cell.findEdge(*nodes(0), *nodes(2));
   dolfin_assert(e0);
   dolfin_assert(e1);
 
   // Create new nodes on marked edges 
-  Node* n_e0 = grid.createNode(e0->midpoint());
-  Node* n_e1 = grid.createNode(e1->midpoint());
+  Node& n_e0 = grid.createNode(e0->midpoint());
+  Node& n_e1 = grid.createNode(e1->midpoint());
 
   // Create new cells 
-  Cell* t1 = grid.createCell(n_dm, n_e0, n_e1);
-  Cell* t2 = grid.createCell(n_m0, n_e0, n_e1);
-  Cell* t3 = grid.createCell(n_e1, n_m0, n_m1);
+  grid.createCell(n_dm, n_e0, n_e1);
+  grid.createCell(n_m0, n_e0, n_e1);
+  grid.createCell(n_e1, n_m0, n_m1);
   
-  // Update parent-child info
-  t1->setParent(&cell);
-  t2->setParent(&cell);
-  t3->setParent(&cell);
-  
-  cell.addChild(t1);
-  cell.addChild(t2);
-  cell.addChild(t3);
-
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
 

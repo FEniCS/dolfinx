@@ -159,10 +159,10 @@ void GridInit::initNodeEdge(Grid& grid)
 
   // Count the number of edges the node appears in
   for (EdgeIterator e(grid); !e.end(); ++e) {
-    Node* n0 = e->node(0);
-    Node* n1 = e->node(1);
-    n0->ne.setsize(n0->ne.size() + 1);
-    n1->ne.setsize(n1->ne.size() + 1);
+    Node& n0 = e->node(0);
+    Node& n1 = e->node(1);
+    n0.ne.setsize(n0.ne.size() + 1);
+    n1.ne.setsize(n1.ne.size() + 1);
   }
   
   // Allocate memory for the edge lists
@@ -171,10 +171,10 @@ void GridInit::initNodeEdge(Grid& grid)
   
   // Add the edges to the edge lists
   for (EdgeIterator e(grid); !e.end(); ++e) {
-    Node* n0 = e->node(0);
-    Node* n1 = e->node(1);
-    n0->ne.add(e);
-    n1->ne.add(e);
+    Node& n0 = e->node(0);
+    Node& n1 = e->node(1);
+    n0.ne.add(e);
+    n1.ne.add(e);
   }
 }
 //-----------------------------------------------------------------------------
@@ -194,10 +194,10 @@ void GridInit::initNodeNode(Grid& grid)
     // Then add the other nodes
     for (int i = 0; i < n->ne.size(); i++) {
       Edge* e = n->ne(i);
-      if ( e->node(0) != n )
-	n->nn(i+1) = n->node(0);
+      if ( &e->node(0) != n )
+	n->nn(i+1) = &n->node(0);
       else
-	n->nn(i+1) = n->node(1);
+	n->nn(i+1) = &n->node(1);
     }
 
   }

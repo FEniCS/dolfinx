@@ -12,9 +12,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GridData::GridData(Grid* grid)
+GridData::GridData(Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
 GridData::~GridData()
@@ -30,12 +30,12 @@ void GridData::clear()
   faces.clear();
 }
 //-----------------------------------------------------------------------------
-Node* GridData::createNode(Point p)
+Node& GridData::createNode(Point p)
 {
   return createNode(p.x, p.y, p.z);
 }
 //-----------------------------------------------------------------------------
-Node* GridData::createNode(real x, real y, real z)
+Node& GridData::createNode(real x, real y, real z)
 {
   // If a node exists with coordinates (x,y,z) then return a pointer to that 
   // node, else create a new node and return a pointer to that node.   
@@ -44,126 +44,126 @@ Node* GridData::createNode(real x, real y, real z)
   for (Table<Node>::Iterator n(nodes); !n.end(); ++n){
     Point p = n->coord();
     if ( p.dist(x,y,z) < DOLFIN_EPS )
-      return n;
+      return *n;
   }
 
   int id;
-  Node* n = nodes.create(&id);
-  n->set(x,y,z);  
-  n->setID(id, grid);
+  Node& n = nodes.create(id);
+  n.set(x,y,z);  
+  n.setID(id, *grid);
   return n;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int n0, int n1, int n2)
+Cell& GridData::createCell(int n0, int n1, int n2)
 {
   int id;
-  Cell* c = cells.create(&id);
-  c->set(getNode(n0), getNode(n1), getNode(n2));
-  c->setID(id, grid);
+  Cell& c = cells.create(id);
+  c.set(getNode(n0), getNode(n1), getNode(n2));
+  c.setID(id, *grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int n0, int n1, int n2, int n3)
+Cell& GridData::createCell(int n0, int n1, int n2, int n3)
 {
   int id;
-  Cell* c = cells.create(&id);
-  c->set(getNode(n0), getNode(n1), getNode(n2), getNode(n3));
-  c->setID(id, grid);
+  Cell& c = cells.create(id);
+  c.set(getNode(n0), getNode(n1), getNode(n2), getNode(n3));
+  c.setID(id, *grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Node* n0, Node* n1, Node* n2)
+Cell& GridData::createCell(Node& n0, Node& n1, Node& n2)
 {
   int id;
-  Cell* c = cells.create(&id);
-  c->set(n0, n1, n2);
-  c->setID(id, grid);
+  Cell& c = cells.create(id);
+  c.set(n0, n1, n2);
+  c.setID(id, *grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Node* n0, Node* n1, Node* n2, Node* n3)
+Cell& GridData::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
 {
   int id;
-  Cell* c = cells.create(&id);
-  c->set(n0, n1, n2, n3);
-  c->setID(id, grid);
+  Cell& c = cells.create(id);
+  c.set(n0, n1, n2, n3);
+  c.setID(id, *grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::createEdge(int n0, int n1)
+Edge& GridData::createEdge(int n0, int n1)
 {
   int id;
-  Edge* e = edges.create(&id);
-  e->set(getNode(n0), getNode(n1));
-  e->setID(id, grid);
+  Edge& e = edges.create(id);
+  e.set(getNode(n0), getNode(n1));
+  e.setID(id, *grid);
   return e;
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::createEdge(Node* n0, Node* n1)
+Edge& GridData::createEdge(Node& n0, Node& n1)
 {
   int id;
-  Edge* e = edges.create(&id);
-  e->set(n0, n1);
-  e->setID(id, grid);
+  Edge& e = edges.create(id);
+  e.set(n0, n1);
+  e.setID(id, *grid);
   return e;
 }
 //-----------------------------------------------------------------------------
-Face* GridData::createFace(int e0, int e1, int e2)
+Face& GridData::createFace(int e0, int e1, int e2)
 {
   int id;
-  Face* f = faces.create(&id);
-  f->set(getEdge(e0), getEdge(e1), getEdge(e2));
-  f->setID(id, grid);
+  Face& f = faces.create(id);
+  f.set(getEdge(e0), getEdge(e1), getEdge(e2));
+  f.setID(id, *grid);
   return f;
 }
 //-----------------------------------------------------------------------------
-Face* GridData::createFace(Edge* e0, Edge* e1, Edge* e2)
+Face& GridData::createFace(Edge& e0, Edge& e1, Edge& e2)
 {
   int id;
-  Face* f = faces.create(&id);
-  f->set(e0, e1, e2);
-  f->setID(id, grid);
+  Face& f = faces.create(id);
+  f.set(e0, e1, e2);
+  f.setID(id, *grid);
   return f;
 }
 //-----------------------------------------------------------------------------
-Node* GridData::getNode(int id)
+Node& GridData::getNode(int id)
 {
-  return nodes.pointer(id);
+  return nodes(id);
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::getCell(int id)
+Cell& GridData::getCell(int id)
 {
-  return cells.pointer(id);
+  return cells(id);
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::getEdge(int id)
+Edge& GridData::getEdge(int id)
 {
-  return edges.pointer(id);
+  return edges(id);
 }
 //-----------------------------------------------------------------------------
-Face* GridData::getFace(int id)
+Face& GridData::getFace(int id)
 {
-  return faces.pointer(id);
+  return faces(id);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Node& node)
 {
-  nodes.remove(&node);
+  nodes.remove(node);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Cell& cell)
 {
-  cells.remove(&cell);
+  cells.remove(cell);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Edge& edge)
 {
-  edges.remove(&edge);
+  edges.remove(edge);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Face& face)
 {
-  faces.remove(&face);
+  faces.remove(face);
 }
 //-----------------------------------------------------------------------------
 int GridData::noNodes() const

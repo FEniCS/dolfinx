@@ -24,13 +24,13 @@ Table<Element>::Iterator TimeSlabData::createElement(Element::Type type, int q,
 {
   // Create element
   int id;
-  Element* element = elements.create(&id);
+  Element& element = elements.create(id);
 
   // Add element to the component list
-  int pos = components(index).add(*element, topslab->endtime());
+  int pos = components(index).add(element, topslab->endtime());
 
   // Initialize element
-  element->init(type, q, index, pos, timeslab);
+  element.init(type, q, index, pos, timeslab);
 
   // Return an iterator positioned at the element
   return elements.iterator(id);

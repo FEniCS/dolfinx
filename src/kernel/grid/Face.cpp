@@ -34,12 +34,12 @@ int Face::size() const
   return fe.size();
 }
 //-----------------------------------------------------------------------------
-Edge* Face::edge(int i) const
+Edge& Face::edge(int i) const
 {
-  return fe(i);
+  return *fe(i);
 }
 //-----------------------------------------------------------------------------
-bool Face::equals(Edge* e0, Edge* e1, Edge* e2) const
+bool Face::equals(const Edge& e0, const Edge& e1, const Edge& e2) const
 {
   dolfin_assert(fe.size() == 3);
 
@@ -47,26 +47,26 @@ bool Face::equals(Edge* e0, Edge* e1, Edge* e2) const
   return equals(e0,e1);
 }
 //-----------------------------------------------------------------------------
-bool Face::equals(Edge* e0, Edge* e1) const
+bool Face::equals(const Edge& e0, const Edge& e1) const
 {
   dolfin_assert(fe.size() == 3);
 
-  if ( fe(0) == e0 && fe(1) == e1 )
+  if ( fe(0) == &e0 && fe(1) == &e1 )
     return true;
 
-  if ( fe(0) == e0 && fe(2) == e1 )
+  if ( fe(0) == &e0 && fe(2) == &e1 )
     return true;
 
-  if ( fe(1) == e0 && fe(0) == e1 )
+  if ( fe(1) == &e0 && fe(0) == &e1 )
     return true;
 
-  if ( fe(1) == e0 && fe(2) == e1 )
+  if ( fe(1) == &e0 && fe(2) == &e1 )
     return true;
 
-  if ( fe(2) == e0 && fe(0) == e1 )
+  if ( fe(2) == &e0 && fe(0) == &e1 )
     return true;
 
-  if ( fe(2) == e0 && fe(1) == e1 )
+  if ( fe(2) == &e0 && fe(1) == &e1 )
     return true;
 
   return false;
@@ -82,9 +82,9 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)
   return stream;
 }
 //-----------------------------------------------------------------------------
-int Face::setID(int id, Grid* grid)
+int Face::setID(int id, Grid& grid)
 {
-  this->grid = grid;
+  this->grid = &grid;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
@@ -93,11 +93,11 @@ void Face::setGrid(Grid& grid)
   this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
-void Face::set(Edge* e0, Edge* e1, Edge* e2)
+void Face::set(Edge& e0, Edge& e1, Edge& e2)
 {
   fe.init(3);
-  fe(0) = e0;
-  fe(1) = e1;
-  fe(2) = e2;
+  fe(0) = &e0;
+  fe(1) = &e1;
+  fe(2) = &e2;
 }
 //-----------------------------------------------------------------------------

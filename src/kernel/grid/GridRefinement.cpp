@@ -114,8 +114,6 @@ void GridRefinement::closeGrid(Grid& grid)
   // Perform the green closure on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
 
-  dolfin_debug("check");
-
   // Keep track of which cells are in the list
   Array<bool> closed(grid.noCells());
   closed = true;
@@ -131,8 +129,6 @@ void GridRefinement::closeGrid(Grid& grid)
     }
   }
 
-  dolfin_debug1("Number of cells to close: %d", cells.size());
-
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
 
@@ -144,7 +140,6 @@ void GridRefinement::closeGrid(Grid& grid)
 
   }
 
-  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::refineGrid(Grid& grid)
@@ -159,8 +154,13 @@ void GridRefinement::refineGrid(Grid& grid)
     if ( c->marker() == Cell::marked_for_coarsening )
       c->marker() = Cell::marked_for_no_ref;
 
+  dolfin_debug("check");
+
   // Refine cells which are not marked_according_to_ref
   for (CellIterator c(grid); !c.end(); ++c) {
+
+    cout << "Checking cell " << c->id() << endl;
+    
 
     // Skip cells which are marked_according_to_ref
     if ( c->marker() == Cell::marked_according_to_ref )
@@ -185,7 +185,7 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   // Get child grid or create a new child grid
   Grid* child = 0;
   if ( grid == grids.fine() )
-    child = grid.createChild();
+    child = &grid.createChild();
   else
     child = &grid.child();
 
@@ -335,15 +335,15 @@ bool GridRefinement::edgeMarkedByOther(Cell& cell)
 void GridRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
 {
   // Set the size of the list
-  nodes.init(nodes.size());
+  nodes.init(cell.noNodes());
 
   // Count the number of marked edges for each node
   Array<int> no_marked_edges(nodes.size());
   no_marked_edges = 0;
   for (EdgeIterator e(cell); !e.end(); ++e) {
     if ( e->marked() ) {
-      no_marked_edges(nodeNumber(*e->node(0), cell))++;
-      no_marked_edges(nodeNumber(*e->node(1), cell))++;
+      no_marked_edges(nodeNumber(e->node(0), cell))++;
+      no_marked_edges(nodeNumber(e->node(1), cell))++;
     }
   }
 
@@ -354,7 +354,7 @@ void GridRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
   for (int i = max_edges; i >= 0; i--) {
     for (int j = 0; j < nodes.size(); j++) {
       if ( no_marked_edges(j) >= i ) {
-	nodes(pos++) = cell.node(j);
+	nodes(pos++) = &cell.node(j);
 	no_marked_edges(j) = -1;
       }
     }
@@ -380,5 +380,29 @@ int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
   // Didn't find the node
   dolfin_error("Unable to find node within cell.");
   return -1;
+}
+//-----------------------------------------------------------------------------
+Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
+{
+  // First check with the children of the neighbors of the cell if the
+  // node already exists
+  Node* n = 0;
+  for (CellIterator c(cell); !c.end(); ++c) {
+    for (int i = 0; i < c->noChildren(); i++) {
+      n = c->child(i)->findNode(node.coord());
+      if ( n ) break;
+    }
+    if ( n ) break;
+  }
+
+  // Create node if it doesn't exist
+  if ( !n )
+    n = &grid.createNode(node.coord());
+
+  // Set parent-child info
+  n->setParent(node);
+  node.setChild(*n);
+
+  return *n;
 }
 //-----------------------------------------------------------------------------

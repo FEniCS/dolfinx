@@ -22,7 +22,7 @@ namespace dolfin {
   public:
     
     /// Create an empty set of grid refinement data
-    GridRefinementData(Grid* grid);
+    GridRefinementData(Grid& grid);
 
     /// Destructor
     ~GridRefinementData();
@@ -31,7 +31,7 @@ namespace dolfin {
     void clear();
 
     /// Mark cell for refinement
-    void mark(Cell* cell);
+    void mark(Cell& cell);
 
     /// Return number of cells marked for refinement
     int noMarkedCells() const;

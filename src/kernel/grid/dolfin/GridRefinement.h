@@ -78,6 +78,9 @@ namespace dolfin {
     /// Mapping from global node number to local number within cell
     static int nodeNumber(const Node& node, const Cell& cell);
 
+    /// Create a new node (if it doesn't exist) and set parent-child info
+    static Node& createNode(Node& node, Grid& grid, const Cell& cell);
+    
   };
 
 }

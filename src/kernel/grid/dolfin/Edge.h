@@ -23,7 +23,7 @@ namespace dolfin {
     Edge();
     
     /// Create edge between two given nodes
-    Edge(Node* n0, Node* n1);
+    Edge(Node& n0, Node& n1);
 
     /// Destructor
     ~Edge();
@@ -34,10 +34,10 @@ namespace dolfin {
     int  id() const;
 
     /// Get end node number i
-    Node* node(int i) const;
+    Node& node(int i) const;
 
     /// Get coordinates of node number i
-    Point coord(int i) const;
+    Point& coord(int i) const;
     
     /// Compute and return length of the edge
     real length() const;
@@ -46,10 +46,10 @@ namespace dolfin {
     Point midpoint() const;
     
     /// Check if edge consists of the two nodes
-    bool equals(Node* n0, Node* n1) const;
+    bool equals(const Node& n0, const Node& n1) const;
 
     /// Check if edge contains the node
-    bool contains(Node* n) const;
+    bool contains(const Node& n) const;
 
     ///--- Output ---
    
@@ -74,13 +74,13 @@ namespace dolfin {
   private:
       
     // Specify global edge number
-    int setID(int id, Grid* grid);
+    int setID(int id, Grid& grid);
     
     // Set the grid pointer
     void setGrid(Grid& grid);
 
     /// Specify nodes
-    void set(Node* n0, Node* n1);
+    void set(Node& n0, Node& n1);
 
     // Initialize marker (if not already done)
     void initMarker();

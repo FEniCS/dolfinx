@@ -34,6 +34,9 @@ namespace dolfin {
     static void refineRegular   (Cell& cell, Grid& grid);
     static void refineIrregular1(Cell& cell, Grid& grid);
     static void refineIrregular2(Cell& cell, Grid& grid);
+
+    static Cell* createCell(Cell& cell, Node& n0, Node& n1, Node& n2);
+
   };
 
 }

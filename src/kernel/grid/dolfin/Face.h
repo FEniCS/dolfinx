@@ -34,13 +34,13 @@ namespace dolfin {
     int size() const;
 
     /// Return edge number i
-    Edge* edge(int i) const;
+    Edge& edge(int i) const;
 
     /// Check if face consists of the given edges
-    bool equals(Edge* e0, Edge* e1, Edge* e2) const;
+    bool equals(const Edge& e0, const Edge& e1, const  Edge& e2) const;
     
     /// Check if face consists of the given edges
-    bool equals(Edge* e0, Edge* e1) const;
+    bool equals(const Edge& e0, const Edge& e1) const;
 
     ///--- Output ---
    
@@ -54,13 +54,13 @@ namespace dolfin {
   private:
     
     // Specify global face number
-    int setID(int id, Grid* grid);
+    int setID(int id, Grid& grid);
 
     // Set the grid pointer
     void setGrid(Grid& grid);
 
     /// Specify three edges
-    void set(Edge* e0, Edge* e1, Edge* e2);
+    void set(Edge& e0, Edge& e1, Edge& e2);
     
     // The grid containing this face
     Grid* grid;
