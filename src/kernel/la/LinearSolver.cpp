@@ -31,6 +31,23 @@ real LinearSolver::residual(const Matrix& A, Vector& x, const Vector& b) const
   return sqrt(r);
 }
 //-----------------------------------------------------------------------------
+real LinearSolver::residual(const Matrix& A, Vector& x, const Vector& b, 
+			    Vector& r) const
+{
+  int n = b.size();
+
+  r.init(n);
+  A.mult(x,r);
+
+  real sum = 0.0;
+  for (int i = 0; i < n; i++) {
+    r(i) = b(i) - r(i);
+    sum += r(i)*r(i);
+  }
+  
+  return sqrt(sum);
+}
+//-----------------------------------------------------------------------------
 void LinearSolver::iterate(const Matrix& A, Vector& x, const Vector& b,
 			   real tol, unsigned int maxiter)
 {

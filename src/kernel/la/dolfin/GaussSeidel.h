@@ -27,6 +27,9 @@ namespace dolfin
     /// Create Gauss-Seidel preconditioner/solver for a given matrix
     GaussSeidel(const Matrix& A, real tol, unsigned int maxiter);
 
+    /// Create Gauss-Seidel preconditioner/solver for a given matrix
+    GaussSeidel(const Matrix& A, unsigned int maxiter);
+
     /// Destructor
     ~GaussSeidel();
 

@@ -26,6 +26,9 @@ namespace dolfin
 
     /// Compute l2-norm of residual
     real residual(const Matrix& A, Vector& x, const Vector& b) const;
+    /// Compute l2-norm of residual and the residual vector
+    real residual(const Matrix& A, Vector& x, const Vector& b, 
+		  Vector& r) const;
 
     /// Iterative solution of the linear system. The virtual function
     /// iteration() is called in each iteration and should be implemented

@@ -1,3 +1,4 @@
+ - Add FGMRES solver in new format (patch from eriksv)
  - Add non-const version of quick-access of sparse matrices
  - Add linear mappings for simple computation of derivatives
  - Add check of matrix dimensions for ODE sparsity pattern

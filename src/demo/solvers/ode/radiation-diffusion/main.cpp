@@ -5,9 +5,10 @@
 
 using namespace dolfin;
 
-/// This test problem is taken from the paper "An Implicit-Explicit Runge-Kutta-Chebyshev
-/// Scheme for Diffusion-Reaction Equations" by Verwer and Sommeijer, published in
-/// SIAM J. Scientific Computing (2004).
+/// This test problem is taken from the paper "An Implicit-Explicit
+/// Runge-Kutta-Chebyshev Scheme for Diffusion-Reaction Equations" by
+/// Verwer and Sommeijer, published in SIAM J. Scientific Computing
+/// (2004).
 
 class RadiationDiffusion : public ODE
 {
