@@ -16,6 +16,12 @@
 class Point{
 public:
 
+  Point(){
+	 x = 0.0;
+	 y = 0.0;
+	 z = 0.0;
+  }
+  
   real Distance(Point p);
   
   float x;

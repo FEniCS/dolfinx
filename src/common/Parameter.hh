@@ -38,7 +38,7 @@ public:
 	 if ( val_string )
 		delete [] val_string;
 	 val_string = 0;
-
+ 
   }
   
   void Set(const char *identifier, Type type, va_list aptr){

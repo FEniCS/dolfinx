@@ -195,7 +195,9 @@ void Terminal::InternalError(const char *function, const char *format, ...)
   va_start(aptr,format);
   va_end(aptr);  
   
-  printf("*** DOLFIN internal error in function %s: ",function);
+  printf("*** DOLFIN internal error\n");
+  printf("***   where: in function %s\n",function);
+  printf("***   cause: ");
   vprintf(format,aptr);
   printf("\n");
   printf("*** Exiting.\n");

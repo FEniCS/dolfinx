@@ -6,11 +6,8 @@
 #include "dolfin_modules.h"
 
 // Temporary for testing
-#include "FiniteElement.hh"
-#include "TetLinFunction.hh"
-#include "TetLinSpace.hh"
-#include "TriLinFunction.hh"
-#include "TriLinSpace.hh"
+#include "Node.hh"
+#include "List.hh"
 
 // Database for all parameters
 Settings *settings = NULL;
@@ -249,31 +246,34 @@ void dolfin_test()
 {
   cout << "Testing DOLFIN:" << endl;
 
+  // Startup
   settings = new Settings();
   settings->Initialize();
-    
-  Grid grid;
-  grid.Read("../../data/grids/tetgrid_4_4_4.inp");
-  grid.Display();
-  
-  FiniteElement trilin_element(&grid,1,trilin);
-  FiniteElement tetlin_element(&grid,1,tetlin);
 
-  TriLinSpace trilinspace(&trilin_element,1);
-  TetLinSpace tetlinspace(&tetlin_element,1);
+  // Testing of DOLFIN internals
   
-  ShapeFunction *v;
-  ShapeFunction *w;
+  List<Node> list;
+  Node n;
   
-  v = trilinspace.GetShapeFunction(0);
-  w = tetlinspace.GetShapeFunction(1);
+  for (int i=0;i<77;i++){
+	 n.SetNodeNo(i*3);
+  	 list.add(n);
+  }
 
-  cout << "v*v = " << v[0]*v[0] << endl;
-  cout << "w*w = " << w[0]*w[0] << endl;
-  cout << "v*w = " << v[0]*w[0] << endl;
-  cout << "w*v = " << w[0]*v[0] << endl;
+  cout << list << endl;
   
-  cout << "Test finished." << endl;
+  for (List<Node>::Iterator it = list.begin(); it != list.end(); ++it){
+	 cout << it << endl;
+	 cout << "*it = " << *it << endl;
+	 cout << "it->GetNodeNo() = " << it->GetNodeNo() << endl;
+	 cout << "it->pointer() = " << it.pointer() << endl;
+  }
+  
+  //cout << list << endl;
+  
+  // Cleanup
+  delete settings;
+  delete display;
 }
 //-----------------------------------------------------------------------------
 void dolfin_test_memory()

@@ -7,7 +7,8 @@ CFLAGS  = `../config/dolfin-config --cflags_insource`
 LFLAGS  = `../config/dolfin-config --lflags_insource`
 
 #OPTFLAGS = -O6 -finline-functions -funroll-loops -fstrict-aliasing -felide-constructors
-OPTFLAGS = -O2
+#OPTFLAGS = -O2
+OPTFLAGS = -g
 CXXFLAGS = $(CFLAGS) $(OPTFLAGS)
 DEST     = dolfin-test
 OBJECTS  = main.o

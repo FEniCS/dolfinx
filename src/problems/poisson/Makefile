@@ -11,7 +11,8 @@ CXX     = `../../config/dolfin-config --compiler`
 #OPTFLAGS = -O6 -finline-functions -funroll-loops -fstrict-aliasing -felide-constructors
 #OPTFLAGS = -p
 
-OPTFLAGS = -O2
+#OPTFLAGS = -O2
+OPTFLAGS = -g
 CXXFLAGS = $(CFLAGS) $(OPTFLAGS)
 DEST     = dolfin-poisson
 OBJECTS  = main.o

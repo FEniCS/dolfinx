@@ -7,6 +7,7 @@
 #include <kw_constants.h>
 
 #include "Point.hh"
+#include <iostream>
 
 class Cell;
 class Grid;
@@ -43,12 +44,19 @@ public:
   /// Get all coordinates
   Point* GetCoord();
 
+  /// Output
+  friend std::ostream &operator<<(std::ostream &os, const Node &node)
+  {
+	 os << "Node: x = [" << node.p.x << " " << node.p.y << " " << node.p.z << "]";
+	 return os;
+  }
+  
   /// Give access to the special functions below
   friend class Grid;
   friend class Triangle;
   friend class Tetrahedron;
 
-private:
+protected:
   
   /// Member functions used for computing neighbor information
   
