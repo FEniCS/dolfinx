@@ -11,5 +11,6 @@ ylabel('u1')
 
 subplot(2,1,2)
 plot(t,u(2,:))
+axis([0 100 -1 1])
 xlabel('t')
 ylabel('u2')
