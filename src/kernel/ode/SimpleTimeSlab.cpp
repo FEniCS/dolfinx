@@ -46,6 +46,19 @@ real SimpleTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
   return fixpoint.residual(group);
 }
 //-----------------------------------------------------------------------------
+void SimpleTimeSlab::countElementGroups(unsigned int& size)
+{
+  // A simple time slab contains only one element group
+  size = 1;
+}
+//-----------------------------------------------------------------------------
+void SimpleTimeSlab::addElementGroups(NewArray<ElementGroup*>& groups,
+				      unsigned int& pos)
+{
+  // Add the element group
+  groups[pos++] = &group;
+}
+//-----------------------------------------------------------------------------
 void SimpleTimeSlab::show(unsigned int depth) const
 {
   for (unsigned int i = 0; i < depth; i++)

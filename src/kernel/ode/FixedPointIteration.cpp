@@ -7,6 +7,8 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/AdaptiveIterationLevel1.h>
@@ -43,6 +45,9 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   Iteration::State newstate;
   bool retry = true;
   
+  // Create a list of element groups from the time slab
+  ElementGroupList groups(timeslab);
+
   dolfin_start("Starting time slab iteration");
   
   while ( retry )

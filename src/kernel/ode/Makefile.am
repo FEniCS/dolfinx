@@ -17,6 +17,8 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementBlock.h \
                           dolfin/ElementData.h \
                           dolfin/ElementGroup.h \
+                          dolfin/ElementGroupIterator.h \
+                          dolfin/ElementGroupList.h \
                           dolfin/ElementIterator.h \
                           dolfin/ElementTmpFile.h \
                           dolfin/EmptySparsity.h \
@@ -60,6 +62,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementBlock.cpp \
                           ElementData.cpp \
                           ElementGroup.cpp \
+                          ElementGroupList.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \
                           EmptySparsity.cpp \

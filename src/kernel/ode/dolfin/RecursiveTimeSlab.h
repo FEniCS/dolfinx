@@ -43,6 +43,12 @@ namespace dolfin {
     /// Compute L2 norm of element residual
     real elementResidualL2(FixedPointIteration& fixpoint);
 
+    /// Count the number of element groups contained in the time slab
+    void countElementGroups(unsigned int& size);
+    
+    /// Add element groups contained in the time slab to the list
+    void addElementGroups(NewArray<ElementGroup*>& groups, unsigned int& pos);
+    
     /// Display structure of time slab
     void show(unsigned int depth = 0) const;
 

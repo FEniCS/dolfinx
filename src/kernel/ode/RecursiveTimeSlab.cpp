@@ -75,6 +75,27 @@ real RecursiveTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
   return sqrt(r);
 }
 //-----------------------------------------------------------------------------
+void RecursiveTimeSlab::countElementGroups(unsigned int& size)
+{
+  // Count number of element groups for time slabs
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    timeslabs[i]->countElementGroups(size);
+  
+  // Count element groups contained in this time slab
+  ++size;
+}
+//-----------------------------------------------------------------------------
+void RecursiveTimeSlab::addElementGroups(NewArray<ElementGroup*>& groups,
+					 unsigned int& pos)
+{
+  // Add element groups contained in time slabs
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    timeslabs[i]->addElementGroups(groups, pos);
+
+  // Add the element group contained in this time slab
+  groups[pos++] = &group;
+}
+//-----------------------------------------------------------------------------
 void RecursiveTimeSlab::show(unsigned int depth) const
 {
   for (unsigned int i = 0; i < depth; i++)

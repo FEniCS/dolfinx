@@ -1,3 +1,4 @@
+ - Add iterators for elements in time slabs and element groups
  - Add -f to creation of symbolic links
 0.4.4
  - Add support for 3D graphics in Octave using Open Inventor (jj)

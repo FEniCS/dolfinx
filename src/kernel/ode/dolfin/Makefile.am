@@ -16,6 +16,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementBlock.h \
              ElementData.h \
              ElementGroup.h \
+             ElementGroupIterator.h \
              ElementIterator.h \
              ElementTmpFile.h \
              EmptySparsity.h \
