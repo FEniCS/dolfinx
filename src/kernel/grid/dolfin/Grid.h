@@ -62,6 +62,12 @@ namespace dolfin {
 
     /// Refine grid
     void refine();
+
+    /// Return parent grid
+    Grid& parent();
+
+    /// Return child grid
+    Grid& child();
     
     ///--- Output ---
 
@@ -109,17 +115,21 @@ namespace dolfin {
     Face* getFace(int id);
 
     bool hasEdge(Node* n0, Node* n1) const;
-    
+
+    /// Compute connectivity
     void init();
+
+    /// Swap data with given grid
+    void swap(Grid& grid);
     
     // Grid data
-    GridData *gd;
+    GridData* gd;
 
     // Boundary data
-    BoundaryData *bd;
+    BoundaryData* bd;
 
     // Grid refinement data
-    GridRefinementData *rd;
+    GridRefinementData* rd;
     
     // Parent grid
     Grid* _parent;

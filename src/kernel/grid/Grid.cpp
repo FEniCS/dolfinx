@@ -25,6 +25,7 @@ Grid::Grid()
   gd = new GridData(this);
   bd = new BoundaryData(this);
   rd = new GridRefinementData(this);
+  _parent = 0;
 
   rename("grid", "no description");
   clear();
@@ -35,6 +36,7 @@ Grid::Grid(const char* filename)
   gd = new GridData(this);
   bd = new BoundaryData(this);
   rd = new GridRefinementData(this);
+  _parent = 0;
 
   rename("grid", "no description");
   clear();
@@ -66,9 +68,14 @@ void Grid::clear()
   gd->clear();
   bd->clear();
   rd->clear();
+
   _type = triangles;
-  _parent = 0;
   _child = 0;
+
+  // Assume that we need to delete the parent which is created by refine().
+  if ( _parent )
+    delete _parent;
+  _parent = 0;
 }
 //-----------------------------------------------------------------------------
 int Grid::noNodes() const
@@ -110,7 +117,47 @@ void Grid::refine()
   // Create grid hierarchy
   GridHierarchy grids(*this);
 
+  // Refine grid hierarchy
   GridRefinement::refine(grids);
+
+  // Swap data structures with the new finest grid. This is necessary since
+  // refine() should replace the current grid with the finest grid. At the
+  // same time, we store the data structures of the current grid in the
+  // newly created finest grid, which becomes the next finest grid:
+  //
+  // Before refinement:  g0 <-> g1 <-> g2 <-> ... <-> *this(gd)
+  // After refinement:   g0 <-> g1 <-> g2 <-> ... <-> *this(gd) <-> new(ngd)
+  // After swap:         g0 <-> g1 <-> g2 <-> ... <-> new(gd)   <-> *this(ngd)
+
+  // Get pointer to new grid
+  Grid* new_grid = &(grids.fine());
+
+  // Swap data
+  swap(*new_grid);
+
+  // Set parent and child
+  if ( new_grid->_parent )
+    new_grid->_parent->_child = new_grid;
+  this->_parent = new_grid;
+  new_grid->_child = this;
+}
+//-----------------------------------------------------------------------------
+Grid& Grid::parent()
+{
+  if ( _parent )
+    return *_parent;
+
+  dolfin_warning("Grid has now parent.");
+  return *this;
+}
+//-----------------------------------------------------------------------------
+Grid& Grid::child()
+{
+  if ( _child )
+    return *_child;
+
+  dolfin_warning("Grid has now child.");
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void Grid::show()
@@ -226,6 +273,30 @@ bool Grid::hasEdge(Node* n0, Node* n1) const
 void Grid::init()
 {
   GridInit::init(*this);
+}
+//-----------------------------------------------------------------------------
+void Grid::swap(Grid& grid)
+{
+  GridData*           tmp_gd     = this->gd;
+  BoundaryData*       tmp_bd     = this->bd;
+  GridRefinementData* tmp_rd     = this->rd;
+  Grid*               tmp_parent = this->_parent;
+  Grid*               tmp_child  = this->_child;
+  Type                tmp_type   = this->_type;
+
+  this->gd      = grid.gd;
+  this->bd      = grid.bd;
+  this->rd      = grid.rd;
+  this->_parent = grid._parent;
+  this->_child  = grid._child;
+  this->_type   = grid._type;
+
+  grid.gd      = tmp_gd;
+  grid.bd      = tmp_bd;
+  grid.rd      = tmp_rd;
+  grid._parent = tmp_parent;
+  grid._child  = tmp_child;
+  grid._type   = tmp_type;
 }
 //-----------------------------------------------------------------------------
 // Additional operators
