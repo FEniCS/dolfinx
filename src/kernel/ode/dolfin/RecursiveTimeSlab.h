@@ -6,6 +6,7 @@
 #ifndef __RECURSIVE_TIME_SLAB_H
 #define __RECURSIVE_TIME_SLAB_H
 
+#include <dolfin/NewArray.h>
 #include <dolfin/TimeSlab.h>
 
 namespace dolfin {
@@ -35,6 +36,9 @@ namespace dolfin {
 
     /// Reset time slab to initial values
     void reset(FixedPointIteration& fixpoint);
+
+    /// Check if the time slab is a leaf
+    bool leaf() const;
 
     /// Compute maximum discrete residual in time slab
     real computeMaxRd(FixedPointIteration& fixpoint);
@@ -71,7 +75,7 @@ namespace dolfin {
     //--- Time slab data ---
 
     // List of time slabs within this time slab
-    std::vector<TimeSlab*> timeslabs;
+    NewArray<TimeSlab*> timeslabs;
 
   };
 

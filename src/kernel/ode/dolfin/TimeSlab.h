@@ -42,14 +42,17 @@ namespace dolfin {
     
     /// Check if the time slab reached the given end time
     bool finished() const;
-    
+
+    /// Check if the time slab is a leaf
+    virtual bool leaf() const = 0;
+
     /// Return start time
     real starttime() const;
     
     /// Return end time
     real endtime() const;
     
-   /// Return length of time slab
+    /// Return length of time slab
     real length() const;
 
     /// Compute maximum discrete residual in time slab

@@ -21,6 +21,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/GenericSparsity.h \
                           dolfin/MatrixSparsity.h \
                           dolfin/Method.h \
+                          dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
                           dolfin/Partition.h \
@@ -56,6 +57,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           GenericSparsity.cpp \
                           MatrixSparsity.cpp \
                           Method.cpp \
+                          NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
                           Partition.cpp \

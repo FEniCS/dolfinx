@@ -20,6 +20,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              GenericSparsity.h \
              MatrixSparsity.h \
              Method.h \
+             NonStiffIteration.h \
              ODE.h \
              ODESolver.h \
              Partition.h \

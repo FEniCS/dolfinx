@@ -8,6 +8,7 @@
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
+#include <dolfin/NonStiffIteration.h>
 #include <dolfin/FixedPointIteration.h>
 
 using namespace dolfin;
@@ -292,6 +293,10 @@ void FixedPointIteration::update(Element& element)
 bool FixedPointIteration::converged(TimeSlab& timeslab, Residuals& r,
 				    unsigned int n)
 {
+  // Convergence handled locally when the slab contains only one element list
+  if ( timeslab.leaf() )
+    return n >= 1;
+
   // Compute maximum discrete residual
   r.r1 = r.r2;
   r.r2 = residual(timeslab);
@@ -306,7 +311,7 @@ bool FixedPointIteration::converged(TimeSlab& timeslab, Residuals& r,
 bool FixedPointIteration::converged(NewArray<Element*>& elements,
 				    Residuals& r, unsigned int n)
 {
-  // Convergence is handled locally when we have only one element
+  // Convergence handled locally when the list contains only one element
   if ( elements.size() == 1 )
     return n >= 1;
 
@@ -337,30 +342,31 @@ bool FixedPointIteration::converged(Element& element, Residuals& r,
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(TimeSlab& timeslab, const Residuals& r)
 {
+  // Choose stabilization
   switch ( state ) {
   case nonstiff:
-    stabilizeNonStiff(timeslab, r);
+    NonStiffIteration::stabilize(timeslab, r);
     break;
   case diagonal:
-    stabilizeDiagonal(timeslab, r);
+    dolfin_error("Not implemented");
     break;
   case parabolic:
     switch ( substate ) {
     case undamped:
-      stabilizeParabolicUndamped(timeslab, r);
+      dolfin_error("Not implemented");
       break;
     case damped:
-      stabilizeParabolicDamped(timeslab, r);
+      dolfin_error("Not implemented");
       break;
     case increasing:
-      stabilizeParabolicIncreasing(timeslab, r);
+      dolfin_error("Not implemented");
       break;
     default:
       dolfin_error("Unknown damping");
     }
     break;
   case nonnormal:
-    stabilizeNonNormal(timeslab, r);
+    dolfin_error("Not implemented");
     break;
   default:
     dolfin_error("Unknown state");
@@ -370,22 +376,72 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab, const Residuals& r)
 void FixedPointIteration::stabilize(NewArray<Element*>& elements, 
 				    const Residuals& r)
 {
-  dolfin_error("Not implemented");
+  // Choose stabilization
+  switch ( state ) {
+  case nonstiff:
+    NonStiffIteration::stabilize(elements, r);
+    break;
+  case diagonal:
+    dolfin_error("Not implemented");
+    break;
+  case parabolic:
+    switch ( substate ) {
+    case undamped:
+      dolfin_error("Not implemented");
+      break;
+    case damped:
+      dolfin_error("Not implemented");
+      break;
+    case increasing:
+      dolfin_error("Not implemented");
+      break;
+    default:
+      dolfin_error("Unknown damping");
+    }
+    break;
+  case nonnormal:
+    dolfin_error("Not implemented");
+    break;
+  default:
+    dolfin_error("Unknown state");
+  }
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(Element& element, const Residuals& r)
 {
-  dolfin_error("Not implemented");
+  // Choose stabilization
+  switch ( state ) {
+  case nonstiff:
+    NonStiffIteration::stabilize(element, r);
+    break;
+  case diagonal:
+    dolfin_error("Not implemented");
+    break;
+  case parabolic:
+    switch ( substate ) {
+    case undamped:
+      dolfin_error("Not implemented");
+      break;
+    case damped:
+      dolfin_error("Not implemented");
+      break;
+    case increasing:
+      dolfin_error("Not implemented");
+      break;
+    default:
+      dolfin_error("Unknown damping");
+    }
+    break;
+  case nonnormal:
+    dolfin_error("Not implemented");
+    break;
+  default:
+    dolfin_error("Unknown state");
+  }
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::updateUndamped(Element& element)
 {
-  cout << "Simple update of element" << endl;
-
-  // Update initial value for element
-  real u0 = u(element.index(), element.starttime());
-  element.update(u0);
-
   // Update element
   element.update(f);
 }

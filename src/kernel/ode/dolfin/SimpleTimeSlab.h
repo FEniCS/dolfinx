@@ -31,6 +31,9 @@ namespace dolfin {
     /// Reset time slab to initial values
     void reset(FixedPointIteration& fixpoint);
 
+    /// Check if the time slab is a leaf
+    bool leaf() const;
+
     /// Compute maximum discrete residual in time slab
     real computeMaxRd(FixedPointIteration& fixpoint);
 

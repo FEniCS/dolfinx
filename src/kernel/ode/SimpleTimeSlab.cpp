@@ -34,6 +34,11 @@ void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
   fixpoint.reset(elements);
 }
 //-----------------------------------------------------------------------------
+bool SimpleTimeSlab::leaf() const
+{
+  return true;
+}
+//-----------------------------------------------------------------------------
 real SimpleTimeSlab::computeMaxRd(FixedPointIteration& fixpoint)
 {
   return fixpoint.residual(elements);

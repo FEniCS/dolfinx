@@ -27,13 +27,13 @@ namespace dolfin
     /// Destructor
     ~FixedPointIteration();
 
-    /// Fixed point iteration on a time slab
+    /// Fixed point iteration on time slab
     bool iterate(TimeSlab& timeslab);
 
-    /// Fixed point iteration on an element list
+    /// Fixed point iteration on element list
     bool iterate(NewArray<Element*>& elements);
     
-    /// Fixed point iteration on an element
+    /// Fixed point iteration on element
     bool iterate(Element& element);
 
     // Compute maximum discrete residual for time slab
@@ -45,14 +45,17 @@ namespace dolfin
     // Compute discrete residual for element
     real residual(Element& element);
     
-    /// Update initial data for an element list
+    /// Update initial data for element list
     void init(NewArray<Element*>& elements);
 
-    /// Reset an element list
+    /// Reset element list
     void reset(NewArray<Element*>& elements);
 
     /// Display a status report
     void report() const;
+
+    /// Friends
+    friend class NonStiffIteration;
 
   private:
 
