@@ -50,6 +50,7 @@ namespace dolfin {
       add(Parameter::BOOL, "automatic modeling", false);
       add(Parameter::BOOL, "use new ode solver", false);
       add(Parameter::BOOL, "implicit", false);
+      add(Parameter::BOOL, "matrix piecewise constant", true);
 
       add(Parameter::INT, "number of samples", 101);
       add(Parameter::INT, "sample density", 1);

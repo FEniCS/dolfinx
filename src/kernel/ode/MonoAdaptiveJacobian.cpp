@@ -12,8 +12,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
-					   bool implicit)
-  : TimeSlabJacobian(timeslab), ts(timeslab), implicit(implicit)
+					   bool implicit, bool piecewise)
+  : TimeSlabJacobian(timeslab), ts(timeslab),
+    implicit(implicit), piecewise(piecewise)
 {
   // Do nothing
 }

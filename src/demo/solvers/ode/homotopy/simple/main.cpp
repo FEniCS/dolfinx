@@ -36,10 +36,7 @@ public:
   
   complex f(const complex z[], real t, unsigned int i)
   {
-    complex fvalue = -z[0]*z[0] + 1.0 - z[0]*z[0]*z[0] + c;
-    std::cout << "f at t = " << t << " z = " << z[0] << ": " << fvalue << std::endl;
-
-    return -z[0]*z[0] + 1.0 - z[0]*z[0]*z[0] + c;
+    return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
   }
 
   void M(const complex x[], complex y[], const complex z[], real t)

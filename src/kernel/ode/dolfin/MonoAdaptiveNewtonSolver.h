@@ -54,15 +54,17 @@ namespace dolfin
     // Evaluate b = -F(x) for explicit system: u' = f
     void bevalImplicit();
 	
-      // Numerical evaluation of the Jacobian used for testing
+    // Numerical evaluation of the Jacobian used for testing
     void debug();
+
+    bool implicit;  // True if ODE is implicit
+    bool piecewise; // True if M is piecewise constant
 
     MonoAdaptiveTimeSlab& ts; // The time slab;
     MonoAdaptiveJacobian A;   // Jacobian of time slab system
     NewVector dx;             // Increment for Newton's method
     NewVector b;              // Right-hand side -F(x)
     NewGMRES solver;          // GMRES solver
-    bool implicit;            // True if ODE is implicit
     real* Mu0;                // Precomputed product M*u0 for implicit system
     
   };

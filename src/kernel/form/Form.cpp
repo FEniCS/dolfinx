@@ -91,15 +91,12 @@ void Form::updateTriLinMap(const Cell& cell)
   const Point& p1(cell.coord(1));
   const Point& p2(cell.coord(2));
 
-
   // Compute Jacobian of map
   f00 = p1.x - p0.x; f01 = p2.x - p0.x;
   f10 = p1.y - p0.y; f11 = p2.y - p0.y;
   
   // Compute determinant
   det = f00 * f11 - f01 * f10;
-
-
   
   // Check determinant
   if ( fabs(det) < DOLFIN_EPS )

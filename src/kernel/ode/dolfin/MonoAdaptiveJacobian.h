@@ -19,7 +19,8 @@ namespace dolfin
   public:
 
     /// Constructor
-    MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab, bool implicit = false);
+    MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
+			 bool implicit, bool piecewise);
 
     /// Destructor
     ~MonoAdaptiveJacobian();
@@ -40,6 +41,9 @@ namespace dolfin
 
     // True if ODE is implicit
     bool implicit;
+
+    // True if M is piecewise constant
+    bool piecewise;
 
   };
 

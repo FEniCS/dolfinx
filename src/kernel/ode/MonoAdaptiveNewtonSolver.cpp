@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewMatrix.h>
@@ -15,8 +16,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab, implicit),
-    implicit(implicit), Mu0(0)
+  : TimeSlabSolver(timeslab), implicit(implicit),
+    piecewise(dolfin_get("matrix piecewise constant")),
+    ts(timeslab), A(timeslab, implicit, piecewise), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
 
