@@ -318,20 +318,22 @@ void RefineGrid::IrrRef2(Cell* parent)
   Cell* cnew1;
   Cell* cnew2;
   int cnt = 0;
-  for (int i;i<parent->noEdges();i++){
+  for (int i=0;i<parent->noEdges();i++){
     if (parent->edge(i)->marked()){
       nnew = grid.createNode(parent->level()+1,parent->edge(i)->midpoint());
       ne0  = grid.createNode(parent->level()+1,parent->edge(i)->node(0)->coord());
       ne1  = grid.createNode(parent->level()+1,parent->edge(i)->node(1)->coord());
-      for (int j;j<parent->noNodes();j++){
+      for (int j=0;j<parent->noNodes();j++){
 	if ( (parent->edge(i)->node(0)->id() != j) && (parent->edge(i)->node(1)->id() != j) ){
 	  nold(cnt++) = grid.createNode(parent->level()+1,parent->node(j)->coord());
 	}
       }
       cnew1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nnew,ne0,nold(0),nold(1));
       cnew2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nnew,ne1,nold(0),nold(1));
+      break;
     }
   }
+
   if (_create_edges){
     grid.createEdges(cnew1);
     grid.createEdges(cnew2);
