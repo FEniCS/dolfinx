@@ -8,20 +8,11 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Event.h>
-#include <dolfin/Element.h>
-#include <dolfin/Sparsity.h>
 #include <dolfin/Dependencies.h>
-//#include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
-#include <dolfin/RHS.h>
-#include <dolfin/Function.h>
-#include <dolfin/Solution.h>
-#include <dolfin/Adaptivity.h>
 
 namespace dolfin
 {
-  class Vector;
-  class Function;
 
   /// A ODE represents an initial value problem of the form
   ///
@@ -48,9 +39,6 @@ namespace dolfin
     // FIXME:: make this abstract?
     virtual real f(const real u[], real t, uint i);
 
-    /// Right-hand side (old version, will be removed)
-    virtual real f(const Vector& u, real t, uint i);
-
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void f(const real u[], real t, real y[]);
 
@@ -63,15 +51,6 @@ namespace dolfin
     /// Jacobian (optional)
     virtual real dfdu(const real u[], real t, uint i, uint j);
 
-    /// Jacobian (old version, will be removed)
-    virtual real dfdu(const Vector& u, real t, uint i, uint j);
-
-    /// Method to use for given component (optional)
-    virtual Element::Type method(uint i);
-
-    /// Order to use for given component (optional)
-    virtual uint order(uint i);
-
     /// Time step to use for whole system (optional)
     virtual real timestep();
     
@@ -80,17 +59,6 @@ namespace dolfin
 
     /// Update ODE, return false to stop (optional)
     virtual bool update(const real u[], real t, bool end);
-
-    /// Update ODE (old version, will be removed)
-    virtual void update(RHS& f, Function& u, real t);
-
-    /// Update ODE (old version, will be removed)
-    virtual void update(Solution& u, Adaptivity& adaptivity, real t);
-
-    /*
-    /// Save sample (old version, will be removed)
-    virtual void save(Sample& sample);
-    */
 
     /// Save sample (optional)
     virtual void save(NewSample& sample);
@@ -104,12 +72,6 @@ namespace dolfin
     /// Solve ODE
     void solve();
 
-    /// Solve ODE
-    void solve(Function& u);
-
-    /// Solve ODE
-    void solve(Function& u, Function& phi);
-    
     /// Automatically detect sparsity
     void sparse();
 
@@ -137,9 +99,6 @@ namespace dolfin
     // Final time
     real T;
     
-    // Sparsity (old version, will be removed)
-    Sparsity sparsity;
-
     // Dependencies
     Dependencies dependencies;
 
@@ -151,9 +110,6 @@ namespace dolfin
 
   private:
 
-    Element::Type default_method;
-    uint default_order;
-    
     Event not_impl_f;
     Event not_impl_M;
     Event not_impl_J;

@@ -6,7 +6,6 @@ include_HEADERS              = dolfin/dolfin_function.h \
                                dolfin/NewFunction.h \
                                dolfin/VectorFunction.h \
                                dolfin/GenericFunction.h \
-                               dolfin/ODEFunction.h \
                                dolfin/ScalarExpressionFunction.h \
                                dolfin/VectorExpressionFunction.h
 INCLUDES                     = @KERNEL_CFLAGS@
@@ -17,6 +16,5 @@ libdolfin_function_a_SOURCES = DofFunction.cpp \
                                NewFunction.cpp \
                                VectorFunction.cpp \
                                GenericFunction.cpp \
-                               ODEFunction.cpp \
                                ScalarExpressionFunction.cpp \
                                VectorExpressionFunction.cpp

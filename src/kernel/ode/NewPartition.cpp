@@ -6,7 +6,6 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/RHS.h>
 #include <dolfin/Regulator.h>
 #include <dolfin/MultiAdaptivity.h>
 #include <dolfin/NewPartition.h>

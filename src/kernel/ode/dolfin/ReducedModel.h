@@ -27,6 +27,8 @@ namespace dolfin
   /// "automatic modeling" is set. Note that this does not currently
   /// work in combination with the "step" interface of the
   /// multi-adaptive solver, i.e., the "solve" interface must be used.
+
+  // FIXME: BROKEN
   
   class ReducedModel : public ODE
   {
@@ -44,20 +46,15 @@ namespace dolfin
     /// Map initial data
     real u0(unsigned int i);
 
-    /// Map the choice of method
-    Element::Type method(unsigned int i);
-
-    /// Map the choice of order
-    unsigned int order(unsigned int i);
-
-    /// Map the choice of time step
-    real timestep(unsigned int i);
+    /*
     
     /// Map update function
     void update(RHS& f, Function& u, real t);
 
     /// Map update function
     void update(Solution& u, Adaptivity& adaptivity, real t);
+
+    */
 
     /*
     /// Map the save function
@@ -86,9 +83,15 @@ namespace dolfin
       /// Inactivate component
       void inactivate();
 
+      // FIXME: BROKEN
+
+      /*
+
       /// Compute model
       void computeModel(Vector& ubar, Vector& fbar, unsigned int i, 
 			real tau, ODE& ode);
+
+      */
 
     private:
 
@@ -119,8 +122,8 @@ namespace dolfin
     real tol;
     
     // Averages of u and f
-    Vector ubar;
-    Vector fbar;
+    //Vector ubar;
+    //Vector fbar;
 
   };
 

@@ -3,10 +3,13 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/Function.h>
 #include <dolfin/Dual.h>
 
 using namespace dolfin;
+
+// FIXME: BROKEN
+
+/*
 
 //-----------------------------------------------------------------------------
 Dual::Dual(ODE& primal, Function& u) : ODE(primal.size()), rhs(primal, u)
@@ -54,3 +57,5 @@ real Dual::f(const Vector& phi, real t, unsigned int i)
   return sum;
 }
 //-----------------------------------------------------------------------------
+
+*/

@@ -1,38 +1,15 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_ode.h \
-                          dolfin/cGqElement.h \
-                          dolfin/cGqMethod.h \
                           dolfin/NewcGqMethod.h \
-                          dolfin/cGqMethods.h \
-                          dolfin/dGqElement.h \
-                          dolfin/dGqMethod.h \
                           dolfin/NewdGqMethod.h \
-                          dolfin/dGqMethods.h \
-                          dolfin/AdaptiveIterationLevel1.h \
-                          dolfin/AdaptiveIterationLevel2.h \
-                          dolfin/AdaptiveIterationLevel3.h \
-                          dolfin/Adaptivity.h \
                           dolfin/NewAdaptivity.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
-                          dolfin/Component.h \
                           dolfin/Dependencies.h \
                           dolfin/Dual.h \
-                          dolfin/Element.h \
-                          dolfin/ElementBlock.h \
-                          dolfin/ElementData.h \
-                          dolfin/ElementGroup.h \
-                          dolfin/ElementGroupIterator.h \
-                          dolfin/ElementGroupList.h \
-                          dolfin/ElementIterator.h \
-                          dolfin/ElementTmpFile.h \
-                          dolfin/FixedPointIteration.h \
                           dolfin/Homotopy.h \
                           dolfin/HomotopyJacobian.h \
                           dolfin/HomotopyODE.h \
-                          dolfin/Iteration.h \
-                          dolfin/JacobianMatrix.h \
-                          dolfin/Method.h \
                           dolfin/MonoAdaptiveFixedPointSolver.h \
                           dolfin/MonoAdaptiveJacobian.h \
                           dolfin/MonoAdaptiveNewtonSolver.h \
@@ -45,64 +22,29 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
                           dolfin/MultiAdaptivity.h \
                           dolfin/NewMethod.h \
-                          dolfin/NewtonIteration.h \
-                          dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
-                          dolfin/ParticleSystem.h \
                           dolfin/NewParticleSystem.h \
-                          dolfin/Partition.h \
                           dolfin/NewPartition.h \
-                          dolfin/RecursiveTimeSlab.h \
                           dolfin/ReducedModel.h \
                           dolfin/Regulator.h \
-                          dolfin/RHS.h \
-                          dolfin/Sample.h \
                           dolfin/NewSample.h \
-                          dolfin/SimpleTimeSlab.h \
-                          dolfin/Solution.h \
-                          dolfin/Sparsity.h \
-                          dolfin/TimeSlab.h \
                           dolfin/NewTimeSlab.h \
                           dolfin/TimeSlabJacobian.h \
                           dolfin/TimeSlabSolver.h \
-                          dolfin/TimeStepper.h \
                           dolfin/NewTimeStepper.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = cGqElement.cpp \
-                          cGqMethod.cpp \
-                          NewcGqMethod.cpp \
-                          cGqMethods.cpp \
-                          dGqElement.cpp \
-                          dGqMethod.cpp \
+libdolfin_ode_a_SOURCES = NewcGqMethod.cpp \
                           NewdGqMethod.cpp \
-                          dGqMethods.cpp \
-                          AdaptiveIterationLevel1.cpp \
-                          AdaptiveIterationLevel2.cpp \
-                          AdaptiveIterationLevel3.cpp \
-                          Adaptivity.cpp \
                           NewAdaptivity.cpp \
                           Alloc.cpp \
                           ComplexODE.cpp \
-                          Component.cpp \
                           Dependencies.cpp \
                           Dual.cpp \
-                          Element.cpp \
-                          ElementBlock.cpp \
-                          ElementData.cpp \
-                          ElementGroup.cpp \
-                          ElementGroupIterator.cpp \
-                          ElementGroupList.cpp \
-                          ElementIterator.cpp \
-                          ElementTmpFile.cpp \
-                          FixedPointIteration.cpp \
                           Homotopy.cpp \
                           HomotopyJacobian.cpp \
                           HomotopyODE.cpp \
-                          Iteration.cpp \
-                          JacobianMatrix.cpp \
-                          Method.cpp \
                           MonoAdaptiveFixedPointSolver.cpp \
                           MonoAdaptiveJacobian.cpp \
                           MonoAdaptiveNewtonSolver.cpp \
@@ -115,26 +57,14 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           MultiAdaptiveTimeSlab.cpp \
                           MultiAdaptivity.cpp \
                           NewMethod.cpp \
-                          NewtonIteration.cpp \
-                          NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
-                          ParticleSystem.cpp \
                           NewParticleSystem.cpp \
-                          Partition.cpp \
                           NewPartition.cpp \
-                          RecursiveTimeSlab.cpp \
                           ReducedModel.cpp \
                           Regulator.cpp \
-                          RHS.cpp \
-                          Sample.cpp \
                           NewSample.cpp \
-                          SimpleTimeSlab.cpp \
-                          Solution.cpp \
-                          Sparsity.cpp \
-                          TimeSlab.cpp \
                           NewTimeSlab.cpp \
                           TimeSlabJacobian.cpp \
                           TimeSlabSolver.cpp \
-                          TimeStepper.cpp \
                           NewTimeStepper.cpp

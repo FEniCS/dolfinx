@@ -40,9 +40,6 @@ namespace dolfin {
     /// Create function from function pointer
     Function(function fp);
 
-    /// Create an ODE function of given dimension
-    Function(unsigned int N);
-
     /// Destructor
     ~Function();
 
@@ -55,9 +52,6 @@ namespace dolfin {
     /// Create function from function pointer
     void init(function fp);
 
-    /// Create an ODE function of given dimension
-    void init(unsigned int N);
-    
     /// Evaluation for given node and time
     real operator() (const Node&  n, real t = 0.0) const;
     real operator() (const Node&  n, real t = 0.0);

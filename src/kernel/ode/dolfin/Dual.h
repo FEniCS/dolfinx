@@ -4,7 +4,6 @@
 #ifndef __DUAL_H
 #define __DUAL_H
 
-#include <dolfin/RHS.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin {
@@ -31,26 +30,31 @@ namespace dolfin {
   ///
   /// where w(t) = phi(T-t).
 
+  // FIXME: BROKEN
+
   class Dual : public ODE
   {
   public:
 
+    Dual() : ODE(1) {}
+
     /// Constructor
-    Dual(ODE& primal, Function& u);
+    //Dual(ODE& primal);
+    //Dual(ODE& primal, Function& u);
 
     /// Destructor
-    ~Dual();
+    //~Dual();
 
     /// Initial value
-    real u0(unsigned int i);
+    //real u0(unsigned int i);
 
     /// Right-hand side
-    real f(const Vector& phi, real t, unsigned int i);
+    //real f(const Vector& phi, real t, unsigned int i);
 
   private:
 
     // Right-hand side for primal problem
-    RHS rhs;
+    //RHS rhs;
 
   };
 

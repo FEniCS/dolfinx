@@ -9,7 +9,6 @@
 namespace dolfin {
 
   class ODE;
-  class Function;
 
   /// Solves a given ODE of the form
   ///
@@ -17,21 +16,19 @@ namespace dolfin {
   ///         
   ///     u(0)  = u0,
   ///
-  /// where u(t) is a vector of length N, using one
-  /// of (or a combination of) the multi-adaptive
-  /// Galerkin methods mcG(q) or mdG(q).
-
+  /// where u(t) is a vector of length N.
+  
   class ODESolver {
   public:
 
     static void solve(ODE& ode);
-    static void solve(ODE& ode, Function& u);
-    static void solve(ODE& ode, Function& u, Function& phi);
+    //static void solve(ODE& ode, Function& u);
+    //static void solve(ODE& ode, Function& u, Function& phi);
 
   private:
 
-    static void solvePrimal(ODE& ode, Function& u);
-    static void solveDual(ODE& ode, Function& u, Function& phi);
+    //static void solvePrimal(ODE& ode, Function& u);
+    //static void solveDual(ODE& ode, Function& u, Function& phi);
 
   };
 

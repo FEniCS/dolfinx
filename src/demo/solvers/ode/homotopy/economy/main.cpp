@@ -5,6 +5,7 @@
 #include "CES.h"
 #include "Leontief.h"
 #include "Polemarchakis.h"
+#include "EavesSchmedders.h"
 
 using namespace dolfin;
 
@@ -16,6 +17,32 @@ using namespace dolfin;
 ///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
 
 void test1()
+{
+  EavesSchmedders ec;
+  ec.solve();
+}
+
+/// CES test problem from Eaves and Schmedders (polynomial form)
+/// Has 3 solutions (one real-valued):
+///
+///   p = (0.951883, 0.048117)
+///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
+///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
+
+void test2()
+{
+  PolynomialEavesSchmedders ec;
+  ec.solve();
+}
+
+/// CES test problem from Eaves and Schmedders (rational form).
+/// Has 3 solutions (one real-valued):
+///
+///   p = (0.951883, 0.048117)
+///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
+///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
+
+void test3()
 {
   CES ec(2, 2, 0.5);
 
@@ -39,7 +66,7 @@ void test1()
 ///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
 ///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
 
-void test2()
+void test4()
 {
   PolynomialCES ec(2, 2, 0.5);
 
@@ -60,7 +87,7 @@ void test2()
 /// Has one unique solution: p = (0.5, 0.5)
 /// (Also p = (0, 1) with first equation removed)
 
-void test3()
+void test5()
 {
   Leontief ec(2, 2);
 
@@ -78,7 +105,7 @@ void test3()
 /// Has one unique solution: p = (0.5, 0.5)
 /// (Also p = (0, 1) with first equation removed)
 
-void test4()
+void test6()
 {
   PolynomialLeontief ec(2, 2);
 
@@ -98,7 +125,7 @@ void test4()
 ///   p = (1, 1)
 ///   p = (-2149/600, 1) = (-3.581667, 1)
 
-void test5()
+void test7()
 {
   Polemarchakis ec;
   ec.solve();
@@ -110,7 +137,7 @@ void test5()
 ///   p = (1, 1)
 ///   p = (-2149/600, 1) = (-3.581667, 1)
 
-void test6()
+void test8()
 {
   PolynomialPolemarchakis ec;
   ec.solve();

@@ -6,11 +6,13 @@
 
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Time step regulator.
 
-  class Regulator {
+  class Regulator
+  {
   public:
     
     /// Constructor

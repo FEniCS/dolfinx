@@ -5,6 +5,10 @@
 
 using namespace dolfin;
 
+// FIXME: BROKEN
+
+/*
+
 class MedicalAkzoNobel : public ODE {
 public:
 
@@ -158,6 +162,8 @@ private:
 
 };
 
+*/
+
 int main()
 {
   dolfin_set("output", "plain text");
@@ -173,8 +179,8 @@ int main()
 
   dolfin_set("partitioning threshold", 0.2);
 
-  MedicalAkzoNobel ode(20);
-  ode.solve();  
+  //MedicalAkzoNobel ode(20);
+  //ode.solve();  
   
   return 0;
 }

@@ -20,7 +20,7 @@ ReducedModel::ReducedModel(ODE& ode)
   tol     = dolfin_get("average tolerance");
 
   // Copy the sparsity
-  sparsity = ode.sparsity;
+  //sparsity = ode.sparsity;
 
   // Adjust the maximum allowed time step to the initial time step
   real kmax = dolfin_get("initial time step");
@@ -34,31 +34,29 @@ ReducedModel::~ReducedModel()
 //-----------------------------------------------------------------------------
 real ReducedModel::f(const Vector& u, real t, unsigned int i)
 {
+  // FIXME: BROKEN
+
+  /*
+
   if ( g[i].active() )
     return ode.f(u, t, i) + g[i]();
   else
     return 0.0;
+
+  */
+
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real ReducedModel::u0(unsigned int i)
 {
   return ode.u0(i);
 }
-//-----------------------------------------------------------------------------
-Element::Type ReducedModel::method(unsigned int i)
-{
-  return ode.method(i);
-}
-//-----------------------------------------------------------------------------
-unsigned int ReducedModel::order(unsigned int i)
-{
-  return ode.order(i);
-}
-//-----------------------------------------------------------------------------
-real ReducedModel::timestep(unsigned int i)
-{
-  return ode.timestep(i);
-}
+
+// FIXME: BROKEN
+
+/* 
+
 //-----------------------------------------------------------------------------
 void ReducedModel::update(RHS& f, Function& u, real t)
 {
@@ -113,6 +111,9 @@ void ReducedModel::update(Solution& u, Adaptivity& adaptivity, real t)
   // Remember that we have created the model
   reduced = true;
 }
+
+*/
+
 /*
 //-----------------------------------------------------------------------------
 void ReducedModel::save(Sample& sample)
@@ -258,11 +259,15 @@ void ReducedModel::Model::inactivate()
   _active = false;
 }
 //-----------------------------------------------------------------------------
+
+/*
 void ReducedModel::Model::computeModel(Vector& ubar, Vector& fbar,
 				       unsigned int i, real tau, ODE& ode)
 {
-  g = fbar(i) - ode.f(ubar, tau, i);
+  // FIXME: BROKEN
+  //g = fbar(i) - ode.f(ubar, tau, i);
 
   cout << "Modeling term for component " << i << ": " << g << endl;
 }
 //-----------------------------------------------------------------------------
+*/

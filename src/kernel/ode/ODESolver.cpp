@@ -4,13 +4,29 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Dual.h>
-#include <dolfin/Function.h>
-#include <dolfin/TimeStepper.h>
 #include <dolfin/NewTimeStepper.h>
 #include <dolfin/ODESolver.h>
 
 using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+void ODESolver::solve(ODE& ode)
+{
+  dolfin_start("Solving ODE");  
+
+  // Temporary fix until we fix the dual problem again
+  NewTimeStepper::solve(ode);
+
+  cout << "Not computing an error estimate. " 
+       << "The solution may be inaccurate." << endl;
+
+  dolfin_end();
+}
+//-----------------------------------------------------------------------------
+
+// FIXME: BROKEN
+
+/*
 
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
@@ -25,7 +41,7 @@ void ODESolver::solve(ODE& ode, Function& u)
   solve(ode, u, phi);
 }
 //-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode, Function& u, Function& phi)
+void ODESolver::solve(ODE& ode)
 {
   // Check if we should solve the dual problem
   bool solve_dual = dolfin_get("solve dual problem");
@@ -47,27 +63,26 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
-void ODESolver::solvePrimal(ODE& ode, Function& u)
+void ODESolver::solvePrimal(ODE& ode)
 {
   dolfin_start("Solving primal problem");
   
   // Initialize primal solution
-  u.init(ode.size());
-  u.rename("u", "primal");
+  //u.init(ode.size());
+  //u.rename("u", "primal");
   
   // Solve primal problem
-  if ( dolfin_get("use new ode solver") )
-    NewTimeStepper::solve(ode);
-  else
-    TimeStepper::solve(ode, u);
+  NewTimeStepper::solve(ode);
 
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
 void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
-{
+{ 
   dolfin_start("Solving dual problem");
   
+  // FIXME: BROKEN
+
   // Create dual problem
   Dual dual(ode, u);
   
@@ -84,3 +99,5 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
+
+*/

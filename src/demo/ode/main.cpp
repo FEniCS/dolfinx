@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   dolfin_set("output", "plain text");
 
   if ( argc != 3 ) {
-    dolfin::cout << "Usage: dolfin-tanganyika method q' where method is one of" << dolfin::endl;
+    dolfin::cout << "Usage: dolfin-ode method q' where method is one of" << dolfin::endl;
     dolfin::cout << "cgq or dgq, and q is the order" << dolfin::endl;
     return 1;
   }
@@ -20,14 +20,14 @@ int main(int argc, char** argv)
 
   if ( strcasecmp(argv[1], "cgq") == 0 ) {
     
-    cGqMethod cGq(q);
-    cGq.show();
+    NewcGqMethod cGq(q);
+    cGq.disp();
 
   }
   else if ( strcasecmp(argv[1], "dgq") == 0 ) {
     
-    dGqMethod dGq(q);
-    dGq.show();
+    NewdGqMethod dGq(q);
+    dGq.disp();
     
   } 
   else {

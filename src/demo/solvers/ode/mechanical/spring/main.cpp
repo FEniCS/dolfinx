@@ -1,15 +1,17 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
-class Spring : public ParticleSystem
+class Spring : public NewParticleSystem
 {
 public:
   
-  Spring() : ParticleSystem(1, 1)
+  Spring() : NewParticleSystem(1, 1)
   {
     // Final time
     T = 30.0;

@@ -13,7 +13,6 @@
 #include <dolfin/ExpressionFunction.h>
 #include <dolfin/ScalarExpressionFunction.h>
 #include <dolfin/VectorExpressionFunction.h>
-#include <dolfin/ODEFunction.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
@@ -44,13 +43,6 @@ Function::Function(function fp)
   f = 0;
   rename("u", "Unnamed function");
   init(fp);
-}
-//-----------------------------------------------------------------------------
-Function::Function(unsigned int N)
-{
-  f = 0;
-  rename("u", "Unnamed function");
-  init(N);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -94,14 +86,6 @@ void Function::init(function fp)
     delete f;
   
   f = new ScalarExpressionFunction(fp);
-}
-//-----------------------------------------------------------------------------
-void Function::init(unsigned int N)
-{
-  if ( f )
-    delete f;
-
-  f = new ODEFunction(N);
 }
 //-----------------------------------------------------------------------------
 real Function::operator() (const Node& n, real t) const

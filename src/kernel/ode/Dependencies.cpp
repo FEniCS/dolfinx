@@ -59,6 +59,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
 //-----------------------------------------------------------------------------
 void Dependencies::set(const Matrix& A)
 {
+  // FIXME: BROKEN
   dolfin_error("This function needs to be updated to the new format.");
 
   /*

@@ -75,8 +75,12 @@ void solveTestProblem8()
 
 void solveTestProblem9()
 {
-  TestProblem9 testProblem;
-  testProblem.solve();
+  // FIXME: BROKEN
+
+  dolfin_error("Broken");
+
+  //TestProblem9 testProblem;
+  //testProblem.solve();
 }
 
 int main(int argc, char* argv[])

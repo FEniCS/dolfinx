@@ -5,6 +5,10 @@
 
 using namespace dolfin;
 
+// FIXME: BROKEN
+
+/*
+
 class Simple : public ParticleSystem
 {
 public:
@@ -44,6 +48,8 @@ private:
   
 };
 
+*/
+
 int main()
 {
   dolfin_set("tolerance", 0.1);
@@ -54,8 +60,8 @@ int main()
   dolfin_set("average length", 0.0000001);
   dolfin_set("average samples", 1000);
 
-  Simple simple;
-  simple.solve();
+  //Simple simple;
+  //simple.solve();
   
   return 0;
 }

@@ -5,6 +5,10 @@
 
 using namespace dolfin;
 
+// FIXME: BROKEN
+
+/*
+
 class TestProblem9 : public ODE
 {
 public:
@@ -66,3 +70,5 @@ private:
   real lambda;
 
 };
+
+*/

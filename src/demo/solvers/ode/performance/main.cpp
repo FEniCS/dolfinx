@@ -13,6 +13,10 @@
 
 using namespace dolfin;
 
+// FIXME: BROKEN
+
+/*
+
 class Benchmark : public ParticleSystem
 {
 public:
@@ -110,6 +114,8 @@ protected:
   
 };
 
+*/
+
 int main(int argC, char* argV[])
 {
   int n  = 100;
@@ -166,7 +172,13 @@ int main(int argC, char* argV[])
   //dolfin_set("initial time step", 0.01);
   //dolfin_set("fixed time step", true);
 
+  // FIXME: BROKEN (or should we remove this?)
+
+  /*
+
   cout << "Creating problem with " << n << " masses" << endl;
+
+
   
   if (method == "mcg")
   {
@@ -202,6 +214,8 @@ int main(int argC, char* argV[])
     Benchmark bench(n, M, b);
     bench.solve();
   }
+
+  */
 
   return 0;
 }

@@ -140,19 +140,19 @@ fi
 
 # List of DOLFIN module libraries
 # FIXME: Rename when old modules are removed
-DOLFIN_MODULES_NEW="poisson"
+DOLFIN_MODULES_NEW="poisson convdiff"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings common"
 
 # Find modules
-cd src/modules
-./scanmodules.sh
-cd ../..
-DOLFIN_MODULES=""
-for l in `cat src/modules/modules.list | grep -v "#"`; do
-    DOLFIN_MODULES="$DOLFIN_MODULES$l "
-done
+#cd src/modules
+#./scanmodules.sh
+#cd ../..
+#DOLFIN_MODULES=""
+#for l in `cat src/modules/modules.list | grep -v "#"`; do
+#    DOLFIN_MODULES="$DOLFIN_MODULES$l "
+#done
 
 # Generate include path for kernel
 KERNEL_CFLAGS=""
@@ -167,7 +167,7 @@ AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for main (including also module code)
 MAIN_CFLAGS=""
-DIRS="$DOLFIN_MODULES $DOLFIN_MODULES_NEW"
+DIRS="$DOLFIN_MODULES_NEW"
 for f in $DIRS; do
     MAIN_CFLAGS="$MAIN_CFLAGS-I\$(top_builddir)/src/modules/$f "
 done
@@ -177,7 +177,7 @@ AC_SUBST(MAIN_CFLAGS)
 # Generate library list for linking in the correct order.
 # FIXME: Not very pretty to list the libraries multiple times
 DOLFIN_LIBS=""
-DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_MODULES_NEW $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
+DIRS="$DOLFIN_MAIN $DOLFIN_MODULES_NEW $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 for f in $DIRS; do
     DOLFIN_LIBS="$DOLFIN_LIBS-ldolfin-$f "
 done
