@@ -1,4 +1,6 @@
  - Initiation of the FEniCS project
+ - Change syntax of mesh files: grid -> mesh
+ - Create symbolic links instead of copying files
  - Tanganyika -> ODE 
  - Add Heat module
  - Grid -> Mesh

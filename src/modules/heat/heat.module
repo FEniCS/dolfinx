@@ -2,5 +2,5 @@
 
 NAME     = "heat"
 KEYWORD  = "heat"
-SOLVER   = "Heat"
+SOLVER   = "HeatSolver"
 NEEDS    = "mesh"
