@@ -71,7 +71,6 @@ namespace dolfin {
     int size();
 
     ///Public data
-    real h; // Mesh size
     real t; // Time
     real k; // Time step
     
@@ -148,6 +147,8 @@ namespace dolfin {
     int dim;  // Space dimension
     int noeq; // Number of equations
     
+    real h; // Local mesh size
+
   };
   
 }
