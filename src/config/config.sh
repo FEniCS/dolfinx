@@ -28,7 +28,7 @@ DOLFIN_INCLUDES="../main/dolfin.h"
 DOLFIN_LIBS=""
 echo "Scanning for DOLFIN libraries..."
 for f in `find .. -name '*.a'`; do
-	 lib=`echo $f | xargs basename | cut -d'b' -f2 | cut -d'.' -f1`
+	 lib=`echo $f | xargs basename | cut -d'b' -f2-0 | cut -d'.' -f1`
 #	 lflag="-l$lib"
 	 DOLFIN_LIBS="$DOLFIN_LIBS $f"
 #	 LFLAGS_INSOURCE="$LFLAGS_INSOURCE $lflag"
