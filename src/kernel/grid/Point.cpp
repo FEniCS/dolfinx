@@ -1,6 +1,8 @@
 #include <cmath>
 #include <dolfin/Point.h>
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 Point::Point()
 {
@@ -37,5 +39,13 @@ real Point::dist(Point p)
   real dz = z - p.z;
 
   return sqrt( dx*dx + dy*dy + dz*dz );
+}
+//-----------------------------------------------------------------------------
+// Additional operators
+//-----------------------------------------------------------------------------
+ostream& dolfin::operator << (ostream& output, const Point& p)
+{
+  output << "[ Point x = " << p.x << " y = " << p.y << " z = " << p.z << " ]";
+  return output;
 }
 //-----------------------------------------------------------------------------

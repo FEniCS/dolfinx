@@ -37,7 +37,7 @@ real Mapping::dt(real a) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dx
+const FunctionSpace::ElementFunction Mapping::dx
 (const FunctionSpace::Product &v) const
 {
   cout << "Warning: derivative of Product not implemented." << endl;
@@ -46,7 +46,7 @@ FunctionSpace::ElementFunction Mapping::dx
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dy
+const FunctionSpace::ElementFunction Mapping::dy
 (const FunctionSpace::Product &v) const
 {
   cout << "Warning: derivative of Product not implemented." << endl;
@@ -55,7 +55,7 @@ FunctionSpace::ElementFunction Mapping::dy
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dz
+const FunctionSpace::ElementFunction Mapping::dz
 (const FunctionSpace::Product &v) const
 {
   cout << "Warning: derivative of Product not implemented." << endl;
@@ -64,7 +64,7 @@ FunctionSpace::ElementFunction Mapping::dz
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dt
+const FunctionSpace::ElementFunction Mapping::dt
 (const FunctionSpace::Product &v) const
 {
   cout << "Warning: derivative of Product not implemented." << endl;
@@ -73,7 +73,7 @@ FunctionSpace::ElementFunction Mapping::dt
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dx
+const FunctionSpace::ElementFunction Mapping::dx
 (const FunctionSpace::ElementFunction &v) const
 {
   cout << "Warning: derivative of ElementFunction not implemented." << endl;
@@ -82,7 +82,7 @@ FunctionSpace::ElementFunction Mapping::dx
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dy
+const FunctionSpace::ElementFunction Mapping::dy
 (const FunctionSpace::ElementFunction &v) const
 {
   cout << "Warning: derivative of ElementFunction not implemented." << endl;
@@ -91,7 +91,7 @@ FunctionSpace::ElementFunction Mapping::dy
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dz
+const FunctionSpace::ElementFunction Mapping::dz
 (const FunctionSpace::ElementFunction &v) const
 {
   cout << "Warning: derivative of ElementFunction not implemented." << endl;
@@ -100,7 +100,7 @@ FunctionSpace::ElementFunction Mapping::dz
   return w;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction Mapping::dt
+const FunctionSpace::ElementFunction Mapping::dt
 (const FunctionSpace::ElementFunction &v) const
 {
   cout << "Warning: derivative of ElementFunction not implemented." << endl;

@@ -5,14 +5,15 @@
 #define __EQUATION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Mapping.h>
 #include <dolfin/Function.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/ShapeFunction.h>
 
 namespace dolfin {
-
+  
   class FiniteElement;
-
+  
   typedef FunctionSpace::ShapeFunction ShapeFunction;
   typedef FunctionSpace::Product Product;
   typedef FunctionSpace::ElementFunction ElementFunction;
@@ -43,6 +44,32 @@ namespace dolfin {
 
   protected:
 
+	 // --- Derivatives (computed using mapping)
+	 
+	 // Derivative of constant
+	 real dx(real a) const;
+	 real dy(real a) const;
+	 real dz(real a) const;
+	 real dt(real a) const;
+
+	 // Derivative of ShapeFunction
+	 const ElementFunction &dx(const ShapeFunction &v) const;
+	 const ElementFunction& dy(const ShapeFunction &v) const;
+	 const ElementFunction& dz(const ShapeFunction &v) const;
+	 const ElementFunction& dt(const ShapeFunction &v) const;
+	 
+	 // Derivative of Product
+	 const ElementFunction& dx(const Product &v) const;
+	 const ElementFunction& dy(const Product &v) const;
+	 const ElementFunction& dz(const Product &v) const;
+	 const ElementFunction& dt(const Product &v) const;
+
+	 // Derivative of ElementFunction
+	 const ElementFunction& dx(const ElementFunction &v) const;
+	 const ElementFunction& dy(const ElementFunction &v) const;
+	 const ElementFunction& dz(const ElementFunction &v) const;
+	 const ElementFunction& dt(const ElementFunction &v) const;
+	 
 	 // Function data
 	 class FunctionPair {
 	 public:
@@ -78,6 +105,9 @@ namespace dolfin {
 	 // List of element functions that need to be updated
 	 ShortList<FunctionPair> functions;
 
+	 // Mapping from reference element
+	 const Mapping* mapping;
+	 
 	 // Integral measures
 	 Integral::InteriorMeasure dK;
 	 Integral::BoundaryMeasure dS;
@@ -86,7 +116,7 @@ namespace dolfin {
 	 int noeq; // Number of equations
 	 real h;   // Mesh size
 	 real t;   // Time
-	 real dt;  // Time step
+	 real k;   // Time step
 	 
   };
 

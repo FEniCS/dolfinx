@@ -15,25 +15,25 @@ TriLinMapping::TriLinMapping() : Mapping()
   dim = 2;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TriLinMapping::dx
+const FunctionSpace::ElementFunction TriLinMapping::dx
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g11*v.dx() + g21*v.dy();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TriLinMapping::dy
+const FunctionSpace::ElementFunction TriLinMapping::dy
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g12*v.dx() + g22*v.dy();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TriLinMapping::dz
+const FunctionSpace::ElementFunction TriLinMapping::dz
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.dz();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TriLinMapping::dt
+const FunctionSpace::ElementFunction TriLinMapping::dt
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.dt();

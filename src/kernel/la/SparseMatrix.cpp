@@ -86,12 +86,15 @@ void SparseMatrix::init(int m, int n)
 	 columns[i][0] = -1;
 	 values[i][0] = 0.0;
   }
+
+  allocsize = 1;
 }
 //-----------------------------------------------------------------------------
 void SparseMatrix::resize()
 {
   int oldsize = 0;
   int newsize = 0;
+  allocsize = 0;
   
   for (int i = 0; i < m; i++) {
 
@@ -104,6 +107,10 @@ void SparseMatrix::resize()
 	 // Keep track of number of cleared elements
 	 oldsize += rowsizes[i];
 	 newsize += rowsize;
+
+	 // Keep track of maximum row length
+	 if ( rowsize > allocsize )
+		allocsize = rowsize;
 	 
 	 // Allocate new row
 	 int*  cols = new int[rowsize];
@@ -153,6 +160,8 @@ void SparseMatrix::clear()
   }
   values = 0;
 
+  allocsize = 1;
+  
   m = 0;
   n = 0;
 }

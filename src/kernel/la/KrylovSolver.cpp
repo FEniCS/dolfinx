@@ -1,7 +1,6 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <unistd.h>
 #include <dolfin/basic.h>
 #include <dolfin/SISolver.h>
 #include <dolfin/KrylovSolver.h>
@@ -42,11 +41,12 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 
   // Check if b = 0
   norm_b = b.norm();
-  if ( norm_b == 0 ){
+  if ( norm_b < DOLFIN_EPS ){
+	 cout << "b = 0, so x = 0" << endl;
     x = 0.0;
     return;
   }
-
+  
   // Choose method
   switch( method ){ 
   case GMRES:
@@ -62,12 +62,14 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
 {
+  cout << "Using the GMRES solver." << endl;
+  
   // FIXME: Should be parameters
   int k_max             = 20;
   int max_no_iterations = 100;
 
   int n = x.size();
-
+  
   // Allocate memory for arrays
   allocArrays(n, k_max);
   
@@ -245,6 +247,8 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
   // dirichlet boundary conditions, since then the 
   // symmetry of the matrix is destroyed.
 
+  cout << "Using the conjugate gradient solver." << endl;
+  
   int sz = x.size();
   int k_max = 20;
   

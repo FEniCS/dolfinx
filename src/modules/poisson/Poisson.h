@@ -16,11 +16,11 @@ namespace dolfin {
 	 }
 	 
 	 real lhs(const ShapeFunction &u, const ShapeFunction &v) {
-		return 1.0;
+		return dx(u)*dx(v) * dK;
 	 }
 	 
 	 real rhs(const ShapeFunction &v) {
-		return 1.0;
+		return (f * v) * dK;
 	 }
 	 
   private:

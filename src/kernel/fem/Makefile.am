@@ -11,9 +11,7 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/ShapeFunction.h \
                           dolfin/Solver.h \
                           dolfin/TetLinMapping.h \
-                          dolfin/TetLinSpace.h \
-                          dolfin/TriLinMapping.h \
-                          dolfin/TriLinSpace.h
+                          dolfin/TriLinMapping.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = ElementFunction.cpp \
@@ -27,7 +25,6 @@ libdolfin_fem_a_SOURCES = ElementFunction.cpp \
                           Integral.cpp \
                           Mapping.cpp \
                           Product.cpp \
-                          shapefunctions.cpp \
                           ShapeFunction.cpp \
                           TetLinMapping.cpp \
                           TriLinMapping.cpp

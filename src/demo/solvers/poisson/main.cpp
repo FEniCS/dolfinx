@@ -8,14 +8,8 @@
 // Source term
 real f(real x, real y, real z, real t)
 {
-  real dx = x - 0.5;
-  real dy = y - 0.5;
-  real r  = sqrt( dx*dx + dy*dy );
-  
-  if ( r < 0.3 )
-	 return 100.0;
-  else
-	 return 0.0;
+  real pi = DOLFIN_PI;
+  return 14.0 * pi*pi * sin(pi*x) * sin(2.0*pi*x) * sin(3.0*pi*x);
 }
 
 using namespace dolfin;

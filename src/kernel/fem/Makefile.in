@@ -73,11 +73,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/ElementFunction.h                           dolfin/Equation.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionList.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/Product.h                           dolfin/ShapeFunction.h                           dolfin/Solver.h                           dolfin/TetLinMapping.h                           dolfin/TetLinSpace.h                           dolfin/TriLinMapping.h                           dolfin/TriLinSpace.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/ElementFunction.h                           dolfin/Equation.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionList.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/Product.h                           dolfin/ShapeFunction.h                           dolfin/Solver.h                           dolfin/TetLinMapping.h                           dolfin/TriLinMapping.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = ElementFunction.cpp                           Equation.cpp                           EquationSystem.h                           FiniteElement.cpp                           Function.cpp                           FunctionList.cpp                           FunctionSpace.cpp                           Galerkin.cpp                           Integral.cpp                           Mapping.cpp                           Product.cpp                           shapefunctions.cpp                           ShapeFunction.cpp                           TetLinMapping.cpp                           TriLinMapping.cpp
+libdolfin_fem_a_SOURCES = ElementFunction.cpp                           Equation.cpp                           EquationSystem.h                           FiniteElement.cpp                           Function.cpp                           FunctionList.cpp                           FunctionSpace.cpp                           Galerkin.cpp                           Integral.cpp                           Mapping.cpp                           Product.cpp                           ShapeFunction.cpp                           TetLinMapping.cpp                           TriLinMapping.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -91,8 +91,7 @@ LIBS = @LIBS@
 libdolfin_fem_a_LIBADD = 
 libdolfin_fem_a_OBJECTS =  ElementFunction.o Equation.o FiniteElement.o \
 Function.o FunctionList.o FunctionSpace.o Galerkin.o Integral.o \
-Mapping.o Product.o shapefunctions.o ShapeFunction.o TetLinMapping.o \
-TriLinMapping.o
+Mapping.o Product.o ShapeFunction.o TetLinMapping.o TriLinMapping.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -115,7 +114,7 @@ DEP_FILES =  .deps/ElementFunction.P .deps/Equation.P \
 .deps/FiniteElement.P .deps/Function.P .deps/FunctionList.P \
 .deps/FunctionSpace.P .deps/Galerkin.P .deps/Integral.P .deps/Mapping.P \
 .deps/Product.P .deps/ShapeFunction.P .deps/TetLinMapping.P \
-.deps/TriLinMapping.P .deps/shapefunctions.P
+.deps/TriLinMapping.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 

@@ -1,1 +1,6 @@
-EXTRA_DIST = dolfin_quadrature.h Quadrature.h TriangleMidpointQuadrature.h TriangleVertexQuadrature.h
+EXTRA_DIST = dolfin_quadrature.h \
+             Quadrature.h \
+             TetrahedronMidpointQuadrature.h \
+             TetrahedronVertexQuadrature.h \
+             TriangleMidpointQuadrature.h \
+             TriangleVertexQuadrature.h

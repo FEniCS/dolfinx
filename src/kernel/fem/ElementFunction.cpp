@@ -527,6 +527,8 @@ void FunctionSpace::ElementFunction::init(int size)
 {
   if ( n == size )
 	 return;
+
+  n = size;
   
   delete [] a;
   delete [] v;

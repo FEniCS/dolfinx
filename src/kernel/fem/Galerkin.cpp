@@ -1,13 +1,6 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Mapping.h>
-#include <dolfin/TriLinMapping.h>
-#include <dolfin/TetLinMapping.h>
-#include <dolfin/Quadrature.h>
-#include <dolfin/TriangleVertexQuadrature.h>
-//#include <dolfin/TetrahedronVertexQuadrature.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/Galerkin.h>
 
 using namespace dolfin;
@@ -48,7 +41,7 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   // Write a message
   cout << "Assembling: system size is ";
   cout << A.size(0) << " x " << A.size(1) << "." << endl;
-  
+
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
 
@@ -83,7 +76,7 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
 
-	 	 // Update mapping
+	 // Update mapping
 	 mapping->update(cell);
 
 	 // Update equation
@@ -148,15 +141,15 @@ void Galerkin::init(Grid &grid)
   switch ( grid.type() ) {
   case Cell::TRIANGLE:
 	 cout << "Using standard piecewise linears on triangles." << endl;
-	 element    = new FiniteElement(triLinSpace, triLinSpace);
-	 mapping    = new TriLinMapping();
-	 quadrature = new TriangleVertexQuadrature();
+	 element    = &p1TriElement;
+	 mapping    = &triLinMapping;
+	 quadrature = &triangleVertexQuadrature;
 	 break;
   case Cell::TETRAHEDRON:
 	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
-	 element    = new FiniteElement(tetLinSpace, tetLinSpace);
-	 mapping    = new TetLinMapping();
-	 //quadrature = TetrahedronVertexQuadrature();
+	 element    = &p1TetElement;
+	 mapping    = &tetLinMapping;
+	 quadrature = &tetrahedronVertexQuadrature;
   break;
   default:
 	 // FIXME: Use logging system

@@ -11,9 +11,11 @@ Equation::Equation(int dim)
 {
   h  = 0.0;
   t  = 0.0;
-  dt = 0.0;
+  k = 0.0;
   
   this->dim = dim;
+  mapping = 0;
+  
   noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
@@ -46,15 +48,98 @@ void Equation::setTime(real t)
   this->t = t;
 }
 //-----------------------------------------------------------------------------
-void Equation::setTimeStep(real dt)
+void Equation::setTimeStep(real k)
 {
-  this->dt = dt;
+  this->k = k;
+}
+//-----------------------------------------------------------------------------
+real Equation::dx(real a) const
+{
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real Equation::dy(real a) const
+{
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real Equation::dz(real a) const
+{
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real Equation::dt(real a) const
+{
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dx(const ShapeFunction &v) const
+{
+  return mapping->dx(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dy(const ShapeFunction &v) const
+{
+  return mapping->dy(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dz(const ShapeFunction &v) const
+{
+  return mapping->dz(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dt(const ShapeFunction &v) const
+{
+  return mapping->dt(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dx(const Product &v) const
+{
+  return mapping->dx(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dy(const Product &v) const
+{
+  return mapping->dy(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dz(const Product &v) const
+{
+  return mapping->dz(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dt(const Product &v) const
+{
+  return mapping->dt(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dx(const ElementFunction &v) const
+{
+  return mapping->dx(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dy(const ElementFunction &v) const
+{
+  return mapping->dy(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dz(const ElementFunction &v) const
+{
+  return mapping->dz(v);
+}
+//-----------------------------------------------------------------------------
+const ElementFunction& Equation::dt(const ElementFunction &v) const
+{
+  return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
 void Equation::add(ElementFunction &v, Function &f)
 {
   FunctionPair p(v, f);
-  functions.add(p);
+  if ( functions.add(p) == -1 ) {
+	 functions.resize(functions.size() + 1);
+	 functions.add(p);
+  }
 }
 //-----------------------------------------------------------------------------
 void Equation::update(const FiniteElement* element,
@@ -69,6 +154,9 @@ void Equation::update(const FiniteElement* element,
   // Update integral measures
   dK.update(*mapping, *quadrature);
   dS.update(*mapping, *quadrature);
+
+  // Save mapping (to compute derivatives)
+  this->mapping = mapping;
 }
 //-----------------------------------------------------------------------------
 // Equation::FunctionPair
@@ -87,7 +175,7 @@ Equation::FunctionPair::FunctionPair(ElementFunction &v, Function &f)
 //-----------------------------------------------------------------------------
 void Equation::FunctionPair::update
 (const FiniteElement &element, const Cell &cell, real t)
-{
+{  
   f->update(*v, element, cell, t);
 }
 //-----------------------------------------------------------------------------

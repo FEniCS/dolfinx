@@ -20,7 +20,7 @@ $state = "header";
 $nodes = 0;
 
 # Parse file
-while ($line=<INFILE>){
+while ($line=<INFILE>) {
 
   # Remove leading and trailing space
   $line =~ s/^\s+//;
@@ -31,7 +31,7 @@ while ($line=<INFILE>){
 
   # Convert
 
-  if ( "$state" eq "header" ){
+  if ( "$state" eq "header" ) {
 
 	 $nodes = @words[0];
 	 $cells = @words[1];
@@ -45,7 +45,7 @@ while ($line=<INFILE>){
 	 $state = "nodes";
 		
   }
-  elsif ( "$state" eq "nodes" ){
+  elsif ( "$state" eq "nodes" ) {
 
 	 $number = @words[0] - 1;
 	 $x = @words[1];
@@ -63,13 +63,13 @@ while ($line=<INFILE>){
 	 }
 		
   }
-  elsif ( "$state" eq "cells" ){
+  elsif ( "$state" eq "cells" ) {
 
 	 $number = @words[0] - 1;
 	 $dummy  = @words[1];
 	 $type   = @words[2];
 
-	 if ( "$type" eq "tet" ){
+	 if ( "$type" eq "tet" ) {
 		
 		$n0 = @words[3] - 1;
 		$n1 = @words[4] - 1;
@@ -87,7 +87,24 @@ while ($line=<INFILE>){
 		}
 		
 	 }
-	 
+	 elsif ( "$type" eq "tri" ) {
+		
+		$n0 = @words[3] - 1;
+		$n1 = @words[4] - 1;
+		$n2 = @words[5] - 1;
+
+		print ( OUTFILE "      <triangle name=\"$number\" n0=\"$n0\" n1=\"$n1\" n2=\"$n2\"/>\n" );
+
+		if ( $number == ($cells - 1) ) {
+
+		  print ( OUTFILE "    </cells>\n");
+		  print ( OUTFILE "  </grid>\n");
+		  print ( OUTFILE "</dolfin>");
+		
+		}
+		
+	 }
+
   }
 
 }

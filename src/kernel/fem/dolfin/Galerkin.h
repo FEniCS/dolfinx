@@ -8,18 +8,19 @@
 #ifndef __GALERKIN_H
 #define __GALERKIN_H
 
+#include <dolfin/dolfin_elements.h>
+#include <dolfin/dolfin_quadrature.h>
+#include <dolfin/Mapping.h>
+#include <dolfin/TriLinMapping.h>
+#include <dolfin/TetLinMapping.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/Vector.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Equation.h>
 #include <dolfin/EquationSystem.h>
-#include <dolfin/TriLinSpace.h>
-#include <dolfin/TetLinSpace.h>
 #include <dolfin/Grid.h>
 
 namespace dolfin {
-
-  class Mapping;
-  class Quadrature;
   
   class Galerkin {
   public:
@@ -29,7 +30,7 @@ namespace dolfin {
 
 	 // Constructor allowing specification of method
 	 Galerkin(FiniteElement &element, Mapping &mapping, Quadrature &quadrature);
-	 
+
 	 // Assemble and set boundary conditions
 	 void assemble(Equation &equation, Grid &grid, Matrix &A, Vector &b);
 	 
@@ -47,14 +48,19 @@ namespace dolfin {
 	 void alloc(Matrix &A, Grid &grid);
 	 void alloc(Vector &b, Grid &grid);
 
+	 // Method data
 	 FiniteElement* element;    // The finite element
 	 Mapping*       mapping;    // Mapping from reference cell
 	 Quadrature*    quadrature; // Quadrature on reference cell
+
+	 // Data for default method
+	 P1TriElement                p1TriElement;
+	 P1TetElement                p1TetElement;
+	 TriLinMapping               triLinMapping;
+	 TetLinMapping               tetLinMapping;
+	 TriangleVertexQuadrature    triangleVertexQuadrature;
+	 TetrahedronVertexQuadrature tetrahedronVertexQuadrature;	 
 	 
-	 TriLinSpace triLinSpace; // Default local function space
-	 TetLinSpace tetLinSpace; // Default local function space
-	 
-	 //dolfin_bc (*bc_function) (real x, real y, real z, int node, int component);
   };
 
 }

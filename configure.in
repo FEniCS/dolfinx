@@ -6,7 +6,7 @@ PACKAGE=dolfin
 VERSION=0.2.11-1
 DOLFIN_MAIN="main"
 # Note: need to be in the correct order, and yes io should be included twice...
-DOLFIN_KERNEL="io grid fem common quadrature io la math"
+DOLFIN_KERNEL="io grid fem elements common quadrature io la math"
 
 dnl Find modules
 cd src/modules
@@ -93,6 +93,8 @@ AC_OUTPUT( Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
+           src/kernel/elements/Makefile \
+           src/kernel/elements/dolfin/Makefile \
            src/kernel/fem/Makefile \
            src/kernel/fem/dolfin/Makefile \
            src/kernel/grid/Makefile \
@@ -101,12 +103,12 @@ AC_OUTPUT( Makefile \
            src/kernel/io/dolfin/Makefile \
            src/kernel/la/Makefile \
            src/kernel/la/dolfin/Makefile \
-           src/kernel/quadrature/Makefile \
-           src/kernel/quadrature/dolfin/Makefile \
-           src/kernel/math/Makefile \
-           src/kernel/math/dolfin/Makefile \
            src/kernel/main/Makefile \
            src/kernel/main/dolfin/Makefile \
+           src/kernel/math/Makefile \
+           src/kernel/math/dolfin/Makefile \
+           src/kernel/quadrature/Makefile \
+           src/kernel/quadrature/dolfin/Makefile \
            src/modules/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \

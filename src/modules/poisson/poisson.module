@@ -1,0 +1,7 @@
+# Module specifications
+
+NAME     = "poisson"
+KEYWORD  = "poisson"
+SOLVER   = "PoissonSolver"
+SETTINGS = "PoissonSettings"
+GRID     = "yes"

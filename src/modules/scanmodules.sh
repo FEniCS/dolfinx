@@ -122,6 +122,7 @@ done
 
 echo "" >> $HEADER
 echo "    cout << \"Could not find any matching solver for problem \\\"\" << problem << \"\\\"\" << endl;" >> $HEADER
+echo "    exit(1);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
@@ -160,6 +161,7 @@ done
 
 echo "" >> $HEADER
 echo "    cout << \"Could not find any matching solver for problem \\\"\" << problem << \"\\\"\" << endl;" >> $HEADER
+echo "    exit(1);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
@@ -193,6 +195,7 @@ done
 
 echo "" >> $HEADER
 echo "    cout << \"Could not find any matching settings for problem \\\"\" << problem << \"\\\"\" << endl;" >> $HEADER
+echo "    exit(1);" >> $HEADER
 
 echo "" >> $HEADER
 echo "}" >> $HEADER

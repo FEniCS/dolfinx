@@ -9,10 +9,6 @@
 #define DOLFIN_TERM_WIDTH          80
 #define DOLFIN_INITIAL_DEBUG_LEVEL 0
 #define DOLFIN_PI                  3.141592653589793238462
-#define DOLFIN_1_3                 0.33333333333333
-#define DOLFIN_1_6                 0.16666666666667
-#define DOLFIN_1_12                0.08333333333333
-#define DOLFIN_SPARSE_ALLOCSIZE    5
 
 typedef double real;
 

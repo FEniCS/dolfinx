@@ -7,6 +7,10 @@
 // DOLFIN quadrature classes
 
 #include <dolfin/Quadrature.h>
+
+#include <dolfin/TetrahedronMidpointQuadrature.h>
+#include <dolfin/TetrahedronVertexQuadrature.h>
+
 #include <dolfin/TriangleMidpointQuadrature.h>
 #include <dolfin/TriangleVertexQuadrature.h>
 

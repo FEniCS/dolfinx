@@ -15,6 +15,5 @@
 
 #include <dolfin/TriLinMapping.h>
 #include <dolfin/TetLinMapping.h>
-#include <dolfin/TriLinSpace.h>
 
 #endif

@@ -15,25 +15,25 @@ TetLinMapping::TetLinMapping() : Mapping()
   dim = 3;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TetLinMapping::dx
+const FunctionSpace::ElementFunction TetLinMapping::dx
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g11*v.dx() + g21*v.dy() + g31*v.dz();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TetLinMapping::dy
+const FunctionSpace::ElementFunction TetLinMapping::dy
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g12*v.dx() + g22*v.dy() + g32*v.dz();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TetLinMapping::dz
+const FunctionSpace::ElementFunction TetLinMapping::dz
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g13*v.dx() + g23*v.dy() + g33*v.dz();
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction TetLinMapping::dt
+const FunctionSpace::ElementFunction TetLinMapping::dt
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.dt();

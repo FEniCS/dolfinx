@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 {  
   Vector x;
   Matrix A;
-
+  
   File file("data.xml");
   
   file >> x;
