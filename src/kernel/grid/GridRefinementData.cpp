@@ -34,6 +34,12 @@ void GridRefinementData::mark(Cell* cell)
 int GridRefinementData::noMarkedCells() const
 {
   return marked_cells.size();
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinementData::setGrid(Grid& grid)
+{
+  this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
 void GridRefinementData::initMarkers()

@@ -80,8 +80,7 @@ void GridInit::initConnectivity(Grid& grid)
 //-----------------------------------------------------------------------------
 void GridInit::initFaces(Grid& grid)
 {
-  // Go through all cells and add new faces. This algorithm is O(n^2),
-  // similarly to initEdges().
+  // Go through all cells and add new faces
 
   // Go through all cells for a grid of tetrahedrons
   for (CellIterator c(grid); !c.end(); ++c)

@@ -146,10 +146,10 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node* n3 = grid.createNode(cell.coord(3));
 
   // Update parent-child info 
-  n0->setParent(cell.node(0));
-  n1->setParent(cell.node(1));
-  n2->setParent(cell.node(2));
-  n3->setParent(cell.node(3));
+  n0->setParent(cell.node(0)); cell.node(0)->setChild(n0);
+  n1->setParent(cell.node(1)); cell.node(1)->setChild(n1);
+  n2->setParent(cell.node(2)); cell.node(2)->setChild(n2);
+  n3->setParent(cell.node(3)); cell.node(3)->setChild(n3);
 
   // Create new nodes with the new coordinates 
   Node* n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
@@ -188,18 +188,8 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   cell.addChild(t7);
   cell.addChild(t8);
 
-  // Set marker of cell to "marked_according_to_ref" 
+  // Set marker of cell to marked_according_to_ref
   cell.marker() = Cell::marked_according_to_ref;
-
-  // Set marker of children to "marked_for_no_ref" 
-  t1->marker() = Cell::marked_for_no_ref;
-  t2->marker() = Cell::marked_for_no_ref;
-  t3->marker() = Cell::marked_for_no_ref;
-  t4->marker() = Cell::marked_for_no_ref;
-  t5->marker() = Cell::marked_for_no_ref;
-  t6->marker() = Cell::marked_for_no_ref;
-  t7->marker() = Cell::marked_for_no_ref;
-  t8->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
 void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)

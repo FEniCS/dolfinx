@@ -110,6 +110,11 @@ int GenericCell::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void GenericCell::setGrid(Grid& grid)
+{
+  this->grid = &grid;
+}
+//-----------------------------------------------------------------------------
 void GenericCell::setParent(Cell* parent)
 {
   // Set parent cell: a cell is parent if the current cell is created through 
@@ -209,11 +214,16 @@ Edge* GenericCell::findEdge(Node* n0, Node* n1)
 //-----------------------------------------------------------------------------
 Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
 {
+  cout << endl;
+
   for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
-      if ( (*f)->equals(e0, e1, e2) )
+      if ( (*f)->equals(e0, e1, e2) ) {
+	cout << "Face [" << e0->id() << " " << e1->id() << " " << e2->id() << "]: found!" << endl;
 	return *f;
+      }
 
+  cout << "Face [" << e0->id() << " " << e1->id() << " " << e2->id() << "]: not found" << endl;
   return 0;
 }
 //-----------------------------------------------------------------------------

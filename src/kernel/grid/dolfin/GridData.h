@@ -103,6 +103,7 @@ namespace dolfin {
     int noFaces() const;
 
     // Friends
+    friend class Grid;
     friend class NodeIterator::GridNodeIterator;
     friend class CellIterator::GridCellIterator;
     friend class EdgeIterator::GridEdgeIterator;
@@ -110,6 +111,9 @@ namespace dolfin {
     
   private:
     
+    // Change the grid pointer
+    void setGrid(Grid& grid);
+
     // The grid
     Grid* grid;
 

@@ -1,3 +1,6 @@
+ - Grid refinement updates
+ - Make OpenDX file format work for grids (output)
+ - Add volume() and diameter() in cell
  - New classes TriGridRefinement and TetGridRefinement
  - Add iterators for faces and edges on a boundary
  - New class GridHierarchy

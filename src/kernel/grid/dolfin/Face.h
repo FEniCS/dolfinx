@@ -54,6 +54,9 @@ namespace dolfin {
     // Specify global face number
     int setID(int id, Grid* grid);
 
+    // Set the grid pointer
+    void setGrid(Grid& grid);
+
     /// Specify three edges
     void set(Edge* e0, Edge* e1, Edge* e2);
     

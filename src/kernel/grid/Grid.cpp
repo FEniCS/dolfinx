@@ -382,6 +382,7 @@ void Grid::init()
 //-----------------------------------------------------------------------------
 void Grid::swap(Grid& grid)
 {
+  // Swap data
   GridData*           tmp_gd     = this->gd;
   BoundaryData*       tmp_bd     = this->bd;
   GridRefinementData* tmp_rd     = this->rd;
@@ -403,8 +404,14 @@ void Grid::swap(Grid& grid)
   grid._child  = tmp_child;
   grid._type   = tmp_type;
 
-  // FIXME: Need to change the grid pointer within all data structures
-  dolfin_error("Does not work yet...");
+  // Change grid reference in all data structures
+  grid.gd->setGrid(grid);
+  grid.bd->setGrid(grid);
+  grid.rd->setGrid(grid);
+
+  this->gd->setGrid(*this);
+  this->bd->setGrid(*this);
+  this->rd->setGrid(*this);
 }
 //-----------------------------------------------------------------------------
 // Additional operators

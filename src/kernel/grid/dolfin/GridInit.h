@@ -12,7 +12,7 @@ namespace dolfin{
   /// information (connections) in a grid.
   ///
   /// The trick is to compute the connections in the correct order, as
-  /// indicated in GridInit.h, to obtain an O(n) algorithm.
+  /// indicated in GridData.h, to obtain an O(n) algorithm.
   
   class GridInit {
   public:

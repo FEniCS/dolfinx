@@ -113,6 +113,11 @@ int Edge::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void Edge::setGrid(Grid& grid)
+{
+  this->grid = &grid;
+}
+//-----------------------------------------------------------------------------
 void Edge::set(Node* n0, Node* n1)
 {
   this->n0 = n0;

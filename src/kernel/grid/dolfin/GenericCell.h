@@ -47,6 +47,8 @@ namespace dolfin {
     Point coord(int i) const;
     Point midpoint() const;
     int   nodeID(int i) const;
+    virtual real volume() const = 0;
+    virtual real diameter() const = 0;
 
     void mark(Cell* cell);
 
@@ -66,6 +68,9 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
+    // Set grid pointer
+    void setGrid(Grid& grid);
+
     // Set parent cell
     void setParent(Cell* parent);
 

@@ -76,6 +76,9 @@ namespace dolfin {
     // Specify global edge number
     int setID(int id, Grid* grid);
     
+    // Set the grid pointer
+    void setGrid(Grid& grid);
+
     /// Specify nodes
     void set(Node* n0, Node* n1);
 

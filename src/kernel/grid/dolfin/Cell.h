@@ -100,7 +100,13 @@ namespace dolfin {
 
     // Return id for node number i
     int nodeID(int i) const;
+    
+    // Compute and return volume / area
+    real volume() const;
 
+    // Compute and return volume / area
+    real diameter() const;
+    
     ///--- Grid refinement ---
 
     /// Mark cell for refinement
@@ -144,6 +150,9 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
+    // Set the grid pointer
+    void setGrid(Grid& grid);
+
     // Set parent cell
     void setParent(Cell* parent);
 

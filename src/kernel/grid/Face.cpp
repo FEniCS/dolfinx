@@ -110,6 +110,11 @@ int Face::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void Face::setGrid(Grid& grid)
+{
+  this->grid = &grid;
+}
+//-----------------------------------------------------------------------------
 void Face::set(Edge* e0, Edge* e1, Edge* e2)
 {
   fe.init(3);

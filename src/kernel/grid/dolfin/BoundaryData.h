@@ -48,12 +48,16 @@ namespace dolfin {
     int noFaces() const;
 
     /// Friends
+    friend class Grid;
     friend class BoundaryInit;
     friend class NodeIterator::BoundaryNodeIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;
     friend class FaceIterator::BoundaryFaceIterator;
 
   private:
+
+    // Change the grid pointer
+    void setGrid(Grid& grid);
 
     // The grid
     Grid* grid;

@@ -186,3 +186,22 @@ int GridData::noFaces() const
   return faces.size();
 }
 //-----------------------------------------------------------------------------
+void GridData::setGrid(Grid& grid)
+{
+  // Change the grid pointer in all data
+  for (Table<Node>::Iterator n(nodes); !n.end(); ++n)
+    n->setGrid(grid);
+
+  for (Table<Cell>::Iterator c(cells); !c.end(); ++c)
+    c->setGrid(grid);
+
+  for (Table<Edge>::Iterator e(edges); !e.end(); ++e)
+    e->setGrid(grid);
+
+  for (Table<Face>::Iterator f(faces); !f.end(); ++f)
+    f->setGrid(grid);
+
+  // Change grid pointer
+  this->grid = &grid;
+}
+//-----------------------------------------------------------------------------

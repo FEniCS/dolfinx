@@ -163,17 +163,12 @@ void GridRefinement::refineGrid(Grid& grid)
   // Refine cells which are not marked_according_to_ref
   for (CellIterator c(grid); !c.end(); ++c) {
 
-    if ( c->id() > 383 ) {
-      cout << "Här blir det fel, antagligen för att vi lägger till celler i nätet (genom refine) " 
-	   << "samtidigt som vi loopar igenom cellerna i nätet." << endl;
-    }
-    
     // Skip cells which are marked_according_to_ref
     if ( c->marker() == Cell::marked_according_to_ref )
       continue;
 
     // Refine according to refinement rule
-    refine(*c, grid);
+    refine(*c, grid.child());
     
   }
 

@@ -184,6 +184,11 @@ int Node::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void Node::setGrid(Grid& grid)
+{
+  this->grid = &grid;
+}
+//-----------------------------------------------------------------------------
 void Node::setParent(Node* parent)
 {
   // Set parent node: a node is parent to if it has the same coordinates 

@@ -175,6 +175,18 @@ int Cell::nodeID(int i) const
   return -1;
 }
 //-----------------------------------------------------------------------------
+real Cell::volume() const
+{
+  dolfin_assert(c);
+  return c->volume();
+}
+//-----------------------------------------------------------------------------
+real Cell::diameter() const
+{
+  dolfin_assert(c);
+  return c->diameter();
+}
+//-----------------------------------------------------------------------------
 void Cell::mark()
 {
   if ( !c )
@@ -209,6 +221,12 @@ int Cell::setID(int id, Grid* grid)
 {
   dolfin_assert(c);
   return c->setID(id, grid);
+}
+//-----------------------------------------------------------------------------
+void Cell::setGrid(Grid& grid)
+{
+  dolfin_assert(c);
+  c->setGrid(grid);
 }
 //-----------------------------------------------------------------------------
 void Cell::setParent(Cell* parent)

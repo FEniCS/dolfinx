@@ -42,6 +42,9 @@ namespace dolfin {
 
   private:
 
+    // Change the grid pointer
+    void setGrid(Grid& grid);
+
     // Initialize markers
     void initMarkers();
 

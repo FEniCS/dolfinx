@@ -112,6 +112,9 @@ namespace dolfin{
     // Specify global node number
     int setID(int id, Grid* grid);
     
+    // Set the grid pointer
+    void setGrid(Grid& grid);
+
     // Set parent node
     void setParent(Node* parent);
 

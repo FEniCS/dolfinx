@@ -31,8 +31,13 @@ void PoissonSolver::solve()
   // Discretise
   fem.assemble(poisson, grid, A, b);
 
+  
+  b.show();
+
   // Solve the linear system
   solver.solve(A, x, b);
+
+  x.show();
 
   // Save the solution
   u.rename("u", "temperature");
