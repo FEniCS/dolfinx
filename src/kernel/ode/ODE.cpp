@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/Function.h>
 #include <dolfin/Vector.h>
 #include <dolfin/ODESolver.h>
@@ -29,6 +30,37 @@ ODE::ODE(unsigned int N) : N(N), T(1.0), sparsity(N)
 ODE::~ODE()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+real ODE::dfdu(const Vector& u, real t, unsigned int i, unsigned int j)
+{
+  // Compute Jacobian numerically if dfdu() is not implemented by user
+
+  // We cast away the constness of u, since we need to change the Vector u
+  // in one position temporarily. Once the derivative has been computed, we
+  // restore u to its original value, keeping it const. 
+  Vector& v = const_cast<Vector&>(u);
+
+  // Save value of u_j
+  real uj = v(j);
+
+  // Small change in u_j
+  real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
+  
+  // Compute F values
+  v(j) -= 0.5 * dU;
+  real f1 = f(v, t, i);
+  
+  v(j) = uj + 0.5*dU;
+  real f2 = f(v, t, i);
+         
+  // Compute derivative
+  if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
+    return 0.0;
+
+  v(j) = uj;
+
+  return (f2 - f1) / dU;
 }
 //-----------------------------------------------------------------------------
 Element::Type ODE::method(unsigned int i)

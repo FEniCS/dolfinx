@@ -60,24 +60,7 @@ real RHS::dfdu(unsigned int i, unsigned int j, real t)
   // to take something.
   update(i, 0, t);
   
-  // Small change in u_j
-  real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(u(j)));
-
-  // Save value of u_j
-  real uj = u(j);
-  
-  // Compute F values
-  u(j) -= 0.5 * dU;
-  real f1 = ode.f(u, t, i);
-  
-  u(j) = uj + 0.5*dU;
-  real f2 = ode.f(u, t, i);
-         
-  // Compute derivative
-  if ( abs(f1-f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
-    return 0.0;
-
-  return (f2-f1) / dU;
+  return ode.dfdu(u, t, i, j);
 }
 //-----------------------------------------------------------------------------
 void RHS::update(unsigned int index, unsigned int node, real t)

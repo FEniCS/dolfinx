@@ -42,6 +42,9 @@ namespace dolfin
     /// Right-hand side
     virtual real f(const Vector& u, real t, unsigned int i) = 0;
 
+    /// Jacobian (optional)
+    virtual real dfdu(const Vector& u, real t, unsigned int i, unsigned int j);
+
     /// Method to use for given component (optional)
     virtual Element::Type method(unsigned int i);
 
