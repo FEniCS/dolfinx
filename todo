@@ -13,6 +13,7 @@ General
 - Replace Array and List with NewArray and NewList
 - Replace int by unsigned int where necessary
 - Update manual: anyone?
+- Fix setprecision() cout
 
 Multi-adaptive solver
 ---------------------

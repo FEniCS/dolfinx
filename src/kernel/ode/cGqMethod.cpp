@@ -31,6 +31,7 @@ void cGqMethod::show() const
   
   for (unsigned int i = 0; i < n; i++)
     dolfin_info("%2d   %.16e   %.16e", i, points[i], qweights[i]);
+  dolfin_info("");
 
   for (unsigned int i = 1; i < n; i++) {
     dolfin_info("");
@@ -40,6 +41,19 @@ void cGqMethod::show() const
     dolfin_info("---------------------------");
     for (unsigned int j = 0; j < n; j++)
       dolfin_info("%2d   %.16e", j, weights[i][j]);
+  }
+  dolfin_info("");
+  
+  dolfin_info("cG(%d) weights in matrix format:", q);
+  if ( q < 10 )
+    dolfin_info("-------------------------------");
+  else
+    dolfin_info("--------------------------------");
+  for (unsigned int i = 1; i < n; i++)
+  {
+    for (unsigned int j = 0; j < n; j++)
+      cout << weights[i][j] << " ";
+    cout << endl;
   }
 }
 //-----------------------------------------------------------------------------
