@@ -12,10 +12,10 @@ TimeSlabData::TimeSlabData(ODE& ode) : components(ode.size())
 {
   topslab = 0;
   
-  for(int i = 0; i < components.size(); i++)
-  {
+  // FIXME: u0 is stored at many places: first in ODE, then in components,
+  // and then also in the elements
+  for (int i = 0; i < components.size(); i++)
     components[i].u0 = ode.u0(i);
-  }
 
   //dolfin_debug1("components(index): %p", &(components(0)));
   //dolfin_debug1("components(index): %p", &(components(1)));

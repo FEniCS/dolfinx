@@ -47,6 +47,11 @@ Element::~Element()
   delete [] values;
 }
 //-----------------------------------------------------------------------------
+real Element::endval() const
+{
+  return values[q];
+}
+//-----------------------------------------------------------------------------
 int Element::within(real t) const
 {
   dolfin_assert(timeslab);

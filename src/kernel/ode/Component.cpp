@@ -102,7 +102,8 @@ Element* Component::createElement(const Element::Type type, int q, int index,
 				  TimeSlab* timeslab)
 {
   Element* element = 0;
-  
+
+  // Create element
   switch (type) {
   case Element::cg:
     element = new cGqElement(q, index, timeslab);
@@ -113,14 +114,8 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   default:
     dolfin_error1("Unknown element type: %d.", type);
   }
-
-  dolfin_debug1("this: %p", this);
-
-  dolfin_debug1("element->starttime: %lf", element->starttime());
-  dolfin_debug1("element->endtime: %lf", element->endtime());
-  dolfin_debug1("element->timestep: %lf", element->timestep());
-  dolfin_debug1("elements.size: %d", elements.size());
-
+  
+  // Set initial value
   if(size() == 0)
   {
     // First element, get u0 from explicit value
@@ -130,11 +125,19 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   {
     // Not the First element, get u0 from previous element
     Element &prevelement = last();
-    real u0i = prevelement.eval(prevelement.endtime());
+    real u0i = prevelement.endval();
     element->update(u0i);
   }
   
+  // Add element to list
   elements.push_back(element);
+
+  dolfin_debug1("this: %p", this);
+
+  dolfin_debug1("element->starttime: %lf", element->starttime());
+  dolfin_debug1("element->endtime: %lf", element->endtime());
+  dolfin_debug1("element->timestep: %lf", element->timestep());
+  dolfin_debug1("elements.size: %d", elements.size());
 
   return element;
 }

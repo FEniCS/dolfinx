@@ -21,25 +21,46 @@ namespace dolfin {
     
     enum Type {cg, dg};
 
+    /// Constructor
     Element(int q, int index, TimeSlab* timeslab);
+
+    /// Destructor
     virtual ~Element();
     
+    /// Evaluate element at given time
     virtual real eval(real t) const = 0;
+
+    /// Evaluate element at given node within element
     virtual real eval(int node) const = 0;
 
+    /// Evaluate element at the end point
+    real endval() const;
+
+    /// Update initial value
     virtual void update(real u0) = 0;
+
+    /// Update element (iteration)
     virtual void update(RHS& f) = 0;
 
+    /// Check if given time is within the element
     int within(real t) const;
+
+    /// Check if the element is within the given time slab
     bool within(TimeSlab* timeslab) const;
 
+    /// Return the left end-point
     real starttime() const;
+
+    /// Return the right end-point
     real endtime() const;
+
+    /// Return the size of the time step
     real timestep() const;
 
+    /// Compute new time step
     virtual real newTimeStep() const = 0;
 
-    // Component index
+    /// Component index
     int index;
 
   protected:
@@ -61,7 +82,6 @@ namespace dolfin {
     // Order
     int q;
     
-
     // The time slab this element belongs to
     TimeSlab* timeslab;
 
