@@ -7,7 +7,7 @@
 #include <string>
 
 namespace dolfin {
-
+  
   class Variable {
   public:
     

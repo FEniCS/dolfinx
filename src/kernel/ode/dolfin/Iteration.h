@@ -5,13 +5,13 @@
 #define __ITERATION_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
 
 namespace dolfin
 {
   class Solution;
   class RHS;
   class TimeSlab;
+  class ElementGroup;
   class Element;
   class FixedPointIteration;
 
@@ -44,9 +44,9 @@ namespace dolfin
     // Start iteration on time slab
     virtual void start(TimeSlab& timeslab) = 0;
 
-    // Start iteration on element list
-    virtual void start(NewArray<Element*>& elements) = 0;
-
+    // Start iteration on element group
+    virtual void start(ElementGroup& group) = 0;
+    
     // Start iteration on element
     virtual void start(Element& element) = 0;
 
@@ -56,15 +56,15 @@ namespace dolfin
     /// Update element
     virtual void update(Element& element) = 0;
 
-    /// Update element list
-    virtual void update(NewArray<Element*>& elements) = 0;
+    /// Update element group
+    virtual void update(ElementGroup& group) = 0;
 
     /// Stabilize time slab iteration
     virtual void stabilize(TimeSlab& timeslab, 
 			   const Residuals& r, unsigned int n) = 0;
     
-    /// Stabilize element list iteration
-    virtual void stabilize(NewArray<Element*>& elements,
+    /// Stabilize element group iteration
+    virtual void stabilize(ElementGroup& group,
 			   const Residuals& r, unsigned int n) = 0;
     
     /// Stabilize element iteration
@@ -74,8 +74,8 @@ namespace dolfin
     /// Check convergence for time slab
     virtual bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n) = 0;
 
-    /// Check convergence for element list
-    virtual bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n) = 0;
+    /// Check convergence for element group
+    virtual bool converged(ElementGroup& group, Residuals& r, unsigned int n) = 0;
 
     /// Check convergence for element
     virtual bool converged(Element& element, Residuals& r, unsigned int n) = 0;
@@ -83,8 +83,8 @@ namespace dolfin
     /// Check divergence for time slab
     virtual bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
 
-    /// Check divergence for element list
-    virtual bool diverged(NewArray<Element*>& elements, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+    /// Check divergence for element group
+    virtual bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
 
     /// Check divergence for element
     virtual bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
@@ -92,14 +92,14 @@ namespace dolfin
     /// Write a status report
     virtual void report() const = 0;
 
-    /// Update initial data for element list
-    void init(NewArray<Element*>& elements);
+    /// Update initial data for element group
+    void init(ElementGroup& group);
 
     // Update initial data for element
     void init(Element& element);
 
-    /// Reset element list
-    void reset(NewArray<Element*>& elements);
+    /// Reset element group
+    void reset(ElementGroup& group);
 
     // Reset element
     void reset(Element& element);
@@ -107,8 +107,8 @@ namespace dolfin
     // Compute L2 norm of element residual for time slab
     real residual(TimeSlab& timeslab);
 
-    // Compute L2 norm of element residual for element list
-    real residual(NewArray<Element*>& elements);
+    // Compute L2 norm of element residual for element group
+    real residual(ElementGroup& group);
 
     // Compute absolute value of element residual for element
     real residual(Element& element);

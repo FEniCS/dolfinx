@@ -5,7 +5,6 @@
 #define __FIXED_POINT_ITERATION_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
 #include <dolfin/Event.h>
 #include <dolfin/Iteration.h>
 
@@ -14,6 +13,7 @@ namespace dolfin
   class Solution;
   class RHS;
   class TimeSlab;
+  class ElementGroup;
   class Element;
   class Iteration;
 
@@ -38,8 +38,8 @@ namespace dolfin
     /// Fixed point iteration on time slab
     bool iterate(TimeSlab& timeslab);
 
-    /// Fixed point iteration on element list
-    bool iterate(NewArray<Element*>& elements);
+    /// Fixed point iteration on element group
+    bool iterate(ElementGroup& group);
     
     /// Fixed point iteration on element
     bool iterate(Element& element);
@@ -47,20 +47,20 @@ namespace dolfin
     // Compute L2 norm of element residual for time slab
     real residual(TimeSlab& timeslab);
 
-    // Compute L2 norm of element residual for element list
-    real residual(NewArray<Element*>& elements);
+    // Compute L2 norm of element residual for element group
+    real residual(ElementGroup& group);
 
     // Compute absolute value of element residual for element
     real residual(Element& element);
     
-    /// Update initial data for element list
-    void init(NewArray<Element*>& elements);
+    /// Update initial data for element group
+    void init(ElementGroup& group);
 
     // Update initial data for element
     void init(Element& element);
 
-    /// Reset element list
-    void reset(NewArray<Element*>& elements);
+    /// Reset element group
+    void reset(ElementGroup& group);
 
     // Reset element
     void reset(Element& element);
@@ -73,8 +73,8 @@ namespace dolfin
     // Start iteration on time slab
     void start(TimeSlab& timeslab);
 
-    // Start iteration on element list
-    void start(NewArray<Element*>& elements);
+    // Start iteration on element group
+    void start(ElementGroup& group);
 
     // Start iteration on element
     void start(Element& element);
@@ -82,8 +82,8 @@ namespace dolfin
     // Update time slab
     void update(TimeSlab& timeslab);
     
-    // Update element list
-    void update(NewArray<Element*>& elements);
+    // Update element group
+    void update(ElementGroup& group);
 
     // Update element
     void update(Element& element);
@@ -92,8 +92,8 @@ namespace dolfin
     void stabilize(TimeSlab& timeslab,
 		   const Iteration::Residuals& r, unsigned int n);
 
-    // Stabilize element list
-    void stabilize(NewArray<Element*>& elements,
+    // Stabilize element group
+    void stabilize(ElementGroup& group,
 		   const Iteration::Residuals& r, unsigned int n);
 
     // Stabilize element
@@ -103,8 +103,8 @@ namespace dolfin
     // Check convergence for time slab
     bool converged(TimeSlab& timeslab, Iteration::Residuals& r, unsigned int n);
 
-    // Check convergence for element list
-    bool converged(NewArray<Element*>& elements, Iteration::Residuals& r, unsigned int n);
+    // Check convergence for element group
+    bool converged(ElementGroup& group, Iteration::Residuals& r, unsigned int n);
 
     // Check convergence for element
     bool converged(Element& element, Iteration::Residuals& r, unsigned int n);
@@ -113,8 +113,8 @@ namespace dolfin
     bool diverged(TimeSlab& timeslab, Iteration::Residuals& r,
 		  unsigned int n, Iteration::State& newstate);
     
-    // Check divergence for element list
-    bool diverged(NewArray<Element*>& elements, Iteration::Residuals& r,
+    // Check divergence for element group
+    bool diverged(ElementGroup& group, Iteration::Residuals& r,
 		  unsigned int n, Iteration::State& newstate);
 
     // Check divergence for element

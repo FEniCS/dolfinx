@@ -1,4 +1,3 @@
-
 EXTRA_DIST = dolfin_tanganyika.h \
              cGqElement.h \
              cGqMethod.h \
@@ -16,6 +15,8 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Element.h \
              ElementBlock.h \
              ElementData.h \
+             ElementGroup.h \
+             ElementIterator.h \
              ElementTmpFile.h \
              EmptySparsity.h \
              FixedPointIteration.h \

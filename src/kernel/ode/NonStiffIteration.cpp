@@ -5,6 +5,7 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/NonStiffIteration.h>
@@ -36,7 +37,7 @@ void NonStiffIteration::start(TimeSlab& timeslab)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::start(NewArray<Element*>& elements)
+void NonStiffIteration::start(ElementGroup& group)
 {
   // Do nothing
 }
@@ -52,18 +53,11 @@ void NonStiffIteration::update(TimeSlab& timeslab)
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(NewArray<Element*>& elements)
+void NonStiffIteration::update(ElementGroup& group)
 {
   // Simple update of element list
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Iterate element
+  for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
-  }
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::update(Element& element)
@@ -78,7 +72,7 @@ void NonStiffIteration::stabilize(TimeSlab& timeslab,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(NewArray<Element*>& elements,
+void NonStiffIteration::stabilize(ElementGroup& group,
 				  const Residuals& r, unsigned int n)
 {
   // Do nothing
@@ -108,16 +102,16 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(NewArray<Element*>& elements, 
+bool NonStiffIteration::converged(ElementGroup& group, 
 				  Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the list contains only one element
-  if ( elements.size() == 1 )
+  if ( group.size() == 1 )
     return n > 0;
   
   // Compute maximum residual
   r.r1 = r.r2;
-  r.r2 = residual(elements);
+  r.r2 = residual(group);
   
   // Save initial residual
   if ( n == 0 )
@@ -164,7 +158,7 @@ bool NonStiffIteration::diverged(TimeSlab& timeslab,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::diverged(NewArray<Element*>& elements, 
+bool NonStiffIteration::diverged(ElementGroup& group, 
 				 Residuals& r, unsigned int n,
 				 Iteration::State& newstate)
 {
@@ -180,7 +174,7 @@ bool NonStiffIteration::diverged(NewArray<Element*>& elements,
   dolfin_info("Problem appears to be stiff, trying adaptive damping.");
   
   // Reset element list
-  reset(elements);
+  reset(group);
 
   // Change state
   newstate = stiff2;

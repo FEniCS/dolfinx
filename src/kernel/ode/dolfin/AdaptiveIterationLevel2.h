@@ -6,7 +6,6 @@
 #ifndef __ADAPTIVE_ITERATION_LEVEL_2_H
 #define __ADAPTIVE_ITERATION_LEVEL_2_H
 
-#include <dolfin/NewArray.h>
 #include <dolfin/Iteration.h>
 
 namespace dolfin
@@ -27,23 +26,23 @@ namespace dolfin
     State state() const;
 
     void start(TimeSlab& timeslab);
-    void start(NewArray<Element*>& elements);
+    void start(ElementGroup& group);
     void start(Element& element);
 
     void update(TimeSlab& timeslab);
-    void update(NewArray<Element*>& elements);
+    void update(ElementGroup& group);
     void update(Element& element);
     
     void stabilize(TimeSlab& timeslab, const Residuals& r, unsigned int n);
-    void stabilize(NewArray<Element*>& elements, const Residuals& r, unsigned int n);
+    void stabilize(ElementGroup& group, const Residuals& r, unsigned int n);
     void stabilize(Element& element, const Residuals& r, unsigned int n);
     
     bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
-    bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
+    bool converged(ElementGroup& group, Residuals& r, unsigned int n);
     bool converged(Element& element, Residuals& r, unsigned int n);
 
     bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate);
-    bool diverged(NewArray<Element*>& elements, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
 
     void report() const;
@@ -51,25 +50,25 @@ namespace dolfin
   private:
 
     // Gauss-Jacobi iteration on element list
-    void updateGaussJacobi(NewArray<Element*>& elements);
+    void updateGaussJacobi(ElementGroup& group);
 
     // Gauss-Seidel iteration on element list
-    void updateGaussSeidel(NewArray<Element*>& elements);
+    void updateGaussSeidel(ElementGroup& group);
     
     // Compute divergence
-    real computeDivergence(NewArray<Element*>& elements, const Residuals& r);
+    real computeDivergence(ElementGroup& group, const Residuals& r);
 
     // Initialize additional data
     void initData(Values& values);
 
     // Copy data from element list
-    void copyData(const NewArray<Element*>& elements, Values& values);
+    void copyData(ElementGroup& group, Values& values);
 
     // Copy data to element list
-    void copyData(const Values& values, NewArray<Element*>& elements) const;
+    void copyData(Values& values, ElementGroup& group);
 
     // Compute size of data
-    unsigned int dataSize(const NewArray<Element*>& elements) const;
+    unsigned int dataSize(ElementGroup& group);
 
     //--- Iteration data ---
    

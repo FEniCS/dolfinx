@@ -28,12 +28,12 @@ SimpleTimeSlab::~SimpleTimeSlab()
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::update(FixedPointIteration& fixpoint)
 {
-  fixpoint.iterate(elements);
+  fixpoint.iterate(group);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
 {
-  fixpoint.reset(elements);
+  fixpoint.reset(group);
 }
 //-----------------------------------------------------------------------------
 bool SimpleTimeSlab::leaf() const
@@ -43,7 +43,7 @@ bool SimpleTimeSlab::leaf() const
 //-----------------------------------------------------------------------------
 real SimpleTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
 {
-  return fixpoint.residual(elements);
+  return fixpoint.residual(group);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::show(unsigned int depth) const
@@ -52,7 +52,7 @@ void SimpleTimeSlab::show(unsigned int depth) const
     cout << "  ";
 
   cout << "Time slab at [" << starttime() << " " << endtime() << "]: "
-       << elements.size() << " element(s)" << endl;
+       << group.size() << " element(s)" << endl;
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
@@ -73,7 +73,7 @@ void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
     u.debug(*element, Solution::create);
 
     // Add element to array
-    elements.push_back(element);
+    group.add(*element);
   }
 }
 //-----------------------------------------------------------------------------

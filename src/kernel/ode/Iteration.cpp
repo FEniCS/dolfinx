@@ -6,6 +6,7 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
 #include <dolfin/Iteration.h>
 
@@ -26,18 +27,11 @@ Iteration::~Iteration()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Iteration::init(NewArray<Element*>& elements)
+void Iteration::init(ElementGroup& group)
 {
   // Update initial data for elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Update initial data
+  for (ElementIterator element(group); !element.end(); ++element)
     init(*element);
-  }
 }
 //-----------------------------------------------------------------------------
 void Iteration::init(Element& element)
@@ -49,18 +43,11 @@ void Iteration::init(Element& element)
   element.update(u0);
 }
 //-----------------------------------------------------------------------------
-void Iteration::reset(NewArray<Element*>& elements)
+void Iteration::reset(ElementGroup& group)
 {
-  // Reset elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Reset element
+  // Reset element group
+  for (ElementIterator element(group); !element.end(); ++element)
     reset(*element);
-  }
 }
 //-----------------------------------------------------------------------------
 void Iteration::reset(Element& element)
@@ -77,19 +64,11 @@ real Iteration::residual(TimeSlab& timeslab)
   return timeslab.elementResidualL2(fixpoint);
 }
 //-----------------------------------------------------------------------------
-real Iteration::residual(NewArray<Element*>& elements)
+real Iteration::residual(ElementGroup& group)
 {
   real r = 0.0;
-  
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Add square of element residual
+  for (ElementIterator element(group); !element.end(); ++element)
     r += sqr(residual(*element));
-  }
 
   return sqrt(r);
 }

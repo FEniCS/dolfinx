@@ -9,6 +9,7 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/AdaptiveIterationLevel2.h>
@@ -41,10 +42,10 @@ void AdaptiveIterationLevel2::start(TimeSlab& timeslab)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::start(NewArray<Element*>& elements)
+void AdaptiveIterationLevel2::start(ElementGroup& group)
 {
   // Compute total number of values in element list
-  datasize = dataSize(elements);
+  datasize = dataSize(group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::start(Element& element)
@@ -58,13 +59,13 @@ void AdaptiveIterationLevel2::update(TimeSlab& timeslab)
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::update(NewArray<Element*>& elements)
+void AdaptiveIterationLevel2::update(ElementGroup& group)
 {
   // Choose update method
   if ( method == gauss_jacobi )
-    updateGaussJacobi(elements);
+    updateGaussJacobi(group);
   else
-    updateGaussSeidel(elements);
+    updateGaussSeidel(group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(Element& element)
@@ -82,7 +83,7 @@ void AdaptiveIterationLevel2::stabilize(TimeSlab& timeslab,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::stabilize(NewArray<Element*>& elements,
+void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 					const Residuals& r, unsigned int n)
 {
   // Make at least one iteration before stabilizing
@@ -92,7 +93,7 @@ void AdaptiveIterationLevel2::stabilize(NewArray<Element*>& elements,
   // Compute divergence rate if necessary
   real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
-    rho = computeDivergence(elements, r);
+    rho = computeDivergence(group, r);
   
   // Adaptive stabilization
   Iteration::stabilize(r, rho);
@@ -122,12 +123,12 @@ bool AdaptiveIterationLevel2::converged(TimeSlab& timeslab,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::converged(NewArray<Element*>& elements, 
+bool AdaptiveIterationLevel2::converged(ElementGroup& group, 
 					Residuals& r, unsigned int n)
 {
   // Compute residual
   r.r1 = r.r2;
-  r.r2 = residual(elements);
+  r.r2 = residual(group);
   
   // Save initial residual
   if ( n == 0 )
@@ -170,7 +171,7 @@ bool AdaptiveIterationLevel2::diverged(TimeSlab& timeslab,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::diverged(NewArray<Element*>& elements, 
+bool AdaptiveIterationLevel2::diverged(ElementGroup& group, 
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
@@ -193,18 +194,14 @@ void AdaptiveIterationLevel2::report() const
        << "fixed point iteration (on element list level)." << endl;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::updateGaussJacobi(NewArray<Element*>& elements)
+void AdaptiveIterationLevel2::updateGaussJacobi(ElementGroup& group)
 {  
   // Initialize values
   initData(x1);
 
   // Compute new values
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(group); !element.end(); ++element)
   {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
     // Iterate element
     fixpoint.iterate(*element);
     
@@ -213,24 +210,17 @@ void AdaptiveIterationLevel2::updateGaussJacobi(NewArray<Element*>& elements)
   }
 
   // Copy values to elements
-  copyData(x1, elements);
+  copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::updateGaussSeidel(NewArray<Element*>& elements)
+void AdaptiveIterationLevel2::updateGaussSeidel(ElementGroup& group)
 {
   // Simple update of element list
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Iterate element
+  for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
-  }
 }
 //-----------------------------------------------------------------------------
-real AdaptiveIterationLevel2::computeDivergence(NewArray<Element*>& elements,
+real AdaptiveIterationLevel2::computeDivergence(ElementGroup& group,
 						const Residuals& r)
 {
   // Successive residuals
@@ -247,16 +237,16 @@ real AdaptiveIterationLevel2::computeDivergence(NewArray<Element*>& elements,
 
   // Save solution values before iteration
   initData(x0);
-  copyData(elements, x0);
+  copyData(group, x0);
 
   for (unsigned int n = 0; n < maxiter; n++)
   {
-    // Update element list
-    update(elements);
+    // Update element group
+    update(group);
     
     // Compute residual
     r1 = r2;
-    r2 = residual(elements);
+    r2 = residual(group);
   
     // Compute divergence
     rho1 = rho2;
@@ -277,7 +267,7 @@ real AdaptiveIterationLevel2::computeDivergence(NewArray<Element*>& elements,
   alpha = alpha0;
 
   // Restore solution values
-  copyData(x0, elements);
+  copyData(x0, group);
 
   return rho2;
 }
@@ -292,17 +282,13 @@ void AdaptiveIterationLevel2::initData(Values& values)
   values.offset = 0;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::copyData(const NewArray<Element*>& elements,
+void AdaptiveIterationLevel2::copyData(ElementGroup& group,
 				       Values& values)
 {
   // Copy data from element list
   unsigned int offset = 0;
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(group); !element.end(); ++element)
   {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
     // Get values from element
     element->get(values.values + offset);
 
@@ -311,17 +297,12 @@ void AdaptiveIterationLevel2::copyData(const NewArray<Element*>& elements,
   }
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::copyData(const Values& values,
-				 NewArray<Element*>& elements) const
+void AdaptiveIterationLevel2::copyData(Values& values, ElementGroup& group)
 {
   // Copy data to elements list
   unsigned int offset = 0;
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(group); !element.end(); ++element)
   {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
     // Set values for element
     element->set(values.values + offset);
 
@@ -330,20 +311,12 @@ void AdaptiveIterationLevel2::copyData(const Values& values,
   }
 }
 //-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel2::dataSize(const NewArray<Element*>& elements) const
+unsigned int AdaptiveIterationLevel2::dataSize(ElementGroup& group)
 {
   // Compute number of values
-  int size = 0;
-  
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Add size of element
+  int size = 0;  
+  for (ElementIterator element(group); !element.end(); ++element)
     size += element->size();
-  }
   
   return size;
 }

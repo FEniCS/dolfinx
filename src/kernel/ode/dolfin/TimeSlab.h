@@ -8,7 +8,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/ElementGroup.h>
 
 namespace dolfin {
 
@@ -80,8 +80,8 @@ namespace dolfin {
     // True if we reached the given end time
     bool reached_endtime;
 
-    // List of elements within this time slab
-    NewArray<Element*> elements;
+    // Element group contained in this time slab
+    ElementGroup group;
 
   };
 

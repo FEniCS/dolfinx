@@ -20,6 +20,8 @@
 #include <dolfin/Dual.h>
 #include <dolfin/Element.h>
 #include <dolfin/ElementData.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementIterator.h>
 #include <dolfin/EmptySparsity.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/FullSparsity.h>

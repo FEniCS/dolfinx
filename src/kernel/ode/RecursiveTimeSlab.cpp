@@ -45,7 +45,7 @@ void RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
   updateTimeSlabs(fixpoint);
 
   // Then iterate on the elements
-  fixpoint.iterate(elements);
+  fixpoint.iterate(group);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
@@ -54,7 +54,7 @@ void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
   resetTimeSlabs(fixpoint);
 
   // Then reset the elements
-  fixpoint.reset(elements);
+  fixpoint.reset(group);
 }
 //-----------------------------------------------------------------------------
 bool RecursiveTimeSlab::leaf() const
@@ -70,7 +70,7 @@ real RecursiveTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
     r += sqr(timeslabs[i]->elementResidualL2(fixpoint));
 
   // Compute L2 norm for elements
-  r += sqr(fixpoint.residual(elements));
+  r += sqr(fixpoint.residual(group));
 
   return sqrt(r);
 }
@@ -81,7 +81,7 @@ void RecursiveTimeSlab::show(unsigned int depth) const
     cout << "  ";
   
   cout << "Time slab at [" << starttime() << " " << endtime() << "]: "
-       << elements.size() << " element(s) and "
+       << group.size() << " element(s) and "
        << timeslabs.size() << " time slab(s)" << endl;
   
   for (unsigned int i = 0; i < timeslabs.size(); i++)
@@ -161,14 +161,14 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
     u.debug(*element, Solution::create);
     
     // Add element to array
-    elements.push_back(element);
+    group.add(*element);
   }
 
   // Reset elements
-  fixpoint.reset(elements);
+  fixpoint.reset(group);
 
   // Iterate on the elements
-  fixpoint.iterate(elements);
+  fixpoint.iterate(group);
 
   // Compute residuals and new time steps
   computeResiduals(f, adaptivity);
@@ -196,11 +196,8 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)
   bool kfixed = adaptivity.fixed();
 
   // Compute residuals and new time steps
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(group); !element.end(); ++element)
   {
-    // Get element
-    Element* element = elements[i];
-
     // Compute residual
     real r = element->computeResidual(f);
 

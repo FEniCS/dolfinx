@@ -7,6 +7,7 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/AdaptiveIterationLevel3.h>
@@ -40,7 +41,7 @@ void AdaptiveIterationLevel3::start(TimeSlab& timeslab)
   datasize = dataSize(timeslab);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::start(NewArray<Element*>& elements)
+void AdaptiveIterationLevel3::start(ElementGroup& group)
 {
   // Do nothing
 }
@@ -59,18 +60,11 @@ void AdaptiveIterationLevel3::update(TimeSlab& timeslab)
     updateGaussSeidel(timeslab);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::update(NewArray<Element*>& elements)
+void AdaptiveIterationLevel3::update(ElementGroup& group)
 {
   // Simple update of element list
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Iterate element
+  for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
-  }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(Element& element)
@@ -101,7 +95,7 @@ void AdaptiveIterationLevel3::stabilize(TimeSlab& timeslab,
   Iteration::stabilize(r, rho);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::stabilize(NewArray<Element*>& elements,
+void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
 					const Residuals& r, unsigned int n)
 {
   // Do nothing
@@ -127,7 +121,7 @@ bool AdaptiveIterationLevel3::converged(TimeSlab& timeslab,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::converged(NewArray<Element*>& elements, 
+bool AdaptiveIterationLevel3::converged(ElementGroup& group, 
 					Residuals& r, unsigned int n)
 {
   // Iterate one time on each element list
@@ -168,7 +162,7 @@ bool AdaptiveIterationLevel3::diverged(TimeSlab& timeslab,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::diverged(NewArray<Element*>& elements, 
+bool AdaptiveIterationLevel3::diverged(ElementGroup& group, 
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
