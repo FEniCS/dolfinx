@@ -55,6 +55,9 @@ namespace dolfin
     // Compute stabilization for diagonal damping
     void stabilizeDiagonal(TimeSlab& timeslab, real rho);
 
+    // Clear data from previous iteration
+    void clear();
+
     //--- Data for fixed point iteration
 
     // Solution

@@ -102,7 +102,7 @@ void TimeSlab::resetElements(Solution& u)
     // Get initial value for element
     real u0 = u(element->index(), element->starttime());
     
-    cout << "Resetting component " << element->index() << " to initial value: " << u0 << endl;
+    cout << "  Resetting component " << element->index() << " to initial value: " << u0 << endl;
 
     // Reset element
     element->reset(u0);
@@ -123,7 +123,7 @@ real TimeSlab::computeMaxRdElements(Solution& u, RHS& f)
     // Compute discrete residual
     maxrd = std::max(maxrd, fabs(element->computeDiscreteResidual(f)));
     
-    cout << "  r[" << element->index() << "] = " << fabs(element->computeDiscreteResidual(f)) << endl;
+    //cout << "  r[" << element->index() << "] = " << fabs(element->computeDiscreteResidual(f)) << endl;
 
   }
 
