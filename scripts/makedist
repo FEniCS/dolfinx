@@ -16,9 +16,7 @@ fi
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
 
 # Write a message
-echo Creating release $VERSION of DOLFIN
-echo Assuming that this is a clean CVS version
-sleep 1
+echo Creating release $VERSION of DOLFIN, assuming this is a clean CVS version
 
 # Create the directory
 DISTDIR=dolfin-$VERSION

@@ -1,4 +1,4 @@
-DOLFIN has been written mainly by:
+DOLFIN is written mainly by:
 
 	Johan Hoffman	email: hoffman@cims.nyu.edu
 			www:   http://www.cims.nyu.edu/~hoffman/
@@ -18,10 +18,8 @@ Contributors in alphabetical order:
 	Niklas Ericsson		<nen@math.chalmers.se>
 	Georgios Foufas		<foufas@math.chalmers.se>
 	Rasmus Hemph		<PDE project course 2001/2002>
-	Johan Hoffman		<hoffman@cims.nyu.edu>
 	Aleksandra Krusper	<PDE project course 2001/2002>
 	Johan Jansson		<johanjan@math.chalmers.se>
-	Anders Logg		<logg@math.chalmers.se>
 	Karin Kraft		<kakr@math.chalmers.se>
         Thomas Svedberg		<thsv@am.chalmers.se>
 	Erik Svensson		<eriksv@math.chalmers.se>
