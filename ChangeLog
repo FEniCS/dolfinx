@@ -1,5 +1,5 @@
 0.4.6
- - Save vectors and matrices from Matlab/Octave
+ - Save vectors and matrices from Matlab/Octave (foufas)
  - Rename writexml.m to xmlmesh.m
  - Inlining of important functions
  - Optimize evaluation of elements
