@@ -12,10 +12,10 @@ int main()
 {
   int refinements = 3;
 
-  // Refine 2D grid
+  // Refine 2D mesh
   refine2D(refinements);
 
-  // Refine 3D grid
+  // Refine 3D mesh
   refine3D(refinements);
   
   return 0;
@@ -23,21 +23,21 @@ int main()
 
 void refine2D(int refinements)
 {
-  dolfin::cout << "Refining 2D grid" << dolfin::endl;
+  dolfin::cout << "Refining 2D mesh" << dolfin::endl;
   dolfin::cout << "----------------" << dolfin::endl;  
 
-  // Load grid
-  Grid grid("grid2D.xml.gz");
+  // Load mesh
+  Mesh mesh("mesh2D.xml.gz");
   
-  // Save first grid
-  File file("grids2D.m");
-  file << grid;
+  // Save first mesh
+  File file("meshes2D.m");
+  file << mesh;
 
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
     
 
-    for (CellIterator cell(grid); !cell.end(); ++cell) {
+    for (CellIterator cell(mesh); !cell.end(); ++cell) {
       
       // Mark cells close to y = x
       for (NodeIterator node(cell); !node.end(); ++node)
@@ -53,12 +53,12 @@ void refine2D(int refinements)
       
     }
 
-    // Refine grid
-    grid.refine();
+    // Refine mesh
+    mesh.refine();
 
-    // Save all grids in the grid hierarcy
-    GridHierarchy grids(grid);
-    for (GridIterator g(grids); !g.end(); ++g)
+    // Save all meshes in the mesh hierarcy
+    MeshHierarchy meshes(mesh);
+    for (MeshIterator g(meshes); !g.end(); ++g)
       file << *g;
 
   }
@@ -68,30 +68,30 @@ void refine2D(int refinements)
 
 void refine3D(int refinements)
 {
-  dolfin::cout << "Refining 3D grid" << dolfin::endl;
+  dolfin::cout << "Refining 3D mesh" << dolfin::endl;
   dolfin::cout << "----------------" << dolfin::endl;  
 
-  // Load grid
-  Grid grid("grid3D.xml.gz");
+  // Load mesh
+  Mesh mesh("mesh3D.xml.gz");
   
-  // Save original grid in OpenDX format
-  File unref("grid3D_unrefined.dx");
-  unref << grid;
+  // Save original mesh in OpenDX format
+  File unref("mesh3D_unrefined.dx");
+  unref << mesh;
 
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
     
     // Mark cells close to (0,0,0)
-    for (CellIterator cell(grid); !cell.end(); ++cell)
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
       if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
 	cell->mark();
     
-    // Refine grid
-    grid.refine();
+    // Refine mesh
+    mesh.refine();
 
   }
 
-  // Save refined grid in OpenDX format
-  File ref("grid3D_refined.dx");
-  ref << grid;
+  // Save refined mesh in OpenDX format
+  File ref("mesh3D_refined.dx");
+  ref << mesh;
 }

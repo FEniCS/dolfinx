@@ -2,42 +2,42 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Cell.h>
-#include <dolfin/Mapping.h>
+#include <dolfin/Map.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Mapping::Mapping()
+Map::Map()
 {
   reset();
 }
 //-----------------------------------------------------------------------------
-real Mapping::det() const
+real Map::det() const
 {
   return d;
 }
 //-----------------------------------------------------------------------------
-real Mapping::dx(real a) const
+real Map::dx(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Mapping::dy(real a) const
+real Map::dy(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Mapping::dz(real a) const
+real Map::dz(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Mapping::dt(real a) const
+real Map::dt(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dx
+const FunctionSpace::ElementFunction Map::dx
 (const FunctionSpace::Product &v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
@@ -46,7 +46,7 @@ const FunctionSpace::ElementFunction Mapping::dx
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dy
+const FunctionSpace::ElementFunction Map::dy
 (const FunctionSpace::Product &v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
@@ -55,7 +55,7 @@ const FunctionSpace::ElementFunction Mapping::dy
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dz
+const FunctionSpace::ElementFunction Map::dz
 (const FunctionSpace::Product &v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
@@ -64,7 +64,7 @@ const FunctionSpace::ElementFunction Mapping::dz
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dt
+const FunctionSpace::ElementFunction Map::dt
 (const FunctionSpace::Product &v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
@@ -73,7 +73,7 @@ const FunctionSpace::ElementFunction Mapping::dt
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dx
+const FunctionSpace::ElementFunction Map::dx
 (const FunctionSpace::ElementFunction &v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
@@ -82,7 +82,7 @@ const FunctionSpace::ElementFunction Mapping::dx
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dy
+const FunctionSpace::ElementFunction Map::dy
 (const FunctionSpace::ElementFunction &v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
@@ -91,7 +91,7 @@ const FunctionSpace::ElementFunction Mapping::dy
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dz
+const FunctionSpace::ElementFunction Map::dz
 (const FunctionSpace::ElementFunction &v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
@@ -100,7 +100,7 @@ const FunctionSpace::ElementFunction Mapping::dz
   return w;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction Mapping::dt
+const FunctionSpace::ElementFunction Map::dt
 (const FunctionSpace::ElementFunction &v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
@@ -109,7 +109,7 @@ const FunctionSpace::ElementFunction Mapping::dt
   return w;
 }
 //-----------------------------------------------------------------------------
-void Mapping::reset()
+void Map::reset()
 {
   f11 = f12 = f13 = 0.0;
   f21 = f22 = f23 = 0.0;

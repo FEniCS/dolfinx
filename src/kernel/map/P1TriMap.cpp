@@ -5,47 +5,47 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
-#include <dolfin/TriLinMapping.h>
+#include <dolfin/P1TriMap.h>
 #include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TriLinMapping::TriLinMapping() : Mapping()
+P1TriMap::P1TriMap() : Map()
 {
   // Set dimension
   dim = 2;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TriLinMapping::dx
+const FunctionSpace::ElementFunction P1TriMap::dx
 (const FunctionSpace::ShapeFunction& v) const
 {
   return g11*v.dX() + g21*v.dY();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TriLinMapping::dy
+const FunctionSpace::ElementFunction P1TriMap::dy
 (const FunctionSpace::ShapeFunction& v) const
 {
   return g12*v.dX() + g22*v.dY();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TriLinMapping::dz
+const FunctionSpace::ElementFunction P1TriMap::dz
 (const FunctionSpace::ShapeFunction& v) const
 {
   return v.dZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TriLinMapping::dt
+const FunctionSpace::ElementFunction P1TriMap::dt
 (const FunctionSpace::ShapeFunction& v) const
 {
   return v.dT();
 }
 //-----------------------------------------------------------------------------
-void TriLinMapping::update(const Cell& cell)
+void P1TriMap::update(const Cell& cell)
 {
   // Check that cell type is correct
   if ( cell.type() != Cell::triangle )
-    dolfin_error("Wrong cell type for mapping (must be a triangle).");
+    dolfin_error("Wrong cell type for map (must be a triangle).");
   
   // Reset values
   reset();
@@ -65,7 +65,7 @@ void TriLinMapping::update(const Cell& cell)
   
   // Check determinant
   if ( fabs(d) < DOLFIN_EPS )
-    dolfin_error("Mapping from reference element is singular.");
+    dolfin_error("Map from reference element is singular.");
   
   // Compute inverse
   g11 =   f22 / d; g12 = - f12 / d;

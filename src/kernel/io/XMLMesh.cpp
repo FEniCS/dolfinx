@@ -2,35 +2,37 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
-#include <dolfin/GridData.h>
+#include <dolfin/MeshData.h>
 #include <dolfin/dolfin_settings.h>
-#include <dolfin/XMLGrid.h>
+#include <dolfin/XMLMesh.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLGrid::XMLGrid(Grid& grid_) : XMLObject(), grid(grid_)
+XMLMesh::XMLMesh(Mesh& mesh_) : XMLObject(), mesh(mesh_)
 {
   state = OUTSIDE;
   nodes = 0;
   cells = 0;
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 {
+  //dolfin_debug1("Found start of element \"%s\"", (const char *) name);
+
   switch ( state ){
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ) {
-      readGrid(name,attrs);
-      state = INSIDE_GRID;
+    if ( xmlStrcasecmp(name,(xmlChar *) "mesh") == 0 ) {
+      readMesh(name,attrs);
+      state = INSIDE_MESH;
     }
     
     break;
 
-  case INSIDE_GRID:
+  case INSIDE_MESH:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 ) {
       readNodes(name,attrs);
@@ -65,13 +67,15 @@ void XMLGrid::startElement(const xmlChar *name, const xmlChar **attrs)
   
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::endElement(const xmlChar *name)
+void XMLMesh::endElement(const xmlChar *name)
 {
+  //dolfin_debug1("Found end of element \"%s\"", (const char *) name);
+
   switch ( state ){
-  case INSIDE_GRID:
-	 
-    if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ) {
-      initGrid();
+  case INSIDE_MESH:
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "mesh") == 0 ) {
+      initMesh();
       ok = true;
       state = DONE;
     }
@@ -81,14 +85,14 @@ void XMLGrid::endElement(const xmlChar *name)
   case INSIDE_NODES:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
-      state = INSIDE_GRID;
+      state = INSIDE_MESH;
     
     break;
     
   case INSIDE_CELLS:
 	 
     if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 )
-      state = INSIDE_GRID;
+      state = INSIDE_MESH;
     
     break;
     
@@ -98,22 +102,22 @@ void XMLGrid::endElement(const xmlChar *name)
   
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::reading(std::string filename)
+void XMLMesh::reading(std::string filename)
 {
-  cout << "Reading grid from file \"" << filename << "\"." << endl;
+  cout << "Reading mesh from file \"" << filename << "\"." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::done()
+void XMLMesh::done()
 {
-  //cout << "Reading grid: " << grid << endl;
+  //cout << "Reading mesh: " << mesh << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
 {
-  grid.clear();
+  mesh.clear();
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readNodes(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readNodes(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int size = 0;
@@ -125,7 +129,7 @@ void XMLGrid::readNodes(const xmlChar *name, const xmlChar **attrs)
   nodes = size;
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readCells(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int size = 0;
@@ -137,7 +141,7 @@ void XMLGrid::readCells(const xmlChar *name, const xmlChar **attrs)
   cells = size;
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readNode(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int id = 0;
@@ -152,13 +156,13 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", &z);
 
   // Set values
-  grid.createNode(x, y, z);
+  mesh.createNode(x, y, z);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int id = 0;
@@ -173,13 +177,13 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n2", &n2);
 
   // Set values
-  grid.createCell(n0, n1, n2);
+  mesh.createCell(n0, n1, n2);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int id = 0;
@@ -196,15 +200,15 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n3", &n3);
 
   // Set values
-  grid.createCell(n0, n1, n2, n3);
+  mesh.createCell(n0, n1, n2, n3);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }
 //-----------------------------------------------------------------------------
-void XMLGrid::initGrid()
+void XMLMesh::initMesh()
 {
   // Compute connections
-  grid.init();
+  mesh.init();
 }
 //-----------------------------------------------------------------------------

@@ -5,47 +5,47 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
-#include <dolfin/TetLinMapping.h>
+#include <dolfin/P1TetMap.h>
 #include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TetLinMapping::TetLinMapping() : Mapping()
+P1TetMap::P1TetMap() : Map()
 {
   // Set dimension
   dim = 3;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TetLinMapping::dx
+const FunctionSpace::ElementFunction P1TetMap::dx
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g11*v.dX() + g21*v.dY() + g31*v.dZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TetLinMapping::dy
+const FunctionSpace::ElementFunction P1TetMap::dy
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g12*v.dX() + g22*v.dY() + g32*v.dZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TetLinMapping::dz
+const FunctionSpace::ElementFunction P1TetMap::dz
 (const FunctionSpace::ShapeFunction &v) const
 {
   return g13*v.dX() + g23*v.dY() + g33*v.dZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction TetLinMapping::dt
+const FunctionSpace::ElementFunction P1TetMap::dt
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.dT();
 }
 //-----------------------------------------------------------------------------
-void TetLinMapping::update(const Cell& cell)
+void P1TetMap::update(const Cell& cell)
 {
   // Check that cell type is correct
   if ( cell.type() != Cell::tetrahedron )
-    dolfin_error("Wrong cell type for mapping (must be a tetrahedron).");
+    dolfin_error("Wrong cell type for map (must be a tetrahedron).");
   
   // Reset values
   reset();
@@ -80,7 +80,7 @@ void TetLinMapping::update(const Cell& cell)
 
   // Check determinant
   if ( fabs(d) < DOLFIN_EPS )
-	 dolfin_error("Mapping from reference element is singular.");
+	 dolfin_error("Map from reference element is singular.");
   
   // Compute inverse
   g11 = d11 / d; g12 = d21 / d; g13 = d31 / d;

@@ -8,7 +8,7 @@ CFLAGS  = `../../config/dolfin-config --cflags_dolfin`
 LIBS    = `../../config/dolfin-config --libs_dolfin`
 CXX     = `../../config/dolfin-config --compiler`
 
-DEST    = dolfin-grid
+DEST    = dolfin-mesh
 OBJECTS = main.o
 
 all: $(DEST)
