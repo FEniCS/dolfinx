@@ -9,9 +9,5 @@ int main()
 {
   dolfin::cout << "Test" << " test" << dolfin::endl;
 
-  Mesh mesh("mesh.xml");
-  File file("mesh.m");
-  file << mesh;
-
   return 0;
 }
