@@ -133,6 +133,7 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     
     if ( r > tol )
     {
+      cout << "tol = " << tol << endl;
       dolfin_info("Homotopy path seems to be diverging.");
       return false;
     }

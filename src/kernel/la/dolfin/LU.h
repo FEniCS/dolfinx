@@ -38,7 +38,7 @@ namespace dolfin
   private:
     
     // Create dense copy of virtual matrix
-    void copyToDense(const VirtualMatrix& A);
+    real copyToDense(const VirtualMatrix& A);
 
     KSP ksp;
 

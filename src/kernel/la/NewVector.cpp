@@ -78,7 +78,7 @@ void NewVector::init(uint size)
   }
 
   // Create vector
-  VecCreate(PETSC_COMM_WORLD, &x);
+  VecCreate(PETSC_COMM_SELF, &x);
   VecSetSizes(x, PETSC_DECIDE, size);
   VecSetFromOptions(x);
 

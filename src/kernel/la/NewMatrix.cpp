@@ -12,37 +12,33 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewMatrix::NewMatrix()
+NewMatrix::NewMatrix() : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
-
-  // Don't initialize the matrix
-  A = 0;
 }
 //-----------------------------------------------------------------------------
-NewMatrix::NewMatrix(uint M, uint N)
+NewMatrix::NewMatrix(uint M, uint N) : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc matrix
-  A = 0;
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-NewMatrix::NewMatrix(const Matrix& B)
+NewMatrix::NewMatrix(const Matrix& B) : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc matrix
-  A = 0;
   init(B.size(0), B.size(1));
   
   uint M = B.size(0);
   uint N = B.size(1);
 
+  // FIXME: Use PETSc function to copy
   for(uint i = 0; i < M; i++)
   {
     for(uint j = 0; j < N; j++)
@@ -219,6 +215,7 @@ real NewMatrix::getval(uint i, uint j) const
   const int ii = static_cast<int>(i);
   const int jj = static_cast<int>(j);
 
+  dolfin_assert(A);
   PetscScalar val;
   MatGetValues(A, 1, &ii, 1, &jj, &val);
 

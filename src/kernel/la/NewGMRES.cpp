@@ -19,7 +19,7 @@ NewGMRES::NewGMRES() : NewLinearSolver(), report(true), ksp(0), B(0)
   PETScManager::init();
   
   // Set up solver environment
-  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPCreate(PETSC_COMM_SELF, &ksp);
   KSPSetType(ksp, KSPGMRES);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   
@@ -35,8 +35,6 @@ NewGMRES::NewGMRES() : NewLinearSolver(), report(true), ksp(0), B(0)
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
   dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
 	      _rtol, _atol, _dtol, _maxiter);
-
-  KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
@@ -76,6 +74,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   // Report number of iterations
   if ( report )
   {
+    KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
     int its = 0;
     KSPGetIterationNumber(ksp, &its);
     dolfin_info("GMRES converged in %d iterations.", its);
@@ -120,6 +119,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   // Report number of iterations
   if ( report )
   {
+    KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
     int its = 0;
     KSPGetIterationNumber(ksp, &its);
     dolfin_info("GMRES converged in %d iterations.", its);

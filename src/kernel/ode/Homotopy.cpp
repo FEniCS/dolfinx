@@ -154,11 +154,11 @@ void Homotopy::computeSolution(HomotopyODE& ode)
       return;
     }
     
-    //cout << "x = "; x.disp();
-    //cout << "F = "; F.disp();
-    //cout << "dx = "; dx.disp();
-    //cout << "J = "; J.disp();
-    //cout << endl;
+    cout << "x = "; x.disp();
+    cout << "F = "; F.disp();
+    cout << "dx = "; dx.disp();
+    cout << "J = "; J.disp(false);
+    cout << endl;
 
     // Solve linear system, seems like we need to scale the right-hand
     // side to make it work with the PETSc GMRES solver
@@ -168,7 +168,12 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     //gmres.solve(J, dx, F);
     lu.solve(J, dx, F);
 
+    cout << "dx = "; dx.disp();
     dx *= r;
+
+    // FIXMETMP: Remove when working
+    dx /= dx.norm(NewVector::linf);
+    cout << "dx = "; dx.disp();
 
     // Subtract increment
     x -= dx;
