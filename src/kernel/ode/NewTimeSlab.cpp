@@ -393,21 +393,21 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
         
     // Get other element
     const int e1  = elast[i1];
-
+    
     // Skip elements which have not been created (use smaller time steps)
     if ( e1 == -1 )
       continue;
-
+    
     // Get data of other element
     const uint s1 = es[e1];
     const real a1 = sa[s1];
     const real b1 = sb[s1];
     const real k1 = b1 - a1;
-
+    
     // Only add dependencies from components with larger time steps
     if ( !within(a0, b0, a1, b1) )
       continue;
-
+    
     //dolfin_info("  Checking element %d (component %d)", e1, i1);
     
     // Iterate over dofs for element
@@ -572,12 +572,19 @@ dolfin::uint NewTimeSlab::countDependencies(uint index)
 //-----------------------------------------------------------------------------
 bool NewTimeSlab::within(real t, real a, real b) const
 {
+  // Check if time is within the given interval, choosing the left interval
+  // if we are close to the edge
+
   return (a + DOLFIN_EPS) < t && t <= (b + DOLFIN_EPS);
 }
 //-----------------------------------------------------------------------------
 bool NewTimeSlab::within(real a0, real b0, real a1, real b1) const
 {
-  return a1 <= (a0 + DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1;
+  // Check if [a0, b0] is contained in [a1, b1], and make sure that
+  // b0 - a0 < a1 - b1
+
+  return ( ( a1 <= (a0 + DOLFIN_EPS) && (b0 + DOLFIN_EPS) <= b1 ) ||
+	   ( a1 <= (a0 - DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1 ) );
 }
 //-----------------------------------------------------------------------------
 int NewTimeSlab::cover(int subslab, uint element)
