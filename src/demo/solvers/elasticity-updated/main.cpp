@@ -14,21 +14,13 @@ real f(real x, real y, real z, real t, int i)
   real force = 0;
 
 
-  /*
-  if(i == 0 && x > 0.5 && t < 0.2)
-  {
-    force -= 50;
-  }
-
-  if(i == 0 && x < -0.5 && t < 0.2)
-  {
-    force += 50;
-  }
-  */
-
   if(i == 0 && t < 2.0)
-    force -= density * 30.0;
+    force += density * 30.0;
 
+  /*
+  if(i == 1 && t < 3.0)
+    force += -density * 2.0;
+  */
 
   /*
   if(i == 1)
@@ -115,7 +107,7 @@ void mybc(BoundaryCondition& bc)
 {
   ///*
   //if(bc.coord().x < -0.8 && bc.coord().y >= -0.5)
-  //if(fabs(bc.coord().x) < 0.1 && bc.coord().y >= 0.0 && bc.coord().y <= 1.0 )
+  //if(bc.coord().x < 0.1 && bc.coord().y >= 0.0 && bc.coord().y <= 1.0 )
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().y) < 0.1)
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().z) < 0.1 && fabs(bc.coord().y) < 0.7)
   //if(bc.coord().x == 0.0 && bc.coord().y == 0)

@@ -42,6 +42,11 @@ public:
       real E = 100.0;
       real nu = 0.3;
 
+      //real b = 10.0;
+      //real b_p = 300.0;
+      //real E = 500.0;
+      //real nu = 0.3;
+
 
       real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
       real mu = E / (2 * (1 + nu));
