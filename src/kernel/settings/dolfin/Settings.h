@@ -20,7 +20,8 @@ namespace dolfin {
       
       add(Parameter::INT, "max no krylov restarts", 100);
       add(Parameter::INT, "max no stored krylov vectors", 100);
-      add(Parameter::INT, "max no cg iterations", 1000); 
+      add(Parameter::INT, "max no cg iterations", 1000);
+      add(Parameter::INT, "pc iterations", 5);
       
       add(Parameter::STRING, "output", "curses");
 
