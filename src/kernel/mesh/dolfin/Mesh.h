@@ -167,6 +167,7 @@ namespace dolfin {
 
     /// Refine uniformly (all cells marked)
     void refineUniformly();
+    void refineUniformly(int i);
 
     /// Return parent mesh
     Mesh& parent();

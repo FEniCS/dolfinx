@@ -205,6 +205,13 @@ void Mesh::refineUniformly()
   refine();
 }
 //-----------------------------------------------------------------------------
+void Mesh::refineUniformly(int i)
+{
+  // Refine uniformly i times. 
+  for (int j=0; j < i; j++)
+    refineUniformly();
+}
+//-----------------------------------------------------------------------------
 Mesh& Mesh::parent()
 {
   if ( _parent )
