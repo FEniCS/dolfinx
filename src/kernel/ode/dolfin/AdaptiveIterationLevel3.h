@@ -17,7 +17,8 @@ namespace dolfin
   public:
     
     AdaptiveIterationLevel3(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-			    unsigned int maxiter, real maxdiv, real maxconv, real tol);
+			    unsigned int maxiter, real maxdiv, real maxconv, real tol,
+			    unsigned int depth);
     
     ~AdaptiveIterationLevel3();
     
@@ -47,23 +48,8 @@ namespace dolfin
     
   private:
     
-    // Gauss-Jacobi iteration on group list
-    void updateGaussJacobi(ElementGroupList& list);
-    
     // Compute divergence
     real computeDivergence(ElementGroupList& list, const Residuals& r);
-
-    // Initialize additional data
-    void initData(Values& values);
-
-    // Copy data from group list
-    void copyData(ElementGroupList& list, Values& values);
-
-    // Copy data to group list
-    void copyData(Values& values, ElementGroupList& list);
-
-    // Compute size of data
-    unsigned int dataSize(ElementGroupList& list);
 
     //--- Iteration data ---
    
@@ -72,12 +58,6 @@ namespace dolfin
  
     // Solution values for Gauss-Jacobi iteration
     Values x1;
-   
-    // Number of values in current element group list
-    unsigned int datasize;
-
-    // True if the element group iteration is local (and not part of group list iteration)
-    bool local_iteration;
 
   };
 

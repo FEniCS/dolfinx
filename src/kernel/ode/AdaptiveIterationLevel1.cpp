@@ -20,8 +20,8 @@ AdaptiveIterationLevel1::AdaptiveIterationLevel1(Solution& u, RHS& f,
 						 FixedPointIteration & fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv, 
-						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol)
+						 real tol, unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }

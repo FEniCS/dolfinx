@@ -15,10 +15,11 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		     unsigned int maxiter, real maxdiv, real maxconv, real tol) : 
+		     unsigned int maxiter, real maxdiv, real maxconv, real tol,
+		     unsigned int depth) : 
   u(u), f(f), fixpoint(fixpoint), 
   maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol),
-  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), depth(0)
+  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), _depth(depth), datasize(0)
 {
   // Do nothing
 }
@@ -26,6 +27,21 @@ Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 Iteration::~Iteration()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+unsigned int Iteration::depth() const
+{
+  return _depth;
+}
+//-----------------------------------------------------------------------------
+void Iteration::down()
+{
+  ++_depth;
+}
+//-----------------------------------------------------------------------------
+void Iteration::up()
+{
+  --_depth;
 }
 //-----------------------------------------------------------------------------
 void Iteration::init(ElementGroup& group)
@@ -99,6 +115,8 @@ void Iteration::stabilize(const Residuals& r, real rho)
   //   j = 1 : last stabilizing iteration
   //   j > 1 : still stabilizing
 
+  cout << "Computing stabilization for rho = " << rho << endl;
+
   switch ( j ) {
   case 0:
     // Increase alpha with a factor 2 towards alpha = 1
@@ -156,8 +174,99 @@ real Iteration::computeAlpha(real rho) const
 //-----------------------------------------------------------------------------
 unsigned int Iteration::computeSteps(real rho) const
 {
+  cout << "rho = " << rho << endl;
+  cout << (1.0 + log(rho)) << endl;
+  cout << (log(1.0/(1.0-gamma*gamma))) << endl;
   return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
+//-----------------------------------------------------------------------------
+void Iteration::initData(Values& values)
+{
+  // Reallocate data if necessary
+  if ( datasize > values.size )
+    values.init(datasize);
+
+  // Reset offset
+  values.offset = 0;
+}
+//-----------------------------------------------------------------------------
+unsigned int Iteration::dataSize(ElementGroupList& list)
+{
+  // Compute total number of values
+  int size = 0;
+  for (ElementIterator element(list); !element.end(); ++element)
+    size += element->size();
+  
+  return size;
+}
+//-----------------------------------------------------------------------------
+unsigned int Iteration::dataSize(ElementGroup& group)
+{
+  // Compute total number of values
+  int size = 0;  
+  for (ElementIterator element(group); !element.end(); ++element)
+    size += element->size();
+  
+  return size;
+}
+//-----------------------------------------------------------------------------
+void Iteration::copyData(ElementGroupList& list, Values& values)
+{
+  // Copy data from group list
+  unsigned int offset = 0;
+  for (ElementIterator element(list); !element.end(); ++element)
+  {
+    // Copy values from element
+    element->get(values.values + offset);
+
+    // Increase offset
+    offset += element->size();
+  }
+}
+//-----------------------------------------------------------------------------
+void Iteration::copyData(Values& values, ElementGroupList& list)
+{
+  // Copy data to group list
+  unsigned int offset = 0;
+  for (ElementIterator element(list); !element.end(); ++element)
+  {
+    // Copy values to element
+    element->set(values.values + offset);
+
+    // Increase offset
+    offset += element->size();
+  }
+}
+//-----------------------------------------------------------------------------
+void Iteration::copyData(ElementGroup& group, Values& values)
+{
+  // Copy data from element group
+  unsigned int offset = 0;
+  for (ElementIterator element(group); !element.end(); ++element)
+  {
+    // Copy values from element
+    element->get(values.values + offset);
+
+    // Increase offset
+    offset += element->size();
+  }
+}
+//-----------------------------------------------------------------------------
+void Iteration::copyData(Values& values, ElementGroup& group)
+{
+  // Copy data to element group
+  unsigned int offset = 0;
+  for (ElementIterator element(group); !element.end(); ++element)
+  {
+    // Copy values to element
+    element->set(values.values + offset);
+
+    // Increase offset
+    offset += element->size();
+  }
+}
+//-----------------------------------------------------------------------------
+// Iteration::Values
 //-----------------------------------------------------------------------------
 Iteration::Values::Values() : values(0), size(0), offset(0)
 {

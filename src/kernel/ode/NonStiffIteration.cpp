@@ -18,8 +18,9 @@ using namespace dolfin;
 NonStiffIteration::NonStiffIteration(Solution& u, RHS& f,
 				     FixedPointIteration & fixpoint,
 				     unsigned int maxiter,
-				     real maxdiv, real maxconv, real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol)
+				     real maxdiv, real maxconv, real tol,
+				     unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }

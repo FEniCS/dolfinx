@@ -24,8 +24,8 @@ AdaptiveIterationLevel2::AdaptiveIterationLevel2(Solution& u, RHS& f,
 						 FixedPointIteration & fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), datasize(0)
+						 real tol, unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }
@@ -96,13 +96,13 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
   if ( n < 1 )
     return;
 
-  // Compute divergence rate if necessary
+  // Stabilize if necessary
   real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
+  {
     rho = computeDivergence(group, r);
-  
-  // Adaptive stabilization
-  Iteration::stabilize(r, rho);
+    Iteration::stabilize(r, rho);
+  }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(Element& element, 
@@ -159,7 +159,7 @@ bool AdaptiveIterationLevel2::diverged(ElementGroupList& list,
   // Make at least two iterations
   if ( n < 2 )
     return false;
-  
+
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
     return false;
@@ -250,53 +250,5 @@ real AdaptiveIterationLevel2::computeDivergence(ElementGroup& group,
   copyData(x0, group);
 
   return rho2;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::initData(Values& values)
-{
-  // Reallocate data if necessary
-  if ( datasize > values.size )
-    values.init(datasize);
-
-  // Reset offset
-  values.offset = 0;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::copyData(ElementGroup& group, Values& values)
-{
-  // Copy data from element group
-  unsigned int offset = 0;
-  for (ElementIterator element(group); !element.end(); ++element)
-  {
-    // Copy values from element
-    element->get(values.values + offset);
-
-    // Increase offset
-    offset += element->size();
-  }
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::copyData(Values& values, ElementGroup& group)
-{
-  // Copy data to element group
-  unsigned int offset = 0;
-  for (ElementIterator element(group); !element.end(); ++element)
-  {
-    // Copy values to element
-    element->set(values.values + offset);
-
-    // Increase offset
-    offset += element->size();
-  }
-}
-//-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel2::dataSize(ElementGroup& group)
-{
-  // Compute total number of values
-  int size = 0;  
-  for (ElementIterator element(group); !element.end(); ++element)
-    size += element->size();
-  
-  return size;
 }
 //-----------------------------------------------------------------------------

@@ -17,7 +17,8 @@ namespace dolfin
   public:
 
     AdaptiveIterationLevel1(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-			    unsigned int maxiter, real maxdiv, real maxconv, real tol);
+			    unsigned int maxiter, real maxdiv, real maxconv, real tol,
+			    unsigned int depth);
     
     ~AdaptiveIterationLevel1();
     

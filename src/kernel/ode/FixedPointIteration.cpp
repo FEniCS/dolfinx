@@ -31,7 +31,7 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
   tol = 1e-10;
 
   // Assume that the problem is non-stiff
-  state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
+  state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
 }
 //-----------------------------------------------------------------------------
 FixedPointIteration::~FixedPointIteration()
@@ -69,15 +69,18 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       // Check convergence
       if ( converged(list, r, n) )
       {
-	dolfin_end("Time slab iteration converged in %d iterations", n + 1);
+	dolfin_end("Time slab iteration converged in %d iterations", n);
 	end(list);
 	return true;
       }
+
+      cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
       
       // Check divergence
       if ( retry = diverged(list, r, n, newstate) )
       {
 	changeState(newstate);
+	cout << "Changing state" << endl;
 	break;
       }
       
@@ -102,7 +105,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
   Iteration::Residuals r;
   Iteration::State newstate;
   bool retry = true;
-  
+
   while ( retry )
   {
     // Update initial data
@@ -111,7 +114,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     // Start iteration
     start(group);
     
-    dolfin_start("Starting element group iteration");
+    //dolfin_start("Starting element group iteration");
     
     // Fixed point iteration on the element group
     for (unsigned int n = 0; n < maxiter; n++)
@@ -135,7 +138,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
       // Check convergence
       if ( converged(group, r, n) )
       {
-	dolfin_end("Element group iteration converged in %d iterations", n + 1);
+	//dolfin_end("Element group iteration converged in %d iterations", n);
 	end(group);
 	return true;
       }
@@ -166,7 +169,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
 	}
 	}
       */
-      
+
       // Update element group
       update(group);
     }
@@ -175,7 +178,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     end(group);
   }
   
-  dolfin_end("Element group iteration did not converge");
+  //dolfin_end("Element group iteration did not converge");
 
   return false;
 }
@@ -409,6 +412,9 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   if ( newstate == state->state() )
     return;
 
+  // Save old depth
+  unsigned int depth = state->depth();
+
   // Delete old state
   delete state;
   state = 0;
@@ -416,16 +422,16 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   // Initialize new state
   switch ( newstate ) {
   case Iteration::nonstiff:
-    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
+    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff1:
-    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol);
+    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff2:
-    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol);
+    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff3:
-    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol);
+    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff:
     dolfin_error("Not implemented.");

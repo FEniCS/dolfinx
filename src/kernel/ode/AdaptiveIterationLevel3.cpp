@@ -22,9 +22,8 @@ AdaptiveIterationLevel3::AdaptiveIterationLevel3(Solution& u, RHS& f,
 						 FixedPointIteration & fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol),
-  datasize(0), local_iteration(true)
+						 real tol, unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }
@@ -43,16 +42,17 @@ void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
   // Compute total number of values in group list
   datasize = dataSize(list);
-
-  // Element group iteration is part of group list iteration
-  local_iteration = false;
-
-  cout << "Total size is " << datasize << endl;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
 {
-  // Do nothing
+  // Compute total number of values in group if this iteration is
+  // not nested inside the group list iteration. This happens when
+  // the time slab is created (group by group), before the actual
+  // iteration starts.
+
+  if ( depth() == 1 )
+    datasize = dataSize(group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(Element& element)
@@ -71,22 +71,36 @@ void AdaptiveIterationLevel3::update(ElementGroupList& list)
 
   // Copy values to elements
   copyData(x1, list);
-
-  // Invalidate data
-  invalidateData();
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroup& group)
 {
-  // Simple update of element group
-  for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
+  // Needs to be handled differently depending on the depth, see comment
+  // above in start(ElementGroup& group).
+
+  if ( depth() == 1 )
+  {
+    // Initialize values
+    initData(x1);
+    
+    // Compute new values
+    for (ElementIterator element(group); !element.end(); ++element)
+      fixpoint.iterate(*element);
+
+    // Copy values to elements
+    copyData(x1, group);
+  }
+  else
+  {
+    // Update elements
+    for (ElementIterator element(group); !element.end(); ++element)
+      fixpoint.iterate(*element);
+  }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(Element& element)
 {
   // Compute new values for element
-  cout << "offset = " << x1.offset << endl;
   element.update(f, alpha, x1.values + x1.offset);
   x1.offset += element.size();
 }
@@ -98,13 +112,13 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
   if ( n < 1 )
     return;
 
-  // Compute divergence rate if necessary
+  // Stabilize if necessary
   real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
+  {
     rho = computeDivergence(list, r);
-  
-  // Adaptive stabilization
-  Iteration::stabilize(r, rho);
+    Iteration::stabilize(r, rho);
+  }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
@@ -151,7 +165,11 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
-  cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
+  // Don't check divergence for element group, since we want to handle
+  // the stabilization ourselves (and not change state).
+  return false;
+  
+  /*
 
   // Make at least two iterations
   if ( n < 2 )
@@ -172,6 +190,7 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
   newstate = stiff;
   
   return true;
+  */
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::diverged(ElementGroup& group, 
@@ -199,6 +218,8 @@ void AdaptiveIterationLevel3::report() const
 real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,
 						const Residuals& r)
 {
+  cout << "Computing divergence for time slab" << endl;
+
   // Successive residuals
   real r1 = r.r1;
   real r2 = r.r2;
@@ -246,55 +267,5 @@ real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,
   copyData(x0, list);
 
   return rho2;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::initData(Values& values)
-{
-  // Reallocate data if necessary
-  if ( datasize > values.size )
-    values.init(datasize);
-
-  cout << "data size is " << values.size << endl;
-
-  // Reset offset
-  values.offset = 0;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::copyData(ElementGroupList& list, Values& values)
-{
-  // Copy data from group list
-  unsigned int offset = 0;
-  for (ElementIterator element(list); !element.end(); ++element)
-  {
-    // Copy values from element
-    element->get(values.values + offset);
-
-    // Increase offset
-    offset += element->size();
-  }
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::copyData(Values& values, ElementGroupList& list)
-{
-  // Copy data to group list
-  unsigned int offset = 0;
-  for (ElementIterator element(list); !element.end(); ++element)
-  {
-    // Copy values to element
-    element->set(values.values + offset);
-
-    // Increase offset
-    offset += element->size();
-  }
-}
-//-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel3::dataSize(ElementGroupList& list)
-{
-  // Compute total number of values
-  int size = 0;
-  for (ElementIterator element(list); !element.end(); ++element)
-    size += element->size();
-  
-  return size;
 }
 //-----------------------------------------------------------------------------

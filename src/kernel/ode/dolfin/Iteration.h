@@ -34,7 +34,8 @@ namespace dolfin
 
     /// Constructor
     Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-	      unsigned int maxiter, real tol, real maxdiv, real maxconv);
+	      unsigned int maxiter, real tol, real maxdiv, real maxconv,
+	      unsigned int depth);
     
     /// Destructor
     virtual ~Iteration();
@@ -93,6 +94,9 @@ namespace dolfin
     /// Write a status report
     virtual void report() const = 0;
 
+    /// Return current depth
+    unsigned int depth() const;
+
     /// Increase depth
     void down();
 
@@ -147,6 +151,27 @@ namespace dolfin
     // Compute number of damping steps
     unsigned int computeSteps(real rho) const;
 
+    // Initialize data to previously computed size
+    void initData(Values& values);
+
+    // Compute size of data
+    unsigned int dataSize(ElementGroupList& list);
+
+    // Compute size of data
+    unsigned int dataSize(ElementGroup& group);
+
+    // Copy data from group list
+    void copyData(ElementGroupList& list, Values& values);
+
+    // Copy data to group list
+    void copyData(Values& values, ElementGroupList& list);
+
+    // Copy data from element group
+    void copyData(ElementGroup& group, Values& values);
+    
+    // Copy data to element group
+    void copyData(Values& values, ElementGroup& group);
+
     //--- Iteration data ---
 
     Solution& u;
@@ -175,7 +200,10 @@ namespace dolfin
     unsigned int j;
 
     // Depth of iteration (0,1,2,3)
-    unsigned int depth;
+    unsigned int _depth;
+
+    // Previously computed data size
+    unsigned int datasize;
 
   };
 
