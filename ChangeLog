@@ -1,3 +1,4 @@
+0.5.0
  - First prototype of new form evaluation system
  - New classes Jacobi, SOR, Richardson (preconditioners and linear solvers)
  - Add integrals on the boundary (ds), partly working
