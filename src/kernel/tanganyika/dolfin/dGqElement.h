@@ -15,7 +15,7 @@ namespace dolfin {
   class dGqElement : public GenericElement {
   public:
     
-    dGqElement(int q, int index, int pos, TimeSlab* timeslab);
+    dGqElement(int q, int index, TimeSlab* timeslab);
 
     real eval(real t) const;
     real eval(int node) const;

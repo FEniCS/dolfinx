@@ -8,10 +8,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabData::TimeSlabData(ODE& ode)
+TimeSlabData::TimeSlabData(ODE& ode) : components(ode.size())
 {
+  /*
   topslab = 0;
   components.init(ode.size());
+  //dolfin_debug1("components(index): %p", &(components(0)));
+  //dolfin_debug1("components(index): %p", &(components(1)));
+  */
+
 }
 //-----------------------------------------------------------------------------
 TimeSlabData::~TimeSlabData()
@@ -19,21 +24,14 @@ TimeSlabData::~TimeSlabData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Table<Element>::Iterator TimeSlabData::createElement(Element::Type type, int q,
-						    int index, TimeSlab* timeslab)
+Element TimeSlabData::createElement(Element::Type type, int q, int index, TimeSlab* timeslab)
 {
-  // Create element
-  int id;
-  Element& element = elements.create(id);
+  Element element(type, q, index, timeslab);
 
   // Add element to the component list
-  int pos = components(index).add(element, topslab->endtime());
+  components[index].add(element, timeslab->endtime());
 
-  // Initialize element
-  element.init(type, q, index, pos, timeslab);
-
-  // Return an iterator positioned at the element
-  return elements.iterator(id);
+  return element;
 }
 //-----------------------------------------------------------------------------
 void TimeSlabData::setslab(TimeSlab* timeslab)
@@ -43,11 +41,11 @@ void TimeSlabData::setslab(TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 int TimeSlabData::size() const
 {
-  return elements.size();
+  return components.size();
 }
 //-----------------------------------------------------------------------------
 Component& TimeSlabData::component(int i)
 {
-  return components(i);
+  return components[i];
 }
 //-----------------------------------------------------------------------------

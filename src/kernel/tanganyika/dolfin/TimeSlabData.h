@@ -4,6 +4,7 @@
 #ifndef __TIME_SLAB_DATA_H
 #define __TIME_SLAB_DATA_H
 
+#include <dolfin/Vector.h>
 #include <dolfin/Array.h>
 #include <dolfin/Table.h>
 #include <dolfin/Element.h>
@@ -29,12 +30,12 @@ namespace dolfin {
     ~TimeSlabData();
 
     /// Create element
-    Table<Element>::Iterator createElement(Element::Type type, int q,
-					   int index, TimeSlab* timeslab);
+    Element createElement(Element::Type type, int q, int index,
+		       TimeSlab* timeslab);
     
     /// Specify top level time slab
     void setslab(TimeSlab* timeslab);
-    
+
     /// Return number of elements
     int size() const;
 
@@ -44,10 +45,10 @@ namespace dolfin {
   private:
 
     // List of elements within all time slabs
-    Table<Element> elements;
+    //std::vector<Element> elements;
 
     // List of components
-    Array<Component> components;
+    std::vector<Component> components;
 
     // Top level time slab
     TimeSlab* topslab;

@@ -7,6 +7,7 @@
 #include <dolfin/TimeSlabData.h>
 #include <dolfin/Partition.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/RHS.h>
 
 using namespace dolfin;
 
@@ -23,7 +24,10 @@ TimeSlab::TimeSlab(real t0, real t1, RHS& f,
 
   // If this is the top level time slab, notify TimeSlabData
   if ( offset == 0 )
+  {
     data.setslab(this);
+    dolfin_debug("setslab");
+  }
 
   create(f, data, partition, offset);
 }
@@ -34,9 +38,7 @@ TimeSlab::~TimeSlab()
 
   // Delete the time slabs
   for (int i = 0; i < timeslabs.size(); i++) {
-    if ( timeslabs(i) )
-      delete timeslabs(i);
-    timeslabs(i) = 0;
+    delete timeslabs[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -86,13 +88,21 @@ real TimeSlab::length() const
 void TimeSlab::create(RHS& f, TimeSlabData& data,
 		      Partition& partition, int offset)
 {
+  dolfin_debug1("offset: %d", offset);
+
   int end = 0;
-  real K = 0.0;
+  real K = 0.1;
 
   dolfin_debug("Computing partition");
 
+  // Update the partition when necessary (not needed for the first time slab)
+  partition.update(data, end);
+
   // Compute a partition into small and large time steps
   partition.partition(offset, end, K);
+
+  dolfin_debug1("offset: %d", offset);
+  dolfin_debug1("end: %d", end);
 
   dolfin_debug1("Adjusting time step K = %f", K);
 
@@ -101,53 +111,52 @@ void TimeSlab::create(RHS& f, TimeSlabData& data,
 
   dolfin_debug1("New end time = %f", t1);
 
-  // Create time slabs for the components with small time steps
-  createTimeSlabs(f, data, partition, end);
+  if(end < (f.size() - 1))
+  {
+    dolfin_debug("Create subslabs");
+
+    // Create time slabs for the components with small time steps
+    createTimeSlabs(f, data, partition, end);
+  }
+
+  dolfin_debug1("offset: %d", offset);
 
   // Create elements for the components with large time steps
-  createElements(f, data, partition, offset, end);
+  createElements(f, data, partition, offset);
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::createTimeSlabs(RHS& f, TimeSlabData& data, 
-			       Partition& partition, int end)
+			       Partition& partition, int offset)
 {
   dolfin_info("Creating time slabs");
-
-  // Check if we need to create any time slabs
-  if ( end >= partition.size() )
-    return;
 
   // Current position
   real t = t0;
 
   // Create the list of time slabs
-  int pos = 0;
   while ( true ) {
 
+
     // Create a new time slab
-    TimeSlab* timeslab = new TimeSlab(t, t1, f, data, partition, end);
+    TimeSlab* timeslab = new TimeSlab(t, t1, f, data, partition, offset);
     
     // Add the new time slab to the list
-    add(timeslab, pos++);
+    add(timeslab);
 
     // Check if we are done
-    if ( timeslab->finished() )
+    if(timeslab->finished())
       break;
     
     // Step to next time slab
     t = timeslab->t1;
-    
-    // Update the partition when necessary (not needed for the first time slab)
-    partition.update(data, end);
- 
   }
 
   // Remove unused time slabs
-  timeslabs.resize();
+  //timeslabs.resize();
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::createElements(RHS& f, TimeSlabData& data,
-			      Partition& partition, int offset, int end)
+			      Partition& partition, int offset)
 {
   // Instead of storing a list of elements, we store two iterators to
   // the list of elements in TimeSlabData.
@@ -158,15 +167,18 @@ void TimeSlab::createElements(RHS& f, TimeSlabData& data,
   Element::Type type = Element::cg;
   int q = 1;
 
-  // Create first element
-  first = data.createElement(type, q, partition.index(offset), this);
+  dolfin_debug1("slab: %p", this);
+  
 
-  // Create elements in the middle
-  for (int i = offset + 1; i < (end - 1); i++)
-    data.createElement(type, q, partition.index(i), this);
+  // Create elements
+  for (int i = offset; i < f.size(); i++)
+  {
+    Element e = data.createElement(type, q, partition.index(i), this);
 
-  // Create last element
-  last = data.createElement(type, q, partition.index(end-1), this);
+    elements.push_back(e);
+  }
+
+  dolfin_debug("Update elements:");
 
   // Update elements
   updateElements(f);
@@ -175,15 +187,25 @@ void TimeSlab::createElements(RHS& f, TimeSlabData& data,
 void TimeSlab::updateTimeSlabs(RHS& f)
 {
   for (int i = 0; i < timeslabs.size(); i++)
-    timeslabs(i)->update(f);
+  {
+    timeslabs[i]->update(f);
+  }
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::updateElements(RHS& f)
 {
-  for (Table<Element>::Iterator element = first;; ++element) {
-    element->update(f);
-    if ( element == last )
-      break;
+  dolfin_debug1("elements: %d", elements.size());
+
+  for(std::vector<Element>::iterator e = elements.begin();
+      e != elements.end(); e++)
+  {
+    e->update(f);
+    real value;
+    value = e->eval(e->starttime());
+    dolfin::cout << "element value at starttime: " << value << dolfin::endl;
+    value = e->eval(e->endtime());
+    dolfin::cout << "element value at endtime: " << value << dolfin::endl;
+
   }
 }
 //-----------------------------------------------------------------------------
@@ -198,20 +220,21 @@ void TimeSlab::setsize(real K)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::add(TimeSlab* timeslab, int pos)
+void TimeSlab::add(TimeSlab* timeslab)
 {
   // Estimate the number of slabs
-  int n = pos + ceil_int( (t1 - timeslab->t0) / timeslab->length());
+  //int n = pos + ceil_int( (t1 - timeslab->t0) / timeslab->length());
   
   // Make sure that the estimate is correct for the last time slab
-  if ( timeslab->finished() )
-    n = pos + 1;
+  //if(timeslab->finished())
+  //n = pos + 1;
   
   // Increase the size of the list if necessary
-  if ( n > timeslabs.size() )
-    timeslabs.resize(n);
+  //if ( n > timeslabs.size() )
+  //timeslabs.resize(n);
 
   // Add the slab to the list
-  timeslabs(pos) = timeslab;
+  //timeslabs(pos) = timeslab;
+  timeslabs.push_back(timeslab);
 }
 //-----------------------------------------------------------------------------

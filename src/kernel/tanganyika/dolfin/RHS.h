@@ -31,6 +31,9 @@ namespace dolfin {
     /// Return current component of f evaluated at time t
     real operator() (int index, int node, real t, TimeSlab* timeslab);
     
+    /// Number of components
+    int size() const;
+
   private:
 
     // Update components that influence the current component at time t

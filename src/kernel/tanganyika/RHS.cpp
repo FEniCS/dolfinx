@@ -21,6 +21,8 @@ RHS::RHS(ODE& ode, TimeSlabData& data)
 
   // Initialize the solution vector
   u.init(ode.size());
+  u = ode.u0;
+
 }
 //-----------------------------------------------------------------------------
 RHS::~RHS()
@@ -33,6 +35,7 @@ real RHS::operator() (int index, int node, real t, TimeSlab* timeslab)
   // Update the solution vector
   update(index, node, t, timeslab);
 
+
   // Evaluate right hand side for current component
   return ode->f(u, t, index);
 }
@@ -44,5 +47,10 @@ void RHS::update(int index, int node, real t, TimeSlab* timeslab)
 
   for (Sparsity::Iterator i(index, ode->sparsity); !i.end(); ++i)
     u(i) = data->component(i)(node, t, timeslab);
+}
+//-----------------------------------------------------------------------------
+int RHS::size() const
+{
+  return ode->size();
 }
 //-----------------------------------------------------------------------------

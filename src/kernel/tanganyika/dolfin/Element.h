@@ -28,13 +28,13 @@ namespace dolfin {
     Element();
 
     /// Constructor
-    Element(Type type, int q, int index, int pos, TimeSlab* timeslab);
+    Element(Type type, int q, int index, TimeSlab* timeslab);
 
     /// Destructor
     ~Element();
     
     /// Initialize element to given method and order
-    void init(Type type, int q, int index, int pos, TimeSlab* timeslab);
+    //void init(Type type, int q, int index, real u0, TimeSlab* timeslab);
 
     /// Evaluation at given time t
     real eval(real t) const;
@@ -67,7 +67,7 @@ namespace dolfin {
     real newTimeStep() const;
 
     /// Assignment
-    void operator=(Element& element);
+    //void operator=(Element& element);
 
   private:
 

@@ -9,8 +9,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dGqElement::dGqElement(int q, int index, int pos, TimeSlab* timeslab) : 
-  GenericElement(q, index, pos, timeslab)
+dGqElement::dGqElement(int q, int index, TimeSlab* timeslab) : 
+  GenericElement(q, index, timeslab)
 {  
   dG.init(q);
 }

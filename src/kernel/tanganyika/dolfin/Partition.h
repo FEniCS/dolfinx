@@ -4,6 +4,9 @@
 #ifndef __PARTITION_H
 #define __PARTITION_H
 
+#include <vector>
+#include <functional>
+
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 
@@ -17,6 +20,10 @@ namespace dolfin {
 
   class Partition {
   public:
+
+    //class lessThanComponent;
+
+    //friend class lessThanComponent;
 
     /// Constructor
     Partition(int N, real timestep);
@@ -36,6 +43,7 @@ namespace dolfin {
     /// Partition (reorder) components
     void partition(int offset, int& end, real& K);
 
+
   private:
 
     class Component {
@@ -45,18 +53,33 @@ namespace dolfin {
       ~Component();
 
       void operator=(int zero);
+      bool operator<(Component &a);
 
       int index;
       real timestep;
 
     };
     
+    struct lessComponents : public std::unary_function<Component, bool> 
+    {
+      real K;
+
+      lessComponents(real &K) : K(K)
+      {
+      }
+      bool operator()(Component &a) const
+      {
+	return a.timestep >= K;
+      }
+    };
+
     real maximum(int offset);
 
     // List of components
-    Array<Component> components;
+    std::vector<Component> components;
 
   };
+
 
 }
 

@@ -1,8 +1,12 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Updates by Johan Jansson 2003
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
+
+#include <vector>
 
 #include <dolfin/Array.h>
 #include <dolfin/Table.h>
@@ -52,12 +56,12 @@ namespace dolfin {
     void create(RHS& f, TimeSlabData& data, Partition& partition, int offset);
     
     // Create list of time slabs within the time slab
-    void createTimeSlabs (RHS& f, TimeSlabData& data,
-			  Partition& partition, int end);
+    void createTimeSlabs(RHS& f, TimeSlabData& data,
+			 Partition& partition, int offset);
 
     // Create list of elements within the time slab
-    void createElements  (RHS& f, TimeSlabData& data,
-			  Partition& partition, int offset, int end);
+    void createElements(RHS& f, TimeSlabData& data,
+			Partition& partition, int offset);
 
     // Update time slabs (iteration)
     void updateTimeSlabs(RHS& f);
@@ -69,7 +73,7 @@ namespace dolfin {
     void setsize(real K);
 
     // Add a new time slab
-    void add(TimeSlab* timeslab, int pos);
+    void add(TimeSlab* timeslab);
 
     // Start and end time for time slab
     real t0;
@@ -79,11 +83,13 @@ namespace dolfin {
     bool reached_endtime;
 
     // List of elements within this time slab
-    Table<Element>::Iterator first;
-    Table<Element>::Iterator last;
+    //Table<Element>::Iterator first;
+    //Table<Element>::Iterator last;
 
+    std::vector<Element> elements;
+    
     // List of time slabs within this time slab
-    Array<TimeSlab*> timeslabs;
+    std::vector<TimeSlab*> timeslabs;
 
   };
 

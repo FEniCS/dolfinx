@@ -50,12 +50,13 @@ namespace dolfin {
     /// Sparsity
     Sparsity sparsity;
     
+    Vector u0;
+
   protected:
     
     int N;
     real T;
 
-    Vector u0;
 
   };
 

@@ -16,14 +16,14 @@ Element::Element()
   element = 0;
 }
 //-----------------------------------------------------------------------------
-Element::Element(Type type, int q, int index, int pos, TimeSlab* timeslab)
+Element::Element(Type type, int q, int index, TimeSlab* timeslab)
 {
   switch (type) {
   case cg:
-    element = new cGqElement(q, index, pos, timeslab);
+    element = new cGqElement(q, index, timeslab);
     break;
   case dg:
-    element = new dGqElement(q, index, pos, timeslab);
+    element = new dGqElement(q, index, timeslab);
     break;
   default:
     dolfin_error("Unknown element type");
@@ -33,24 +33,32 @@ Element::Element(Type type, int q, int index, int pos, TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 Element::~Element()
 {
-  if ( element )
-    delete element;
-  element = 0;
+  dolfin_debug("foo");
+
+  //if ( element )
+  //delete element;
+  //element = 0;
 }
+/*
 //-----------------------------------------------------------------------------
-void Element::init(Type type, int q, int index, int pos, TimeSlab* timeslab)
+void Element::init(Type type, int q, int index, TimeSlab* timeslab)
 {
+  dolfin_debug1("Created element component: %d", index);
+
   if ( element ) {
     dolfin_debug("FIXME: don't delete the old element");
     delete element;
   }
 
+  dolfin_debug1("slab: %p", timeslab);
+
   switch (type) {
   case cg:
-    element = new cGqElement(q, index, pos, timeslab);
+    element = new cGqElement(q, index, timeslab);
+    dolfin_debug1("order: %d", element->order());
     break;
   case dg:
-    element = new dGqElement(q, index, pos, timeslab);
+    element = new dGqElement(q, index, timeslab);
     break;
   default:
     dolfin_error("Unknown element type");
@@ -58,6 +66,7 @@ void Element::init(Type type, int q, int index, int pos, TimeSlab* timeslab)
   }
 }
 //-----------------------------------------------------------------------------
+*/
 real Element::eval(real t) const
 {
   dolfin_assert(element);
@@ -72,13 +81,16 @@ real Element::eval(int node) const
 //-----------------------------------------------------------------------------
 void Element::update(real u0)
 {
+
   dolfin_assert(element);
+
   element->update(u0);
 }
 //-----------------------------------------------------------------------------
 void Element::update(RHS& f)
 {
   dolfin_assert(element);
+
   element->update(f);
 }
 //-----------------------------------------------------------------------------
@@ -96,7 +108,7 @@ bool Element::within(TimeSlab* timeslab) const
 //-----------------------------------------------------------------------------
 real Element::starttime() const
 {
-  dolfin_segfault();
+  //dolfin_segfault();
   dolfin_assert(element);
   return element->starttime();
 }
@@ -110,7 +122,7 @@ real Element::endtime() const
 real Element::timestep() const
 {
   dolfin_assert(element);
-  return element->starttime();
+  return element->timestep();
 }
 //-----------------------------------------------------------------------------
 real Element::newTimeStep() const
@@ -119,8 +131,7 @@ real Element::newTimeStep() const
   return element->newTimeStep();
 }
 //-----------------------------------------------------------------------------
-void Element::operator=(Element& element)
-{
-  this->element = element.element;
-}
-//-----------------------------------------------------------------------------
+//void Element::operator=(Element& element)
+//{
+//  this->element = element.element;
+//}

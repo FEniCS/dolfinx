@@ -1,6 +1,9 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <algorithm>
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/TimeSlabData.h>
 #include <dolfin/Partition.h>
@@ -8,13 +11,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Partition::Partition(int N, real timestep)
+Partition::Partition(int N, real timestep) : components(N)
 {
-  components.init(N);
-
   for (int i = 0; i < N; i++) {
-    components(i).index = i;
-    components(i).timestep = timestep;
+    components[i].index = i;
+    components[i].timestep = timestep;
   }
 }
 //-----------------------------------------------------------------------------
@@ -30,7 +31,7 @@ int Partition::size() const
 //-----------------------------------------------------------------------------
 int Partition::index(int i) const
 {
-  return components(i).index;
+  return components[i].index;
 }
 //-----------------------------------------------------------------------------
 void Partition::update(TimeSlabData& data, int offset)
@@ -41,19 +42,62 @@ void Partition::update(TimeSlabData& data, int offset)
   for (int i = offset; i < components.size(); i++) {
 
     // Component index
-    int index = components(i).index;
+    int index = components[i].index;
 
-    // Get time step
-    real k = data.component(index).last().newTimeStep();
+    real k;
+
+    if(data.component(index).size() != 0)
+    {
+      // Get time step
+      k = data.component(index).last().newTimeStep();
+    }
+    else
+    {
+      if(index == 0)
+	k = 0.1;
+      else
+	k = 0.1;
+    }
+
+    dolfin_debug2("Partition: k[%d]: %f", i, k);
 
     // Save time step
-    components(i).timestep = k;
+    components[i].timestep = k;
 
   }
 }
 //-----------------------------------------------------------------------------
 void Partition::partition(int offset, int& end, real& K)
 {
+  
+  for (int i = offset; i < components.size(); i++)
+  {
+    dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
+  }
+
+  lessComponents foo(K);
+
+  std::vector<Component>::iterator middle =
+    std::partition(components.begin(), components.end(), foo);
+
+  end = middle - components.begin();
+
+  dolfin_debug1("end: %d", end);
+
+  for (int i = offset; i < components.size(); i++)
+  {
+    dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
+  }
+
+  /*
+  std::vector::iterator it;
+  for(it = components.begin(); it != components.end(); it++)
+  {
+    
+  }
+  */
+
+  /*
   // Move all components with time steps larger than K to the top of
   // the list, at positions [offset ... end-1]. We move through the
   // list with two different indices and swap components. The
@@ -86,16 +130,20 @@ void Partition::partition(int offset, int& end, real& K)
   }
 
   end = i;
+
+  */
 }
 //-----------------------------------------------------------------------------
 real Partition::maximum(int offset)
 {
+  /*
   real K = 0.0;
 
   for (int i = offset; i < components.size(); i++)
     K = max(components(i).timestep, K);
 
   return K;
+  */
 }
 //-----------------------------------------------------------------------------
 Partition::Component::Component()
@@ -114,5 +162,10 @@ void Partition::Component::operator=(int zero)
   // This is needed for ShortList
   index = 0;
   timestep = 0.0;
+}
+//-----------------------------------------------------------------------------
+bool Partition::Component::operator<(Component &a)
+{
+  return timestep < a.timestep;
 }
 //-----------------------------------------------------------------------------

@@ -27,6 +27,9 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   Progress p("Time-stepping");
   while ( true ) {
 
+    dolfin_debug("stepping");
+
+
     // Create time slab
     TimeSlab timeslab(t, t1, f, data, partition, 0);
 
@@ -42,8 +45,16 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     t = timeslab.endtime();
 
     // Update partition with new time steps
-    partition.update(data, 0);
+    //partition.update(data, 0);
 
+    dolfin_debug("solution");
+    for (int i = 0; i < data.size(); i++)
+    {
+      Component &c = data.component(i);
+
+      real value = c(t);
+      dolfin::cout << "U(" << t << ", " << i << ": " << value << dolfin::endl;
+    }
   }
 
 }

@@ -9,15 +9,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqElement::cGqElement(int q, int index, int pos, TimeSlab* timeslab) : 
-  GenericElement(q, index, pos, timeslab)
+cGqElement::cGqElement(int q, int index, TimeSlab* timeslab) : 
+  GenericElement(q, index, timeslab)
 {  
   cG.init(q);
+
+  dolfin_debug1("cGqElement::ctor: %p", this);
 }
 //-----------------------------------------------------------------------------
 real cGqElement::eval(real t) const
 {
-  real tau = 0.0;
+  //real tau = 0.0;
+  real tau = t - starttime() / (endtime() - starttime());
 
   real sum = 0.0;
   for (int i = 0; i <= q; i++)
@@ -28,8 +31,11 @@ real cGqElement::eval(real t) const
 //-----------------------------------------------------------------------------
 real cGqElement::eval(int node) const
 {
+  dolfin_debug1("Eval cGqElement: %p", this);
+
   dolfin_assert(node >= 0);
   dolfin_assert(node <= q);
+
   
   return values[node];
 }
@@ -68,8 +74,8 @@ void cGqElement::feval(RHS& f)
   // higher order methods (where we have more degrees of freedom) and
   // when function evaluations are expensive.
 
-  real t0 = 0.0;
-  real k = 0.1;
+  real t0 = starttime();
+  real k = timestep();
 
   for (int i = 0; i <= q; i++)
     this->f(i) = f(index, i, t0 + cG(q).point(i)*k, timeslab);
@@ -77,7 +83,7 @@ void cGqElement::feval(RHS& f)
 //-----------------------------------------------------------------------------
 real cGqElement::integral(int i) const
 {
-  real k = 0.1;
+  real k = timestep();
 
   real sum = 0.0;
   for (int j = 0; j <= q; j++)

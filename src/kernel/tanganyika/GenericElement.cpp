@@ -11,7 +11,7 @@ using namespace dolfin;
 Vector dolfin::GenericElement::f;
 
 //-----------------------------------------------------------------------------
-GenericElement::GenericElement(int q, int index, int pos, TimeSlab* timeslab)
+GenericElement::GenericElement(int q, int index, TimeSlab* timeslab)
 {
   dolfin_assert(q >= 0);
   
@@ -19,8 +19,16 @@ GenericElement::GenericElement(int q, int index, int pos, TimeSlab* timeslab)
   this->q = q;
   values = new real[q+1];
 
+  dolfin_debug("foo");
+
+  for(int i = 0; i < q+1; i++)
+  {
+    values[i] = 0;
+  }
+
+  values[0] = 1;
+
   this->index = index;
-  this->pos = pos;
   this->timeslab = timeslab;
 
   // Increase size of the common vector to the maximum required size
@@ -34,6 +42,8 @@ GenericElement::GenericElement(int q, int index, int pos, TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 GenericElement::~GenericElement()
 {
+  dolfin_debug("foo");
+
   delete [] values;
 }
 //-----------------------------------------------------------------------------
@@ -50,16 +60,19 @@ bool GenericElement::within(TimeSlab* timeslab) const
 //-----------------------------------------------------------------------------
 real GenericElement::starttime() const
 {
+  dolfin_assert(timeslab);
   return timeslab->starttime();
 }
 //-----------------------------------------------------------------------------
 real GenericElement::endtime() const
 {
+  dolfin_assert(timeslab);
   return timeslab->endtime();
 }
 //-----------------------------------------------------------------------------
 real GenericElement::timestep() const
 {
+  dolfin_assert(timeslab);
   return timeslab->length();
 }
 //-----------------------------------------------------------------------------

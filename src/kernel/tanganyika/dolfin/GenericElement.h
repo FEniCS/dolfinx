@@ -15,7 +15,7 @@ namespace dolfin {
   class GenericElement {
   public:
     
-    GenericElement(int q, int index, int pos, TimeSlab* timeslab);
+    GenericElement(int q, int index, TimeSlab* timeslab);
     virtual ~GenericElement();
     
     virtual real eval(real t) const = 0;
@@ -54,9 +54,6 @@ namespace dolfin {
     
     // Component index
     int index;
-
-    // Position in component list of elements
-    int pos;
 
     // The time slab this element belongs to
     TimeSlab* timeslab;

@@ -14,13 +14,10 @@ Component::Component()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Component::Component(int size)
+Component::Component(int size) : elements(size)
 {
-  dolfin_segfault();
-  dolfin_assert(size > 0);
-
-  // Initialize the list of elements to given size (which is only a guess)
-  elements.init(size);
+  //dolfin_segfault();
+  //dolfin_assert(size > 0);
 }
 //-----------------------------------------------------------------------------
 Component::~Component()
@@ -28,13 +25,12 @@ Component::~Component()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Component::init(int size)
-{
-  elements.init(size);
-}
-//-----------------------------------------------------------------------------
 real Component::operator() (int node, real t, TimeSlab* timeslab)
 {
+  dolfin_debug("foo");
+  dolfin::cout << "node: " << node << dolfin::endl;
+  dolfin::cout << "t: " << t << dolfin::endl;
+
   // Step to correct position
   Element element = findpos(t);
 
@@ -46,31 +42,79 @@ real Component::operator() (int node, real t, TimeSlab* timeslab)
   return element.eval(t);
 }
 //-----------------------------------------------------------------------------
+real Component::operator() (real t)
+{
+  Element element = elements.back();
+
+  return element.eval(t);
+}
+//-----------------------------------------------------------------------------
 int Component::add(Element& element, real t1)
 {
+  dolfin_debug1("this: %p", this);
+  dolfin_debug1("t1: %lf", t1);
+
   // Estimate the number of elements
-  int n = next + ceil_int( (t1 - element.starttime()) / element.timestep() );
+  //int n = next + ceil_int( (t1 - element.starttime()) / element.timestep() );
+
+  dolfin_debug1("element.starttime: %lf", element.starttime());
+  dolfin_debug1("element.timestep: %lf", element.timestep());
+  dolfin_debug1("elements.size: %d", elements.size());
   
+  elements.push_back(element);
+
   // Increase the size of the list if necessary
-  if ( n > elements.size() )
-    elements.resize(n);
+  //if ( n > elements.size() )
+  //elements.resize(n);
 
   // Add the slab to the list
-  elements(next++) = element;
+  //elements(next++) = element;
 
-  return n;
+  return elements.size();
 }
 //-----------------------------------------------------------------------------
 Element& Component::last()
 {
-  dolfin_assert(next > 0);
-  dolfin_assert(next <= elements.size());
+  //dolfin_assert(next > 0);
+  //dolfin_assert(next <= elements.size());
 
-  return elements(next-1);
+  return elements.back();
 }
 //-----------------------------------------------------------------------------
 Element Component::findpos(real t)
 {
+  dolfin_debug("findpos");
+
+  dolfin::cout << "Looking for t: " << t << dolfin::endl;
+
+  dolfin_assert(elements.size() > 0);
+  dolfin_assert(elements.front().starttime() <= t);
+  dolfin_assert(elements.back().endtime() >= t);
+
+  dolfin::cout << "Component range: " << elements.front().starttime() <<
+    "-" << elements.back().endtime() << dolfin::endl;
+
+  typedef std::vector<Element>::iterator ElementIterator;
+
+  ElementIterator target;
+
+  static Element dummy;
+  LessElement comp(dummy, t);
+
+  target = upper_bound(elements.begin(), elements.end(), dummy, comp);
+
+  dolfin_debug("found");
+
+  if(target == elements.end())
+    --target;
+
+  dolfin::cout << "Found element at: " << (*target).starttime() << "-" <<
+    (*target).endtime() << dolfin::endl;
+
+
+  return *target;
+
+  /*
   Element element = elements(current);
 
   // Check if we are already at the correct position
@@ -113,5 +157,26 @@ Element Component::findpos(real t)
   }
 
   return element;
+  */
+}
+//-----------------------------------------------------------------------------
+int Component::size()
+{
+  return elements.size();
+}
+//-----------------------------------------------------------------------------
+Component::LessElement::LessElement(Element &dummy, real t) : dummy(dummy),
+							      t(t)
+{
+}
+//-----------------------------------------------------------------------------
+bool Component::LessElement::operator()(const Element &x, const Element &y)
+{
+  if(&x == &dummy)
+    return t < y.starttime();
+  else if(&y == &dummy)
+    return x.starttime() < t;
+  else
+    return x.starttime() < y.starttime();
 }
 //-----------------------------------------------------------------------------
