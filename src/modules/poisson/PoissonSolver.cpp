@@ -130,4 +130,3 @@ void PoissonSolver::dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh)
     b(bndIdx[i]) = 0.0;
 }
 //-----------------------------------------------------------------------------
-
