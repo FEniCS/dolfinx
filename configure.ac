@@ -27,13 +27,13 @@ AC_ARG_ENABLE(curses,
               enable_curses=no)
 
 # Option --with-petsc-dir
-AC_ARG_WITH(petsc,
+AC_ARG_WITH(petsc-dir,
             AC_HELP_STRING([--with-petsc-dir=<path>],
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
 # Option --with-petsc-bopt
-AC_ARG_WITH(petsc,
+AC_ARG_WITH(petsc-bopt,
             AC_HELP_STRING([--with-petsc-dir=<path>],
                            [Specify path to PETSc (O_c++ or g_c++)]),
             [BOPT=$with_petsc_bopt],)
@@ -88,6 +88,7 @@ else
 fi
 
 # Handle option --with-petsc-dir=<path>
+
 if test x$PETSC_DIR = x; then
     echo "assuming path to PETSc is /usr/local/lib/petsc"
     PETSC_DIR="/usr/local/lib/petsc/"
