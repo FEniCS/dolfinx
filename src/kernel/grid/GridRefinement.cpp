@@ -48,15 +48,22 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
-    if ( *grid != grids.fine() )
+    if ( *grid != grids.fine() ) {
+      cout << "--- Evaluate marks at level " << grid.index() << endl;
       evaluateMarks(*grid);
+    }
+    cout << "--- Close grid at level " << grid.index() << endl;
     closeGrid(*grid);
   }
 
+  cout << endl;
+
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if ( *grid != grids.coarse() )
+    if ( *grid != grids.coarse() ) {
+      cout << "--- Close grid at level " << grid.index() << endl;
       closeGrid(*grid);
+    }
     cout << "--- Unrefine at level " << grid.index() << endl;
     unrefineGrid(*grid, grids);
     cout << "--- Refine at level " << grid.index() << endl;
@@ -190,10 +197,21 @@ void GridRefinement::closeGrid(Grid& grid)
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c) {
+    
+    if ( c->midpoint().dist(0.333, 0.333) < 0.01 ) {
+      cout << "  Checking if cell needs to be closed: " << *c << endl;
+      for (EdgeIterator e(c); !e.end(); ++e)
+	cout << "    edge = " << *e << " marked = " << e->marked() 
+	     << " midpoint = " << e->midpoint() << endl;
+    }
+
     if ( c->status() == Cell::ref_reg || c->status() == Cell::unref ) {
       if ( edgeMarkedByOther(*c) ) {
 	cells.add(c);
 	closed(c->id()) = false;	
+
+	if ( c->midpoint().dist(0.333, 0.333) < 0.01 )
+	  cout << "  Needs to be closed!" << endl;
       }
     }
   }
@@ -306,9 +324,18 @@ void GridRefinement::closeCell(Cell& cell,
   // First count the number of marked edges in the cell
   int no_marked_edges = noMarkedEdges(cell);
 
+  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 ) {
+    cout << "    Closing cell with midpoint = " << cell.midpoint() << endl;
+    cout << "    number of marked edges = " << no_marked_edges << endl;
+  }
+
   // Check which rule should be applied
   if ( checkRule(cell, no_marked_edges) )
     return;
+
+  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 ) {
+    cout << "    Unable to find refinement rule" << endl;
+  }
 
   // If we didn't find a matching refinement rule, mark cell for regular
   // refinement and add cells containing the previously unmarked edges
@@ -516,9 +543,11 @@ void GridRefinement::removeCell(Cell& cell, Grid& grid)
   if ( cell.parent() )
     cell.parent()->removeChild(cell);
 
-  // Remove children
-  for (int i = 0; i < cell.noChildren(); i++)
-      removeCell(*cell.child(i), grid.child());
+  // Remove children (leaf element can have 0 or 1 childs)
+  if ( cell.noChildren() > 0 ) {
+    dolfin_assert(cell.noChildren() == 1);
+    removeCell(*cell.child(0), grid.child());
+  }
   
   // Update status 
   if ( cell.parent()->noChildren() == 0 )

@@ -31,6 +31,9 @@ bool TriGridRefinement::checkRule(Cell& cell, int no_marked_edges)
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refine(Cell& cell, Grid& grid)
 {
+  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 )
+    cout << "Refinement rule for the cell: " << cell.marker() << endl;
+
   // Refine cell according to marker
   switch ( cell.marker() ) {
   case Cell::marked_for_no_ref:
@@ -43,7 +46,7 @@ void TriGridRefinement::refine(Cell& cell, Grid& grid)
     refineIrregular1(cell, grid);
     break;
   case Cell::marked_for_irr_ref_2:
-    refineIrregular1(cell, grid);
+    refineIrregular2(cell, grid);
     break;
   default:
     // We should not rearch this case, cell cannot be
@@ -80,6 +83,9 @@ bool TriGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
 
   if ( no_marked_edges != 2 )
     return false;
+
+  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 )
+    cout << "    Matches irregular refinement rule 2" << endl;
 
   cell.marker() = Cell::marked_for_irr_ref_2;
   return true;
@@ -180,6 +186,9 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // Sort nodes by the number of marked edges
   Array<Node*> nodes;
   sortNodes(cell, nodes);
+
+  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 )
+    cout << "Refining the cell with irregular refinement rule 2" << endl;
 
   // Create new nodes with the same coordinates as the old nodes
   Node& n_dm = createNode(*nodes(0), grid, cell);

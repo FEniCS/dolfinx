@@ -21,6 +21,7 @@ end
 disp(['Found ' num2str(n) ' grids in ' num2str(levels) ' levels'])
 
 % Draw grids
+figure(1)
 clf
 count = 1;
 for i=1:levels
@@ -31,3 +32,8 @@ for i=1:levels
     count = count + 1;
   end
 end
+
+% Draw the finest grid
+figure(2)
+clf
+pdemesh(points{n}, edges{n}, cells{n})
