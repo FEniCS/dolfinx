@@ -14,7 +14,6 @@ fi
 
 # Get the version number
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
-echo 'Version number is '$VERSION
 
 # Write a message
 echo Creating release $VERSION of DOLFIN
@@ -23,12 +22,10 @@ sleep 1
 
 # Create the directory
 DISTDIR=dolfin-$VERSION
-echo 'Creating directory '$DISTDIR
 mkdir $DISTDIR
 
 # Copy files
 FILES=`ls | grep -v $DISTDIR`
-echo 'Copying files'
 cp -R $FILES $DISTDIR
 
 # Remove unecessary files
@@ -38,7 +35,6 @@ REMOVE3=`find $DISTDIR -name '*.a'`
 REMOVE4=$DISTDIR'/config.cache '$DISTDIR'/config.status '$DISTDIR'/config.log'
 REMOVE5=`find $DISTDIR | grep '\.deps'`
 REMOVE=$REMOVE1' '$REMOVE2' '$REMOVE3' '$REMOVE4' '$REMOVE5
-echo 'Removing unecessary files'
 rm -rf $REMOVE
 
 # Create the archive
@@ -47,7 +43,6 @@ echo 'Creating arhive: '$TARBALL
 tar zcf $TARBALL $DISTDIR
 
 # Remove the directory
-echo 'Removing temporary directory'
 rm -rf $DISTDIR
 
 # Unpack the tarball
@@ -59,7 +54,7 @@ echo 'Compiling in directory '$DISTDIR' (see make-'$VERSION'.log)'
 MAKELOG='../make-'$VERSION'.log'
 cd $DISTDIR
 rm -f $MAKELOG
-./configure >> $MAKELOG
+./configure --enable-debug >> $MAKELOG
 make >& $MAKELOG
 
 # Show log
