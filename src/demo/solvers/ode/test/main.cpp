@@ -18,7 +18,7 @@ public:
     lambda2 = 1.0;
 
     // Final time
-    T = 20.0;
+    T = 200.0;
 
     // Initial value
     //u0(0) = 1.0;
@@ -97,11 +97,11 @@ int main()
   dolfin_set("interval threshold", 0.9);
   dolfin_set("number of samples", 100);
 
-  Minimal minimal;
-  minimal.solve();
+  //Minimal minimal;
+  //minimal.solve();
   
-  //SpringSystem springSystem(10);
-  //springSystem.solve();
+  SpringSystem springSystem(10);
+  springSystem.solve();
 
   return 0;
 }

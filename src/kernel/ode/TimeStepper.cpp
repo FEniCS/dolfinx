@@ -50,7 +50,7 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     else
       timeslab = new RecursiveTimeSlab(t, t1, f, data, partition, 0);
     
-    cout << "Created a time slab: " << *timeslab << endl;
+    //cout << "Created a time slab: " << *timeslab << endl;
     
     // Iterate a couple of times on the time slab
     for (int i = 0; i < 2; i++)

@@ -18,7 +18,7 @@ Partition::Partition(unsigned int N) : indices(N)
 {
   // Get parameter for threshold
   threshold = dolfin_get("partitioning threshold");
-  
+
   // Reset all indices
   for (unsigned int i = 0; i < N; i++)
     indices[i] = i;
@@ -44,7 +44,7 @@ int Partition::index(unsigned int i) const
 void Partition::update(int offset, int& end, real& K, TimeSlabData& data)
 {
   // Compute the largest time step
-  K = maximum(offset, data) / threshold;
+  K = threshold * maximum(offset, data);
 
   // Comparison operator
   Less less(K, data);
@@ -55,6 +55,26 @@ void Partition::update(int offset, int& end, real& K, TimeSlabData& data)
 
   // Compute pivot index
   end = middle - indices.begin();
+}
+//-----------------------------------------------------------------------------
+void Partition::debug(unsigned int offset, unsigned int end, 
+		      TimeSlabData& data) const
+{
+  // This function can be used to debug the partitioning.
+  
+  cout << endl;
+  for (unsigned int i = 0; i < indices.size(); i++)
+  {
+    if ( i == offset )
+      cout << "--------------------------- offset" << endl;
+
+    if ( i == end )
+      cout << "--------------------------- end" << endl;
+
+    cout << i << ": index = " << indices[i] 
+	 << " k = " << data.regulator(indices[i]).timestep() << endl;
+  }
+  cout << endl;
 }
 //-----------------------------------------------------------------------------
 real Partition::maximum(int offset, TimeSlabData& data) const

@@ -39,6 +39,9 @@ namespace dolfin {
     
   private:
 
+    // Debug partitioning
+    void debug(unsigned int offset, unsigned int end, TimeSlabData& data) const;
+
     // Compute largest time step
     real maximum(int offset, TimeSlabData& data) const;
 
