@@ -82,6 +82,9 @@ namespace dolfin
     /// Apply changes to vector
     void apply();
 
+    /// Element access operator (needed for const objects)
+    real operator() (uint i) const;
+
     /// Element assignment operator
     Element operator() (uint i);
 

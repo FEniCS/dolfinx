@@ -164,6 +164,11 @@ void NewVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
+real NewVector::operator() (uint i) const
+{
+  return getval(i);
+}
+//-----------------------------------------------------------------------------
 NewVector::Element NewVector::operator() (uint i)
 {
   Element index(i, *this);

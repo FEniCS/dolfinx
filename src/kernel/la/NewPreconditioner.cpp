@@ -24,7 +24,7 @@ int NewPreconditioner::PCApply(PC pc, Vec x, Vec y)
 
   NewVector dolfinx(x), dolfiny(y);
 
-  newpc->solve(dolfinx, dolfiny);
+  newpc->solve(dolfiny, dolfinx);
 
   return 0;
 }

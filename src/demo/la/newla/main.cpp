@@ -4,34 +4,63 @@
 #include <math.h>
 #include <dolfin.h>
 #include <dolfin/NewGMRES.h>
+#include <petsc/petscksp.h>
+#include <petsc/petscerror.h>
 
 using namespace dolfin;
 
-class MyPreconditioner : public NewPreconditioner
+class IdentityPreconditioner : public NewPreconditioner
 {
 public:
-  virtual ~MyPreconditioner()
+  virtual ~IdentityPreconditioner()
   {
   };
 
   virtual void solve(NewVector& x, const NewVector& b)
   {
-    cout << "preconditioning" << endl;
-
-    //cout << "b:" << endl;
-    //b.disp();
-    //cout << "x:" << endl;
-    //x.disp();
+    cout << "preconditioning (identity)" << endl;
 
     // Do nothing
 
-    b.axpy(1.0, x);
+    x = b;
 
   };
 };
 
+class JacobiPreconditioner : public NewPreconditioner
+{
+public:
+  JacobiPreconditioner(NewMatrix &A) : A(A)
+  {
+  };
+  virtual ~JacobiPreconditioner()
+  {
+  };
+
+  virtual void solve(NewVector& x, const NewVector& b)
+  {
+    cout << "preconditioning (jacobi)" << endl;
+
+    // Diagonal preconditioner
+
+    // Note: inefficient operators, don't use these when you need efficiency
+
+    int n = x.size();
+
+    for(int i = 0; i < n; i++)
+    {
+      x(i) = b(i) / A(i, i);
+    }
+  };
+
+  NewMatrix &A;
+};
+
+
 int main(int argc, char **argv)
 {  
+  //petsc(argc, argv);
+
   //dolfin_set("output", "plain text");
 
   dolfin::cout << "--------------------------------------" << dolfin::endl;
@@ -141,7 +170,11 @@ int main(int argc, char **argv)
   R.disp();
 
 
-  const int N = 40;
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+  dolfin::cout << "Test Preconditioner interface" << dolfin::endl;
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+
+  const int N = 61;
 
   NewMatrix A2(N, N);
   NewVector b2(N), x2(N), R2(N);
@@ -150,28 +183,32 @@ int main(int argc, char **argv)
   {
     A2(i, i) = 2.0;
     b2(i) = 1.0 / N;
-    x2(i) = 0.0;
+    x2(i) = 1.0;
   }
+
   for(int i = 0; i < N - 1; i++)
   {
     A2(i + 1, i) = -1;
     A2(i, i + 1) = -1;
   }
 
-  cout << "A2: " << endl;
-  A2.disp(false);
-  cout << "b2: " << endl;
-  b2.disp();
-  cout << "x2: " << endl;
-  x2.disp();
+//   cout << "A2: " << endl;
+//   A2.disp(false);
+//   cout << "b2: " << endl;
+//   b2.disp();
+//   cout << "x2: " << endl;
+//   x2.disp();
+
+
 
   NewGMRES newsolver2;
 
-  MyPreconditioner mypc;
-  //newsolver2.setAbstol(1e-10);
-  //newsolver2.setRtol(1e-10);
-  newsolver2.setPreconditioner(mypc);
+  IdentityPreconditioner idpc;
+  //JacobiPreconditioner jpc(A2);
+  newsolver2.setPreconditioner(idpc);
+  //newsolver2.setPreconditioner(jpc);
 
+  x2 = 1.0;
   newsolver2.solve(A2, x2, b2);
 
   A2.mult(x2, R2);
@@ -182,259 +219,6 @@ int main(int argc, char **argv)
 
   dolfin::cout << "R2: " << dolfin::endl;
   R2.disp();
-
-  /*
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test file i/o" << dolfin::endl;
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  
-  Vector x;
-  Vector b;
-  Matrix A;
-  
-  File file("data.xml");
-  File matlab("matrix.m");
-  
-  file >> b;
-  file >> A;
-
-  dolfin::cout << A << dolfin::endl;
-  dolfin::cout << b << dolfin::endl;
-  dolfin::cout << x << dolfin::endl;
-
-  matlab << A;
-
-  dolfin::cout << "A = "; 
-  A.show();
-  dolfin::cout << "b = "; 
-  b.show();
-  dolfin::cout << "x = "; 
-  x.show();
-  */
-
-
-  /*
-
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test matrix notation" << dolfin::endl;
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  
-  Matrix B(A);
-  B.show();
-
-  Vector c(b);
-  c.show();
- 
-  B(3,all) = c;
-  B.show();
-
-  B(all,5) = c; 
-  B.show();
-
-  c = B(all,first);
-  c.show();
-
-  B(last,all) = B(all,2);
-  B.show();
-
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test Krylov solvers" << dolfin::endl;
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-
-  KrylovSolver ks;
-  Vector R;
-
-
-  dolfin_set("krylov tolerance",1.0e-10);
-  dolfin_set("max no krylov restarts", 100);
-  dolfin_set("max no stored krylov vectors", 100);
-  dolfin_set("max no cg iterations", 100);
-  dolfin_set("pc iterations", 5);
-
-  x = 1.0;
-  ks.setMethod(KrylovSolver::GMRES);
-  ks.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  ks.setMethod(KrylovSolver::CG);
-  ks.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test for stationary iterative solvers" << dolfin::endl;
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-
-  SISolver si;
-
-  x = 1.0;
-  si.setMethod(SISolver::JACOBI);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::GAUSS_SEIDEL);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::SOR);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::RICHARDSON);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  // Change to diagonal dominant matrix (should be simple for SI methods) 
-  for (int i=0; i < 10; i++){
-    A(i,i) = 1.0;
-    if (i==0){
-      A(0,1) = 1.0e-1;
-    } else if (i==9){
-      A(9,8) = 1.0e-1;
-    } else{ 
-      A(i,i-1) = 1.0e-1;
-      A(i,i+1) = 1.0e-1;
-    }
-  }
-  dolfin::cout << "A = "; A.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::JACOBI);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::GAUSS_SEIDEL);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::SOR);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  x = 1.0;
-  si.setMethod(SISolver::RICHARDSON);
-  si.solve(A,x,b);
-  R.init(x.size()); A.mult(x,R); R -= b;
-  dolfin::cout << "x = "; x.show(); dolfin::cout << "R = "; R.show();
-
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Benchmark for Krylov solvers in DOLFIN" << dolfin::endl;
-  dolfin::cout << "--------------------------------------" << dolfin::endl;
-
-  int N = 200;
-
-  A.init(N,N);
-  b.init(N);
-
-  Vector U1(N);
-  Vector U2(N);
-  Vector U3(N);
-  Vector U4(N);
-
-  dolfin::cout << "Assembling stiffness matrix" << dolfin::endl;
-  tic();
-  for (int i = 0; i < N; i++) {
-    A(i,i) = 20.0;
-    if ( i > 0 )
-      A(i, i - 1) = -10.0;
-    if ( i < (N-1) )
-      A(i, i + 1) = -10.0;
-  }
-  toc();
-  meminfo();
-  
-  dolfin::cout << "Computing load vector" << dolfin::endl;
-  tic();
-  for (int i = 0; i < N; i++) {
-    b(i) = 10.0;
-  }
-  toc();
-  meminfo();
-
-  if(N <= 10)
-  {
-    A.show();
-    b.show();
-  }
-
-
-  dolfin::cout << "Solving Ax = b using CG" << dolfin::endl;
-  tic();
-  ks.setMethod(KrylovSolver::CG);
-  ks.solve(A, U1, b);
-  toc();
-  meminfo();
-  R.init(U1.size()); A.mult(U1,R); R -= b;
-  if(N <= 10){ dolfin::cout << "x = "; U1.show(); dolfin::cout << "R = "; R.show();}
-
-  dolfin::cout << "Solving Ax = b using GMRES" << dolfin::endl;
-  tic();
-  ks.setMethod(KrylovSolver::GMRES);
-  ks.solve(A, U2, b);
-  toc();
-  meminfo();
-  R.init(U2.size()); A.mult(U2,R); R -= b;
-  if(N <= 10){ dolfin::cout << "x = "; U2.show(); dolfin::cout << "R = "; R.show();}
-
-  // Preconditioning (simple diagonal scaling)
-  real d;
-  for (int i = 0; i < N; i++) {
-    d = A(i,i);
-    b(i)   = b(i)/d;
-    for (int j = 0; j < N; j++) {
-      A(i,j) = A(i,j)/d;
-    }
-  }
-  
-  if(N <= 10)
-  {
-    A.show();
-    b.show();
-  }
-
-  dolfin::cout << "Solving Ax = b using CG, preconditioned" << dolfin::endl;
-  tic();
-  ks.setMethod(KrylovSolver::CG);
-  ks.solve(A, U3, b);
-  toc();
-  meminfo();
-  R.init(U3.size()); A.mult(U3,R); R -= b;
-  if(N <= 10){ dolfin::cout << "x = "; U3.show(); dolfin::cout << "R = "; R.show();}
-
-  dolfin::cout << "Solving Ax = b using GMRES, preconditioned" << dolfin::endl;
-  tic();
-  ks.setMethod(KrylovSolver::GMRES);
-  ks.solve(A, U4, b);
-  toc();
-  meminfo();
-  R.init(U4.size()); A.mult(U4,R); R -= b;
-  if(N <= 10){ dolfin::cout << "x = "; U4.show(); dolfin::cout << "R = "; R.show();}
-
-  real diff_norm = 0.0;
-  for (int i = 0; i < N; i++) diff_norm += pow(U1(i)-U3(i),2.0);
-  diff_norm = sqrt(diff_norm);
-  dolfin::cout << "Difference wrt preconditioned CG solutions: " << diff_norm << dolfin::endl;
-
-  diff_norm = 0.0;
-  for (int i = 0; i < N; i++) diff_norm += pow(U2(i)-U4(i),2.0);
-  diff_norm = sqrt(diff_norm);
-  dolfin::cout << "Difference wrt preconditioned GMRES solutions: " << diff_norm << dolfin::endl;
-
-  */
 
 }
 

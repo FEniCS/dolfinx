@@ -15,3 +15,4 @@ i = Index()
 j = Index()
 
 a = ((u[i].dx(j) + u[j].dx(i)) * (v[i].dx(j) + v[j].dx(i))) * dx
+#a = ((v[i].dx(j) + v[j].dx(i)) * (u[i].dx(j) + u[j].dx(i))) * dx

@@ -158,6 +158,9 @@ void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 
   petscpc->data = &pc;
   petscpc->ops->apply = NewPreconditioner::PCApply;
+  petscpc->ops->applytranspose = NewPreconditioner::PCApply;
+  petscpc->ops->applysymmetricleft = NewPreconditioner::PCApply;
+  petscpc->ops->applysymmetricright = NewPreconditioner::PCApply;
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::disp() const
