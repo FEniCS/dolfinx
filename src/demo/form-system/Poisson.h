@@ -119,9 +119,9 @@ public:
   bool interior(real* block) const
   {
     // Compute geometry tensors
-    real G0_0 = det*c[0][0];
-    real G0_1 = det*c[0][1];
-    real G0_2 = det*c[0][2];
+    real G0_0 = det*w[0][0];
+    real G0_1 = det*w[0][1];
+    real G0_2 = det*w[0][2];
 
     // Compute element tensor
     block[0] = 0.0833333333333*G0_0 + 0.0416666666667*G0_1 + 0.0416666666667*G0_2;
