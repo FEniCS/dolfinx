@@ -34,7 +34,7 @@ namespace dolfin {
 
     /// Update partition (reorder components starting at offset)
     void update(int offset, int& end, real& K, Adaptivity& adaptivity);
-    
+
   private:
 
     // Debug partitioning

@@ -9,7 +9,7 @@ namespace dolfin {
   class GenericSparsity {
   public:
 
-    enum Type { empty, full, automatic, table, matrix };
+    enum Type { automatic, full, empty, matrix, table };
 
     GenericSparsity(unsigned int N);
     virtual ~GenericSparsity();

@@ -4,6 +4,7 @@
 #ifndef __DUAL_H
 #define __DUAL_H
 
+#include <dolfin/Vector.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin {
@@ -33,7 +34,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    Dual(ODE& ode, Function& u);
+    Dual(ODE& primal, Function& u);
 
     /// Destructor
     ~Dual();
@@ -42,12 +43,16 @@ namespace dolfin {
     real u0(unsigned int i);
 
     /// Right-hand side
-    real f(const Vector& u, real t, unsigned int i);
+    real f(const Vector& phi, real t, unsigned int i);
 
   private:
+    
+    // Compute derivative dfi/duj
+    real dFdU(unsigned int i, unsigned int j, real t);
 
-    ODE& ode;
+    ODE& primal;
     Function& u;
+    Vector buffer;
 
   };
 

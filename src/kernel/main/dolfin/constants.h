@@ -10,6 +10,7 @@
 #define DOLFIN_PARAMSIZE     32
 #define DOLFIN_TERM_WIDTH    80
 #define DOLFIN_EPS           3.0e-16
+#define DOLFIN_SQRT_EPS      1.0e-8
 #define DOLFIN_PI            3.141592653589793238462
 #define DOLFIN_PROGRESS_STEP 0.1
 #define DOLFIN_PROGRESS_BARS 4

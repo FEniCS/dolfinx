@@ -23,9 +23,6 @@ namespace dolfin {
     /// Clear sparsity (no dependencies)
     void clear();
 
-    /// Full dependencies, each component depends on all other components
-    void full();
-
     /// Set sparsity (number of dependencies for component i)
     void setsize(unsigned int i, unsigned int size);
     
@@ -34,6 +31,9 @@ namespace dolfin {
     
     /// Set sparsity defined by a sparse matrix
     void set(const Matrix& A);
+
+    /// Set sparsity to transpose of given sparsity
+    void transp(const Sparsity& sparsity);
     
     /// Try to automatically detect dependencies
     void guess(ODE& ode);

@@ -14,14 +14,13 @@ public:
   Minimal() : ODE(3)
   {
     // Parameters
-    lambda1 = 1.0;
-    lambda2 = 1.0;
+    lambda = 1.0;
 
     // Final time
     T = 30.0;
 
     // Compute sparsity
-    sparse();
+    //sparse();
   }
 
   real u0(unsigned int i)
@@ -43,12 +42,12 @@ public:
     if ( i == 1 )
       return -u(0);
 
-    return -lambda2 * u(2);
+    return -lambda * u(2);
   }
   
 private:
 
-  real lambda1, lambda2;
+  real lambda;
 
 };
 
@@ -87,7 +86,7 @@ int main()
   dolfin_set("debug time steps", 1);
   dolfin_set("tolerance", 0.1);
   dolfin_set("initial time step", 0.1);
-  dolfin_set("maximum time step", 1.0);
+  dolfin_set("maximum time step", 0.1);
   dolfin_set("partitioning threshold", 1.0);
   dolfin_set("interval threshold", 0.9);
   dolfin_set("number of samples", 100);

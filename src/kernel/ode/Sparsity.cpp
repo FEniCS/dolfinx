@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/EmptySparsity.h>
 #include <dolfin/FullSparsity.h>
@@ -34,14 +35,6 @@ void Sparsity::clear()
   sparsity = new EmptySparsity(N);
 }
 //-----------------------------------------------------------------------------
-void Sparsity::full()
-{
-  if ( sparsity )
-    delete sparsity;
-
-  sparsity = new FullSparsity(N);
-}
-//-----------------------------------------------------------------------------
 void Sparsity::setsize(unsigned int i, unsigned int size)
 {
   dolfin_assert(sparsity);
@@ -72,6 +65,49 @@ void Sparsity::set(const Matrix& A)
     delete sparsity;
   
   sparsity = new MatrixSparsity(N,A);
+}
+//-----------------------------------------------------------------------------
+void Sparsity::transp(const Sparsity& sparsity)
+{
+  // Clear old sparsity
+  if ( this->sparsity )
+    delete this->sparsity;
+
+  // Get size of system
+  N = sparsity.N;
+
+  // If sparsity is full, then the transpose is full
+  if ( sparsity.sparsity->type() == GenericSparsity::full )
+  {
+    this->sparsity = new FullSparsity(N);
+    return;
+  }
+
+  // If sparsity is empty, then the transpose is empty
+  if ( sparsity.sparsity->type() == GenericSparsity::empty )
+  {
+    this->sparsity = new EmptySparsity(N);
+    return;
+  }
+
+  // Otherwise, create table sparsity
+  this->sparsity = new TableSparsity(N);
+
+  // Count the number of dependencies
+  NewArray<unsigned int> rowsizes(N);
+  rowsizes = 0;
+  for (unsigned int i = 0; i < N; i++)
+    for (Iterator it(i, sparsity); !it.end(); ++it)
+      rowsizes[*it]++;
+
+  // Set row sizes
+  for (unsigned int i = 0; i < N; i++)
+    this->sparsity->setsize(i, rowsizes[i]);
+
+  // Set dependencies
+  for (unsigned int i = 0; i < N; i++)
+    for (Iterator it(i, sparsity); !it.end(); ++it)
+      this->sparsity->set(*it, i);
 }
 //-----------------------------------------------------------------------------
 void Sparsity::guess(ODE& ode)
