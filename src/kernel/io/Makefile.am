@@ -7,6 +7,7 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/MFile.h \
                          dolfin/OctaveFile.h \
                          dolfin/OpenDXFile.h \
+                         dolfin/TecplotFile.h \
                          dolfin/XMLFile.h \
                          dolfin/XMLMesh.h \
                          dolfin/XMLMatrix.h \
@@ -22,6 +23,7 @@ libdolfin_io_a_SOURCES = File.cpp \
                          MFile.cpp \
                          OctaveFile.cpp \
                          OpenDXFile.cpp \
+                         TecplotFile.cpp \
                          XMLFile.cpp \
                          XMLMesh.cpp \
                          XMLMatrix.cpp \

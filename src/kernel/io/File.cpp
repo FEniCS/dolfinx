@@ -10,6 +10,7 @@
 #include <dolfin/OctaveFile.h>
 #include <dolfin/OpenDXFile.h>
 #include <dolfin/GiDFile.h>
+#include <dolfin/TecplotFile.h>
 
 using namespace dolfin;
 
@@ -34,6 +35,8 @@ File::File(const std::string& filename)
     file = new MatlabFile(filename);
   else if ( filename.rfind(".dx") != filename.npos )
     file = new OpenDXFile(filename);
+  else if ( filename.rfind(".tec") != filename.npos )
+    file = new TecplotFile(filename);
   else
   {
     file = 0;
@@ -58,6 +61,9 @@ File::File(const std::string& filename, Type type)
     break;
   case GID:
     file = new GiDFile(filename);
+    break;
+  case TECPLOT:
+    file = new TecplotFile(filename);
     break;
   default:
     file = 0;
