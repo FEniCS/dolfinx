@@ -3,9 +3,13 @@
 
 // DOLFIN linear algebra
 
+#include <dolfin/BiCGSTAB.h>
+#include <dolfin/CG.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/DirectSolver.h>
+#include <dolfin/FGMRES.h>
 #include <dolfin/GaussSeidel.h>
+#include <dolfin/GMRES.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Matrix.h>
