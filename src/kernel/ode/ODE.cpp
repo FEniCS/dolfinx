@@ -14,8 +14,9 @@ using namespace dolfin;
 ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N),
 		   default_timestep(dolfin_get("initial time step")),
 		   default_order(dolfin_get("order")),
-		   implicit_identity("Warning: multiplication with M not implemented, assuming identity."),
-		   feval_not_impl("Warning: consider implementing feval() improve efficiency.")
+		   not_impl_feval("Warning: consider implementing ODE::feval() to improve efficiency."),
+		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
+		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
 {
   // Choose method
   string method = dolfin_get("method");
@@ -49,8 +50,10 @@ void ODE::feval(const real u[], real t, real f[])
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
 
-  feval_not_impl();
+  // Display a warning, more efficiently if implemented
+  not_impl_feval();
 
+  // Call f for each component
   for (uint i = 0; i < N; i++)
     f[i] = this->f(u, t, i);
 }
@@ -59,10 +62,36 @@ void ODE::M(const real x[], real y[], const real u[], real t)
 {
   // Assume M is the identity if not supplied by user: y = x
   
-  implicit_identity();
+  // Display a warning, implicit system but M is not implemented
+  not_impl_M();
 
+  // Set y = x
   for (uint i = 0; i < N; i++)
     y[i] = x[i];
+}
+//-----------------------------------------------------------------------------
+void ODE::J(const real x[], real y[], const real u[], real t)
+{
+  // If a user of the mono-adaptive solver does not supply this function,
+  // then call dfdu for each component
+  
+  // FIXME: More efficient to compute product as Jx = (f(u+hx) - f(u)) / h
+
+  // Display a warning, more efficiently if implemented
+  not_impl_J();
+
+  // Compute product
+  for (uint i = 0; i < N; i++)
+  {
+    real sum = 0.0;
+    const NewArray<uint>& deps = dependencies[i];
+    for (uint pos = 0; pos < deps.size(); pos++)
+    {
+      const uint j = deps[pos];
+      sum += dfdu(u, t, i, j) * x[j];
+    }
+    y[i] = sum;
+  }
 }
 //-----------------------------------------------------------------------------
 real ODE::dfdu(const real u[], real t, uint i, uint j)
@@ -86,11 +115,12 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   uu[j] = uj + 0.5*dU;
   real f2 = f(uu, t, i);
          
+  // Reset value of uj
+  uu[j] = uj;
+
   // Compute derivative
   if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
     return 0.0;
-
-  uu[j] = uj;
 
   return (f2 - f1) / dU;
 }

@@ -42,7 +42,7 @@ void MultiAdaptiveNewtonSolver::start()
   A.init(dx, dx);
 
   // Recompute Jacobian
-  A.update(ts);
+  A.update();
 
   //debug();
   //A.disp();

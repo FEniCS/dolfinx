@@ -49,8 +49,8 @@ void MonoAdaptiveNewtonSolver::start()
   // Initialize Jacobian matrix
   A.init(dx, dx);
 
-  // Recompute Jacobian
-  A.update(ts);
+  // Recompute Jacobian 
+  //A.update();
 
   // Precompute product M*u0
   if ( implicit )

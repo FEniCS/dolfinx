@@ -34,7 +34,8 @@ public:
     fp = fopen("lorenz.txt", "w");
 
     // Final time
-    T = 1e5;
+    //T = 1e5;
+    T = 50.0;
   }
   
   ~Lorenz()
@@ -54,16 +55,18 @@ public:
     }
   }
 
-  real f(const real u[], real t, unsigned int i)
+  void feval(const real u[], real t, real f[])
   {
-    switch (i) {
-    case 0:
-      return s*(u[1] - u[0]);
-    case 1:
-      return r*u[0] - u[1] - u[0]*u[2];
-    default:
-      return u[0]*u[1] - b*u[2];
-    }
+    f[0] = s*(u[1] - u[0]);
+    f[1] = r*u[0] - u[1] - u[0]*u[2];
+    f[2] = u[0]*u[1] - b*u[2];
+  }
+
+  void J(const real x[], real y[], const real u[], real t)
+  {
+    y[0] = s*(x[1] - x[0]);
+    y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
+    y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
   void update(const real u[], real t)
@@ -133,10 +136,11 @@ int main()
   dolfin_set("initial time step", 0.05);
   dolfin_set("fixed time step", true);
   dolfin_set("use new ode solver", true);
+  dolfin_set("solver", "newton");
   dolfin_set("method", "cg");
   dolfin_set("order", 10);
   dolfin_set("tolerance", 1e-12);
-  dolfin_set("save solution", false);
+  //dolfin_set("save solution", false);
   
   Lorenz lorenz;
   lorenz.solve();

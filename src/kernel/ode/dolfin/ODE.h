@@ -54,8 +54,11 @@ namespace dolfin
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void feval(const real u[], real t, real f[]);
 
-    /// Compute product y = Mx
+    /// Compute product y = Mx for implicit system
     virtual void M(const real x[], real y[], const real u[], real t);
+
+    /// Compute product y = Jx for Jacobian J
+    virtual void J(const real x[], real y[], const real u[], real t);
 
     /// Jacobian (optional)
     virtual real dfdu(const real u[], real t, uint i, uint j);
@@ -149,8 +152,9 @@ namespace dolfin
     Element::Type default_method;
     uint default_order;
     
-    Event implicit_identity;
-    Event feval_not_impl;
+    Event not_impl_feval;
+    Event not_impl_M;
+    Event not_impl_J;
 
   };
 

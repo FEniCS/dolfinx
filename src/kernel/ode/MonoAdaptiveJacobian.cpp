@@ -33,6 +33,7 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Get data arrays (assumes uniprocessor case)
   const real* xx = x.array();
   real* yy = y.array();
+  const real* uu = ts.x.array();
 
   // Temporary data array used to store multiplications
   real* z = ts.tmp();
@@ -44,9 +45,6 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Compute product y = Mx for each stage for implicit system
   if ( implicit )
   {
-    // Get data array for solution (assumes uniprocessor case)
-    const real* uu = ts.x.array();
-
     // Iterate over stages
     for (uint n = 0; n < method.nsize(); n++)
     {
@@ -67,15 +65,15 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
       for (uint i = 0; i < ts.N; i++)
 	yy[noffset + i] = z[i];
     }
-
-    ts.x.restore(uu);
   }
 
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
   {
+    const real t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
 
+    /*
     // Compute z = df/du * x for current stage
     for (uint i = 0; i < ts.N; i++)
     {
@@ -89,7 +87,11 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
       }
       z[i] = sum;
     }
+    */
 
+    // Compute z = df/du * x for current stage
+    ode.J(xx + noffset, z, uu + noffset, t);
+    
     // Add z with correct weights to y
     for (uint m = 0; m < method.nsize(); m++)
     {
@@ -111,5 +113,6 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Restore data arrays
   x.restore(xx);
   y.restore(yy);
+  ts.x.restore(uu);
 }
 //-----------------------------------------------------------------------------

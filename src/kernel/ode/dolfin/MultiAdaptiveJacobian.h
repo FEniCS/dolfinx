@@ -27,6 +27,9 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(const NewVector& x, NewVector& y) const;
 
+    /// Recompute Jacobian if necessary
+    void update();
+
     /// Friends
     friend class MultiAdaptivePreconditioner;
 
@@ -40,6 +43,12 @@ namespace dolfin
 
     // The time slab
     MultiAdaptiveTimeSlab& ts;
+
+    // Values of the Jacobian df/du of the right-hand side
+    real* Jvalues;
+
+    // Indices for first element of each row for the Jacobian df/du
+    uint* Jindices;
     
     // Lookup table for dependencies to components with smaller time steps
     real* Jlookup;

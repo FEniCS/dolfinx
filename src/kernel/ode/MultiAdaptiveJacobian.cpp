@@ -12,8 +12,27 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabJacobian(timeslab), ts(timeslab)
+  : TimeSlabJacobian(timeslab), ts(timeslab),
+    Jvalues(0), Jindices(0), Jlookup(0)
 {
+  // Allocate Jacobian row indices
+  Jindices = new uint[ode.size()];
+  
+  // Compute start of each row
+  uint sum = 0;
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    Jindices[i] = sum;
+    sum += ode.dependencies[i].size();
+  }
+
+  // Allocate Jacobian values
+  Jvalues = new real[sum];
+  for (uint pos = 0; pos < sum; pos++)
+    Jvalues[pos] = 0.0;
+
+  dolfin_info("Generated Jacobian data structure for %d dependencies.", sum);
+
   // Compute maximum number of dependencies
   uint maxsize = 0;
   for (uint i = 0; i < ode.size(); i++)
@@ -29,7 +48,24 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
 {
+  if ( Jvalues ) delete [] Jvalues;
+  if ( Jindices ) delete [] Jindices;
   if ( Jlookup ) delete [] Jlookup;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptiveJacobian::update()
+{
+  // Compute Jacobian at the beginning of the slab
+  real t = ts.starttime();
+  dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
+  
+  // Compute Jacobian
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    const NewArray<uint>& deps = ode.dependencies[i];
+    for (uint pos = 0; pos < deps.size(); pos++)
+      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u0, t, i, deps[pos]);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const

@@ -29,8 +29,8 @@ namespace dolfin
     /// Compute product y = Ax
     virtual void mult(const NewVector& x, NewVector& y) const = 0;
 
-    /// Recompute Jacobian
-    void update(const NewTimeSlab& timeslab);
+    /// Recompute Jacobian if necessary
+    virtual void update();
 
   protected:
     
@@ -40,12 +40,6 @@ namespace dolfin
     // Method, mcG(q) or mdG(q)
     const NewMethod& method;
 
-    // Values of the Jacobian df/du of the right-hand side
-    real* Jvalues;
-
-    // Indices for first element of each row for the Jacobian df/du
-    uint* Jindices;
-    
   };
 
 }
