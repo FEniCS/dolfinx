@@ -1,3 +1,4 @@
+ - Add greeting at end of compilation
 0.3.5
  - Define version number only in the file configure.in
  - Fix compilation problem (missing depcomp)
