@@ -15,6 +15,8 @@ using namespace dolfin;
 NewcGqMethod::NewcGqMethod(unsigned int q) : NewMethod(q, q + 1, q)
 {
   init();
+
+  _type = NewMethod::cG;
 }
 //-----------------------------------------------------------------------------
 real NewcGqMethod::ueval(real x0, real values[], real tau) const

@@ -22,7 +22,9 @@ namespace dolfin
   /// The class VirtualMatrix enables the use of Krylov subspace
   /// methods for linear systems Ax = b, without having to explicitly
   /// store the matrix A. All that is needed is that the user-defined
-  /// VirtualMatrix implements multiplication with vectors.
+  /// VirtualMatrix implements multiplication with vectors. Note that
+  /// the multiplication operator needs to be defined in terms of
+  /// PETSc data structures (Vec), since it will be called from PETSc.
 
   class VirtualMatrix
   {
@@ -31,14 +33,14 @@ namespace dolfin
     /// Constructor
     VirtualMatrix();
 
-    /// Create a virtual matrix matching the given result vector
-    VirtualMatrix(const NewVector& y);
+    /// Create a virtual matrix matching the given vectors
+    VirtualMatrix(const NewVector& x, const NewVector& y);
 
     /// Destructor
     virtual ~VirtualMatrix();
 
-    /// Initialize virtual matrix matching the given result vector
-    void init(const NewVector& y);
+    /// Initialize virtual matrix matching the given vectors
+    void init(const NewVector& x, const NewVector& y);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;
@@ -50,7 +52,7 @@ namespace dolfin
     const Mat mat() const;
 
     /// Compute product y = Ax
-    virtual void mult(const NewVector& x, NewVector& y) const = 0;
+    virtual void mult(Vec x, Vec y) const = 0;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const VirtualMatrix& A);

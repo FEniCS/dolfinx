@@ -19,11 +19,16 @@ namespace dolfin
   {
   public:
     
+    enum Type { cG, dG, none };
+
     /// Constructor
     NewMethod(unsigned int q, unsigned int nq, unsigned int nn);
 
     /// Destructor
     virtual ~NewMethod();
+
+    /// Return type (inline optimized)
+    inline Type type() const { return _type; }
 
     /// Return degree (inline optimized)
     inline unsigned int degree() const { return q; }
@@ -45,6 +50,9 @@ namespace dolfin
 
     /// Return quadrature weight, including only quadrature (inline optimized)
     inline real qweight(unsigned int i) const { return qweights[i]; }
+
+    /// Evaluation of trial space basis function i at given tau (inline optimized)
+    inline real eval(unsigned int i, real tau) const { return trial->eval(i, tau); }
     
     /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
     inline real derivative(unsigned int i) const { return derivatives[i]; }
@@ -89,6 +97,8 @@ namespace dolfin
 
     Lagrange* trial;
     Lagrange* test;
+
+    Type _type;
 
   };
 

@@ -50,6 +50,8 @@ NewMethod::NewMethod(unsigned int q, unsigned int nq, unsigned int nn)
 
   trial = 0;
   test = 0;
+
+  _type = none;
 }
 //-----------------------------------------------------------------------------
 NewMethod::~NewMethod()

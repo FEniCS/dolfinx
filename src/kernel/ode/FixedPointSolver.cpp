@@ -49,8 +49,7 @@ real FixedPointSolver::iteration()
 
     // Get initial value for element
     const int ep = ts.ee[e];
-    const uint jp = ep * method.nsize();
-    const real x0 = ( ep != -1 ? ts.jx[jp + method.nsize() - 1] : ts.u0[i] );
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
     // Evaluate right-hand side at quadrature points of element
     ts.feval(f, s, e, i, a, b, k);

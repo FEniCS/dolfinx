@@ -33,8 +33,8 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
     method = new NewdGqMethod(q);
 
   // Choose solver
-  //solver = new FixedPointSolver(*this, *method);
-  solver = new NewtonSolver(*this, *method);
+  solver = new FixedPointSolver(*this, *method);
+  //solver = new NewtonSolver(*this, *method);
 
   // Get initial data
   for (uint i = 0; i < N; i++)
@@ -377,8 +377,8 @@ void NewTimeSlab::create_j(uint index)
   size_j.next += method->nsize();
 
   // Create dofs
-  for (uint stage = 0; stage < method->nsize(); stage++)
-    jx[pos + stage] = u0[index];
+  for (uint n = 0; n < method->nsize(); n++)
+    jx[pos + n] = u0[index];
 }
 //-----------------------------------------------------------------------------
 void NewTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0)
@@ -419,10 +419,10 @@ void NewTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0)
     //dolfin_info("  Checking element %d (component %d)", e1, i1);
     
     // Iterate over dofs for element
-    for (uint stage = 0; stage < method->nsize(); stage++)
+    for (uint n = 0; n < method->nsize(); n++)
     {
-      //const uint j = j1 + stage;
-      const real t = a1 + k1*method->npoint(stage);
+      //const uint j = j1 + n;
+      const real t = a1 + k1*method->npoint(n);
       
       //dolfin_info("    Checking dof at t = %f", t);
       
@@ -763,15 +763,15 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
   dolfin_assert(ndep * method->nsize() == (end - d));
 
   // Evaluate the right-hand side at all quadrature points
-  for (uint n = 0; n < method->qsize(); n++)
+  for (uint m = 0; m < method->qsize(); m++)
   {
     // Compute quadrature point
-    const real t = a0 + k0*method->qpoint(n);
+    const real t = a0 + k0*method->qpoint(m);
     //cout << "  Evaluating u at t = " << t << endl;
 
     //cout << "  Updating for large time steps" << endl;
 
-    // Update values for components with larger and equal time steps,
+    // Update values for components with larger or equal time steps,
     // also including the initial value from components with small
     // time steps (needed for cG)
     for (uint pos = 0; pos < deps.size(); pos++)
@@ -806,7 +806,7 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
       // Use fast evaluation for elements in the same sub slab
       const uint j1 = e1 * method->nsize();
       if ( s0 == s1 )
-	u[i1] = method->ueval(x0, jx + j1, n);
+	u[i1] = method->ueval(x0, jx + j1, m);
       else
       {
 	const real a1 = sa[s1];
@@ -851,7 +851,7 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     }
     
     // Evaluate right-hand side
-    f[n] = ode.f(u, t, i0);
+    f[m] = ode.f(u, t, i0);
   }
 }
 //-----------------------------------------------------------------------------

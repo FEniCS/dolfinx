@@ -29,6 +29,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/FixedPointSolver.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
+                          dolfin/NewJacobianMatrix.h \
                           dolfin/Method.h \
                           dolfin/NewMethod.h \
                           dolfin/NewtonIteration.h \
@@ -85,6 +86,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           FixedPointSolver.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
+                          NewJacobianMatrix.cpp \
                           Method.cpp \
                           NewMethod.cpp \
                           NewtonIteration.cpp \

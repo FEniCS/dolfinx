@@ -27,6 +27,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              FixedPointSolver.h \
              Iteration.h \
              JacobianMatrix.h \
+             NewJacobianMatrix.h \
              Method.h \
              NewMethod.h \
              NonStiffIteration.h \

@@ -99,6 +99,7 @@ namespace dolfin
     friend class Dual;
     friend class RHS;
     friend class NewTimeSlab;
+    friend class NewJacobianMatrix;
     friend class ReducedModel;
     friend class JacobianMatrix;
 
