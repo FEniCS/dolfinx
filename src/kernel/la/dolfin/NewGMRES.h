@@ -33,10 +33,31 @@ namespace dolfin
     /// Solve linear system Ax = b for a given right-hand side b
     void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
+    /// Change rtol
+    void changeRtol(real rt);
+      
+    /// Change abstol
+    void changeAbstol(real at);
+      
+    /// Change dtol
+    void changeDtol(real dt);
+      
+    /// Change maxits
+    void changeMaxits(int mi);
+      
   private:
 
-    // Tolerance
-    real tol;
+    // Tolerances:
+    // rtol - the relative convergence tolerance (relative decrease in the residual norm)
+    // abstol - the absolute convergence tolerance (absolute size of the residual norm)
+    // dtol - the divergence tolerance (amount residual can increase before KSPDefaultConverged() 
+    //	                 		concludes that the method is diverging)
+    // maxits - maximum number of iterations to use
+
+    real rtol;
+    real abstol;
+    real dtol;
+    int maxits;
 
     // Maximum number of iterations
     unsigned int maxiter;

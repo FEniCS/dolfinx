@@ -19,6 +19,7 @@ NewGMRES::NewGMRES()
 {
   // Initialize PETSc
   PETScManager::init();
+
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
@@ -35,12 +36,21 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   // The default ILU preconditioner creates an extra matrix.
   // To save memory, use e.g. a Jacobi preconditioner.
 
-  dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
 
-  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
+  dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
+
+  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   KSPSetFromOptions(ksp);
+
+  /*
+  // Set tolerances
+  real rtol,abstol,dtol;
+  int maxits; 
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  */
 
   // Solve system
   dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
@@ -61,8 +71,6 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
-  dolfin_info("Solving system of size %d x %d.", A.size(0), A.size(1));
-
   //Set up solver environment.
   KSP  ksp;
   //PC   pc;
@@ -73,9 +81,17 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   //dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
 
-  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
+  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   KSPSetFromOptions(ksp);
+
+  /*
+  // Set tolerances
+  real rtol,abstol,dtol;
+  int maxits; 
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  */
 
   //Solve system.
   //dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
@@ -94,3 +110,33 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
+/*
+void NewGMRES::changeRtol(real rt)
+{
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  rtol = rt;
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::changeAbstol(real at)
+{
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  abstol = at;
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::changeDtol(real dt)
+{
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  dtol = dt;
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::changeMaxits(int mi)
+{
+  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
+  maxits = mi;
+  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+}
+//-----------------------------------------------------------------------------
+*/

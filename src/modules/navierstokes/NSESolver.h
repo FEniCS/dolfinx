@@ -14,6 +14,7 @@ namespace dolfin {
     NSESolver(Mesh& mesh);
     
     const char* description();
+    void Newsolve();
     void solve();
 
   };
