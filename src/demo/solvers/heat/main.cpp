@@ -37,15 +37,15 @@ void mybc(BoundaryCondition& bc)
 int main(int argc, char **argv)
 {
   Mesh mesh("two_particles.xml.gz");
-  Problem convdiff("convection-diffusion", mesh);
+  Problem heat("heat", mesh);
 
-  convdiff.set("source", f);
-  convdiff.set("diffusivity", a);
-  convdiff.set("boundary condition", mybc);
-  convdiff.set("final time", 0.5);
-  convdiff.set("time step", 0.1);
+  heat.set("source", f);
+  heat.set("diffusivity", a);
+  heat.set("boundary condition", mybc);
+  heat.set("final time", 0.5);
+  heat.set("time step", 0.1);
 
-  convdiff.solve();
+  heat.solve();
   
   return 0;
 }

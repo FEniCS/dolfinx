@@ -31,9 +31,11 @@ namespace dolfin {
     }
     
   private:    
+
     ElementFunction f;         // Source term
     ElementFunction up;        // Function value at left end-point
     ElementFunction a;         // Diffusivity
+
   };
 
 }

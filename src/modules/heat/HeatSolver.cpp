@@ -33,7 +33,6 @@ void HeatSolver::solve()
   Galerkin     fem;
   Heat         heat(f, u0, a);
   KrylovSolver solver;
-  //File         file("heat.m");
   File         file("heat.dx");
   
   real t = 0.0;
@@ -43,7 +42,7 @@ void HeatSolver::solve()
   // Save initial value
   u1.rename("u", "temperature");
   file << mesh;
-  //file << u1;
+  // file << u1;
 
   // Assemble matrix
   heat.k = k;
@@ -69,14 +68,14 @@ void HeatSolver::solve()
     
     // Save the solution
     u1.t = t;
-    //    file << u1;
+    // file << u1;
 
     // Update progress
     p = t / T;
 
   }
 
-  file << u1;
+  // file << u1;
 
 }
 //-----------------------------------------------------------------------------

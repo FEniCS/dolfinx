@@ -19,7 +19,7 @@ General
 - Save edges in matlab format
 - General boundary conditions
 - Multigrid
-- Mesh generation (octree) from given CAD model
 - Vector valued PDE
 - General function representations
-- i/o for functions 
+- i/o for functions, in particular in OpenDX format
+- Use stl containers (inherit) in Array and List

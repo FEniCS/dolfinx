@@ -1,11 +1,11 @@
 % Copyright (C) 2003 Johan Hoffman and Anders Logg.
 % Licensed under the GNU GPL Version 2.
 %
-% Draw grids from the 2D grid refinement example.
+% Draw meshes from the 2D mesh refinement example.
 
-% Load the grids
-disp('Loading grids')
-grids2D
+% Load the meshes
+disp('Loading meshes')
+meshes2D
 
 % Count the number of levels
 n = length(points);
@@ -18,9 +18,9 @@ for i=1:n
      break;
   end
 end
-disp(['Found ' num2str(n) ' grids in ' num2str(levels) ' levels'])
+disp(['Found ' num2str(n) ' meshes in ' num2str(levels) ' levels'])
 
-% Draw grids
+% Draw meshes
 figure(1)
 clf
 count = 1;
@@ -34,7 +34,7 @@ for i=1:levels
   end
 end
 
-% Draw the finest grid
+% Draw the finest mesh
 figure(2)
 clf
 pdemesh(points{n}, edges{n}, cells{n})
