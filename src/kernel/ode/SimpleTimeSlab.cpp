@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Jansson, 2003.
 
 #include <iostream>
 
@@ -42,6 +44,15 @@ bool SimpleTimeSlab::leaf() const
 real SimpleTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
 {
   return fixpoint.residual(elements);
+}
+//-----------------------------------------------------------------------------
+void SimpleTimeSlab::show(unsigned int depth) const
+{
+  for (unsigned int i = 0; i < depth; i++)
+    cout << "  ";
+
+  cout << "Time slab at [" << starttime() << " " << endtime() << "]: "
+       << elements.size() << " element(s)" << endl;
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)

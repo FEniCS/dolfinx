@@ -58,11 +58,15 @@ void TimeStepper::solve(ODE& ode, Function& function)
   Progress p("Time-stepping");
   while ( true ) {
     
+    cout << "Creating new time slab" << endl;
+
     // Create a new time slab
     if ( t == 0.0 )
       timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
+
+    timeslab->show();
 
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )

@@ -42,7 +42,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   Iteration::State newstate;
   bool retry = true;
   
-  //dolfin_start("Starting time slab iteration");
+  dolfin_start("Starting time slab iteration");
   
   while ( retry )
   {
@@ -55,7 +55,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
       // Check convergence
       if ( converged(timeslab, r, n) )
       {
-	//dolfin_end("Time slab iteration converged in %d iterations", n + 1);
+	dolfin_end("Time slab iteration converged in %d iterations", n + 1);
 	return true;
       }
       
@@ -74,7 +74,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     }
   }
 
-  //dolfin_end("Time slab iteration did not converge");
+  dolfin_end("Time slab iteration did not converge");
 
   return false;
 }

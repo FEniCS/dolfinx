@@ -52,7 +52,7 @@ namespace dolfin {
     class Row;
     class Column;
 
-    ///--- Basic operations
+    ///--- Basic operations ---
 
     /// Initialize to a zero matrix with given dimensions
     virtual void init(unsigned int m, unsigned int n);
@@ -60,7 +60,7 @@ namespace dolfin {
     /// Clear all data
     virtual void clear();
 
-    ///--- Simple functions
+    ///--- Simple functions ---
     
     /// Return matrix type, sparse or dense
     virtual Type type() const;
@@ -77,7 +77,7 @@ namespace dolfin {
     /// Return size of matrix in bytes (approximately)
     virtual unsigned int bytes() const;
 
-    ///--- Operators
+    ///--- Operators ---
 
     /// Index operator
     virtual real operator()(unsigned int i, unsigned int j) const;
@@ -118,7 +118,7 @@ namespace dolfin {
     /// Multiplication with a given scalar
     virtual void operator*=(real a);    
     
-    ///--- Matrix operations
+    ///--- Matrix operations ---
 
     /// Compute maximum norm
     virtual real norm() const;
@@ -162,7 +162,7 @@ namespace dolfin {
     /// Solve A x = b with high precision using a computed lu factorization (only dense)
     virtual void hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const;
     
-    /// --- Special functions
+    /// --- Special functions ---
 
     /// Clear unused elements (only sparse)
     virtual void resize();
@@ -185,7 +185,7 @@ namespace dolfin {
     /// Set this matrix to the transpose of the given matrix
     virtual void settransp(const Matrix& A);
 
-    /// --- Output
+    ///--- Output ---
 
     /// Display entire matrix
     virtual void show() const;
@@ -193,7 +193,7 @@ namespace dolfin {
     /// Condensed information in one line
     friend LogStream& operator<< (LogStream& stream, const Matrix& A);
 
-    ///--- Nested classes
+    ///--- Nested classes ---
 
     /// Nested class Element, reference to a position in the matrix
     class Element {

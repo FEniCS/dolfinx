@@ -210,8 +210,9 @@ bool AdaptiveIteration::diverged(TimeSlab& timeslab,
   if ( r.r2 < maxconv * r.r1 )
     return false;
   
+  cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
+  
   // Notify change of strategy
-  cout << "checking time slab convergence" << endl;
   dolfin_info("Adaptive damping is not enough, trying a stabilizing time step sequence.");
   
   // Check if we need to reset the element

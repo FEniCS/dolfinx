@@ -43,6 +43,9 @@ namespace dolfin {
     /// Compute L2 norm of element residual
     real elementResidualL2(FixedPointIteration& fixpoint);
 
+    /// Display structure of time slab
+    void show(unsigned int depth = 0) const;
+
   private:
     
     // Create new time slab

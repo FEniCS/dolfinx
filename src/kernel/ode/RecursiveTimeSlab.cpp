@@ -75,6 +75,23 @@ real RecursiveTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
   return sqrt(r);
 }
 //-----------------------------------------------------------------------------
+void RecursiveTimeSlab::show(unsigned int depth) const
+{
+  for (unsigned int i = 0; i < depth; i++)
+    cout << "  ";
+  
+  cout << "Time slab at [" << starttime() << " " << endtime() << "]: "
+       << elements.size() << " element(s) and "
+       << timeslabs.size() << " time slab(s)" << endl;
+  
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+  {
+    TimeSlab* timeslab = timeslabs[i];
+    dolfin_assert(timeslab);
+    timeslab->show(depth + 1);
+  }
+}
+//-----------------------------------------------------------------------------
 void RecursiveTimeSlab::create(Solution& u, RHS& f,
 			       Adaptivity& adaptivity,
 			       FixedPointIteration& fixpoint,

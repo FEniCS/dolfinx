@@ -58,6 +58,11 @@ namespace dolfin {
     /// Compute L2 norm of element residual
     virtual real elementResidualL2(FixedPointIteration& fixpoint) = 0;
 
+    ///--- Output ---
+
+    /// Display structure of time slab
+    virtual void show(unsigned int depth = 0) const = 0;
+
     /// Output
     friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);
 
