@@ -239,7 +239,7 @@ namespace dolfin {
       void operator= (const Vector& x);
 
       real operator* (const Vector& x) const;
-      
+
       friend class Column;
 
     private:

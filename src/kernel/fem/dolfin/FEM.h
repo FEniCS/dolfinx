@@ -48,7 +48,6 @@ namespace dolfin {
     static void assemble(PDE& pde, Mesh& mesh, Vector& b,
 			 FiniteElementMethod& method);
 
-
   private:
 
     // Assemble matrix

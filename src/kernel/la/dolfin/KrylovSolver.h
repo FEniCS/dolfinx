@@ -24,7 +24,7 @@ namespace dolfin {
    KrylovSolver(Method method = GMRES);
    
    void solve(const Matrix &A, Vector &x, const Vector &b);
-   
+
    void setMethod(Method method);
    void setPreconditioner(Preconditioner pc);
    
