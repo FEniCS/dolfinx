@@ -12,14 +12,13 @@ Main authors:
 Contributors:
 -------------
 
-	Vector class:
-	-------------
-
-	Georgios Foufas (foufas@math.chalmers.se)
-
-	GiD routines:
-	-------------
+- Georgios Foufas (foufas@math.chalmers.se)
+  (Operators in Vector and Matrix)
 	
- 	Rasmus Hemph       (PDE project course 2001/2002)
-	Alexandra Krusper  (PDE project course 2001/2002)
-	Walter Villanueva  (PDE project course 2001/2002)
+- Erik Svensson (eriksv@math.chalmers.se)
+  (New Matlab format for sparse matrix)
+
+- Rasmus Hemph       (PDE project course 2001/2002)
+  Aleksandra Krusper (PDE project course 2001/2002)
+  Walter Villanueva  (PDE project course 2001/2002)
+  (GiD file format)

@@ -12,6 +12,7 @@ int main(int argc, char **argv)
   Matrix A;
   
   File file("data.xml");
+  File matlab("matrix.m");
   
   file >> b;
   file >> A;
@@ -20,6 +21,8 @@ int main(int argc, char **argv)
   cout << b << endl;
   cout << x << endl;
 
+  matlab << A;
+  
   //  A(1,1) = 0.5;
   real a = A(1,1);
   cout << "A(1,1) = " << a << endl;

@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// New output format for Matrix added by Erik Svensson 2003
 
 // FIXME: Use streams rather than stdio
 #include <stdio.h>
@@ -45,18 +47,24 @@ void MatlabFile::operator<<(const Vector& x)
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Matrix& A)
 {
+  real value;
+  int j ;
+  
   FILE *fp = fopen(filename.c_str(), "a");
-
+  
   fprintf(fp, "A = [");
   for (int i = 0; i < A.size(0); i++) {
-	 for (int j = 0; j < A.size(1); j++)
-		fprintf(fp, " %.16e", A(i,j));
-	 if ( i == (A.size(0) - 1) )
-		fprintf(fp,"];\n");
-	 else
-		fprintf(fp,"\n");
+    for (int pos = 0; pos < A.rowSize(i); pos++) {
+      value = A(i, &j, pos);
+      fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);
+      if ( i == (A.size(0) - 1) && pos == (A.rowSize(i) - 1) )
+        fprintf(fp, "];\n");
+      else
+        fprintf(fp, "\n");
+    }
   }
-
+  fprintf(fp, "A=spconvert(A);\n");
+  
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
