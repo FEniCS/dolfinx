@@ -91,6 +91,7 @@ fi
 if test x$PETSC_DIR = x; then
     echo "assuming path to PETSc is /usr/local/lib/petsc"
     PETSC_DIR="/usr/local/lib/petsc/"
+    AC_SUBST(PETSC_DIR)
 else
     echo "using PETSC_DIR=$PETSC_DIR"
 fi
@@ -98,7 +99,8 @@ fi
 # Handle option --with-petsc-bopt=<bopt>
 if test x$BOPT = x; then
     echo "assuming PETSc BOPT is g_c++"
-    PETSC_DIR="g_c++"
+    BOPT="g_c++"
+    AC_SUBST(BOPT)
 else
     echo "using BOPT=$BOPT"
 fi
@@ -141,8 +143,8 @@ else
     AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
     if test $petsc_found = yes; then
         # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs`
-        PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs`
+        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
+        PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
         # Extra flag to choose correct version
         PETSC_CFLAGS="$PETSC_CFLAGS -DPETSC_2_2_1"
     else
