@@ -1,7 +1,7 @@
 // Copyright (C) 2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Heat.h>
+//#include <dolfin/Heat.h>
 #include <dolfin/HeatSolver.h>
 
 using namespace dolfin;
@@ -16,6 +16,7 @@ HeatSolver::HeatSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc,
 //-----------------------------------------------------------------------------
 void HeatSolver::solve()
 {
+  /*
   Heat::FiniteElement element;
 
   Heat::BilinearForm a;
@@ -43,6 +44,7 @@ void HeatSolver::solve()
     solver.solve(A, x, b);
 
   }
+  */
 
   /*
   // FIXME: Remove this and implement output for NewFunction
