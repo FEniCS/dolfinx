@@ -37,10 +37,10 @@ public:
   real f(const Vector& u, real t, unsigned int i)
   {
     if ( i == 0 )
-      return u(1);
+      return 0.0; //return u(1);
 
     if ( i == 1 )
-      return -u(0);
+      return 0.0; //return -u(0);
 
     return -lambda * u(2);
   }

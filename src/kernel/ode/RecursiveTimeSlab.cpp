@@ -140,6 +140,9 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
     elements.push_back(element);
   }
 
+  // Reset elements
+  resetElements(u);
+
   // Update elements
   updateElements(fixpoint);
 

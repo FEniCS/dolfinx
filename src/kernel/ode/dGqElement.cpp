@@ -140,6 +140,14 @@ real dGqElement::computeDiscreteResidual(RHS& f)
   // Evaluate right-hand side
   feval(f);
 
+  /*
+    cout << "    u0       = " << u0 << endl;
+    cout << "    u1       = " << values[q] << endl;
+    cout << "    u1 - u0  = " << values[q] - u0 << endl;
+    cout << "    integral = " << integral(q) << endl;
+    cout << "    timestep = " << timestep() << endl;
+  */
+
   return (values[q] - u0 - integral(q)) / timestep();
 }
 //-----------------------------------------------------------------------------

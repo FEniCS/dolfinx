@@ -54,6 +54,8 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 
   cout << "Converged in " << n << " iterations" << endl;
 
+  clear();
+
   return true;
 }
 //-----------------------------------------------------------------------------

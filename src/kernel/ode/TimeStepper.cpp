@@ -57,6 +57,8 @@ void TimeStepper::solve(ODE& ode, Function& function)
       timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
+
+    cout << *timeslab << endl;
     
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )

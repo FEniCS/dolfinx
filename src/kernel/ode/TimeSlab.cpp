@@ -123,7 +123,7 @@ real TimeSlab::computeMaxRdElements(Solution& u, RHS& f)
     // Compute discrete residual
     maxrd = std::max(maxrd, fabs(element->computeDiscreteResidual(f)));
     
-    //cout << "  r[" << element->index() << "] = " << fabs(element->computeDiscreteResidual(f)) << endl;
+    cout << "  r[" << element->index() << "] = " << fabs(element->computeDiscreteResidual(f)) << endl;
 
   }
 
