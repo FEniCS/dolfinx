@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_form.h                            dolfin/ElementFunction.h                            dolfin/FunctionList.h                            dolfin/Integral.h                            dolfin/PDE.h                            dolfin/Product.h                            dolfin/ShapeFunction.h
+include_HEADERS = dolfin/dolfin_form.h                            dolfin/BilinearForm.h                            dolfin/ElementFunction.h                            dolfin/Form.h                            dolfin/FunctionList.h                            dolfin/Integral.h                            dolfin/LinearForm.h                            dolfin/NewPDE.h                            dolfin/PDE.h                            dolfin/Product.h                            dolfin/ShapeFunction.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-form.a
-libdolfin_form_a_SOURCES = ElementFunction.cpp                            FunctionList.cpp                            Integral.cpp                            PDE.cpp                            Product.cpp                            ShapeFunction.cpp
+libdolfin_form_a_SOURCES = BilinearForm.cpp                            ElementFunction.cpp                            FunctionList.cpp                            Integral.cpp                            LinearForm.cpp                            NewPDE.cpp                            PDE.cpp                            Product.cpp                            ShapeFunction.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,8 +98,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_form_a_LIBADD = 
-libdolfin_form_a_OBJECTS =  ElementFunction.o FunctionList.o Integral.o \
-PDE.o Product.o ShapeFunction.o
+libdolfin_form_a_OBJECTS =  BilinearForm.o ElementFunction.o \
+FunctionList.o Integral.o LinearForm.o NewPDE.o PDE.o Product.o \
+ShapeFunction.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -113,8 +114,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/ElementFunction.P .deps/FunctionList.P \
-.deps/Integral.P .deps/PDE.P .deps/Product.P .deps/ShapeFunction.P
+DEP_FILES =  .deps/BilinearForm.P .deps/ElementFunction.P \
+.deps/FunctionList.P .deps/Integral.P .deps/LinearForm.P .deps/NewPDE.P \
+.deps/PDE.P .deps/Product.P .deps/ShapeFunction.P
 SOURCES = $(libdolfin_form_a_SOURCES)
 OBJECTS = $(libdolfin_form_a_OBJECTS)
 
