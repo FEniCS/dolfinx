@@ -22,17 +22,17 @@ TimeSlabData::TimeSlabData(ODE& ode) : components(ode.size())
   //dolfin_debug1("components(index): %p", &(components(1)));
   
   // Check if we want to save debug info
-  debug = dolfin_get("debug time slab");
+  _debug = dolfin_get("debug time slab");
 
   // Open debug file
-  if ( debug )
+  if ( _debug )
     file.open("timeslab.debug", std::ios::out);
 }
 //-----------------------------------------------------------------------------
 TimeSlabData::~TimeSlabData()
 {
   // Close debug file
-  if ( debug )
+  if ( _debug )
     file.close();
 }
 //-----------------------------------------------------------------------------
@@ -44,10 +44,6 @@ Element* TimeSlabData::createElement(const Element::Type type, int q,
 
   // Create the new element
   Element *e = components[index].createElement(type, q, index, timeslab);
-
-  // Write debug info to file
-  if ( debug )
-    file << index << " " << e->starttime() << " " << e->endtime() << "\n";
 
   dolfin_debug2("components[%d].size(): %d", index, components[index].size());
 
@@ -92,5 +88,17 @@ void TimeSlabData::shift()
     dolfin_debug2("u0i: %d, %lf", it - components.begin(), u0i);
 
   }
+}
+//-----------------------------------------------------------------------------
+void TimeSlabData::debug(Element& element, Action action)
+{
+  if ( !_debug )
+    return;
+  
+  //Write debug info to file
+  file << action << " "
+       << element.index << " " 
+       << element.starttime() << " " 
+       << element.endtime() << "\n";
 }
 //-----------------------------------------------------------------------------

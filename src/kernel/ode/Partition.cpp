@@ -39,12 +39,12 @@ void Partition::update(TimeSlabData& data, int offset)
   // Compute new preliminary time steps for all elements, starting at
   // position offset, and compute the maximum time step.
 
-  for (int i = offset; i < components.size(); i++) {
+  for (unsigned int i = offset; i < components.size(); i++) {
 
     // Component index
     int index = components[i].index;
 
-    real k;
+    real k = 0.0;
 
     if(index == 0)
       k = 0.1;
@@ -79,7 +79,7 @@ void Partition::partition(int offset, int& end, real& K)
   //K = maximum(offset) / 2.0;
   K = maximum(offset) / 1.0;
   
-  for (int i = offset; i < components.size(); i++)
+  for (unsigned int i = offset; i < components.size(); i++)
      dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
 
   lessComponents less(K);
@@ -91,7 +91,7 @@ void Partition::partition(int offset, int& end, real& K)
 
   dolfin_debug1("end: %d", end);
 
-  for (int i = offset; i < components.size(); i++)
+  for (unsigned int i = offset; i < components.size(); i++)
     dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
 
 }
@@ -100,7 +100,7 @@ real Partition::maximum(int offset)
 {
   real K = 0.0;
 
-  for (int i = offset; i < components.size(); i++)
+  for (unsigned int i = offset; i < components.size(); i++)
     K = max(components[i].timestep, K);
 
   return K;

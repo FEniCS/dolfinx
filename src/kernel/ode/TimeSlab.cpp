@@ -185,7 +185,14 @@ void TimeSlab::createElements(RHS& f, TimeSlabData& data,
   
   // Create elements
   for (int i = offset; i < end; i++) {
-    Element* element = data.createElement(type, q, partition.index(i), this);
+
+    // Create element
+    Element *element = data.createElement(type, q, partition.index(i), this);
+
+    // Write debug info
+    data.debug(*element, TimeSlabData::create);
+
+    // Add element to array
     elements.push_back(element);
   }
 
@@ -223,7 +230,7 @@ void TimeSlab::updateElements(RHS& f, TimeSlabData& data)
     for(std::vector<Element *>::iterator it = elements.begin();
 	it != elements.end(); it++)
     {
-      Element *e = *it;
+      Element *element = *it;
       
       //if(e->starttime() == data
       // Update u0 (from the end values of previous slabs)
@@ -234,15 +241,20 @@ void TimeSlab::updateElements(RHS& f, TimeSlabData& data)
       
       /// Iterate over element
       
-      
-      e->update(f);
+
+      // Update element
+      element->update(f);
+
+      // Write debug info
+      data.debug(*element, TimeSlabData::update);
+
       real value, residual;
       
-      residual = e->computeResidual(f);
+      residual = element->computeResidual(f);
       
-      value = e->eval(e->starttime());
+      value = element->eval(element->starttime());
       dolfin::cout << "element value at starttime: " << value << dolfin::endl;
-      value = e->eval(e->endtime());
+      value = element->eval(element->endtime());
       dolfin::cout << "element value at endtime: " << value << dolfin::endl;
       dolfin::cout << "element residual at endtime: " <<
 	residual << dolfin::endl;

@@ -24,7 +24,7 @@ Component::Component(int size) : elements(size), u0(0)
 Component::~Component()
 {
   // Delete elements
-  for (int i = 0; i < elements.size(); i++)
+  for (unsigned int i = 0; i < elements.size(); i++)
     delete elements[i];
 }
 //-----------------------------------------------------------------------------

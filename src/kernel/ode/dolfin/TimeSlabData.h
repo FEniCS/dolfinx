@@ -13,7 +13,7 @@
 #include <dolfin/Component.h>
 
 namespace dolfin {
-  
+
   class ODE;
   class TimeSlab;
 
@@ -24,7 +24,7 @@ namespace dolfin {
   
   class TimeSlabData {
   public:
-    
+
     /// Constructor
     TimeSlabData(ODE& ode);
 
@@ -47,6 +47,10 @@ namespace dolfin {
     /// Shift solution at endtime to new u0
     void shift();
 
+    /// Save debug info
+    enum Action { create = 0, update };
+    void debug(Element& element, Action action);
+
   private:
 
     // List of components
@@ -62,7 +66,7 @@ namespace dolfin {
     TimeSlab* topslab;
 
     // Save debug info to file 'timeslab.debug'
-    bool debug;
+    bool _debug;
     std::ofstream file;
     
   };

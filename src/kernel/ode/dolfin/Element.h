@@ -60,14 +60,14 @@ namespace dolfin {
     /// Return the size of the time step
     real timestep() const;
 
-    /// Component index
-    int index;
-
     // Compute residual
     real computeResidual(RHS& f);
 
     // Compute new time step
     virtual real computeTimeStep() const = 0;
+
+    /// Component index
+    int index;
 
   protected:
 
