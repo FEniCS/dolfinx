@@ -15,6 +15,7 @@ namespace dolfin {
   class Grid;
   class Edge;
   class Cell;
+  class GridHierarchy;
 
   /// Algorithm for the refinement of a triangular or tetrahedral grid.
   ///
@@ -24,7 +25,7 @@ namespace dolfin {
   class GridRefinement {
   public:
 
-    static void refine(Grid& grid);
+    static void refine(GridHierarchy& grids);
     
   private:
 

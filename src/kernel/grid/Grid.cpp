@@ -84,9 +84,9 @@ void Grid::mark(Cell* cell)
 void Grid::refine()
 {
   // Create grid hierarchy
-  GridHierarchy gh(*this);
+  GridHierarchy grids(*this);
 
-  GridRefinement::refine(*this);
+  GridRefinement::refine(grids);
 }
 //-----------------------------------------------------------------------------
 void Grid::show()

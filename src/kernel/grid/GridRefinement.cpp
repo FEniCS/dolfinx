@@ -2,21 +2,25 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/Grid.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/GridHierarchy.h>
 #include <dolfin/GridRefinement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void GridRefinement::refine(Grid& grid)
+void GridRefinement::refine(GridHierarchy& grids)
 {
+  // Write a message
   dolfin_start("Refining grid:");
-  cout << grid.rd.noMarkedCells() << " cells marked for refinement." << endl;
+  cout << grids.fine().rd.noMarkedCells()
+       << " cells marked for refinement." << endl;
 
   // Refine grid here ...
+  
 
 
   dolfin_end();
