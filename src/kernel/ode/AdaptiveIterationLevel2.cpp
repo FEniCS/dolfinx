@@ -24,9 +24,8 @@ AdaptiveIterationLevel2::AdaptiveIterationLevel2(Solution& u, RHS& f,
 						 FixedPointIteration& fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol, unsigned int depth,
-						 bool debug_iter) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
+						 real tol, unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }
@@ -49,6 +48,7 @@ void AdaptiveIterationLevel2::start(ElementGroupList& list)
 void AdaptiveIterationLevel2::start(ElementGroup& group)
 {
   // Initialize data for Gauss-Jacobi iteration
+  initData(x0, dataSize(group));
   initData(x1, dataSize(group));
 }
 //-----------------------------------------------------------------------------
@@ -69,6 +69,11 @@ void AdaptiveIterationLevel2::update(ElementGroupList& list, Increments& d)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
 {
+  cout << "Updating, saving data" << endl;
+
+  // Save values before iteration (to restore when diverging)
+  copyData(group, x0);
+
   // Reset values
   x1.offset = 0;
 
@@ -103,6 +108,7 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 {
   // Compute residual (needed for j = 0)
   real r = (j == 0 ? residual(group) : 0.0);
+  cout << "residual = " << r << endl;
 
   // Stabilize if necessary
   if ( Iteration::stabilize(d, n, r) )
@@ -121,6 +127,10 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 
     // Save increment at start of stabilizing iterations
     d0 = d.d2;
+
+    // Restore the solution if necessary
+    if ( !_accept )
+      copyData(x0, group);
   }
 }
 //-----------------------------------------------------------------------------

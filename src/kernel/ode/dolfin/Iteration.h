@@ -51,7 +51,7 @@ namespace dolfin
     /// Constructor
     Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 	      unsigned int maxiter, real tol, real maxdiv, real maxconv,
-	      unsigned int depth, bool debug_iterations);
+	      unsigned int depth);
     
     /// Destructor
     virtual ~Iteration();
@@ -145,6 +145,9 @@ namespace dolfin
 
     // Compute absolute value of element residual for element
     real residual(Element& element);
+    
+    // Check if latest iteration was accepted
+    bool accept() const;
 
   protected:
 
@@ -248,8 +251,8 @@ namespace dolfin
     // Temporary data used for propagation of initial values
     Values u0;
 
-    // Check if we should debug iterations
-    bool debug_iter;
+    // True if we should keep the new values
+    bool _accept;
 
   };
 

@@ -22,9 +22,8 @@ AdaptiveIterationLevel3::AdaptiveIterationLevel3(Solution& u, RHS& f,
 						 FixedPointIteration& fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol, unsigned int depth,
-						 bool debug_iter) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
+						 real tol, unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }
@@ -42,12 +41,14 @@ Iteration::State AdaptiveIterationLevel3::state() const
 void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
   // Initialize data for Gauss-Jacobi iteration
+  initData(x0, dataSize(list));
   initData(x1, dataSize(list));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
 {
   // Initialize data for Gauss-Jacobi iteration
+  initData(x0, dataSize(group));
   initData(x1, dataSize(group));
 }
 //-----------------------------------------------------------------------------
@@ -67,6 +68,9 @@ void AdaptiveIterationLevel3::update(ElementGroupList& list, Increments& d)
 void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list,
 						Increments& d)
 {
+  // Save values before iteration (to restore when diverging)
+  copyData(list, x0);
+
   // Reset values
   x1.offset = 0;
 
@@ -94,6 +98,9 @@ void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list,
 void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list,
 						Increments& d)
 {
+  // Save values before iteration (to restore when diverging)
+  copyData(list, x0);
+
   // Reset values
   x1.offset = 0;
   
@@ -128,6 +135,9 @@ void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list,
 void AdaptiveIterationLevel3::update(ElementGroup& group, Increments& d)
 {
   dolfin_assert(depth() == 1);
+
+  // Save values before iteration (to restore when diverging)
+  copyData(group, x0);
 
   // Reset values
   x1.offset = 0;
@@ -169,12 +179,18 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
     // Compute alpha
     alpha = computeAlpha(rho);
     
+    cout << "New alpha = " << alpha << endl;
+
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
     
     // Save increment at start of stabilizing iterations
     d0 = d.d2;
+
+    // Check if we should keep the solution
+    if ( !_accept )
+      copyData(x0, list);
   }
 }
 //-----------------------------------------------------------------------------
@@ -199,6 +215,10 @@ void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
     
     // Save increment at start of stabilizing iterations
     d0 = d.d2;
+
+    // Restore the solution if necessary
+    if ( !_accept )
+      copyData(x0, group);
   }
 }
 //-----------------------------------------------------------------------------

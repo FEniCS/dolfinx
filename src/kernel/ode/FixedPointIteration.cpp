@@ -37,22 +37,17 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
   // Choose initial stiffness
   std::string stiffness = dolfin_get("stiffness");
   if ( stiffness == "non-stiff" )
-    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv,
-				  tol, 0, debug_iter);
+    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else if ( stiffness == "stiff level 1" )
-    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, 0, debug_iter);
+    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else if ( stiffness == "stiff level 2" )
-    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, 0, debug_iter);
+    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else if ( stiffness == "stiff level 3" )
-    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, 0, debug_iter);
+    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else
   {
     dolfin_warning1("Unknown stiffness: %s, assuming problem is non-stiff.", stiffness.c_str());
-    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv,
-				  tol, 0, debug_iter);
+    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   }  
 }
 //-----------------------------------------------------------------------------
@@ -104,12 +99,12 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       // Stabilize iteration
       stabilize(list, d, n);
       
-      // Update group list
-      update(list, d);
-
       // Write debug info
       if ( debug_iter )
 	debug(list, d);
+
+      // Update group list
+      update(list, d);
     }
 
     // End iteration
@@ -155,12 +150,12 @@ real FixedPointIteration::iterate(ElementGroup& group)
       // Stabilize iteration
       stabilize(group, d, n);
 
-      // Update element group
-      update(group, d);
-
       // Write debug info
       if ( debug_iter )
 	debug(group, d);
+
+      // Update element group
+      update(group, d);
     }
 
     // End iteration
@@ -201,13 +196,13 @@ real FixedPointIteration::iterate(Element& element)
     
       // Stabilize iteration
       stabilize(element, d, n);
-      
-      // Update element
-      update(element, d);
 
       // Write debug info
       if ( debug_iter )
 	debug(element, d);
+      
+      // Update element
+      update(element, d);
     }
 
     // End iteration
@@ -417,20 +412,16 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   // Initialize new state
   switch ( newstate ) {
   case Iteration::nonstiff:
-    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv,
-				  tol, depth, debug_iter);
+    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff1:
-    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, depth, debug_iter);
+    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff2:
-    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, depth, debug_iter);
+    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff3:
-    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv,
-					tol, depth, debug_iter);
+    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff:
     dolfin_error("Not implemented.");
@@ -443,6 +434,10 @@ void FixedPointIteration::changeState(Iteration::State newstate)
 void FixedPointIteration::debug(ElementGroupList& list,
 				const Iteration::Increments& d)
 {
+  // Don't write debug info if iteration wasn't accepted
+  if ( !state->accept() )
+    return;
+
   real r = 0.0;
   real alpha = 0.0;
   unsigned int m = 0;
@@ -461,6 +456,11 @@ void FixedPointIteration::debug(ElementGroupList& list,
 void FixedPointIteration::debug(ElementGroup& group,
 				const Iteration::Increments& d)
 {
+  // Don't write debug info if iteration wasn't accepted
+  if ( !state->accept() )
+    return;
+
+
   real r = 0.0;
   real alpha = 0.0;
   unsigned int m = 0;
@@ -479,6 +479,10 @@ void FixedPointIteration::debug(ElementGroup& group,
 void FixedPointIteration::debug(Element& element,
 				const Iteration::Increments& d)
 {
+  // Don't write debug info if iteration wasn't accepted
+  if ( !state->accept() )
+    return;
+
   real r = 0.0;
   real alpha = 0.0;
   unsigned int m = 0;

@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
   dolfin_set("debug iterations", true);
   dolfin_set("initial time step", 1.0);
   dolfin_set("fixed time step", true);
-  dolfin_set("stiffness", "stiff level 2");
+  dolfin_set("stiffness", "stiff level 3");
   
   // Choose test problem
   switch (n) {

@@ -20,7 +20,7 @@ namespace dolfin
     
     AdaptiveIterationLevel2(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 			    unsigned int maxiter, real maxdiv, real maxconv, real tol,
-			    unsigned int depth, bool debug_iter);
+			    unsigned int depth);
     
     ~AdaptiveIterationLevel2();
     

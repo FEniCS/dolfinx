@@ -20,8 +20,8 @@ NonStiffIteration::NonStiffIteration(Solution& u, RHS& f,
 				     FixedPointIteration& fixpoint,
 				     unsigned int maxiter,
 				     real maxdiv, real maxconv, real tol,
-				     unsigned int depth, bool debug_iter) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
+				     unsigned int depth) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
 }
