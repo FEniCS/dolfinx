@@ -8,7 +8,7 @@ CFLAGS  = `../../../config/dolfin-config --cflags_dolfin`
 LIBS    = `../../../config/dolfin-config --libs_dolfin`
 CXX     = `../../../config/dolfin-config --compiler`
 
-DEST    = dolfin-bench-la
+DEST    = dolfin-bench-ode
 OBJECTS = main.o
 
 all: $(DEST)

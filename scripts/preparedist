@@ -28,7 +28,7 @@ make
 
 echo '- Running DOLFIN benchmark problem'
 sleep 1
-src/demo/bench/la/dolfin-bench >> src/demo/bench/la/bench.log
+src/demo/bench/la/dolfin-bench-la >> src/demo/bench/la/bench.log
 
 echo '- Running benchmark problem for multi-adaptive solver'
 sleep 1
