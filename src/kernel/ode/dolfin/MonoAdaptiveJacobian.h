@@ -38,9 +38,6 @@ namespace dolfin
     // The time slab
     MonoAdaptiveTimeSlab& ts;
 
-    // Temporary data to store product df/du * x at current stage
-    real* z;
-    
   };
 
 }

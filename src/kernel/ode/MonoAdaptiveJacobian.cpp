@@ -12,14 +12,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab)
-  : TimeSlabJacobian(timeslab), ts(timeslab), z(0)
+  : TimeSlabJacobian(timeslab), ts(timeslab)
 {
-  z = new real[ts.N];
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 {
-  if ( z ) delete [] z;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
@@ -32,6 +32,9 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Get data arrays (assumes uniprocessor case)
   const real* xx = x.array();
   real* yy = y.array();
+
+  // Temporary data array used to store multiplications
+  real* z = ts.tmp();
 
   // Compute size of time step
   const real k = ts.length();

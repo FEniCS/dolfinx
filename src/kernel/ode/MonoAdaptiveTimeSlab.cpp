@@ -235,8 +235,16 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   }
   else if ( solver == "newton" )
   {
-    dolfin_info("Using mono-adaptive Newton solver.");
-    return new MonoAdaptiveNewtonSolver(*this, implicit);
+    if ( implicit )
+    {
+      dolfin_info("Using mono-adaptive Newton solver for implicit ODE.");
+      return new MonoAdaptiveNewtonSolver(*this, implicit);
+    }
+    else
+    {
+      dolfin_info("Using mono-adaptive Newton solver.");
+      return new MonoAdaptiveNewtonSolver(*this, implicit);
+    }
   }
   else if ( solver == "default" )
   {
@@ -257,5 +265,19 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   }
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+real* MonoAdaptiveTimeSlab::tmp()
+{
+  // This function provides access to an array that can be used for
+  // temporary data storage by the Newton solver. We can reuse the
+  // parts of f that are recomputed in each iteration. Note that this
+  // needs to be done differently for cG and dG, since cG does not
+  // recompute the right-hand side at the first quadrature point.
+
+  if ( method->type() == NewMethod::cG )
+    return f + N;
+  else
+    return f;
 }
 //-----------------------------------------------------------------------------

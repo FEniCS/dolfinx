@@ -68,6 +68,9 @@ namespace dolfin
     // Choose solver
     TimeSlabSolver* chooseSolver();
 
+    // Temporary data array used to store multiplications
+    real* tmp();
+
     TimeSlabSolver* solver;    // The solver
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs

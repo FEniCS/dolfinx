@@ -48,7 +48,13 @@ namespace dolfin
     // Evaluate b = -F(x) at current x
     void beval();
 
-    // Numerical evaluation of the Jacobian used for testing
+    // Evaluate b = -F(x) for explicit system: u' = f
+    void bevalExplicit();
+
+    // Evaluate b = -F(x) for explicit system: u' = f
+    void bevalImplicit();
+	
+      // Numerical evaluation of the Jacobian used for testing
     void debug();
 
     MonoAdaptiveTimeSlab& ts; // The time slab;

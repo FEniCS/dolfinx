@@ -57,7 +57,10 @@ void ODE::feval(real u[], real t, real f[])
 //-----------------------------------------------------------------------------
 void ODE::M(const real x[], real y[])
 {
-  dolfin_error("Not implemented");
+  // Assume M is the identity if not supplied by user: y = x
+
+  for (uint i = 0; i < N; i++)
+    y[i] = x[i];
 }
 //-----------------------------------------------------------------------------
 real ODE::dfdu(real u[], real t, uint i, uint j)
