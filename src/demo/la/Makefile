@@ -77,6 +77,7 @@ MPI_CFLAGS = -I/usr/include/mpi
 PACKAGE = 
 PACKAGE_NAME = dolfin
 PACKAGE_VERSION = 0.5.3
+PETSC_CFLAGS = -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include
 PETSC_DIR = /usr/local/lib/petsc/
 RANLIB = ranlib
 VERSION = 

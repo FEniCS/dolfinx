@@ -106,6 +106,7 @@ if test $petsc_found = yes; then
     # Extract PETSc variables from PETSC_DIR/bmake/common/variables
     PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
     PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
+    AC_SUBST(PETSC_CFLAGS)
 else
     echo "*** Unable to find PETSc 2.2.1 on your system."
     echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"

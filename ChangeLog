@@ -1,3 +1,4 @@
+ - Remove option to compile with PETSc 2.2.0 (2.2.1 required)
  - Make make install work again (fix missing includes)
  - Add support for mixing multiple finite elements (through FFC)
  - Improve functionality of homotopy solver
