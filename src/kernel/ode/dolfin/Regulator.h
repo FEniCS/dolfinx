@@ -27,6 +27,9 @@ namespace dolfin {
 
     /// Update time step (set new desired value)
     void update(real k, real kmax, bool kfixed);
+
+    /// Update maximum time step
+    void update(real kmax);
     
     /// Return time step
     real timestep() const;

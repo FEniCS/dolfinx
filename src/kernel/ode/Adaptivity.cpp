@@ -26,6 +26,9 @@ Adaptivity::Adaptivity(ODE& ode) : regulators(ode.size())
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)
     regulators[i].init(ode.timestep(i));
+
+  // Remaining number of small time steps
+  m = 0;
 }
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
@@ -64,11 +67,23 @@ real Adaptivity::minstep() const
   return std::min(kmin, kmax_current);
 }
 //-----------------------------------------------------------------------------
-void Adaptivity::decreaseTimeStep(real factor)
+void Adaptivity::stabilize(real k, unsigned int m)
 {
-  dolfin_assert(factor >= 0.0);
-  dolfin_assert(factor <= 1.0);
-  kmax_current = factor * minstep();
+  dolfin_assert(k >= 0.0);
+  dolfin_assert(m >= 1);
+
+  cout << "Old maximum time step: " << kmax_current << endl;
+
+  // Decrease time step by at least a factor 1/2
+  kmax_current = k;
+  this->m = m;
+
+  // Update regulators
+  for (unsigned int i = 0; i < regulators.size(); i++)
+    regulators[i].update(kmax_current);
+
+  cout << "New maximum time step: " << kmax_current << endl;
+  cout << "Number of small steps: " << m << endl;
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::fixed() const
@@ -88,9 +103,19 @@ unsigned int Adaptivity::size() const
 //-----------------------------------------------------------------------------
 void Adaptivity::shift()
 {
-  // FIXME: Maybe this should be a parameter
-  kmax_current *= 1.5;
-  if ( kmax_current > kmax )
-    kmax_current = kmax;
+  cout << "Remaining number of small steps: " << m << endl;
+
+  if ( m > 0 )
+  {
+    // Decrease the remaining number of small steps
+    m -= 1;
+  }
+  else
+  {
+    // Increase kmax_current with a factor 2 towards kmax
+    kmax_current = 2.0 * kmax_current * kmax / (2.0*kmax_current + kmax);
+
+    cout << "Increased maximum time step to " << kmax_current << endl;
+  }
 }
 //-----------------------------------------------------------------------------

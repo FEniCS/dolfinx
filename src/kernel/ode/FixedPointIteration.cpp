@@ -57,8 +57,8 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
   Iteration::State newstate;
   bool retry = true;
 
-  dolfin_start("Starting time slab iteration");
-  cout << "Number of elements: " << list.size() << endl;
+  //dolfin_start("Starting time slab iteration");
+  //cout << "Number of elements: " << list.size() << endl;
 
   while ( retry )
   {
@@ -71,18 +71,17 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       // Check convergence
       if ( converged(list, r, n) )
       {
-	dolfin_end("Time slab iteration converged in %d iterations", n);
+	//dolfin_end("Time slab iteration converged in %d iterations", n);
 	end(list);
 	return true;
       }
 
-      cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
+      //cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
       
       // Check divergence
       if ( retry = diverged(list, r, n, newstate) )
       {
 	changeState(newstate);
-	cout << "Changing state" << endl;
 	break;
       }
       
@@ -97,7 +96,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
     end(list);
   }
 
-  dolfin_end("Time slab did not converge");
+  //dolfin_end("Time slab did not converge");
 
   return false;
 }
@@ -134,7 +133,6 @@ bool FixedPointIteration::iterate(ElementGroup& group)
       // Check divergence
       if ( retry = diverged(group, r, n, newstate) )
       {
-	dolfin_end("Changing state");
 	changeState(newstate);
 	break;
       }
@@ -175,12 +173,9 @@ bool FixedPointIteration::iterate(Element& element)
       if ( converged(element, r, n) )
       {
 	//dolfin_end("Element iteration converged in %d iterations", n + 1);
-	//cout << "u(" << element.index() << "," << element.endtime() << ") = " << element.endval() << endl;
 	end(element);
 	return true;
       }
-      
-      //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
       
       // Check divergence
       if ( retry = diverged(element, r, n, newstate) )
@@ -192,12 +187,8 @@ bool FixedPointIteration::iterate(Element& element)
       // Stabilize iteration
       stabilize(element, r, n);
       
-      //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
-      
       // Update element
       update(element);
-      //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
-      
     }
 
     // End iteration
@@ -223,6 +214,12 @@ void FixedPointIteration::reset(Element& element)
 {
   dolfin_assert(state);
   state->reset(element);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::stabilization(real& alpha, unsigned int& m) const
+{
+  dolfin_assert(state);
+  state->stabilization(alpha, m);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::report() const

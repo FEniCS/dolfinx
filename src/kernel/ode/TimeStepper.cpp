@@ -50,9 +50,8 @@ real TimeStepper::step()
   cout << "Creating time slab" << endl;
 
   // Repeat until the time slab has converged
-  while ( !createTimeSlab() )
-    decreaseTimeStep();
-  
+  while ( !createTimeSlab() );
+
   return t;
 }
 //-----------------------------------------------------------------------------
@@ -73,10 +72,16 @@ bool TimeStepper::createFirstTimeSlab()
 {
   // Create the time slab
   SimpleTimeSlab timeslab(t, T, u, adaptivity);
+
+  cout << "Created time slab of length k = " << timeslab.length() << endl;
     
   // Try to solve the system using fixed point iteration
   if ( !fixpoint.iterate(timeslab) )
+  {
+    stabilize(timeslab.length());
+    u.reset();
     return false;
+  }
 
   // Update time
   t = timeslab.endtime();
@@ -104,10 +109,16 @@ bool TimeStepper::createGeneralTimeSlab()
 {
   // Create the time slab
   RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
-    
+   
+  cout << "Created time slab of length k = " << timeslab.length() << endl;
+ 
   // Try to solve the system using fixed point iteration
   if ( !fixpoint.iterate(timeslab) )
+  {
+    stabilize(timeslab.length());
+    u.reset();
     return false;
+  }
 
   // Update time
   t = timeslab.endtime();
@@ -136,6 +147,8 @@ void TimeStepper::shift()
   real TOL = adaptivity.tolerance();
   real kmax = adaptivity.maxstep();
   real kfixed = adaptivity.fixed();
+
+  cout << "Computing new time steps with maximum = " << kmax << endl;
 
   // Update residuals and time steps
   for (unsigned int i = 0; i < u.size(); i++)
@@ -182,12 +195,17 @@ void TimeStepper::save(TimeSlab& timeslab)
   }
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::decreaseTimeStep()
+void TimeStepper::stabilize(real K)
 {
-  // FIXME: Maybe this should be a parameter
-  adaptivity.decreaseTimeStep(0.5);
+  // Get stabilization parameters from fixed point iteration
+  real alpha = 1.0;
+  unsigned int m = 0;
+  fixpoint.stabilization(alpha, m);
 
-  // Throw away solution values for current time slab
-  u.reset();
+  // Compute stabilizing time step, at least (at most) a factor 1/2
+  real k = std::min(alpha, 0.5) * K;
+
+  // Stabilize
+  adaptivity.stabilize(k, m);
 }
 //-----------------------------------------------------------------------------

@@ -137,25 +137,18 @@ void AdaptiveIterationLevel3::update(Element& element)
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 					const Residuals& r, unsigned int n)
 {
-  cout << "Checking stabilization" << endl;
-  cout << "j = " << j << endl;
-
   // Stabilize if necessary
   if ( Iteration::stabilize(r, n) )
   {
-    cout << "Need to stabilize time slab" << endl;
-    
     // Compute divergence
     real rho = computeDivergence(list, r);
     
     // Compute alpha
     alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
 
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
-    cout << "  m     = " << m << endl;
     
     // Save residual at start of stabilizing iterations
     r0 = r.r2;
@@ -168,19 +161,15 @@ void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
   // Stabilize if necessary
   if ( Iteration::stabilize(r, n) )
   {
-    cout << "Need to stabilize element group" << endl;
-    
     // Compute divergence
     real rho = computeDivergence(group, r);
     
     // Compute alpha
     alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
 
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
-    cout << "  m     = " << m << endl;
     
     // Save residual at start of stabilizing iterations
     r0 = r.r2;

@@ -31,6 +31,12 @@ Iteration::~Iteration()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void Iteration::stabilization(real& alpha, unsigned int& m) const
+{
+  alpha = this->alpha;
+  m = this->m;
+}
+//-----------------------------------------------------------------------------
 unsigned int Iteration::depth() const
 {
   return _depth;
@@ -159,8 +165,6 @@ bool Iteration::stabilize(const Residuals& r, unsigned int n)
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
 {
-  cout << "Computing divergence for time slab" << endl;
-  
   // Successive residuals
   real r1 = r.r1;
   real r2 = r.r2;
@@ -190,15 +194,9 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
     rho1 = rho2;
     rho2 = r2 / (DOLFIN_EPS + r1);
 
-    cout << "  rho = " << rho2 << endl;
-    
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
-    {
-      dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
-      break;
-    }
-    
+      break;    
   }
 
   // Restore alpha
@@ -244,8 +242,6 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
     // Compute divergence
     rho1 = rho2;
     rho2 = r2 / (DOLFIN_EPS + r1);
-
-    cout << "  rho = " << rho2 << endl;
 
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )

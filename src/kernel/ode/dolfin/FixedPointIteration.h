@@ -55,6 +55,9 @@ namespace dolfin
     /// Reset element
     void reset(Element& element);
 
+    /// Return stabilization parameters
+    void stabilization(real& alpha, unsigned int& m) const;
+
     /// Display a status report
     void report() const;
 

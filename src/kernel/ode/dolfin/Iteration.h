@@ -94,6 +94,9 @@ namespace dolfin
     /// Write a status report
     virtual void report() const = 0;
 
+    /// Return stabilization parameters
+    void stabilization(real& alpha, unsigned int& m) const;
+
     /// Return current depth
     unsigned int depth() const;
 

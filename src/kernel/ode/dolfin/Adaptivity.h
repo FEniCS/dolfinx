@@ -37,8 +37,8 @@ namespace dolfin {
     /// Return minimum time step
     real minstep() const;
     
-    /// Decrease maximum time step (temporarily) with given factor
-    void decreaseTimeStep(real factor);
+    /// Use a stabilizing time step sequence
+    void stabilize(real k, unsigned int m);
     
     /// Return whether we use fixed time steps or not
     bool fixed() const;
@@ -71,6 +71,9 @@ namespace dolfin {
     
     // Threshold for reaching end of interval
     real beta;
+
+    // Remaining number of small time steps
+    unsigned int m;
 
   };
 

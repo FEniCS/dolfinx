@@ -72,8 +72,8 @@ namespace dolfin {
     // Save solution (when necessary)
     void save(TimeSlab& timeslab);
 
-    // Decrease the time step
-    void decreaseTimeStep();
+    // Stabilize using a sequence of small time steps
+    void stabilize(real K);
     
     //--- Time-stepping data ---
 
