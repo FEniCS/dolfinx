@@ -33,7 +33,7 @@ Total time:                   13.35
   Machine: i686
   System:  Linux
   Version: 2.4.19
-  DOLFIN:  2.4.19
+  DOLFIN:  0.3.10
 
 - Assembling 100 times
 - Matrix/vector multiplication 100 times
@@ -60,7 +60,7 @@ Total time:                   12.85
   Machine: i686
   System:  Linux
   Version: 2.4.19
-  DOLFIN:  2.4.19
+  DOLFIN:  0.3.11
 
 - Assembling 100 times
 - Matrix/vector multiplication 100 times
