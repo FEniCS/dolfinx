@@ -14,7 +14,10 @@ class RadiationDiffusion : public ODE
 public:
 
   RadiationDiffusion(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh), 
-				   A(2*mesh.noNodes(), 2*mesh.noNodes()), b(2*mesh.noNodes()),
+				   A(2*mesh.noNodes(), 2*mesh.noNodes()),
+				   Dx(2*mesh.noNodes(), 2*mesh.noNodes()),
+				   Dy(2*mesh.noNodes(), 2*mesh.noNodes()),
+				   b(2*mesh.noNodes()),
 				   ufile("solution.m"), kfile("timesteps.m")
   {
     // Parameters
@@ -22,27 +25,11 @@ public:
     h  = 1.0 / 6.0;
     Z0 = 10.0;
     kappa = 0.005;
-
-    // Create stiffness for the system
-    StiffnessMatrix A0(mesh);
-    for (unsigned int i = 0; i < N/2; i++)
-    {
-      for (unsigned int pos = 0; !A0.endrow(i, pos); pos++)
-      {
-	unsigned int j = 0;
-	real element = A0(i, j, pos);
-	A(i, j) = element;
-	A(i + N/2, j + N/2) = element;
-      }
-    }
-   
-    // Lump mass matrix (same as load vector)
-    LoadVector b0(mesh);
-    for (unsigned int i = 0; i < N/2; i++)
-    {
-      b(i) = b0(i);
-      b(i + N/2) = b0(i);
-    }
+    
+    // Create data for space discretization of system
+    createStiffnessMatrix(mesh);
+    createLoadVector(mesh);
+    createDerivatives(mesh);
   }
   
   /// Initial condition
@@ -106,6 +93,7 @@ public:
     real epsilon = kappa * pow(u2, 2.5);
 
     return epsilon * A.mult(u, i);
+
   }
   
   /// Atomic number
@@ -128,6 +116,59 @@ public:
 
     return 1.0;
   }
+
+  /// Create system stiffness matrix from simple stiffness matrix
+  void createStiffnessMatrix(Mesh& mesh)
+  {
+    StiffnessMatrix A0(mesh);
+   
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      for (unsigned int pos = 0; !A0.endrow(i, pos); pos++)
+      {
+        unsigned int j = 0;
+        real element = A0(i, j, pos);
+        A(i, j) = element;
+        A(i + N/2, j + N/2) = element;
+      }
+    }
+  }
+
+  /// Create system load vector from simple load vector
+  void createLoadVector(Mesh& mesh)
+  {
+    LoadVector b0(mesh);
+
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      b(i) = b0(i);
+      b(i + N/2) = b0(i);
+    }
+  }
+
+  /// Create matrices for derivative of first component
+  void createDerivatives(Mesh& mesh)
+  {
+    DxMatrix Dx0(mesh);
+    DyMatrix Dy0(mesh);
+   
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      for (unsigned int pos = 0; !Dx0.endrow(i, pos); pos++)
+      {
+	unsigned int j = 0;
+	real element = Dx0(i, j, pos);
+	Dx(i, j) = element;
+      }
+
+      for (unsigned int pos = 0; !Dx0.endrow(i, pos); pos++)
+      {
+	unsigned int j = 0;
+	real element = Dy0(i, j, pos);
+	Dy(i, j) = element;
+      }
+     }
+   }
 
   void save(Sample& sample)
   {
@@ -165,6 +206,8 @@ private:
 
   Mesh& mesh; // The mesh
   Matrix A;   // Stiffness matrix
+  Matrix Dx;  // Derivative in x-direction
+  Matrix Dy;  // Derivative in y-direction
   Vector b;   // Load vector
   File ufile; // File for storing the solution
   File kfile; // File for storing the time steps
