@@ -8,7 +8,13 @@
 
 using namespace dolfin;
 
-// CES test problem from Eaves and Schmedders (rational form)
+/// CES test problem from Eaves and Schmedders (rational form).
+/// Has 3 solutions (one real-valued):
+///
+///   p = (0.951883, 0.048117)
+///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
+///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
+
 void test1()
 {
   CES ec(2, 2, 0.5);
@@ -26,7 +32,13 @@ void test1()
   ec.solve();
 }
 
-// CES test problem from Eaves and Schmedders (polynomial form)
+/// CES test problem from Eaves and Schmedders (polynomial form)
+/// Has 3 solutions (one real-valued):
+///
+///   p = (0.951883, 0.048117)
+///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
+///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
+
 void test2()
 {
   PolynomialCES ec(2, 2, 0.5);
@@ -44,7 +56,9 @@ void test2()
   ec.solve();
 }
 
-// Leontief test problem (rational form)
+/// Leontief test problem (rational form)
+/// Has one unique solution: p = (0.5, 0.5)
+
 void test3()
 {
   Leontief ec(2, 2);
@@ -59,7 +73,9 @@ void test3()
   ec.solve();
 }
 
-// Leontief test problem (polynomial form)
+/// Leontief test problem (polynomial form)
+/// Has one unique solution: p = (0.5, 0.5)
+
 void test4()
 {
   PolynomialLeontief ec(2, 2);
@@ -74,14 +90,24 @@ void test4()
   ec.solve();
 }
 
-// Leontief test problem from Polemarchakis (rational form)
+/// Leontief test problem from Polemarchakis (rational form)
+/// Has two solutions:
+///
+///   p = (1, 1)
+///   p = (-2149/600, 1) = (-3.581667, 1)
+
 void test5()
 {
   Polemarchakis ec;
   ec.solve();
 }
 
-// Leontief test problem from Polemarchakis (polynomial form)
+/// Leontief test problem from Polemarchakis (polynomial form)
+/// Has two solutions:
+///
+///   p = (1, 1)
+///   p = (-2149/600, 1) = (-3.581667, 1)
+
 void test6()
 {
   PolynomialPolemarchakis ec;
@@ -91,8 +117,8 @@ void test6()
 int main()
 {
   dolfin_set("method", "cg");
-  dolfin_set("order", 1);
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("order", 2);
+  dolfin_set("tolerance", 0.005);
   dolfin_set("initial time step", 0.01);
   dolfin_set("linear solver", "direct");
   dolfin_set("adaptive samples", true);
@@ -100,7 +126,7 @@ int main()
   dolfin_set("homotopy divergence tolerance", 10.0);
   dolfin_set("homotopy randomize", true);
 
-  test1();
+  test2();
 
   return 0;
 }

@@ -164,7 +164,7 @@ void CursesLogger::debug(const char* msg, const char* location)
 //-----------------------------------------------------------------------------
 void CursesLogger::warning(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "Warning at %s: %s", location, msg);
+  snprintf(tmp, DOLFIN_WORDLENGTH, "Warning: %s", msg);
   buffer.add(tmp, Buffer::warning, level);
   redraw();
 }

@@ -89,6 +89,9 @@ public:
 
     w[0][0] = 1.0; w[0][1] = 2.0;
     w[1][0] = 2.0; w[1][1] = 1.0;
+
+    init(&tmp0);
+    init(&tmp1);
   }
 
   void F(const complex z[], complex y[])

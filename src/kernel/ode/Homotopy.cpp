@@ -202,7 +202,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
   HomotopyJacobian J(ode, x);
   J.init(dx, dx);
   
-  cout << "Starting point: ";
+  cout << "Starting point:     x = ";
   x.disp();
 
   // Solve system using Newton's method
@@ -213,7 +213,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
 
     // Check convergence
     real r = F.norm(Vector::linf);
-    cout << "r = " << r << ": x = "; x.disp();
+    //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
       cout << "Solution converged: x = ";

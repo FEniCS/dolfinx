@@ -26,7 +26,7 @@ complex HomotopyODE::z0(unsigned int i)
 {
   const complex z = homotopy.z0(i);
 
-  cout << "Starting point: z = " << z << endl;
+  //cout << "Starting point: z = " << z << endl;
 
   return z;
 }
