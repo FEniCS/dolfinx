@@ -23,9 +23,14 @@ EdgeIterator::EdgeIterator(const Mesh *mesh)
   e = new MeshEdgeIterator(*mesh);
 }
 //-----------------------------------------------------------------------------
-EdgeIterator::EdgeIterator(const Boundary& boundary)
+EdgeIterator::EdgeIterator(const Boundary &boundary)
 {
   e = new BoundaryEdgeIterator(boundary);
+}
+//-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const Boundary *boundary)
+{
+  e = new BoundaryEdgeIterator(*boundary);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Cell &cell)

@@ -22,9 +22,14 @@ FaceIterator::FaceIterator(const Mesh *mesh)
   f = new MeshFaceIterator(*mesh);
 }
 //-----------------------------------------------------------------------------
-FaceIterator::FaceIterator(const Boundary& boundary)
+FaceIterator::FaceIterator(const Boundary &boundary)
 {
   f = new BoundaryFaceIterator(boundary);
+}
+//-----------------------------------------------------------------------------
+FaceIterator::FaceIterator(const Boundary *boundary)
+{
+  f = new BoundaryFaceIterator(*boundary);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Cell& cell)

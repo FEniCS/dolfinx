@@ -73,3 +73,13 @@ const FunctionSpace::ElementFunction P1IntMap::ddt
   return v.ddT();
 }
 //-----------------------------------------------------------------------------
+void P1IntMap::update(const Edge& bnd_edge)
+{
+  dolfin_error("Edge map not implemented for 1D maps.");
+}
+//-----------------------------------------------------------------------------
+void P1IntMap::update(const Face& bnd_face)
+{
+  dolfin_error("Face map not implemented for 1D maps.");
+}
+//-----------------------------------------------------------------------------

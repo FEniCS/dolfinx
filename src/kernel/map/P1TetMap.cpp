@@ -92,16 +92,21 @@ const FunctionSpace::ElementFunction P1TetMap::ddt
   return v.ddT();
 }
 //-----------------------------------------------------------------------------
-void P1TetMap::update(const Face& boundary)
+void P1TetMap::update(const Edge& bnd_edge)
+{
+  dolfin_error("Edge map not implemented for 3D maps.");
+}
+//-----------------------------------------------------------------------------
+void P1TetMap::update(const Face& bnd_face)
 {
   // Update map to interior of cell
-  update(boundary.cell(0));
+  update(bnd_face.cell(0));
 
   // The determinant is given by the norm of the cross product
   
   // Get the first two edges
-  Edge& e0 = boundary.edge(0);
-  Edge& e1 = boundary.edge(1);
+  Edge& e0 = bnd_face.edge(0);
+  Edge& e1 = bnd_face.edge(1);
 
   // Get coordinates
   Point& p00 = e0.coord(0);

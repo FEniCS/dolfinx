@@ -49,7 +49,7 @@ void Integral::Measure::update(const Map &map,
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (real a) const
 {
-  return a * q->measure() * fabs(m->det());
+  return a * q->measure() * fabs(det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
@@ -66,10 +66,10 @@ real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
   
   // Check if integral has already been computed
   if ( value.ok() )
-    return value() * fabs(m->det());
+    return value() * fabs(det());
   
   // If the value has not been computed before, we need to compute it
-  return integral(v) * fabs(m->det());
+  return integral(v) * fabs(det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::Product &v)
@@ -91,10 +91,10 @@ real Integral::Measure::operator* (const FunctionSpace::Product &v)
   
   // Check if integral has already been computed
   if ( value.ok() )
-    return value() * fabs(m->det());
+    return value() * fabs(det());
   
   // If the value has not been computed before, we need to compute it
-  return integral(v) * fabs(m->det());
+  return integral(v) * fabs(det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::ElementFunction &v)
@@ -160,18 +160,44 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::Product &v)
   return I;
 }
 //-----------------------------------------------------------------------------
+real Integral::InteriorMeasure::det() const
+{
+  // Return determinant
+  return m->det();
+}
+//-----------------------------------------------------------------------------
 // Integral::BoundaryMeasure
 //-----------------------------------------------------------------------------
 real Integral::BoundaryMeasure::integral(const FunctionSpace::ShapeFunction &v)
 {
-  // Not implemented
-  return 0.0;
+  // Compute integral using the quadrature rule
+  real I = 0.0;
+  for (int i = 0; i < q->size(); i++)
+    I += q->weight(i) * v(q->point(i));
+  
+  // Set value
+  table[0](v.id()).set(I);
+
+  return I;
 }
 //-----------------------------------------------------------------------------
 real Integral::BoundaryMeasure::integral(const FunctionSpace::Product &v)
 {
-  // Not implemented
-  return 0.0;
+  // Compute integral using the quadrature rule
+  real I = 0.0;
+  for (int i = 0; i < q->size(); i++)
+    I += q->weight(i) * v(q->point(i));
+  
+  // Set value
+  table[v.size() - 1](v.id()).set(I);
+  
+  return I;
+}
+//-----------------------------------------------------------------------------
+real Integral::BoundaryMeasure::det() const
+{
+  // Return determinant
+  return m->bdet();
 }
 //-----------------------------------------------------------------------------
 // Additional operators

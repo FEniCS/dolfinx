@@ -24,6 +24,7 @@ namespace dolfin {
     FaceIterator(const Mesh* mesh);
 
     FaceIterator(const Boundary& boundary);
+    FaceIterator(const Boundary* boundary);
 
     FaceIterator(const Cell& cell);
     FaceIterator(const CellIterator& cellIterator);

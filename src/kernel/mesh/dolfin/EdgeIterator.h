@@ -30,6 +30,7 @@ namespace dolfin {
     EdgeIterator(const Mesh* mesh);
 
     EdgeIterator(const Boundary& boundary);
+    EdgeIterator(const Boundary* boundary);
 
     EdgeIterator(const Node& node);
     EdgeIterator(const NodeIterator& nodeIterator);

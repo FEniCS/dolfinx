@@ -43,6 +43,7 @@ namespace dolfin {
       // Evaluation of integrals
       virtual real integral(const FunctionSpace::ShapeFunction &v) = 0;
       virtual real integral(const FunctionSpace::Product &v) = 0;
+      virtual real det() const = 0;
       
       // Init table
       void init();
@@ -109,6 +110,8 @@ namespace dolfin {
       // Evaluation of integrals
       real integral(const FunctionSpace::ShapeFunction &v);
       real integral(const FunctionSpace::Product &v);
+
+      real det() const;
       
     };
     
@@ -124,7 +127,9 @@ namespace dolfin {
       // Evaluation of integrals
       real integral(const FunctionSpace::ShapeFunction &v);
       real integral(const FunctionSpace::Product &v);
-      
+
+      real det() const;
+
     };
     
   };

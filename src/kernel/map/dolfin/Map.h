@@ -41,10 +41,10 @@ namespace dolfin {
     virtual void update(const Cell& cell) = 0;
 
     /// Update map to interior and boundary of cell
-    virtual void update(const Edge& boundary);
+    virtual void update(const Edge& bnd_edge) = 0;
 
     /// Update map to interior and boundary of cell
-    virtual void update(const Face& boundary);
+    virtual void update(const Face& bnd_face) = 0;
     
     /// Get cell 
     const Cell* cell() const;

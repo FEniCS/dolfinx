@@ -33,7 +33,7 @@ namespace dolfin {
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
     {
 
-      unorm = 1.0;//sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell_->node(0).id()))+sqr(b(1)(cell_->node(0).id()))+sqr(b(2)(cell_->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
 
@@ -56,7 +56,7 @@ namespace dolfin {
     real rhs(ShapeFunction::Vector& v)
     {
 
-      unorm = 1.0;//sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell_->node(0).id()))+sqr(b(1)(cell_->node(0).id()))+sqr(b(2)(cell_->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
 
@@ -129,7 +129,7 @@ namespace dolfin {
     real rhs(ShapeFunction& v)
     {
 
-      unorm = 1.0;//sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell_->node(0).id()))+sqr(b(1)(cell_->node(0).id()))+sqr(b(2)(cell_->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
       
