@@ -9,13 +9,13 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  Grid grid;
-  File in("grid.xml.gz");
-  File out("grid_refined.dx");
-
-  // Read grid from file
-  in >> grid;
+  // Load grid
+  Grid grid("grid.xml.gz");
   
+  // Save original grid in OpenDX format
+  File dx_unref("grid_unrefined.dx");
+  dx_unref << grid;
+
   // Mark nodes for refinement
   for (CellIterator cell(grid); !cell.end(); ++cell)
     if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
@@ -24,8 +24,9 @@ int main()
   // Refine grid
   grid.refine();
 
-  // Save refined grid to file
-  out << grid;
+  // Save refined grid in OpenDX format
+  File dx_ref("grid_unrefined.dx");
+  dx_ref << grid;
 
   return 0;
 }
