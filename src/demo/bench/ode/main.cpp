@@ -92,6 +92,8 @@ public:
   // Save solution  
   void save(NewSample& sample)
   {
+    // FIXME: Don't save solution when running benchmark
+
     // Create vectors
     NewVector ux(N/2);
     NewVector kx(N/2);

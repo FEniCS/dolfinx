@@ -1,3 +1,5 @@
+ - Simple creation of piecewise linear functions (without having an element)
+ - Simple creation of piecewise linear elements
  - Add support of automatic creation of simple meshes (unit cube, unit square)
 0.5.3 [2005-02-26]
  - Change to PETSc version 2.2.1
