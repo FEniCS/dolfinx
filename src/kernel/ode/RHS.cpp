@@ -14,13 +14,15 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Solution& solution) :
-  N(ode.size()), ode(ode), solution(&solution), function(0), u(ode.size())
+  N(ode.size()), ode(ode), solution(&solution), function(0), u(ode.size()),
+  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Function& function) :
-  N(ode.size()), ode(ode), solution(0), function(&function), u(ode.size())
+  N(ode.size()), ode(ode), solution(0), function(&function), u(ode.size()),
+  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
 {
   // Do nothing
 }
@@ -39,9 +41,9 @@ real RHS::operator() (unsigned int index, unsigned int node, real t)
 {
   // Update the solution vector
   update(index, node, t);
-  
+
   // Evaluate right hand side for current component
-  return ode.f(u, t, index);
+  return check(ode.f(u, t, index));
 }
 //-----------------------------------------------------------------------------
 real RHS::dfdu(unsigned int i, unsigned int j, real t)

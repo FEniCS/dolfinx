@@ -4,8 +4,10 @@
 #ifndef __RHS_H
 #define __RHS_H
 
+#include <limits>
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
+#include <dolfin/Event.h>
 
 namespace dolfin {
 
@@ -50,6 +52,17 @@ namespace dolfin {
     // Update when we use Solution
     void updateFunction(unsigned int index, real t);
 
+    // Check computed value
+    inline real check(real value)
+    {
+      if ( value > -std::numeric_limits<real>::max() && 
+	   value <  std::numeric_limits<real>::max() )
+	return value;
+
+      illegal_number();
+      return 0.0;
+    }
+
     // Number of components
     unsigned int N;
 
@@ -64,6 +77,9 @@ namespace dolfin {
     
     // Solution vector
     Vector u;
+
+    // Event for illegal value of right-hand side
+    Event illegal_number;
 
   };
     

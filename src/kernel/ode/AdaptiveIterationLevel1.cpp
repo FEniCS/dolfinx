@@ -69,7 +69,7 @@ void AdaptiveIterationLevel1::update(ElementGroup& group, Increments& d)
   real increment = 0.0;
   for (ElementIterator element(group); !element.end(); ++element)
     increment += sqr(fixpoint.iterate(*element));
-
+  
   d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
@@ -184,8 +184,11 @@ bool AdaptiveIterationLevel1::diverged(Element& element,
     return false;
   
   // Check if the solution converges
-  if ( d.d2 < maxconv * d.d1 )
+  if ( d.d2 < d.d1 )
     return false;
+
+  cout << "Number of iterations: " << n << endl;
+  cout << d << endl;
 
   // Don't know what to do
   dolfin_error("Local iterations did not converge.");

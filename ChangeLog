@@ -1,3 +1,6 @@
+ - Restructure stiff test problems
+ - Check if value of right-hand side is valid
+ - Modify divergence test in AdaptiveIterationLevel1
 0.4.6
  - Save vectors and matrices from Matlab/Octave (foufas)
  - Rename writexml.m to xmlmesh.m

@@ -8,6 +8,9 @@
 #include "TestProblem1.h"
 #include "TestProblem2.h"
 #include "TestProblem3.h"
+#include "TestProblem4.h"
+#include "TestProblem5.h"
+#include "TestProblem6.h"
 #include "TestProblem7.h"
 #include "TestProblem8.h"
 #include "TestProblem9.h"
@@ -16,51 +19,63 @@ using namespace dolfin;
 
 void solveTestProblem1()
 {
+  dolfin_set("tolerance", 0.1);
   TestProblem1 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem2()
 {
+  dolfin_set("tolerance", 0.1);
   TestProblem2 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem3()
 {
+  dolfin_set("tolerance", 0.1);
   TestProblem3 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem4()
 {
-  dolfin_info("Not implemented");
+  dolfin_set("tolerance", 0.01);
+  TestProblem4 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem5()
 {
-  dolfin_info("Not implemented");
+  dolfin_set("tolerance", 0.01);
+  TestProblem5 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem6()
 {
-  dolfin_info("Not implemented");
+  dolfin_set("tolerance", 0.01);
+  TestProblem6 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem7()
 {
+  dolfin_set("tolerance", 0.01);
   TestProblem7 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem8()
 {
+  dolfin_set("tolerance", 0.01);
   TestProblem8 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem9()
 {
+  dolfin_set("tolerance", 0.01);
   TestProblem9 testProblem;
   testProblem.solve();
 }
@@ -90,13 +105,13 @@ int main(int argc, char* argv[])
   // Get the number of the test problem
   int n = atoi(argv[1]);
 
-  dolfin_set("output", "plain text");
-
   // DOLFIN settings
+  dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
+  dolfin_set("maximum time step", 1.0);
   dolfin_set("solve dual problem", false);
-
+  
   // Choose test problem
   switch (n) {
   case 1:

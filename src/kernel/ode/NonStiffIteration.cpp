@@ -75,6 +75,9 @@ void NonStiffIteration::update(Element& element, Increments& d)
 {
   // Simple update of element
   d = fabs(element.update(f));
+
+  //if ( element.index() == 1 )
+  //  cout << "  new value = " << element.endval() << endl;
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::stabilize(ElementGroupList& list,
