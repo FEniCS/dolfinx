@@ -45,6 +45,7 @@ Multi-adaptive solver
 - Use two files for matlab format
 - Speedup interpolation (finding the correct element block)
 - Bug in ElementData::createBlock() when out of memory?
+- Automatic local reduction of time steps when stabilization doesn't work
 
 Modules
 -------
