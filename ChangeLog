@@ -1,3 +1,4 @@
+ - New classes Jacobi, SOR, Richardson (preconditioners and linear solvers)
  - Add integrals on the boundary (ds), partly working
  - Add maps from boundary of reference cell
  - Add evaluation of map from reference cell
