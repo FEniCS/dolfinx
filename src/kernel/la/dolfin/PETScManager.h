@@ -15,8 +15,11 @@ namespace dolfin
   {
   public:
 
-    /// Initialize PETSc
+    /// Initialize PETSc without command-line arguments
     static void init();
+
+    /// Initialize PETSc with command-line arguments
+    static void init(int argc, char* argv[]);
     
   protected:
 

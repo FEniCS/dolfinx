@@ -18,7 +18,7 @@ void PETScManager::init()
   if ( petsc.initialized )
     return;
 
-  cout << "Initializing PETSc." << endl;
+  cout << "Initializing PETSc (ignoring command-line arguments)." << endl;
 
   // Prepare fake command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
@@ -33,6 +33,19 @@ void PETScManager::init()
   // Cleanup
   delete [] argv[0];
   delete [] argv;
+
+  petsc.initialized = true;
+}
+//-----------------------------------------------------------------------------
+void PETScManager::init(int argc, char* argv[])
+{
+  if ( petsc.initialized )
+    return;
+
+  cout << "Initializing PETSc (with given command-line arguments)." << endl;
+
+  // Initialize PETSc
+  PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 
   petsc.initialized = true;
 }
