@@ -32,12 +32,16 @@ public:
 
   /// --- Accessor functions for stored data
 
+  /// Set global node number
+  void SetNodeNo(int nn);  
   /// Set coordinates
   void SetCoord(float x, float y, float z);  
+  /// Get global node number
+  int GetNodeNo();  
   /// Get coordinate i
   real GetCoord(int i);
   /// Get all coordinates
-  Point GetCoord();
+  Point* GetCoord();
 
   /// Give access to the special functions below
   friend class Grid;
@@ -60,6 +64,8 @@ private:
   void ComputeNodeNeighbors(Cell **cell_list, int thisnode, int *tmp);
 
   Point p;
+
+  int global_node_number;
 
   int *neighbor_nodes;
   int *neighbor_cells;

@@ -108,7 +108,7 @@ int FiniteElement::GetSpaceDim()
 int FiniteElement::GetGlobalDof(int dof)
 {
   // FIXME: Only for nodal basis
-  return grid->GetCell(cellnumber)->GetNode(dof);
+  return grid->GetCell(cellnumber)->GetNode(dof)->GetNodeNo();
 }
 //-----------------------------------------------------------------------------
 int FiniteElement::GetDim()
@@ -173,7 +173,7 @@ void FiniteElement::GetCoordinates()
   Node *n;
   
   for (int i=0;i<no_nodes;i++){
-	 n = grid->GetNode(c->GetNode(i));
+	 n = c->GetNode(i);
 	 for (int j=0;j<nsd;j++)
 		coord[i][j] = n->GetCoord(j);
   }

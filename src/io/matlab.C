@@ -49,7 +49,7 @@ void matlab_write_grid(FILE *fp, Grid *grid)
   if ( grid->GetCell(0)->GetSize() != 3 )
 	 display->Error("Unable to save 3d data to MATLAB format (not implemented).");
   
-  Point p;
+  Point *p;
   Cell *c;
 
   // Write nodes
@@ -58,9 +58,9 @@ void matlab_write_grid(FILE *fp, Grid *grid)
   for (int i=0;i<grid->GetNoNodes();i++){
 	 p = grid->GetNode(i)->GetCoord();
 	 if ( i < (grid->GetNoNodes()-1) )
-		fprintf(fp,"%f %f\n",p.x,p.y );
+		fprintf(fp,"%f %f\n",p->x,p->y );
 	 else
-		fprintf(fp,"%f %f]';\n",p.x,p.y);
+		fprintf(fp,"%f %f]';\n",p->x,p->y);
   }
   fprintf(fp,"\n");
 
@@ -71,9 +71,9 @@ void matlab_write_grid(FILE *fp, Grid *grid)
 	 c = grid->GetCell(i);
 	 for (int j=0;j<c->GetSize();j++)
 		if ( j < (c->GetSize()-1) )
-		  fprintf(fp,"%d ",c->GetNode(j)+1);
+		  fprintf(fp,"%d ",c->GetNode(j)->GetNodeNo()+1);
 		else
-		  fprintf(fp,"%d",c->GetNode(j)+1);
+		  fprintf(fp,"%d",c->GetNode(j)->GetNodeNo()+1);
 	 if ( i < (grid->GetNoCells()-1) )
 		fprintf(fp," 1\n");
 	 else

@@ -37,7 +37,7 @@ public:
   /// Return the number of nodes in the cell
   virtual int GetSize() = 0;
   /// Return global node number of node number <node> in the cell
-  virtual int GetNode(int node) = 0;
+  virtual Node* GetNode(int node) = 0;
 
   /// --- Functions that require computation (every time!)
   

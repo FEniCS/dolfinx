@@ -37,11 +37,12 @@ void inp_read_nodes(FILE *fp, Grid *grid, int no_nodes)
   float x,y,z;
 
   display->Message(0,"no_nodes = %d",no_nodes);
-  
+
   // Read all nodes
   for (int i=0;i<no_nodes;i++){
-	 fscanf(fp,"%d %f %f %f\n",&n,&x,&y,&z);
-	 grid->GetNode(i)->SetCoord(x,y,z);
+    fscanf(fp,"%d %f %f %f\n",&n,&x,&y,&z);
+    grid->GetNode(i)->SetNodeNo(n-1);
+    grid->GetNode(i)->SetCoord(x,y,z);
   }
 }
 //-----------------------------------------------------------------------------
@@ -50,15 +51,20 @@ void inp_read_cells(FILE *fp, Grid *grid, int no_cells, CellType celltype)
   int n, material, n1, n2, n3, n4;
   char string[DOLFIN_WORDLENGTH];
 
+  display->Message(0,"no_cells = %d",no_cells);
+
   if ( celltype == CELL_TRIANGLE )
 	 for (int i=0;i<no_cells;i++){
 		fscanf(fp,"%d %d %s %d %d %d\n",&n,&material,string,&n1,&n2,&n3);
-		((Triangle *) grid->GetCell(i))->Set(n1-1,n2-1,n3-1,material);
+		((Triangle *) grid->GetCell(i))->
+		  Set(grid->GetNode(n1-1),grid->GetNode(n2-1),grid->GetNode(n3-1),material);
 	 }
   else if ( celltype == CELL_TETRAHEDRON )
 	 for (int i=0;i<no_cells;i++){
 		fscanf(fp,"%d %d %s %d %d %d %d\n",&n,&material,string,&n1,&n2,&n3,&n4);
-		((Tetrahedron *) grid->GetCell(i))->Set(n1-1,n2-1,n3-1,n4-1,material);
+		((Tetrahedron *) grid->GetCell(i))->
+		  Set(grid->GetNode(n1-1),grid->GetNode(n2-1),
+		      grid->GetNode(n3-1),grid->GetNode(n4-1),material);
 	 }
 }
 //-----------------------------------------------------------------------------

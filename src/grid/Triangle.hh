@@ -9,10 +9,10 @@
 class Triangle : public Cell{
 public:
 
-  void Set(int n1, int n2, int n3, int material);
+  void Set(Node *n1, Node *n2, Node *n3, int material);
 
   int GetSize ();
-  int GetNode (int node);
+  Node* GetNode (int node);
 
   real ComputeVolume       (Grid *grid);
   real ComputeCircumRadius (Grid *grid);
@@ -29,7 +29,7 @@ private:
   void AddNodes             (int exclude_node, int *new_nodes, int *pos);
   void ComputeCellNeighbors (Node *node_list, int thiscell);
   
-  int nodes[3];
+  Node* nodes[3];
 };
 
 #endif

@@ -37,7 +37,7 @@ void opendx_write_grid(FILE *fp, Grid *grid)
   
   // Write nodes
 
-  Point p;
+  Point *p;
   Cell *c;
   
   fprintf(fp,"# A list of all node positions\n");
@@ -48,9 +48,9 @@ void opendx_write_grid(FILE *fp, Grid *grid)
 
 	 p = grid->GetNode(i)->GetCoord();
 	 
-	 x = float(p.x);
-	 y = float(p.y);
-	 z = float(p.z);
+	 x = float(p->x);
+	 y = float(p->y);
+	 z = float(p->z);
 	 
 	 fwrite(&x,sizeof(float),1,fp);
 	 fwrite(&y,sizeof(float),1,fp);
@@ -68,10 +68,10 @@ void opendx_write_grid(FILE *fp, Grid *grid)
 
 	 c = grid->GetCell(i);
 	 
-	 n1 = c->GetNode(0);
-	 n2 = c->GetNode(1);
-	 n3 = c->GetNode(2);
-	 n4 = c->GetNode(3);
+	 n1 = c->GetNode(0)->GetNodeNo();
+	 n2 = c->GetNode(1)->GetNodeNo();
+	 n3 = c->GetNode(2)->GetNodeNo();
+	 n4 = c->GetNode(3)->GetNodeNo();
 
 	 fwrite(&n1,sizeof(int),1,fp);
 	 fwrite(&n2,sizeof(int),1,fp);

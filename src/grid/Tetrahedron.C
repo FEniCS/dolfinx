@@ -6,7 +6,7 @@
 #include "Grid.hh"
 
 //-----------------------------------------------------------------------------
-void Tetrahedron::Set(int n1, int n2, int n3, int n4, int material)
+void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
 {
   nodes[0] = n1;
   nodes[1] = n2;
@@ -21,7 +21,7 @@ int Tetrahedron::GetSize()
   return 4;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::GetNode(int node)
+Node* Tetrahedron::GetNode(int node)
 {
   if ( (node<0) || (node>=4) )
 	 display->InternalError("Tetrahedron::GetNode()","Illegal node: %d",node);
@@ -32,18 +32,18 @@ int Tetrahedron::GetNode(int node)
 real Tetrahedron::ComputeVolume(Grid *grid)
 {
   // Get the coordinates
-  Point A = grid->GetNode(nodes[0])->GetCoord();
-  Point B = grid->GetNode(nodes[1])->GetCoord();
-  Point C = grid->GetNode(nodes[2])->GetCoord();
-  Point D = grid->GetNode(nodes[3])->GetCoord();
+  Point *A = nodes[0]->GetCoord();
+  Point *B = nodes[1]->GetCoord();
+  Point *C = nodes[2]->GetCoord();
+  Point *D = nodes[3]->GetCoord();
 
   // Make sure we get full precision
   real x1, x2, x3, x4, y1, y2, y3, y4, z1, z2, z3, z4;
 
-  x1 = real(A.x); y1 = real(A.y); z1 = real(A.z);
-  x2 = real(B.x); y2 = real(B.y); z2 = real(B.z);
-  x3 = real(C.x); y3 = real(C.y); z3 = real(C.z);
-  x4 = real(D.x); y4 = real(D.y); z4 = real(D.z);
+  x1 = real(A->x); y1 = real(A->y); z1 = real(A->z);
+  x2 = real(B->x); y2 = real(B->y); z2 = real(B->z);
+  x3 = real(C->x); y3 = real(C->y); z3 = real(C->z);
+  x4 = real(D->x); y4 = real(D->y); z4 = real(D->z);
 
   // Formula for volume from http://mathworld.wolfram.com
   real v = ( x1 * ( y2*z3 + y4*z2 + y3*z4 - y3*z2 - y2*z4 - y4*z3 ) -
@@ -79,18 +79,18 @@ real Tetrahedron::ComputeCircumRadius(Grid *grid)
 real Tetrahedron::ComputeCircumRadius(Grid *grid, real volume)
 {
   // Get the coordinates
-  Point A = grid->GetNode(nodes[0])->GetCoord();
-  Point B = grid->GetNode(nodes[1])->GetCoord();
-  Point C = grid->GetNode(nodes[2])->GetCoord();
-  Point D = grid->GetNode(nodes[3])->GetCoord();
+  Point *A = nodes[0]->GetCoord();
+  Point *B = nodes[1]->GetCoord();
+  Point *C = nodes[2]->GetCoord();
+  Point *D = nodes[3]->GetCoord();
   
   // Compute side lengths
-  real a  = B.Distance(C);
-  real b  = A.Distance(C);
-  real c  = A.Distance(B);
-  real aa = A.Distance(D);
-  real bb = B.Distance(D);
-  real cc = C.Distance(D);
+  real a  = B->Distance(*C);
+  real b  = A->Distance(*C);
+  real c  = A->Distance(*B);
+  real aa = A->Distance(*D);
+  real bb = B->Distance(*D);
+  real cc = C->Distance(*D);
   
   // Compute "area" of triangle with strange side lengths
   real l1   = a*aa;
@@ -107,32 +107,32 @@ real Tetrahedron::ComputeCircumRadius(Grid *grid, real volume)
 //-----------------------------------------------------------------------------
 void Tetrahedron::CountCell(Node *node_list)
 {
-  node_list[nodes[0]].nc += 1;
-  node_list[nodes[1]].nc += 1;
-  node_list[nodes[2]].nc += 1;
-  node_list[nodes[3]].nc += 1;
+  node_list[nodes[0]->GetNodeNo()].nc += 1;
+  node_list[nodes[1]->GetNodeNo()].nc += 1;
+  node_list[nodes[2]->GetNodeNo()].nc += 1;
+  node_list[nodes[3]->GetNodeNo()].nc += 1;
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::AddCell(Node *node_list, int *current, int thiscell)
 {
   int pos, n;
-  n=nodes[0]; pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[1]; pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[2]; pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
-  n=nodes[3]; pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
+  n=nodes[0]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
+  n=nodes[1]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
+  n=nodes[2]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
+  n=nodes[3]->GetNodeNo(); pos=current[n]; node_list[n].neighbor_cells[pos]=thiscell; current[n]+=1;
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::AddNodes(int exclude_node, int *new_nodes, int *pos)
 {
   int n;
 
-  if ( (n = nodes[0]) != exclude_node )
+  if ( (n = nodes[0]->GetNodeNo()) != exclude_node )
 	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-  if ( (n = nodes[1]) != exclude_node )
+  if ( (n = nodes[1]->GetNodeNo()) != exclude_node )
 	 if ( !contains(new_nodes,*pos,n) )	new_nodes[(*pos)++] = n;
-  if ( (n = nodes[2]) != exclude_node )
+  if ( (n = nodes[2]->GetNodeNo()) != exclude_node )
 	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
-  if ( (n = nodes[3]) != exclude_node )
+  if ( (n = nodes[3]->GetNodeNo()) != exclude_node )
 	 if ( !contains(new_nodes,*pos,n) ) new_nodes[(*pos)++] = n;
 }
 //-----------------------------------------------------------------------------
@@ -145,19 +145,23 @@ void Tetrahedron::ComputeCellNeighbors(Node *node_list, int thiscell)
   
   int c;
 
-  if ( node_list[nodes[0]].CommonCell(&node_list[nodes[1]],&node_list[nodes[2]],thiscell,&c) ){
+  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],
+						   &node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
 	 neighbor_cells[nc] = c;
 	 nc += 1;
   }
-  if ( node_list[nodes[0]].CommonCell(&node_list[nodes[1]],&node_list[nodes[3]],thiscell,&c) ){	 
+  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],
+						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){	 
 	 neighbor_cells[nc] = c;
 	 nc += 1;
   }
-  if ( node_list[nodes[0]].CommonCell(&node_list[nodes[2]],&node_list[nodes[3]],thiscell,&c) ){
+  if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],
+						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){
 	 neighbor_cells[nc] = c;
 	 nc += 1;
   }
-  if ( node_list[nodes[1]].CommonCell(&node_list[nodes[2]],&node_list[nodes[3]],thiscell,&c) ){
+  if ( node_list[nodes[1]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],
+						   &node_list[nodes[3]->GetNodeNo()],thiscell,&c) ){
 	 neighbor_cells[nc] = c;
 	 nc += 1;
   }

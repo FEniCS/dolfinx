@@ -161,7 +161,7 @@ void GlobalField::GetLocalDof(int cell, real t, real *local_dof, int component =
   switch( representation ){ 
   case NODAL: 
     for (int i=0;i<local_dim;i++)
-      local_dof[i] = dof_values->Get(grid->GetCell(cell)->GetNode(i)*nvd + component); 
+      local_dof[i] = dof_values->Get(c->GetNode(i)->GetNodeNo()*nvd + component); 
     break;
   case CONSTANT:
     for (int i=0;i<local_dim;i++) 
@@ -177,10 +177,10 @@ void GlobalField::GetLocalDof(int cell, real t, real *local_dof, int component =
 	 }
 
 	 // Get the value from the function
-	 Point p;
+	 Point *p;
 	 for (int i=0;i<local_dim;i++){
-		p = grid->GetNode(c->GetNode(i))->GetCoord();
-		local_dof[i] = function(p.x,p.y,p.z,t);
+		p = c->GetNode(i)->GetCoord();
+		local_dof[i] = function(p->x,p->y,p->z,t);
 	 }
 	 
     break;

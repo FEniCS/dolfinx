@@ -775,7 +775,7 @@ void ProblemNS::SetInitialData()
 
   initial_data = zero_initial_data;
   
-  Point pnt;
+  Point *pnt;
   u->SetToConstant(0.0);
   p->SetToConstant(0.0);
   
@@ -797,9 +797,9 @@ void ProblemNS::SetInitialData()
     noRolls = 1.0;
     for (int i=0; i < no_nodes; i++ ){
       pnt = grid->GetNode(i)->GetCoord();
-      x = real(pnt.x);
-      y = real(pnt.y); 
-      z = real(pnt.z);
+      x = real(pnt->x);
+      y = real(pnt->y); 
+      z = real(pnt->z);
       u->Set(i*noeq_vel+0,16.0*y*(1.0-y)*z*(1-z));
       u->Set(i*noeq_vel+1,pert * (   sin(noRolls*2.0*pi*y) * cos(noRolls*pi*z) ));
       u->Set(i*noeq_vel+2,pert * ( - cos(noRolls*2.0*pi*y) * sin(noRolls*pi*z) ));
@@ -810,9 +810,9 @@ void ProblemNS::SetInitialData()
     pert = 0.0;
     for (int i=0; i < no_nodes; i++ ){
       pnt = grid->GetNode(i)->GetCoord();
-      x = real(pnt.x);
-      y = real(pnt.y); 
-      z = real(pnt.z);
+      x = real(pnt->x);
+      y = real(pnt->y); 
+      z = real(pnt->z);
       u->Set(i*noeq_vel+0,2.0*y-1.0);
       u->Set(i*noeq_vel+1,pert * (   sin(2.0*pi*y) * cos(pi*z) ));
       u->Set(i*noeq_vel+2,pert * ( - cos(2.0*pi*y) * sin(pi*z) ));

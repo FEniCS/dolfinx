@@ -124,7 +124,7 @@ void Grid::DisplayAll()
   Display();
   
   Node n;
-  Point p;
+  Point *p;
   Cell *c;
   
   display->Message(0,"");
@@ -132,7 +132,7 @@ void Grid::DisplayAll()
   for (int i=0;i<no_nodes;i++){
 	 n = nodes[i];
 	 p = n.GetCoord();
-	 printf("n = %d x = (%f,%f,%f) n-n = [ ",i,p.x,p.y,p.z);
+	 printf("n = %d x = (%f,%f,%f) n-n = [ ",i,p->x,p->y,p->z);
 	 for (int j=0;j<n.GetNoNodeNeighbors();j++)
 		printf("%d ",n.GetNodeNeighbor(j));
 	 printf("] n-c = [ ");
@@ -213,7 +213,7 @@ void Grid::Write(const char *filename)
 //-----------------------------------------------------------------------------
 void Grid::WriteINP(FILE *fp)
 {
-  Point p;
+  Point *p;
   Triangle *tri;
   Tetrahedron *tet;
   
@@ -222,8 +222,8 @@ void Grid::WriteINP(FILE *fp)
   
   // Write node position
   for (int i=0;i<no_nodes;i++){
-	 p = nodes[i].p;
-	 fprintf(fp,"%d %f %f %f\n",i+1,p.x,p.y,p.z);
+	 p = &nodes[i].p;
+	 fprintf(fp,"%d %f %f %f\n",i+1,p->x,p->y,p->z);
   }
 
   // Write cells

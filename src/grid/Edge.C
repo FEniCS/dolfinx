@@ -49,32 +49,25 @@ Node* Edge::GetMidnode()
 real Edge::ComputeLength(Grid *grid)
 {
   // Get the coordinates
-  Point A = end_nodes[0]->GetCoord();
-  Point B = end_nodes[1]->GetCoord();
+  Point *A = end_nodes[0]->GetCoord();
+  Point *B = end_nodes[1]->GetCoord();
 
-  // Make sure we get full precision
-  real x1, x2, y1, y2, z1, z2;
+  real l = A->Distance(*B);
 
-  x1 = real(A.x); y1 = real(A.y); z1 = real(A.z);
-  x2 = real(B.x); y2 = real(B.y); z2 = real(B.z);
-
-  // The Euklidian length of the edge 
-  real l = sqrt( sqr(x2-x1) + sqr(y2-y1) + sqr(z2-z1) );
-  
   return ( l );
 }
 //-----------------------------------------------------------------------------
 Point* Edge::ComputeMidpoint(Grid *grid)
 {
   // Get the coordinates
-  Point A = end_nodes[0]->GetCoord();
-  Point B = end_nodes[1]->GetCoord();
+  Point *A = end_nodes[0]->GetCoord();
+  Point *B = end_nodes[1]->GetCoord();
 
   // Make sure we get full precision
   real x1, x2, y1, y2, z1, z2;
 
-  x1 = real(A.x); y1 = real(A.y); z1 = real(A.z);
-  x2 = real(B.x); y2 = real(B.y); z2 = real(B.z);
+  x1 = real(A->x); y1 = real(A->y); z1 = real(A->z);
+  x2 = real(B->x); y2 = real(B->y); z2 = real(B->z);
 
   // The midpoint of the edge 
   Point *M;

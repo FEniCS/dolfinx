@@ -194,7 +194,7 @@ void Discretiser::SetBoundaryConditions(SparseMatrix *A, Vector *b)
   if ( (A->Size(0) != no_eq*no_nodes ) || ( b->Size() != no_eq*no_nodes ) )
   	 display->Error("You must assemble the matrix before settings boundary conditions.");
 
-  Point p;
+  Point *p;
   dolfin_bc bc;
   
   for (int i=0;i<no_nodes;i++){
@@ -203,7 +203,7 @@ void Discretiser::SetBoundaryConditions(SparseMatrix *A, Vector *b)
 	 
     for (int component=0;component<no_eq;component++){
 
-      bc = bc_function(p.x,p.y,p.z,i,component+equation->GetStartVectorComponent());
+      bc = bc_function(p->x,p->y,p->z,i,component+equation->GetStartVectorComponent());
       
       switch ( bc.type ){
       case dirichlet:

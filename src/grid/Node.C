@@ -56,11 +56,21 @@ int Node::GetNodeNeighbor(int i)
   return ( neighbor_nodes[i] );
 }
 //-----------------------------------------------------------------------------
+void Node::SetNodeNo(int nn)
+{
+  global_node_number = nn;
+}
+//-----------------------------------------------------------------------------
 void Node::SetCoord(float x, float y, float z)
 {
   p.x = x;
   p.y = y;
   p.z = z;
+}
+//-----------------------------------------------------------------------------
+int Node::GetNodeNo()
+{
+  return global_node_number;
 }
 //-----------------------------------------------------------------------------
 real Node::GetCoord(int i)
@@ -82,9 +92,9 @@ real Node::GetCoord(int i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-Point Node::GetCoord()
+Point* Node::GetCoord()
 {
-  return ( p );
+  return ( &p );
 }
 //-----------------------------------------------------------------------------
 void Node::AllocateForNeighborCells()

@@ -65,6 +65,7 @@ void gid_read_nodes(FILE *fp, Grid *grid, int no_nodes)
 
   for (int i=0;i<no_nodes;i++){
 	 fscanf(fp,"%d %f %f %f\n",&n,&x,&y,&z);
+	 grid->GetNode(i)->SetNodeNo(n-1);
 	 grid->GetNode(i)->SetCoord(x,y,z);
   }
 }
@@ -80,12 +81,15 @@ void gid_read_cells(FILE *fp, Grid *grid, int no_cells, CellType celltype)
   if ( celltype == CELL_TRIANGLE )
 	 for (int i=0;i<no_cells;i++){
 		fscanf(fp,"%d %d %d %d\n",&n,&n1,&n2,&n3);
-		((Triangle *) grid->GetCell(i))->Set(n1-1,n2-1,n3-1,0);
+		((Triangle *) grid->GetCell(i))->
+		  Set(grid->GetNode(n1-1),grid->GetNode(n2-1),grid->GetNode(n3-1),0);
 	 }
   else if ( celltype == CELL_TETRAHEDRON )
 	 for (int i=0;i<no_cells;i++){
 		fscanf(fp,"%d %d %d %d %d\n",&n,&n1,&n2,&n3,&n4);
-		((Tetrahedron *) grid->GetCell(i))->Set(n1-1,n2-1,n3-1,n4-1,0);
+		((Tetrahedron *) grid->GetCell(i))->
+		  Set(grid->GetNode(n1-1),grid->GetNode(n2-1),
+		      grid->GetNode(n3-1),grid->GetNode(n4-1),0);
 	 }
 }
 //-----------------------------------------------------------------------------
@@ -114,7 +118,7 @@ void gid_write_header(FILE *fp, DataInfo *datainfo, SysInfo *sysinfo)
 //-----------------------------------------------------------------------------
 void gid_write_grid(FILE *fp, Grid *grid)
 {
-  Point p;
+  Point *p;
   Cell *c;;
   
   // Write grid header
@@ -127,7 +131,7 @@ void gid_write_grid(FILE *fp, Grid *grid)
   fprintf(fp, "Coordinates \n");
   for (int i=0;i<grid->GetNoNodes();i++){
     p = grid->GetNode(i)->GetCoord();
-    fprintf(fp,"%i %f %f %f\n",i+1, p.x, p.y, p.z);
+    fprintf(fp,"%i %f %f %f\n",i+1, p->x, p->y, p->z);
   }
   fprintf(fp, "end coordinates\n");
  
@@ -137,7 +141,7 @@ void gid_write_grid(FILE *fp, Grid *grid)
     c = grid->GetCell(i);
     fprintf(fp,"%i",i+1);
     for (int j=0;j<c->GetSize();j++)
-		  fprintf(fp," %d",c->GetNode(j)+1);
+		  fprintf(fp," %d",c->GetNode(j)->GetNodeNo()+1);
 	 fprintf(fp,"\n");
   }
   fprintf(fp,"end elements\n");

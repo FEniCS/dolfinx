@@ -4,8 +4,7 @@
 #ifndef __EDGE_HH
 #define __EDGE_HH
 
-// An edge consists of two endpoints.  cell is the geometric part of an element. An element contains
-// basis functions, but a cell contains only the geometric information.
+// An edge consists of two endpoints.  
 //
 // Similarly to a Node, the Edge should be small and simple to keep
 // the total data size as small as possible.
