@@ -4,10 +4,7 @@ General
 - Optimize form evaluation: Hoffman, Logg
 - Save edges in matlab format: Svensson?
 - General boundary conditions: Kraft?
-- Multigrid: Svensson, Målqvist?
-- Vector valued PDE: Hoffman, Logg (Bengzon, Jansson ?)
 - General function representations: Hoffman, Logg, Jansson
-- i/o for functions, in particular in OpenDX format: Hoffman, Logg
 - Use libtool: anyone?
 - Replace stdio with iostream and fstream
 - Replace Array and List with NewArray and NewList
@@ -20,6 +17,7 @@ General
 - Load parameters from dolfin.xml
 - Add GiD file format (Harald)
 - Fix assembly for systems of more than 3 equations
+- Add multigrid solver
 
 Multi-adaptive solver
 ---------------------
