@@ -3,7 +3,7 @@ function h = mesh2ko(p, e, t, fname)
   color1 = [0.0 1.0 0.0];
   color2 = [1.0 0.0 0.0];
 
-  r = 0.2;
+  r = 0.08;
 
   pmax = max(p');
   pmin = min(p');

@@ -17,6 +17,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh) : Solver(mesh)
   dolfin_parameter(Parameter::REAL,      "final time",  1.0);
   dolfin_parameter(Parameter::REAL,      "time step",   0.1);
   dolfin_parameter(Parameter::VFUNCTION, "source",      0);
+  dolfin_parameter(Parameter::VFUNCTION, "initial velocity",      0);
 }
 //-----------------------------------------------------------------------------
 const char* ElasticityUpdatedSolver::description()
@@ -29,7 +30,7 @@ void ElasticityUpdatedSolver::solve()
   Matrix A;
   Vector x10, x11, x20, x21, xtot, xzero, b, xcomp, tmp;
   
-  std::cerr << "Elasticity updated2" << std::endl;
+  std::cerr << "Elasticity updated" << std::endl;
 
   Function::Vector u0(mesh, x10, 3);
   Function::Vector u1(mesh, x11, 3);
@@ -37,6 +38,7 @@ void ElasticityUpdatedSolver::solve()
   Function::Vector w1(mesh, x21, 3);
 
   Function::Vector f("source", 3);
+  Function::Vector v0("initial velocity", 3);
   
   ElasticityUpdated   elasticity(f, w0);
   KrylovSolver solver;
@@ -62,8 +64,23 @@ void ElasticityUpdatedSolver::solve()
   //Matrix &sigma0 = *(elasticity.sigma0array[0]);
   //sigma0(0, 0) = 50.0;
 
-  
 
+  // Set initial velocities
+  for (NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    int id = (*n).id();
+    
+    real v0x, v0y, v0z;
+
+    v0x = v0(0)(n->coord().x, n->coord().y, n->coord().z, 0.0);
+    v0y = v0(1)(n->coord().x, n->coord().y, n->coord().z, 0.0);
+    v0z = v0(2)(n->coord().x, n->coord().y, n->coord().z, 0.0);
+
+    x21(id * 3 + 0) = v0x; 
+    x21(id * 3 + 1) = v0y; 
+    x21(id * 3 + 2) = v0z; 
+  }
+  
   elasticity.k = k;
   FEM::assemble(elasticity, mesh, A);
 
@@ -71,21 +88,6 @@ void ElasticityUpdatedSolver::solve()
   Progress p("Time-stepping");
   
   int counter = 0;
-
-
-  ///*
-  x21(0 * 3 + 0) = 0.0; 
-  x21(1 * 3 + 0) = 8.0; 
-  x21(2 * 3 + 0) = 0.0; 
-  x21(3 * 3 + 0) = 0.0; 
-  //*/
-
-  /*
-  x21(0 * 3 + 0) = -1.0; 
-  x21(1 * 3 + 0) = 2.0; 
-  x21(2 * 3 + 0) = -1.0; 
-  x21(3 * 3 + 0) = -1.0; 
-  */
 
   // Start time-stepping
   while ( t < T ) {
