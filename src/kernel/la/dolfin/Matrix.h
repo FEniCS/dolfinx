@@ -101,7 +101,7 @@ namespace dolfin {
     void solve(Vector& x, Vector& b);
     
     /// Output
-    void show();
+    void show() const;
     friend LogStream& operator<< (LogStream& stream, const Matrix& A);
     
   protected:

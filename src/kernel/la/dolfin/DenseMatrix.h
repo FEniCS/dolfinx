@@ -15,7 +15,8 @@ namespace dolfin {
   public:
     
     DenseMatrix(int m, int n);
-    DenseMatrix(Matrix& A);
+    DenseMatrix(const DenseMatrix& A);
+    DenseMatrix(const Matrix& A);
     ~DenseMatrix();
     
     /// Initialize to a zero m x n matrix
@@ -29,16 +30,35 @@ namespace dolfin {
     
     /// Return size along dimension dim (0 for row size, 1 for columns size)
     int size(int dim) const;
+
+    //---
     
-    // Solve the linear system Ax = b (and replace A by its LU factorization)
-    void solve(Vector& x, Vector& b);
-    
+    /// Solve Ax = b (and replace A by its LU factorization)
+    void solve(Vector& x, const Vector& b);
+
+    /// Compute inverse (and replace A by its LU factorization)
+    void inverse(DenseMatrix& Ainv);
+
+    /// Solve Ax = b with high precision (not replacing A by its LU factorization)
+    void hpsolve(Vector& x, const Vector& b) const;
+
     /// Compute LU factorization (in-place)
     void lu();
 
-    /// Solve the linear system A x = b using a computed lu factorization
-    void lusolve(Vector& x, Vector& b);
+    /// Solve A x = b using a computed lu factorization
+    void solveLU(Vector& x, const Vector& b) const;
 
+    /// Compute inverse using a computed lu factorization
+    void inverseLU(DenseMatrix& Ainv) const;
+
+    /// Solve A x = b with high precision using a computed lu factorization
+    void hpsolveLU(const DenseMatrix& LU, Vector& x, const Vector& b) const;
+
+    /// Output
+    void show() const;
+    friend LogStream& operator<< (LogStream& stream, const DenseMatrix& A);
+
+    // Friends
     friend class DirectSolver;
     
   private:

@@ -400,13 +400,10 @@ void Matrix::solve(Vector& x, Vector& b)
   solver.solve(*this, x, b);
 }
 //-----------------------------------------------------------------------------
-void Matrix::show()
+void Matrix::show() const
 {
   for (int i = 0; i < m; i++) {
-    if ( i == 0 )
-      cout << "| ";
-    else
-      cout << "| ";
+    cout << "| ";
     for (int j = 0; j < n; j++){
       cout << (*this)(i,j) << " ";
     }
@@ -509,7 +506,7 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
   else if ( bytes > 1024 )
 	 stream << bytes/1024 << " kb. ]";
   else
-	 stream << bytes << " bytes. ]";
+	 stream << bytes << " bytes ]";
   
   return stream;
 }

@@ -1,3 +1,5 @@
+ - Add output functionality in DenseMatrix
+ - Add high precision solver to DirectSolver
  - Clean up error messages in Matrix
  - Make solvers directly accessible through Matrix and DenseMatrix
  - Add quadrature (Gauss, Radau, and Lobatto) from Tanganyika

@@ -208,7 +208,7 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& vector)
   else if ( bytes > 1024 )
 	 stream << bytes/1024 << " kb. ]";
   else
-	 stream << bytes << " bytes. ]";
+	 stream << bytes << " bytes ]";
   
   return stream;
 }

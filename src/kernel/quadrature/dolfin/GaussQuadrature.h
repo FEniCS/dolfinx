@@ -4,6 +4,7 @@
 #ifndef __GAUSS_QUADRATURE_H
 #define __GAUSS_QUADRATURE_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/GaussianQuadrature.h>
 
 namespace dolfin {
@@ -21,12 +22,14 @@ namespace dolfin {
   public:
     
     GaussQuadrature(int n);
-    
+
   private:
 
     void computePoints();
 
   };
+
+  LogStream& operator<<(LogStream& stream, const GaussQuadrature& gauss);
   
 }
 

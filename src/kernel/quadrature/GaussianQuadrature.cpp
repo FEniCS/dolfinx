@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Legendre.h>
@@ -38,7 +39,7 @@ void GaussianQuadrature::computeWeights()
   b(0) = 2.0;
     
   // Solve the system of equations
-  A.solve(x, b);
+  A.hpsolve(x, b);
   
   // Save the weights
   for (int i = 0; i < n; i++)
@@ -52,11 +53,12 @@ bool GaussianQuadrature::check(int q)
   // This value should be zero.
   
   Legendre p(q);
-  int n;
   
   real sum = 0.0;
   for (int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
+
+  dolfin_info("sum = %.16e", sum);
     
   return fabs(sum) < DOLFIN_EPS;
 }

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <stdio.h>
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Legendre.h>
@@ -55,5 +56,33 @@ void GaussQuadrature::computePoints()
   // Set middle node
   if ( (n % 2) != 0 )
     points[n/2] = 0.0;
+}
+//-----------------------------------------------------------------------------
+// Output
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<<(LogStream& stream, const GaussQuadrature& gauss)
+{
+  stream << "Gauss quadrature points and weights on [-1,1]:" << dolfin::endl;
+  stream << dolfin::endl;
+
+  char number[32];
+  char point[32];
+  char weight[32];
+
+  stream << " i   points                 weights" << dolfin::endl;
+  stream << "----------------------------------------------" << dolfin::endl;
+  for (int i = 0; i < gauss.size(); i++) {
+
+    sprintf(number, "%2d", i);
+    sprintf(point,  "% .16e", gauss.point(i).x);
+    sprintf(weight, "% .16e", gauss.weight(i));
+    
+    stream << number << "   " << point << "  " << weight;
+
+    if ( i < (gauss.size()-1) )
+      stream << dolfin::endl;
+
+  }
+
 }
 //-----------------------------------------------------------------------------

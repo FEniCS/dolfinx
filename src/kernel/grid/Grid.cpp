@@ -192,13 +192,13 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Grid& grid)
 
   switch ( grid.type() ) {
   case Grid::TRIANGLES:
-    stream << "(triangles). ]";
+    stream << "(triangles) ]";
     break;
   case Grid::TETRAHEDRONS:
-    stream << "(tetrahedrons). ]";
+    stream << "(tetrahedrons) ]";
     break;
   default:
-    stream << "(unknown type). ]";
+    stream << "(unknown type) ]";
   }
 
   return stream;

@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
@@ -10,13 +11,27 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DirectSolver::solve(DenseMatrix& A, Vector& x, Vector& b)
+void DirectSolver::solve(DenseMatrix& A, Vector& x, const Vector& b) const
 {
   lu(A);
-  lusolve(A, x, b);
+  solveLU(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::lu(DenseMatrix& A)
+void DirectSolver::hpsolve(const DenseMatrix& A,
+			   Vector& x, const Vector& b) const
+{
+  DenseMatrix LU(A);
+  lu(LU);
+  hpsolveLU(LU, A, x, b);
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::inverse(DenseMatrix& A, DenseMatrix& Ainv) const
+{
+  lu(A);
+  inverseLU(A, Ainv);
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::lu(DenseMatrix& A) const
 {
   // This function replaces the matrix with its LU factorization.
   //
@@ -51,7 +66,7 @@ void DirectSolver::lu(DenseMatrix& A)
   int i,imax,j,k;
   imax = 0;
   real big,dum,sum,temp;
-  real *vv = new real[n];
+  real* vv = new real[n];
   d = 1.0;
   
   for (i=1;i<=n;i++){
@@ -97,11 +112,27 @@ void DirectSolver::lu(DenseMatrix& A)
     }
   }
   
-  delete vv;
+  delete [] vv;
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::lusolve(DenseMatrix& LU, Vector& x, Vector& b)
+void DirectSolver::solveLU(const DenseMatrix& LU,
+			   Vector& x, const Vector& b) const
 {
+  // Solve the linear system A x = b using a computed LU factorization
+
+  // Check dimensions
+  if ( LU.m != LU.n )
+    dolfin_error("LU factorization must be a square matrix.");
+
+  if ( LU.m != b.n )
+    dolfin_error("Non-matching dimensions for matrix and vector.");
+
+  // Get size
+  int n = LU.m;
+  
+  // Initialize solution vector
+  x.init(n);
+
   // This function solves for the right-hand side b
   //
   // Note! The matrix must be LU factorized first!
@@ -112,18 +143,9 @@ void DirectSolver::lusolve(DenseMatrix& LU, Vector& x, Vector& b)
   //    float replaced by real
   //    removed comments
   //    changed from [i][j] to [i-1][j-1]
-  
-  //Check dimensions
-  if ( LU.size(0) != LU.size(1) )
-    dolfin_error("Matrix must be square.");
-  if ( LU.size(1) != b.size() )
-    dolfin_error("Incompatible matrix and vector dimensions.");
-  if ( LU.size(0) != x.size() )
-    x.init(LU.size(0));
-  
+
   // Prepare the variables for the notation in the algorithm
   real **a = LU.values;       // The matrix
-  int n = LU.size(0);         // Dimension
   int *indx = LU.permutation; // Permutation
   
   // Copy b to x
@@ -158,6 +180,110 @@ void DirectSolver::lusolve(DenseMatrix& LU, Vector& x, Vector& b)
     for (j=i+1;j<=n;j++) sum -= a[i-1][j-1]*x.values[j-1];
     x.values[i-1]=sum/a[i-1][i-1]; 
   }
+  
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::inverseLU(const DenseMatrix& LU, DenseMatrix& Ainv) const
+{
+  // Compute inverse using a computed LU factorization
+
+  // Check dimensions
+  if ( LU.m != LU.n )
+    dolfin_error("LU factorization must be a square matrix.");
+
+  // Get size
+  int n = LU.m;
+
+  // Initialize inverse
+  Ainv.init(n, n);
+
+  // Unit vector and solution
+  Vector e(n);
+  Vector x;
+
+  // Compute inverse
+  for (int j = 0; j < n; j++) {
+
+    e(j) = 1.0;
+    solveLU(LU, x, e);
+    e(j) = 0.0;
+
+    for (int i = 0; i < n; i++)
+      Ainv(i, j) = x(i);
+
+  }
+
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
+			     Vector& x, const Vector& b) const
+{
+  // Solve the linear system A x = b to very high precision, by first
+  // computing the inverse using Gaussian elimination, and then using the
+  // inverse as a preconditioner for Gauss-Seidel iteration.
+
+  // Check dimensions
+  if ( LU.m != LU.n )
+    dolfin_error("LU factorization must be a square matrix.");
+
+  if ( A.m != A.n )
+    dolfin_error("Matrix must be square.");
+
+  if ( LU.m != b.n )
+    dolfin_error("Non-matching dimensions for matrix and vector.");
+
+  if ( LU.m != A.m )
+    dolfin_error("Non-matching matrix dimensions.");
+  
+  // Get size
+  int n = LU.m;
+  
+  // Initialize the solution vector
+  x.init(n);
+
+  // Compute product B = Ainv * A
+  DenseMatrix B(n, n);
+  Vector colA(n);
+  Vector colB(n);
+  for (int j = 0; j < n; j++) {
+    for (int i = 0; i < n; i++)
+      colA(i) = A(i,j);
+    solveLU(LU, colB, colA);
+    for (int i = 0; i < n; i++)
+      B(i,j) = colB(i);
+  }
+
+  // Compute product c = Ainv * b
+  Vector c(n);
+  solveLU(LU, c, b);
+  
+  // Solve B x = c using Gauss-Seidel iteration
+  real res = 0.0;
+  do {
+    
+    // Gauss-Seidel iteration
+    for (int i = 0; i < n; i++) {
+      real sum = c(i);
+      for (int j = 0; j < n; j++)
+	if ( j != i )
+	  sum += B(i,j) * x(j);
+      x(i) = sum / B(i,i);
+    }
+    
+    // Compute the residual
+    res = 0.0;
+    for (int i = 0; i < n; i++) {
+      real sum = 0.0;
+      for (int j = 0; j < n; j++)
+	sum += A(i,j) * x(j);
+      sum -= b(i);
+      res += sum*sum;
+    }
+    res = sqrt(res);
+    
+    dolfin_info("residual = %.16e", res);
+
+  } while ( res > DOLFIN_EPS );
   
 }
 //-----------------------------------------------------------------------------
