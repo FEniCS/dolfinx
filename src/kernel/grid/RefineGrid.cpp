@@ -46,26 +46,27 @@ Refinement::RefineGrid()
 void RefineGrid::GlobalRegularRefinement()
 {
   // Regular refinement: 
-  //
   // (1) Triangles: 1 -> 4 
   // (2) Tetrahedrons: 1 -> 8 
 
-  Grid grid_tmp;
-  grid_tmp = grid;
-
-  int cnt = 0;
-  for (CellIterator c(grid_tmp); !c.end(); ++c){
-    RegularRefinement(*c);
-    cout << "cnt = " << cnt++ << endl;
-  }
-
+  //  cout << "no elms = " << grid.noCells() << endl;
+  //  cout << "no nodes = " << grid.noNodes() << endl;
+  
+  List<Cell *> cells;
+  for (CellIterator c(grid); !c.end(); ++c)
+    cells.add(c);
+  
+  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c)
+    RegularRefinement(*(*c.pointer()));
+  
+  //  cout << "new no elms = " << grid.noCells() << endl;
+  //  cout << "new no nodes = " << grid.noNodes() << endl;
 }
 
 
 void RefineGrid::RegularRefinement(Cell &parent)
 {
   // Regular refinement: 
-  //
   // (1) Triangles: 1 -> 4 
   // (2) Tetrahedrons: 1 -> 8 
 
@@ -94,14 +95,16 @@ void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
   Node *n13 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(3)->coord()));
   Node *n23 = grid.createNode(parent.node(2)->coord().midpoint(parent.node(3)->coord()));
 
-  Cell *t1 = grid.createCell(Cell::TETRAHEDRON,parent.node(0),n01,n02,n03);
-  Cell *t2 = grid.createCell(Cell::TETRAHEDRON,n01,parent.node(1),n12,n13);
-  Cell *t3 = grid.createCell(Cell::TETRAHEDRON,n02,n12,parent.node(2),n23);
-  Cell *t4 = grid.createCell(Cell::TETRAHEDRON,n03,n13,n23,parent.node(3));
-  Cell *t5 = grid.createCell(Cell::TETRAHEDRON,n01,n02,n03,n13);
-  Cell *t6 = grid.createCell(Cell::TETRAHEDRON,n01,n02,n12,n13);
-  Cell *t7 = grid.createCell(Cell::TETRAHEDRON,n02,n03,n13,n23);
-  Cell *t8 = grid.createCell(Cell::TETRAHEDRON,n02,n12,n13,n23);
+  int level = parent.level() + 1;
+
+  Cell *t1 = grid.createCell(level,Cell::TETRAHEDRON,parent.node(0),n01,n02,n03);
+  Cell *t2 = grid.createCell(level,Cell::TETRAHEDRON,n01,parent.node(1),n12,n13);
+  Cell *t3 = grid.createCell(level,Cell::TETRAHEDRON,n02,n12,parent.node(2),n23);
+  Cell *t4 = grid.createCell(level,Cell::TETRAHEDRON,n03,n13,n23,parent.node(3));
+  Cell *t5 = grid.createCell(level,Cell::TETRAHEDRON,n01,n02,n03,n13);
+  Cell *t6 = grid.createCell(level,Cell::TETRAHEDRON,n01,n02,n12,n13);
+  Cell *t7 = grid.createCell(level,Cell::TETRAHEDRON,n02,n03,n13,n23);
+  Cell *t8 = grid.createCell(level,Cell::TETRAHEDRON,n02,n12,n13,n23);
 }
 
 void RefineGrid::RegularRefinementTriangle(Cell &parent)
@@ -112,10 +115,12 @@ void RefineGrid::RegularRefinementTriangle(Cell &parent)
   Node *n02 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(2)->coord()));
   Node *n12 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(2)->coord()));
 
-  Cell *t1 = grid.createCell(Cell::TETRAHEDRON,parent.node(0),n01,n02);
-  Cell *t2 = grid.createCell(Cell::TETRAHEDRON,n01,parent.node(1),n12);
-  Cell *t3 = grid.createCell(Cell::TETRAHEDRON,n02,n12,parent.node(2));
-  Cell *t4 = grid.createCell(Cell::TETRAHEDRON,n01,n12,n02);
+  int level = parent.level() + 1;
+
+  Cell *t1 = grid.createCell(level,Cell::TETRAHEDRON,parent.node(0),n01,n02);
+  Cell *t2 = grid.createCell(level,Cell::TETRAHEDRON,n01,parent.node(1),n12);
+  Cell *t3 = grid.createCell(level,Cell::TETRAHEDRON,n02,n12,parent.node(2));
+  Cell *t4 = grid.createCell(level,Cell::TETRAHEDRON,n01,n12,n02);
 }
 
 /*

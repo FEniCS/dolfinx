@@ -24,49 +24,54 @@ Node* GridData::createNode(real x, real y, real z)
   return n;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Cell::Type type)
+Cell* GridData::createCell(int level, Cell::Type type)
 {
   int id;
   Cell *c = cells.create(&id);
+  c->setLevel(level);
   c->setID(id);
   c->init(type);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2)
+Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2)
 {
   int id;
   Cell *c = cells.create(&id);
+  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2));
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
+Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3)
 {
   int id;
   Cell *c = cells.create(&id);
+  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2)
+Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2)
 {
   int id;
   Cell *c = cells.create(&id);
+  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(n0,n1,n2);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
+Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
 {
   int id;
   Cell *c = cells.create(&id);
+  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(n0,n1,n2,n3);

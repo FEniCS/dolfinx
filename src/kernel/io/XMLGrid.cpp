@@ -169,8 +169,11 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n1", &n1);
   parseIntegerRequired(name, attrs, "n2", &n2);
 
+  // Set initial level to 0
+  int level = 0;
+
   // Set values
-  grid.createCell(Cell::TRIANGLE, n0, n1, n2);
+  grid.createCell(level, Cell::TRIANGLE, n0, n1, n2);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
@@ -192,8 +195,11 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n2", &n2);
   parseIntegerRequired(name, attrs, "n3", &n3);
 
+  // Set initial level to 0
+  int level = 0;
+
   // Set values
-  grid.createCell(Cell::TETRAHEDRON, n0, n1, n2, n3);
+  grid.createCell(level, Cell::TETRAHEDRON, n0, n1, n2, n3);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.

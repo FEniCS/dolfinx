@@ -43,6 +43,7 @@ namespace dolfin {
 	 int id() const;
 	 int nodeID(int i) const;
 	 int edgeID(int i) const;
+	 int level() const;
 
 	 // Mark and check if marked
 	 void mark();
@@ -71,6 +72,7 @@ namespace dolfin {
 	 void set(Node *n0, Node *n1, Node *n2);
 	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
 	 
+	 void setLevel(int level);
 	 void setID(int id);
 	 void init(Type type);
 	 bool neighbor(Cell &cell);
@@ -78,6 +80,9 @@ namespace dolfin {
 	 // Global cell number
 	 int _id;
 	 
+	 // Refinement level in grid hierarchy, coarsest grid i level = 0
+	 int _level;
+
 	 // The cell
 	 GenericCell *c;
 
