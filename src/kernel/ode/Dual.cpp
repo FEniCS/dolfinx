@@ -1,37 +1,28 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Element.h>
-#include <dolfin/ODEFunction.h>
+#include <dolfin/Dual.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODEFunction::ODEFunction(unsigned int N) : _elmdata(N)
+Dual::Dual(ODE& ode, Function& u) : ODE(ode.size()), ode(ode), u(u)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ODEFunction::~ODEFunction()
+Dual::~Dual()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ODEFunction::operator() (unsigned int i, real t)
+real Dual::u0(unsigned int i)
 {
-  // Get element
-  Element* element = _elmdata.element(i,t);
-
-  // Check if we got the element
-  if ( !element )
-    dolfin_error("Requested value not available.");
-
-  // Evaluate element at given time
-  return element->value(t);
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-ElementData& ODEFunction::elmdata()
+real Dual::f(const Vector& u, real t, unsigned int i)
 {
-  return _elmdata;
+  return 0.0;
 }
 //-----------------------------------------------------------------------------

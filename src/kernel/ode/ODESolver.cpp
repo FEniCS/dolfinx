@@ -1,9 +1,10 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
+#include <dolfin/Dual.h>
+#include <dolfin/Function.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/ODESolver.h>
 
@@ -12,13 +13,46 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
 {
-  // Eventually, this is where we will put the adaptive algorithm,
-  // including repeated solution of the primal and dual problems,
-  // computation stability factors and error estimates.
+  Function u, phi;
+  solve(ode, u, phi);
 
+}
+//-----------------------------------------------------------------------------
+void ODESolver::solve(ODE& ode, Function& u)
+{
+  Function phi;
+  solve(ode, u, phi);
+}
+//-----------------------------------------------------------------------------
+void ODESolver::solve(ODE& ode, Function& u, Function& phi)
+{
   dolfin_start("Solving ODE");
+  
+  // Get size of system
+  unsigned int N = ode.size();
 
-  TimeStepper::solve(ode);
+  dolfin_start("Solving primal problem");
+
+  // Initialize primal solution
+  u.init(N);
+
+  // Solve primal problem
+  TimeStepper::solve(ode, u.elmdata());
+
+  dolfin_end();
+
+  dolfin_start("Solving dual problem");
+
+  // Create dual problem
+  Dual dual(ode, u);
+
+  // Initialize dual solution phi
+  phi.init(N);
+  
+  // Solve dual problem
+  TimeStepper::solve(dual, phi.elmdata());
+
+  dolfin_end();
 
   dolfin_end();
 }

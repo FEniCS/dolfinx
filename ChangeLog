@@ -1,3 +1,6 @@
+ - Fix bug in progress bar (TerminalLogger)
+ - Many updates of multi-adaptive solver
+ - Add class ODEFunction
  - Update function class hierarchies
  - Move functions to a separate directory
  - Store multi-adaptive solution binary on disk with cache

@@ -20,8 +20,11 @@ namespace dolfin {
     
     // Evaluation of function
     real operator() (const Node&  n, real t) const;
+    real operator() (const Node&  n, real t);
     real operator() (const Point& p, real t) const;
+    real operator() (const Point& p, real t);
     real operator() (real x, real y, real z, real t) const;
+    real operator() (real x, real y, real z, real t);
 
     // Update values of element function
     void update(FunctionSpace::ElementFunction& v,

@@ -23,7 +23,19 @@ real GenericFunction::operator() (const Node&  n, real t) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+real GenericFunction::operator() (const Node&  n, real t)
+{
+  dolfin_error("Function can not be evaluated at a given node.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 real GenericFunction::operator() (const Point& p, real t) const
+{
+  dolfin_error("Function can not be evaluated at a given point.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericFunction::operator() (const Point& p, real t)
 {
   dolfin_error("Function can not be evaluated at a given point.");
   return 0.0;
@@ -35,7 +47,19 @@ real GenericFunction::operator() (real x, real y, real z, real t) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+real GenericFunction::operator() (real x, real y, real z, real t)
+{
+  dolfin_error("Function can not be evaluated at given coordinates.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 real GenericFunction::operator() (unsigned int i, real t) const
+{
+  dolfin_error("Function can not be evaluated for given a component.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericFunction::operator() (unsigned int i, real t)
 {
   dolfin_error("Function can not be evaluated for given a component.");
   return 0.0;
@@ -55,6 +79,11 @@ real GenericFunction::time() const
 Mesh& GenericFunction::mesh() const
 {
   dolfin_error("Function is not defined on a mesh.");
+}
+//-----------------------------------------------------------------------------
+ElementData& GenericFunction::elmdata()
+{
+  dolfin_error("Function does not contain element data.");
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::update(FunctionSpace::ElementFunction &v,

@@ -10,6 +10,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/AutomaticSparsity.h \
                           dolfin/Component.h \
                           dolfin/AutomaticSparsity.h \
+                          dolfin/Dual.h \
                           dolfin/Element.h \
                           dolfin/ElementBlock.h \
                           dolfin/ElementData.h \
@@ -43,6 +44,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Adaptivity.cpp \
                           AutomaticSparsity.cpp \
                           Component.cpp \
+                          Dual.cpp \
                           Element.cpp \
                           ElementBlock.cpp \
                           ElementData.cpp \

@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/Function.h>
+#include <dolfin/Vector.h>
 #include <dolfin/ODESolver.h>
 #include <dolfin/ODE.h>
 
@@ -15,7 +17,7 @@ ODE::ODE(unsigned int N) : sparsity(N)
 //-----------------------------------------------------------------------------
 ODE::~ODE()
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 unsigned int ODE::size() const
@@ -31,6 +33,16 @@ real ODE::endtime() const
 void ODE::solve()
 {
   ODESolver::solve(*this);
+}
+//-----------------------------------------------------------------------------
+void ODE::solve(Function& u)
+{
+  ODESolver::solve(*this, u);
+}
+//-----------------------------------------------------------------------------
+void ODE::solve(Function& u, Function& phi)
+{
+  ODESolver::solve(*this, u, phi);
 }
 //-----------------------------------------------------------------------------
 void ODE::sparse(unsigned int i, unsigned int size)

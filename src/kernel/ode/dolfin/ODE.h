@@ -4,12 +4,15 @@
 #ifndef __ODE_H
 #define __ODE_H
 
+#include <dolfin/constants.h>
 #include <dolfin/Sparsity.h>
-#include <dolfin/Vector.h>
 
 namespace dolfin {
 
-  /// ODE represents an initial value problem of the form
+  class Vector;
+  class Function;
+
+  /// A ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t),t) on (0,T],
   ///         
@@ -40,6 +43,12 @@ namespace dolfin {
 
     /// Solve ODE
     void solve();
+
+    /// Solve ODE
+    void solve(Function& u);
+
+    /// Solve ODE
+    void solve(Function& u, Function& phi);
 
     /// Set sparsity (number of dependencies for component i)
     void sparse(unsigned int i, unsigned int size);

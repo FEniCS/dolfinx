@@ -12,19 +12,59 @@
 #include <dolfin/ExpressionFunction.h>
 #include <dolfin/ScalarExpressionFunction.h>
 #include <dolfin/VectorExpressionFunction.h>
+#include <dolfin/ODEFunction.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+Function::Function()
+{
+  f = new GenericFunction();
+  rename("u", "An unspecified function");
+}
+//-----------------------------------------------------------------------------
 Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size)
 {
-  f = new DofFunction(mesh, x, dim, size);
+  f = 0;
   rename("u", "A function");
+  init(mesh, x, dim, size);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const char *name, int dim, int size)
 {
+  f = 0;
+  rename("u", "A function");
+  init(name, dim, size);
+}
+//-----------------------------------------------------------------------------
+Function::Function(unsigned int N)
+{
+  f = 0;
+  rename("u", "A function");
+  init(N);
+}
+//-----------------------------------------------------------------------------
+Function::~Function()
+{
+  if ( f != 0 )
+    delete f;
+  f = 0;
+}
+//-----------------------------------------------------------------------------
+void Function::init(Mesh& mesh, dolfin::Vector& x, int dim, int size)
+{
+  if ( f )
+    delete f;
+  
+  f = new DofFunction(mesh, x, dim, size);
+}
+//-----------------------------------------------------------------------------
+void Function::init(const char* name,  int dim, int size)
+{
+  if ( f )
+    delete f;
+
   function fp;
   vfunction vfp;
   
@@ -38,24 +78,22 @@ Function::Function(const char *name, int dim, int size)
     vfp = dolfin_get(name);
     f = new VectorExpressionFunction(vfp, dim, size);
   }
-
-  rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
-Function::Function(ElementData& elmdata)
+void Function::init(unsigned int N)
 {
-  //f = new ODEFunction(elmdata);
-  f = 0;
-}
-//-----------------------------------------------------------------------------
-Function::~Function()
-{
-  if ( f != 0 )
+  if ( f )
     delete f;
-  f = 0;
+
+  f = new ODEFunction(N);
 }
 //-----------------------------------------------------------------------------
 real Function::operator() (const Node& n, real t) const
+{
+  return (*f)(n, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Node& n, real t)
 {
   return (*f)(n, t);
 }
@@ -65,12 +103,27 @@ real Function::operator() (const Point& p, real t) const
   return (*f)(p, t);
 }
 //-----------------------------------------------------------------------------
+real Function::operator() (const Point& p, real t)
+{
+  return (*f)(p, t);
+}
+//-----------------------------------------------------------------------------
 real Function::operator() (real x, real y, real z, real t) const
 {
   return (*f)(x, y, z, t);
 }
 //-----------------------------------------------------------------------------
+real Function::operator() (real x, real y, real z, real t)
+{
+  return (*f)(x, y, z, t);
+}
+//-----------------------------------------------------------------------------
 real Function::operator() (unsigned int i, real t) const
+{
+  return (*f)(i, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (unsigned int i, real t)
 {
   return (*f)(i, t);
 }
@@ -88,6 +141,11 @@ real Function::time() const
 Mesh& Function::mesh() const
 {
   return f->mesh();
+}
+//-----------------------------------------------------------------------------
+ElementData& Function::elmdata()
+{
+  return f->elmdata();
 }
 //-----------------------------------------------------------------------------
 void Function::update(FunctionSpace::ElementFunction& v,

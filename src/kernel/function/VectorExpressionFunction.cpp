@@ -30,6 +30,15 @@ real VectorExpressionFunction::operator() (const Node& n, real t)  const
   return f(p.x, p.y, p.z, t, dim);
 }
 //-----------------------------------------------------------------------------
+real VectorExpressionFunction::operator() (const Node& n, real t)
+{
+  if ( f == 0 )
+    return 0.0;
+		 
+  Point p = n.coord();
+  return f(p.x, p.y, p.z, t, dim);
+}
+//-----------------------------------------------------------------------------
 real VectorExpressionFunction::operator() (const Point& p, real t) const
 {
   if ( f == 0 )
@@ -38,7 +47,23 @@ real VectorExpressionFunction::operator() (const Point& p, real t) const
   return f(p.x, p.y, p.z, t, dim);
 }
 //-----------------------------------------------------------------------------
+real VectorExpressionFunction::operator() (const Point& p, real t)
+{
+  if ( f == 0 )
+    return 0.0;
+  
+  return f(p.x, p.y, p.z, t, dim);
+}
+//-----------------------------------------------------------------------------
 real VectorExpressionFunction::operator() (real x, real y, real z, real t) const
+{
+  if ( f == 0 )
+    return 0.0;
+  
+  return f(x, y, z, t, dim);
+}
+//-----------------------------------------------------------------------------
+real VectorExpressionFunction::operator() (real x, real y, real z, real t)
 {
   if ( f == 0 )
     return 0.0;

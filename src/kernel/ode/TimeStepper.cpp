@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode)
+void TimeStepper::solve(ODE& ode, ElementData& elmdata)
 {
   unsigned int no_samples = dolfin_get("number of samples");
   unsigned int N = ode.size();
@@ -38,7 +38,6 @@ void TimeStepper::solve(ODE& ode)
   // Create data for time-stepping
   Partition partition(N);
   Adaptivity adaptivity(N);
-  ElementData elmdata(N);
   Solution u(ode, elmdata);
   RHS f(ode, u);
 

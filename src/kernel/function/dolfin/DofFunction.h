@@ -22,6 +22,7 @@ namespace dolfin {
 	 
     // Evaluation of function
     real operator() (const Node&  n, real t) const;
+    real operator() (const Node&  n, real t);
 
     // Update function to given time
     void update(real t);

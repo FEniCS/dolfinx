@@ -30,8 +30,15 @@ real DofFunction::operator() (const Node& n, real t)  const
   return x(n.id()*size + dim);
 }
 //-----------------------------------------------------------------------------
+real DofFunction::operator() (const Node& n, real t)
+{
+  return x(n.id()*size + dim);
+}
+//-----------------------------------------------------------------------------
 void DofFunction::update(real t)
 {
+  dolfin_debug("Updating function");
+
   this->t = t;
 }
 //-----------------------------------------------------------------------------

@@ -60,21 +60,23 @@ void TerminalLogger::progress(const char* title, const char* label, real p)
   int n = (int) (p*((double) N));
   
   // Print the title
+  indent();
   printf("| %s", title);
   for (int i = 0; i < (N-length(title)-1); i++)
-	 printf(" ");
+    printf(" ");
   printf("|\n");
   
   // Print the progress bar
+  indent();
   printf("|");
   for (int i = 0; i < n; i++)
-	 printf("=");
+    printf("=");
   if ( n > 0 && n < N ) {
-	 printf("|");
-	 n++;
+    printf("|");
+    n++;
   }
   for (int i = n; i < N; i++)
-	 printf("-");
+    printf("-");
   printf("| %.1f%%\n", 100.0*p);
 }
 //-----------------------------------------------------------------------------

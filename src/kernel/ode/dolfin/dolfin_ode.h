@@ -15,6 +15,7 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/Component.h>
+#include <dolfin/Dual.h>
 #include <dolfin/Element.h>
 #include <dolfin/ElementData.h>
 #include <dolfin/EmptySparsity.h>

@@ -11,6 +11,8 @@ namespace dolfin {
   class Cell;
   class Node;
   class Point;
+  class Mesh;
+  class ElementData;
   class FiniteElement;
   
   class GenericFunction {
@@ -21,12 +23,16 @@ namespace dolfin {
 
     // Evaluation of function
     virtual real operator() (const Node&  n, real t) const;
+    virtual real operator() (const Node&  n, real t);
     virtual real operator() (const Point& p, real t) const;
+    virtual real operator() (const Point& p, real t);
     virtual real operator() (real x, real y, real z, real t) const;
+    virtual real operator() (real x, real y, real z, real t);
     virtual real operator() (unsigned int i, real t) const;
+    virtual real operator() (unsigned int i, real t);
 
     // Update function to given time
-    void update(real t);
+    virtual void update(real t);
 
     // Return current time
     real time() const;
@@ -37,6 +43,9 @@ namespace dolfin {
     // Return the mesh
     virtual Mesh& mesh() const;
     
+    // Get element data
+    virtual ElementData& elmdata();
+
     // Update values of element function
     virtual void update(FunctionSpace::ElementFunction &v,
 			const FiniteElement &element, 

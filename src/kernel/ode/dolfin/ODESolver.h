@@ -9,6 +9,7 @@
 namespace dolfin {
 
   class ODE;
+  class Function;
 
   /// Solves a given ODE of the form
   ///
@@ -24,8 +25,8 @@ namespace dolfin {
   public:
 
     static void solve(ODE& ode);
-
-  private:
+    static void solve(ODE& ode, Function& u);
+    static void solve(ODE& ode, Function& u, Function& phi);
 
   };
 
