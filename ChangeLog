@@ -1,3 +1,4 @@
+ - Allow user to supply Jacobian to ODE solver
  - Add optional test to check if a dependency already exists (Sparsity)
  - Modify sparse matrix output (Matrix::show())
  - Add FGMRES solver in new format (patch from eriksv)

@@ -61,6 +61,56 @@ public:
     else
       return - 100.0*u(i)*u(i-1);
   }
+
+  real dfdu(const Vector& u, real t, unsigned int i, unsigned int j)
+  {
+    if ( i % 2 == 0 )
+    {
+      real tmp0 = static_cast<real>(i/2+1)*h - 1.0;
+      real tmp1 = cinv*tmp0*tmp0;
+      real a = 2.0*cinv*tmp0*tmp1;
+      real b = tmp1*tmp1;
+      
+      if ( i == 0 )
+      {
+	if ( j == i )
+	  return -2.0*b*h2inv - 100.0*u(i+1);
+	else if ( j == (i+1) )
+	  return -100.0*u(i);
+	else if ( j == (i+2) )
+	  return 0.5*a*hinv + b*h2inv;
+      }
+      else if ( i == (N - 2) )
+      {
+	if ( j == i )
+	  return 0.5*a*hinv - b*h2inv - 100.0*u(i+1);
+	else if ( j == (i+1) )
+	  return -100.0*u(i);
+	else if ( j == (i-2) )
+	  return -0.5*a*hinv + b*h2inv;
+      }
+      else
+      {
+	if ( j == i )
+	  return -2.0*b*h2inv - 100.0*u(i+1);
+	else if ( j == (i+1) )
+	  return -100.0*u(i);
+	else if ( j == (i-2) )
+	  return -0.5*a*hinv + b*h2inv;
+	else if ( j == (i+2) )
+	  return 0.5*a*hinv + b*h2inv;
+      }
+    }
+    else
+    {
+      if ( j == i )
+	return -100.0*u(i-1);
+      else if ( j == (i-1) )
+	return -100.0*u(i);
+    }
+    
+    return 0.0;
+  }
   
 private:
 
@@ -110,6 +160,7 @@ private:
 
 int main()
 {
+  //dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("tolerance", 1e-3);
