@@ -182,8 +182,6 @@ void Progress::update()
   if ( (p1 - p0) < DOLFIN_PROGRESS_STEP && (p1 != 1.0 || p1 == p0) )
     return;
 
-  dolfin_info("updating progress to %f", p1);
-
   LogManager::log.progress(_title, _label, p1);
   p0 = p1;
 }

@@ -1,14 +1,14 @@
-function M = plotslab(interval, drawupdates, drawtext, saveps)
+function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps)
 
-% Usage: M = plotslab(interval, drawupdates, drawtext, saveps)
+% Usage: M = plotslab(debugfile, interval, drawupdates, drawtext, saveps)
 %
-% Draws and creates a movie M of a time slab. Data
-% is taken from the file 'timesteps.debug' which is
-% created by DOLFIN when the option 'debug time steps'
+% Draws and creates a movie M of a time slab. A debug file
+% is created by DOLFIN when the option 'debug time steps'
 % is specified.
 %
 % Arguments:
 %
+%   debugfile   - name of file containing time stepping data
 %   interval    - plot elements within interval
 %   drawupdates - blink element updates
 %   drawtext    - draw extra text
@@ -19,7 +19,7 @@ function M = plotslab(interval, drawupdates, drawtext, saveps)
 
 % Load the steps
 disp('Loading file...')
-load('timesteps.debug');
+timesteps = load(debugfile);
 
 % Get the number of components
 N  = max(timesteps(:,2)) + 1;

@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __PARAMETER_HH
-#define __PARAMETER_HH
+#ifndef __PARAMETER_H
+#define __PARAMETER_H
 
 #include <string>
 #include <stdarg.h>

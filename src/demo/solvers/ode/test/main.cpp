@@ -88,11 +88,8 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.01);
   dolfin_set("debug time steps", 1);
-  //dolfin_set("initial time step", 0.1);
-  //dolfin_set("fixed time step", true);
 
   //Single single;
   //single.solve();

@@ -61,16 +61,6 @@ public:
     return 1;
   }
 
-  /*
-  real timestep(unsigned int i)
-  {
-    if ( i == 2 )
-      return 1e-3;
-
-    return 0.1;
-  }
-  */
-  
 private:
 
   real lambda;
@@ -79,17 +69,8 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("debug time steps", 1);
   dolfin_set("tolerance", 0.01);
-  dolfin_set("initial time step", 0.1);
-  //dolfin_set("maximum time step", 1.0);
-  //dolfin_set("fixed time step", true);
-  dolfin_set("partitioning threshold", 1.0);
-  dolfin_set("interval threshold", 0.9);
-  dolfin_set("number of samples", 100);
-  dolfin_set("element cache size", 32);
-  dolfin_set("maximum iterations", 100);
 
   Simple simple;
   simple.solve();

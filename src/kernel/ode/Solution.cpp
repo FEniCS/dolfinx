@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <string>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
@@ -20,13 +21,16 @@ Solution::Solution(ODE& ode, Function& u) :
   // Set initial data
   for (unsigned int i = 0; i < u0.size(); i++)
     u0[i] = ode.u0(i);
-  
-  // Open debug file
-  if ( _debug )
-    file.open("timesteps.debug", std::ios::out);
 
   // Set name and label of solution (same as function)
   rename(u.name(), u.label());
+
+  // Open debug file
+  if ( _debug )
+  {
+    std::string filename = label() + ".debug";
+    file.open(filename.c_str(), std::ios::out);
+  }
 }
 //-----------------------------------------------------------------------------
 Solution::~Solution()

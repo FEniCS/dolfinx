@@ -267,8 +267,6 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   if ( newstate == state->state() )
     return;
 
-  dolfin_info("New state = %d", newstate);
-
   // Delete old state
   delete state;
   state = 0;
@@ -294,50 +292,7 @@ void FixedPointIteration::changeState(Iteration::State newstate)
 //-----------------------------------------------------------------------------
 
 /*
-void FixedPointIteration::stabilizeNonStiff(TimeSlab& timeslab,
-					    const Iteration::Residuals& r)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return;
 
-  // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying diagonal damping.");
-  
-  // Check if we need to reset the time slab
-  if ( r.r2 > r.r0 )
-  {
-    event_reset_timeslab();
-    timeslab.reset(*this);  
-  }
-
-  // Change state
-  state = diagonal;
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonal(TimeSlab& timeslab,
-					    const Iteration::Residuals& r)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return;
-
-  // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, trying parabolic damping.");
-  
-  // Check if we need to reset the time slab
-  if ( r.r2 > r.r0 )
-  {
-    event_reset_timeslab();
-    timeslab.reset(*this);  
-  }
-
-  // Change state
-  state = parabolic;
-
-  // Start without damping to find the correct value of the damping
-  substate = undamped;
-}
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilizeParabolicUndamped(TimeSlab& timeslab,
 						     const Iteration::Residuals& r)
@@ -437,10 +392,5 @@ void FixedPointIteration::stabilizeParabolicIncreasing(TimeSlab& timeslab,
   }
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeNonNormal(TimeSlab& timeslab,
-					     const Iteration::Residuals& r)
-{
-  cout << "Not implemented" << endl;
-}
 
 */

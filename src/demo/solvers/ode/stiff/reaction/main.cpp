@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Updates by Anders Logg 2003.
+// Modified by Anders Logg 2003.
 
 #include <dolfin.h>
 
@@ -43,10 +43,10 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 1e-3);
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
+  dolfin_set("debug time steps", true);
 
   Reaction reaction;
   reaction.solve();

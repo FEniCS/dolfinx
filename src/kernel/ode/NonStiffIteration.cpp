@@ -68,10 +68,7 @@ Iteration::State NonStiffIteration::stabilize(TimeSlab& timeslab,
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the time slab.");
     timeslab.reset(fixpoint);
-  }
 
   // Compute damping
   computeDamping(r, d);
@@ -92,10 +89,7 @@ Iteration::State NonStiffIteration::stabilize(NewArray<Element*>& elements,
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the element list.");
     reset(elements);
-  }
 
   // Compute damping
   computeDamping(r, d);
@@ -116,15 +110,7 @@ Iteration::State NonStiffIteration::stabilize(Element& element,
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the element.");
     reset(element);
-  }
-
-  // Compute damping
-  real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
-  real rho = - element.timestep() * dfdu;
-  d.alpha = computeAlpha(rho);
 
   // Change state
   return diagonal;

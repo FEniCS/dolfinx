@@ -52,8 +52,13 @@ void DiagonalIteration::update(NewArray<Element*>& elements)
 //-----------------------------------------------------------------------------
 void DiagonalIteration::update(Element& element)
 {
+  // Compute diagonal derivative
+  real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
+  real rho = - element.timestep() * dfdu;
+  real alpha = computeAlpha(rho);
+
   // Simple update of element
-  element.update(f);
+  element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
 Iteration::State DiagonalIteration::stabilize(TimeSlab& timeslab,
@@ -64,14 +69,11 @@ Iteration::State DiagonalIteration::stabilize(TimeSlab& timeslab,
     return diagonal;
 
   // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying a stabilizing time step sequence.");
+  dolfin_info("Diagonal damping is not enough, need to use a stabilizing time step sequence.");
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the element list.");
     timeslab.reset(fixpoint);
-  }
 
   // Compute damping
   computeDamping(r, d);
@@ -88,14 +90,11 @@ Iteration::State DiagonalIteration::stabilize(NewArray<Element*>& elements,
     return diagonal;
 
   // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying parabolic damping.");
+  dolfin_info("Diagonal damping is not enough, trying parabolic damping.");
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the element list.");
     reset(elements);
-  }
 
   // Compute damping
   computeDamping(r, d);
@@ -110,23 +109,12 @@ Iteration::State DiagonalIteration::stabilize(Element& element,
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
     return diagonal;
-
-  // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying diagonal damping.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-  {
-    dolfin_info("Need to reset the element.");
-    reset(element);
-  }
+  // Notify change of strategy
+  dolfin_info("Diagonal damping is not enough, don't know what to do.");
+  dolfin_error("Local iterations did not converge.");
 
-  // Compute damping
-  real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
-  real rho = - element.timestep() * dfdu;
-  d.alpha = computeAlpha(rho);
-
-  // Change state
+  // Change state (statement out of reach)
   return diagonal;
 }
 //-----------------------------------------------------------------------------
