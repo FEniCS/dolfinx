@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 #define N 10 // Number of times to do the assembly
-#define M 4 // Number of times to refine the mesh 
+#define M 1 // Number of times to refine the mesh 
 
 // Test old assembly
 real testOld(Mesh& mesh)

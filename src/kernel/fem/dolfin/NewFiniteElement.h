@@ -32,7 +32,10 @@ namespace dolfin
     virtual unsigned int shapedim() const = 0;
 
     /// Return vector dimension of the finite element space
-    virtual unsigned int vectordim() const = 0;
+    virtual unsigned int tensordim(unsigned int i) const = 0;
+
+    /// Return vector dimension of the finite element space
+    virtual unsigned int rank() const = 0;
 
     /// Return map from local to global degree of freedom
     virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
