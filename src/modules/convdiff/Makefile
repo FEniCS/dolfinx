@@ -1,4 +1,3 @@
-# Generated automatically from Makefile.in by configure.
 # Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
 # Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
@@ -16,6 +15,7 @@ SHELL = /bin/sh
 
 srcdir = .
 top_srcdir = ../../..
+
 prefix = /usr/local
 exec_prefix = ${prefix}
 
@@ -48,7 +48,7 @@ AUTOHEADER = autoheader
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = ${INSTALL} -m 644
-INSTALL_SCRIPT = ${INSTALL_PROGRAM}
+INSTALL_SCRIPT = ${INSTALL}
 transform = s,x,x,
 
 NORMAL_INSTALL = :
@@ -59,32 +59,32 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 AWK = mawk
 CC = gcc
-CXX = c++
-DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-poisson -ldolfin-template -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
+CXX = g++
+DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
 LN_S = ln -s
-MAIN_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/navierstokes -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
+MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common  -I$(top_builddir)/src/modules/convdiff 
 MAKEINFO = makeinfo
-MODULE_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
+MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common 
 PACKAGE = dolfin
 RANLIB = ranlib
 VERSION = 0.2.11-1
 
-INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
+INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common 
 lib_LIBRARIES = libdolfin-convdiff.a
 include_HEADERS = 
-libdolfin_convdiff_a_SOURCES = EquationConvDiff_cG1dG0.hh                                EquationConvDiff2d_cG1dG0.hh                                EquationConvDiff_cG1cG1.hh                                EquationConvDiff2d_cG1cG1.hh                                ProblemConvDiff.C                                ProblemConvDiff.hh
+libdolfin_convdiff_a_SOURCES = EquationConvDiff_cG1dG0.hh                                EquationConvDiff2d_cG1dG0.hh                                EquationConvDiff_cG1cG1.hh                                EquationConvDiff2d_cG1cG1.hh                                SolverConvDiff.C                                SolverConvDiff.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS =  -DSTDC_HEADERS=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = 
 libdolfin_convdiff_a_LIBADD = 
-libdolfin_convdiff_a_OBJECTS =  ProblemConvDiff.o
+libdolfin_convdiff_a_OBJECTS =  SolverConvDiff.o
 AR = ar
 CXXFLAGS = -g -O2
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -103,7 +103,7 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/ProblemConvDiff.P
+DEP_FILES =  .deps/SolverConvDiff.P
 SOURCES = $(libdolfin_convdiff_a_SOURCES)
 OBJECTS = $(libdolfin_convdiff_a_OBJECTS)
 

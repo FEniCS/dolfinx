@@ -2,5 +2,5 @@
 
 NAME     = "convdiff"
 KEYWORD  = "convection-diffusion"
-PROBLEM  = "ProblemConvDiff"
+SOLVER   = "SolverConvDiff"
 SETTINGS = "SettingsConvDiff"

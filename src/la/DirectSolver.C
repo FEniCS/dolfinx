@@ -5,7 +5,7 @@
 #include "DenseMatrix.hh"
 #include "SparseMatrix.hh"
 #include "Vector.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //-----------------------------------------------------------------------------
 void DirectSolver::LU(DenseMatrix *LU)

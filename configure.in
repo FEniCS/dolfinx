@@ -53,7 +53,7 @@ dnl Generate include path for modules (including kernel code)
 MODULE_INCLUDES=""
 DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
 for f in $DIRS; do
-	MODULE_INCLUDES="$MODULE_INCLUDES-I\$(top_builddir)/src/$f "
+	MODULE_INCLUDES="$MODULE_INCLUDES-I\$(top_builddir)/src/kernel/$f "
 done
 AC_SUBST(MODULE_INCLUDES)
 
@@ -80,20 +80,25 @@ dnl list of files, so this cannot be done automatically. We have
 dnl to list all the files.
 AC_OUTPUT( Makefile \
            src/Makefile \
+           src/pre/Makefile \
+           src/kernel/Makefile \
+           src/kernel/common/Makefile \
+           src/kernel/fem/Makefile \
+           src/kernel/fem/dolfin/Makefile \
+           src/kernel/grid/Makefile \
+           src/kernel/grid/dolfin/Makefile \
+           src/kernel/io/Makefile \
+           src/kernel/io/dolfin/Makefile \
+           src/kernel/la/Makefile \
+           src/kernel/main/Makefile \
+           src/kernel/main/dolfin/Makefile \
            src/modules/Makefile \
-           src/main/Makefile \
-           src/config/Makefile \
-           src/fem/Makefile \
-           src/grid/Makefile \
-           src/io/Makefile \
-           src/la/Makefile \
-           src/common/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/template/Makefile \
-           src/problems/Makefile \
-           src/problems/navierstokes/Makefile \
+           src/config/Makefile \
+           src/demo/Makefile \
+           src/demo/solvers/navierstokes/Makefile \
            src/utils/Makefile \
-           src/utils/inp2dx/Makefile \
-           src/modules/poisson/Makefile )
+           src/utils/inp2dx/Makefile )

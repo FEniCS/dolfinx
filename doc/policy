@@ -53,3 +53,14 @@ keep sort of the same style when writing the code.
 
 	// (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
 	// Licensed under the GNU GPL Version 2.
+
+9. Include private header files as
+
+	#include "file.h"
+
+   and public header files as
+
+	#include <dolfin/file.h>
+
+   Private headers are those only used internally. Public headers are those
+   that should be installed on the system.

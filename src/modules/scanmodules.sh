@@ -4,7 +4,7 @@
 # and creates the file modules.list and dolfin_modules.h
 
 MODULES="modules.list"
-HEADER="../main/dolfin_modules.h"
+HEADER="../kernel/main/dolfin_modules.h"
 
 rm -f $MODULES
 rm -f $HEADER
@@ -46,10 +46,10 @@ for d in `cat $MODULES | grep -v '#'`; do
 		  echo "Unable to find KEYWORD for module $d in file src/modules/$d/$d.module"
 		  exit 1
     fi
-	 # Find PROBLEM from config file
- 	 PROBLEM=`cat $d/$d.module | grep PROBLEM | cut -d'"' -f2`
-	 if [ 'x'$PROBLEM = 'x' ]; then
-		  echo "Unable to find PROBLEM for module $d in file src/modules/$d/$d.module"
+	 # Find SOLVER from config file
+ 	 SOLVER=`cat $d/$d.module | grep SOLVER | cut -d'"' -f2`
+	 if [ 'x'$SOLVER = 'x' ]; then
+		  echo "Unable to find SOLVER for module $d in file src/modules/$d/$d.module"
 		  exit 1
     fi
 	 # Find SETTINGS from config file
@@ -62,7 +62,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 	 # Write a nice message
 	 echo "  $NAME ($KEYWORD)"
 	 # Include files
-	 echo "#include \"$PROBLEM.hh\"" >> $HEADER
+	 echo "#include \"$SOLVER.hh\"" >> $HEADER
 	 echo "#include \"$SETTINGS.hh\"" >> $HEADER
 done
 echo "" >> $HEADER
@@ -70,7 +70,7 @@ echo "#include <string.h>" >> $HEADER
 echo "" >> $HEADER
 echo "#define DOLFIN_MODULE_COUNT $COUNT" >> $HEADER
 echo "" >> $HEADER
-echo "Problem * dolfin_module_problem(const char *keyword, Grid *grid)" >> $HEADER
+echo "Solver * dolfin_module_problem(const char *keyword, Grid *grid)" >> $HEADER
 echo "{" >> $HEADER
 for d in `cat $MODULES | grep -v '#'`; do
     # Find KEYWORD from config file
@@ -80,17 +80,17 @@ for d in `cat $MODULES | grep -v '#'`; do
 		  echo "Unable to find KEYWORD for module $d in file src/modules/$d/$d.module"
 		  exit 1
     fi
-	 # Find PROBLEM from config file
- 	 PROBLEM=`cat $d/$d.module | grep PROBLEM | cut -d'"' -f2`
-	 if [ 'x'$PROBLEM = 'x' ]; then
-		  echo "Unable to find PROBLEM for module $d in file src/modules/$d/$d.module"
+	 # Find SOLVER from config file
+ 	 SOLVER=`cat $d/$d.module | grep SOLVER | cut -d'"' -f2`
+	 if [ 'x'$SOLVER = 'x' ]; then
+		  echo "Unable to find SOLVER for module $d in file src/modules/$d/$d.module"
 		  exit 1
     fi
 	 echo "    if ( strcasecmp(keyword,\"$KEYWORD\") == 0 )" >> $HEADER
-	 echo "        return new $PROBLEM(grid);" >> $HEADER
+	 echo "        return new $SOLVER(grid);" >> $HEADER
 done
 echo "" >> $HEADER
-echo "    display->Error(\"Could not find any matching module for problem \\\"%s\\\".\",keyword);" >> $HEADER
+echo "    display->Error(\"Could not find any matching solver for problem \\\"%s\\\".\",keyword);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
@@ -115,7 +115,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 	 echo "        return new $SETTINGS();" >> $HEADER
 done
 echo "" >> $HEADER
-echo "    display->Error(\"Could not find any matching module for problem \\\"%s\\\".\",keyword);" >> $HEADER
+echo "    display->Error(\"Could not find any matching solver for problem \\\"%s\\\".\",keyword);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER

@@ -1,1 +1,1 @@
-SUBDIRS = common io grid la fem modules main config problems utils test
+SUBDIRS = pre kernel modules config demo utils

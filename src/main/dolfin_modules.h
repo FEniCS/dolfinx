@@ -2,31 +2,19 @@
 // Modules are automatically detected from src/modules/ as directories
 // containing a file src/modules/<name>/<name>.module.
  
-#include "ProblemConvDiff.hh"
+#include "SolverConvDiff.hh"
 #include "SettingsConvDiff.hh"
-#include "ProblemNS.hh"
-#include "SettingsNavierStokes.hh"
-#include "ProblemPoisson.hh"
-#include "SettingsPoisson.hh"
-#include "ProblemTemplate.hh"
-#include "SettingsTemplate.hh"
 
 #include <string.h>
 
-#define DOLFIN_MODULE_COUNT 4
+#define DOLFIN_MODULE_COUNT 1
 
-Problem * dolfin_module_problem(const char *keyword, Grid *grid)
+Solver * dolfin_module_problem(const char *keyword, Grid *grid)
 {
     if ( strcasecmp(keyword,"convection-diffusion") == 0 )
-        return new ProblemConvDiff(grid);
-    if ( strcasecmp(keyword,"navier-stokes") == 0 )
-        return new ProblemNS(grid);
-    if ( strcasecmp(keyword,"poisson") == 0 )
-        return new ProblemPoisson(grid);
-    if ( strcasecmp(keyword,"my problem") == 0 )
-        return new ProblemTemplate(grid);
+        return new SolverConvDiff(grid);
 
-    display->Error("Could not find any matching module for problem \"%s\".",keyword);
+    display->Error("Could not find any matching solver for problem \"%s\".",keyword);
 
     return 0;
 }
@@ -35,14 +23,8 @@ Settings * dolfin_module_settings(const char *keyword)
 {
     if ( strcasecmp(keyword,"convection-diffusion") == 0 )
         return new SettingsConvDiff();
-    if ( strcasecmp(keyword,"navier-stokes") == 0 )
-        return new SettingsNavierStokes();
-    if ( strcasecmp(keyword,"poisson") == 0 )
-        return new SettingsPoisson();
-    if ( strcasecmp(keyword,"my problem") == 0 )
-        return new SettingsTemplate();
 
-    display->Error("Could not find any matching module for problem \"%s\".",keyword);
+    display->Error("Could not find any matching solver for problem \"%s\".",keyword);
 
     return 0;
 }

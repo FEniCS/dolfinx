@@ -2,7 +2,7 @@
 
 #include "DenseMatrix.hh"
 #include "SparseMatrix.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(int m, int n)
