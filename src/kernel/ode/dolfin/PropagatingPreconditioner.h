@@ -11,7 +11,9 @@ namespace dolfin
 
   class NewVector;
   class NewJacobianMatrix;
+  class ODE;
   class NewTimeSlab;
+  class NewMethod;
   
   /// This class implements a preconditioner for the Newton system to
   /// be solved on each time slab. The preconditioner does
@@ -24,7 +26,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    PropagatingPreconditioner(const NewJacobianMatrix& A, NewTimeSlab& timeslab);
+    PropagatingPreconditioner(const NewJacobianMatrix& A);
 
     /// Destructor
     ~PropagatingPreconditioner();
@@ -34,8 +36,17 @@ namespace dolfin
 
   private:
 
+    /// The Jacobian of the time slab system
     const NewJacobianMatrix& A;
+
+    // The ODE
+    ODE& ode;
+
+    // The time slab
     NewTimeSlab& ts;
+    
+    // Method, mcG(q) or mdG(q)
+    const NewMethod& method;
 
   };
 

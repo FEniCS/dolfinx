@@ -32,6 +32,9 @@ namespace dolfin
     /// Recompute Jacobian
     void update();
 
+    /// Friends
+    friend class PropagatingPreconditioner;
+
   private:
 
     // Compute product for mcG(q)

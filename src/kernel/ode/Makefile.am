@@ -96,7 +96,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
                           ParticleSystem.cpp \
-                          PropagatingPreconditioner.h \
+                          PropagatingPreconditioner.cpp \
                           NewParticleSystem.cpp \
                           Partition.cpp \
                           NewPartition.cpp \

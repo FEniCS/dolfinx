@@ -91,7 +91,7 @@ include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElemen
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           NewcGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           NewdGqMethod.cpp                           dGqMethods.cpp                           AdaptiveIterationLevel1.cpp                           AdaptiveIterationLevel2.cpp                           AdaptiveIterationLevel3.cpp                           Adaptivity.cpp                           NewAdaptivity.cpp                           Alloc.cpp                           Component.cpp                           Dependencies.cpp                           Dual.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           ElementGroup.cpp                           ElementGroupIterator.cpp                           ElementGroupList.cpp                           ElementIterator.cpp                           ElementTmpFile.cpp                           FixedPointIteration.cpp                           FixedPointSolver.cpp                           Iteration.cpp                           JacobianMatrix.cpp                           NewJacobianMatrix.cpp                           Method.cpp                           NewMethod.cpp                           NewtonIteration.cpp                           NewtonSolver.cpp                           NonStiffIteration.cpp                           ODE.cpp                           ODESolver.cpp                           ParticleSystem.cpp                           PropagatingPreconditioner.h                           NewParticleSystem.cpp                           Partition.cpp                           NewPartition.cpp                           RecursiveTimeSlab.cpp                           ReducedModel.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           NewSample.cpp                           SimpleTimeSlab.cpp                           Solution.cpp                           Sparsity.cpp                           TimeSlab.cpp                           NewTimeSlab.cpp                           TimeSlabSolver.cpp                           TimeStepper.cpp                           NewTimeStepper.cpp
+libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           NewcGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           NewdGqMethod.cpp                           dGqMethods.cpp                           AdaptiveIterationLevel1.cpp                           AdaptiveIterationLevel2.cpp                           AdaptiveIterationLevel3.cpp                           Adaptivity.cpp                           NewAdaptivity.cpp                           Alloc.cpp                           Component.cpp                           Dependencies.cpp                           Dual.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           ElementGroup.cpp                           ElementGroupIterator.cpp                           ElementGroupList.cpp                           ElementIterator.cpp                           ElementTmpFile.cpp                           FixedPointIteration.cpp                           FixedPointSolver.cpp                           Iteration.cpp                           JacobianMatrix.cpp                           NewJacobianMatrix.cpp                           Method.cpp                           NewMethod.cpp                           NewtonIteration.cpp                           NewtonSolver.cpp                           NonStiffIteration.cpp                           ODE.cpp                           ODESolver.cpp                           ParticleSystem.cpp                           PropagatingPreconditioner.cpp                           NewParticleSystem.cpp                           Partition.cpp                           NewPartition.cpp                           RecursiveTimeSlab.cpp                           ReducedModel.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           NewSample.cpp                           SimpleTimeSlab.cpp                           Solution.cpp                           Sparsity.cpp                           TimeSlab.cpp                           NewTimeSlab.cpp                           TimeSlabSolver.cpp                           TimeStepper.cpp                           NewTimeStepper.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -113,18 +113,14 @@ ElementIterator.o ElementTmpFile.o FixedPointIteration.o \
 FixedPointSolver.o Iteration.o JacobianMatrix.o NewJacobianMatrix.o \
 Method.o NewMethod.o NewtonIteration.o NewtonSolver.o \
 NonStiffIteration.o ODE.o ODESolver.o ParticleSystem.o \
-NewParticleSystem.o Partition.o NewPartition.o RecursiveTimeSlab.o \
-ReducedModel.o Regulator.o RHS.o Sample.o NewSample.o SimpleTimeSlab.o \
-Solution.o Sparsity.o TimeSlab.o NewTimeSlab.o TimeSlabSolver.o \
-TimeStepper.o NewTimeStepper.o
+PropagatingPreconditioner.o NewParticleSystem.o Partition.o \
+NewPartition.o RecursiveTimeSlab.o ReducedModel.o Regulator.o RHS.o \
+Sample.o NewSample.o SimpleTimeSlab.o Solution.o Sparsity.o TimeSlab.o \
+NewTimeSlab.o TimeSlabSolver.o TimeStepper.o NewTimeStepper.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 HEADERS =  $(include_HEADERS)
 
 DIST_COMMON =  README Makefile.am Makefile.in
@@ -147,12 +143,12 @@ DEP_FILES =  .deps/AdaptiveIterationLevel1.P \
 .deps/NewTimeStepper.P .deps/NewcGqMethod.P .deps/NewdGqMethod.P \
 .deps/NewtonIteration.P .deps/NewtonSolver.P .deps/NonStiffIteration.P \
 .deps/ODE.P .deps/ODESolver.P .deps/ParticleSystem.P .deps/Partition.P \
-.deps/RHS.P .deps/RecursiveTimeSlab.P .deps/ReducedModel.P \
-.deps/Regulator.P .deps/Sample.P .deps/SimpleTimeSlab.P \
-.deps/Solution.P .deps/Sparsity.P .deps/TimeSlab.P \
-.deps/TimeSlabSolver.P .deps/TimeStepper.P .deps/cGqElement.P \
-.deps/cGqMethod.P .deps/cGqMethods.P .deps/dGqElement.P \
-.deps/dGqMethod.P .deps/dGqMethods.P
+.deps/PropagatingPreconditioner.P .deps/RHS.P .deps/RecursiveTimeSlab.P \
+.deps/ReducedModel.P .deps/Regulator.P .deps/Sample.P \
+.deps/SimpleTimeSlab.P .deps/Solution.P .deps/Sparsity.P \
+.deps/TimeSlab.P .deps/TimeSlabSolver.P .deps/TimeStepper.P \
+.deps/cGqElement.P .deps/cGqMethod.P .deps/cGqMethods.P \
+.deps/dGqElement.P .deps/dGqMethod.P .deps/dGqMethods.P
 SOURCES = $(libdolfin_ode_a_SOURCES)
 OBJECTS = $(libdolfin_ode_a_OBJECTS)
 

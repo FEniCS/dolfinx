@@ -78,6 +78,7 @@ namespace dolfin
     friend class FixedPointSolver;
     friend class NewtonSolver;
     friend class NewJacobianMatrix;
+    friend class PropagatingPreconditioner;
 
   private:
 

@@ -103,6 +103,7 @@ namespace dolfin
     friend class RHS;
     friend class NewTimeSlab;
     friend class NewJacobianMatrix;
+    friend class PropagatingPreconditioner;
     friend class ReducedModel;
     friend class JacobianMatrix;
 
@@ -117,7 +118,7 @@ namespace dolfin
     // Sparsity (old version, will be removed)
     Sparsity sparsity;
 
-    // Depdendencies
+    // Dependencies
     Dependencies dependencies;
 
     // Transpose of dependencies
