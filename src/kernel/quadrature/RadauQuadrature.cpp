@@ -11,8 +11,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 RadauQuadrature::RadauQuadrature(int n) : GaussianQuadrature(n)
 {
-  computePoints();
-  computeWeights();
+  init();
 
   if ( !check(2*n-2) )
     dolfin_error("Radau quadrature not ok, check failed.");

@@ -14,8 +14,7 @@ LobattoQuadrature::LobattoQuadrature(int n) : GaussianQuadrature(n)
   if ( n < 2 )
     dolfin_error("Lobatto quadrature requires at least 2 points.");
 
-  computePoints();
-  computeWeights();
+  init();
 
   if ( !check(2*n-3) )
     dolfin_error("Lobatto quadrature not ok, check failed.");

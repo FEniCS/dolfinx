@@ -22,8 +22,17 @@ namespace dolfin {
     
   protected:
     
+    // Compute points and weights
+    void init();
+
+    // Compute quadrature points
+    virtual void computePoints() = 0;
+
+    // Compute quadrature weights
     void computeWeights();
-    bool check(int q);
+
+    // Check that quadrature is exact for given degree q
+    bool check(int q) const;
     
   };
   

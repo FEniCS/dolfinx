@@ -12,8 +12,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 GaussQuadrature::GaussQuadrature(int n) : GaussianQuadrature(n)
 {
-  computePoints();
-  computeWeights();
+  init();
 
   if ( !check(2*n-1) )
     dolfin_error("Gauss quadrature not ok, check failed.");

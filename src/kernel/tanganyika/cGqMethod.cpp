@@ -5,23 +5,113 @@
 
 using namespace dolfin;
 
-real dPrecalcResidualFactors_cG[PRECALC_MAX+1] = PRECALC_CG_RF;
-real dPrecalcProductFactors_cG[PRECALC_MAX+1] = PRECALC_CG_PF;
-
 //-----------------------------------------------------------------------------
-    cGqMethod(int iiHighestOrder) : Method(iiHighestOrder){
-      // Initialize linearizations
-      mLinearizations = new Matrix<real>* [iiHighestOrder+1];
-      mSteps          = new Matrix<real>* [iiHighestOrder+1];
-      mLinearizations[0] = new Matrix<real>(1,1);
-      mSteps[0]          = new Matrix<real>(1,1);
-      for (int i=1;i<(iiHighestOrder+1);i++){
-	mLinearizations[i] = new Matrix<real>(i,i);
-	mSteps[i]          = new Matrix<real>(i,1);	 
+cGqMethod::cGqMethod(int q) : Method(int q)
+{
+  if ( q < 1 )
+    dolfin_error("Polynomial order q must be at least 1 for the cG(q) method.");
+
+  init();
+}
+//-----------------------------------------------------------------------------
+void cGqMethod::computeQuadrature()
+{
+  // Use Lobatto quadrature
+  Lobatto quadrature(q);
+
+  // Get points and rescale from [-1,1] to [0,1]
+  for (int i = 0; i < n; i++)
+    points[i] = (quadrature.point(i) + 1.0) / 2.0;
+
+  // Get weights and rescale from [-1,1] to [0,1]
+  for (int i = 0; i < n; i++)
+    qweights[i] = 0.5 * quadrature.weight(i);
+}
+//-----------------------------------------------------------------------------
+void cGqMethod::computeBasis()
+{
+  dolfin_assert(!trial);
+  dolfin_assert(!test);
+
+  // Compute Lagrange basis for trial space
+  trial = new Lagrange(q);
+  for (int i = 0; i < n; i++)
+    trial->set(i, points[i]);
+
+  // Compute Lagrange basis for test space using the Lobatto points for q-1
+  test = new Lagrange(q-1);
+  Lobatto lobatto(q-1);
+  for (int i = 0; i < (n-1); i++)
+    test->set(i, (lobatto->point(i) + 1.0) / 2.0);
+}
+//-----------------------------------------------------------------------------
+void cGqMethod::computeWeights()
+{
+  Matrix A(n, n, Matrix::DENSE);
+  Matrix B(n, n, Matrix::DENSE);
+  
+  // Compute matrix coefficients
+  for (int i = 1; i <= q; i++) {
+    for (int j = 1; j <= q; j++) {
+      
+      // Use Lobatto quadrature which is exact for the order we need, 2q-1
+      real integral = 0.0;
+      for (int k = 0; k < n; k++) {
+	x = points[k];
+	integral += qweight[k] * trial->dx(j,x) * test->(i-1,x);
       }
-    };	 
+      
+      A(i-1,j-1) = integral;
+      
+    }
+  }
+  
+  // Compute inverse
+  A.hpinverse(B);
+  
+  // Compute nodal weights
+  for (int j=1;j<(i+1);j++) {
+    
+    for (int k=0;k<(i+1);k++) {
+      
+      // Order:            i
+      // Integral:         j (=1,...,i)
+      // Quadrature point: k (=0,...,i)
+      
+      // Compute the sum
+      dWeight = 0.0;
+      for (int l=0;l<i;l++)
+	dWeight += (B->Get(j-1,l)) * (lBasisFunctions[i-1][l]->Value(dNodalPoints[i][k]));
+      
+      // Check that the weight is correct. All weights for the last integral, j = i,
+      // should be 1.
+      if ( j == i )
+	CheckWeight(dWeight);
+      
+      // Use the quadrature weight
+      dWeight *= (qQuadrature->GetWeight(i+1,k));
+      
+      // Compensate for integrating over [0,1] and not [-1,1]
+      dWeight *= 0.5;
+      
+      // Set the weight
+      dNodalWeights[i][j][k] = dWeight;
+      
+    }
+    
+  }
+  
+  // Save the weight function
+  for (int i = 1; i < (i+1); j++)
+    for (int k = 0; k < i; k++)
+      dWeightFunctionNodalValues[i][j][k] = B->Get(j-1,k);
+  
+  // Set the weight for j=0 which is not used for cG(q)
+  for (int k=0;k<=i;k++)
+    dNodalWeights[i][0][k] = 0.0;
+  
 
-
+}
 //-----------------------------------------------------------------------------
 void cGqMethod::Display()
 {
@@ -154,412 +244,4 @@ void cGqMethod::Display()
 	 cout << endl;
   }
   cout << endl;
-  
 }
-//-----------------------------------------------------------------------------
-real cGqMethod::GetWeightGeneric(int iOrder, int iIndex, real dTau)
-{
-  // This function returns the Galerkin quadrature weight at dTau
-  // for  elements of order iOrder, used for computing integral iIndex.
-  //
-
-  // Note! This value does not include the quadrature weight!
-    
-  assert ( iOrder >= 1 );
-  assert ( iOrder <= iHighestOrder );
-  assert ( iIndex >= 1 );
-  assert ( iIndex <= iOrder );
-
-  real dValue = 0.0;
-
-  // Compute the value of the basis function
-  
-  for (int i=0;i<iOrder;i++)
-	 dValue += ( lBasisFunctions[iOrder-1][i]->Value(dTau) *
-					 dWeightFunctionNodalValues[iOrder][iIndex][i] );
-  
-  return ( dValue );
-}
-//-----------------------------------------------------------------------------
-real cGqMethod::GetQuadratureWeight(int iOrder, int iNodalIndex)
-{
-  // This function returns the quadrature weight for node iNodalIndex for
-  // elements of order iOrder.
-  
-  assert ( iOrder >= 1 );
-  assert ( iOrder <= iHighestOrder );
-  assert ( iNodalIndex >= 0 );
-  assert ( iNodalIndex <= iOrder );
-  
-  return ( (qQuadrature->GetWeight(iOrder+1,iNodalIndex))/2.0 );
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::UpdateLinearization(int    iOrder,
-												real dTimeStep,
-												real dDerivative)
-{
-  // This function updates the linearization.
-  
-  // Note! This may not work very well for generic quadrature.
-  // It is assumed that the quadrature points and nodal points
-  // are the same.
-
-  real dVal;
-  real kdfdu = dTimeStep * dDerivative;
-
-  // Compute the matrix coefficients
-  for (int i=0;i<iOrder;i++)
-	 for (int j=0;j<iOrder;j++){
-
-		// Compute the value
-		if ( i == j )
-		  dVal = 1.0;
-		else
-		  dVal = 0.0;
-		dVal -= kdfdu * dNodalWeights[iOrder][i+1][j+1];
-
-		// Set the value in the matrix
-		mLinearizations[iOrder]->Set(i,j,dVal);
-		
-	 }
-
-  // Compute the LU factorization
-  if ( !(mLinearizations[iOrder]->LU()) )
-	 bLinearizationSingular[iOrder] = true;
-  else
-	 bLinearizationSingular[iOrder] = false;  
-  
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::GetStep(int iOrder, real *dStep)
-{
-  // This function computes the new step using the linearization.
-
-  // If the matrix was singular then do fix point interation
-  if ( bLinearizationSingular[iOrder] )
-	 return;
-  
-  // Set the right-hand side coefficients
-  for (int i=0;i<iOrder;i++)
-	 mSteps[iOrder]->Set(i,0,dStep[i]);
-  
-  // Solve
-  mLinearizations[iOrder]->LUSolve(mSteps[iOrder]);
-  
-  // Place the solution in dStep
-  for (int i=0;i<iOrder;i++)
-	 dStep[i] = mSteps[iOrder]->Get(i,0);
-  
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::InitQuadrature()
-{
-  // This function initializes the quadrature.
-  
-  qQuadrature = new Lobatto(iHighestOrder+1);
-  if ( !(qQuadrature->Init()) )
-	 bOK = false;
-
-  qGauss = new Gauss(iHighestOrder+1);
-  if ( !(qGauss->Init()) )
-	 bOK = false;
-
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::GetNodalPoints()
-{
-  // This function computes the nodal points for basis functions
-  // and quadrature.
-
-  // Get the points and recompute to [0,1]
-  for (int i=0;i<(iHighestOrder+1);i++)
-	 for (int j=0;j<(i+1);j++)
-		dNodalPoints[i][j] = (qQuadrature->GetPoint(i+1,j) + 1.0) / 2.0; 
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeNodalWeights()
-{
-  // This function computes the nodal weights for the cG(q) method.
-
-  Matrix<real> *A, *B;
-  Polynomial<real> p1(0), p2(0), p(0);
-  real dPoint, dWeight;
-  real dIntegral;
-
-  // Set the first weight (won't be used)
-  dWeightFunctionNodalValues[0][0][0] = 1.0;
-  
-  // Compute the weights for every order
-  for (int i=1;i<(iHighestOrder+1);i++){
-
-	 // Set the first weight (won't be used)
-	 dWeightFunctionNodalValues[i][0][0] = 1.0;
-	 
-	 // Computing weights for order q = i
-
-	 // Set the matrix dimensions
-	 A = new Matrix<real>(i,i);
-	 B = new Matrix<real>(i,i);
-	 
-	 // Compute the matrix coefficients
-	 for (int j=0;j<i;j++)
-		for (int k=0;k<i;k++){
-
-		  // Compute the integral by quadrature
-		  dIntegral = 0.0;
-
-		  for (int l=0;l<=i;l++){
-			 dPoint  = dNodalPoints[i][l];
-			 dWeight = qQuadrature->GetWeight(i+1,l) * 0.5;
-				
-			 dIntegral += ( lBasisFunctions[i][k+1]->Derivative(dPoint) *
-								 lBasisFunctions[i-1][j]->Value(dPoint) *
-								 dWeight );
-			 
-		  }
-
-
-		  A->Set(j,k,dIntegral);
-		  
-		}
-
-	 // Compute the inverse
-	 *B = A->InverseHighPrecision();
-	 
-	 // Compute the nodal weights
-	 for (int j=1;j<(i+1);j++){
-
-		for (int k=0;k<(i+1);k++){
-
-		  // Order:            i
-		  // Integral:         j (=1,...,i)
-		  // Quadrature point: k (=0,...,i)
-		  
-		  // Compute the sum
-		  dWeight = 0.0;
-		  for (int l=0;l<i;l++)
-			 dWeight += (B->Get(j-1,l)) * (lBasisFunctions[i-1][l]->Value(dNodalPoints[i][k]));
-
-		  // Check that the weight is correct. All weights for the last integral, j = i,
-		  // should be 1.
-		  if ( j == i )
-			 CheckWeight(dWeight);
-		  
-		  // Use the quadrature weight
-		  dWeight *= (qQuadrature->GetWeight(i+1,k));
-
-		  // Compensate for integrating over [0,1] and not [-1,1]
-		  dWeight *= 0.5;
-
-		  // Set the weight
-		  dNodalWeights[i][j][k] = dWeight;
-		  
-		}
-
-	 }
-
-	 // Save the weight function
-	 for (int j=1;j<(i+1);j++)
-		for (int k=0;k<i;k++)
-		  dWeightFunctionNodalValues[i][j][k] = B->Get(j-1,k);
-	 
-	 // Set the weight for j=0 which is not used for cG(q)
-	 for (int k=0;k<=i;k++)
-		dNodalWeights[i][0][k] = 0.0;
-	 
-	 // Delete the matrix
-	 delete A;
-	 delete B;
-	 
-  } 
-
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeInterpolationConstants()
-{
-  // This function computes the interpolation constants for the
-  // cG(q) method
-
-  // Set the q = 0 constant
-  dInterpolationConstants[0] = 1.0;
-
-  // Set the rest of the constants
-  for (int i=1;i<=(iHighestOrder+1);i++)
-	 dInterpolationConstants[i] = 1.0 / ( pow(2.0,real(i-1)) * Factorial(i-1) );
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeResidualFactors()
-{
-  // This function computes the residual factors, i.e.
-  //
-  //             mean(|r|) = c * |r|(endtime)
-  //
-  // assuming that the residual is a legendre polynomial.
-  
-  real dIntegral;
-  real x;
-  real dx = DEFAULT_RESIDUAL_FACTOR_STEP;
-  real f;
-  Legendre p;
-  
-  // Set the first factor to 1, not used for cG(q)
-  dResidualFactors[0] = 1.0;
-  
-  for (int i=1;i<=iHighestOrder;i++){
-
-	 // Check for precalc
-	 if ( i <= PRECALC_MAX ){
-		dResidualFactors[i] = dPrecalcResidualFactors_cG[i];
-		continue;
-	 }
-	 
-	 dIntegral = 0.0;
-
-	 for (x=(-1.0+dx/2.0);x<1.0;x+=dx){
-
-		f = fabs(p.Value(i,x));
-
-		dIntegral += f*dx;
-		
-	 }
-	 
-	 dIntegral /= 2.0;
-
-	 dResidualFactors[i] = dIntegral / 1.0;
-
-  }
-
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeProductFactors()
-{
-  // This function computes the residual factors, i.e.
-  //
-  //             mean(|r * (v-w)| = c * |(r*(v-w))(endtime)|
-  //
-  // where r is the residual, v is the dual and w is the interpolant,
-  // assuming that r and (v-w) are legendre polynomials. This is
-  // (approximately) the case if w is chosen as the interpolant at the
-  // Gauss quadrature points.
-  
-  real dIntegral;
-  real x;
-  real dx = DEFAULT_RESIDUAL_FACTOR_STEP;
-  real f;
-  Legendre p;
-  
-  // Set the first factor to 1, not used for cG(q)
-  dResidualFactors[0] = 1.0;
-  
-  for (int i=1;i<=iHighestOrder;i++){
-
-	 // Check for precalc
-	 if ( i <= PRECALC_MAX ){
-		dProductFactors[i] = dPrecalcProductFactors_cG[i];
-		continue;
-	 }
-	 
-	 dIntegral = 0.0;
-
-	 for (x=(-1.0+dx/2.0);x<1.0;x+=dx){
-
-		f = fabs(p.Value(i,x));
-		f = f * f;
-		
-		// Compute the square
-		
-		dIntegral += f*dx;
-		
-	 }
-	 
-	 dIntegral /= 2.0;
-
-	 dProductFactors[i] = dIntegral / 1.0;
-	 
-  }
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeQuadratureFactors()
-{
-  // This function computes the quadrature factors for estimating
-  // the quadrature error in terms of quadrature differences,
-  //
-  // |E_i| = c * |E_i - E_{i+1}|
-
-  real n;
-  
-  // Set the first factor, won't be used
-  dQuadratureFactors[0] = 1.0;
-
-  // Set the rest
-  for (int i=1;i<=iHighestOrder;i++){
-	 n = real(i + 1);
-	 dQuadratureFactors[i] = 1.0 / ( 1.0 - pow(2.0,3.0-2.0*n) );
-  }
-
-}
-//-----------------------------------------------------------------------------
-void cGqMethod::ComputeInterpolationWeights()
-{
-  // This function computes the values of the lagrange basis functions
-  // of order q-1, located at the q Gauss points.
-
-  Lagrange *p;
-  real dThisPoint, dPoint;
-  real c;
-  int iPosition;
-  
-  // Set the point and weight for q = 0, won't be used
-  dInterpolationWeights[0][0] = 1.0;
-  dInterpolationPoints[0][0]  = 0.5;
-
-  if ( iHighestOrder > 0 ){
-	 // Set the point and weight for q = 1, constant interpolant
-	 dInterpolationWeights[1][0] = 1.0;
-	 dInterpolationPoints[1][0]  = 0.5;
-  }
-	 
-  // Compute the polynomials for every order greater than 1
-  for (int i=2;i<(iHighestOrder+1);i++){
-
-	 // Make a new Lagrange polynomial
-	 p = new Lagrange(i-1);
-	 
-	 for (int j=0;j<i;j++){
-
-		// This nodal point
-		dThisPoint = qGauss->GetPoint(i,j);
-		
-		// Compute polynomial j for order i
-		
-		// First compute the constant
-		c = 1.0;
-		for (int k=0;k<i;k++)
-		  if ( k != j ){
-			 dPoint = qGauss->GetPoint(i,k);
-			 c *= ( dThisPoint - dPoint );
-		  }
-		c = 1/c;
-		
-		// Set coefficients for Lagrange basis function
-		iPosition = 0;
-		for (int k=0;k<i;k++)
-		  if ( k != j )
-			 p->SetPoint(iPosition++,qGauss->GetPoint(i,k));
-		p->SetConstant(c);
-
-		// Evaluate at the endpoint
-		dInterpolationWeights[i][j] = p->Value(1.0);
-
-		// Set the nodal point
-		dInterpolationPoints[i][j] = (dThisPoint + 1.0) / 2.0;
-		
-	 }
-
-	 // Delete the polynomial
-	 delete p;
-	 
-  }
-  
-}
-//-----------------------------------------------------------------------------
