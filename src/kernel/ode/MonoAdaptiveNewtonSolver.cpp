@@ -18,12 +18,12 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab)
 {
-  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -43,8 +43,8 @@ void MonoAdaptiveNewtonSolver::start()
   // Recompute Jacobian
   A.update(ts);
 
-  //debug();
-  //A.disp();
+  debug();
+  A.disp();
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveNewtonSolver::iteration()
@@ -134,17 +134,17 @@ void MonoAdaptiveNewtonSolver::debug()
 		  
     ts.x(j) -= 0.5*dx;
     beval();
-    F1 = b;
+    F1 = b; // Should be -b
 
     ts.x(j) = xj + 0.5*dx;
     beval();
-    F2 = b;
+    F2 = b; // Should be -b
     
     ts.x(j) = xj;
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F2(i) - F1(i)) / dx;
+      real dFdx = (F1(i) - F2(i)) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
 	B(i, j) = dFdx;
     }

@@ -28,10 +28,13 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
 
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   y = x;
-  
+
   // Get data arrays (assumes uniprocessor case)
   const real* xx = x.array();
   real* yy = y.array();
+
+  // Compute size of time step
+  const real k = ts.length();
 
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
@@ -60,9 +63,9 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
       // Get correct weight
       real w = 0.0;
       if ( method.type() == NewMethod::cG )
-	w = method.nweight(m, n + 1);
+	w = - k * method.nweight(m, n + 1);
       else
-	w = method.nweight(m, n);
+	w = - k * method.nweight(m, n);
 
       // Add w * z to y
       for (uint i = 0; i < ts.N; i++)

@@ -44,8 +44,8 @@ void MultiAdaptiveNewtonSolver::start()
   // Recompute Jacobian
   A.update(ts);
 
-  //debug();
-  //A.disp();
+  debug();
+  A.disp();
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration()
@@ -141,19 +141,17 @@ void MultiAdaptiveNewtonSolver::debug()
 		  
     ts.jx[j] -= 0.5*dx;
     beval();
-    for (uint i = 0; i < n; i++)
-      F1(i) = -b(i);
+    F1 = b; // Should be -b
 
     ts.jx[j] = xj + 0.5*dx;
     beval();
-    for (uint i = 0; i < n; i++)
-      F2(i) = -b(i);
+    F2 = b; // Should be -b
 
     ts.jx[j] = xj;
 
     for (uint i = 0; i < n; i++)
     {
-      real dFdx = (F2(i) - F1(i)) / dx;
+      real dFdx = (F1(i) - F2(i)) / dx;
       if ( fabs(dFdx) > DOLFIN_EPS )
 	B(i, j) = dFdx;
     }
