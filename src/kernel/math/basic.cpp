@@ -8,8 +8,11 @@
 
 using namespace dolfin;
 
-// Seed only first time
-bool rand_seeded = false;
+namespace dolfin
+{
+  // Seed only first time
+  bool dolfin::rand_seeded = false;
+}
 
 //-----------------------------------------------------------------------------
 int dolfin::max(int x, int y)

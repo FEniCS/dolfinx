@@ -127,6 +127,26 @@ Mesh::Type Mesh::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
+Node& Mesh::node(unsigned int id)
+{
+  return gd->node(id);
+}
+//-----------------------------------------------------------------------------
+Cell& Mesh::cell(unsigned int id)
+{
+  return gd->cell(id);
+}
+//-----------------------------------------------------------------------------
+Edge& Mesh::edge(unsigned int id)
+{
+  return gd->edge(id);
+}
+//-----------------------------------------------------------------------------
+Face& Mesh::face(unsigned int id)
+{
+  return gd->face(id);
+}
+//-----------------------------------------------------------------------------
 void Mesh::refine()
 {
   // Check that this is the finest mesh
@@ -305,26 +325,6 @@ Face& Mesh::createFace(int e0, int e1, int e2)
 Face& Mesh::createFace(Edge& e0, Edge& e1, Edge& e2)
 {
   return gd->createFace(e0, e1, e2);
-}
-//-----------------------------------------------------------------------------
-Node& Mesh::getNode(int id)
-{
-  return gd->getNode(id);
-}
-//-----------------------------------------------------------------------------
-Cell& Mesh::getCell(int id)
-{
-  return gd->getCell(id);
-}
-//-----------------------------------------------------------------------------
-Edge& Mesh::getEdge(int id)
-{
-  return gd->getEdge(id);
-}
-//-----------------------------------------------------------------------------
-Face& Mesh::getFace(int id)
-{
-  return gd->getFace(id);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Node& node)

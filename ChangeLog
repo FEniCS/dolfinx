@@ -1,3 +1,7 @@
+ - Make progress step a parameter
+ - New function ODE::sparse(const Matrix& A)
+ - Access nodes, cells, edges, faces by id
+ - New function Matrix::lump()
 0.4.8
  - Add support for systems (jansson and bengzon)
  - Add new module wave

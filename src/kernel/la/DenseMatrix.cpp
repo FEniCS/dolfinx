@@ -341,13 +341,25 @@ void DenseMatrix::ident(unsigned int i)
   values[i][i] = 1.0;
 }
 //-----------------------------------------------------------------------------
+void DenseMatrix::lump(Vector& a) const
+{
+  a.init(m);
+
+  for (unsigned int i = 0; i < m; i++)
+  {
+    a(i) = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      a(i) += values[i][j];
+  }
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::addrow()
 {
   real** new_values = new real * [m+1];
-                                                                                                                                                            
+
   for (unsigned int i = 0; i < m; i++)
     new_values[i] = values[i];
-                                                                                                                                                            
+
   new_values[m] = new real [n];
   for (unsigned int i = 0; i < n; i++)
     new_values[m][i] = 0.0;

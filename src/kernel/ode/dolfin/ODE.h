@@ -64,6 +64,9 @@ namespace dolfin
     /// Automatically detect sparsity
     void sparse();
 
+    /// Compute sparsity from given matrix
+    void sparse(const Matrix& A);
+
     /// Friends
     friend class Dual;
     friend class RHS;

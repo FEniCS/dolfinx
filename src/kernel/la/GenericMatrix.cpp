@@ -178,6 +178,11 @@ void GenericMatrix::ident(unsigned int i)
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
+void GenericMatrix::lump(Vector& a) const
+{
+  dolfin_error("This function is not implemented");
+}
+//-----------------------------------------------------------------------------
 void GenericMatrix::addrow()
 {
   dolfin_error("This function is not implemented");

@@ -54,6 +54,7 @@ namespace dolfin {
     
     void resize();
     void ident(unsigned int i);
+    void lump(Vector& a) const;
     void addrow();
     void addrow(const Vector& x);
     void initrow(unsigned int i, unsigned int rowsize);

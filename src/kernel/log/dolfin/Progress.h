@@ -42,6 +42,8 @@ namespace dolfin {
     
     real p0;
     real p1;
+
+    real progress_step;
     
     unsigned int i;
     unsigned int n;

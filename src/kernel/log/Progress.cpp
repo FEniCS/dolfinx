@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/utils.h>
 #include <dolfin/LogManager.h>
 #include <dolfin/LoggerMacros.h>
@@ -26,7 +27,9 @@ Progress::Progress(const char* title, unsigned int n)
 
   p0 = 0.0;
   p1 = 0.0;
-  
+
+  progress_step = dolfin_get("progress step");
+
   i = 0;
   this->n = n;
 
@@ -44,6 +47,8 @@ Progress::Progress(const char* title)
 
   p0 = 0.0;
   p1 = 0.0;
+
+  progress_step = dolfin_get("progress step");
 
   i = 0;
   n = 0;
@@ -179,7 +184,7 @@ real Progress::checkBounds(real p)
 void Progress::update()
 {
   // Only update when the increase is significant
-  if ( (p1 - p0) < DOLFIN_PROGRESS_STEP && (p1 != 1.0 || p1 == p0) )
+  if ( (p1 - p0) < progress_step && (p1 != 1.0 || p1 == p0) )
     return;
 
   LogManager::log.progress(_title, _label, p1);

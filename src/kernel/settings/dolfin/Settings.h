@@ -20,6 +20,7 @@ namespace dolfin {
       add(Parameter::REAL, "start time", 0.0);
       add(Parameter::REAL, "end time",   10.0);
       add(Parameter::REAL, "krylov tolerance", 1.0e-10);
+      add(Parameter::REAL, "progress step", 0.1);
 
       add(Parameter::INT, "max no krylov restarts", 100);
       add(Parameter::INT, "max no stored krylov vectors", 100);

@@ -159,7 +159,7 @@ namespace dolfin {
     /// Compute inverse using a computed lu factorization (only dense)
     virtual void inverseLU(Matrix& Ainv) const;
 
-    /// Solve A x = b with high precision using a computed lu factorization (only dense)
+    /// Solve A x = b high precision using computed lu factorization (only dense)
     virtual void hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const;
     
     /// --- Special functions ---
@@ -169,6 +169,9 @@ namespace dolfin {
     
     /// Set A(i,j) = d_{ij} on row i
     virtual void ident(unsigned int i);
+
+    /// Compute lumped matrix and put result in the given vector
+    virtual void lump(Vector& a) const;
 
     /// Add a new row
     virtual void addrow();

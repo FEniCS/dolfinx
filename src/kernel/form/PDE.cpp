@@ -8,29 +8,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PDE::PDE(int dim, int noeq)
+PDE::PDE(int dim, int noeq) : dim(dim), noeq(noeq)
 {
   h  = 0.0;
   t  = 0.0;
   k = 0.0;
-  
-  this->dim = dim;
-  this->noeq = noeq;
-
-  dolfin_debug1("noeq: %d", noeq);
-  
-  //noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
 PDE::~PDE()
 {
-  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PDE::updateLHS(FiniteElement::Vector* element,
-			 const Cell*          cell,
-			 const Map*       map,
-			 const Quadrature*    quadrature)
+		    const Cell* cell,
+		    const Map* map,
+		    const Quadrature* quadrature)
 {
   // Common update for LHS and RHS
   update(element, cell, map, quadrature);
@@ -147,20 +140,13 @@ void PDE::add(ElementFunction& v, Function& f)
 void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 {
   for(int i = 0; i < f.size(); i++)
-  {
     add(v(i), f(i));
-  }
-
-
-  //add(v(0), f(0));
-  //add(v(1), f(1));
-  //add(v(2), f(2));
 }
 //-----------------------------------------------------------------------------
 void PDE::update(FiniteElement::Vector* element,
-                 const Cell*          cell,
-                 const Map*       map,
-                 const Quadrature*    quadrature)
+                 const Cell* cell,
+                 const Map* map,
+                 const Quadrature* quadrature)
 {
   // Update element functions
   // We assume that the element dependency is only on the grid, therefore

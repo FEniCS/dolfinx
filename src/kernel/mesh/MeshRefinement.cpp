@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshRefinement::refine(MeshHierarchy& meshes)
 {
-  dolfin_start("Refining meshes:");
+  dolfin_start("Refining mesh:");
 
   // Check pre-condition for all meshes
   checkPreCondition(meshes);

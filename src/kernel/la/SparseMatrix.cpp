@@ -425,6 +425,18 @@ void SparseMatrix::ident(unsigned int i)
   rowsizes[i] = 1;
 }
 //-----------------------------------------------------------------------------
+void SparseMatrix::lump(Vector& a) const
+{
+  a.init(m);
+
+  for (unsigned int i = 0; i < m; i++)
+  {
+    a(i) = 0.0;
+    for (unsigned int pos = 0; pos < rowsizes[i]; pos++)
+      a(i) += values[i][pos];
+  }
+}
+//-----------------------------------------------------------------------------
 void SparseMatrix::addrow()
 {
   real** new_values = new real * [m+1];

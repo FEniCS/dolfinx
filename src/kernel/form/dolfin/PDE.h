@@ -30,13 +30,13 @@ namespace dolfin {
     // Variational formulation, left-hand side
     virtual real lhs(const ShapeFunction &u, const ShapeFunction &v)
     {
-      return 0;
+      return 0.0;
     }
 
     // Variational formulation, right-hand side
     virtual real rhs(const ShapeFunction &v)
     {
-      return 0;
+      return 0.0;
     }
     
     // Variational formulation for systems, left-hand side
@@ -55,15 +55,15 @@ namespace dolfin {
     
     // Update before computation of left-hand side
     void updateLHS(FiniteElement::Vector* element,
-                   const Cell*          cell,
-                   const Map*       mapping,
-                   const Quadrature*    quadrature);
+                   const Cell* cell,
+                   const Map* mapping,
+                   const Quadrature* quadrature);
     
     // Update before computation of right-hand side
     void updateRHS(FiniteElement::Vector* element,
-                   const Cell*          cell,
-                   const Map*       mapping,
-                   const Quadrature*    quadrature);
+                   const Cell* cell,
+                   const Map* mapping,
+                   const Quadrature* quadrature);
 
     // Number of equations
     int size();

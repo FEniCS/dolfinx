@@ -87,10 +87,10 @@ namespace dolfin {
     Face& createFace(int e0, int e1, int e2);
     Face& createFace(Edge& e0, Edge& e1, Edge& e2);
     
-    Node& getNode(int id);
-    Cell& getCell(int id);
-    Edge& getEdge(int id);
-    Face& getFace(int id);
+    Node& node(int id);
+    Cell& cell(int id);
+    Edge& edge(int id);
+    Face& face(int id);
 
     void remove(Node& node);
     void remove(Cell& cell);

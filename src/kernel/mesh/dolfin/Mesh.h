@@ -57,6 +57,18 @@ namespace dolfin {
     /// Return type of mesh
     Type type() const;
 
+    /// Return given node (can also use a node iterator)
+    Node& node(unsigned int id);
+
+    /// Return given cell (can also use a cell iterator)
+    Cell& cell(unsigned int id);
+
+    /// Return given edge (can also use an edge iterator)
+    Edge& edge(unsigned int id);
+
+    /// Return given face (can also use a face iterator)
+    Face& face(unsigned int id);
+
     ///--- Mesh refinement ---
 
     /// Mark cell for refinement
@@ -130,12 +142,6 @@ namespace dolfin {
     Face& createFace(int e0, int e1, int e2);
     Face& createFace(Edge& e0, Edge& e1, Edge& e2);
     
-    // Mapping s from id to node, cell, edge, face
-    Node& getNode(int id);
-    Cell& getCell(int id);
-    Edge& getEdge(int id);
-    Face& getFace(int id);
-
     // Remove node, cell, edge, face (use with care)
     void remove(Node& node);
     void remove(Cell& cell);

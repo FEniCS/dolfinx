@@ -48,7 +48,7 @@ Cell& MeshData::createCell(int n0, int n1, int n2)
 {
   int id;
   Cell& c = cells.create(id);
-  c.set(getNode(n0), getNode(n1), getNode(n2));
+  c.set(node(n0), node(n1), node(n2));
   c.setID(id, *mesh);
   return c;
 }
@@ -57,7 +57,7 @@ Cell& MeshData::createCell(int n0, int n1, int n2, int n3)
 {
   int id;
   Cell& c = cells.create(id);
-  c.set(getNode(n0), getNode(n1), getNode(n2), getNode(n3));
+  c.set(node(n0), node(n1), node(n2), node(n3));
   c.setID(id, *mesh);
   return c;
 }
@@ -84,7 +84,7 @@ Edge& MeshData::createEdge(int n0, int n1)
 {
   int id;
   Edge& e = edges.create(id);
-  e.set(getNode(n0), getNode(n1));
+  e.set(node(n0), node(n1));
   e.setID(id, *mesh);
   return e;
 }
@@ -102,7 +102,7 @@ Face& MeshData::createFace(int e0, int e1, int e2)
 {
   int id;
   Face& f = faces.create(id);
-  f.set(getEdge(e0), getEdge(e1), getEdge(e2));
+  f.set(edge(e0), edge(e1), edge(e2));
   f.setID(id, *mesh);
   return f;
 }
@@ -116,22 +116,22 @@ Face& MeshData::createFace(Edge& e0, Edge& e1, Edge& e2)
   return f;
 }
 //-----------------------------------------------------------------------------
-Node& MeshData::getNode(int id)
+Node& MeshData::node(int id)
 {
   return nodes(id);
 }
 //-----------------------------------------------------------------------------
-Cell& MeshData::getCell(int id)
+Cell& MeshData::cell(int id)
 {
   return cells(id);
 }
 //-----------------------------------------------------------------------------
-Edge& MeshData::getEdge(int id)
+Edge& MeshData::edge(int id)
 {
   return edges(id);
 }
 //-----------------------------------------------------------------------------
-Face& MeshData::getFace(int id)
+Face& MeshData::face(int id)
 {
   return faces(id);
 }

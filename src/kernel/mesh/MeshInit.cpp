@@ -14,8 +14,8 @@ void MeshInit::init(Mesh& mesh)
 {
   // Write a message
   dolfin_start("Computing mesh connectivity:");
-  cout << "Found " << mesh.noNodes() << " nodes." << endl;
-  cout << "Found " << mesh.noCells() << " cells." << endl;
+  cout << "Found " << mesh.noNodes() << " nodes" << endl;
+  cout << "Found " << mesh.noCells() << " cells" << endl;
   
   // Reset all previous connections
   clear(mesh);
@@ -106,13 +106,11 @@ void MeshInit::initEdges(Mesh& mesh)
   // Go through all cells and create edges. Each edge checks with its
   // cell neighbors to see if an edge has already been added.
 
-  cout << "Creating edges" << endl;
-  
   for (CellIterator c(mesh); !c.end(); ++c)
     c->createEdges();
   
   // Write a message
-  cout << "Created " << mesh.noEdges() << " edges." << endl;
+  cout << "Created " << mesh.noEdges() << " edges" << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initFaces(Mesh& mesh)
@@ -124,7 +122,7 @@ void MeshInit::initFaces(Mesh& mesh)
     c->createFaces();
 
   // Write a message
-  cout << "Created " << mesh.noFaces() << " faces." << endl;
+  cout << "Created " << mesh.noFaces() << " faces" << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initNodeCell(Mesh& mesh)

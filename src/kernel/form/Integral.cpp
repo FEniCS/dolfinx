@@ -118,10 +118,6 @@ void Integral::Measure::init()
 //-----------------------------------------------------------------------------
 void Integral::Measure::resize(int new_order, int new_n)
 {
-  dolfin_debug("Resizing integral table.");
-  dolfin_debug1("Number of factors:   %d", new_order);
-  dolfin_debug1("Number of functions: %d",  new_n);
-  
   // Create a new table
   Tensor<Value>* new_table = new Tensor<Value>[new_order];
   for (int i = 0; i < new_order; i++)
