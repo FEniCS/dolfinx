@@ -5,6 +5,7 @@
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FunctionList.h>
 #include <dolfin/Integral.h>
+#include <cmath>
 
 using namespace dolfin;
 

@@ -5,6 +5,7 @@
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/DirectSolver.h>
+#include <cmath>
 
 using namespace dolfin;
 

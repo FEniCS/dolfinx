@@ -4,9 +4,9 @@
 // Contributions by: Georgios Foufas (2002)
 //                   Johan Jansson (2003)
 
-#include <math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
+#include <cmath>
 
 using namespace dolfin;
 

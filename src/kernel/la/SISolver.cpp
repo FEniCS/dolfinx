@@ -6,6 +6,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/SISolver.h>
+#include <cmath>
 
 using namespace dolfin;
 

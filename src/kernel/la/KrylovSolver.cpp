@@ -9,6 +9,7 @@
 #include <dolfin/SISolver.h>
 #include <dolfin/Settings.h>
 #include <dolfin/KrylovSolver.h>
+#include <cmath>
 
 using namespace dolfin;
 

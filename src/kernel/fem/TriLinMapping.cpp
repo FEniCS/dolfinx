@@ -6,6 +6,7 @@
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/TriLinMapping.h>
+#include <cmath>
 
 using namespace dolfin;
 
