@@ -11,6 +11,10 @@
 namespace dolfin
 {
 
+  /// LinearForm represents a linear form L(v) with argument v (the
+  /// test function) a basis function of the finite element space
+  /// defined by a finite element.
+
   class LinearForm : public Form
   {
   public:
@@ -26,7 +30,15 @@ namespace dolfin
 
     /// Compute element vector (boundary contribution)
     virtual bool boundary(real* block) const;
-    
+
+    /// Return finite element defining the test space
+    const NewFiniteElement& test() const;
+
+  protected:
+
+    // Finite element defining the test space
+    NewFiniteElement* _test;
+
   };
 
 }

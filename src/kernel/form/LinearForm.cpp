@@ -6,14 +6,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearForm::LinearForm() : Form()
+LinearForm::LinearForm() : Form(), _test(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 LinearForm::~LinearForm()
 {
-  // Do nothing
+  if ( _test ) delete [] _test;
 }
 //-----------------------------------------------------------------------------
 bool LinearForm::interior(real* block) const
@@ -28,5 +28,11 @@ bool LinearForm::boundary(real* block) const
   // The default version returns false, which means that the form does
   // not contain any integrals over the boundary of the domain.
   return false;
+}
+//-----------------------------------------------------------------------------
+const NewFiniteElement& LinearForm::test() const
+{
+  dolfin_assert(_test); // Should be created by child class
+  return *_test;
 }
 //-----------------------------------------------------------------------------
