@@ -117,6 +117,7 @@ int main()
   dolfin_set("tolerance", 0.001);
   dolfin_set("number of samples", 100);
   dolfin_set("progress step", 0.01);
+  dolfin_set("save solution", false);
 
   // Number of refinements
   unsigned int refinements = 2;
