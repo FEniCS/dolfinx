@@ -21,6 +21,7 @@ Cell::Cell()
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+  _no_children = 0;
 
   _refined_by_face_rule = false;
 }
@@ -41,6 +42,7 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+  _no_children = 0;
 
   _refined_by_face_rule = false;
 }
@@ -62,6 +64,7 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+  _no_children = 0;
 
   _refined_by_face_rule = false;
 }
@@ -109,6 +112,11 @@ int Cell::noBound() const
   return 0;
 }
 //-----------------------------------------------------------------------------
+int Cell::noChildren() const
+{
+  return _no_children;
+}
+//-----------------------------------------------------------------------------
 Node* Cell::node(int i) const
 {
   return cn(i);
@@ -124,9 +132,15 @@ Cell* Cell::neighbor(int i) const
   return cc(i);
 }
 //-----------------------------------------------------------------------------
-Cell* Cell::son(int i) const
+Cell* Cell::child(int i) const
 {
   return children(i);
+}
+//-----------------------------------------------------------------------------
+void Cell::addChild(Cell* child) 
+{
+  children.add(child);
+  _no_children++;
 }
 //-----------------------------------------------------------------------------
 Point Cell::coord(int i) const

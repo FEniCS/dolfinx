@@ -17,6 +17,8 @@ namespace dolfin {
 	 
 	 void GlobalRegularRefinement();
 
+	 void EvaluateMarks(int grid_level);
+
 	 void RegularRefinement(Cell* parent);
 
 	 void RegularRefinementTetrahedron(Cell* parent);

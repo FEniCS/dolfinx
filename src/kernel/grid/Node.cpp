@@ -9,13 +9,14 @@ Node::Node()
 {
   _id = -1;
   _boundary = -1;
-  _son = NULL;
+  _child = NULL;
 }
 //-----------------------------------------------------------------------------
 Node::Node(real x)
 {
   _id = -1;
   _boundary = -1;
+  _child = NULL;
 
   p.x = x;
 }
@@ -24,7 +25,7 @@ Node::Node(real x, real y)
 {
   _id = -1;
   _boundary = -1;
-  _son = NULL;
+  _child = NULL;
 
   p.x = x;
   p.y = y;
@@ -34,7 +35,7 @@ Node::Node(real x, real y, real z)
 {
   _id = -1;
   _boundary = -1;
-  _son = NULL;
+  _child = NULL;
 
   p.x = x;
   p.y = y;
@@ -68,19 +69,19 @@ Point Node::coord() const
   return p;
 }
 //-----------------------------------------------------------------------------
-Node* Node::son() 
+Node* Node::child() 
 {
-  return _son;
+  return _child;
+}
+//-----------------------------------------------------------------------------
+void Node::setChild(Node* child) 
+{
+  _child = child;
 }
 //-----------------------------------------------------------------------------
 Edge* Node::edge(int i) 
 {
   return ne(i);
-}
-//-----------------------------------------------------------------------------
-void Node::setSon(Node* son) 
-{
-  _son = son;
 }
 //-----------------------------------------------------------------------------
 int Node::boundary() const

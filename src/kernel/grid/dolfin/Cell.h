@@ -35,17 +35,20 @@ namespace dolfin {
 	 int noEdges() const;
 	 int noFaces() const;
 	 int noBound() const; 
+	 int noChildren() const; 
 
 	 // Cell data
 	 Node* node(int i) const;
 	 Edge* edge(int i) const;
 	 Cell* neighbor(int i) const;
-	 Cell* son(int i) const;
+	 Cell* child(int i) const;
 	 Point coord(int i) const;
 	 Type  type() const;
 	 int   noCellNeighbors() const;
 	 int   noNodeNeighbors() const;
 
+	 void addChild(Cell* child);
+	   
 	 void setEdge(Edge* e, int i);
 	 
 	 // id information for cell and its contents
@@ -95,6 +98,8 @@ namespace dolfin {
 
 	 // Global cell number
 	 int _id;
+
+	 int _no_children;
 	 
 	 // Refinement level in grid hierarchy, coarsest grid is level = 0
 	 int _level;

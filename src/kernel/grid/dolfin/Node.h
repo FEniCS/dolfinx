@@ -31,12 +31,13 @@ namespace dolfin{
     int   id() const;
     Point coord() const;
     int level() const;
-    void  setSon(Node* son);
-    Node* son();
+    Node* child();
     Edge* edge(int i);
     int   boundary() const;
     bool  neighbor(Node* n);
     
+    void setChild(Node* child);
+
     int   noNodeNeighbors() const;
     int   noCellNeighbors() const;
     int   noEdgeNeighbors() const;
@@ -86,7 +87,7 @@ namespace dolfin{
     ShortList<Node*> nn;
     ShortList<Cell*> nc;
     ShortList<Edge*> ne;
-    Node* _son;
+    Node* _child;
 
   };
   
