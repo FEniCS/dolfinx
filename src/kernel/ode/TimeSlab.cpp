@@ -4,12 +4,8 @@
 #include <iostream>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_math.h>
-#include <dolfin/Element.h>
-#include <dolfin/TimeSlabData.h>
-#include <dolfin/Partition.h>
+#include <dolfin/TimeSteppingData.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/RHS.h>
 
 using namespace dolfin;
 
@@ -60,7 +56,7 @@ real TimeSlab::length() const
   return t1 - t0;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::setsize(real K, const TimeSlabData& data)
+void TimeSlab::setsize(real K, const TimeSteppingData& data)
 {
   // Make sure that we don't go beyond t1
 

@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Regulator.h>
-#include <dolfin/TimeSlabData.h>
+#include <dolfin/TimeSteppingData.h>
 #include <dolfin/Partition.h>
 
 using namespace dolfin;
@@ -41,7 +41,7 @@ int Partition::index(unsigned int i) const
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-void Partition::update(int offset, int& end, real& K, TimeSlabData& data)
+void Partition::update(int offset, int& end, real& K, TimeSteppingData& data)
 {
   // Compute the largest time step
   K = threshold * maximum(offset, data);
@@ -58,7 +58,7 @@ void Partition::update(int offset, int& end, real& K, TimeSlabData& data)
 }
 //-----------------------------------------------------------------------------
 void Partition::debug(unsigned int offset, unsigned int end, 
-		      TimeSlabData& data) const
+		      TimeSteppingData& data) const
 {
   // This function can be used to debug the partitioning.
   
@@ -77,7 +77,7 @@ void Partition::debug(unsigned int offset, unsigned int end,
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-real Partition::maximum(int offset, TimeSlabData& data) const
+real Partition::maximum(int offset, TimeSteppingData& data) const
 {
   real K = 0.0;
 
@@ -87,7 +87,7 @@ real Partition::maximum(int offset, TimeSlabData& data) const
   return K;
 }
 //-----------------------------------------------------------------------------
-Partition::Less::Less(real& K, TimeSlabData& data) : K(K), data(data)
+Partition::Less::Less(real& K, TimeSteppingData& data) : K(K), data(data)
 {
   // Do nothing
 }

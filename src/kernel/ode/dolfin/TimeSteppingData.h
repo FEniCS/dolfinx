@@ -1,53 +1,43 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __TIME_SLAB_DATA_H
-#define __TIME_SLAB_DATA_H
+#ifndef __TIME_STEPPING_DATA_H
+#define __TIME_STEPPING_DATA_H
 
 #include <fstream>
-
-#include <dolfin/NewArray.h>
-#include <dolfin/Component.h>
-#include <dolfin/Regulator.h>
 #include <dolfin/Element.h>
+#include <dolfin/Component.h>
+#include <dolfin/NewArray.h>
+#include <dolfin/Regulator.h>
 
 namespace dolfin {
 
-  class ODE;
-  class RHS;
-  class TimeSlab;
+  class ElementData;
 
-  /// TimeSlabData is a container for time slab data (elements).
-  /// A block-linked list is used to store the elements.
-  /// The purpose of this class is to be able to reuse elements
-  /// from previous time slabs in new time slabs.
-  
-  class TimeSlabData {
+  /// TimeSteppingData contains data for adaptive time-stepping,
+  /// that can be shared by different time slabs.
+
+  class TimeSteppingData {
   public:
 
     /// Constructor
-    TimeSlabData(ODE& ode);
+    TimeSteppingData(ElementData& elmdata);
 
     /// Destructor
-    ~TimeSlabData();
-
-    /// Create element
-    Element* createElement(Element::Type type, int q, int index,
-			   TimeSlab* timeslab);
+    ~TimeSteppingData();
     
     /// Return number of components
     unsigned int size() const;
-
     /// Return given component
     Component& component(unsigned int i);
 
     /// Return given component
     const Component& component(unsigned int i) const;
 
-    /// Return given regulator
+    /// Return time step regulator for given component
     Regulator& regulator(unsigned int i);
 
-    /// Return given regulator
+    /// Return time step regulator for given component
     const Regulator& regulator(unsigned int i) const;
 
     /// Return tolerance
@@ -58,7 +48,10 @@ namespace dolfin {
 
     /// Return threshold for reaching end of interval
     real threshold() const;
-    
+
+    /// Create a new element
+    Element* createElement(Element::Type type, int q, int index, TimeSlab* timeslab);
+
     /// Prepare for next time slab
     void shift(TimeSlab& timeslab, RHS& f);
 
@@ -66,13 +59,10 @@ namespace dolfin {
     enum Action { create = 0, update };
     void debug(Element& element, Action action);
 
-    /// Output
-    friend LogStream& operator<<(LogStream& stream, const TimeSlabData& data);
-
   private:
-    
-    // List of components
-    NewArray<Component> components;
+
+    // Element data
+    ElementData& elmdata;
 
     // List of regulators
     NewArray<Regulator> regulators;
@@ -86,11 +76,12 @@ namespace dolfin {
     // Threshold for reaching end of interval
     real interval_threshold;
 
-    // Save debug info to file 'timeslab.debug'
+    // Save debug info to file 'timesteps.debug'
     bool _debug;
     std::ofstream file;
 
   };
+
 }
 
 #endif

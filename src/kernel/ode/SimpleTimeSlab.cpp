@@ -5,7 +5,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Element.h>
-#include <dolfin/TimeSlabData.h>
+#include <dolfin/TimeSteppingData.h>
 #include <dolfin/Partition.h>
 #include <dolfin/RHS.h>
 #include <dolfin/SimpleTimeSlab.h>
@@ -13,8 +13,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, RHS& f, TimeSlabData& data) : 
-  TimeSlab(t0, t1)
+SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, RHS& f, 
+			       TimeSteppingData& data) : TimeSlab(t0, t1)
 {
   create(f, data);
 }
@@ -24,7 +24,7 @@ SimpleTimeSlab::~SimpleTimeSlab()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::update(RHS& f, TimeSlabData& data)
+void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data)
 {
   // Update all elements
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -36,11 +36,11 @@ void SimpleTimeSlab::update(RHS& f, TimeSlabData& data)
     element->update(f);
     
     // Write debug info
-    data.debug(*element, TimeSlabData::update);
+    data.debug(*element, TimeSteppingData::update);
   }
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::create(RHS& f, TimeSlabData& data)
+void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
 {
   dolfin_debug("Creating simple time slab");
 
@@ -61,7 +61,7 @@ void SimpleTimeSlab::create(RHS& f, TimeSlabData& data)
     Element *element = data.createElement(type, q, i, this);
     
     // Write debug info
-    data.debug(*element, TimeSlabData::create);
+    data.debug(*element, TimeSteppingData::create);
 
     // Add element to array
     elements.push_back(element);

@@ -189,6 +189,11 @@ void Component::clear()
   u0 = 0.0;
 }
 //-----------------------------------------------------------------------------
+void Component::setu0(real u0)
+{
+  this->u0 = u0;
+}
+//-----------------------------------------------------------------------------
 Element* Component::findpos(real t) 
 {
   /// Find element through binary search

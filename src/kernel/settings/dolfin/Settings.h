@@ -31,7 +31,7 @@ namespace dolfin {
       add(Parameter::INT, "pc iterations", 5);
       add(Parameter::INT, "number of samples", 10);
        
-      add(Parameter::BOOL, "debug time slab", 0);
+      add(Parameter::BOOL, "debug time steps", 0);
 
       add(Parameter::STRING, "output", "curses");
 

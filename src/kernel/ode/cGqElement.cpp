@@ -13,23 +13,16 @@ cGqElement::cGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) :
   Element(q, index, timeslab)
 {  
   cG.init(q);
-
-  //dolfin_debug1("cGqElement::ctor: %p", this);
 }
 //-----------------------------------------------------------------------------
 real cGqElement::value(real t) const
 {
-  //dolfin_debug1("t: %lf", t);
-  
-  //for(int i = 0; i < q + 1; i++)
-  //  dolfin::cout << "values[" << i << "]: " << values[i] << dolfin::endl;
-
   real tau = (t - starttime()) / timestep();
 
   real sum = 0.0;
   for (unsigned int i = 0; i <= q; i++)
     sum += values[i] * cG(q).basis(i, tau);
-  
+
   return sum;
 }
 //-----------------------------------------------------------------------------

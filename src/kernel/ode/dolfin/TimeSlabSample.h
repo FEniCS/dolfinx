@@ -9,7 +9,7 @@
 namespace dolfin {
 
   class TimeSlab;
-  class TimeSlabData;
+  class TimeSteppingData;
   class RHS;
 
   /// A TimeSlabSample is sample of the values at a given point
@@ -19,7 +19,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    TimeSlabSample(TimeSlab& timeslab, TimeSlabData& data, 
+    TimeSlabSample(TimeSlab& timeslab, TimeSteppingData& data, 
 		   RHS& f, real t);
 
     /// Destructor
@@ -43,7 +43,7 @@ namespace dolfin {
   private:
 
     TimeSlab& timeslab;
-    TimeSlabData& data;
+    TimeSteppingData& data;
     RHS& f;
     real t;
 

@@ -3,8 +3,8 @@ function M = plotslab(interval, drawupdates, drawtext, saveps)
 % Usage: M = plotslab(interval, drawupdates, drawtext, saveps)
 %
 % Draws and creates a movie M of a time slab. Data
-% is taken from the file 'timeslab.debug' which is
-% created by DOLFIN when the option 'debug time slab'
+% is taken from the file 'timesteps.debug' which is
+% created by DOLFIN when the option 'debug time steps'
 % is specified.
 %
 % Arguments:
@@ -19,10 +19,10 @@ function M = plotslab(interval, drawupdates, drawtext, saveps)
 
 % Load the steps
 disp('Loading file...')
-load('timeslab.debug');
+load('timesteps.debug');
 
 % Get the number of components
-N  = max(timeslab(:,2)) + 1;
+N  = max(timesteps(:,2)) + 1;
 
 % Get the time interval
 T1 = interval(1);
@@ -46,12 +46,12 @@ iterations = 0;
 clear M
 
 % Step to the correct position
-for i = 1:size(timeslab,1)
+for i = 1:size(timesteps,1)
 
-  a  = timeslab(i,1);
-  n  = timeslab(i,2);
-  t1 = timeslab(i,3);
-  t2 = timeslab(i,4); 
+  a  = timesteps(i,1);
+  n  = timesteps(i,2);
+  t1 = timesteps(i,3);
+  t2 = timesteps(i,4); 
 
   if t2 >= T1
     break;
@@ -60,13 +60,13 @@ for i = 1:size(timeslab,1)
 end
 
 % Draw the elements
-for j = i:size(timeslab, 1)
+for j = i:size(timesteps, 1)
 
   % Get next element
-  a  = timeslab(j,1);
-  n  = timeslab(j,2);
-  t1 = timeslab(j,3);
-  t2 = timeslab(j,4);
+  a  = timesteps(j,1);
+  n  = timesteps(j,2);
+  t1 = timesteps(j,3);
+  t2 = timesteps(j,4);
 
   % Go to next element if we don't want to draw updates
   if ~drawupdates & a == 1

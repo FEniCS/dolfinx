@@ -12,7 +12,7 @@
 namespace dolfin {
 
   class RHS;
-  class TimeSlabData;
+  class TimeSteppingData;
   class Regulator;
 
   /// Partition is used in the recursive construction of time slabs
@@ -35,24 +35,24 @@ namespace dolfin {
     int index(unsigned int pos) const;
 
     /// Update partition (reorder components starting at offset)
-    void update(int offset, int& end, real& K, TimeSlabData& data);
+    void update(int offset, int& end, real& K, TimeSteppingData& data);
     
   private:
 
     // Debug partitioning
-    void debug(unsigned int offset, unsigned int end, TimeSlabData& data) const;
+    void debug(unsigned int offset, unsigned int end, TimeSteppingData& data) const;
 
     // Compute largest time step
-    real maximum(int offset, TimeSlabData& data) const;
+    real maximum(int offset, TimeSteppingData& data) const;
 
     // Comparison operator for the partition
     struct Less : public std::unary_function<unsigned int, bool> 
     {
-      Less(real& K, TimeSlabData& data);
+      Less(real& K, TimeSteppingData& data);
       bool operator()(unsigned int index) const;
       
       real K;
-      TimeSlabData& data;
+      TimeSteppingData& data;
     };
 
     // List of component indices

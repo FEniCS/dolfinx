@@ -4,15 +4,14 @@
 #ifndef __RHS_H
 #define __RHS_H
 
-#include <dolfin/Vector.h>
-
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin {
 
   class ODE;
   class TimeSlab;
-  class TimeSlabData;
+  class ElementData;
 
   /// RHS takes care of evaluating the right-hand side f(u,t)
   /// for a given component at a given time. The vector u is
@@ -23,14 +22,15 @@ namespace dolfin {
   public:
 
     /// Constructor
-    RHS(ODE& ode, TimeSlabData& data);
+    RHS(ODE& ode, ElementData& elmdata);
 
     /// Destructor
     ~RHS();
     
-    /// Return current component of f evaluated at time t
-    real operator() (unsigned int index, unsigned int node, real t, TimeSlab* timeslab);
-    
+    /// Evaluation of the right-hand side
+    real operator() (unsigned int index, unsigned int node, real t,
+		     TimeSlab* timeslab);
+
     /// Number of components
     unsigned int size() const;
 
@@ -43,10 +43,10 @@ namespace dolfin {
     Vector u;
     
     // The ODE to be integrated
-    ODE* ode;
+    ODE& ode;
 
-    // Time slab data
-    TimeSlabData* data;
+    // Element data
+    ElementData& elmdata;
 
   };   
     

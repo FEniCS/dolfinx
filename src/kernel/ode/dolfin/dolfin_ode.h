@@ -15,6 +15,7 @@
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/Component.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementData.h>
 #include <dolfin/EmptySparsity.h>
 #include <dolfin/FullSparsity.h>
 #include <dolfin/GenericElement.h>
@@ -26,7 +27,7 @@
 #include <dolfin/RHS.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/TableSparsity.h>
-#include <dolfin/TimeSlabData.h>
 #include <dolfin/TimeStepper.h>
+#include <dolfin/TimeSteppingData.h>
 
 #endif

@@ -5,24 +5,17 @@
 #include <dolfin/Component.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/TimeSlabData.h>
+#include <dolfin/ElementData.h>
 #include <dolfin/RHS.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RHS::RHS(ODE& ode, TimeSlabData& data)
+RHS::RHS(ODE& ode, ElementData& elmdata) : ode(ode), elmdata(elmdata)
 {
-  // Save the ODE
-  this->ode = &ode;
-
-  // Save time slab data
-  this->data = &data;
-
   // Initialize the solution vector
   u.init(ode.size());
   u = ode.u0;
-
 }
 //-----------------------------------------------------------------------------
 RHS::~RHS()
@@ -37,7 +30,7 @@ real RHS::operator() (unsigned int index, unsigned int node, real t,
   update(index, node, t, timeslab);
 
   // Evaluate right hand side for current component
-  return ode->f(u, t, index);
+  return ode.f(u, t, index);
 }
 //-----------------------------------------------------------------------------
 void RHS::update(unsigned int index, unsigned int node, real t, 
@@ -46,12 +39,12 @@ void RHS::update(unsigned int index, unsigned int node, real t,
   // Update the solution vector for all components that influence the
   // current component.
   
-  for (Sparsity::Iterator i(index, ode->sparsity); !i.end(); ++i)
-    u(i) = data->component(i)(node, t, timeslab);
+  for (Sparsity::Iterator i(index, ode.sparsity); !i.end(); ++i)
+    u(i) = elmdata.component(i)(node, t, timeslab);
 }
 //-----------------------------------------------------------------------------
 unsigned int RHS::size() const
 {
-  return ode->size();
+  return ode.size();
 }
 //-----------------------------------------------------------------------------

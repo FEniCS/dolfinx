@@ -57,8 +57,9 @@ namespace dolfin {
 
     /// Clear component
     void clear();
-        
-    friend class TimeSlabData;
+
+    /// Specify initial value
+    void setu0(real u0);
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Component& data);

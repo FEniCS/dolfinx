@@ -11,7 +11,7 @@
 namespace dolfin {
 
   class Element;
-  class TimeSlabData;
+  class TimeSteppingData;
   class Partition;
   class RHS;
 
@@ -22,38 +22,40 @@ namespace dolfin {
 
     /// Create time slab, including one iteration
     RecursiveTimeSlab(real t0, real t1, RHS& f, 
-		      TimeSlabData& data, Partition& partition, int offset);
+		      TimeSteppingData& data,
+		      Partition& partition, int offset);
     
     /// Destructor
     ~RecursiveTimeSlab();
     
     /// Update time slab (iteration)
-    void update(RHS& f, TimeSlabData& data);
+    void update(RHS& f, TimeSteppingData& data);
 
   private:
     
     // Create new time slab
-    void create(RHS& f, TimeSlabData& data, Partition& partition, int offset);
+    void create(RHS& f, TimeSteppingData& data,
+		Partition& partition, int offset);
     
     // Create list of time slabs within the time slab
-    void createTimeSlabs(RHS& f, TimeSlabData& data,
+    void createTimeSlabs(RHS& f, TimeSteppingData& data,
 			 Partition& partition, int offset);
 
     // Create list of elements within the time slab
-    void createElements(RHS& f, TimeSlabData& data,
+    void createElements(RHS& f, TimeSteppingData& data,
 			Partition& partition, int offset, int end);
 
     // Update time slabs (iteration)
-    void updateTimeSlabs(RHS& f, TimeSlabData& data);
+    void updateTimeSlabs(RHS& f, TimeSteppingData& data);
     
     // Update elements (iteration)
-    void updateElements(RHS& f, TimeSlabData& data);
+    void updateElements(RHS& f, TimeSteppingData& data);
 
     // Update initial value
-    void updateu0(TimeSlabData& data);
+    void updateu0(TimeSteppingData& data);
 
     // Compute residuals and new time steps
-    void computeResiduals(RHS& f, TimeSlabData& data);
+    void computeResiduals(RHS& f, TimeSteppingData& data);
 
     //--- Time slab data ---
 

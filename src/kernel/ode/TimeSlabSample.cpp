@@ -3,13 +3,13 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/TimeSlabData.h>
+#include <dolfin/TimeSteppingData.h>
 #include <dolfin/TimeSlabSample.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabSample::TimeSlabSample(TimeSlab& timeslab, TimeSlabData& data, 
+TimeSlabSample::TimeSlabSample(TimeSlab& timeslab, TimeSteppingData& data, 
 			       RHS& f, real t) :
   timeslab(timeslab), data(data), f(f), t(t)
 {

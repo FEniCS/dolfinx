@@ -14,12 +14,13 @@
 #include <dolfin/File.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
+#include <dolfin/ElementData.h>
 #include <dolfin/Partition.h>
-#include <dolfin/TimeSlabData.h>
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabSample.h>
+#include <dolfin/TimeSteppingData.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
@@ -30,10 +31,14 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   // Get parameters
   int no_samples = dolfin_get("number of samples");
 
+  // Get size of system
+  int N = ode.size();
+
   // Create data for time-stepping
-  TimeSlabData data(ode);
-  Partition partition(ode.size());
-  RHS f(ode, data);
+  ElementData elmdata(ode);
+  TimeSteppingData data(elmdata);
+  RHS f(ode, elmdata);
+  Partition partition(N);
   TimeSlab* timeslab = 0;
   real t = t0;
 
@@ -78,7 +83,7 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save(TimeSlab& timeslab, TimeSlabData& data, RHS& f,
+void TimeStepper::save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f,
 		       File& file, real t0, real t1, int no_samples)
 {
   // Compute time of first sample within time slab

@@ -10,7 +10,7 @@ namespace dolfin {
 
   class ODE;
   class TimeSlab;
-  class TimeSlabData;
+  class TimeSteppingData;
   class RHS;
   class File;
 
@@ -32,7 +32,7 @@ namespace dolfin {
   private:
 
     // Save solution (when necessary)
-    static void save(TimeSlab& timeslab, TimeSlabData& data, RHS& f, 
+    static void save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f, 
 		     File& file, real t0, real t1, int no_samples);
 
   };
