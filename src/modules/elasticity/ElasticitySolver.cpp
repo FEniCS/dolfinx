@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Fredrik Bengzon and Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2004.
 
 #include "ElasticitySolver.h"
 #include "Elasticity.h"
@@ -33,7 +35,6 @@ void ElasticitySolver::solve()
 
   Function::Vector f("source", 3);
   
-  Galerkin     fem;
   Elasticity   elasticity(f, u0, w0);
   KrylovSolver solver;
   File         file("elasticity.m");
@@ -48,7 +49,7 @@ void ElasticitySolver::solve()
 
   // Assemble matrix
   elasticity.k = k;
-  fem.assemble(elasticity, mesh, A);
+  FEM::assemble(elasticity, mesh, A);
 
   dolfin_debug("Assembled matrix:");
   //A.show();
@@ -89,8 +90,7 @@ void ElasticitySolver::solve()
     // Assemble load vector
     elasticity.k = k;
     elasticity.t = t;
-    //fem.assemble(elasticity, mesh, A);
-    fem.assemble(elasticity, mesh, b);
+    FEM::assemble(elasticity, mesh, b);
     
     //A.show();
     //b.show();

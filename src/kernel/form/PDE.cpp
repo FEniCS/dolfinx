@@ -22,10 +22,10 @@ PDE::~PDE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PDE::updateLHS(FiniteElement::Vector* element,
-		    const Cell* cell,
-		    const Map* map,
-		    const Quadrature* quadrature)
+void PDE::updateLHS(FiniteElement::Vector& element,
+		    const Cell& cell,
+		    const Map& map,
+		    const Quadrature& quadrature)
 {
   // Common update for LHS and RHS
   update(element, cell, map, quadrature);
@@ -34,10 +34,10 @@ void PDE::updateLHS(FiniteElement::Vector* element,
   updateLHS();
 }
 //-----------------------------------------------------------------------------
-void PDE::updateRHS(FiniteElement::Vector* element,
-			 const Cell*          cell,
-			 const Map*       map,
-			 const Quadrature*    quadrature)
+void PDE::updateRHS(FiniteElement::Vector& element,
+		    const Cell& cell,
+		    const Map& map,
+		    const Quadrature& quadrature)
 {
   // Common update for LHS and RHS
   update(element, cell, map, quadrature);
@@ -151,28 +151,28 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
     add(v(i), f(i));
 }
 //-----------------------------------------------------------------------------
-void PDE::update(FiniteElement::Vector* element,
-                 const Cell* cell,
-                 const Map* map,
-                 const Quadrature* quadrature)
+void PDE::update(FiniteElement::Vector& element,
+                 const Cell& cell,
+                 const Map& map,
+                 const Quadrature& quadrature)
 {
   // Update element functions
   // We assume that the element dependency is only on the grid, therefore
   // any element, such as the 0th is sufficient
   
   for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
-    p->update(*((*element)(0)), *cell, t);
+    p->update(*(element(0)), cell, t);
   
   // Update integral measures
-  dx.update(*map, *quadrature);
-  ds.update(*map, *quadrature);
-  h = cell->diameter();
+  dx.update(map, quadrature);
+  ds.update(map, quadrature);
+  h = cell.diameter();
   
   // Save map (to compute derivatives)
-  this->map = map;
+  this->map = &map;
 
   // Save cell 
-  this->cell = cell;
+  this->cell = &cell;
 }
 //-----------------------------------------------------------------------------
 int PDE::size()

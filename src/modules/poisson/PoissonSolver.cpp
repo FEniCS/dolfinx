@@ -19,7 +19,6 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  Galerkin     fem;
   Matrix       A;
   Vector       x, b;
   Function     u(mesh, x);
@@ -29,7 +28,7 @@ void PoissonSolver::solve()
   File         file("poisson.m");
 
   // Discretise
-  fem.assemble(poisson, mesh, A, b);
+  FEM::assemble(poisson, mesh, A, b);
 
   // Solve the linear system
   solver.solve(A, x, b);

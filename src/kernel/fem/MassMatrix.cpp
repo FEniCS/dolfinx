@@ -3,7 +3,7 @@
 
 #include <dolfin/Mesh.h>
 #include <dolfin/PDE.h>
-#include <dolfin/Galerkin.h>
+#include <dolfin/FEM.h>
 #include <dolfin/MassMatrix.h>
 
 using namespace dolfin;
@@ -31,8 +31,7 @@ namespace dolfin
 MassMatrix::MassMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
 {
   MassForm form;
-  Galerkin fem;
 
-  fem.assemble(form, mesh, *this);
+  FEM::assemble(form, mesh, *this);
 }
 //-----------------------------------------------------------------------------

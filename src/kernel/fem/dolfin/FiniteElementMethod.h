@@ -35,19 +35,28 @@ namespace dolfin
     /// Destructor
     ~FiniteElementMethod();
 
+    /// Return finite element
+    FiniteElement::Vector& element();
+
+    /// Return map
+    Map& map();
+
+    /// Return quadrature rule
+    Quadrature& quadrature();
+
     /// The assembler FEM is a friend
     friend class FEM;
 
   private:
 
     // The finite element
-    FiniteElement::Vector* element;
+    FiniteElement::Vector* _element;
 
     // The map from the reference cell
-    Map* map;
+    Map* _map;
     
     // The quadrature rule on the reference cell
-    Quadrature* quadrature;
+    Quadrature* _quadrature;
     
     // True if user specifies method
     bool user;

@@ -43,8 +43,6 @@ void EulerSolver::solve()
 
   Function::Vector residual_energy(mesh, rex, 5);
 
-  Galerkin     fem;
-
   Euler        euler(fm,fe,am,ae,ulin,u0);
 
   KrylovSolver solver;
@@ -66,7 +64,7 @@ void EulerSolver::solve()
 
   cout << " Assembling A and b START   " << endl;
     
-  fem.assemble(euler, mesh, Ae, be);
+  FEM::assemble(euler, mesh, Ae, be);
 
   cout << " Assembling A and b END   " << endl;
 
@@ -96,8 +94,8 @@ void EulerSolver::solve()
       euler.k     = k;
       euler.t     = t;      
 
-      fem.assemble(euler, mesh, Ae);
-      fem.assemble(euler, mesh, be);
+      FEM::assemble(euler, mesh, Ae);
+      FEM::assemble(euler, mesh, be);
 
       // Solve the linear system
       solver.solve(Ae, ux1, be);

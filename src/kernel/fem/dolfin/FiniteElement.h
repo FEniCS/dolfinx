@@ -36,7 +36,7 @@ namespace dolfin {
     int dim() const;
     
     // Update function spaces
-    void update(const Map* map);
+    void update(const Map& map);
     
     
     // Iterator over shape functions in the local trial space

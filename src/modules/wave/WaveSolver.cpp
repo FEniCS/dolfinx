@@ -30,7 +30,6 @@ void WaveSolver::solve()
   Function w1(mesh, x21);
   Function f("source");
   
-  Galerkin     fem;
   Wave         wave(f, u0, w0);
   KrylovSolver solver;
   File         file("wave.m");
@@ -48,9 +47,7 @@ void WaveSolver::solve()
 
   // Assemble matrix
   wave.k = k;
-  fem.assemble(wave, mesh, A);
-
-  //A.show();
+  FEM::assemble(wave, mesh, A);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -71,9 +68,7 @@ void WaveSolver::solve()
     // Assemble load vector
     wave.k = k;
     wave.t = t;
-    fem.assemble(wave, mesh, b);
-
-    //b.show();
+    FEM::assemble(wave, mesh, b);
 
     // Solve the linear system
     //solver.solve(A, x21, b);

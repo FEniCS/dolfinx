@@ -30,7 +30,6 @@ void HeatSolver::solve()
   Function f("source");
   Function a("diffusivity");
   
-  Galerkin     fem;
   Heat         heat(f, u0, a);
   KrylovSolver solver;
   File         file("heat.dx");
@@ -41,19 +40,18 @@ void HeatSolver::solve()
 
   // Save initial value
   u1.rename("u", "temperature");
-  file << mesh;
-  // file << u1;
+  file << u1;
 
   // Assemble matrix
   heat.k = k;
-  fem.assemble(heat, mesh, A);
+  FEM::assemble(heat, mesh, A);
 
   // Start a progress session
   Progress p("Time-stepping");
 
   // Start time-stepping
-  while ( t < T ) {
-    
+  while ( t < T )
+  {
     // Make time step
     t += k;
     x0 = x1;
@@ -61,21 +59,17 @@ void HeatSolver::solve()
     // Assemble load vector
     heat.k = k;
     heat.t = t;
-    fem.assemble(heat, mesh, b);
+    FEM::assemble(heat, mesh, b);
     
     // Solve the linear system
     solver.solve(A, x1, b);
     
     // Save the solution
     u1.update(t);
-    // file << u1;
+    file << u1;
 
     // Update progress
     p = t / T;
-
   }
-
-  // file << u1;
-
 }
 //-----------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 
 #include <dolfin/Mesh.h>
 #include <dolfin/PDE.h>
-#include <dolfin/Galerkin.h>
+#include <dolfin/FEM.h>
 #include <dolfin/StiffnessMatrix.h>
 
 using namespace dolfin;
@@ -32,9 +32,8 @@ StiffnessMatrix::StiffnessMatrix(Mesh& mesh, real epsilon)
   : Matrix(mesh.noNodes(), mesh.noNodes())
 {
   StiffnessForm form;
-  Galerkin fem;
 
-  fem.assemble(form, mesh, *this);
+  FEM::assemble(form, mesh, *this);
   (*this) *= epsilon;
 }
 //-----------------------------------------------------------------------------

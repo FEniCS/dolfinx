@@ -1,0 +1,81 @@
+This list functions as a project plan for the development of DOLFIN.
+
+It works as follows: Pick something from the list, notify one of the
+maintainers that you're working on it. When a task is done, it will
+be deleted from this list and moved to the ChangeLog.
+
+Ideally, each task should be assigned to a developer, including an
+estimate of when the task should be ready.
+
+Send suggestions, comments, and corrections to dolfin@math.chalmers.se.
+
+Assembly
+--------
+
+o [hoffman, logg] Boundary conditions, fix ds (May 04)
+o [hoffman, logg] Optimize form evaluation
+* Replace FiniteElement::Vector with FiniteElement
+* Implementation of arbitrary finite elements
+* Add i,j in vector PDE?
+* Use NewArray<...> instead of ::Vector in assembly classes?
+* Remove specification of dim from PDE
+
+Mesh
+----
+
+o [jj, logg] File format including boundary
+o [jj] Schema for mesh XML format
+* Fix bug in mesh refinement, non-working mesh from Pär Ingelström
+* Geometry representation, including boundaries
+* Mesh generation using triangle or tetgen?
+
+Linear Algebra
+--------------
+
+o [foufas] Wrapper for LAPACK
+o [erik]  Matrix-matrix multiplication
+o [erik] Algebraic multigrid
+* Expression templates
+* Decision on strategy
+
+Function
+--------
+
+o [hoffman, jj, logg] General function representations
+   
+Input/Output
+------------
+
+o [erik?] Save edges in MATLAB format
+
+Multi-adaptive solver
+---------------------
+
+o [jj, logg] Save dual solution backwards
+o [jj, logg] Error estimates
+o [jj, logg] Automatic computation of stability factors as function of time T
+o [jj, logg] Use two files for matlab format
+o [jj, logg] Speedup interpolation
+o [jj, logg] Bug in ElementData::createBlock() when out of memory?
+o [jj, logg] Automatic local reduction of time steps when stabilization doesn't work
+
+Modules
+-------
+
+o [hoffman] Navier-Stokes solver
+o [harald] Euler solver
+o [foufas] Finance module
+
+General
+-------
+
+* Replace Array and List with NewArray and NewList
+* Use libtool?
+* Cleanup Parameter and ParameterList
+* Update manual
+* Replace stdio with iostream and fstream
+* Fix setprecision() for cout
+* Use symbolic links for meshes, see example src/demo/fem
+* Automatically load parameters from dolfin.xml
+* A mail list for DOLFIN?
+* Move to FEniCS web server?

@@ -3,7 +3,7 @@
 
 #include <dolfin/Mesh.h>
 #include <dolfin/PDE.h>
-#include <dolfin/Galerkin.h>
+#include <dolfin/FEM.h>
 #include <dolfin/LoadVector.h>
 
 using namespace dolfin;
@@ -31,8 +31,7 @@ namespace dolfin
 LoadVector::LoadVector(Mesh& mesh) : Vector(mesh.noNodes())
 {
   LoadForm form;
-  Galerkin fem;
   
-  fem.assemble(form, mesh, *this);
+  FEM::assemble(form, mesh, *this);
 }
 //-----------------------------------------------------------------------------

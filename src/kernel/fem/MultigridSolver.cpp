@@ -12,7 +12,6 @@
 #include <dolfin/dolfin_mesh.h>
 #include <dolfin/MeshHierarchy.h>
 #include <dolfin/MultigridSolver.h>
-#include <dolfin/Galerkin.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/Variable.h>
 #include <dolfin/General.h>
@@ -70,13 +69,10 @@ void MultigridSolver::mainIteration(PDE& pde, Vector& x,
   Matrices A(noLevels); // Matrices, and vectors for the A's and b's
   Vectors  b(noLevels);  // for different meshes. 
   
-  // Define an assembler
-  Galerkin fem;
-
   // Assemble the matrices
   dolfin_info("Assembling for multigrid");
   for (unsigned int i=0; i < noLevels ; i++)
-    fem.assemble(pde, meshes(i), A[i], b[i]);   
+    FEM::assemble(pde, meshes(i), A[i], b[i]);   
  
   tic();
   

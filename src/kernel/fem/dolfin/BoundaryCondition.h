@@ -57,7 +57,7 @@ namespace dolfin {
       _val[component] = val;
     }
 
-    friend class Galerkin;
+    friend class FEM;
     
   private:
     

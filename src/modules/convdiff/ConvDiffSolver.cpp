@@ -32,7 +32,6 @@ void ConvDiffSolver::solve()
   Function a("diffusivity");
   Function::Vector beta("convection", 1);
   
-  Galerkin     fem;
   ConvDiff     convdiff(f, u0, a, beta);
   KrylovSolver solver;
   File         file("convdiff.m");
@@ -47,7 +46,7 @@ void ConvDiffSolver::solve()
 
   // Assemble matrix
   convdiff.k = k;
-  fem.assemble(convdiff, mesh, A);
+  FEM::assemble(convdiff, mesh, A);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -62,7 +61,7 @@ void ConvDiffSolver::solve()
     // Assemble load vector
     convdiff.k = k;
     convdiff.t = t;
-    fem.assemble(convdiff, mesh, b);
+    FEM::assemble(convdiff, mesh, b);
     
     // Solve the linear system
     solver.solve(A, x1, b);

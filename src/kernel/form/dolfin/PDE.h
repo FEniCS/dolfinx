@@ -55,16 +55,16 @@ namespace dolfin {
     }
     
     /// Update before computation of left-hand side
-    void updateLHS(FiniteElement::Vector* element,
-                   const Cell* cell,
-                   const Map* mapping,
-                   const Quadrature* quadrature);
+    void updateLHS(FiniteElement::Vector& element,
+                   const Cell& cell,
+                   const Map& mapping,
+                   const Quadrature& quadrature);
     
     /// Update before computation of right-hand side
-    void updateRHS(FiniteElement::Vector* element,
-                   const Cell* cell,
-                   const Map* mapping,
-                   const Quadrature* quadrature);
+    void updateRHS(FiniteElement::Vector& element,
+                   const Cell& cell,
+                   const Map& mapping,
+                   const Quadrature& quadrature);
 
     /// Return number of equations
     int size();
@@ -123,10 +123,10 @@ namespace dolfin {
     void add(ElementFunction::Vector &v, Function::Vector &f);
     
     // Update equation
-    void update(FiniteElement::Vector* element,
-		const Cell* cell,
-		const Map* map,
-		const Quadrature* quadrature);
+    void update(FiniteElement::Vector& element,
+		const Cell& cell,
+		const Map& map,
+		const Quadrature& quadrature);
     
     // Optional update before computation of left-hand side
     virtual void updateLHS() {};

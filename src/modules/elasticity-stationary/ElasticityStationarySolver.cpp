@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Fredrik Bengzon and Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2004.
 
 #include "ElasticityStationarySolver.h"
 #include "ElasticityStationary.h"
@@ -33,18 +35,14 @@ void ElasticityStationarySolver::solve()
 
   Function::Vector f("source", 3);
   
-  Galerkin     fem;
   ElasticityStationary   elasticity(f, u0, w0);
   KrylovSolver solver;
   File         file("elasticitystationary.m");
   
   // Time independent
 
-  // Assemble matrix
-  fem.assemble(elasticity, mesh, A);
-
-  fem.assemble(elasticity, mesh, b);
-  //b.show();
+  // Assemble matrix and vector
+  FEM::assemble(elasticity, mesh, A, b);
 
   // Solve the linear system
   //solver.setMethod(KrylovSolver::CG);

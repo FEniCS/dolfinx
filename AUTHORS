@@ -8,26 +8,26 @@ DOLFIN is written mainly by:
 
 DOLFIN is currently maintained by:
 
-	Johan Hoffman		<hoffman@cims.nyu.edu>
-	Johan Jansson		<johanjan@math.chalmers.se>
-	Anders Logg		<logg@math.chalmers.se>
+	Johan Hoffman		<hoffman@cims.nyu.edu>		hoffman
+	Johan Jansson		<johanjan@math.chalmers.se>	jj
+	Anders Logg		<logg@math.chalmers.se>		logg
 
 Contributors in alphabetical order:
 
 	Fredrik Bengzon		<bengzon@math.chalmers.se>
 	Niklas Ericsson		<nen@math.chalmers.se>
-	Georgios Foufas		<foufas@math.chalmers.se>
+	Georgios Foufas		<foufas@math.chalmers.se>	foufas
 	Rasmus Hemph		<PDE project course 2001/2002>
 	David Heintz		<david.heintz@comhem.se>
         Pär Ingelström          <pi@elmagn.chalmers.se>
 	Aleksandra Krusper	<PDE project course 2001/2002>
 	Johan Jansson		<johanjan@math.chalmers.se>
 	Karin Kraft		<kakr@math.chalmers.se>
-	Andreas Mark		<f00anma@dd.chalmers.se>
+	Andreas Mark		<f00anma@dd.chalmers.se>	
 	Andreas Nilsson		<f99anni@dd.chalmers.se>
         Thomas Svedberg		<thsv@am.chalmers.se>
-	Erik Svensson		<eriksv@math.chalmers.se>
-	Harald Svensson		<harald.s@home.se>
+	Erik Svensson		<eriksv@math.chalmers.se>	erik
+	Harald Svensson		<harald.s@home.se>		harald
 	Jim Tilander		<jt@dd.chalmers.se>
 	Walter Villanueva	<PDE project course 2001/2002>
 

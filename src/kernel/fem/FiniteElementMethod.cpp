@@ -22,12 +22,12 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
     
     cout << "Using standard piecewise linears on triangles." << endl;
     
-    element = new FiniteElement::Vector(noeq);
+    _element = new FiniteElement::Vector(noeq);
     for (unsigned int i = 0; i < noeq; ++i)
-      (*element)(i) = new P1TriElement();
+      (*_element)(i) = new P1TriElement();
     
-    map = new P1TriMap();
-    quadrature = new TriangleMidpointQuadrature();
+    _map = new P1TriMap();
+    _quadrature = new TriangleMidpointQuadrature();
     
     break;
     
@@ -35,12 +35,12 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
     
     cout << "Using standard piecewise linears on tetrahedrons." << endl;
     
-    element = new FiniteElement::Vector(noeq);
+    _element = new FiniteElement::Vector(noeq);
     for (unsigned int i = 0; i < noeq; ++i)
-      (*element)(i) = new P1TetElement();
+      (*_element)(i) = new P1TetElement();
     
-    map = new P1TetMap();
-    quadrature = new TetrahedronMidpointQuadrature();
+    _map = new P1TetMap();
+    _quadrature = new TetrahedronMidpointQuadrature();
     break;
     
   default:
@@ -51,12 +51,27 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
 FiniteElementMethod::FiniteElementMethod(FiniteElement::Vector& element,
 					 Map& map, Quadrature& quadrature)
 {
-  this->element = &element;
-  this->map = &map;
-  this->quadrature = &quadrature;
+  _element = &element;
+  _map = &map;
+  _quadrature = &quadrature;
   
   // User specifies method
   user = true;
+}
+//-----------------------------------------------------------------------------
+FiniteElement::Vector& FiniteElementMethod::element()
+{
+  return *_element;
+}
+//-----------------------------------------------------------------------------
+Map& FiniteElementMethod::map()
+{
+  return *_map;
+}
+//-----------------------------------------------------------------------------
+Quadrature& FiniteElementMethod::quadrature()
+{
+  return *_quadrature;
 }
 //-----------------------------------------------------------------------------
 FiniteElementMethod::~FiniteElementMethod()
@@ -64,24 +79,24 @@ FiniteElementMethod::~FiniteElementMethod()
   // Delete method data if not given by user
   if ( !user )
   {
-    if ( element )
+    if ( _element )
     {
-      for (unsigned int i = 0; i < element->size(); ++i)
+      for (unsigned int i = 0; i < _element->size(); ++i)
       {
-	delete (*element)(i);
-	(*element)(i) = 0;
+	delete (*_element)(i);
+	(*_element)(i) = 0;
       }
-      delete element;
+      delete _element;
     }
-    element = 0;
+    _element = 0;
     
-    if ( map )
-      delete map;
-    map = 0;
+    if ( _map )
+      delete _map;
+    _map = 0;
     
-    if ( quadrature )
-      delete quadrature;
-    quadrature = 0;
+    if ( _quadrature )
+      delete _quadrature;
+    _quadrature = 0;
   }
 }
 //-----------------------------------------------------------------------------

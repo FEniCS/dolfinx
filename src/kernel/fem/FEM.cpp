@@ -1,134 +1,92 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Fredrik Bengzon and Johan Jansson, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
-#include <dolfin/dolfin_element.h>
-#include <dolfin/dolfin_quadrature.h>
-#include <dolfin/utils.h>
-#include <dolfin/Map.h>
-#include <dolfin/P1TriMap.h>
-#include <dolfin/P1TetMap.h>
-#include <dolfin/FiniteElement.h>
-#include <dolfin/FiniteElementMethod.h>
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/PDE.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Map.h>
+#include <dolfin/Quadrature.h>
+#include <dolfin/FiniteElementMethod.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/BCFunctionPointer.h>
 #include <dolfin/BoundaryCondition.h>
-#include <dolfin/PDE.h>
-#include <dolfin/Galerkin.h>
+#include <dolfin/FEM.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Galerkin::Galerkin()
+void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 {
-  // Will be created later (need to know the space dimension)
-  element = 0;
-  map = 0;
-  quadrature = 0;
-
-  // Using default method
-  user = false;
-}
-//-----------------------------------------------------------------------------
-Galerkin::Galerkin(FiniteElement::Vector& element,
-		   Map&           map,
-		   Quadrature&    quadrature)
-{
-  this->element = &element;
-  this->map = &map;
-  this->quadrature = &quadrature;
-  
-  // User specified method
-  user = true;
-}
-//-----------------------------------------------------------------------------
-Galerkin::~Galerkin()
-{
-  if ( !user ) {
-    
-    if ( element )
-      delete element;
-    element = 0;
-    
-    if ( map )
-      delete map;
-    map = 0;
-    
-    if ( quadrature )
-      delete quadrature;
-    quadrature = 0;
-    
-  }
-}
-//-----------------------------------------------------------------------------
-void Galerkin::assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b)
-{
-  assemble(pde, mesh, A);
-  assemble(pde, mesh, b);
-}
-//-----------------------------------------------------------------------------
-void Galerkin::assemble(PDE& pde, Mesh& mesh, Matrix& A)
-{
-  assembleLHS(pde, mesh, A);
-  setBC(mesh, A);
-}
-//-----------------------------------------------------------------------------
-void Galerkin::assemble(PDE& pde, Mesh& mesh, Vector& b)
-{
-  assembleRHS(pde, mesh, b);
-  setBC(mesh, b);
-}
-//-----------------------------------------------------------------------------
-void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
-{  
-  // Make sure that we have chosen trial and test spaces
-  init(mesh, pde.size());
-  
+  // Create default method
   FiniteElementMethod method(mesh.type(), pde.size());
+  FiniteElement::Vector& element(method.element());
+  Map& map(method.map());
+  Quadrature& quadrature(method.quadrature());
 
+  // Assemble matrix
+  assemble(pde, mesh, A, element, map, quadrature);
+
+  // Assemble vector
+  assemble(pde, mesh, b, element, map, quadrature);
+}
+//-----------------------------------------------------------------------------
+void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A)
+{
+  // Create default method
+  FiniteElementMethod method(mesh.type(), pde.size());
+  FiniteElement::Vector& element(method.element());
+  Map& map(method.map());
+  Quadrature& quadrature(method.quadrature());
+
+  // Assemble matrix
+  assemble(pde, mesh, A, element, map, quadrature);
+}
+//-----------------------------------------------------------------------------
+void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b)
+{
+  // Create default method
+  FiniteElementMethod method(mesh.type(), pde.size());
+  FiniteElement::Vector& element(method.element());
+  Map& map(method.map());
+  Quadrature& quadrature(method.quadrature());
+
+  // Assemble vector
+  assemble(pde, mesh, b, element, map, quadrature);
+}
+//-----------------------------------------------------------------------------
+void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
+		   FiniteElement::Vector& element, Map& map,
+		   Quadrature& quadrature)
+{
   // Allocate and reset matrix
-  alloc(A, mesh);
+  alloc(A, mesh, element);
   
   // Start a progress session
   Progress p("Assembling left-hand side", mesh.noCells());  
-  dolfin_info("Assembling: system size is %d x %d.", A.size(0), A.size(1));
   
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update map
-    map->update(cell);
+    map.update(cell);
     
     // Update element
-    for (unsigned int i = 0; i < element->size(); ++i)
-      (*element)(i)->update(map);
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
     
     // Update equation
     pde.updateLHS(element, cell, map, quadrature);
     
     // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element);
-         !v.end(); ++v)
-    {
-      //dolfin_debug("test function");
-      for (FiniteElement::Vector::TrialFunctionIterator u(element);
-           !u.end(); ++u)
-      {
-        // u and v are vector valued with components determined
-        // by which element we are on
-        
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
         A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
-        
-        //dolfin_debug2("assembling: (%d, %d)", v.dof(cell), u.dof(cell));
-        //dolfin_debug1("lhs: %lf", pde.lhs(*u, *v));
-        
-      }
-    }
-
+    
     // Update progress
     p++;
   }
@@ -136,17 +94,19 @@ void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
   // Clear unused elements
   A.resize();
 
+  // FIXME: This should be removed
+  setBC(mesh, A, element);
+
   // Write a message
   cout << "Assembled: " << A << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
+void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
+		   FiniteElement::Vector& element, Map& map,
+		   Quadrature& quadrature)
 {
-  // Make sure that we have chosen trial and test spaces
-  init(mesh, pde.size());
-  
   // Allocate and reset matrix
-  alloc(b, mesh);
+  alloc(b, mesh, element);
   
   // Start a progress session
   Progress p("Assembling right-hand side", mesh.noCells());  
@@ -155,7 +115,7 @@ void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update map
-    map->update(cell);
+    map.update(cell);
     
     // Update equation
     pde.updateRHS(element, cell, map, quadrature);
@@ -168,15 +128,18 @@ void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
     p++;
   }
   
+  // FIXME: This should be removed
+  setBC(mesh, b, element);
+
   // Write a message
   cout << "Assembled: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::setBC(Mesh& mesh, Matrix& A)
+void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc(element->size());
+  BoundaryCondition bc(element.size());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -195,9 +158,9 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < element->size(); i++)
+      for (unsigned int i = 0; i < element.size(); i++)
       {
-	A.ident(element->size() * node->id() + i);
+	A.ident(element.size() * node->id() + i);
       }
 
       //A.ident(node->id());
@@ -213,11 +176,11 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
   }
 }
 //-----------------------------------------------------------------------------
-void Galerkin::setBC(Mesh& mesh, Vector& b)
+void FEM::setBC(Mesh& mesh, Vector& b, FiniteElement::Vector& element)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc(element->size());
+  BoundaryCondition bc(element.size());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -236,8 +199,8 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < element->size(); i++)
-	b(element->size() * node->id() + i) = bc.val(i);
+      for (unsigned int i = 0; i < element.size(); i++)
+	b(element.size() * node->id() + i) = bc.val(i);
       break;
     case BoundaryCondition::NEUMANN:
       if ( bc.val() != 0.0 )
@@ -250,48 +213,7 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
   }
 }
 //-----------------------------------------------------------------------------
-void Galerkin::init(Mesh &mesh, int noeq)
-{
-  // Check if the element has already been created
-  if ( element )
-    return;
-  
-  // FIXME: testing
-  this->noeq = noeq;
-
-  // Create default finite element
-  switch ( mesh.type() ) {
-  case Mesh::triangles:
-
-    cout << "Using standard piecewise linears on triangles." << endl;
-
-    element = new FiniteElement::Vector(noeq);
-    for(int i = 0; i < noeq; ++i)
-      (*element)(i) = new P1TriElement();
-
-    map = new P1TriMap();
-    quadrature = new TriangleMidpointQuadrature();
-
-    break;
-
-  case Mesh::tetrahedrons:
-
-    cout << "Using standard piecewise linears on tetrahedrons." << endl;
-
-    element = new FiniteElement::Vector(noeq);
-    for(int i = 0; i < noeq; ++i)
-      (*element)(i)    = new P1TetElement();
-
-    map = new P1TetMap();
-    quadrature = new TetrahedronMidpointQuadrature();
-    break;
-
-  default:
-    dolfin_error("No default spaces for this type of cell.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Galerkin::alloc(Matrix &A, Mesh &mesh)
+void FEM::alloc(Matrix &A, Mesh &mesh, FiniteElement::Vector& element)
 {
   // Count the degrees of freedom
   
@@ -301,18 +223,18 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
 
   unsigned int imax = 0;
   unsigned int jmax = 0;
-
+  
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     
-    for (FiniteElement::TestFunctionIterator v((*element)(0)); !v.end(); ++v)
+    for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
     {
       unsigned int i = v.dof(cell);
       if ( i > imax )
 	imax = i;
     }
-
-    for (FiniteElement::TrialFunctionIterator u((*element)(0)); !u.end(); ++u)
+    
+    for (FiniteElement::TrialFunctionIterator u(element(0)); !u.end(); ++u)
     {
       unsigned int j = u.dof(cell);
       if ( j > jmax )
@@ -322,23 +244,21 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
   }
   
   // Size of the matrix
-  unsigned int m = (imax + 1) * element->size();
-  unsigned int n = (jmax + 1) * element->size();
+  unsigned int m = (imax + 1) * element.size();
+  unsigned int n = (jmax + 1) * element.size();
   
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
     A.init(m, n);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::alloc(Vector &b, Mesh &mesh)
+void FEM::alloc(Vector &b, Mesh &mesh, FiniteElement::Vector& element)
 {
   // Count the degrees of freedom
-
   unsigned int imax = 0;
-  
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (FiniteElement::TestFunctionIterator v((*element)(0)); !v.end(); ++v)
+    for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
     {
       unsigned int i = v.dof(cell);
       if ( i > imax )
@@ -347,7 +267,7 @@ void Galerkin::alloc(Vector &b, Mesh &mesh)
   }
   
   // Size of vector
-  unsigned int m = (imax + 1) * element->size();
+  unsigned int m = (imax + 1) * element.size();
   
   // Initialise vector
   if ( b.size() != m )

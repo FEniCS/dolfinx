@@ -30,7 +30,6 @@ void WaveVectorSolver::solve()
   Function::Vector w1(mesh, x21, 4);
   Function::Vector f("source", 4);
   
-  Galerkin     fem;
   WaveVector   wavevector(f, u0, w0);
   KrylovSolver solver;
   File         file("wavevector.m");
@@ -48,7 +47,7 @@ void WaveVectorSolver::solve()
 
   // Assemble matrix
   wavevector.k = k;
-  fem.assemble(wavevector, mesh, A);
+  FEM::assemble(wavevector, mesh, A);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -64,7 +63,7 @@ void WaveVectorSolver::solve()
     // Assemble load vector
     wavevector.k = k;
     wavevector.t = t;
-    fem.assemble(wavevector, mesh, b);
+    FEM::assemble(wavevector, mesh, b);
 
     // Solve the linear system
     //solver.solve(A, x21, b);

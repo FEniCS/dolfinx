@@ -33,7 +33,6 @@ void NSESolver::solve()
   Function::Vector res_con(mesh, x5, 1);
   Function::Vector f("source");
   
-  Galerkin       fem;
   NSE_Momentum   momentum(f, u0, ulin, p1);
   NSE_Continuity continuity(f, ulin);
   KrylovSolver   solver;
@@ -50,12 +49,12 @@ void NSESolver::solve()
   //file << p1;
 
   // Assemble continuity matrix
-  fem.assemble(continuity, mesh, Ac);
+  FEM::assemble(continuity, mesh, Ac);
 
   // Assemble momentum matrix
   momentum.k = k;
   momentum.t = t;
-  fem.assemble(momentum, mesh, Am);
+  FEM::assemble(momentum, mesh, Am);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -74,17 +73,17 @@ void NSESolver::solve()
       x3 = x1;
 
       // Assemble continuity load vector
-      fem.assemble(continuity, mesh, bc);
+      FEM::assemble(continuity, mesh, bc);
     
       // Solve the linear system
       solver.solve(Ac, x2, bc);
     
       // Assemble momentum load vector
       momentum.k = k;
-      fem.assemble(momentum, mesh, bm);
+      FEM::assemble(momentum, mesh, bm);
 
       // Assemble momentum matrix
-      fem.assemble(momentum, mesh, Am);
+      FEM::assemble(momentum, mesh, Am);
 
       // Solve the linear system
       solver.solve(Am, x1, bm);
