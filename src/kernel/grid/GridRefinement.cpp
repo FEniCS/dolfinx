@@ -128,9 +128,11 @@ void GridRefinement::closeGrid(Grid& grid)
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
 
+    // Get first cell and remove it from the list
     Cell* cell = cells.pop();
 
-    closeElement(*cell);
+    // Close cell
+    closeCell(*cell);
 
   }
 
