@@ -24,9 +24,6 @@ real testOld(Mesh& mesh)
     FEM::assemble(poisson, mesh, A);
   }
 
-  File file("A1.m");
-  file << A;
-
   return toc();
 }
 
@@ -45,9 +42,6 @@ real testOptimized(Mesh& mesh)
     NewFEM::assemble(a, mesh, A);
   }
 
-  File file("A2.m");
-  file << A;
-
   return toc();
 }
 
@@ -65,9 +59,6 @@ real testFFC(Mesh& mesh)
     A = 0.0;
     NewFEM::assemble(a, mesh, A);
   }
-
-  File file("A3.m");
-  file << A;
 
   return toc();
 }

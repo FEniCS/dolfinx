@@ -25,6 +25,11 @@ Method::Method(unsigned int q)
     for (unsigned int j = 0; j < n; j++)
       weights[i][j] = 0.0;
   }
+
+  // Allocate weight sums
+  weightsums = new real[n];
+  for (unsigned int i = 0; i < n; i++)
+    weightsums[i] = 0.0;
   
   // Allocate quadrature weights
   qweights = new real[n];
@@ -55,6 +60,10 @@ Method::~Method()
   }
   weights = 0;
 
+  // Clear weight sums
+  delete [] weightsums;
+  weightsums = 0;
+
   // Clear quadrature weights
   if ( qweights )
     delete [] qweights;
@@ -81,7 +90,18 @@ void Method::init()
   computeQuadrature();
   computeBasis();
   computeWeights();
+  computeWeightSums();
   computeDerivatives();
+}
+//-----------------------------------------------------------------------------
+void Method::computeWeightSums()
+{
+  for (unsigned int i = 0; i < n; i++)
+  {
+    weightsums[i] = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      weightsums[i] += weights[i][j];
+  }
 }
 //-----------------------------------------------------------------------------
 void Method::computeDerivatives()

@@ -4,6 +4,7 @@
 #ifndef __METHOD_H
 #define __METHOD_H
 
+#include <dolfin/Lagrange.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
@@ -34,6 +35,9 @@ namespace dolfin {
     /// Return nodal weight j for degree of freedom i, including quadrature (inline optimized)
     inline real weight(unsigned int i, unsigned int j) const { return weights[i][j]; }
 
+    /// Return sum of nodal weights for degree of freedom i, including quadrature (inline optimized)
+    inline real weightsum(unsigned int i) const { return weightsums[i]; }
+
     /// Return quadrature weight, including only quadrature (inline optimized)
     inline real weight(unsigned int i) const { return qweights[i]; }
 
@@ -57,6 +61,7 @@ namespace dolfin {
     virtual void computeBasis      () = 0;
     virtual void computeWeights    () = 0;
 
+    void computeWeightSums();
     void computeDerivatives();
 
     unsigned int q; // Polynomial order
@@ -64,6 +69,7 @@ namespace dolfin {
 
     real*  points;
     real** weights;
+    real*  weightsums;
     real*  qweights;
     real*  derivatives;
 

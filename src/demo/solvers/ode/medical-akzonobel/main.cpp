@@ -161,8 +161,8 @@ private:
 int main()
 {
   dolfin_set("output", "plain text");
-  dolfin_set("method", "dg");
-  dolfin_set("order", 0);
+  dolfin_set("method", "cg");
+  dolfin_set("order", 1);
   dolfin_set("tolerance", 1e-3);
   dolfin_set("initial time step", 0.001);
   dolfin_set("maximum time step", 0.01);

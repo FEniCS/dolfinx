@@ -69,23 +69,17 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 
   cout << "Newton slab" << endl;
 
-  // Count degrees of freedom
-
-  int dof = 0;
-
-  for (ElementIterator element(list); !element.end(); ++element)
-  {
-    dof = dof + element->size();
-  }  
 
   JacobianMatrix J(f);
-  Vector res(dof);
-  Vector sk(dof);
 
   
   // Update Jacobian at the left end-point of the interval
   ElementIterator element(list);
-  J.update(element->endtime(), dof);
+  J.update(element->endtime());
+  unsigned int dof = J.update(list);
+
+  Vector res(dof);
+  Vector sk(dof);
 
   // Compute discrete residual
   int i = 0;

@@ -30,20 +30,23 @@ namespace dolfin
     unsigned int size(unsigned int dim) const;
     
     /// Multiplication with vector (use with GMRES solver)
-    void mult(const Vector& x, Vector& Ax) const;
+    void mult(const Vector& x, Vector& Ax);
 
-    /// Recompute at given time for given number of unknowns
-    void update(real t, unsigned n);
+    /// Recompute Jacobian at given time
+    void update(real t);
+
+    /// Update Jacobian for time slab and compute the number of unknowns
+    unsigned int update(ElementGroupList& elements);
 
   private:
 
     /// Multiplication for cG(q) elements
     unsigned int cGmult(const Vector& x, Vector& Ax,
-			unsigned int dof, const cGqElement& element);
+			unsigned int dof, const dolfin::Element& element);
 
     /// Multiplication for dG(q) elements
     unsigned int dGmult(const Vector& x, Vector& Ax,
-			unsigned int dof, const dGqElement& element);
+			unsigned int dof, const dolfin::Element& element);
 
     // The right-hand side
     RHS& f;
@@ -53,7 +56,16 @@ namespace dolfin
 
     // Number of unknowns
     unsigned int n;
+
+    // List of elements (time slab)
+    ElementGroupList* elements;
     
+    // List of the latest degree of freedom (closest to T)
+    NewArray<unsigned int> latest;
+    
+    // Start time for the time slab
+    real t0;
+
   };
 
 }
