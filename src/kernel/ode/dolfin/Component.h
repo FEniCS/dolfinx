@@ -43,9 +43,8 @@ namespace dolfin {
 
     // Return number of elements in component
     int size();
-
-    // Initial value
-    real u0;
+    
+    friend class TimeSlabData;
 
   private:
 
@@ -55,12 +54,14 @@ namespace dolfin {
     // A list of elements for this component
     std::vector<Element*> elements;
 
-
     // Current position (latest position)
     int current;
 
     // Next available position
     int next;
+
+    // Initial value
+    real u0;
 
     struct LessElement :
       public std::binary_function<Element *, Element *, bool>

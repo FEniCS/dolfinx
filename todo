@@ -24,3 +24,4 @@ General
 - Use libtool: anyone?
 - Replace stdio with iostream and fstream
 - Replace Array and List with NewArray and NewList
+- Replace int by unsigned int where necessary

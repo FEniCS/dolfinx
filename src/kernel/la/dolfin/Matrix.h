@@ -39,7 +39,7 @@ namespace dolfin {
     Matrix(Type type = sparse);
 
     /// Create matrix with given dimensions
-    Matrix(int m, int n, Type type = sparse);
+    Matrix(unsigned int m, unsigned int n, Type type = sparse);
 
     /// Create a copy of a given matrix
     Matrix(const Matrix& A);
@@ -55,7 +55,7 @@ namespace dolfin {
     ///--- Basic operations
 
     /// Initialize to a zero matrix with given dimensions
-    virtual void init(int m, int n);
+    virtual void init(unsigned int m, unsigned int n);
 
     /// Clear all data
     virtual void clear();
@@ -66,42 +66,42 @@ namespace dolfin {
     virtual Type type() const;
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    virtual int size(int dim) const;
+    virtual unsigned int size(unsigned int dim) const;
 
     /// Return number of non-zero elements (only sparse)
-    virtual int size() const;
+    virtual unsigned int size() const;
 
     /// Return number of non-zero elements on row i (only sparse)
-    virtual int rowsize(int i) const;
+    virtual unsigned int rowsize(unsigned int i) const;
 
     /// Return size of matrix in bytes (approximately)
-    virtual int bytes() const;
+    virtual unsigned int bytes() const;
 
     ///--- Operators
 
     /// Index operator
-    virtual real operator()(int i, int j) const;
+    virtual real operator()(unsigned int i, unsigned int j) const;
 
     /// Index operator
-    virtual Element operator()(int i, int j);
+    virtual Element operator()(unsigned int i, unsigned int j);
 
     /// Index operator
-    virtual Row operator()(int i, Range j);
+    virtual Row operator()(unsigned int i, Range j);
 
     /// Index operator
     virtual Row operator()(Index i, Range j);
     
     /// Index operator
-    virtual Column operator()(Range i, int j);
+    virtual Column operator()(Range i, unsigned int j);
 
     /// Index operator
     virtual Column operator()(Range i, Index j);
 
     /// Index operator (only dense, quick access)
-    virtual real* operator[](int i) const;
+    virtual real* operator[](unsigned int i) const;
 
     /// Index operator (only sparse, quick access)
-    virtual real operator()(int i, int& j, int pos) const;
+    virtual real operator()(unsigned int i, unsigned int& j, unsigned int pos) const;
 
     /// Assignment from scalar (affects only already non-zero elements for sparse)
     virtual void operator=(real a);
@@ -124,7 +124,7 @@ namespace dolfin {
     virtual real norm() const;
 
     /// Matrix-vector multiplication, component i of Ax
-    virtual real mult(const Vector& x, int i) const;
+    virtual real mult(const Vector& x, unsigned int i) const;
 
     /// Matrix-vector multiplication
     virtual void mult(const Vector& x, Vector& Ax) const;
@@ -133,10 +133,10 @@ namespace dolfin {
     virtual void multt(const Vector& x, Vector &Ax) const;
 
     /// Scalar product with row
-    virtual real multrow(const Vector& x, int i) const;
+    virtual real multrow(const Vector& x, unsigned int i) const;
 
     /// Scalar product with column
-    virtual real multcol(const Vector& x, int j) const;
+    virtual real multcol(const Vector& x, unsigned int j) const;
 
     /// Compute transpose
     virtual void transp(Matrix& At) const;
@@ -168,7 +168,7 @@ namespace dolfin {
     virtual void resize();
     
     /// Set A(i,j) = d_{ij} on row i
-    virtual void ident(int i);
+    virtual void ident(unsigned int i);
 
     /// Add a new row
     virtual void addrow();
@@ -177,10 +177,10 @@ namespace dolfin {
     virtual void addrow(const Vector& x);
 
     /// Specify number of non-zero elements on row i (only sparse)
-    virtual void initrow(int i, int rowsize);
+    virtual void initrow(unsigned int i, unsigned int rowsize);
 
     /// True if we have reached the end of the row (only sparse)
-    virtual bool endrow(int i, int pos) const;
+    virtual bool endrow(unsigned int i, unsigned int pos) const;
     
     /// Set this matrix to the transpose of the given matrix
     virtual void settransp(const Matrix& A);
@@ -199,7 +199,7 @@ namespace dolfin {
     class Element {
     public:
     
-      Element(Matrix& matrix, int i, int j);
+      Element(Matrix& matrix, unsigned int i, unsigned int j);
       
       operator real() const;
       
@@ -214,8 +214,8 @@ namespace dolfin {
     protected:
     
       Matrix& A;
-      int i;
-      int j;
+      unsigned int i;
+      unsigned int j;
 
     };
 
@@ -223,13 +223,13 @@ namespace dolfin {
     class Row {
     public:
     
-      Row(Matrix& matrix, int i, Range j);
+      Row(Matrix& matrix, unsigned int i, Range j);
       Row(Matrix& matrix, Index i, Range j);
 
-      int size() const;
+      unsigned int size() const;
 
-      real operator() (int j) const;
-      Element operator()(int j);
+      real operator() (unsigned int j) const;
+      Element operator()(unsigned int j);
 
       void operator= (const Row& row);
       void operator= (const Column& col);
@@ -242,7 +242,7 @@ namespace dolfin {
     private:
     
       Matrix& A;
-      int i;
+      unsigned int i;
       Range j;
 
     };
@@ -251,13 +251,13 @@ namespace dolfin {
     class Column {
     public:
     
-      Column(Matrix& matrix, Range i, int j);
+      Column(Matrix& matrix, Range i, unsigned int j);
       Column(Matrix& matrix, Range i, Index j);
 
-      int size() const;
+      unsigned int size() const;
 
-      real operator() (int i) const;
-      Element operator()(int i);
+      real operator() (unsigned int i) const;
+      Element operator()(unsigned int i);
 
       void operator= (const Column& col);
       void operator= (const Row& row);
@@ -271,7 +271,7 @@ namespace dolfin {
     
       Matrix& A;
       Range i;
-      int j;
+      unsigned int j;
 
     };
 
@@ -293,11 +293,11 @@ namespace dolfin {
     void clearperm();
 
     /// Return permutation (only dense)
-    int* permutation();
-
+    unsigned int* permutation();
+    
     /// Return permutation (only dense)
-    int* const permutation() const;
-
+    unsigned int* const permutation() const;
+    
     GenericMatrix* A;
     Type _type;
 

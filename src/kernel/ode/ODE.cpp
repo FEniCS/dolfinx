@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(int N) : sparsity(N)
+ODE::ODE(unsigned int N) : sparsity(N)
 {
   this->N = N;
   T = 1.0;
@@ -20,7 +20,7 @@ ODE::~ODE()
 
 }
 //-----------------------------------------------------------------------------
-int ODE::size() const
+unsigned int ODE::size() const
 {
   return N;  
 }
@@ -35,12 +35,12 @@ void ODE::solve()
   ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
-void ODE::sparse(int i, int size)
+void ODE::sparse(unsigned int i, unsigned int size)
 {
   sparsity.setsize(i, size);
 }
 //-----------------------------------------------------------------------------
-void ODE::depends(int i, int j)
+void ODE::depends(unsigned int i, unsigned int j)
 {
   sparsity.set(i,j);
 }

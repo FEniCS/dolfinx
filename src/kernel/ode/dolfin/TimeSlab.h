@@ -26,17 +26,13 @@ namespace dolfin {
   public:
 
     /// Create time slab, including one iteration
-    TimeSlab(real t0, real t1, RHS& f, 
-	     TimeSlabData& data, Partition& partition, int offset);
-    
+    TimeSlab(real t0, real t1);
+
     /// Destructor
-    ~TimeSlab();
+    virtual ~TimeSlab();
     
     /// Update time slab (iteration)
-    void update(RHS& f, TimeSlabData& data);
-    
-    /// Update time slab (iteration)
-    void updateu0(TimeSlabData &data);
+    virtual void update(RHS& f, TimeSlabData& data) = 0;
     
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -53,37 +49,13 @@ namespace dolfin {
     /// Return length of time slab
     real length() const;
 
-    // FIXME: Maybe this shouldn't be public?
-    // List of time slabs within this time slab
-    std::vector<TimeSlab *> timeslabs;
-
     /// Output
-    friend LogStream& operator<<(LogStream& stream, const TimeSlab &timeslab);
+    friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);
 
-  private:
+  protected:
     
-    // Create new time slab
-    void create(RHS& f, TimeSlabData& data, Partition& partition, int offset);
-    
-    // Create list of time slabs within the time slab
-    void createTimeSlabs(RHS& f, TimeSlabData& data,
-			 Partition& partition, int offset);
-
-    // Create list of elements within the time slab
-    void createElements(RHS& f, TimeSlabData& data,
-			Partition& partition, int offset, int end);
-
-    // Update time slabs (iteration)
-    void updateTimeSlabs(RHS& f, TimeSlabData& data);
-
-    // Update elements (iteration)
-    void updateElements(RHS& f, TimeSlabData& data);
-
     // Specify and adjust the time step
     void setsize(real K);
-
-    // Add a new time slab
-    void add(TimeSlab* timeslab);
 
     //--- Time slab data ---
 
@@ -93,14 +65,6 @@ namespace dolfin {
 
     // True if we reached the given end time
     bool reached_endtime;
-
-    // List of elements within this time slab
-    std::vector<Element*> elements;
-    
-
-    // List of elements within this time slab
-    //Table<Element>::Iterator first;
-    //Table<Element>::Iterator last;
 
   };
 

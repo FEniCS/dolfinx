@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GaussianQuadrature::GaussianQuadrature(int n) : Quadrature(n)
+GaussianQuadrature::GaussianQuadrature(unsigned int n) : Quadrature(n)
 {
   // Length of interval [-1,1]
   m = 2.0;
@@ -43,9 +43,9 @@ void GaussianQuadrature::computeWeights()
   Vector x(n), b(n);
    
   // Compute the matrix coefficients
-  for (int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     Legendre p(i);
-    for (int j = 0; j < n; j++)
+    for (unsigned int j = 0; j < n; j++)
       A(i,j) = p(points[j]);
     b(i) = 0.0;
   }
@@ -55,11 +55,11 @@ void GaussianQuadrature::computeWeights()
   A.hpsolve(x, b);
 
   // Save the weights
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     weights[i] = x(i);
 }
 //-----------------------------------------------------------------------------
-bool GaussianQuadrature::check(int q) const
+bool GaussianQuadrature::check(unsigned int q) const
 {
   // Checks that the points and weights are correct. We compute the
   // value of the integral of the Legendre polynomial of degree q.
@@ -68,7 +68,7 @@ bool GaussianQuadrature::check(int q) const
   Legendre p(q);
   
   real sum = 0.0;
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
   
   if ( q == 0 )

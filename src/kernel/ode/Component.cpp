@@ -54,37 +54,36 @@ real Component::operator()(real t)
   //dolfin::cout << "node: " << node << dolfin::endl;
   //dolfin::cout << "Looking for t: " << t << dolfin::endl;
 
-  if(elements.size() > 0)
+  if (elements.size() > 0)
   {
     real t0 = elements.front()->starttime();
     real t1 = elements.back()->endtime();
 
     //dolfin::cout << "Component range: " << t0 << "-" << t1 << dolfin::endl;
 
-    if(t == t0)
+    if( t == t0)
     {
-      dolfin_debug("u0");
+      //dolfin_debug("u0");
       return u0;
     }
-    else if(t > t1)
+    else if (t > t1)
     {
       // Should extrapolate
       // I don't think our sceheme requires it however
 
-      dolfin_debug("after end");
+      //dolfin_debug("after end");
       return u0;
     }
-    else if(t < t0)
+    else if (t < t0)
     {
       // Shouldn't ever get here
-
-      dolfin_debug("before start");
+      dolfin_error("Request for element value at t < t0");
+      //dolfin_debug("before start");
       return u0;
     }
     else
     {
       Element *element = findpos(t);
-
       return element->eval(t);
     }
   }
@@ -92,7 +91,7 @@ real Component::operator()(real t)
   {
     // Range empty
 
-    dolfin_debug("Range empty");
+    //dolfin_debug("Range empty");
 
     return u0;
   }
@@ -124,28 +123,24 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   else
   {
     // Not the First element, get u0 from previous element
-    Element &prevelement = last();
-    real u0i = prevelement.eval();
-    element->update(u0i);
+    element->update(last().eval());
   }
   
   // Add element to list
   elements.push_back(element);
 
-  dolfin_debug1("this: %p", this);
-
-  dolfin_debug1("element->starttime: %lf", element->starttime());
-  dolfin_debug1("element->endtime: %lf", element->endtime());
-  dolfin_debug1("element->timestep: %lf", element->timestep());
-  dolfin_debug1("elements.size: %d", elements.size());
+  //dolfin_debug1("this: %p", this);
+  //dolfin_debug1("element->starttime: %lf", element->starttime());
+  //dolfin_debug1("element->endtime: %lf", element->endtime());
+  //dolfin_debug1("element->timestep: %lf", element->timestep());
+  //dolfin_debug1("elements.size: %d", elements.size());
 
   return element;
 }
 //-----------------------------------------------------------------------------
 Element& Component::last()
 {
-  //dolfin_assert(next > 0);
-  //dolfin_assert(next <= elements.size());
+  dolfin_assert(elements.size() > 0);
 
   return *(elements.back());
 }
@@ -154,8 +149,7 @@ Element *Component::findpos(real t)
 {
   /// Find element through binary search
 
-  dolfin_debug("findpos");
-
+  //dolfin_debug("findpos");
 
   //dolfin_assert(elements.size() > 0);
   //dolfin_assert(elements.front()->starttime() <= t);
@@ -187,15 +181,15 @@ Element *Component::findpos(real t)
 
   if(target == elements.end())
   {
-    dolfin_debug("found end");
+    //dolfin_debug("found end");
     //target--;
     return 0;
   }
   else
   {
-    dolfin_debug("found");
-    dolfin::cout << "Found element at: " << (*target)->starttime() << "-" <<
-      (*target)->endtime() << dolfin::endl;
+    //dolfin_debug("found");
+    //dolfin::cout << "Found element at: " << (*target)->starttime() << "-" <<
+    //(*target)->endtime() << dolfin::endl;
     return *target;
   }
 

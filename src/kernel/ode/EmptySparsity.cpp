@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EmptySparsity::EmptySparsity(int N) : GenericSparsity(N)
+EmptySparsity::EmptySparsity(unsigned int N) : GenericSparsity(N)
 {
   // Do nothing
 }
@@ -22,7 +22,7 @@ GenericSparsity::Type EmptySparsity::type() const
   return empty;
 }
 //-----------------------------------------------------------------------------
-EmptySparsity::Iterator* EmptySparsity::createIterator(int i) const
+EmptySparsity::Iterator* EmptySparsity::createIterator(unsigned int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
@@ -30,7 +30,7 @@ EmptySparsity::Iterator* EmptySparsity::createIterator(int i) const
   return new Iterator(i, *this);
 }
 //-----------------------------------------------------------------------------
-EmptySparsity::Iterator::Iterator(int i, const EmptySparsity& sparsity) 
+EmptySparsity::Iterator::Iterator(unsigned int i, const EmptySparsity& sparsity) 
   : GenericSparsity::Iterator(i), s(sparsity)
 {
   // Do nothing
@@ -46,7 +46,7 @@ EmptySparsity::Iterator& EmptySparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int EmptySparsity::Iterator::operator*() const
+unsigned int EmptySparsity::Iterator::operator*() const
 {
   return 0;
 }

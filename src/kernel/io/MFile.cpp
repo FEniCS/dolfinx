@@ -38,7 +38,7 @@ void MFile::operator<<(Vector& x)
   
   // Write vector
   fprintf(fp, "%s = [", x.name().c_str());
-  for (int i = 0; i < x.size(); i++)
+  for (unsigned int i = 0; i < x.size(); i++)
     fprintf(fp, " %.16e", x(i));
   fprintf(fp, " ];\n");
   

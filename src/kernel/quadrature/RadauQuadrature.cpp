@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RadauQuadrature::RadauQuadrature(int n) : GaussianQuadrature(n)
+RadauQuadrature::RadauQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   init();
 
@@ -27,7 +27,7 @@ void RadauQuadrature::show() const
   cout << " i    points                   weights" << endl;
   cout << "-----------------------------------------------------" << endl;
 
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
 }
 //-----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ void RadauQuadrature::computePoints()
   sign = ( (p1(x) + p2(x)) > 0 ? 1.0 : -1.0 );
   
   // Compute the rest of the nodes by Newton's method
-  for (int i = 1; i < n; i++) {
+  for (unsigned int i = 1; i < n; i++) {
     
     // Step to a sign change
     while ( (p1(x) + p2(x))*sign > 0.0 )

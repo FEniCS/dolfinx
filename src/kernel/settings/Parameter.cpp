@@ -252,6 +252,20 @@ Parameter::operator int() const
   return val_int;
 }
 //-----------------------------------------------------------------------------
+Parameter::operator unsigned int() const
+{
+  if ( type != INT )
+    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <int>.",
+		  identifier.c_str());
+  
+  if ( val_int < 0 )
+    dolfin_error("Assignment not possible. Value is negative and variable is of type <unsigned int>.");
+
+  int val_unsigned_int = val_int;
+
+  return val_unsigned_int;
+}
+//-----------------------------------------------------------------------------
 Parameter::operator bool() const
 {
   if ( type != BOOL )

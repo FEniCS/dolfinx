@@ -8,11 +8,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Method::Method(int q)
+Method::Method(unsigned int q)
 {
-  if ( q < 0 )
-    dolfin_error("Polynomial order must be non-negative.");
-
   this->q = q;
   n = q + 1;
 
@@ -20,25 +17,25 @@ Method::Method(int q)
 
   // Allocate points
   points  = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     points[i] = 0.0;
 
   // Allocate weights
   weights = new (real *)[n];
-  for (int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     weights[i] = new real[n];
-    for (int j = 0; j < n; j++)
+    for (unsigned int j = 0; j < n; j++)
       weights[i][j] = 0.0;
   }
   
   // Allocate quadrature weights
   qweights = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     qweights[i] = 0.0;
 
   // Allocate derivatives
   derivatives = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     derivatives[i] = 0.0;
 
   trial = 0;
@@ -54,7 +51,7 @@ Method::~Method()
   
   // Clear weights
   if ( weights ) {
-    for (int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < n; i++)
       delete [] weights[i];
     delete [] weights;
   }
@@ -81,32 +78,29 @@ Method::~Method()
   test = 0;
 }
 //-----------------------------------------------------------------------------
-int Method::size() const
+unsigned int Method::size() const
 {
   return n;
 }
 //-----------------------------------------------------------------------------
-int Method::degree() const
+unsigned int Method::degree() const
 {
   return q;
 }
 //-----------------------------------------------------------------------------
-real Method::point(int i) const
+real Method::point(unsigned int i) const
 {
   //dolfin_debug2("i = %d n = %d", i, n);
 
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(points);
 
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Method::weight(int i, int j) const
+real Method::weight(unsigned int i, unsigned int j) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
-  dolfin_assert(j >= 0);
   dolfin_assert(j < n);
 
   dolfin_assert(weights);
@@ -114,36 +108,32 @@ real Method::weight(int i, int j) const
   return weights[i][j];
 }
 //-----------------------------------------------------------------------------
-real Method::weight(int i) const
+real Method::weight(unsigned int i) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(qweights);
 
   return qweights[i];
 }
 //-----------------------------------------------------------------------------
-real Method::basis(int i, real t) const
+real Method::basis(unsigned int i, real t) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(trial);
 
   return trial->eval(i, t);
 }
 //-----------------------------------------------------------------------------
-real Method::derivative(int i, real t) const
+real Method::derivative(unsigned int i, real t) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(trial);
 
   return trial->dx(i, t);
 }
 //-----------------------------------------------------------------------------
-real Method::derivative(int i) const
+real Method::derivative(unsigned int i) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(trial);
 
@@ -160,7 +150,7 @@ void Method::init()
 //-----------------------------------------------------------------------------
 void Method::computeDerivatives()
 {
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     derivatives[i] = derivative(i, 1.0);
 }
 //-----------------------------------------------------------------------------

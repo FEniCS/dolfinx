@@ -11,7 +11,7 @@ namespace dolfin {
   class EmptySparsity : public GenericSparsity {
   public:
 
-    EmptySparsity(int N);
+    EmptySparsity(unsigned int N);
     ~EmptySparsity();
 
     Type type() const;
@@ -19,11 +19,11 @@ namespace dolfin {
     class Iterator : public GenericSparsity::Iterator {
     public:
 
-      Iterator(int i, const EmptySparsity& sparsity);
+      Iterator(unsigned int i, const EmptySparsity& sparsity);
       ~Iterator();
 
       Iterator& operator++();
-      int operator*() const;
+      unsigned int operator*() const;
       bool end() const;
 
     private:
@@ -32,7 +32,7 @@ namespace dolfin {
 
     };
 
-    Iterator* createIterator(int i) const;
+    Iterator* createIterator(unsigned int i) const;
 
     friend class Iterator;
 

@@ -5,6 +5,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/RHS.h>
 #include <dolfin/TimeSlabData.h>
 #include <dolfin/Partition.h>
 
@@ -17,6 +18,9 @@ Partition::Partition(int N, real timestep) : components(N)
     components[i].index = i;
     components[i].timestep = timestep;
   }
+  
+  valid = false;
+  threshold = 1.0;
 }
 //-----------------------------------------------------------------------------
 Partition::~Partition()
@@ -29,74 +33,64 @@ int Partition::size() const
   return components.size();
 }
 //-----------------------------------------------------------------------------
-int Partition::index(int i) const
+int Partition::index(unsigned int i) const
 {
+  dolfin_assert(i < components.size());
+  
   return components[i].index;
 }
 //-----------------------------------------------------------------------------
-void Partition::update(TimeSlabData& data, int offset)
+void Partition::update(int offset, RHS& f, TimeSlabData& data)
 {
   // Compute new preliminary time steps for all elements, starting at
   // position offset, and compute the maximum time step.
 
-  for (unsigned int i = offset; i < components.size(); i++) {
+  // Don't compute new time steps if we don't need to
+  if (valid)
+    return;
+  
+  // Compute new time steps for all components starting at offset
+  for (unsigned int i = offset; i < components.size(); i++)
+  {
+    // Get last element for the component
+    Element& element = data.component(index(i)).last();
 
-    // Component index
-    int index = components[i].index;
+    // Compute residual
+    real r = element.computeResidual(f);
 
-    real k = 0.0;
-
-    if(index == 0)
-      k = 0.1;
-    else if(index == 1)
-      k = 0.01;
-      //k = 0.1;
-    else if(index == 2)
-      k = 0.5;
-    /*
-      if(data.component(index).size() != 0)
-      {
-      // Get time step
-      k = data.component(index).last().newTimeStep();
-      }
-      else
-      {
-      }
-    */
-
-    dolfin_debug2("Partition: k[%d]: %f", i, k);
-
+    // Compute new time step
+    real k = element.computeTimeStep(r);
+    
     // Save time step
     components[i].timestep = k;
-
-  }
+  } 
 }
 //-----------------------------------------------------------------------------
 void Partition::partition(int offset, int& end, real& K)
 {
-  // Compute K
+  // Compute the largest time step
+  K = maximum(offset) / threshold;
 
-  //K = maximum(offset) / 2.0;
-  K = maximum(offset) / 1.0;
-  
-  for (unsigned int i = offset; i < components.size(); i++)
-     dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
+  // Comparison operator
+  Less less(K);
 
-  lessComponents less(K);
-
-  std::vector<Component>::iterator middle =
+  // Partition using std::partition
+  std::vector<ComponentIndex>::iterator middle =
     std::partition(components.begin() + offset, components.end(), less);
 
+  // Compute pivot index
   end = middle - components.begin();
 
-  dolfin_debug1("end: %d", end);
-
-  for (unsigned int i = offset; i < components.size(); i++)
-    dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
-
+  // Change the state
+  valid = true;
 }
 //-----------------------------------------------------------------------------
-real Partition::maximum(int offset)
+void Partition::invalidate()
+{
+  valid = false;
+}
+//-----------------------------------------------------------------------------
+real Partition::maximum(int offset) const
 {
   real K = 0.0;
 
@@ -104,28 +98,5 @@ real Partition::maximum(int offset)
     K = max(components[i].timestep, K);
 
   return K;
-}
-//-----------------------------------------------------------------------------
-Partition::Component::Component()
-{
-  index = 0;
-  timestep = 0.0;
-}
-//-----------------------------------------------------------------------------
-Partition::Component::~Component()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void Partition::Component::operator=(int zero)
-{
-  // This is needed for ShortList
-  index = 0;
-  timestep = 0.0;
-}
-//-----------------------------------------------------------------------------
-bool Partition::Component::operator<(Component &a)
-{
-  return timestep < a.timestep;
 }
 //-----------------------------------------------------------------------------

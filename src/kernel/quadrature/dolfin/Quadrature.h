@@ -11,17 +11,17 @@ namespace dolfin {
   class Quadrature {
   public:
     
-    Quadrature(int n);
+    Quadrature(unsigned int n);
     virtual ~Quadrature();
     
     /// Return number of quadrature points
     int size() const;
 
     /// Return quadrature point
-    const Point& point(int i) const;
+    const Point& point(unsigned int i) const;
 
     /// Return quadrature weight
-    real weight(int i) const;
+    real weight(unsigned int i) const;
 
     /// Return sum of weights (length, area, volume)
     real measure() const;
@@ -31,10 +31,10 @@ namespace dolfin {
 
   protected:
     
-    int n;         // Number of quadrature points
-    Point* points; // Quadrature points
-    real* weights; // Quadrature weights
-    real m;        // Sum of weights
+    unsigned int n; // Number of quadrature points
+    Point* points;  // Quadrature points
+    real* weights;  // Quadrature weights
+    real m;         // Sum of weights
     
   };
   

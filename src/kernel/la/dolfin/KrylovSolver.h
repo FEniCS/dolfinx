@@ -30,7 +30,7 @@ namespace dolfin {
     void solveCG    (const Matrix &A, Vector &x, const Vector &b);
     void solveGMRES (const Matrix &A, Vector &x, const Vector &b);
     
-    int restartedGMRES(const Matrix &A, Vector &x, const Vector &b, Vector& r, int k_max);
+    int restartedGMRES(const Matrix &A, Vector &x, const Vector &b, Vector& r, unsigned int k_max);
     
     void solvePxu(const Matrix &A, Vector &x, Vector &u);
 

@@ -11,8 +11,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabData::TimeSlabData(ODE& ode) : components(ode.size())
 {
-  topslab = 0;
-  
   // FIXME: u0 is stored at many places: first in ODE, then in components,
   // and then also in the elements
   for (unsigned int i = 0; i < components.size(); i++)
@@ -39,37 +37,35 @@ TimeSlabData::~TimeSlabData()
 Element* TimeSlabData::createElement(const Element::Type type, int q,
 				     int index, TimeSlab* timeslab)
 {
-  dolfin_debug3("creating element at: %d %lf-%lf", index,
-		timeslab->starttime(), timeslab->endtime());
+  //dolfin_debug3("creating element at: %d %lf-%lf", index,
+  //		timeslab->starttime(), timeslab->endtime());
 
   // Create the new element
   Element *e = components[index].createElement(type, q, index, timeslab);
 
-  dolfin_debug2("components[%d].size(): %d", index, components[index].size());
+  //dolfin_debug2("components[%d].size(): %d", index, components[index].size());
 
   return e;
 }
 //-----------------------------------------------------------------------------
-void TimeSlabData::setslab(TimeSlab* timeslab)
-{
-  topslab = timeslab;
-}
-//-----------------------------------------------------------------------------
-int TimeSlabData::size() const
+unsigned int TimeSlabData::size() const
 {
   return components.size();
 }
 //-----------------------------------------------------------------------------
-Component& TimeSlabData::component(int i)
+Component& TimeSlabData::component(unsigned int i)
 {
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < components.size());
+
   return components[i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlabData::shift()
+void TimeSlabData::shift(TimeSlab& timeslab)
 {
   /// Clear data for the current interval and shift values to the next interval
 
-  dolfin_debug("foo");
+  //dolfin_debug("foo");
 
   typedef std::vector<Component>::iterator dataiterator;
   for(dataiterator it = components.begin(); it != components.end(); it++)
@@ -78,14 +74,14 @@ void TimeSlabData::shift()
     
     //dolfin_debug1("c.size(): %d", c.size());
 
-    real u0i = c.last().eval(topslab->endtime());
+    real u0i = c.last().eval(timeslab.endtime());
     //real u0i = c(topslab->endtime());
     c = Component();
     c.u0 = u0i;
 
     //dolfin::cout << "Last element at: " << c.last().starttime() << "-" <<
     //c.last().endtime() << dolfin::endl;
-    dolfin_debug2("u0i: %d, %lf", it - components.begin(), u0i);
+    //dolfin_debug2("u0i: %d, %lf", it - components.begin(), u0i);
 
   }
 }

@@ -6,17 +6,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Quadrature::Quadrature(int n)
+Quadrature::Quadrature(unsigned int n)
 {
-  if ( n <= 0 )
-    dolfin_error("Number of quadrature points must be positive.");
-
   this->n = n;
   
   points = new Point[n];
   weights = new real[n];
   
-  for (int i = 0; i < 0; i++)
+  for (unsigned int i = 0; i < 0; i++)
     weights[i] = 0;
 }
 //-----------------------------------------------------------------------------
@@ -36,12 +33,12 @@ int Quadrature::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-const Point& Quadrature::point(int i) const
+const Point& Quadrature::point(unsigned int i) const
 {
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Quadrature::weight(int i) const
+real Quadrature::weight(unsigned int i) const
 {
   return weights[i];
 }

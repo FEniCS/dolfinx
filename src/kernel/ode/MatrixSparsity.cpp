@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MatrixSparsity::MatrixSparsity(int N, const Matrix& A_) : 
+MatrixSparsity::MatrixSparsity(unsigned int N, const Matrix& A_) : 
   GenericSparsity(N), A(A_)
 {
   // Check that the matrix is full
@@ -26,15 +26,14 @@ GenericSparsity::Type MatrixSparsity::type() const
   return matrix;
 }
 //-----------------------------------------------------------------------------
-MatrixSparsity::Iterator* MatrixSparsity::createIterator(int i) const
+MatrixSparsity::Iterator* MatrixSparsity::createIterator(unsigned int i) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < N);
 
   return new Iterator(i, *this);
 }
 //-----------------------------------------------------------------------------
-MatrixSparsity::Iterator::Iterator(int i, const MatrixSparsity& sparsity) 
+MatrixSparsity::Iterator::Iterator(unsigned int i, const MatrixSparsity& sparsity) 
   : GenericSparsity::Iterator(i), s(sparsity)
 {
   pos = 0;
@@ -52,13 +51,13 @@ MatrixSparsity::Iterator& MatrixSparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int MatrixSparsity::Iterator::operator*() const
+unsigned int MatrixSparsity::Iterator::operator*() const
 {
   // FIXME: This will be better when the iterator in Matrix is fixed
   if ( s.A.endrow(i, pos) )
     dolfin_error("Reached end of row.");
 
-  int j;
+  unsigned int j;
   s.A(i, j, pos);
   
   return j;

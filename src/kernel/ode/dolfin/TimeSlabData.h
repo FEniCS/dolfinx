@@ -35,24 +35,21 @@ namespace dolfin {
     Element* createElement(Element::Type type, int q, int index,
 			   TimeSlab* timeslab);
     
-    /// Specify top level time slab
-    void setslab(TimeSlab* timeslab);
-
-    /// Return number of elements
-    int size() const;
+    /// Return number of components
+    unsigned int size() const;
 
     /// Return given component
-    Component& component(int i);
+    Component& component(unsigned int i);
 
     /// Shift solution at endtime to new u0
-    void shift();
+    void shift(TimeSlab& timeslab);
 
     /// Save debug info
-    enum Action { create = 0, update };
+    enum Action { slab = 0, create, update };
     void debug(Element& element, Action action);
 
   private:
-
+    
     // List of components
     std::vector<Component> components;
 
@@ -61,9 +58,6 @@ namespace dolfin {
 
     // Latest residuals
     std::vector<real> residuals_latest;
-
-    // Top level time slab
-    TimeSlab* topslab;
 
     // Save debug info to file 'timeslab.debug'
     bool _debug;

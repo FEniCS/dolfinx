@@ -19,19 +19,20 @@ namespace dolfin {
 	 
     Vector();
     Vector(int size);
+    Vector(unsigned int size);
     Vector(const Vector& x);
     Vector(real x0);
     Vector(real x0, real x1);
     Vector(real x0, real x1, real x2);
     ~Vector ();
     
-    void init(int size);
+    void init(unsigned int size);
     void clear();
-    int size() const;
-    int bytes() const;
+    unsigned int size() const;
+    unsigned int bytes() const;
 
-    real  operator()(int i) const;    
-    real& operator()(int i);
+    real  operator()(unsigned int i) const;    
+    real& operator()(unsigned int i);
     
     void operator=(const Vector& x);
     void operator=(real scalar);
@@ -55,7 +56,7 @@ namespace dolfin {
     real operator*(const Matrix::Column& col) const;
     
     real norm () const;
-    real norm (int i) const;
+    real norm (unsigned int i) const;
     
     void add(real a, Vector& x);
     void add(real a, const Matrix::Row& row);
@@ -74,9 +75,9 @@ namespace dolfin {
     
   private:
     
-    void alloc(int size);
+    void alloc(unsigned int size);
 
-    int n;
+    unsigned int n;
     real *values;
     
   };

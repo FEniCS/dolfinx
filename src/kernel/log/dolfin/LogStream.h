@@ -20,6 +20,7 @@ namespace dolfin {
     LogStream& operator<<(const char* s);
     LogStream& operator<<(const std::string& s);
     LogStream& operator<<(int a);
+    LogStream& operator<<(unsigned int a);
     LogStream& operator<<(real a);
     LogStream& operator<<(const LogStream& stream);
 

@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TableSparsity::TableSparsity(int N) : GenericSparsity(N)
+TableSparsity::TableSparsity(unsigned int N) : GenericSparsity(N)
 {
   list = new Array<int>[N];
 }
@@ -19,7 +19,7 @@ TableSparsity::~TableSparsity()
   list = 0;
 }
 //-----------------------------------------------------------------------------
-void TableSparsity::setsize(int i, int size)
+void TableSparsity::setsize(unsigned int i, unsigned int size)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
@@ -30,17 +30,17 @@ void TableSparsity::setsize(int i, int size)
   list[i].init(size);
 
   // Index -1 denotes an empty position
-  for (int pos = 0; pos < size; pos++)
+  for (unsigned int pos = 0; pos < size; pos++)
     list[i](pos) = -1;
 }
 //-----------------------------------------------------------------------------
-void TableSparsity::set(int i, int j)
+void TableSparsity::set(unsigned int i, unsigned int j)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
 
   // Find first empty position
-  for (int pos = 0; pos < list[i].size(); pos++) {
+  for (unsigned int pos = 0; pos < list[i].size(); pos++) {
     if ( list[i](pos) == j )
       return;
     else if ( list[i](pos) == -1 ) {
@@ -57,7 +57,7 @@ GenericSparsity::Type TableSparsity::type() const
   return table;
 }
 //-----------------------------------------------------------------------------
-TableSparsity::Iterator* TableSparsity::createIterator(int i) const
+TableSparsity::Iterator* TableSparsity::createIterator(unsigned int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
@@ -65,7 +65,7 @@ TableSparsity::Iterator* TableSparsity::createIterator(int i) const
   return new Iterator(i, *this);
 }
 //-----------------------------------------------------------------------------
-TableSparsity::Iterator::Iterator(int i, const TableSparsity& sparsity)
+TableSparsity::Iterator::Iterator(unsigned int i, const TableSparsity& sparsity)
   : GenericSparsity::Iterator(i), s(sparsity)
 {
   pos = 0;
@@ -95,9 +95,9 @@ TableSparsity::Iterator& TableSparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int TableSparsity::Iterator::operator*() const
+unsigned int TableSparsity::Iterator::operator*() const
 {
-  return s.list[i](pos);
+  return static_cast<unsigned int>(s.list[i](pos));
 }
 //-----------------------------------------------------------------------------
 bool TableSparsity::Iterator::end() const

@@ -29,7 +29,7 @@ Matrix::Matrix(Type type)
   _type = type;
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(int m, int n, Type type)
+Matrix::Matrix(unsigned int m, unsigned int n, Type type)
 {
   switch ( type ) {
   case dense:
@@ -68,7 +68,7 @@ Matrix::~Matrix ()
   A = 0;
 }
 //-----------------------------------------------------------------------------
-void Matrix::init(int m, int n)
+void Matrix::init(unsigned int m, unsigned int n)
 {
   A->init(m,n);
 }
@@ -83,39 +83,39 @@ Matrix::Type Matrix::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-int Matrix::size(int dim) const
+unsigned int Matrix::size(unsigned int dim) const
 {
   return A->size(dim);
 }
 //-----------------------------------------------------------------------------
-int Matrix::size() const
+unsigned int Matrix::size() const
 {
   return A->size();
 }
 //-----------------------------------------------------------------------------
-int Matrix::rowsize(int dim) const
+unsigned int Matrix::rowsize(unsigned int dim) const
 {
   return A->rowsize(dim);
 }
 //-----------------------------------------------------------------------------
-int Matrix::bytes() const
+unsigned int Matrix::bytes() const
 {
   return A->bytes();
 }
 //-----------------------------------------------------------------------------
-real Matrix::operator()(int i, int j) const
+real Matrix::operator()(unsigned int i, unsigned int j) const
 {
   // This operator is used when the object is const
   return (*A)(i,j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Element Matrix::operator()(int i, int j)
+Matrix::Element Matrix::operator()(unsigned int i, unsigned int j)
 {
   // This operator is used when the object is non-const and is slower
   return Element(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Row Matrix::operator()(int i, Range j)
+Matrix::Row Matrix::operator()(unsigned int i, Range j)
 {
   return Row(*this, i, j);
 }
@@ -125,7 +125,7 @@ Matrix::Row Matrix::operator()(Index i, Range j)
   return Row(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Column Matrix::operator()(Range i, int j)
+Matrix::Column Matrix::operator()(Range i, unsigned int j)
 {
   return Column(*this, i, j);
 }
@@ -135,12 +135,12 @@ Matrix::Column Matrix::operator()(Range i, Index j)
   return Column(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-real Matrix::operator()(int i, int& j, int pos) const
+real Matrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
 {
   return (*A)(i,j,pos);
 }
 //-----------------------------------------------------------------------------
-real* Matrix::operator[](int i) const
+real* Matrix::operator[](unsigned int i) const
 {
   return (*A)[i];
 }
@@ -202,7 +202,7 @@ real Matrix::norm() const
   return A->norm();
 }
 //-----------------------------------------------------------------------------
-real Matrix::mult(const Vector& x, int i) const
+real Matrix::mult(const Vector& x, unsigned int i) const
 {
   return A->mult(x,i);
 }
@@ -217,12 +217,12 @@ void Matrix::multt(const Vector& x, Vector &Ax) const
   A->multt(x,Ax);
 }
 //-----------------------------------------------------------------------------
-real Matrix::multrow(const Vector& x, int i) const
+real Matrix::multrow(const Vector& x, unsigned int i) const
 {
   return A->multrow(x,i);
 }
 //-----------------------------------------------------------------------------
-real Matrix::multcol(const Vector& x, int j) const
+real Matrix::multcol(const Vector& x, unsigned int j) const
 {
   return A->multcol(x,j);
 }
@@ -367,7 +367,7 @@ void Matrix::resize()
   A->resize();
 }
 //-----------------------------------------------------------------------------
-void Matrix::ident(int i)
+void Matrix::ident(unsigned int i)
 {
   A->ident(i);
 }
@@ -382,12 +382,12 @@ void Matrix::addrow(const Vector& x)
   A->addrow(x);
 }
 //-----------------------------------------------------------------------------
-void Matrix::initrow(int i, int rowsize)
+void Matrix::initrow(unsigned int i, unsigned int rowsize)
 {
   A->initrow(i, rowsize);
 }
 //-----------------------------------------------------------------------------
-bool Matrix::endrow(int i, int pos) const
+bool Matrix::endrow(unsigned int i, unsigned int pos) const
 {
   return A->endrow(i, pos);
 }
@@ -427,7 +427,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-Matrix::Element::Element(Matrix& matrix, int i, int j) : A(matrix)
+Matrix::Element::Element(Matrix& matrix, unsigned int i, unsigned int j) : A(matrix)
 {
   this->i = i;
   this->j = j;
@@ -470,7 +470,7 @@ void Matrix::Element::operator/=(real a)
   A.A->div(i, j, a);
 }
 //-----------------------------------------------------------------------------
-Matrix::Row::Row(Matrix& matrix, int i, Range) : A(matrix)
+Matrix::Row::Row(Matrix& matrix, unsigned int i, Range) : A(matrix)
 {
   this->i = i;
   this->j = j;
@@ -486,17 +486,17 @@ Matrix::Row::Row(Matrix& matrix, Index i, Range j) : A(matrix)
   this->j = j;
 }
 //-----------------------------------------------------------------------------
-int Matrix::Row::size() const
+unsigned int Matrix::Row::size() const
 {
   return A.size(1);
 }
 //-----------------------------------------------------------------------------
-real Matrix::Row::operator()(int j) const
+real Matrix::Row::operator()(unsigned int j) const
 {
   return A(i,j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Element Matrix::Row::operator()(int j)
+Matrix::Element Matrix::Row::operator()(unsigned int j)
 {
   return Element(A, i, j);
 }
@@ -506,7 +506,7 @@ void Matrix::Row::operator=(const Row& row)
   if ( A.size(1) != row.A.size(1) )
     dolfin_error("Matrix dimensions don't match.");
   
-  for (int j = 0; j < A.size(1); j++)
+  for (unsigned int j = 0; j < A.size(1); j++)
     A(i,j) = row.A(row.i,j);
 }
 //-----------------------------------------------------------------------------
@@ -515,7 +515,7 @@ void Matrix::Row::operator=(const Column& col)
   if ( A.size(1) != col.A.size(0) )
     dolfin_error("Matrix dimensions don't match.");
 
-  for (int j = 0; j < A.size(1); j++)
+  for (unsigned int j = 0; j < A.size(1); j++)
     A(i,j) = col.A(j,col.j);
 }
 //-----------------------------------------------------------------------------
@@ -524,7 +524,7 @@ void Matrix::Row::operator=(const Vector& x)
   if ( x.size() != A.size(1) )
     dolfin_error("Matrix imensions don't match.");
 
-  for (int j = 0; j < x.size(); j++)
+  for (unsigned int j = 0; j < x.size(); j++)
     A(i,j) = x(j);
 }
 //-----------------------------------------------------------------------------
@@ -533,7 +533,7 @@ real Matrix::Row::operator* (const Vector& x) const
   return A.multrow(x,i);
 }
 //-----------------------------------------------------------------------------
-Matrix::Column::Column(Matrix& matrix, Range i, int j) : A(matrix)
+Matrix::Column::Column(Matrix& matrix, Range i, unsigned int j) : A(matrix)
 {
   this->i = i;
   this->j = j;
@@ -549,17 +549,17 @@ Matrix::Column::Column(Matrix& matrix, Range i, Index j) : A(matrix)
     this->j = A.size(1) - 1;
 }
 //-----------------------------------------------------------------------------
-int Matrix::Column::size() const
+unsigned int Matrix::Column::size() const
 {
   return A.size(0);
 }
 //-----------------------------------------------------------------------------
-real Matrix::Column::operator()(int i) const
+real Matrix::Column::operator()(unsigned int i) const
 {
   return A(i,j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Element Matrix::Column::operator()(int i)
+Matrix::Element Matrix::Column::operator()(unsigned int i)
 {
   return Element(A, i, j);
 }
@@ -569,7 +569,7 @@ void Matrix::Column::operator=(const Column& col)
   if ( A.size(0) != col.A.size(0) )
     dolfin_error("Matrix dimensions don't match.");
 
-  for (int i = 0; i < A.size(0); i++)
+  for (unsigned int i = 0; i < A.size(0); i++)
     A(i,j) = col.A(i,j);
 }
 //-----------------------------------------------------------------------------
@@ -578,7 +578,7 @@ void Matrix::Column::operator=(const Row& row)
   if ( A.size(0) != row.A.size(1) )
     dolfin_error("Matrix dimensions don't match.");
 
-  for (int i = 0; i < A.size(0); i++)
+  for (unsigned int i = 0; i < A.size(0); i++)
     A(i,j) = row.A(row.i,i);
 }
 //-----------------------------------------------------------------------------
@@ -587,7 +587,7 @@ void Matrix::Column::operator=(const Vector& x)
   if ( x.size() != A.size(0) )
     dolfin_error("Matrix imensions don't match.");
 
-  for (int i = 0; i < x.size(); i++)
+  for (unsigned int i = 0; i < x.size(); i++)
     A(i,j) = x(i);
 }
 //-----------------------------------------------------------------------------
@@ -624,14 +624,14 @@ void Matrix::clearperm()
   A->clearperm();
 }
 //-----------------------------------------------------------------------------
-int* Matrix::permutation()
+unsigned int* Matrix::permutation()
 {
   // See comment in Matrix::values() above
   
   return A->getperm();
 }
 //-----------------------------------------------------------------------------
-int* const Matrix::permutation() const
+unsigned int* const Matrix::permutation() const
 {
   // See comment in Matrix::values() above
   

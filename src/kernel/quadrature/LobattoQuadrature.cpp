@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LobattoQuadrature::LobattoQuadrature(int n) : GaussianQuadrature(n)
+LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   if ( n < 2 )
     dolfin_error("Lobatto quadrature requires at least 2 points.");
@@ -30,7 +30,7 @@ void LobattoQuadrature::show() const
   cout << " i    points                   weights" << endl;
   cout << "-----------------------------------------------------" << endl;
 
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
 }
 //----------------------------------------------------------------------------
@@ -61,7 +61,7 @@ void LobattoQuadrature::computePoints()
   points[n-1] = 1.0;
   
   // Compute the rest of the nodes by Newton's method
-  for (int i = 1; i <= ((n-1)/2); i++) {
+  for (unsigned int i = 1; i <= ((n-1)/2); i++) {
     
     // Initial guess
     x = cos(DOLFIN_PI*real(i)/real(n-1));

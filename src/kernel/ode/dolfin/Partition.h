@@ -12,6 +12,7 @@
 
 namespace dolfin {
 
+  class RHS;
   class TimeSlabData;
 
   /// Partition is used in the recursive construction of time slabs
@@ -30,54 +31,57 @@ namespace dolfin {
     /// Return size of partition
     int size() const;
 
-    /// Return component index number i
-    int index(int i) const;
+    /// Return component index at given position
+    int index(unsigned int pos) const;
 
-    /// Update time steps
-    void update(TimeSlabData& data, int offset);
-    
+    /// Update data for partition (time steps)
+    void update(int offset, RHS& f, TimeSlabData& data);
+
     /// Partition (reorder) components
     void partition(int offset, int& end, real& K);
-
-    //class lessThanComponent;
-    //friend class lessThanComponent;
-
+    
+    /// Invalidate partition (update needed)
+    void invalidate();
+    
   private:
 
-    class Component {
+    // Component index and time step
+    class ComponentIndex {
     public:
 
-      Component();
-      ~Component();
-
-      void operator=(int zero);
-      bool operator<(Component &a);
+      ComponentIndex() : index(0), timestep(0.0) {}
 
       int index;
       real timestep;
 
     };
-    
-    struct lessComponents : public std::unary_function<Component, bool> 
-    {
-      real K;
 
-      lessComponents(real &K) : K(K)
+    // Comparison operator for the partition
+    struct Less : public std::unary_function<ComponentIndex, bool> 
+    {
+      Less(real& K) : K(K) {}
+
+      bool operator()(ComponentIndex& component) const
       {
+	return component.timestep >= K;
       }
-      bool operator()(Component &a) const
-      {
-	return a.timestep >= K;
-      }
+
+      real K;
     };
 
-    real maximum(int offset);
+    // List of component indices
+    std::vector<ComponentIndex> components;
+    
+    // Compute largest time step
+    real maximum(int offset) const;
 
-    // List of components
-    std::vector<Component> components;
+    // State
+    bool valid;
 
+    // Threshold for partition
+    real threshold;
+    
   };
-
 
 }
 

@@ -17,34 +17,34 @@ namespace dolfin {
   public:
     
     /// Constructor
-    Method(int q);
+    Method(unsigned int q);
 
     /// Destructor
     virtual ~Method();
     
     /// Return number of points
-    int size() const;
+    unsigned int size() const;
     
     /// Return degree
-    int degree() const;
+    unsigned int degree() const;
 
     /// Return nodal point
-    real point(int i) const;
+    real point(unsigned int i) const;
     
     /// Return nodal weight j for degree of freedom i (including quadrature)
-    real weight(int i, int j) const;
+    real weight(unsigned int i, unsigned int j) const;
 
     /// Return quadrature weight (including only quadrature)
-    real weight(int i) const;
+    real weight(unsigned int i) const;
 
     /// Evaluation of basis function i at given point t within [0,1]
-    real basis(int i, real t) const;
+    real basis(unsigned int i, real t) const;
 
     /// Evaluation of derivative of basis function i at given point t within [0,1]
-    real derivative(int i, real t) const;
+    real derivative(unsigned int i, real t) const;
     
     /// Evaluation of derivative of basis function i at t = 1
-    real derivative(int i) const;
+    real derivative(unsigned int i) const;
     
     /// Display method data
     virtual void show() const = 0;
@@ -59,8 +59,8 @@ namespace dolfin {
 
     void computeDerivatives();
 
-    int q; // Polynomial order
-    int n; // Number of nodal points
+    unsigned int q; // Polynomial order
+    unsigned int n; // Number of nodal points
 
     real*  points;
     real** weights;

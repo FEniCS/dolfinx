@@ -30,7 +30,7 @@ RHS::~RHS()
 
 }
 //-----------------------------------------------------------------------------
-real RHS::operator() (int index, int node, real t, TimeSlab* timeslab)
+real RHS::operator() (unsigned int index, unsigned int node, real t, TimeSlab* timeslab)
 {
   // Update the solution vector
   update(index, node, t, timeslab);
@@ -40,7 +40,7 @@ real RHS::operator() (int index, int node, real t, TimeSlab* timeslab)
   return ode->f(u, t, index);
 }
 //-----------------------------------------------------------------------------
-void RHS::update(int index, int node, real t, TimeSlab* timeslab)
+void RHS::update(unsigned int index, unsigned int node, real t, TimeSlab* timeslab)
 {
   // Update the solution vector for all components that influence the
   // current component.
@@ -48,11 +48,11 @@ void RHS::update(int index, int node, real t, TimeSlab* timeslab)
   for (Sparsity::Iterator i(index, ode->sparsity); !i.end(); ++i)
   {
     u(i) = data->component(i)(node, t, timeslab);
-    dolfin_debug3("u(%d, %lf): %lf", (int)i, t, u(i));
+    //dolfin_debug3("u(%d, %lf): %lf", (int)i, t, u(i));
   }
 }
 //-----------------------------------------------------------------------------
-int RHS::size() const
+unsigned int RHS::size() const
 {
   return ode->size();
 }

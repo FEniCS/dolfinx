@@ -21,7 +21,7 @@ namespace dolfin {
   class GaussQuadrature : public GaussianQuadrature {
   public:
     
-    GaussQuadrature(int n);
+    GaussQuadrature(unsigned int n);
 
     void show() const;
 

@@ -12,7 +12,7 @@ using namespace dolfin;
 Vector dolfin::Element::f;
 
 //-----------------------------------------------------------------------------
-Element::Element(int q, int index, TimeSlab* timeslab)
+Element::Element(unsigned int q, unsigned int index, TimeSlab* timeslab)
 {
   dolfin_assert(q >= 0);
   
@@ -20,9 +20,9 @@ Element::Element(int q, int index, TimeSlab* timeslab)
   this->q = q;
   values = new real[q+1];
 
-  dolfin_debug("foo");
+  //dolfin_debug("foo");
 
-  for(int i = 0; i < q+1; i++)
+  for(unsigned int i = 0; i < q+1; i++)
   {
     values[i] = 0;
   }
@@ -43,14 +43,14 @@ Element::Element(int q, int index, TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 Element::~Element()
 {
-  dolfin_debug("foo");
+  //dolfin_debug("foo");
 
   if ( values )
     delete [] values;
   values = 0;
 }
 //-----------------------------------------------------------------------------
-real Element::eval(int node) const
+real Element::eval(unsigned int node) const
 {
   dolfin_assert(node >= 0);
   dolfin_assert(node <= q);
@@ -63,7 +63,7 @@ real Element::eval() const
   return values[q];
 }
 //-----------------------------------------------------------------------------
-int Element::within(real t) const
+bool Element::within(real t) const
 {
   dolfin_assert(timeslab);
   return timeslab->within(t);

@@ -50,16 +50,16 @@ void DirectSolver::lu(Matrix& A) const
   A.initperm();
 
   // Get data from matrix
-  int n      = A.size(0);
-  real** a   = A.values();
-  int* index = A.permutation();
+  unsigned int n = A.size(0);
+  real** a = A.values();
+  unsigned int* index = A.permutation();
   
   // Compute the LU factorization
-  for (int j = 0; j < (n-1); j++) {
+  for (unsigned int j = 0; j < (n-1); j++) {
     
     // Partial pivoting, find the largest element on and below the diagonal
     int imax = j;    
-    for (int i = j+1; i < n; i++)
+    for (unsigned int i = j+1; i < n; i++)
       if ( fabs(a[i][j]) > fabs(a[imax][j]) )
 	imax = i;
     
@@ -79,10 +79,10 @@ void DirectSolver::lu(Matrix& A) const
     a[imax] = tmp2;
     
     // Gaussian elimination
-    for (int i = j+1; i < n; i++) {
+    for (unsigned int i = j+1; i < n; i++) {
       real alpha = a[i][j] / diag;
       a[i][j] = alpha;
-      for (int k = j+1; k < n; k++)
+      for (unsigned int k = j+1; k < n; k++)
 	a[i][k] -= alpha * a[j][k];
     }
 
@@ -101,9 +101,9 @@ void DirectSolver::solveLU(const Matrix& LU, Vector& x, const Vector& b) const
     dolfin_error("Non-matching dimensions for matrix and vector.");
 
   // Get data from matrix
-  int n = LU.size(0);
+  unsigned int n = LU.size(0);
   real** const a   = LU.values();
-  int* const index = LU.permutation();
+  unsigned int* const index = LU.permutation();
   
   // Check that the matrix has been LU factorized
   if ( !index )
@@ -113,17 +113,17 @@ void DirectSolver::solveLU(const Matrix& LU, Vector& x, const Vector& b) const
   x.init(n);
 
   // First solve Lx = b by forward substitution
-  for (int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     real sum = b(index[i]);
-    for (int j = 0; j < i; j++)
+    for (unsigned int j = 0; j < i; j++)
       sum -= a[i][j] * x(j);
     x(i) = sum;
   }
  
   // Then solve Ux = x by backsubstitution
-  for (int i = n-1; i >= 0; i--) {
+  for (unsigned int i = n-1; i >= 0; i--) {
     real sum = x(i);
-    for (int j = i+1; j < n; j++)
+    for (unsigned int j = i+1; j < n; j++)
       sum -= a[i][j] * x(j);
     x(i) = sum / a[i][i];
   }
@@ -141,7 +141,7 @@ void DirectSolver::inverseLU(const Matrix& LU, Matrix& Ainv) const
     dolfin_error("LU factorization must be a square matrix.");
  
   // Get size
-  int n = LU.size(0);
+  unsigned int n = LU.size(0);
  
   // Initialize inverse
   Ainv.init(n, n);
@@ -151,13 +151,13 @@ void DirectSolver::inverseLU(const Matrix& LU, Matrix& Ainv) const
   Vector x;
  
   // Compute inverse
-  for (int j = 0; j < n; j++) {
+  for (unsigned int j = 0; j < n; j++) {
                                                                                                                                                             
     e(j) = 1.0;
     solveLU(LU, x, e);
     e(j) = 0.0;
                                                                                                                                                             
-    for (int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < n; i++)
       Ainv(i, j) = x(i);
                                                                                                                                                             
   }
@@ -194,7 +194,7 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
     dolfin_error("Non-matching matrix dimensions.");
   
   // Get size
-  int n = LU.size(0);
+  unsigned int n = LU.size(0);
   
   // Start with the solution from LU factorization
   solveLU(LU, x, b);
@@ -203,11 +203,11 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
   Matrix B(n, n);
   Vector colA(n);
   Vector colB(n);
-  for (int j = 0; j < n; j++) {
-    for (int i = 0; i < n; i++)
+  for (unsigned int j = 0; j < n; j++) {
+    for (unsigned int i = 0; i < n; i++)
       colA(i) = A(i,j);
     solveLU(LU, colB, colA);
-    for (int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < n; i++)
       B(i,j) = colB(i);
   }
 
@@ -221,7 +221,7 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
 
     // Compute the residual
     res = 0.0;
-    for (int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < n; i++)
       res += sqr(A.mult(x,i) - b(i));
     res /= real(n);
     res = sqrt(res);
@@ -231,9 +231,9 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
       break;
     
     // Gauss-Seidel iteration
-    for (int i = 0; i < n; i++) {
+    for (unsigned int i = 0; i < n; i++) {
       real sum = c(i);
-      for (int j = 0; j < n; j++)
+      for (unsigned int j = 0; j < n; j++)
 	if ( j != i )
 	  sum -= B(i,j) * x(j);
       x(i) = sum / B(i,i);

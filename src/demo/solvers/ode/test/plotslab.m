@@ -67,6 +67,8 @@ for j = i:size(timeslab, 1)
   t1 = timeslab(j,3);
   t2 = timeslab(j,4);
   
+  [a n t1 t2]
+
   % Check if we have finished
   if t1 > T2
     break
@@ -94,6 +96,7 @@ for j = i:size(timeslab, 1)
       %c = [0 98 178]/256;
       c = 'r';
       cc = [250 130 180]/256;
+      disp('Blinking box')
       drawbox([t1 n], [t2 (n+1)], c);
 
       % Draw text
@@ -117,6 +120,7 @@ for j = i:size(timeslab, 1)
       % Restore box
       %c = [128 156 178]/256;
       c = 'b';
+      disp('Restoring box')
       drawbox([t1 n], [t2 (n+1)], c);
 
   end  

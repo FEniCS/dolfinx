@@ -15,7 +15,7 @@ namespace dolfin {
   class AutomaticSparsity : public GenericSparsity {
   public:
 
-    AutomaticSparsity(int N, ODE& ode);
+    AutomaticSparsity(unsigned int N, ODE& ode);
     ~AutomaticSparsity();
 
     Type type() const;
@@ -23,31 +23,31 @@ namespace dolfin {
     class Iterator : public GenericSparsity::Iterator {
     public:
 
-      Iterator(int i, const AutomaticSparsity& sparsity);
+      Iterator(unsigned int i, const AutomaticSparsity& sparsity);
       ~Iterator();
 
       Iterator& operator++();
-      int operator*() const;
+      unsigned int operator*() const;
       bool end() const;
 
     private:
 
       const AutomaticSparsity& s;
-      int pos;
+      unsigned int pos;
       bool at_end;
 
     };
 
-    Iterator* createIterator(int i) const;
+    Iterator* createIterator(unsigned int i) const;
 
     friend class Iterator;
 
   private:
 
     void computeSparsity(ODE& ode);
-    bool checkdep(ODE& ode, Vector& u, real f0, int i, int j);
+    bool checkdep(ODE& ode, Vector& u, real f0, unsigned int i, unsigned int j);
 
-    Array<int>* list;
+    Array<unsigned int>* list;
     real increment;
 
   };

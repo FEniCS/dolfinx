@@ -104,12 +104,11 @@ void SISolver::iterateRichardson(const Matrix& A, Vector& x, const Vector& b)
   real aij;
   Vector x0(x);
 
-  int j;
-  for (int i=0;i<A.size(0);i++){
+  unsigned int j;
+  for (unsigned int i=0;i<A.size(0);i++){
     x(i) = b(i);
-    for (int pos = 0; pos < A.rowsize(i); pos++) {
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       aij = A(i,j,pos);
-      if (j == -1) break;
       if (i == j) x(i) += (1.0-aij)*x0(j);
       else x(i) -= aij*x0(j);
     }
@@ -122,12 +121,11 @@ void SISolver::iterateJacobi(const Matrix& A, Vector& x, const Vector& b)
   real aij = 0.0;
   Vector x0(x);
 
-  int j;
-  for (int i = 0; i < A.size(0); i++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < A.size(0); i++) {
     x(i) = b(i);
-    for (int pos = 0; pos < A.rowsize(i); pos++) {
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       aij = A(i,j,pos);
-      if (j == -1) break;
       if (i==j) aii = aij;
       else x(i) -= aij*x0(j);
     }
@@ -140,12 +138,11 @@ void SISolver::iterateGaussSeidel(const Matrix& A, Vector& x, const Vector& b)
   real aii = 0.0;
   real aij = 0.0;
 
-  int j;
-  for (int i = 0; i < A.size(0); i++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < A.size(0); i++) {
     x(i) = b(i);
-    for (int pos = 0; pos < A.rowsize(i); pos++) {
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       aij = A(i,j,pos);
-      if (j == -1) break;
       if (i==j) aii = aij;
       else x(i) -= aij*x(j);
     }
@@ -159,12 +156,11 @@ void SISolver::iterateSOR(const Matrix& A, Vector& x, const Vector& b)
   real aii = 0.0;
   real omega = 1.0;
 
-  int j;
-  for (int i = 0; i < A.size(0); i++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < A.size(0); i++) {
     x(i) = b(i);
-    for (int pos = 0; pos < A.rowsize(i); pos++) {
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       aij = A(i,j,pos);
-      if (j == -1 ) break;
       if (j==i){
 	aii = aij;
 	x(i) += (1.0-omega)*aii*x(i);
@@ -179,7 +175,7 @@ void SISolver::iterateSOR(const Matrix& A, Vector& x, const Vector& b)
 real SISolver::residual(const Matrix &A, Vector &x, const Vector &b)
 {
   real norm_r = 0.0;
-  for (int i = 0; i < A.size(0); i++)
+  for (unsigned int i = 0; i < A.size(0); i++)
     norm_r += sqr(b(i) - A.mult(x,i));
 
   return sqrt(norm_r);

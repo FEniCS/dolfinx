@@ -5,13 +5,13 @@
 
 namespace dolfin {
 
-  real sqr(real x);
-  real max(real x, real y);
-  real min(real x, real y);
-
   int max(int x, int y);
   int min(int x, int y);
 
+  real abs(real x);
+  real sqr(real x);
+  real max(real x, real y);
+  real min(real x, real y);
   real rand();
 
   int round_int(real x);

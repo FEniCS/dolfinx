@@ -12,33 +12,33 @@ namespace dolfin {
   class TableSparsity : public GenericSparsity {
   public:
 
-    TableSparsity(int N);
+    TableSparsity(unsigned int N);
     ~TableSparsity();
 
-    void setsize(int i, int size);
-    void set(int i, int j);
+    void setsize(unsigned int i, unsigned int size);
+    void set(unsigned int i, unsigned int j);
 
     Type type() const;
 
     class Iterator : public GenericSparsity::Iterator {
     public:
 
-      Iterator(int i, const TableSparsity& sparsity);
+      Iterator(unsigned int i, const TableSparsity& sparsity);
       ~Iterator();
 
       Iterator& operator++();
-      int operator*() const;
+      unsigned int operator*() const;
       bool end() const;
 
     private:
 
       const TableSparsity& s;
-      int pos;
+      unsigned int pos;
       bool at_end;
 
     };
 
-    Iterator* createIterator(int i) const;
+    Iterator* createIterator(unsigned int i) const;
 
     friend class Iterator;
 

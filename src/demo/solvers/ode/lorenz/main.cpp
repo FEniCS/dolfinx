@@ -27,7 +27,7 @@ public:
     sparse();
   }
 
-  real f(const Vector& u, real t, int i)
+  real f(const Vector& u, real t, unsigned int i)
   {
     switch (i) {
     case 0:

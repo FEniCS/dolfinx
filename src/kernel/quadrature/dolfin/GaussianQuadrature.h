@@ -18,7 +18,7 @@ namespace dolfin {
   class GaussianQuadrature : public Quadrature {
   public:
     
-    GaussianQuadrature(int n);
+    GaussianQuadrature(unsigned int n);
     
   protected:
     
@@ -32,7 +32,7 @@ namespace dolfin {
     void computeWeights();
 
     // Check that quadrature is exact for given degree q
-    bool check(int q) const;
+    bool check(unsigned int q) const;
 
     /// Display quadrature data
     virtual void show() const = 0;

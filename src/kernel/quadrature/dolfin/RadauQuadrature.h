@@ -23,7 +23,7 @@ namespace dolfin {
   class RadauQuadrature : public GaussianQuadrature {
   public:
     
-    RadauQuadrature(int n);
+    RadauQuadrature(unsigned int n);
 
     void show() const;
     

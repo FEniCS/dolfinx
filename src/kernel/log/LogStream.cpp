@@ -62,6 +62,14 @@ LogStream& LogStream::operator<<(int a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+LogStream& LogStream::operator<<(unsigned int a)
+{
+  char tmp[DOLFIN_WORDLENGTH];
+  sprintf(tmp, "%d", a);
+  add(tmp);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 LogStream& LogStream::operator<<(real a)
 {
   char tmp[DOLFIN_WORDLENGTH];

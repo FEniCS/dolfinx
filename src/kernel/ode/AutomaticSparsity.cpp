@@ -12,9 +12,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-AutomaticSparsity::AutomaticSparsity(int N, ODE& ode) : GenericSparsity(N)
+AutomaticSparsity::AutomaticSparsity(unsigned int N, ODE& ode) : GenericSparsity(N)
 {
-  list = new Array<int>[N];
+  list = new Array<unsigned int>[N];
   increment = dolfin_get("sparsity check increment");
 
   computeSparsity(ode);
@@ -32,7 +32,7 @@ GenericSparsity::Type AutomaticSparsity::type() const
   return automatic;
 }
 //-----------------------------------------------------------------------------
-AutomaticSparsity::Iterator* AutomaticSparsity::createIterator(int i) const
+AutomaticSparsity::Iterator* AutomaticSparsity::createIterator(unsigned int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
@@ -48,13 +48,13 @@ void AutomaticSparsity::computeSparsity(ODE& ode)
 
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
-  int sum = 0;
-  for (int i = 0; i < N; i++) {
+  unsigned int sum = 0;
+  for (unsigned int i = 0; i < N; i++) {
     
     // Count the number of dependencies
-    int size = 0;
+    unsigned int size = 0;
     real f0 = ode.f(u, 0.0, i);
-    for (int j = 0; j < N; j++)
+    for (unsigned int j = 0; j < N; j++)
       if ( checkdep(ode, u, f0, i, j) )
 	size++;
     
@@ -65,8 +65,8 @@ void AutomaticSparsity::computeSparsity(ODE& ode)
     list[i].init(size);
 
     // Set the dependencies
-    int pos = 0;
-    for (int j = 0; j < N; j++)
+    unsigned int pos = 0;
+    for (unsigned int j = 0; j < N; j++)
       if ( checkdep(ode, u, f0, i, j) )
 	list[i](pos++) = j;
 
@@ -77,7 +77,7 @@ void AutomaticSparsity::computeSparsity(ODE& ode)
   dolfin_info("Automatically detected %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
-bool AutomaticSparsity::checkdep(ODE& ode, Vector& u, real f0, int i, int j)
+bool AutomaticSparsity::checkdep(ODE& ode, Vector& u, real f0, unsigned int i, unsigned int j)
 {
   // Save original value
   real uj = u(j);
@@ -93,14 +93,12 @@ bool AutomaticSparsity::checkdep(ODE& ode, Vector& u, real f0, int i, int j)
   return fabs(f - f0) > DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
-AutomaticSparsity::Iterator::Iterator(int i, const AutomaticSparsity& sparsity)
+AutomaticSparsity::Iterator::Iterator(unsigned int i, const AutomaticSparsity& sparsity)
   : GenericSparsity::Iterator(i), s(sparsity)
 {
   pos = 0;
 
   if ( s.list[i].size() == 0 )
-    at_end = true;
-  else if ( s.list[i](0) == -1 )
     at_end = true;
   else
     at_end = false;
@@ -113,9 +111,7 @@ AutomaticSparsity::Iterator::~Iterator()
 //-----------------------------------------------------------------------------
 AutomaticSparsity::Iterator& AutomaticSparsity::Iterator::operator++()
 {
-  if ( pos == (s.list[i].size() - 1) )
-    at_end = true;
-  else if ( s.list[i](pos+1) == -1 )
+  if ( (pos + 1) == static_cast<unsigned int>(s.list[i].size()) )
     at_end = true;
   else
     pos++;
@@ -123,7 +119,7 @@ AutomaticSparsity::Iterator& AutomaticSparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int AutomaticSparsity::Iterator::operator*() const
+unsigned int AutomaticSparsity::Iterator::operator*() const
 {
   return s.list[i](pos);
 }

@@ -19,22 +19,22 @@ namespace dolfin {
   public:
   
     SparseMatrix ();
-    SparseMatrix (int m, int n);
+    SparseMatrix (unsigned int m, unsigned int n);
     SparseMatrix (const SparseMatrix& A);
     SparseMatrix (const DenseMatrix& A);
     ~SparseMatrix ();
     
-    void init(int m, int n);
+    void init(unsigned int m, unsigned int n);
     void clear();
     
-    int size(int dim) const;
-    int size() const;
-    int rowsize(int i) const;
-    int bytes() const;
+    unsigned int size(unsigned int dim) const;
+    unsigned int size() const;
+    unsigned int rowsize(unsigned int i) const;
+    unsigned int bytes() const;
     
-    real  operator()(int i, int j) const;
-    real* operator[](int i);
-    real  operator()(int i, int& j, int pos) const;
+    real  operator()(unsigned int i, unsigned int j) const;
+    real* operator[](unsigned int i);
+    real  operator()(unsigned int i, unsigned int& j, unsigned int pos) const;
     
     void operator=  (real a);
     void operator=  (const DenseMatrix& A);
@@ -47,18 +47,18 @@ namespace dolfin {
     
     real norm() const;
 
-    real mult    (const Vector& x, int i) const;
+    real mult    (const Vector& x, unsigned int i) const;
     void mult    (const Vector& x, Vector& Ax) const;
     void multt   (const Vector& x, Vector& Ax) const;
-    real multrow (const Vector& x, int i) const;
-    real multcol (const Vector& x, int j) const;
+    real multrow (const Vector& x, unsigned int i) const;
+    real multcol (const Vector& x, unsigned int j) const;
 
     void resize();
-    void ident(int i);
+    void ident(unsigned int i);
     void addrow();
     void addrow(const Vector& x);
-    void initrow(int i, int rowsize);
-    bool endrow(int i, int pos) const;
+    void initrow(unsigned int i, unsigned int rowsize);
+    bool endrow(unsigned int i, unsigned int pos) const;
     void settransp(const DenseMatrix& A);
     void settransp(const SparseMatrix& A);
 
@@ -69,14 +69,14 @@ namespace dolfin {
 
   protected:
     
-    void alloc(int m, int n);
+    void alloc(unsigned int m, unsigned int n);
 
-    real read  (int i, int j) const;
-    void write (int i, int j, real value);
-    void add   (int i, int j, real value);
-    void sub   (int i, int j, real value);
-    void mult  (int i, int j, real value);
-    void div   (int i, int j, real value);
+    real read  (unsigned int i, unsigned int j) const;
+    void write (unsigned int i, unsigned int j, real value);
+    void add   (unsigned int i, unsigned int j, real value);
+    void sub   (unsigned int i, unsigned int j, real value);
+    void mult  (unsigned int i, unsigned int j, real value);
+    void div   (unsigned int i, unsigned int j, real value);
 
     real** getvalues();
     real** const getvalues() const;
@@ -84,20 +84,20 @@ namespace dolfin {
     void initperm();
     void clearperm();
 
-    int* getperm();
-    int* const getperm() const;
+    unsigned int* getperm();
+    unsigned int* const getperm() const;
     
   private:
 
-    void resizeRow(int i, int rowsize);
+    void resizeRow(unsigned int i,unsigned  int rowsize);
     
     // Data
-    int*   rowsizes;
-    int**  columns;
+    unsigned int* rowsizes;
+    int** columns;
     real** values;
     
     // Additional size to allocate when needed
-    int allocsize;
+    unsigned int allocsize;
     
   };
   

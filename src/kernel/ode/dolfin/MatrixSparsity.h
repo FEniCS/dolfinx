@@ -13,7 +13,7 @@ namespace dolfin {
   class MatrixSparsity : public GenericSparsity {
   public:
 
-    MatrixSparsity(int N, const Matrix& A_);
+    MatrixSparsity(unsigned int N, const Matrix& A_);
     ~MatrixSparsity();
 
     Type type() const;
@@ -21,21 +21,21 @@ namespace dolfin {
     class Iterator : public GenericSparsity::Iterator {
     public:
 
-      Iterator(int i, const MatrixSparsity& sparsity);
+      Iterator(unsigned int i, const MatrixSparsity& sparsity);
       ~Iterator();
 
       Iterator& operator++();
-      int operator*() const;
+      unsigned int operator*() const;
       bool end() const;
 
     private:
 
       const MatrixSparsity& s;
-      int pos;
+      unsigned int pos;
 
     };
 
-    Iterator* createIterator(int i) const;
+    Iterator* createIterator(unsigned int i) const;
 
     friend class Iterator;
 

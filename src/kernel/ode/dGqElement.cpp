@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dGqElement::dGqElement(int q, int index, TimeSlab* timeslab) : 
+dGqElement::dGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) : 
   Element(q, index, timeslab)
 {  
   dG.init(q);
@@ -20,7 +20,7 @@ real dGqElement::eval(real t) const
   real tau = (t - starttime()) / timestep();
 
   real sum = 0.0;
-  for (int i = 0; i <= q; i++)
+  for (unsigned int i = 0; i <= q; i++)
     sum += values[i] * dG(q).basis(i, tau);
   
   return sum;
@@ -30,7 +30,7 @@ real dGqElement::dx() const
 {
   real dudx = 0.0;
 
-  for (int i = 0; i <= q; i++)
+  for (unsigned int i = 0; i <= q; i++)
     dudx += values[i] * dG(q).derivative(i);
 
   return dudx;
@@ -44,7 +44,7 @@ void dGqElement::update(real u0)
   this->u0 = u0;
 
   // Update nodal values
-  for (int i = 0; i <= q; i++)
+  for (unsigned int i = 0; i <= q; i++)
     values[i] = u0;
 }
 //-----------------------------------------------------------------------------
@@ -59,9 +59,26 @@ void dGqElement::update(RHS& f)
   feval(f);
 
   // Update nodal values
-  for (int i = 0; i <= q; i++)
+  for (unsigned int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
     //values[i] = values[0] + integral(i);
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeTimeStep(real r) const
+{
+  // Compute new time step based on residual and current time step
+  
+  // Compute new time step based on residual and current time step
+
+  // FIXME: Return maximum time step
+  if ( abs(r) < DOLFIN_EPS )
+    return 0.25;
+
+  // FIXME: Use tolerance and stability factor
+  real k0 = timestep();
+  real k1 = 0.1 / r;
+
+  return 2.0*k0*k1 / (k0 + k1);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)
@@ -71,26 +88,18 @@ void dGqElement::feval(RHS& f)
   real t0 = starttime();
   real k = timestep();
   
-  for (int i = 0; i <= q; i++)
+  for (unsigned int i = 0; i <= q; i++)
     this->f(i) = f(index, i, t0 + dG(q).point(i)*k, timeslab);
 }
 //-----------------------------------------------------------------------------
-real dGqElement::integral(int i) const
+real dGqElement::integral(unsigned int i) const
 {
   real k = timestep();
 
   real sum = 0.0;
-  for (int j = 0; j <= q; j++)
+  for (unsigned int j = 0; j <= q; j++)
     sum += dG(q).weight(i, j) * f(j);
 
   return k * sum;
-}
-//-----------------------------------------------------------------------------
-real dGqElement::computeTimeStep() const
-{
-  // Compute new time step based on residual and current time step
-  
-  // Not implemented, return a random time step
-  return dolfin::rand();
 }
 //-----------------------------------------------------------------------------

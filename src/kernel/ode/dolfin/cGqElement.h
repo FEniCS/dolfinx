@@ -15,7 +15,7 @@ namespace dolfin {
   class cGqElement : public Element {
   public:
     
-    cGqElement(int q, int index, TimeSlab* timeslab);
+    cGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab);
 
     real eval(real t) const;
     real dx() const;
@@ -23,11 +23,12 @@ namespace dolfin {
     void update(real u0);
     void update(RHS& f);
     
+    real computeTimeStep(real r) const;
+    
   private:
     
     void feval(RHS& f);
-    real integral(int i) const;
-    real computeTimeStep() const;
+    real integral(unsigned int i) const;
     
   };   
     

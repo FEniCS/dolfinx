@@ -7,9 +7,10 @@
 
 using namespace dolfin;
 
-class Minimal : public ODE {
+class Minimal : public ODE
+{
 public:
-
+  
   Minimal() : ODE(3)
   {
     // Parameters
@@ -27,11 +28,11 @@ public:
     u0(1) = 1.0;
     u0(2) = 1.0;
 
-    // Sparsity (not really necessary here)
+    // Compute sparsity
     sparse();
   }
 
-  real f(const Vector& u, real t, int i)
+  real f(const Vector& u, real t, unsigned int i)
   {
     //dolfin_debug("foo");
     //dolfin::cout << "u: " << dolfin::endl;
@@ -61,14 +62,40 @@ private:
 
 };
 
+class SpringSystem : public ODE
+{
+public:
+  
+  SpringSystem(unsigned int N) : ODE(N)
+  {
+    // Final time
+    T = 5.0;
+
+    // Initial value
+    u0 = 0.0;
+
+    // Compute sparsity
+    sparse();
+  }
+
+  real f(const Vector& u, real t, unsigned int i)
+  {
+    real k = (real) (i+1);   
+    return -k*u(i);
+  }
+
+};
+
 int main()
 {
   dolfin_set("output", "plain text");
   dolfin_set("debug time slab", 1);
 
   Minimal minimal;
-
   minimal.solve();
   
+  SpringSystem springSystem(10);
+  springSystem.solve();
+
   return 0;
 }

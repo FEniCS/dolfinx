@@ -21,7 +21,7 @@ DenseMatrix::DenseMatrix()
   n = 0;
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(int m, int n)
+DenseMatrix::DenseMatrix(unsigned int m, unsigned int n)
 {
   values = 0;
   this->m = 0;
@@ -40,8 +40,8 @@ DenseMatrix::DenseMatrix(const DenseMatrix& A)
 
   init(A.m, A.n);
   
-  for (int i = 0; i < n; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < n; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] = A.values[i][j];
 }
 //-----------------------------------------------------------------------------
@@ -54,11 +54,11 @@ DenseMatrix::DenseMatrix(const SparseMatrix& A)
 
   init(A.size(0), A.size(1));
   
-  int j;
+  unsigned int j;
   real value;
   
-  for (int i = 0; i < m; i++)
-    for (int pos = 0; pos < A.rowsize(i); pos++){
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int pos = 0; pos < A.rowsize(i); pos++) {
       value = A(i,j,pos);
       values[i][j] = value;
     }  
@@ -69,7 +69,7 @@ DenseMatrix::~DenseMatrix()
   clear();
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::init(int m, int n)
+void DenseMatrix::init(unsigned int m, unsigned int n)
 {
   if ( m <= 0 )
     dolfin_error("Number of rows must be positive.");
@@ -99,7 +99,7 @@ void DenseMatrix::init(int m, int n)
 void DenseMatrix::clear()
 {
   if ( values ) {
-    for (int i = 0; i < m; i++)
+    for (unsigned int i = 0; i < m; i++)
       delete [] values[i];
     delete [] values;
     values = 0;
@@ -111,7 +111,7 @@ void DenseMatrix::clear()
   n = 0;
 }
 //-----------------------------------------------------------------------------
-int DenseMatrix::size(int dim) const
+unsigned int DenseMatrix::size(unsigned int dim) const
 {
   if ( dim == 0 )
     return m;
@@ -122,42 +122,42 @@ int DenseMatrix::size(int dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-int DenseMatrix::size() const
+unsigned int DenseMatrix::size() const
 {  
   dolfin_warning("Checking number of non-zero elements in a dense matrix.");
   
   return m*n;
 }
 //-----------------------------------------------------------------------------
-int DenseMatrix::rowsize(int i) const
+unsigned int DenseMatrix::rowsize(unsigned int i) const
 {
   dolfin_warning("Checking row size for dense matrix.");
   return n;
 }
 //-----------------------------------------------------------------------------
-int DenseMatrix::bytes() const
+unsigned int DenseMatrix::bytes() const
 {
-  int bytes = 0;
+  unsigned int bytes = 0;
   
   bytes += sizeof(DenseMatrix);
   bytes += m * sizeof(real *);
   bytes += m * n * sizeof(real);
-  bytes += m * sizeof(int);
+  bytes += m * sizeof(unsigned int);
 
   return bytes;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::operator()(int i, int j) const
+real DenseMatrix::operator()(unsigned int i, unsigned int j) const
 {
   return values[i][j];
 }
 //-----------------------------------------------------------------------------
-real* DenseMatrix::operator[](int i)
+real* DenseMatrix::operator[](unsigned int i)
 {
   return values[i];
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::operator()(int i, int& j, int pos) const
+real DenseMatrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
 {
   dolfin_warning("Using sparse quick-access operator for dense matrix.");
 
@@ -167,8 +167,8 @@ real DenseMatrix::operator()(int i, int& j, int pos) const
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator=(real a)
 {
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] = a;
 }
 //-----------------------------------------------------------------------------
@@ -176,13 +176,13 @@ void DenseMatrix::operator=(const DenseMatrix& A)
 {
   init(A.m, A.n);
 
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] = A.values[i][j];
 
   if ( A.permutation ) {
     initperm();
-    for (int i = 0; i < m; i++)
+    for (unsigned int i = 0; i < m; i++)
       permutation[i] = A.permutation[i];
   }
 }
@@ -192,9 +192,9 @@ void DenseMatrix::operator=(const SparseMatrix& A)
   init(A.m, A.n);
   (*this) = 0.0;
 
-  int j;
-  for (int i = 0; i < m; i++)
-    for (int pos = 0; !A.endrow(i,pos); pos++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
       values[i][j] = a;
     }
@@ -206,8 +206,8 @@ void DenseMatrix::operator+=(const DenseMatrix& A)
 {
   init(A.m, A.n);
 
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] += A.values[i][j];
   
   clearperm();
@@ -217,9 +217,9 @@ void DenseMatrix::operator+=(const SparseMatrix& A)
 {
   init(A.m, A.n);
 
-  int j;
-  for (int i = 0; i < m; i++)
-    for (int pos = 0; !A.endrow(i,pos); pos++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
       values[i][j] += a;
     }
@@ -231,8 +231,8 @@ void DenseMatrix::operator-=(const DenseMatrix& A)
 {
   init(A.m, A.n);
   
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] -= A.values[i][j];
 
   clearperm();
@@ -242,9 +242,9 @@ void DenseMatrix::operator-=(const SparseMatrix& A)
 {
   init(A.m, A.n);
 
-  int j;
-  for (int i = 0; i < m; i++)
-    for (int pos = 0; !A.endrow(i,pos); pos++) {
+  unsigned int j;
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
       values[i][j] -= a;
     }
@@ -254,8 +254,8 @@ void DenseMatrix::operator-=(const SparseMatrix& A)
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator*=(real a)
 {
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] *= a;
 
   clearperm();
@@ -266,21 +266,21 @@ real DenseMatrix::norm() const
   real max = 0.0;
   real val;
   
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       if ( (val = fabs(values[i][j])) > max )
 	max = val;
   
   return max;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::mult(const Vector& x, int i) const
+real DenseMatrix::mult(const Vector& x, unsigned int i) const
 {
   if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
 
   real sum = 0.0;
-  for (int j = 0; j < n; j++)
+  for (unsigned int j = 0; j < n; j++)
     sum += values[i][j] * x(j);
 
   return sum;
@@ -293,7 +293,7 @@ void DenseMatrix::mult(const Vector& x, Vector& Ax) const
 
   Ax.init(m);
   
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     Ax(i) = mult(x, i);
 }
 //-----------------------------------------------------------------------------
@@ -305,23 +305,23 @@ void DenseMatrix::multt(const Vector& x, Vector& Ax) const
   Ax.init(n);
   Ax = 0.0;
                                                                                                                                                             
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       Ax(j) += values[i][j] * x(i);
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::multrow(const Vector& x, int i) const
+real DenseMatrix::multrow(const Vector& x, unsigned int i) const
 {
   return mult(x,i);
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::multcol(const Vector& x, int j) const
+real DenseMatrix::multcol(const Vector& x, unsigned int j) const
 {
   if ( m != x.size() )
     dolfin_error("Matrix dimensions don't match.");
 
   real sum = 0.0;
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     sum += values[i][j] * x(j);
 
   return sum;
@@ -332,9 +332,9 @@ void DenseMatrix::resize()
   dolfin_warning("Clearing unused elements has no effect for a dense matrix.");
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::ident(int i)
+void DenseMatrix::ident(unsigned int i)
 {
-  for (int j = 0; j < n; j++)
+  for (unsigned int j = 0; j < n; j++)
     values[i][j] = 0.0;
   values[i][i] = 1.0;
 }
@@ -343,11 +343,11 @@ void DenseMatrix::addrow()
 {
   real** new_values = new (real *)[m+1];
                                                                                                                                                             
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     new_values[i] = values[i];
                                                                                                                                                             
   new_values[m] = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     new_values[m][i] = 0.0;
   
   m = m + 1;
@@ -365,11 +365,11 @@ void DenseMatrix::addrow(const Vector &x)
                                                                                                                                                             
   real** new_values = new (real *)[m+1];
                                                                                                                                                             
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     new_values[i] = values[i];
                                                                                                                                                             
   new_values[m] = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     new_values[m][i] = x(i);
                                                                                                                                                             
   m = m + 1;
@@ -380,12 +380,12 @@ void DenseMatrix::addrow(const Vector &x)
   clearperm();
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::initrow(int i, int rowsize)
+void DenseMatrix::initrow(unsigned int i, unsigned int rowsize)
 {
   dolfin_warning("Specifying number of non-zero elements on a row has no effect for a dense matrix.");
 }
 //-----------------------------------------------------------------------------
-bool DenseMatrix::endrow(int i, int pos) const
+bool DenseMatrix::endrow(unsigned int i, unsigned int pos) const
 {
   dolfin_warning("You probably don't want to use endrow() for a dense matrix.");
   return pos < n;
@@ -395,8 +395,8 @@ void DenseMatrix::settransp(const DenseMatrix& A)
 {
   init(A.n, A.m);
                                                                                                                                                             
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] = A.values[j][i];
 }
 //-----------------------------------------------------------------------------
@@ -404,17 +404,17 @@ void DenseMatrix::settransp(const SparseMatrix& A)
 {
   init(A.n, A.m);
                                                                                                                                                             
-  int j;                                                                                                                                                            
-  for (int i = 0; i < n; i++)
-    for (int pos = 0; !A.endrow(i,pos); pos++)
+  unsigned int j;                                                                                                                                                            
+  for (unsigned int i = 0; i < n; i++)
+    for (unsigned int pos = 0; !A.endrow(i,pos); pos++)
       values[j][i] = A(i,j,pos);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::show() const 
 {
-  for (int i = 0; i < m; i++) {
+  for (unsigned int i = 0; i < m; i++) {
     cout << "| ";
-    for (int j = 0; j < n; j++){
+    for (unsigned int j = 0; j < n; j++){
       cout << (*this)(i,j) << " ";
     }
     cout << "|" << endl;
@@ -423,57 +423,57 @@ void DenseMatrix::show() const
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const DenseMatrix& A)
 {
-  int m = A.size(0);
-  int n = A.size(1);
+  unsigned int m = A.size(0);
+  unsigned int n = A.size(1);
   
   stream << "[ Dense matrix of size " << m << " x " << n << " ]";
 
   return stream;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::alloc(int m, int n)
+void DenseMatrix::alloc(unsigned int m, unsigned int n)
 {
   // Use with caution. Only for internal use.
 
   values = new (real *)[m];
   
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     values[i] = new real[n];
   
-  for (int i = 0; i < m; i++)
-    for (int j = 0; j < n; j++)
+  for (unsigned int i = 0; i < m; i++)
+    for (unsigned int j = 0; j < n; j++)
       values[i][j] = 0.0;
  
   this->m = m;
   this->n = n;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::read(int i, int j) const
+real DenseMatrix::read(unsigned int i, unsigned int j) const
 {
   return values[i][j];
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::write(int i, int j, real value)
+void DenseMatrix::write(unsigned int i, unsigned int j, real value)
 {
   values[i][j] = value;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::add(int i, int j, real value)
+void DenseMatrix::add(unsigned int i, unsigned int j, real value)
 {
   values[i][j] += value;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::sub(int i, int j, real value)
+void DenseMatrix::sub(unsigned int i, unsigned int j, real value)
 {
   values[i][j] -= value;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::mult(int i, int j, real value)
+void DenseMatrix::mult(unsigned int i, unsigned int j, real value)
 {
   values[i][j] *= value;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::div(int i, int j, real value)
+void DenseMatrix::div(unsigned int i, unsigned int j, real value)
 {
   values[i][j] /= value;
 }
@@ -491,9 +491,9 @@ real** const DenseMatrix::getvalues() const
 void DenseMatrix::initperm()
 {
   if ( !permutation )
-    permutation = new int[m];
+    permutation = new unsigned int[m];
   
-  for (int i = 0; i < m; i++)
+  for (unsigned int i = 0; i < m; i++)
     permutation[i] = i;
 }
 //-----------------------------------------------------------------------------
@@ -504,12 +504,12 @@ void DenseMatrix::clearperm()
   permutation = 0;
 }
 //-----------------------------------------------------------------------------
-int* DenseMatrix::getperm()
+unsigned int* DenseMatrix::getperm()
 {
   return permutation;
 }
 //-----------------------------------------------------------------------------
-int* const DenseMatrix::getperm() const
+unsigned int* const DenseMatrix::getperm() const
 {
   return permutation;
 }

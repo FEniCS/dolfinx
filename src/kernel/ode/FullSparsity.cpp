@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FullSparsity::FullSparsity(int N) : GenericSparsity(N)
+FullSparsity::FullSparsity(unsigned int N) : GenericSparsity(N)
 {
   // Do nothing
 }
@@ -22,7 +22,7 @@ GenericSparsity::Type FullSparsity::type() const
   return full;
 }
 //-----------------------------------------------------------------------------
-FullSparsity::Iterator* FullSparsity::createIterator(int i) const
+FullSparsity::Iterator* FullSparsity::createIterator(unsigned int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < N);
@@ -30,7 +30,7 @@ FullSparsity::Iterator* FullSparsity::createIterator(int i) const
   return new Iterator(i, *this);
 }
 //-----------------------------------------------------------------------------
-FullSparsity::Iterator::Iterator(int i, const FullSparsity& sparsity) 
+FullSparsity::Iterator::Iterator(unsigned int i, const FullSparsity& sparsity) 
   : GenericSparsity::Iterator(i), s(sparsity)
 {
   pos = 0;
@@ -52,7 +52,7 @@ FullSparsity::Iterator& FullSparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int FullSparsity::Iterator::operator*() const
+unsigned int FullSparsity::Iterator::operator*() const
 {
   return pos;
 }

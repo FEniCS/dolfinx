@@ -14,16 +14,16 @@ namespace dolfin {
   class Progress {
   public:
     
-    Progress(const char* title, int n);
+    Progress(const char* title, unsigned int n);
     Progress(const char* title);
     ~Progress();
     
-    void operator=(int i);
+    void operator=(unsigned int i);
     void operator=(real p);
     void operator++();
     void operator++(int);
     
-    void update(int i,  const char* format, ...);
+    void update(unsigned int i,  const char* format, ...);
     void update(real p, const char* format, ...);
     
     real value();
@@ -32,7 +32,7 @@ namespace dolfin {
     
   private:
     
-    real checkBounds(int i);
+    real checkBounds(unsigned int i);
     real checkBounds(real p);
     
     void update();
@@ -43,8 +43,8 @@ namespace dolfin {
     real p0;
     real p1;
     
-    int i;
-    int n;
+    unsigned int i;
+    unsigned int n;
     
   };
   

@@ -70,7 +70,7 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
 {
   // Get parameters
   int max_no_restarts = dolfin_get("max no krylov restarts"); // max no restarts
-  int k_max = dolfin_get("max no stored krylov vectors"); // no iterations before restart
+  unsigned int k_max = dolfin_get("max no stored krylov vectors"); // no iterations before restart
 
   // Compute residual
   Vector r(b.size());
@@ -99,12 +99,12 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
 }
 //-----------------------------------------------------------------------------
 int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
-				 Vector& r, int k_max)
+				 Vector& r, unsigned int k_max)
 {
   //Flexible GMRES with right preconditioner.
 
   // Number of unknowns
-  int n = x.size();
+  unsigned int n = x.size();
   
   // Initialization of temporary variables 
   Matrix mat_h(k_max+1,k_max+1, Matrix::dense);
@@ -124,7 +124,8 @@ int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
   real norm_residual = residual(A,x,b,r);
 
   // Set start values for v. 
-  for (int i=0;i<n;i++) mat_v[0][i] = vec_v(i) = r(i)/norm_residual;
+  for (unsigned int i = 0; i < n; i++)
+    mat_v[0][i] = vec_v(i) = r(i)/norm_residual;
 
   if (pc != NONE){
     no_pc_sweeps = dolfin_get("pc iterations"); // no pc iterations (sweeps
@@ -136,10 +137,10 @@ int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
   vec_g = 0.0;
   vec_g(0) = norm_residual;
 
-  int k = 0;
-  int k_end = 0;
-
-  for (k=0;k<k_max;k++) {
+  unsigned int k = 0;
+  unsigned int k_end = 0;
+  
+  for (k = 0; k < k_max; k++) {
 
     // Use the modified Gram-Schmidt process with reorthogonalization to
     // find orthogonal Krylov vectors.
@@ -157,30 +158,30 @@ int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
     }
 
     // Modified Gram-Schmit orthogonalization. 
-    for (int j=0;j<k+1;j++){
+    for (unsigned int j = 0; j < k+1; j++) {
       /* konstruktionen här är långsammare än den efterföljande
       htmp = vec_v * mat_v(j,all); 
       mat_h(j,k) = htmp;
       vec_v.add(-htmp,mat_v(j,all));
       */
       htmp = 0.0;
-      for (int i=0;i<n;i++) htmp += vec_v(i) * mat_v[j][i];
+      for (unsigned int i = 0; i < n; i++) htmp += vec_v(i) * mat_v[j][i];
       mat_h[j][k] = htmp;
-      for (int i=0;i<n;i++) vec_v(i) -= htmp * mat_v[j][i];
+      for (unsigned int i = 0; i < n; i++) vec_v(i) -= htmp * mat_v[j][i];
     }
     mat_h[k+1][k] = vec_v.norm();
     
     // Test for non orthogonality and reorthogonalise if necessary.
     if ( reorthog(A,mat_v,vec_v,k) ){ 
-      for (int j=0;j<k+1;j++){
+      for (unsigned int j = 0; j < k+1; j++) {
 	/* konstruktionen här är långsammare än den efterföljande
 	htmp = vec_v * mat_v(j,all);
 	mat_h(j,k) += htmp;
 	vec_v.add(-htmp,mat_v(j,all));
 	*/
-	for (int i=0;i<n;i++) htmp = vec_v(i)*mat_v[j][i];
+	for (unsigned int i = 0; i < n; i++) htmp = vec_v(i)*mat_v[j][i];
 	mat_h(j,k) += htmp;
-	for (int i=0;i<n;i++) vec_v(i) -= htmp*mat_v[j][i];
+	for (unsigned int i = 0; i < n; i++) vec_v(i) -= htmp*mat_v[j][i];
       }	  
       mat_h[k+1][k] = vec_v.norm();
     }
@@ -190,8 +191,8 @@ int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
 	 
     // If k > 0, solve least squares problem using QR factorization
     // and Givens rotations.  
-    if (k>0){
-      for (int j=0;j<k;j++){
+    if (k>0) {
+      for (unsigned int j = 0; j < k; j++) {
 	tmp1 = mat_h[j][k];
 	tmp2 = mat_h[j+1][k];
 	mat_h[j][k]   = vec_c(j)*tmp1 - vec_s(j)*tmp2;
@@ -228,9 +229,9 @@ int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
 
   // solve triangular system ry = w
   vec_y(k) = vec_w(k)/mat_r[k][k];
-  for (int i=1;i<k+1;i++){
+  for (unsigned int i = 1; i < k+1; i++) {
     vec_y(k-i) = vec_w(k-i);
-    for (int j=0;j<i;j++) vec_y(k-i) -= mat_r[k-i][k-j]*vec_y(k-j);
+    for (unsigned int j = 0; j < i; j++) vec_y(k-i) -= mat_r[k-i][k-j]*vec_y(k-j);
     vec_y(k-i) /= mat_r[k-i][k-i];
   }
 
@@ -252,9 +253,8 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
 {
   // Only for symmetric, positive definite problems.
 
-  int n = x.size();
-  int k_max;
-  k_max = dolfin_get("max no cg iterations"); // max no iterations
+  unsigned int n = x.size();
+  unsigned int k_max = dolfin_get("max no cg iterations"); // max no iterations
   
   Vector rho(k_max+1);
   
@@ -274,19 +274,19 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
 
   real alpha,beta,tmp;
 
-  int k;
-  for (k=1;k<k_max;k++){
+  unsigned int k;
+  for (k = 1; k < k_max; k++) {
 
-    if (k==1){
+    if ( k==1 ) {
       p = (pc!=NONE) ? z : r;
     } 
     else{
       beta = rho(k-1)/rho(k-2);
       if (pc != NONE){
-	for (int i=0;i<n;i++) p(i) = z(i) + beta*p(i);
+	for (unsigned int i = 0; i < n; i++) p(i) = z(i) + beta*p(i);
       }
       else{
-	for (int i=0;i<n;i++) p(i) = r(i) + beta*p(i);
+	for (unsigned int i = 0; i < n; i++) p(i) = r(i) + beta*p(i);
       }
     }      
     

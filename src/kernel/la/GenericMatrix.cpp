@@ -12,7 +12,7 @@ GenericMatrix::GenericMatrix()
   n = 0;
 }
 //-----------------------------------------------------------------------------
-GenericMatrix::GenericMatrix(int m, int n)
+GenericMatrix::GenericMatrix(unsigned int m, unsigned int n)
 {
   this->m = m;
   this->n = n;
@@ -23,7 +23,7 @@ GenericMatrix::~GenericMatrix()
 
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::init(int m, int n)
+void GenericMatrix::init(unsigned int m, unsigned int n)
 {
   dolfin_error("This function is not implemented");
 }
@@ -33,7 +33,7 @@ void GenericMatrix::clear()
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-int GenericMatrix::size(int dim) const
+unsigned int GenericMatrix::size(unsigned int dim) const
 {
   if ( dim == 0 )
     return m;
@@ -44,37 +44,37 @@ int GenericMatrix::size(int dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-int GenericMatrix::size() const
+unsigned int GenericMatrix::size() const
 {
   dolfin_error("This function is not implemented");
   return 0;
 }
 //-----------------------------------------------------------------------------
-int GenericMatrix::rowsize(int i) const
+unsigned int GenericMatrix::rowsize(unsigned int i) const
 {
   dolfin_error("This function is not implemented");
   return 0;
 }
 //-----------------------------------------------------------------------------
-int GenericMatrix::bytes() const
+unsigned int GenericMatrix::bytes() const
 {
   dolfin_error("This function is not implemented");
   return 0;
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix:: operator()(int i, int j) const    
+real GenericMatrix:: operator()(unsigned int i, unsigned int j) const    
 {
   dolfin_error("This function is not implemented");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real* GenericMatrix::operator[](int i)
+real* GenericMatrix::operator[](unsigned int i)
 {
   dolfin_error("This function is not implemented");
   return 0;
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix:: operator()(int i, int& j, int pos) const
+real GenericMatrix:: operator()(unsigned int i, unsigned int& j, unsigned int pos) const
 {
   dolfin_error("This function is not implemented");
   return 0.0;
@@ -141,7 +141,7 @@ real GenericMatrix::norm() const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix::mult(const Vector& x, int i) const
+real GenericMatrix::mult(const Vector& x, unsigned int i) const
 {
   dolfin_error("This function is not implemented");
   return 0.0;
@@ -157,13 +157,13 @@ void GenericMatrix::multt(const Vector& x, Vector& Ax) const
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix::multrow(const Vector& x, int i) const
+real GenericMatrix::multrow(const Vector& x, unsigned int i) const
 {
   dolfin_error("This function is not implemented");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix::multcol(const Vector& x, int j) const
+real GenericMatrix::multcol(const Vector& x, unsigned int j) const
 {
   dolfin_error("This function is not implemented");
   return 0.0;
@@ -174,7 +174,7 @@ void GenericMatrix::resize()
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::ident(int i)
+void GenericMatrix::ident(unsigned int i)
 {
   dolfin_error("This function is not implemented");
 }
@@ -189,12 +189,12 @@ void GenericMatrix::addrow(const Vector& x)
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::initrow(int i, int rowsize)
+void GenericMatrix::initrow(unsigned int i, unsigned int rowsize)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-bool GenericMatrix::endrow(int i, int pos) const
+bool GenericMatrix::endrow(unsigned int i, unsigned int pos) const
 {
   dolfin_error("This function is not implemented");
   return true;
@@ -228,38 +228,38 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const GenericMatrix& A
   return stream;
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::alloc(int m, int n)
+void GenericMatrix::alloc(unsigned int m, unsigned int n)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-real GenericMatrix::read(int i, int j) const
+real GenericMatrix::read(unsigned int i, unsigned int j) const
 {
   dolfin_error("This function is not implemented");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::write(int i, int j, real value)
+void GenericMatrix::write(unsigned int i, unsigned int j, real value)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::add(int i, int j, real value)
+void GenericMatrix::add(unsigned int i, unsigned int j, real value)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::sub(int i, int j, real value)
+void GenericMatrix::sub(unsigned int i, unsigned int j, real value)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::mult(int i, int j, real value)
+void GenericMatrix::mult(unsigned int i, unsigned int j, real value)
 {
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-void GenericMatrix::div(int i, int j, real value)
+void GenericMatrix::div(unsigned int i, unsigned int j, real value)
 {
   dolfin_error("This function is not implemented");
 }
@@ -286,13 +286,13 @@ void GenericMatrix::clearperm()
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
-int* GenericMatrix::getperm()
+unsigned int* GenericMatrix::getperm()
 {
   dolfin_error("This function is not implemented");
   return 0;
 }
 //-----------------------------------------------------------------------------
-int* const GenericMatrix::getperm() const
+unsigned int* const GenericMatrix::getperm() const
 {
   dolfin_error("This function is not implemented");
   return 0;

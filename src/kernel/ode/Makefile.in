@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElement.h                           dolfin/cGqMethod.h                           dolfin/cGqMethods.h                           dolfin/dGqElement.h                           dolfin/dGqMethod.h                           dolfin/dGqMethods.h                           dolfin/AutomaticSparsity.h                           dolfin/Component.h                           dolfin/AutomaticSparsity.h                           dolfin/Element.h                           dolfin/EmptySparsity.h                           dolfin/FullSparsity.h                           dolfin/GenericElement.h                           dolfin/GenericSparsity.h                           dolfin/MatrixSparsity.h                           dolfin/Method.h                           dolfin/ODE.h                           dolfin/ODESolver.h                           dolfin/Partition.h                           dolfin/RHS.h                           dolfin/Sparsity.h                           dolfin/TableSparsity.h                           dolfin/TimeSlab.h                           dolfin/TimeSlabData.h                           dolfin/TimeStepper.h
+include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElement.h                           dolfin/cGqMethod.h                           dolfin/cGqMethods.h                           dolfin/dGqElement.h                           dolfin/dGqMethod.h                           dolfin/dGqMethods.h                           dolfin/AutomaticSparsity.h                           dolfin/Component.h                           dolfin/AutomaticSparsity.h                           dolfin/Element.h                           dolfin/EmptySparsity.h                           dolfin/FullSparsity.h                           dolfin/GenericElement.h                           dolfin/GenericSparsity.h                           dolfin/MatrixSparsity.h                           dolfin/Method.h                           dolfin/ODE.h                           dolfin/ODESolver.h                           dolfin/Partition.h                           dolfin/RecursiveTimeSlab.h                           dolfin/RHS.h                           dolfin/SimpleTimeSlab.h                           dolfin/Sparsity.h                           dolfin/TableSparsity.h                           dolfin/TimeSlab.h                           dolfin/TimeSlabData.h                           dolfin/TimeStepper.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Element.cpp                           EmptySparsity.cpp                           FullSparsity.cpp                           GenericElement.cpp                           GenericSparsity.cpp                           MatrixSparsity.cpp                           Method.cpp                           ODE.cpp                           ODESolver.cpp                           Partition.cpp                           RHS.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeSlabData.cpp                           TimeStepper.cpp
+libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Element.cpp                           EmptySparsity.cpp                           FullSparsity.cpp                           GenericElement.cpp                           GenericSparsity.cpp                           MatrixSparsity.cpp                           Method.cpp                           ODE.cpp                           ODESolver.cpp                           Partition.cpp                           RecursiveTimeSlab.cpp                           RHS.cpp                           SimpleTimeSlab.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeSlabData.cpp                           TimeStepper.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -102,8 +102,8 @@ libdolfin_ode_a_OBJECTS =  cGqElement.o cGqMethod.o cGqMethods.o \
 dGqElement.o dGqMethod.o dGqMethods.o AutomaticSparsity.o Component.o \
 Element.o EmptySparsity.o FullSparsity.o GenericElement.o \
 GenericSparsity.o MatrixSparsity.o Method.o ODE.o ODESolver.o \
-Partition.o RHS.o Sparsity.o TableSparsity.o TimeSlab.o TimeSlabData.o \
-TimeStepper.o
+Partition.o RecursiveTimeSlab.o RHS.o SimpleTimeSlab.o Sparsity.o \
+TableSparsity.o TimeSlab.o TimeSlabData.o TimeStepper.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -121,10 +121,11 @@ DEP_FILES =  .deps/AutomaticSparsity.P .deps/Component.P .deps/Element.P \
 .deps/EmptySparsity.P .deps/FullSparsity.P .deps/GenericElement.P \
 .deps/GenericSparsity.P .deps/MatrixSparsity.P .deps/Method.P \
 .deps/ODE.P .deps/ODESolver.P .deps/Partition.P .deps/RHS.P \
-.deps/Sparsity.P .deps/TableSparsity.P .deps/TimeSlab.P \
-.deps/TimeSlabData.P .deps/TimeStepper.P .deps/cGqElement.P \
-.deps/cGqMethod.P .deps/cGqMethods.P .deps/dGqElement.P \
-.deps/dGqMethod.P .deps/dGqMethods.P
+.deps/RecursiveTimeSlab.P .deps/SimpleTimeSlab.P .deps/Sparsity.P \
+.deps/TableSparsity.P .deps/TimeSlab.P .deps/TimeSlabData.P \
+.deps/TimeStepper.P .deps/cGqElement.P .deps/cGqMethod.P \
+.deps/cGqMethods.P .deps/dGqElement.P .deps/dGqMethod.P \
+.deps/dGqMethods.P
 SOURCES = $(libdolfin_ode_a_SOURCES)
 OBJECTS = $(libdolfin_ode_a_OBJECTS)
 

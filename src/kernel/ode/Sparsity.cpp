@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Sparsity::Sparsity(int N)
+Sparsity::Sparsity(unsigned int N)
 {
   sparsity = new FullSparsity(N);
   this->N = N;
@@ -42,7 +42,7 @@ void Sparsity::full()
   sparsity = new FullSparsity(N);
 }
 //-----------------------------------------------------------------------------
-void Sparsity::setsize(int i, int size)
+void Sparsity::setsize(unsigned int i, unsigned int size)
 {
   dolfin_assert(sparsity);
   
@@ -54,7 +54,7 @@ void Sparsity::setsize(int i, int size)
   sparsity->setsize(i, size);
 }
 //-----------------------------------------------------------------------------
-void Sparsity::set(int i, int j)
+void Sparsity::set(unsigned int i, unsigned int j)
 {
   dolfin_assert(sparsity);
 
@@ -86,7 +86,7 @@ void Sparsity::show() const
 {
   dolfin_info("Sparsity pattern:");
 
-  for (int i = 0; i < N; i++) {
+  for (unsigned int i = 0; i < N; i++) {
     cout << i << ":";
     for (Iterator it(i, *this); !it.end(); ++it)
       cout << " " << *it;
@@ -94,14 +94,14 @@ void Sparsity::show() const
   }
 }
 //-----------------------------------------------------------------------------
-GenericSparsity::Iterator* Sparsity::createIterator(int i) const
+GenericSparsity::Iterator* Sparsity::createIterator(unsigned int i) const
 {
   dolfin_assert(sparsity);
   
   return sparsity->createIterator(i);
 }
 //-----------------------------------------------------------------------------
-Sparsity::Iterator::Iterator(int i, const Sparsity& sparsity)
+Sparsity::Iterator::Iterator(unsigned int i, const Sparsity& sparsity)
 {
   iterator = sparsity.createIterator(i);
 }
@@ -120,12 +120,12 @@ Sparsity::Iterator& Sparsity::Iterator::operator++()
   return *this;
 }
 //-----------------------------------------------------------------------------
-int Sparsity::Iterator::operator*() const
+unsigned int Sparsity::Iterator::operator*() const
 {
   return **iterator;
 }
 //-----------------------------------------------------------------------------
-Sparsity::Iterator::operator int() const
+Sparsity::Iterator::operator unsigned int() const
 {
   return **iterator;
 }

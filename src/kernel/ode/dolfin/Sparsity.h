@@ -15,7 +15,7 @@ namespace dolfin {
   public:
     
     // Constructor
-    Sparsity(int N);
+    Sparsity(unsigned int N);
 
     // Destructor
     ~Sparsity();
@@ -27,10 +27,10 @@ namespace dolfin {
     void full();
 
     /// Set sparsity (number of dependencies for component i)
-    void setsize(int i, int size);
+    void setsize(unsigned int i, unsigned int size);
     
     /// Set sparsity (component i depends on component j)
-    void set(int i, int j);
+    void set(unsigned int i, unsigned int j);
     
     /// Set sparsity defined by a sparse matrix
     void set(const Matrix& A);
@@ -46,7 +46,7 @@ namespace dolfin {
     public:
       
       /// Constructor
-      Iterator(int i, const Sparsity& sparsity);
+      Iterator(unsigned int i, const Sparsity& sparsity);
 
       /// Destructor
       ~Iterator();
@@ -55,10 +55,10 @@ namespace dolfin {
       Iterator& operator++();
 
       /// Return index for current position
-      int operator*() const;
+      unsigned int operator*() const;
 
       /// Return index for current position
-      operator int() const;
+      operator unsigned int() const;
 
       /// Check if we have reached end of the row
       bool end() const;
@@ -75,11 +75,11 @@ namespace dolfin {
     
   private:
 
-    GenericSparsity::Iterator* createIterator(int i) const;
+    GenericSparsity::Iterator* createIterator(unsigned int i) const;
     
     GenericSparsity* sparsity;
 
-    int N;
+    unsigned int N;
 
   };
 

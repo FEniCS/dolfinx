@@ -19,7 +19,9 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
                           dolfin/Partition.h \
+                          dolfin/RecursiveTimeSlab.h \
                           dolfin/RHS.h \
+                          dolfin/SimpleTimeSlab.h \
                           dolfin/Sparsity.h \
                           dolfin/TableSparsity.h \
                           dolfin/TimeSlab.h \
@@ -45,7 +47,9 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
                           Partition.cpp \
+                          RecursiveTimeSlab.cpp \
                           RHS.cpp \
+                          SimpleTimeSlab.cpp \
                           Sparsity.cpp \
                           TableSparsity.cpp \
                           TimeSlab.cpp \

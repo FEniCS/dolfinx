@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GaussQuadrature::GaussQuadrature(int n) : GaussianQuadrature(n)
+GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
 {
   init();
 
@@ -28,7 +28,7 @@ void GaussQuadrature::show() const
   cout << " i    points                   weights" << endl;
   cout << "-----------------------------------------------------" << endl;
   
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
 }
 //-----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ void GaussQuadrature::computePoints()
   real x, dx;
   
   // Compute the points by Newton's method
-  for (int i = 0; i <= ((n-1)/2); i++) {
+  for (unsigned int i = 0; i <= ((n-1)/2); i++) {
     
     // Initial guess
     x = cos(DOLFIN_PI*(real(i+1)-0.25)/(real(n)+0.5));

@@ -11,35 +11,35 @@ namespace dolfin {
 
     enum Type { empty, full, automatic, table, matrix };
 
-    GenericSparsity(int N);
+    GenericSparsity(unsigned int N);
     virtual ~GenericSparsity();
 
-    virtual void setsize(int i, int size);
-    virtual void set(int i, int j);
+    virtual void setsize(unsigned int i, unsigned int size);
+    virtual void set(unsigned int i, unsigned int j);
 
     virtual Type type() const = 0;
 
     class Iterator {
     public:
 
-      Iterator(int i);
+      Iterator(unsigned int i);
       virtual ~Iterator();
 
       virtual Iterator& operator++() = 0;
-      virtual int operator*() const = 0;
+      virtual unsigned int operator*() const = 0;
       virtual bool end() const = 0;
 
     protected:
 
-      int i;
+      unsigned int i;
 
     };
 
-    virtual Iterator* createIterator(int i) const = 0;
+    virtual Iterator* createIterator(unsigned int i) const = 0;
 
   protected:
 
-    int N;
+    unsigned int N;
     
   };
   

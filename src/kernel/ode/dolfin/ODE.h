@@ -21,16 +21,16 @@ namespace dolfin {
   public:
     
     /// Constructor
-    ODE(int N);
+    ODE(unsigned int N);
 
     /// Destructor
     virtual ~ODE();
 
     /// Right-hand side
-    virtual real f(const Vector& u, real t, int i) = 0;
+    virtual real f(const Vector& u, real t, unsigned int i) = 0;
 
     /// Number of components N
-    int size() const;
+    unsigned int size() const;
 
     /// End time (final time)
     real endtime() const;
@@ -39,10 +39,10 @@ namespace dolfin {
     void solve();
 
     /// Set sparsity (number of dependencies for component i)
-    void sparse(int i, int size);
+    void sparse(unsigned int i, unsigned int size);
     
     /// Set sparsity (component i depends on j)
-    void depends(int i, int j);
+    void depends(unsigned int i, unsigned int j);
 
     /// Set sparsity defined by a sparse matrix
     void sparse(const Matrix& A);
@@ -58,7 +58,7 @@ namespace dolfin {
 
   protected:
     
-    int N;
+    unsigned int N;
     real T;
 
 

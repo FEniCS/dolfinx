@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Progress::Progress(const char* title, int n)
+Progress::Progress(const char* title, unsigned int n)
 {
   if ( n <= 0 )
     dolfin_error("Number of steps for progress session must be positive.");
@@ -66,7 +66,7 @@ Progress::~Progress()
   _label = 0;
 }
 //-----------------------------------------------------------------------------
-void Progress::operator=(int i)
+void Progress::operator=(unsigned int i)
 {
   if ( n == 0 )
 	 dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
@@ -99,16 +99,16 @@ void Progress::operator++()
 void Progress::operator++(int)
 {
   if ( n == 0 )
-	 dolfin_error("Cannot step progress for session with unknown number of steps.");
+    dolfin_error("Cannot step progress for session with unknown number of steps.");
   
   if ( i < (n-1) )
-	 i++;
+    i++;
 
   p1 = checkBounds(i);
   update();
 }
 //-----------------------------------------------------------------------------
-void Progress::update(int i, const char* format, ...)
+void Progress::update(unsigned int i, const char* format, ...)
 {
   if ( n == 0 )
 	 dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
@@ -151,7 +151,7 @@ const char* Progress::label()
   return _label;
 }
 //-----------------------------------------------------------------------------
-real Progress::checkBounds(int i)
+real Progress::checkBounds(unsigned int i)
 {
   if ( i < 0 )
     return 0.0;

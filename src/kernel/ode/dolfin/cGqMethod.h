@@ -16,7 +16,7 @@ namespace dolfin {
   class cGqMethod : public Method {
   public:
     
-    cGqMethod(int q);
+    cGqMethod(unsigned int q);
 
     void show() const;
     

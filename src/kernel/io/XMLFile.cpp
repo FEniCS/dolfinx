@@ -70,7 +70,7 @@ void XMLFile::operator<<(Vector& x)
   fprintf(fp, " <dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   fprintf(fp, "\t  <vector size=\" %i \"> \n", x.size() );
   
-  for (int i = 0; i < x.size(); i++) {
+  for (unsigned int i = 0; i < x.size(); i++) {
     fprintf(fp, "\t\t  <element row=\"%i\" value=\"%f\"/>\n", i, x(i) );
     if ( i == (x.size() - 1))
       fprintf(fp, "\t </vector>\n");
@@ -102,10 +102,10 @@ void XMLFile::operator<<(Matrix& A)
 
     fprintf(fp, "\t <sparsematrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1) );
                                                                                                                              
-    for (int i = 0; i < A.size(0); i++) {
+    for (unsigned int i = 0; i < A.size(0); i++) {
       fprintf(fp, "\t\t <row row=\"%i\" size=\"%i\">\n", i, A.rowsize(i));
-      for (int pos = 0; !A.endrow(i, pos); pos++) {
-	int j = 0;
+      for (unsigned int pos = 0; !A.endrow(i, pos); pos++) {
+	unsigned int j = 0;
 	real aij = A(i, j, pos);
         fprintf(fp, "\t\t\t <element column=\"%i\" value=\"%f\"/>\n", j, aij);
         if ( i == (A.size(0) - 1) && pos == (A.rowsize(i)-1)){

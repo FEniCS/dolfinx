@@ -83,7 +83,7 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "value", &value);   
   
   // Check values
-  if ( row < 0 || row >= x.size() )
+  if ( row < 0 || row >= static_cast<int>(x.size()) )
     dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)", row, x.size() - 1);
   
   // Set value

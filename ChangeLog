@@ -1,3 +1,4 @@
+ - Start changing from int to unsigned int where necessary
  - Fix bool->int when using stdard in Parameter
  - Add NewArray and NewList (will replace Array and List)
 0.4.0

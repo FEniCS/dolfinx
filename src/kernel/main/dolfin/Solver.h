@@ -43,7 +43,7 @@ namespace dolfin {
     class DummyODE : public ODE {
     public:
       DummyODE() : ODE(1) {}
-      real f(const Vector& u, real t, int i) { return 0.0; }
+      real f(const Vector& u, real t, unsigned int i) { return 0.0; }
     };
 
     Mesh     dummy_mesh;

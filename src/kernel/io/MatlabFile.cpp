@@ -17,7 +17,7 @@ using namespace dolfin;
 void MatlabFile::operator<<(Matrix& A)
 {
   real value;
-  int j ;
+  unsigned int j ;
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
@@ -25,8 +25,8 @@ void MatlabFile::operator<<(Matrix& A)
   switch ( A.type() ) {
   case Matrix::dense:
 
-    for (int i = 0; i < A.size(0); i++) {
-      for (int j = 0; j<A.size(1); j++) {
+    for (unsigned int i = 0; i < A.size(0); i++) {
+      for (unsigned int j = 0; j<A.size(1); j++) {
         fprintf(fp, "%.16e ", A[i][j]);
         if ( j < (A.size(1) - 1) && i <= (A.size(0) - 1))
           fprintf(fp, ", ");
@@ -43,8 +43,8 @@ void MatlabFile::operator<<(Matrix& A)
 
     // Write matrix in sparse format
     fprintf(fp, "%s = [", A.name().c_str());
-    for (int i = 0; i < A.size(0); i++) {
-      for (int pos = 0; !A.endrow(i, pos); pos++) {
+    for (unsigned int i = 0; i < A.size(0); i++) {
+      for (unsigned int pos = 0; !A.endrow(i, pos); pos++) {
 	value = A(i, j, pos);
 	fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);		
 	if ( i == (A.size(0) - 1) && A.endrow(i, pos + 1) )

@@ -26,9 +26,9 @@ void OctaveFile::operator<<(Matrix& A)
   FILE *fp = fopen(filename.c_str(), "a");
   
   fprintf(fp, "%s = [", A.name().c_str());
-  for (int i = 0; i < A.size(0); i++) {
+  for (unsigned int i = 0; i < A.size(0); i++) {
 
-    for (int j = 0; j < A.size(1); j++) {
+    for (unsigned int j = 0; j < A.size(1); j++) {
       if ( (value = A(i,j)) == 0.0 )
 		  fprintf(fp, " 0");
       else
