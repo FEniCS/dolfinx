@@ -1,6 +1,9 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewMatrix.h>
@@ -159,7 +162,7 @@ const Mat NewMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::disp(bool sparse) const
+void NewMatrix::disp(bool sparse, int precision) const
 {
   // Use PETSc sparse output as default
   if ( sparse )
@@ -167,23 +170,26 @@ void NewMatrix::disp(bool sparse) const
     MatView(A, PETSC_VIEWER_STDOUT_SELF);
     return;
   }
-  
+
   // Dense output
   const uint M = size(0);
   const uint N = size(1);
   for (uint i = 0; i < M; i++)
   {
-    cout << "| ";
+    std::stringstream line;
+
+    line << std::setprecision(precision);
+
     for (uint j = 0; j < N; j++)
     {
-      const real value = getval(i, j);
+      real value = getval(i, j);
       if ( fabs(value) < DOLFIN_EPS )
-	cout << "0 ";
-      else
-	cout << value << " ";
+	value = 0.0;
+
+      line << std::setw(precision + 1) << value << " ";
     }
-    cout << "|" << endl;
-  }
+    cout << line.str().c_str() << endl;
+  }  
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const NewMatrix& A)

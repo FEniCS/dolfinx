@@ -71,7 +71,7 @@ namespace dolfin
     const Mat mat() const;
 
     /// Display matrix (sparse output is default)
-    void disp(bool sparse = true) const;
+    void disp(bool sparse = true, int precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);

@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   b.disp();
 
   dolfin::cout << "A: " << dolfin::endl;
-  A.disp();
+  A.disp(false);
   
   dolfin::cout << "--------------------------------------" << dolfin::endl;
   dolfin::cout << "Test Krylov solvers" << dolfin::endl;
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
   }
 
   cout << "A2: " << endl;
-  A2.disp();
+  A2.disp(false);
   cout << "b2: " << endl;
   b2.disp();
   cout << "x2: " << endl;
