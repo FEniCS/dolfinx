@@ -1,15 +1,18 @@
 Assembly
 --------
 
+- Bugfix: assembly does not work for systems of more than 3 equations (Jansson, Logg)
+- Boundary conditions, fix ds (Logg)
+- Add i,j in vector PDE?
 - Optimize form evaluation: Hoffman, Logg
 - Use NewArray<...> instead of ::Vector in assembly classes
-- Assembly does not work for systems of more than 3 equations
-- General boundary conditions: Kraft?
 - Remove specification of dim from PDE
 
 Mesh
 ----
 
+- File format including boundary
+- Schema for mesh XML format (Jansson)
 - Fix bug in mesh refinement (non-working mesh from Pär Ingelström)
 - Geometry representation, including boundaries
 - Mesh generation (use triangle, tetgen)
