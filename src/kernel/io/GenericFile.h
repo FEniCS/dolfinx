@@ -5,6 +5,7 @@
 #define __GENERIC_FILE_H
 
 #include <string>
+#include <fstream>
 
 namespace dolfin {
   
@@ -24,9 +25,20 @@ namespace dolfin {
 	 
 	 virtual void operator<< (const Vector &vector) = 0;
 	 
-  private:
+  protected:
+
+	 void openIn();
+	 void openOut();
+	 void closeIn();
+	 void closeOut();
 	 
 	 std::string filename;
+
+	 std::ifstream in;
+	 std::ofstream out;
+
+	 bool infile_opened;
+	 bool outfile_opened;
 	 
   };
 

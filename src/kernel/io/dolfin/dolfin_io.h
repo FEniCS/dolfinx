@@ -7,8 +7,4 @@
 #include <dolfin/Terminal.hh>
 #include <dolfin/File.h>
 
-// DOLFIN cout
-
-#include <dolfin/cout.h>
-
 #endif

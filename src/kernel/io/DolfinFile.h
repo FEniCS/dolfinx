@@ -11,10 +11,11 @@ namespace dolfin {
   class DolfinFile : public GenericFile {
   public:
 
-	 DolfinFile(const std::string filename) : GenericFile(filename) {}
+	 DolfinFile(const std::string filename);
+	 ~DolfinFile();
 	 
 	 // Input
-
+	 
 	 void operator>> (Vector &vector);
 	 
 	 // Output
@@ -22,7 +23,12 @@ namespace dolfin {
 	 void operator<< (const Vector &vector);
 	 	 
   private:
-	 	 
+
+	 void createIndex();
+
+	 int no_objects;
+	 long *objects;
+	 
   };
 
 }

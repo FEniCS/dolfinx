@@ -10,11 +10,11 @@ using namespace dolfin;
 
 int main(int argc, char **argv)
 {
-  File file("test.dolfin");
+  File file("example.dolfin");
   Vector x;
 
   file >> x;
-  
+
   // Temporary: FIXME
   delete display;
 }
