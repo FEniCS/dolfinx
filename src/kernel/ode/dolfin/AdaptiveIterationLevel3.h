@@ -49,9 +49,6 @@ namespace dolfin
     
     // Gauss-Jacobi iteration on group list
     void updateGaussJacobi(ElementGroupList& list);
-
-    // Gauss-Seidel iteration on group list
-    void updateGaussSeidel(ElementGroupList& list);
     
     // Compute divergence
     real computeDivergence(ElementGroupList& list, const Residuals& r);
@@ -78,6 +75,9 @@ namespace dolfin
    
     // Number of values in current element group list
     unsigned int datasize;
+
+    // True if the element group iteration is local (and not part of group list iteration)
+    bool local_iteration;
 
   };
 

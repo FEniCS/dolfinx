@@ -18,7 +18,7 @@ Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		     unsigned int maxiter, real maxdiv, real maxconv, real tol) : 
   u(u), f(f), fixpoint(fixpoint), 
   maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol),
-  method(gauss_jacobi), alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0)  
+  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), depth(0)
 {
   // Do nothing
 }

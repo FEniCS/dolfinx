@@ -69,6 +69,15 @@ namespace dolfin
     // Start iteration on element
     void start(Element& element);
 
+    // End iteration on group list
+    void end(ElementGroupList& list);
+
+    // End iteration on element group
+    void end(ElementGroup& group);
+
+    // End iteration on element
+    void end(Element& element);
+
     // Update group list
     void update(ElementGroupList& list);
     

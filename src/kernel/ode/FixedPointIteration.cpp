@@ -70,6 +70,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       if ( converged(list, r, n) )
       {
 	dolfin_end("Time slab iteration converged in %d iterations", n + 1);
+	end(list);
 	return true;
       }
       
@@ -86,6 +87,9 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       // Update group list
       update(list);
     }
+
+    // End iteration
+    end(list);
   }
 
   dolfin_end("Time slab did not converge");
@@ -132,6 +136,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
       if ( converged(group, r, n) )
       {
 	dolfin_end("Element group iteration converged in %d iterations", n + 1);
+	end(group);
 	return true;
       }
       
@@ -165,6 +170,9 @@ bool FixedPointIteration::iterate(ElementGroup& group)
       // Update element group
       update(group);
     }
+
+    // End iteration
+    end(group);
   }
   
   dolfin_end("Element group iteration did not converge");
@@ -193,6 +201,7 @@ bool FixedPointIteration::iterate(Element& element)
       {
 	//dolfin_end("Element iteration converged in %d iterations", n + 1);
 	//cout << "u(" << element.index() << "," << element.endtime() << ") = " << element.endval() << endl;
+	end(element);
 	return true;
       }
       
@@ -215,10 +224,10 @@ bool FixedPointIteration::iterate(Element& element)
       //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
       
     }
-    break;
-  }
 
-  //dolfin_end("Element iteration did not converge");
+    // End iteration
+    end(element);
+  }
 
   return true;
 }
@@ -250,19 +259,46 @@ void FixedPointIteration::report() const
 void FixedPointIteration::start(ElementGroupList& list)
 {
   dolfin_assert(state);
+  state->down();
   state->start(list);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::start(ElementGroup& group)
 {
   dolfin_assert(state);
+  state->down();
   state->start(group);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::start(Element& element)
 {
   dolfin_assert(state);
+  state->down();
   state->start(element);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::end(ElementGroupList& list)
+{
+  dolfin_assert(state);
+  state->up();
+  // Could be implemented if needed
+  //state->end(list);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::end(ElementGroup& group)
+{
+  dolfin_assert(state);
+  state->up();
+  // Could be implemented if needed
+  //state->end(group);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::end(Element& element)
+{
+  dolfin_assert(state);
+  state->up();
+  // Could be implemented if needed
+  //state->end(element);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(ElementGroupList& list)

@@ -27,7 +27,7 @@ AdaptiveIterationLevel2::AdaptiveIterationLevel2(Solution& u, RHS& f,
 						 real tol) :
   Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), datasize(0)
 {
-  // method = gauss_seidel;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 AdaptiveIterationLevel2::~AdaptiveIterationLevel2()
@@ -65,23 +65,22 @@ void AdaptiveIterationLevel2::update(ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group)
 {
-  // Choose update method
-  if ( method == gauss_jacobi )
-    updateGaussJacobi(group);
-  else
-    updateGaussSeidel(group);
+  // Initialize values
+  initData(x1);
+  
+  // Compute new values
+  for (ElementIterator element(group); !element.end(); ++element)
+    fixpoint.iterate(*element);
+  
+  // Copy values to elements
+  copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(Element& element)
 {
-  // Choose update method
-  if ( method == gauss_jacobi )
-  {
-    element.update(f, alpha, x1.values + x1.offset);
-    x1.offset += element.size();
-  }
-  else
-    element.update(f, alpha);
+  // Compute new values for element
+  element.update(f, alpha, x1.values + x1.offset);
+  x1.offset += element.size();
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(ElementGroupList& list,
@@ -199,26 +198,6 @@ void AdaptiveIterationLevel2::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
        << "fixed point iteration (on element group level)." << endl;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::updateGaussJacobi(ElementGroup& group)
-{  
-  // Initialize values
-  initData(x1);
-  
-  // Compute new values
-  for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
-  
-  // Copy values to elements
-  copyData(x1, group);
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::updateGaussSeidel(ElementGroup& group)
-{
-  // Simple update of element group
-  for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
 }
 //-----------------------------------------------------------------------------
 real AdaptiveIterationLevel2::computeDivergence(ElementGroup& group,

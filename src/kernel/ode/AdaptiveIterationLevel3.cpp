@@ -23,9 +23,10 @@ AdaptiveIterationLevel3::AdaptiveIterationLevel3(Solution& u, RHS& f,
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
 						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), datasize(0)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol),
+  datasize(0), local_iteration(true)
 {
-  // method = gauss_seidel;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 AdaptiveIterationLevel3::~AdaptiveIterationLevel3()
@@ -43,6 +44,9 @@ void AdaptiveIterationLevel3::start(ElementGroupList& list)
   // Compute total number of values in group list
   datasize = dataSize(list);
 
+  // Element group iteration is part of group list iteration
+  local_iteration = false;
+
   cout << "Total size is " << datasize << endl;
 }
 //-----------------------------------------------------------------------------
@@ -58,11 +62,18 @@ void AdaptiveIterationLevel3::start(Element& element)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroupList& list)
 {
-  // Choose update method
-  if ( method == gauss_jacobi )
-    updateGaussJacobi(list);
-  else
-    updateGaussSeidel(list);
+  // Initialize values
+  initData(x1);
+  
+  // Compute new values
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+    fixpoint.iterate(*group);
+
+  // Copy values to elements
+  copyData(x1, list);
+
+  // Invalidate data
+  invalidateData();
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroup& group)
@@ -74,15 +85,10 @@ void AdaptiveIterationLevel3::update(ElementGroup& group)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(Element& element)
 {
-  // Choose update method
-  if ( method == gauss_jacobi )
-  {
-    cout << "offset = " << x1.offset << endl;
-    element.update(f, alpha, x1.values + x1.offset);
-    x1.offset += element.size();
-  }
-  else
-    element.update(f, alpha);
+  // Compute new values for element
+  cout << "offset = " << x1.offset << endl;
+  element.update(f, alpha, x1.values + x1.offset);
+  x1.offset += element.size();
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
@@ -123,7 +129,7 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list,
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
-  
+
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
@@ -188,26 +194,6 @@ void AdaptiveIterationLevel3::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
        << "fixed point iteration (on time slab level)." << endl;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list)
-{  
-  // Initialize values
-  initData(x1);
-
-  // Compute new values
-  for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
-
-  // Copy values to elements
-  copyData(x1, list);
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list)
-{
-  // Simple update of element group
-  for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
 real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,

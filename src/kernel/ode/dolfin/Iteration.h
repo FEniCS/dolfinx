@@ -93,6 +93,12 @@ namespace dolfin
     /// Write a status report
     virtual void report() const = 0;
 
+    /// Increase depth
+    void down();
+
+    /// Decrease depth
+    void up();
+
     /// Update initial data for element group
     void init(ElementGroup& group);
 
@@ -118,9 +124,6 @@ namespace dolfin
     real residual(Element& element);
 
   protected:
-
-    // Type of iteration
-    enum Method {gauss_jacobi, gauss_seidel};
 
     // An array of values used for Gauss-Jacobi iteration
     struct Values
@@ -156,9 +159,6 @@ namespace dolfin
     real maxconv;
     real tol;
 
-    // Current method (Gauss-Jacobi or Gauss-Seidel)
-    Method method;
-
     // Stabilization parameter
     real alpha;
 
@@ -173,6 +173,9 @@ namespace dolfin
 
     // Number of remaining stabilizing iterations
     unsigned int j;
+
+    // Depth of iteration (0,1,2,3)
+    unsigned int depth;
 
   };
 
