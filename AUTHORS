@@ -12,6 +12,11 @@ Main authors:
 Contributors (in alphabetical order:
 ------------------------------------
 
+- Fredrik Bengzon (bengzon@math.chalmers.se)
+
+    PDE systems
+    Elasticity and wave modules
+
 - Niklas Ericsson (nen@math.chalmers.se)
   
     LU factorization and LU solve
@@ -25,6 +30,8 @@ Contributors (in alphabetical order:
   
     Multi-adaptive ODE solver
     Updates of Vector
+    PDE systems
+    Elasticity and wave modules
 
 - Karin Kraft (kakr@math.chalmers.se)
   
