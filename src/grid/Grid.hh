@@ -9,6 +9,7 @@
 #include "Node.hh"
 #include "Cell.hh"
 #include "CellType.hh"
+#include "GridData.hh"
 
 class Grid{
 public:
@@ -83,6 +84,8 @@ private:
   CellType celltype;
 
   /// --- Grid data (main part) ---
+
+  GridData *gd;
   
   /// Nodes (positions)
   Node *nodes;

@@ -12,6 +12,7 @@
 #include <Input.hh>
 
 #include "Grid.hh"
+#include "GridData.hh"
 #include "Tetrahedron.hh"
 #include "Triangle.hh"
 
@@ -25,6 +26,7 @@ Grid::Grid()
   celltype = CELL_NONE;
   mem      = sizeof(Grid);
   h        = 0.0;
+  gd = 0;
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -32,6 +34,9 @@ Grid::~Grid()
   if ( nodes )
 	 delete [] nodes;
   nodes = 0;
+  
+  if ( gd )
+	 delete gd;
   
   if ( cells ){
 	 for (int i=0;i<no_cells;i++)

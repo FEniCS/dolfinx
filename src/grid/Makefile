@@ -72,7 +72,7 @@ VERSION = 0.2.11-1
 INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
 lib_LIBRARIES = libdolfin-grid.a
 include_HEADERS = 
-libdolfin_grid_a_SOURCES = Cell.C                            Cell.hh                            Edge.C                            Edge.hh                            Grid.C                            Grid.hh                            Node.C                            Node.hh                            Point.C                            Point.hh                            Tetrahedron.C                            Tetrahedron.hh                            Triangle.C                            Triangle.hh
+libdolfin_grid_a_SOURCES = Cell.C                            Cell.hh                            Edge.C                            Edge.hh                            Grid.C                            Grid.hh                            GridData.C                            GridData.hh                            Node.C                            Node.hh                            Point.C                            Point.hh                            Tetrahedron.C                            Tetrahedron.hh                            Triangle.C                            Triangle.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -84,8 +84,8 @@ CPPFLAGS =
 LDFLAGS = 
 LIBS = 
 libdolfin_grid_a_LIBADD = 
-libdolfin_grid_a_OBJECTS =  Cell.o Edge.o Grid.o Node.o Point.o \
-Tetrahedron.o Triangle.o
+libdolfin_grid_a_OBJECTS =  Cell.o Edge.o Grid.o GridData.o Node.o \
+Point.o Tetrahedron.o Triangle.o
 AR = ar
 CXXFLAGS = -g -O2
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -104,8 +104,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Cell.P .deps/Edge.P .deps/Grid.P .deps/Node.P \
-.deps/Point.P .deps/Tetrahedron.P .deps/Triangle.P
+DEP_FILES =  .deps/Cell.P .deps/Edge.P .deps/Grid.P .deps/GridData.P \
+.deps/Node.P .deps/Point.P .deps/Tetrahedron.P .deps/Triangle.P
 SOURCES = $(libdolfin_grid_a_SOURCES)
 OBJECTS = $(libdolfin_grid_a_OBJECTS)
 

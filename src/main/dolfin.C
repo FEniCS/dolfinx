@@ -254,6 +254,8 @@ void dolfin_test()
   
   List<Node> list;
   Node n;
+
+  cout << list << endl;
   
   for (int i=0;i<77;i++){
 	 n.SetNodeNo(i*3);

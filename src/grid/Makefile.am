@@ -7,6 +7,8 @@ libdolfin_grid_a_SOURCES = Cell.C \
                            Edge.hh \
                            Grid.C \
                            Grid.hh \
+                           GridData.C \
+                           GridData.hh \
                            Node.C \
                            Node.hh \
                            Point.C \

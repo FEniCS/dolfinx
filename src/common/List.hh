@@ -6,8 +6,10 @@
 
 // List implements a block-linked list.
 //
-// At start a block of size BLOCK_SIZE is allocated
-// and new blocks are allocated when needed.
+// Objects can be dynamically added to (or removed from) the list.
+// New blocks of size BLOCK_SIZE are allocated when needed.
+
+#include <iostream>
 
 #define BLOCK_SIZE 1024
 
@@ -17,14 +19,10 @@ public:
   /// Constructor
   List(){
 	 
-	 // Create the first block
-	 _first_block = new Block(0);
-	 
-	 // Start at the first block
+	 _first_block = 0;
 	 _current_block = _first_block;
 	 
-	 // Start with one empty block
-	 _blocks = 1;
+	 _blocks = 0;
 	 _size = 0;
 	 _empty = 0;
 	 
@@ -34,22 +32,31 @@ public:
   ~List(){
 	 
 	 // Delete all blocks
-	 Block *b = _first_block;
-	 while ( true ){
-		if ( b->prev )
-		  delete b->prev;
-		
-		if ( !b->next )
-		  break;
-
-		b = b->next;
+	 if ( _first_block ){
+		Block *b = _first_block;
+		while ( true ){
+		  if ( b->prev )
+			 delete b->prev;
+		  
+		  if ( !b->next )
+			 break;
+		  
+		  b = b->next;
+		}
+		delete b;
 	 }
-	 delete b;
 
   }
   
   /// Creates a new object in the list
   T* create(){
+
+	 // Create a new block if there are no blocks
+	 if ( !_first_block ){
+		_first_block = new Block(0);
+		_current_block = _first_block;
+		_blocks = 1;
+	 }
 	 
 	 // Check for empty position
 	 if ( _empty > 0 ){
@@ -81,6 +88,15 @@ public:
 	 return _current_block->create();
   }
 
+  // Creates a new object in the list and returns a unique id
+  T* create(int *id){
+
+	 T* t = create();
+	 *id = pos - 
+	 
+
+  }
+  
   /// Adds an object to the list
   T* add(T x){
 	 T *new_x = create();
