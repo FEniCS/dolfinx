@@ -86,7 +86,7 @@ real Iteration::residual(NewArray<Element*>& elements)
     Element* element = elements[i];
     dolfin_assert(element);
 
-    // Compute discrete residual
+    // Add square of element residual
     r += sqr(residual(*element));
   }
 

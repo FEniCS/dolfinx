@@ -71,6 +71,9 @@ namespace dolfin {
     /// Set element values to given values (not including initial data)
     virtual void set(const real* const values) = 0;
 
+    /// Get element values (not including initial data)
+    virtual void get(real* const values) const = 0;
+
     /// Check if given time is within the element
     bool within(real t) const;
 

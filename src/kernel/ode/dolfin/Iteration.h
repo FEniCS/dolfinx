@@ -31,14 +31,6 @@ namespace dolfin
       real r0, r1, r2;
     };
 
-    // Damping
-    struct Damping
-    {
-      Damping() : alpha(0), m(0) {}
-      real alpha;
-      unsigned int m;
-    };
-
     /// Constructor
     Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 	      unsigned int maxiter, real tol, real maxdiv, real maxconv);
@@ -59,25 +51,25 @@ namespace dolfin
     virtual void start(Element& element) = 0;
 
     /// Update time slab
-    virtual void update(TimeSlab& timeslab, const Damping& d) = 0;
+    virtual void update(TimeSlab& timeslab) = 0;
 
     /// Update element
-    virtual void update(Element& element, const Damping& d) = 0;
+    virtual void update(Element& element) = 0;
 
     /// Update element list
-    virtual void update(NewArray<Element*>& elements, const Damping& d) = 0;
+    virtual void update(NewArray<Element*>& elements) = 0;
 
     /// Stabilize time slab iteration
     virtual void stabilize(TimeSlab& timeslab, 
-			   const Residuals& r, Damping& d) = 0;
+			   const Residuals& r, unsigned int n) = 0;
     
     /// Stabilize element list iteration
     virtual void stabilize(NewArray<Element*>& elements,
-			   const Residuals& r, Damping& d) = 0;
+			   const Residuals& r, unsigned int n) = 0;
     
     /// Stabilize element iteration
     virtual void stabilize(Element& element,
-			   const Residuals& r, Damping& d) = 0;
+			   const Residuals& r, unsigned int n) = 0;
     
     /// Check convergence for time slab
     virtual bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n) = 0;

@@ -19,7 +19,6 @@ using namespace dolfin;
 FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
 {
   maxiter       = dolfin_get("maximum iterations");
-  local_maxiter = dolfin_get("maximum local iterations");
   maxdiv        = dolfin_get("maximum divergence");
   maxconv       = dolfin_get("maximum convergence");
 
@@ -40,7 +39,6 @@ FixedPointIteration::~FixedPointIteration()
 bool FixedPointIteration::iterate(TimeSlab& timeslab)
 {
   Iteration::Residuals r;
-  Iteration::Damping d;
   Iteration::State newstate;
   bool retry = true;
   
@@ -57,7 +55,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
       // Check convergence
       if ( converged(timeslab, r, n) )
       {
-	//dolfin_end("Time slab iteration converged");
+	//dolfin_end("Time slab iteration converged in %d iterations", n + 1);
 	return true;
       }
       
@@ -69,10 +67,10 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
       }
       
       // Stabilize iteration
-      stabilize(timeslab, r, d);
+      stabilize(timeslab, r, n);
       
       // Update time slab
-      update(timeslab, d);
+      update(timeslab);
     }
   }
 
@@ -84,7 +82,6 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 bool FixedPointIteration::iterate(NewArray<Element*>& elements)
 {
   Iteration::Residuals r;
-  Iteration::Damping d;
   Iteration::State newstate;
   bool retry = true;
   
@@ -96,10 +93,10 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     // Start iteration on element list
     start(elements);
     
-    //dolfin_start("Starting element list iteration");
+    dolfin_start("Starting element list iteration");
     
     // Fixed point iteration on the element list
-    for (unsigned int n = 0; n < local_maxiter; n++)
+    for (unsigned int n = 0; n < maxiter; n++)
     {
       /*
 	for (unsigned int i = 0; i < elements.size(); i++)
@@ -120,7 +117,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       // Check convergence
       if ( converged(elements, r, n) )
       {
-	//dolfin_end("Element list iteration converged");
+	dolfin_end("Element list iteration converged in %d iterations", n + 1);
 	return true;
       }
       
@@ -129,13 +126,13 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       // Check divergence
       if ( retry = diverged(elements, r, n, newstate) )
       {
-	//dolfin_end("Changing state");
+	dolfin_end("Changing state");
 	changeState(newstate);
 	break;
       }
     
       // Stabilize iteration
-      stabilize(elements, r, d);
+      stabilize(elements, r, n);
       
       /*
 	for (unsigned int i = 0; i < elements.size(); i++)
@@ -152,11 +149,11 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       */
       
       // Update element list
-      update(elements, d);
+      update(elements);
     }
   }
   
-  //dolfin_end("Element list iteration did not converge");
+  dolfin_end("Element list iteration did not converge");
 
   return false;
 }
@@ -164,7 +161,6 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
 bool FixedPointIteration::iterate(Element& element)
 {
   Iteration::Residuals r;
-  Iteration::Damping d;
   Iteration::State newstate;
   bool retry = true;
 
@@ -176,12 +172,12 @@ bool FixedPointIteration::iterate(Element& element)
     start(element);
     
     // Fixed point iteration on the element
-    for (unsigned int n = 0; n < local_maxiter; n++)
+    for (unsigned int n = 0; n < maxiter; n++)
     {
       // Check convergence
       if ( converged(element, r, n) )
       {
-	//dolfin_end("Element iteration converged");
+	//dolfin_end("Element iteration converged in %d iterations", n + 1);
 	//cout << "u(" << element.index() << "," << element.endtime() << ") = " << element.endval() << endl;
 	return true;
       }
@@ -196,12 +192,12 @@ bool FixedPointIteration::iterate(Element& element)
       }
     
       // Stabilize iteration
-      stabilize(element, r, d);
+      stabilize(element, r, n);
       
       //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
       
       // Update element
-      update(element, d);
+      update(element);
       //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
       
     }
@@ -279,50 +275,47 @@ void FixedPointIteration::start(Element& element)
   state->start(element);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(TimeSlab& timeslab,
-				 const Iteration::Damping& d)
+void FixedPointIteration::update(TimeSlab& timeslab)
 {
   dolfin_assert(state);
-  state->update(timeslab, d);
+  state->update(timeslab);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(NewArray<Element*>& elements, 
-				 const Iteration::Damping& d)
+void FixedPointIteration::update(NewArray<Element*>& elements)
 {
   dolfin_assert(state);
-  state->update(elements, d);
+  state->update(elements);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(Element& element,
-				 const Iteration::Damping& d)
+void FixedPointIteration::update(Element& element)
 {
   dolfin_assert(state);
   u.debug(element, Solution::update);
-  state->update(element, d);
+  state->update(element);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(TimeSlab& timeslab, 
 				    const Iteration::Residuals& r,
-				    Iteration::Damping& d)
+				    unsigned int n)
 {
   dolfin_assert(state);
-  state->stabilize(timeslab, r, d);
+  state->stabilize(timeslab, r, n);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(NewArray<Element*>& elements, 
 				    const Iteration::Residuals& r,
-				    Iteration::Damping& d)
+				    unsigned int n)
 {
   dolfin_assert(state);
-  state->stabilize(elements, r, d);
+  state->stabilize(elements, r, n);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(Element& element, 
 				    const Iteration::Residuals& r,
-				    Iteration::Damping& d)
+				    unsigned int n)
 {
   dolfin_assert(state);
-  state->stabilize(element, r, d);
+  state->stabilize(element, r, n);
 }
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::converged(TimeSlab& timeslab,

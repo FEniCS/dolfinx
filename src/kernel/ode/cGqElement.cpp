@@ -113,6 +113,12 @@ void cGqElement::set(const real* const values)
     this->values[i] = values[i-1];
 }
 //-----------------------------------------------------------------------------
+void cGqElement::get(real* const values) const
+{
+  for (unsigned int i = 1; i <= q; i++)
+    values[i-1] = this->values[i];
+}
+//-----------------------------------------------------------------------------
 real cGqElement::computeTimeStep(real TOL, real r, real kmax) const
 {
   // Compute new time step based on residual

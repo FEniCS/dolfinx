@@ -80,22 +80,25 @@ namespace dolfin
     void start(Element& element);
 
     // Update time slab
-    void update(TimeSlab& timeslab, const Iteration::Damping& d);
+    void update(TimeSlab& timeslab);
     
     // Update element list
-    void update(NewArray<Element*>& elements, const Iteration::Damping& d);
+    void update(NewArray<Element*>& elements);
 
     // Update element
-    void update(Element& element, const Iteration::Damping& db);
+    void update(Element& element);
 
     // Stabilize time slab
-    void stabilize(TimeSlab& timeslab, const Iteration::Residuals& r, Iteration::Damping& d);
+    void stabilize(TimeSlab& timeslab,
+		   const Iteration::Residuals& r, unsigned int n);
 
     // Stabilize element list
-    void stabilize(NewArray<Element*>& elements, const Iteration::Residuals& r, Iteration::Damping& d);
+    void stabilize(NewArray<Element*>& elements,
+		   const Iteration::Residuals& r, unsigned int n);
 
     // Stabilize element
-    void stabilize(Element& element, const Iteration::Residuals& r, Iteration::Damping& d);
+    void stabilize(Element& element,
+		   const Iteration::Residuals& r, unsigned int n);
 
     // Check convergence for time slab
     bool converged(TimeSlab& timeslab, Iteration::Residuals& r, unsigned int n);
@@ -131,9 +134,6 @@ namespace dolfin
 
     // Maximum number of iterations
     unsigned int maxiter;
-
-    // Maximum number of local iterations
-    unsigned int local_maxiter;
 
     // Maximum allowed divergence
     real maxdiv;

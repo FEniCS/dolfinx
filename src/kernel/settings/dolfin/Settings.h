@@ -40,7 +40,6 @@ namespace dolfin {
       add(Parameter::INT, "number of samples", 100);
       add(Parameter::INT, "element cache size", 32);
       add(Parameter::INT, "maximum iterations", 100);
-      add(Parameter::INT, "maximum local iterations", 10);
       add(Parameter::INT, "order", 1);
       
       add(Parameter::REAL, "initial time step", 0.01);

@@ -46,7 +46,6 @@ int main()
   dolfin_set("tolerance", 1e-3);
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
-  dolfin_set("solve dual problem", false);
   dolfin_set("initial time step", 0.1);
   dolfin_set("fixed time step", true);
 

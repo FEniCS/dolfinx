@@ -21,7 +21,8 @@ AdaptiveIteration::AdaptiveIteration(Solution& u, RHS& f,
 				     unsigned int maxiter,
 				     real maxdiv, real maxconv, real tol) :
   Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), 
-  method(gauss_jacobi), m(0), j(0), alpha(1), gamma(1.0/sqrt(2.0))
+  method(gauss_jacobi), datasize(0), m(0), j(0),
+  alpha(1), gamma(1.0/sqrt(2.0)), r0(0)
 {
   // method = gauss_seidel;
 }
@@ -43,9 +44,8 @@ void AdaptiveIteration::start(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 void AdaptiveIteration::start(NewArray<Element*>& elements)
 {
-  // Initialize data for Gauss-Jacobi iteration
-  if ( method == gauss_jacobi )
-    initData(elements);
+  // Compute total number of values in element list
+  datasize = dataSize(elements);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIteration::start(Element& element)
@@ -53,72 +53,108 @@ void AdaptiveIteration::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::update(TimeSlab& timeslab, const Damping& d)
+void AdaptiveIteration::update(TimeSlab& timeslab)
 {
   // Simple update of time slab
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::update(NewArray<Element*>& elements, const Damping& d)
+void AdaptiveIteration::update(NewArray<Element*>& elements)
 {
   // Choose update method
   if ( method == gauss_jacobi )
-    updateGaussJacobi(elements, d);
+    updateGaussJacobi(elements);
   else
-    updateGaussSeidel(elements, d);
+    updateGaussSeidel(elements);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::update(Element& element, const Damping& d)
+void AdaptiveIteration::update(Element& element)
 {
   // Choose update method
   if ( method == gauss_jacobi )
-    element.update(f, alpha, values.values + values.offset);
+    element.update(f, alpha, x1.values + x1.offset);
   else
     element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIteration::stabilize(TimeSlab& timeslab,
-				   const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIteration::stabilize(NewArray<Element*>& elements,
-				  const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
-  cout << "Stabilizing element list iteration: " << r.r1 << " --> " << r.r2 << endl;
+  // Make at least one iteration before stabilizing
+  if ( n == 0 )
+    return;
+
+  cout << "Residual: " << r.r1 << " --> " << r.r2 << endl;
+
+  // Take action depending on j, the remaining number of iterations
+  // with small alpha.
+  //
+  //     j = 0 : increasing alpha (or alpha = 1)
+  //     j = 1 : last stabilizing iteration
+  //     j > 1 : still stabilizing
+
+  switch ( j ) {
+  case 0:
+    // Increase alpha with a factor 2 towards alpha = 1
+    if ( r.r2 > 0.5*r.r1 )
+      alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
+    break;
+  case 1:
+    // Continue with another round of stabilizing steps if it seems to work
+    if ( pow(r.r2/r0, 1.0/static_cast<real>(m)) < 0.75 )
+    {
+      cout << "Trying again" << endl;
+      
+      // Choose same value for m as last time
+      j = m;
+      
+      // Choose a slightly larger alpha if convergence is monotone
+      if ( r.r2 < 0.75*r.r1 && r.r1 < 0.75*r0 )
+	alpha *= 1.1;
+      
+      // Save residual at start of stabilizing iterations
+      r0 = r.r2;
+    }
+    else
+    {
+      // Finish stabilization
+      j = 0;
+    }
+    break;
+  default:
+    // Decrease number of remaining iterations with small alpha
+    j -= 1;
+  }
   
   // Check stabilization is needed
   if ( r.r2 > r.r1 && j == 0 )
   {
-
     // Compute divergence rate
-    real rho = computeDivergence(r);
-    
+    real rho = computeDivergence(elements, r);
+    cout << "  rho   = " << rho << endl;
+
     // Compute alpha
     alpha = computeAlpha(rho);
+    cout << "  alpha = " << alpha << endl;
 
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
-
+    cout << "  m     = " << m << endl;
+    
+    // Save residual at start of stabilizing iterations
+    r0 = r.r2;
   }
-  
-  
-	  
-  /*
-  % Compute alpha
-  gamma = 1 / sqrt(2);
-  gamma = 0.9;
-  %a = gamma / (1 + rho);
-  a = gamma / (1 + rho);
-  m = 1*ceil(log(rho) / log(1/(1-gamma^2)));
-  j = m;
-  */
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIteration::stabilize(Element& element, 
-				  const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
@@ -130,11 +166,11 @@ bool AdaptiveIteration::converged(TimeSlab& timeslab,
   if ( timeslab.leaf() )
     return n >= 1;
 
-  // Compute maximum discrete residual
+  // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(timeslab);
 
-  // Save initial discrete residual
+  // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
@@ -144,11 +180,11 @@ bool AdaptiveIteration::converged(TimeSlab& timeslab,
 bool AdaptiveIteration::converged(NewArray<Element*>& elements, 
 				   Residuals& r, unsigned int n)
 {
-  // Compute maximum discrete residual
+  // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(elements);
   
-  // Save initial discrete residual
+  // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
 
@@ -211,13 +247,10 @@ void AdaptiveIteration::report() const
        << "fixed point iteration." << endl;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::updateGaussJacobi(NewArray<Element*>& elements,
-					  const Damping& d)
+void AdaptiveIteration::updateGaussJacobi(NewArray<Element*>& elements)
 {  
-  // Reset offset
-  values.offset = 0;
-
-  cout << "Number of elements in list: " << elements.size() << endl;
+  // Initialize values
+  initData(x1);
 
   // Compute new values
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -238,15 +271,14 @@ void AdaptiveIteration::updateGaussJacobi(NewArray<Element*>& elements,
     */
 
     // Increase offset
-    values.offset += element->size();
+    x1.offset += element->size();
   }
 
   // Copy values to elements
-  copyData(elements);
+  copyData(x1, elements);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::updateGaussSeidel(NewArray<Element*>& elements,
-					  const Damping& d)
+void AdaptiveIteration::updateGaussSeidel(NewArray<Element*>& elements)
 {
   // Simple update of element list
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -260,43 +292,55 @@ void AdaptiveIteration::updateGaussSeidel(NewArray<Element*>& elements,
   }
 }
 //-----------------------------------------------------------------------------
-real AdaptiveIteration::computeDivergence(const Residuals& r) const
+real AdaptiveIteration::computeDivergence(NewArray<Element*>& elements,
+					  const Residuals& r)
 {
-  real rho2 = r.r2 / r.r1;
+  // Successive residuals
+  real r1 = r.r1;
+  real r2 = r.r2;
+
+  // Successive convergence factors
+  real rho2 = r2 / r1;
   real rho1 = rho2;
 
-  rho2 = rho1 + rho2;
+  // Save current alpha and change alpha to 1 for divergence computation
+  real alpha0 = alpha;
+  alpha = 1.0;
+
+  // Save solution values before iteration
+  initData(x0);
+  copyData(elements, x0);
+
+  for (unsigned int n = 0; n < maxiter; n++)
+  {
+    // Update element list
+    update(elements);
+    
+    // Compute residual
+    r1 = r2;
+    r2 = residual(elements);
   
+    // Compute divergence
+    rho1 = rho2;
+    rho2 = r2 / (DOLFIN_EPS + r1);
+
+    cout << "rho = " << rho2 << endl;
+
+    if ( abs(rho2-rho1) < 0.1 * rho1 )
+    {
+      dolfin_debug1("Computed divergence rate in %d", n + 1);
+      break;
+    }
+    
+  }
+
+  // Restore alpha
+  alpha = alpha0;
+
+  // Restore solution values
+  copyData(x0, elements);
+
   return rho2;
-
-
-  //alpha = 
-
-
-  /*
-  for (int n = 0; n < local_maxiter
-  for n = 1:100
-	  
-	  % Update
-	  x  = update(g, x, 1);
-  
-  % Compute residual
-      r1 = r2;
-  r2 = residual(g, x);
-  
-  % Compute divergence
-  rho0 = rho1;
-  rho1 = r2 / r1;
-
-  if ( abs(rho1-rho0) < 0.1 * rho0 )
-    disp(['Computed divergence rate in ' num2str(n) ' iterations'])
-    break
-  end
-  
-end
-
-rho = rho1;
-  */
 }
 //-----------------------------------------------------------------------------
 real AdaptiveIteration::computeAlpha(real rho) const
@@ -306,27 +350,42 @@ real AdaptiveIteration::computeAlpha(real rho) const
 //-----------------------------------------------------------------------------
 unsigned int AdaptiveIteration::computeSteps(real rho) const
 {
-  return 1 + ceil_int(log(rho) / log(1.0/(1.0-gamma*gamma)));
+  return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::initData(const NewArray<Element*>& elements)
+void AdaptiveIteration::initData(Values& values)
 {
-  // Compute number of values
-  unsigned int newsize = dataSize(elements);
-
-  cout << "Number of values: " << newsize << endl;
-
   // Reallocate data if necessary
-  if ( newsize > values.size )
-    values.init(newsize);
+  if ( datasize > values.size )
+    values.init(datasize);
 
   // Reset offset
   values.offset = 0;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIteration::copyData(NewArray<Element*>& elements) const
+void AdaptiveIteration::copyData(const NewArray<Element*>& elements,
+				 Values& values)
 {
-  // Copy data to elements in list
+  // Copy data from element list
+  unsigned int offset = 0;
+  for (unsigned int i = 0; i < elements.size(); i++)
+  {
+    // Get the element
+    Element* element = elements[i];
+    dolfin_assert(element);
+
+    // Get values from element
+    element->get(values.values + offset);
+
+    // Increase offset
+    offset += element->size();
+  }
+}
+//-----------------------------------------------------------------------------
+void AdaptiveIteration::copyData(const Values& values,
+				 NewArray<Element*>& elements) const
+{
+  // Copy data to elements list
   unsigned int offset = 0;
   for (unsigned int i = 0; i < elements.size(); i++)
   {

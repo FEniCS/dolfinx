@@ -29,13 +29,13 @@ namespace dolfin
     void start(NewArray<Element*>& elements);
     void start(Element& element);
 
-    void update(TimeSlab& timeslab, const Damping& d);
-    void update(NewArray<Element*>& elements, const Damping& d);
-    void update(Element& element, const Damping& d);
+    void update(TimeSlab& timeslab);
+    void update(NewArray<Element*>& elements);
+    void update(Element& element);
     
-    void stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
-    void stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);
-    void stabilize(Element& element, const Residuals& r, Damping& d);
+    void stabilize(TimeSlab& timeslab, const Residuals& r, unsigned int n);
+    void stabilize(NewArray<Element*>& elements, const Residuals& r, unsigned int n);
+    void stabilize(Element& element, const Residuals& r, unsigned int n);
     
     bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
     bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
@@ -66,13 +66,13 @@ namespace dolfin
     };
 
     // Gauss-Jacobi iteration on element list
-    void updateGaussJacobi(NewArray<Element*>& elements, const Damping& d);
+    void updateGaussJacobi(NewArray<Element*>& elements);
 
     // Gauss-Seidel iteration on element list
-    void updateGaussSeidel(NewArray<Element*>& elements, const Damping& d);
+    void updateGaussSeidel(NewArray<Element*>& elements);
     
     // Compute divergence
-    real computeDivergence(const Residuals& r) const;
+    real computeDivergence(NewArray<Element*>& elements, const Residuals& r);
 
     // Compute alpha
     real computeAlpha(real rho) const;
@@ -81,19 +81,30 @@ namespace dolfin
     unsigned int computeSteps(real rho) const;
 
     // Initialize additional data
-    void initData(const NewArray<Element*>& elements);
+    void initData(Values& values);
+
+    // Copy data from element list
+    void copyData(const NewArray<Element*>& elements, Values& values);
 
     // Copy data to element list
-    void copyData(NewArray<Element*>& elements) const;
+    void copyData(const Values& values, NewArray<Element*>& elements) const;
 
     // Compute size of data
     unsigned int dataSize(const NewArray<Element*>& elements) const;
 
+    //--- Data for adaptive iteration ---
+
     // Current method (Gauss-Jacobi or Gauss-Seidel)
     Method method;
-    
-    // Additional data for Gauss-Jacobi iteration
-    Values values;
+   
+    // Solution values for divergence computation
+    Values x0;
+ 
+    // Solution values for Gauss-Jacobi iteration
+    Values x1;
+   
+    // Number of values in current element list
+    unsigned int datasize;
 
     // Number of stabilizing iterations
     unsigned int m;
@@ -106,6 +117,9 @@ namespace dolfin
 
     // Angle of sector, gamma = cos(theta)
     real gamma;
+
+    // Residual at start of stabilizing iterations
+    real r0;
 
   };
 

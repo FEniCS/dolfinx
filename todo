@@ -1,11 +1,12 @@
 Multi-adaptive solver
 ---------------------
 
+- Stiff problems: diagonal iteration for dG(1)
+- First time step
 - Save dual solution backwards
 - Error estimates
 - Optimization and benchmarks, including control of the error estimates
 - Automatic computation of stability factors as function of time T
-- Stiff problems, adaptive damping
 - Examples: Lorenz, sin-cos, stiff problems, cow, solar system
 
 General

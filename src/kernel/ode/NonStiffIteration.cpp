@@ -46,13 +46,13 @@ void NonStiffIteration::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(TimeSlab& timeslab, const Damping& d)
+void NonStiffIteration::update(TimeSlab& timeslab)
 {
   // Simple update of time slab
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(NewArray<Element*>& elements, const Damping& d)
+void NonStiffIteration::update(NewArray<Element*>& elements)
 {
   // Simple update of element list
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -66,26 +66,26 @@ void NonStiffIteration::update(NewArray<Element*>& elements, const Damping& d)
   }
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(Element& element, const Damping& d)
+void NonStiffIteration::update(Element& element)
 {
   // Simple update of element
   element.update(f);
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::stabilize(TimeSlab& timeslab,
-				  const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::stabilize(NewArray<Element*>& elements,
-				  const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::stabilize(Element& element, 
-				  const Residuals& r, Damping& d)
+				  const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
@@ -97,11 +97,11 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
   if ( timeslab.leaf() )
     return n > 0;
 
-  // Compute maximum discrete residual
+  // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(timeslab);
 
-  // Save initial discrete residual
+  // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
@@ -115,11 +115,11 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
   if ( elements.size() == 1 )
     return n > 0;
   
-  // Compute maximum discrete residual
+  // Compute maximum residual
   r.r1 = r.r2;
   r.r2 = residual(elements);
   
-  // Save initial discrete residual
+  // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
@@ -129,11 +129,11 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
 bool NonStiffIteration::converged(Element& element, 
 				  Residuals& r, unsigned int n)
 {
-  // Compute discrete residual
+  // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(element);
 
-  // Save initial discrete residual
+  // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   

@@ -90,8 +90,6 @@ void dGqElement::update(RHS& f, real alpha)
 //-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f, real alpha, real* values)
 {
-  cout << "Gauss-Seidel update of element" << endl;
-
   // Evaluate right-hand side
   feval(f);
 
@@ -101,8 +99,6 @@ void dGqElement::update(RHS& f, real alpha, real* values)
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = w0*this->values[i] + alpha*(u0 + integral(i));
-
-  cout << "u[" << _index << "] : " << this->values[0] << " --> " << values[0] << endl;
 }
 //-----------------------------------------------------------------------------
 void dGqElement::set(real u0)
@@ -116,6 +112,12 @@ void dGqElement::set(const real* const values)
 {
   for (unsigned int i = 0; i <= q; i++)
     this->values[i] = values[i];
+}
+//-----------------------------------------------------------------------------
+void dGqElement::get(real* const values) const
+{
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] = this->values[i];
 }
 //-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
@@ -165,7 +167,7 @@ real dGqElement::computeElementResidual(RHS& f)
   // Evaluate right-hand side
   feval(f);
 
-  // Compute discrete residual
+  // Compute element residual
   return values[q] - u0 - integral(q);
 }
 //-----------------------------------------------------------------------------

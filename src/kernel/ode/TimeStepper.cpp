@@ -32,9 +32,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, Function& function)
 {
+  dolfin_warning("ODE solver is EXPERIMENTAL.");
+  
   // Start timing
   tic();
-
+  
   // Initializations
   unsigned int no_samples = dolfin_get("number of samples");
   unsigned int N = ode.size();

@@ -27,13 +27,13 @@ namespace dolfin
     void start(NewArray<Element*>& elements);
     void start(Element& element);
 
-    void update(TimeSlab& timeslab, const Damping& d);
-    void update(NewArray<Element*>& elements, const Damping& d);
-    void update(Element& element, const Damping& d);    
+    void update(TimeSlab& timeslab);
+    void update(NewArray<Element*>& elements);
+    void update(Element& element);    
 
-    void stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
-    void stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);
-    void stabilize(Element& element, const Residuals& r, Damping& d);
+    void stabilize(TimeSlab& timeslab, const Residuals& r, unsigned int n);
+    void stabilize(NewArray<Element*>& elements, const Residuals& r, unsigned int n);
+    void stabilize(Element& element, const Residuals& r, unsigned int n);
     
     bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
     bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
