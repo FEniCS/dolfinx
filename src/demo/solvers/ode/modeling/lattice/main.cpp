@@ -5,11 +5,11 @@
 
 using namespace dolfin;
 
-class Structure : public ParticleSystem
+class Lattice : public ParticleSystem
 {
 public:
   
-  Structure(unsigned int p) : ParticleSystem(p*p + (p-1)*(p-1), 2), p(p)
+  Lattice(unsigned int p) : ParticleSystem(p*p + (p-1)*(p-1), 2), p(p)
   {
     // Final time
     T = 10.0;
@@ -309,8 +309,8 @@ int main()
   dolfin_set("average samples", 100);
   dolfin_set("element cache size", 128);
 
-  Structure structure(5);
-  structure.solve();
+  Lattice lattice(5);
+  lattice.solve();
   
   return 0;
 }

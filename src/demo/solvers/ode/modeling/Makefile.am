@@ -1,1 +1,1 @@
-SUBDIRS = simple structure
+SUBDIRS = simple lattice
