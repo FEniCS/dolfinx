@@ -20,7 +20,8 @@ namespace dolfin {
   /// updated only for the components which influence the
   /// given component, as determined by the sparsity pattern.
 
-  class RHS {
+  class RHS
+  {
   public:
 
     /// Constructor

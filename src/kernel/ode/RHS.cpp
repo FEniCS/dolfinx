@@ -14,14 +14,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Solution& solution) :
-  N(ode.size()), ode(ode), solution(&solution), function(0), u(ode.size()),
+  ode(ode), N(ode.size()), solution(&solution), function(0), u(ode.size()),
   illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Function& function) :
-  N(ode.size()), ode(ode), solution(0), function(&function), u(ode.size()),
+  ode(ode), N(ode.size()), solution(0), function(&function), u(ode.size()),
   illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
 {
   // Do nothing
