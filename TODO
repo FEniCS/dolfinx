@@ -33,6 +33,8 @@ o [hoffman, logg] Boundary conditions, fix ds (May 04, partly fixed)
 Mesh
 ----
 
+* Make MeshInit sort nodes locally
+
 o [jj] Schema for mesh XML format
 * Connectivity, automate computation all 16 connections
 * Geometry representation, including boundaries

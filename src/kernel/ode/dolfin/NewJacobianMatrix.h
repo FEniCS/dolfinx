@@ -34,6 +34,12 @@ namespace dolfin
 
   private:
 
+    // Compute product for mcG(q)
+    void cGmult(real x[], real y[]) const;
+
+    // Compute product for mdG(q)
+    void dGmult(real x[], real y[]) const;
+
     // The ODE
     ODE& ode;
 
