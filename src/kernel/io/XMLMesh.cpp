@@ -189,16 +189,7 @@ void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "name", id);
 
   // Add Boundary ID to node
-  node->boundaryids.push_back(id);
-
-  // FIXME: Remove when boundary ID code is verified
-  /*
-  cout << "boundaryids for node: " << node->id() << endl;
-  for(int i = 0; i < node->boundaryids.size(); i++)
-  {
-    cout << node->boundaryids[i] << endl;
-  }
-  */
+  node->nbids.insert(id);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.

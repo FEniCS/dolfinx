@@ -40,7 +40,7 @@ void MeshInit::renumber(Mesh& mesh)
   i = 0;
   for (CellIterator c(mesh); !c.end(); ++c)
     c->setID(i++, mesh);
-
+  
   // Renumber edges
   i = 0;
   for (EdgeIterator e(mesh); !e.end(); ++e)
@@ -76,14 +76,16 @@ void MeshInit::clear(Mesh& mesh)
     c->c->ce.clear();
     c->c->cf.clear();
   }
-
-  // Clear connectivity for edges 
+  
+  // Clear connectivity and boundaryids for edges 
   for (EdgeIterator e(mesh); !e.end(); ++e) {
     e->ec.clear();
+    e->ebids.clear();
   }
-  // Clear connectivity for faces 
+  // Clear connectivity and boundaryids for faces 
   for (FaceIterator f(mesh); !f.end(); ++f) {
     f->fc.clear();
+    f->fbids.clear(); 
   }
 }
 //-----------------------------------------------------------------------------
@@ -93,16 +95,16 @@ void MeshInit::initConnectivity(Mesh& mesh)
 
   // Compute n-c connections [1]
   initNodeCell(mesh);
-  
+
   // Compute c-c connections [2]
   initCellCell(mesh);
 
   // Compute edges [3]
   initEdges(mesh);
-  
+
   // Compute n-e connections [4]
   initNodeEdge(mesh);
-  
+
   // Compute n-n connections [5]
   initNodeNode(mesh);
 
@@ -114,7 +116,14 @@ void MeshInit::initConnectivity(Mesh& mesh)
 
   // Compute f-c connections [8]
   initFaceCell(mesh);
-}
+
+  // Compute the boundaryids for edge, ebids [9]
+  initEdgeBoundaryids(mesh);
+
+  // Compute the boundaryids for face, fbids [11]
+  initFaceBoundaryids(mesh);  
+
+}  
 //-----------------------------------------------------------------------------
 void MeshInit::initEdges(Mesh& mesh)
 {
@@ -148,20 +157,21 @@ void MeshInit::initNodeCell(Mesh& mesh)
   //   1. Count the number of cell neighbors for each node
   //   2. Allocate memory for each node
   //   3. Add the cell neighbors
-  
+
   // Count the number of cells the node appears in
   for (CellIterator c(mesh); !c.end(); ++c)
     for (NodeIterator n(c); !n.end(); ++n)
       n->nc.setsize(n->nc.size()+1);
-  
+
   // Allocate memory for the cell lists
   for (NodeIterator n(mesh); !n.end(); ++n)
     n->nc.init();
 
   // Add the cells to the cell lists
-  for (CellIterator c(mesh); !c.end(); ++c)
+  for (CellIterator c(mesh); !c.end(); ++c){
     for (NodeIterator n(c); !n.end(); ++n)
       n->nc.add(c);
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initCellCell(Mesh& mesh)
@@ -303,3 +313,34 @@ void MeshInit::initFaceCell(Mesh& mesh)
       f->fc.add(c);
 }
 //-----------------------------------------------------------------------------
+void MeshInit::initEdgeBoundaryids(Mesh& mesh)
+{
+  for (EdgeIterator e(mesh); !e.end(); ++e){
+    // Intersect boundaryids in node 0 and 1, put the result in e->ebids
+    set_intersection( e->node(0).nbids.begin(), e->node(0).nbids.end(),
+		      e->node(1).nbids.begin(), e->node(1).nbids.end(),
+		      inserter(e->ebids,e->ebids.begin()) );
+  }
+}
+//-----------------------------------------------------------------------------
+void MeshInit::initFaceBoundaryids(Mesh& mesh)
+{
+  std::set <int> tmp;
+  
+  // Faces are only relevant in 3D
+  if ( mesh.type() == Mesh::tetrahedrons )
+    for (FaceIterator f(mesh); !f.end(); ++f){
+      tmp.clear();
+      // Intersect boundaryids in edge 0 and 1, put the result in tmp
+      set_intersection( f->edge(0).ebids.begin(), f->edge(0).ebids.end(),
+			f->edge(1).ebids.begin(), f->edge(1).ebids.end(),
+			inserter(tmp,tmp.begin()) );
+      // Intersect boundaryids in edge 2 and tmp, put the result in f->fbids
+      set_intersection( f->edge(2).ebids.begin(), f->edge(2).ebids.end(),
+			tmp.begin(), tmp.end(),
+			inserter(f->fbids,f->fbids.begin()) );
+    }
+
+}
+//-----------------------------------------------------------------------------
+

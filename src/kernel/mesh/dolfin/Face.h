@@ -5,6 +5,7 @@
 #define __FACE_H
 
 #include <dolfin/Array.h>
+#include <set>
 
 namespace dolfin {
   
@@ -26,7 +27,7 @@ namespace dolfin {
 
     /// Clear face data
     void clear();
-
+   
     /// Return id of face
     int id() const;
 
@@ -58,8 +59,11 @@ namespace dolfin {
     friend class MeshInit;
     friend class EdgeIterator::FaceEdgeIterator;
 
+    // Boundary information
+    std::set<int> fbids;
+
   private:
-    
+
     // Specify global face number
     int setID(int id, Mesh& mesh);
 
@@ -77,10 +81,10 @@ namespace dolfin {
 
     // The list of edges
     Array<Edge*> fe;
-
+    
     // Connectivity
     Array<Cell*> fc;
-
+    
   };
 
 }

@@ -41,15 +41,30 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
   // Choose initial stiffness
   std::string stiffness = dolfin_get("stiffness");
   if ( stiffness == "non-stiff" )
+  {
+    cout << "Non-stiff iteration" << endl;
     state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  }
   else if ( stiffness == "stiff level 1" )
+  {
+    cout << "Stiff1 iteration" << endl;
     state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  }
   else if ( stiffness == "stiff level 2" )
+  {
+    cout << "Stiff2 iteration" << endl;
     state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  }
   else if ( stiffness == "stiff level 3" )
+  {
+    cout << "Stiff3 iteration" << endl;
     state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  }
   else if ( stiffness == "stiff" )
+  {
+    cout << "Newton iteration" << endl;
     state = new NewtonIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  }
   else
   {
     dolfin_warning1("Unknown stiffness: %s, assuming problem is non-stiff.", stiffness.c_str());
@@ -417,18 +432,23 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   // Initialize new state
   switch ( newstate ) {
   case Iteration::nonstiff:
+    cout << "Non-stiff iteration" << endl;
     state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff1:
+    cout << "Stiff1 iteration" << endl;
     state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff2:
+    cout << "Stiff2 iteration" << endl;
     state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff3:
+    cout << "Stiff3 iteration" << endl;
     state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::newton:
+    cout << "Newton iteration" << endl;
     state = new NewtonIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff:

@@ -37,9 +37,14 @@ public:
       //real E = 500.0;
       //real nu = 0.3;
 
-      real b = 10.0;
+      //real b = 10.0;
+      //real b_p = 300.0;
+      //real E = 100.0;
+      //real nu = 0.3;
+
+      real b = 0.1;
       real b_p = 300.0;
-      real E = 100.0;
+      real E = 50.0;
       real nu = 0.3;
 
       //real b = 10.0;
@@ -151,7 +156,7 @@ public:
 
 	// Plasticity
 
-	///*
+	/*
 	real psigmanorm;
 
 	psigma = sigma0;
@@ -171,7 +176,7 @@ public:
 
 	  epsilon += psigma;
 	}
-	//*/
+	*/
 
 	// Elasticity
 

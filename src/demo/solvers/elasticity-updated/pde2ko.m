@@ -1,9 +1,6 @@
-function h = pde2ko2(p, e, t, u, v1, fname)
+function h = pde2ko(p, e, t, u, v1, fname)
   
   u = v1;
-
-  pdeformed = p + u;
-  
 
   color1 = [0.0 1.0 0.0];
   color2 = [1.0 0.0 0.0];
@@ -81,11 +78,8 @@ function h = pde2ko2(p, e, t, u, v1, fname)
 
   for i = 1:size(p, 2)
     
-
-    u
     
-    %pdeformed = p(:, i) + u(:, i)
-    %pdeformed = p(:, i);
+    pdeformed = p(:, i) + u(:, i);
 
     fprintf(fd, '<element>\n');
     fprintf(fd, '<name>%d</name>\n', i);
@@ -95,9 +89,9 @@ function h = pde2ko2(p, e, t, u, v1, fname)
     %fprintf(fd, '<x>%f</x>\n', p(1, i));
     %fprintf(fd, '<y>%f</y>\n', p(2, i));
     %fprintf(fd, '<z>%f</z>\n', 0);
-    fprintf(fd, '<x>%f</x>\n', pdeformed(1, i));
-    fprintf(fd, '<y>%f</y>\n', pdeformed(2, i));
-    fprintf(fd, '<z>%f</z>\n', pdeformed(3, i));
+    fprintf(fd, '<x>%f</x>\n', pdeformed(1));
+    fprintf(fd, '<y>%f</y>\n', pdeformed(2));
+    fprintf(fd, '<z>%f</z>\n', pdeformed(3));
     fprintf(fd, '</position>\n');
     fprintf(fd, '<velocity>\n');
     fprintf(fd, '<x>%f</x>\n', 0);
@@ -107,52 +101,6 @@ function h = pde2ko2(p, e, t, u, v1, fname)
     fprintf(fd, '<artificial>%s</artificial>\n', 'false');
     fprintf(fd, '</element>\n');
   end
-
-  for i = 1:size(t, 2)
-    
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(2, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(1, i)) - pdeformed(:, t(2, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(3, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(1, i)) - pdeformed(:, t(3, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(1, i)) - pdeformed(:, t(4, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(2, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(3, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(2, i)) - pdeformed(:, t(3, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(2, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(2, i)) - pdeformed(:, t(4, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-
-    fprintf(fd, '<connection>\n');
-    fprintf(fd, '<element1>%d</element1>\n', t(3, i));
-    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
-    fprintf(fd, '<length>%f</length>\n', norm(pdeformed(:, t(3, i)) - pdeformed(:, t(4, i))));
-    fprintf(fd, '<transient>false</transient>\n');
-    fprintf(fd, '</connection>\n');
-  end
-
 
   fprintf(fd, '</physical>\n');
 

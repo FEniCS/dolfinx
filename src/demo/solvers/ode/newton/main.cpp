@@ -50,9 +50,21 @@ public:
   real f(const Vector& u, real t, unsigned int i)
   {
     if ( i == 0 )
-      return u(1);
+      return 0.2 * u(1);
 
-    return -u(0);
+    return 10.0 * -u(0);
+  }
+
+  real timestep(unsigned int i)
+  {
+    if(i == 0)
+    {
+      return 0.04;
+    }
+    else
+    {
+      return 0.01;
+    }
   }
   
 };
@@ -64,7 +76,7 @@ public:
   SpringSystem(unsigned int N) : ODE(2*N)
   {
     // Final time
-    T = 5.0;
+    T = 10.0;
 
     // Compute sparsity
     sparse();
@@ -84,6 +96,28 @@ public:
     return -k*u(i-N/2);
   }
 
+  /*  
+  real timestep(unsigned int i)
+  {
+    if(i == 3)
+    {
+      return 0.001;
+    }
+    else if(i == 2)
+    {
+      return 0.008;
+    }
+    else if(i == 1)
+    {
+      return 0.004;
+    }
+    else
+    {
+      return 0.008;
+    }
+  }
+  */
+
 };
 
 int main()
@@ -92,7 +126,17 @@ int main()
 
   dolfin_set("tolerance", 0.01);
   dolfin_set("stiffness", "stiff");
+
   dolfin_set("debug iterations", true);
+
+  dolfin_set("maximum time step", 5.0);
+  //dolfin_set("fixed time step", true);
+  dolfin_set("fixed time step", false);
+  //dolfin_set("initial time step", 1e-06);
+
+  //dolfin_set("partitioning threshold", 1 - 1e-07);
+
+  dolfin_set("partitioning threshold", 0.5);
 
   dolfin::dolfin_set("method", "dg");
   dolfin::dolfin_set("order", 0);

@@ -7,7 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
-#include <dolfin/NewArray.h>
+#include <set>
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
@@ -130,7 +130,7 @@ namespace dolfin{
     friend class EdgeIterator::NodeEdgeIterator;	 
     
     // Boundary information
-    NewArray<int> boundaryids;
+    std::set<int> nbids;
 
   private:
 
@@ -170,7 +170,7 @@ namespace dolfin{
     Array<Node*> nn;
     Array<Cell*> nc;
     Array<Edge*> ne;
-
+    
     // Parent-child info
     Node* _parent;
     Node* _child;

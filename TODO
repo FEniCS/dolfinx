@@ -26,7 +26,6 @@ o [hoffman, logg] Boundary conditions, fix ds (May 04, partly fixed)
 Mesh
 ----
 
-o [jj, logg] File format including boundary
 o [jj] Schema for mesh XML format
 * Connectivity, automate computation all 16 connections
 * Geometry representation, including boundaries
@@ -83,6 +82,4 @@ General
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
 * Automatically load parameters from dolfin.xml
-* A mail list for DOLFIN?
-* Move to FEniCS web server?
 * Change int --> unsigned int where appropriate

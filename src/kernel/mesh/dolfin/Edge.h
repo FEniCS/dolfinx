@@ -5,6 +5,8 @@
 #define __EDGE_H
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
+#include <set>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
@@ -80,9 +82,12 @@ namespace dolfin {
     friend class FaceIterator::CellFaceIterator;
     friend class Triangle;
     friend class Tetrahedron;
-    
+
+    // Boundary information
+    std::set<int> ebids;
+
   private:
-      
+
     // Specify global edge number
     int setID(int id, Mesh& mesh);
     
@@ -121,7 +126,7 @@ namespace dolfin {
 
     // Connectivity
     Array<Cell*> ec;
-
+    
     // Mesh refinement data
     EdgeRefData* rd;
 

@@ -32,10 +32,13 @@ namespace dolfin{
     static void initCellCell     (Mesh& mesh);
     static void initNodeEdge     (Mesh& mesh);
     static void initNodeNode     (Mesh& mesh);
-
+    
     static void initEdgeCell     (Mesh& mesh);
     static void initFaceCell     (Mesh& mesh);
-    
+
+    static void initEdgeBoundaryids(Mesh& mesh);
+    static void initFaceBoundaryids(Mesh& mesh);
+
   };
 
 }

@@ -42,7 +42,7 @@ void ElasticityUpdatedSolver::solve()
   
   ElasticityUpdated   elasticity(f, w0);
   KrylovSolver solver;
-  File         file("ElasticityUpdated.m");
+  File solutionfile("ElasticityUpdated.m");
   
   real t = 0.0;
   real T = dolfin_get("final time");
@@ -100,6 +100,12 @@ void ElasticityUpdatedSolver::solve()
   elasticity.k = k;
   FEM::assemble(elasticity, mesh, A);
 
+  cout << "Mass Matrix:" << endl;
+
+  A.show();
+
+  A.lump(m);
+
   // Start a progress session
   Progress p("Time-stepping");
   
@@ -131,18 +137,17 @@ void ElasticityUpdatedSolver::solve()
       //meshfile << uzero;
       meshfile << mesh;
     }
+
+    if(counter % 33 == 0)
+    {
+      solutionfile << u1;
+    }
+
       
     counter++;
 
     // Make time step
     t += k;
-
-    x10 = x11;
-    //x10 = 0;
-    x20 = x21;
-
-    elasticity.k = k;
-    elasticity.t = t;
 
     cout << "before: " << endl;
 
@@ -157,6 +162,14 @@ void ElasticityUpdatedSolver::solve()
 
     cout << "x21: " << endl;
     x21.show();
+
+
+    x10 = x11;
+    x20 = x21;
+
+    elasticity.k = k;
+    elasticity.t = t;
+
 
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -174,30 +187,53 @@ void ElasticityUpdatedSolver::solve()
 
     //A.show();
 
-    //cout << "b:" << endl;
+    cout << "b:" << endl;
 
-    //b.show();
+    b.show();
 
     x21 = 0;
 
     // Lump and solve
 
-    /*
-    A.lump(m);
-    
+
+    ///*
+    //A.lump(m);
+
     for(int i = 0; i < m.size(); i++)
     {
       x21(i) = b(i) / m(i);
     }
-    */
+    //*/
 
     // Solve the linear system
+    /*
     solver.solve(A, x21, b);
+    */
 
     x11 = x10;
     x11.add(k, x21);
 
+
+
+    cout << "after: " << endl;
+
+    cout << "x10: " << endl;
+    x10.show();
+
+    cout << "x11: " << endl;
+    x11.show();
+
+    cout << "x20: " << endl;
+    x20.show();
+
+    cout << "x21: " << endl;
+    x21.show();
+    
+
+
     //Update the mesh
+
+    /*
 
     for (NodeIterator n(&mesh); !n.end(); ++n)
     {
@@ -212,6 +248,8 @@ void ElasticityUpdatedSolver::solve()
       //x11(3 * id + 1) = 0;
       //x11(3 * id + 2) = 0;
     }
+
+    */
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {

@@ -14,18 +14,20 @@ real f(real x, real y, real z, real t, int i)
   real force = 0;
 
 
+  /*
   if(i == 0 && t < 2.0)
     force += density * 30.0;
+  */
 
   /*
   if(i == 1 && t < 3.0)
     force += -density * 2.0;
   */
 
-  /*
+  ///*
   if(i == 1)
-    force += -density * 9.81 * 1.0;
-  */
+    force += -density * 9.81 * 10.0;
+  //*/
 
   /*
   if(i == 1 && x > 0.7 && y > 0.7)
@@ -57,9 +59,38 @@ real v0(real x, real y, real z, real t, int i)
   */
 
   /*
-  if(i == 1 && x >= 4.0)
-    velocity -= 4.0;
+  if(i == 1 && x >= 0.3)
+    velocity += 3.0;
+
+  if(i == 1 && x < 0.3 && x >= -0.3)
+    velocity -= 3.0;
+
+  if(i == 1 && x < -0.3)
+    velocity += 3.0;
   */
+
+  /*
+  if(i == 1 && x >= 0.3)
+    velocity += 2.5;
+
+  if(i == 1 && x < 0.3 && x >= -0.3)
+    velocity -= 3.5;
+
+  if(i == 1 && x < -0.3)
+    velocity += 2.5;
+  */
+
+  /*
+  if(i == 1 && x >= 0.3)
+    velocity -= 2.5;
+
+  if(i == 1 && x < 0.3 && x >= -0.3)
+    velocity += 3.5;
+
+  if(i == 1 && x < -0.3)
+    velocity -= 2.5;
+  */
+
 
   /*
   if(i == 1 && x > 0.5)
@@ -106,15 +137,13 @@ real v0(real x, real y, real z, real t, int i)
 void mybc(BoundaryCondition& bc)
 {
   ///*
-  //if(bc.coord().x < -0.8 && bc.coord().y >= -0.5)
-  //if(bc.coord().x < 0.1 && bc.coord().y >= 0.0 && bc.coord().y <= 1.0 )
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().y) < 0.1)
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().z) < 0.1 && fabs(bc.coord().y) < 0.7)
   //if(bc.coord().x == 0.0 && bc.coord().y == 0)
   //if(bc.coord().y == 1.0)
   //if(bc.coord().y > 0.7)
   //if(bc.coord().x == 0.0 && bc.coord().z == 0.0)
-  if(bc.coord().x <= -1.0)
+  if(bc.coord().x <= 0.0)
   {
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
@@ -136,13 +165,14 @@ int main(int argc, char **argv)
   dolfin_set("output", "plain text");
 
   //Mesh mesh("cow01.xml.gz");
+  //Mesh mesh("cow02.xml.gz");
   //Mesh mesh("tetmesh-1c.xml.gz");
-  //Mesh mesh("minimal2.xml.gz");
+  Mesh mesh("minimal2.xml.gz");
   //Mesh mesh("tetmesh-1.xml.gz");
   //Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh-8.xml.gz");
 
-  Mesh mesh("diamond-1.xml.gz");
+  //Mesh mesh("diamond-1.xml.gz");
 
   //mesh.refineUniformly();
   //mesh.refineUniformly();
