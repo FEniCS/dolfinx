@@ -128,7 +128,7 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   real z = 0.0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &id);
+  parseIntegerRequired(name, attrs, "name", &id);
   parseRealRequired(name, attrs, "x", &x);
   parseRealRequired(name, attrs, "y", &y);
   parseRealRequired(name, attrs, "z", &z);
@@ -149,7 +149,7 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   int n2 = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &id);
+  parseIntegerRequired(name, attrs, "name", &id);
   parseIntegerRequired(name, attrs, "n0", &n0);
   parseIntegerRequired(name, attrs, "n1", &n1);
   parseIntegerRequired(name, attrs, "n2", &n2);
@@ -171,7 +171,7 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   int n3 = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &id);
+  parseIntegerRequired(name, attrs, "name", &id);
   parseIntegerRequired(name, attrs, "n0", &n0);
   parseIntegerRequired(name, attrs, "n1", &n1);
   parseIntegerRequired(name, attrs, "n2", &n2);

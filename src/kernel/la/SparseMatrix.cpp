@@ -184,11 +184,6 @@ SparseMatrix::Reference SparseMatrix::operator()(int i, int j)
  return Reference(this,i,j);
 }
 //-----------------------------------------------------------------------------
-const real SparseMatrix::operator()(int i, int j) const
-{
-  return readElement(i,j);
-}
-//-----------------------------------------------------------------------------
 real SparseMatrix::norm()
 {
   real max = 0.0;

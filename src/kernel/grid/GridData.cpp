@@ -16,7 +16,6 @@ GridData::GridData()
 GridData::~GridData()
 {
 
-
 }
 //-----------------------------------------------------------------------------
 Node* GridData::createNode()

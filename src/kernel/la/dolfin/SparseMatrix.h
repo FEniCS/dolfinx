@@ -67,7 +67,6 @@ namespace dolfin {
 	 /// Indexing: fast alternative
 	 real operator()(int i, int *j, int pos) const;
 	 /// Indexing: slow alternative
-	 const real operator()(int i, int j) const;
 	 Reference operator()(int i, int j);
 		
 	 /// Returns maximum norm

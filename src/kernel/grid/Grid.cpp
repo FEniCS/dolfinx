@@ -66,6 +66,7 @@ void Grid::clear()
 {
   if ( gridData )
 	 delete gridData;
+  gridData = new GridData();
 }
 //-----------------------------------------------------------------------------
 void Grid::Init()

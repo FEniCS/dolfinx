@@ -12,7 +12,7 @@
 ///    a list of all nodes
 ///    a list of all cells
 
-#include <List.hh>
+#include <List.h>
 
 namespace dolfin {
 

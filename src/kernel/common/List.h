@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __LIST_HH
-#define __LIST_HH
+#ifndef __LIST_H
+#define __LIST_H
 
 // List implements a block-linked list.
 //
@@ -26,16 +26,17 @@ public:
 	 _blocks = 0;
 	 _size = 0;
 	 _empty = 0;
-	 
+
   }
 
   /// Destructor
   ~List(){
-	 
+
 	 // Delete all blocks
 	 if ( _first_block ){
 		Block *b = _first_block;
 		while ( true ){
+		  
 		  if ( b->prev )
 			 delete b->prev;
 		  
@@ -46,7 +47,7 @@ public:
 		}
 		delete b;
 	 }
-
+	 
   }
   
   /// Creates a new object in the list and returns a unique id
@@ -91,6 +92,7 @@ public:
 
   // Creates a new object in the list
   T* create(){
+	 
 	 int dummy;
 	 T* t = create(&dummy);
 	 return t;
