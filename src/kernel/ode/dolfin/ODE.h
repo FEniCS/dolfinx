@@ -63,6 +63,9 @@ namespace dolfin
     /// Order to use for given component (optional)
     virtual uint order(uint i);
 
+    /// Time step to use for whole system (optional)
+    virtual real timestep();
+    
     /// Time step to use for given component (optional)
     virtual real timestep(uint i);
 

@@ -31,11 +31,13 @@ EXTRA_DIST = dolfin_tanganyika.h \
              MonoAdaptiveJacobian.h \
              MonoAdaptiveNewtonSolver.h \
              MonoAdaptiveTimeSlab.h \
+             MonoAdaptivity.h \
              MultiAdaptiveFixedPointSolver.h \
              MultiAdaptiveJacobian.h \
              MultiAdaptiveNewtonSolver.h \
              MultiAdaptivePreconditioner.h \
              MultiAdaptiveTimeSlab.h \
+             MultiAdaptivity.h \
              NewMethod.h \
              NonStiffIteration.h \
              ODE.h \

@@ -11,9 +11,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
-(MonoAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab)
+(MonoAdaptiveTimeSlab& timeslab)
+  : TimeSlabSolver(timeslab), ts(timeslab), xold(0)
 {
-  // Do nothing
+  // Initialize old values at right end-point
+  xold = new real[ts.N];
+  for (uint i = 0; i < ts.N; i++)
+    xold[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
@@ -28,6 +32,11 @@ real MonoAdaptiveFixedPointSolver::iteration()
 
   // Get array of values
   real* xx = ts.x.array();
+
+  // Save old values
+  const uint xoffset = (method.nsize() - 1) * ts.N;
+  for (uint i = 0; i < ts.N; i++)
+    xold[i] = xx[xoffset + i];
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -52,9 +61,18 @@ real MonoAdaptiveFixedPointSolver::iteration()
     }
   }
 
+  // Compute size of increment
+  real max_increment = 0.0;
+  for (uint i = 0; i < ts.N; i++)
+  {
+    const real increment = fabs(xx[xoffset + i] - xold[i]);
+    if ( increment > max_increment )
+      max_increment = increment;
+  }
+
   // Restore array
   ts.x.restore(xx);
 
-  return 0.0;
+  return max_increment;
 }
 //-----------------------------------------------------------------------------

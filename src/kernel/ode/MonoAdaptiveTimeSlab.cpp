@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
-  : NewTimeSlab(ode), solver(0), nj(0), dofs(0), f(0)
+  : NewTimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
 {
   // Choose solver
   solver = new MonoAdaptiveFixedPointSolver(*this);
@@ -21,21 +21,20 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   dofs = new real[method->nsize()];
 
   // Compute the number of dofs
-  nj = N * method->nsize();
+  nj = method->nsize() * N;
 
   // Initialize values of right-hand side
-  f = new real[nj];
-  for (uint j = 0; j < nj; j++)
+  const uint fsize = method->qsize() * N;
+  f = new real[fsize];
+  for (uint j = 0; j < fsize; j++)
     f[j] = 0.0;
 
   // Initialize solution
   x.init(nj);
 
   // Evaluate f at initial data for cG(q)
-  real* xx = x.array();
   if ( method->type() == NewMethod::cG )
-    ode.feval(xx, 0.0, f);
-  x.restore(xx);
+    ode.feval(u0, 0.0, f);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
@@ -47,6 +46,9 @@ MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab:: build(real a, real b)
 {
+  cout << "Mono-adaptive time slab: building between "
+       << a << " and " << b << endl;
+
   // Copy initial values to solution
   real* xx = x.array();
   for (uint n = 0; n < method->nsize(); n++)
@@ -57,6 +59,18 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
     }
   }
   x.restore(xx);
+
+  // Choose time step
+  const real k = adaptivity.timestep();
+  if ( k < adaptivity.threshold() * (b - a) )
+    b = a + k;
+
+  // Save start and end time
+  _a = a;
+  _b = b;
+
+  cout << "Mono-adaptive time slab: finished building between "
+       << a << " and " << b << endl;
 
   return b;
 }
@@ -100,6 +114,9 @@ void MonoAdaptiveTimeSlab::shift()
       rmax = r;
   }
 
+  // Compute new time step
+  adaptivity.update(rmax, *method);
+  
   cout << "r = " << rmax << endl;
   
   // Let user update ODE
@@ -159,13 +176,24 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::disp() const
 {
-  dolfin_error("Not implemented");
+  cout << "--- Mono-adaptive time slab ------------------------------" << endl;
+  cout << "nj = " << nj << endl;
+  cout << "x =";
+  const real* xx = x.array();
+  for (uint j = 0; j < nj; j++)
+    cout << " " << xx[j];
+  cout << endl;
+  x.restore(xx);
+  cout << "f =";
+  for (uint j = 0; j < (method->nsize() * N); j++)
+    cout << " " << f[j];
+  cout << endl;
+  cout << "----------------------------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::feval(uint m)
 {
   // Evaluation depends on the choice of method
-
   if ( method->type() == NewMethod::cG )
   {
     // Special case: m = 0

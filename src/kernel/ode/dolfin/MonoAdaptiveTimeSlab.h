@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/NewVector.h>
+#include <dolfin/MonoAdaptivity.h>
 #include <dolfin/NewTimeSlab.h>
 
 namespace dolfin
@@ -64,12 +65,12 @@ namespace dolfin
     // Evaluate right-hand side at given quadrature point
     void feval(uint m);
 
-    TimeSlabSolver* solver; // The solver
-    uint nj;                // Number of dofs
-
-    real* dofs;             // Local dofs for an element used for interpolation
-    real* f;                // Values of right-hand side at all quadrature points
-    NewVector x;            // Degrees of freedom for the solution
+    TimeSlabSolver* solver;    // The solver
+    MonoAdaptivity adaptivity; // Adaptive time step regulation
+    uint nj;                   // Number of dofs
+    real* dofs;                // Local dofs for an element used for interpolation
+    real* f;                   // Values of right-hand side at all quadrature points
+    NewVector x;               // Degrees of freedom for the solution
 
   };
 

@@ -122,9 +122,14 @@ dolfin::uint ODE::order(uint i)
   return default_order;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(uint i)
+real ODE::timestep()
 {
   return default_timestep;
+}
+//-----------------------------------------------------------------------------
+real ODE::timestep(uint i)
+{
+  return timestep();
 }
 //-----------------------------------------------------------------------------
 void ODE::update(real u[], real t)

@@ -33,11 +33,13 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/MonoAdaptiveJacobian.h \
                           dolfin/MonoAdaptiveNewtonSolver.h \
                           dolfin/MonoAdaptiveTimeSlab.h \
+                          dolfin/MonoAdaptivity.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
+                          dolfin/MultiAdaptivity.h \
                           dolfin/NewMethod.h \
                           dolfin/NewtonIteration.h \
                           dolfin/NonStiffIteration.h \
@@ -97,11 +99,13 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           MonoAdaptiveJacobian.cpp \
                           MonoAdaptiveNewtonSolver.cpp \
                           MonoAdaptiveTimeSlab.cpp \
+                          MonoAdaptivity.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \
+                          MultiAdaptivity.cpp \
                           NewMethod.cpp \
                           NewtonIteration.cpp \
                           NonStiffIteration.cpp \

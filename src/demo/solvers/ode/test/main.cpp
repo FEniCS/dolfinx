@@ -93,7 +93,7 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 0.64;
+    T = 64;
 
     // Compute sparsity
     //dependencies.detect(*this);

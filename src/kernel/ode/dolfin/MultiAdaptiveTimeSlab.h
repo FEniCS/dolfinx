@@ -7,9 +7,9 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
-#include <dolfin/NewPartition.h>
-#include <dolfin/NewAdaptivity.h>
 #include <dolfin/Alloc.h>
+#include <dolfin/NewPartition.h>
+#include <dolfin/MultiAdaptivity.h>
 #include <dolfin/NewTimeSlab.h>
 
 namespace dolfin
@@ -137,12 +137,12 @@ namespace dolfin
     uint nj; // Number of dofs
     uint nd; // Number of dependencies
 
-    TimeSlabSolver* solver;   // The solver
-    NewAdaptivity adaptivity; // Adaptive time step selection
-    NewPartition partition;   // Time step partitioning 
-    NewArray<int> elast;      // Last element for each component
-    real* u;                  // Interpolated solution vector
-    uint emax;                // Last covered element for sample
+    TimeSlabSolver* solver;     // The solver
+    MultiAdaptivity adaptivity; // Adaptive time step regulation
+    NewPartition partition;     // Time step partitioning 
+    NewArray<int> elast;        // Last element for each component
+    real* u;                    // Interpolated solution vector
+    uint emax;                  // Last covered element for sample
 
   };
 

@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Regulator.h>
-#include <dolfin/NewAdaptivity.h>
+#include <dolfin/MultiAdaptivity.h>
 #include <dolfin/NewPartition.h>
 
 using namespace dolfin;
@@ -40,7 +40,7 @@ dolfin::uint NewPartition::index(uint i) const
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-real NewPartition::update(uint offset, uint& end, NewAdaptivity& adaptivity)
+real NewPartition::update(uint offset, uint& end, MultiAdaptivity& adaptivity)
 {
   // Compute time steps for partition. We partition the components into two
   // groups, one group with k < K and one with k >= K.
@@ -80,7 +80,7 @@ void NewPartition::debug(uint offset, uint end) const
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-real NewPartition::maximum(uint offset, NewAdaptivity& adaptivity) const
+real NewPartition::maximum(uint offset, MultiAdaptivity& adaptivity) const
 {
   real K = 0.0;
 
@@ -90,7 +90,8 @@ real NewPartition::maximum(uint offset, NewAdaptivity& adaptivity) const
   return K;
 }
 //-----------------------------------------------------------------------------
-real NewPartition::minimum(uint offset, uint end, NewAdaptivity& adaptivity) const
+real NewPartition::minimum(uint offset, uint end,
+			   MultiAdaptivity& adaptivity) const
 {
   real k = adaptivity.timestep(indices[offset]);
 
@@ -100,8 +101,8 @@ real NewPartition::minimum(uint offset, uint end, NewAdaptivity& adaptivity) con
   return k;
 }
 //-----------------------------------------------------------------------------
-NewPartition::Less::Less(real& K, NewAdaptivity& adaptivity) : 
-  K(K), adaptivity(adaptivity)
+NewPartition::Less::Less(real& K, MultiAdaptivity& adaptivity)
+  : K(K), adaptivity(adaptivity)
 {
   // Do nothing
 }

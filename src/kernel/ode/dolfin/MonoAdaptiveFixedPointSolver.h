@@ -39,6 +39,9 @@ namespace dolfin
     // The time slab
     MonoAdaptiveTimeSlab& ts;
 
+    // Old values at right end-point used to compute the increment
+    real* xold;
+
   };
 
 }
