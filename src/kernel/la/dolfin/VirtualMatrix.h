@@ -13,7 +13,7 @@ namespace dolfin
 
   class NewVector;
   
-  /// This class represents a matrix-free matrix of dimension m x n.
+  /// This class represents a matrix-free matrix of dimension m x m.
   /// It is a simple wrapper for a PETSc shell matrix. The interface
   /// is intentionally simple. For advanced usage, access the PETSc
   /// Mat pointer using the function mat() and use the standard PETSc
@@ -31,14 +31,14 @@ namespace dolfin
     /// Constructor
     VirtualMatrix();
 
-    /// Constructor
-    VirtualMatrix(uint m, uint n);
+    /// Create a virtual matrix matching the given result vector
+    VirtualMatrix(const NewVector& y);
 
     /// Destructor
     virtual ~VirtualMatrix();
 
-    /// Initialize matrix
-    void init(uint m, uint n);
+    /// Initialize virtual matrix matching the given result vector
+    void init(const NewVector& y);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;

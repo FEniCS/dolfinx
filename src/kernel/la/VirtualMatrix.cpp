@@ -18,14 +18,14 @@ VirtualMatrix::VirtualMatrix()
   A = 0;
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(uint m, uint n)
+VirtualMatrix::VirtualMatrix(const NewVector& y)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc matrix
   A = 0;
-  init(m, n);
+  init(y);
 }
 //-----------------------------------------------------------------------------
 VirtualMatrix::~VirtualMatrix()
@@ -34,16 +34,33 @@ VirtualMatrix::~VirtualMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(uint m, uint n)
+void VirtualMatrix::init(const NewVector& y)
 {
-  /*
+/*
+  // Get size and local size of given vector and existing matrix
+  int m = 0;
+  int M = 0;
+  VecGetLocalSize(y, &m);
+  VecGetSize(y, &M);
+
   // Free previously allocated memory if necessary
   if ( A )
-    if ( m == size(0) && n == size(1) )
+  {
+    // Get size and local size of existing matrix
+    int mm(0), M(0);
+
+
+      if ( M == size(0) && m == size(1) )
       return;
     else
       MatDestroy(A);
+
+    }
+
   
+  MatCreateShell(comm,m,N,M,N,ctx,&A);
+  MatShellSetOperation(mat,MAT_MULT,mult); 
+ 
   MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
   MatSetFromOptions(A);
   */
