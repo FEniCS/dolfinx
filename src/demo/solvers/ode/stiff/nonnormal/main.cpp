@@ -5,11 +5,11 @@
 
 using namespace dolfin;
 
-class NonDiagonal : public ODE
+class NonNormal : public ODE
 {
 public:
   
-  NonDiagonal() : ODE(2), A(2,2)
+  NonNormal() : ODE(2), A(2,2)
   {
     T = 2.0;
 
@@ -50,8 +50,8 @@ int main()
   dolfin_set("initial time step", 0.1);
   dolfin_set("fixed time step", true);
 
-  NonDiagonal nondiagonal;
-  nondiagonal.solve();
+  NonNormal nonnormal;
+  nonnormal.solve();
   
   return 0;
 }
