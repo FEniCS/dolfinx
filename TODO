@@ -37,14 +37,15 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
-o Implement NewMatrix and NewMatrix PETSc wrappers
-o Implement wrappers for PETSc solvers
+o [hoffman, jj, logg] Implement NewMatrix and NewMatrix PETSc wrappers
+o [hoffman, jj] Implement wrappers for PETSc solvers
+* Create wrapper for MatShell (matrix-free)?
 
-o [foufas] Wrapper for LAPACK
-o [erik] Matrix-matrix multiplication
-o [erik] Algebraic multigrid
-* Expression templates
-* Decision on strategy
+o [foufas] Wrapper for LAPACK?
+o [erik] Matrix-matrix multiplication?
+o [erik] Algebraic multigrid?
+* Expression templates?
+* Decision on strategy: use PETSc
 
 Function
 --------

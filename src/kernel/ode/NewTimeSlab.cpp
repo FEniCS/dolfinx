@@ -9,6 +9,7 @@
 #include <dolfin/NewcGqMethod.h>
 #include <dolfin/NewdGqMethod.h>
 #include <dolfin/FixedPointSolver.h>
+#include <dolfin/NewtonSolver.h>
 #include <dolfin/NewTimeSlab.h>
 
 using namespace dolfin;
@@ -32,7 +33,8 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
     method = new NewdGqMethod(q);
 
   // Choose solver
-  solver = new FixedPointSolver(*this, *method);
+  //solver = new FixedPointSolver(*this, *method);
+  solver = new NewtonSolver(*this, *method);
 
   // Get initial data
   for (uint i = 0; i < N; i++)

@@ -28,7 +28,7 @@ namespace dolfin
 
   protected:
 
-    // Iteration
+    // Make an iteration
     real iteration();
 
   private:

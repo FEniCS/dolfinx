@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/NewTimeSlab.h>
 #include <dolfin/NewMethod.h>
@@ -11,21 +12,74 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(NewTimeSlab& timeslab, const NewMethod& method)
-  : TimeSlabSolver(timeslab, method), f(0)
+  : TimeSlabSolver(timeslab, method), f(0), A(0), x(0)
 {
+  // Initialize local array
   f = new real[method.qsize()];
+
+  // Initialize PETSc
+  PETScManager::init();
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
+  // Delete local array
   if ( f ) delete [] f;
+
+  // Delete PETSc matrix if necessary
+  if ( A ) MatDestroy(A);
+
+  // Delete PETSc vector if necessary
+  if ( x ) VecDestroy(x);
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::start()
+{
+  // Get size of system
+  int nj = static_cast<int>(ts.nj);
+
+  // Create matrix and vector the first time
+  if ( !A )
+  {
+    cout << "Creating matrix for the first time" << endl;
+
+    // Create vector
+    VecCreate(PETSC_COMM_WORLD, &x);
+    VecSetSizes(x, PETSC_DECIDE, nj);
+    VecSetFromOptions(x);
+    
+    // Extract local partitioning needed to create the matrix
+    int m = 0;
+    VecGetLocalSize(x, &m);
+    cout << "m = " << m << endl;
+    
+    // Create matrix
+    MatCreateShell(PETSC_COMM_WORLD, m, nj, nj, nj, (void*) this, &A);
+    return;
+  }
+  
+
+  
+  
+  
+
+  // Check if we need to change the size of the matrix
+  int m = 0;
+  int n = 0;
+  MatGetSize(A, &m, &n);
+  if ( m != nj || n != nj )
+  {
+    cout << "Need to change size of matrix: m = " << m << " nj = " << nj << endl;
+    MatDestroy(A);
+    MatCreateShell(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, nj, nj, 
+		   (void*) this, &A);
+  }
 }
 //-----------------------------------------------------------------------------
 real NewtonSolver::iteration()
 {
   dolfin_error("Not implemented");
   
-
   // Reset dof
   uint j = 0;
 

@@ -20,6 +20,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/SISolver.h \
                          dolfin/SparseMatrix.h \
                          dolfin/Vector.h \
+                         dolfin/VirtualMatrix.h \
                          dolfin/NewVector.h
 INCLUDES               = @KERNEL_CFLAGS@
 lib_LIBRARIES          = libdolfin-la.a
@@ -43,4 +44,5 @@ libdolfin_la_a_SOURCES = BiCGSTAB.cpp \
 	                 SISolver.cpp \
                          SparseMatrix.cpp \
                          Vector.cpp \
+                         VirtualMatrix.cpp \
                          NewVector.cpp

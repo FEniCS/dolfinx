@@ -1,8 +1,6 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
-
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewMatrix.h>
@@ -32,8 +30,7 @@ NewMatrix::NewMatrix(int m, int n)
 NewMatrix::~NewMatrix()
 {
   // Free memory of matrix
-  if ( A )
-    MatDestroy(A);
+  if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::init(int m, int n)

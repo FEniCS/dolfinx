@@ -92,11 +92,11 @@ const Vec NewVector::vec() const
 real NewVector::operator()(unsigned int i) const
 {
   // Assumes uniprocessor case.
-
+  
   PetscScalar    *array;
   VecGetArray(v, &array);
   VecRestoreArray(v, &array);
-
+  
   real val = array[i];
 
   return val;

@@ -26,6 +26,8 @@ TimeSlabSolver::~TimeSlabSolver()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::solve()
 {
+  start();
+
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
@@ -35,9 +37,23 @@ void TimeSlabSolver::solve()
 
     // Check convergenge
     if ( increment < tol )
+    {
+      end();
       return;
+    }
   }
 
+  end();
   dolfin_error("Time slab system did not converge.");
+}
+//-----------------------------------------------------------------------------
+void TimeSlabSolver::start()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void TimeSlabSolver::end()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------

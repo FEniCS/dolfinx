@@ -25,7 +25,13 @@ namespace dolfin
 
   protected:
 
-    /// Iteration
+    /// Start iterations (optional)
+    virtual void start();
+
+    /// End iterations (optional)
+    virtual void end();
+
+    /// Make an iteration
     virtual real iteration() = 0;
 
     NewTimeSlab& ts;
