@@ -50,6 +50,9 @@ namespace dolfin
     // Evaluate b = -F(x) at current x
     void beval();
 
+    // Numerical evaluation of the Jacobian used for testing
+    void debug();
+
     real* f;             // Values of right-hand side at quadrature points
     NewJacobianMatrix A; // Jacobian of time slab system
     NewVector dx;        // Increment for Newton's method

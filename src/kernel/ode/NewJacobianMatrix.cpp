@@ -57,11 +57,6 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
   VecGetArray(x, &xx);
   VecGetArray(y, &yy);
 
-  /*
-
-  // Reset dof
-  uint j0 = 0;
-
   // Reset current sub slab
   int s0 = -1;
 
@@ -79,6 +74,7 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
     const real a0 = ts.sa[s0];
     const real b0 = ts.sb[s0];
     const real k0 = b0 - a0;
+    const uint j0 = e0 * method.nsize();
     
     // Add dependency on predecessor for all dofs of element
     const int ep = ts.ee[e0];
@@ -116,22 +112,21 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
 	{
 	  // Add dependency to dof of initial value if any
 	  const int ep = ts.ee[e1];
+	  const real tmp0 = k0 * dfdu;
 	  if ( ep != -1 )
 	  {
-	    const real x0 = xx[ep * method.nsize() + method.nsize() - 1];
-	    const real tmp = k0 * dfdu * x0;
+	    const real tmp1 = tmp0 * xx[ep * method.nsize() + method.nsize() - 1];
 	    for (uint n = 0; n < method.nsize(); n++)
-	      yy[j0 + n] -= tmp * method.nweight(n, 0);
+	      yy[j0 + n] -= tmp1 * method.nweight(n, 0);
 	  }
 
 	  // Add dependencies to internal dofs
-	  const real tmp = k0 * dfdu;
 	  for (uint n = 0; n < method.nsize(); n++)
 	  {
 	    real sum = 0.0;
-	    for (uint m = 1; m < method.qsize(); m++)
-	      sum += method.nweight(n, m) * xx[j1 + m];
-	    yy[j0 + n] -= tmp * sum;
+	    for (uint m = 0; m < method.nsize(); m++)
+	      sum += method.nweight(n, m + 1) * xx[j1 + m];
+	    yy[j0 + n] -= tmp0 * sum;
 	  }
 	}
 	else
@@ -164,6 +159,8 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
 	    {
 	      const real tau = (a0 + k0*method.qpoint(m) - a1) / k1;
 	      const real tmp1 = method.nweight(n, m);
+	      dolfin_assert(tau >= -DOLFIN_EPS);
+	      dolfin_assert(tau <= 1.0 + DOLFIN_EPS);
 
 	      // Add dependency to dof of initial value if any
 	      const int ep = ts.ee[e1];
@@ -218,16 +215,27 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
     }
   }
 
-  */
-
   // Restore PETSc data arrays
   VecRestoreArray(x, &xx);
   VecRestoreArray(y, &yy);
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::update(real t)
+void NewJacobianMatrix::update()
 {
+  // Compute Jacobian at the beginning of the slab
+  real t = ts.starttime();
   dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
-  
+
+  // Update vector u to values at the left end-point
+  for (uint i = 0; i < ode.size(); i++)
+    ts.u[i] = ts.u0[i];
+ 
+  // Compute Jacobian
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    const NewArray<uint>& deps = ode.dependencies[i];
+    for (uint pos = 0; pos < deps.size(); pos++)
+      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u, t, i, deps[pos]);
+  }
 }
 //-----------------------------------------------------------------------------

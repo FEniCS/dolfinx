@@ -48,6 +48,9 @@ namespace dolfin
     virtual real f(const Vector& u, real t, uint i);
 
     /// Jacobian (optional)
+    virtual real dfdu(real u[], real t, uint i, uint j);
+
+    /// Jacobian (old version, will be removed)
     virtual real dfdu(const Vector& u, real t, uint i, uint j);
 
     /// Method to use for given component (optional)

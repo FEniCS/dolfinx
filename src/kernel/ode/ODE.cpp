@@ -46,6 +46,32 @@ real ODE::f(const Vector& u, real t, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+real ODE::dfdu(real u[], real t, uint i, uint j)
+{
+  // Compute Jacobian numerically if dfdu() is not implemented by user
+  
+  // Save value of u_j
+  real uj = u[j];
+  
+  // Small change in u_j
+  real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
+  
+  // Compute F values
+  u[j] -= 0.5 * dU;
+  real f1 = f(u, t, i);
+  
+  u[j] = uj + 0.5*dU;
+  real f2 = f(u, t, i);
+         
+  // Compute derivative
+  if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
+    return 0.0;
+
+  u[j] = uj;
+
+  return (f2 - f1) / dU;
+}
+//-----------------------------------------------------------------------------
 real ODE::dfdu(const Vector& u, real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user

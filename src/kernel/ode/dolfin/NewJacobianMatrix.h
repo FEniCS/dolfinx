@@ -29,8 +29,8 @@ namespace dolfin
     /// Compute product y = Ax
     void mult(Vec x, Vec y) const;
 
-    /// Recompute Jacobian at given time
-    void update(real t);
+    /// Recompute Jacobian
+    void update();
 
   private:
 

@@ -135,8 +135,18 @@ public:
     }
   }
 
+  real dfdu(real u[], real t, unsigned int i, unsigned int j)
+  {
+    return 1.0;
+
+    real a[3][3] = { {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0} };
+    return a[i][j];
+  }
+
   real timestep(unsigned int i)
   {
+    return 0.1;
+
     switch ( i ) {
     case 0:
       return 0.16;

@@ -5,6 +5,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
+#include <dolfin/NewMatrix.h>
 #include <dolfin/NewTimeSlab.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/NewtonSolver.h>
@@ -39,9 +40,10 @@ void NewtonSolver::start()
   // Initialize Jacobian matrix
   A.init(dx, dx);
 
-  // Compute Jacobian
-  A.update(ts.starttime());
+  // Recompute Jacobian
+  A.update();
 
+  debug();
   A.disp();
 }
 //-----------------------------------------------------------------------------
@@ -84,7 +86,7 @@ real NewtonSolver::iteration()
 //-----------------------------------------------------------------------------
 void NewtonSolver::beval()
 {
-  // Get array of values for F (assumes uniprocessor case)
+  // Get array of values for b (assumes uniprocessor case)
   real* bvals = b.array();
 
   // Reset dof
@@ -129,5 +131,40 @@ void NewtonSolver::beval()
 
   // Restor array
   b.restore(bvals);
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::debug()
+{
+  const uint n = ts.nj;
+  NewMatrix B(n, n);
+  NewVector F1(n), F2(n);
+
+  // Iterate over the columns of B
+  for (uint j = 0; j < n; j++)
+  {
+    const real xj = ts.jx[j];
+    real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
+		  
+    ts.jx[j] -= 0.5*dx;
+    beval();
+    for (uint i = 0; i < n; i++)
+      F1(i) = -b(i);
+
+    ts.jx[j] = xj + 0.5*dx;
+    beval();
+    for (uint i = 0; i < n; i++)
+      F2(i) = -b(i);
+
+    ts.jx[j] = xj;
+
+    for (uint i = 0; i < n; i++)
+    {
+      real dFdx = (F2(i) - F1(i)) / dx;
+      if ( fabs(dx) > DOLFIN_EPS )
+	B(i, j) = dFdx;
+    }
+  }
+
+  B.disp();
 }
 //-----------------------------------------------------------------------------
