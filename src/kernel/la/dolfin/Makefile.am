@@ -7,10 +7,13 @@ EXTRA_DIST = dolfin_la.h \
              GaussSeidel.h \
              GenericMatrix.h \
              GMRES.h \
-             Matrix.h \
-             Preconditioner.h \
+             Jacobi.h \
              KrylovSolver.h \
              LinearSolver.h \
+             Matrix.h \
+             Preconditioner.h \
+             Richardson.h \
+             SOR.h \
              SISolver.h \
              SparseMatrix.h \
              Vector.h \

@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_la.h                          dolfin/BiCGSTAB.h                          dolfin/CG.h                          dolfin/DenseMatrix.h                          dolfin/DirectSolver.h                          dolfin/FGMRES.h                          dolfin/GaussSeidel.h                          dolfin/GenericMatrix.h                          dolfin/GMRES.h                          dolfin/KrylovSolver.h                          dolfin/LinearSolver.h                          dolfin/Matrix.h                          dolfin/Preconditioner.h                          dolfin/SISolver.h                          dolfin/SparseMatrix.h                          dolfin/Vector.h
+include_HEADERS = dolfin/dolfin_la.h                          dolfin/BiCGSTAB.h                          dolfin/CG.h                          dolfin/DenseMatrix.h                          dolfin/DirectSolver.h                          dolfin/FGMRES.h                          dolfin/GaussSeidel.h                          dolfin/GenericMatrix.h                          dolfin/GMRES.h                          dolfin/Jacobi.h                          dolfin/KrylovSolver.h                          dolfin/LinearSolver.h                          dolfin/Matrix.h                          dolfin/Preconditioner.h                          dolfin/Richardson.h                          dolfin/SOR.h                          dolfin/SISolver.h                          dolfin/SparseMatrix.h                          dolfin/Vector.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-la.a
-libdolfin_la_a_SOURCES = BiCGSTAB.cpp                          CG.cpp                          DenseMatrix.cpp                          DirectSolver.cpp                          FGMRES.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp                          GMRES.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp                          Preconditioner.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp
+libdolfin_la_a_SOURCES = BiCGSTAB.cpp                          CG.cpp                          DenseMatrix.cpp                          DirectSolver.cpp                          FGMRES.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp                          GMRES.cpp 	                 Jacobi.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp                          Preconditioner.cpp 	                 Richardson.cpp 	                 SOR.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -99,9 +99,9 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_la_a_LIBADD = 
 libdolfin_la_a_OBJECTS =  BiCGSTAB.o CG.o DenseMatrix.o DirectSolver.o \
-FGMRES.o GaussSeidel.o GenericMatrix.o GMRES.o KrylovSolver.o \
-LinearSolver.o Matrix.o Preconditioner.o SISolver.o SparseMatrix.o \
-Vector.o
+FGMRES.o GaussSeidel.o GenericMatrix.o GMRES.o Jacobi.o KrylovSolver.o \
+LinearSolver.o Matrix.o Preconditioner.o Richardson.o SOR.o SISolver.o \
+SparseMatrix.o Vector.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -117,9 +117,10 @@ TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/BiCGSTAB.P .deps/CG.P .deps/DenseMatrix.P \
 .deps/DirectSolver.P .deps/FGMRES.P .deps/GMRES.P .deps/GaussSeidel.P \
-.deps/GenericMatrix.P .deps/KrylovSolver.P .deps/LinearSolver.P \
-.deps/Matrix.P .deps/Preconditioner.P .deps/SISolver.P \
-.deps/SparseMatrix.P .deps/Vector.P
+.deps/GenericMatrix.P .deps/Jacobi.P .deps/KrylovSolver.P \
+.deps/LinearSolver.P .deps/Matrix.P .deps/Preconditioner.P \
+.deps/Richardson.P .deps/SISolver.P .deps/SOR.P .deps/SparseMatrix.P \
+.deps/Vector.P
 SOURCES = $(libdolfin_la_a_SOURCES)
 OBJECTS = $(libdolfin_la_a_OBJECTS)
 

@@ -8,10 +8,13 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/GaussSeidel.h \
                          dolfin/GenericMatrix.h \
                          dolfin/GMRES.h \
+                         dolfin/Jacobi.h \
                          dolfin/KrylovSolver.h \
                          dolfin/LinearSolver.h \
                          dolfin/Matrix.h \
                          dolfin/Preconditioner.h \
+                         dolfin/Richardson.h \
+                         dolfin/SOR.h \
                          dolfin/SISolver.h \
                          dolfin/SparseMatrix.h \
                          dolfin/Vector.h
@@ -25,10 +28,13 @@ libdolfin_la_a_SOURCES = BiCGSTAB.cpp \
                          GaussSeidel.cpp \
                          GenericMatrix.cpp \
                          GMRES.cpp \
+	                 Jacobi.cpp \
 	                 KrylovSolver.cpp \
                          LinearSolver.cpp \
                          Matrix.cpp \
                          Preconditioner.cpp \
+	                 Richardson.cpp \
+	                 SOR.cpp \
 	                 SISolver.cpp \
                          SparseMatrix.cpp \
                          Vector.cpp

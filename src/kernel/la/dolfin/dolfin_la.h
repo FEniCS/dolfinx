@@ -10,10 +10,13 @@
 #include <dolfin/FGMRES.h>
 #include <dolfin/GaussSeidel.h>
 #include <dolfin/GMRES.h>
+#include <dolfin/Jacobi.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Preconditioner.h>
+#include <dolfin/Richardson.h>
+#include <dolfin/SOR.h>
 #include <dolfin/SISolver.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
