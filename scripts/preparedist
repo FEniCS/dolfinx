@@ -21,7 +21,7 @@ sleep 1
 
 echo '- Recompiling to run benchmark problems'
 sleep 1
-autoreconf
+scripts/preconfigure
 ./configure --enable-optimization
 make clean
 make
