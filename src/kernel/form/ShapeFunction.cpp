@@ -13,11 +13,13 @@ using namespace dolfin;
 FunctionSpace::ShapeFunction::ShapeFunction()
 {
   _id = 0; // Initialise to the zero function
+  _component = 0; // Initialise to the zero function
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ShapeFunction::ShapeFunction(int i)
+FunctionSpace::ShapeFunction::ShapeFunction(int i, int component)
 {
   _id = 1; // Initialise to one
+  _component = component;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ShapeFunction::ShapeFunction(function f)
@@ -41,6 +43,11 @@ void FunctionSpace::ShapeFunction::set(ElementFunction dx,
 int FunctionSpace::ShapeFunction::id() const
 {
   return _id;
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::ShapeFunction::component() const
+{
+  return _component;
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::ShapeFunction::zero() const
@@ -212,6 +219,52 @@ FunctionSpace::ElementFunction dolfin::operator*
 (real a, const FunctionSpace::ShapeFunction &v)
 {
   return v * a;
+}
+//-----------------------------------------------------------------------------
+// Vector element function
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::Vector::Vector(int size)
+{
+  v = new ShapeFunction[size];
+  _size = size;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::Vector::Vector(const Vector& v)
+{
+  _size = v._size;
+  this->v = new ShapeFunction[_size];
+  for (int i = 0; i < _size; i++)
+    this->v[i] = v.v[i];
+}
+//-----------------------------------------------------------------------------
+/*
+FunctionSpace::ShapeFunction::Vector::Vector(const ShapeFunction& v0,
+					       const ShapeFunction& v1,
+					       const ShapeFunction& v2)
+{
+  _size = 3;
+  v = new ShapeFunction[_size];
+
+  v[0] = v0;
+  v[1] = v1;
+  v[2] = v2;
+}
+*/
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::Vector::~Vector()
+{
+  delete [] v;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction&
+FunctionSpace::ShapeFunction::Vector::operator() (int i)
+{
+  return v[i];
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::ShapeFunction::Vector::size() const
+{
+  return _size;
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream,

@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "wave"
+KEYWORD  = "wave"
+SOLVER   = "WaveSolver"
+NEEDS    = "mesh"

@@ -33,7 +33,7 @@ Galerkin::Galerkin()
   user = false;
 }
 //-----------------------------------------------------------------------------
-Galerkin::Galerkin(FiniteElement& element,
+Galerkin::Galerkin(FiniteElement::Vector& element,
 		   Map&           map,
 		   Quadrature&    quadrature)
 {
@@ -85,7 +85,7 @@ void Galerkin::assemble(PDE& pde, Mesh& mesh, Vector& b)
 void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
 {  
   // Make sure that we have chosen trial and test spaces
-  init(mesh);
+  init(mesh, pde.size());
   
   // Allocate and reset matrix
   alloc(A, mesh);
@@ -95,25 +95,39 @@ void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
   dolfin_info("Assembling: system size is %d x %d.", A.size(0), A.size(1));
   
   // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell) {
-    
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     // Update map
     map->update(cell);
     
     // Update element
-    element->update(map);
+    for(int i = 0; i < element->size(); ++i)
+      (*element)(i)->update(map);
     
     // Update equation
     pde.updateLHS(element, cell, map, quadrature);
     
     // Iterate over test and trial functions
-    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-      for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
-	A(v.dof(cell), u.dof(cell)) += pde.lhs(u, v);
-    
+    for (FiniteElement::Vector::TestFunctionIterator v(element);
+         !v.end(); ++v)
+    {
+      //dolfin_debug("test function");
+      for (FiniteElement::Vector::TrialFunctionIterator u(element);
+           !u.end(); ++u)
+      {
+        // u and v are vector valued with components determined
+        // by which element we are on
+        
+        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+        
+        //dolfin_debug2("assembling: (%d, %d)", v.dof(cell), u.dof(cell));
+        //dolfin_debug1("lhs: %lf", pde.lhs(*u, *v));
+        
+      }
+    }
+
     // Update progress
     p++;
-
   }
   
   // Clear unused elements
@@ -126,7 +140,7 @@ void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
 void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
 {
   // Make sure that we have chosen trial and test spaces
-  init(mesh);
+  init(mesh, pde.size());
   
   // Allocate and reset matrix
   alloc(b, mesh);
@@ -135,8 +149,8 @@ void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
   Progress p("Assembling right-hand side", mesh.noCells());  
   
   // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell) {
-    
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     // Update map
     map->update(cell);
     
@@ -144,12 +158,16 @@ void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
     pde.updateRHS(element, cell, map, quadrature);
     
     // Iterate over test functions
-    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(v);
-    
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+    {
+      b(v.dof(cell)) += pde.rhs(*v);
+ 
+      //dolfin_debug1("assembling: (%d)", v.dof(cell));
+
+      //dolfin_debug1("rhs: %lf", pde.rhs(*v));
+    }
     // Update progress
     p++;
-
   }
   
   // Write a message
@@ -160,7 +178,7 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc;
+  BoundaryCondition bc(element->size());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -170,8 +188,8 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
   Boundary boundary(mesh);
 
   // Iterate over all nodes on the boundary
-  for (NodeIterator node(boundary); !node.end(); ++node) {
-
+  for (NodeIterator node(boundary); !node.end(); ++node)
+  {
     // Get boundary condition
     bc.update(node);
     bcf(bc);
@@ -179,7 +197,12 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      A.ident(node->id());
+      for(int i = 0; i < element->size(); i++)
+      {
+	A.ident(element->size() * node->id() + i);
+      }
+
+      //A.ident(node->id());
       break;
     case BoundaryCondition::NEUMANN:
       if ( bc.val() != 0.0 )
@@ -188,17 +211,15 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
     default:
       dolfin_error("Unknown boundary condition.");
       break;
-    }
-    
+    }    
   }
-  
 }
 //-----------------------------------------------------------------------------
 void Galerkin::setBC(Mesh& mesh, Vector& b)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc;
+  BoundaryCondition bc(element->size());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -208,8 +229,8 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
   Boundary boundary(mesh);
   
   // Iterate over all nodes on the boundary
-  for (NodeIterator node(boundary); !node.end(); ++node) {
-   
+  for (NodeIterator node(boundary); !node.end(); ++node)
+  {
     // Get boundary condition
     bc.update(node);
     bcf(bc);
@@ -217,7 +238,8 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      b(node->id()) = bc.val();
+      for(int i = 0; i < element->size(); i++)
+	b(element->size() * node->id() + i) = bc.val(i);
       break;
     case BoundaryCondition::NEUMANN:
       if ( bc.val() != 0.0 )
@@ -226,32 +248,46 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
     default:
       dolfin_error("Unknown boundary condition.");
       break;
-    }
-    
+    }    
   }
-  
 }
 //-----------------------------------------------------------------------------
-void Galerkin::init(Mesh &mesh)
+void Galerkin::init(Mesh &mesh, int noeq)
 {
   // Check if the element has already been created
   if ( element )
 	 return;
 
+  // FIXME: testing
+  this->noeq = noeq;
+
   // Create default finite element
   switch ( mesh.type() ) {
   case Mesh::triangles:
+
     cout << "Using standard piecewise linears on triangles." << endl;
-    element = new P1TriElement();
+
+    element = new FiniteElement::Vector(noeq);
+    for(int i = 0; i < noeq; ++i)
+      (*element)(i) = new P1TriElement();
+
     map = new P1TriMap();
     quadrature = new TriangleMidpointQuadrature();
+
     break;
+
   case Mesh::tetrahedrons:
+
     cout << "Using standard piecewise linears on tetrahedrons." << endl;
-    element = new P1TetElement();
+
+    element = new FiniteElement::Vector(noeq);
+    for(int i = 0; i < noeq; ++i)
+      (*element)(i)    = new P1TetElement();
+
     map = new P1TetMap();
     quadrature = new TetrahedronMidpointQuadrature();
     break;
+
   default:
     dolfin_error("No default spaces for this type of cell.");
   }
@@ -261,20 +297,24 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
 {
   // Count the degrees of freedom
   
+  // For now we count the number of degrees of freedom of the first
+  // element. Handling of heterogenous order of the elements is
+  // deferred to future revisions.
+
   unsigned int imax = 0;
   unsigned int jmax = 0;
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     
-    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+    for (FiniteElement::TestFunctionIterator v((*element)(0)); !v.end(); ++v)
     {
       unsigned int i = v.dof(cell);
       if ( i > imax )
 	imax = i;
     }
 
-    for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
+    for (FiniteElement::TrialFunctionIterator u((*element)(0)); !u.end(); ++u)
     {
       unsigned int j = u.dof(cell);
       if ( j > jmax )
@@ -284,8 +324,8 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
   }
   
   // Size of the matrix
-  unsigned int m = imax + 1;
-  unsigned int n = jmax + 1;
+  unsigned int m = (imax + 1) * element->size();
+  unsigned int n = (jmax + 1) * element->size();
   
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
@@ -300,7 +340,7 @@ void Galerkin::alloc(Vector &b, Mesh &mesh)
   
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+    for (FiniteElement::TestFunctionIterator v((*element)(0)); !v.end(); ++v)
     {
       unsigned int i = v.dof(cell);
       if ( i > imax )
@@ -309,7 +349,7 @@ void Galerkin::alloc(Vector &b, Mesh &mesh)
   }
   
   // Size of vector
-  unsigned int m = imax + 1;
+  unsigned int m = (imax + 1) * element->size();
   
   // Initialise vector
   if ( b.size() != m )

@@ -25,7 +25,8 @@ namespace dolfin {
     Galerkin();
     
     // Constructor allowing specification of method
-    Galerkin(FiniteElement& element, Map& map, Quadrature& quadrature);
+    Galerkin(FiniteElement::Vector& element, Map& map,
+	     Quadrature& quadrature);
     
     // Destructor
     ~Galerkin();
@@ -47,19 +48,21 @@ namespace dolfin {
     
   private:
     
-    void init(Mesh& mesh);
+    void init(Mesh& mesh, int noeq = 1);
     
     void alloc(Matrix& A, Mesh& mesh);
     void alloc(Vector& b, Mesh& mesh);
     
     // Method data
-    FiniteElement* element;    // The finite element
+    FiniteElement::Vector* element;    // The finite element
     Map*       map;    // Map from reference cell
     Quadrature*    quadrature; // Quadrature on reference cell
     
     // True if user specifies method
     bool user;
     
+    // Number of equations
+    int noeq;
   };
 
 }

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Element.h>
@@ -23,8 +24,8 @@ Adaptivity::Adaptivity(ODE& ode) : regulators(ode.size())
   // Start with given maximum time step
   kmax_current = kmax;
 
-  // Scale tolerance with the number of components
-  TOL /= static_cast<real>(ode.size());
+  // Scale tolerance with the square root of the number of components
+  //TOL /= sqrt(static_cast<real>(ode.size()));
 
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)

@@ -14,11 +14,11 @@ General
 - Replace int by unsigned int where necessary
 - Update manual: anyone?
 - Fix setprecision() cout
+- Use NewArray<...> instead of ::Vector in assembly classes
 
 Multi-adaptive solver
 ---------------------
 
-- Stiff problems: diagonal iteration for dG(1)
 - Save dual solution backwards
 - Error estimates
 - Automatic computation of stability factors as function of time T

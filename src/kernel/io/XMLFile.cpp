@@ -133,6 +133,11 @@ void XMLFile::operator<<(Matrix& A)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator<<(Function::Vector& u)
+{
+  dolfin_warning("Cannot write functions to XML files.");
+}
+//-----------------------------------------------------------------------------
 void XMLFile::parseFile()
 {
   // Write a message

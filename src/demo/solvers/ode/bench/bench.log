@@ -171,3 +171,15 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Changes: Decreased tolerance for discrete residual (needed for stiff
 test problems).
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.7 (tor feb 26 17:45:38 CET 2004)
+Compiler flags: -I/usr/local/include -O3 -Wall -Werror
+Elapsed time:   real: 4.896  user: 4.750  sys: 0.090  cpu: 98.84%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Modifications for version 0.4.8.
+---------------------------------------------------------------------------

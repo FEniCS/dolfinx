@@ -25,6 +25,7 @@ namespace dolfin {
     
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
+    void operator<< (Function::Vector& u);
     
   };
   

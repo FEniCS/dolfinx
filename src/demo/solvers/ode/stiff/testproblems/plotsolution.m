@@ -208,7 +208,7 @@ ylabel('u')
 
 subplot(2,2,2)
 plot(t',u')
-axis([38 48 -15 15])
+axis([40 50 -15 15])
 xlabel('t')
 ylabel('u')
 
@@ -221,7 +221,7 @@ ylabel('k')
 
 subplot(2,2,4)
 plot(t',k')
-axis([38 48 -0.05 1.05])
+axis([40 50 -0.05 1.05])
 grid on
 xlabel('t')
 ylabel('k')
@@ -320,6 +320,9 @@ xlabel('t')
 ylabel('k')
 
 print -depsc solution_9.eps
+
+disp('Press any key to continue')
+pause
 
 disp('Plotting time slab for test problem 9')
 

@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "elasticity-stationary"
+KEYWORD  = "elasticity-stationary"
+SOLVER   = "ElasticityStationarySolver"
+NEEDS    = "mesh"

@@ -23,7 +23,7 @@ namespace dolfin {
     ShapeFunction();
     
     // Constructor for v = 1
-    ShapeFunction(int id);
+    ShapeFunction(int id, int component);
     
     // Initialisation
     ShapeFunction(function f);
@@ -34,6 +34,9 @@ namespace dolfin {
     
     // Get id
     int id() const;
+
+    // Get component number
+    int component() const;
     
     // True if equal to zero
     bool zero() const;
@@ -90,9 +93,29 @@ namespace dolfin {
     // Output
     friend LogStream& operator<<(LogStream& stream, const ShapeFunction &v);
     
+    // Vector shape function
+    class Vector {
+    public:
+      
+      Vector(int size);
+      Vector(const Vector& v);
+      //Vector(const ShapeFunction& v0, const ShapeFunction& v1, const ShapeFunction& v2);
+      ~Vector();
+      
+      int size() const;
+      
+      ShapeFunction& operator() (int i);
+      
+    private:
+      ShapeFunction* v;
+      int _size;
+    };
+
+
   private:
     
     int _id;
+    int _component;
     
   };
   

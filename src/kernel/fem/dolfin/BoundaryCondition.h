@@ -16,10 +16,20 @@ namespace dolfin {
     
     enum Type { DIRICHLET, NEUMANN };
     
-    BoundaryCondition() {
+    BoundaryCondition(int components = 1) {
+      this->components = components;
       _type = NEUMANN;
-      _val  = 0.0;
       np = 0;
+      _val = new real[components];
+
+      for(int i = 0; i < components; i++)
+      {
+	_val[i]  = 0.0;
+      }
+    }
+
+    ~BoundaryCondition() {
+      delete [] _val;
     }
     
     Point coord() const {
@@ -38,15 +48,15 @@ namespace dolfin {
       return _type;
     }
     
-    real val() const {
-      return _val;
+    real val(int component = 0) const {
+      return _val[component];
     }
     
-    void set(Type type, real val) {
+    void set(Type type, real val, int component = 0) {
       _type = type;
-      _val = val;
+      _val[component] = val;
     }
-    
+
     friend class Galerkin;
     
   private:
@@ -54,14 +64,18 @@ namespace dolfin {
     void update(Node* np) {
       this->np = np;
       _type = NEUMANN;
-      _val = 0.0;
+
+      for(int i = 0; i < components; i++)
+      {
+	_val[i]  = 0.0;
+      }
     }
     
     Node* np;
     
     Type _type;
-    real _val;
-    
+    real* _val;
+    int components;
   };
 
 }

@@ -17,7 +17,7 @@ DofFunction::DofFunction(Mesh& mesh, Vector& x, int dim, int size) :
   GenericFunction(), _mesh(mesh), x(x), t(0), dim(dim), size(size)
 {
   // FIXME: assumes nodal basis
-  x.init(mesh.noNodes());
+  x.init(mesh.noNodes() * size);
 }
 //-----------------------------------------------------------------------------
 DofFunction::~DofFunction()
@@ -58,6 +58,6 @@ void DofFunction::update(FunctionSpace::ElementFunction &v,
 			 real t) const
 {
   for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-    v.set(phi.index(), phi, x(phi.dof(cell)));
+    v.set(phi.index(), phi, x(phi.dof(cell) * size + dim));
 }
 //-----------------------------------------------------------------------------

@@ -7,6 +7,8 @@
 #include <string>
 #include <fstream>
 
+#include <dolfin/Function.h>
+
 
 namespace dolfin {
   
@@ -36,6 +38,7 @@ namespace dolfin {
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
+    virtual void operator<< (Function::Vector& u);
     virtual void operator<< (Sample& sample);
     
     void read();

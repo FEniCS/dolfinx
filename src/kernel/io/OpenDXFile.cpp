@@ -233,3 +233,8 @@ void OpenDXFile::operator<<(Function& u)
   */
 }
 //-­---------------------------------------------------------------------------
+void OpenDXFile::operator<<(Function::Vector& u)
+{
+  dolfin_error("Cannot save functions to OpenDX files.");
+}
+//-­---------------------------------------------------------------------------

@@ -102,20 +102,22 @@ void FunctionSpace::update(const Map& map)
 // FunctionSpace::Iterator
 //-----------------------------------------------------------------------------
 FunctionSpace::Iterator::Iterator
-(const FunctionSpace &functionSpace) : V(functionSpace)
+(const FunctionSpace &functionSpace) : V(&functionSpace)
 {
-  v = V.v.begin();
+  //dolfin_debug1("size: %d", V->v.size());
+
+  v = V->v.begin();
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::Iterator::dof(const Cell& cell) const
 {
-  return V.dof(v.index(), cell);
+  return V->dof(v.index(), cell);
 }
 //-----------------------------------------------------------------------------
 real FunctionSpace::Iterator::dof
 (const Cell& cell, const ExpressionFunction& f, real t) const
 {
-  return V.dof(v.index(), cell, f, t);
+  return V->dof(v.index(), cell, f, t);
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::Iterator::index() const
@@ -148,3 +150,35 @@ FunctionSpace::ShapeFunction* FunctionSpace::Iterator::operator->() const
   return &(*v);
 }
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Vector function space
+//-----------------------------------------------------------------------------
+FunctionSpace::Vector::Vector(int size)
+{
+  v = new (FunctionSpace *)[size];
+  _size = size;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::Vector::Vector(const Vector& v)
+{
+  _size = v._size;
+  this->v = new (FunctionSpace *)[_size];
+  for (int i = 0; i < _size; i++)
+    this->v[i] = v.v[i];
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::Vector::~Vector()
+{
+  delete [] v;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace&
+FunctionSpace::Vector::operator() (int i)
+{
+  return *(v[i]);
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::Vector::size() const
+{
+  return _size;
+}

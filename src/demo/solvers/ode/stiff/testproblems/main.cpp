@@ -67,7 +67,7 @@ void solveTestProblem7()
 void solveTestProblem8()
 {
   // Decrease tolerance to resolve 2:nd component
-  dolfin_set("tolerance", 0.001);
+  dolfin_set("tolerance", 0.01);
   
   TestProblem8 testProblem;
   testProblem.solve();

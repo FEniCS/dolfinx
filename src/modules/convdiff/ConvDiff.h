@@ -12,9 +12,9 @@ namespace dolfin {
   public:
     
     ConvDiff(Function& source,
-	     Function& previous,
+	     Function::Vector& previous,
 	     Function& diffusion,
-	     Function::Vector& convection) : PDE(3)
+	     Function::Vector& convection) : PDE(2)
     {
       add(f,  source);
       add(up, previous);
@@ -29,12 +29,12 @@ namespace dolfin {
     
     real rhs(const ShapeFunction& v)
     {
-      return (up*v + k*f*v) * dK;
+      return (up(0)*v + k*f*v) * dK;
     }
     
   private:    
     ElementFunction f;         // Source term
-    ElementFunction up;        // Function value at left end-point
+    ElementFunction::Vector up;        // Function value at left end-point
     ElementFunction a;         // Diffusivity
     ElementFunction::Vector b; // Convection
   };

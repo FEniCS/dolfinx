@@ -33,6 +33,7 @@ namespace dolfin {
     
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
+    void operator<< (Function::Vector& u);
     
     // Friends
     

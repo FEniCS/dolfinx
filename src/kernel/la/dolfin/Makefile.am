@@ -7,4 +7,5 @@ EXTRA_DIST = dolfin_la.h \
              KrylovSolver.h \
              SISolver.h \
              SparseMatrix.h \
-             Vector.h
+             Vector.h \
+             ILU.h

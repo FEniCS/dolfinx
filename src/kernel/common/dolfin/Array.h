@@ -4,6 +4,8 @@
 #ifndef __ARRAY_H
 #define __ARRAY_H
 
+#include <signal.h>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/General.h>
 
@@ -182,12 +184,16 @@ namespace dolfin {
   //---------------------------------------------------------------------------
   template <class T> Array<T>::Array()
   {
+    //dolfin_debug("Array ctor");
+
     array = 0;
     _size = 0;
   }
   //---------------------------------------------------------------------------    
   template <class T> Array<T>::Array(int size)
   {
+    //dolfin_debug("Array size ctor");
+
     array = 0;
     _size = 0;
     init(size);
@@ -324,7 +330,11 @@ namespace dolfin {
 	return i;
       }
 
+    dolfin_debug("foo");
+    raise(SIGSEGV);
     dolfin_error("Array is full.");
+    dolfin_debug("foo2");
+    //dolfin_segfault();
     return -1;
   }
   //--------------------------------------------------------------------------- 

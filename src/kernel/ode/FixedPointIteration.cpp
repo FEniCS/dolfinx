@@ -31,9 +31,7 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
   debug_iter = dolfin_get("debug iterations");
 
   // FIXME: Convergence should be determined by the error control
-  tol = dolfin_get("tolerance");
-  tol *= 0.01;
-
+  tol = 0.01*adaptivity.tolerance();
   cout << "Fixed point tolerance: " << tol << endl;
 
   // Choose initial stiffness

@@ -226,3 +226,54 @@ void MFile::operator<< (Sample& sample)
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
+void MFile::operator<<(Function::Vector& u)
+{
+  // Assume mesh is the same for all components
+
+  // Write mesh the first time
+  if ( u(0).number() == 0 )
+    *this << u(0).mesh();
+  
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Move old vector into list if we are saving a new value
+  if ( u(0).number() == 1 ) {
+    fprintf(fp, "tmp = %s;\n", u(0).name().c_str());
+    fprintf(fp, "clear %s\n", u(0).name().c_str());
+    fprintf(fp, "%s{1} = tmp;\n", u(0).name().c_str());
+    fprintf(fp, "clear tmp\n\n");
+  }
+
+  // Write vector
+  if ( u(0).number() == 0 ) {
+    fprintf(fp, "%s = [", u(0).name().c_str());
+    for(int i = 0; i < u.size(); i++)
+    { 
+      for (NodeIterator n(u(0).mesh()); !n.end(); ++n)
+	fprintf(fp, " %.16f", u(i)(*n));
+      fprintf(fp, ";");
+    }
+    fprintf(fp, " ]';\n\n");
+  }
+  else {
+    fprintf(fp, "%s{%d} = [", u(0).name().c_str(), u(0).number() + 1);
+    for(int i = 0; i < u.size(); i++)
+    { 
+      for (NodeIterator n(u(0).mesh()); !n.end(); ++n)
+	fprintf(fp, " %.16f", u(i)(*n));
+      fprintf(fp, ";");
+    }
+    fprintf(fp, " ]';\n\n");
+  }
+  
+  // Close file
+  fclose(fp);
+  
+  // Increase the number of times we have saved the function
+  ++u(0);
+
+  cout << "Saved function " << u(0).name() << " (" << u(0).label()
+       << ") to file " << filename << " in Octave/Matlab format." << endl;
+}
+//-----------------------------------------------------------------------------

@@ -8,15 +8,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PDE::PDE(int dim)
+PDE::PDE(int dim, int noeq)
 {
   h  = 0.0;
   t  = 0.0;
   k = 0.0;
   
   this->dim = dim;
+  this->noeq = noeq;
+
+  dolfin_debug1("noeq: %d", noeq);
   
-  noeq = 1; // Will be set otherwise by EquationSystem
+  //noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
 PDE::~PDE()
@@ -24,7 +27,7 @@ PDE::~PDE()
   
 }
 //-----------------------------------------------------------------------------
-void PDE::updateLHS(const FiniteElement* element,
+void PDE::updateLHS(FiniteElement::Vector* element,
 			 const Cell*          cell,
 			 const Map*       map,
 			 const Quadrature*    quadrature)
@@ -36,7 +39,7 @@ void PDE::updateLHS(const FiniteElement* element,
   updateLHS();
 }
 //-----------------------------------------------------------------------------
-void PDE::updateRHS(const FiniteElement* element,
+void PDE::updateRHS(FiniteElement::Vector* element,
 			 const Cell*          cell,
 			 const Map*       map,
 			 const Quadrature*    quadrature)
@@ -143,19 +146,28 @@ void PDE::add(ElementFunction& v, Function& f)
 //-----------------------------------------------------------------------------
 void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 {
-  add(v(0), f(0));
-  add(v(1), f(1));
-  add(v(2), f(2));
+  for(int i = 0; i < f.size(); i++)
+  {
+    add(v(i), f(i));
+  }
+
+
+  //add(v(0), f(0));
+  //add(v(1), f(1));
+  //add(v(2), f(2));
 }
 //-----------------------------------------------------------------------------
-void PDE::update(const FiniteElement* element,
-		 const Cell*          cell,
-		 const Map*       map,
-		 const Quadrature*    quadrature)
+void PDE::update(FiniteElement::Vector* element,
+                 const Cell*          cell,
+                 const Map*       map,
+                 const Quadrature*    quadrature)
 {
   // Update element functions
+  // We assume that the element dependency is only on the grid, therefore
+  // any element, such as the 0th is sufficient
+  
   for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
-    p->update(*element, *cell, t);
+    p->update(*((*element)(0)), *cell, t);
   
   // Update integral measures
   dK.update(*map, *quadrature);
@@ -163,6 +175,11 @@ void PDE::update(const FiniteElement* element,
 
   // Save map (to compute derivatives)
   this->map = map;
+}
+//-----------------------------------------------------------------------------
+int PDE::size()
+{
+  return noeq;
 }
 //-----------------------------------------------------------------------------
 // PDE::FunctionPair
@@ -182,6 +199,8 @@ PDE::FunctionPair::FunctionPair(ElementFunction &v, Function &f)
 void PDE::FunctionPair::update
 (const FiniteElement &element, const Cell &cell, real t)
 {  
+  // How do we do this for vector valued elements?
+
   f->update(*v, element, cell, t);
 }
 //-----------------------------------------------------------------------------

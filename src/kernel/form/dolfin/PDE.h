@@ -10,10 +10,12 @@
 #include <dolfin/Function.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/ShapeFunction.h>
+#include <dolfin/FiniteElement.h>
 
 namespace dolfin {
   
-  class FiniteElement;
+  //class FiniteElement;
+  //class FiniteElement::Vector;
   
   typedef FunctionSpace::ShapeFunction ShapeFunction;
   typedef FunctionSpace::Product Product;
@@ -22,26 +24,50 @@ namespace dolfin {
   class PDE {
   public:
     
-    PDE(int dim);
+    PDE(int dim, int noeq = 1);
     virtual ~PDE();
     
     // Variational formulation, left-hand side
-    virtual real lhs(const ShapeFunction &u, const ShapeFunction &v) = 0;
+    virtual real lhs(const ShapeFunction &u, const ShapeFunction &v)
+    {
+      return 0;
+    }
+
     // Variational formulation, right-hand side
-    virtual real rhs(const ShapeFunction &v) = 0;
+    virtual real rhs(const ShapeFunction &v)
+    {
+      return 0;
+    }
+    
+    // Variational formulation for systems, left-hand side
+    virtual real lhs(ShapeFunction::Vector &u,
+ 		     ShapeFunction::Vector &v)
+    {
+      return lhs(u(0), v(0));
+    }
+    
+    
+    // Variational formulation for systems, right-hand side
+    virtual real rhs(ShapeFunction::Vector &v)
+    {
+      return rhs(v(0));
+    }
     
     // Update before computation of left-hand side
-    void updateLHS(const FiniteElement* element,
-		   const Cell*          cell,
-		   const Map*           map,
-		   const Quadrature*    quadrature);
+    void updateLHS(FiniteElement::Vector* element,
+                   const Cell*          cell,
+                   const Map*       mapping,
+                   const Quadrature*    quadrature);
     
     // Update before computation of right-hand side
-    void updateRHS(const FiniteElement* element,
-		   const Cell*          cell,
-		   const Map*       map,
-		   const Quadrature*    quadrature);
-    
+    void updateRHS(FiniteElement::Vector* element,
+                   const Cell*          cell,
+                   const Map*       mapping,
+                   const Quadrature*    quadrature);
+
+    // Number of equations
+    int size();
+
     // Public data
     real h; // Mesh size
     real t; // Time
@@ -97,7 +123,7 @@ namespace dolfin {
     void add(ElementFunction::Vector &v, Function::Vector &f);
     
     // Update equation
-    void update(const FiniteElement* element,
+    void update(FiniteElement::Vector* element,
 		const Cell*          cell,
 		const Map*       map,
 		const Quadrature*    quadrature);

@@ -6,6 +6,8 @@
 #ifndef __FILE_H
 #define __FILE_H
 
+#include <dolfin/Function.h>
+
 namespace dolfin {
 
   class Vector;
@@ -38,6 +40,7 @@ namespace dolfin {
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
+    void operator<< (Function::Vector& u);
     void operator<< (Sample& sample);
     
   private:

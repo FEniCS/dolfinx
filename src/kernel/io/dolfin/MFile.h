@@ -29,6 +29,7 @@ namespace dolfin {
     virtual void operator<< (Matrix& A) = 0;
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
+    void operator<< (Function::Vector& u);
     void operator<< (Sample& sample);
 
   };

@@ -68,7 +68,7 @@ namespace dolfin {
       
     private:
       
-      const FunctionSpace &V;
+      const FunctionSpace *V;
       Array<ShapeFunction>::Iterator v;
       
     };
@@ -76,14 +76,33 @@ namespace dolfin {
     // Friends
     friend class Iterator;
     friend class FiniteElement;
+
+    // Vector function space
+    class Vector {
+    public:
+      
+      Vector(int size = 3);
+      Vector(const Vector& v);
+      //Vector(const FunctionSpace& v0, const FunctionSpace& v1, const FunctionSpace& v2);
+      ~Vector();
+      
+      int size() const;
+      
+      FunctionSpace& operator() (int i);
+      
+    private:
+      FunctionSpace** v;
+      int _size;
+    };
     
   protected:
     
     int _dim;               // Dimension (number of shape functions)
     Array<ShapeFunction> v; // Shape functions
-    
+
   };
   
 }
 
 #endif
+

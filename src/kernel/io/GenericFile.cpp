@@ -72,6 +72,11 @@ void GenericFile::operator<<(Function& u)
   write_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator<<(Function::Vector& u)
+{
+  write_not_impl("Function");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Sample& sample)
 {
   write_not_impl("Sample");

@@ -26,8 +26,8 @@ void ConvDiffSolver::solve()
   Matrix A;
   Vector x0, x1, b;
   
-  Function u0(mesh, x0);
-  Function u1(mesh, x1);
+  Function::Vector u0(mesh, x0, 1);
+  Function::Vector u1(mesh, x1, 1);
   Function f("source");
   Function a("diffusivity");
   Function::Vector beta("convection");
@@ -42,7 +42,7 @@ void ConvDiffSolver::solve()
   real k = dolfin_get("time step");
 
   // Save initial value
-  u1.rename("u", "temperature");
+  u1(0).rename("u", "temperature");
   file << u1;
 
   // Assemble matrix
@@ -68,7 +68,8 @@ void ConvDiffSolver::solve()
     solver.solve(A, x1, b);
     
     // Save the solution
-    u1.update(t);
+    //u1.update(t);
+    u1(0).update(t);
     file << u1;
 
     // Update progress
