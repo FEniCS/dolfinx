@@ -11,6 +11,7 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/XMLMesh.h \
                          dolfin/XMLMatrix.h \
                          dolfin/XMLObject.h \
+                         dolfin/XMLParameterList.h \
                          dolfin/XMLVector.h
 INCLUDES               = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES          = libdolfin-io.a
@@ -25,4 +26,5 @@ libdolfin_io_a_SOURCES = File.cpp \
                          XMLMesh.cpp \
                          XMLMatrix.cpp \
                          XMLObject.cpp \
+                         XMLParameterList.cpp \
                          XMLVector.cpp

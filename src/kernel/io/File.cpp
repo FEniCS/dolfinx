@@ -100,11 +100,25 @@ void File::operator>>(Function& u)
   *file >> u;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(Function::Vector& u)
+{
+  file->read();
+  
+  *file >> u;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(Sample& sample)
 {
   file->read();
   
   *file >> sample;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(ParameterList& parameters)
+{
+  file->read();
+  
+  *file >> parameters;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)
@@ -135,6 +149,13 @@ void File::operator<<(Function& u)
   *file << u;
 }
 //-----------------------------------------------------------------------------
+void File::operator<<(Function::Vector& u)
+{
+  file->write();
+  
+  *file << u;
+}
+//-----------------------------------------------------------------------------
 void File::operator<<(Sample& sample)
 {
   file->write();
@@ -142,10 +163,10 @@ void File::operator<<(Sample& sample)
   *file << sample;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Function::Vector& u)
+void File::operator<<(ParameterList& parameters)
 {
   file->write();
   
-  *file << u;
+  *file << parameters;
 }
 //-----------------------------------------------------------------------------

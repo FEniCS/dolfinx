@@ -32,6 +32,9 @@ namespace dolfin {
     
     /// Check if the list is empty
     bool empty();
+
+    /// Friends
+    friend class XMLFile;
     
   private:
     

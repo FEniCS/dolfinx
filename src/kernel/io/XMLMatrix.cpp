@@ -80,8 +80,8 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
   int columns = 0;
 
   // Parse values
-  parseIntegerRequired(name, attrs, "rows",    &rows);
-  parseIntegerRequired(name, attrs, "columns", &columns);
+  parseIntegerRequired(name, attrs, "rows",    rows);
+  parseIntegerRequired(name, attrs, "columns", columns);
 
   // Set values
   A.init(rows, columns);
@@ -94,8 +94,8 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
   int size = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "row", &row);
-  parseIntegerRequired(name, attrs, "size", &size);
+  parseIntegerRequired(name, attrs, "row",  row);
+  parseIntegerRequired(name, attrs, "size", size);
 
   // Set values
   A.initrow(row, size);
@@ -108,8 +108,8 @@ void XMLMatrix::readElement(const xmlChar *name, const xmlChar **attrs)
   real value = 0.0;
   
   // Parse values
-  parseIntegerRequired (name, attrs, "column", &column);
-  parseRealRequired    (name, attrs, "value",  &value);
+  parseIntegerRequired (name, attrs, "column", column);
+  parseRealRequired    (name, attrs, "value",  value);
   
   // Set values
   A(row,column) = value;

@@ -57,9 +57,12 @@ namespace dolfin {
     operator vfunction() const;
     operator bcfunction() const;
 
+    // Friends
+    friend class XMLFile;
+
     // Output
-    friend LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p);
-    
+    friend LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p);    
+
   private:
     
     // A description of the parameter

@@ -1,3 +1,4 @@
+ - Add assembly test
  - Add simple StiffnessMatrix, MassMatrix, and LoadVector
  - Change dK --> dx
  - Change dx() --> ddx()

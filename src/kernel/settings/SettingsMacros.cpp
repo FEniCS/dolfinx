@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/File.h>
 #include <dolfin/SettingsManager.h>
 #include <dolfin/SettingsMacros.h>
 
@@ -35,5 +36,17 @@ void dolfin::dolfin_set_aptr(const char *identifier, va_list aptr)
 Parameter dolfin::dolfin_get(const char *identifier)
 {
   return SettingsManager::settings.get(identifier);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_load(const char* filename)
+{
+  File file(filename);
+  file >> SettingsManager::settings;
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_save(const char* filename)
+{
+  File file(filename);
+  file << SettingsManager::settings;
 }
 //-----------------------------------------------------------------------------

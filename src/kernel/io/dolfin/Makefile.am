@@ -8,6 +8,8 @@ EXTRA_DIST = dolfin_io.h \
              OctaveFile.h \
              XMLFile.h \
              XMLMatrix.h \
-             XMLVector.h \
              XMLMesh.h \
-             XMLObject.h
+             XMLObject.h \
+             XMLParameterList.h \
+             XMLVector.h
+	

@@ -123,7 +123,7 @@ void XMLMesh::readNodes(const xmlChar *name, const xmlChar **attrs)
   int size = 0;
 
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &size);
+  parseIntegerRequired(name, attrs, "size", size);
 
   // Set values
   nodes = size;
@@ -135,7 +135,7 @@ void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
   int size = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &size);
+  parseIntegerRequired(name, attrs, "size", size);
 
   // Set values
   cells = size;
@@ -150,10 +150,10 @@ void XMLMesh::readNode(const xmlChar *name, const xmlChar **attrs)
   real z = 0.0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "name", &id);
-  parseRealRequired(name, attrs, "x", &x);
-  parseRealRequired(name, attrs, "y", &y);
-  parseRealRequired(name, attrs, "z", &z);
+  parseIntegerRequired(name, attrs, "name", id);
+  parseRealRequired(name, attrs, "x", x);
+  parseRealRequired(name, attrs, "y", y);
+  parseRealRequired(name, attrs, "z", z);
 
   // Set values
   mesh.createNode(x, y, z);
@@ -171,10 +171,10 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
   int n2 = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "name", &id);
-  parseIntegerRequired(name, attrs, "n0", &n0);
-  parseIntegerRequired(name, attrs, "n1", &n1);
-  parseIntegerRequired(name, attrs, "n2", &n2);
+  parseIntegerRequired(name, attrs, "name", id);
+  parseIntegerRequired(name, attrs, "n0", n0);
+  parseIntegerRequired(name, attrs, "n1", n1);
+  parseIntegerRequired(name, attrs, "n2", n2);
 
   // Set values
   mesh.createCell(n0, n1, n2);
@@ -193,11 +193,11 @@ void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   int n3 = 0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "name", &id);
-  parseIntegerRequired(name, attrs, "n0", &n0);
-  parseIntegerRequired(name, attrs, "n1", &n1);
-  parseIntegerRequired(name, attrs, "n2", &n2);
-  parseIntegerRequired(name, attrs, "n3", &n3);
+  parseIntegerRequired(name, attrs, "name", id);
+  parseIntegerRequired(name, attrs, "n0", n0);
+  parseIntegerRequired(name, attrs, "n1", n1);
+  parseIntegerRequired(name, attrs, "n2", n2);
+  parseIntegerRequired(name, attrs, "n3", n3);
 
   // Set values
   mesh.createCell(n0, n1, n2, n3);

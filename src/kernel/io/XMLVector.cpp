@@ -62,7 +62,7 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   int size = 0;
 
   // Parse values
-  parseIntegerRequired(name, attrs, "size", &size);
+  parseIntegerRequired(name, attrs, "size", size);
   
   // Check values
   if ( size < 0 )
@@ -79,8 +79,8 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   real value = 0.0;
   
   // Parse values
-  parseIntegerRequired(name, attrs, "row", &row);
-  parseRealRequired(name, attrs, "value", &value);   
+  parseIntegerRequired(name, attrs, "row", row);
+  parseRealRequired(name, attrs, "value",  value);   
   
   // Check values
   if ( row < 0 || row >= static_cast<int>(x.size()) )

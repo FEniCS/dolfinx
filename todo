@@ -20,6 +20,7 @@ General
 - Add multigrid solver
 - Remove specification of dim from PDE
 - Use symbolic links for meshes (see example src/demo/fem)
+- Cleanup Parameter and ParameterList
 
 Multi-adaptive solver
 ---------------------

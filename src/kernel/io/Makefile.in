@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_io.h                          dolfin/File.h                          dolfin/GenericFile.h                          dolfin/GiDFile.h                          dolfin/MatlabFile.h                          dolfin/MFile.h                          dolfin/OctaveFile.h                          dolfin/OpenDXFile.h                          dolfin/XMLFile.h                          dolfin/XMLMesh.h                          dolfin/XMLMatrix.h                          dolfin/XMLObject.h                          dolfin/XMLVector.h
+include_HEADERS = dolfin/dolfin_io.h                          dolfin/File.h                          dolfin/GenericFile.h                          dolfin/GiDFile.h                          dolfin/MatlabFile.h                          dolfin/MFile.h                          dolfin/OctaveFile.h                          dolfin/OpenDXFile.h                          dolfin/XMLFile.h                          dolfin/XMLMesh.h                          dolfin/XMLMatrix.h                          dolfin/XMLObject.h                          dolfin/XMLParameterList.h                          dolfin/XMLVector.h
 
 INCLUDES = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES = libdolfin-io.a
-libdolfin_io_a_SOURCES = File.cpp                          GenericFile.cpp                          GiDFile.cpp                          MatlabFile.cpp                          MFile.cpp                          OctaveFile.cpp                          OpenDXFile.cpp                          XMLFile.cpp                          XMLMesh.cpp                          XMLMatrix.cpp                          XMLObject.cpp                          XMLVector.cpp
+libdolfin_io_a_SOURCES = File.cpp                          GenericFile.cpp                          GiDFile.cpp                          MatlabFile.cpp                          MFile.cpp                          OctaveFile.cpp                          OpenDXFile.cpp                          XMLFile.cpp                          XMLMesh.cpp                          XMLMatrix.cpp                          XMLObject.cpp                          XMLParameterList.cpp                          XMLVector.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -100,7 +100,7 @@ LIBS = @LIBS@
 libdolfin_io_a_LIBADD = 
 libdolfin_io_a_OBJECTS =  File.o GenericFile.o GiDFile.o MatlabFile.o \
 MFile.o OctaveFile.o OpenDXFile.o XMLFile.o XMLMesh.o XMLMatrix.o \
-XMLObject.o XMLVector.o
+XMLObject.o XMLParameterList.o XMLVector.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -117,7 +117,7 @@ GZIP_ENV = --best
 DEP_FILES =  .deps/File.P .deps/GenericFile.P .deps/GiDFile.P \
 .deps/MFile.P .deps/MatlabFile.P .deps/OctaveFile.P .deps/OpenDXFile.P \
 .deps/XMLFile.P .deps/XMLMatrix.P .deps/XMLMesh.P .deps/XMLObject.P \
-.deps/XMLVector.P
+.deps/XMLParameterList.P .deps/XMLVector.P
 SOURCES = $(libdolfin_io_a_SOURCES)
 OBJECTS = $(libdolfin_io_a_OBJECTS)
 

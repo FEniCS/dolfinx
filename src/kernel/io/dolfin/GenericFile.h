@@ -5,10 +5,7 @@
 #define __GENERIC_FILE_H
 
 #include <string>
-#include <fstream>
-
 #include <dolfin/Function.h>
-
 
 namespace dolfin {
   
@@ -16,6 +13,8 @@ namespace dolfin {
   class Matrix;
   class Mesh;
   class Function;
+  class Function::Vector;
+  class ParameterList;
   class Sample;
   
   class GenericFile {
@@ -30,7 +29,9 @@ namespace dolfin {
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Function& u);
+    virtual void operator>> (Function::Vector& u);
     virtual void operator>> (Sample& sample);
+    virtual void operator>> (ParameterList& parameters);
     
     // Output
     
@@ -40,6 +41,7 @@ namespace dolfin {
     virtual void operator<< (Function& u);
     virtual void operator<< (Function::Vector& u);
     virtual void operator<< (Sample& sample);
+    virtual void operator<< (ParameterList& parameters);
     
     void read();
     void write();

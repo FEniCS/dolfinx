@@ -10,12 +10,15 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/Parameter.h>
+#include <dolfin/ParameterList.h>
 
 #include <dolfin/XMLFile.h>
 #include <dolfin/XMLObject.h>
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
+#include <dolfin/XMLParameterList.h>
 
 using namespace dolfin;
 
@@ -56,6 +59,14 @@ void XMLFile::operator>>(Mesh& mesh)
   parseFile();
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator>>(ParameterList& parameters)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLParameterList(parameters);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
   // Open file
@@ -63,13 +74,13 @@ void XMLFile::operator<<(Vector& x)
   
   // Write vector in XML format
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
-  fprintf(fp, " <dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
-  fprintf(fp, "\t  <vector size=\" %i \"> \n", x.size() );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "  <vector size=\" %i \"> \n", x.size() );
   
   for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "\t\t  <element row=\"%i\" value=\"%f\"/>\n", i, x(i) );
+    fprintf(fp, "    <element row=\"%i\" value=\"%f\"/>\n", i, x(i) );
     if ( i == (x.size() - 1))
-      fprintf(fp, "\t </vector>\n");
+      fprintf(fp, "  </vector>\n");
   }
   
   fprintf(fp, "</dolfin>\n");
@@ -91,25 +102,25 @@ void XMLFile::operator<<(Matrix& A)
   
   // Write matrix in sparse XML format
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, " <dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   
   switch( A.type() ) {
   case Matrix::sparse:
 
-    fprintf(fp, "\t <sparsematrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1) );
+    fprintf(fp, "  <sparsematrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1) );
                                                                                                                              
     for (unsigned int i = 0; i < A.size(0); i++) {
-      fprintf(fp, "\t\t <row row=\"%i\" size=\"%i\">\n", i, A.rowsize(i));
+      fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, A.rowsize(i));
       for (unsigned int pos = 0; !A.endrow(i, pos); pos++) {
 	unsigned int j = 0;
 	real aij = A(i, j, pos);
-        fprintf(fp, "\t\t\t <element column=\"%i\" value=\"%f\"/>\n", j, aij);
+        fprintf(fp, "      <element column=\"%i\" value=\"%f\"/>\n", j, aij);
         if ( i == (A.size(0) - 1) && pos == (A.rowsize(i)-1)){
-           fprintf(fp, "\t\t </row>\n");
-           fprintf(fp, "\t </sparsematrix>\n");
+           fprintf(fp, "    </row>\n");
+           fprintf(fp, "  </sparsematrix>\n");
         }
         else if ( pos == (A.rowsize(i)-1))
-          fprintf(fp, "\t\t </row>\n");
+          fprintf(fp, "    </row>\n");
       }
     }
     break;
@@ -131,6 +142,55 @@ void XMLFile::operator<<(Matrix& A)
                                                                                                                              
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(ParameterList& parameters)
+{
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+
+  // Write parameter list in XML format
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "  <parameters>\n" );
+
+  for (List<Parameter>::Iterator p(parameters.list); !p.end(); ++p)
+  {
+    switch ( p->type )
+    {
+    case Parameter::REAL:
+      fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
+	      p->identifier.c_str(), p->val_real);
+      break;
+    case Parameter::INT:
+      fprintf(fp, "    <parameter name=\"%s\" type=\"int\" value=\"%d\"/>\n",
+	      p->identifier.c_str(), p->val_int);
+      break;
+    case Parameter::BOOL:
+      if ( p->val_bool )
+	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"true\"/>\n",
+		p->identifier.c_str());
+      else
+	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"false\"/>\n",
+		p->identifier.c_str());
+      break;
+    case Parameter::STRING:
+      fprintf(fp, "    <parameter name=\"%s\" type=\"string\" value=\"%s\"/>\n",
+	      p->identifier.c_str(), p->val_string.c_str());
+      break;
+    default:
+      ; // Do nothing
+    }
+
+  }
+  
+  fprintf(fp, "  </parameters>\n" );
+  fprintf(fp, "</dolfin>\n");
+
+  // Close file
+  fclose(fp);
+
+  cout << "Saved parameters to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function::Vector& u)
