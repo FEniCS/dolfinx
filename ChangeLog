@@ -1,3 +1,4 @@
+ - Add functions Boundary::noNodes(), noFaces(), noEdges()
  - New class GaussSeidel (preconditioner and linear solver)
  - New classes Preconditioner and LinearSolver
  - Bug fix for tetrahedral mesh refinement (ingelstrom)

@@ -24,15 +24,16 @@ namespace dolfin {
   /// is associated with a node. The ID of the node is used as an index
   /// for the degrees of freedom.
 
-  class FEM {
+  class FEM
+  {
   public:
     
     /// Assemble linear system
     static void assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b);
-
+    
     /// Assemble matrix
     static void assemble(PDE& pde, Mesh& mesh, Matrix& A);
-
+    
     /// Assemble vector 
     static void assemble(PDE& pde, Mesh& mesh, Vector& b);
     
@@ -56,7 +57,7 @@ namespace dolfin {
 			 Quadrature& interior_quadrature, 
 			 Quadrature& boundary_quadrature);
 			     
-    /// Assemble matrix for interior cells
+    /// Assemble matrix for interior
     static void assembleInterior(PDE& pde, Mesh& mesh, Matrix& A, 
 				 FiniteElement::Vector& element, Map& map,
 				 Quadrature& interior_quadrature, 
@@ -67,10 +68,14 @@ namespace dolfin {
 				 FiniteElement::Vector& element, Map& map,
 				 Quadrature& interior_quadrature, 
 				 Quadrature& boundary_quadrature);
+
+    /// Assemble matrix for boundary (triangular mesh)
     static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 				    FiniteElement::Vector& element, Map& map,
 				    Quadrature& interior_quadrature, 
 				    Quadrature& boundary_quadrature);
+
+    /// Assemble matrix for boundary (tetrahedral mesh)
     static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 				    FiniteElement::Vector& element, Map& map,
 				    Quadrature& interior_quadrature, 
@@ -82,7 +87,7 @@ namespace dolfin {
 			 Quadrature& interior_quadrature, 
 			 Quadrature& boundary_quadrature);
 
-    /// Assemble vector for interior cells 
+    /// Assemble vector for interior
     static void assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
 				 FiniteElement::Vector& element, Map& map,
 				 Quadrature& interior_quadrature, 
@@ -93,10 +98,14 @@ namespace dolfin {
 				 FiniteElement::Vector& element, Map& map,
 				 Quadrature& interior_quadrature, 
 				 Quadrature& boundary_quadrature);
+
+    /// Assemble vector for boundary (triangular mesh)
     static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 				    FiniteElement::Vector& element, Map& map,
 				    Quadrature& interior_quadrature, 
 				    Quadrature& boundary_quadrature);
+
+    /// Assemble vector for boundary (tetrahedral mesh)
     static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 				    FiniteElement::Vector& element, Map& map,
 				    Quadrature& interior_quadrature, 
@@ -113,9 +122,6 @@ namespace dolfin {
 
     // Initialize vector
     static void alloc(Vector& b, Mesh& mesh, FiniteElement::Vector& element);
-
-    // Default method
-    static FiniteElementMethod method;
 
   };
 

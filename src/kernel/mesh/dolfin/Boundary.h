@@ -19,6 +19,15 @@ namespace dolfin {
     /// Destructor
     ~Boundary();
 
+    /// Return number of nodes on the boundary
+    int noNodes() const;
+
+    /// Return number of edges on the boundary
+    int noEdges() const;
+
+    /// Return number of faces on the boundary
+    int noFaces() const;
+
     /// Friends
     friend class NodeIterator::BoundaryNodeIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;
