@@ -36,6 +36,8 @@ namespace dolfin {
 
     void start();
     void end();
+
+    void active(bool state);
     
   private:
 
@@ -44,7 +46,8 @@ namespace dolfin {
     GenericLogger* log;
     char* buffer;
     char* location;
-    
+    bool state;
+
   };
 
 }

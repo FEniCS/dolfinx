@@ -22,8 +22,6 @@ GridRefinementData::~GridRefinementData()
 void GridRefinementData::clear()
 {
   marked_cells.clear();
-  cell_markers.clear();
-  edge_markers.clear();
 }
 //-----------------------------------------------------------------------------
 void GridRefinementData::mark(Cell& cell)
@@ -40,31 +38,5 @@ int GridRefinementData::noMarkedCells() const
 void GridRefinementData::setGrid(Grid& grid)
 {
   this->grid = &grid;
-}
-//-----------------------------------------------------------------------------
-void GridRefinementData::initMarkers()
-{
-  cell_markers.init(grid->noCells());
-  edge_markers.init(grid->noEdges());
-}
-//-----------------------------------------------------------------------------
-Cell::Marker& GridRefinementData::cellMarker(int id)
-{
-  return cell_markers(id).marker;
-}
-//-----------------------------------------------------------------------------
-void GridRefinementData::edgeMark(int id, Cell& cell)
-{
-  edge_markers(id).mark(cell);
-}
-//-----------------------------------------------------------------------------
-bool GridRefinementData::edgeMarked(int id) const
-{
-  return edge_markers(id).marked();
-}
-//-----------------------------------------------------------------------------
-bool GridRefinementData::edgeMarked(int id, Cell& cell) const
-{
-  return edge_markers(id).marked(cell);
 }
 //-----------------------------------------------------------------------------

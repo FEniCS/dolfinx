@@ -31,6 +31,9 @@ namespace dolfin { void dolfin_start(); }
 namespace dolfin { void dolfin_start(const char* msg, ...); }
 namespace dolfin { void dolfin_end(); }
 
+// Switch logging on or off
+namespace dolfin { void dolfin_log(bool state); }
+
 // Debug macros (with varying number of arguments)
 
 #define dolfin_debug(msg)                  do { dolfin::LogManager::log.debug(__FILE__, __LINE__, __FUNCTION__, msg); } while( false )

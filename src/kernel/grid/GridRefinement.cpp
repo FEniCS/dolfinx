@@ -36,10 +36,6 @@ void GridRefinement::refine(GridHierarchy& grids)
 //-----------------------------------------------------------------------------
 void GridRefinement::initMarks(GridHierarchy& grids)
 {
-  // Create markers for all grids
-  for (GridIterator grid(grids); !grid.end(); ++grid)
-    grid->rd->initMarkers();
-    
   // Set markers for finest grid to marked_for_no_ref;
   for (CellIterator c(grids.fine()); !c.end(); ++c)
     c->marker() = Cell::marked_for_no_ref;
@@ -172,7 +168,9 @@ void GridRefinement::refineGrid(Grid& grid)
   }
 
   // Compute connectivity for child
+  dolfin_log(false);
   grid.child().init();
+  dolfin_log(true);
 
   cout << "Refined grid has " << grid.noCells() << " cells." << endl;
 }
@@ -201,10 +199,8 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   for (CellIterator c(grid); !c.end(); ++c) {
 
     // Skip cells which are not marked according to refinement
-    if ( c->marker() != Cell::marked_according_to_ref ) {
-      cout << "Cell is not marked according to refinement" << endl;
+    if ( c->marker() != Cell::marked_according_to_ref )
       continue;
-    }
 
     // Mark children of the cell for re-use
     for (int i = 0; i < c->noChildren(); i++) {
@@ -217,18 +213,13 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 
   // Remove all nodes in the child not marked for re-use
   for (NodeIterator n(*child); !n.end(); ++n)
-    if ( !reuse_node(n->id()) ) {
-      cout << "Removing node" << endl;
+    if ( !reuse_node(n->id()) )
       removeNode(*n,*child);
-    }
   
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
-    if ( !reuse_cell(c->id()) ) {
-      cout << "Removing cell" << endl;
+    if ( !reuse_cell(c->id()) )
       removeCell(*c,*child);
-    }
-
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell,
@@ -382,28 +373,6 @@ int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
   return -1;
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::removeNode(Node& node, Grid& grid)
-{
-  // Update parent-child info for parent
-  node.parent()->removeChild(node);
-
-  // Remove node
-  grid.remove(node);
-}
-//-----------------------------------------------------------------------------
-void GridRefinement::removeCell(Cell& cell, Grid& grid)
-{
-  // Update parent-child info for parent
-  cell.parent()->removeChild(cell);
-
-  // Update status 
-  if ( cell.parent()->noChildren() == 0 )
-    cell.parent()->status() = Cell::unref; 
-
-  // Remove node
-  grid.remove(cell);
-}
-//-----------------------------------------------------------------------------
 Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 {
   // Create the node
@@ -436,5 +405,28 @@ Node& GridRefinement::createNode(const Point& p, Grid& grid, const Cell& cell)
 
   // Create node if it doesn't exist
   return grid.createNode(p);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::removeNode(Node& node, Grid& grid)
+{
+  // Update parent-child info for parent
+  if ( node.parent() )
+    node.parent()->removeChild();
+
+  // Remove node
+  grid.remove(node);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::removeCell(Cell& cell, Grid& grid)
+{
+  // Update parent-child info for parent
+  cell.parent()->removeChild(cell);
+
+  // Update status 
+  if ( cell.parent()->noChildren() == 0 )
+    cell.parent()->status() = Cell::unref; 
+
+  // Remove node
+  grid.remove(cell);
 }
 //-----------------------------------------------------------------------------

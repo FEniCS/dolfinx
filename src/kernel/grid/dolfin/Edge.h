@@ -89,10 +89,10 @@ namespace dolfin {
     void mark(Cell& cell);
 
     // Check if cell has been marked for refinement
-    bool marked() const;
+    bool marked();
 
     // Check if cell has been marked for refinement by given cell
-    bool marked(Cell& cell) const;
+    bool marked(Cell& cell);
 
     //--- Edge data ---
     
@@ -105,6 +105,9 @@ namespace dolfin {
     // Nodes
     Node* n0;
     Node* n1;
+
+    // Grid refinement data
+    EdgeRefData* rd;
 
   };
   

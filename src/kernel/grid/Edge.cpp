@@ -18,6 +18,8 @@ Edge::Edge()
 
   n0 = 0;
   n1 = 0;
+
+  rd = 0;
 }
 //-----------------------------------------------------------------------------
 Edge::Edge(Node& n0, Node& n1)
@@ -27,6 +29,8 @@ Edge::Edge(Node& n0, Node& n1)
 
   this->n0 = &n0;
   this->n1 = &n1;
+
+  rd = 0;
 }
 //-----------------------------------------------------------------------------
 Edge::~Edge()
@@ -122,21 +126,28 @@ void Edge::set(Node& n0, Node& n1)
   this->n1 = &n1;
 }
 //-----------------------------------------------------------------------------
+void Edge::initMarker()
+{
+  if ( !rd )
+    rd = new EdgeRefData();
+  dolfin_assert(rd);
+}
+//-----------------------------------------------------------------------------
 void Edge::mark(Cell& cell)
 {
-  // The marker is stored (temporarily) in GridRefinementData
-  grid->edgeMark(_id, cell);
+  initMarker();
+  rd->mark(cell);
 }
 //-----------------------------------------------------------------------------
-bool Edge::marked() const
+bool Edge::marked()
 {
-  // The marker is stored (temporarily) in GridRefinementData
-  return grid->edgeMarked(_id);
+  initMarker();
+  return rd->marked();
 }
 //-----------------------------------------------------------------------------
-bool Edge::marked(Cell& cell) const
+bool Edge::marked(Cell& cell)
 {
-  // The marker is stored (temporarily) in GridRefinementData
-  return grid->edgeMarked(_id, cell);
+  initMarker();
+  return rd->marked(cell);
 }
 //-----------------------------------------------------------------------------

@@ -229,9 +229,9 @@ void Node::removeParent(Node& parent)
   this->_parent = 0;
 }
 //-----------------------------------------------------------------------------
-void Node::removeChild(Node& child)
+void Node::removeChild()
 {
-  // Reove child 
+  // Remove child 
   this->_child = 0;
 }
 //-----------------------------------------------------------------------------

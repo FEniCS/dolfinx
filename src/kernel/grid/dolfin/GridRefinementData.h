@@ -45,21 +45,6 @@ namespace dolfin {
     // Change the grid pointer
     void setGrid(Grid& grid);
 
-    // Initialize markers
-    void initMarkers();
-
-    // Return cell marker
-    Cell::Marker& cellMarker(int id);
-    
-    // Mark edge by given cell
-    void edgeMark(int id, Cell& cell);
-
-    // Check if edge is marked
-    bool edgeMarked(int id) const;
-
-    // Check if edge is marked by given cell
-    bool edgeMarked(int id, Cell& cell) const;
-
     //--- Grid refinement data ---
     
     // The grid
@@ -67,10 +52,6 @@ namespace dolfin {
 
     // Cells marked for refinement
     List<Cell*> marked_cells;
-
-    // Cell markers
-    Array<CellRefData> cell_markers;
-    Array<EdgeRefData> edge_markers;
 
   };
 

@@ -15,10 +15,14 @@ namespace dolfin {
     /// Create cell refinement data
     CellRefData() {
       marker = Cell::marked_according_to_ref;
+      status = Cell::unref;
     }
     
     /// The mark of the cell
     Cell::Marker marker;
+
+    // The status of the cell
+    Cell::Status status;
 
   };
 

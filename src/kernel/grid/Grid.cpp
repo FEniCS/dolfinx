@@ -348,30 +348,6 @@ void Grid::remove(Face& face)
   gd->remove(face);
 }
 //-----------------------------------------------------------------------------
-Cell::Marker& Grid::cellMarker(int id)
-{
-  dolfin_assert(rd);
-  return rd->cellMarker(id);
-}
-//-----------------------------------------------------------------------------
-void Grid::edgeMark(int id, Cell& cell)
-{
-  dolfin_assert(rd);
-  rd->edgeMark(id, cell);
-}
-//-----------------------------------------------------------------------------
-bool Grid::edgeMarked(int id)
-{
-  dolfin_assert(rd);
-  return rd->edgeMarked(id);
-}
-//-----------------------------------------------------------------------------
-bool Grid::edgeMarked(int id, Cell& cell)
-{
-  dolfin_assert(rd);
-  return rd->edgeMarked(id, cell);
-}
-//-----------------------------------------------------------------------------
 void Grid::init()
 {
   GridInit::init(*this);

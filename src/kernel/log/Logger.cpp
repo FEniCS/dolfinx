@@ -22,6 +22,8 @@ Logger::Logger()
   
   buffer = new char[DOLFIN_LINELENGTH];
   location  = new char[DOLFIN_LINELENGTH];
+
+  state = true;
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
@@ -41,12 +43,18 @@ Logger::~Logger()
 //-----------------------------------------------------------------------------
 void Logger::info(const char* msg)
 {
+  if ( !state )
+    return;
+
   init();
   log->info(msg);
 }
 //-----------------------------------------------------------------------------
 void Logger::info(const char* format, va_list aptr)
 {
+  if ( !state )
+    return;
+
   init();
 
   vsprintf(buffer, format, aptr);
@@ -56,6 +64,9 @@ void Logger::info(const char* format, va_list aptr)
 void Logger::debug(const char* file, unsigned long line,
 		   const char* function, const char* format, ...)
 {
+  if ( !state )
+    return;
+
   init();
   
   sprintf(location, "%s:%d: %s()", file, line, function);
@@ -88,6 +99,9 @@ void Logger::warning(const char* file, unsigned long line,
 void Logger::error(const char* file, unsigned long line,
 		   const char* function, const char* format, ...)
 {
+  if ( !state )
+    return;
+
   init();
 
   sprintf(location, "%s:%d: %s()", file, line, function);
@@ -119,12 +133,18 @@ void Logger::dassert(const char* file, unsigned long line,
 //-----------------------------------------------------------------------------
 void Logger::progress(const char* title, const char* label, real p)
 {
+  if ( !state )
+    return;
+
   init();
   log->progress(title, label, p);
 }
 //-----------------------------------------------------------------------------
 void Logger::update()
 {
+  if ( !state )
+    return;
+
   init();
   log->update();
 }
@@ -163,6 +183,11 @@ void Logger::end()
 {
   init();
   log->end();
+}
+//-----------------------------------------------------------------------------
+void Logger::active(bool state)
+{
+  this->state = state;
 }
 //-----------------------------------------------------------------------------
 void Logger::init()

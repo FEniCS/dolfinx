@@ -144,8 +144,8 @@ namespace dolfin {
     Cell* _parent;
     Array<Cell*> children;
 
-    // Cell status
-    Cell::Status _status;
+    // Grid refinement data
+    CellRefData* rd;
     
   };
 

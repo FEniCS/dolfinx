@@ -119,14 +119,10 @@ void GridInit::initNodeCell(Grid& grid)
   for (NodeIterator n(grid); !n.end(); ++n)
     n->nc.init();
 
-  dolfin_debug("check");
-
   // Add the cells to the cell lists
   for (CellIterator c(grid); !c.end(); ++c)
     for (NodeIterator n(c); !n.end(); ++n)
       n->nc.add(c);
-
-  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridInit::initCellCell(Grid& grid)
