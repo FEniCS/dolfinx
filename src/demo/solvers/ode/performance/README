@@ -1,7 +1,7 @@
 The setup of this test is that we have a string of masses connected
 with springs. The first mass is connected with a hard spring to a
 wall, and oscillates with high frequency and amplitude. The rest of
-the masses (the "slow" masses) are connected to eachother and to the
+the masses (the "slow" masses) are connected to each other and to the
 first mass with soft springs, optionally also with damping, and will
 oscillate slowly and with low amplitude.
 
@@ -33,6 +33,6 @@ solver should grow as:
 
 T = C1 + C2 * B^1/2 * M * N
 
-Hopefully our stiff multi-adaptive algorithm will grow as:
+Hopefully, our stiff multi-adaptive algorithm will grow as:
 
-T = C1 * M +  C2 * B^1/2 * N
+T = C1 * M + C2 * B^1/2 * N

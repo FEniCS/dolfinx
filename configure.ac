@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(dolfin, 0.4.9, dolfin@math.chalmers.se)
+AC_INIT(dolfin, 0.4.10, dolfin@math.chalmers.se)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
@@ -184,7 +184,6 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/ode/Makefile \
            src/demo/solvers/ode/stiff/Makefile \
            src/demo/solvers/ode/mechanical/Makefile \
-           src/demo/solvers/ode/performance/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/greeting/Makefile )
