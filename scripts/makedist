@@ -68,9 +68,9 @@ less $MAKELOG
 # Copy files to web server
 cd ..
 echo 'Copying ChangeLog to web server'
-scp ChangeLog logg@fourier.math.chalmers.se:work/current/www-phi/pub/software/dolfin
+scp ChangeLog logg@fourier.math.chalmers.se:work/www-phi/pub/software/dolfin
 echo 'Copying tarball to web server'
-scp $TARBALL  logg@fourier.math.chalmers.se:work/current/www-phi/pub/software/dolfin/v0.4
+scp $TARBALL logg@fourier.math.chalmers.se:work/www-phi/pub/software/dolfin/v0.4
 
 # Write a message
 echo ' '
