@@ -23,14 +23,7 @@
 #include "dolfin/Poisson.h"
 #include "dolfin/PoissonSolver.h"
 
-// FIXME: Remove when working
-#include "dolfin/PoissonOld.h"
-#include "dolfin/KrylovSolver.h"
-#include "dolfin/FEM.h"
-
 using namespace dolfin;
-
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 PoissonSolver::PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc)
@@ -41,10 +34,6 @@ PoissonSolver::PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc)
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  //cout << "---------------- Old solver -----------------" << endl;
-  //solveOld();
-  //cout << "---------------- New solver -----------------" << endl;
-
   Poisson::FiniteElement element;
 
   // FIXME: Should be able to take f as an argument from main.cpp
@@ -65,9 +54,6 @@ void PoissonSolver::solve()
   // Set boundary conditions
   NewFEM::setBC(A, b, mesh, bc);
   
-  //A.disp(false);
-  //b.disp();
-
   // Solve the linear system
   // FIXME: Make NewGMRES::solve() static
   NewGMRES solver;
