@@ -7,6 +7,7 @@
 #include <dolfin/P1TetElement.h>
 #include <dolfin/P1TriMap.h>
 #include <dolfin/P1TetMap.h>
+#include <dolfin/GaussQuadrature.h>
 #include <dolfin/TriangleMidpointQuadrature.h>
 #include <dolfin/TetrahedronMidpointQuadrature.h>
 #include <dolfin/FiniteElementMethod.h>
@@ -27,7 +28,8 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
       (*_element)(i) = new P1TriElement();
     
     _map = new P1TriMap();
-    _quadrature = new TriangleMidpointQuadrature();
+    _interior_quadrature = new TriangleMidpointQuadrature();
+    _boundary_quadrature = new GaussQuadrature(2);
     
     break;
     
@@ -40,7 +42,9 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
       (*_element)(i) = new P1TetElement();
     
     _map = new P1TetMap();
-    _quadrature = new TetrahedronMidpointQuadrature();
+    _interior_quadrature = new TetrahedronMidpointQuadrature();
+    _boundary_quadrature = new TriangleMidpointQuadrature();
+
     break;
     
   default:
@@ -52,12 +56,15 @@ FiniteElementMethod::FiniteElementMethod(Mesh::Type type, unsigned int noeq)
 }
 //-----------------------------------------------------------------------------
 FiniteElementMethod::FiniteElementMethod(FiniteElement::Vector& element,
-					 Map& map, Quadrature& quadrature)
+					 Map& map, 
+					 Quadrature& interior_quadrature,
+					 Quadrature& boundary_quadrature)
 {
   // Save user data
   _element = &element;
   _map = &map;
-  _quadrature = &quadrature;
+  _interior_quadrature = &interior_quadrature;
+  _boundary_quadrature = &boundary_quadrature;
   
   // User specifies method
   user = true;
@@ -79,13 +86,17 @@ FiniteElementMethod::~FiniteElementMethod()
       delete _map;
 
     
-    if ( _quadrature )
-      delete _quadrature;
+    if ( _interior_quadrature )
+      delete _interior_quadrature;
+
+    if ( _boundary_quadrature )
+      delete _boundary_quadrature;
   }
 
   _element = 0;
   _map = 0;
-  _quadrature = 0;
+  _interior_quadrature = 0;
+  _boundary_quadrature = 0;
 }
 //-----------------------------------------------------------------------------
 FiniteElement::Vector& FiniteElementMethod::element()
@@ -104,11 +115,19 @@ Map& FiniteElementMethod::map()
   return *_map;
 }
 //-----------------------------------------------------------------------------
-Quadrature& FiniteElementMethod::quadrature()
+Quadrature& FiniteElementMethod::interiorQuadrature()
 {
-  if (!_quadrature)
+  if (!_interior_quadrature)
     dolfin_error("Finite element method not initialized.");
 
-  return *_quadrature;
+  return *_interior_quadrature;
+}
+//-----------------------------------------------------------------------------
+Quadrature& FiniteElementMethod::boundaryQuadrature()
+{
+  if (!_boundary_quadrature)
+    dolfin_error("Finite element method not initialized.");
+
+  return *_boundary_quadrature;
 }
 //-----------------------------------------------------------------------------

@@ -58,13 +58,16 @@ namespace dolfin {
     void updateLHS(FiniteElement::Vector& element,
                    const Cell& cell,
                    const Map& mapping,
-                   const Quadrature& quadrature);
+                   const Quadrature& interior_quadrature,
+                   const Quadrature& boundary_quadrature);
     
     /// Update by cell before computation of right-hand side
     void updateRHS(FiniteElement::Vector& element,
                    const Cell& cell,
                    const Map& mapping,
-                   const Quadrature& quadrature);
+                   const Quadrature& interior_quadrature,
+                   const Quadrature& boundary_quadrature);
+
 
     /// Return number of equations
     int size();
@@ -126,7 +129,8 @@ namespace dolfin {
     void update(FiniteElement::Vector& element,
 		const Cell& cell,
 		const Map& map,
-		const Quadrature& quadrature);
+		const Quadrature& interior_quadrature,
+		const Quadrature& boundary_quadrature);
     
     // Optional update before computation of left-hand side
     virtual void updateLHS() {};

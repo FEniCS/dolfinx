@@ -30,7 +30,8 @@ namespace dolfin
     /// Create user-specified finite element method
     FiniteElementMethod(FiniteElement::Vector& element, 
 			Map& map, 
-			Quadrature& quadrature);
+			Quadrature& interior_quadrature, 
+			Quadrature& boundary_quadrature);
     
     /// Destructor
     ~FiniteElementMethod();
@@ -41,8 +42,9 @@ namespace dolfin
     /// Return map
     Map& map();
 
-    /// Return quadrature rule
-    Quadrature& quadrature();
+    /// Return quadrature rules
+    Quadrature& interiorQuadrature();
+    Quadrature& boundaryQuadrature();
 
     /// The assembler FEM is a friend
     friend class FEM;
@@ -55,8 +57,11 @@ namespace dolfin
     // The map from the reference cell
     Map* _map;
     
-    // The quadrature rule on the reference cell
-    Quadrature* _quadrature;
+    // The quadrature rule on the reference cell interior
+    Quadrature* _interior_quadrature;
+    
+    // The quadrature rule on the reference cell boundary 
+    Quadrature* _boundary_quadrature;
     
     // True if user specifies method
     bool user;

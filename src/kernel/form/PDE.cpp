@@ -25,10 +25,11 @@ PDE::~PDE()
 void PDE::updateLHS(FiniteElement::Vector& element,
 		    const Cell& cell,
 		    const Map& map,
-		    const Quadrature& quadrature)
+		    const Quadrature& interior_quadrature,
+		    const Quadrature& boundary_quadrature)
 {
   // Common update for LHS and RHS
-  update(element, cell, map, quadrature);
+  update(element, cell, map, interior_quadrature, boundary_quadrature);
   
   // Local update of LHS
   updateLHS();
@@ -37,10 +38,11 @@ void PDE::updateLHS(FiniteElement::Vector& element,
 void PDE::updateRHS(FiniteElement::Vector& element,
 		    const Cell& cell,
 		    const Map& map,
-		    const Quadrature& quadrature)
+		    const Quadrature& interior_quadrature,
+		    const Quadrature& boundary_quadrature)
 {
   // Common update for LHS and RHS
-  update(element, cell, map, quadrature);
+  update(element, cell, map, interior_quadrature, boundary_quadrature);
 
   // Local update of RHS
   updateRHS();
@@ -154,7 +156,8 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 void PDE::update(FiniteElement::Vector& element,
                  const Cell& cell,
                  const Map& map,
-                 const Quadrature& quadrature)
+                 const Quadrature& interior_quadrature,
+                 const Quadrature& boundary_quadrature)
 {
   // Update element functions
   // We assume that the element dependency is only on the grid, therefore
@@ -164,8 +167,8 @@ void PDE::update(FiniteElement::Vector& element,
     p->update(*(element(0)), cell, t);
   
   // Update integral measures
-  dx.update(map, quadrature);
-  ds.update(map, quadrature);
+  dx.update(map, interior_quadrature);
+  ds.update(map, boundary_quadrature);
   h = cell.diameter();
   
   // Save map (to compute derivatives)

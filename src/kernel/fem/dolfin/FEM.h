@@ -54,44 +54,54 @@ namespace dolfin {
     // Assemble matrix
     static void assemble(PDE& pde, Mesh& mesh, Matrix& A,
 			 FiniteElement::Vector& element, Map& map,
-			 Quadrature& quadrature);
-    
+			 Quadrature& interior_quadrature, 
+			 Quadrature& boundary_quadrature);
+			     
     /// Assemble matrix for interior cells
     static void assembleInterior(PDE& pde, Mesh& mesh, Matrix& A, 
 				 FiniteElement::Vector& element, Map& map,
-				 Quadrature& quadrature);
-
+				 Quadrature& interior_quadrature, 
+				 Quadrature& boundary_quadrature);
+				
     /// Assemble matrix for boundary 
     static void assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
 				 FiniteElement::Vector& element, Map& map,
-				 Quadrature& quadrature);
+				 Quadrature& interior_quadrature, 
+				 Quadrature& boundary_quadrature);
     static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 				    FiniteElement::Vector& element, Map& map,
-				    Quadrature& quadrature);
+				    Quadrature& interior_quadrature, 
+				    Quadrature& boundary_quadrature);
     static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 				    FiniteElement::Vector& element, Map& map,
-				    Quadrature& quadrature);
+				    Quadrature& interior_quadrature, 
+				    Quadrature& boundary_quadrature);
 
     // Assemble vector
     static void assemble(PDE& pde, Mesh& mesh, Vector& b,
 			 FiniteElement::Vector& element, Map& map,
-			 Quadrature& quadrature);
+			 Quadrature& interior_quadrature, 
+			 Quadrature& boundary_quadrature);
 
     /// Assemble vector for interior cells 
     static void assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
 				 FiniteElement::Vector& element, Map& map,
-				 Quadrature& quadrature);
-    
+				 Quadrature& interior_quadrature, 
+				 Quadrature& boundary_quadrature);
+      
     /// Assemble vector for boundary 
     static void assembleBoundary(PDE& pde, Mesh& mesh, Vector& b,
 				 FiniteElement::Vector& element, Map& map,
-				 Quadrature& quadrature);
+				 Quadrature& interior_quadrature, 
+				 Quadrature& boundary_quadrature);
     static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 				    FiniteElement::Vector& element, Map& map,
-				    Quadrature& quadrature);
+				    Quadrature& interior_quadrature, 
+				    Quadrature& boundary_quadrature);
     static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 				    FiniteElement::Vector& element, Map& map,
-				    Quadrature& quadrature);
+				    Quadrature& interior_quadrature, 
+				    Quadrature& boundary_quadrature);
     
     // Set boundary conditions for matrix
     static void setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element);

@@ -26,13 +26,14 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b)
   FiniteElementMethod method(mesh.type(), pde.size());
   FiniteElement::Vector& element(method.element());
   Map& map(method.map());
-  Quadrature& quadrature(method.quadrature());
+  Quadrature& interior_quadrature(method.interiorQuadrature());
+  Quadrature& boundary_quadrature(method.boundaryQuadrature());
 
   // Assemble matrix
-  assemble(pde, mesh, A, element, map, quadrature);
+  assemble(pde, mesh, A, element, map, interior_quadrature, boundary_quadrature);
 
   // Assemble vector
-  assemble(pde, mesh, b, element, map, quadrature);
+  assemble(pde, mesh, b, element, map, interior_quadrature, boundary_quadrature);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A)
@@ -41,10 +42,11 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A)
   FiniteElementMethod method(mesh.type(), pde.size());
   FiniteElement::Vector& element(method.element());
   Map& map(method.map());
-  Quadrature& quadrature(method.quadrature());
+  Quadrature& interior_quadrature(method.interiorQuadrature());
+  Quadrature& boundary_quadrature(method.boundaryQuadrature());
 
   // Assemble matrix
-  assemble(pde, mesh, A, element, map, quadrature);
+  assemble(pde, mesh, A, element, map, interior_quadrature, boundary_quadrature);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b)
@@ -53,23 +55,25 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b)
   FiniteElementMethod method(mesh.type(), pde.size());
   FiniteElement::Vector& element(method.element());
   Map& map(method.map());
-  Quadrature& quadrature(method.quadrature());
+  Quadrature& interior_quadrature(method.interiorQuadrature());
+  Quadrature& boundary_quadrature(method.boundaryQuadrature());
 
   // Assemble vector
-  assemble(pde, mesh, b, element, map, quadrature);
+  assemble(pde, mesh, b, element, map, interior_quadrature, boundary_quadrature);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
 		   FiniteElement::Vector& element, Map& map,
-		   Quadrature& quadrature)
+		   Quadrature& interior_quadrature, 
+		   Quadrature& boundary_quadrature)
 {
   // Allocate and reset matrix
   alloc(A, mesh, element);
   
   // Assemble interior elements
-  assembleInterior(pde,mesh,A,element,map,quadrature);
+  assembleInterior(pde,mesh,A,element,map, interior_quadrature, boundary_quadrature);
   // Assemble boundary
-  assembleBoundary(pde,mesh,A,element,map,quadrature);
+  assembleBoundary(pde,mesh,A,element,map, interior_quadrature, boundary_quadrature);
 
   // Clear unused elements
   A.resize();
@@ -83,7 +87,8 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
 			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& quadrature)
+			   Quadrature& interior_quadrature, 
+			   Quadrature& boundary_quadrature)
 {
   // Start a progress session
   Progress p("Assembling left-hand side", mesh.noCells());  
@@ -99,7 +104,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
       element(i)->update(map);
     
     // Update equation
-    pde.updateLHS(element, cell, map, quadrature);
+    pde.updateLHS(element, cell, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test and trial functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -113,15 +118,16 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
 			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& quadrature)
+			   Quadrature& interior_quadrature, 
+			   Quadrature& boundary_quadrature)
 {
   // Iterate over boundary 
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde,mesh,A,element,map,quadrature);
+    assembleBoundaryTri(pde,mesh,A,element,map,interior_quadrature,boundary_quadrature);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde,mesh,A,element,map,quadrature);
+    assembleBoundaryTet(pde,mesh,A,element,map,interior_quadrature,boundary_quadrature);
     break;
   default:
     dolfin_error("Unknown mesh type.");
@@ -130,7 +136,8 @@ void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& quadrature)
+			      Quadrature& interior_quadrature, 
+			      Quadrature& boundary_quadrature)
 {
   /*
   // Create boundary object 
@@ -150,7 +157,7 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
       element(i)->update(map);
     
     // Update equation
-    pde.updateLHS(element, edge.cell(0), map, quadrature);
+    pde.updateLHS(element, edge.cell(0), map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test and trial functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -165,7 +172,8 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& quadrature)
+			      Quadrature& interior_quadrature, 
+			      Quadrature& boundary_quadrature)
 {
   /*
   // Create boundary object 
@@ -185,7 +193,7 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 	element(i)->update(map);
       
       // Update equation
-      pde.updateLHS(element, face.cell(0), map, quadrature);
+      pde.updateLHS(element, face.cell(0), map, interior_quadrature, boundary_quadrature);
       
       // Iterate over test and trial functions
       for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -200,15 +208,16 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 //-----------------------------------------------------------------------------
 void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
 		   FiniteElement::Vector& element, Map& map,
-		   Quadrature& quadrature)
+		   Quadrature& interior_quadrature, 
+		   Quadrature& boundary_quadrature)
 {
   // Allocate and reset matrix
   alloc(b, mesh, element);
   
   // Assemble interior elements
-  assembleInterior(pde,mesh,b,element,map,quadrature);
+  assembleInterior(pde,mesh,b,element,map,interior_quadrature,boundary_quadrature);
   // Assemble boundary
-  assembleBoundary(pde,mesh,b,element,map,quadrature);
+  assembleBoundary(pde,mesh,b,element,map,interior_quadrature,boundary_quadrature);
 
   // FIXME: This should be removed
   setBC(mesh, b, element);
@@ -219,7 +228,8 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
 //-----------------------------------------------------------------------------
 void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
 			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& quadrature)
+			   Quadrature& interior_quadrature, 
+			   Quadrature& boundary_quadrature)
 {
   // Start a progress session
   Progress p("Assembling right-hand side", mesh.noCells());  
@@ -231,7 +241,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
     map.update(cell);
     
     // Update equation
-    pde.updateRHS(element, cell, map, quadrature);
+    pde.updateRHS(element, cell, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -244,15 +254,16 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Vector& b,
 			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& quadrature)
+			   Quadrature& interior_quadrature, 
+			   Quadrature& boundary_quadrature)
 {
   // Iterate over boundary 
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde,mesh,b,element,map,quadrature);
+    assembleBoundaryTri(pde,mesh,b,element,map,interior_quadrature,boundary_quadrature);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde,mesh,b,element,map,quadrature);
+    assembleBoundaryTet(pde,mesh,b,element,map,interior_quadrature,boundary_quadrature);
     break;
   default:
     dolfin_error("Unknown mesh type.");
@@ -261,7 +272,8 @@ void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Vector& b,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& quadrature)
+			      Quadrature& interior_quadrature, 
+			      Quadrature& boundary_quadrature)
 {
   /*
   // Create boundary object 
@@ -277,7 +289,7 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
     map.update(edge.cell(0),edge);
     
     // Update equation
-    pde.updateRHS(element, edge.cell(0), map, quadrature);
+    pde.updateRHS(element, edge.cell(0), map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -291,7 +303,8 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& quadrature)
+			      Quadrature& interior_quadrature, 
+			      Quadrature& boundary_quadrature)
 {
   /*
   // Create boundary object 
@@ -307,7 +320,7 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
     map.update(face.cell(0),face);
     
     // Update equation
-    pde.updateRHS(element, face.cell(0), map, quadrature);
+    pde.updateRHS(element, face.cell(0), map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
