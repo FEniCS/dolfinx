@@ -19,11 +19,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
-		      const NewFiniteElement& element)
+void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
+
+  // Get finite element
+  // FIXME: Should not assume that test and trial elements are the same
+  const NewFiniteElement& element = a.test();
 
   // Initialize element matrix data block
   unsigned int n = element.spacedim();
@@ -47,7 +50,7 @@ void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    a.update(*cell, element);
+    a.update(*cell);
     
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
@@ -71,19 +74,21 @@ void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
   delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh,
-		      const NewFiniteElement& element)
+void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());
 
+  // Get finite element
+  const NewFiniteElement& test = L.test();
+
   // Initialize element vector data block
-  unsigned int n = element.spacedim();
+  unsigned int n = test.spacedim();
   real* block = new real[n];
   int* dofs = new int[n];
 
   // Initialize global vector 
-  unsigned int N = size(mesh, element);
+  unsigned int N = size(mesh, test);
   b.init(N);
   b = 0.0;
 
@@ -91,11 +96,11 @@ void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    L.update(*cell, element);
+    L.update(*cell);
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell, mesh);
+      dofs[i] = test.dof(i, *cell, mesh);
     
     // Compute element matrix
     L.interior(block);
@@ -116,12 +121,15 @@ void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, LinearForm& L,
-		      NewMatrix& A, NewVector& b, Mesh& mesh,
-		      const NewFiniteElement& element)
+		      NewMatrix& A, NewVector& b, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling matrix and vector (interior contributions)",
 	     mesh.noCells());
+
+  // Get finite element
+  // FIXME: Should not assume that test and trial element are the same
+  const NewFiniteElement& element = a.test();
 
   // Initialize element matrix/vector data block
   unsigned int n = element.spacedim();
@@ -147,8 +155,8 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    a.update(*cell, element);
-    L.update(*cell, element);
+    a.update(*cell);
+    L.update(*cell);
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
@@ -180,10 +188,9 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L,
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, LinearForm& L,
 		      NewMatrix& A, NewVector& b, Mesh& mesh,
-		      const NewFiniteElement& element,
 		      NewBoundaryCondition& bc)
 {
-  assemble(a, L, A, b, mesh, element);
+  assemble(a, L, A, b, mesh);
   setBC(A, b, mesh, bc);
 }
 //-----------------------------------------------------------------------------

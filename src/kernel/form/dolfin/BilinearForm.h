@@ -22,7 +22,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    BilinearForm();
+    BilinearForm(uint nfunctions = 0);
     
     /// Destructor
     virtual ~BilinearForm();

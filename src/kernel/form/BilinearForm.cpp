@@ -7,15 +7,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BilinearForm::BilinearForm() : Form(), _test(0), _trial(0)
+BilinearForm::BilinearForm(uint nfunctions)
+  : Form(nfunctions), _test(0), _trial(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 BilinearForm::~BilinearForm()
 {
-  if ( _test ) delete [] _test;
-  if ( _trial ) delete [] _trial;
+  if ( _test ) delete _test;
+  if ( _trial ) delete _trial;
 }
 //-----------------------------------------------------------------------------
 bool BilinearForm::interior(real* block) const

@@ -19,21 +19,20 @@ PoissonSolver::PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& b
 void PoissonSolver::solve()
 {
   // Define the bilinear and linear forms
-  Poisson::FiniteElement element;
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
 
   // Discretize
   NewMatrix A;
   NewVector x, b;
-  NewFEM::assemble(a, L, A, b, mesh, element, bc);
+  NewFEM::assemble(a, L, A, b, mesh, bc);
 
   // Solve the linear system
   NewGMRES solver;
   solver.solve(A, x, b);
 
   // Save function to file
-  NewFunction u(mesh, x, element);
+  NewFunction u(mesh, x, a.trial());
   File file("poisson.m");
   file << u;
 }

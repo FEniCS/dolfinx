@@ -6,29 +6,26 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
+#include <dolfin/NewFiniteElement.h>
 
 namespace dolfin
 {
 
   class Cell;
   class NewFunction;
-  class NewFiniteElement;
   
   class Form
   {
   public:
 
     /// Constructor
-    Form();
+    Form(uint nfunctions);
 
     /// Destructor
     virtual ~Form();
 
-    /// Initialize functions (coefficients)
-    void init(uint nfunctions, uint spacedim);
-
     /// Update map to current cell
-    void update(const Cell& cell, const NewFiniteElement& element);
+    void update(const Cell& cell);
 
     /// Friends
     friend class NewFEM;
@@ -42,10 +39,10 @@ namespace dolfin
     void updateTetLinMap(const Cell& cell);
 
     // Update coefficients
-    void updateCoefficients(const Cell& cell, const NewFiniteElement& element);
+    void updateCoefficients(const Cell& cell);
 
     // Add function
-    void add(const NewFunction& function);
+    void add(const NewFunction& function, const NewFiniteElement* element);
 
     // Determinant of Jacobian of map
     real det;
@@ -55,6 +52,9 @@ namespace dolfin
 
     // Inverse of Jacobian of map
     real g00, g01, g02, g10, g11, g12, g20, g21, g22;
+
+    // List of finite elements for functions (coefficients)
+    NewArray<const NewFiniteElement*> elements;
 
     // List of functions (coefficients)
     NewArray<const NewFunction*> functions;

@@ -6,14 +6,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearForm::LinearForm() : Form(), _test(0)
+LinearForm::LinearForm(uint nfunctions) : Form(nfunctions), _test(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 LinearForm::~LinearForm()
 {
-  if ( _test ) delete [] _test;
+  if ( _test ) delete _test;
 }
 //-----------------------------------------------------------------------------
 bool LinearForm::interior(real* block) const

@@ -20,7 +20,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    LinearForm();
+    LinearForm(uint nfunctions = 0);
     
     /// Destructor
     virtual ~LinearForm();

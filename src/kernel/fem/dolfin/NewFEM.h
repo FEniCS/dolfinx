@@ -22,7 +22,7 @@ namespace dolfin
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find u in V such that
   ///
-  ///     a(u,v) = L(v) for all v in V,
+  ///     a(v, u) = L(v) for all v in V,
   ///
   /// where a(.,.) is a given bilinear form and L(.) is a given linear form.
 
@@ -31,23 +31,20 @@ namespace dolfin
   public:
 
     /// Assemble bilinear form
-    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
-			 const NewFiniteElement& element);
+    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh);
 
     /// Assemble linear form
-    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
-			 const NewFiniteElement& element);
+    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh);
 
     /// Assemble bilinear and linear forms
     static void assemble(BilinearForm& a, LinearForm& L, 
-			 NewMatrix& A, NewVector& b, Mesh& mesh,
-			 const NewFiniteElement& element);
-
+			 NewMatrix& A, NewVector& b, Mesh& mesh);
+    
     /// Assemble bilinear and linear forms (including Dirichlet boundary conditions)
     static void assemble(BilinearForm& a, LinearForm& L, 
 			 NewMatrix& A, NewVector& b, Mesh& mesh,
-			 const NewFiniteElement& element, NewBoundaryCondition& bc);
-
+			 NewBoundaryCondition& bc);
+    
     /// Set Dirichlet boundary conditions
     static void setBC(NewMatrix& A, NewVector& b, Mesh& mesh,
 		      NewBoundaryCondition& bc);
