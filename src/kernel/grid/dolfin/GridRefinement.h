@@ -29,8 +29,9 @@ namespace dolfin {
     
   private:
 
+    static void globalRegularRefinement(GridHierarchy& grids);
+
     /*
-    void globalRegularRefinement();
     void globalRefinement();
     
     void evaluateMarks(int grid_level);
@@ -40,12 +41,14 @@ namespace dolfin {
     
     void refineGrid(int grid_level);
     void unrefineGrid(int grid_level);
+    */    
+
+    static void regularRefinement(Cell* parent, Grid& g);
     
-    void regularRefinement(Cell* parent);
-    
-    void regularRefinementTetrahedron(Cell* parent);
-    void regularRefinementTriangle(Cell* parent);
-    
+    static void regularRefinementTetrahedron(Cell* parent, Grid& g);
+    static void regularRefinementTriangle(Cell* parent, Grid& g);
+
+    /*
     void localIrregularRefinement(Cell *parent);
     
     void irregularRefinementBy1(Cell *parent);

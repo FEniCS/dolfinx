@@ -1,7 +1,7 @@
 //
-// time: Mon Sep  8 12:49:16 2003
+// time: Mon Sep  8 20:06:11 2003
 //
-// version: 3.2.0 (format), 4.3.0 (DX)
+// version: 3.1.2 (format), 4.1.3 (DX)
 //
 //
 // MODULE main
@@ -29,8 +29,8 @@ macro main(
 ) {
     // 
     // node FileSelector[3]: x = 20, y = 124, inputs = 0, label = FileSelector
-    // output[1]: visible = 1, type = 32, value = "/home/hoffman/tmp/dolfin/src/problems/navier-stokes/benchmark/navier_stokes-primal.dx"
-    // output[2]: visible = 1, type = 32, value = "navier_stokes-primal.dx"
+    // output[1]: visible = 1, type = 32, value = "/home/hoffman/tmp/dolfin/src/demo/grid/grid_refined.dx"
+    // output[2]: visible = 1, type = 32, value = "grid_refined.dx"
     // page group: Import
     //
     // 
@@ -43,8 +43,8 @@ macro main(
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Selector_3"
     // input[2]: defaulting = 0, visible = 0, type = 32, value = "Velocity series" 
     // input[3]: defaulting = 0, visible = 0, type = 29, value = 0 
-    // input[4]: defaulting = 1, visible = 1, type = 16777248, value = { "Velocity series" "Pressure series" "Temperature series" }
-    // input[5]: defaulting = 1, visible = 0, type = 16777245, value = { 0 1 2 }
+    // input[4]: defaulting = 1, visible = 1, type = 16777248, value = {"Velocity series" "Pressure series" "Temperature series" }
+    // input[5]: defaulting = 1, visible = 0, type = 16777245, value = {0  1  2  }
     // output[1]: visible = 1, type = 29, value = 0 
     // output[2]: visible = 1, type = 32, value = "Velocity series" 
     // page group: Import
@@ -182,7 +182,7 @@ main_Inquire_5_out_1 =
     // input[7]: defaulting = 0, visible = 0, type = 16777217, value = { 0 10 1 0 10 1 }
     // page group: Frame
     // vcr[1]: min = 0, max = 10, beg = 0, end = 10, cur = 5, inc = 1, loop = off, step = on, pal = off
-    // window: position = (0.7344,0.7823), size = 0.2188x0.0771
+    // window: position = (0.7344,0.7826), size = 0.2188x0.0768
     //
     main_Sequencer_1_in_3 = @frame;
 main_Sequencer_1_out_1[cache: 2] = 
@@ -776,7 +776,7 @@ main_ColorBar_1_out_1 =
     // input[6]: defaulting = 0, visible = 0, type = 8, value = [1.27355 2.29765 4.38769]
     // input[7]: defaulting = 1, visible = 0, type = 5, value = 4.34294
     // input[8]: defaulting = 0, visible = 0, type = 1, value = 509
-    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.687
+    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.68664
     // input[10]: defaulting = 0, visible = 0, type = 8, value = [-0.0563172 0.910444 -0.40978]
     // input[11]: defaulting = 0, visible = 0, type = 5, value = 53.0296
     // input[12]: defaulting = 0, visible = 0, type = 1, value = 1
@@ -785,7 +785,7 @@ main_ColorBar_1_out_1 =
     // input[16]: defaulting = 0, visible = 0, type = 32, value = "none"
     // input[17]: defaulting = 1, visible = 0, type = 1, value = 1
     // input[18]: defaulting = 1, visible = 0, type = 1, value = 1
-    // input[19]: defaulting = 0, visible = 0, type = 3, value = 0
+    // input[19]: defaulting = 0, visible = 0, type = 1, value = 0
     // input[20]: visible = 1
     // input[21]: visible = 1
     // input[22]: defaulting = 0, visible = 0, type = 32, value = "black"
@@ -799,7 +799,7 @@ main_ColorBar_1_out_1 =
     // page group: Image
     // title: value = Basic3D
     // depth: value = 16
-    // window: position = (0.3102,0.0615), size = 0.5109x0.5115
+    // window: position = (0.3105,0.0612), size = 0.5107x0.5117
     // internal caching: 1
     //
 main_Image_1_out_1,
@@ -1026,7 +1026,7 @@ wireless_25 = main_AutoColor_5_out_2;
 // network: end of macro body
 CacheScene(main_Image_1_in_1, main_Image_1_out_1, main_Image_1_out_2);
 }
-main_FileSelector_3_out_1 = "/home/hoffman/tmp/dolfin/src/problems/navier-stokes/benchmark/navier_stokes-primal.dx";
+main_FileSelector_3_out_1 = "/home/hoffman/tmp/dolfin/src/demo/grid/grid_refined.dx";
 main_StringList_1_out_1 = { "Velocity series", "Pressure series", "Temperature series" };
 main_Selector_3_in_1 = "Selector_3";
 main_Selector_3_in_2 = "Velocity series" ;
@@ -1667,7 +1667,7 @@ main_Image_1_in_5 = [0.5 0.5 0.5];
 main_Image_1_in_6 = [1.27355 2.29765 4.38769];
 main_Image_1_in_7 = NULL;
 main_Image_1_in_8 = 509;
-main_Image_1_in_9 = 0.687;
+main_Image_1_in_9 = 0.68664;
 main_Image_1_in_10 = [-0.0563172 0.910444 -0.40978];
 main_Image_1_in_11 = 53.0296;
 main_Image_1_in_12 = 1;
@@ -1721,7 +1721,7 @@ main_Transmitter_11_out_1 = NULL;
 main_Transmitter_17_out_1 = NULL;
 main_Transmitter_24_out_1 = NULL;
 main_ShowBoundary_1_in_2 = NULL;
-Executive("product version 4 3 0");
+Executive("product version 4 1 3");
 $sync
 
 sequence main();

@@ -140,6 +140,9 @@ void Grid::refine()
     new_grid->_parent->_child = new_grid;
   this->_parent = new_grid;
   new_grid->_child = this;
+
+  // Compute connectivity
+  init();
 }
 //-----------------------------------------------------------------------------
 Grid& Grid::parent()

@@ -131,6 +131,7 @@ namespace dolfin {
     // Friends
     friend class GridData;
     friend class GridInit;
+    friend class GridRefinement;
     friend class GenericCell;
     friend class NodeIterator::CellNodeIterator;
     friend class CellIterator::CellCellIterator;
