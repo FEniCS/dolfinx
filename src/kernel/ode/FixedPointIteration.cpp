@@ -38,10 +38,10 @@ FixedPointIteration::~FixedPointIteration()
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::iterate(TimeSlab& timeslab)
 {
-  // Since elements are stored recursively in the time slabs, the fixed
-  // point iteration needs help from the time slabs to do the iteration.
-  // The time slabs will call FixedPointIteration::update() on all elements
-  // within the time slabs.
+  // Since only the time slab knows how its elements are stored, the fixed
+  // point iteration needs help from the time slab to do the iteration.
+  // The time slab will call FixedPointIteration::update() for each element
+  // within the time slab.
 
   reset();
 
@@ -55,15 +55,15 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     update(timeslab);
 
     // Check if we have done too many iterations
-    if ( n++ >= maxiter )
+    if ( ++n >= maxiter )
     {
       event_nonconverging();
+      reset();
       return false;
     }    
   }
 
   reset();
-
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -72,8 +72,13 @@ real FixedPointIteration::update(Element& element)
   // Save end value for element
   real u1 = element.endval();
 
-  // Update initial value
-  real u0 = u(element.index(), element.starttime());
+  // Get element data
+  unsigned int index = element.index();
+  real t0 = element.starttime();
+  real t1 = element.endtime();
+
+  // Update initial value for element
+  real u0 = u(index, t0);
   element.update(u0);
 
   // Local variables
@@ -91,10 +96,9 @@ real FixedPointIteration::update(Element& element)
     // Compute local damping
     if ( local_damping )
     {
-      unsigned int index = element.index();
-      real dfdu = f.dfdu(index, index, element.endtime());
+      real dfdu = f.dfdu(index, index, t1);
       real rho = element.timestep() * fabs(dfdu);
-      local_alpha = 1.0 / (1.0 + rho);
+      local_alpha = computeDamping(rho);
     }
     
     // Update element
@@ -121,18 +125,17 @@ real FixedPointIteration::update(Element& element)
       {
 	event_diag_damping();
 	local_damping = true;
-      }
 
-      // Check if we need to reset the element
-      if ( local_r2 > maxdiv * local_r0 )
-      {
-	event_reset_element();
-	reset(element);
+	// Check if we need to reset the element
+	if ( local_r2 > maxdiv * local_r0 )
+	{
+	  event_reset_element();
+	  reset(element);
+	}
       }
-
     }
   }
-
+  
   // Return change in end value
   return fabs(element.endval() - u1);
 }
@@ -144,19 +147,6 @@ void FixedPointIteration::reset(Element& element)
   
   // Reset element
   element.reset(u0);
-}
-//-----------------------------------------------------------------------------
-bool FixedPointIteration::converged(TimeSlab& timeslab)
-{
-  // Compute maximum discrete residual
-  r1 = r2;
-  r2 = timeslab.computeMaxRd(u, f);
-
-  // Save initial discrete residual
-  if ( n == 0 )
-    r0 = r2;
-  
-  return r2 < tol;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(TimeSlab& timeslab)
@@ -188,18 +178,19 @@ void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab)
   // Check if the solution converges
   if ( r2 < 0.5*r1 )
     return;
-  else if ( r2 < r1 )
-    if ( event_scalar_damping.count() == 0 )
-      event_accelerating();
+
+  // Determine type of damping
+  if ( r2 < r1 && event_scalar_damping.count() == 0 )
+    event_accelerating();
   else
-    event_scalar_damping();
+    event_scalar_damping(); 
   
   // Compute stabilization
   real rho = computeConvergenceRate();
   alpha = computeDamping(rho);
   m = computeDampingSteps(rho);
   
-  // Reset time slab to initial values 
+  // Check if we need to reset the time slab
   if ( r2 > maxdiv * r0 )
   {
     event_reset_timeslab();
@@ -222,15 +213,18 @@ void FixedPointIteration::stabilizeDamped(TimeSlab& timeslab)
     state = increasing;
   }
 
-  // Adjust alpha if the solution diverges
+  // Check if the solution diverges
   if ( r2 > r1 )
   {
     // Decrease alpha
     alpha /= 2.0;
 
-    // Reset time slab to initial values 
+    // Check if we need to reset the time slab
     if ( r2 > maxdiv * r0 )
+    {
+      event_reset_timeslab();
       timeslab.reset(*this);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -245,11 +239,14 @@ void FixedPointIteration::stabilizeIncreasing(TimeSlab& timeslab)
     // Compute stabilization
     real rho = computeConvergenceRate();
     alpha = computeDamping(rho/alpha);
-    m = computeDampingSteps(rho);
+    m = computeDampingSteps(rho/alpha);
     
-    // Reset time slab to initial values 
+    // Check if we need to reset the time slab
     if ( r2 > maxdiv * r0 )
+    {
+      event_reset_timeslab();
       timeslab.reset(*this);
+    }
     
     // Change state
     event_scalar_damping();
@@ -276,14 +273,25 @@ real FixedPointIteration::computeConvergenceRate()
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeDamping(real rho)
 {
-  dolfin_assert(rho > 0.0);
-  return 0.99 / (1 + rho);    
+  return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
 }
 //-----------------------------------------------------------------------------
 unsigned int FixedPointIteration::computeDampingSteps(real rho)
 {
-  dolfin_assert(rho > 0.0);
   return 1 + 2*ceil_int(log(1.0 + rho));
+}
+//-----------------------------------------------------------------------------
+bool FixedPointIteration::converged(TimeSlab& timeslab)
+{
+  // Compute maximum discrete residual
+  r1 = r2;
+  r2 = timeslab.computeMaxRd(u, f);
+
+  // Save initial discrete residual
+  if ( n == 0 )
+    r0 = r2;
+  
+  return r2 < tol;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::reset()

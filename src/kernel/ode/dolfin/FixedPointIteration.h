@@ -4,8 +4,8 @@
 #ifndef __FIXED_POINT_ITERATION_H
 #define __FIXED_POINT_ITERATION_H
 
-#include <dolfin/Event.h>
 #include <dolfin/constants.h>
+#include <dolfin/Event.h>
 
 namespace dolfin
 {
@@ -40,22 +40,19 @@ namespace dolfin
     // Current state
     enum State { undamped, damped, increasing };
 
-    // Check if the time slab has converged
-    bool converged(TimeSlab& timeslab);
-
     // Update time slab
     void update(TimeSlab& timeslab);
 
     // Compute stabilization
     void stabilize(TimeSlab& timeslab);
 
-    // Compute stabilization for undamped state
+    // Compute stabilization for state {undamped}
     void stabilizeUndamped(TimeSlab& timeslab);
 
-    // Compute stabilization for scalar damping with small alpha
+    // Compute stabilization for state {damped}
     void stabilizeDamped(TimeSlab& timeslab);
 
-    // Compute stabilization for scalar damping with increasing alpha
+    // Compute stabilization for state {increasing}
     void stabilizeIncreasing(TimeSlab& timeslab);
 
     // Compute convergence rate
@@ -66,6 +63,9 @@ namespace dolfin
 
     // Compute m
     unsigned int computeDampingSteps(real rho);
+
+    // Check if the time slab has converged
+    bool converged(TimeSlab& timeslab);
 
     // Reset fixed point iteration
     void reset();
