@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Find all BROKENs in the code 
+
+find . -name '*.h' | xargs grep BROKEN
+find . -name '*.cpp' | xargs grep BROKEN

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Find all FIXMEs in the code
+
+find . -name '*.h' | xargs grep FIXME
+find . -name '*.cpp' | xargs grep FIXME
