@@ -6,7 +6,6 @@
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewMatrix.h>
-#
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>

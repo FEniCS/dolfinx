@@ -4,6 +4,7 @@
 #ifndef __DOLFIN_CONSTANTS_H
 #define __DOLFIN_CONSTANTS_H
 
+#include <complex>
 #include <float.h>
 
 #define DOLFIN_VERSION       PACKAGE_VERSION
@@ -25,7 +26,8 @@ namespace dolfin
   
   typedef double real;
   typedef unsigned int uint;
-  
+  typedef std::complex<double> complex;
+
 }
 
 #endif
