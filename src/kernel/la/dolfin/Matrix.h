@@ -56,8 +56,9 @@ namespace dolfin {
 	 friend class Reference;
 
 	 // Operators
-	 void operator=  (Matrix& A);
-	 void operator+= (Matrix& A);
+	 void operator=  (const Matrix& A);
+	 void operator+= (const Matrix& A);
+	 void operator-= (const Matrix& A);
 	 void operator*= (real a);
 	 
 	 /// Resize to empty matrix of given size

@@ -45,7 +45,7 @@ Matrix::~Matrix()
   clear();
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator= (Matrix& A)
+void Matrix::operator= (const Matrix& A)
 {
   init(A.m, A.n);
   
@@ -59,12 +59,12 @@ void Matrix::operator= (Matrix& A)
   }
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator+= (Matrix& A)
+void Matrix::operator+= (const Matrix& A)
 {
   if ( A.m != m || A.n != n ) {
-	 // FIXME: Use logging system
-    std::cout << "Matrix::operator= (): Matrices not compatible." << std::endl;
-	 exit(1);
+	// FIXME: Use logging system
+	std::cout << "Matrix::operator= (): Matrices not compatible." << std::endl;
+	exit(1);
   }
 
   int j = 0;
@@ -73,6 +73,23 @@ void Matrix::operator+= (Matrix& A)
       if ( (j = A.columns[i][pos]) == -1 )
 		  break;
 		addtoElement(i, j, A.values[i][pos]);
+    }
+}
+//-----------------------------------------------------------------------------
+void Matrix::operator-= (const Matrix& A)
+{
+  if ( A.m != m || A.n != n ) {
+	// FIXME: Use logging system
+	cout << "Matrix::operator= (): Matrices not compatible." << endl;
+	exit(1);
+  }
+
+  int j = 0;
+  for (int i = 0; i < m; i++)
+    for (int pos = 0; pos < A.rowsizes[i]; pos++) {
+      if ( (j = A.columns[i][pos]) == -1 )
+                  break;
+                addtoElement(i, j, -A.values[i][pos] );
     }
 }
 //-----------------------------------------------------------------------------

@@ -31,11 +31,12 @@ namespace dolfin {
 	 void operator=(const Vector &vector);
 	 void operator=(real scalar);
 	 
-	 void operator-=(const Vector &vector);
 
 	 void operator+=(const Vector &vector);
 	 void operator+=(real scalar);	 
 	 void operator*=(real scalar);
+
+	 void operator-=(const Vector &vector);
 	 
 	 real operator*(const Vector &vector);
 	 
