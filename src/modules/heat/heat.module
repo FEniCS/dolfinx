@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "heat"
+KEYWORD  = "heat"
+SOLVER   = "Heat"
+NEEDS    = "mesh"
