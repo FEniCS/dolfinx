@@ -4,6 +4,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/LU.h>
+#include <dolfin/NewGMRES.h>
 #include <dolfin/ComplexODE.h>
 #include <dolfin/HomotopyJacobian.h>
 #include <dolfin/HomotopyODE.h>
@@ -14,7 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false),
-    fp(0), mi(0), ci(0), x(2*n)
+    solver(0), fp(0), mi(0), ci(0), x(2*n)
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -39,12 +41,11 @@ Homotopy::Homotopy(uint n)
   // FIXME: Maybe this should be a parameter?
   tol = 1e-14;
   
-  // Set tolerance for GMRES solver
-  gmres.setAtol(0.1*tol);
-
-  // Don't want the GMRES solver to report the number of iterations
-  gmres.setReport(false);
-  gmres.disp();
+  // Choose solver
+  //solver = new NewGMRES();
+  //((NewGMRES *) solver)->setAtol(0.1*tol);
+  //((NewGMRES *) solver)->setReport(false);
+  solver = new LU();
 
   // Open file
   fp = fopen("solution.data", "w");
@@ -67,6 +68,7 @@ Homotopy::~Homotopy()
 {
   if ( mi ) delete [] mi;
   if ( ci ) delete [] ci;
+  if ( solver ) delete solver;
 
   // Close file
   fclose(fp);
@@ -176,11 +178,11 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     // side to make it work with the PETSc GMRES solver
     //r += DOLFIN_EPS;
     //F /= r;
-    //gmres.solve(J, dx, F);
+    //solver->solve(J, dx, F);
     //dx *= r;
     
     // Solve linear system using LU factorization
-    lu.solve(J, dx, F);
+    solver->solve(J, dx, F);
 
     // Subtract increment
     x -= dx;
@@ -207,14 +209,15 @@ void Homotopy::randomize()
 
   for (uint i = 0; i < n; i++)
   {
-    const real r = rand();
-    const real a = 2.0*DOLFIN_PI*rand();
-    const complex c = std::polar(r, a);
-    ci[i] = c;
-
-    // Choice from Morgan's paper
-    //const complex c(0.00143289 + static_cast<real>(i), 0.983727);
+    //const real r = rand();
+    // const real a = 2.0*DOLFIN_PI*rand();
+    //const complex c = std::polar(r, a);
     //ci[i] = c;
+
+    // FIXMETMP: Remove when working
+    // Choice from Morgan's paper
+    const complex c(0.00143289 + static_cast<real>(i), 0.983727);
+    ci[i] = c;
   }
 }
 //-----------------------------------------------------------------------------

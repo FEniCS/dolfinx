@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <dolfin/constants.h>
 #include <dolfin/LU.h>
-#include <dolfin/NewGMRES.h>
 #include <dolfin/NewVector.h>
 
 namespace dolfin
 {
 
+  class NewLinearSolver;
   class HomotopyODE;
   class ComplexODE;
 
@@ -61,18 +61,17 @@ namespace dolfin
     // Evaluate right-hand side
     void feval(NewVector& F, ComplexODE& ode);
 
-    uint n;          // Size of system
-    uint M;          // Number of paths
-    uint maxiter;    // Maximum number of iterations
-    real tol;        // Tolerance for Newton's method
-    real divtol;     // Tolerance for divergence of homotopy path
-    bool monitor;    // True if we should monitor the homotopy
-    NewGMRES gmres;  // GMRES solver
-    LU lu;           // LU solver
-    FILE* fp;        // File pointer for saving solution
-    uint* mi;        // Array of local path numbers
-    complex* ci;     // Array of constants for system G(z) = 0
-    NewVector x;     // Real-valued vector x corresponding to solution z of F(z) = 0
+    uint n;                  // Size of system
+    uint M;                  // Number of paths
+    uint maxiter;            // Maximum number of iterations
+    real tol;                // Tolerance for Newton's method
+    real divtol;             // Tolerance for divergence of homotopy path
+    bool monitor;            // True if we should monitor the homotopy
+    NewLinearSolver* solver; // GMRES solver
+    FILE* fp;                // File pointer for saving solution
+    uint* mi;                // Array of local path numbers
+    complex* ci;             // Array of constants for system G(z) = 0
+    NewVector x;             // Real-valued vector x corresponding to solution z of F(z) = 0
 
   };
 

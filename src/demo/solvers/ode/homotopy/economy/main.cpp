@@ -303,6 +303,7 @@ int main()
   dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.01);
   dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("linear solver", "direct");
   
   //Leontief leontief(2, 2);
   //leontief.solve();
