@@ -22,6 +22,7 @@ namespace dolfin {
 
   private:
     
+    GridHierarchy& grids;
 
   };
   
