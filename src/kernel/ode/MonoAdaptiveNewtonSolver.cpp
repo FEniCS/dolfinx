@@ -17,7 +17,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab)
 {
-
+  
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
@@ -84,12 +84,43 @@ real MonoAdaptiveNewtonSolver::iteration()
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::beval()
 {
-  // Get array of values for b (assumes uniprocessor case)
-  real* bvals = b.array();
+  // Get array of values for x and b (assumes uniprocessor case)
+  real* bb = b.array();
+  real* xx = ts.x.array();
 
+  // Compute size of time step
+  const real k = ts.length();
 
-  // Restore array
-  b.restore(bvals);
+  // Evaluate right-hand side at all quadrature points
+  for (uint m = 0; m < method.qsize(); m++)
+    ts.feval(m);
+
+  // Update the values at each stage
+  for (uint n = 0; n < method.nsize(); n++)
+  {
+    const uint noffset = n * ts.N;
+
+    // Reset values to initial data
+    for (uint i = 0; i < ts.N; i++)
+      bb[noffset + i] = ts.u0[i];
+    
+    // Add weights of right-hand side
+    for (uint m = 0; m < method.qsize(); m++)
+    {
+      const real tmp = k * method.nweight(n, m);
+      const uint moffset = m * ts.N;
+      for (uint i = 0; i < ts.N; i++)
+	bb[noffset + i] += tmp * ts.f[moffset + i];
+    }
+  }
+
+  // Subtract current values
+  for (uint j = 0; j < ts.nj; j++)
+    bb[j] -= xx[j];
+
+  // Restore arrays
+  b.restore(bb);
+  ts.x.restore(xx);
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()

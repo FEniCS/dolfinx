@@ -55,6 +55,11 @@ void ODE::feval(real u[], real t, real f[])
     f[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
+void M(const real x[], real y[])
+{
+  dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
 real ODE::dfdu(real u[], real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user

@@ -132,6 +132,7 @@ real* NewVector::array()
 
   real* data = 0;
   VecGetArray(x, &data);
+  dolfin_assert(data);
 
   return data;
 }

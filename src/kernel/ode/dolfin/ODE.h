@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2004, 2005.
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -50,6 +52,9 @@ namespace dolfin
 
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void feval(real u[], real t, real f[]);
+
+    /// Compute product y = Mx
+    virtual void M(const real x[], real y[]);
 
     /// Jacobian (optional)
     virtual real dfdu(real u[], real t, uint i, uint j);
