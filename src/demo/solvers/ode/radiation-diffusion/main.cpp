@@ -14,81 +14,164 @@ class RadiationDiffusion : public ODE
 public:
 
   RadiationDiffusion(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh), 
-				   A(mesh), b(mesh),
+				   A(2*mesh.noNodes(), 2*mesh.noNodes()), b(2*mesh.noNodes()),
 				   ufile("solution.m"), kfile("timesteps.m")
   {
     // Parameters
-    T = 3.0;
-    
-    // Create lumped mass matrix
-    MassMatrix M(mesh);
-    M.lump(m);
+    T  = 3.0;
+    h  = 1.0 / 6.0;
+    Z0 = 10.0;
+    kappa = 0.005;
 
-    // Compute sparsity
-    sparse(A);
+    // Create stiffness for the system
+    StiffnessMatrix A0(mesh);
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      for (unsigned int pos = 0; !A0.endrow(i, pos); pos++)
+      {
+	unsigned int j = 0;
+	real element = A0(i, j, pos);
+	A(i, j) = element;
+	A(i + N/2, j + N/2) = element;
+      }
+    }
+   
+    // Lump mass matrix (same as load vector)
+    LoadVector b0(mesh);
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      b(i) = b0(i);
+      b(i + N/2) = b0(i);
+    }
   }
-
+  
+  /// Initial condition
   real u0(unsigned int i)
   {
     // Using constant initial conditions throughout the domain
-
+    
     real E0 = 1.0e-5;
     real T0 = pow(E0, 0.25);
-
+    
     if ( i < N/2 )
       return E0;
     else
       return T0;
   }
   
+  /// The right-hand side
   real f(const Vector& u, real t, unsigned int i)
   {
+    if ( i < N/2 )
+      return (radiation1(u, i) + diffusion1(u, i)) / b(i);
+    else
+      return (radiation2(u, i) + diffusion2(u, i)) / b(i);
+  }
+
+  /// Radiation for first component
+  real radiation1(const Vector& u, unsigned int i)
+  {
+    real u1 = u(i);
+    real u2 = u(i + N/2);
+    const Point& p = mesh.node(i).coord();
+
+    return sigma(p.x, p.y, u2) * (pow(u2, 4.0) - u1);
+  }
+
+  /// Radiation for second component
+  real radiation2(const Vector& u, unsigned int i)
+  {
+    real u1 = u(i - N/2);
+    real u2 = u(i);
+    const Point& p = mesh.node(i - N/2).coord();
+
+    return - sigma(p.x, p.y, u2) * (pow(u2, 4.0) - u1);
+  }
+
+  /// Diffusion for first component
+  real diffusion1(const Vector& u, unsigned int i)
+  {
+    real u1 = u(i);
+    real u2 = u(i + N/2);
+    const Point& p = mesh.node(i).coord();
+    real epsilon = 1.0 / (3.0*sigma(p.x, p.y, u2) + grad(u, i) / u1);
+
+    return epsilon * A.mult(u, i);
+  }
+
+  /// Diffusion for second component
+  real diffusion2(const Vector& u, unsigned int i)
+  {
+    real u2 = u(i);
+    real epsilon = kappa * pow(u2, 2.5);
+
+    return epsilon * A.mult(u, i);
+  }
+  
+  /// Atomic number
+  real z(real x, real y)
+  {
+    return (fabs(x - 0.5) <= h && fabs(y - 0.5) <= h ? Z0 : 1.0);
+  }
+
+  /// The factor sigma
+  real sigma(real x, real y, real u2)
+  {
+    return pow(z(x, y) / u2, 3.0);
+  }
+
+  /// Compute norm of gradient of the first component
+  real grad(const Vector& u, unsigned int i)
+  {
+    // We only need to compute the gradient of u1
+    dolfin_assert(i < N/2);
+
     return 1.0;
-    //return (-A.mult(u, i) + b(i)*u(i)*(1.0 - u(i)*u(i))) / m(i);
   }
 
   void save(Sample& sample)
   {
     // Create  mesh-dependent functions from the sample
-    Vector Ex(N), Tx(N), kEx(N), kTx(N);
-    Function E(mesh, Ex), T(mesh, Tx), kE(mesh, kEx), kT(mesh, kTx);
-    E.rename("E", "Radiation energy");
-    T.rename("T", "Material temperature");
-    kE.rename("kE", "Time steps for the radiation energy");
-    kT.rename("kT", "Time steps for the material temperature");
+    Vector u1x(N/2), u2x(N/2), k1x(N/2), k2x(N/2);
+    Function u1(mesh, u1x), u2(mesh, u2x), k1(mesh, k1x), k2(mesh, k2x);
+    u1.rename("u1", "Radiation energy (E)");
+    u2.rename("u2", "Material temperature (T)");
+    k1.rename("k1", "Time steps for the radiation energy (E)");
+    k2.rename("k2", "Time steps for the material temperature (T)");
 
     // Set current time
-    E.update(sample.t());
-    T.update(sample.t());
-    kE.update(sample.t());
-    kT.update(sample.t());
+    u1.update(sample.t());
+    u2.update(sample.t());
+    k1.update(sample.t());
+    k2.update(sample.t());
     
     // Get the degrees of freedom
-    for (unsigned int i = 0; i < N; i++)
+    for (unsigned int i = 0; i < N/2; i++)
     {
-      Ex(i)  = sample.u(i);
-      Tx(i)  = sample.u(i + N/2);
-      kEx(i) = sample.k(i);
-      kTx(i) = sample.k(i + N/2);
+      u1x(i) = sample.u(i);
+      u2x(i) = sample.u(i + N/2);
+      k1x(i) = sample.k(i);
+      k2x(i) = sample.k(i + N/2);
     }
 
     // Save solution and time steps to file
-    ufile << E;
-    ufile << T;
-    kfile << kE;
-    kfile << kT;
+    ufile << u1;
+    ufile << u2;
+    kfile << k1;
+    kfile << k2;
   }
   
 private:
 
-  Mesh& mesh;        // The mesh
-  StiffnessMatrix A; // The unmodified stiffness matrix
-  LoadVector b;      // The load vector
-  Vector m;          // Lumped mass matrix
-
+  Mesh& mesh; // The mesh
+  Matrix A;   // Stiffness matrix
+  Vector b;   // Load vector
   File ufile; // File for storing the solution
   File kfile; // File for storing the time steps
 
+  real h;     // Half size of box with higher density
+  real Z0;    // Large density
+  real kappa; // Diffusion parameter 
 };
 
 int main()
