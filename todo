@@ -3,3 +3,4 @@
 - Multigrid
 - Multi-adaptive ODE-solver
 - Fix the Navier-Stokes module
+- Grid generation (octree) from given CAD model
