@@ -14,7 +14,7 @@ namespace dolfin {
     NSE_Momentum(Function::Vector& source,
 		 Function::Vector& uprevious,
 		 Function::Vector& convection,
-		 Function& pressure) : PDE(3, 3)
+		 Function::Vector& pressure) : PDE(3, 3)
       {
 	add(f,  source);
 	add(up, uprevious);
@@ -30,7 +30,7 @@ namespace dolfin {
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
     {
 
-      unorm = sqrt(sqr(up(0)(cell->node(0).id()))+sqr(up(1)(cell->node(0).id()))+sqr(up(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
 
@@ -49,7 +49,7 @@ namespace dolfin {
     real rhs(ShapeFunction::Vector& v)
     {
 
-      unorm = sqrt(sqr(up(0)(cell->node(0).id()))+sqr(up(1)(cell->node(0).id()))+sqr(up(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
 
@@ -61,11 +61,15 @@ namespace dolfin {
 	  (nu*( dx(up(0))*v(0).dx() + dy(up(0))*v(0).dy() + dz(up(0))*v(0).dz() + 
 	        dx(up(1))*v(1).dx() + dy(up(1))*v(1).dy() + dz(up(1))*v(1).dz() + 
 	        dx(up(2))*v(2).dx() + dy(up(2))*v(2).dy() + dz(up(2))*v(2).dz() ) + 
-	   (b,grad(up(0)))*v(0) + (b,grad(up(1)))*v(1) + (b,grad(up(2)))*v(2) + 
-	   d1*((b,grad(up(0)))*(b,grad(v(0))) + (b,grad(up(1)))*(b,grad(v(1))) + (b,grad(up(2)))*(b,grad(v(2)))) +   
-	   d2*(up(0).dx()+up(1).dy()+up(2).dz())*(v(0).dx()+v(1).dy()+v(2).dz())) -
-	  d1*(p.dx()*(b,grad(v(0))) + p.dy()*(b,grad(v(1))) + p.dz()*(b,grad(v(2)))) + 
-	  p*(v(0).dx()+v(1).dy()+v(2).dz()) ) * dK;
+	   (b(0)*dx(up(0)) + b(1)*dy(up(0)) + b(2)*dz(up(0)))*v(0) + 
+	   (b(0)*dx(up(1)) + b(1)*dy(up(1)) + b(2)*dz(up(1)))*v(1) + 
+	   (b(0)*dx(up(2)) + b(1)*dy(up(2)) + b(2)*dz(up(2)))*v(2) + 
+	   d1*((b(0)*dx(up(0)) + b(1)*dy(up(0)) + b(2)*dz(up(0)))*(b,grad(v(0))) + 
+	       (b(0)*dx(up(1)) + b(1)*dy(up(1)) + b(2)*dz(up(1)))*(b,grad(v(0))) + 
+	       (b(0)*dx(up(2)) + b(1)*dy(up(2)) + b(2)*dz(up(2)))*(b,grad(v(0)))) + 
+	   d2*(dx(up(0))+dy(up(1))+dz(up(2)))*(v(0).dx()+v(1).dy()+v(2).dz())) -
+	  d1*(dx(p(0))*(b,grad(v(0))) + dy(p(0))*(b,grad(v(1))) + dz(p(0))*(b,grad(v(2)))) + 
+	  p(0)*(v(0).dx()+v(1).dy()+v(2).dz()) ) * dK;
 
     }
     
@@ -73,7 +77,7 @@ namespace dolfin {
     ElementFunction::Vector f;   // Source term
     ElementFunction::Vector up;  // Velocity value at left end-point
     ElementFunction::Vector b;   // Convection = linearized velocity
-    ElementFunction p;           // linearized pressure
+    ElementFunction::Vector p;           // linearized pressure
 
     real nu,d1,d2,C1,C2,unorm;
   };
@@ -90,9 +94,10 @@ namespace dolfin {
 	add(b,  convection);
 
 	C1 = 2.0;
+	nu = 1.0/1000.0;
       }
     
-    real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
+    real lhs(ShapeFunction& u, ShapeFunction& v)
     {
 
       return
@@ -100,24 +105,26 @@ namespace dolfin {
 
     }
     
-    real rhs(ShapeFunction::Vector& v)
+    real rhs(ShapeFunction& v)
     {
 
-      unorm = sqrt(sqr(up(0)(cell->node(0).id()))+sqr(up(1)(cell->node(0).id()))+sqr(up(2)(cell->node(0).id())));
+      unorm = sqrt(sqr(b(0)(cell->node(0).id()))+sqr(b(1)(cell->node(0).id()))+sqr(b(2)(cell->node(0).id())));
       if ( (h/nu) > 1.0 ) d1 = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(unorm/h) ));
       else d1 = C1 * sqr(h);
       
       return
-	( - ((b,grad(up(0)))*v.dx() + (b,grad(up(1)))*v.dy() + (b,grad(up(2)))*v.dz()) - 
-	  (1.0/d1) * (b.dx() + b.dy() + b.dz())*v ) * dK;
-
+	( (-1.0)*((b(0)*dx(b(0)) + b(1)*dy(b(0)) + b(2)*dz(b(0)))*v.dx() + 
+		  (b(0)*dx(b(1)) + b(1)*dy(b(1)) + b(2)*dz(b(1)))*v.dy() + 
+		  (b(0)*dx(b(2)) + b(1)*dy(b(2)) + b(2)*dz(b(2)))*v.dz()) -  
+	  (1.0/d1)*(dx(b(0)) + dy(b(1)) + dz(b(2)))*v ) * dK;
+      
     }
     
   private:    
     ElementFunction::Vector f;   // Source term
     ElementFunction::Vector b;   // Convection = linearized velocity
 
-    real d1,d2,C1,C2,unorm;
+    real nu,d1,d2,C1,C2,unorm;
   };
   
 

@@ -23,7 +23,7 @@ const char* NSESolver::description()
 void NSESolver::solve()
 {
   Matrix Am, Ac;
-  Vector x0, x1, x2, x3, bm, bc;
+  Vector x0, x1, x2, x3, x4, x5, bm, bc;
   
   Function::Vector u0(mesh, x0, 3);
   Function::Vector u1(mesh, x1, 3);
@@ -31,11 +31,11 @@ void NSESolver::solve()
   Function::Vector ulin(mesh, x3, 3);
   Function::Vector res_mom(mesh, x4, 1);
   Function::Vector res_con(mesh, x5, 1);
-  Function f("source");
+  Function::Vector f("source");
   
   Galerkin       fem;
-  NSE_Momentum   momentum(f, u0, beta, p1);
-  NSE_Continuity continuity(f, beta);
+  NSE_Momentum   momentum(f, u0, ulin, p1);
+  NSE_Continuity continuity(f, ulin);
   KrylovSolver   solver;
   File           file("nse.m");
   
@@ -44,10 +44,10 @@ void NSESolver::solve()
   real k = dolfin_get("time step");
 
   // Save initial value
-  u1.rename("u", "velocity");
-  p1.rename("p", "pressure");
-  file << u1;
-  file << p1;
+  //u1.rename("u", "velocity");
+  //p1.rename("p", "pressure");
+  //file << u1;
+  //file << p1;
 
   // Assemble continuity matrix
   fem.assemble(continuity, mesh, Ac);
@@ -90,8 +90,8 @@ void NSESolver::solve()
       solver.solve(Am, x1, bm);
 
       // Check discrete residuals 
-      x4 = Am*x1-bm;
-      x5 = Ac*x2-bc;
+      Am.mult(x1,x4); x4 -= bm;
+      Ac.mult(x2,x5); x5 -= bc;
       if ((x4.norm() + x5.norm()) < 1.0e-2) break;
       
       cout << "l2_norm (mom) = " << x4.norm() << endl;
@@ -99,10 +99,10 @@ void NSESolver::solve()
     }
 
     // Save the solution
-    u1.update(t);
-    p1.update(t);
-    file << u1;
-    file << p1;
+    //u1.update(t);
+    //p1.update(t);
+    //file << u1;
+    //file << p1;
 
     // Update progress
     p = t / T;

@@ -8,10 +8,10 @@
 
 namespace dolfin {
   
-  class NSE : public Solver {
+  class NSESolver : public Solver {
   public:
     
-    NSE(Mesh& mesh);
+    NSESolver(Mesh& mesh);
     
     const char* description();
     void solve();
