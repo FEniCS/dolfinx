@@ -88,7 +88,7 @@ mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin.h                   dolfin/constants.h                   dolfin/init.h 
+include_HEADERS = dolfin.h                   dolfin/dolfin_main.h                   dolfin/constants.h                   dolfin/init.h 
 
 #                  dolfin/Problem.h \
 #                  dolfin/Solver.h

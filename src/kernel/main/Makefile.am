@@ -1,5 +1,6 @@
 SUBDIRS         = dolfin
 include_HEADERS = dolfin.h \
+                  dolfin/dolfin_main.h \
                   dolfin/constants.h \
                   dolfin/init.h 
 #                  dolfin/Problem.h \

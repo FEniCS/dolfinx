@@ -1,3 +1,4 @@
+ - Make make install work again (fix missing includes)
  - Add support for mixing multiple finite elements (through FFC)
  - Improve functionality of homotopy solver
  - Simple creation of piecewise linear functions (without having an element)
