@@ -6,7 +6,7 @@
 
 #include "MatlabOld.hh"
 #include "Settings.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 extern Settings *settings;
 

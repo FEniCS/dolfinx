@@ -9,11 +9,11 @@
 #include <kw_constants.h>
 #include <SysInfo.hh>
 #include <DataInfo.hh>
-#include <Grid.hh>
+#include <dolfin/Grid.hh>
 #include <Vector.hh>
 #include <FileType.hh>
 
-class Output{
+namespace Dolfin{ class Output{
 public:
 
   Output(int no_data, ...);
@@ -25,7 +25,7 @@ public:
   /// Set label for data
   void SetLabel(int i, const char *name, const char *label);
   /// Add frame to the file
-  void AddFrame(Grid *grid, Vector **u, real t, int no_vectors = 1);
+  //  void AddFrame(Grid *grid, Vector **u, real t, int no_vectors = 1);
   /// Reset the file, overwriting previously saved frames
   void Reset();
   
@@ -35,9 +35,9 @@ protected:
   void GenerateFileName();
   void SaveTimeValue(real t);
   
-  void MatlabAddFrame (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
-  void OpenDXAddFrame (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
-  void GiDAddFrame    (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
+  //  void MatlabAddFrame (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
+  // void OpenDXAddFrame (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
+  //void GiDAddFrame    (FILE *fp, Grid *grid, Vector **u, real t, int no_vectors);
   
   // Filename for saving output
   char filename[DOLFIN_LINELENGTH];
@@ -67,6 +67,6 @@ protected:
   // File type
   FileType filetype;
   
-};
+}; }
 
 #endif

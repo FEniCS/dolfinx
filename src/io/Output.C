@@ -1,11 +1,11 @@
 #include "Output.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <Settings.hh>
 #include <utils.h>
 
-#include "matlab.h"
-#include "opendx.h"
-#include "gid.h"
+//#include "matlab.h"
+//#include "opendx.h"
+//#include "gid.h"
 
 extern Settings *settings;
 
@@ -20,6 +20,8 @@ extern Settings *settings;
 // If no_vectors > 2: Then no_vectors must be = 3 and the 3 vectors should be
 //
 //     [ u1 u2 u3 u1 u2 u3 ... ], [ p p ... ], [ w1 w2 w1 w2 ... ]
+
+using namespace Dolfin;
 
 //-----------------------------------------------------------------------------
 Output::Output(int no_data, ...)
@@ -84,6 +86,7 @@ void Output::SetLabel(int i, const char *name, const char *label)
   datainfo->SetLabel(i,name,label);
 }
 //----------------------------------------------------------------------------
+/*
 void Output::AddFrame(Grid *grid, Vector **u, real t, int no_vectors = 1)
 {
   FILE *fp = 0;
@@ -126,6 +129,7 @@ void Output::AddFrame(Grid *grid, Vector **u, real t, int no_vectors = 1)
   // Close file
   fclose(fp);
 }
+*/
 //----------------------------------------------------------------------------
 void Output::Reset()
 {
@@ -244,6 +248,7 @@ void Output::SaveTimeValue(real t)
   time_values->Set(current_frame,t);
 }
 //----------------------------------------------------------------------------
+/*
 void Output::MatlabAddFrame(FILE *fp, Grid *grid, Vector **u, real t,
 									 int no_vectors)
 {
@@ -329,4 +334,5 @@ void Output::GiDAddFrame(FILE *fp, Grid *grid, Vector **u, real t,
   gid_write_field(fp,grid,datainfo,u,t,current_frame,no_vectors);
 
 }
+*/
 //----------------------------------------------------------------------------

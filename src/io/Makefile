@@ -1,4 +1,3 @@
-# Generated automatically from Makefile.in by configure.
 # Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
 # Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
@@ -15,7 +14,8 @@
 SHELL = /bin/sh
 
 srcdir = .
-top_srcdir = ../..
+top_srcdir = ../../..
+
 prefix = /usr/local
 exec_prefix = ${prefix}
 
@@ -38,7 +38,7 @@ pkgdatadir = $(datadir)/dolfin
 pkglibdir = $(libdir)/dolfin
 pkgincludedir = $(includedir)/dolfin
 
-top_builddir = ../..
+top_builddir = ../../..
 
 ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
@@ -48,7 +48,7 @@ AUTOHEADER = autoheader
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = ${INSTALL} -m 644
-INSTALL_SCRIPT = ${INSTALL_PROGRAM}
+INSTALL_SCRIPT = ${INSTALL}
 transform = s,x,x,
 
 NORMAL_INSTALL = :
@@ -59,33 +59,34 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 AWK = mawk
 CC = gcc
-CXX = c++
-DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-poisson -ldolfin-template -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
+CXX = g++
+DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
 LN_S = ln -s
-MAIN_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/navierstokes -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
+MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common  -I$(top_builddir)/src/modules/convdiff 
 MAKEINFO = makeinfo
-MODULE_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
+MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common 
 PACKAGE = dolfin
 RANLIB = ranlib
 VERSION = 0.2.11-1
 
-INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
+SUBDIRS = dolfin
+include_HEADERS = dolfin/Display.hh dolfin/Terminal.hh
+INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common 
 lib_LIBRARIES = libdolfin-io.a
-include_HEADERS = 
-libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.C                          DataInfo.hh                          Display.hh                          Display.C                          FileType.C                          FileType.hh                          Input.C                          Input.hh                          MatlabOld.C                          MatlabOld.hh                          Output.C                          Output.hh                          Terminal.C                          Terminal.hh                          Value.C                          Value.hh                          gid.C                          gid.h                          inp.C                          inp.h                          matlab.C                          matlab.h                          opendx.C                          opendx.h
+libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.C                          DataInfo.hh                          Display.C                          FileType.C                          FileType.hh                          Input.C                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.C                          Value.C                          Value.hh                          matlab.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS =  -DSTDC_HEADERS=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = 
 libdolfin_io_a_LIBADD = 
 libdolfin_io_a_OBJECTS =  DataInfo.o Display.o FileType.o Input.o \
-MatlabOld.o Output.o Terminal.o Value.o gid.o inp.o matlab.o opendx.o
+Terminal.o Value.o
 AR = ar
 CXXFLAGS = -g -O2
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -105,8 +106,7 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/DataInfo.P .deps/Display.P .deps/FileType.P \
-.deps/Input.P .deps/MatlabOld.P .deps/Output.P .deps/Terminal.P \
-.deps/Value.P .deps/gid.P .deps/inp.P .deps/matlab.P .deps/opendx.P
+.deps/Input.P .deps/Terminal.P .deps/Value.P
 SOURCES = $(libdolfin_io_a_SOURCES)
 OBJECTS = $(libdolfin_io_a_OBJECTS)
 
@@ -114,7 +114,7 @@ all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .C .S .c .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/io/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/io/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -191,6 +191,61 @@ uninstall-includeHEADERS:
 	  rm -f $(DESTDIR)$(includedir)/$$p; \
 	done
 
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+
+
+
+all-recursive install-data-recursive install-exec-recursive \
+installdirs-recursive install-recursive uninstall-recursive  \
+check-recursive installcheck-recursive info-recursive dvi-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
+	  rev="$$subdir $$rev"; \
+	  test "$$subdir" != "." || dot_seen=yes; \
+	done; \
+	test "$$dot_seen" = "no" && rev=". $$rev"; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+
 tags: TAGS
 
 ID: $(HEADERS) $(SOURCES) $(LISP)
@@ -201,9 +256,14 @@ ID: $(HEADERS) $(SOURCES) $(LISP)
 	here=`pwd` && cd $(srcdir) \
 	  && mkid -f$$here/ID $$unique $(LISP)
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	tags=; \
 	here=`pwd`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+   if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+   fi; \
+	done; \
 	list='$(SOURCES) $(HEADERS)'; \
 	unique=`for i in $$list; do echo $$i; done | \
 	  awk '    { files[$$0] = 1; } \
@@ -222,14 +282,14 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-subdir = src/io
+subdir = src/kernel/io
 
 distdir: $(DISTFILES)
 	here=`cd $(top_builddir) && pwd`; \
 	top_distdir=`cd $(top_distdir) && pwd`; \
 	distdir=`cd $(distdir) && pwd`; \
 	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/io/Makefile
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/kernel/io/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
@@ -238,6 +298,16 @@ distdir: $(DISTFILES)
 	    test -f $(distdir)/$$file \
 	    || ln $$d/$$file $(distdir)/$$file 2> /dev/null \
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
+	  fi; \
+	done
+	for subdir in $(SUBDIRS); do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d $(distdir)/$$subdir \
+	    || mkdir $(distdir)/$$subdir \
+	    || exit 1; \
+	    chmod 777 $(distdir)/$$subdir; \
+	    (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(top_distdir) distdir=../$(distdir)/$$subdir distdir) \
+	      || exit 1; \
 	  fi; \
 	done
 
@@ -292,29 +362,30 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 info-am:
-info: info-am
+info: info-recursive
 dvi-am:
-dvi: dvi-am
+dvi: dvi-recursive
 check-am: all-am
-check: check-am
+check: check-recursive
 installcheck-am:
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-exec-am: install-libLIBRARIES
-install-exec: install-exec-am
+install-exec: install-exec-recursive
 
 install-data-am: install-includeHEADERS
-install-data: install-data-am
+install-data: install-data-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
-install: install-am
+install: install-recursive
 uninstall-am: uninstall-libLIBRARIES uninstall-includeHEADERS
-uninstall: uninstall-am
+uninstall: uninstall-recursive
 all-am: Makefile $(LIBRARIES) $(HEADERS)
-all-redirect: all-am
+all-redirect: all-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) AM_INSTALL_PROGRAM_FLAGS=-s install
-installdirs:
+installdirs: installdirs-recursive
+installdirs-am:
 	$(mkinstalldirs)  $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 
 
@@ -330,17 +401,17 @@ maintainer-clean-generic:
 mostlyclean-am:  mostlyclean-libLIBRARIES mostlyclean-compile \
 		mostlyclean-tags mostlyclean-depend mostlyclean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 clean-am:  clean-libLIBRARIES clean-compile clean-tags clean-depend \
 		clean-generic mostlyclean-am
 
-clean: clean-am
+clean: clean-recursive
 
 distclean-am:  distclean-libLIBRARIES distclean-compile distclean-tags \
 		distclean-depend distclean-generic clean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 
 maintainer-clean-am:  maintainer-clean-libLIBRARIES \
 		maintainer-clean-compile maintainer-clean-tags \
@@ -349,18 +420,24 @@ maintainer-clean-am:  maintainer-clean-libLIBRARIES \
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 
 .PHONY: mostlyclean-libLIBRARIES distclean-libLIBRARIES \
 clean-libLIBRARIES maintainer-clean-libLIBRARIES uninstall-libLIBRARIES \
 install-libLIBRARIES mostlyclean-compile distclean-compile \
 clean-compile maintainer-clean-compile uninstall-includeHEADERS \
-install-includeHEADERS tags mostlyclean-tags distclean-tags clean-tags \
-maintainer-clean-tags distdir mostlyclean-depend distclean-depend \
-clean-depend maintainer-clean-depend info-am info dvi-am dvi check \
-check-am installcheck-am installcheck install-exec-am install-exec \
+install-includeHEADERS install-data-recursive uninstall-data-recursive \
+install-exec-recursive uninstall-exec-recursive installdirs-recursive \
+uninstalldirs-recursive all-recursive check-recursive \
+installcheck-recursive info-recursive dvi-recursive \
+mostlyclean-recursive distclean-recursive clean-recursive \
+maintainer-clean-recursive tags tags-recursive mostlyclean-tags \
+distclean-tags clean-tags maintainer-clean-tags distdir \
+mostlyclean-depend distclean-depend clean-depend \
+maintainer-clean-depend info-am info dvi-am dvi check check-am \
+installcheck-am installcheck install-exec-am install-exec \
 install-data-am install-data install-am install uninstall-am uninstall \
-all-redirect all-am all installdirs mostlyclean-generic \
+all-redirect all-am all installdirs-am installdirs mostlyclean-generic \
 distclean-generic clean-generic maintainer-clean-generic clean \
 mostlyclean distclean maintainer-clean
 

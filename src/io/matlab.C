@@ -1,5 +1,5 @@
 #include "matlab.h"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //----------------------------------------------------------------------------
 void matlab_write_header(FILE *fp, DataInfo *datainfo, SysInfo *sysinfo)

@@ -1,5 +1,5 @@
 #include "DataInfo.hh"
-#include "Display.hh"
+#include <dolfin/Display.hh>
 #include <kw_constants.h>
 #include <stdio.h>
 

@@ -1,11 +1,12 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Terminal.hh"
+#include <dolfin/Terminal.hh>
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "kw_constants.h"
 
 //-----------------------------------------------------------------------------
 void Terminal::Status(int level, const char *format, ...)

@@ -1,8 +1,8 @@
 #include "Input.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
-#include "inp.h"
-#include "gid.h"
+//#include "inp.h"
+//#include "gid.h"
 
 // Input works in the following way:
 //
@@ -21,20 +21,27 @@ Input::Input(const char *filename)
 {
   sprintf(this->filename,"%s",filename);
 
-  // Open the file
+  // Check if the file exists
   fp = fopen(filename,"r");
   if ( !fp )
 	 display->Error("Unable to read grid file \"%s\".",filename);
-
+  fclose(fp);
+  
   // Determine the file type
   filetype = GetFileType(filename);
 }
 //-----------------------------------------------------------------------------
+//void Input::loadGrid(GridData *gd)
+//{
+//  display->Message(0,"Not implemented");
+//}
+//-----------------------------------------------------------------------------
 Input::~Input()
 {
-  CloseFile();
+  
 }
 //-----------------------------------------------------------------------------
+/*
 void Input::ReadHeader(int *no_nodes, int *no_cells, CellType *celltype)
 {
   // Read header
@@ -104,3 +111,4 @@ void Input::CloseFile()
   fp = 0;
 }
 //-----------------------------------------------------------------------------
+*/

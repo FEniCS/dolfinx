@@ -4,11 +4,10 @@
 #ifndef __INTPUT_HH
 #define __INTPUT_HH
 
-#include <Grid.hh>
-#include <Triangle.hh>
-#include <Tetrahedron.hh>
+#include <dolfin/dolfin_grid.h>
+//#include "GridData.hh"
 #include <FileType.hh>
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <utils.h>
 
 #include <string.h>
@@ -19,9 +18,11 @@ public:
   Input(const char *filename);
   ~Input();
 
-  void ReadHeader (int *no_nodes, int *no_cells, CellType *celltype);
-  void ReadNodes  (Grid *grid, int no_nodes);
-  void ReadCells  (Grid *grid, int no_cells, CellType celltype);
+  //void loadGrid(GridData *gd);
+  
+  //  void ReadHeader (int *no_nodes, int *no_cells, CellType *celltype);
+  // void ReadNodes  (Grid *grid, int no_nodes);
+  //void ReadCells  (Grid *grid, int no_cells, CellType celltype);
 
   // Should not need to be used (file is close in the destructor).
   void CloseFile();
