@@ -53,6 +53,7 @@ namespace dolfin {
     
     Node* createNode();
     Cell* createCell(int level, Cell::Type type);
+    Edge* createEdge();
     
     Node* createNode(Point p);
     Node* createNode(real x, real y, real z);
@@ -67,8 +68,12 @@ namespace dolfin {
     Cell* createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2);
     Cell* createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
 
+    Edge* createEdge(int n0, int n1);
+    Edge* createEdge(Node* n0, Node* n1);
+
     Node* getNode(int id);
     Cell* getCell(int id);
+    Edge* getEdge(int id);
     
     void init();
     

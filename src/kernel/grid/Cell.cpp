@@ -201,13 +201,20 @@ void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
   cn(2) = n2;
   cn(3) = n3;
 
+  Edge e1(n0,n1);
+  Edge e2(n0,n2);
+  Edge e3(n0,n3);
+  Edge e4(n1,n1);
+  Edge e5(n1,n2);
+  Edge e6(n2,n3);
+
   ce.init(6);
-  ce(0)->set(n0,n1);
-  ce(1)->set(n0,n2);
-  ce(2)->set(n0,n3);
-  ce(3)->set(n1,n2);
-  ce(4)->set(n1,n3);
-  ce(5)->set(n2,n3);
+  ce(0) = &e1;
+  ce(1) = &e2;
+  ce(2) = &e3;
+  ce(3) = &e4;
+  ce(4) = &e5;
+  ce(5) = &e6;
 }
 //-----------------------------------------------------------------------------
 void Cell::setID(int id)

@@ -106,6 +106,29 @@ namespace dolfin {
 		
 	 };
 	 
+
+	 // Iterator for the edges at a node 
+	 class NodeEdgeIterator : public GenericEdgeIterator {
+	 public:
+
+		NodeEdgeIterator(const Node &node);
+		void operator++();
+		bool end();
+		bool last();
+		int index();
+
+		Edge& operator*() const;
+		Edge* operator->() const;
+		Edge* pointer() const;
+		
+	 private:
+
+		ShortList<Edge *>::Iterator edge_iterator;
+
+		GenericCell *genericCell;
+		
+	 };
+	 
   private:
 
 	 GenericEdgeIterator *n;

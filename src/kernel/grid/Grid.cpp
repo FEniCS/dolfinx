@@ -122,6 +122,11 @@ Cell* Grid::createCell(int level, Cell::Type type)
   return gd->createCell(level,type);
 }
 //-----------------------------------------------------------------------------
+Edge* Grid::createEdge()
+{
+  return gd->createEdge();
+}
+//-----------------------------------------------------------------------------
 Node* Grid::createNode(Point p)
 {
   return gd->createNode(p.x,p.y,p.z);
@@ -196,18 +201,29 @@ Cell* Grid::createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* 
   return gd->createCell(parent->level(),type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------
+Edge* Grid::createEdge(int n0, int n1)
+{
+  return gd->createEdge(n0,n1);
+}
+//-----------------------------------------------------------------------------
+Edge* Grid::createEdge(Node* n0, Node* n1)
+{
+  return gd->createEdge(n0,n1);
+}
+//-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)
 {
-  Node *node = gd->getNode(id);
-
-  return node;
+  return gd->getNode(id);
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::getCell(int id)
 {
-  Cell *cell = gd->getCell(id);
-
-  return cell;
+  return gd->getCell(id);
+}
+//-----------------------------------------------------------------------------
+Edge* Grid::getEdge(int id)
+{
+  return gd->getEdge(id);
 }
 //-----------------------------------------------------------------------------
 void Grid::init()

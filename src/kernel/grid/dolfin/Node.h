@@ -16,6 +16,7 @@ namespace dolfin{
 
   class GenericCell;
   class Cell;
+  class Edge;
   class InitGrid;
   
   class Node{
@@ -34,6 +35,7 @@ namespace dolfin{
     
     int   noNodeNeighbors() const;
     int   noCellNeighbors() const;
+    int   noEdgeNeighbors() const;
  
     // Comparison with numbers based on id
 
@@ -61,6 +63,7 @@ namespace dolfin{
     friend class InitGrid;
     friend class NodeIterator::NodeNodeIterator;
     friend class CellIterator::NodeCellIterator;	 
+    friend class EdgeIterator::NodeEdgeIterator;	 
     
   private:
     
@@ -74,6 +77,7 @@ namespace dolfin{
     // Connectivity
     ShortList<Node*> nn;
     ShortList<Cell*> nc;
+    ShortList<Edge*> ne;
     
   };
   

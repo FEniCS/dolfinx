@@ -9,6 +9,7 @@
 // 1. All neighbor cells of a node: n-c
 // 2. All neighbor cells of a cell: c-c (including the cell itself)
 // 3. All neighbor nodes of a node: n-n (including the node itself)
+// 4. All neighbor edges of a node: n-e 
 
 #ifndef __INIT_GRID_H
 #define __INIT_GRID_H
@@ -34,6 +35,7 @@ namespace dolfin{
 	 void initNodeCell();
 	 void initCellCell();
 	 void initNodeNode();
+	 void initNodeEdge();
  
 	 Grid& grid;
 	 

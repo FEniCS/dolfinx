@@ -12,16 +12,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Edge::Edge()
 {
-  _en0 = 0;
-  _en1 = 0;
+  _en0 = NULL;
+  _en1 = NULL;
 
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
-Edge::Edge(Node *en1, Node *en2)
+Edge::Edge(Node *en0, Node *en1)
 {
-  _en0 = en1;
-  _en1 = en2;
+  _en0 = en0;
+  _en1 = en1;
 
   marked_for_refinement = false;
 }
@@ -30,15 +30,19 @@ Edge::~Edge()
 {
 }
 //-----------------------------------------------------------------------------
-void Edge::set(Node *en1, Node *en2)
+void Edge::set(Node *en0, Node *en1)
 {
 
   cout << "check0" << endl;
-  cout << (*en1) << endl;
+  cout << (*en0) << endl;
   cout << "check1" << endl;
-  _en0 = en1;
+  cout << (*en1) << endl;
+  cout << "check1.25" << endl;
+  (*_en0) = (*en0);
+  cout << "check1" << endl;
+  cout << (*_en0) << endl;
   cout << "check1.5" << endl;
-  _en1 = en2;
+  _en1 = en1;
   cout << "check2" << endl;
 }
 //-----------------------------------------------------------------------------

@@ -166,3 +166,45 @@ Edge* EdgeIterator::CellEdgeIterator::pointer() const
   return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
+// EdgeIterator::NodeEdgeIterator
+//-----------------------------------------------------------------------------
+EdgeIterator::NodeEdgeIterator::NodeEdgeIterator(const Node &node)
+{
+  edge_iterator = node.ne.begin();
+}
+//-----------------------------------------------------------------------------
+void EdgeIterator::NodeEdgeIterator::operator++()
+{
+  ++edge_iterator;
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::NodeEdgeIterator::end()
+{
+  return edge_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::NodeEdgeIterator::last()
+{
+  return edge_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int EdgeIterator::NodeEdgeIterator::index()
+{
+  return edge_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Edge& EdgeIterator::NodeEdgeIterator::operator*() const
+{
+  return **edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::NodeEdgeIterator::operator->() const
+{
+  return *edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::NodeEdgeIterator::pointer() const
+{
+  return *edge_iterator;
+}
+//-----------------------------------------------------------------------------

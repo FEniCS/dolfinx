@@ -96,6 +96,14 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
   return c;
 }
 //-----------------------------------------------------------------------------
+Edge* GridData::createEdge()
+{ 
+  int id;
+  Edge *e = edges.create(&id);
+  e->setID(id);
+  return e;
+}
+//-----------------------------------------------------------------------------
 Edge* GridData::createEdge(int n0, int n1)
 {
   // If an edge exists with nodes n0 and n1 then return a pointer to that 

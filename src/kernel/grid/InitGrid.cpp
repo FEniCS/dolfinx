@@ -1,5 +1,6 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Node.h>
+#include <dolfin/Edge.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/InitGrid.h>
 
@@ -24,11 +25,13 @@ void InitGrid::clear()
   for (NodeIterator n(grid); !n.end(); ++n){
     n->nn.clear();
     n->nc.clear();
+    n->ne.clear();
   }
   
   // Clear connectivity for cells
-  for (CellIterator c(grid); !c.end(); ++c)
+  for (CellIterator c(grid); !c.end(); ++c){
     c->cc.clear();
+  }
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initNeighbors()
@@ -50,6 +53,9 @@ void InitGrid::initNeighbors()
 
   // Compute n-n connections
   initNodeNode();  
+
+  // Compute n-e connections
+  initNodeEdge();  
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initBoundary()
@@ -159,5 +165,36 @@ void InitGrid::initNodeNode()
     n1->nn.resize();
     
   }
+}
+//-----------------------------------------------------------------------------
+void InitGrid::initNodeEdge()
+{
+  // Go through all nodes and count the edge neighbors.
+  // This is done in four sweeps: count (overestimate), allocate, add, and
+  // reallocate. Here is room for some optimisation: If for example the cell
+  // is a triangle, then we will first allocate for 3n-3 node neighbors when
+  // we really want only n.
+
+
+  // FIXME: Nagot skumt med detta...
+  /*
+  for (NodeIterator n1(grid); !n1.end(); ++n1) {
+    
+    // Allocate for the maximum number of node neighbors
+    for (CellIterator c(n1); !c.end(); ++c)
+      n1->ne.setsize( n1->ne.size() + c->noEdges() );
+    n1->ne.init();
+    
+    // Add all uniqe node neighbors
+    for (CellIterator c(n1); !c.end(); ++c)
+      for (EdgeIterator e2(c); !e2.end(); ++e2)
+	if ( !n1->ne.contains(e2) )
+	  n1->ne.add(e2);
+    
+    // Reallocate
+    n1->ne.resize();
+    
+  }
+  */
 }
 //-----------------------------------------------------------------------------

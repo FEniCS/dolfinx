@@ -19,10 +19,10 @@ namespace dolfin {
   public:
     
     Edge();
-    Edge(Node *en1, Node *en2);
+    Edge(Node *en0, Node *en1);
     ~Edge();
     
-    void set(Node *en1, Node *en2);
+    void set(Node *en0, Node *en1);
     
     /// --- Accessor functions for stored data
   

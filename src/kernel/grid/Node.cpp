@@ -79,6 +79,11 @@ int Node::noCellNeighbors() const
   return nc.size();
 }
 //-----------------------------------------------------------------------------
+int Node::noEdgeNeighbors() const
+{
+  return ne.size();
+}
+//-----------------------------------------------------------------------------
 bool Node::operator== (int id) const
 {
   return _id == id;
