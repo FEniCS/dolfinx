@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __EQUATION_H
-#define __EQUATION_H
+#ifndef __PDE_H
+#define __PDE_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Mapping.h>
@@ -18,11 +18,11 @@ namespace dolfin {
   typedef FunctionSpace::Product Product;
   typedef FunctionSpace::ElementFunction ElementFunction;
   
-  class Equation {
+  class PDE {
   public:
     
-    Equation(int dim);
-    virtual ~Equation();
+    PDE(int dim);
+    virtual ~PDE();
     
     // Variational formulation, left-hand side
     virtual real lhs(const ShapeFunction &u, const ShapeFunction &v) = 0;

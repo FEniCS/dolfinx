@@ -2,13 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Equation.h>
+#include <dolfin/PDE.h>
 #include <dolfin/FiniteElement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Equation::Equation(int dim)
+PDE::PDE(int dim)
 {
   h  = 0.0;
   t  = 0.0;
@@ -19,12 +19,12 @@ Equation::Equation(int dim)
   noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
-Equation::~Equation()
+PDE::~PDE()
 {
   
 }
 //-----------------------------------------------------------------------------
-void Equation::updateLHS(const FiniteElement* element,
+void PDE::updateLHS(const FiniteElement* element,
 			 const Cell*          cell,
 			 const Mapping*       mapping,
 			 const Quadrature*    quadrature)
@@ -36,7 +36,7 @@ void Equation::updateLHS(const FiniteElement* element,
   updateLHS();
 }
 //-----------------------------------------------------------------------------
-void Equation::updateRHS(const FiniteElement* element,
+void PDE::updateRHS(const FiniteElement* element,
 			 const Cell*          cell,
 			 const Mapping*       mapping,
 			 const Quadrature*    quadrature)
@@ -48,94 +48,94 @@ void Equation::updateRHS(const FiniteElement* element,
   updateRHS();
 }
 //-----------------------------------------------------------------------------
-real Equation::dx(real a) const
+real PDE::dx(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Equation::dy(real a) const
+real PDE::dy(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Equation::dz(real a) const
+real PDE::dz(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Equation::dt(real a) const
+real PDE::dt(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dx(const ShapeFunction &v) const
+const ElementFunction& PDE::dx(const ShapeFunction &v) const
 {
   return v.dx();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dy(const ShapeFunction &v) const
+const ElementFunction& PDE::dy(const ShapeFunction &v) const
 {
   return v.dy();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dz(const ShapeFunction &v) const
+const ElementFunction& PDE::dz(const ShapeFunction &v) const
 {
   return v.dz();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dt(const ShapeFunction &v) const
+const ElementFunction& PDE::dt(const ShapeFunction &v) const
 {
   return v.dt();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dx(const Product &v) const
+const ElementFunction PDE::dx(const Product &v) const
 {
   return mapping->dx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dy(const Product &v) const
+const ElementFunction PDE::dy(const Product &v) const
 {
   return mapping->dy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dz(const Product &v) const
+const ElementFunction PDE::dz(const Product &v) const
 {
   return mapping->dz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dt(const Product &v) const
+const ElementFunction PDE::dt(const Product &v) const
 {
   return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dx(const ElementFunction &v) const
+const ElementFunction PDE::dx(const ElementFunction &v) const
 {
   return mapping->dx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dy(const ElementFunction &v) const
+const ElementFunction PDE::dy(const ElementFunction &v) const
 {
   return mapping->dy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dz(const ElementFunction &v) const
+const ElementFunction PDE::dz(const ElementFunction &v) const
 {
   return mapping->dz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dt(const ElementFunction &v) const
+const ElementFunction PDE::dt(const ElementFunction &v) const
 {
   return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction::Vector
-Equation::grad(const ShapeFunction &v)
+PDE::grad(const ShapeFunction &v)
 {
   FunctionSpace::ElementFunction::Vector w(v.dx(), v.dy(), v.dz());
   return w;
 }
 //-----------------------------------------------------------------------------
-void Equation::add(ElementFunction& v, Function& f)
+void PDE::add(ElementFunction& v, Function& f)
 {
   FunctionPair p(v, f);
   if ( functions.add(p) == -1 ) {
@@ -144,14 +144,14 @@ void Equation::add(ElementFunction& v, Function& f)
   }
 }
 //-----------------------------------------------------------------------------
-void Equation::add(ElementFunction::Vector& v, Function::Vector& f)
+void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 {
   add(v(0), f(0));
   add(v(1), f(1));
   add(v(2), f(2));
 }
 //-----------------------------------------------------------------------------
-void Equation::update(const FiniteElement* element,
+void PDE::update(const FiniteElement* element,
 		      const Cell*          cell,
 		      const Mapping*       mapping,
 		      const Quadrature*    quadrature)
@@ -168,27 +168,27 @@ void Equation::update(const FiniteElement* element,
   this->mapping = mapping;
 }
 //-----------------------------------------------------------------------------
-// Equation::FunctionPair
+// PDE::FunctionPair
 //-----------------------------------------------------------------------------
-Equation::FunctionPair::FunctionPair()
+PDE::FunctionPair::FunctionPair()
 {
   v = 0;
   f = 0;
 }
 //-----------------------------------------------------------------------------
-Equation::FunctionPair::FunctionPair(ElementFunction &v, Function &f)
+PDE::FunctionPair::FunctionPair(ElementFunction &v, Function &f)
 {
   this->v = &v;
   this->f = &f;
 }
 //-----------------------------------------------------------------------------
-void Equation::FunctionPair::update
+void PDE::FunctionPair::update
 (const FiniteElement &element, const Cell &cell, real t)
 {  
   f->update(*v, element, cell, t);
 }
 //-----------------------------------------------------------------------------
-void Equation::FunctionPair::operator= (int zero)
+void PDE::FunctionPair::operator= (int zero)
 {
   if ( zero != 0 )
 	 dolfin_error("Assignment to int must be zero.");
@@ -197,7 +197,7 @@ void Equation::FunctionPair::operator= (int zero)
   f = 0;
 }
 //-----------------------------------------------------------------------------
-bool Equation::FunctionPair::operator! () const
+bool PDE::FunctionPair::operator! () const
 {
   return v == 0;
 }

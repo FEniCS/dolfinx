@@ -1,17 +1,17 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __EQUATION_SYSTEM_H
-#define __EQUATION_SYSTEM_H
+#ifndef __PDE_SYSTEM_H
+#define __PDE_SYSTEM_H
 
-#include <dolfin/Equation.h>
+#include <dolfin/PDE.h>
 
 namespace dolfin {
 
-  class EquationSystem : public Equation {
+  class PDESystem : public PDE {
   public:
 	 
-	 EquationSystem(int dim, int noeq);
+	 PDESystem(int dim, int noeq);
 	 
 	 virtual real lhs(ShapeFunction *u, ShapeFunction *v) = 0;
 	 virtual real rhs(ShapeFunction *v) = 0;

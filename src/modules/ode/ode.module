@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "ode"
+KEYWORD  = "ode"
+SOLVER   = "ODESolverWrapper"
+NEEDS    = "ode"
