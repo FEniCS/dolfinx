@@ -54,6 +54,15 @@ void ComplexODE::M(const complex x[], complex y[], const complex z[], real t)
     y[i] = x[i];
 }
 //-----------------------------------------------------------------------------
+void ComplexODE::J(const complex x[], complex y[], const complex z[], real t)
+{
+  // If a user does not supply J, then compute it by the approximation
+  //
+  //     Jx = ( f(z + hx) - f(z - hx) ) / 2h
+
+  dolfin_error("Not implemented yet...");
+}
+//-----------------------------------------------------------------------------
 real ComplexODE::k(uint i)
 {
   return default_timestep;
@@ -141,6 +150,37 @@ void ComplexODE::M(const real x[], real y[], const real u[], real t)
   
   // Call user-supplied function M(x, y, z, t)
   M(fvalues, yvalues, zvalues, t);
+
+  // Copy values to y
+  for (uint i = 0; i < n; i++)
+  {
+    const complex yvalue = yvalues[i];
+    y[2*i] = yvalue.real();
+    y[2*i + 1] = yvalue.imag();
+  }
+}
+//-----------------------------------------------------------------------------
+void ComplexODE::J(const real x[], real y[], const real u[], real t)
+{
+  // Update zvalues and fvalues for all components
+  for (uint i = 0; i < n; i++)
+  {
+    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex xvalue(x[2*i], x[2*i + 1]);
+    zvalues[i] = zvalue;
+    fvalues[i] = xvalue; // Use fvalues for x
+  }
+
+  // Use additional array for y, initialize the first time
+  if ( !yvalues )
+  {
+    yvalues = new complex[n];
+    for (uint i = 0; i < n; i++)
+      yvalues[i] = 0.0;
+  }
+  
+  // Call user-supplied function J(x, y, z, t)
+  J(fvalues, yvalues, zvalues, t);
 
   // Copy values to y
   for (uint i = 0; i < n; i++)

@@ -49,8 +49,11 @@ namespace dolfin
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void feval(const complex z[], real t, complex f[]);
     
-    // Compute product y = Mx
+    /// Compute product y = Mx for implicit system
     virtual void M(const complex x[], complex y[], const complex z[], real t);
+
+    /// Compute product y = Jx for Jacobian J
+    virtual void J(const complex x[], complex y[], const complex u[], real t);
 
     /// Return time step for component i (optional)
     virtual real k(uint i);
@@ -69,6 +72,9 @@ namespace dolfin
 
     /// Compute product y = Mx for real-valued ODE
     void M(const real x[], real y[], const real u[], real t);
+
+    /// Compute product y = Jx for real-valued ODE
+    void J(const real x[], real y[], const real u[], real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);

@@ -17,7 +17,8 @@ public:
   Homotopy(unsigned int m) : ComplexODE(1), 
 			     m(static_cast<real>(m)),
 			     p(static_cast<real>(3)),
-			     c(0.00143289, 0.982727)
+			     c(0.00143289, 0.982727),
+			     active(true)
   {
     T = 1.0;
   }
@@ -34,7 +35,10 @@ public:
   
   complex f(const complex z[], real t, unsigned int i)
   {
-    return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
+    if ( active )
+      return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
+    else
+      return 0.0;
   }
 
   void M(const complex x[], complex y[], const complex z[], real t)
@@ -43,8 +47,20 @@ public:
     //cout << "Product at t = " << t << ": " << y[0] << " = M * " << x[0] << endl;
   }
 
+  void J(const complex x[], complex y[], const complex z[], real t)
+  {
+    y[0] = (3.0*z[0]*z[0] + 2.0*z[0]) * x[0];
+  }
+
   void update(const complex z[], real t)
   {
+    // This is a temporary test to see if the solution is diverging
+    if ( std::abs(z[0]) > 10.0 )
+    {
+      cout << "Solution is diverging, inactivating." << endl;
+      active = false;
+    }
+
     cout << "Updating at t = " << t << ": z = " << z[0] << endl;
   }
 
@@ -59,6 +75,9 @@ private:
   // Parameter for start root, x^3 = c
   complex c;
 
+  // True if active (inactivated if divergent)
+  bool active;
+
 };
 
 int main()
@@ -66,17 +85,17 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
-  dolfin_set("method", "dg");
-  dolfin_set("order", 0);
+  dolfin_set("method", "cg");
+  dolfin_set("order", 1);
   dolfin_set("implicit", true);
 
-  dolfin_set("initial time step", 0.1);
-  dolfin_set("fixed time step", true);
-  dolfin_set("tolerance", 1e-5);
+  //dolfin_set("initial time step", 0.1);
+  //dolfin_set("fixed time step", true);
+  //dolfin_set("tolerance", 1e-1);
 
   // Iterate over the different starting points
   char filename[16];
-  for (unsigned int i = 1; i < 3; i++)
+  for (unsigned int i = 0; i < 3; i++)
   {
     sprintf(filename, "primal_%d.m", i);
     dolfin_set("file name", filename);

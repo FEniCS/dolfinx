@@ -72,14 +72,17 @@ void ODE::M(const real x[], real y[], const real u[], real t)
 //-----------------------------------------------------------------------------
 void ODE::J(const real x[], real y[], const real u[], real t)
 {
-  // If a user of the mono-adaptive solver does not supply this function,
-  // then call dfdu for each component
-  
-  // FIXME: More efficient to compute product as Jx = (f(u+hx) - f(u)) / h
+  // If a user does not supply J, then compute it by the approximation
+  //
+  //     Jx = ( f(z + hx) - f(z - hx) ) / 2h
 
   // Display a warning, more efficiently if implemented
   not_impl_J();
 
+  dolfin_error("Not implemented yet...");
+
+  /* Old version, should not be used
+  
   // Compute product
   for (uint i = 0; i < N; i++)
   {
@@ -92,6 +95,8 @@ void ODE::J(const real x[], real y[], const real u[], real t)
     }
     y[i] = sum;
   }
+
+  */
 }
 //-----------------------------------------------------------------------------
 real ODE::dfdu(const real u[], real t, uint i, uint j)

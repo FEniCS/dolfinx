@@ -162,9 +162,10 @@ int main()
   dolfin_set("use new ode solver", true);
   dolfin_set("fixed time step", true);
   dolfin_set("maximum time step", 1.0);
-  dolfin_set("method", "cg");
+  dolfin_set("method", "mcg");
+  //dolfin_set("solver", "fixed point");
   dolfin_set("solver", "newton");
-  dolfin_set("implicit", true);
+  //dolfin_set("implicit", true);
   dolfin_set("order", 2);
 
   //Single single;
