@@ -10,15 +10,15 @@ namespace dolfin{
   
   class SolverConvDiff : public Solver {
   public:
-	 
-	 SolverConvDiff(Grid *grid) : Solver(grid) {}
-	 ~SolverConvDiff();
-	 
-	 const char *Description();
-	 void solve();
-	 
+    
+    SolverConvDiff(Grid *grid) : Solver(grid) {}
+    ~SolverConvDiff();
+    
+    const char *Description();
+    void solve();
+    
   };
-
+  
 }
 
 #endif

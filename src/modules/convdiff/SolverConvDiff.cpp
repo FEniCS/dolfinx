@@ -23,7 +23,6 @@ void ProblemConvDiff::solve()
   Vector u(no_nodes);
   Vector up(no_nodes);
   KrylovSolver solver;
-  real T0,T;
   
   // Choose equation
   if ( space_dimension == 2 )

@@ -282,7 +282,14 @@ namespace dolfin {
 		// Create iterator positioned at the beginning of the list
 		Iterator(List<T> *list){
 		  this->list = list;
-		  list->iterator_start(this);
+		  this->list->iterator_start(this);
+		  _index = 0;
+		}
+
+		// Create iterator positioned at the beginning of the list
+		Iterator(List<T>& list){
+		  this->list = &list;
+		  this->list->iterator_start(this);
 		  _index = 0;
 		}
 		
