@@ -11,7 +11,6 @@ namespace dolfin
 {
   
   class Function;
-  class NewPDE;
 
   /// FunctionPair represents a pair of functions (w,f),
   /// with the local function w being the restriction of
@@ -28,15 +27,9 @@ namespace dolfin
     /// Create empty function pair
     FunctionPair();
     
-    /// Create function pair of given functions
-    FunctionPair(NewArray<real>& w, Function& f);
-    
     /// Destructor
     ~FunctionPair();
 
-    /// Update local values on given cell at given time t
-    void update(const Cell& cell, const NewPDE& pde);
-    
   private:
     
     // Degrees of freedom of the local function

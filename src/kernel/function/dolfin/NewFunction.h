@@ -26,7 +26,7 @@ namespace dolfin
     ~NewFunction();
 
     /// Compute projection onto a given local finite element space
-    void project(const Cell& cell, const NewFiniteElement& element, real f[]) const;
+    void project(const Cell& cell, const NewFiniteElement& element, real c[]) const;
 
   private:
 

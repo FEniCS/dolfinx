@@ -6,7 +6,6 @@
 #include <dolfin/Vector.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
-#include <dolfin/NewFiniteElement.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
 #include <dolfin/NewPDE.h>
@@ -59,17 +58,5 @@ void DofFunction::update(FunctionSpace::ElementFunction &v,
 {
   for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
     v.set(phi.index(), phi, x(phi.dof(cell) * size + dim));
-}
-//-----------------------------------------------------------------------------
-void DofFunction::update(NewArray<real>& w, const Cell& cell, 
-			 const NewFiniteElement& element) const
-{
-  // FIXME: A finite element containing the mapping from local to global
-  // FIXME: degrees of freedom should be part of a Function. Temporarily,
-  // FIXME: we obtain the element as an argument
-
-  w.resize(element.spacedim());
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    w[i] = x(element.dof(i, cell));
 }
 //-----------------------------------------------------------------------------

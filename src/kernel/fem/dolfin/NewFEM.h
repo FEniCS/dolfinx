@@ -14,6 +14,7 @@ namespace dolfin
   class Mesh;
   class NewMatrix;
   class NewVector;
+  class NewFiniteElement;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find u in V such that

@@ -117,7 +117,7 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L, Mesh& mesh,
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell);
+      dofs[i] = element.dof(i, *cell, mesh);
     
     // Add element matrix to global matrix
     A.add(block, dofs, n, dofs, n);
@@ -200,7 +200,7 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell);
+      dofs[i] = element.dof(i, *cell, mesh);
     
     // Add element matrix to global matrix
     A.add(block, dofs, n, dofs, n);
@@ -254,7 +254,7 @@ void NewFEM::assemble(LinearForm& L, Mesh& mesh, NewVector& b)
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell);
+      dofs[i] = element.dof(i, *cell, mesh);
     
     // Add element matrix to global matrix
     b.add(block, dofs, n);
@@ -282,7 +282,7 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
   {
     for (uint i = 0; i < element.spacedim(); i++)
     {
-      uint dof = element.dof(i, *cell);
+      uint dof = element.dof(i, *cell, mesh);
       if ( dof > dofmax )
 	dofmax = dof;
     }

@@ -38,10 +38,10 @@ namespace dolfin
     virtual unsigned int rank() const = 0;
 
     /// Return map from local to global degree of freedom
-    virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
+    virtual unsigned int dof(unsigned int i, const Cell& cell, const Mesh& mesh) const = 0;
     
     /// Return map from local degree of freedom to global coordinate
-    virtual const Point& coord(unsigned int i, const Cell& cell) const = 0;
+    virtual const Point coord(unsigned int i, const Cell& cell, const Mesh& mesh) const = 0;
 
   };
 

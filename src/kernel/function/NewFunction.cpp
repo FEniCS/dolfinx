@@ -8,7 +8,6 @@
 
 using namespace dolfin;
 
-/*
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
 			 NewVector& x) : mesh(mesh), element(element), x(x)
@@ -22,7 +21,7 @@ NewFunction::~NewFunction()
 }
 //-----------------------------------------------------------------------------
 void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
-			  real f[]) const
+			  real c[]) const
 {
   // Check if we're computing the projection onto a cell of the same
   // mesh for the same element (the easy case...)
@@ -39,14 +38,12 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
 
     real *values = x.array();
     for (uint i = 0; i < element.spacedim(); i++)
-      f[i] = values[element.dof(i, cell)];
+      c[i] = values[element.dof(i, cell, mesh)];
     x.restore(values);
   }
   else
   {
     dolfin_error("Projection between different finite element spaces not implemented.");
   }
-
 }
 //-----------------------------------------------------------------------------
-*/

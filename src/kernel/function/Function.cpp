@@ -198,12 +198,6 @@ void Function::update(FunctionSpace::ElementFunction& v,
   f->update(v, element, cell, t);
 }
 //-----------------------------------------------------------------------------
-void Function::update(NewArray<real>& w, const Cell& cell,
-		      const NewPDE& pde) const
-{
-  f->update(w, cell, pde);
-}
-//-----------------------------------------------------------------------------
 // Vector function
 //-----------------------------------------------------------------------------
 Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)

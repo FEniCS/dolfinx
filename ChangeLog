@@ -1,3 +1,4 @@
+ - Fix initialization of PETSc
  - Add mono-adaptive cG(q) and dG(q) solvers (experimental)
  - Implementation of new assebly: NewFEM, using output from FFC 
  - Add access to mesh for nodes, cells, faces and edges

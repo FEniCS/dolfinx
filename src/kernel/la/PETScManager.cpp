@@ -44,7 +44,10 @@ PETScManager::PETScManager() : initialized(false)
 //-----------------------------------------------------------------------------
 PETScManager::~PETScManager()
 {
-  std::cout << "Finalizing PETSc." << std::endl;
-  PetscFinalize();
+  if ( petsc.initialized )
+  {
+    std::cout << "Finalizing PETSc." << std::endl;
+    PetscFinalize();
+  }
 }
 //-----------------------------------------------------------------------------

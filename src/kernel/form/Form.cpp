@@ -1,15 +1,21 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Point.h>
+#include <dolfin/NewFunction.h>
+#include <dolfin/NewFiniteElement.h>
 #include <dolfin/Form.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(const NewFiniteElement& element) : element(element)
+Form::Form(const NewFiniteElement& element, uint ncoeff)
+  : element(element), c(0), ncoeff(0)
 {
   // Reset data
   det = 0.0;
@@ -21,11 +27,28 @@ Form::Form(const NewFiniteElement& element) : element(element)
   g00 = 0.0; g01 = 0.0; g02 = 0.0;
   g10 = 0.0; g11 = 0.0; g12 = 0.0;
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
+
+  // Initialize coefficients
+  if ( ncoeff > 0 )
+  {
+    c = new real* [ncoeff];
+    for (uint i = 0; i < ncoeff; i++)
+    {
+      c[i] = new real[element.spacedim()];
+      for (uint j = 0; j < element.spacedim(); j++)
+	c[i][j] = 0.0;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
 {
-  // Do nothing
+  if ( c )
+  {
+    for (uint i = 0; i < ncoeff; i++)
+      delete [] c[i];
+    delete [] c;
+  }
 }
 //-----------------------------------------------------------------------------
 void Form::update(const Cell& cell)
@@ -42,6 +65,9 @@ void Form::update(const Cell& cell)
   default:
     dolfin_error("Unknown cell type.");
   }
+
+  // Update coefficients
+  updateCoefficients(cell);
 }
 //-----------------------------------------------------------------------------
 void Form::updateTriLinMap(const Cell& cell)
@@ -124,28 +150,15 @@ void Form::updateTetLinMap(const Cell& cell)
   det = fabs(det);
 }
 //-----------------------------------------------------------------------------
-
-
-
-//List of function pairs
-//NewArray<FunctionPair> functions;
-//
+void Form::updateCoefficients(const Cell& cell)
+{
+  // Compute the projection of all functions to the current element
+  for (uint i = 0; i < ncoeff; i++)
+    functions[i]->project(cell, element, c[i]);
+}
 //-----------------------------------------------------------------------------
-//void NewPDE::update(const Cell& cell)
-//{
-//  // Update functions
-//  updateFunctions(cell);
-//}
-//-----------------------------------------------------------------------------
-//void NewPDE::add(NewArray<real>& w, Function& f)
-//{
-//  FunctionPair p(w, f);
-// functions.push_back(p);
-//}
-//-----------------------------------------------------------------------------
-//void NewPDE::updateFunctions(const Cell& cell)
-//{
-//  for (unsigned int i = 0; i < functions.size(); i++)
-//    functions[i].update(cell, *this);
-//}
+void Form::add(const NewFunction& function)
+{
+  functions.push_back(&function);
+}
 //-----------------------------------------------------------------------------

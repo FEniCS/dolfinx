@@ -1,15 +1,18 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Hoffman, 2005.
+// Modified by Anders Logg, 2005.
 
+#include "Poisson.h"
 #include "PoissonSolver.h"
-#include "FFCPoisson.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
 {
-  dolfin_parameter(Parameter::FUNCTION, "source", 0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const char* PoissonSolver::description()
@@ -19,23 +22,23 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  FFCPoissonFiniteElement element;
-  FFCPoissonBilinearForm a(element);
-  //  FFCPoissonLinearForm L(element);
-  NewMatrix A;
-  NewVector x,b;
+  Poisson::FiniteElement element;
+  Poisson::BilinearForm a(element);
+  Poisson::LinearForm L(element);
+  //NewMatrix A;
+  //NewVector x, b;
 
-  b.init(A.size(0));
-  b = 1.0;
+  //b.init(A.size(0));
+  //b = 1.0;
 
   //  NewFunction  u(mesh, x);
   //  NewFunction  f("source");
   //  NewGMRES     solver;
-  File         file("poisson.m");
+  //File         file("poisson.m");
 
   // Discretise
   //NewFEM::assemble(a, L, mesh, A, b);
-  NewFEM::assemble(a, mesh, A);
+  //NewFEM::assemble(a, mesh, A);
 
   // Solve the linear system
   //solver.solve(A, x, b);

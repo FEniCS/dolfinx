@@ -11,7 +11,6 @@ namespace dolfin {
 
   class Cell;
   class FiniteElement;
-  class NewFiniteElement;
   class Vector;
   class Mesh;
   class NewPDE;
@@ -40,9 +39,6 @@ namespace dolfin {
 		const FiniteElement &element,
 		const Cell &cell, real t) const;
 
-    // Update local function (restriction to given cell)
-    void update(NewArray<real>& w, const Cell& cell, const NewFiniteElement& element) const;
-    
   private:
     
     Mesh& _mesh;
