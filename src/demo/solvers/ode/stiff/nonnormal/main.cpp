@@ -47,7 +47,7 @@ int main()
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("initial time step", 0.1);
-  //dolfin_set("fixed time step", true);
+  dolfin_set("fixed time step", true);
 
   NonNormal nonnormal;
   nonnormal.solve();

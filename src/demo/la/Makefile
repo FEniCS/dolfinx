@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal-1.4
+ACLOCAL = aclocal
 AUTOCONF = autoconf
-AUTOMAKE = automake-1.4
+AUTOMAKE = automake
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror
+CXXFLAGS = -O2
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-template -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -74,7 +74,7 @@ MAKEINFO = makeinfo
 MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.4.3
+PACKAGE_VERSION = 0.4.4
 RANLIB = ranlib
 VERSION = 
 XML2_INCLUDES = -I/usr/include/libxml2

@@ -1,3 +1,5 @@
+0.4.4
+ - Add support for 3D graphics in Octave using Open Inventor (jj)
 0.4.3
  - Stabilization of multi-adaptive solver (experimental) 
  - Improved non-support for curses (--disable-curses)
