@@ -1,5 +1,5 @@
 //
-// time: Thu Sep 18 13:50:08 2003
+// time: Thu Sep 25 09:59:59 2003
 //
 // version: 3.2.0 (format), 4.3.0 (DX)
 //
@@ -29,8 +29,8 @@ macro main(
 ) {
     // 
     // node FileSelector[3]: x = 20, y = 124, inputs = 0, label = FileSelector
-    // output[1]: visible = 1, type = 32, value = "/home/logg/work/src/dolfin/dolfin/src/demo/grid/grid_refined.dx"
-    // output[2]: visible = 1, type = 32, value = "grid_refined.dx"
+    // output[1]: visible = 1, type = 32, value = "/home/logg/work/src/dolfin/dolfin/src/demo/grid/grid3D_refined.dx"
+    // output[2]: visible = 1, type = 32, value = "grid3D_refined.dx"
     // page group: Import
     //
     // 
@@ -182,7 +182,7 @@ main_Inquire_5_out_1 =
     // input[7]: defaulting = 0, visible = 0, type = 16777217, value = { 0 10 1 0 10 1 }
     // page group: Frame
     // vcr[1]: min = 0, max = 10, beg = 0, end = 10, cur = 5, inc = 1, loop = off, step = on, pal = off
-    // window: position = (0.7344,0.7823), size = 0.2188x0.0771
+    // window: position = (0.7344,0.7826), size = 0.2188x0.0768
     //
     main_Sequencer_1_in_3 = @frame;
 main_Sequencer_1_out_1[cache: 2] = 
@@ -429,6 +429,16 @@ main_Receiver_9_out_1[cache: 0] = Colorslice;
     //
 main_Receiver_18_out_1[cache: 0] = Field;
     // 
+    // node ShowBoundary[1]: x = 60, y = 155, inputs = 2, label = ShowBoundary
+    // input[2]: defaulting = 1, visible = 1, type = 3, value = NULL
+    // page group: Geometry
+    //
+main_ShowBoundary_1_out_1 = 
+    ShowBoundary(
+    main_Receiver_18_out_1,
+    main_ShowBoundary_1_in_2
+    ) [instance: 1, cache: 1];
+    // 
     // node ShowConnections[2]: x = 300, y = 155, inputs = 1, label = ShowConnections
     // page group: Geometry
     //
@@ -442,7 +452,7 @@ main_ShowConnections_2_out_1 =
     //
 main_Collect_2_out_1 = 
     Collect(
-    main_Collect_2_in_1,
+    main_ShowBoundary_1_out_1,
     main_ShowConnections_2_out_1
     ) [instance: 2, cache: 1];
     // 
@@ -793,13 +803,13 @@ main_ColorBar_1_out_1 =
     // node Image[1]: x = 120, y = 496, inputs = 49, label = Image
     // input[1]: defaulting = 0, visible = 0, type = 67108863, value = "Image_1"
     // input[4]: defaulting = 0, visible = 0, type = 1, value = 1
-    // input[5]: defaulting = 0, visible = 0, type = 8, value = [0.25 0.25 0.25]
-    // input[6]: defaulting = 0, visible = 0, type = 8, value = [1.20859 0.838721 2.11295]
-    // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.16625
+    // input[5]: defaulting = 0, visible = 0, type = 8, value = [0.5 0.5 0.5]
+    // input[6]: defaulting = 0, visible = 0, type = 8, value = [-1.24217 -3.47462 0.833196]
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = 2.33248
     // input[8]: defaulting = 0, visible = 0, type = 1, value = 640
-    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.75
-    // input[10]: defaulting = 0, visible = 0, type = 8, value = [-0.089117 0.961987 -0.258147]
-    // input[11]: defaulting = 0, visible = 0, type = 5, value = 30.0
+    // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.751
+    // input[10]: defaulting = 0, visible = 0, type = 8, value = [0.0699073 -0.113723 -0.99105]
+    // input[11]: defaulting = 0, visible = 0, type = 5, value = 30.0001
     // input[12]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[14]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[15]: defaulting = 0, visible = 0, type = 32, value = "none"
@@ -822,8 +832,8 @@ main_ColorBar_1_out_1 =
     // input[42]: defaulting = 0, visible = 0, type = 32, value = "Basic3D"
     // page group: Image
     // title: value = Basic3D
-    // depth: value = 24
-    // window: position = (0.4648,0.1906), size = 0.5109x0.5437
+    // depth: value = 16
+    // window: position = (0.4648,0.1901), size = 0.6387x0.6797
     // internal caching: 1
     //
 main_Image_1_out_1,
@@ -951,16 +961,6 @@ Vorticity = main_AutoColor_4_out_1;
     //
 main_Receiver_25_out_1[cache: 0] = Vorticity;
     // 
-    // node ShowBoundary[1]: x = 60, y = 155, inputs = 2, label = ShowBoundary
-    // input[2]: defaulting = 1, visible = 1, type = 3, value = NULL
-    // page group: Geometry
-    //
-main_ShowBoundary_1_out_1 = 
-    ShowBoundary(
-    main_Receiver_18_out_1,
-    main_ShowBoundary_1_in_2
-    ) [instance: 1, cache: 1];
-    // 
     // node ShowBox[2]: x = 200, y = 155, inputs = 1, label = ShowBox
     // page group: Geometry
     //
@@ -1029,7 +1029,7 @@ wireless_25 = main_AutoColor_5_out_2;
 // network: end of macro body
 CacheScene(main_Image_1_in_1, main_Image_1_out_1, main_Image_1_out_2);
 }
-main_FileSelector_3_out_1 = "/home/logg/work/src/dolfin/dolfin/src/demo/grid/grid_refined.dx";
+main_FileSelector_3_out_1 = "/home/logg/work/src/dolfin/dolfin/src/demo/grid/grid3D_refined.dx";
 main_StringList_1_out_1 = { "Grid", "u" };
 main_Selector_3_in_1 = "Selector_3";
 main_Selector_3_in_2 = "Grid" ;
@@ -1164,8 +1164,9 @@ main_AutoColor_5_out_2 = NULL;
 main_Transmitter_12_out_1 = NULL;
 main_Receiver_9_out_1 = NULL;
 main_Receiver_18_out_1 = NULL;
+main_ShowBoundary_1_in_2 = NULL;
+main_ShowBoundary_1_out_1 = NULL;
 main_ShowConnections_2_out_1 = NULL;
-main_Collect_2_in_1 = NULL;
 main_Collect_2_out_1 = NULL;
 main_Transmitter_20_out_1 = NULL;
 main_Receiver_19_out_1 = NULL;
@@ -1669,15 +1670,15 @@ macro Image(
         RECformat) [instance: 2, cache: 1];
 }
 main_Image_1_in_1 = "Image_1";
-main_Image_1_in_3 = "X24,,Basic3D";
+main_Image_1_in_3 = "X16,,Basic3D";
 main_Image_1_in_4 = 1;
-main_Image_1_in_5 = [0.25 0.25 0.25];
-main_Image_1_in_6 = [1.20859 0.838721 2.11295];
+main_Image_1_in_5 = [0.5 0.5 0.5];
+main_Image_1_in_6 = [-1.24217 -3.47462 0.833196];
 main_Image_1_in_7 = NULL;
 main_Image_1_in_8 = 640;
-main_Image_1_in_9 = 0.75;
-main_Image_1_in_10 = [-0.089117 0.961987 -0.258147];
-main_Image_1_in_11 = 30.0;
+main_Image_1_in_9 = 0.751;
+main_Image_1_in_10 = [0.0699073 -0.113723 -0.99105];
+main_Image_1_in_11 = 30.0001;
 main_Image_1_in_12 = 1;
 main_Image_1_in_13 = NULL;
 main_Image_1_in_14 = 1;
@@ -1723,7 +1724,6 @@ main_Switch_8_out_1 = NULL;
 main_Transmitter_17_out_1 = NULL;
 main_Transmitter_23_out_1 = NULL;
 main_Transmitter_24_out_1 = NULL;
-main_ShowBoundary_1_in_2 = NULL;
 Executive("product version 4 3 0");
 $sync
 

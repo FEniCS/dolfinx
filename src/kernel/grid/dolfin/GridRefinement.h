@@ -24,6 +24,9 @@ namespace dolfin {
     
     //--- Algorithms working on the whole grid hierarchy ---
 
+    // Propagate markers for leaf elements
+    static void propagateLeafMarks(GridHierarchy& grids);
+    
     /// Update marks for edges
     static void updateEdgeMarks(GridHierarchy& grids);
 
@@ -92,6 +95,9 @@ namespace dolfin {
 
     /// Check if a given cell is a leaf element
     static bool leaf(Cell& cell);
+    
+    /// Check if cell is allowed to be refined
+    static bool okToRefine(Cell& cell);
 
     /// Create a new node (if it doesn't exist) and set parent-child info
     static Node& createNode(Node& node, Grid& grid, const Cell& cell);

@@ -29,6 +29,7 @@ for i=1:levels
     subplot(levels, levels, (i-1)*levels + j)
     pdemesh(points{count}, edges{count}, cells{count})
     axis([0 1 0 1])
+    axis off
     count = count + 1;
   end
 end

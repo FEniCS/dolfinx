@@ -12,13 +12,13 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  int refinements = 6;
+  int refinements = 3;
 
   // Refine 2D grid
   refine2D(refinements);
 
   // Refine 3D grid
-  /* refine3D(refinements); */
+  refine3D(refinements);
   
   return 0;
 }
@@ -38,17 +38,23 @@ void refine2D(int refinements)
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
     
-    // Mark cells with a node at x = (0,0)
-    for (CellIterator cell(grid); !cell.end(); ++cell)
+
+    for (CellIterator cell(grid); !cell.end(); ++cell) {
+      
+      // Mark cells close to y = x
       for (NodeIterator node(cell); !node.end(); ++node)
-	if ( node->dist(0.0, 0.0) < DOLFIN_EPS )
+	if ( fabs(node->coord().x - node->coord().y) < DOLFIN_EPS )
 	  cell->mark();
-    
-    // Mark cells which have a midpoint close to x = (1,1)
-    for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(1.0, 1.0) < 0.3 )
+      
+      // Mark cells at the corners
+      if ( cell->midpoint().dist(0.0, 0.0) < 0.25 ||
+	   cell->midpoint().dist(1.0, 0.0) < 0.25 ||
+	   cell->midpoint().dist(1.0, 1.0) < 0.25 ||
+	   cell->midpoint().dist(0.0, 1.0) < 0.25 )
 	cell->mark();
       
+    }
+
     // Refine grid
     grid.refine();
 
@@ -77,7 +83,7 @@ void refine3D(int refinements)
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
     
-    // Mark nodes for refinement
+    // Mark cells close to (0,0,0)
     for (CellIterator cell(grid); !cell.end(); ++cell)
       if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
 	cell->mark();

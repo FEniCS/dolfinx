@@ -115,7 +115,7 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
-  dolfin_assert(cell.parent()->status() != irr_ref);
+  dolfin_assert(okToRefine(cell));
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
@@ -152,7 +152,7 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
-  dolfin_assert(cell.parent()->status() != irr_ref);
+  dolfin_assert(okToRefine(cell));
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
@@ -193,7 +193,7 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
-  dolfin_assert(cell.parent()->status() != irr_ref);
+  dolfin_assert(okToRefine(cell));
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);

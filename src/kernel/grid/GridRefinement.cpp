@@ -23,6 +23,9 @@ void GridRefinement::refine(GridHierarchy& grids)
   // Check pre-condition for all grids
   checkPreCondition(grids);
 
+  // Propagate markers for leaf elements
+  propagateLeafMarks(grids);
+
   // Mark edges
   updateEdgeMarks(grids);
 
@@ -33,6 +36,32 @@ void GridRefinement::refine(GridHierarchy& grids)
   checkPostCondition(grids);
 
   dolfin_end();
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::propagateLeafMarks(GridHierarchy& grids)
+{
+  // We need to propagate the markers of leaf elements up through the
+  // grid hierarchy, since Bey's algorithm assumes that leaf elements
+  // are not refined, whereas in our version leaf elements are copied
+  // to the next level.  In Bey's algorithm, a leaf element is present
+  // at all levels, starting at the level from which it is not further
+  // refined, so we have to make sure that the copies of the leaf
+  // elements in finer grids are identical as far as the markers are
+  // concerned.
+
+  for (CellIterator c(grids.fine()); !c.end(); ++c) {
+    
+    for (Cell* parent = c->parent(); parent; parent = parent->parent()) {
+
+      if ( !leaf(*parent) )
+	break;
+
+      dolfin_assert(parent->noChildren() == 1);      
+      parent->marker() = parent->child(0)->marker();
+
+    }
+
+  }
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::updateEdgeMarks(GridHierarchy& grids)
@@ -202,12 +231,13 @@ void GridRefinement::closeGrid(Grid& grid)
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c) {
-    if ( c->status() == Cell::ref_reg || c->status() == Cell::unref ) {
-      if ( edgeMarkedByOther(*c) ) {
-	cells.add(c);
-	closed(c->id()) = false;
-      }
+
+    // Note that we check all cells, not only regular (different from Bey)
+    if ( edgeMarkedByOther(*c) ) {
+      cells.add(c);
+      closed(c->id()) = false;
     }
+
   }
 
   // Repeat until the list of elements is empty
@@ -218,7 +248,7 @@ void GridRefinement::closeGrid(Grid& grid)
 
     // Close cell
     closeCell(*cell, cells, closed);
-    
+
   }
 
 }
@@ -411,7 +441,7 @@ bool GridRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
 bool GridRefinement::edgeMarkedByOther(Cell& cell)
 {
   for (EdgeIterator e(cell); !e.end(); ++e)
-    if ( e->marked() )
+    if ( e->marked() ) 
       if ( !e->marked(cell) )
 	return true;
 
@@ -473,6 +503,19 @@ bool GridRefinement::leaf(Cell& cell)
   return cell.status() == Cell::unref;
 }
 //-----------------------------------------------------------------------------
+bool GridRefinement::okToRefine(Cell& cell)
+{
+  // Get the cell's parent
+  Cell* parent = cell.parent();
+
+  // Can be refined if it has no parent (belongs to coarsest grid)
+  if ( !parent )
+    return true;
+
+  // If cell has a parent, the parent can not be irregularly refined
+  return parent->status() != Cell::ref_irr;
+}
+//-----------------------------------------------------------------------------
 Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 {
   // Create the node
@@ -519,14 +562,6 @@ void GridRefinement::removeNode(Node& node, Grid& grid)
 //-----------------------------------------------------------------------------
 void GridRefinement::removeCell(Cell& cell, Grid& grid)
 {
-  if ( !leaf(cell) ) {
-    cout << "--- Illegal cell: " << cell << endl;
-    cout << "  parent = " << *cell.parent() << endl;
-    cout << "  marker = " << cell.marker() << endl;
-    cout << "  status = " << cell.status() << endl;
-    cout << "  number of children = " << cell.noChildren() << endl;
-  }
-
   // Only leaf elements should be removed
   dolfin_assert(leaf(cell));
 
