@@ -220,6 +220,12 @@ real SparseMatrix::operator()(int i, int j) const
   return read(i,j);
 }
 //-----------------------------------------------------------------------------
+real* SparseMatrix::operator[](int i)
+{
+  dolfin_error("Using dense quick-access operator for sparse matrix.");
+  return 0;
+}
+//-----------------------------------------------------------------------------
 real SparseMatrix::operator()(int i, int& j, int pos) const
 {
   j = columns[i][pos];

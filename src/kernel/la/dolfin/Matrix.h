@@ -86,19 +86,22 @@ namespace dolfin {
     /// Index operator
     Element operator()(int i, int j);
 
-    // Index operator
+    /// Index operator
     Row operator()(int i, MatrixRange j);
 
-    // Index operator
+    /// Index operator
     Row operator()(MatrixIndex i, MatrixRange j);
     
-    // Index operator
+    /// Index operator
     Column operator()(MatrixRange i, int j);
 
-    // Index operator
+    /// Index operator
     Column operator()(MatrixRange i, MatrixIndex j);
 
-    /// Index operator (only sparse)
+    /// Index operator (only dense, quick access)
+    real* operator[](int i) const;
+
+    /// Index operator (only sparse, quick access)
     real operator()(int i, int& j, int pos) const;
 
     /// Assignment from scalar (affects only already non-zero elements for sparse)

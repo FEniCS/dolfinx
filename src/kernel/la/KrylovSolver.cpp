@@ -136,7 +136,7 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
   vec_g(0) = rho;
 
   int k,k_end;
-  for (k=0;k<k_max;k++){
+  for (k = 0; k < k_max; k++) {
     // Use the modified Gram-Schmidt process find orthogonal Krylov vectors
     //
     // The computation of the Krylov vector AP^(-1) v(k) includes  
@@ -145,49 +145,49 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
     A.mult(vec_tmp1,vec_tmp2);
     for (int i=0;i<n;i++) mat_v(i,k+1) = vec_tmp2(i);
 
-    for (int j=0;j<k+1;j++){
-      mat_h(j,k) = 0.0;
-      for (int i = 0; i < n; i++) mat_h(j,k) += mat_v(i,k+1) * mat_v(i,j);
-      for (int i = 0; i < n; i++) mat_v(i,k+1) -= mat_h(j,k) * mat_v(i,j);
+    for (int j = 0; j < k+1; j++) {
+      mat_h[j][k] = 0.0;
+      for (int i = 0; i < n; i++) mat_h[j][k] += mat_v[i][k+1] * mat_v[i][j];
+      for (int i = 0; i < n; i++) mat_v[i][k+1] -= mat_h[j][k] * mat_v[i][j];
     }
     norm_v = 0.0;
-    for (int i=0;i<n;i++) norm_v += sqr(mat_v(i,k+1));
+    for (int i=0;i<n;i++) norm_v += sqr(mat_v[i][k+1]);
     norm_v = sqrt(norm_v);
-    mat_h(k+1,k) = norm_v;
+    mat_h[k+1][k] = norm_v;
     
     // Test for non orthogonality and reorthogonalise if necessary
     if ( reorthog(A, mat_v, k) ) { 
       for (int j=0;j<k+1;j++){
-	for (int i=0;i<n;i++) htmp = mat_v(i,k+1)*mat_v(i,j);
-	mat_h(j,k) += htmp;
-	for (int i=0;i<n;i++) mat_v(i,k+1) -= htmp*mat_v(i,j);
+	for (int i=0;i<n;i++) htmp = mat_v[i][k+1]*mat_v[i][j];
+	mat_h[j][k] += htmp;
+	for (int i=0;i<n;i++) mat_v[i][k+1] -= htmp*mat_v[i][j];
       }	  
       norm_v = 0.0;
-      for (int i=0;i<n;i++) norm_v += sqr(mat_v(i,k+1));
+      for (int i=0;i<n;i++) norm_v += sqr(mat_v[i][k+1]);
       norm_v = sqrt(norm_v);
-      mat_h(k+1,k) = norm_v;
+      mat_h[k+1][k] = norm_v;
     }
     
     for (int i = 0; i < n; i++)
-      mat_v(i,k+1) /= norm_v;
+      mat_v[i][k+1] /= norm_v;
 	 
     // If k > 0, solve least squares problem using QR factorization and Givens rotations  
     if ( k > 0 ){
       for (int j=0;j<k;j++){
-	tmp1 = mat_h(j,k);
-	tmp2 = mat_h(j+1,k);
-	mat_h(j,k)   = vec_c(j)*tmp1 - vec_s(j)*tmp2;
-	mat_h(j+1,k) = vec_s(j)*tmp1 + vec_c(j)*tmp2;
+	tmp1 = mat_h[j][k];
+	tmp2 = mat_h[j+1][k];
+	mat_h[j][k]   = vec_c(j)*tmp1 - vec_s(j)*tmp2;
+	mat_h[j+1][k] = vec_s(j)*tmp1 + vec_c(j)*tmp2;
       }
     }
     
-    nu = sqrt( sqr(mat_h(k,k)) + sqr(mat_h(k+1,k)) );
+    nu = sqrt( sqr(mat_h[k][k]) + sqr(mat_h[k+1][k]) );
     
-    vec_c(k) =   mat_h(k,k)   / nu;
-    vec_s(k) = - mat_h(k+1,k) / nu;
+    vec_c(k) =   mat_h[k][k]   / nu;
+    vec_s(k) = - mat_h[k+1][k] / nu;
     
-    mat_h(k,k) = vec_c(k)*mat_h(k,k) - vec_s(k)*mat_h(k+1,k);
-    mat_h(k+1,k) = 0.0;
+    mat_h[k][k] = vec_c(k)*mat_h[k][k] - vec_s(k)*mat_h[k+1][k];
+    mat_h[k+1][k] = 0.0;
     
     tmp1 = vec_c(k)*vec_g(k) - vec_s(k)*vec_g(k+1);
     vec_g(k+1) = vec_s(k)*vec_g(k) + vec_c(k)*vec_g(k+1);
@@ -208,20 +208,20 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
   for (int i=0;i<k+1;i++){ 
     vec_w(i)= vec_g(i);
     for (int j=0;j<k+1;j++){ 
-      mat_r(i,j) = mat_h(i,j);
+      mat_r[i][j] = mat_h[i][j];
     }
   } 
   // solve triangular system ry = w
-  vec_y(k) = vec_w(k)/mat_r(k,k);
+  vec_y(k) = vec_w(k)/mat_r[k][k];
   for (int i=1;i<k+1;i++){
     vec_y(k-i) = vec_w(k-i);
-    for (int j=0;j<i;j++) vec_y(k-i) -= mat_r(k-i,k-j)*vec_y(k-j);
-    vec_y(k-i) /= mat_r(k-i,k-i);
+    for (int j=0;j<i;j++) vec_y(k-i) -= mat_r[k-i][k-j]*vec_y(k-j);
+    vec_y(k-i) /= mat_r[k-i][k-i];
   }
   
   vec_tmp1 = 0.0;
   for (int i=0;i<n;i++){
-    for (int j=0;j<k+1;j++) vec_tmp1(i) += mat_v(i,j)*vec_y(j);
+    for (int j=0;j<k+1;j++) vec_tmp1(i) += mat_v[i][j]*vec_y(j);
   }
 
   for (int i=0;i<n;i++) u(i) += vec_tmp1(i);

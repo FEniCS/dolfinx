@@ -21,9 +21,10 @@ namespace dolfin {
     virtual int size() const = 0;
     virtual int rowsize(int i) const = 0;
     virtual int bytes() const = 0;
-    
-    virtual real operator()(int i, int& j, int pos) const = 0;
-    virtual real operator()(int i, int j) const = 0;
+
+    virtual real  operator()(int i, int j) const = 0;    
+    virtual real* operator[](int i) = 0;
+    virtual real  operator()(int i, int& j, int pos) const = 0;
 
     virtual void operator=  (real a) = 0;
     virtual void operator=  (const DenseMatrix& A) = 0;

@@ -29,8 +29,9 @@ namespace dolfin {
     int rowsize(int i) const;
     int bytes() const;
     
-    real operator()(int i, int j) const;
-    real operator()(int i, int& j, int pos) const;
+    real  operator()(int i, int j) const;
+    real* operator[](int i);
+    real  operator()(int i, int& j, int pos) const;
 
     void operator=  (real a);
     void operator=  (const DenseMatrix& A);

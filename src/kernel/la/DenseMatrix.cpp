@@ -144,14 +144,19 @@ int DenseMatrix::bytes() const
   return bytes;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::operator() (int i, int j) const
+real DenseMatrix::operator()(int i, int j) const
 {
   return values[i][j];
 }
 //-----------------------------------------------------------------------------
+real* DenseMatrix::operator[](int i)
+{
+  return values[i];
+}
+//-----------------------------------------------------------------------------
 real DenseMatrix::operator()(int i, int& j, int pos) const
 {
-  dolfin_warning("Using quick-access operator for dense matrix.");
+  dolfin_warning("Using sparse quick-access operator for dense matrix.");
 
   j = pos;
   return values[i][j];

@@ -87,11 +87,13 @@ int Matrix::bytes() const
 //-----------------------------------------------------------------------------
 real Matrix::operator()(int i, int j) const
 {
+  // This operator is used when the object is const
   return (*A)(i,j);
 }
 //-----------------------------------------------------------------------------
 Matrix::Element Matrix::operator()(int i, int j)
 {
+  // This operator is used when the object is non-const and is slower
   return Element(*this, i, j);
 }
 //-----------------------------------------------------------------------------
@@ -118,6 +120,11 @@ Matrix::Column Matrix::operator()(MatrixRange i, MatrixIndex j)
 real Matrix::operator()(int i, int& j, int pos) const
 {
   return (*A)(i,j,pos);
+}
+//-----------------------------------------------------------------------------
+real* Matrix::operator[](int i) const
+{
+  return (*A)[i];
 }
 //-----------------------------------------------------------------------------
 void Matrix::operator=(real a)
@@ -288,6 +295,8 @@ Matrix::Element::Element(Matrix& matrix, int i, int j) : A(matrix)
 //-----------------------------------------------------------------------------
 Matrix::Element::operator real() const
 {
+  //dolfin_debug("Conversion to real");
+
   return A.A->read(i,j);
 }
 //-----------------------------------------------------------------------------
