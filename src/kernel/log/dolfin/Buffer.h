@@ -18,9 +18,10 @@ namespace dolfin {
     void init(int lines, int cols);
     
     int size() const;
-    void add(const char* msg, Type type = info);
+    void add(const char* msg, Type type = info, int level = 0);
     const char* get(int line) const;
     Type type(int line) const;
+    int level(int line) const;
 
   private:
 
@@ -35,6 +36,7 @@ namespace dolfin {
 
     char** buffer; // The buffer
     Type*  types;  // Line types
+    int*   levels; // Levels
     
   };
 

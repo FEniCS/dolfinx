@@ -11,9 +11,9 @@ if [ "$CHECK" != "scripts" ]; then
 	exit 1
 fi
 
-echo '- Edit configure.in with new version number'
+echo '- Edit configure.ac with new version number'
 sleep 1
-/usr/bin/nano configure.in
+/usr/bin/nano configure.ac
 
 echo '- Edit ChangeLog'
 sleep 1
@@ -21,8 +21,8 @@ sleep 1
 
 echo '- Recompiling'
 sleep 1
-scripts/preconfigure
-./configure CXXFLAGS='-O2'
+autoreconf
+./configure --enable-debug
 make clean
 make
 

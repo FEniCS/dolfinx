@@ -118,14 +118,25 @@ void GridInit::initNodeCell(Grid& grid)
 void GridInit::initCellCell(Grid& grid)
 {
   // Go through all cells and count the cell neighbors.
+  // This is done in four steps:
+  //
+  //   1. Count the number of cell neighbors for each cell
+  //   2. Allocate memory for each cell (overestimate)
+  //   3. Add the cell neighbors
+  //   4. Reallocate
 
   for (CellIterator c1(grid); !c1.end(); ++c1) {
 
-    // Allocate for the maximum number of cell neighbors
-    c1->c->cc.init(c1->noEdges() + 1);
-    c1->c->cc.reset();
+    // Count the number of cell neighbors (overestimate)
+    for (NodeIterator n(c1); !n.end(); ++n)
+      for (CellIterator c2(n); !c2.end(); ++c2)
+	if ( c1->neighbor(*c2) )
+	  c1->c->cc.setsize(c1->c->cc.size()+1);
+
+    // Allocate memory
+    c1->c->cc.init();
     
-    // Add all unique cell neighbors
+    // Add all *unique* cell neighbors
     for (NodeIterator n(c1); !n.end(); ++n)
       for (CellIterator c2(n); !c2.end(); ++c2)
 	if ( c1->neighbor(*c2) )

@@ -29,19 +29,19 @@ void BoundaryData::clear()
 //-----------------------------------------------------------------------------
 void BoundaryData::add(Node* node)
 {
-  cout << "Adding node to boundary: " << *node << endl;
+  //cout << "Adding node to boundary: " << *node << endl;
   nodes.add(node);
 }
 //-----------------------------------------------------------------------------
 void BoundaryData::add(Edge* edge)
 {
-  cout << "Adding edge to boundary: " << *edge << endl;
+  //cout << "Adding edge to boundary: " << *edge << endl;
   edges.add(edge);
 }
 //-----------------------------------------------------------------------------
 void BoundaryData::add(Face* face)
 {
-  cout << "Adding face to boundary: " << *face << endl;
+  //cout << "Adding face to boundary: " << *face << endl;
   faces.add(face);
 }
 //-----------------------------------------------------------------------------

@@ -106,9 +106,6 @@ bool GenericCell::neighbor(GenericCell* cell) const
 //-----------------------------------------------------------------------------
 void GenericCell::createEdge(Node* n0, Node* n1)
 {
-  bool check = ( (n0->id() == 6  && n1->id() == 11) ||
-		 (n0->id() == 11 && n1->id() == 6) );
-
   Edge* edge = 0;
 
   // Check neighbor cells if an edge already exists between the two nodes
@@ -117,12 +114,6 @@ void GenericCell::createEdge(Node* n0, Node* n1)
     if ( edge )
       break;
   }
-
-
- 
-
-
-
 
   // Create the new edge if it doesn't exist
   if ( !edge )
@@ -147,20 +138,6 @@ void GenericCell::createFace(Edge* e0, Edge* e1, Edge* e2)
   // Create the new face if it doesn't exist
   if ( !face )
     face = grid->createFace(e0, e1, e2);
-
-  
-
-  
-  if ( _id == 30 || _id == 31 ) {
-    
-    cout << "--- Creating face for cell " << _id << " ---" << endl;
-    cout << "face id = " << face->id() << endl;
-    cout << "e0 = " << *e0 << endl;
-    cout << "e1 = " << *e1 << endl;
-    cout << "e2 = " << *e2 << endl;
-    
-  }
-    
 
   // Add the face at the first empty position
   cf.add(face);

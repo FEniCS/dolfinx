@@ -149,28 +149,28 @@ CursesLogger::~CursesLogger()
 //-----------------------------------------------------------------------------
 void CursesLogger::info(const char* msg)
 {
-  buffer.add(msg);
+  buffer.add(msg, Buffer::info, level);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::debug(const char* msg, const char* location)
 {
   snprintf(tmp, DOLFIN_WORDLENGTH, "Debug at %s: %s", location, msg);
-  buffer.add(tmp, Buffer::debug);
+  buffer.add(tmp, Buffer::debug, level);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::warning(const char* msg, const char* location)
 {
   snprintf(tmp, DOLFIN_WORDLENGTH, "Warning at %s: %s", location, msg);
-  buffer.add(tmp, Buffer::warning);
+  buffer.add(tmp, Buffer::warning, level);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::error(const char* msg, const char* location)
 {
   snprintf(tmp, DOLFIN_WORDLENGTH, "Error at %s: %s", location, msg);
-  buffer.add(tmp, Buffer::error);
+  buffer.add(tmp, Buffer::error, level);
   setInfo("Press any key to quit.");
   state = ERROR;
   updateInternal();
@@ -179,7 +179,7 @@ void CursesLogger::error(const char* msg, const char* location)
 void CursesLogger::dassert(const char* msg, const char* location)
 {
   snprintf(tmp, DOLFIN_WORDLENGTH, "Assertion %s failed at %s", msg, location);
-  buffer.add(tmp, Buffer::error);
+  buffer.add(tmp, Buffer::error, level);
   setInfo("Press any key to quit.");
   state = ERROR;
   updateInternal();
@@ -285,7 +285,7 @@ void CursesLogger::progress_flush()
 void CursesLogger::initColors()
 {
   if ( !has_colors() ) {
-    buffer.add("Your terminal has no colors.", Buffer::warning);
+    buffer.add("Your terminal has no colors.", Buffer::warning, level);
     return;
   }
 
@@ -757,7 +757,7 @@ void CursesLogger::drawBuffer()
 
     // Print line from the buffer
     clearLine(line, 0);
-    indent();
+    indent(buffer.level(i));
     printw(buffer.get(i));
 
     // Step to previous line
@@ -863,10 +863,12 @@ void CursesLogger::redraw()
   refresh();
 }
 //-----------------------------------------------------------------------------
-void CursesLogger::indent()
+void CursesLogger::indent(int _level)
 {
-  // Indent output to indicate the level
-  for (int i = 0; i < level; i++)
+  // Indent output to indicate the level. Note that we need to use the level
+  // stored for each row in the buffer and not the current level.
+
+  for (int i = 0; i < _level; i++)
     printw("  ");
 }
 //-----------------------------------------------------------------------------

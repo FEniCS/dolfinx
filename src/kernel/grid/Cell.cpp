@@ -251,16 +251,16 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
 {
   switch ( cell.type() ){
   case Cell::triangle:
-    stream << "[Cell (triangle) with nodes ( ";
+    stream << "[Cell (triangle): id = " << cell.id() << " nodes = ( ";
     for (NodeIterator n(cell); !n.end(); ++n)
       stream << n->id() << " ";
-    stream << "]";
+    stream << ") ]";
     break;
   case Cell::tetrahedron:
-    stream << "[Cell (tetrahedron) with nodes ( ";
+    stream << "[Cell (tetrahedron): id = " << cell.id() << " nodes = ( ";
     for (NodeIterator n(cell); !n.end(); ++n)
       stream << n->id() << " ";
-    stream << "]";
+    stream << ") ]";
     break;
   default:
     dolfin_error("Unknown cell type");

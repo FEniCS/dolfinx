@@ -101,17 +101,8 @@ void BoundaryInit::initFacesTet(Grid& grid)
 
   // Count the number of cell neighbors for each face
   for (CellIterator c(grid); !c.end(); ++c) 
-    for (FaceIterator f(c); !f.end(); ++f) {
-
-      if ( c->id() == 30 )
-	cout << "Face in cell 30: " << *f << endl;
-
-      if ( c->id() == 31 )
-	cout << "Face in cell 31: " << *f << endl;
-
+    for (FaceIterator f(c); !f.end(); ++f)
       cellcount(f->id()) += 1;
-
-    }
   
   // Add faces with only one cell neighbor to the boundary
   for (FaceIterator f(grid); !f.end(); ++f) {

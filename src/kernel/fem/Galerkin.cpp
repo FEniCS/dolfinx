@@ -167,13 +167,12 @@ void Galerkin::setBC(Grid& grid, Matrix& A)
   // Get boundary condition function
   bcf = dolfin_get("boundary condition");
 
+  // Create boundary
+  Boundary boundary(grid);
+
   // Iterate over all nodes on the boundary
-  for (NodeIterator node(grid); !node.end(); ++node) {
-    
-    // Only set boundary condition for nodes on the boundary
-    if ( node->boundary() == -1 )
-      continue;
-    
+  for (NodeIterator node(boundary); !node.end(); ++node) {
+
     // Get boundary condition
     bc.update(node);
     bcf(bc);
@@ -211,7 +210,7 @@ void Galerkin::setBC(Grid& grid, Vector& b)
   
   // Iterate over all nodes on the boundary
   for (NodeIterator node(boundary); !node.end(); ++node) {
-    
+   
     // Get boundary condition
     bc.update(node);
     bcf(bc);

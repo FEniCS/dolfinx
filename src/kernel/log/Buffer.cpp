@@ -11,6 +11,7 @@ Buffer::Buffer()
 {
   buffer = 0;
   types = 0;
+  levels = 0;
   clear();
 }
 //-----------------------------------------------------------------------------
@@ -18,6 +19,7 @@ Buffer::Buffer(int lines, int cols)
 {
   buffer = 0;
   types = 0;
+  levels = 0;
   init(lines, cols);
 }
 //-----------------------------------------------------------------------------
@@ -51,6 +53,10 @@ void Buffer::init(int lines, int cols)
   types = new Type[lines];
   for (int i = 0; i < lines; i++)
     types[i] = info;
+
+  levels = new int[lines];
+  for (int i = 0; i < lines; i++)
+    levels[i] = 0;
 }
 //-----------------------------------------------------------------------------
 int Buffer::size() const
@@ -61,7 +67,7 @@ int Buffer::size() const
   return last - first + 1;
 }
 //-----------------------------------------------------------------------------
-void Buffer::add(const char* msg, Type type)
+void Buffer::add(const char* msg, Type type, int level)
 {
   // Step last
   last++;
@@ -86,6 +92,9 @@ void Buffer::add(const char* msg, Type type)
 
   // Save the type
   types[last] = type;
+
+  // Save the level
+  levels[last] = level;
 }
 //-----------------------------------------------------------------------------
 const char* Buffer::get(int line) const
@@ -108,6 +117,16 @@ Buffer::Type Buffer::type(int line) const
   return types[(first + line) % lines];
 }
 //-----------------------------------------------------------------------------
+int Buffer::level(int line) const
+{
+  if ( line < 0 )
+    dolfin_error("Line number must be non-negative.");
+  if ( line >= lines )
+    dolfin_error1("Line number too large: %d.", line);
+
+  return levels[(first + line) % lines];
+}
+//-----------------------------------------------------------------------------
 void Buffer::clear()
 {
   if ( buffer ) {
@@ -120,6 +139,10 @@ void Buffer::clear()
   if ( types )
     delete [] types;
   types = 0;
+
+  if ( levels )
+    delete [] levels;
+  levels = 0;
 
   lines = 0;
   cols = 0;

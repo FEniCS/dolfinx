@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <stdio.h>
+
 #include <dolfin/GenericLogger.h>
 
 using namespace dolfin;
@@ -19,7 +21,7 @@ void GenericLogger::start()
 void GenericLogger::end()
 {
   level--;
-  
+
   if ( level < 0 )
     level = 0;
 }

@@ -89,7 +89,7 @@ namespace dolfin {
     
     void redraw();
 
-    void indent();
+    void indent(int _level);
     
   };
   
