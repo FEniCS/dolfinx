@@ -7,6 +7,7 @@
 #define __NEW_FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Point.h>
 #include <dolfin/Variable.h>
 
 namespace dolfin
@@ -14,7 +15,6 @@ namespace dolfin
   
   class Cell;
   class Mesh;
-  class Point;
   class NewFiniteElement;
   class NewVector;
   
@@ -26,7 +26,10 @@ namespace dolfin
   {
   public:
 
-    /// Create function on a given mesh
+    /// Create user-defined function
+    NewFunction();
+
+    /// Create function with given degrees of freedom
     NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x);
 
     /// Destructor
@@ -36,7 +39,7 @@ namespace dolfin
     void project(const Cell& cell, const NewFiniteElement& element, real c[]) const;
 
     /// Evaluate function at given point
-    virtual real operator()(const Point& p);
+    virtual real operator() (const Point& p) const;
 
   private:
 

@@ -9,6 +9,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+NewFunction::NewFunction() : data(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
 			 NewVector& x) : data(0)
 {
@@ -27,6 +32,15 @@ NewFunction::~NewFunction()
 void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
 			  real c[]) const
 {
+  // Check if function is user-defined
+  if ( !data )
+  {
+    for (uint i = 0; i < element.spacedim(); i++)
+      c[i] = (*this)(element.coord(i, cell, data->mesh));
+
+    return;
+  }
+
   // Check if we're computing the projection onto a cell of the same
   // mesh for the same element (the easy case...)
   if ( &(cell.mesh()) == &(data->mesh) && &element == &(data->element) )
@@ -44,18 +58,17 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     for (uint i = 0; i < element.spacedim(); i++)
       c[i] = values[element.dof(i, cell, data->mesh)];
     data->x.restore(values);
+
+    return;
   }
-  else
-  {
-    dolfin_error("Projection between different finite element spaces not implemented.");
-  }
+
+  // Need to compute projection between different spaces
+  dolfin_error("Projection between different finite element spaces not implemented.");
 }
 //-----------------------------------------------------------------------------
-real NewFunction::operator()(const Point& p)
+real NewFunction::operator()(const Point& p) const
 {
-  // FIXME: Empty implementation. We need to decide what the default
-  // behavior should be.
-
+  dolfin_error("User-defined function evaluation not implemented.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
