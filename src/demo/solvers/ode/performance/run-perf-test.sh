@@ -43,7 +43,7 @@ function run()
     echo
 
     echo "n = [ " $n "];" > timings.m
-    echo -n "t_mdg0 = [" >> timings.m
+    echo -n "t = [" >> timings.m
 
     # Run multi-adaptive test
     echo "Running multi-adaptive performance test"
@@ -56,10 +56,10 @@ function run()
     done
 
     echo "];" >> timings.m
-    echo "k_mdg0 = " $( echo "timings; lsquares(n, t_mdg0)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
-    echo "m_mdg0 = " $( echo "timings; lsquares(n, t_mdg0)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "k = " $( echo "timings; lsquares(n, t)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "m = " $( echo "timings; lsquares(n, t)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
     echo
-    echo -n "t_dg0 = [" >> timings.m
+    echo -n "t = [" >> timings.m
 
     # Run mono-adaptive test
     echo "Running mono-adaptive performance test"
@@ -72,8 +72,8 @@ function run()
     done
 
     echo "];" >> timings.m
-    echo "k_dg0 = " $( echo "timings; lsquares(n, t_mdg0)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
-    echo "m_dg0 = " $( echo "timings; lsquares(n, t_mdg0)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "k = " $( echo "timings; lsquares(n, t)(1)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
+    echo "m = " $( echo "timings; lsquares(n, t)(2)" | octave -q | awk '{ print $3 }' ) ";" >> timings.m
 
 }
 
@@ -88,12 +88,12 @@ uname -a
 
 # Non-stiff
 run 100 0
-mv timings.m timings_m100_b0.m
+mv timings.m timings_M100_b0.m
 run 200 0
-mv timings.m timings_m200_b0.m
+mv timings.m timings_M200_b0.m
 
-# Non-stiff
-run 100 0
-mv timings.m timings_m100_b100.m
-run 200 0
-mv timings.m timings_m200_b100.m
+# Stiff
+run 100 100
+mv timings.m timings_M100_b100.m
+run 200 100
+mv timings.m timings_M200_b100.m
