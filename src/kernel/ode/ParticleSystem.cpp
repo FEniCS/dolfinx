@@ -1,6 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/Vector.h>
 #include <dolfin/ParticleSystem.h>
 
@@ -144,5 +145,25 @@ real ParticleSystem::f(const Vector& u, real t, unsigned int i)
   }
   
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+real ParticleSystem::dist(unsigned int i, unsigned int j) const
+{
+  real dx = x(i) - x(j);
+  real r = dx*dx;
+
+  if ( dim > 1 )
+  {
+    real dy = y(i) - y(j);
+    r += dy*dy;
+  }
+
+  if ( dim > 2 )
+  {
+    real dz = z(i) - z(j);
+    r += dz*dz;
+  }
+ 
+  return sqrt(r);
 }
 //-----------------------------------------------------------------------------

@@ -29,11 +29,6 @@ public:
       return 1.0;
   }
 
-  real v0(unsigned int i)
-  {
-    return 0.0;
-  }
-
   real Fx(unsigned int i, real t)
   {
     if ( i == 0 )
@@ -50,7 +45,6 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.1);
   dolfin_set("initial time step", 0.0000000001);
   dolfin_set("solve dual problem", false);

@@ -73,17 +73,20 @@ namespace dolfin
   protected:
 
     // Return x-component of current position (inline optimized)
-    real x(unsigned int i) { return (*u)(dim*i); }
+    real x(unsigned int i) const { return (*u)(dim*i); }
     // Return y-component of current position (inline optimized)
-    real y(unsigned int i) { return (*u)(dim*i + 1); }
+    real y(unsigned int i) const { return (*u)(dim*i + 1); }
     // Return z-component of current position (inline optimized)
-    real z(unsigned int i) { return (*u)(dim*i + 2); }
+    real z(unsigned int i) const { return (*u)(dim*i + 2); }
     // Return x-component of current velocity (inline optimized)
-    real vx(unsigned int i) { return (*u)(offset + dim*i); }
+    real vx(unsigned int i) const { return (*u)(offset + dim*i); }
     // Return y-component of current velocity (inline optimized)
-    real vy(unsigned int i) { return (*u)(offset + dim*i + 1); }
+    real vy(unsigned int i) const { return (*u)(offset + dim*i + 1); }
     // Return z-component of current velocity (inline optimized)
-    real vz(unsigned int i) { return (*u)(offset + dim*i + 2); }
+    real vz(unsigned int i) const { return (*u)(offset + dim*i + 2); }
+
+    // Return distance between to particles
+    real dist(unsigned int i, unsigned int j) const;
 
     // Number of particles
     unsigned int n;

@@ -5,20 +5,17 @@
 
 using namespace dolfin;
 
-class Spring : public ParticleSystem
+class Structure : public ParticleSystem
 {
 public:
   
-  Spring() : ParticleSystem(1, 1)
+  Structure(unsigned int p) : ParticleSystem(p*p + (p-1)*(p-1), 2), p(p)
   {
     // Final time
     T = 30.0;
 
-    // Spring constant
-    k = 5.0;
-    
-    // Damping constant
-    b = 1.0;
+    // Distance between large masses
+    h = 1.0 / static_cast<real>(p-1);
 
     // Compute sparsity
     sparse();
@@ -26,32 +23,134 @@ public:
 
   real x0(unsigned int i)
   {
-    return 1.0;
+    if ( i < p*p )
+      return static_cast<real>(i % p) * h;
+    else
+      return 0.5*h + static_cast<real>((i-p*p) % (p-1)) * h;
   }
 
-  real v0(unsigned int i)
+  real y0(unsigned int i)
   {
-    return 0.0;
+    if ( i < p*p )
+      return static_cast<real>(i / p) * h;
+    else
+      return 0.5*h + static_cast<real>((i-p*p) / (p-1)) * h;
   }
 
   real Fx(unsigned int i, real t)
   {
-    return - k * x(0) - b * vx(0);
+    real fx = 0.0;
+    if ( i < p*p )
+    {
+      // Compute force for large mass
+      unsigned int i1 = i % p;
+      unsigned int i2 = i / p;
+
+      // Add force from the left
+      if ( i1 > 0 )
+      {
+	real r = dist(i, i - 1);
+	fx += (r - h) * (x(i-1) - x(i)) / r;
+      }
+      
+      // Add force from the right
+      if ( i1 < (p-1) )
+      {
+	real r = dist(i, i + 1);
+	fx += (r - h) * (x(i+1) - x(i)) / r;
+      }
+
+      // Add force from below
+      if ( i2 > 0 )
+      {
+	real r = dist(i, i - p);
+	fx += (r - h) * (x(i-p) - x(i)) / r;
+      }
+
+      // Add force from above
+      if ( i2 < (p-1) )
+      {
+	real r = dist(i, i + p);
+	fx += (r - h) * (x(i+p) - x(i)) / r;
+      }
+    }
+    else
+    {
+      // Compute force for small mass
+      
+      fx += 0.0;
+    }
+    
+    return fx;
   }
 
+  real Fy(unsigned int i, real t)
+  {
+    real fy = 0.0;
+    if ( i < p*p )
+    {
+      // Compute force for large mass
+      unsigned int i1 = i % p;
+      unsigned int i2 = i / p;
+
+      // Add force from the left
+      if ( i1 > 0 )
+      {
+	real r = dist(i, i - 1);
+	fy += (r - h) * (y(i-1) - y(i)) / r;
+      }
+      
+      // Add force from the right
+      if ( i1 < (p-1) )
+      {
+	real r = dist(i, i + 1);
+	fy += (r - h) * (y(i+1) - y(i)) / r;
+      }
+
+      // Add force from below
+      if ( i2 > 0 )
+      {
+	real r = dist(i, i - p);
+	fy += (r - h) * (y(i-p) - y(i)) / r;
+      }
+
+      // Add force from above
+      if ( i2 < (p-1) )
+      {
+	real r = dist(i, i + p);
+	fy += (r - h) * (y(i+p) - y(i)) / r;
+      }
+    }
+    else
+    {
+      // Compute force for small mass
+
+      fy += 0.0;
+    }
+
+    return fy;
+  }
+  
 private:
 
-  real k;
-  real b;
-  
+  unsigned int p;
+  real h;
+
 };
 
 int main()
 {
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("output", "plain text");
+  dolfin_set("tolerance", 0.1);
+  //dolfin_set("initial time step", 0.0000000001);
+  dolfin_set("solve dual problem", false);
+  dolfin_set("number of samples", 100);
+  //dolfin_set("automatic modeling", true);
+  dolfin_set("average length", 0.0000001);
+  dolfin_set("average samples", 1000);
 
-  Spring spring;
-  spring.solve();
+  Structure structure(2);
+  structure.solve();
   
   return 0;
 }

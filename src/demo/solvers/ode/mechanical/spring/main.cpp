@@ -29,11 +29,6 @@ public:
     return 1.0;
   }
 
-  real v0(unsigned int i)
-  {
-    return 0.0;
-  }
-
   real Fx(unsigned int i, real t)
   {
     return - k * x(0) - b * vx(0);
