@@ -1,12 +1,30 @@
 Contents
 
-	1. Installation
-	2. License
-	3. Feedback
-	4. About
+	1. Dependencies
+	2. Installation
+	3. License
+	4. Feedback
+	5. About
 
 -------------------------------------------------------------------------------
-1. Installation
+1. Dependencies
+
+DOLFIN depends on PETSc, version 2.2.1. PETSc can be downloaded from
+
+    http://www-unix.mcs.anl.gov/petsc/petsc-2/
+
+Follow the installation instructions on the PETSc web page. Normally,
+you should only have to perform the following simple steps in the PETSc
+source directory:
+
+    export PETSC_DIR=`pwd`
+    ./config/configure.py
+    make BOPT=g_c++
+
+Replace "export PETSC_DIR=" with "setenv PETSC_DIR " if you're using tcsh.
+
+-------------------------------------------------------------------------------
+2. Installation
 
 DOLFIN follows GNU standard, so the installation procedure is simple:
 
@@ -52,17 +70,16 @@ A note for Solaris users: You probably need to disable curses and use gmake:
 	./configure --disable-curses
 	gmake
 
--------------------------------------------------------------------------------
-2. Feed back
-
-Feed back, patches, and comments should be sent to
-
-	dolfin@fenics.org
-
 ------------------------------------------------------------------------------
 3. License
 
 DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
+-------------------------------------------------------------------------------
+4. Feed back
+
+Feed back, patches, and comments should be sent to
+
+	dolfin@fenics.org
 
 ------------------------------------------------------------------------------
 5. About
@@ -75,5 +92,4 @@ For more information about DOLFIN, visit
 
 -------------------------------------------------------------------------------
 Chicago
-October 2004
--
+February 2005
