@@ -11,172 +11,177 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SISolver::SISolver()
 {
-  iterative_method = GAUSS_SEIDEL;
-  
-  max_no_iterations = 100;
-
-  tol = 1.0e-6;
+  method = gauss_seidel;
+  max_no_iterations = 10000;
+  tol = 1.0e-10;
 }
 //-----------------------------------------------------------------------------
 void SISolver::solve(Matrix& A, Vector& x, Vector& b)
 {
+  // Solve linear system of equations Ax=b, using a stationary iterative (SI) method 
   if ( A.size(0) != A.size(1) ) {
-	 cout << "Must be a square matrix." << endl;
-	 exit(1);
+    cout << "Must be a square matrix." << endl;
+    exit(1);
   }
-
   if ( A.size(0) != b.size() ) {
-	 cout << "Not compatible matrix and vector sizes." << endl;
-	 exit(1);
+    cout << "Not compatible matrix and vector sizes." << endl;
+    exit(1);
   }
+  if ( x.size() != b.size() ) x.init(b.size());
   
-  if ( x.size() != b.size() )
-    x.init(b.size());
-
+  cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << endl;
+  
+  // Check if b=0 => x=0
   real norm_b = b.norm();
-  if ( norm_b < DOLFIN_EPS ) {
-	 x = 0.0;
+  if (norm_b < DOLFIN_EPS){
+    x = 0.0;
     return;
-  }  
+  }
+  real norm_r = 2.0*tol*norm_b;
   
-  residual = 2.0*tol*norm_b;
-
-  iteration = 0;
-   while ( residual/norm_b > tol ){
+  int iteration = 0;
+  while (norm_r > tol*norm_b){
     iteration ++;
-    switch( iterative_method ){ 
-    case RICHARDSON:
-      iterateRichardson(A, x, b);
+    switch(method){ 
+    case richardson:
+      iterateRichardson(A,x,b);
       break;
-    case JACOBI:
-      iterateJacobi(A, x, b);
+    case jacobi:
+      iterateJacobi(A,x,b);
       break;
-    case GAUSS_SEIDEL:
-      iterateGaussSeidel(A, x, b);
+    case gauss_seidel:
+      iterateGaussSeidel(A,x,b);
       break;
-    case SOR:
-      iterateSOR(A, x, b);
+    case sor:
+      iterateSOR(A,x,b);
       break;
     default:
-      cout << "Unknown method" << endl;
-		exit(1);
+      cout << "Unknown stationary iterative method" << endl;
+      exit(1);
     }
-    computeResidual(A,x,b);
-	}
-	
+    
+    if (iteration == (max_no_iterations - 1)){
+      break;
+      //cout << "SI iterations did not converge: residual = " << norm_r << endl;
+      //exit(1);
+    }
+    norm_r = getResidual(A,x,b);
+  }
+  
+  switch(method){ 
+  case richardson:
+    cout << "Richardson";
+    break;
+  case jacobi:
+    cout << "Jacobi";
+    break;
+  case gauss_seidel:
+    cout << "Gauss-Seidel";
+    break;
+  case sor:
+    cout << "SOR";
+    break;
+  default:
+    cout << "Unknown stationary iterative method" << endl;
+    exit(1);
+  }
+  if (norm_r < tol*norm_b){
+    cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << endl;
+  } else{
+    cout << " iterations did not converge: residual = " << norm_r << endl;
+  }
 }
 //-----------------------------------------------------------------------------
-void SISolver::set(int noit)
+void SISolver::setNoSweeps(int max_no_iterations)
 {
-  max_no_iterations = noit;
+  this->max_no_iterations = max_no_iterations;
 }
 //-----------------------------------------------------------------------------
-void SISolver::set(Method method)
+void SISolver::setMethod(SI_method method)
 {
-  iterative_method = method;
+  this->method = method;
 }
 //-----------------------------------------------------------------------------
 void SISolver::iterateRichardson(Matrix& A, Vector& x, Vector& b)
 {
   real aij;
-  int j;
-
   Vector x0(x);
 
-  for (int i = 0; i < A.size(0); i++){
-    x(i) = 0.0;
-    for (int pos = 0; pos < A.rowSize(i); pos++) {
-      aij = A(i, &j, pos);
-		if ( j == -1 )
-		  break;
-      if (i==j)
-		  x(i) += (1.0-aij)*x0(j);
-      else
-		  x(i) += -aij*x0(j);
+  int j;
+  for (int i=0;i<A.size(0);i++){
+    x(i) = b(i);
+    for (int pos=0;pos<A.rowSize(i);pos++) {
+      aij = A(i,&j,pos);
+      if (j == -1) break;
+      if (i == j) x(i) += (1.0-aij)*x0(j);
+      else x(i) -= aij*x0(j);
     }
-    x(i) += b(i);
   }
 }
 //-----------------------------------------------------------------------------
 void SISolver::iterateJacobi(Matrix& A, Vector& x, Vector& b)
 {
-  real aij, aii;
-  int j;
-
+  real aii,aij;
   Vector x0(x);
 
-  for (int i = 0; i < A.size(0); i++) {
-    x(i) = 0.0;
-    for (int pos = 0; pos < A.rowSize(i); pos++){
-      aij = A(i, &j, pos);
-      if ( j == -1 )
-		  break;
-      if (i==j)
-		  aii = aij;
-      else
-		  x(i) += -aij*x0(j);
+  int j;
+  for (int i=0;i<A.size(0);i++){
+    x(i) = b(i);
+    for (int pos=0;pos<A.rowSize(i);pos++){
+      aij = A(i,&j,pos);
+      if (j == -1) break;
+      if (i==j) aii = aij;
+      else x(i) -= aij*x0(j);
     }
-    x(i) += b(i);
-    x(i) *= 1.0 / aii;
+    x(i) /= aii;
   }
 }
 //-----------------------------------------------------------------------------
 void SISolver::iterateGaussSeidel(Matrix& A, Vector& x, Vector& b)
 {
-  real aij, aii;
-  int j;
+  real aii,aij;
 
-  for (int i = 0; i < A.size(0); i++) {
-    x(i) = 0.0;
-    for (int pos = 0; pos < A.rowSize(i); pos++) {
-      aij = A(i, &j, pos);
-		if ( j == -1 )
-		  break;
-      if (j==i)
-		  aii = aij;
-		else
-		  x(i) += -aij*x(j);
+  int j;
+  for (int i=0;i<A.size(0);i++){
+    x(i) = b(i);
+    for (int pos=0;pos<A.rowSize(i);pos++){
+      aij = A(i,&j,pos);
+      if (j == -1) break;
+      if (i==j) aii = aij;
+      else x(i) -= aij*x(j);
     }
-    x(i) += b(i);
-    x(i) *= 1.0 / aii;
+    x(i) /= aii;
   }
 }
 //-----------------------------------------------------------------------------
 void SISolver::iterateSOR(Matrix& A, Vector& x, Vector& b)
 {
   real aij, aii;
-  int j;
-
   real omega = 1.0;
 
-  for (int i = 0; i < A.size(0); i++) {
-    x(i) = 0.0;
-    for (int pos = 0; pos < A.rowSize(i); pos++) {
-      aij = A(i, &j, pos);
-		if ( j == -1 )
-		  break;
-      if ( j==i ){
-		  aii = aij;
-		  x(i) += (1.0-omega)*aii*x(j);
+  int j;
+  for (int i=0;i<A.size(0);i++){
+    x(i) = b(i);
+    for (int pos=0;pos<A.rowSize(i);pos++){
+      aij = A(i,&j,pos);
+      if (j == -1 ) break;
+      if (j==i){
+	aii = aij;
+	x(i) += (1.0-omega)*aii*x(i);
       } else{
-		  x(i) += -omega*aij*x(j);
+	x(i) -= omega*aij*x(j);
       }	  
     }
-    x(i) += b(i);
-    x(i) *= 1.0 / aii;
+    x(i) /= aii;
   }
 }
 //-----------------------------------------------------------------------------
-void SISolver::computeResidual(Matrix& A, Vector& x, Vector& b)
+real SISolver::getResidual(Matrix &A, Vector &x, Vector &b)
 {
-  residual = 0.0;
-  real Axi;
-  
-  for (int i = 0; i < A.size(0); i++) {
-	 Axi = A.mult(x, i);
-	 residual += sqr( b(i) - Axi );
-  }
+  real norm_r = 0.0;
+  for (int i=0;i<A.size(0);i++)
+    norm_r += sqr(b(i) - A.mult(x,i));
 
-  residual = sqrt(residual);
+  return sqrt(norm_r);
 }
 //-----------------------------------------------------------------------------
