@@ -161,7 +161,6 @@ void DirectSolver::inverseLU(const Matrix& LU, Matrix& Ainv) const
       Ainv(i, j) = x(i);
                                                                                                                                                             
   }
-                                                                                                                                                            
 }
 //-----------------------------------------------------------------------------
 void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,

@@ -12,6 +12,9 @@ Main authors:
 Contributors:
 -------------
 
+- Niklas Ericsson (nen@math.chalmers.se)
+  (LU factorization and LU solve)
+
 - Georgios Foufas (foufas@math.chalmers.se)
   (Operators in Vector and Matrix)
 
