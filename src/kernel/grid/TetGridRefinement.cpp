@@ -305,71 +305,99 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   Array<Node*> nodes;
   sortNodes(cell, nodes);
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm  = createNode(*nodes(0), grid, cell);
-  Node& n_m0  = createNode(*nodes(1), grid, cell);
-  Node& n_m1  = createNode(*nodes(2), grid, cell);
-  Node& n_nm  = createNode(*nodes(3), grid, cell);
-
-  // Find the edges
-  Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
-  Edge* e1 = cell.findEdge(*nodes(0), *nodes(2));
-  dolfin_assert(e0);
-  dolfin_assert(e1);
-
-  // Find the common face
-  Face* common_face = cell.findFace(*e0, *e1);
-  dolfin_assert(common_face);
-
-  // Create new node on marked edge 
-  Node& n_e0 = createNode(e0->midpoint(), grid, cell);
-  Node& n_e1 = createNode(e1->midpoint(), grid, cell);
-
-
-  dolfin_error("Irregular 3 does not work yet.");
-
-  // Create new cells 
-  Cell& c1 = createCell(n_dm, n_e0, n_e1, n_nm, grid, cell);
-
   // Find neighbor with common face
-  Cell* neighbor = findNeighbor(cell, *common_face);
+  Cell* neighbor = findNeighbor(cell, *cell.findFace(*cell.findEdge(*nodes(0),*nodes(1)),
+						     *cell.findEdge(*nodes(0),*nodes(1))));
   dolfin_assert(neighbor);
-
-  // If neighbor with common 2-marked-edges-face is marked for regular
-  // refinement do the same for cell, else find orientation of
-  // neighbors refinement.
 
   if ( neighbor->marker() == Cell::marked_for_reg_ref ) {
     // If neighbor is marked for regular refinement so is cell
-    cell.marker() = Cell::marked_for_reg_ref;
-    refineRegular(cell,grid);
+    refineIrregular31(cell,grid);
   }
   else if ( neighbor->marker() == Cell::marked_according_to_ref ) {
     // If neighbor is marked refinement by rule 3, 
     // just chose an orientation, and it will be up to 
     // the neighbor to make sure the common face match
-    createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
-    createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
+    refineIrregular32(cell,grid,nodes);
   }
   else {
     // If neighbor has been refined irregular according to 
     // refinement rule 3, make sure the common face matches
-    for (int i = 0; i < neighbor->noChildren(); i++) {
-      if ( *neighbor->child(i) != c1 ){
-	if ( neighbor->child(i)->haveNode(n_e0) && neighbor->child(i)->haveNode(n_e1) ){
-	  if ( neighbor->child(i)->haveNode(n_m0) ){
-	    createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
-	    createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
-	  }
-	  else{
-	    createCell(n_e0, n_e1, n_m1, n_nm, grid, cell);
-	    createCell(n_m0, n_m1, n_e0, n_nm, grid, cell);
-	  }		
+    refineIrregular33(cell, grid, nodes, *neighbor);
+  }
+}
+//-----------------------------------------------------------------------------
+void TetGridRefinement::refineIrregular31(Cell& cell, Grid& grid)
+{
+  // If neighbor with common 2-marked-edges-face is marked for regular
+  // refinement do the same for cell
+  cell.marker() = Cell::marked_for_reg_ref;
+  refineRegular(cell,grid);
+}
+//-----------------------------------------------------------------------------
+void TetGridRefinement::refineIrregular32(Cell& cell, Grid& grid, 
+					  Array<Node*>& sorted_nodes)
+{
+  // If neighbor is marked refinement by rule 3, 
+  // just chose an orientation, and it will be up to 
+  // the neighbor to make sure the common face match
+
+  // Create new nodes with the same coordinates as the old nodes
+  Node& n_dm  = createNode(*sorted_nodes(0), grid, cell);
+  Node& n_m0  = createNode(*sorted_nodes(1), grid, cell);
+  Node& n_m1  = createNode(*sorted_nodes(2), grid, cell);
+  Node& n_nm  = createNode(*sorted_nodes(3), grid, cell);
+
+  // Create new node on marked edge 
+  Node& n_e0 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(1)), grid, cell);
+  Node& n_e1 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(2)), grid, cell);
+
+  // Create new cells 
+  createCell(n_dm, n_e0, n_e1, n_nm, grid, cell);
+  createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
+  createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
+
+  // Set marker of cell
+  cell.marker() = Cell::marked_according_to_ref;
+
+  // Set status of cell
+  cell.status() = Cell::ref_irr;
+}
+//-----------------------------------------------------------------------------
+void TetGridRefinement::refineIrregular33(Cell& cell, Grid& grid, 
+					  Array<Node*>& sorted_nodes,
+					  Cell& face_neighbor)
+{
+  // Create new nodes with the same coordinates as the old nodes
+  Node& n_dm  = createNode(*sorted_nodes(0), grid, cell);
+  Node& n_m0  = createNode(*sorted_nodes(1), grid, cell);
+  Node& n_m1  = createNode(*sorted_nodes(2), grid, cell);
+  Node& n_nm  = createNode(*sorted_nodes(3), grid, cell);
+
+  // Create new node on marked edge 
+  Node& n_e0 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(1)), grid, cell);
+  Node& n_e1 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(2)), grid, cell);
+
+  // Create new cells 
+  Cell& c1 = createCell(n_dm, n_e0, n_e1, n_nm, grid, cell);
+
+  // If neighbor has been refined irregular according to 
+  // refinement rule 3, make sure the common face matches
+  for (int i = 0; i < face_neighbor.noChildren(); i++) {
+    if ( *face_neighbor.child(i) != c1 ){
+      if ( face_neighbor.child(i)->haveNode(n_e0) && face_neighbor.child(i)->haveNode(n_e1) ){
+	if ( face_neighbor.child(i)->haveNode(n_m0) ){
+	  createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
+	  createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
 	}
+	else{
+	  createCell(n_e0, n_e1, n_m1, n_nm, grid, cell);
+	  createCell(n_m0, n_m1, n_e0, n_nm, grid, cell);
+	}		
       }
     }
   }
-  
+    
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
 

@@ -38,6 +38,12 @@ namespace dolfin {
     static void refineIrregular1(Cell& cell, Grid& grid);
     static void refineIrregular2(Cell& cell, Grid& grid);
     static void refineIrregular3(Cell& cell, Grid& grid);
+    static void refineIrregular31(Cell& cell, Grid& grid);
+    static void refineIrregular32(Cell& cell, Grid& grid, 
+				  Array<Node*>& sorted_nodes);
+    static void refineIrregular33(Cell& cell, Grid& grid, 
+				  Array<Node*>& sorted_nodes,
+				  Cell& face_neighbor);
     static void refineIrregular4(Cell& cell, Grid& grid);
 
     static bool  markedEdgesOnSameFace (Cell& cell);
