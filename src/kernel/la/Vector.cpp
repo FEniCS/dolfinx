@@ -1,7 +1,8 @@
 // (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
 // Licensed under the GNU GPL Version 2.
 //
-// Modifications by Georgios Foufas (2002)
+// Contributions by: Georgios Foufas (2002)
+//                   Johan Jansson (2003)
 
 #include <math.h>
 #include <dolfin/Vector.h>
@@ -26,7 +27,7 @@ Vector::Vector(int size)
   rename("x", "A vector");
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(Vector &vector)
+Vector::Vector(const Vector &vector)
 {
   n = vector.n;
   values = new real[n];
@@ -74,8 +75,10 @@ real Vector::operator()(int i) const
   return values[i];
 }
 //-----------------------------------------------------------------------------
-void Vector::operator=(Vector &vector)
+void Vector::operator=(const Vector &vector)
 {
+  if(size() != vector.size())
+    init(vector.size());
   for (int i = 0; i < n; i++)
 	 values[i] = vector.values[i];    
 }
@@ -92,13 +95,13 @@ void Vector::operator+=(real scalar)
 	 values[i] += scalar;
 }
 //-----------------------------------------------------------------------------
-void Vector::operator+=(Vector &vector)
+void Vector::operator+=(const Vector &vector)
 {
   for (int i=0;i<n;i++)
 	 values[i] += vector.values[i];
 }
 //-----------------------------------------------------------------------------
-void Vector::operator-=(Vector &vector)
+void Vector::operator-=(const Vector &vector)
 {
   for (int i=0;i<n;i++)
 	 values[i] -= vector.values[i];
@@ -110,7 +113,7 @@ void Vector::operator*=(real scalar)
 	 values[i] *= scalar; 
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(Vector &vector)
+real Vector::operator*(const Vector &vector)
 {
   real sum = 0.0;
   for (int i=0;i<n;i++)

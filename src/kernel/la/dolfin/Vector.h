@@ -1,7 +1,8 @@
 // (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
 // Licensed under the GNU GPL Version 2.
 //
-// Modifications by Georgios Foufas (2002)
+// Contributions by: Georgios Foufas (2002)
+//                   Johan Jansson (2003)
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -17,7 +18,7 @@ namespace dolfin {
 	 
 	 Vector  ();
 	 Vector  (int size);
-	 Vector  (Vector &vector);
+	 Vector  (const Vector &vector);
 	 ~Vector ();
 
 	 void init(int size);
@@ -27,16 +28,16 @@ namespace dolfin {
 	 real& operator()(int i);
 	 real  operator()(int i) const;
 	 
-	 void operator=(Vector &vector);
+	 void operator=(const Vector &vector);
 	 void operator=(real scalar);
 	 
-	 void operator-=(Vector &vector);
+	 void operator-=(const Vector &vector);
 
-	 void operator+=(Vector &vector);
+	 void operator+=(const Vector &vector);
 	 void operator+=(real scalar);	 
 	 void operator*=(real scalar);
 	 
-	 real operator*(Vector &vector);
+	 real operator*(const Vector &vector);
 	 
 	 real norm ();
 	 real norm (int i);
