@@ -4,6 +4,7 @@
 // Multi-adaptivity
 
 #include <dolfin/cGqMethod.h>
+#include <dolfin/dGqMethod.h>
 #include <dolfin/Method.h>
 
 #endif

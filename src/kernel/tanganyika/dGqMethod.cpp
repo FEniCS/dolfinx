@@ -2,29 +2,26 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Lagrange.h>
-#include <dolfin/LobattoQuadrature.h>
+#include <dolfin/RadauQuadrature.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/cGqMethod.h>
+#include <dolfin/dGqMethod.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqMethod::cGqMethod(int q) : Method(q)
+dGqMethod::dGqMethod(int q) : Method(q)
 {
-  if ( q < 1 )
-    dolfin_error("Polynomial order q must be at least 1 for the cG(q) method.");
-
   init();
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::show() const
+void dGqMethod::show() const
 {
-  dolfin_info("Data for the cG(%d) method", q);
+  dolfin_info("Data for the dG(%d) method", q);
   dolfin_info("==========================");
   dolfin_info("");
 
-  dolfin_info("Lobatto quadrature points and weights on [0,1]:");
+  dolfin_info("Radau quadrature points and weights on [0,1]:");
   dolfin_info("");
   dolfin_info(" i   points                   weights");
   dolfin_info("----------------------------------------------------");
@@ -32,9 +29,9 @@ void cGqMethod::show() const
   for (int i = 0; i < n; i++)
     dolfin_info("%2d   %.16e   %.16e", i, points[i], qweights[i]);
 
-  for (int i = 1; i < n; i++) {
+  for (int i = 0; i < n; i++) {
     dolfin_info("");
-    dolfin_info("cG(%d) weights for degree of freedom %d:", q, i);
+    dolfin_info("dG(%d) weights for degree of freedom %d:", q, i);
     dolfin_info("");
     dolfin_info(" i   weights");
     dolfin_info("---------------------------");
@@ -43,21 +40,21 @@ void cGqMethod::show() const
   }
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeQuadrature()
+void dGqMethod::computeQuadrature()
 {
-  // Use Lobatto quadrature
-  LobattoQuadrature quadrature(n);
+  // Use Radau quadrature
+  RadauQuadrature quadrature(n);
 
-  // Get points and rescale from [-1,1] to [0,1]
+  // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (int i = 0; i < n; i++)
-    points[i] = (quadrature.point(i) + 1.0) / 2.0;
+    points[i] = 1.0 - (quadrature.point(n-1-i) + 1.0) / 2.0;
 
-  // Get weights and rescale from [-1,1] to [0,1]
+  // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (int i = 0; i < n; i++)
-    qweights[i] = 0.5 * quadrature.weight(i);
+    qweights[i] = 0.5 * quadrature.weight(n-1-i);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeBasis()
+void dGqMethod::computeBasis()
 {
   dolfin_assert(!trial);
   dolfin_assert(!test);
@@ -67,39 +64,34 @@ void cGqMethod::computeBasis()
   for (int i = 0; i < n; i++)
     trial->set(i, points[i]);
 
-  // Compute Lagrange basis for test space using the Lobatto points for q-1
-  test = new Lagrange(q-1);
-  if ( q > 1 ) {
-    LobattoQuadrature lobatto(n-1);
-    for (int i = 0; i < (n-1); i++)
-      test->set(i, (lobatto.point(i) + 1.0) / 2.0);
-  }
-  else
-    test->set(0, 1.0);
+  // Compute Lagrange basis for test space
+  test = new Lagrange(q);
+  for (int i = 0; i < n; i++)
+    test->set(i, points[i]);
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeWeights()
+void dGqMethod::computeWeights()
 {
-  Matrix A(q, q, Matrix::DENSE);
+  Matrix A(n, n, Matrix::DENSE);
   
   // Compute matrix coefficients
-  for (int i = 1; i < n; i++) {
-    for (int j = 1; j < n; j++) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
   
-      // Use Lobatto quadrature which is exact for the order we need, 2q-1
+      // Use Radau quadrature which is exact for the order we need, 2q
       real integral = 0.0;
       for (int k = 0; k < n; k++) {
 	real x = points[k];
-	integral += qweights[k] * trial->dx(j,x) * test->eval(i-1,x);
+	integral += qweights[k] * trial->dx(j,x) * test->eval(i,x);
       }
       
-      A(i-1,j-1) = integral;
+      A[i][j] = integral + trial->eval(j,0.0) * test->eval(i,0.0);
       
     }
   }
 
-  Vector b(q);
-  Vector w(q);
+  Vector b(n);
+  Vector w(n);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (int i = 0; i < n; i++) {
@@ -108,20 +100,16 @@ void cGqMethod::computeWeights()
     real x = points[i];
     
     // Evaluate test functions at current nodal point
-    for (int j = 0; j < q; j++)
+    for (int j = 0; j < n; j++)
       b(j) = test->eval(j,x);
     
     // Solve for the weight functions at the nodal point
     A.hpsolve(w,b);
 
     // Save weights including quadrature
-    for (int j = 1; j < n; j++)
-      weights[j][i] = qweights[i] * w(j-1);
+    for (int j = 0; j < n; j++)
+      weights[j][i] = qweights[i] * w(j);
     
   }
-
-  // Set weights for i = 0 (not used)
-  for (int j = 0; j < n; j++)
-    weights[0][j] = 0.0;
 }
 //-----------------------------------------------------------------------------

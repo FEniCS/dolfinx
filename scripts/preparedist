@@ -4,6 +4,7 @@
 # which files to update and in what order.
 
 # Simple test to see where we are
+# FIXME: Does not work when typing ./scripts/...
 CHECK=`echo $0 | cut -d'/' -f1`
 if [ "$CHECK" != "scripts" ]; then
 	echo "This script must be run from the top level directory."

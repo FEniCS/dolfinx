@@ -17,6 +17,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/dolfin_tanganyika.h>
 
 #include <dolfin/Problem.h>
 #include <dolfin/constants.h>

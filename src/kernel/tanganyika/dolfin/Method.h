@@ -48,8 +48,8 @@ namespace dolfin {
     virtual void computeBasis      () = 0;
     virtual void computeWeights    () = 0;
 
-    int q;
-    int n;
+    int q; // Polynomial order
+    int n; // Number of nodal points
 
     real*  points;
     real** weights;
