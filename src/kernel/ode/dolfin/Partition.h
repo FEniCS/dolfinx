@@ -21,10 +21,6 @@ namespace dolfin {
   class Partition {
   public:
 
-    //class lessThanComponent;
-
-    //friend class lessThanComponent;
-
     /// Constructor
     Partition(int N, real timestep);
 
@@ -43,6 +39,8 @@ namespace dolfin {
     /// Partition (reorder) components
     void partition(int offset, int& end, real& K);
 
+    //class lessThanComponent;
+    //friend class lessThanComponent;
 
   private:
 

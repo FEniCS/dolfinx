@@ -28,22 +28,22 @@ namespace dolfin {
     /// Create time slab, including one iteration
     TimeSlab(real t0, real t1, RHS& f, 
 	     TimeSlabData& data, Partition& partition, int offset);
-
+    
     /// Destructor
     ~TimeSlab();
-
+    
     /// Update time slab (iteration)
     void update(RHS& f, TimeSlabData& data);
-
+    
     /// Update time slab (iteration)
     void updateu0(TimeSlab &prevslab);
-
+    
     /// Check if the given time is within the time slab
     bool within(real t) const;
-
+    
     /// Check if the time slab reached the given end time
     bool finished() const;
-
+    
     /// Return start time
     real starttime() const;
 
@@ -78,6 +78,8 @@ namespace dolfin {
     // Add a new time slab
     void add(TimeSlab* timeslab);
 
+    //--- Time slab data ---
+
     // Start and end time for time slab
     real t0;
     real t1;
@@ -86,13 +88,14 @@ namespace dolfin {
     bool reached_endtime;
 
     // List of elements within this time slab
-    //Table<Element>::Iterator first;
-    //Table<Element>::Iterator last;
-
     std::vector<Element*> elements;
     
     // List of time slabs within this time slab
     std::vector<TimeSlab*> timeslabs;
+
+    // List of elements within this time slab
+    //Table<Element>::Iterator first;
+    //Table<Element>::Iterator last;
 
   };
 

@@ -36,8 +36,6 @@ TimeSlab::~TimeSlab()
 {
   dolfin_debug("Clearing time slab");
 
-  
-
   // Delete the time slabs
   for (int i = 0; i < timeslabs.size(); i++) {
     delete timeslabs[i];
@@ -62,7 +60,7 @@ bool TimeSlab::within(real t) const
   // a round-off error may cause the next interval to be chosen,
   // which is not what we want, at least not for dG.
 
-  t += DOLFIN_EPS;
+  t -= DOLFIN_EPS;
 
   return (t0 <= t) && (t <= t1);
 }

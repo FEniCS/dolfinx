@@ -22,20 +22,24 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   // Get size of the system
   int N = ode.size();
 
-  // Create time slab data, partition and right-hand side
+  // Create time slab data
   TimeSlabData data(ode);
-  Partition partition(N, 0.1);
-  RHS f(ode, data);
 
-  real t = t0;
+  // Create partition
+  Partition partition(N, 0.1);
+
+  // Create right-hand side
+  RHS f(ode, data);
 
   // Temporary way of storing solution
   std::vector<std::pair<real, Vector> > solution;
-
   Vector Ui(f.size());
-
   solution.push_back(std::pair<real, Vector>(t0, ode.u0));
+  
+  // Start time
+  real t = t0;
 
+  // The time-stepping loop
   Progress p("Time-stepping");
   while ( true ) {
 
@@ -106,7 +110,6 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     os << " ";
   }
   os << "]" << std::endl;
-
 
 }
 //-----------------------------------------------------------------------------

@@ -77,9 +77,7 @@ void Partition::partition(int offset, int& end, real& K)
   K = maximum(offset) / 1.0;
   
   for (int i = offset; i < components.size(); i++)
-  {
-    dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
-  }
+     dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
 
   lessComponents foo(K);
 
@@ -91,53 +89,8 @@ void Partition::partition(int offset, int& end, real& K)
   dolfin_debug1("end: %d", end);
 
   for (int i = offset; i < components.size(); i++)
-  {
     dolfin_debug2("Partition: k[%d]: %f", i, components[i].timestep);
-  }
 
-  /*
-  std::vector::iterator it;
-  for(it = components.begin(); it != components.end(); it++)
-  {
-    
-  }
-  */
-
-  /*
-  // Move all components with time steps larger than K to the top of
-  // the list, at positions [offset ... end-1]. We move through the
-  // list with two different indices and swap components. The
-  // algorithm is O(components.size() - offset) and reminds about the
-  // the partition used in quick sort.
-
-  K = maximum(offset) / 2.0;
-  int n = components.size();
-
-  int i = offset;
-  int j = offset;
-
-  while ( true ) {
-    
-    // Move j to the next component with large time step
-    for (; j < n; j++)
-      if ( components(j).timestep > K )
-	break;
-    
-    // If we couldn't find the component we are done
-    if ( j == n )
-      break;
-    
-    // Swap the components
-    components.swap(i,j);
-    
-    // Move i to the next component
-    i++;
-
-  }
-
-  end = i;
-
-  */
 }
 //-----------------------------------------------------------------------------
 real Partition::maximum(int offset)
@@ -146,8 +99,6 @@ real Partition::maximum(int offset)
 
   for (int i = offset; i < components.size(); i++)
     K = max(components[i].timestep, K);
-
-  //dolfin_debug1("maximum: %lf", K);
 
   return K;
 }
