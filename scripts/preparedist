@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# This script prepares for a new release, helping to remember
+# which files to update and in what order.
+
+# Simple test to see where we are
+CHECK=`echo $0 | cut -d'/' -f1`
+if [ "$CHECK" != "scripts" ]; then
+	echo "This script must be run from the top level directory."
+	exit 1
+fi
+
+echo '- Edit configure.in with new version number'
+sleep 1
+/usr/bin/nano configure.in
+
+echo '- Edit ChangeLog'
+sleep 1
+/usr/bin/nano ChangeLog
+
+echo '- Commiting changes to cvs'
+sleep 1
+/usr/bin/cvs commit
+
+echo '- Type: cvs rtag v0_2_0 dolfin (with correct version number)'
+echo '- Then checkout a clean version and run scripts/makedist'
