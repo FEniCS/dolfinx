@@ -18,6 +18,7 @@ int main(int argc, char **argv)
   dolfin_set_parameter("problem description", "Navier-Stokes equations");
   dolfin_set_parameter("grid file",           "../../../../data/grids/tetgrid_8_8_8.inp");
   dolfin_set_parameter("output file prefix",  "navier_stokes");
+  dolfin_set_parameter("output file type",  "opendx");
   dolfin_set_parameter("output samples",10);
   dolfin_set_parameter("reynolds number", Re);
   dolfin_set_parameter("start time", 0.0);

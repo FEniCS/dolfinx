@@ -22,23 +22,23 @@ public:
   Edge();
   ~Edge();
 
-  void Set(int en1, int en2, int mn);
-  void SetEndnodes(int en1, int en2);
-  void SetMidnode(int mn);
+  void Set(Node *en1, Node *en2, Node *mn);
+  void SetEndnodes(Node *en1, Node *en2);
+  void SetMidnode(Node *mn);
 
   /// --- Accessor functions for stored data
   
   /// Get end node number i
-  int GetEndnode(int i);
+  Node* GetEndnode(int i);
   /// Get mid node 
-  int GetMidnode();
+  Node* GetMidnode();
 
   /// --- Functions that require computation (every time!)
   
   /// Compute and return the lenght of the edge
   real ComputeLength(Grid *grid);
   /// Compute and return midpoint of the edge 
-  Point ComputeMidpoint(Grid *grid);
+  Point* ComputeMidpoint(Grid *grid);
     
   /// Give access to the special functions below
   friend class Grid;
@@ -48,8 +48,8 @@ protected:
   
 private:
   
-  int end_nodes[2];
-  int mid_node;
+  Node *end_nodes[2];
+  Node *mid_node;
   
 };
 

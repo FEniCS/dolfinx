@@ -6,7 +6,15 @@
 #include "Grid.hh"
 
 //-----------------------------------------------------------------------------
-void Edge::Set(int en1, int en2, int mn)
+Edge::Edge()
+{
+  end_nodes[0] = 0;
+  end_nodes[1] = 0;
+
+  mid_node = 0;
+}
+//-----------------------------------------------------------------------------
+void Edge::Set(Node *en1, Node *en2, Node *mn)
 {
   end_nodes[0] = en1;
   end_nodes[1] = en2;
@@ -14,18 +22,18 @@ void Edge::Set(int en1, int en2, int mn)
   mid_node = mn;
 }
 //-----------------------------------------------------------------------------
-void Edge::SetEndnodes(int en1, int en2)
+void Edge::SetEndnodes(Node *en1, Node *en2)
 {
   end_nodes[0] = en1;
   end_nodes[1] = en2;
 }
 //-----------------------------------------------------------------------------
-void Edge::SetMidnode(int mn)
+void Edge::SetMidnode(Node *mn)
 {
   mid_node = mn;
 }
 //-----------------------------------------------------------------------------
-int Edge::GetEndnode(int node)
+Node* Edge::GetEndnode(int node)
 {
   if ( (node<0) || (node>=2) )
 	 display->InternalError("Edge::GetEndNode()","Illegal node: %d",node);
@@ -33,7 +41,7 @@ int Edge::GetEndnode(int node)
   return end_nodes[node];
 }
 //-----------------------------------------------------------------------------
-int Edge::GetMidnode()
+Node* Edge::GetMidnode()
 {
   return mid_node;
 }
@@ -41,8 +49,8 @@ int Edge::GetMidnode()
 real Edge::ComputeLength(Grid *grid)
 {
   // Get the coordinates
-  Point A = grid->GetNode(end_nodes[0])->GetCoord();
-  Point B = grid->GetNode(end_nodes[1])->GetCoord();
+  Point A = end_nodes[0]->GetCoord();
+  Point B = end_nodes[1]->GetCoord();
 
   // Make sure we get full precision
   real x1, x2, y1, y2, z1, z2;
@@ -56,11 +64,11 @@ real Edge::ComputeLength(Grid *grid)
   return ( l );
 }
 //-----------------------------------------------------------------------------
-Point Edge::ComputeMidpoint(Grid *grid)
+Point* Edge::ComputeMidpoint(Grid *grid)
 {
   // Get the coordinates
-  Point A = grid->GetNode(end_nodes[0])->GetCoord();
-  Point B = grid->GetNode(end_nodes[1])->GetCoord();
+  Point A = end_nodes[0]->GetCoord();
+  Point B = end_nodes[1]->GetCoord();
 
   // Make sure we get full precision
   real x1, x2, y1, y2, z1, z2;
@@ -69,10 +77,10 @@ Point Edge::ComputeMidpoint(Grid *grid)
   x2 = real(B.x); y2 = real(B.y); z2 = real(B.z);
 
   // The midpoint of the edge 
-  Point M;
-  M.x = 0.5*(x1+x2);
-  M.y = 0.5*(y1+y2);
-  M.z = 0.5*(z1+z2);
+  Point *M;
+  M->x = 0.5*(x1+x2);
+  M->y = 0.5*(y1+y2);
+  M->z = 0.5*(z1+z2);
   
   return ( M );
 }
