@@ -33,7 +33,8 @@ src/demo/bench/dolfin-bench >> src/demo/bench/bench.log
 echo '- Running benchmark problem for multi-adaptive solver'
 sleep 1
 cd src/demo/solvers/ode/bench
-dolfin-ode-bench >> bench.log 2>&1
+./run-bench.sh >> bench.log 2>&1
+cd ../../../../..
 
 echo '- Commiting changes to cvs'
 sleep 1
