@@ -40,15 +40,16 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     if (data->no_comp > 1)
     {
       for (uint i = 0; i < element.spacedim(); i++)
-	for (int j = 0; j < data->no_comp; j++)
-	  /// FIXME: Same ordering as in FFC? 
-          c[i*data->no_comp+j] = (*this)(element.coord(i, cell, cell.mesh()),j);
-    } else{ 
-      for (uint i = 0; i < element.spacedim(); i++)
-      c[i] = (*this)(element.coord(i, cell, cell.mesh()));
+      for (int j = 0; j < data->no_comp; j++)
+      /// FIXME: Same ordering as in FFC? 
+      c[i*data->no_comp+j] = (*this)(element.coord(i, cell, cell.mesh()),j);
     }
-    return;
     */
+    
+    for (uint i = 0; i < element.spacedim(); i++)
+      c[i] = (*this)(element.coord(i, cell, cell.mesh()));
+
+    return;
   }
 
   // Check if we're computing the projection onto a cell of the same
@@ -64,23 +65,12 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: in x, then we can optimize by just calling
     // FIXME: element::dof() one time with i = 0.
 
-    /*
     real *values = data->x.array();
-    /// FIXME: Replace with "element" function, given by FFC  
-    if (data->no_comp > 1)
-    {
-    for (uint i = 0; i < element.spacedim(); i++)
-      for (uint j = 0; j < element.spacedim(); j++)
-	/// FIXME: Same ordering as in FFC? 
-	c[i*data->no_comp+j] = values[element.dof(i, cell, data->mesh)*data->no_comp+j];
-    } else{
     for (uint i = 0; i < element.spacedim(); i++)
       c[i] = values[element.dof(i, cell, data->mesh)];
-    }
     data->x.restore(values);
 
     return;
-    */
   }
 
   // Need to compute projection between different spaces

@@ -7,7 +7,6 @@
 // Alexander P. Morgan, ACM TOMS 1983.
 
 #include <dolfin.h>
-#include <cblas.h>
 
 using namespace dolfin;
 
