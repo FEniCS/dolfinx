@@ -31,7 +31,8 @@ void PoissonSolver::solve()
   Poisson::FiniteElement element;
 
   // FIXME: Should be able to take f as an argument from main.cpp
-  NewVector fvalues;
+  // FIXME: fvalues should be initialized by NewFunction
+  NewVector fvalues(mesh.noNodes());
   NewFunction f(mesh, element, fvalues);
 
   Poisson::BilinearForm a;
@@ -45,6 +46,18 @@ void PoissonSolver::solve()
 
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
+
+  Matrix Aold(A.size(0), A.size(1));
+
+  for(int i = 0; i < A.size(0); i++)
+  {
+    for(int j = 0; j < A.size(1); j++)
+    {
+      Aold(i, j) = A(i, j);
+    }
+  }
+
+  Aold.show();
 
   // Solve the linear system
   // FIXME: Make NewGMRES::solve() static
