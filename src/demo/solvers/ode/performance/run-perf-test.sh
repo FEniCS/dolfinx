@@ -25,7 +25,7 @@ function run()
     n="10 20 40 100 200 400 1000"
 
     M=$1
-    b=$2    
+    b=$2
 
     echo "---------------------------------------------------------------------------"    
     echo "M = "$M
@@ -41,8 +41,8 @@ function run()
     echo
 
     for i in $n; do
-	echo "mdG(0) n = " $i
-	runsingle $i $M $b mdg	
+	echo "mcG(1) n = " $i
+	runsingle $i $M $b mcg	
     done
 
     echo "];" >> timings.m
@@ -57,8 +57,8 @@ function run()
     echo
 
     for i in $n; do
-	echo "dG(0) n = " $i
-	runsingle $i $M mono
+	echo "cG(1) n = " $i
+	runsingle $i $M $b cg
     done
 
     echo "];" >> timings.m

@@ -23,8 +23,8 @@ public:
     if ( n < 2 )
       dolfin_error("System must have at least 2 particles.");
     
-    cout << "b: " << b << endl;
-    cout << "M: " << M << endl;
+    cout << "b = " << b << endl;
+    cout << "M = " << M << endl;
 
     // Final time
     T = 1.0;
@@ -159,7 +159,7 @@ int main(int argC, char* argV[])
   dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.1);
   dolfin_set("solve dual problem", false);
-  //dolfin_set("save solution", false);
+  dolfin_set("save solution", false);
   dolfin_set("partitioning threshold", 0.99);
   dolfin_set("fixed time step", true);  
   dolfin_set("maximum iterations", 20000);
