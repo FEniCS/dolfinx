@@ -1,3 +1,6 @@
+0.3.2
+ - More work on grid refinement
+ - Add new curses based log system
 0.3.1
  - Makefile updates: make install should now work properly
  - KrylovSolver updates
