@@ -21,11 +21,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 AdaptiveIterationLevel2::AdaptiveIterationLevel2(Solution& u, RHS& f,
-						 FixedPointIteration & fixpoint, 
+						 FixedPointIteration& fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol, unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
+						 real tol, unsigned int depth,
+						 bool debug_iter) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
 {
   // Do nothing
 }
@@ -58,9 +59,12 @@ void AdaptiveIterationLevel2::start(Element& element)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroupList& list, Increments& d)
 {
-  // Simple update of time slab
+  // Iterate on each element group and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
+    increment += sqr(fixpoint.iterate(*group));
+
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
@@ -68,54 +72,57 @@ void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
   // Reset values
   x1.offset = 0;
 
-  // Compute new values
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
-  
+  {
+    real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
+  }
+  d = sqrt(increment);
+
   // Copy values to elements
   copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(Element& element, Increments& d)
 {
-  // Compute new values for element
-  element.update(f, alpha, x1.values + x1.offset);
-  x1.offset += element.size();
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(ElementGroupList& list,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Stabilize if necessary
-  if ( Iteration::stabilize(r, n) )
+  if ( Iteration::stabilize(r, d, n) )
   {
-    cout << "Need to stabilize element group" << endl;
-    
     // Compute divergence
-    real rho = computeDivergence(group, r);
-    
+    real rho = computeDivergence(group, r, d);
+
     // Compute alpha
     alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
 
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
-    cout << "  m     = " << m << endl;
     
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
+    // Save increment at start of stabilizing iterations
+    r0 = d.d2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(Element& element, 
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
@@ -123,23 +130,33 @@ void AdaptiveIterationLevel2::stabilize(Element& element,
 bool AdaptiveIterationLevel2::converged(ElementGroupList& list, Residuals& r,
 					const Increments& d, unsigned int n)
 {
+  /*
   // Convergence handled locally when the slab contains only one element group
   if ( list.size() <= 1 )
     return n > 0;
-
+  
   // Compute residual
   r = residual(list);
-
+  
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
   return r.r2 < tol;
+  */
+  
+  // First check increment
+  if ( (d.d2/alpha) > tol || n == 0 )
+    return false;
+  
+  // If increment is small, then check residual
+  return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::converged(ElementGroup& group, Residuals& r,
 					const Increments& d, unsigned int n)
 {
+  /*
   // Compute residual
   r = residual(group);
   
@@ -147,7 +164,20 @@ bool AdaptiveIterationLevel2::converged(ElementGroup& group, Residuals& r,
   if ( n == 0 )
     r.r0 = r.r2;
 
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
+  */
+
+  /*
+  if ( n > 0 )
+  {
+    cout << "Checking convergence for element group:" << endl;
+    cout << "  tol = " << tol << endl;
+    cout << "  r   = " << r.r2 << endl;
+    cout << "  d   = " << d.d2/alpha << endl;
+  }
+  */
+
+  return (d.d2 / alpha) < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::converged(Element& element, Residuals& r,
@@ -167,8 +197,14 @@ bool AdaptiveIterationLevel2::diverged(ElementGroupList& list,
   if ( n < 2 )
     return false;
 
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
+    return false;
+  */
+  
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
     return false;
   
   // Notify change of strategy

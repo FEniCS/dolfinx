@@ -1,1 +1,1 @@
-SUBDIRS = simple reaction heat nonnormal
+SUBDIRS = simple reaction heat nonnormal test

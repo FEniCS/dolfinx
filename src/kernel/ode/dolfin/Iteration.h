@@ -51,7 +51,7 @@ namespace dolfin
     /// Constructor
     Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 	      unsigned int maxiter, real tol, real maxdiv, real maxconv,
-	      unsigned int depth);
+	      unsigned int depth, bool debug_iterations);
     
     /// Destructor
     virtual ~Iteration();
@@ -78,16 +78,16 @@ namespace dolfin
     virtual void update(Element& element, Increments& d) = 0;
 
     /// Stabilize group list iteration
-    virtual void stabilize(ElementGroupList& list, 
-			   const Residuals& r, unsigned int n) = 0;
+    virtual void stabilize(ElementGroupList& list, const Residuals& r, 
+			   const Increments& d, unsigned int n) = 0;
     
     /// Stabilize element group iteration
-    virtual void stabilize(ElementGroup& group,
-			   const Residuals& r, unsigned int n) = 0;
+    virtual void stabilize(ElementGroup& group, const Residuals& r,
+			   const Increments& d, unsigned int n) = 0;
     
     /// Stabilize element iteration
-    virtual void stabilize(Element& element,
-			   const Residuals& r, unsigned int n) = 0;
+    virtual void stabilize(Element& element, const Residuals& r,
+			   const Increments& d, unsigned int n) = 0;
     
     /// Check convergence for group list
     virtual bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n) = 0;
@@ -162,13 +162,13 @@ namespace dolfin
     };
 
     // Stabilization for adaptive iteration
-    bool stabilize(const Residuals& r, unsigned int n);
+    bool stabilize(const Residuals& r, const Increments& d, unsigned int n);
     
     // Compute divergence
-    real computeDivergence(ElementGroupList& list, const Residuals& r);
+    real computeDivergence(ElementGroupList& list, const Residuals& r, const Increments& d);
 
     // Compute divergence
-    real computeDivergence(ElementGroup& group, const Residuals& r);
+    real computeDivergence(ElementGroup& group, const Residuals& r, const Increments& d);
 
     // Compute alpha
     real computeAlpha(real rho) const;
@@ -238,6 +238,9 @@ namespace dolfin
 
     // Temporary data used for propagation of initial values
     Values u0;
+
+    // Check if we should debug iterations
+    bool debug_iter;
 
   };
 

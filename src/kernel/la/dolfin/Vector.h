@@ -1,4 +1,4 @@
-// (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Contributions by: Georgios Foufas (2002)

@@ -92,24 +92,24 @@ namespace dolfin
     void update(Element& element, Iteration::Increments& d);
 
     // Stabilize group list
-    void stabilize(ElementGroupList& list,
-		   const Iteration::Residuals& r, unsigned int n);
+    void stabilize(ElementGroupList& list, const Iteration::Residuals& r,
+		   const Iteration::Increments& d, unsigned int n);
     
     // Stabilize element group
-    void stabilize(ElementGroup& group,
-		   const Iteration::Residuals& r, unsigned int n);
+    void stabilize(ElementGroup& group, const Iteration::Residuals& r, 
+		   const Iteration::Increments& r, unsigned int n);
 
     // Stabilize element
-    void stabilize(Element& element,
-		   const Iteration::Residuals& r, unsigned int n);
+    void stabilize(Element& element, const Iteration::Residuals& r,
+		   const Iteration::Increments& d, unsigned int n);
 
     // Check convergence for group list
     bool converged(ElementGroupList& list, Iteration::Residuals& r,
-		   const Iteration::Increments&d, unsigned int n);
+		   const Iteration::Increments& d, unsigned int n);
     
     // Check convergence for element group
     bool converged(ElementGroup& group, Iteration::Residuals& r,
-		   const Iteration::Increments&d, unsigned int n);
+		   const Iteration::Increments& d, unsigned int n);
 
     // Check convergence for element
     bool converged(Element& element, Iteration::Residuals& r,
@@ -136,6 +136,15 @@ namespace dolfin
     // Change state
     void changeState(Iteration::State newstate);
 
+    // Write debug info for group list iteration
+    void debug(ElementGroupList& list, const Iteration::Increments& d);
+    
+    // Write debug info for element group iteration
+    void debug(ElementGroup& group, const Iteration::Increments& d);
+
+    // Write debug info for element iteration
+    void debug(Element& element, const Iteration::Increments& d);
+
     //--- Data for fixed point iteration ---
 
     // Solution
@@ -155,6 +164,9 @@ namespace dolfin
 
     // Tolerance for discrete residual
     real tol;
+
+    // Check if we should debug iterations
+    bool debug_iter;
 
     // Current state
     Iteration* state;

@@ -17,11 +17,11 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NonStiffIteration::NonStiffIteration(Solution& u, RHS& f,
-				     FixedPointIteration & fixpoint,
+				     FixedPointIteration& fixpoint,
 				     unsigned int maxiter,
 				     real maxdiv, real maxconv, real tol,
-				     unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
+				     unsigned int depth, bool debug_iter) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
 {
   // Do nothing
 }
@@ -77,20 +77,20 @@ void NonStiffIteration::update(Element& element, Increments& d)
   d = fabs(element.update(f));
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(ElementGroupList& list,
-				  const Residuals& r, unsigned int n)
+void NonStiffIteration::stabilize(ElementGroupList& list, const Residuals& r,
+				  const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(ElementGroup& group,
-				  const Residuals& r, unsigned int n)
+void NonStiffIteration::stabilize(ElementGroup& group, const Residuals& r,
+				 const Increments& d,  unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(Element& element, 
-				  const Residuals& r, unsigned int n)
+void NonStiffIteration::stabilize(Element& element, const Residuals& r,
+				  const Increments& d, unsigned int n)
 {
   // Do nothing
 }
@@ -136,10 +136,10 @@ bool NonStiffIteration::converged(ElementGroup& group, Residuals& r,
   if ( n == 0 )
   r.r0 = r.r2;
 
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
   */
   
-  return d.d2 < tol & n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::converged(Element& element, Residuals& r,
@@ -153,10 +153,10 @@ bool NonStiffIteration::converged(Element& element, Residuals& r,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
   */
 
-  return d.d2 < tol & n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::diverged(ElementGroupList& list, 

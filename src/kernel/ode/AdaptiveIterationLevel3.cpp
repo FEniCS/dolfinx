@@ -19,11 +19,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 AdaptiveIterationLevel3::AdaptiveIterationLevel3(Solution& u, RHS& f,
-						 FixedPointIteration & fixpoint, 
+						 FixedPointIteration& fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
-						 real tol, unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
+						 real tol, unsigned int depth,
+						 bool debug_iter) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
 {
   // Do nothing
 }
@@ -72,8 +73,14 @@ void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list,
   // Compute new values. Note that we skip the recursive iteration,
   // we directly update all elements without calling iterate on
   // all element groups contained in the group list.
+  real increment = 0.0;
   for (ElementIterator element(list); !element.end(); ++element)
-    update(*element, d);
+  {
+    real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
+  }
+  d = sqrt(increment);
   
   // Copy values to elements
   copyData(x1, list);
@@ -96,18 +103,22 @@ void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list,
   // Compute new values. Note that we skip the recursive iteration,
   // we directly update all elements without calling iterate on
   // all element groups contained in the group list.
+  real increment = 0.0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
     // Update initial value for element
     element->update(u0.values[element->index()]);
-    
+
     // Compute new values for element
-    update(*element, d);
+    real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
     
     // Save end value as new initial value for this component
     u0.values[element->index()] = element->endval();
   }
-  
+  d = sqrt(increment);
+
   // Copy values to elements
   copyData(x1, list);
 }
@@ -122,28 +133,33 @@ void AdaptiveIterationLevel3::update(ElementGroup& group, Increments& d)
   // Compute new values. Note that we skip the recursive iteration,
   // we directly update all elements without calling iterate on
   // all element groups contained in the group list.
+  real increment = 0.0;
   for (ElementIterator element(group); !element.end(); ++element)
-    update(*element, d);
-  
+  {
+    real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
+  }
+  d = sqrt(increment);
+
   // Copy values to elements
   copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(Element& element, Increments& d)
 {
-  // Compute new values for element
-  element.update(f, alpha, x1.values + x1.offset);
-  x1.offset += element.size();
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Stabilize if necessary
-  if ( Iteration::stabilize(r, n) )
+  if ( Iteration::stabilize(r, d, n) )
   {
     // Compute divergence
-    real rho = computeDivergence(list, r);
+    real rho = computeDivergence(list, r, d);
     
     // Compute alpha
     alpha = computeAlpha(rho);
@@ -152,19 +168,20 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
     m = computeSteps(rho);
     j = m;
     
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
+    // Save increment at start of stabilizing iterations
+    r0 = d.d2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Stabilize if necessary
-  if ( Iteration::stabilize(r, n) )
+  if ( Iteration::stabilize(r, d, n) )
   {
     // Compute divergence
-    real rho = computeDivergence(group, r);
+    real rho = computeDivergence(group, r, d);
     
     // Compute alpha
     alpha = computeAlpha(rho);
@@ -173,20 +190,22 @@ void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
     m = computeSteps(rho);
     j = m;
     
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
+    // Save increment at start of stabilizing iterations
+    r0 = d.d2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(Element& element, 
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
-  // Do nothing
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::converged(ElementGroupList& list, Residuals& r,
 					const Increments& d, unsigned int n)
 {
+  /*
   // Compute residual
   r = residual(list);
 
@@ -195,11 +214,20 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list, Residuals& r,
     r.r0 = r.r2;
 
   return r.r2 < tol;
+  */
+
+  // First check increment
+  if ( (d.d2/alpha) > tol || n == 0 )
+    return false;
+  
+  // If increment is small, then check residual
+  return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::converged(ElementGroup& group, Residuals& r,
 					const Increments& d, unsigned int n)
 {
+  /*
   // Compute residual
   r = residual(group);
   
@@ -207,17 +235,17 @@ bool AdaptiveIterationLevel3::converged(ElementGroup& group, Residuals& r,
   if ( n == 0 )
     r.r0 = r.r2;
 
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
+  */
+
+  return (d.d2 / alpha) < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::converged(Element& element, Residuals& r,
 					const Increments& d, unsigned int n)
 {
-  // We should not reach this statement
-  dolfin_assert(false);
-
-  // Iterate one time on each element
-  return n > 0;
+  dolfin_error("Unreachable statement.");
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::diverged(ElementGroupList& list, 

@@ -166,8 +166,9 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
     Element* element = u.createElement(u.method(index), u.order(index), 
 				       index, t0, t1);
     
-    // Update regulator for element
-    adaptivity.regulator(index).init(k);
+    // Update regulator for component
+    if ( !adaptivity.fixed() )
+      adaptivity.regulator(index).init(k);
 
     // Write debug info
     u.debug(*element, Solution::create);

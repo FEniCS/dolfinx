@@ -17,7 +17,7 @@ namespace dolfin
 
     NonStiffIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		      unsigned int maxiter, real maxdiv, real maxconv, real tol,
-		      unsigned int depth);
+		      unsigned int depth, bool debug_iter);
 
     ~NonStiffIteration();
 
@@ -31,9 +31,9 @@ namespace dolfin
     void update(ElementGroup& group, Increments& d);
     void update(Element& element, Increments& d);
     
-    void stabilize(ElementGroupList& list, const Residuals& r, unsigned int n);
-    void stabilize(ElementGroup& group, const Residuals& r, unsigned int n);
-    void stabilize(Element& element, const Residuals& r, unsigned int n);
+    void stabilize(ElementGroupList& list, const Residuals& r, const Increments& d, unsigned int n);
+    void stabilize(ElementGroup& group, const Residuals& r, const Increments& d, unsigned int n);
+    void stabilize(Element& element, const Residuals& r, const Increments& d, unsigned int n);
     
     bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n);
     bool converged(ElementGroup& group, Residuals& r, const Increments& d, unsigned int n);

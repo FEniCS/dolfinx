@@ -128,16 +128,13 @@ real dGqElement::update(RHS& f, real alpha, real* values)
 
   // Compute weight for old value
   real w0 = 1.0 - alpha;
- 
-  // Save old value
-  real u1 = values[q];
 
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = w0*this->values[i] + alpha*(u0 + integral(i));
 
   // Return increment
-  return values[q] - u1;
+  return values[q] - this->values[q];
 }
 //-----------------------------------------------------------------------------
 void dGqElement::set(real u0)

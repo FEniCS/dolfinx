@@ -33,9 +33,10 @@ namespace dolfin {
 
       // Parameters for multi-adaptive solver
 
-      add(Parameter::BOOL, "debug time steps", 0);
       add(Parameter::BOOL, "fixed time step", false);
       add(Parameter::BOOL, "solve dual problem", true);
+      add(Parameter::BOOL, "debug time steps", false);
+      add(Parameter::BOOL, "debug iterations", false);
 
       add(Parameter::INT, "number of samples", 100);
       add(Parameter::INT, "element cache size", 32);
@@ -51,6 +52,7 @@ namespace dolfin {
       add(Parameter::REAL, "maximum convergence", 0.75);
       
       add(Parameter::STRING, "method", "cg");
+      add(Parameter::STRING, "stiffness", "non-stiff");
 
      }
     

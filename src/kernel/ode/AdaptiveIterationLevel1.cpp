@@ -18,11 +18,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 AdaptiveIterationLevel1::AdaptiveIterationLevel1(Solution& u, RHS& f,
-						 FixedPointIteration & fixpoint, 
+						 FixedPointIteration& fixpoint, 
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv, 
-						 real tol, unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
+						 real tol, unsigned int depth,
+						 bool debug_iter) :
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth, debug_iter)
 {
   // Do nothing
 }
@@ -79,19 +80,22 @@ void AdaptiveIterationLevel1::update(Element& element, Increments& d)
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroupList& list,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroup& group,
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(Element& element, 
-					const Residuals& r, unsigned int n)
+					const Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Compute diagonal damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
@@ -144,10 +148,10 @@ bool AdaptiveIterationLevel1::converged(ElementGroup& group, Residuals& r,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
   */
   
-  return d.d2 < tol & n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::converged(Element& element, Residuals& r,
@@ -161,10 +165,10 @@ bool AdaptiveIterationLevel1::converged(Element& element, Residuals& r,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol && n > 0;
   */
 
-  return d.d2 < tol & n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(ElementGroupList& list, 

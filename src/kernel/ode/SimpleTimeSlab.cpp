@@ -78,8 +78,9 @@ void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
     // Create element
     Element *element = u.createElement(u.method(i), u.order(i), i, t0, t1);
     
-    // Update regulator for element
-    adaptivity.regulator(i).init(kmin);
+    // Update regulator for component
+    if ( !adaptivity.fixed() )
+      adaptivity.regulator(i).init(kmin);
 
     // Write debug info
     u.debug(*element, Solution::create);

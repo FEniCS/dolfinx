@@ -129,15 +129,12 @@ real cGqElement::update(RHS& f, real alpha, real* values)
   // Compute weight for old value
   real w0 = 1.0 - alpha;
 
-  // Save old value
-  real u1 = values[q];
-
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i-1] = w0*this->values[i] + alpha*(this->values[0] + integral(i));
 
   // Return increment
-  return values[q] - u1;
+  return values[q] - this->values[q];
 }
 //-----------------------------------------------------------------------------
 void cGqElement::set(real u0)
