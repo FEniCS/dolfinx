@@ -40,13 +40,14 @@ void solveTestProblem3()
 
 void solveTestProblem4()
 {
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("tolerance", 0.1);
   TestProblem4 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem5()
 {
+  // Need to decrease the tolerance
   dolfin_set("tolerance", 0.01);
   TestProblem5 testProblem;
   testProblem.solve();
@@ -54,7 +55,8 @@ void solveTestProblem5()
 
 void solveTestProblem6()
 {
-  dolfin_set("tolerance", 0.01);
+  // Need to decrease the tolerance
+  dolfin_set("tolerance", 0.1);
   TestProblem6 testProblem;
   testProblem.solve();
 }

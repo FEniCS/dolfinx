@@ -13,6 +13,7 @@ public:
   {
     dolfin_info("The HIRES problem.");
 
+    // Final time
     T = 321.8122;
   }
 

@@ -201,7 +201,7 @@ void MFile::operator<< (Sample& sample)
   fprintf(fp, "];\n");
   fprintf(fp, "%s = [%s tmp'];\n", 
 	  sample.name().c_str(), sample.name().c_str());
-  fprintf(fp, "clear tmp;\n");
+  //fprintf(fp, "clear tmp;\n");
 
   // Save time steps
   fprintf(fp, "tmp = [ ");
@@ -209,7 +209,7 @@ void MFile::operator<< (Sample& sample)
     fprintf(fp, "%.16e ", sample.k(i));
   fprintf(fp, "];\n");
   fprintf(fp, "k = [k tmp'];\n");
-  fprintf(fp, "clear tmp;\n");
+  //fprintf(fp, "clear tmp;\n");
 
   // Save residuals
   fprintf(fp, "tmp = [ ");

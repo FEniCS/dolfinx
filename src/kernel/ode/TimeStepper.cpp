@@ -253,7 +253,7 @@ void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
 	t = t1;
 
       // Create and save the sample
-      Sample sample(u, f, t0 + n*dk);
+      Sample sample(u, f, t0 + (static_cast<real>(n)+1.0)*dk);
       file << sample;
     }
   }

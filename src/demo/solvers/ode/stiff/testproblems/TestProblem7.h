@@ -18,7 +18,7 @@ public:
     
     sparse();
   }
-
+  
   real u0(unsigned int i)
   {
     return 0.0;

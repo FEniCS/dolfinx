@@ -1,3 +1,5 @@
+ - Modify Octave/Matlab format for solution data (speed improvement)
+ - Adaptive sampling of solution (optional)
  - Restructure stiff test problems
  - Check if value of right-hand side is valid
  - Modify divergence test in AdaptiveIterationLevel1

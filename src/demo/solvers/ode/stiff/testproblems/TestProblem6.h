@@ -15,10 +15,10 @@ public:
     dolfin_info("Van der Pol's equation.");
 
     // Final time
-    T = 500.0;
+    T = 100.0;
 
     // Parameters
-    mu = 100.0;
+    mu = 10.0;
   }
 
   real u0(unsigned int i)
