@@ -139,6 +139,14 @@ bool GenericCell::neighbor(GenericCell* cell) const
   return count >= 2;
 }
 //-----------------------------------------------------------------------------
+bool GenericCell::haveEdge(Edge& edge) const
+{
+  for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
+    if ( *e == &edge )
+      return true;
+  return false;
+}
+//-----------------------------------------------------------------------------
 void GenericCell::createEdge(Node* n0, Node* n1)
 {
   Edge* edge = 0;

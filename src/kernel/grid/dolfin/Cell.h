@@ -137,7 +137,10 @@ namespace dolfin {
     void set(Node* n0, Node* n1, Node* n2, Node* n3);
 
     // Check if given cell is a neighbor
-    bool neighbor(Cell& cell);
+    bool neighbor(Cell& cell) const;
+
+    // Check if given edge is contained in the cell
+    bool haveEdge(Edge& edge) const;
 
     // Create edges for the cell
     void createEdges();

@@ -117,8 +117,10 @@ void GridRefinement::closeGrid(Grid& grid)
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c)
-    if ( edgeMarkedByOther(*c) )
+    if ( edgeMarkedByOther(*c) ) {
       cells.add(c);
+      c.closed() = false;
+    }
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
@@ -225,9 +227,24 @@ void GridRefinement::closeCell(Cell& cell, List<Cell*>& cell)
   // refinement and add cells containing the previously unmarked edges
   // to the list of cells that need to be closed.
 
-  
+  for (EdgeIterator e(cell); !e.end(); ++e) {
 
-  
+    // Skip marked edges
+    if ( e.marked() )
+      continue;
+    
+    // Mark edge by this cell
+    e.mark(cell);
+
+    // Add neighbors to the list of cells that need to be closed
+    for (CellIterator c(cell); !c.end(); ++c)
+      if ( c->haveEdge(*e) && c->closed() && c->status() == ref_reg && *c != &cell )
+	  cells.add(*neighbor);
+  }
+
+  // Remember that the cell has been closed, important since we don't want
+  // to add cells which are not yet closed (and are already in the list).
+  cell.closed() = true;
 }
 //-----------------------------------------------------------------------------
 bool GridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)

@@ -74,6 +74,9 @@ namespace dolfin {
     // Check if given cell is a neighbor
     bool neighbor(GenericCell* cell) const;
 
+    // Check if given edge is contained in the cell
+    bool haveEdge(Edge& edge) const;
+
     // Create edges for the cell
     virtual void createEdges() = 0;
 

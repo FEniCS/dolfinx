@@ -129,6 +129,12 @@ Cell* Cell::neighbor(int i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+bool Cell::haveEdge(Edge& edge) const
+{
+  dolfin_assert(c);
+  return c->haveEdge(edge);
+}
+//-----------------------------------------------------------------------------
 Cell* Cell::parent() const
 {
   dolfin_assert(c);
