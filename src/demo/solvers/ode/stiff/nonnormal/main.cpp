@@ -14,7 +14,7 @@ public:
   
   NonNormal() : ODE(2), A(2,2)
   {
-    T = 2.0;
+    T = 1.0;
 
     real lambda = 100.0;
     real epsilon = 1.0;

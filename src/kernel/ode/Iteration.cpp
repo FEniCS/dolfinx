@@ -131,7 +131,7 @@ bool Iteration::stabilize(const Residuals& r, unsigned int n)
   case 0:
     // Increase alpha with a factor 2 towards alpha = 1
     if ( r.r2 > maxconv*r.r1 )
-      alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
+      alpha = 2.0 * alpha / (1.0 + alpha);
     break;
   case 1:
     // Continue with another round of stabilizing steps if it seems to work
@@ -245,11 +245,7 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
 
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
-    {
-      dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
       break;
-    }
-    
   }
 
   // Restore alpha

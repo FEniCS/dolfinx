@@ -47,8 +47,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
 {
-  cout << "Creating time slab" << endl;
-
   // Repeat until the time slab has converged
   while ( !createTimeSlab() );
 
@@ -73,8 +71,6 @@ bool TimeStepper::createFirstTimeSlab()
   // Create the time slab
   SimpleTimeSlab timeslab(t, T, u, adaptivity);
 
-  cout << "Created time slab of length k = " << timeslab.length() << endl;
-    
   // Try to solve the system using fixed point iteration
   if ( !fixpoint.iterate(timeslab) )
   {
@@ -110,8 +106,6 @@ bool TimeStepper::createGeneralTimeSlab()
   // Create the time slab
   RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
    
-  cout << "Created time slab of length k = " << timeslab.length() << endl;
- 
   // Try to solve the system using fixed point iteration
   if ( !fixpoint.iterate(timeslab) )
   {
@@ -147,8 +141,6 @@ void TimeStepper::shift()
   real TOL = adaptivity.tolerance();
   real kmax = adaptivity.maxstep();
   real kfixed = adaptivity.fixed();
-
-  cout << "Computing new time steps with maximum = " << kmax << endl;
 
   // Update residuals and time steps
   for (unsigned int i = 0; i < u.size(); i++)

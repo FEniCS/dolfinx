@@ -72,7 +72,7 @@ void Adaptivity::stabilize(real k, unsigned int m)
   dolfin_assert(k >= 0.0);
   dolfin_assert(m >= 1);
 
-  cout << "Old maximum time step: " << kmax_current << endl;
+  cout << "Stabilizing time step" << endl;
 
   // Decrease time step by at least a factor 1/2
   kmax_current = k;
@@ -81,9 +81,6 @@ void Adaptivity::stabilize(real k, unsigned int m)
   // Update regulators
   for (unsigned int i = 0; i < regulators.size(); i++)
     regulators[i].update(kmax_current);
-
-  cout << "New maximum time step: " << kmax_current << endl;
-  cout << "Number of small steps: " << m << endl;
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::fixed() const
@@ -103,8 +100,6 @@ unsigned int Adaptivity::size() const
 //-----------------------------------------------------------------------------
 void Adaptivity::shift()
 {
-  cout << "Remaining number of small steps: " << m << endl;
-
   if ( m > 0 )
   {
     // Decrease the remaining number of small steps
@@ -113,9 +108,7 @@ void Adaptivity::shift()
   else
   {
     // Increase kmax_current with a factor 2 towards kmax
-    kmax_current = 2.0 * kmax_current * kmax / (2.0*kmax_current + kmax);
-
-    cout << "Increased maximum time step to " << kmax_current << endl;
+    kmax_current = 2.0 * kmax_current * kmax / (kmax_current + kmax);
   }
 }
 //-----------------------------------------------------------------------------
