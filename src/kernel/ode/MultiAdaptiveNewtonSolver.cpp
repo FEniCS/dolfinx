@@ -15,16 +15,20 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab), f(0)
+  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab), f(0), mpc(A)
 {
   // Initialize local array
   f = new real[method.qsize()];
+
+  // Set preconditioner
+  solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
 {
   // Delete local array
   if ( f ) delete [] f;
+
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::start()
@@ -50,6 +54,8 @@ void MultiAdaptiveNewtonSolver::start()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration()
 {
+  cout << "MultiAdaptiveNewtonSolver::iteration()" << endl;
+
   // Evaluate b = -F(x) at current x
   beval();
   

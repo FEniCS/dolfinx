@@ -32,7 +32,7 @@ namespace dolfin
     ~MultiAdaptivePreconditioner();
     
     /// Solve linear system approximately for given right-hand side b
-    void solve(NewVector& x, const NewVector& b) const;
+    void solve(NewVector& x, const NewVector& b);
 
   private:
 

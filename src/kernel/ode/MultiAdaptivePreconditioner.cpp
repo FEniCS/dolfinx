@@ -24,8 +24,10 @@ MultiAdaptivePreconditioner::~MultiAdaptivePreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivePreconditioner::solve(NewVector& x, const NewVector& b) const
+void MultiAdaptivePreconditioner::solve(NewVector& x, const NewVector& b)
 {
+  cout << "preconditioning (multi-adaptive)" << endl;
+
   // Reset dof
   uint j = 0;
 

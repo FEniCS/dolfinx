@@ -8,6 +8,7 @@
 #include <dolfin/NewGMRES.h>
 #include <dolfin/NewVector.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
+#include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/TimeSlabSolver.h>
 
 namespace dolfin
@@ -57,7 +58,7 @@ namespace dolfin
     NewVector dx;              // Increment for Newton's method
     NewVector b;               // Right-hand side -F(x)
     NewGMRES solver;           // GMRES solver
-    
+    MultiAdaptivePreconditioner mpc; // Preconditioner
   };
 
 }
