@@ -30,7 +30,7 @@ Homotopy::Homotopy(uint n)
   maxiter = dolfin_get("maximum iterations");
 
   // FIXME: Maybe this should be a parameter?
-  tol = 1e-10;
+  tol = 1e-14;
   
   // Set tolerance for GMRES solver
   gmres.setAtol(0.1*tol);

@@ -8,15 +8,12 @@
 #include <dolfin/pcimpl.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/NewVector.h>
-#include <dolfin/NewMatrix.h>
-#include <dolfin/VirtualMatrix.h>
 #include <dolfin/NewGMRES.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewGMRES::NewGMRES() : report(true), ksp(0), B(0)
+NewGMRES::NewGMRES() : NewLinearSolver(), report(true), ksp(0), B(0)
 {
   // Initialize PETSc
   PETScManager::init();

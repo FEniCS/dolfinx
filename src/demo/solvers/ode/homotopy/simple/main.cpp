@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   dolfin_set("method", "cg");
-  dolfin_set("order", 2);
+  dolfin_set("order", 1);
 
   Simple simple;
   simple.solve();

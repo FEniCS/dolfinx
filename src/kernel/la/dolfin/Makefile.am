@@ -11,6 +11,7 @@ EXTRA_DIST = dolfin_la.h \
              Jacobi.h \
              KrylovSolver.h \
              LinearSolver.h \
+             NewLinearSolver.h \
              LU.h \
              Matrix.h \
              NewMatrix.h \

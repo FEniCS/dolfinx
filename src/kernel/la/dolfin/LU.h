@@ -7,13 +7,16 @@
 #include <petscksp.h>
 #include <petscmat.h>
 
-#include <dolfin/NewVector.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/NewLinearSolver.h>
 
 namespace dolfin
 {
 
-  class LU
+  /// This class implements the direct solution (LU factorization) for
+  /// linear systems of the form Ax = b. It is a wrapper for the LU
+  /// solver of PETSc.
+  
+  class LU : public NewLinearSolver
   {
   public:
     
@@ -24,6 +27,9 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
+    void solve(const NewMatrix& A, NewVector& x, const NewVector& b);
+
+    /// Solve linear system Ax = b (matrix-free version)
     void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
     /// Display LU solver data

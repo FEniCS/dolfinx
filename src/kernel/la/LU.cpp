@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LU::LU() : ksp(0), B(0), idxm(0), idxn(0)
+LU::LU() : NewLinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -29,6 +29,16 @@ LU::~LU()
   if ( B ) MatDestroy(B);
   if ( idxm ) delete [] idxm;
   if ( idxn ) delete [] idxn;
+}
+//-----------------------------------------------------------------------------
+void LU::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
+{
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.init(A.size(1));
+
+  // Solve linear system
+  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
+  KSPSolve(ksp, b.vec(), x.vec());
 }
 //-----------------------------------------------------------------------------
 void LU::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)

@@ -10,17 +10,16 @@
 #include <petscksp.h>
 #include <dolfin/constants.h>
 #include <dolfin/NewPreconditioner.h>
+#include <dolfin/NewLinearSolver.h>
 
 namespace dolfin
 {
-  
-  class NewMatrix;
-  class NewVector;
-  class VirtualMatrix;
 
-  /// This is just a template. Write documentation here.
+  /// This class implements the GMRES method for linear systems
+  /// of the form Ax = b. It is a wrapper for the GMRES solver
+  /// of PETSc.
   
-  class NewGMRES
+  class NewGMRES : public NewLinearSolver
   {
   public:
 
@@ -33,7 +32,7 @@ namespace dolfin
     /// Solve linear system Ax = b
     void solve(const NewMatrix& A, NewVector& x, const NewVector& b);
 
-    /// Solve linear system Ax = b
+    /// Solve linear system Ax = b (matrix-free version)
     void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
     /// FIXME: Options below should be moved to some parameter system,
