@@ -63,7 +63,7 @@ AWK = mawk
 BOPT = g_c++
 CC = gcc
 CXX = g++
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98 
+CXXFLAGS = -O3 -Wall -Werror -ansi -std=c++98
 DOLFIN_LIBS = -ldolfin-main -ldolfin-convdiff -ldolfin-elasticity -ldolfin-elasticity-stationary -ldolfin-elasticity-updated -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson-multigrid -ldolfin-template -ldolfin-wave -ldolfin-wave-vector -ldolfin-poisson -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common  -lncurses -Wl,-rpath,/usr/local/lib/petsc//lib/libg_c++/linux-gnu -L/usr/local/lib/petsc//lib/libg_c++/linux-gnu -lpetscts -lpetscsnes -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -L/usr/X11R6/lib -lX11 -llapack -lblas -ldl -ldl -ldl -ldl -lm -L/usr/lib/mpich/lib -lmpich -lfrtbegin -lg2c -lm -L/usr/lib/gcc-lib/i486-linux/3.3.5 -L/usr/lib/gcc-lib/i486-linux/3.3.5/../../.. -lm -lgcc_s -L/usr/lib -lxml2 -lz -lpthread -lm
 HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS = -I$(top_builddir)/src/modules -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2
@@ -76,7 +76,7 @@ MAKEINFO = makeinfo
 MPI_CFLAGS = -I/usr/include/mpi
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.5.3
+PACKAGE_VERSION = 0.5.4
 PETSC_CFLAGS = -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include
 PETSC_DIR = /usr/local/lib/petsc/
 RANLIB = ranlib

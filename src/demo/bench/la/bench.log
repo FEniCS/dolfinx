@@ -541,3 +541,4 @@ See docs/index.html for manual pages.
 Libraries linked from /home/hazelsct/petsc-2.2.0/lib/libO/linux
 -----------------------------------------------------------------------
 PETSc ERROR: PetscInitialize() must be called before PetscFinalize()
+*** [Error at ParameterList.cpp:62: set_aptr()]: Unknown parameter "output".
