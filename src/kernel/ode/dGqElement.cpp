@@ -1,7 +1,9 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/RHS.h>
 #include <dolfin/dGqMethods.h>
 #include <dolfin/dGqElement.h>
@@ -42,6 +44,25 @@ real dGqElement::value(real t) const
   for (unsigned int i = 0; i <= q; i++)
     sum += values[i] * dG(q).basis(i, tau);
   
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::value(unsigned int node, real t) const
+{
+  // First check if the node matches
+  if ( t0 + dG(q).point(node)*timestep() == t )
+    return values[node];
+
+  // Special case: initial value
+  if ( t == t0 )
+    return values[0];
+
+  real tau = (t - t0) / (t1 - t0);
+
+  real sum = 0.0;
+  for (unsigned int i = 0; i <= q; i++)
+    sum += values[i] * dG(q).basis(i, tau);
+
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -130,7 +151,7 @@ real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
 {
   // Compute new time step based on residual
 
-  if ( abs(r) < DOLFIN_EPS )
+  if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
   // FIXME: Missing stability factor and interpolation constant

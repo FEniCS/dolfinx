@@ -22,6 +22,7 @@ namespace dolfin {
     unsigned int size() const;
 
     real value(real t) const;
+    real value(unsigned int node, real t) const;
     real initval() const;
     real dx() const;
 

@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Lagrange::Lagrange(int q)
+Lagrange::Lagrange(unsigned int q)
 {
   if ( q < 0 )
     dolfin_error("Degree for Lagrange polynomial must be non-negative.");
@@ -17,11 +17,11 @@ Lagrange::Lagrange(int q)
   n = q + 1;
   
   points = new real[n];
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     points[i] = 0.0;
 
   constants = 0;
-  updated = false;
+  init();
 }
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(const Lagrange& p)
@@ -32,11 +32,11 @@ Lagrange::Lagrange(const Lagrange& p)
   n = p.n;
 
   points = new real[p.n];
-  for (int i = 0; i < p.n; i++)
+  for (unsigned int i = 0; i < p.n; i++)
     points[i] = p.points[i];
 
   constants = 0;
-  updated = false;
+  init();
 }
 //-----------------------------------------------------------------------------
 Lagrange::~Lagrange()
@@ -50,26 +50,26 @@ Lagrange::~Lagrange()
   constants = 0;
 }
 //-----------------------------------------------------------------------------
-void Lagrange::set(int i, real x)
+void Lagrange::set(unsigned int i, real x)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 
   points[i] = x;
-  updated = false;
+  init();
 }
 //-----------------------------------------------------------------------------
-int Lagrange::size() const
+unsigned int Lagrange::size() const
 {
   return n;
 }
 //-----------------------------------------------------------------------------
-int Lagrange::degree() const
+unsigned int Lagrange::degree() const
 {
   return q;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::point(int i) const
+real Lagrange::point(unsigned int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
@@ -77,39 +77,34 @@ real Lagrange::point(int i) const
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::operator() (int i, real x)
+real Lagrange::operator() (unsigned int i, real x)
 {
   return eval(i,x);
 }
 //-----------------------------------------------------------------------------
-real Lagrange::eval(int i, real x)
+real Lagrange::eval(unsigned int i, real x)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 
-  init();
-
-  real product = constants[i];
-  
-  for (int j = 0; j < n; j++)
+  real product(constants[i]);
+  for (unsigned int j = 0; j < n; j++)
     if ( j != i )
       product *= x - points[j];
   
   return product;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dx(int i, real x)
+real Lagrange::dx(unsigned int i, real x)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
   
-  init();
-  
-  real sum = 0.0;
-  for (int j = 0; j < n; j++) {
+  real sum(0);
+  for (unsigned int j = 0; j < n; j++) {
     if ( j != i ) {
       real product = 1.0;
-      for (int k = 0; k < n; k++)
+      for (unsigned int k = 0; k < n; k++)
 	if ( k != i && k != j )
 	  product *= x - points[k];
       sum += product;
@@ -119,15 +114,13 @@ real Lagrange::dx(int i, real x)
   return sum * constants[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dqx(int i)
+real Lagrange::dqx(unsigned int i)
 {
   dolfin_assert(i >= 0);
 
-  init();
-  
   real product = constants[i];
   
-  for (int j = 1; j <= q; j++)
+  for (unsigned int j = 1; j <= q; j++)
     product *= (real) j;
   
   return product;
@@ -144,29 +137,29 @@ void Lagrange::show() const
   dolfin_info("Lagrange polynomial of degree %d with %d points.", q, n);
   dolfin_info("----------------------------------------------");
 
-  for (int i = 0; i < n; i++)
+  for (unsigned int i = 0; i < n; i++)
     dolfin_info("x[%d] = %f", i, points[i]);
 }
 //-----------------------------------------------------------------------------
 void Lagrange::init()
 {
-  if ( updated )
-    return;
+  // Note: this will be computed each time a new nodal point is specified,
+  // but will only be correct once all nodal points are distinct. This
+  // requires some extra work at the start but give increased performance
+  // since we don't have to check each time that the constants have been
+  // computed.
 
   if ( constants == 0 )
     constants = new real[n];
 
   // Compute constants
-  for (int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++) {
     real product = 1.0;
-    for (int j = 0; j < n; j++)
+    for (unsigned int j = 0; j < n; j++)
       if ( j != i )
 	product *= points[i] - points[j];
-    if ( fabs(product) < DOLFIN_EPS )
-      dolfin_error("Nodal points for Lagrange polynomial must be distinct.");
-    constants[i] = 1.0 / product;
+    if ( fabs(product) > DOLFIN_EPS )
+      constants[i] = 1.0 / product;
   }
-  
-  updated = true;
 }
 //-----------------------------------------------------------------------------

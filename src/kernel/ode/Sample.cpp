@@ -32,7 +32,7 @@ real Sample::t() const
 //-----------------------------------------------------------------------------
 real Sample::u(unsigned int index)
 {
-  return solution.u(index, time);
+  return solution.u(index, 0, time);
 }
 //-----------------------------------------------------------------------------
 real Sample::k(unsigned int index)

@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/RHS.h>
 #include <dolfin/cGqMethods.h>
 #include <dolfin/cGqElement.h>
@@ -33,6 +34,25 @@ unsigned int cGqElement::size() const
 //-----------------------------------------------------------------------------
 real cGqElement::value(real t) const
 {
+  // Special case: initial value
+  if ( t == t0 )
+    return values[0];
+
+  real tau = (t - t0) / (t1 - t0);
+
+  real sum = 0.0;
+  for (unsigned int i = 0; i <= q; i++)
+    sum += values[i] * cG(q).basis(i, tau);
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real cGqElement::value(unsigned int node, real t) const
+{
+  // First check if the node matches
+  if ( t0 + cG(q).point(node)*timestep() == t )
+    return values[node];
+
   // Special case: initial value
   if ( t == t0 )
     return values[0];

@@ -1,3 +1,5 @@
+ - Optimize evaluation of elements
+ - Optimize Lagrange polynomials
  - Optimize sparsity: use stl containers
  - Optimize choice of discrete residual for multi-adaptive solver
  - Decrease largest (default) time step to 0.1

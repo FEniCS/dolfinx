@@ -38,6 +38,9 @@ namespace dolfin {
     /// Return value of element at given time
     virtual real value(real t) const = 0;
 
+    /// Return value of element at given time, perhaps at the given node (optimized version)
+    virtual real value(unsigned int node, real t) const = 0;
+
     /// Return value of element at given node within element
     real value(unsigned int node) const;
 

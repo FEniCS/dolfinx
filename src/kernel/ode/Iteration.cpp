@@ -62,7 +62,7 @@ void Iteration::init(ElementGroup& group)
 void Iteration::init(Element& element)
 {
   // Get initial value
-  real u0 = u(element.index(), element.starttime());
+  real u0 = u(element.index(), 0, element.starttime());
   
   // Reset element
   element.update(u0);
@@ -85,7 +85,7 @@ void Iteration::reset(ElementGroup& group)
 void Iteration::reset(Element& element)
 {
   // Get initial value
-  real u0 = u(element.index(), element.starttime());
+  real u0 = u(element.index(), 0, element.starttime());
 
   // Reset element
   element.set(u0);
@@ -275,7 +275,7 @@ void Iteration::initInitialData(real t0)
 
   // Set initial values for all components
   for (unsigned int i = 0; i < N; i++)
-    u0.values[i] = u(i, t0);
+    u0.values[i] = u(i, 0, t0);
 }
 //-----------------------------------------------------------------------------
 void Iteration::initData(Values& values, unsigned int size)

@@ -83,7 +83,7 @@ void RHS::update(unsigned int index, unsigned int node, real t)
   if ( solution )
     updateSolution(index, node, t);
   else
-    updateFunction(index, node, t);
+    updateFunction(index, t);
 }
 //-----------------------------------------------------------------------------
 void RHS::updateSolution(unsigned int index, unsigned int node, real t)
@@ -94,16 +94,16 @@ void RHS::updateSolution(unsigned int index, unsigned int node, real t)
   {
     const NewArray<unsigned int>& row = ode.sparsity.row(index);
     for (unsigned int pos = 0; pos < row.size(); ++pos)
-      u(row[pos]) = (*solution)(row[pos], t);
+      u(row[pos]) = solution->u(row[pos], node, t);
   }
   else
   {
     for (unsigned int j = 0; j < N; j++)
-      u(j) = (*solution)(j, t);
+      u(j) = solution->u(j, node, t);
   }
 }
 //-----------------------------------------------------------------------------
-void RHS::updateFunction(unsigned int index, unsigned int node, real t)
+void RHS::updateFunction(unsigned int index, real t)
 {
   dolfin_assert(function);
 

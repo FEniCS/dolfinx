@@ -26,7 +26,7 @@ namespace dolfin {
   public:
  
     /// Constructor
-    Lagrange(int q);
+    Lagrange(unsigned int q);
     
     /// Copy constructor
     Lagrange(const Lagrange& p);
@@ -35,28 +35,28 @@ namespace dolfin {
     ~Lagrange();
     
     /// Specify point
-    void set(int i, real x);
+    void set(unsigned int i, real x);
 
     /// Return number of points
-    int size() const;
+    unsigned int size() const;
     
     /// Return degree
-    int degree() const;
+    unsigned int degree() const;
     
     /// Return point
-    real point(int i) const;
+    real point(unsigned int i) const;
     
     /// Return value of polynomial i at given point x
-    real operator() (int i, real x);
+    real operator() (unsigned int i, real x);
     
     /// Return value of polynomial i at given point x
-    real eval(int i, real x);
+    real eval(unsigned int i, real x);
 
     /// Return derivate of polynomial i at given point x
-    real dx(int i, real x);
+    real dx(unsigned int i, real x);
 
     /// Return derivative q (a constant) of polynomial
-    real dqx(int i);
+    real dqx(unsigned int i);
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
@@ -66,12 +66,10 @@ namespace dolfin {
 
     void init();
     
-    int q;
-    int n;
+    unsigned int q;
+    unsigned int n;
     real* points; 
     real* constants;
-
-    bool updated;
 
   };
 

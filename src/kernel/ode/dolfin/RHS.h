@@ -48,7 +48,7 @@ namespace dolfin {
     void updateSolution(unsigned int index, unsigned int node, real t);
 
     // Update when we use Solution
-    void updateFunction(unsigned int index, unsigned int node, real t);
+    void updateFunction(unsigned int index, real t);
 
     // Number of components
     unsigned int N;

@@ -70,9 +70,9 @@ Element* Solution::last(unsigned int i)
   return elmdata.last(i);
 }
 //-----------------------------------------------------------------------------
-real Solution::operator() (unsigned int i, real t)
+real Solution::operator() (unsigned int i, unsigned int node, real t)
 {
-  return u(i,t);
+  return u(i, node, t);
 }
 //-----------------------------------------------------------------------------
 real Solution::u(unsigned int i, real t)
@@ -84,14 +84,36 @@ real Solution::u(unsigned int i, real t)
   // First check if the initial value is requested. We don't want to ask
   // elmdata for the element, since elmdata might go looking for the element
   // on disk if it is not available.
- 
+  
   if ( t == t0 )
     return u0[i];
-
+  
   // Then try to find the element and return the value if we found it
   Element* element = elmdata.element(i,t);
   if ( element )
     return element->value(t);
+
+  // If we couldn't find the element return initial value (extrapolation)
+  return u0[i];
+}
+//-----------------------------------------------------------------------------
+real Solution::u(unsigned int i, unsigned int node, real t)
+{
+  dolfin_assert(i < u0.size());
+  
+  // Note: the logic of this function is nontrivial.
+  
+  // First check if the initial value is requested. We don't want to ask
+  // elmdata for the element, since elmdata might go looking for the element
+  // on disk if it is not available.
+  
+  if ( t == t0 )
+    return u0[i];
+  
+  // Then try to find the element and return the value if we found it
+  Element* element = elmdata.element(i,t);
+  if ( element )
+    return element->value(node, t);
 
   // If we couldn't find the element return initial value (extrapolation)
   return u0[i];

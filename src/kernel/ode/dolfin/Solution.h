@@ -51,10 +51,13 @@ namespace dolfin {
     Element* last(unsigned int i);
 
     /// Evaluation (same as function u())
-    real operator() (unsigned int i, real t);
+    real operator() (unsigned int i, unsigned int node, real t);
 
     /// Return value for given component at given time
     real u(unsigned int i, real t);
+
+    /// Return value for given component at given time (optimized version)
+    real u(unsigned int i, unsigned int node, real t);
 
     /// Return time step at given time
     real k(unsigned int i, real t);
