@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     // Type of iteration
-    enum State {nonstiff, stiff1, stiff2, stiff3};
+    enum State {nonstiff, stiff1, stiff2, stiff3, stiff};
 
     // Discrete residuals
     struct Residuals
@@ -115,6 +115,33 @@ namespace dolfin
 
   protected:
 
+    // Type of iteration
+    enum Method {gauss_jacobi, gauss_seidel};
+
+    // An array of values used for Gauss-Jacobi iteration
+    struct Values
+    {
+      Values();
+      ~Values();
+
+      void init(unsigned int size);
+
+      real* values;
+      unsigned int size;
+      unsigned int offset;
+    };
+
+    // Stabilization for adaptive iteration
+    void stabilize(const Residuals& r, real rho);
+
+    // Compute alpha
+    real computeAlpha(real rho) const;
+
+    // Compute number of damping steps
+    unsigned int computeSteps(real rho) const;
+
+    //--- Iteration data ---
+
     Solution& u;
     RHS& f;
     FixedPointIteration& fixpoint;
@@ -124,6 +151,24 @@ namespace dolfin
     real maxdiv;
     real maxconv;
     real tol;
+
+    // Current method (Gauss-Jacobi or Gauss-Seidel)
+    Method method;
+
+    // Stabilization parameter
+    real alpha;
+
+    // Angle of sector, gamma = cos(theta)
+    real gamma;
+
+    // Residual at start of stabilizing iterations
+    real r0;
+
+    // Number of stabilizing iterations
+    unsigned int m;
+
+    // Number of remaining stabilizing iterations
+    unsigned int j;
 
   };
 

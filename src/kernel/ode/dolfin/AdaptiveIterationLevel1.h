@@ -46,14 +46,6 @@ namespace dolfin
 
     void report() const;
 
-  private:
-
-    // Compute alpha
-    real computeAlpha(real rho) const;
-
-    // Stabilization parameter
-    real alpha;
-
   };
 
 }

@@ -17,7 +17,7 @@ AdaptiveIterationLevel1::AdaptiveIterationLevel1(Solution& u, RHS& f,
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv, 
 						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), alpha(1)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol)
 {
   // Do nothing
 }
@@ -91,7 +91,11 @@ void AdaptiveIterationLevel1::stabilize(Element& element,
   // Compute diagonal damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
   real rho = - element.timestep() * dfdu;
-  alpha = computeAlpha(rho);
+
+  if ( rho >= 0.0 || rho < -1.0 )
+    alpha = (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
+  else
+    alpha = 1.0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::converged(TimeSlab& timeslab, 
@@ -214,13 +218,5 @@ void AdaptiveIterationLevel1::report() const
 {
   cout << "System appears to be diagonally stiff, solution computed with "
        << "diagonally damped fixed point iteration." << endl;
-}
-//-----------------------------------------------------------------------------
-real AdaptiveIterationLevel1::computeAlpha(real rho) const
-{
-  if ( rho >= 0.0 || rho < -1.0 )
-    return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
-
-  return 1.0;
 }
 //-----------------------------------------------------------------------------

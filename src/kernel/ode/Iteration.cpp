@@ -15,7 +15,8 @@ using namespace dolfin;
 Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		     unsigned int maxiter, real maxdiv, real maxconv, real tol) : 
   u(u), f(f), fixpoint(fixpoint), 
-  maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol)
+  maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol),
+  method(gauss_jacobi), alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0)  
 {
   // Do nothing
 }
@@ -96,5 +97,99 @@ real Iteration::residual(NewArray<Element*>& elements)
 real Iteration::residual(Element& element)
 {
   return fabs(element.computeElementResidual(f));
+}
+//-----------------------------------------------------------------------------
+void Iteration::stabilize(const Residuals& r, real rho)
+{
+  // Take action depending on j, the remaining number of iterations
+  // with small alpha.
+  //
+  //   j = 0 : increasing alpha (or alpha = 1)
+  //   j = 1 : last stabilizing iteration
+  //   j > 1 : still stabilizing
+
+  switch ( j ) {
+  case 0:
+    // Increase alpha with a factor 2 towards alpha = 1
+    if ( r.r2 > 0.5*r.r1 )
+      alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
+    break;
+  case 1:
+    // Continue with another round of stabilizing steps if it seems to work
+    if ( pow(r.r2/r0, 1.0/static_cast<real>(m)) < 0.75 )
+    {
+      cout << "Trying again" << endl;
+      
+      // Choose same value for m as last time
+      j = m;
+      
+      // Choose a slightly larger alpha if convergence is monotone
+      if ( r.r2 < 0.75*r.r1 && r.r1 < 0.75*r0 )
+	alpha *= 1.1;
+      
+      // Save residual at start of stabilizing iterations
+      r0 = r.r2;
+    }
+    else
+    {
+      // Finish stabilization
+      j = 0;
+    }
+    break;
+  default:
+    // Decrease number of remaining iterations with small alpha
+    j -= 1;
+  }
+
+  // Check if stabilization is needed
+  if ( r.r2 > r.r1 && j == 0 )
+  {
+    // Compute alpha
+    alpha = computeAlpha(rho);
+    cout << "  alpha = " << alpha << endl;
+
+    // Compute number of damping steps
+    m = computeSteps(rho);
+    j = m;
+    cout << "  m     = " << m << endl;
+    
+    // Save residual at start of stabilizing iterations
+    r0 = r.r2;
+  }
+}
+//-----------------------------------------------------------------------------
+real Iteration::computeAlpha(real rho) const
+{
+  return gamma / (1.0 + rho);
+}
+//-----------------------------------------------------------------------------
+unsigned int Iteration::computeSteps(real rho) const
+{
+  return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
+}
+//-----------------------------------------------------------------------------
+Iteration::Values::Values() : values(0), size(0), offset(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Iteration::Values::~Values()
+{
+  if ( values )
+    delete [] values;
+  values = 0;
+}
+//-----------------------------------------------------------------------------
+void Iteration::Values::init(unsigned int size)
+{
+  dolfin_assert(size > 0);
+
+  if ( values )
+    delete [] values;
+  
+  values = new real[size];
+  dolfin_assert(values);
+  this->size = size;
+  offset = 0;
 }
 //-----------------------------------------------------------------------------

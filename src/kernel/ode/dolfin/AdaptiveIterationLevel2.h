@@ -50,22 +50,6 @@ namespace dolfin
 
   private:
 
-    // Type of iteration
-    enum Method {gauss_jacobi, gauss_seidel};
-
-    // Additional data for Gauss-Jacobi iteration
-    struct Values
-    {
-      Values();
-      ~Values();
-
-      void init(unsigned int size);
-
-      real* values;
-      unsigned int size;
-      unsigned int offset;
-    };
-
     // Gauss-Jacobi iteration on element list
     void updateGaussJacobi(NewArray<Element*>& elements);
 
@@ -74,12 +58,6 @@ namespace dolfin
     
     // Compute divergence
     real computeDivergence(NewArray<Element*>& elements, const Residuals& r);
-
-    // Compute alpha
-    real computeAlpha(real rho) const;
-
-    // Compute number of damping steps
-    unsigned int computeSteps(real rho) const;
 
     // Initialize additional data
     void initData(Values& values);
@@ -93,10 +71,7 @@ namespace dolfin
     // Compute size of data
     unsigned int dataSize(const NewArray<Element*>& elements) const;
 
-    //--- Data for adaptive iteration ---
-
-    // Current method (Gauss-Jacobi or Gauss-Seidel)
-    Method method;
+    //--- Iteration data ---
    
     // Solution values for divergence computation
     Values x0;
@@ -106,21 +81,6 @@ namespace dolfin
    
     // Number of values in current element list
     unsigned int datasize;
-
-    // Number of stabilizing iterations
-    unsigned int m;
-
-    // Number of remaining stabilizing iterations
-    unsigned int j;
-    
-    // Stabilization parameter
-    real alpha;
-
-    // Angle of sector, gamma = cos(theta)
-    real gamma;
-
-    // Residual at start of stabilizing iterations
-    real r0;
 
   };
 

@@ -11,6 +11,7 @@
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/AdaptiveIterationLevel1.h>
 #include <dolfin/AdaptiveIterationLevel2.h>
+#include <dolfin/AdaptiveIterationLevel3.h>
 #include <dolfin/FixedPointIteration.h>
 
 using namespace dolfin;
@@ -387,7 +388,10 @@ void FixedPointIteration::changeState(Iteration::State newstate)
     state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
   case Iteration::stiff3:
-    dolfin_error("Not implemented");
+    state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol);
+    break;
+  case Iteration::stiff:
+    dolfin_error("Not implemented.");
     break;
   default:
     dolfin_error("Unknown state");

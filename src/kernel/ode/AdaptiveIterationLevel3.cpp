@@ -19,9 +19,7 @@ AdaptiveIterationLevel3::AdaptiveIterationLevel3(Solution& u, RHS& f,
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
 						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), 
-  method(gauss_jacobi), datasize(0), m(0), j(0),
-  alpha(1), gamma(1.0/sqrt(2.0)), r0(0)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), datasize(0)
 {
   // method = gauss_seidel;
 }
@@ -33,7 +31,7 @@ AdaptiveIterationLevel3::~AdaptiveIterationLevel3()
 //-----------------------------------------------------------------------------
 Iteration::State AdaptiveIterationLevel3::state() const
 {
-  return stiff2;
+  return stiff3;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(TimeSlab& timeslab)
@@ -91,71 +89,16 @@ void AdaptiveIterationLevel3::stabilize(TimeSlab& timeslab,
 					const Residuals& r, unsigned int n)
 {
   // Make at least one iteration before stabilizing
-  if ( n == 0 )
+  if ( n < 1 )
     return;
-  
-  //cout << "Residual: " << r.r1 << " --> " << r.r2 << endl;
-  
-  // Take action depending on j, the remaining number of iterations
-  // with small alpha.
-  //
-  //     j = 0 : increasing alpha (or alpha = 1)
-  //     j = 1 : last stabilizing iteration
-  //     j > 1 : still stabilizing
 
-  switch ( j ) {
-  case 0:
-    // Increase alpha with a factor 2 towards alpha = 1
-    if ( r.r2 > 0.5*r.r1 )
-      alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
-    break;
-  case 1:
-    // Continue with another round of stabilizing steps if it seems to work
-    if ( pow(r.r2/r0, 1.0/static_cast<real>(m)) < 0.75 )
-    {
-      cout << "Trying again" << endl;
-      
-      // Choose same value for m as last time
-      j = m;
-      
-      // Choose a slightly larger alpha if convergence is monotone
-      if ( r.r2 < 0.75*r.r1 && r.r1 < 0.75*r0 )
-	alpha *= 1.1;
-      
-      // Save residual at start of stabilizing iterations
-      r0 = r.r2;
-    }
-    else
-    {
-      // Finish stabilization
-      j = 0;
-    }
-    break;
-  default:
-    // Decrease number of remaining iterations with small alpha
-    j -= 1;
-  }
-  
-  // Check stabilization is needed
+  // Compute divergence rate if necessary
+  real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
-  {
-    // Compute divergence rate
-    real rho = computeDivergence(timeslab, r);
-    cout << "  rho   = " << rho << endl;
-
-    // Compute alpha
-    alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
-
-    // Compute number of damping steps
-    m = computeSteps(rho);
-    j = m;
-    cout << "  m     = " << m << endl;
-    
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
-  }
-
+    rho = computeDivergence(timeslab, r);
+  
+  // Adaptive stabilization
+  Iteration::stabilize(r, rho);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(NewArray<Element*>& elements,
@@ -173,10 +116,6 @@ void AdaptiveIterationLevel3::stabilize(Element& element,
 bool AdaptiveIterationLevel3::converged(TimeSlab& timeslab, 
 					Residuals& r, unsigned int n)
 {
-  // Convergence handled locally when the slab contains only one element list
-  if ( timeslab.leaf() )
-    return n > 0;
-
   // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(timeslab);
@@ -191,7 +130,7 @@ bool AdaptiveIterationLevel3::converged(TimeSlab& timeslab,
 bool AdaptiveIterationLevel3::converged(NewArray<Element*>& elements, 
 					Residuals& r, unsigned int n)
 {
-  // Iteration one time on each element list
+  // Iterate one time on each element list
   return n > 0;
 }
 //-----------------------------------------------------------------------------
@@ -224,7 +163,7 @@ bool AdaptiveIterationLevel3::diverged(TimeSlab& timeslab,
     timeslab.reset(fixpoint);
 
   // Change state
-  newstate = stiff3;
+  newstate = stiff;
   
   return true;
 }
@@ -233,8 +172,7 @@ bool AdaptiveIterationLevel3::diverged(NewArray<Element*>& elements,
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
-  // Don't check divergence for element list, since we want to handle
-  // the stabilization ourselves (and not change state).
+  // Don't check divergence for element lists
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -249,7 +187,7 @@ bool AdaptiveIterationLevel3::diverged(Element& element,
 void AdaptiveIterationLevel3::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
-       << "fixed point iteration." << endl;
+       << "fixed point iteration (on time slab level)." << endl;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::updateGaussJacobi(TimeSlab& timeslab)
@@ -317,7 +255,7 @@ real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
 
   for (unsigned int n = 0; n < maxiter; n++)
   {
-    // Update element list
+    // Update time slab
     update(timeslab);
     
     // Compute residual
@@ -330,6 +268,7 @@ real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
 
     cout << "rho = " << rho2 << endl;
 
+    // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
     {
       dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
@@ -345,16 +284,6 @@ real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
   copyData(x0, timeslab);
 
   return rho2;
-}
-//-----------------------------------------------------------------------------
-real AdaptiveIterationLevel3::computeAlpha(real rho) const
-{
-  return gamma / (1.0 + rho);
-}
-//-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel3::computeSteps(real rho) const
-{
-  return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::initData(Values& values)
@@ -428,30 +357,5 @@ unsigned int AdaptiveIterationLevel3::dataSize(const TimeSlab& timeslab) const
   */
   
   return size;
-}
-//-----------------------------------------------------------------------------
-AdaptiveIterationLevel3::Values::Values() : values(0), size(0), offset(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-AdaptiveIterationLevel3::Values::~Values()
-{
-  if ( values )
-    delete [] values;
-  values = 0;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::Values::init(unsigned int size)
-{
-  dolfin_assert(size > 0);
-
-  if ( values )
-    delete [] values;
-  
-  values = new real[size];
-  dolfin_assert(values);
-  this->size = size;
-  offset = 0;
 }
 //-----------------------------------------------------------------------------

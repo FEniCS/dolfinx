@@ -21,9 +21,7 @@ AdaptiveIterationLevel2::AdaptiveIterationLevel2(Solution& u, RHS& f,
 						 unsigned int maxiter,
 						 real maxdiv, real maxconv,
 						 real tol) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), 
-  method(gauss_jacobi), datasize(0), m(0), j(0),
-  alpha(1), gamma(1.0/sqrt(2.0)), r0(0)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), datasize(0)
 {
   // method = gauss_seidel;
 }
@@ -88,70 +86,16 @@ void AdaptiveIterationLevel2::stabilize(NewArray<Element*>& elements,
 					const Residuals& r, unsigned int n)
 {
   // Make at least one iteration before stabilizing
-  if ( n == 0 )
+  if ( n < 1 )
     return;
 
-  //cout << "Residual: " << r.r1 << " --> " << r.r2 << endl;
-
-  // Take action depending on j, the remaining number of iterations
-  // with small alpha.
-  //
-  //     j = 0 : increasing alpha (or alpha = 1)
-  //     j = 1 : last stabilizing iteration
-  //     j > 1 : still stabilizing
-
-  switch ( j ) {
-  case 0:
-    // Increase alpha with a factor 2 towards alpha = 1
-    if ( r.r2 > 0.5*r.r1 )
-      alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
-    break;
-  case 1:
-    // Continue with another round of stabilizing steps if it seems to work
-    if ( pow(r.r2/r0, 1.0/static_cast<real>(m)) < 0.75 )
-    {
-      cout << "Trying again" << endl;
-      
-      // Choose same value for m as last time
-      j = m;
-      
-      // Choose a slightly larger alpha if convergence is monotone
-      if ( r.r2 < 0.75*r.r1 && r.r1 < 0.75*r0 )
-	alpha *= 1.1;
-      
-      // Save residual at start of stabilizing iterations
-      r0 = r.r2;
-    }
-    else
-    {
-      // Finish stabilization
-      j = 0;
-    }
-    break;
-  default:
-    // Decrease number of remaining iterations with small alpha
-    j -= 1;
-  }
-  
-  // Check stabilization is needed
+  // Compute divergence rate if necessary
+  real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
-  {
-    // Compute divergence rate
-    real rho = computeDivergence(elements, r);
-    cout << "  rho   = " << rho << endl;
-
-    // Compute alpha
-    alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
-
-    // Compute number of damping steps
-    m = computeSteps(rho);
-    j = m;
-    cout << "  m     = " << m << endl;
-    
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
-  }
+    rho = computeDivergence(elements, r);
+  
+  // Adaptive stabilization
+  Iteration::stabilize(r, rho);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::stabilize(Element& element, 
@@ -246,7 +190,7 @@ bool AdaptiveIterationLevel2::diverged(Element& element,
 void AdaptiveIterationLevel2::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
-       << "fixed point iteration." << endl;
+       << "fixed point iteration (on element list level)." << endl;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::updateGaussJacobi(NewArray<Element*>& elements)
@@ -320,6 +264,7 @@ real AdaptiveIterationLevel2::computeDivergence(NewArray<Element*>& elements,
 
     cout << "rho = " << rho2 << endl;
 
+    // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
     {
       dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
@@ -335,16 +280,6 @@ real AdaptiveIterationLevel2::computeDivergence(NewArray<Element*>& elements,
   copyData(x0, elements);
 
   return rho2;
-}
-//-----------------------------------------------------------------------------
-real AdaptiveIterationLevel2::computeAlpha(real rho) const
-{
-  return gamma / (1.0 + rho);
-}
-//-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel2::computeSteps(real rho) const
-{
-  return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::initData(Values& values)
@@ -411,30 +346,5 @@ unsigned int AdaptiveIterationLevel2::dataSize(const NewArray<Element*>& element
   }
   
   return size;
-}
-//-----------------------------------------------------------------------------
-AdaptiveIterationLevel2::Values::Values() : values(0), size(0), offset(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-AdaptiveIterationLevel2::Values::~Values()
-{
-  if ( values )
-    delete [] values;
-  values = 0;
-}
-//-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::Values::init(unsigned int size)
-{
-  dolfin_assert(size > 0);
-
-  if ( values )
-    delete [] values;
-  
-  values = new real[size];
-  dolfin_assert(values);
-  this->size = size;
-  offset = 0;
 }
 //-----------------------------------------------------------------------------
