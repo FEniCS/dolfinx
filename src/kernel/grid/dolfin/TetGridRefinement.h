@@ -33,18 +33,18 @@ namespace dolfin {
     static bool checkRuleIrregular3(Cell& cell, int no_marked_edges);
     static bool checkRuleIrregular4(Cell& cell, int no_marked_edges);
 
-    static void refineNoRefine  (Cell& cell, Grid& grid);
-    static void refineRegular   (Cell& cell, Grid& grid);
-    static void refineIrregular1(Cell& cell, Grid& grid);
-    static void refineIrregular2(Cell& cell, Grid& grid);
-    static void refineIrregular3(Cell& cell, Grid& grid);
+    static void refineNoRefine   (Cell& cell, Grid& grid);
+    static void refineRegular    (Cell& cell, Grid& grid);
+    static void refineIrregular1 (Cell& cell, Grid& grid);
+    static void refineIrregular2 (Cell& cell, Grid& grid);
+    static void refineIrregular3 (Cell& cell, Grid& grid);
+    static void refineIrregular4 (Cell& cell, Grid& grid);
+
     static void refineIrregular31(Cell& cell, Grid& grid);
-    static void refineIrregular32(Cell& cell, Grid& grid, 
+    static void refineIrregular32(Cell& cell, Grid& grid,
 				  Array<Node*>& sorted_nodes);
     static void refineIrregular33(Cell& cell, Grid& grid, 
-				  Array<Node*>& sorted_nodes,
-				  Cell& face_neighbor);
-    static void refineIrregular4(Cell& cell, Grid& grid);
+				  Array<Node*>& sorted_nodes, Cell& face_neighbor);
 
     static bool  markedEdgesOnSameFace (Cell& cell);
     static Cell* findNeighbor          (Cell& cell, Face& face);
