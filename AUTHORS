@@ -9,28 +9,39 @@ Main authors:
 			www:   http://www.math.chalmers.se/~logg
 
 
-Contributors:
--------------
+Contributors (in alphabetical order:
+------------------------------------
 
 - Niklas Ericsson (nen@math.chalmers.se)
-  (LU factorization and LU solve)
+  
+    LU factorization and LU solve
 
 - Georgios Foufas (foufas@math.chalmers.se)
-  (Operators in Vector and Matrix)
+  
+    Operators in Vector and Matrix
 
 - Johan Jansson (johanjan@math.chalmers.se)
-  (Updates of Vector)
+  
+    Multi-adaptive ODE solver
+    Updates of Vector
 
 - Karin Kraft (kakr@math.chalmers.se)
-  (Matrix updates)
+  
+    Matrix updates
 	
 - Erik Svensson (eriksv@math.chalmers.se)
-  (New Matlab format for sparse matrix)
+
+    New Matlab format for sparse matrix
 
 - Jim Tilander (jt@dd.chalmers.se)
-  (Logsystem)
+
+    Logsystem
 
 - Rasmus Hemph       (PDE project course 2001/2002)
   Aleksandra Krusper (PDE project course 2001/2002)
   Walter Villanueva  (PDE project course 2001/2002)
-  (GiD file format)
+
+    GiD file format
+
+Missing credits? Please tell us and we will fix it.
+Send an email to dolfin@math.chalmers.se.
