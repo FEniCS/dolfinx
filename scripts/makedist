@@ -62,6 +62,8 @@ less $MAKELOG
 cd ..
 echo 'Copying ChangeLog to web server'
 scp ChangeLog logg@fourier.math.chalmers.se:work/www-phi/pub/software/dolfin
+echo 'Copying TODO list to web server'
+scp TODO logg@fourier.math.chalmers.se:work/www-phi/pub/software/dolfin
 echo 'Copying tarball to web server'
 scp $TARBALL logg@fourier.math.chalmers.se:work/www-phi/pub/software/dolfin/v0.4
 
