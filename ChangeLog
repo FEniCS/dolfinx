@@ -10,6 +10,9 @@
  - New function ODE::sparse(const Matrix& A)
  - Access nodes, cells, edges, faces by id
  - New function Matrix::lump()
+ - Add performance tests for multi-adaptivity (both stiff and non-stiff)
+ - First version of Newton for the multi-adaptive solver
+ - Test for Newton for the multi-adaptive solver
 0.4.8
  - Add support for systems (jansson and bengzon)
  - Add new module wave

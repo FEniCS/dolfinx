@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// - Updates by Johan Jansson (2004)
 
 #ifndef __ITERATION_H
 #define __ITERATION_H
