@@ -45,7 +45,8 @@ void NewMatrix::init(int m, int n)
     else
       MatDestroy(A);
   
-  dolfin_error("Not implemented");
+  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
 int NewMatrix::size(int dim) const

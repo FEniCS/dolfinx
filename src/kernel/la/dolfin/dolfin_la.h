@@ -22,5 +22,6 @@
 #include <dolfin/SISolver.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
+#include <dolfin/NewVector.h>
 
 #endif

@@ -19,4 +19,5 @@ EXTRA_DIST = dolfin_la.h \
              SISolver.h \
              SparseMatrix.h \
              Vector.h \
+             NewVector.h \
              ILU.h
