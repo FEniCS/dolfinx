@@ -1,3 +1,4 @@
+ - Convert grids in data/grids to xml.gz
  - Add iterators for Nodes and Cells
  - Change from .hh to .h
  - Add operators to Vector class (Foufas)
