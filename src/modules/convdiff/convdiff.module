@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "convdiff"
+KEYWORD  = "convection-diffusion"
+PROBLEM  = "ProblemConvDiff"
+SETTINGS = "SettingsConvDiff"

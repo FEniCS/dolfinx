@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "poisson"
+KEYWORD  = "poisson"
+PROBLEM  = "ProblemPoisson"
+SETTINGS = "SettingsPoisson"

@@ -1,0 +1,99 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(README)
+
+dnl Settings
+PACKAGE=dolfin
+VERSION=0.2.11-1
+DOLFIN_MAIN="main"
+DOLFIN_KERNEL="fem grid io la common"
+
+dnl Find modules
+cd src/modules
+./scanmodules.sh
+cd ../..
+DOLFIN_MODULES=""
+for l in `cat src/modules/modules.list | grep -v "#"`; do
+	DOLFIN_MODULES="$DOLFIN_MODULES$l "
+done
+echo $DOLFIN_MODULES
+
+dnl Initialize automake
+AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+
+dnl Checks for programs
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_RANLIB
+AC_PROG_AWK
+AC_PROG_INSTALL
+AC_PROG_LN_S
+
+dnl Checks for libraries.
+dnl Replace `main' with a function in -lgrid:
+dnl AC_CHECK_LIB(grid, main)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+
+dnl Check for PETSc
+dnl echo "checking for PETSc..."
+dnl echo "  PETSc directory:    PETSC_DIR  = " $PETSC_DIR
+dnl echo "  PETSc architecture: PETSC_ARCH = " $PETSC_ARCH
+dnl if [ test -f $PETSC_DIR/include/petsc.h ]; then
+dnl   echo "  Found PETSc header petsc.h"
+dnl else
+dnl  echo "  Unable to find PETSc header petsc.h."
+dnl  echo "  You need PETSc to install DOLFIN. See http://www-fp.mcs.anl.gov/petsc/"
+dnl  exit
+dnl fi
+
+dnl Generate include path for modules (including kernel code)
+MODULE_INCLUDES=""
+DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
+for f in $DIRS; do
+	MODULE_INCLUDES="$MODULE_INCLUDES-I\$(top_builddir)/src/$f "
+done
+AC_SUBST(MODULE_INCLUDES)
+
+dnl Generate include path for main (including also module code)
+MAIN_INCLUDES=""
+DIRS="$DOLFIN_MODULES"
+for f in $DIRS; do
+	MAIN_INCLUDES="$MAIN_INCLUDES-I\$(top_builddir)/src/modules/$f "
+done
+MAIN_INCLUDES="$MODULE_INCLUDES $MAIN_INCLUDES"
+AC_SUBST(MAIN_INCLUDES)
+
+dnl Generate library list for linking in the correct order.
+DOLFIN_LFLAGS=""
+DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_KERNEL"
+for f in $DIRS; do
+	DOLFIN_LFLAGS="$DOLFIN_LFLAGS-ldolfin-$f "
+done
+AC_SUBST(DOLFIN_LFLAGS)
+
+dnl Create Makefiles
+dnl Seems like automake cannot handle a variable containing the
+dnl list of files, so this cannot be done automatically. We have
+dnl to list all the files.
+AC_OUTPUT( Makefile \
+           src/Makefile \
+           src/modules/Makefile \
+           src/main/Makefile \
+           src/config/Makefile \
+           src/fem/Makefile \
+           src/grid/Makefile \
+           src/io/Makefile \
+           src/la/Makefile \
+           src/common/Makefile \
+           src/modules/poisson/Makefile \
+           src/modules/convdiff/Makefile \
+           src/modules/navierstokes/Makefile \
+           src/modules/template/Makefile \
+           src/problems/Makefile \
+           src/problems/navierstokes/Makefile \
+           src/utils/Makefile \
+           src/utils/inp2dx/Makefile \
+           src/modules/poisson/Makefile )

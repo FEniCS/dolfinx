@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "template"
+KEYWORD  = "my problem"
+PROBLEM  = "ProblemTemplate"
+SETTINGS = "SettingsTemplate"

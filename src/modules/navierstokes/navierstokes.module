@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "navierstokes"
+KEYWORD  = "navier-stokes"
+PROBLEM  = "ProblemNS"
+SETTINGS = "SettingsNavierStokes"

@@ -1,0 +1,5 @@
+(^|/)CVS($|/)
+(^|/)\.hg($|/)
+^tailor.log$
+^tailor.state$
+^tailor.state.journal$

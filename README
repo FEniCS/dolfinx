@@ -1,0 +1,94 @@
+This is DOLFIN. (Previously known as Kraftwerk)
+
+-------------------------------------------------------------------------------
+Contents
+
+	1. Installation
+	2. Testing
+	3. License
+	4. Feedback
+	5. About
+
+-------------------------------------------------------------------------------
+1. Installation
+
+	You should only have to do the following
+
+		./configure
+		make
+
+	Look at the file INSTALL for details.
+
+	A few hints:
+
+		o 	Maybe you will need to use g++ rather than c++:
+
+			Type
+
+				setenv CXX g++
+
+			before running ./configure.
+
+		o	You probably have to use gmake, rather than make:
+
+				alias make gmake
+
+		o	Optimization:
+
+				setenv CXXFLAGS '-03'
+			
+			or even
+
+				setenv CXXFLAGS '-O6 -finline-functions -funroll-loops ...
+                                        -fstrict-aliasing -felide-constructors'
+
+		o	Warnings:
+
+				setenv CXXFLAGS '-Wall -ansi -pedantic'
+
+		o	If you want to install locally (not as root), try
+
+				./configure --prefix=<dir>
+
+			where <dir> is where you want to install, such as
+			<dir>=/home/logg/local .
+
+-------------------------------------------------------------------------------
+2. Testing
+
+-------------------------------------------------------------------------------
+3. Feed back
+
+	Send us an email at
+
+		dolfin@math.chalmers.se	
+
+------------------------------------------------------------------------------
+4. License
+
+	GNU GPL Version 2
+
+------------------------------------------------------------------------------
+5. About
+
+	DOLFIN is maintained by:
+
+		Johan Hoffman
+		Chalmers Finite Element Center
+		Goteborg
+		Sweden
+		email: hoffman@math.chalmers.se
+
+		Anders Logg
+		Chalmers Finite Element Center
+		Goteborg
+		Sweden
+		email: logg@math.chalmers.se
+
+	For more information about DOLFIN, visit
+
+		www.phi.chalmers.se/dolfin/
+
+-------------------------------------------------------------------------------
+Goteborg
+March 2002

@@ -1,0 +1,50 @@
+0.2.11-1
+ - Fix compilation error (`source`) on Solaris
+0.2.11
+ - Automate build process to simplify addition of new modules
+ - Fix bug in matlab_write_field() (walter)
+ - Fix bug in SparseMatrix::GetCopy() (foufas)
+0.2.10-1
+ - Fix compilation errors on RedHat (thsv)
+0.2.10
+ - Fix compilation of problems to use correct compiler
+ - Change default test problems to the ones in the report
+ - Improve memory management using mpatrol for tracking allocations
+ - Change bool to int for va_arg, seems to be a problem with gcc > 3.0
+ - Improve input / output support: GiD, Matlab, OpenDX
+0.2.8
+ - Navier-Stokes starting to work again
+ - Add Navier-Stokes 2d
+ - Bug fixes
+0.2.7
+ - Add support for 2D problems
+ - Add module convection-diffusion
+ - Add local/global fields in equation/problem
+ - Bug fixes
+ - Navier-Stokes updates (still broken)
+0.2.6
+ - Navier-Stokes updates (still broken)
+ - Output to matlab format
+0.2.5
+ - Add variational formulation with overloaded operators for systems
+ - ShapeFunction/LocalField/FiniteElement according to Scott & Brenner
+0.2.4
+ - Add boundary conditions
+ - Poisson seems to work ok
+0.2.3
+ - Add GMRES solver
+ - Add CG solver
+ - Add direct solver
+ - Add Poisson solver
+ - Big changes to the organisation of the source tree
+ - Add kwdist.sh script
+ - Bug fixes
+0.2.2:
+ - Remove curses temporarily
+0.2.1:
+ - Remove all PETSc stuff. Finally!
+ - Gauss-Seidel cannot handle the pressure equation
+0.2.0:
+ - First GPL release
+ - Remove all of Klas Samuelssons proprietary grid code
+ - Adaptivity and refinement broken, include in next release

@@ -1,0 +1,29 @@
+Check list for releasing new versions of DOLFIN
+-----------------------------------------------
+
+(Assuming the current version number is 0.2.0.)
+
+1. Edit the file ChangeLog using proper formatting
+
+2. Tag the existing version in cvs
+
+		cvs rtag v0_2_0 dolfin
+
+3. Edit the version number in the following files:
+
+	configure.in
+	src/common/kw_constants.h
+
+4. Create a tarball of the archive:
+
+	./makedist.sh
+
+   Remember to check the output in make-*.log
+
+5. Copy the tarball and ChangeLog to the web archive
+
+6. Update the web page with the version number and the release date
+
+7. Update at freshmeat
+
+That should be all...

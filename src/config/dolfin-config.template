@@ -1,0 +1,44 @@
+usage()
+{
+   cat << EOF
+Usage: dolfin-config [options]
+
+       --version  (for version number)
+       --cflags   (for compiler flags)
+       --lflags   (for linking flags)
+       --compiler (for the compiler)
+
+       --cflags_insource (for in-source test problems)
+       --lflags_insource (for in-source test problems)
+
+EOF
+   exit $1
+}
+
+if test $# -eq 0; then
+        usage 1 1>&2
+fi
+
+case $1 in
+	--version)
+		echo $PACKAGE $VERSION
+		;;
+	--cflags)
+      echo $CFLAGS
+      ;;
+	--lflags)
+		echo $LFLAGS
+      ;;
+	--compiler)
+		echo $COMPILER
+      ;;
+	--cflags_insource)
+      echo $CFLAGS_INSOURCE
+      ;;
+	--lflags_insource)
+		echo $LFLAGS_INSOURCE
+      ;;
+	*)
+      usage 1 1>&2
+      ;;
+esac
