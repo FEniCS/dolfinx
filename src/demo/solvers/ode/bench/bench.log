@@ -254,3 +254,14 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------------------------------------------------------------
+./run-bench.sh: line 3: ../../../../config/dolfin-config: Filen eller katalogen finns inte
+./run-bench.sh: line 5: ../../../../config/dolfin-config: Filen eller katalogen finns inte
+DOLFIN version:  (tor feb 24 10:54:30 CST 2005)
+Compiler flags: 
+Elapsed time:   ./run-bench.sh: line 12: ./dolfin-ode-bench: Filen eller katalogen finns inte
+real: 0.001  user: 0.000  sys: 0.001  cpu: 100.00%
+ 
+Linux galerkin 2.6.10 #1 Mon Feb 7 11:17:57 CST 2005 i686 GNU/Linux
+./run-bench.sh: line 15: ../../../../config/dolfin-config: Filen eller katalogen finns inte
+./run-bench.sh: line 15: --version: command not found
+---------------------------------------------------------------------------
