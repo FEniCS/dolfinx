@@ -18,7 +18,7 @@ NewMatrix::NewMatrix()
   A = 0;
 }
 //-----------------------------------------------------------------------------
-NewMatrix::NewMatrix(int M, int N)
+NewMatrix::NewMatrix(uint M, uint N)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -37,12 +37,12 @@ NewMatrix::NewMatrix(const Matrix& B)
   A = 0;
   init(B.size(0), B.size(1));
   
-  unsigned int M = B.size(0);
-  unsigned int N = B.size(1);
+  uint M = B.size(0);
+  uint N = B.size(1);
 
-  for(unsigned int i = 0; i < M; i++)
+  for(uint i = 0; i < M; i++)
   {
-    for(unsigned int j = 0; j < N; j++)
+    for(uint j = 0; j < N; j++)
     {
       setval(i, j, B(i, j));
     }
@@ -55,7 +55,7 @@ NewMatrix::~NewMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::init(int M, int N)
+void NewMatrix::init(uint M, uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -74,7 +74,7 @@ void NewMatrix::init(int M, int N)
   MatCreateSeqBAIJ(PETSC_COMM_SELF, 1, M, N, 50, PETSC_NULL, &A);
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::init(int M, int N, int bs)
+void NewMatrix::init(uint M, uint N, uint bs)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -90,7 +90,7 @@ void NewMatrix::init(int M, int N, int bs)
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, 50, PETSC_NULL, &A);
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::init(int M, int N, int bs, int mnc)
+void NewMatrix::init(uint M, uint N, uint bs, uint mnc)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -106,7 +106,7 @@ void NewMatrix::init(int M, int N, int bs, int mnc)
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, mnc, PETSC_NULL, &A);
 }
 //-----------------------------------------------------------------------------
-int NewMatrix::size(int dim) const
+dolfin::uint NewMatrix::size(uint dim) const
 {
   int M = 0;
   int N = 0;
@@ -127,6 +127,15 @@ void NewMatrix::add(const real block[],
 		    const int cols[], int n)
 {
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
+}
+//-----------------------------------------------------------------------------
+void NewMatrix::ident(const int rows[], int m)
+{
+  IS is = 0;
+  ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
+  real one = 1.0;
+  MatZeroRows(A, is, &one);
+  ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::mult(const NewVector& x, NewVector& Ax) const

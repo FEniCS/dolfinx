@@ -6,6 +6,7 @@
 
 // FIXME: Should not be needed
 #include <dolfin/NewFunction.h>
+#include <dolfin/BoundaryCondition.h>
 
 // FIXME: Should not be needed
 #include <dolfin/NewGMRES.h>
@@ -17,6 +18,18 @@
 #include "PoissonOld.h"
 
 using namespace dolfin;
+
+class MyBC : public NewBoundaryCondition
+{
+  const BoundaryValue operator() (const Point& p)
+  {
+    BoundaryValue value;
+    if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
+      value.set(0.0);
+    
+    return value;
+  }
+};
 
 //-----------------------------------------------------------------------------
 PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
@@ -32,11 +45,12 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  cout << "---------------- Old solver -----------------" << endl;
+  //cout << "---------------- Old solver -----------------" << endl;
+  //solveOld();
+  //cout << "---------------- New solver -----------------" << endl;
 
-  solveOld();
-
-  cout << "---------------- New solver -----------------" << endl;
+  // FIXME: This should be input to the solver
+  MyBC bc;
 
   Poisson::FiniteElement element;
 
@@ -55,41 +69,21 @@ void PoissonSolver::solve()
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
 
-  //cout << "Before BC:" << endl;
-  //A.disp(false);
-
   // Set boundary conditions
-  dirichletBC(A, b, mesh);
+  NewFEM::setBC(A, b, mesh, bc);
   
-  //cout << "After BC:" << endl;
   //A.disp(false);
-
-  x.init(b.size());
-  x = 0.0;
+  //b.disp();
 
   // Solve the linear system
   // FIXME: Make NewGMRES::solve() static
   NewGMRES solver;
   solver.solve(A, x, b);
 
-  //A.disp(false);
-  //b.disp();
-
-  cout << "New solution x:" << endl;
-  x.disp();
-    
+  // FIXME: Remove this and implement output for NewFunction
   Vector xold(b.size());
   for(uint i = 0; i < x.size(); i++)
     xold(i) = x(i);
-
-  cout << "Copied new solution x:" << endl;
-  xold.show();
-
-  // Save the solution
-  // FIXME: Implement output for NewFunction
-  //NewFunction u(mesh, element, x);
-  //u.rename("u", "temperature");
-
   Function uold(mesh, xold);
   uold.rename("u", "temperature");
   File file("poisson.m");
@@ -111,11 +105,11 @@ void PoissonSolver::solveOld()
   // Discretise
   FEM::assemble(poisson, mesh, A, b);
 
-  //cout << "Old matrix A:" << endl;
-  //A.show();
+  cout << "Old matrix A:" << endl;
+  A.show();
 
-  //cout << "Old vector b:" << endl;
-  //b.show();
+  cout << "Old vector b:" << endl;
+  b.show();
 
   // Solve the linear system
   solver.solve(A, x, b);
@@ -126,40 +120,5 @@ void PoissonSolver::solveOld()
   // Save the solution
   u.rename("u", "temperature");
   file << u;
-}
-//-----------------------------------------------------------------------------
-void PoissonSolver::dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh)
-{
-  // Temporary very simple implementation of Dirchlet boundary conditions 
-
-  NewArray<int> bcNodes(mesh.noNodes());
-  bcNodes = 0;
-  int noBndNodes = 0;
-  
-  real tol = 1.0e-6;
-  for (NodeIterator n(mesh); !n.end(); ++n){
-    /*
-    if ( (fabs(n->coord().x - 0.0)<tol) || (fabs(n->coord().x - 1.0)<tol) || 
-	 (fabs(n->coord().y - 0.0)<tol) || (fabs(n->coord().y - 1.0)<tol) ){
-    */
-    if ( (fabs(n->coord().x - 0.0)<tol) || (fabs(n->coord().x - 1.0)<tol) ){
-      bcNodes[n->id()] = 1;
-      noBndNodes++;
-    }
-  }
-  
-  NewArray<int> bcIdx(noBndNodes);
-  int cnt = 0;
-  for (int i=0;i<mesh.noNodes();i++){
-    if (bcNodes[i] == 1){
-      bcIdx[cnt] = i; 
-      cnt++;
-    }
-  }
-
-  NewArray<real> bcVal(noBndNodes);
-  bcVal = 0.0;
-  
-  NewFEM::setBC(A,b,mesh,bcIdx,bcVal);
 }
 //-----------------------------------------------------------------------------

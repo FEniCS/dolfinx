@@ -77,9 +77,14 @@ void NewVector::init(uint size)
     clear();
   }
 
+  // Create vector
   VecCreate(PETSC_COMM_WORLD, &x);
   VecSetSizes(x, PETSC_DECIDE, size);
   VecSetFromOptions(x);
+
+  // Set all entries to zero
+  real a = 0.0;
+  VecSet(&a, x);
 }
 //-----------------------------------------------------------------------------
 void NewVector::axpy(const real a, const NewVector& x) const

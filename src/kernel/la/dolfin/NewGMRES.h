@@ -52,7 +52,10 @@ namespace dolfin
 
     /// Return PETSc solver pointer
     KSP solver();
-      
+
+    /// Display GMRES solver data
+    void disp() const;
+     
   private:
 
     // Tolerances:

@@ -1,7 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
-#include <petsc/petscmat.h>
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -12,6 +12,7 @@
 #include <dolfin/NewMatrix.h>
 #include <dolfin/NewVector.h>
 #include <dolfin/Boundary.h>
+#include <dolfin/NewBoundaryCondition.h>
 #include <dolfin/NewFiniteElement.h>
 #include <dolfin/NewFEM.h>
 
@@ -195,30 +196,45 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
   return dofmax + 1;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::setBC( NewMatrix& A, NewVector& b, Mesh& mesh, 
-		    NewArray<int>& bcIdx, NewArray<real>& bcVal )
+void NewFEM::setBC(NewMatrix& A, NewVector& b, Mesh& mesh, 
+		   NewBoundaryCondition& bc)
 {
-  // Temporary implementation of Dirchlet boundary conditions: 
-  // bcIdx - indices of Dirichlet boundary 
-  // bcVal - values for Dirichlet boundary 
-
-  int noBndNodes = bcIdx.size();
-  int *bndIdx;
-  PetscMalloc(noBndNodes*sizeof(int),&bndIdx);
-  for (uint i=0;i<bcVal.size();i++){
-    bndIdx[i] = bcIdx[i]; 
-  }
+  // FIXME: This is a temporary implementation for linears. We need to iterate
+  // FIXME: over all faces (edges) on the boundary and for each entity call
+  // FIXME: the given boundary conditions for all dofs associated with the
+  // FIXME: boundary. Only works for scalar linear elements.
   
-  IS bndRows;
-  ISCreateGeneral(PETSC_COMM_SELF, noBndNodes, bndIdx, &bndRows);
-  real one = 1.0;
-  MatZeroRows( A.mat(), bndRows, &one); 
-  ISDestroy( bndRows );
+  dolfin_info("Setting boundary conditions (works only for linears).");
 
-  real tst;
-  for( int i=0; i<noBndNodes;i++){
-    tst = bcVal[i];
-    b(bcIdx[i]) = tst;
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Create boundary value
+  BoundaryValue bv;
+
+  // Allocate list of rows
+  int* rows = new int[boundary.noNodes()];
+
+  // Iterate over all nodes on the boundary
+  uint m = 0;
+  for (NodeIterator node(boundary); !node.end(); ++node)
+  {
+    // Get boundary condition
+    bv = bc(node->coord());
+    
+    // Set boundary condition if Dirichlet
+    if ( bv.fixed )
+    {
+      uint dof = node->id();
+      rows[m++] = dof;
+      b(dof) = bv.value;
+    }
   }
+
+  // Set rows of matrix to the identity matrix
+  A.ident(rows, m);
+
+  // Delete list of rows
+  delete [] rows;
 }
 //-----------------------------------------------------------------------------

@@ -9,6 +9,8 @@
 #include <dolfin/Function.h>
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/BoundaryCondition.h>
+#include <dolfin/NewBoundaryCondition.h>
+#include <dolfin/BoundaryValue.h>
 #include <dolfin/DxMatrix.h>
 #include <dolfin/DyMatrix.h>
 #include <dolfin/DzMatrix.h>

@@ -32,9 +32,6 @@ NewGMRES::NewGMRES() : ksp(0)
   PC pc;
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCNONE);
-
-  // Display some info about the solver
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
@@ -45,6 +42,13 @@ NewGMRES::~NewGMRES()
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 {
+  // Check dimensions
+  if ( A.size(0) != b.size() )
+    dolfin_error("Non-matching dimensions for linear system.");
+  
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.init(A.size(1));
+
   // Set linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSetRhs(ksp, b.vec());
@@ -52,6 +56,12 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 
   // Solve linear system
   KSPSolve(ksp);
+
+  // Check if the solution converged
+  KSPConvergedReason reason;
+  KSPGetConvergedReason(ksp, &reason);
+  if ( reason < 0 )
+    dolfin_error("GMRES solver did not converge.");
 
   // Report number of iterations
   int its = 0;
@@ -61,6 +71,13 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
+  // Check dimensions
+  if ( A.size(0) != b.size() )
+    dolfin_error("Non-matching dimensions for linear system.");
+  
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.init(A.size(1));
+
   // Set linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSetRhs(ksp, b.vec());
@@ -68,6 +85,12 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 
   // Solve linear system
   KSPSolve(ksp);
+
+  // Check if the solution converged
+  KSPConvergedReason reason;
+  KSPGetConvergedReason(ksp, &reason);
+  if ( reason < 0 )
+    dolfin_error("GMRES solver did not converge.");
   
   // Report number of iterations
   int its = 0;
@@ -112,5 +135,10 @@ void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 
   petscpc->data = &pc;
   petscpc->ops->apply = NewPreconditioner::PCApply;
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::disp() const
+{
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------

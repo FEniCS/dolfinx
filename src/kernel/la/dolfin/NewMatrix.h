@@ -32,9 +32,9 @@ namespace dolfin
     NewMatrix();
 
     /// Constructor
-    NewMatrix(int M, int N);
+    NewMatrix(uint M, uint N);
 
-    /// Constructor
+    /// Constructor (just for testing, will be removed)
     NewMatrix(const Matrix &B);
 
     /// Destructor
@@ -42,13 +42,12 @@ namespace dolfin
 
     /// Initialize matrix: no rows m, columns n, block size bs, 
     /// and max number of connectivity mnc. 
-    void init(int M, int N);
-    void init(int M, int N, int bs);
-    void init(int M, int N, int bs, int mnc);
+    void init(uint M, uint N);
+    void init(uint M, uint N, uint bs);
+    void init(uint M, uint N, uint bs, uint mnc);
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension
-    /// dim
-    int size(int dim) const;
+    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
+    uint size(uint dim) const;
 
     /// Set all entries to zero
     NewMatrix& operator= (real zero);
@@ -56,6 +55,9 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
+    /// Set given rows to identity matrix
+    void ident(const int rows[], int m);
+    
     /// Matrix-vector multiplication
     void mult(const NewVector& x, NewVector& Ax) const;
 

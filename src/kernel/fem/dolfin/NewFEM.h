@@ -1,5 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __NEW_FEM_H
 #define __NEW_FEM_H
@@ -15,6 +17,7 @@ namespace dolfin
   class NewMatrix;
   class NewVector;
   class NewFiniteElement;
+  class NewBoundaryCondition;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find u in V such that
@@ -36,9 +39,9 @@ namespace dolfin
 
     static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
 			 const NewFiniteElement& element);
-
-    static void setBC( NewMatrix& A, NewVector& b, Mesh& mesh, 
-		       NewArray<int>& bcIdx, NewArray<real>& bcVal );
+    
+    static void setBC(NewMatrix& A, NewVector& b, Mesh& mesh,
+		      NewBoundaryCondition& bc);
 
   private:
 

@@ -82,11 +82,11 @@ mpi_found = yes
 petsc_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/DxMatrix.h                           dolfin/DyMatrix.h                           dolfin/DzMatrix.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/NewFEM.h                           dolfin/NewFiniteElement.h                           dolfin/StiffnessMatrix.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/NewBoundaryCondition.h                           dolfin/BoundaryValue.h                           dolfin/DxMatrix.h                           dolfin/DyMatrix.h                           dolfin/DzMatrix.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/NewFEM.h                           dolfin/NewFiniteElement.h                           dolfin/StiffnessMatrix.h
 
 INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -DPETSC_DIR=/usr/lib/petsc -DPETSC_ARCH=linux -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -I/usr/include/mpi -I/usr/include/libxml2
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = DxMatrix.cpp                           DyMatrix.cpp                           DzMatrix.cpp                           FiniteElement.cpp                           FEM.cpp                           FiniteElementMethod.cpp                           FunctionSpace.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           NewFEM.cpp                           NewFiniteElement.cpp                           StiffnessMatrix.cpp
+libdolfin_fem_a_SOURCES = NewBoundaryCondition.cpp                           BoundaryValue.cpp                           DxMatrix.cpp                           DyMatrix.cpp                           DzMatrix.cpp                           FiniteElement.cpp                           FEM.cpp                           FiniteElementMethod.cpp                           FunctionSpace.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           NewFEM.cpp                           NewFiniteElement.cpp                           StiffnessMatrix.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,10 +98,10 @@ CPPFLAGS =
 LDFLAGS = 
 LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
-libdolfin_fem_a_OBJECTS =  DxMatrix.o DyMatrix.o DzMatrix.o \
-FiniteElement.o FEM.o FiniteElementMethod.o FunctionSpace.o \
-LoadVector.o MassMatrix.o MultigridSolver.o NewFEM.o NewFiniteElement.o \
-StiffnessMatrix.o
+libdolfin_fem_a_OBJECTS =  NewBoundaryCondition.o BoundaryValue.o \
+DxMatrix.o DyMatrix.o DzMatrix.o FiniteElement.o FEM.o \
+FiniteElementMethod.o FunctionSpace.o LoadVector.o MassMatrix.o \
+MultigridSolver.o NewFEM.o NewFiniteElement.o StiffnessMatrix.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -115,11 +115,11 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/DxMatrix.P .deps/DyMatrix.P .deps/DzMatrix.P \
-.deps/FEM.P .deps/FiniteElement.P .deps/FiniteElementMethod.P \
-.deps/FunctionSpace.P .deps/LoadVector.P .deps/MassMatrix.P \
-.deps/MultigridSolver.P .deps/NewFEM.P .deps/NewFiniteElement.P \
-.deps/StiffnessMatrix.P
+DEP_FILES =  .deps/BoundaryValue.P .deps/DxMatrix.P .deps/DyMatrix.P \
+.deps/DzMatrix.P .deps/FEM.P .deps/FiniteElement.P \
+.deps/FiniteElementMethod.P .deps/FunctionSpace.P .deps/LoadVector.P \
+.deps/MassMatrix.P .deps/MultigridSolver.P .deps/NewBoundaryCondition.P \
+.deps/NewFEM.P .deps/NewFiniteElement.P .deps/StiffnessMatrix.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 
