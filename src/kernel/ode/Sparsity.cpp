@@ -74,8 +74,11 @@ void Sparsity::set(unsigned int i, unsigned int j, bool checknew)
 //-----------------------------------------------------------------------------
 void Sparsity::set(const Matrix& A)
 {
+  //cout << "N: " << N << endl;
+  //cout << "A.size(0): " << A.size(0) << endl;
+
   // Check dimension of matrix
-  if ( !A.size(0) != N )
+  if ( A.size(0) != N )
     dolfin_error("Incorrect matrix dimensions for sparsity pattern.");
 
   // Clear previous dependencies

@@ -94,6 +94,9 @@ namespace dolfin {
 
     ///--- Basic functions
 
+    /// Compute connectivity
+    void init();
+
     /// Clear mesh
     void clear();
 
@@ -209,8 +212,6 @@ namespace dolfin {
     // Create a new mesh as a child to this mesh
     Mesh& createChild();
     
-    /// Compute connectivity
-    void init();
 
     /// Swap data with given mesh
     void swap(Mesh& mesh);

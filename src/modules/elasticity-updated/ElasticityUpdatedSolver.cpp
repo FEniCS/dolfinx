@@ -118,7 +118,8 @@ void ElasticityUpdatedSolver::solve()
       
       fileid << counter;
       
-      filename << "mesh" << fileid.str() << ".m";
+      //filename << "mesh" << fileid.str() << ".m";
+      filename << "mesh" << fileid.str() << ".xml.gz";
       
       std::cout << "writing: " << filename.str() << std::endl;
       
@@ -127,7 +128,8 @@ void ElasticityUpdatedSolver::solve()
       
       File meshfile(fname);
       
-      meshfile << uzero;
+      //meshfile << uzero;
+      meshfile << mesh;
     }
       
     counter++;
@@ -179,6 +181,7 @@ void ElasticityUpdatedSolver::solve()
     x21 = 0;
 
     // Lump and solve
+
     /*
     A.lump(m);
     

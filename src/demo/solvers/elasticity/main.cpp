@@ -59,7 +59,6 @@ int main(int argc, char **argv)
 {
   dolfin_set("output", "plain text");
 
-
   //Mesh mesh("dolfin.xml.gz");
   //Mesh mesh("dolfin.xml.gz");
   //Mesh mesh("trimesh-16.xml.gz");
@@ -71,7 +70,7 @@ int main(int argc, char **argv)
   //Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh-8.xml.gz");
 
-  Mesh mesh("boundaryexample.xml.gz");
+  Mesh mesh("unitcube0.xml.gz");
 
   Problem elasticity("elasticity", mesh);
 

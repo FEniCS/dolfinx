@@ -191,6 +191,7 @@ void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
   // Add Boundary ID to node
   node->boundaryids.push_back(id);
 
+  // FIXME: Remove when boundary ID code is verified
   /*
   cout << "boundaryids for node: " << node->id() << endl;
   for(int i = 0; i < node->boundaryids.size(); i++)

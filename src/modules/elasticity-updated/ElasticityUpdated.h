@@ -109,12 +109,12 @@ public:
 
 	/*
 	Ftransp.mult(gradwptransp, tmp1);
-	tmp1.mult(F0, tmp2);
+	tmp1.mult(F, tmp2);
 
 	epsilon = tmp2;
 	
 	Ftransp.mult(gradwp, tmp1);
-	tmp1.mult(F0, tmp2);
+	tmp1.mult(F, tmp2);
 
 	epsilon += tmp2;
 	*/
@@ -141,6 +141,8 @@ public:
 	
 	//vsigma = epsilon;
 
+	// Viscosity
+
 	vsigma = gradwp;
 	vsigma += gradwptransp;
 
@@ -153,6 +155,8 @@ public:
 	Matrix &sigma1 = *(sigma1array[cell_->id()]);
 	Matrix &vsigma1 = *(vsigmaarray[cell_->id()]);
       
+	// Update sigma
+
 	sigma *= k;
 	sigma += sigma0;
 

@@ -354,7 +354,7 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddx() const
 	}
       }
       
-      w += wi * pi;
+      w = w + wi * pi;
     }
   }
 
@@ -394,7 +394,7 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddy() const
 	}
       }
       
-      w += wi * pi;
+      w = w + wi * pi;
     }
   }
 
@@ -434,7 +434,7 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddz() const
 	}
       }
       
-      w += wi * pi;
+      w = w + wi * pi;
     }
   }
 

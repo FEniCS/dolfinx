@@ -110,7 +110,8 @@ real v0(real x, real y, real z, real t, int i)
 void mybc(BoundaryCondition& bc)
 {
   ///*
-  if(fabs(bc.coord().x) < 0.1 && bc.coord().y >= 0.0 && bc.coord().y <= 1.0 )
+  if(bc.coord().x < -0.8 && bc.coord().y >= -0.5)
+  //if(fabs(bc.coord().x) < 0.1 && bc.coord().y >= 0.0 && bc.coord().y <= 1.0 )
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().y) < 0.1)
   //if(fabs(bc.coord().x) < 0.1 && fabs(bc.coord().z) < 0.1 && fabs(bc.coord().y) < 0.7)
   //if(bc.coord().x == 0.0 && bc.coord().y == 0)
@@ -138,7 +139,8 @@ int main(int argc, char **argv)
 
   dolfin_set("output", "plain text");
 
-  Mesh mesh("tetmesh-1c.xml.gz");
+  Mesh mesh("cow01.xml.gz");
+  //Mesh mesh("tetmesh-1c.xml.gz");
   //Mesh mesh("minimal.xml.gz");
   //Mesh mesh("tetmesh-1.xml.gz");
   //Mesh mesh("tetmesh-4.xml.gz");

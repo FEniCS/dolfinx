@@ -737,7 +737,7 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddx() const
 
     wi = a[i] * v[i].ddx();
 
-    w += wi;
+    w = w + wi;
   }
 
   return w;
@@ -755,7 +755,7 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddy() const
 
     wi = a[i] * v[i].ddy();
 
-    w += wi;
+    w = w + wi;
   }
 
   return w;
@@ -773,7 +773,7 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddz() const
 
     wi = a[i] * v[i].ddz();
 
-    w += wi;
+    w = w + wi;
   }
 
   return w;
