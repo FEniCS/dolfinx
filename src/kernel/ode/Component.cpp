@@ -98,7 +98,7 @@ Element* Component::findpos(real t)
   /// [elements.begin(), target). In other words, t <= target->endtime()
   /// is true, while t <= (target - 1)->endtime() is false.
 
-  target = upper_bound(elements.begin(), elements.end(), dummy, comp);
+  target = std::upper_bound(elements.begin(), elements.end(), dummy, comp);
 
   if (target == elements.end())
     return 0;
