@@ -210,6 +210,11 @@ NewMatrix::Element NewMatrix::operator()(uint i, uint j)
   return element;
 }
 //-----------------------------------------------------------------------------
+real NewMatrix::operator() (uint i, uint j) const
+{
+  return getval(i, j);
+}
+//-----------------------------------------------------------------------------
 real NewMatrix::getval(uint i, uint j) const
 {
   const int ii = static_cast<int>(i);
@@ -253,6 +258,13 @@ NewMatrix::Element::operator real() const
 const NewMatrix::Element& NewMatrix::Element::operator=(const real a)
 {
   A.setval(i, j, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewMatrix::Element& NewMatrix::Element::operator=(const Element& e)
+{
+  A.setval(i, j, e.A.getval(e.i, e.j));
 
   return *this;
 }

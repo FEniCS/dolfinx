@@ -76,6 +76,9 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
     
+    /// Element access operator (needed for const objects)
+    real operator() (uint i, uint j) const;
+
     /// Element assignment operator
     Element operator()(uint i, uint j);
 
@@ -85,6 +88,7 @@ namespace dolfin
       Element(uint i, uint j, NewMatrix& A);
       operator real() const;
       const Element& operator=(const real a);
+      const Element& operator=(const Element& e); 
       const Element& operator+=(const real a);
       const Element& operator-=(const real a);
       const Element& operator*=(const real a);

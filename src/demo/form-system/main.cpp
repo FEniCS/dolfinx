@@ -92,6 +92,21 @@ real testOldElasticity(Mesh& mesh)
   NewMatrix Anew(A);
   Anew.disp(false);
 
+  NewMatrix Anewp(A.size(0), A.size(1));
+
+  for(unsigned int i = 0; i < Anewp.size(0); i++)
+  {
+    for(unsigned int j = 0; j < Anewp.size(1); j++)
+    {
+      //cout << "i: " << i << " " << 3 * (i % 4) + (i / 4) << endl;
+      //cout << "j: " << j << " " << 4 * (j % 3) + (j / 3) << endl;
+      Anewp(4 * (i % 3) + (i / 3), 4 * (j % 3) + (j / 3)) = Anew(i, j);
+    }
+  }
+
+  cout << "A (Old Elasticity permuted): " << endl;
+  Anewp.disp(false);
+
   return toc();
 }
 
@@ -122,7 +137,7 @@ int testAssembly(Mesh& mesh2D, Mesh& mesh3D)
   
   real t1 = testFFC(mesh2D);
   real t2 = testOldPoisson(mesh2D);
-  real t3 = testFFCSystem(mesh2D);
+  real t3 = testFFCSystem(mesh3D);
   real t4 = testElasticity(mesh3D);
   real t5 = testOldElasticity(mesh3D);
 
