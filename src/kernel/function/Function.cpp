@@ -27,21 +27,21 @@ Function::Function()
 Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size)
 {
   f = 0;
-  rename("u", "A function");
+  rename("u", "Unnamed function");
   init(mesh, x, dim, size);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const char *name, int dim, int size)
 {
   f = 0;
-  rename("u", "A function");
+  rename("u", "Unnamed function");
   init(name, dim, size);
 }
 //-----------------------------------------------------------------------------
 Function::Function(unsigned int N)
 {
   f = 0;
-  rename("u", "A function");
+  rename("u", "Unnamed function");
   init(N);
 }
 //-----------------------------------------------------------------------------

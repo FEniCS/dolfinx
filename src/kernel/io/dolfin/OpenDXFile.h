@@ -7,6 +7,7 @@
 #include <string>
 #include <stdio.h>
 #include <dolfin/constants.h>
+#include <dolfin/Event.h>
 #include <dolfin/NewArray.h>
 #include <dolfin/GenericFile.h>
 
@@ -54,6 +55,10 @@ namespace dolfin {
 
     // Start position for latest time series
     long series_pos;
+
+    // Events
+    Event event_saving_mesh;
+    Event event_saving_function;
     
   };
   

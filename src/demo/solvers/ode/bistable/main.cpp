@@ -78,6 +78,7 @@ public:
     // Create a mesh-dependent function from the sample
     Vector x(N);
     Function u(mesh, x);
+    u.rename("u", "Solution of the bistable equation");
 
     // Get the degrees of freedom and set current time
     u.update(sample.t());

@@ -35,7 +35,7 @@ namespace dolfin {
     virtual void update(real t);
 
     // Return current time
-    real time() const;
+    virtual real time() const;
 
     // FIXME: Special member functions below: Should they be removed?
     //---------------------------------------------------------------

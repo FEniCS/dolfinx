@@ -12,7 +12,10 @@
 using namespace dolfin;
 
 //-­---------------------------------------------------------------------------
-OpenDXFile::OpenDXFile(const std::string filename) : GenericFile(filename)
+OpenDXFile::OpenDXFile(const std::string filename) : 
+  GenericFile(filename),
+  event_saving_mesh("Saving mesh to OpenDX file."),
+  event_saving_function("Saving function to OpenDX file.")
 {
   type = "OpenDX";
   series_pos = 0;
@@ -25,8 +28,8 @@ OpenDXFile::~OpenDXFile()
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Mesh& mesh)
 {
-  dolfin_info("Saving mesh to OpenDX file.");
- 
+  event_saving_mesh();
+  
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
   
@@ -46,10 +49,14 @@ void OpenDXFile::operator<<(Mesh& mesh)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Function& u)
 {
-  dolfin_info("Saving function to OpenDX file.");
+  event_saving_function();
 
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
+
+  // Remove previous time series 
+  if ( frames.size() > 1 )
+    removeSeries(fp);
 
   // Write mesh
   writeMesh(fp, u.mesh());
@@ -57,9 +64,8 @@ void OpenDXFile::operator<<(Function& u)
   // Write function
   writeFunction(fp, u);
 
-  // Write time series if more than one frame
-  if ( frames.size() > 0 )
-    writeSeries(fp, u);
+  // Write time series
+  writeSeries(fp, u);
 
   // Close file
   fclose(fp);
@@ -75,7 +81,7 @@ void OpenDXFile::writeHeader(FILE* fp)
   fprintf(fp,"# Saved by %s at %s\n", system.user(), date());
   fprintf(fp,"# on %s (%s) running %s version %s.\n",
 	  system.host(), system.mach(), system.name(), system.vers());
-  fprintf(fp,"#\n");
+  fprintf(fp,"\n");
 }
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
@@ -106,7 +112,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write cells
   fprintf(fp, "# A list of all cells (connections)\n");
   fprintf(fp, "object \"cells %d\" class array type int rank 1 shape 4 items %d lsb binary data follows\n",
-	  mesh.noCells(), frames.size());
+	  frames.size(), mesh.noCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
@@ -189,7 +195,7 @@ void OpenDXFile::writeSeries(FILE* fp, Function& u)
   series_pos = ftell(fp);
 
   // Write the time series
-  fprintf(fp,"# Time series");
+  fprintf(fp,"# Time series for [%s]\n", u.label().c_str());
   fprintf(fp,"object \"Time series\" class series\n", u.label().c_str());
   
   for (unsigned int i = 0; i < frames.size(); i++)

@@ -27,13 +27,11 @@ DofFunction::~DofFunction()
 //-----------------------------------------------------------------------------
 real DofFunction::operator() (const Node& n, real t)  const
 {
-  dolfin_debug("I am a DOfFunction");
   return x(n.id()*size + dim);
 }
 //-----------------------------------------------------------------------------
 real DofFunction::operator() (const Node& n, real t)
 {
-  dolfin_debug("I am a DOfFunction");
   return x(n.id()*size + dim);
 }
 //-----------------------------------------------------------------------------
