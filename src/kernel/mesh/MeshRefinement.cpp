@@ -539,9 +539,16 @@ Node& MeshRefinement::createNode(const Point& p, Mesh& mesh, const Cell& cell)
   for (NodeIterator n(cell); !n.end(); ++n) {
     for (CellIterator c(n); !c.end(); ++c) {
       for (int i = 0; i < c->noChildren(); i++) {
-	Node* new_node = c->child(i)->findNode(p);
+
+	// FIXME: No children should be null!
+	Cell* child = c->child(i);
+	if ( !child )
+	  continue;
+
+	Node* new_node = child->findNode(p);
 	if ( new_node )
 	  return *new_node;
+	
       }
     }
   }

@@ -339,16 +339,20 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
     // If neighbor is marked for regular refinement so is cell
     refineIrregular31(cell,mesh);
   }
-  else if ( neighbor->marker() == Cell::marked_according_to_ref ) {
+  else if ( neighbor->marker() == Cell::marked_for_irr_ref_3) {
     // If neighbor is marked refinement by rule 3, 
     // just chose an orientation, and it will be up to 
     // the neighbor to make sure the common face match
     refineIrregular32(cell,mesh,nodes);
   }
-  else {
+  else if ( neighbor->marker() == Cell::marked_according_to_ref ) {
     // If neighbor has been refined irregular according to 
     // refinement rule 3, make sure the common face matches
     refineIrregular33(cell, mesh, nodes, *neighbor);
+  }
+  else {
+    // This case shouldn't happen
+    dolfin_error("Unable to handle refinement rule of neighbor.");
   }
 }
 //-----------------------------------------------------------------------------
