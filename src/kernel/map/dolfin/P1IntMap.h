@@ -15,10 +15,11 @@ namespace dolfin {
   public:
     
     P1IntMap();
+
+    Point operator() (const Point& p) const;
+    Point operator() (const Point& p, unsigned int boundary) const;
   
-    void update(const Cell &cell);
-    void update(const Edge& bnd_edge);
-    void update(const Face& bnd_face);
+    void update(const Cell& cell);
   
     const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;

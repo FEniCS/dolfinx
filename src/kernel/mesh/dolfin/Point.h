@@ -35,6 +35,9 @@ namespace dolfin {
     /// Add point
     Point operator+= (const Point& p);
 
+    /// Multiply by scalar
+    Point operator*= (real a);
+
     /// Divide by scalar
     Point operator/= (real a);
 

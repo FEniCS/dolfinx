@@ -18,6 +18,75 @@ P1TriMap::P1TriMap() : Map()
   dim = 2;
 }
 //-----------------------------------------------------------------------------
+Point P1TriMap::operator() (const Point& p) const
+{
+  // Check that we have a cell
+  if ( !_cell )
+    dolfin_error("Unable to evaluate map to cell. No cell given.");
+
+  // Check that cell type is correct
+  if ( _cell->type() != Cell::triangle )
+    dolfin_error("Wrong cell type for map (must be a triangle).");
+
+  // Get the points of the cell
+  Point& p0 = _cell->coord(0);
+  Point& p1 = _cell->coord(1);
+  Point& p2 = _cell->coord(2);
+
+  // Evaluate basis functions
+  real phi0 = 1.0 - p.x - p.y;
+  real phi1 = p.x;
+  real phi2 = p.y;
+
+  // Map point
+  Point q;
+  q.x = phi0*p0.x + phi1*p1.x + phi2*p2.x;
+  q.y = phi0*p0.y + phi1*p1.y + phi2*p2.y;
+  q.z = phi0*p0.z + phi1*p1.z + phi2*p2.z;
+
+  return q;
+}
+//-----------------------------------------------------------------------------
+Point P1TriMap::operator() (const Point& p, unsigned int boundary) const
+{
+  // Check that we have a cell
+  if ( !_cell )
+    dolfin_error("Unable to evaluate map to cell. No cell given.");
+
+  // Check that cell type is correct
+  if ( _cell->type() != Cell::triangle )
+    dolfin_error("Wrong cell type for map (must be a triangle).");
+
+  // Get the points of the cell
+  Point& p0 = _cell->coord(0);
+  Point& p1 = _cell->coord(1);
+  Point& p2 = _cell->coord(2);
+
+  // Map point
+  Point q;
+  switch (boundary) {
+  case 0: // Map to edge between n0 and n1
+    q.x = p0.x + p.x*(p1.x - p0.x);
+    q.y = p0.y + p.x*(p1.y - p0.y);
+    q.z = p0.z + p.x*(p1.z - p0.z);
+    break;
+  case 1: // Map to edge between n1 and n2
+    q.x = p1.x + p.x*(p2.x - p1.x);
+    q.y = p1.y + p.x*(p2.y - p1.y);
+    q.z = p1.z + p.x*(p2.z - p1.z);
+    break;
+  case 2: // Map to edge between n2 and n0
+    q.x = p2.x + p.x*(p0.x - p2.x);
+    q.y = p2.y + p.x*(p0.y - p2.y);
+    q.z = p2.z + p.x*(p0.z - p2.z);
+    break;
+  default:
+    dolfin_error("Illegal boundary number for triangle, must be 0, 1, or 2.");
+  }
+
+  return q;
+}
+//-----------------------------------------------------------------------------
 void P1TriMap::update(const Cell& cell)
 {
   // Check that cell type is correct

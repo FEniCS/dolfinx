@@ -81,6 +81,15 @@ Point Point::operator+= (const Point& p)
   return *this;
 }
 //-----------------------------------------------------------------------------
+Point Point::operator*= (real a)
+{
+  x *= a;
+  y *= a;
+  z *= a;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 Point Point::operator/= (real a)
 {
   x /= a;

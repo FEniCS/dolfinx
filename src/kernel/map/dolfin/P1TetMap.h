@@ -11,10 +11,14 @@
 
 namespace dolfin {
   
-  class P1TetMap : public Map {
+  class P1TetMap : public Map
+  {
   public:
     
     P1TetMap();
+
+    Point operator() (const Point& p) const;
+    Point operator() (const Point& p, unsigned int boundary) const;
 
     void update(const Cell& cell);
     void update(const Face& face);

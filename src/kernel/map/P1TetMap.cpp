@@ -20,6 +20,88 @@ P1TetMap::P1TetMap() : Map()
   dim = 3;
 }
 //-----------------------------------------------------------------------------
+Point P1TetMap::operator() (const Point& p) const
+{
+  // Check that we have a cell
+  if ( !_cell )
+    dolfin_error("Unable to evaluate map to cell. No cell given.");
+
+  // Check that cell type is correct
+  if ( _cell->type() != Cell::tetrahedron )
+    dolfin_error("Wrong cell type for map (must be a tetrahedron).");
+
+  // Get the points of the cell
+  Point& p0 = _cell->coord(0);
+  Point& p1 = _cell->coord(1);
+  Point& p2 = _cell->coord(2);
+  Point& p3 = _cell->coord(3);
+
+  // Evaluate basis functions
+  real phi0 = 1.0 - p.x - p.y - p.z;
+  real phi1 = p.x;
+  real phi2 = p.y;
+  real phi3 = p.z;
+
+  // Map point
+  Point q;
+  q.x = phi0*p0.x + phi1*p1.x + phi2*p2.x + phi3*p3.x;
+  q.y = phi0*p0.y + phi1*p1.y + phi2*p2.y + phi3*p3.y;
+  q.z = phi0*p0.z + phi1*p1.z + phi2*p2.z + phi3*p3.z;
+
+  return q;
+}
+//-----------------------------------------------------------------------------
+Point P1TetMap::operator() (const Point& p, unsigned int boundary) const
+{
+  // Check that we have a cell
+  if ( !_cell )
+    dolfin_error("Unable to evaluate map to cell. No cell given.");
+
+  // Check that cell type is correct
+  if ( _cell->type() != Cell::tetrahedron )
+    dolfin_error("Wrong cell type for map (must be a tetrahedron).");
+
+  // Get the points of the cell
+  Point& p0 = _cell->coord(0);
+  Point& p1 = _cell->coord(1);
+  Point& p2 = _cell->coord(2);
+  Point& p3 = _cell->coord(3);
+
+  // Evaluate basis functions
+  real phi0 = 1.0 - p.x - p.y;
+  real phi1 = p.x;
+  real phi2 = p.y;
+    
+  // Map point
+  Point q;
+  switch (boundary) {
+  case 0: // Map to face with nodes (n0, n1, n2)
+    q.x = phi0*p0.x + phi1*p1.x + phi2*p2.x;
+    q.y = phi0*p0.y + phi1*p1.y + phi2*p2.y;
+    q.z = phi0*p0.z + phi1*p1.z + phi2*p2.z;
+    break;
+  case 1: // Map to face with nodes (n0, n3, n1)
+    q.x = phi0*p0.x + phi1*p3.x + phi2*p1.x;
+    q.y = phi0*p0.y + phi1*p3.y + phi2*p1.y;
+    q.z = phi0*p0.z + phi1*p3.z + phi2*p1.z;
+    break;
+  case 2: // Map to face with nodes (n1, n3, n2) 
+    q.x = phi0*p1.x + phi1*p3.x + phi2*p2.x;
+    q.y = phi0*p1.y + phi1*p3.y + phi2*p2.y;
+    q.z = phi0*p1.z + phi1*p3.z + phi2*p2.z;
+    break;
+  case 3: // Map to face with nodes (n0, n2, n3)
+    q.x = phi0*p0.x + phi1*p2.x + phi2*p3.x;
+    q.y = phi0*p0.y + phi1*p2.y + phi2*p3.y;
+    q.z = phi0*p0.z + phi1*p2.z + phi2*p3.z;
+    break;
+  default:
+    dolfin_error("Illegal boundary number for tetrahedron, must be 0, 1, 2, or 3.");
+  }
+
+  return q;
+}
+//-----------------------------------------------------------------------------
 void P1TetMap::update(const Cell& cell)
 {
   // Check that cell type is correct

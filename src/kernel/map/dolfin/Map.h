@@ -1,36 +1,50 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// Map from reference cell to actual cell, including the
-// derivative of the map and the inverse of the derivative.
-//
-// It is assumed that the map is affine (constant determinant) that
-// the reference cells are given by
-//
-//   (0) - (1)                             in 1D
-//
-//   (0,0) - (1,0)                         in 2D
-//
-//   (0,0,0) - (1,0,0) - (0,1,0) - (0,0,1) in 3D
-
 #ifndef __MAP_H
 #define __MAP_H
 
+#include <dolfin/Point.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/Product.h>
 #include <dolfin/ElementFunction.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Cell;
   class Edge;
   class Face;
+
+  /// Map from reference cell to actual cell, including the
+  /// derivative of the map and the inverse of the derivative.
+  ///
+  /// It is assumed that the map is affine (constant determinant)
+  /// and that the reference cells are given by
+  ///
+  ///   (0) - (1)                             in 1D
+  ///
+  ///   (0,0) - (1,0)                         in 2D
+  ///
+  ///   (0,0,0) - (1,0,0) - (0,1,0) - (0,0,1) in 3D
   
-  class Map {
+  class Map
+  {
   public:
     
+    // Constructor
     Map();
+
+    // Destructor
+    virtual ~Map();
     
+    /// Evaluate map from reference cell
+    virtual Point operator() (const Point& p) const = 0;
+    
+    /// Evaluate map from reference boundary of reference cell to
+    /// the given boundary on the current cell
+    virtual Point operator() (const Point& p, unsigned int boundary) const = 0;
+
     /// Return determinant of derivative of map to interior of cell
     real det() const;
 

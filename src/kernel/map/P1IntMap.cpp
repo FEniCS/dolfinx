@@ -17,6 +17,22 @@ P1IntMap::P1IntMap() : Map()
   dim = 1;
 }
 //-----------------------------------------------------------------------------
+Point P1IntMap::operator() (const Point& p) const
+{
+  dolfin_error("Not implemented.");
+
+  Point q;
+  return q;
+}
+//-----------------------------------------------------------------------------
+Point P1IntMap::operator() (const Point& p, unsigned int boundary) const
+{
+  dolfin_error("Not implemented.");
+
+  Point q;
+  return q;
+}
+//-----------------------------------------------------------------------------
 void P1IntMap::update(const Cell& cell)
 {
   dolfin_error("Intervals (1D) not yet implemented in DOLFIN.");
@@ -73,15 +89,5 @@ const FunctionSpace::ElementFunction P1IntMap::ddt
 (const FunctionSpace::ShapeFunction& v) const
 {
   return v.ddT();
-}
-//-----------------------------------------------------------------------------
-void P1IntMap::update(const Edge& bnd_edge)
-{
-  dolfin_error("Edge map not implemented for 1D maps.");
-}
-//-----------------------------------------------------------------------------
-void P1IntMap::update(const Face& bnd_face)
-{
-  dolfin_error("Face map not implemented for 1D maps.");
 }
 //-----------------------------------------------------------------------------

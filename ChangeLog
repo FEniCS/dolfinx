@@ -1,3 +1,5 @@
+ - Add maps from boundary of reference cell
+ - Add evaluation of map from reference cell
  - New Matrix functions: max, min, norm, and sum of rows and columns (erik)
  - Derivatives/gradients of ElementFunction (coefficients f.ex.) implemented
  - Enable assignment to all elements of a NewArray

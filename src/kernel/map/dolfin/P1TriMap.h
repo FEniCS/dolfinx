@@ -11,10 +11,14 @@
 
 namespace dolfin {
   
-  class P1TriMap : public Map {
+  class P1TriMap : public Map
+  {
   public:
     
     P1TriMap();
+
+    Point operator() (const Point& p) const;
+    Point operator() (const Point& p, unsigned int boundary) const;
     
     void update(const Cell& cell);
     void update(const Edge& edge);
