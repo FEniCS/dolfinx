@@ -6,7 +6,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LinearForm::LinearForm(const NewFiniteElement& element) : Form(element)
+LinearForm::LinearForm() : Form()
 {
   // Do nothing
 }
@@ -16,14 +16,14 @@ LinearForm::~LinearForm()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool LinearForm::interior(real* b) const
+bool LinearForm::interior(real* block) const
 {
   // The default version returns false, which means that the form does
   // not contain any integrals over the interior of the domain.
   return false;
 }
 //-----------------------------------------------------------------------------
-bool LinearForm::boundary(real* b) const
+bool LinearForm::boundary(real* block) const
 {
   // The default version returns false, which means that the form does
   // not contain any integrals over the boundary of the domain.

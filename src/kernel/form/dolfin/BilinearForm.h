@@ -1,42 +1,32 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
 
-#include <dolfin/NewArray.h>
-#include <dolfin/IndexPair.h>
 #include <dolfin/Form.h>
 
 namespace dolfin
 {
 
-  class NewFiniteElement;
-  
   class BilinearForm : public Form
   {
   public:
     
     /// Constructor
-    BilinearForm(const NewFiniteElement& element);
+    BilinearForm();
     
     /// Destructor
     virtual ~BilinearForm();
     
     /// Compute element matrix (interior contribution)
-    virtual bool interior(real** A) const;
+    virtual bool interior(real* block) const;
     
     /// Compute element matrix (boundary contribution)
-    virtual bool boundary(real** A) const;
+    virtual bool boundary(real* block) const;
     
-    /// Friends
-    friend class NewFEM;
-
-  protected:
-    
-    //List of nonzero indices
-    NewArray<IndexPair> nonzero;
-
   };
 
 }

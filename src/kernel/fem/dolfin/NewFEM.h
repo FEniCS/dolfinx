@@ -27,25 +27,18 @@ namespace dolfin
   {
   public:
 
-    static void assemble(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-			 NewMatrix& A, NewVector& b); 
-    static void assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A);
-    static void assemble(LinearForm& L, Mesh& mesh, NewVector& b);
+    static void assemble(BilinearForm& a, LinearForm& L, 
+			 NewMatrix& A, NewVector& b, Mesh& mesh,
+			 const NewFiniteElement& element);
+
+    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
+			 const NewFiniteElement& element);
+
+    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
+			 const NewFiniteElement& element);
 
   private:
 
-    // Allocate element matrix (use arrays to improve speed)
-    static real** allocElementMatrix(const NewFiniteElement& element);
-    
-    // Allocate element vector (use arrays to improve speed)
-    static real* allocElementVector(const NewFiniteElement& element);
-
-    // Delete element matrix
-    static void freeElementMatrix(real**& AK, const NewFiniteElement& element);
-
-    // Delete element vector
-    static void freeElementVector(real*& bK, const NewFiniteElement& element);
-    
     // Count the degrees of freedom
     static uint size(Mesh& mesh, const NewFiniteElement& element);
 

@@ -14,8 +14,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(const NewFiniteElement& element, uint ncoeff)
-  : element(element), c(0), ncoeff(0)
+Form::Form() : c(0), nfunctions(0)
 {
   // Reset data
   det = 0.0;
@@ -27,31 +26,41 @@ Form::Form(const NewFiniteElement& element, uint ncoeff)
   g00 = 0.0; g01 = 0.0; g02 = 0.0;
   g10 = 0.0; g11 = 0.0; g12 = 0.0;
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
-
-  // Initialize coefficients
-  if ( ncoeff > 0 )
-  {
-    c = new real* [ncoeff];
-    for (uint i = 0; i < ncoeff; i++)
-    {
-      c[i] = new real[element.spacedim()];
-      for (uint j = 0; j < element.spacedim(); j++)
-	c[i][j] = 0.0;
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
 {
   if ( c )
   {
-    for (uint i = 0; i < ncoeff; i++)
+    for (uint i = 0; i < nfunctions; i++)
       delete [] c[i];
     delete [] c;
   }
 }
 //-----------------------------------------------------------------------------
-void Form::update(const Cell& cell)
+void Form::init(uint nfunctions, uint spacedim)
+{
+  dolfin_assert(nfunctions > 0);
+  dolfin_assert(c == 0);
+
+  // Save the number of functions
+  this->nfunctions = nfunctions;
+
+  // Initialize list of functions
+  functions.clear();
+  functions.reserve(nfunctions);
+
+  // Initialize coefficients
+  c = new real* [nfunctions];
+  for (uint i = 0; i < nfunctions; i++)
+  {
+    c[i] = new real[spacedim];
+    for (uint j = 0; j < spacedim; j++)
+      c[i][j] = 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
+void Form::update(const Cell& cell, const NewFiniteElement& element)
 {
   // Choose map from cell type
   switch ( cell.type() )
@@ -67,7 +76,7 @@ void Form::update(const Cell& cell)
   }
 
   // Update coefficients
-  updateCoefficients(cell);
+  updateCoefficients(cell, element);
 }
 //-----------------------------------------------------------------------------
 void Form::updateTriLinMap(const Cell& cell)
@@ -150,15 +159,23 @@ void Form::updateTetLinMap(const Cell& cell)
   det = fabs(det);
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(const Cell& cell)
+void Form::updateCoefficients(const Cell& cell, const NewFiniteElement& element)
 {
+  dolfin_assert(nfunctions == functions.size());
+
   // Compute the projection of all functions to the current element
-  for (uint i = 0; i < ncoeff; i++)
+  for (uint i = 0; i < nfunctions; i++)
+  {
+    dolfin_assert(functions[i]);
     functions[i]->project(cell, element, c[i]);
+  }
 }
 //-----------------------------------------------------------------------------
 void Form::add(const NewFunction& function)
 {
+  if ( functions.size() == nfunctions )
+    dolfin_error("All functions already added.");
+
   functions.push_back(&function);
 }
 //-----------------------------------------------------------------------------

@@ -4,9 +4,13 @@
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
 
+#include <dolfin/constants.h>
+#include <dolfin/Variable.h>
+
 namespace dolfin
 {
   
+  class Cell;
   class Mesh;
   class NewFiniteElement;
   class NewVector;
@@ -15,7 +19,7 @@ namespace dolfin
   /// defined in terms of the a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
 
-  class NewFunction
+  class NewFunction : public Variable
   {
   public:
 

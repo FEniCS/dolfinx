@@ -9,10 +9,8 @@
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/NewMatrix.h>
 #include <dolfin/NewVector.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/NewFiniteElement.h>
 #include <dolfin/NewFEM.h>
@@ -20,110 +18,54 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-real** NewFEM::allocElementMatrix(const NewFiniteElement& element)
+void NewFEM::assemble(BilinearForm& a, LinearForm& L,
+		      NewMatrix& A, NewVector& b, Mesh& mesh,
+		      const NewFiniteElement& element)
 {
-  // Allocate element matrix
-  real** AK = new real*[element.spacedim()];
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    AK[i] = new real [element.spacedim()];
-  
-  // Set all entries to zero                                                    
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    for (unsigned int j = 0; j < element.spacedim(); j++)
-      AK[i][j] = 0.0;
-
-  return AK;
-}
-//-----------------------------------------------------------------------------
-real* NewFEM::allocElementVector(const NewFiniteElement& element)
-{
-  // Allocate element vector
-  real* bK = new real[element.spacedim()];
-
-  // Set all entries to zero
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    bK[i] = 0.0;
-
-  return bK;
-}
-//-----------------------------------------------------------------------------
-void NewFEM::freeElementMatrix(real**& AK, const NewFiniteElement& element)
-{
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    delete [] AK[i];
-  delete [] AK;
-  AK = 0;
-}
-//-----------------------------------------------------------------------------
-void NewFEM::freeElementVector(real*& bK, const NewFiniteElement& element)
-{
-  delete [] bK;
-  bK = 0;
-}
-//-----------------------------------------------------------------------------
-void NewFEM::assemble(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-		      NewMatrix& A, NewVector& b) 
-{
-
   // Start a progress session
-  Progress p("Assembling matrix and vector (interior contributions)", mesh.noCells());
+  Progress p("Assembling matrix and vector (interior contributions)",
+	     mesh.noCells());
 
-  // Initialize finite element and element matrix and vector
-  const NewFiniteElement& element = a.element;
-  real** AK = allocElementMatrix(element);
-  real*  bK = allocElementVector(element);
-
+  // Initialize element matrix/vector data block
   unsigned int n = element.spacedim();
-  real* block = new real[n*n];
+  real* block_A = new real[n*n];
+  real* block_b = new real[n];
   int* dofs = new int[n];
 
   // Initialize global matrix 
   // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
-  // minimize memory requirements. 
-
+  // minimize memory requirements.   
   unsigned int N = size(mesh, element);
   A.init(N, N);
   A = 0.0;
   b.init(N);
   b = 0.0;
-
+  
   // Debug
-
-//   cout << "A inside:" << endl;
-//   A.disp();
-
+  //   cout << "A inside:" << endl;
+  //   A.disp();
+  
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    a.update(*cell);
-    L.update(*cell);
-   
-    // Compute element matrix and vector 
-    a.interior(AK);
-    L.interior(bK);
-
-    // Copy values to one array
-    unsigned int pos = 0;
-    for (unsigned int i = 0; i < n; i++)
-      for (unsigned int j = 0; j < n; j++)
-	block[pos++] = AK[i][j];
-
-    // Copy values to one array
-    pos = 0;
-    for (unsigned int i = 0; i < n; i++)
-      block[pos++] = bK[i];
+    a.update(*cell, element);
+    L.update(*cell, element);
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
       dofs[i] = element.dof(i, *cell, mesh);
+   
+    // Compute element matrix and vector 
+    a.interior(block_A);
+    L.interior(block_b);
     
     // Add element matrix to global matrix
-    A.add(block, dofs, n, dofs, n);
+    A.add(block_A, dofs, n, dofs, n);
     
-    // Add element matrix to global matrix
-    b.add(block, dofs, n);
+    // Add element vector to global vector
+    b.add(block_b, dofs, n);
 
     // Update progress
     p++;
@@ -133,25 +75,19 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L, Mesh& mesh,
   A.apply();
   b.apply();
 
-  delete [] block;
+  // Delete data
+  delete [] block_A;
+  delete [] block_b;
   delete [] dofs;
-
-  // Delete element matrix
-  freeElementMatrix(AK, element);
-  freeElementVector(bK, element);
-
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
+void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
+		      const NewFiniteElement& element)
 {
-
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
-  // Initialize finite element and element matrix
-  const NewFiniteElement& element = a.element;
-  real** AK = allocElementMatrix(element);
-
+  // Initialize element matrix data block
   unsigned int n = element.spacedim();
   real* block = new real[n*n];
   int* dofs = new int[n];
@@ -159,49 +95,29 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   // Initialize global matrix 
   // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
-  // minimize memory requirements. 
-
+  // minimize memory requirements.   
   unsigned int N = size(mesh, element);
   A.init(N, N, 1);
   A = 0.0;
 
   // Debug
-
-//   A.apply();
-
-//   cout << "A inside:" << endl;
-//   A.disp();
-
+  //   A.apply();
+  //   cout << "A inside:" << endl;
+  //   A.disp();
+  
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    a.update(*cell);
+    a.update(*cell, element);
     
-    // Compute element matrix
-    a.interior(AK);
-
-    // Debug
-
-//     Matrix Ael(n, n);
-    
-//     for (unsigned int i = 0; i < n; i++)
-//       for (unsigned int j = 0; j < n; j++)
-// 	Ael(i, j) = AK[i][j];
-
-//     cout << "Ael: " << endl;
-//     Ael.show();
-
-    // Copy values to one array
-    unsigned int pos = 0;
-    for (unsigned int i = 0; i < n; i++)
-      for (unsigned int j = 0; j < n; j++)
-	block[pos++] = AK[i][j];
-
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
       dofs[i] = element.dof(i, *cell, mesh);
-    
+
+    // Compute element matrix
+    a.interior(block);
+
     // Add element matrix to global matrix
     A.add(block, dofs, n, dofs, n);
 
@@ -212,23 +128,18 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   // Complete assembly
   A.apply();
 
+  // Delete data
   delete [] block;
   delete [] dofs;
-
-  // Delete element matrix
-  freeElementMatrix(AK, element);
-
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(LinearForm& L, Mesh& mesh, NewVector& b)
+void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh,
+		      const NewFiniteElement& element)
 {
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());
 
-  // Initialize finite element and element matrix
-  const NewFiniteElement& element = L.element;
-  real* bK = allocElementVector(element);
-
+  // Initialize element vector data block
   unsigned int n = element.spacedim();
   real* block = new real[n];
   int* dofs = new int[n];
@@ -242,19 +153,14 @@ void NewFEM::assemble(LinearForm& L, Mesh& mesh, NewVector& b)
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update form
-    L.update(*cell);
-    
-    // Compute element matrix
-    L.interior(bK);
-
-    // Copy values to one array
-    unsigned int pos = 0;
-    for (unsigned int i = 0; i < n; i++)
-      block[pos++] = bK[i];
+    L.update(*cell, element);
 
     // Compute mapping from local to global degrees of freedom
     for (unsigned int i = 0; i < n; i++)
       dofs[i] = element.dof(i, *cell, mesh);
+    
+    // Compute element matrix
+    L.interior(block);
     
     // Add element matrix to global matrix
     b.add(block, dofs, n);
@@ -266,11 +172,9 @@ void NewFEM::assemble(LinearForm& L, Mesh& mesh, NewVector& b)
   // Complete assembly
   b.apply();
 
+  // Delete data
   delete [] block;
   delete [] dofs;
-
-  // Delete element matrix
-  freeElementVector(bK, element);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
@@ -291,4 +195,3 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
   return dofmax + 1;
 }
 //-----------------------------------------------------------------------------
-

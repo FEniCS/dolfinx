@@ -29,7 +29,7 @@ public:
 
   inline unsigned int spacedim() const
   {
-    return 6;
+    return 3;
   }
 
   inline unsigned int shapedim() const
@@ -74,7 +74,9 @@ class BilinearForm : public dolfin::BilinearForm
 {
 public:
 
-  BilinearForm(const NewFiniteElement& element) : dolfin::BilinearForm(element) {}
+  BilinearForm() : dolfin::BilinearForm()
+  {
+  }
 
   bool interior(real* block) const
   {
@@ -85,42 +87,15 @@ public:
     real G0_11 = det*(g10*g10 + g11*g11);
 
     // Compute element tensor
-    block[0] = 3.0*G0_00 + 3.0*G0_01 + 3.0*G0_10 + 3.0*G0_11;
-    block[1] = 1.0*G0_00 + 1.0*G0_10;
-    block[2] = 1.0*G0_01 + 1.0*G0_11;
-    block[3] = 0.0;
-    block[4] = -4.0*G0_01 - 4.0*G0_11;
-    block[5] = -4.0*G0_00 - 4.0*G0_10;
-    block[6] = 1.0*G0_00 + 1.0*G0_01;
-    block[7] = 3.0*G0_00;
-    block[8] = -1.0*G0_01;
-    block[9] = 4.0*G0_01;
-    block[10] = 0.0;
-    block[11] = -4.0*G0_00 - 4.0*G0_01;
-    block[12] = 1.0*G0_10 + 1.0*G0_11;
-    block[13] = -1.0*G0_10;
-    block[14] = 3.0*G0_11;
-    block[15] = 4.0*G0_10;
-    block[16] = -4.0*G0_10 - 4.0*G0_11;
-    block[17] = 0.0;
-    block[18] = 0.0;
-    block[19] = 4.0*G0_10;
-    block[20] = 4.0*G0_01;
-    block[21] = 8.0*G0_00 + 4.0*G0_01 + 4.0*G0_10 + 8.0*G0_11;
-    block[22] = -8.0*G0_00 - 4.0*G0_01 - 4.0*G0_10;
-    block[23] = -4.0*G0_01 - 4.0*G0_10 - 8.0*G0_11;
-    block[24] = -4.0*G0_10 - 4.0*G0_11;
-    block[25] = 0.0;
-    block[26] = -4.0*G0_01 - 4.0*G0_11;
-    block[27] = -8.0*G0_00 - 4.0*G0_01 - 4.0*G0_10;
-    block[28] = 8.0*G0_00 + 4.0*G0_01 + 4.0*G0_10 + 8.0*G0_11;
-    block[29] = 4.0*G0_01 + 4.0*G0_10;
-    block[30] = -4.0*G0_00 - 4.0*G0_01;
-    block[31] = -4.0*G0_00 - 4.0*G0_10;
-    block[32] = 0.0;
-    block[33] = -4.0*G0_01 - 4.0*G0_10 - 8.0*G0_11;
-    block[34] = 4.0*G0_01 + 4.0*G0_10;
-    block[35] = 8.0*G0_00 + 4.0*G0_01 + 4.0*G0_10 + 8.0*G0_11;
+    block[0] = 0.5*G0_00 + 0.5*G0_01 + 0.5*G0_10 + 0.5*G0_11;
+    block[1] = -0.5*G0_00 - 0.5*G0_10;
+    block[2] = -0.5*G0_01 - 0.5*G0_11;
+    block[3] = -0.5*G0_00 - 0.5*G0_01;
+    block[4] = 0.5*G0_00;
+    block[5] = 0.5*G0_01;
+    block[6] = -0.5*G0_10 - 0.5*G0_11;
+    block[7] = 0.5*G0_10;
+    block[8] = 0.5*G0_11;
 
     return true;
   }
@@ -134,7 +109,12 @@ class LinearForm : public dolfin::LinearForm
 {
 public:
 
-  LinearForm(const NewFiniteElement& element) : dolfin::LinearForm(element) {}
+  LinearForm(const NewFunction& w0) : dolfin::LinearForm()
+  {
+    // Add functions
+    init(1, 3);
+    add(w0);
+  }
 
   bool interior(real* block) const
   {
@@ -142,17 +122,11 @@ public:
     real G0_0 = det*c[0][0];
     real G0_1 = det*c[0][1];
     real G0_2 = det*c[0][2];
-    real G0_3 = det*c[0][3];
-    real G0_4 = det*c[0][4];
-    real G0_5 = det*c[0][5];
 
     // Compute element tensor
-    block[0] = 0.0166666666667*G0_0 - 0.00277777777778*G0_1 - 0.00277777777778*G0_2 - 0.0111111111111*G0_3;
-    block[1] = -0.00277777777778*G0_0 + 0.0166666666667*G0_1 - 0.00277777777778*G0_2 - 0.0111111111111*G0_4;
-    block[2] = -0.00277777777778*G0_0 - 0.00277777777778*G0_1 + 0.0166666666667*G0_2 - 0.0111111111111*G0_5;
-    block[3] = -0.0111111111111*G0_0 + 0.0888888888889*G0_3 + 0.0444444444444*G0_4 + 0.0444444444444*G0_5;
-    block[4] = -0.0111111111111*G0_1 + 0.0444444444444*G0_3 + 0.0888888888889*G0_4 + 0.0444444444444*G0_5;
-    block[5] = -0.0111111111111*G0_2 + 0.0444444444444*G0_3 + 0.0444444444444*G0_4 + 0.0888888888889*G0_5;
+    block[0] = 0.0833333333333*G0_0 + 0.0416666666667*G0_1 + 0.0416666666667*G0_2;
+    block[1] = 0.0416666666667*G0_0 + 0.0833333333333*G0_1 + 0.0416666666667*G0_2;
+    block[2] = 0.0416666666667*G0_0 + 0.0416666666667*G0_1 + 0.0833333333333*G0_2;
 
     return true;
   }

@@ -6,9 +6,11 @@
 
 #include <dolfin.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class Solver {
+  class Solver
+  {
   public:
 
     /// Constructor for general solver

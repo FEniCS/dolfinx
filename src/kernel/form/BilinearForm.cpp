@@ -7,12 +7,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BilinearForm::BilinearForm(const NewFiniteElement& element) : Form(element)
+BilinearForm::BilinearForm() : Form()
 {
-  // Set default (full) nonzero pattern
-  for (unsigned int i = 0; i < element.spacedim(); i++)
-    for (unsigned int j = 0; j < element.spacedim(); j++)
-      nonzero.push_back(IndexPair(i, j));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BilinearForm::~BilinearForm()
@@ -20,14 +17,14 @@ BilinearForm::~BilinearForm()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool BilinearForm::interior(real** A) const
+bool BilinearForm::interior(real* block) const
 {
   // The default version returns false, which means that the form does
   // not contain any integrals over the interior of the domain.
   return false;
 }
 //-----------------------------------------------------------------------------
-bool BilinearForm::boundary(real** A) const
+bool BilinearForm::boundary(real* block) const
 {
   // The default version returns true, which means that the form does
   // not contain any integrals over the boundary of the domain.

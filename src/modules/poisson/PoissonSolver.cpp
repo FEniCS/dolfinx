@@ -4,6 +4,12 @@
 // Modified by Johan Hoffman, 2005.
 // Modified by Anders Logg, 2005.
 
+// FIXME: Should not be needed
+#include <dolfin/NewFunction.h>
+
+// FIXME: Should not be needed
+#include <dolfin/NewGMRES.h>
+
 #include "Poisson.h"
 #include "PoissonSolver.h"
 
@@ -23,28 +29,31 @@ const char* PoissonSolver::description()
 void PoissonSolver::solve()
 {
   Poisson::FiniteElement element;
-  Poisson::BilinearForm a(element);
-  Poisson::LinearForm L(element);
-  //NewMatrix A;
-  //NewVector x, b;
 
-  //b.init(A.size(0));
-  //b = 1.0;
+  // FIXME: Should be able to take f as an argument from main.cpp
+  NewVector fvalues;
+  NewFunction f(mesh, element, fvalues);
 
-  //  NewFunction  u(mesh, x);
-  //  NewFunction  f("source");
-  //  NewGMRES     solver;
-  //File         file("poisson.m");
+  Poisson::BilinearForm a;
+  Poisson::LinearForm L(f);
 
-  // Discretise
-  //NewFEM::assemble(a, L, mesh, A, b);
-  //NewFEM::assemble(a, mesh, A);
+  NewMatrix A;
+  NewVector x, b;
+
+  NewFunction u(mesh, element, x);
+  u.rename("u", "temperature");
+
+  // Discretize
+  NewFEM::assemble(a, L, A, b, mesh, element);
 
   // Solve the linear system
-  //solver.solve(A, x, b);
+  // FIXME: Make NewGMRES::solve() static
+  NewGMRES solver;
+  solver.solve(A, x, b);
 
   // Save the solution
-  //u.rename("u", "temperature");
+  // FIXME: Implement output for NewFunction
+  //File file("poisson.m");
   //file << u;
 }
 //-----------------------------------------------------------------------------

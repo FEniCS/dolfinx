@@ -6,9 +6,11 @@
 
 #include <dolfin/Solver.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class PoissonSolver : public Solver {
+  class PoissonSolver : public Solver
+  {
   public:
     
     PoissonSolver(Mesh& mesh);

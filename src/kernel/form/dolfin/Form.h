@@ -18,14 +18,17 @@ namespace dolfin
   {
   public:
 
-    /// Create form for given element and given number of coefficients
-    Form(const NewFiniteElement& element, uint ncoeff = 0);
+    /// Constructor
+    Form();
 
     /// Destructor
     virtual ~Form();
 
+    /// Initialize functions (coefficients)
+    void init(uint nfunctions, uint spacedim);
+
     /// Update map to current cell
-    void update(const Cell& cell);
+    void update(const Cell& cell, const NewFiniteElement& element);
 
     /// Friends
     friend class NewFEM;
@@ -39,13 +42,10 @@ namespace dolfin
     void updateTetLinMap(const Cell& cell);
 
     // Update coefficients
-    void updateCoefficients(const Cell& cell);
+    void updateCoefficients(const Cell& cell, const NewFiniteElement& element);
 
     // Add function
     void add(const NewFunction& function);
-
-    // The finite element
-    const NewFiniteElement& element;
 
     // Determinant of Jacobian of map
     real det;
@@ -62,8 +62,8 @@ namespace dolfin
     // Coefficients of functions projected to current element
     real** c;
 
-    // Number of coefficients
-    uint ncoeff;
+    // Number of functions
+    uint nfunctions;
 
   };
 

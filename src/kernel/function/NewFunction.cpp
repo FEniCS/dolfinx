@@ -12,7 +12,7 @@ using namespace dolfin;
 NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
 			 NewVector& x) : mesh(mesh), element(element), x(x)
 {
-  // Do nothing
+  rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
