@@ -13,7 +13,7 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/XMLObject.h \
                          dolfin/XMLParameterList.h \
                          dolfin/XMLVector.h
-INCLUDES               = @MODULE_INCLUDES@ @XML2_INCLUDES@
+INCLUDES               = @KERNEL_CFLAGS@
 lib_LIBRARIES          = libdolfin-io.a
 libdolfin_io_a_SOURCES = File.cpp \
                          GenericFile.cpp \

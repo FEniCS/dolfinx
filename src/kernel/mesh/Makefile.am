@@ -25,7 +25,7 @@ include_HEADERS          = dolfin/dolfin_mesh.h \
                            dolfin/Tetrahedron.h \
                            dolfin/TriMeshRefinement.h \
                            dolfin/Triangle.h
-INCLUDES                 = @MODULE_INCLUDES@
+INCLUDES                 = @KERNEL_CFLAGS@
 lib_LIBRARIES            = libdolfin-mesh.a
 libdolfin_mesh_a_SOURCES = Boundary.cpp \
                            BoundaryData.cpp \

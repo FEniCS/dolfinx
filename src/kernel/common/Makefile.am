@@ -19,7 +19,7 @@ include_HEADERS = dolfin/dolfin_common.h \
                   dolfin/timeinfo.h \
                   dolfin/utils.h
 
-INCLUDES = @MODULE_INCLUDES@
+INCLUDES = @KERNEL_CFLAGS@
 
 lib_LIBRARIES = libdolfin-common.a
 

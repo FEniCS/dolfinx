@@ -10,9 +10,19 @@ namespace dolfin
   class BilinearForm;
   class LinearForm;
 
+  /// A NewPDE represents a (linearized) partial differential equation,
+  /// given by a variation problem of the form: Find u in V such that
+  ///
+  ///     a(u,v) = L(v) for all v in V,
+  ///
+  /// where a(.,.) is a given bilinear form and L(.) is a given linear form.
+
   class NewPDE
   {
   public:
+
+    /// Constructor
+    NewPDE();
 
     /// Constructor
     NewPDE(BilinearForm& a, LinearForm& L);
@@ -20,11 +30,16 @@ namespace dolfin
     /// Destructor
     ~NewPDE();
 
-    /// The bilinear form
-    BilinearForm& a;
+    /// Return the bilinear form a(.,.)
+    BilinearForm& a();
 
-    /// The linear form
-    LinearForm& L;
+    /// Return the linear form L(.,.)
+    LinearForm& L();
+
+  protected:
+
+    BilinearForm* bilinear;
+    LinearForm* linear;
 
   };
 

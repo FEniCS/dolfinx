@@ -26,63 +26,81 @@ AC_ARG_ENABLE(curses,
                              [Compile without curses]),
               enable_curses=no)
 
-AC_ARG_ENABLE(bmp,
-[  --enable-bmp            support loading BMP images [default=yes]],
-              , enable_bmp=yes)
-if test x$enable_bmp = xyes; then
-    CFLAGS="$CFLAGS -DLOAD_BMP"
-fi
-
-# Checks for programs
+# Standard tests
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
 AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
-
-# Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-# Modify compiler flags when debug is enabled
+# Handle option --enable-debug
 if test x$enable_debug = xyes; then
     CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
-# Modify compiler flags when optimization is enabled
+# Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     CXXFLAGS='-O3 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
-# Check for curses
-if test x$enable_curses = x; then
+# Handle option --disable-curses
+if test x$disable_curses = x; then
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
                    echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
+    CURSES_CFLAGS=''
+    CURSES_LIBS='-lncurses'
 else
-    CXXFLAGS=$CXXFLAGS' -DNO_CURSES=1'
+    CURSES_CFLAGS='-DNO_CURSES=1'
+    CURSES_LIBS=''
+fi
+
+# Check for PETSc
+AC_CHECK_PROG(petsc_found, petscarch, yes, no)
+if test $petsc_found = yes; then
+    # FIXME: Do correct test
+    PETSC_ARCH=`petscarch`
+    PETSC_DIR='/usr/lib/petsc'
+    BOPT='O_c++'
+    PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX"
+    AC_SUBST(PETSC_ARCH)
+    AC_SUBST(PETSC_DIR)
+    AC_SUBST(BOPT)
+    AC_SUBST(PETSC_CFLAGS)
+else
+    echo "*** Unable to find PETSc on your system."
+    echo "*** Perhaps you need to install the package petsc-dev?"
+    exit 1
+fi
+
+# Check for MPI (needed by PETSc)
+AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+if test $mpi_found = yes; then
+    # FIXME: Do correct test
+    MPI_CFLAGS='-I/usr/include/mpi'
+else
+    echo "*** Unable to find MPI on your system."
+    echo "*** Perhaps you need to install the package mpich?"
+    exit 1
 fi
 
 # Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
 if test $libxml2_found = yes; then	  
-	XML2_INCLUDES=`xml2-config --cflags`
-	XML2_LFLAGS=`xml2-config --libs`
- 	AC_SUBST(XML2_INCLUDES)
-	AC_SUBST(XML2_LFLAGS)
+    XML2_CFLAGS=`xml2-config --cflags`
+    XML2_LIBS=`xml2-config --libs`
 else
- 	echo "*** Unable to find libxml2 development files on your system."
-        echo "*** Perhaps you need to install the package libxml2-dev?"
-	exit 1
+    echo "*** Unable to find libxml2 development files on your system."
+    echo "*** Perhaps you need to install the package libxml2-dev?"
+    exit 1
 fi
 
-# Note: need to be in the correct order, and some are needed twice.
-# Not very pretty... Maybe someone knows how to fix this?
-#DOLFIN_KERNEL="ode io mesh fem element mesh io fem form quadrature map la math common settings log settings common main ode"
+# List of DOLFIN kernel modules
 DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings common"
-DOLFIN_KERNEL="$DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 
 # Find modules
 cd src/modules
@@ -90,39 +108,40 @@ cd src/modules
 cd ../..
 DOLFIN_MODULES=""
 for l in `cat src/modules/modules.list | grep -v "#"`; do
-	DOLFIN_MODULES="$DOLFIN_MODULES$l "
+    DOLFIN_MODULES="$DOLFIN_MODULES$l "
 done
 
-# Generate include path for modules (including kernel code)
-MODULE_INCLUDES=""
+# Generate include path for kernel
+KERNEL_CFLAGS=""
 DOLFIN_MAIN="main"
 DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
 for f in $DIRS; do
-	MODULE_INCLUDES="$MODULE_INCLUDES-I\$(top_builddir)/src/kernel/$f "
+    KERNEL_CFLAGS="$KERNEL_CFLAGS-I\$(top_builddir)/src/kernel/$f "
 done
-AC_SUBST(MODULE_INCLUDES)
+KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
+AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for main (including also module code)
-MAIN_INCLUDES=""
+MAIN_CFLAGS=""
 DIRS="$DOLFIN_MODULES"
 for f in $DIRS; do
-	MAIN_INCLUDES="$MAIN_INCLUDES-I\$(top_builddir)/src/modules/$f "
+    MAIN_CFLAGS="$MAIN_CFLAGS-I\$(top_builddir)/src/modules/$f "
 done
-MAIN_INCLUDES="$MODULE_INCLUDES $MAIN_INCLUDES"
-AC_SUBST(MAIN_INCLUDES)
+MAIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
+AC_SUBST(MAIN_CFLAGS)
 
 # Generate library list for linking in the correct order.
-DOLFIN_LFLAGS=""
-DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_KERNEL"
+# FIXME: Not very pretty to list the libraries multiple times
+DOLFIN_LIBS=""
+DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 for f in $DIRS; do
-	DOLFIN_LFLAGS="$DOLFIN_LFLAGS-ldolfin-$f "
+    DOLFIN_LIBS="$DOLFIN_LIBS-ldolfin-$f "
 done
-AC_SUBST(DOLFIN_LFLAGS)
-
-# Seems to be needed for CXXFLAGS to get to src/config
-AC_SUBST(CXXFLAGS)
+DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $XML2_LIBS"
+AC_SUBST(DOLFIN_LIBS)
 
 # Export variables to makefiles
+AC_SUBST(CXXFLAGS)
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 

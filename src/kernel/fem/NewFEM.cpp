@@ -1,6 +1,8 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <petsc/petscmat.h>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/NewPDE.h>
@@ -19,16 +21,16 @@ using namespace dolfin;
 void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 {
   // Assemble matrix
-  assemble(pde.a, mesh, A);
+  assemble(pde.a(), mesh, A);
 
   // Assemble vector
-  assemble(pde.L, mesh, b);
+  assemble(pde.L(), mesh, b);
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
   // Allocate and reset matrix
-  alloc(a.element, mesh, A);
+  alloc(A, a.element, mesh);
   
   // Assemble interior contribution
   assembleInterior(a, mesh, A);
@@ -46,7 +48,7 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, Matrix& A)
 void NewFEM::assemble(LinearForm& L, Mesh& mesh, Vector& b)
 {
   // Allocate and reset vector
-  alloc(L.element, mesh, b);
+  alloc(b, L.element, mesh);
   
   // Assemble interior contribution
   assembleInterior(L, mesh, b);
@@ -186,7 +188,7 @@ void NewFEM::assembleBoundaryTet(LinearForm& L, Mesh& mesh, Vector& b)
   // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Matrix& A)
+void NewFEM::alloc(Matrix& A, const NewFiniteElement& element, Mesh& mesh)
 {
   // Count the degrees of freedom (check maximum index)
   unsigned int dofmax = 0;
@@ -209,7 +211,7 @@ void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Matrix& A)
   A = 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Vector& b)
+void NewFEM::alloc(Vector& b, const NewFiniteElement& element, Mesh& mesh)
 {
   // Count the degrees of freedom (check maximum index)
   unsigned int dofmax = 0;
@@ -271,5 +273,16 @@ void NewFEM::freeElementVector(real*& bK, const NewFiniteElement& element)
 {
   delete [] bK;
   bK = 0;
+}
+//-----------------------------------------------------------------------------
+void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh)
+{
+  Mat A;
+  MatCreateSeqAIJ(PETSC_COMM_SELF, 100, 100, 10, PETSC_NULL, &A);
+  int m;
+  int n;
+  MatGetSize(A, &m, &n);
+  
+  dolfin_info("Size of PETSc matrix: %d x %d", m, n);
 }
 //-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-INCLUDES                  = @MODULE_INCLUDES@
+INCLUDES                  = @KERNEL_CFLAGS@
 lib_LIBRARIES             = libdolfin-euler.a
 include_HEADERS           = 
 libdolfin_euler_a_SOURCES = Euler.h \

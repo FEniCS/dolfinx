@@ -18,7 +18,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/SISolver.h \
                          dolfin/SparseMatrix.h \
                          dolfin/Vector.h
-INCLUDES               = @MODULE_INCLUDES@
+INCLUDES               = @KERNEL_CFLAGS@
 lib_LIBRARIES          = libdolfin-la.a
 libdolfin_la_a_SOURCES = BiCGSTAB.cpp \
                          CG.cpp \

@@ -1,1 +1,1 @@
-SUBDIRS = test la mesh fem quadrature ode bench solvers elementfunction form
+SUBDIRS = test la mesh fem quadrature ode bench elementfunction form solvers

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
-#include "Poisson.h"
+#include "Poisson.h" 
 #include "OptimizedPoisson.h"
 #include "FFCPoisson.h"
 
@@ -63,6 +63,20 @@ real testFFC(Mesh& mesh)
   return toc();
 }
 
+// Test new assembly (FFC) with PETSc
+real testFFCPETSc(Mesh& mesh)
+{
+  cout << "Testing new assembly, FFC with PETSc, not doing anything..." << endl;
+
+  tic();
+  
+  FFCPoissonFiniteElement element;
+  FFCPoissonBilinearForm a(element);
+  NewFEM::testPETSc(a, mesh);
+
+  return toc();
+}
+
 int main()
 {
   dolfin_set("output", "plain text");
@@ -76,12 +90,14 @@ int main()
   real t1 = testOld(mesh);
   real t2 = testOptimized(mesh);
   real t3 = testFFC(mesh);
+  real t4 = testFFCPETSc(mesh);
 
   dolfin_log(true);
 
   cout << "Old assembly:   " << t1 << endl;
   cout << "New, optimized: " << t2 << endl;
   cout << "New, FFC:       " << t3 << endl;
+  cout << "New, FFC/PETSc: " << t4 << endl;
 
   return 0;
 }

@@ -9,7 +9,7 @@ include_HEADERS                = dolfin/dolfin_quadrature.h \
                                  dolfin/TetrahedronVertexQuadrature.h \
                                  dolfin/TriangleMidpointQuadrature.h \
                                  dolfin/TriangleVertexQuadrature.h
-INCLUDES                       = @MODULE_INCLUDES@
+INCLUDES                       = @KERNEL_CFLAGS@
 lib_LIBRARIES                  = libdolfin-quadrature.a
 libdolfin_quadrature_a_SOURCES = GaussianQuadrature.cpp \
                                  GaussQuadrature.cpp \

@@ -11,7 +11,7 @@ include_HEADERS          = dolfin/dolfin_form.h \
                            dolfin/NewPDE.h \
                            dolfin/Product.h \
                            dolfin/ShapeFunction.h
-INCLUDES                 = @MODULE_INCLUDES@
+INCLUDES                 = @KERNEL_CFLAGS@
 lib_LIBRARIES            = libdolfin-form.a
 libdolfin_form_a_SOURCES = BilinearForm.cpp \
                            ElementFunction.cpp \

@@ -40,7 +40,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Sparsity.h \
                           dolfin/TimeSlab.h \
                           dolfin/TimeStepper.h
-INCLUDES                = @MODULE_INCLUDES@
+INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
 libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           cGqMethod.cpp \

@@ -14,7 +14,7 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/NewFEM.h \
                           dolfin/NewFiniteElement.h \
                           dolfin/StiffnessMatrix.h
-INCLUDES                = @MODULE_INCLUDES@
+INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = DxMatrix.cpp \
                           DyMatrix.cpp \

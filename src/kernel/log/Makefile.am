@@ -11,7 +11,7 @@ include_HEADERS         = dolfin/dolfin_log.h \
                           dolfin/Progress.h \
                           dolfin/SilentLogger.h \
                           dolfin/TerminalLogger.h
-INCLUDES                = @MODULE_INCLUDES@
+INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-log.a
 libdolfin_log_a_SOURCES = Buffer.cpp \
                           GenericLogger.cpp \

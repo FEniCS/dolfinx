@@ -8,7 +8,7 @@ include_HEADERS              = dolfin/dolfin_function.h \
                                dolfin/ODEFunction.h \
                                dolfin/ScalarExpressionFunction.h \
                                dolfin/VectorExpressionFunction.h
-INCLUDES                     = @MODULE_INCLUDES@
+INCLUDES                     = @KERNEL_CFLAGS@
 lib_LIBRARIES                = libdolfin-function.a
 libdolfin_function_a_SOURCES = DofFunction.cpp \
                                ExpressionFunction.cpp \

@@ -4,8 +4,6 @@
 #ifndef __NEW_FEM_H
 #define __NEW_FEM_H
 
-#include <dolfin/NewArray.h>
-
 namespace dolfin
 {
 
@@ -16,8 +14,12 @@ namespace dolfin
   class Matrix;
   class Vector;
 
-  /// Automated assembly of a linear system from a given variational
-  /// formulation. 
+  /// Automated assembly of a linear system from a given partial differential
+  /// equation, specified as a variational problem: Find u in V such that
+  ///
+  ///     a(u,v) = L(v) for all v in V,
+  ///
+  /// where a(.,.) is a given bilinear form and L(.) is a given linear form.
 
   class NewFEM
   {
@@ -31,6 +33,9 @@ namespace dolfin
     
     /// Assemble vector for linear form
     static void assemble(LinearForm& L, Mesh& mesh, Vector& b);
+
+    /// Testing PETSc
+    static void testPETSc(BilinearForm& a, Mesh& mesh);
 
   private:
     
@@ -47,10 +52,10 @@ namespace dolfin
     static void assembleBoundaryTet (LinearForm& L, Mesh& mesh, Vector& b);
 
     // Allocate global matrix
-    static void alloc(const NewFiniteElement& element, Mesh& mesh, Matrix &A);
+    static void alloc(Matrix& A, const NewFiniteElement& element, Mesh& mesh);
 
     // Allocate global vector
-    static void alloc(const NewFiniteElement& element, Mesh& mesh, Vector& b);
+    static void alloc(Vector& b, const NewFiniteElement& element, Mesh& mesh);
   
     // Allocate element matrix (use arrays to improve speed)
     static real** allocElementMatrix(const NewFiniteElement& element);
@@ -63,7 +68,7 @@ namespace dolfin
 
     // Delete element vector
     static void freeElementVector(real*& bK, const NewFiniteElement& element);
-        
+
   };
 
 }

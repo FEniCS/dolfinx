@@ -1,4 +1,4 @@
-INCLUDES               = @MODULE_INCLUDES@
+INCLUDES               = @KERNEL_CFLAGS@
 lib_LIBRARIES          = libdolfin-elasticity-updated.a
 include_HEADERS        = 
 libdolfin_elasticity_updated_a_SOURCES = ElasticityUpdated.h \
