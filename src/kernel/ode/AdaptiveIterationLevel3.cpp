@@ -137,6 +137,9 @@ void AdaptiveIterationLevel3::update(Element& element)
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 					const Residuals& r, unsigned int n)
 {
+  cout << "Checking stabilization" << endl;
+  cout << "j = " << j << endl;
+
   // Stabilize if necessary
   if ( Iteration::stabilize(r, n) )
   {

@@ -58,7 +58,8 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
   bool retry = true;
 
   dolfin_start("Starting time slab iteration");
-  
+  cout << "Number of elements: " << list.size() << endl;
+
   while ( retry )
   {
     // Start iteration

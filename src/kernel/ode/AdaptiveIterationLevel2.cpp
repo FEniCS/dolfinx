@@ -95,7 +95,7 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
   // Stabilize if necessary
   if ( Iteration::stabilize(r, n) )
   {
-    cout << "Need to stabilize time slab" << endl;
+    cout << "Need to stabilize element group" << endl;
     
     // Compute divergence
     real rho = computeDivergence(group, r);

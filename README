@@ -32,7 +32,7 @@ A number of options can be given to configure:
 			
 	or even
 
-		./configure CXXFLAGS '-O6 -finline-functions -funroll-loops ...
+		./configure CXXFLAGS='-O6 -finline-functions -funroll-loops ...
                                       -fstrict-aliasing -felide-constructors'
 
 	o To enable extra debugging code (recommended for developers):

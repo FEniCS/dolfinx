@@ -1,3 +1,4 @@
+ - Improve TimeStepper interface (Ko Project)
  - Use iterators instead of recursively calling TimeSlab::update()
  - Clean up ODESolver
  - Add iterators for elements in time slabs and element groups

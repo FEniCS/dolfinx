@@ -57,6 +57,15 @@ namespace dolfin {
 
   private:
 
+    // Create a time slab
+    bool createTimeSlab();
+
+    // Create the first time slab
+    bool createFirstTimeSlab();
+
+    // Create a standard (recursive) time slab
+    bool createGeneralTimeSlab();
+
     // Prepare for next time slab
     void shift();
 

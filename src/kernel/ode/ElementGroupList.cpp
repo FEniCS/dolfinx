@@ -13,8 +13,6 @@ ElementGroupList::ElementGroupList(TimeSlab& timeslab) : groups(0)
   // Compute the size of the list
   unsigned int size = 0;
   timeslab.countElementGroups(size);
-
-  cout << "Found " << size << " element groups" << endl;
   
   // Create the list
   groups = new NewArray<ElementGroup*>(size);

@@ -22,7 +22,7 @@ TimeStepper::TimeStepper(ODE& ode, Function& function) :
   f(ode, u), fixpoint(u, f), file(u.label() + ".m"), p("Time-stepping"),
   _finished(false)
 {
-  dolfin_warning("ODE solver is EXPERIMENTAL..");
+  dolfin_warning("ODE solver is EXPERIMENTAL.");
 
   // Start timing
   tic();
@@ -47,35 +47,42 @@ void TimeStepper::solve(ODE& ode, Function& function)
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
 {
-  cout << "Creating new time slab" << endl;
-  
-  TimeSlab* timeslab = 0;
+  cout << "Creating time slab" << endl;
 
   // Repeat until the time slab has converged
-  while (true)
-  {
-    // Create a new time slab
-    if ( t == 0.0 )
-      timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
-    else
-      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
-    
-    timeslab->show();
-  
-    // Solve system using damped fixed point iteration
-    if ( fixpoint.iterate(*timeslab) )
-      break;
-
-    // Time slab did not converge, so we throw away the time slab and try again
+  while ( !createTimeSlab() )
     decreaseTimeStep();
-    delete timeslab;
-  }
   
+  return t;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::finished() const
+{
+  return _finished;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::createTimeSlab()
+{
+  if ( t == 0.0 )
+    return createFirstTimeSlab();
+  else
+    return createGeneralTimeSlab();
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::createFirstTimeSlab()
+{
+  // Create the time slab
+  SimpleTimeSlab timeslab(t, T, u, adaptivity);
+    
+  // Try to solve the system using fixed point iteration
+  if ( !fixpoint.iterate(timeslab) )
+    return false;
+
   // Update time
-  t = timeslab->endtime();
+  t = timeslab.endtime();
   
   // Save solution
-  save(*timeslab);
+  save(timeslab);
   
   // Prepare for next time slab
   shift();
@@ -84,22 +91,44 @@ real TimeStepper::step()
   p = t / T;
 
   // Check if we are done
-  if ( timeslab->finished() )
+  if ( timeslab.finished() )
   {
     _finished = true;
     p = 1.0;
   }
-  
-  // Delete time slab
-  delete timeslab;
-  
-  // Return end time
-  return t;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
-bool TimeStepper::finished() const
+bool TimeStepper::createGeneralTimeSlab()
 {
-  return _finished;
+  // Create the time slab
+  RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
+    
+  // Try to solve the system using fixed point iteration
+  if ( !fixpoint.iterate(timeslab) )
+    return false;
+
+  // Update time
+  t = timeslab.endtime();
+  
+  // Save solution
+  save(timeslab);
+  
+  // Prepare for next time slab
+  shift();
+  
+  // Update progress
+  p = t / T;
+
+  // Check if we are done
+  if ( timeslab.finished() )
+  {
+    _finished = true;
+    p = 1.0;
+  }
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::shift()
