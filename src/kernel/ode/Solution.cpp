@@ -152,6 +152,15 @@ unsigned int Solution::order(unsigned int i)
   return ode.order(i);
 }
 //-----------------------------------------------------------------------------
+void Solution::setlast(unsigned int i, real value)
+{
+  // Get last element
+  Element* element = elmdata.last(i);
+
+  // Modify values for element
+  element->set(value);
+}
+//-----------------------------------------------------------------------------
 void Solution::shift(real t0)
 {
   for (unsigned int i = 0; i < elmdata.size(); i++)

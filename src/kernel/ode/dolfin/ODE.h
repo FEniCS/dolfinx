@@ -10,6 +10,7 @@
 #include <dolfin/Sample.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Function.h>
+#include <dolfin/Solution.h>
 #include <dolfin/Adaptivity.h>
 
 namespace dolfin
@@ -51,7 +52,10 @@ namespace dolfin
     virtual real timestep(unsigned int i);
 
     /// Update ODE (optional)
-    virtual void update(RHS& f, Function& u, real t, Adaptivity& adaptivity);
+    virtual void update(RHS& f, Function& u, real t);
+
+    /// Update ODE (optional)
+    virtual void update(Solution& u, Adaptivity& adaptivity, real t);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);

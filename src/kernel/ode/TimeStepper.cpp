@@ -130,7 +130,8 @@ bool TimeStepper::createFirstTimeSlab()
   save(timeslab);
   
   // Update ODE
-  ode.update(f, function, t, adaptivity);
+  ode.update(f, function, t);
+  ode.update(u, adaptivity, t);
   
   // Update progress
   p = t / T;
@@ -178,7 +179,8 @@ bool TimeStepper::createGeneralTimeSlab()
   save(timeslab);
   
   // Update ODE
-  ode.update(f, function, t, adaptivity);
+  ode.update(f, function, t);
+  ode.update(u, adaptivity, t);
 
   // Update progress
   p = t / T;

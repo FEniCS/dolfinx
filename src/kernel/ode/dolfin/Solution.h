@@ -74,6 +74,9 @@ namespace dolfin {
     /// Return order to use for given component
     unsigned int order(unsigned int i);
 
+    /// Modify end-time value for given component (next initial value)
+    void setlast(unsigned int i, real value);
+
     /// Prepare for next time slab (propagate values)
     void shift(real t0);
 

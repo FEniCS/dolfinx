@@ -12,10 +12,10 @@ public:
   Simple() : ParticleSystem(2, 1)
   {
     // Final time
-    T = 30.0;
+    T = 100.0;
 
     // The large spring constant
-    k = 1e8;
+    k = 1e18;
     
     // Compute sparsity
     sparse();
@@ -52,10 +52,11 @@ int main()
 {
   dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.1);
-  dolfin_set("initial time step", 0.00005);
+  dolfin_set("initial time step", 0.0000000001);
   dolfin_set("solve dual problem", false);
+  dolfin_set("number of samples", 1000);
   dolfin_set("automatic modeling", true);
-  dolfin_set("average length", 0.1);
+  dolfin_set("average length", 0.0000001);
   dolfin_set("average samples", 1000);
 
   Simple simple;

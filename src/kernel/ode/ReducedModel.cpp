@@ -56,10 +56,10 @@ real ReducedModel::timestep(unsigned int i)
   return ode.timestep(i);
 }
 //-----------------------------------------------------------------------------
-void ReducedModel::update(RHS& f, Function& u, real t, Adaptivity& adaptivity)
+void ReducedModel::update(RHS& f, Function& u, real t)
 {
   // Update for the given model if used
-  ode.update(f, u, t, adaptivity);
+  ode.update(f, u, t);
 
   // Create the reduced model only one time
   if ( reduced )
@@ -70,11 +70,11 @@ void ReducedModel::update(RHS& f, Function& u, real t, Adaptivity& adaptivity)
     return;
 
   // Write a message
-  dolfin_info("Creating reduced model at t = %f.", 2*tau);
+  dolfin_info("Creating reduced model at t = %.1e.", 2*tau);
 
   // Average values of u and f
-  Vector ubar(ode.size());
-  Vector fbar(ode.size());
+  ubar.init(ode.size());
+  fbar.init(ode.size());
 
   // Compute average values
   for (unsigned int i = 0; i < ode.size(); i++)
@@ -83,9 +83,33 @@ void ReducedModel::update(RHS& f, Function& u, real t, Adaptivity& adaptivity)
   // Compute reduced model
   for (unsigned int i = 0; i < ode.size(); i++)
     g[i].computeModel(ubar, fbar, i, tau, ode);
+}
+//-----------------------------------------------------------------------------
+void ReducedModel::update(Solution& u, Adaptivity& adaptivity, real t)
+{
+  // Update for the given model if used
+  ode.update(u, adaptivity, t);
 
+  // Check if we have reached the beyond twice the average length
+  if ( t < (2.0*tau) )
+    return;
+
+  // Create the reduced model only one time
+  if ( reduced )
+    return;  
+
+  // FIXME: Choose better maximum time step
   // Adjust (increase) maximum allowed time step
-  adaptivity.adjustMaximumTimeStep(tau);
+  adaptivity.adjustMaximumTimeStep(0.1);
+
+  // Adjust end values for inactive components
+  for (unsigned int i = 0; i < ode.size(); i++)
+    if ( !g[i].active() )
+      u.setlast(i, ubar(i));
+
+  // Clear averages
+  ubar.clear();
+  fbar.clear();
 
   // Remember that we have created the model
   reduced = true;

@@ -53,8 +53,11 @@ namespace dolfin
     /// Map the choice of time step
     real timestep(unsigned int i);
     
-    /// Map the update function
-    void update(RHS& f, Function& u, real t, Adaptivity& adaptivity);
+    /// Map update function
+    void update(RHS& f, Function& u, real t);
+
+    /// Map update function
+    void update(Solution& u, Adaptivity& adaptivity, real t);
 
     /// Map the save function
     void save(Sample& sample);
@@ -112,6 +115,10 @@ namespace dolfin
     // Tolerance for active components
     real tol;
     
+    // Averages of u and f
+    Vector ubar;
+    Vector fbar;
+
   };
 
 }
