@@ -30,6 +30,8 @@ namespace dolfin {
 	 Grid(const char *filename);
 	 ~Grid();
 
+	 void operator = ( const Grid& grid );
+
 	 void clear();
 	 void refine();
 	 

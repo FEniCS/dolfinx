@@ -54,6 +54,13 @@ void Grid::clear()
   _type = TRIANGLES;
 }
 //-----------------------------------------------------------------------------
+void Grid::operator = (const Grid& grid)
+{
+  init();  
+  
+  (*this->gd) = (*grid.gd);
+}
+//-----------------------------------------------------------------------------
 void Grid::refine()
 {
   refineGrid.refine();
