@@ -31,6 +31,7 @@ namespace dolfin
     virtual void solve(NewVector& x, const NewVector& b) = 0;
 
     static int PCApply(PC pc, Vec x, Vec y);
+    static int PCCreate(PC pc);
 
   protected:
 

@@ -45,7 +45,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 
   KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-  KSPSetFromOptions(ksp);
+  //KSPSetFromOptions(ksp);
 
   /*
   // Set tolerances
@@ -58,15 +58,20 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   // Solve system
   dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
 
+  //PC pc;
+  //KSPGetPC(ksp, &pc);
+  //PCSetType(pc, PCNONE);
+
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
+
   KSPSolve(ksp);
 
   int its = 0;
   KSPGetIterationNumber(ksp, &its);
   dolfin_info("GMRES converged in %d iterations.", its);
 
-  //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
@@ -87,11 +92,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   */
 
   //Solve system.
-  //dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
-
-  PC pc;
-  KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCNONE);
+  dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
 
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
@@ -136,6 +137,9 @@ void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 {
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
+
+  NewPreconditioner::PCCreate(petscpc);
+
   petscpc->data = &pc;
   petscpc->ops->apply = NewPreconditioner::PCApply;
 }

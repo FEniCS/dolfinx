@@ -1,10 +1,34 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <math.h>
 #include <dolfin.h>
 #include <dolfin/NewGMRES.h>
 
 using namespace dolfin;
+
+class MyPreconditioner : public NewPreconditioner
+{
+public:
+  virtual ~MyPreconditioner()
+  {
+  };
+
+  virtual void solve(NewVector& x, const NewVector& b)
+  {
+    cout << "preconditioning" << endl;
+
+    //cout << "b:" << endl;
+    //b.disp();
+    //cout << "x:" << endl;
+    //x.disp();
+
+    // Do nothing
+
+    b.axpy(1.0, x);
+
+  };
+};
 
 int main(int argc, char **argv)
 {  
@@ -105,6 +129,7 @@ int main(int argc, char **argv)
   NewGMRES newsolver;
   NewVector R(x.size());
 
+
   newsolver.solve(A, x, b);
   A.mult(x, R);
   R.axpy(-1, b);
@@ -115,6 +140,48 @@ int main(int argc, char **argv)
   dolfin::cout << "R: " << dolfin::endl;
   R.disp();
 
+
+  const int N = 40;
+
+  NewMatrix A2(N, N);
+  NewVector b2(N), x2(N), R2(N);
+
+  for(int i = 0; i < N; i++)
+  {
+    A2(i, i) = 2.0;
+    b2(i) = 1.0 / N;
+    x2(i) = 0.0;
+  }
+  for(int i = 0; i < N - 1; i++)
+  {
+    A2(i + 1, i) = -1;
+    A2(i, i + 1) = -1;
+  }
+
+  cout << "A2: " << endl;
+  A2.disp();
+  cout << "b2: " << endl;
+  b2.disp();
+  cout << "x2: " << endl;
+  x2.disp();
+
+  NewGMRES newsolver2;
+
+  MyPreconditioner mypc;
+  //newsolver2.setAbstol(1e-10);
+  //newsolver2.setRtol(1e-10);
+  newsolver2.setPreconditioner(mypc);
+
+  newsolver2.solve(A2, x2, b2);
+
+  A2.mult(x2, R2);
+  R2.axpy(-1, b2);
+
+  dolfin::cout << "x2: " << dolfin::endl;
+  x2.disp();
+
+  dolfin::cout << "R2: " << dolfin::endl;
+  R2.disp();
 
   /*
   dolfin::cout << "--------------------------------------" << dolfin::endl;
