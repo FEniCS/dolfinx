@@ -4,6 +4,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_elements.h>
 #include <dolfin/dolfin_quadrature.h>
+#include <dolfin/utils.h>
 #include <dolfin/Mapping.h>
 #include <dolfin/TriLinMapping.h>
 #include <dolfin/TetLinMapping.h>
@@ -47,18 +48,18 @@ Galerkin::Galerkin(FiniteElement& element,
 Galerkin::~Galerkin()
 {
   if ( !user ) {
-
-	 if ( element )
-		delete element;
-	 element = 0;
-
-	 if ( mapping )
-		delete mapping;
-	 mapping = 0;
-
-	 if ( quadrature )
-		delete quadrature;
-	 quadrature = 0;
+    
+    if ( element )
+      delete element;
+    element = 0;
+    
+    if ( mapping )
+      delete mapping;
+    mapping = 0;
+    
+    if ( quadrature )
+      delete quadrature;
+    quadrature = 0;
 	 
   }
 }
@@ -79,36 +80,36 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   alloc(A, grid);
   
   // Start a progress session
-  Progress p("Assembling", grid.noCells());  
+  Progress p("Assembling left-hand side", grid.noCells());  
   dolfin_info("Assembling: system size is %d x %d.", A.size(0), A.size(1));
   
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
+    
+    // Update mapping
+    mapping->update(cell);
+    
+    // Update element
+    element->update(mapping);
+    
+    // Update equation
+    equation.updateLHS(element, cell, mapping, quadrature);
+    
+    // Iterate over test and trial functions
+    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+      for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
+	A(v.dof(cell), u.dof(cell)) += equation.lhs(u, v);
+    
+    // Update progress
+    p++;
 
-	 // Update mapping
-	 mapping->update(cell);
-
-	 // Update element
-	 element->update(mapping);
-	 
-	 // Update equation
-	 equation.updateLHS(element, cell, mapping, quadrature);
-
-	 // Iterate over test and trial functions
-	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-		for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
-		  A(v.dof(cell), u.dof(cell)) += equation.lhs(u, v);
-
-	 // Update progress
-	 p++;
-	 
   }
   
   // Clear unused elements
   A.resize();
 
   // Write a message
-  cout << "Assembling: " << A << endl;
+  cout << "Assembled: " << A << endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
@@ -119,23 +120,29 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   // Allocate and reset matrix
   alloc(b, grid);
 
+  // Start a progress session
+  Progress p("Assembling right-hand side", grid.noCells());  
+
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
+    
+    // Update mapping
+    mapping->update(cell);
+    
+    // Update equation
+    equation.updateRHS(element, cell, mapping, quadrature);
+    
+    // Iterate over test functions
+    for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+      b(v.dof(cell)) += equation.rhs(v);
+    
+    // Update progress
+    p++;
 
-	 // Update mapping
-	 mapping->update(cell);
-
-	 // Update equation
-	 equation.updateRHS(element, cell, mapping, quadrature);
-	 
-	 // Iterate over test functions
-	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-		b(v.dof(cell)) += equation.rhs(v);
-	 
   }
   
   // Write a message
-  cout << "Assembling: " << b << endl;
+  cout << "Assembled: " << b << endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)

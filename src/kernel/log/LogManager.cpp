@@ -3,7 +3,5 @@
 
 #include <dolfin/LogManager.h>
 
-using namespace dolfin;
-
 // Initialise static data
-Logger LogManager::log;
+dolfin::Logger dolfin::LogManager::log;

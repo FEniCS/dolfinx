@@ -71,3 +71,18 @@ void TerminalLogger::update()
   // FIXME: Maybe we should flush the output?
 }
 //-----------------------------------------------------------------------------
+bool TerminalLogger::finished()
+{
+  return false;
+}
+//-----------------------------------------------------------------------------
+void TerminalLogger::progress_add(Progress* p)
+{
+  // Do nothing here
+}
+//-----------------------------------------------------------------------------
+void TerminalLogger::progress_remove(Progress *p)
+{
+  // Do nothing here
+}
+//-----------------------------------------------------------------------------

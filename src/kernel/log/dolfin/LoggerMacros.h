@@ -9,12 +9,13 @@
 #include <dolfin/LogManager.h>
 
 // Info (does not need to be a macro)
-
 namespace dolfin { void dolfin_info(const char *msg, ...); }
 
 // Update (force refresh of curses interface)
-
 namespace dolfin { void dolfin_update(); }
+
+// Check if the computation is still running
+namespace dolfin { bool dolfin_finished(); }
 
 // Debug macros (with varying number of arguments)
 

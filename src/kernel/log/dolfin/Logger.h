@@ -15,29 +15,32 @@ namespace dolfin {
   class Logger {
   public:
 	 
-	 Logger();
-	 ~Logger();
+    Logger();
+    ~Logger();
+    
+    void info    (const char* msg);
+    void info    (const char* format, va_list aptr);
+    
+    void debug   (const char* file, unsigned long line, const char* function, const char* format, ...);
+    void warning (const char* file, unsigned long line, const char* function, const char* format, ...);
+    void error   (const char* file, unsigned long line, const char* function, const char* format, ...);
+    void progress(const char* title, const char* label, real p);
+    
+    void update();
+    bool finished();
+    
+    void progress_add    (Progress* p);
+    void progress_remove (Progress *p);    
 
-	 void info    (const char* msg);
-	 void info    (const char* format, va_list aptr);
-	 
-	 void debug   (const char* file, unsigned long line, const char* function, const char* format, ...);
-	 void warning (const char* file, unsigned long line, const char* function, const char* format, ...);
-	 void error   (const char* file, unsigned long line, const char* function, const char* format, ...);
-
-	 void progress(const char* title, const char* label, real p);
-
-	 void update();
-	 
-	 void start();
-	 void end();
-	 
+    void start();
+    void end();
+    
   private:
-
-	 GenericLogger* log;
-	 char* buffer;
-	 char* location;
-	 
+    
+    GenericLogger* log;
+    char* buffer;
+    char* location;
+    
   };
 
 }

@@ -6,8 +6,10 @@
 
 #include <curses.h>
 
+#include <dolfin/ShortList.h>
 #include <dolfin/constants.h>
 #include <dolfin/Buffer.h>
+#include <dolfin/Progress.h>
 #include <dolfin/GenericLogger.h>
 
 namespace dolfin {
@@ -25,23 +27,35 @@ namespace dolfin {
     void progress(const char* title, const char* label, real p);
 
     void update();
+    bool finished();
     
+    void progress_add    (Progress* p);
+    void progress_remove (Progress *p);
+
   private:
 
-    enum State { BUFFER, ABOUT, HELP };
+    enum State { RUNNING, PAUSED, ABOUT, HELP, FINISHED, QUIT };
+    bool running; // True while running, will remain false when first set to false
+    bool waiting; // True if waiting for input, ignore alarm
 
-    State state;    // State (what to display)
-    
-    WINDOW *win;    // Pointer to the terminal
-    
-    int lines;      // Number of lines
-    int cols;       // Number of columns
-    
-    int offset;     // Start position for buffer
-    Buffer buffer;  // Buffer
-    char*  guiinfo; // Message from the curses interface (not program message)
+    State state;      // State (what to display)
 
-    bool finished;  // True if finished
+    int lines;        // Number of lines
+    int cols;         // Number of columns
+    int offset;       // Start position for buffer (depends on the number of progress bars)
+
+    Progress** pbars; // List of progress bars
+    WINDOW *win;      // Pointer to the terminal
+    Buffer buffer;    // Buffer
+    char*  guiinfo;   // Message from the curses interface (not program)
+
+    void updateRunning (char c);
+    void updatePaused  (char c);
+    void updateAbout   (char c);
+    void updateHelp    (char c);
+    void updateFinished(char c);
+
+    void killProgram();
     
     void setSignals();
     
@@ -54,6 +68,7 @@ namespace dolfin {
     void getAnyKey();
     
     void drawTitle();
+    void drawProgress();
     void drawBuffer();
     void drawAbout();
     void drawHelp();

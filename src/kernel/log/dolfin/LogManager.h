@@ -9,11 +9,11 @@
 #include <dolfin/Logger.h>
 
 namespace dolfin {
-
+  
   class LogManager {
   public:
-
-	 static Logger log;
+    
+    static Logger log;
 	 
   };
 

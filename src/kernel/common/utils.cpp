@@ -1,6 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <time.h>
+#include <cmath>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 
 using namespace dolfin;
@@ -42,5 +45,19 @@ int dolfin::length(const char *string)
   int n = 0;
   for (; string[n]; n++);
   return n;
+}
+//-----------------------------------------------------------------------------
+void dolfin::delay(real seconds)
+{
+  if ( seconds < 0 ) {
+    dolfin_warning("Delay must be positive.");
+    return;
+  }
+  
+  struct timespec req;
+  req.tv_sec  = (int) floor(seconds);
+  req.tv_nsec = (int) (1000000000.0 * (seconds - floor(seconds)));
+  
+  nanosleep(&req, 0);
 }
 //-----------------------------------------------------------------------------

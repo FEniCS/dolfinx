@@ -15,24 +15,34 @@
 
 using namespace dolfin;
 
-// Signal handlers
+// A note on the update process: Every second, an alarm is triggered and
+// the function update() is called. We then remain in the update loop
+// until it is time to start running again.
+//
+// A warning: don't use sleep(). Not a good idea to mix sleep() and alarm().
+
+// Signal handler, alarm every second as long as the computation is running
 void sigalarm(int i)
 {
   // Update (will reach CursesLogger::update())
   dolfin_update();
-
-  // Set new alarm
-  alarm(1);
+  
+  // Set new alarm if the computation is still running
+  if ( !dolfin_finished() )
+    alarm(1);
 }
 
 //-----------------------------------------------------------------------------
 CursesLogger::CursesLogger() : GenericLogger()
 {
-  // Notify that we are still running the program
-  finished = false;
-
   // Set state
-  state = BUFFER;
+  state = RUNNING;
+
+  // Computation still running
+  running = true;
+
+  // Not waiting for input
+  waiting = false;
   
   // Init curses
   win = initscr();
@@ -59,6 +69,11 @@ CursesLogger::CursesLogger() : GenericLogger()
   init_pair(5, COLOR_WHITE, COLOR_BLUE);
   init_pair(6, COLOR_BLACK, COLOR_WHITE);
 
+  // Initialise progress bars
+  pbars = new (Progress *)[DOLFIN_PROGRESS_BARS];
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    pbars[i] = 0;
+
   // Initialise the buffer
   buffer.init(lines, cols);
   offset = 1;
@@ -80,8 +95,9 @@ CursesLogger::CursesLogger() : GenericLogger()
 //-----------------------------------------------------------------------------
 CursesLogger::~CursesLogger()
 {
-  // Make sure that we are finished (so update() will ignore 'q')
-  finished = true;
+  // Make sure that we are finished 
+  state = FINISHED;
+  running = false;
   
   // Add an extra line to the buffer
   buffer.add("");
@@ -91,14 +107,16 @@ CursesLogger::~CursesLogger()
   redraw();
 
   // Wait for 'q'
-  nodelay(win, false);
-  while ( getch() != 'q' );
-  
+  update();
+
   // End curses
   endwin();
 
   // Clear gui message
   delete [] guiinfo;
+
+  // Clear progress bars
+  delete [] pbars;
 
   // Write a message in plain text
   std::cout << "DOLFIN finished at " << date() << "." << std::endl;
@@ -128,83 +146,288 @@ void CursesLogger::error(const char* msg, const char* location)
 //-----------------------------------------------------------------------------
 void CursesLogger::progress(const char* title, const char* label, real p)
 {
-  /*
-  int N = DOLFIN_TERM_WIDTH - 15;
-  int n = (int) (p*((double) N));
-  
-  // Print the title
-  printf("| %s", title);
-  for (int i = 0; i < (N-length(title)-1); i++)
-	 printf(" ");
-  printf("|\n");
-  
-  // Print the progress bar
-  printf("|");
-  for (int i = 0; i < n; i++)
-	 printf("=");
-  if ( n > 0 && n < N ) {
-	 printf("|");
-	 n++;
-  }
-  for (int i = n; i < N; i++)
-	 printf("-");
-  printf("| %.1f\%\n", 100.0*p);
-  */
+  update();
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------- 
 void CursesLogger::update()
 {
-  if ( finished ) {
-    redraw();
+  // Ignore call if we're waiting for input
+  if ( waiting )
     return;
-  }
-  
-  // Check keyboard for command
-  char c = getch();
 
+  while ( true ) {
+    
+    // Check keyboard for command (non-locking input selected in constructor)
+    char c = getch();
+    
+    if ( c != ERR ) {
+      
+      switch ( state ) {
+      case RUNNING:
+	updateRunning(c);
+	break;
+      case PAUSED:
+	updatePaused(c);
+	break;
+      case ABOUT:
+	updateAbout(c);
+	break;
+      case HELP:
+	updateHelp(c);
+	break;
+      default: // FINISHED
+	updateFinished(c);
+      }
+
+    }
+    
+    redraw();
+    
+    // Check if we should exit the loop
+    if ( state == RUNNING || state == QUIT )
+      break;
+
+    // Sleep for a while
+    delay(0.01);
+
+  }
+}
+//-----------------------------------------------------------------------------
+bool CursesLogger::finished()
+{
+  return state == FINISHED;
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::progress_add(Progress* p)
+{
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    if ( pbars[i] == 0 ) {
+      pbars[i] = p;
+      offset += 2;
+      redraw();
+      return;
+    }
+
+  dolfin_warning("Too many progress bars.");
+  redraw();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::progress_remove(Progress *p)
+{
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
+    if ( pbars[i] == p ) {
+      for (int j = i + 1; j < DOLFIN_PROGRESS_BARS; j++)
+	pbars[j-1] = pbars[j];
+      pbars[DOLFIN_PROGRESS_BARS - 1] = 0;
+      offset -= 2;
+      redraw();
+      return;
+    }
+  
+  dolfin_warning("Removing unknown  progress.bar.");
+  redraw();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updateRunning(char c)
+{
   switch ( c ) {
   case 'q':
-    setInfo("Really quit? [y/n]");
-    redraw();
-    if ( getYesNo() ) {
-      endwin();
-      std::cout << "DOLFIN stopped at " << date() << "." << std::endl;
-      kill(getpid(), SIGKILL);
+    if ( running )
+      killProgram();
+    else {
+      setInfo("DOLFIN finished.");
+      state = QUIT;
     }
-    else
-      setInfo("Quit cancelled.");
     break;
   case 'p':
-    setInfo("Paused. Press any key to continue.");
-    redraw();
-    getAnyKey();
-    setInfo("Running.");
+    if ( running ) {
+      setInfo("Paused. Press space or 'p' to continue.");
+      state = PAUSED;
+    }
+    else 
+      setInfo("Program has finished.");
     break;
   case 'a':
-    state = ABOUT;
-    setInfo("Paused. Press any key to continue.");
-    redraw();
-    getAnyKey();
-    setInfo("Running.");
-    state = BUFFER;
+    if ( running ) {
+      setInfo("Press space to continue.");
+      state = ABOUT;
+    }
+    else {
+      setInfo("Press space to return.");
+      state = ABOUT;
+    }
     break;
   case 'h':
-    state = HELP;
-    setInfo("Paused. Press any key to continue.");
-    redraw();
-    getAnyKey();
-    setInfo("Running.");
-    state = BUFFER;
-    break;
-  case ERR:
-    ;
+    if ( running ) {
+      setInfo("Press space to continue.");
+      state = HELP;
+    }
+    else {
+      setInfo("Press space to return.");
+      state = HELP;
+    }
     break;
   default:
     setInfo("Unknown command.");
   }
-
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updatePaused(char c)
+{
+  switch ( c ) {
+  case 'q':
+    killProgram();
+    break;
+  case 'p':
+    if ( running ) {
+      setInfo("Running.");
+      state = RUNNING;
+    }
+    else
+      setInfo("Program paused but has finished. Weird.");
+    break;
+  case 'a':
+    setInfo("Press space to continue.");
+    state = ABOUT;
+    break;
+  case 'h':
+    setInfo("Press space to continue.");
+    state = HELP;
+    break;
+  case ' ':
+    setInfo("Running.");
+    state = RUNNING;
+    break;
+  default:
+    setInfo("Unknown command.");
+  }
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updateAbout(char c)
+{
+  switch ( c ) {
+  case 'q':
+    if ( running )
+      killProgram();
+    else {
+      setInfo("DOLFIN finished.");
+      state = QUIT;
+      return;
+    }
+    break;
+  case 'p':
+    if ( running ) 
+      setInfo("Already paused.");
+    else
+      setInfo("Program has finished.");
+    break;
+  case 'a':
+    // Ignore
+    break;
+  case 'h':
+    if ( running ) {
+      setInfo("Press space to continue.");
+      state = HELP;
+    }
+    else {
+      setInfo("Press space to return.");
+      state = HELP;
+    }
+    break;
+  case ' ':
+    if ( running ) {
+      setInfo("Running.");
+      state = RUNNING;
+    }
+    else {
+      setInfo("DOLFIN finished.");
+      state = FINISHED;
+    }
+    break;
+  default:
+    setInfo("Unknown command.");
+  }
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updateHelp(char c)
+{
+  switch ( c ) {
+  case 'q':
+    if ( running )
+      killProgram();
+    else {
+      setInfo("DOLFIN finished.");
+      state = QUIT;
+    }
+    break;
+  case 'p':
+    if ( running ) 
+      setInfo("Already paused.");
+    else
+      setInfo("Program has finished.");
+    break;
+  case 'a':
+    if ( running ) {
+      setInfo("Press space to continue.");
+      state = ABOUT;
+    }
+    else {
+      setInfo("Press space to return.");
+      state = ABOUT;
+    }
+    break;
+  case 'h':
+    // Ignore
+    break;
+  case ' ':
+    if ( running ) {
+      setInfo("Running.");
+      state = RUNNING;
+    }
+    else {
+      setInfo("DOLFIN finished.");
+      state = FINISHED;
+    }
+    break;
+  default:
+    setInfo("Unknown command.");
+  }
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::updateFinished(char c)
+{
+  switch ( c ) {
+  case 'q':
+    state = QUIT;
+    break;
+  case 'p':
+    setInfo("Program has finished.");
+    break;
+  case 'a':
+    setInfo("Press space to return.");
+    state = ABOUT;
+    break;
+  case 'h':
+    setInfo("Press space to return.");
+    state = HELP;
+    break;
+  default:
+    setInfo("Unknown command.");
+  }
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::killProgram()
+{
+  setInfo("Stop running program? [y/n]");
   redraw();
-
+  
+  if ( getYesNo() ) {
+    endwin();
+    std::cout << "DOLFIN stopped at " << date() << "." << std::endl;
+    kill(getpid(), SIGKILL);
+  }
+  else
+    setInfo("Quit cancelled.");
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::setSignals()
@@ -244,6 +467,9 @@ void CursesLogger::clearLine(int line, int col)
 //-----------------------------------------------------------------------------
 bool CursesLogger::getYesNo()
 {
+  // Notify that we are waiting for input
+  waiting = true;
+
   // Wait for input
   nodelay(win, false);
 
@@ -254,18 +480,24 @@ bool CursesLogger::getYesNo()
     case 'y':
       // Reset input state to normal
       nodelay(win, true);
+      waiting = false;
       return true;
       break;
     case 'n':
       // Reset input state to normal
       nodelay(win, true);
+      waiting = false;
       return false;
       break;
     default:
-      setInfo("Please press 'y' or 'n'.");
-      redraw();
+      // Ignore (seems like getch() stops waiting for input at alarm)
+      ;
     }
   }
+
+  // Reset input state to normal
+  nodelay(win, true);
+  waiting = false;
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::getAnyKey()
@@ -288,17 +520,57 @@ void CursesLogger::drawTitle()
   printw("DOLFIN version %s", DOLFIN_VERSION);
 }
 //-----------------------------------------------------------------------------
-void CursesLogger::drawBuffer()
+void CursesLogger::drawProgress()
 {
   attron(A_NORMAL);
+  attron(COLOR_PAIR(6));
+  int line = 0;
+  int n = 0;
 
+  for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++) {    
+
+    if ( pbars[i] == 0 )
+      return;
+   
+    line = 1 + 2*i;
+    
+    // Draw title
+    clearLine(line, 0);
+    printw("| %s", pbars[i]->title());
+    move(line, cols - 1);
+    printw("|");
+
+    // Draw progress bar
+    n = (int) (pbars[i]->value() * ((real) cols));
+    clearLine(line + 1, 0);
+    printw("|");
+    for (int j = 0; j < n; j++)
+      printw("=");
+    printw("|");
+    move(line + 1, cols - 1);
+    printw("|");
+
+    // Draw progress value
+    move(line, cols - 6);
+    printw("%2.1f%%", 100.0 * pbars[i]->value());
+
+  }
+
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::drawBuffer()
+{
+  attroff(A_BOLD);
+  attron(COLOR_PAIR(6));
+  clearLines();
+  
   int line = offset + buffer.size() - 1;
   if ( line > (lines - 3) )
     line = lines - 3;
-  for (int i = buffer.size() - 1; i >= 0; i--) {
 
+  for (int i = buffer.size() - 1; i >= 0; i--) {
+    
     // Print line from the buffer
-    attron(COLOR_PAIR(1));
     clearLine(line, 0);
     printw(buffer.get(i));
 
@@ -313,40 +585,55 @@ void CursesLogger::drawBuffer()
 //-----------------------------------------------------------------------------
 void CursesLogger::drawAbout()
 {
-  attron(A_NORMAL);
+  attroff(A_BOLD);
   attron(COLOR_PAIR(6));
   clearLines();
-
-  move(offset + 1, 2);  printw(" ___   ___  _    ___ ___ _  _ ");
-  move(offset + 2, 2);  printw("|   \\ / _ \\| |  | __|_ _| \\| |");
-  move(offset + 3, 2);  printw("| () | (_) | |__| _| | ||  ` |");
-  move(offset + 4, 2);  printw("|___/ \\___/|____|_| |___|_|\\_|");
-
-  move(offset + 6, 2);  printw("DOLFIN is written and maintained by");
-  move(offset + 8, 2);  printw("Johan Hoffman (hoffman@cims.nyu.edu)");
-  move(offset + 9, 2);  printw("Anders Logg   (logg@math.chalmers.se)");
   
-  move(offset + 11, 2); printw("For a complete list of author/contributors, see");
-  move(offset + 12, 2); printw("the file AUTHORS in the source distribution.");
+  int line = 0;
+  
+  move(line + 1, 2);  printw(" ___   ___  _    ___ ___ _  _ ");
+  move(line + 2, 2);  printw("|   \\ / _ \\| |  | __|_ _| \\| |");
+  move(line + 3, 2);  printw("| () | (_) | |__| _| | ||  ` |");
+  move(line + 4, 2);  printw("|___/ \\___/|____|_| |___|_|\\_|");
 
-  move(offset + 14, 2); printw("For more information about DOLFIN, please visit");
-  move(offset + 15, 2); printw("the web page at");
-  move(offset + 17, 2); printw("http://www.phi.chalmers.se/dolfin/");
+  move(line + 6, 2);  printw("DOLFIN is written and maintained by");
+  move(line + 8, 2);  printw("Johan Hoffman (hoffman@cims.nyu.edu)");
+  move(line + 9, 2);  printw("Anders Logg   (logg@math.chalmers.se)");
+  
+  move(line + 11, 2); printw("For a complete list of author/contributors, see");
+  move(line + 12, 2); printw("the file AUTHORS in the source distribution.");
+
+  move(line + 14, 2); printw("For more information about DOLFIN, please visit");
+  move(line + 15, 2); printw("the web page at");
+  move(line + 17, 2); printw("http://www.phi.chalmers.se/dolfin/");
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::drawHelp()
 {
-  attron(A_NORMAL);
+  attroff(A_BOLD);
   attron(COLOR_PAIR(6));
   clearLines();
 
-  move(offset + 1, 2);
-  printw("No help available yet.");
+  int line = 2;
+
+  move(line + 0,  2); printw("Shortcut keys");
+  move(line + 1,  2); printw("-------------");
+
+  move(line + 3,  2); printw("q - press to quit / kill process");
+  move(line + 4,  2); printw("p - press to toggle pause");
+  move(line + 5,  2); printw("a - press to display some info about DOLFIN");
+  move(line + 6,  2); printw("p - press to display this help");
+
+  move(line + 8,  2); printw("In preparation");
+  move(line + 9,  2); printw("--------------");
+  move(line + 11, 2); printw("- Scrolling using arrow keys");
+  move(line + 12, 2); printw("- Stepping program line by line");
+  move(line + 13, 2); printw("- Web browser and coffee-making ;)");
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::drawInfo()
 {
-  attron(A_NORMAL);
+  attroff(A_BOLD);
   attron(COLOR_PAIR(5));
   clearLine(lines - 2, 0);
   printw(guiinfo);
@@ -354,7 +641,7 @@ void CursesLogger::drawInfo()
 //-----------------------------------------------------------------------------
 void CursesLogger::drawCommands()
 {
-  attron(A_NORMAL);
+  attroff(A_BOLD);
   attron(COLOR_PAIR(4));
 
   clearLine(lines - 1, 0);
@@ -369,15 +656,18 @@ void CursesLogger::redraw()
 
   // Draw contents
   switch ( state ) {
-  case BUFFER:
+  case RUNNING:
+    drawProgress();
     drawBuffer();
     break;
   case ABOUT:
     drawAbout();
     break;
-  default:
+  case HELP:
     drawHelp();
     break;
+  default: // FINISHED
+    drawBuffer();
   }
 
   // Draw info field

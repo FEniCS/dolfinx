@@ -16,6 +16,8 @@ namespace dolfin {
   void remove_newline (char *string);
   int  length         (const char *string);
   
+  void delay(real seconds);
+  
 }
   
 #endif

@@ -10,40 +10,44 @@
 #include <dolfin/constants.h>
 
 namespace dolfin {
-
+  
   class Progress {
   public:
-
-	 Progress(const char* title, int n);
-	 Progress(const char* title);
-	 ~Progress();
-
-	 void operator=(int i);
-	 void operator=(real p);
-	 void operator++();
-	 void operator++(int);
-
-	 void update(int i,  const char* format, ...);
-	 void update(real p, const char* format, ...);
-	 
+    
+    Progress(const char* title, int n);
+    Progress(const char* title);
+    ~Progress();
+    
+    void operator=(int i);
+    void operator=(real p);
+    void operator++();
+    void operator++(int);
+    
+    void update(int i,  const char* format, ...);
+    void update(real p, const char* format, ...);
+    
+    real value();
+    const char* title();
+    const char* label();
+    
   private:
-
-	 real checkBounds(int i);
-	 real checkBounds(real p);
-	 
-	 void update();
-	 
-	 char* title;
-	 char* label;
-	 
-	 real p0;
-	 real p1;
-	 
-	 int i;
-	 int n;
-	 
+    
+    real checkBounds(int i);
+    real checkBounds(real p);
+    
+    void update();
+    
+    char* _title;
+    char* _label;
+    
+    real p0;
+    real p1;
+    
+    int i;
+    int n;
+    
   };
-
+  
 }
 
 #endif

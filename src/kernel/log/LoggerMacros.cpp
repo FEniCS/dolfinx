@@ -24,3 +24,8 @@ void dolfin::dolfin_update()
   LogManager::log.update();
 }
 //-----------------------------------------------------------------------------
+bool dolfin::dolfin_finished()
+{
+  return LogManager::log.finished();
+}
+//-----------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdarg.h>
 
 #include <dolfin/constants.h>
@@ -16,7 +17,7 @@ Logger::Logger()
 {
   //log = new TerminalLogger();
   log = new CursesLogger();
-
+  
   buffer = new char[DOLFIN_LINELENGTH];
   location  = new char[DOLFIN_LINELENGTH];
 }
@@ -97,6 +98,21 @@ void Logger::progress(const char* title, const char* label, real p)
 void Logger::update()
 {
   log->update();
+}
+//-----------------------------------------------------------------------------
+bool Logger::finished()
+{
+  return log->finished();
+}
+//-----------------------------------------------------------------------------
+void Logger::progress_add(Progress* p)
+{
+  log->progress_add(p);
+}
+//-----------------------------------------------------------------------------
+void Logger::progress_remove (Progress *p)
+{
+  log->progress_remove(p);
 }
 //-----------------------------------------------------------------------------
 void Logger::start()

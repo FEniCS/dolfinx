@@ -4,6 +4,7 @@
 #ifndef __GENERIC_LOGGER_H
 #define __GENERIC_LOGGER_H
 
+#include <dolfin/Progress.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
@@ -21,6 +22,10 @@ namespace dolfin {
 	 virtual void progress(const char* title, const char* label, real p) = 0;
 
 	 virtual void update() = 0;
+	 virtual bool finished() = 0;
+	 
+	 virtual void progress_add    (Progress* p) = 0;
+	 virtual void progress_remove (Progress *p) = 0;
 	 
 	 void start();
 	 void end();
