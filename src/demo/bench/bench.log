@@ -28,7 +28,7 @@ Total time:                   13.35
 - System info:
 
   User:    logg
-  Date:    Thu Sep  4 16:36:57 2003
+  Date:    Thu Sep  4 16:44:40 2003
   Host:    elrond
   Machine: i686
   System:  Linux
@@ -43,12 +43,12 @@ Total time:                   13.35
 Using Krylov solver for linear system of 100000 unknowns.
 Restarted GMRES converged after 20 iterations (residual 1.66784e-08)
 
-Assembling:                   2.77
-Matrix/vector multiplication: 1.00
-LU factorization:             4.30
-LU solve:                     1.76
-Krylov solve:                 2.78
+Assembling:                   2.91
+Matrix/vector multiplication: 0.99
+LU factorization:             4.28
+LU solve:                     1.73
+Krylov solve:                 2.94
 
-Total time:                   12.61
+Total time:                   12.85
 
 --------------------------------------------------------

@@ -22,7 +22,7 @@ sleep 1
 echo '- Recompiling'
 sleep 1
 autoreconf
-./configure --enable-debug
+./configure CXXFLAGS='-O2'
 make clean
 make
 

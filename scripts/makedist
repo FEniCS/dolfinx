@@ -13,7 +13,7 @@ if [ "$CHECK" != "scripts" ]; then
 fi
 
 # Get the version number
-VERSION=`cat ./configure.in | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
+VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
 echo 'Version number is '$VERSION
 
 # Create the directory
@@ -23,8 +23,8 @@ rm -rf $DISTDIR
 mkdir $DISTDIR
 
 # Prepare makefiles
-scripts/preconfigure
-./configure
+autoreconf
+./configure --enable-debug
  
 # Make clean
 echo 'Making clean'
