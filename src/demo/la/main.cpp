@@ -47,13 +47,13 @@ int main(int argc, char **argv)
   Vector R;
 
   x = 1.0;
-  ks.set(KrylovSolver::GMRES);
+  ks.setMethod(KrylovSolver::GMRES);
   ks.solve(A,x,b);
   R.init(x.size()); A.mult(x,R); R -= b;
   cout << "x = "; x.show(); cout << "R = "; R.show();
 
   x = 1.0;
-  ks.set(KrylovSolver::CG);
+  ks.setMethod(KrylovSolver::CG);
   ks.solve(A,x,b);
   R.init(x.size()); A.mult(x,R); R -= b;
   cout << "x = "; x.show(); cout << "R = "; R.show();
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
 
   cout << "Solving Ax = b using CG" << endl;
   tic();
-  ks.set(KrylovSolver::CG);
+  ks.setMethod(KrylovSolver::CG);
   ks.solve(A, U1, b);
   toc();
   meminfo();
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
 
   cout << "Solving Ax = b using GMRES" << endl;
   tic();
-  ks.set(KrylovSolver::GMRES);
+  ks.setMethod(KrylovSolver::GMRES);
   ks.solve(A, U2, b);
   toc();
   meminfo();
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
 
   cout << "Solving Ax = b using CG, preconditioned" << endl;
   tic();
-  ks.set(KrylovSolver::CG);
+  ks.setMethod(KrylovSolver::CG);
   ks.solve(A, U3, b);
   toc();
   meminfo();
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 
   cout << "Solving Ax = b using GMRES, preconditioned" << endl;
   tic();
-  ks.set(KrylovSolver::GMRES);
+  ks.setMethod(KrylovSolver::GMRES);
   ks.solve(A, U4, b);
   toc();
   meminfo();

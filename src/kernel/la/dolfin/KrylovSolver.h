@@ -22,7 +22,7 @@ namespace dolfin {
     
     void solve(Matrix &A, Vector &x, Vector &b);
 
-	 void set(Method method);
+    void setMethod(Method method);
     
   private:
     

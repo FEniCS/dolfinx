@@ -21,7 +21,7 @@ KrylovSolver::KrylovSolver(Method method)
   tol = 1.0e-10;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::set(Method method)
+void KrylovSolver::setMethod(Method method)
 {
   this->method = method;
 }
