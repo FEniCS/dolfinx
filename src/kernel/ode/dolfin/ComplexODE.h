@@ -52,8 +52,11 @@ namespace dolfin
     // Compute product y = Mx
     virtual void M(const complex x[], complex y[], const complex z[], real t);
 
-    /// Return time step for component i
+    /// Return time step for component i (optional)
     virtual real k(uint i);
+
+    /// Update ODE (optional)
+    virtual void update(const complex z[], real t);
 
     /// Return initial value for real-valued ODE
     real u0(uint i);
@@ -69,6 +72,9 @@ namespace dolfin
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
+
+    /// Update for real-valued ODE (optional)
+    void update(const real u[], real t);
 
   protected:
 

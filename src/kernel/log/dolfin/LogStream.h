@@ -22,6 +22,7 @@ namespace dolfin {
     LogStream& operator<<(int a);
     LogStream& operator<<(unsigned int a);
     LogStream& operator<<(real a);
+    LogStream& operator<<(complex z);
     LogStream& operator<<(const LogStream& stream);
 
     void show() const;

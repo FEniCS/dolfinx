@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <cmath>
+#include <string>
 #include <dolfin/constants.h>
 #include <dolfin/LoggerMacros.h>
 #include <dolfin/LogManager.h>
@@ -77,6 +78,14 @@ LogStream& LogStream::operator<<(real a)
     sprintf(tmp, "%e", a);
   else
     sprintf(tmp, "%f", a);
+  add(tmp);
+  return *this;
+}
+//-----------------------------------------------------------------------------
+LogStream& LogStream::operator<<(complex z)
+{
+  char tmp[DOLFIN_WORDLENGTH];
+  sprintf(tmp, "%f + %fi", z.real(), z.imag());
   add(tmp);
   return *this;
 }

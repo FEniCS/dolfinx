@@ -40,6 +40,7 @@ void TimeSlabSolver::solve()
     if ( increment < tol )
     {
       end();
+      dolfin_info("Time slab system converged in %d iterations.", iter + 1);
       return;
     }
   }

@@ -59,6 +59,11 @@ real ComplexODE::k(uint i)
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
+void ComplexODE::update(const complex z[], real t)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 real ComplexODE::u0(uint i)
 {
   // Translate initial value from complex to real
@@ -150,5 +155,18 @@ real ComplexODE::timestep(uint i)
 {
   // Translate time step
   return k(i / 2);
+}
+//-----------------------------------------------------------------------------
+void ComplexODE::update(const real u[], real t)
+{
+  // Update zvalues for all components
+  for (uint i = 0; i < n; i++)
+  {
+    const complex zvalue(u[2*i], u[2*i + 1]);
+    zvalues[i] = zvalue;
+  }
+
+  // Call user-supplied function update(z, t)
+  update(zvalues, t);
 }
 //-----------------------------------------------------------------------------

@@ -6,8 +6,6 @@
 // simple test system F(z) = -z^2 + 1 = 0, taken from
 // Alexander P. Morgan, ACM TOMS 1983.
 
-#include <string>
-#include <iostream>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -36,13 +34,20 @@ public:
   
   complex f(const complex z[], real t, unsigned int i)
   {
+    cout << "f at t = " << t << ": " << (z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0) << endl;
+
     return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
   }
 
   void M(const complex x[], complex y[], const complex z[], real t)
   {
     y[0] = (3.0*(1.0 - t)*z[0]*z[0] - 2.0*t*z[0]) * x[0];
-    std::cout << "Product at t = " << t << ": " << y[0] << " = M * " << x[0] << std::endl;
+    //cout << "Product at t = " << t << ": " << y[0] << " = M * " << x[0] << endl;
+  }
+
+  void update(const complex z[], real t)
+  {
+    cout << "Updating at t = " << t << ": z = " << z[0] << endl;
   }
 
 private:
@@ -67,19 +72,19 @@ int main()
   dolfin_set("order", 0);
   dolfin_set("implicit", true);
 
-  dolfin_set("initial time step", 0.0001);
+  dolfin_set("initial time step", 0.1);
   dolfin_set("fixed time step", true);
   dolfin_set("tolerance", 1e-5);
 
   // Iterate over the different starting points
   char filename[16];
-  for (unsigned int i = 0; i < 3; i++)
+  for (unsigned int i = 1; i < 3; i++)
   {
     sprintf(filename, "primal_%d.m", i);
     dolfin_set("file name", filename);
 
     Homotopy homotopy(i);
-    std::cout << "Solving homotopy for starting point z = " << homotopy.z0(0) << std::endl;
+    cout << "Solving homotopy for starting point z = " << homotopy.z0(0) << endl;
     homotopy.solve();
   }
 

@@ -218,6 +218,11 @@ void MonoAdaptiveTimeSlab::feval(uint m)
     ode.feval(xx + m*N, t, f + m*N);    
     x.restore(xx);
   }
+
+  cout << "f =";
+  for (uint j = 0; j < nj; j++)
+    cout << " " << f[j];
+  cout << endl;
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()

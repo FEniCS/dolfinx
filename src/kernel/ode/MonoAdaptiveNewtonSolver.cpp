@@ -98,6 +98,9 @@ void MonoAdaptiveNewtonSolver::beval()
     bevalImplicit();
   else
     bevalExplicit();
+
+  //cout << "Evaluated right-hand side F:" << endl;
+  //b.disp();
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::bevalExplicit()
@@ -147,10 +150,6 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   real* bb = b.array();
   real* xx = ts.x.array();
 
-  // Temporary data array used to store multiplications
-  //real* z = ts.tmp();
-  real* z = new real[ts.N];
-
   // Compute size of time step
   const real a = ts.starttime();
   const real k = ts.length();
@@ -168,6 +167,11 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
     for (uint i = 0; i < ts.N; i++)
       bb[noffset + i] = Mu0[i];
     
+    cout << "Mu0:";
+    for (uint i = 0; i < ts.N; i++)
+      cout << " " << Mu0[i];
+    cout << endl;
+
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
@@ -175,18 +179,45 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
 	bb[noffset + i] += tmp * ts.f[moffset + i];
+
+      cout << "k*f:";
+      for (uint i = 0; i < ts.N; i++)
+	cout << " " << tmp*ts.f[i];
+      cout << endl;
+      
     }
   }
   
+  // Temporary data array used to store multiplications
+  real* z = ts.tmp();
+
   // Subtract current values (do this after f is used, otherwise
   // we can't use z...)
   for (uint n = 0; n < method.nsize(); n++)
   {
-    const real t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
-    ode.M(xx + noffset, z, xx + noffset, t);
+    if ( piecewise )
+    {
+      ode.M(xx + noffset, z, ts.u0, a);
+    }
+    else
+    {
+      const real t = a + method.npoint(n) * k;
+      ode.M(xx + noffset, z, xx + noffset, t);
+    }
     for (uint i = 0; i < ts.N; i++)
       bb[noffset + i] -= z[i];
+
+    cout << "Mu1:";
+    for (uint i = 0; i < ts.N; i++)
+      cout << " " << z[i];
+    cout << endl;
+
+    cout << "b:  ";
+    for (uint i = 0; i < ts.N; i++)
+      cout << " " << bb[i];
+    cout << endl;
+
   }
 
   // Restore arrays

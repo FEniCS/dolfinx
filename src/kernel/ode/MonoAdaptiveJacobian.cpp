@@ -31,7 +31,6 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
     y = x;
 
   // Get data arrays (assumes uniprocessor case)
-  const real* uu = ts.x.array();
   const real* xx = x.array();
   real* yy = y.array();
 
@@ -45,14 +44,31 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Compute product y = Mx for each stage for implicit system
   if ( implicit )
   {
+    // Get data array for solution (assumes uniprocessor case)
+    const real* uu = ts.x.array();
+
+    // Iterate over stages
     for (uint n = 0; n < method.nsize(); n++)
     {
-      const real t = a + method.npoint(n) * k;
       const uint noffset = n * ts.N;
-      ode.M(xx + noffset, z, uu + noffset, t);
+
+      // Do multiplication
+      if ( piecewise )
+      {
+	ode.M(xx + noffset, z, ts.u0, a);
+      }
+      else
+      {
+	const real t = a + method.npoint(n) * k;
+	ode.M(xx + noffset, z, uu + noffset, t);
+      }
+      
+      // Copy values
       for (uint i = 0; i < ts.N; i++)
 	yy[noffset + i] = z[i];
     }
+
+    ts.x.restore(uu);
   }
 
   // Iterate over the stages
@@ -93,7 +109,6 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   }
 
   // Restore data arrays
-  ts.x.restore(uu);
   x.restore(xx);
   y.restore(yy);
 }
