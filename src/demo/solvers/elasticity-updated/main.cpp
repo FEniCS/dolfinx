@@ -26,7 +26,7 @@ real f(real x, real y, real z, real t, int i)
 
   ///*
   if(i == 1)
-    force += -density * 9.81 * 10.0;
+    force += -density * 9.81 * 1.0;
   //*/
 
   /*
@@ -143,7 +143,7 @@ void mybc(BoundaryCondition& bc)
   //if(bc.coord().y == 1.0)
   //if(bc.coord().y > 0.7)
   //if(bc.coord().x == 0.0 && bc.coord().z == 0.0)
-  if(bc.coord().x <= 0.0)
+  if(bc.coord().x <= 0.0 && bc.coord().y >= 0.0)
   {
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
@@ -166,8 +166,8 @@ int main(int argc, char **argv)
 
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow02.xml.gz");
-  //Mesh mesh("tetmesh-1c.xml.gz");
-  Mesh mesh("minimal2.xml.gz");
+  Mesh mesh("tetmesh-1c.xml.gz");
+  //Mesh mesh("minimal2.xml.gz");
   //Mesh mesh("tetmesh-1.xml.gz");
   //Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh-8.xml.gz");

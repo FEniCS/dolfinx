@@ -13,10 +13,12 @@ class ElasticityUpdated : public PDE {
 public:
     
   ElasticityUpdated(Function::Vector& source,
-		     Function::Vector& wprevious) : PDE(3, 3), f(3), wp(3)
+		    Function::Vector& wprevious,
+		    Function::Vector& wnew) : PDE(3, 3), f(3), wp(3), w(3)
     {
       add(f,  source);
       add(wp, wprevious);
+      add(w, wnew);
     }
     
   real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
@@ -33,19 +35,20 @@ public:
 
 
       // Material parameters
-      //real b = 0.1;
-      //real E = 500.0;
-      //real nu = 0.3;
+      real b = 0.1;
+      real E = 500.0;
+      real nu = 0.3;
+      real b_p = 300.0;
 
       //real b = 10.0;
       //real b_p = 300.0;
       //real E = 100.0;
       //real nu = 0.3;
 
-      real b = 0.1;
-      real b_p = 300.0;
-      real E = 50.0;
-      real nu = 0.3;
+      //real b = 0.1;
+      //real b_p = 300.0;
+      //real E = 50.0;
+      //real nu = 0.3;
 
       //real b = 10.0;
       //real b_p = 300.0;
@@ -78,23 +81,26 @@ public:
 
       if(!computedsigma[cell_->id()])
       {
-	gradwp(0, 0) = (wp(0).ddx())(mp);
-	gradwp(0, 1) = (wp(0).ddy())(mp);
-	gradwp(0, 2) = (wp(0).ddz())(mp);
+	gradwp(0, 0) = (w(0).ddx())(mp);
+	gradwp(0, 1) = (w(0).ddy())(mp);
+	gradwp(0, 2) = (w(0).ddz())(mp);
 	
-	gradwp(1, 0) = (wp(1).ddx())(mp);
-	gradwp(1, 1) = (wp(1).ddy())(mp);
-	gradwp(1, 2) = (wp(1).ddz())(mp);
+	gradwp(1, 0) = (w(1).ddx())(mp);
+	gradwp(1, 1) = (w(1).ddy())(mp);
+	gradwp(1, 2) = (w(1).ddz())(mp);
 	
-	gradwp(2, 0) = (wp(2).ddx())(mp);
-	gradwp(2, 1) = (wp(2).ddy())(mp);
-	gradwp(2, 2) = (wp(2).ddz())(mp);
+	gradwp(2, 0) = (w(2).ddx())(mp);
+	gradwp(2, 1) = (w(2).ddy())(mp);
+	gradwp(2, 2) = (w(2).ddz())(mp);
 	
 	gradwp.transp(gradwptransp);
 	
 	Matrix &F0 = *(F0array[cell_->id()]);
 	Matrix &F1 = *(F1array[cell_->id()]);
 	
+	// Compute F
+
+	/*
 	//gradwp.mult(F0, F);
 	F0.mult(gradwp, F);
 	
@@ -108,6 +114,8 @@ public:
 
 	F.transp(Ftransp);
 	F0.transp(F0transp);
+
+	*/
 
 	// Alternative 1
 
@@ -140,10 +148,8 @@ public:
 	epsilon += tmp2;
 	*/
 
-
 	//cout << "epsilon on cell " << cell_->id() << ": " << endl;
 	//epsilon.show();
-      
 	
 	//vsigma = epsilon;
 
@@ -196,12 +202,8 @@ public:
 	sigma(0, 1) = mu * epsilon(0, 1);
 	sigma(1, 0) = sigma(0, 1);
 
-
-
-
 	//cout << "sigma on cell " << cell_->id() << ": " << endl;
 	//sigma.show();
-      
       
 	// Update sigma
 	sigma *= k;
@@ -209,12 +211,6 @@ public:
 
 	sigma1 = sigma; 
 	vsigma1 = vsigma;
-
-
-	//cout << "sigma0 on cell " << cell_->id() << ": " << endl;
-	//sigma0->show();
-	//cout << "sigma1 on cell " << cell_->id() << ": " << endl;
-	//sigma1->show();
 
 	computedsigma[cell_->id()] = true;
       }
@@ -225,8 +221,7 @@ public:
       }
 
 	
-      return ((wp(0) * v(0) + wp(1) * v(1) + wp(2) * v(2)) +
-	      k * (f(0) * v(0) + f(1) * v(1) + f(2) * v(2)) -
+      return (k * (f(0) * v(0) + f(1) * v(1) + f(2) * v(2)) -
 	      k * (sigma(0, 0) * v(0).ddx() +
 		   sigma(0, 1) * v(0).ddy() +
 		   sigma(0, 2) * v(0).ddz() +
@@ -256,6 +251,7 @@ public:
  private:    
   ElementFunction::Vector f; // Source term
   ElementFunction::Vector wp;        // Velocity value at left end-point
+  ElementFunction::Vector w;         // Velocity value at right end-point
   
 };
   

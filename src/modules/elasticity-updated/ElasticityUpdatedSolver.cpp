@@ -28,6 +28,7 @@ const char* ElasticityUpdatedSolver::description()
 void ElasticityUpdatedSolver::solve()
 {
   Matrix A;
+  Vector residual, stepresidual;
   Vector x10, x11, x20, x21, xtot, xzero, b, m, xcomp, tmp;
   
   std::cerr << "Elasticity updated" << std::endl;
@@ -40,13 +41,15 @@ void ElasticityUpdatedSolver::solve()
   Function::Vector f("source", 3);
   Function::Vector v0("initial velocity", 3);
   
-  ElasticityUpdated   elasticity(f, w0);
+  ElasticityUpdated   elasticity(f, w0, w1);
   KrylovSolver solver;
   File solutionfile("ElasticityUpdated.m");
   
   real t = 0.0;
   real T = dolfin_get("final time");
   real k = dolfin_get("time step");
+
+  // Initialize matrices
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -75,10 +78,6 @@ void ElasticityUpdatedSolver::solve()
 
   elasticity.computedsigma.resize(mesh.noCells());
 
-  //Matrix &sigma0 = *(elasticity.sigma0array[0]);
-  //sigma0(0, 0) = 50.0;
-
-
   // Set initial velocities
   for (NodeIterator n(&mesh); !n.end(); ++n)
   {
@@ -102,7 +101,7 @@ void ElasticityUpdatedSolver::solve()
 
   cout << "Mass Matrix:" << endl;
 
-  A.show();
+  //A.show();
 
   A.lump(m);
 
@@ -149,6 +148,7 @@ void ElasticityUpdatedSolver::solve()
     // Make time step
     t += k;
 
+    /*
     cout << "before: " << endl;
 
     cout << "x10: " << endl;
@@ -162,7 +162,7 @@ void ElasticityUpdatedSolver::solve()
 
     cout << "x21: " << endl;
     x21.show();
-
+    */
 
     x10 = x11;
     x20 = x21;
@@ -170,70 +170,84 @@ void ElasticityUpdatedSolver::solve()
     elasticity.k = k;
     elasticity.t = t;
 
+    stepresidual.init(x21.size());
 
-
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for(int stepiters = 0; stepiters < 1; stepiters++)
     {
-      int id = (*cell).id();
+
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+	int id = (*cell).id();
+	
+	elasticity.computedsigma[id] = false;
+      }
+
+      // Assemble
+      //FEM::assemble(elasticity, mesh, A);
+      FEM::assemble(elasticity, mesh, b);
       
-      elasticity.computedsigma[id] = false;
+      //cout << "A:" << endl;
+      
+      //A.show();
+      
+      //cout << "b:" << endl;
+      //b.show();
+      
+      // Lump and solve
+      
+      ///*
+      //A.lump(m);
+      
+      for(int i = 0; i < m.size(); i++)
+      {
+	//x21(i) = b(i) / m(i);
+	stepresidual(i) = -x21(i) + x20(i) + b(i) / m(i);
+      }
+      //*/
+      
+      // Solve the linear system
+      /*
+      //x21 = 0;
+      
+      //solver.solve(A, x21, b);
+      stepresidual = 0;
+      
+      solver.solve(A, stepresidual, b);
+      */
+
+      cout << "step residual: " << stepresidual.norm() << endl;
+
+      x21 += stepresidual;
+      
+      x11 = x10;
+      x11.add(k, x21);
+
+      if(stepresidual.norm() < 1e-5)
+      {
+	break;
+      }
     }
-
-    // Assemble
-    FEM::assemble(elasticity, mesh, A);
-    FEM::assemble(elasticity, mesh, b);
-
-    //cout << "A:" << endl;
-
-    //A.show();
-
-    cout << "b:" << endl;
-
-    b.show();
-
-    x21 = 0;
-
-    // Lump and solve
-
-
-    ///*
-    //A.lump(m);
-
-    for(int i = 0; i < m.size(); i++)
-    {
-      x21(i) = b(i) / m(i);
-    }
-    //*/
-
-    // Solve the linear system
-    /*
-    solver.solve(A, x21, b);
-    */
-
-    x11 = x10;
-    x11.add(k, x21);
-
-
-
-    cout << "after: " << endl;
-
-    cout << "x10: " << endl;
-    x10.show();
-
-    cout << "x11: " << endl;
-    x11.show();
-
-    cout << "x20: " << endl;
-    x20.show();
-
-    cout << "x21: " << endl;
-    x21.show();
     
-
-
+    /*
+      cout << "after: " << endl;
+      
+      cout << "x10: " << endl;
+      x10.show();
+      
+      cout << "x11: " << endl;
+      x11.show();
+      
+      cout << "x20: " << endl;
+      x20.show();
+      
+      cout << "x21: " << endl;
+      x21.show();
+    */
+    
+    
     //Update the mesh
 
-    /*
+    ///*
 
     for (NodeIterator n(&mesh); !n.end(); ++n)
     {
@@ -249,7 +263,7 @@ void ElasticityUpdatedSolver::solve()
       //x11(3 * id + 2) = 0;
     }
 
-    */
+    //*/
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
