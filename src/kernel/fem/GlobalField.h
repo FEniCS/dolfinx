@@ -4,17 +4,16 @@
 #ifndef __GLOBALFIELD_HH
 #define __GLOBALFIELD_HH
 
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 #include <dolfin/Grid.h>
 #include "Output.h"
-
-class Vector;
-
 
 enum Representation { NONE, NODAL, CONSTANT, FUNCTION, LIST };
  
 namespace dolfin {
 
+  class Vector;
+  
   class GlobalField {
   public:
 	 

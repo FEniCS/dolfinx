@@ -5,7 +5,7 @@
 #define __DISPLAY_HH
 
 #include <stdio.h>
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 
 /// This class takes care of writing messages in various formats,
 /// including progress of the solution and error messages.

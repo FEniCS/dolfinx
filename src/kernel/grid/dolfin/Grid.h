@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 #include <dolfin/List.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>

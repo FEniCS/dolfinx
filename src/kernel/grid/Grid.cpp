@@ -8,7 +8,7 @@
 
 #include <dolfin/Display.h>
 #include <utils.h>
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 
 #include <dolfin/Grid.h>
 #include <dolfin/Node.h>

@@ -5,7 +5,7 @@
 #define __NODE_HH
 
 #include <iostream>
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>

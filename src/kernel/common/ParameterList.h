@@ -5,9 +5,10 @@
 #define __PARAMETER_LIST_HH
 
 #include <stdarg.h>
+
+#include <dolfin/constants.h>
 #include "Parameter.h"
 #include "Function.h"
-#include "kw_constants.h"
 
 #define KW_FILE_FORMAT_DX    1
 #define KW_FILE_FORMAT_INP   2

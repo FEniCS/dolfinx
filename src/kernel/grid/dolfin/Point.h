@@ -11,7 +11,7 @@
 // Coordinates are represented as floats to save memory, whereas
 // calculations on node positions are performed with full precision.
 
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 
 class Point{
 public:

@@ -6,7 +6,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 #include <SysInfo.h>
 #include <DataInfo.h>
 #include <dolfin/Grid.h>

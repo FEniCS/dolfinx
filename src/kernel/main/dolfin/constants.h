@@ -1,10 +1,5 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
-
-#ifndef __DOLFIN_CONSTANTS_HH
-#define __DOLFIN_CONSTANTS_HH
-
-/// Constants
+#ifndef __DOLFIN_CONSTANTS_H
+#define __DOLFIN_CONSTANTS_H
 
 #define DOLFIN_VERSION             "0.2.11-1"
 #define DOLFIN_LINELENGTH          1024
@@ -17,8 +12,6 @@
 #define DOLFIN_1_3                 0.33333333333333
 #define DOLFIN_1_6                 0.16666666666667
 #define DOLFIN_1_12                0.08333333333333
-
-/// Typedefs
 
 typedef double real;
 

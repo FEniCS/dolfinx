@@ -7,9 +7,9 @@
 #include <iostream>
 #include <string.h>
 
-#include <kw_constants.h>
-#include <utils.h>
+#include <dolfin/constants.h>
 #include <dolfin/Display.h>
+#include "utils.h"
 
 #define PARAMETER_IDENTIFIER_LENGTH 128
 

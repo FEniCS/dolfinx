@@ -1,7 +1,7 @@
 #ifndef __SYSINFO_HH
 #define __SYSINFO_HH
 
-#include "kw_constants.h"
+#include <dolfin/constants.h>
 
 class SysInfo{
 public:

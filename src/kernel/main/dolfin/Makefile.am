@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_constants.h Problem.hh
+EXTRA_DIST = constants.h Problem.h

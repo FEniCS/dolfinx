@@ -1,7 +1,7 @@
 #ifndef __DATA_INFO_H
 #define __DATA_INFO_H
 
-class DataInfo{
+class DataInfo {
 public:
 
   DataInfo(const char *description, int no_data, int *dimensions);

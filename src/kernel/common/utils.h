@@ -7,8 +7,8 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
-#include "kw_constants.h"
 #include <stdio.h>
+#include <dolfin/constants.h>
 
 /// String manipulation
 bool suffix(const char *string, const char *suffix);

@@ -4,7 +4,7 @@
 #ifndef __SOLVER_NAVIER_STOKES_H
 #define __SOLVER_NAVIER_STOKES_H
 
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 #include "Solver.h"
 
 namespace dolfin{

@@ -4,13 +4,7 @@
 #ifndef __GENERIC_CELL_H
 #define __GENERIC_CELL_H
 
-// A cell is the geometric part of an element. An element contains
-// basis functions, but a cell contains only the geometric information.
-//
-// Similarly to a Node, the a Cell should be small and simple to keep
-// the total data size as small as possible.
-
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 #include <dolfin/Cell.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/ShortList.h>

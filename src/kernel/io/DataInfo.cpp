@@ -1,6 +1,6 @@
 #include "DataInfo.h"
 #include <dolfin/Display.h>
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 #include <stdio.h>
 
 //-----------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 
 #include <parser.h>
 
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 #include "GenericFile.h"
 
 namespace dolfin {

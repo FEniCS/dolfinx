@@ -1,5 +1,5 @@
+#include <dolfin/constants.h>
 #include "Value.h"
-#include "kw_constants.h"
 
 //-----------------------------------------------------------------------------
 Value::Value(int size)

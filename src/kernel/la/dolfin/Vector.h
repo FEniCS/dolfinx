@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include <dolfin/dolfin_constants.h>
+#include <dolfin/constants.h>
 
 namespace dolfin {
   

@@ -1,7 +1,7 @@
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
 
-#include <kw_constants.h>
+#include <dolfin/constants.h>
 
 namespace dolfin {
   
