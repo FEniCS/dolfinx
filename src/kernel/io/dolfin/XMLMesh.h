@@ -33,7 +33,7 @@ namespace dolfin {
     void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
     
     void initMesh();
-    
+
     Mesh& mesh;
     int nodes;
     int cells;

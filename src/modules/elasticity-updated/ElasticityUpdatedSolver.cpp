@@ -28,7 +28,7 @@ const char* ElasticityUpdatedSolver::description()
 void ElasticityUpdatedSolver::solve()
 {
   Matrix A;
-  Vector x10, x11, x20, x21, xtot, xzero, b, xcomp, tmp;
+  Vector x10, x11, x20, x21, xtot, xzero, b, m, xcomp, tmp;
   
   std::cerr << "Elasticity updated" << std::endl;
 
@@ -95,6 +95,8 @@ void ElasticityUpdatedSolver::solve()
     x21(id * 3 + 2) = v0z; 
   }
   
+  m = x21;
+
   elasticity.k = k;
   FEM::assemble(elasticity, mesh, A);
 
@@ -176,6 +178,16 @@ void ElasticityUpdatedSolver::solve()
 
     x21 = 0;
 
+    // Lump and solve
+    /*
+    A.lump(m);
+    
+    for(int i = 0; i < m.size(); i++)
+    {
+      x21(i) = b(i) / m(i);
+    }
+    */
+
     // Solve the linear system
     solver.solve(A, x21, b);
 
@@ -211,6 +223,85 @@ void ElasticityUpdatedSolver::solve()
       *sigma0i = *sigma1i;
       *F0i = *F1i;
     }
+
+
+
+    // Move boundary (test for smoother)
+
+    for (NodeIterator n(&mesh); !n.end(); ++n)
+    {
+      int id = (*n).id();
+
+      //if(id == 106 || id == 107 || id == 111 || id == 112 ||
+      //	 id == 81  || id == 82  || id == 86  || id == 87)
+      if(id == 1)
+      {
+
+	real theta = k;
+
+	Matrix Rz(3, 3);
+
+	Rz(0, 0) = cos(theta);
+	Rz(0, 1) = -sin(theta);
+	Rz(1, 0) = sin(theta);
+	Rz(1, 1) = cos(theta);
+	Rz(2, 2) = 1;
+
+	/*
+	Vector w(3);
+
+	w(0) = 0;
+	w(1) = 0;
+	w(2) = 0.1;
+	*/
+
+	Vector center(3), r(3), p(3), v(3), rnew(3);
+
+	p(0) = (*n).coord().x;
+	p(1) = (*n).coord().y;
+	p(2) = (*n).coord().z;
+
+	center(0) = 0.375;
+	center(1) = 0.375;
+	center(2) = 1;
+
+	r = p;
+	r.add(-1, center);
+
+	Rz.mult(r, rnew);
+
+	v = rnew;
+	v.add(-1, r);
+
+	//w.cross(r, v);
+	
+
+	//std::cout << "node id: " << id << std::endl;
+	//(*n).coord().x += v(0);
+	//(*n).coord().y += v(1);
+	//(*n).coord().z += v(2);
+
+	//x21(id * 3 + 0) = v(0) / k; 
+	//x21(id * 3 + 1) = v(1) / k; 
+	//x21(id * 3 + 2) = v(2) / k; 
+
+	//(*n).coord().x += 0.1 * k;
+	//(*n).coord().y += 0.0;
+	//(*n).coord().z += 0.0;
+
+	//x21(id * 3 + 0) = 0.1; 
+	//x21(id * 3 + 1) = 0.0; 
+	//x21(id * 3 + 2) = 0.0; 
+
+
+	
+	//x11(3 * id + 0) = 0;
+	//x11(3 * id + 1) = 0;
+	//x11(3 * id + 2) = 0;
+      }
+    }
+
+
 
     // Update progress
     p = t / T;

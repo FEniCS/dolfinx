@@ -317,6 +317,18 @@ void Vector::add(real a, const Matrix::Column& col)
     values[i] += a * col(i);
 }
 //-----------------------------------------------------------------------------
+void Vector::cross(Vector &v, Vector &uxv)
+{
+  if(size() != 3 || v.size() != 3)
+    dolfin_error("Cross product only defined for 3-element vectors.");
+
+  Vector &u = *this;
+
+  uxv(0) = u(1) * v(2) - u(2) * v(1);
+  uxv(1) = u(2) * v(0) - u(0) * v(2);
+  uxv(2) = u(0) * v(1) - u(1) * v(0);
+}
+//-----------------------------------------------------------------------------
 void Vector::rand()
 {
   for (unsigned int i = 0; i < n; i++)

@@ -33,8 +33,7 @@ public:
 
 
       // Material parameters
-      
-      real b = 0.5;
+      real b = 0.1;
       real E = 50.0;
       real nu = 0.3;
 

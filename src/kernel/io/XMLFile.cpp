@@ -144,6 +144,60 @@ void XMLFile::operator<<(Matrix& A)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator<<(Mesh& mesh)
+{
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write mesh in XML format
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "  <mesh> \n");
+
+  fprintf(fp, "    <nodes size=\" %i \"> \n", mesh.noNodes());
+  
+  for(NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    Node &node = *n;
+
+    fprintf(fp, "    <node name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
+	    node.id(), node.coord().x, node.coord().y, node.coord().z);
+  }
+
+  fprintf(fp, "    </nodes>\n");
+
+  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.noCells());
+
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    Cell &cell = *c;
+
+    if(mesh.type() == Mesh::tetrahedrons)
+    {
+      fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
+	      cell.id(), cell.node(0).id(), cell.node(1).id(), cell.node(2).id(), cell.node(3).id());
+    }
+    else
+    {
+      fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
+	      cell.id(), cell.node(0).id(), cell.node(1).id(),
+	      cell.node(2).id());
+    }
+  }
+
+  fprintf(fp, "    </cells>\n");
+
+  
+  fprintf(fp, "  </mesh>\n");
+  fprintf(fp, "</dolfin>\n");
+  
+  // Close file
+  fclose(fp);
+  
+  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
+       << ") to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
 {
   // Open file
