@@ -33,7 +33,7 @@ Linear Algebra
 --------------
 
 o [foufas] Wrapper for LAPACK
-o [erik]  Matrix-matrix multiplication
+o [erik] Matrix-matrix multiplication
 o [erik] Algebraic multigrid
 * Expression templates
 * Decision on strategy
