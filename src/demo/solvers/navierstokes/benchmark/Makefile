@@ -11,8 +11,8 @@ CXX     = `../../../../config/dolfin-config --compiler`
 DEST    = dolfin-navierstokes-benchmark
 OBJECTS = main.o
 
-all:
-#all: $(DEST)
+#all:
+all: $(DEST)
 
 install:	
 
