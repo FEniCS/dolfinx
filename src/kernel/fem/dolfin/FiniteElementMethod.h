@@ -23,7 +23,7 @@ namespace dolfin
   class FiniteElementMethod
   {
   public:
-    
+
     /// Create default finite element method for given mesh and system size
     FiniteElementMethod(Mesh::Type type, unsigned int noeq);
     

@@ -8,6 +8,7 @@
 
 #include <dolfin/FiniteElement.h>
 
+
 namespace dolfin {
 
   class PDE;
@@ -70,6 +71,9 @@ namespace dolfin {
 
     // Initialize vector
     static void alloc(Vector& b, Mesh& mesh, FiniteElement::Vector& element);
+
+    // Default method
+    static FiniteElementMethod method;
 
   };
 

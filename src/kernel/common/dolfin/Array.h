@@ -330,11 +330,8 @@ namespace dolfin {
 	return i;
       }
 
-    dolfin_debug("foo");
-    raise(SIGSEGV);
+    dolfin_segfault();
     dolfin_error("Array is full.");
-    dolfin_debug("foo2");
-    //dolfin_segfault();
     return -1;
   }
   //--------------------------------------------------------------------------- 

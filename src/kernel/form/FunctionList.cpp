@@ -27,8 +27,15 @@ FunctionList::FunctionList()
 //-----------------------------------------------------------------------------
 int FunctionList::add(function f)
 {
+  // Check if function has been added before
+  for (int i = 0; i < list.size(); i++)
+    if (list(i).f == f)
+      return i;
+
+  // Try to add function
   int id = list.add(FunctionData(f));
   
+  // Increase size of list if it didn't work
   if ( id == -1 ) {
     list.resize(2*list.size());
     id = list.add(FunctionData(f));
