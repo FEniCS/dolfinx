@@ -164,22 +164,23 @@ void Grid::refine()
   // After refinement:   g0 <-> g1 <-> g2 <-> ... <-> *this(gd) <-> new(ngd)
   // After swap:         g0 <-> g1 <-> g2 <-> ... <-> new(gd)   <-> *this(ngd)
 
+
   // Get pointer to new grid
   Grid* new_grid = &(grids.fine());
 
-  // Swap data
-  swap(*new_grid);
+  // Swap data only if a new grid was created
+  if ( new_grid != this ) {
 
-  
-
-
-  // Set parent and child
-  if ( new_grid->_parent )
-    new_grid->_parent->_child = new_grid;
-  this->_parent = new_grid;
-  new_grid->_child = this;
-
-
+    // Swap data
+    swap(*new_grid);
+    
+    // Set parent and child
+    if ( new_grid->_parent )
+      new_grid->_parent->_child = new_grid;
+    this->_parent = new_grid;
+    new_grid->_child = this;
+    
+  }    
 
   // Compute connectivity
   init();

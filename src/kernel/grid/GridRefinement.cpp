@@ -7,6 +7,7 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/CellMarker.h>
+#include <dolfin/EdgeMarker.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/GridIterator.h>
 #include <dolfin/GridRefinement.h>
@@ -21,6 +22,9 @@ void GridRefinement::refine(GridHierarchy& grids)
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
   
+  // Init marks for the finest grid
+  initMarks(grids.fine());
+
   // Refine grid hierarchy
   globalRefinement(grids);
 
@@ -60,6 +64,29 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
 }
 //-----------------------------------------------------------------------------
+void GridRefinement::initMarks(Grid& grid)
+{
+  // Make sure that all cells have markers
+  for (CellIterator c(grid); !c.end(); ++c)
+    c->initMarker();
+
+  // Make sure that all edges have markers
+  for (EdgeIterator e(grid); !e.end(); ++e)
+    e->initMarker();
+
+  // Set markers for cells and edges
+  for (List<Cell*>::Iterator c(grid.rd->marked_cells); !c.end(); ++c) {
+
+    // Mark cell for regular refinement
+    (*c)->marker().mark = marked_for_reg_ref;
+
+    // Mark edges of the cell
+    for (EdgeIterator e(**c); !e.end(); ++e)
+      e->marker().cellcount++;
+
+  }
+}
+//-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
 {
   // Evaluate and adjust marks for a grid.
@@ -87,6 +114,15 @@ void GridRefinement::closeGrid(Grid& grid)
 {
   // Perform the green closer on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
+
+  
+
+
+
+  
+
+
+
 
   
 
@@ -173,6 +209,9 @@ void GridRefinement::regularRefinementTri(Cell& cell, Grid& grid)
   t2->setParent(&cell);
   t3->setParent(&cell);
   t4->setParent(&cell);
+
+  // FIXME: Borde det inte heta addChild()?
+
   
   cell.setChild(t1);
   cell.setChild(t2);
@@ -248,7 +287,7 @@ bool GridRefinement::oneEdgeOfChildMarkedForRefinement(Cell& cell)
 {
   for (int i = 0; i < cell.noChildren(); i++)
     for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
-      if ( e.marker().mark == marked )
+      if ( e->marker().cellcount > 0 )
 	return true;
 
   return false;
@@ -749,48 +788,6 @@ void GridRefinement::refineGrid(int grid_level)
 
 
 
-void GridRefinement::closeGrid(int grid_level)
-{
-  bool marked_for_ref_by_cell;
-  List<Cell *> cells;
-  for (CellIterator c(grid); !c.end(); ++c){
-    if ( (c->level() == grid_level) && (c->status() == Cell::REFINED_REGULAR) ){ 
-      marked_for_ref_by_cell = false;
-      for (int i=0;i<c->noEdges();i++){
-	if (marked_for_ref_by_cell) break;
-	if (c->edge(i)->marked()){
-	  for (int j=0;j<c->edge(j)->refinedByCells();j++){
-	    if (marked_for_ref_by_cell) break;
-	    if (c->edge(i)->refinedByCell(j)->id() == c->id()){
-	      marked_for_ref_by_cell = true;
-	      cells.add(c);
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  List<Cell *> new_cells;
-  bool cell_is_member;
-  while (cells.size() > 0){
-    
-    new_cells = closeCell((*cells.pointer(0)));
-    //    cells.remove(cells(0));
-
-    for (List<Cell *>::Iterator cn(new_cells); !cn.end(); ++cn){
-      cell_is_member = false;      
-      for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
-	if ((*cn.pointer())->id() == (*c.pointer())->id()){
-	  cell_is_member = true;
-	  break;
-	}
-      }
-      if (!cell_is_member) cells.add((*cn.pointer()));
-    }
-
-  }
-}
 
 
 List<Cell *> GridRefinement::closeCell(Cell *parent)

@@ -197,6 +197,12 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return 0;
 }
 //-----------------------------------------------------------------------------
+void GenericCell::initMarker()
+{
+  if ( !_marker )
+    _marker = new CellMarker();
+}
+//-----------------------------------------------------------------------------
 CellMarker& GenericCell::marker() const
 {
   dolfin_assert(_marker);

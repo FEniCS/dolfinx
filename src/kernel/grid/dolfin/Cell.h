@@ -175,7 +175,10 @@ namespace dolfin {
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
 
-    /// Return marker for cell
+    // Initialize marker (if not already done)
+    void initMarker();
+
+    // Return marker for cell
     CellMarker& marker() const;
 
     // The cell

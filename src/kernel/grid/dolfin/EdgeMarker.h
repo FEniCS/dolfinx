@@ -6,19 +6,17 @@
 
 namespace dolfin {
 
-  enum EdgeMark { marked, unmarked };
-  
   /// Edge marker
   class EdgeMarker {
   public:
 
     /// Create an empty marker
     EdgeMarker() {
-      mark = unmarked;
+      cellcount = 0;
     }
 
-    /// The mark of the edge
-    EdgeMark mark;
+    /// Number of cells this edge has been marked by
+    int cellcount;
     
   };
 

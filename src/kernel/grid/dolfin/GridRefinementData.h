@@ -35,6 +35,9 @@ namespace dolfin {
     /// Return number of cells marked for refinement
     int noMarkedCells() const;
 
+    /// Friends
+    friend class GridRefinement;
+
   private:
 
     // The grid

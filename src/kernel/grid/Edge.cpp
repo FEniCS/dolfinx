@@ -114,6 +114,12 @@ void Edge::set(Node* n0, Node* n1)
   this->n1 = n1;
 }
 //-----------------------------------------------------------------------------
+void Edge::initMarker()
+{
+  if ( !_marker )
+    _marker = new EdgeMarker();
+}
+//-----------------------------------------------------------------------------
 EdgeMarker& Edge::marker() const
 {
   dolfin_assert(_marker);

@@ -40,6 +40,9 @@ namespace dolfin {
 
     //--- Algorithms working on the grid on a given level ---
 
+    // Set initial marks for cells and edges
+    static void initMarks(Grid& grid);
+
     // Evaluate and adjust marks for a grid
     static void evaluateMarks(Grid& grid);
 
