@@ -175,9 +175,6 @@ void Function::update(FunctionSpace::ElementFunction& v,
   // Update degrees of freedom for element function, assuming it belongs to
   // the local trial space of the finite element.
 
-  cout << "  Updating function, element.dim() = " << element.dim() << endl;
-  cout << "  " << v << endl;
-
   // Set dimension of function space for element function
   v.init(element.dim());
    

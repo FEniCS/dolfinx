@@ -17,30 +17,6 @@ P1TetMap::P1TetMap() : Map()
   dim = 3;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddx
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g11*v.ddX() + g21*v.ddY() + g31*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddy
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g12*v.ddX() + g22*v.ddY() + g32*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddz
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g13*v.ddX() + g23*v.ddY() + g33*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddt
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return v.ddT();
-}
-//-----------------------------------------------------------------------------
 void P1TetMap::update(const Cell& cell)
 {
   // Check that cell type is correct
@@ -86,5 +62,39 @@ void P1TetMap::update(const Cell& cell)
   g11 = d11 / d; g12 = d21 / d; g13 = d31 / d;
   g21 = d12 / d; g22 = d22 / d; g23 = d32 / d;
   g31 = d13 / d; g32 = d23 / d; g33 = d33 / d;
+}
+//-----------------------------------------------------------------------------
+void P1TetMap::update(const Cell& interior, const Cell& boundary)
+{
+  // Update map to interior of cell
+  update(interior);
+
+  // Update map to boundary of cell
+
+  // Add some code here... :-)
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddx
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g11*v.ddX() + g21*v.ddY() + g31*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddy
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g12*v.ddX() + g22*v.ddY() + g32*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddz
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g13*v.ddX() + g23*v.ddY() + g33*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddt
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return v.ddT();
 }
 //-----------------------------------------------------------------------------

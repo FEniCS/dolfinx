@@ -17,6 +17,11 @@ real Map::det() const
   return d;
 }
 //-----------------------------------------------------------------------------
+real Map::bdet() const
+{
+  return bd;
+}
+//-----------------------------------------------------------------------------
 real Map::ddx(real a) const
 {
   return 0.0;
@@ -38,7 +43,7 @@ real Map::ddt(real a) const
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddx
-(const FunctionSpace::Product &v) const
+(const FunctionSpace::Product& v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
   
@@ -47,7 +52,7 @@ const FunctionSpace::ElementFunction Map::ddx
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddy
-(const FunctionSpace::Product &v) const
+(const FunctionSpace::Product& v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
   
@@ -56,7 +61,7 @@ const FunctionSpace::ElementFunction Map::ddy
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddz
-(const FunctionSpace::Product &v) const
+(const FunctionSpace::Product& v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
   
@@ -65,7 +70,7 @@ const FunctionSpace::ElementFunction Map::ddz
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddt
-(const FunctionSpace::Product &v) const
+(const FunctionSpace::Product& v) const
 {
   dolfin_warning("Derivative of Product not implemented.");
   
@@ -74,7 +79,7 @@ const FunctionSpace::ElementFunction Map::ddt
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddx
-(const FunctionSpace::ElementFunction &v) const
+(const FunctionSpace::ElementFunction& v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
   
@@ -83,7 +88,7 @@ const FunctionSpace::ElementFunction Map::ddx
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddy
-(const FunctionSpace::ElementFunction &v) const
+(const FunctionSpace::ElementFunction& v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
   
@@ -92,7 +97,7 @@ const FunctionSpace::ElementFunction Map::ddy
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddz
-(const FunctionSpace::ElementFunction &v) const
+(const FunctionSpace::ElementFunction& v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
   
@@ -101,7 +106,7 @@ const FunctionSpace::ElementFunction Map::ddz
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction Map::ddt
-(const FunctionSpace::ElementFunction &v) const
+(const FunctionSpace::ElementFunction& v) const
 {
   dolfin_warning("Derivative of ElementFunction not implemented.");
   

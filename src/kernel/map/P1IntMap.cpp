@@ -17,6 +17,43 @@ P1IntMap::P1IntMap() : Map()
   dim = 1;
 }
 //-----------------------------------------------------------------------------
+void P1IntMap::update(const Cell& cell)
+{
+  // Check that cell type is correct
+  if ( cell.type() != Cell::interval )
+    dolfin_error("Wrong cell type for map (must be an interval).");
+  
+  // Reset values
+  reset();
+  
+  // Get coordinates
+  NodeIterator n(cell);
+  Point p0 = n->coord(); ++n;
+  Point p1 = n->coord(); 
+
+  // Set values for Jacobian
+  f11 = p1.x - p0.x; 
+  
+  // Compute determinant
+  d = f11;
+  
+  // Check determinant
+  if ( fabs(d) < DOLFIN_EPS )
+    dolfin_error("Map from reference element is singular.");
+  
+  // Compute inverse
+  g11 = 1 / d;
+}
+//-----------------------------------------------------------------------------
+void P1IntMap::update(const Cell& interior, const Cell& boundary)
+{
+  // Update map to interior of cell
+  update(interior);
+
+  // Update map to boundary of cell
+  bd = 1.0; // Should not be used?
+}
+//-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1IntMap::ddx
 (const FunctionSpace::ShapeFunction& v) const
 {
@@ -67,5 +104,14 @@ void P1IntMap::update(const Cell& cell)
   
   // Compute inverse
   g11 = 1 / d;
+}
+//-----------------------------------------------------------------------------
+void P1IntMap::update(const Cell& interior, const Cell& boundary)
+{
+  // Update map to interior of cell
+  update(interior);
+
+  // Update map to boundary of cell
+  bd = 1.0; // Should not be used?
 }
 //-----------------------------------------------------------------------------

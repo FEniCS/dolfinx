@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 // Map from the reference cell defined by the nodes
-// (0,0,0) - (1,0,0) - (0,1,0) to a given triangle in R^3.
+// (0,0) - (1,0) - (0,1) to a given triangle in 2D.
 
 #ifndef __P1_TRI_MAP_H
 #define __P1_TRI_MAP_H
@@ -16,13 +16,14 @@ namespace dolfin {
     
     P1TriMap();
     
+    void update(const Cell &cell);
+    void update(const Cell& interior, const Cell& boundary);
+
     const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction &v) const;
-    
-    void update(const Cell &cell);
-    
+        
   };
 
 }

@@ -17,30 +17,6 @@ P1TriMap::P1TriMap() : Map()
   dim = 2;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::ddx
-(const FunctionSpace::ShapeFunction& v) const
-{
-  return g11*v.ddX() + g21*v.ddY();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::ddy
-(const FunctionSpace::ShapeFunction& v) const
-{
-  return g12*v.ddX() + g22*v.ddY();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::ddz
-(const FunctionSpace::ShapeFunction& v) const
-{
-  return v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::ddt
-(const FunctionSpace::ShapeFunction& v) const
-{
-  return v.ddT();
-}
-//-----------------------------------------------------------------------------
 void P1TriMap::update(const Cell& cell)
 {
   // Check that cell type is correct
@@ -70,5 +46,39 @@ void P1TriMap::update(const Cell& cell)
   // Compute inverse
   g11 =   f22 / d; g12 = - f12 / d;
   g21 = - f21 / d; g22 =   f11 / d;
+}
+//-----------------------------------------------------------------------------
+void P1TriMap::update(const Cell& interior, const Cell& boundary)
+{
+  // Update map to interior of cell
+  update(interior);
+
+  // Update map to boundary of cell
+
+  // Add some code here... :-)
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TriMap::ddx
+(const FunctionSpace::ShapeFunction& v) const
+{
+  return g11*v.ddX() + g21*v.ddY();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TriMap::ddy
+(const FunctionSpace::ShapeFunction& v) const
+{
+  return g12*v.ddX() + g22*v.ddY();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TriMap::ddz
+(const FunctionSpace::ShapeFunction& v) const
+{
+  return v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TriMap::ddt
+(const FunctionSpace::ShapeFunction& v) const
+{
+  return v.ddT();
 }
 //-----------------------------------------------------------------------------
