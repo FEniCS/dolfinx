@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 #include "TestProblem8.h"
+#include "TestProblem9.h"
 
 using namespace dolfin;
 
@@ -52,7 +53,8 @@ void solveTestProblem8()
 
 void solveTestProblem9()
 {
-  dolfin_info("Not implemented");
+  TestProblem9 testProblem;
+  testProblem.solve();
 }
 
 int main(int argc, char* argv[])
@@ -85,43 +87,44 @@ int main(int argc, char* argv[])
   // DOLFIN settings
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
+  dolfin_set("solve dual problem", false);
 
   // Choose test problem
   switch (n) {
   case 1:
-    dolfin_info("Solving test problem number 1");
+    dolfin_info("Solving test problem number 1.");
     solveTestProblem1();
     break;
   case 2:
-    dolfin_info("Solving test problem number 2");
+    dolfin_info("Solving test problem number 2.");
     solveTestProblem2();
     break;
   case 3:
-    dolfin_info("Solving test problem number 3");
+    dolfin_info("Solving test problem number 3.");
     solveTestProblem3();
     break;
   case 4:
-    dolfin_info("Solving test problem number 4");
+    dolfin_info("Solving test problem number 4.");
     solveTestProblem4();
     break;
   case 5:
-    dolfin_info("Solving test problem number 5");
+    dolfin_info("Solving test problem number 5.");
     solveTestProblem5();
     break;
   case 6:
-    dolfin_info("Solving test problem number 6");
+    dolfin_info("Solving test problem number 6.");
     solveTestProblem6();
     break;
   case 7:
-    dolfin_info("Solving test problem number 7");
+    dolfin_info("Solving test problem number 7.");
     solveTestProblem7();
     break;
   case 8:
-    dolfin_info("Solving test problem number 8");
+    dolfin_info("Solving test problem number 8.");
     solveTestProblem8();
     break;
   case 9:
-    dolfin_info("Solving test problem number 9");
+    dolfin_info("Solving test problem number 9.");
     solveTestProblem9();
     break;
   default:
