@@ -113,7 +113,7 @@ void GenericCell::setParent(Cell* parent)
   this->_parent = parent;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::setChild(Cell* child)
+void GenericCell::addChild(Cell* child)
 {
   // Set the child cell if Cell not already contains the child cell: a cell 
   // is child if it is created through refinement of the current cell.  

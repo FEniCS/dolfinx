@@ -69,7 +69,7 @@ namespace dolfin {
     void setParent(Cell* parent);
 
     // Set child cell
-    void setChild(Cell* child);
+    void addChild(Cell* child);
 
     // Check if given cell is a neighbor
     bool neighbor(GenericCell* cell) const;

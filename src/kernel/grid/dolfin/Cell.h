@@ -146,7 +146,7 @@ namespace dolfin {
     void setParent(Cell* parent);
 
     // Set child cell
-    void setChild(Cell* child);
+    void addChild(Cell* child);
 
     // Clear data and create a new triangle
     void set(Node* n0, Node* n1, Node* n2);

@@ -69,6 +69,13 @@ namespace dolfin {
     // Refine a tetrahedron regularly
     static void regularRefinementTet(Cell& cell, Grid& grid);
 
+    // Refine a tetrahedron irregularly
+    // (different cases depending on number of marked edges)
+    void irregTetRefByRule1(Cell& cell, Grid& grid);
+    void irregTetRefByRule2(Cell& cell, Grid& grid);
+    void irregTetRefByRule3(Cell& cell, Grid& grid);
+    void irregTetRefByRule4(Cell& cell, Grid& grid);
+
     ///--- A couple of special functions, placed here rather than in Cell ---
 
     /// Check if all children are marked for coarsening
@@ -81,19 +88,13 @@ namespace dolfin {
     static bool oneEdgeMarkedForRefinement(Cell& cell);
     
 
-
-
  
 
     /*
     void localIrregularRefinement(Cell *parent);
-    
-    void irregularRefinementBy1(Cell *parent);
-    void irregularRefinementBy2(Cell *parent);
-    void irregularRefinementBy3(Cell *parent);
-    void irregularRefinementBy4(Cell *parent);
-    
     */
+    
+    
 
   };
 

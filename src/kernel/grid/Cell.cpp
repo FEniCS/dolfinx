@@ -189,12 +189,12 @@ void Cell::setParent(Cell* parent)
   return c->setParent(parent);
 }
 //-----------------------------------------------------------------------------
-void Cell::setChild(Cell* child)
+void Cell::addChild(Cell* child)
 {
   // Set the child if cell not already contains the child cell: a cell 
   // is child if it is created through refinement of the current cell.  
   dolfin_assert(c);
-  return c->setChild(child);
+  return c->addChild(child);
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node* n0, Node* n1, Node* n2)
