@@ -1,7 +1,7 @@
 This directory contains header files that will be exported
 to the system on 'make install'. Files will be installed in
 
-        $prefix/include
+	$prefix/include/dolfin
 
 Before compilation anything, this directory should be empty,
-so don't try to put anything else here.  
+so don't try to put anything else here.
