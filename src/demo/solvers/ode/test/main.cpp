@@ -115,11 +115,11 @@ public:
   {
     switch ( i ) {
     case 0:
-      return u[1] + 0.1*u[0] + 0.3*u[2];
+      return u[1]; // + 0.1*u[0] + 0.3*u[2];
     case 1:
-      return -u[0] - 0.2*u[1] + 0.4*u[2];
+      return -u[0]; // - 0.2*u[1] + 0.4*u[2];
     default:
-      return cos(t) + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
+      return cos(t); // + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
     }
   }
 

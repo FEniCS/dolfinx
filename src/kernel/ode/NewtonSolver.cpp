@@ -43,8 +43,8 @@ void NewtonSolver::start()
   // Recompute Jacobian
   A.update();
 
-  debug();
-  A.disp();
+  //debug();
+  //A.disp();
 }
 //-----------------------------------------------------------------------------
 real NewtonSolver::iteration()

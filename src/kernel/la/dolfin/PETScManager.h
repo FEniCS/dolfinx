@@ -30,6 +30,9 @@ namespace dolfin
 
     // Singleton instance
     static PETScManager petsc;
+
+    // Check if initialized
+    bool initialized;
     
   };
   

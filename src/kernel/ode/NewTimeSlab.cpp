@@ -22,7 +22,6 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
   elast(N), u0(N), u(0), emax(0)
 {
   cout << "Experimental time slab: creating" << endl;
-  cout << "  N = " << ode.size() << endl;
 
   // Choose method
   std::string m = dolfin_get("method");
@@ -458,7 +457,7 @@ void NewTimeSlab::alloc_s(uint newsize)
 
   if ( newsize <= size_s.size ) return;
 
-  dolfin_info("Reallocating: ns = %d", newsize);
+  //dolfin_info("Reallocating: ns = %d", newsize);
 
   Alloc::realloc(&sa, size_s.size, newsize);
   Alloc::realloc(&sb, size_s.size, newsize);
@@ -472,7 +471,7 @@ void NewTimeSlab::alloc_e(uint newsize)
 
   if ( newsize <= size_e.size ) return;
 
-  dolfin_info("Reallocating: ne = %d", newsize);
+  //dolfin_info("Reallocating: ne = %d", newsize);
 
   Alloc::realloc(&ei, size_e.size, newsize);
   Alloc::realloc(&es, size_e.size, newsize);
@@ -488,7 +487,7 @@ void NewTimeSlab::alloc_j(uint newsize)
 
   if ( newsize <= size_j.size ) return;
 
-  dolfin_info("Reallocating: nj = %d", newsize);
+  //dolfin_info("Reallocating: nj = %d", newsize);
 
   Alloc::realloc(&jx, size_j.size, newsize);
 
@@ -501,7 +500,7 @@ void NewTimeSlab::alloc_d(uint newsize)
 
   if ( newsize <= size_d.size ) return;
 
-  dolfin_info("Reallocating: nd = %d", newsize);
+  //dolfin_info("Reallocating: nd = %d", newsize);
 
   Alloc::realloc(&de, size_d.size, newsize);
 

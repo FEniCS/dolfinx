@@ -56,8 +56,6 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
   // implementation will probably not work with parallel vectors since we
   // use VecGetArray to access the local arrays of the vectors
 
-  cout << "Computing product y = Ax" << endl;
-  
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   VecCopy(x, y);
 

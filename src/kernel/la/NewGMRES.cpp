@@ -38,7 +38,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
 
-  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
+  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   KSPSetFromOptions(ksp);
 
@@ -61,6 +61,8 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
+  dolfin_info("Solving system of size %d x %d.", A.size(0), A.size(1));
+
   //Set up solver environment.
   KSP  ksp;
   //PC   pc;
@@ -71,7 +73,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   //dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
   KSPCreate(PETSC_COMM_WORLD, &ksp);
 
-  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
+  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   KSPSetFromOptions(ksp);
 
