@@ -36,7 +36,19 @@ namespace dolfin
     /// Fixed point iteration on an element
     bool iterate(Element& element);
 
-    /// Reset a list of elements
+    // Compute maximum discrete residual for time slab
+    real residual(TimeSlab& timeslab);
+
+    // Compute maximum discrete residual for element list
+    real residual(NewArray<Element*> elements);
+
+    // Compute discrete residual for element
+    real residual(Element& element);
+    
+    /// Update initial data for an element list
+    void init(NewArray<Element*>& elements);
+
+    /// Reset an element list
     void reset(NewArray<Element*>& elements);
 
     /// Display a status report
@@ -48,7 +60,7 @@ namespace dolfin
     enum State { nonstiff, diagonal, parabolic, nonnormal };
 
     // Current damping for problems of type {parabolic}
-    enum Damping { undamped, damped, increasing };
+    enum SubState { undamped, damped, increasing };
 
     // Discrete residuals
     struct Residuals
@@ -57,6 +69,14 @@ namespace dolfin
       real r0, r1, r2;
     };
 
+    // Damping
+    struct Damping
+    {
+      Damping() : alpha(0), m(0) {}
+      real alpha;
+      unsigned int m;
+    };
+    
     // Update time slab
     void update(TimeSlab& timeslab);
     
@@ -74,7 +94,7 @@ namespace dolfin
 
     // Check if element has converged
     bool converged(Element& element, Residuals& r, unsigned int n);
-    
+
     // Stabilize time slab
     void stabilize(TimeSlab& timeslab, const Residuals& r);
 
@@ -111,6 +131,9 @@ namespace dolfin
     // Compute stabilization for state {nonnormal}
     void stabilizeNonNormal(TimeSlab& timeslab, const Residuals& r);
 
+    // Update initial data for element
+    void init(Element& element);
+
     // Reset element
     void reset(Element& element);
 
@@ -122,9 +145,6 @@ namespace dolfin
 
     // Compute m
     unsigned int computeDampingSteps(real rho);
-
-    // Reset fixed point iteration
-    void reset();
 
     //--- Data for fixed point iteration
 
@@ -162,8 +182,8 @@ namespace dolfin
 
     //--- Temporary data (cleared between iterations)
 
-    // Current damping
-    Damping damping;
+    // Sub state for parabolic damping
+    SubState substate;
 
     // Remaining number of iterations with small alpha
     unsigned int m;

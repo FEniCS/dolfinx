@@ -53,7 +53,7 @@ namespace dolfin {
     real length() const;
 
     /// Compute maximum discrete residual in time slab
-    virtual real computeMaxRd(Solution& u, RHS& f) = 0;
+    virtual real computeMaxRd(FixedPointIteration& fixpoint) = 0;
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);
@@ -62,9 +62,6 @@ namespace dolfin {
     
     // Specify and adjust the time step
     void setsize(real K, const Adaptivity& adaptivity);
-
-    // Compute maximum discrete residual for elements
-    real computeMaxRdElements(Solution& u, RHS& f);
 
     //--- Time slab data ---
 

@@ -34,9 +34,9 @@ void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
   fixpoint.reset(elements);
 }
 //-----------------------------------------------------------------------------
-real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)
+real SimpleTimeSlab::computeMaxRd(FixedPointIteration& fixpoint)
 {
-  return computeMaxRdElements(u, f);
+  return fixpoint.residual(elements);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)

@@ -72,28 +72,6 @@ void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-real TimeSlab::computeMaxRdElements(Solution& u, RHS& f)
-{
-  real maxrd = 0.0;
-
-  // Compute maximum discrete residual
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Compute discrete residual
-    maxrd = std::max(maxrd, fabs(element->computeDiscreteResidual(f)));
-    
-    //cout << "  r[" << element->index() << "] = "
-    //	   << fabs(element->computeDiscreteResidual(f)) << endl;
-
-  }
-
-  return maxrd;
-}
-//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const TimeSlab& timeslab)
 {
   stream << "[ TimeSlab of length " << timeslab.length()
