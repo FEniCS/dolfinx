@@ -11,7 +11,7 @@ AM_MAINTAINER_MODE
 # Option --enable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
-                             [Turn on debugging and warnings]),
+                             [Turn on debugging and warnings (this is the default)]),
               enable_debug=yes)
 
 # Option --enable-optimization
@@ -36,6 +36,10 @@ AC_PROG_LN_S
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
+
+# Make debug option default so developers don't forget it
+echo "Turning on debugging and warnings (use --enable-optimization to avoid this)."
+enable_debug="yes"
 
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
