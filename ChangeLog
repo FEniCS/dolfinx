@@ -1,3 +1,4 @@
+ - Add multi-adaptive solver for the bistable equation
  - Add BiCGSTAB solver (thsv)
  - Fix bug in SOR (thsv)
  - Improved visual program for OpenDX

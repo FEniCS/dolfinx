@@ -19,16 +19,21 @@ echo '- Edit ChangeLog'
 sleep 1
 /usr/bin/nano ChangeLog
 
-echo '- Recompiling'
+echo '- Recompiling to run benchmark problems'
 sleep 1
 autoreconf
-./configure CXXFLAGS='-O2'
+./configure --enable-optimization
 make clean
 make
 
-echo '- Running benchmark problem'
+echo '- Running DOLFIN benchmark problem'
 sleep 1
 src/demo/bench/dolfin-bench >> src/demo/bench/bench.log
+
+echo '- Running benchmark problem for multi-adaptive solver'
+sleep 1
+cd src/demo/solvers/ode/bench
+dolfin-ode-bench >>& bench.log
 
 echo '- Commiting changes to cvs'
 sleep 1
