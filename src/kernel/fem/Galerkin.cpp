@@ -149,7 +149,7 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
   if ( !bcf )
 	 std::cout << "Boundary conditions not specified." << std::endl;
   
-  // Iterate over all cells in the grid
+  // Iterate over all nodes on the boundary
   for (NodeIterator node(grid); !node.end(); ++node) {
 
 	 // Only set boundary condition for nodes on the boundary
