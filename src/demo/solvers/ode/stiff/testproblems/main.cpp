@@ -45,8 +45,6 @@ void solveTestProblem4()
 
 void solveTestProblem5()
 {
-  //dolfin_set("tolerance", 0.01);
-
   TestProblem5 testProblem;
   testProblem.solve();
 }

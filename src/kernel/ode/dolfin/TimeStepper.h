@@ -57,9 +57,6 @@ namespace dolfin {
 
   private:
 
-    // Create a time slab
-    bool createTimeSlab();
-
     // Create the first time slab
     bool createFirstTimeSlab();
 

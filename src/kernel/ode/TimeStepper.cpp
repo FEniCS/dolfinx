@@ -51,19 +51,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
 {
-  // Repeat until the time slab has converged
-  while ( !createTimeSlab() );
-
-  return t;
-}
-//-----------------------------------------------------------------------------
-bool TimeStepper::finished() const
-{
-  return _finished;
-}
-//-----------------------------------------------------------------------------
-bool TimeStepper::createTimeSlab()
-{
   if ( t == 0.0 )
   {
     dolfin_warning("ODE solver is EXPERIMENTAL.");
@@ -72,10 +59,17 @@ bool TimeStepper::createTimeSlab()
     tic();
 
     // Create first time slab
-    return createFirstTimeSlab();
+    while ( !createFirstTimeSlab() );
   }
   else
-    return createGeneralTimeSlab();
+    while ( !createGeneralTimeSlab() );
+
+  return t;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::finished() const
+{
+  return _finished;
 }
 //-----------------------------------------------------------------------------
 bool TimeStepper::createFirstTimeSlab()

@@ -11,13 +11,13 @@ public:
   
   TestProblem7() : ODE(101)
   {
-    dolfin_info("The heat equation on [0,1] with h = %f", h);
-    
+    // Mesh size
+    h = 1.0 / (static_cast<real>(N) - 1);
+
     // Final time
     T = 1.0;
 
-    // Mesh size
-    h = 1.0 / (static_cast<real>(N) - 1);
+    dolfin_info("The heat equation on [0,1] with h = %f", h);
     
     // Compute sparsity
     sparse();
