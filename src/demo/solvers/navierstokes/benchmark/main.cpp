@@ -20,15 +20,15 @@ real testFFC(Mesh& mesh)
 {
   cout << "--- Testing new assembly, FFC ---" << endl;
 
-  int N = 2;
+ // unsigned int N = 2;
 
   /*
   FFCPoissonFiniteElement element;
   FFCPoissonBilinearForm a(element);
   Matrix A;
   */
-  tic();
-  for (unsigned int i = 0; i < N; i++)
+  //tic();
+  //for (unsigned int i = 0; i < N; i++)
     //NewFEM::assemble(a, mesh, A);
 
   return toc();
