@@ -166,7 +166,7 @@ void Function::update(FunctionSpace::ElementFunction& v,
 //-----------------------------------------------------------------------------
 Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
 {
-  f = new (Function *)[size];
+  f = new Function * [size];
   
   for (int i = 0; i < size; i++)
     f[i] = new Function(mesh, x, i, size);
@@ -176,7 +176,7 @@ Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
 //-----------------------------------------------------------------------------
 Function::Vector::Vector(const char* name, int size)
 {
-  f = new (Function *)[size];
+  f = new Function * [size];
 
   for (int i = 0; i < size; i++)
     f[i] = new Function(name, i, size);

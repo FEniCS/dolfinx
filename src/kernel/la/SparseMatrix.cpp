@@ -53,14 +53,14 @@ SparseMatrix::SparseMatrix(const SparseMatrix& A) :
   // We cannot use init since we want to allocate memory to exactly match
   // the structure of the given SparseMatrix A.
 
-  rowsizes = new (unsigned int)[m];
-  columns = new (int *)[m];
-  values = new (real *)[m];
+  rowsizes = new unsigned int [m];
+  columns = new int * [m];
+  values = new real * [m];
 
   for (unsigned int i = 0; i < m; i++) {
     unsigned int rs = (rowsizes[i] = A.rowsizes[i]);
-    columns[i] = new int[rs];
-    values[i] = new real[rs];
+    columns[i] = new int [rs];
+    values[i] = new real [rs];
     
     for (unsigned int pos = 0; pos < rs; pos++) {
       columns[i][pos] = A.columns[i][pos];
@@ -85,9 +85,9 @@ SparseMatrix::SparseMatrix(const DenseMatrix& A):
   // the structure (based on the number of non-zero elements) of the
   // given DenseMatrix A.
 
-  rowsizes = new (unsigned int)[m];
-  columns = new (int *)[m];
-  values = new (real *)[m];
+  rowsizes = new unsigned int [m];
+  columns = new int * [m];
+  values = new real * [m];
   
   for (unsigned int i = 0; i < m; i++) {
     
@@ -98,8 +98,8 @@ SparseMatrix::SparseMatrix(const DenseMatrix& A):
 	rs++;
 
     rowsizes[i] = rs;
-    columns[i] = new int[rs];
-    values[i] = new real[rs];
+    columns[i] = new int [rs];
+    values[i] = new real [rs];
     
     unsigned int pos = 0;
     for (unsigned int j = 0; j < n; j++)
@@ -427,9 +427,9 @@ void SparseMatrix::ident(unsigned int i)
 //-----------------------------------------------------------------------------
 void SparseMatrix::addrow()
 {
-  real** new_values = new (real *)[m+1];
-  int** new_columns = new (int *)[m+1];
-  unsigned int* new_rowsizes = new (unsigned int)[m+1];
+  real** new_values = new real * [m+1];
+  int** new_columns = new int * [m+1];
+  unsigned int* new_rowsizes = new unsigned int [m+1];
                                                                                                                                                             
   for (unsigned int i = 0; i < m; i++) {
     new_values[i] = values[i];
@@ -437,8 +437,8 @@ void SparseMatrix::addrow()
     new_rowsizes[i] = rowsizes[i];
   }
                                                                                                                                                             
-  new_values[m] = new real[1];
-  new_columns[m] = new int[1];
+  new_values[m] = new real [1];
+  new_columns[m] = new int [1];
   new_rowsizes[m] = 1;
   new_values[m][0] = 0.0;
   new_columns[m][0] = -1;
@@ -458,9 +458,9 @@ void SparseMatrix::addrow(const Vector& x)
   if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
 
-  real **new_values = new (real *)[m+1];
-  int **new_columns = new (int *)[m+1];
-  unsigned int *new_rowsizes = new (unsigned int)[m+1];
+  real **new_values = new real * [m+1];
+  int **new_columns = new int * [m+1];
+  unsigned int *new_rowsizes = new unsigned int [m+1];
                                                                                                                                                             
   for (unsigned int i = 0; i < m; i++) {
     new_values[i] = values[i];
@@ -473,8 +473,8 @@ void SparseMatrix::addrow(const Vector& x)
     if (fabs(x(i)) > DOLFIN_EPS)
       nonzero++;
 
-  new_values[m] = new real[nonzero];
-  new_columns[m] = new int[nonzero];
+  new_values[m] = new real [nonzero];
+  new_columns[m] = new int [nonzero];
   new_rowsizes[m] = nonzero;
                      
   unsigned int pos = 0;
@@ -536,12 +536,12 @@ void SparseMatrix::settransp(const SparseMatrix& A)
   this->n = A.m;
                                                                                                                                                             
   // Allocate memory
-  rowsizes = new (unsigned int)[m];
-  columns  = new (int *)[m];
-  values   = new (real *)[m];
+  rowsizes = new unsigned int [m];
+  columns  = new int * [m];
+  values   = new real * [m];
 
   // Current position in row
-  unsigned int* rowpos = new (unsigned int)[m];
+  unsigned int* rowpos = new unsigned int [m];
 
   // Reset row sizes
   for (unsigned int i = 0; i < m; i++) {
@@ -557,8 +557,8 @@ void SparseMatrix::settransp(const SparseMatrix& A)
   // Allocate memory
   allocsize = 0;
   for (unsigned int i = 0; i < m; i++) {
-    columns[i] = new int[rowsizes[i]];
-    values[i] = new real[rowsizes[i]];
+    columns[i] = new int [rowsizes[i]];
+    values[i] = new real [rowsizes[i]];
     allocsize = (rowsizes[i] > allocsize ) ? rowsizes[i] : allocsize;
   }
 
@@ -582,12 +582,12 @@ void SparseMatrix::settransp(const DenseMatrix& A)
   this->n = A.m;
 
   // Allocate memory
-  rowsizes = new (unsigned int)[m];
-  columns = new (int*)[m];
-  values = new (real*)[m];
+  rowsizes = new unsigned int [m];
+  columns = new int * [m];
+  values = new real * [m];
 
   // Current position in row
-  unsigned int* rowpos = new (unsigned int)[m];
+  unsigned int* rowpos = new unsigned int [m];
           
   // Reset row sizes
   for (unsigned int i = 0; i < m; i++) {
@@ -660,13 +660,13 @@ void SparseMatrix::alloc(unsigned int m, unsigned int n)
 {
   // Use with caution. Only for internal use.
   
-  rowsizes = new (unsigned int)[m];
-  columns = new (int *)[m];
-  values = new (real *)[m];
+  rowsizes = new unsigned int [m];
+  columns = new int * [m];
+  values = new real * [m];
 
   for (unsigned int i = 0; i < m; i++) {
-    columns[i] = new int[1];
-    values[i] = new real[1];
+    columns[i] = new int [1];
+    values[i] = new real [1];
     rowsizes[i] = 1;
     columns[i][0] = -1;
     values[i][0] = 0.0;

@@ -26,7 +26,7 @@ FunctionSpace::FunctionSpace(int dim)
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v)
@@ -150,19 +150,18 @@ FunctionSpace::ShapeFunction* FunctionSpace::Iterator::operator->() const
   return &(*v);
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 // Vector function space
 //-----------------------------------------------------------------------------
 FunctionSpace::Vector::Vector(int size)
 {
-  v = new (FunctionSpace *)[size];
+  v = new FunctionSpace*[size];
   _size = size;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Vector::Vector(const Vector& v)
 {
   _size = v._size;
-  this->v = new (FunctionSpace *)[_size];
+  this->v = new FunctionSpace*[_size];
   for (int i = 0; i < _size; i++)
     this->v[i] = v.v[i];
 }
@@ -182,3 +181,4 @@ int FunctionSpace::Vector::size() const
 {
   return _size;
 }
+//-----------------------------------------------------------------------------

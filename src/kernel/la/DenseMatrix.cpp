@@ -343,12 +343,12 @@ void DenseMatrix::ident(unsigned int i)
 //-----------------------------------------------------------------------------
 void DenseMatrix::addrow()
 {
-  real** new_values = new (real *)[m+1];
+  real** new_values = new real * [m+1];
                                                                                                                                                             
   for (unsigned int i = 0; i < m; i++)
     new_values[i] = values[i];
                                                                                                                                                             
-  new_values[m] = new real[n];
+  new_values[m] = new real [n];
   for (unsigned int i = 0; i < n; i++)
     new_values[m][i] = 0.0;
   
@@ -365,7 +365,7 @@ void DenseMatrix::addrow(const Vector &x)
   if ( x.size() != n)
     dolfin_error("Matrix dimensions don't match");
                                                                                                                                                             
-  real** new_values = new (real *)[m+1];
+  real** new_values = new real * [m+1];
                                                                                                                                                             
   for (unsigned int i = 0; i < m; i++)
     new_values[i] = values[i];
@@ -437,7 +437,7 @@ void DenseMatrix::alloc(unsigned int m, unsigned int n)
 {
   // Use with caution. Only for internal use.
 
-  values = new (real *)[m];
+  values = new real * [m];
   
   for (unsigned int i = 0; i < m; i++)
     values[i] = new real[n];

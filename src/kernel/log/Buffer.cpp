@@ -44,7 +44,7 @@ void Buffer::init(int lines, int cols)
   last = -1;
   full = false;
   
-  buffer = new (char *)[lines];
+  buffer = new char *[lines];
   for (int i = 0; i < lines; i++) {
     buffer[i] = new char[cols+1];
     buffer[i][0] = '\0';

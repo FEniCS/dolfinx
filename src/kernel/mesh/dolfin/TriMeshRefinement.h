@@ -38,8 +38,8 @@ namespace dolfin {
     static void refineIrregular1(Cell& cell, Mesh& mesh);
     static void refineIrregular2(Cell& cell, Mesh& mesh);
 
-    static Cell& TriMeshRefinement::createCell(Node& n0, Node& n1, Node& n2,
-					       Mesh& mesh, Cell& cell);
+    static Cell& createCell(Node& n0, Node& n1, Node& n2, Mesh& mesh,
+			    Cell& cell);
     
   };
 

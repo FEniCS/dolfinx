@@ -1,3 +1,4 @@
+ - Compile with -Wall -Werror -pedantic -ansi -std=c++98 (thsv)
  - Add support for systems (patch from jj and bengzon)
  - Add new module wave
  - Add new module wave-vector

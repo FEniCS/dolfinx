@@ -34,7 +34,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction& v)
   n = 1;
 
   a = new real[1];
-  this->v = new Product[1](v);
+  this->v = new Product[1];
+  this->v[0] = v;
 
   a[0] = 1.0;
 
@@ -46,7 +47,8 @@ FunctionSpace::ElementFunction::ElementFunction(const Product& v)
   n = 1;
 
   a = new real[1];
-  this->v = new Product[1](v);
+  this->v = new Product[1];
+  this->v[0] = v;
 
   a[0] = 1.0;
 
@@ -79,7 +81,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const ShapeFunction& v)
   n = 1;
   
   this->a = new real[1];
-  this->v = new Product[1](v);
+  this->v = new Product[1];
+  this->v[0] = v;
 
   this->a[0] = a;
 
@@ -91,7 +94,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const Product& v)
   n = 1;
 
   this->a = new real[1];
-  this->v = new Product[1](v);
+  this->v = new Product[1];
+  this->v[0] = v;
 
   this->a[0] = a;
 
@@ -239,7 +243,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction& v0,
   n = 1;
   
   a = new real[1];
-  v = new Product[1](v0, v1);
+  v = new Product[1];
+  v[0].set(v0, v1);
   
   a[0] = 1.0;
 
@@ -252,7 +257,8 @@ FunctionSpace::ElementFunction::ElementFunction(const Product& v0,
   n = 1;
   
   a = new real[1];
-  v = new Product[1](v0, v1);
+  v = new Product[1];
+  v[0].set(v0, v1);
   
   a[0] = 1.0;
 
@@ -301,8 +307,9 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction& v0,
 {
   n = 1;
   
-  a = new real[n];
-  v = new Product[n](v0, v1);
+  a = new real[1];
+  v = new Product[1];
+  v[0].set(v0, v1);
   
   a[0] = 1.0;
   
@@ -501,8 +508,9 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 
   n = 1;
 
-  a = new real[n];
-  this->v = new Product[n](v);
+  a = new real[1];
+  this->v = new Product[1];
+  this->v[0] = v;
 
   a[0] = 1.0;
 
@@ -521,8 +529,9 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 
   n = 1;
 
-  a = new real[n];
-  this->v = new Product[n](v);
+  a = new real[1];
+  this->v = new Product[1];
+  this->v[0] = v;
   
   a[0] = 1.0;
   

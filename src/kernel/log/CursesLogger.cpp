@@ -71,12 +71,12 @@ CursesLogger::CursesLogger() : GenericLogger()
   nodelay(win, true);
 
   // Initialise progress bars
-  pbars = new (Progress *)[DOLFIN_PROGRESS_BARS];
+  pbars = new Progress * [DOLFIN_PROGRESS_BARS];
   for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
     pbars[i] = 0;
 
   // Initialise time to display progress bars (will remain for a few seconds after removed)
-  ptimes = new int[DOLFIN_PROGRESS_BARS];
+  ptimes = new int [DOLFIN_PROGRESS_BARS];
   for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
     ptimes[i] = -1;
 

@@ -30,7 +30,7 @@ void cGqMethods::init(unsigned int q)
   // Check if we need to increase the size of the list
   if ( (q+1) > size )
   {
-    cGqMethod** new_methods = new (cGqMethod*)[q+1];
+    cGqMethod** new_methods = new cGqMethod*[q+1];
     for (unsigned int i = 0; i < (q+1); i++)
       new_methods[i] = 0;
     for (unsigned int i = 0; i < size; i++)

@@ -42,7 +42,7 @@ AC_TYPE_SIZE_T
 
 # Modify compiler flags when debug is enabled
 if test x$enable_debug = xyes; then
-    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror'
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
 # Check for curses

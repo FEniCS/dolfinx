@@ -19,7 +19,7 @@ Method::Method(unsigned int q)
     points[i] = 0.0;
 
   // Allocate weights
-  weights = new (real *)[n];
+  weights = new real*[n];
   for (unsigned int i = 0; i < n; i++) {
     weights[i] = new real[n];
     for (unsigned int j = 0; j < n; j++)

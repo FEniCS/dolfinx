@@ -141,7 +141,7 @@ FiniteElement::TestFunctionIterator::operator->() const
 //-----------------------------------------------------------------------------
 FiniteElement::Vector::Vector(int size)
 {
-  v = new (FiniteElement *)[size];
+  v = new FiniteElement*[size];
   _size = size;
 }
 //-----------------------------------------------------------------------------
