@@ -174,11 +174,12 @@ void NewMatrix::disp(bool sparse, int precision) const
   // Dense output
   const uint M = size(0);
   const uint N = size(1);
+
   for (uint i = 0; i < M; i++)
   {
-    std::stringstream line;
-    
+    std::stringstream line;  
     line << std::setprecision(precision);
+    line << "| ";
 
     for (uint j = 0; j < N; j++)
     {
@@ -188,6 +189,8 @@ void NewMatrix::disp(bool sparse, int precision) const
 
       line << std::setw(precision + 3) << value << " ";
     }
+    line << "|";
+
     cout << line.str().c_str() << endl;
   }
 }

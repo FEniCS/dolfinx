@@ -42,6 +42,9 @@ void HomotopyODE::feval(const complex z[], real t, complex f[])
   // Call user-supplied function to compute F(z)
   homotopy.F(z, f);
 
+  // FIXMETMP: Remove when working
+  return;
+
   // Just compute F(z) if playing end game
   if ( _state == endgame )
     return;
@@ -69,6 +72,9 @@ void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)
 
   // Call user-supplied function to compute F'*x
   homotopy.JF(z, x, y);
+
+  // FIXMETMP: Remove when working
+  return;
 
   // Multiply by t
   for (uint i = 0; i < n; i++)

@@ -96,7 +96,7 @@ const Mat VirtualMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::disp() const
+void VirtualMatrix::disp(bool sparse, int precision) const
 {
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
@@ -120,7 +120,7 @@ void VirtualMatrix::disp() const
     x(j) = 0.0;
   }
 
-  A.disp();
+  A.disp(sparse, precision);
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const VirtualMatrix& A)

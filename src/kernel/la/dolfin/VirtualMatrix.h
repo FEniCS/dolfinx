@@ -54,8 +54,8 @@ namespace dolfin
     /// Compute product y = Ax
     virtual void mult(const NewVector& x, NewVector& y) const = 0;
 
-    /// Display matrix
-    void disp() const;
+    /// Display matrix (sparse output is default)
+    void disp(bool sparse = true, int precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const VirtualMatrix& A);

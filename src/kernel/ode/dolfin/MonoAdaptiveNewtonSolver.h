@@ -46,13 +46,13 @@ namespace dolfin
   private:
 
     // Evaluate b = -F(x) at current x
-    real beval();
+    void beval();
 
     // Evaluate b = -F(x) for explicit system: u' = f
-    real bevalExplicit();
+    void bevalExplicit();
 
     // Evaluate b = -F(x) for explicit system: u' = f
-    real bevalImplicit();
+    void bevalImplicit();
 	
     // Numerical evaluation of the Jacobian used for testing
     void debug();

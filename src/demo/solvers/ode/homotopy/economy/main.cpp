@@ -12,9 +12,9 @@ public:
   Leontief(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), tmp(0)
   {
     // Initialize temporary storage
-    tmp = new complex[n];
-    for (unsigned int k = 0; k < n; k++)
-      tmp[k] = 0.0;
+    tmp = new complex[m];
+    for (unsigned int i = 0; i < m; i++)
+      tmp[i] = 0.0;
 
     // Initialize matrices a and w
     a = new real * [m];
@@ -52,12 +52,11 @@ public:
   {
     for (unsigned int j = 0; j < n; j++)
       y[j] = 0.0;
-    return;
 
     // Precompute scalar products
     for (unsigned int i = 0; i < m; i++)
       tmp[i] = dot(w[i], z) / dot(a[i], z);
-    
+
     // Evaluate right-hand side
     for (unsigned int j = 0; j < n; j++)
     {
@@ -70,8 +69,6 @@ public:
 
   void JF(const complex z[], const complex x[], complex y[])
   {
-    return;
-
     // Precompute scalar products
     for (unsigned int i = 0; i < m; i++)
     {
