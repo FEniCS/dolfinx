@@ -19,47 +19,61 @@ namespace dolfin{
   
   class Node{
   public:
+    
+    Node();
+    Node(real x);
+    Node(real x, real y);
+    Node(real x, real y, real z);
+    
+    void  set(real x, real y, real z);
+    int   id() const;
+    Point coord() const;
+    int   boundary() const;
+    bool  neighbor(Node* n);
+    
+    int   noNodeNeighbors() const;
+    int   noCellNeighbors() const;
+ 
+    // Comparison with numbers based on id
 
-	 Node();
-	 Node(real x);
-	 Node(real x, real y);
-	 Node(real x, real y, real z);
-	 
-	 void  set(real x, real y, real z);
-	 int   id() const;
-	 Point coord() const;
-	 int   boundary() const;
-	 bool  neighbor(Node* n);
-	 
-	 int   noNodeNeighbors() const;
-	 int   noCellNeighbors() const;
-	 
-	 /// Output
-	 friend LogStream& operator<<(LogStream& stream, const Node& node);
-	 void show();
-	 
-	 /// Friends
-	 friend class Grid;
-	 friend class Triangle;
-	 friend class Tetrahedron;
-	 friend class GridData;
-	 friend class InitGrid;
-	 friend class NodeIterator::NodeNodeIterator;
-	 friend class CellIterator::NodeCellIterator;	 
-	 
+    bool operator== (int id) const;
+    bool operator<  (int id) const;
+    bool operator<= (int id) const;
+    bool operator>  (int id) const;
+    bool operator>= (int id) const;
+
+    friend bool operator== (int id, const Node& node);
+    friend bool operator<  (int id, const Node& node);
+    friend bool operator<= (int id, const Node& node);
+    friend bool operator>  (int id, const Node& node);
+    friend bool operator>= (int id, const Node& node);
+   
+    /// Output
+    friend LogStream& operator<<(LogStream& stream, const Node& node);
+    void show();
+    
+    /// Friends
+    friend class Grid;
+    friend class Triangle;
+    friend class Tetrahedron;
+    friend class GridData;
+    friend class InitGrid;
+    friend class NodeIterator::NodeNodeIterator;
+    friend class CellIterator::NodeCellIterator;	 
+    
   private:
-
-	 int setID(int id);
-
-	 // Node data
-	 Point p;	 
-	 int _id;
-	 int _boundary;
-	 
-	 // Connectivity
-	 ShortList<Node*> nn;
-	 ShortList<Cell*> nc;
-	 
+    
+    int setID(int id);
+    
+    // Node data
+    Point p;	 
+    int _id;
+    int _boundary;
+    
+    // Connectivity
+    ShortList<Node*> nn;
+    ShortList<Cell*> nc;
+    
   };
   
 }

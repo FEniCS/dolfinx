@@ -63,9 +63,9 @@ int Node::boundary() const
 bool Node::neighbor(Node* n)
 {
   for (NodeIterator neighbor(*this); !neighbor.end(); ++neighbor)
-	 if ( n == neighbor )
-		return true;
-
+    if ( n == neighbor )
+      return true;
+  
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -77,6 +77,56 @@ int Node::noNodeNeighbors() const
 int Node::noCellNeighbors() const
 {
   return nc.size();
+}
+//-----------------------------------------------------------------------------
+bool Node::operator== (int id) const
+{
+  return _id == id;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator< (int id) const
+{
+  return _id < id;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator<= (int id) const
+{
+  return _id <= id;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator> (int id) const
+{
+  return _id > id;
+}
+//-----------------------------------------------------------------------------
+bool Node::operator>= (int id) const
+{
+  return _id >= id;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::operator== (int id, const Node& node)
+{
+  return node == id;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::operator< (int id, const Node& node)
+{
+  return node > id;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::operator<= (int id, const Node& node)
+{
+  return node >= id;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::operator> (int id, const Node& node)
+{
+  return node < id;
+}
+//-----------------------------------------------------------------------------
+bool dolfin::operator>= (int id, const Node& node)
+{
+  return node <= id;
 }
 //-----------------------------------------------------------------------------
 int Node::setID(int id)

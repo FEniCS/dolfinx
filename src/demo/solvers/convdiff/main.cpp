@@ -22,19 +22,28 @@ real f(real x, real y, real z, real t)
 // Diffusivity
 real a(real x, real y, real z, real t)
 {
-  return 0.1;
+  return 0.01;
 }
 
 // Convection
 real b(real x, real y, real z, real t, int i)
 {
-  return 0.1;
+  if ( i == 0 )
+    return -10.0;
+  
+  return 0.0;
 }
 
 // Boundary conditions
 void mybc(BoundaryCondition& bc)
 {
-  bc.set(BoundaryCondition::DIRICHLET, 0.0);
+  // u = 0 on the inflow boundary
+  if ( bc.coord().x == 1.0 )
+    bc.set(BoundaryCondition::DIRICHLET, 0.0);
+
+  // u = 1 on the dolphin
+  if ( bc.node() < 77 )
+    bc.set(BoundaryCondition::DIRICHLET, 1.0);
 }
 
 int main(int argc, char **argv)
@@ -46,7 +55,7 @@ int main(int argc, char **argv)
   convdiff.set("diffusivity", a);
   convdiff.set("convection", b);
   convdiff.set("boundary condition", mybc);
-  convdiff.set("final time", 1.0);
+  convdiff.set("final time", 0.5);
   convdiff.set("time step", 0.1);
 
   convdiff.solve();
@@ -58,16 +67,6 @@ int main(int argc, char **argv)
 //{
 // dolfin_bc bc;
 //
- // u = 0 on the inflow boundary
-//  if ( x == 1.0 ){
-//	 bc.type = dirichlet;
-//	 bc.val  = 0.0;
-// }
-// u = 1 on the dolphin
-//if ( (node < 77) || ( (node >= 759) & (node <= 883) ) ){
-// 	 bc.type = dirichlet;
-// 	 bc.val  = 1.0;
-// }
-//
+
 //  return bc;
 //}

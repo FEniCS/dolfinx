@@ -34,8 +34,8 @@ Galerkin::Galerkin()
 }
 //-----------------------------------------------------------------------------
 Galerkin::Galerkin(FiniteElement& element,
-						 Mapping&       mapping,
-						 Quadrature&    quadrature)
+		   Mapping&       mapping,
+		   Quadrature&    quadrature)
 {
   this->element    = &element;
   this->mapping    = &mapping;
@@ -151,7 +151,6 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
   
   BoundaryCondition bc;
   bcfunction bcf;
-  Point p;
   
   // Get boundary condition function
   bcf = dolfin_get("boundary condition");
@@ -163,11 +162,8 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
     if ( node->boundary() == -1 )
       continue;
     
-    // Get coordinate
-    p = node->coord();
-    
     // Get boundary condition
-    bc.update(p);
+    bc.update(node);
     bcf(bc);
     
     // Set boundary condition

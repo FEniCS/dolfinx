@@ -89,7 +89,7 @@ void MFile::operator<<(Grid& grid)
       fprintf(fp, "%d ", n->id() + 1);
     
     if ( c.last() )
-      fprintf(fp, "];\n");
+      fprintf(fp, "]';\n");
     else
       fprintf(fp, "\n");
     
@@ -131,14 +131,17 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s = [", u.name().c_str());
     for (NodeIterator n(u.grid()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
-    fprintf(fp, " ];\n\n");
+    fprintf(fp, " ]';\n\n");
   }
   else {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
     for (NodeIterator n(u.grid()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
-    fprintf(fp, " ];\n\n");
+    fprintf(fp, " ]';\n\n");
   }
+  
+  // Close file
+  fclose(fp);
   
   // Increase the number of times we have saved the function
   ++u;

@@ -54,9 +54,6 @@ void ConvDiffSolver::solve()
     // Make time step
     t += k;
     
-    // Update progress
-    p = t / T;
-    
     // Set solution to previous solution
     x0 = x1;
     
@@ -74,6 +71,9 @@ void ConvDiffSolver::solve()
     u1.t = t;
     file << u1;
 
+    // Update progress
+    p = t / T;
+    
   }
 
 }
