@@ -15,10 +15,10 @@ namespace dolfin {
   class Settings : public ParameterList {
   public:
     
-    Settings() : ParameterList() {
+    Settings() : ParameterList()
+    {
+      dolfin_info("Initializing DOLFIN parameter database.");
 
-      std::cout << "Initializing DOLFIN version " << DOLFIN_VERSION << std::endl;
-      
       // General parameters
 
       add(Parameter::REAL, "tolerance", 0.1);

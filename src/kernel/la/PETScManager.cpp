@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <petsc/petsc.h>
+#include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 
@@ -23,9 +24,9 @@ void PETScManager::init()
   // Prepare fake command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
   int argc = 1;
-  char** argv = new char*[1];
-  argv[0] = new char[7];
-  sprintf(argv[0], "%s", "uknown");
+  char** argv = new char * [1];
+  argv[0] = new char[DOLFIN_WORDLENGTH];
+  sprintf(argv[0], "%s", "unknown");
 
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
@@ -42,8 +43,8 @@ void PETScManager::init(int argc, char* argv[])
   if ( petsc.initialized )
     return;
 
-  cout << "Initializing PETSc (with given command-line arguments)." << endl;
-
+  cout << "Initializing PETSc with given command-line arguments." << endl;
+  
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 

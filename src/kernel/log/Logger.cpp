@@ -187,37 +187,47 @@ void Logger::active(bool state)
   this->state = state;
 }
 //-----------------------------------------------------------------------------
-void Logger::init()
+void Logger::init(const char* type)
 {
-  if ( log != 0 )
-    return;
-
-  // Get output type
-  string type = dolfin_get("output");
-
+  // Delete old logger
+  if ( log )
+    delete log;
+  
   // Choose output type
-  if ( type == "plain text" ) {
+  if ( strcasecmp(type, "plain text") == 0 )
+  {
     log = new TerminalLogger();
     return;
   }
-  else if ( type == "silent" ) {
+  else if ( strcasecmp(type, "curses") )
+  {
+#ifdef NO_CURSES
+    log = new TerminalLogger();
+    dolfin_warning1("DOLFIN compiled without curses, using plain text.");
+    return;
+#else
+    log = new CursesLogger();
+    return;
+#endif
+  }
+  else if ( strcasecmp(type, "silent") )
+  {
     log = new SilentLogger();
     return;
   }
-  else if ( type != "curses" ) {
+  else
+  {
     log = new TerminalLogger();
-    dolfin_warning1("Unknown output type \"%s\".", type.c_str());
-    return;
+    dolfin_warning1("Unknown output type \"%s\", using plain text.", type);
   }
+}
+//-----------------------------------------------------------------------------
+void Logger::init()
+{
+  if ( log )
+    return;
 
-  // Assume that curses is chosen
-#ifdef NO_CURSES
-  log = new TerminalLogger();
-  cout << " (Warning: Curses-based interface is not available.)" << endl;
-  return;
-#else
-  log = new CursesLogger();
-  return;
-#endif
+  // Default is plain text
+  init("plain text");
 }
 //-----------------------------------------------------------------------------

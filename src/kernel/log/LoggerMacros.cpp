@@ -80,6 +80,11 @@ void dolfin::dolfin_end(const char* msg, ...)
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
+void dolfin::dolfin_output(const char* type)
+{
+  LogManager::log.init(type);
+}
+//-----------------------------------------------------------------------------
 void dolfin::dolfin_log(bool state)
 {
   LogManager::log.active(state);

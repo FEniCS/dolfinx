@@ -39,6 +39,8 @@ namespace dolfin {
 
     void active(bool state);
     
+    void init(const char* type);
+
   private:
 
     void init();

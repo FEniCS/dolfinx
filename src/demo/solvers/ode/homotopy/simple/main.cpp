@@ -85,14 +85,13 @@ private:
 
 int main(int argc, char* argv[])
 {
-  dolfin_set("output", "plain text");
+  dolfin_init(argc, argv);
+
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
   dolfin_set("implicit", true);
-
-  PETScManager::init(argc, argv);
 
   //dolfin_set("initial time step", 0.1);
   //dolfin_set("fixed time step", true);

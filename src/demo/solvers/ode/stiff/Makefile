@@ -40,10 +40,10 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../../../..
 
-ACLOCAL = /home/hoffman/tmp/dolfin/missing aclocal-1.4
-AUTOCONF = /home/hoffman/tmp/dolfin/missing autoconf
-AUTOMAKE = /home/hoffman/tmp/dolfin/missing automake-1.4
-AUTOHEADER = /home/hoffman/tmp/dolfin/missing autoheader
+ACLOCAL = aclocal-1.4
+AUTOCONF = autoconf
+AUTOMAKE = automake-1.4
+AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
@@ -57,22 +57,17 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = 
-host_triplet = @host@
 AWK = mawk
 BOPT = O_c++
 CC = gcc
 CXX = g++
 CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98
 DOLFIN_LIBS = -ldolfin-main -ldolfin-convdiff -ldolfin-elasticity -ldolfin-elasticity-stationary -ldolfin-elasticity-updated -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-poisson-multigrid -ldolfin-template -ldolfin-wave -ldolfin-wave-vector -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common  -lncurses -L/usr/lib -lxml2 -lz -lpthread -lm
-HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -DPETSC_DIR=/usr/lib/petsc -DPETSC_ARCH=linux -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -I/usr/include/mpi -I/usr/include/libxml2
-LIB = @LIB@
 LN_S = ln -s
-LTLIB = @LTLIB@
 MAINT = #
 MAIN_CFLAGS = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -DPETSC_DIR=/usr/lib/petsc -DPETSC_ARCH=linux -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -I/usr/include/mpi -I/usr/include/libxml2 -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/elasticity -I$(top_builddir)/src/modules/elasticity-stationary -I$(top_builddir)/src/modules/elasticity-updated -I$(top_builddir)/src/modules/heat -I$(top_builddir)/src/modules/odesolver -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/poisson-multigrid -I$(top_builddir)/src/modules/template -I$(top_builddir)/src/modules/wave -I$(top_builddir)/src/modules/wave-vector 
-MAKEINFO = /home/hoffman/tmp/dolfin/missing makeinfo
+MAKEINFO = makeinfo
 MPI_CFLAGS = -I/usr/include/mpi
 PACKAGE = 
 PACKAGE_NAME = dolfin
