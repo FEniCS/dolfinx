@@ -37,7 +37,7 @@ namespace dolfin {
 		     real T, unsigned int no_samples);
 
     // Decrease the time step
-    static void decreaseTimeStep(Adaptivity& adaptivity);
+    static void decreaseTimeStep(Adaptivity& adaptivity, Solution& u);
 
   };
 

@@ -47,8 +47,8 @@ namespace dolfin {
     /// Notify that this might be a good time to move to next block
     void shift();
 
-    /// Reset current element block
-    void reset();
+    /// Drop last block
+    void dropLast();
 
     /// Return number of components
     unsigned int size() const;
@@ -94,7 +94,7 @@ namespace dolfin {
     // Interval
     real t0, t1;
 
-    // True if this block is empty
+    // True if element data is empty
     bool empty;
 
     // Cache size

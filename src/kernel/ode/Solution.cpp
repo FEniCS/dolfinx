@@ -130,7 +130,7 @@ void Solution::shift(real t0)
 //-----------------------------------------------------------------------------
 void Solution::reset()
 {
-  elmdata.reset();
+  elmdata.dropLast();
 }
 //-----------------------------------------------------------------------------
 void Solution::debug(Element& element, Action action)

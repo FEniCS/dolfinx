@@ -61,7 +61,7 @@ void TimeStepper::solve(ODE& ode, Function& function)
     if ( !fixpoint.iterate(*timeslab) )
     {
       // If the iterations did not converges, decrease the time step
-      decreaseTimeStep(adaptivity);
+      decreaseTimeStep(adaptivity, u);
 
       // Throw away the time slab and try again
       delete timeslab;
@@ -143,7 +143,7 @@ void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
   }
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity)
+void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity, Solution& u)
 {
   dolfin_warning("Fixed point iteration did not converge, decreasing time steps.");
 
@@ -154,6 +154,11 @@ void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity)
 
     // Specify new time step
     adaptivity.regulator(i).init(k/2.0);
+
+    cout << "New time step: " << k/2.0 << endl;
   }
+
+  // Throw away solution values for current time slab
+  u.reset();
 }
 //-----------------------------------------------------------------------------

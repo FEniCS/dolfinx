@@ -158,6 +158,13 @@ void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
 
   cout << "  m = " << m << endl;
 
+  // Check if we're done
+  if ( m == 0 )
+  {
+    alpha *= 2.0;
+    state = scalar_increasing;
+  }
+
   // Adjust alpha if the solution diverges
   if ( r2 > r1 )
   {
@@ -167,13 +174,6 @@ void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
     // Reset time slab to initial values 
     if ( r2 > 10.0 * r0 )
       timeslab.reset(u);
-  }
-
-  // Check if we're done
-  if ( m == 0 )
-  {
-    alpha *= 2.0;
-    state = scalar_increasing;
   }
 }
 //-----------------------------------------------------------------------------
@@ -218,7 +218,12 @@ void FixedPointIteration::stabilizeDiagonalIncreasing(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeConvergenceRate()
 {
-  return std::max(d2 / (DOLFIN_EPS + d1), r2 / (DOLFIN_EPS + r1));
+  real rho = d2 / (DOLFIN_EPS + d1);
+  
+  if ( rho <= 1.0 )
+    rho = r2 / (DOLFIN_EPS + r1);
+
+  return rho;
 }
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeDamping(real rho)
@@ -228,6 +233,8 @@ real FixedPointIteration::computeDamping(real rho)
 //-----------------------------------------------------------------------------
 unsigned int FixedPointIteration::computeDampingSteps(real rho)
 {
+  cout << "  rho = " << rho << endl;
+
   return 2*ceil_int(log(rho));
 }
 //-----------------------------------------------------------------------------

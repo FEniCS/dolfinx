@@ -64,7 +64,7 @@ Element* ElementData::first(unsigned int i)
   if ( !block )
     return 0;
   
-  // Found the first block
+  // Return first element in the first block
   return block->first(i);
 }
 //-----------------------------------------------------------------------------
@@ -77,7 +77,7 @@ Element* ElementData::last(unsigned int i)
   if ( !block )
     return 0;
   
-  // Found the last block
+  // Return last element in the last block
   return block->last(i);
 }
 //-----------------------------------------------------------------------------
@@ -92,10 +92,25 @@ void ElementData::shift()
   current = 0;
 }
 //-----------------------------------------------------------------------------
-void ElementData::reset()
+void ElementData::dropLast()
 {
-  delete current;
-  current = new ElementBlock(N);
+  // Pick the last block
+  ElementBlock* last = blocks.back();
+
+  // The last block should be the current block
+  dolfin_assert(last);
+  dolfin_assert(current == last);
+  
+  // Update interval
+  dolfin_assert(t1 == last->endtime());
+  t1 = last->starttime();
+
+  // Delete last block and remove it from the list
+  delete last;
+  blocks.pop_back();
+
+  // Set current to null so that a new block will be created next time
+  current = 0;
 }
 //-----------------------------------------------------------------------------
 unsigned int ElementData::size() const
@@ -110,6 +125,9 @@ bool ElementData::within(real t) const
 //-----------------------------------------------------------------------------
 void ElementData::createBlock()
 {
+  // Current should be null when we create a new block
+  dolfin_assert(current == 0);
+
   // Remove old block if necessary
   if ( memoryFull() )
     dropBlock(t0,t1);
@@ -250,8 +268,9 @@ void ElementData::dropBlock(real t0, real t1)
   
   // Delete the last block
   dolfin_assert(last != blocks.end());
+  if ( *last == current )
+    current = 0;
+  delete *last;
   blocks.erase(last);
-  
-  dolfin_warning("Maybe we should delete the block as well?");
 }
 //-----------------------------------------------------------------------------
