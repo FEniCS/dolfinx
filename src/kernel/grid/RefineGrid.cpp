@@ -11,6 +11,8 @@ using namespace dolfin;
 void RefineGrid::refine()
 {
   cout << "Refining grid: " << grid << endl;
+
+  
 }
 //-----------------------------------------------------------------------------
 
@@ -41,8 +43,24 @@ Refinement::RefineGrid()
 */
 
 
+void RefineGrid::GlobalRegularRefinement()
+{
+  // Regular refinement: 
+  //
+  // (1) Triangles: 1 -> 4 
+  // (2) Tetrahedrons: 1 -> 8 
+
+  for (CellIterator c(grid); !c.end(); ++c){
+    cout << "check 00" << endl;
+    RegularRefinement(*c);
+  }
+
+}
+
+
 void RefineGrid::RegularRefinement(Cell &parent)
 {
+  cout << "check 0" << endl;
   // Regular refinement: 
   //
   // (1) Triangles: 1 -> 4 
@@ -59,6 +77,10 @@ void RefineGrid::RegularRefinement(Cell &parent)
 
 void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
 {
+  cout << "check" << endl;
+  // cout << "check = " << parent << endl;
+
+
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges. 
   Node *n01 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(1)->coord()));

@@ -13,6 +13,8 @@ namespace dolfin {
 	 
 	 RefineGrid(Grid &grid_) : grid(grid_) {}
 	 
+	 void GlobalRegularRefinement();
+
 	 void RegularRefinement(Cell &parent);
 
 	 void RegularRefinementTetrahedron(Cell &parent);

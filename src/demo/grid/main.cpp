@@ -20,5 +20,7 @@ int main()
   // Refine grid
   grid.refine();
   
+  dolfin::cout << grid << dolfin::endl;  
+
   return 0;
 }
