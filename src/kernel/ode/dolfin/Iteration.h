@@ -40,12 +40,12 @@ namespace dolfin
     // Increments
     struct Increments
     {
-      Increments() : d1(0), d2(0), dtot(0) {}
-      void operator=(real d) { d1 = d2; d2 = d; dtot = std::max(dtot, d); }
-      void reset() { d1 = 0.0; d2 = 0.0; dtot = 0.0; }
+      Increments() : d0(0), d1(0), d2(0), dtot(0) {}
+      void operator=(real d) { d0 = d1; d1 = d2; d2 = d; dtot = std::max(dtot, d); }
+      void reset() { d0 = 0.0; d1 = 0.0; d2 = 0.0; dtot = 0.0; }
       friend LogStream& operator<<(LogStream& stream, const Increments& d)
-      { stream << "increment: " << d.d1 << " --> " << d.d2; return stream; }
-      real d1, d2, dtot;
+      { stream << "increment: " << d.d0 << " --> " << d.d1 << " --> " << d.d2; return stream; }
+      real d0, d1, d2, dtot;
     };
 
     /// Constructor
@@ -169,6 +169,12 @@ namespace dolfin
 
     // Compute divergence
     real computeDivergence(ElementGroup& group, const Residuals& r, const Increments& d);
+
+    // Unstabilized update
+    void updateUnstabilized(ElementGroupList& list, Increments& d);
+
+    // Unstabilized update
+    void updateUnstabilized(ElementGroup& group, Increments& d);
 
     // Compute alpha
     real computeAlpha(real rho) const;

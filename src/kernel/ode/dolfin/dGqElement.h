@@ -28,6 +28,7 @@ namespace dolfin {
 
     void update(real u0);
     real update(RHS& f);
+    real update(RHS& f, real* values);
     real update(RHS& f, real alpha);
     real update(RHS& f, real alpha, real* values);
 

@@ -77,6 +77,7 @@ void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
   for (ElementIterator element(group); !element.end(); ++element)
   {
     real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    di /= alpha;
     increment += di*di;
     x1.offset += element->size();
   }
@@ -114,7 +115,7 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
-    
+
     // Save increment at start of stabilizing iterations
     r0 = d.d2;
   }
@@ -146,7 +147,7 @@ bool AdaptiveIterationLevel2::converged(ElementGroupList& list, Residuals& r,
   */
   
   // First check increment
-  if ( (d.d2/alpha) > tol || n == 0 )
+  if ( d.d2 > tol || n == 0 )
     return false;
   
   // If increment is small, then check residual
@@ -173,11 +174,11 @@ bool AdaptiveIterationLevel2::converged(ElementGroup& group, Residuals& r,
     cout << "Checking convergence for element group:" << endl;
     cout << "  tol = " << tol << endl;
     cout << "  r   = " << r.r2 << endl;
-    cout << "  d   = " << d.d2/alpha << endl;
+    cout << "  d   = " << d.d2 << endl;
   }
   */
 
-  return (d.d2 / alpha) < tol && n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::converged(Element& element, Residuals& r,

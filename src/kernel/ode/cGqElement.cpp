@@ -102,6 +102,19 @@ real cGqElement::update(RHS& f)
   return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
+real cGqElement::update(RHS& f, real* values)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Update nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    values[i-1] = this->values[0] + integral(i);
+
+  // Return increment
+  return values[q] - this->values[q];
+}
+//-----------------------------------------------------------------------------
 real cGqElement::update(RHS& f, real alpha)
 {
   // Evaluate right-hand side

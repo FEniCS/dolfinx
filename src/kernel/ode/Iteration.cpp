@@ -160,9 +160,9 @@ bool Iteration::stabilize(const Residuals& r, const Increments& d,
     // Decrease number of remaining iterations with small alpha
     j -= 1;
   }
-
+  
   // Check if stabilization is needed
-  return d.d2 > d.d1 && j == 0;
+  return (d.d2 > d.d1 && d.d1 > r0) || (d.d2 > d.d1 && j == 0);
 }
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
@@ -228,10 +228,6 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
   real rho1 = 1.0;
   real rho2 = 1.0;
   
-  // Save current alpha and change alpha to 1 for divergence computation
-  real alpha0 = alpha;
-  alpha = 1.0;
-
   // Save solution values before iteration
   initData(x0, x1.size);
   copyData(group, x0);
@@ -239,7 +235,7 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update element group
-    update(group, dd);
+    updateUnstabilized(group, dd);
 
     // Check for convergence
     if ( dd.d2 < tol )
@@ -260,13 +256,34 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
       break;
   }
 
-  // Restore alpha
-  alpha = alpha0;
-
   // Restore solution values
   copyData(x0, group);
 
   return rho2;
+}
+//-----------------------------------------------------------------------------
+void Iteration::updateUnstabilized(ElementGroupList& list, Increments& d)
+{
+  dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void Iteration::updateUnstabilized(ElementGroup& group, Increments& d)
+{
+  // Reset values
+  x1.offset = 0;
+  
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
+  for (ElementIterator element(group); !element.end(); ++element)
+  {
+    real di = fabs(element->update(f, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
+  }
+  d = sqrt(increment);
+
+  // Copy values to elements
+  copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
 real Iteration::computeAlpha(real rho) const

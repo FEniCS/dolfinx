@@ -1,9 +1,15 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// Test problems for the adaptive stabilization of stiff
-// problems over one time step. The test problems are different
-// versions of the nonnormal test problem.
+// Test problems for the adaptive stabilization of stiff problems over
+// one time step. The test problems are different versions of the
+// nonnormal test problem. Typical way of running obtaining data from
+// the iteration:
+//
+//   ./dolfin-ode-stiff-test | grep debug2 | cut -d':' -f2 > iter
+//
+// which may not be very nice, but this is only for debugging... :)
+// The number printed are the residual, increment, and damping.
 
 #include <dolfin.h>
 
@@ -61,6 +67,10 @@ int main()
   // Underdamped
   TestProblem test2(2e4);
   test2.solve();
+
+  // Overdamped
+  TestProblem test3(1e3);
+  test3.solve();
   
   return 0;
 }

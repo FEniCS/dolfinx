@@ -62,6 +62,9 @@ namespace dolfin {
     /// Update element (iteration)
     virtual real update(RHS& f) = 0;
 
+    /// Update element (iteration), non-destructive
+    virtual real update(RHS& f, real* values) = 0;
+
     /// Update element (iteration), damped version
     virtual real update(RHS& f, real alpha) = 0;
 
