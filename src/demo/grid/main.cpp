@@ -6,11 +6,15 @@
 // Temporary: FIXME
 Display *display = new Terminal(0);
 
+using namespace dolfin;
+
 int main(int argc, char **argv)
 {
-  dolfin::Grid grid("grid.inp");
+  dolfin::Grid grid;
+
+  File file("grid.xml");
+
+  
 
 
-  // Temporary: FIXME
-  delete display;
 }

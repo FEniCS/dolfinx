@@ -11,6 +11,8 @@
 namespace dolfin {
 
   class Vector;
+  class SparseMatrix;
+  class Grid;
   
   class GenericFile {
   public:
@@ -21,25 +23,18 @@ namespace dolfin {
 	 // Input
 	 
 	 virtual void operator>> (Vector& vector) = 0;
+	 virtual void operator>> (SparseMatrix& sparseMatrix) = 0;
+	 virtual void operator>> (Grid& grid) = 0;
 	 
 	 // Output
 	 
-	 virtual void operator<< (const Vector &vector) = 0;
+	 virtual void operator<< (const Vector& vector) = 0;
+	 virtual void operator<< (const SparseMatrix& sparseMatrix) = 0;
+	 virtual void operator<< (const Grid& grid) = 0;
 	 
   protected:
 
-	 void openIn();
-	 void openOut();
-	 void closeIn();
-	 void closeOut();
-	 
 	 std::string filename;
-
-	 std::ifstream in;
-	 std::ofstream out;
-
-	 bool infile_opened;
-	 bool outfile_opened;
 	 
   };
 

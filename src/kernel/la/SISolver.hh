@@ -4,7 +4,7 @@
 #ifndef __SI_SOLVER_HH
 #define __SI_SOLVER_HH
 
-#include "SparseMatrix.hh"
+#include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
 
 namespace dolfin {

@@ -12,6 +12,9 @@
 namespace dolfin {
 
   class Vector;
+  class XMLObject;
+  
+  enum ParserState { OUTSIDE, VECTOR_OUTSIDE, VECTOR_INSIDE, DONE };
   
   class XMLFile : public GenericFile {
   public:
@@ -22,33 +25,30 @@ namespace dolfin {
 	 // Input
 	 
 	 void operator>> (Vector &vector);
+	 void operator>> (SparseMatrix &sparseMatrix);
+	 void operator>> (Grid &grid);
 	 
 	 // Output
 	 
 	 void operator<< (const Vector &vector);
+	 void operator<< (const SparseMatrix &sparseMatrix);
+	 void operator<< (const Grid &grid);
 
 	 // Friends
 	 
-	 friend void sax_start_element(void *ctx, const xmlChar *name, const xmlChar **attrs);
+	 friend void sax_start_element (void *ctx, const xmlChar *name, const xmlChar **attrs);
+	 friend void sax_end_element   (void *ctx, const xmlChar *name);
 
-  protected:
-
-	 void VectorInit  (const xmlChar *name, const xmlChar **attrs);
-	 void VectorValue (const xmlChar *name, const xmlChar **attrs);
-	 
   private:
 
-	 void resetData();
 	 void parseFile();
-	 void parseIntegerRequired (const xmlChar *name, const xmlChar **attrs, const char *attribute, int *value);
-	 void parseIntegerOptional (const xmlChar *name, const xmlChar **attrs, const char *attribute, int *value);
-	 void parseRealRequired    (const xmlChar *name, const xmlChar **attrs, const char *attribute, real *value);
-	 void parseRealOptional    (const xmlChar *name, const xmlChar **attrs, const char *name, real *value);
 
+	 // Parser and state
 	 xmlSAXHandler sax;
+	 ParserState state;
 
 	 // Data
-	 Vector *vector;
+	 XMLObject *xmlObject;
 	 
   };
 

@@ -31,8 +31,28 @@ void File::operator>>(Vector& vector)
   *file >> vector;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Vector &vector)
+void File::operator>>(SparseMatrix& sparseMatrix)
+{
+  *file >> sparseMatrix;
+}
+//-----------------------------------------------------------------------------
+void File::operator>>(Grid& grid)
+{
+  *file >> grid;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const Vector& vector)
 {
   *file << vector;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const SparseMatrix& sparseMatrix)
+{
+  *file << sparseMatrix;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(const Grid& grid)
+{
+  *file << grid;
 }
 //-----------------------------------------------------------------------------

@@ -24,6 +24,11 @@ Vector::Vector(int size)
   resize(size);
 }
 //-----------------------------------------------------------------------------
+int Vector::bytes()
+{
+  return sizeof(Vector) + n*sizeof(real);
+}
+//-----------------------------------------------------------------------------
 Vector::~Vector()
 {
   delete [] values;
@@ -47,6 +52,15 @@ int Vector::size()
   return n;
 }
 //-----------------------------------------------------------------------------
+real& Vector::operator()(int i)
+{
+  if ( (i<0) || (i>=n) )
+	 display->InternalError("Vector::operator ()",
+									"Illegal vector index: %d",i);
+         
+  return values[i];
+}
+//-----------------------------------------------------------------------------
 void Vector::operator=(Vector &vector)
 {
   if ( size() != vector.size() )
@@ -61,15 +75,6 @@ void Vector::operator=(real scalar)
 {
   for (int i=0; i<n; i++)
 	 values[i] = scalar;    
-}
-//-----------------------------------------------------------------------------
-real& Vector::operator()(int i)
-{
-  if ( (i<0) || (i>=n) )
-	 display->InternalError("Vector::operator ()",
-									"Illegal vector index: %d",i);
-         
-  return values[i];
 }
 //-----------------------------------------------------------------------------
 void Vector::operator+=(real scalar) 
@@ -152,16 +157,31 @@ void Vector::add(real scalar, Vector &vector)
 	 values[i] += scalar * vector.values[i];  
 }
 //-----------------------------------------------------------------------------
+void Vector::show()
+{
+  cout << "[ ";
+  for (int i = 0; i < n; i++)
+	 cout << values[i] << " ";
+  cout << "]" << endl;
+}
+//-----------------------------------------------------------------------------
 namespace dolfin {
 
   //---------------------------------------------------------------------------
   ostream& operator << (ostream& output, Vector& vector)
   {
-	 output << "[ ";
-	 for (int i = 0; i < vector.size(); i++)
-		output << vector(i) << " ";
-	 output << "]";
+	 output << "[ Vector of size " << vector.size()
+			  << ", approximatetly ";
+
+	 int bytes = vector.bytes();
 	 
+	 if ( bytes > 1024*1024 )
+		output << bytes/1024 << " Mb.]";
+	 else if ( bytes > 1024 )
+		output << bytes/1024 << " kb.]";
+	 else
+		output << bytes << " bytes.]";
+
 	 return output;
   }
   //---------------------------------------------------------------------------

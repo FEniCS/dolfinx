@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include "DenseMatrix.hh"
-#include "SparseMatrix.hh"
+#include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Display.hh>
 #include "DirectSolver.hh"
@@ -158,7 +158,7 @@ void DirectSolver::Solve(SparseMatrix *A, Vector *x, Vector *b)
   display->Message(0,"Using direct solver for sparse matrix (not recommended).");
 
   // Make a copy of the sparse matrix
-  DenseMatrix B(A);
+  DenseMatrix B(*A);
 
   // LU factorize B
   LU(&B);

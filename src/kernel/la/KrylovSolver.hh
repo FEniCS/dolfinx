@@ -4,7 +4,7 @@
 #ifndef __KRYLOV_SOLVER_HH
 #define __KRYLOV_SOLVER_HH
 
-#include "SparseMatrix.hh"
+#include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
 
 namespace dolfin {

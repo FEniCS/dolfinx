@@ -3,7 +3,7 @@
 #include <dolfin/Display.hh>
 #include <dolfin/Tetrahedron.hh>
 #include <dolfin/Node.hh>
-#include <dolfin/Grid.hh>
+#include <dolfin/Grid.h>
 
 using namespace dolfin;
 

@@ -3,7 +3,7 @@
 
 // DOLFIN grid classes
 
-#include <dolfin/Grid.hh>
+#include <dolfin/Grid.h>
 #include <dolfin/Point.hh>
 #include <dolfin/Node.hh>
 #include <dolfin/Cell.hh>

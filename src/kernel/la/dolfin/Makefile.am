@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_la.h Vector.h
+EXTRA_DIST = dolfin_la.h Vector.h SparseMatrix.h

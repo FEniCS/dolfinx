@@ -9,14 +9,18 @@ Display *display = new Terminal(0);
 using namespace dolfin;
 
 int main(int argc, char **argv)
-{
-  File file("data.xml");
+{  
   Vector x;
+  Matrix A;
 
-  file >> x;
-
-  cout << "x = " << x << endl;
+  File file("data.xml");
   
-  // Temporary: FIXME
-  delete display;
+  file >> x;
+  file >> A;
+
+  cout << x << endl;
+  cout << A << endl;
+
+  x.show();
+  A.show();
 }

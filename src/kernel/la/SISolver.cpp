@@ -19,9 +19,9 @@ SISolver::SISolver()
 //-----------------------------------------------------------------------------
 void SISolver::Solve(SparseMatrix* A, Vector* x, Vector* b)
 {
-  if (A->Size(0)!=A->Size(1)) display->Error("Must be a square matrix.");
+  if (A->size(0)!=A->size(1)) display->Error("Must be a square matrix.");
 
-  if (A->Size(0)!=b->size())  display->Error("Not compatible matrix and vector sizes.");
+  if (A->size(0)!=b->size())  display->Error("Not compatible matrix and vector sizes.");
   
   if (x->size()!=b->size())
     x->resize(b->size());
@@ -78,10 +78,10 @@ void SISolver::IterateRichardson(SparseMatrix* A, Vector* x, Vector* b)
   Vector x0( x->size() );
   x0 = *x;
 
-  for (int i=0; i<A->Size(0); i++){
+  for (int i=0; i<A->size(0); i++){
     x->values[i] = 0.0;
-    for (int pos=0; pos<A->GetRowLength(i); pos++){
-      aij = A->Get(i,&j,pos);
+    for (int pos=0; pos<A->rowSize(i); pos++){
+      aij = (*A)(i,&j,pos);
 		if ( j == -1 )
 		  break;
       if (i==j){
@@ -103,10 +103,10 @@ void SISolver::IterateJacobi(SparseMatrix* A, Vector* x, Vector* b)
   Vector x0( x->size() );
   x0 = *x;
 
-  for (int i=0; i<A->Size(0); i++){
+  for (int i=0; i<A->size(0); i++){
     (*x)(i) = 0.0;
-    for (int pos=0; pos<A->GetRowLength(i); pos++){
-      aij = A->Get(i,&j,pos);
+    for (int pos=0; pos<A->rowSize(i); pos++){
+      aij = (*A)(i,&j,pos);
       if ( j == -1 ) break;
       if (i==j) aii = aij;
       else (*x)(i) += -aij*x0(j);
@@ -122,10 +122,10 @@ void SISolver::IterateGaussSeidel(SparseMatrix* A, Vector* x, Vector* b)
   
   int j;
 
-  for (int i=0; i<A->Size(0); i++){
+  for (int i=0; i<A->size(0); i++){
     (*x)(i) = 0.0;
-    for (int pos=0; pos<A->GetRowLength(i); pos++){
-      aij = A->Get(i,&j,pos);
+    for (int pos=0; pos<A->rowSize(i); pos++){
+      aij = (*A)(i,&j,pos);
 		if ( j == -1 )
 		  break;
       if (j==i){
@@ -148,10 +148,10 @@ void SISolver::IterateSOR(SparseMatrix* A, Vector* x, Vector* b)
 
   real omega = 1.0;
 
-  for (int i=0; i<A->Size(0); i++){
+  for (int i=0; i<A->size(0); i++){
     (*x)(i) = 0.0;
-    for (int pos=0; pos<A->GetRowLength(i); pos++){
-      aij = A->Get(i,&j,pos);
+    for (int pos=0; pos<A->rowSize(i); pos++){
+      aij = (*A)(i,&j,pos);
 		if ( j == -1 )
 		  break;
       if (j==i){
@@ -170,11 +170,11 @@ void SISolver::IterateSOR(SparseMatrix* A, Vector* x, Vector* b)
 void SISolver::ComputeResidual(SparseMatrix* A, Vector* x, Vector* b)
 {
   residual = 0.0;
-  real Ax;
+  real Axi;
   
-  for (int i=0;i<A->Size(0);i++){
-	 Ax = A->Mult(i,x);
-	 residual += sqr((*b)(i)-Ax);
+  for (int i=0;i<A->size(0);i++){
+	 Axi = A->mult(*x,i);
+	 residual += sqr((*b)(i)-Axi);
   }
 
   residual = sqrt(residual);

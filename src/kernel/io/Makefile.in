@@ -76,7 +76,7 @@ SUBDIRS = dolfin
 include_HEADERS = dolfin/Display.hh dolfin/Terminal.hh
 INCLUDES = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES = libdolfin-io.a
-libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.cpp                          DataInfo.hh                          Display.cpp                          DolfinFile.cpp                          DolfinFile.h                          File.cpp                          File.h                          FileType.cpp                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.cpp                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.cpp                          Value.cpp                          Value.hh                          XMLFile.cpp                          XMLFile.h                          matlab.h
+libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.cpp                          DataInfo.hh                          Display.cpp                          File.cpp                          File.h                          FileType.cpp                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.cpp                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.cpp                          Value.cpp                          Value.hh                          XMLFile.cpp                          XMLFile.h                          XMLGrid.h                          XMLGrid.cpp                          XMLObject.h                          XMLObject.cpp                          XMLSparseMatrix.h                          XMLSparseMatrix.cpp                          XMLVector.h                          XMLVector.cpp                          matlab.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -88,8 +88,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_io_a_LIBADD = 
-libdolfin_io_a_OBJECTS =  DataInfo.o Display.o DolfinFile.o File.o \
-FileType.o GenericFile.o Input.o Terminal.o Value.o XMLFile.o
+libdolfin_io_a_OBJECTS =  DataInfo.o Display.o File.o FileType.o \
+GenericFile.o Input.o Terminal.o Value.o XMLFile.o XMLGrid.o \
+XMLObject.o XMLSparseMatrix.o XMLVector.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -108,9 +109,10 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/DataInfo.P .deps/Display.P .deps/DolfinFile.P \
-.deps/File.P .deps/FileType.P .deps/GenericFile.P .deps/Input.P \
-.deps/Terminal.P .deps/Value.P .deps/XMLFile.P
+DEP_FILES =  .deps/DataInfo.P .deps/Display.P .deps/File.P \
+.deps/FileType.P .deps/GenericFile.P .deps/Input.P .deps/Terminal.P \
+.deps/Value.P .deps/XMLFile.P .deps/XMLGrid.P .deps/XMLObject.P \
+.deps/XMLSparseMatrix.P .deps/XMLVector.P
 SOURCES = $(libdolfin_io_a_SOURCES)
 OBJECTS = $(libdolfin_io_a_OBJECTS)
 

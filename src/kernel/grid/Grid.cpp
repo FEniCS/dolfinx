@@ -10,7 +10,7 @@
 #include <utils.h>
 #include <kw_constants.h>
 
-#include <dolfin/Grid.hh>
+#include <dolfin/Grid.h>
 #include <dolfin/Node.hh>
 #include <dolfin/Triangle.hh>
 #include <dolfin/Tetrahedron.hh>

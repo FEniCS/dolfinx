@@ -3,7 +3,7 @@
 
 #include <dolfin/Triangle.hh>
 #include <dolfin/Node.hh>
-#include <dolfin/Grid.hh>
+#include <dolfin/Grid.h>
 #include <utils.h>
 #include <dolfin/Display.hh>
 

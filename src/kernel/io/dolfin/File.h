@@ -9,6 +9,8 @@
 namespace dolfin {
 
   class Vector;
+  class SparseMatrix;
+  class Grid;
   class GenericFile;
   
   class File {
@@ -20,11 +22,15 @@ namespace dolfin {
 	 // Input
 	 
 	 void operator>> (Vector& vector);
+	 void operator>> (SparseMatrix& sparseMatrix);
+	 void operator>> (Grid& grid);
 	 
 	 // Output
 
-	 void operator<< (const Vector &vector);
-
+	 void operator<< (const Vector& vector);
+	 void operator<< (const SparseMatrix& sparseMatrix);
+	 void operator<< (const Grid& grid);
+	 
   private:
 
 	 GenericFile *file;

@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "DenseMatrix.hh"
-#include "SparseMatrix.hh"
+#include <dolfin/SparseMatrix.h>
 #include <dolfin/Display.hh>
 
 using namespace dolfin;
@@ -16,27 +16,27 @@ DenseMatrix::DenseMatrix(int m, int n)
  values = 0;
  permutation = 0;
  
- Resize(m,n);
+ resize(m,n);
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(SparseMatrix *A)
+DenseMatrix::DenseMatrix(SparseMatrix &A)
 {
-  if ( (A->Size(0)<=0) || (A->Size(1)<=0) )
-	 display->InternalError("DenseMatrix::DenseMatrix()",
-									"Illegal dimensions %d x %d.",
-									A->Size(0),A->Size(1));
+  resize(A.size(0),A.size(1));
 
-  values = 0;
-  permutation = 0;
+  int j;
+  real value;
   
-  Resize(A->Size(0),A->Size(1));
-  
-  A->CopyTo(this);
+  for (int i = 0; i < m; i++)
+	 for (int pos = 0; pos < A.rowSize(i); pos++){
+		value = A(i,&j,pos);
+		values[i][j] = value;
+	 }
+
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::Resize(int m, int n)
+void DenseMatrix::resize(int m, int n)
 {
- if ( (m<=0) || (n<=0) )
+ if ( m <= 0 || n <= 0 )
 	display->InternalError("DenseMatrix::Resize()",
 								  "Illegal dimensions %d x %d.",m,n);
  

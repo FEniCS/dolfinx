@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+
+# Convert an inp grid file to an xml file that can be read by DOLFIN
+#
+# Usage: inp2xml grid.inp grid.xml
+#
+# Copyright (C) 2002 Johan Hoffman and Anders Logg.
+# Licensed under the GNU GPL Version 2.
+
+use Text::ParseWords;
+
+# Open files
+open(INFILE,"<$ARGV[0]");
+open(OUTFILE,">$ARGV[1]");
+
+# State
+$state = "header";
+
+# Variables
+$nodes = 0;
+
+# Parse file
+while ($line=<INFILE>){
+
+  # Remove leading and trailing space
+  $line =~ s/^\s+//;
+  $line =~ s/\s+$//;
+
+  # Convert line into list of words
+  @words = &shellwords($line);
+
+  # Convert
+
+  if ( "$state" eq "header" ){
+
+	 $nodes = @words[0];
+	 $cells = @words[1];
+
+	 print ( OUTFILE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" );
+	 print ( OUTFILE "\n" );
+	 print ( OUTFILE "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\">\n" );
+	 print ( OUTFILE "  <grid>\n");
+	 print ( OUTFILE "    <nodes size=\"$nodes\">\n" );
+	 
+	 $state = "nodes";
+		
+  }
+  elsif ( "$state" eq "nodes" ){
+
+	 $number = @words[0] - 1;
+	 $x = @words[1];
+	 $y = @words[2];
+	 $z = @words[3];
+	 
+	 print ( OUTFILE "      <node name=\"$number\" x=\"$x\" y=\"$y\" z=\"$z\">\n" );
+
+	 if ( $number == ( $nodes - 1 ) ){
+
+		print ( OUTFILE "    </nodes>\n" );
+		print ( OUTFILE "    <cells size=\"$cells\">\n" );
+				
+		$state = "cells";
+	 }
+		
+  }
+  elsif ( "$state" eq "cells" ){
+
+	 $number = @words[0] - 1;
+	 $dummy  = @words[1];
+	 $type   = @words[2];
+
+	 if ( "$type" eq "tet" ){
+		
+		$n0 = @words[3] - 1;
+		$n1 = @words[4] - 1;
+		$n2 = @words[5] - 1;
+		$n3 = @words[6] - 1;
+
+		print ( OUTFILE "      <tetrahedron name=\"$number\" n0=\"$n0\" n1=\"$n1\" n2=\"$n2\" n3=\"$n3\">\n" );
+
+		if ( $number == ($cells - 1) ){
+
+		  print ( OUTFILE "    </cells>\n");
+		  print ( OUTFILE "  </grid>\n");
+		  print ( OUTFILE "</dolfin>");
+		
+		}
+		
+	 }
+	 
+  }
+
+}

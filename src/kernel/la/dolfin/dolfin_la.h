@@ -4,5 +4,12 @@
 // DOLFIN linear algebra classes
 
 #include <dolfin/Vector.h>
+#include <dolfin/SparseMatrix.h>
+
+namespace dolfin {
+
+  typedef SparseMatrix Matrix;
+
+}
 
 #endif

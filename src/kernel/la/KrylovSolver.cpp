@@ -323,7 +323,7 @@ void KrylovSolver::SolveCG(Vector* x, Vector* b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::ApplyMatrix( Vector *x, Vector *Ax )
 {
-  A->Mult(x,Ax);
+  A->mult(*x,*Ax);
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::ApplyMatrix( real **x, int comp )
@@ -350,10 +350,10 @@ void KrylovSolver::ApplyMatrix( real **x, int comp )
     display->InternalError("SISolver::Solve()","Preconditioner not implemented");
   }
 
-  Vector tmp1(A->Size(0)); 
-  Vector tmp2(A->Size(0)); 
+  Vector tmp1(A->size(0)); 
+  Vector tmp2(A->size(0)); 
 
-  for (int i=0; i<A->Size(0); i++)
+  for (int i=0; i<A->size(0); i++)
 	 tmp1(i) = x[i][comp];
 
   // Precondition 
@@ -364,9 +364,9 @@ void KrylovSolver::ApplyMatrix( real **x, int comp )
     tmp1 = tmp2;
   }      
     
-  A->Mult(&tmp1,&tmp2);
+  A->mult(tmp1,tmp2);
 
-  for (int i=0; i<A->Size(0); i++) x[i][comp+1] = tmp2(i);
+  for (int i=0; i<A->size(0); i++) x[i][comp+1] = tmp2(i);
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::SetMatrix(SparseMatrix* A)
@@ -398,9 +398,9 @@ void KrylovSolver::SolvePxv( Vector *x )
     display->InternalError("SISolver::Solve()","Preconditioner not implemented");
   }
 
-  Vector tmp1(A->Size(0)); 
+  Vector tmp1(A->size(0)); 
 
-  for (int i=0; i<A->Size(0); i++)
+  for (int i=0; i<A->size(0); i++)
 	 tmp1(i) = (*x)(i);
 
   // Solve preconditioned problem 
@@ -411,8 +411,8 @@ void KrylovSolver::SolvePxv( Vector *x )
 void KrylovSolver::ComputeResidual( Vector *x, Vector *b, Vector *res )
 {
   real Axrow;
-  for (int i=0;i<A->Size(0);i++){
-    Axrow  = A->Mult(i,x);
+  for (int i=0;i<A->size(0);i++){
+    Axrow = A->mult(*x,i);
     (*res)(i) = (*b)(i) - Axrow;
   }
 }
@@ -421,8 +421,8 @@ real KrylovSolver::GetResidual( Vector *x, Vector *b )
 {
   real Axrow;
   norm_residual = 0.0;
-  for (int i=0;i<A->Size(0);i++){
-    Axrow  = A->Mult(i,x);
+  for (int i=0;i<A->size(0);i++){
+    Axrow = A->mult(*x,i);
     norm_residual += sqr( (*b)(i) - Axrow );
   }
   return sqrt(norm_residual);

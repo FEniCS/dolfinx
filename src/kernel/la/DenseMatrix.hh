@@ -12,10 +12,10 @@ namespace dolfin {
   public:
 	 
 	 DenseMatrix(int m, int n);
-	 DenseMatrix(SparseMatrix *A);
+	 DenseMatrix(SparseMatrix &A);
 	 ~DenseMatrix();
 	 
-	 void Resize(int m, int n);
+	 void resize(int m, int n);
 	 
 	 void     Set        (int i, int j, real value);
 	 int      Size       (int dim);
