@@ -8,7 +8,7 @@
 
 using namespace dolfin;
 
-#define N 1 // Number of times to do the assembly
+#define N 10 // Number of times to do the assembly
 
 // Test old assembly
 real testOld(Mesh& mesh)
@@ -77,15 +77,16 @@ int main()
   dolfin_set("output", "plain text");
 
   Mesh mesh("mesh.xml.gz");
-  //mesh.refineUniformly();
+  mesh.refineUniformly();
+  mesh.refineUniformly();
   
-  //dolfin_log(false);
+  dolfin_log(false);
   
   real t1 = testOld(mesh);
   real t2 = testOptimized(mesh);
   real t3 = testFFC(mesh);
 
-  //dolfin_log(true);
+  dolfin_log(true);
 
   cout << "Old assembly:   " << t1 << endl;
   cout << "New, optimized: " << t2 << endl;
