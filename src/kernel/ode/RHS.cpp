@@ -15,14 +15,16 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Solution& solution) :
   ode(ode), N(ode.size()), solution(&solution), function(0), u(ode.size()),
-  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
+  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3),
+  t(0.0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Function& function) :
   ode(ode), N(ode.size()), solution(0), function(&function), u(ode.size()),
-  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3)
+  illegal_number("Warning: Right-hand side returned illegal number (nan or inf).", 3),
+  t(0.0)
 {
   // Do nothing
 }
@@ -51,6 +53,12 @@ real RHS::operator() (unsigned int index, unsigned int node, real t)
   return check(ode.f(u, t, index));
 }
 //-----------------------------------------------------------------------------
+real RHS::operator() (unsigned int index)
+{
+  // No need to update, just compute the value
+  return check(ode.f(u, t, index));
+}
+//-----------------------------------------------------------------------------
 real RHS::dfdu(unsigned int i, unsigned int j, real t)
 {
   // Update u(j) in case f(i) does not depend on u(j)
@@ -60,7 +68,23 @@ real RHS::dfdu(unsigned int i, unsigned int j, real t)
   // to take something.
   update(i, 0, t);
   
-  return ode.dfdu(u, t, i, j);
+  return check(ode.dfdu(u, t, i, j));
+}
+//-----------------------------------------------------------------------------
+real RHS::dfdu(unsigned int i, unsigned int j)
+{
+  // No need to update, just compute the derivative
+  return check(ode.dfdu(u, t, i, j));
+}
+//-----------------------------------------------------------------------------
+void RHS::update(real t)
+{
+  // Save the current time
+  this->t = t;
+
+  // Update all components
+  for (unsigned int i = 0; i < ode.size(); i++)
+    update(i, 0, t);
 }
 //-----------------------------------------------------------------------------
 void RHS::update(unsigned int index, unsigned int node, real t)

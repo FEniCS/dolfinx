@@ -88,6 +88,7 @@ namespace dolfin
     friend class Dual;
     friend class RHS;
     friend class ReducedModel;
+    friend class JacobianMatrix;
 
   protected:
     

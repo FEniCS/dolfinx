@@ -23,10 +23,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewtonIteration::NewtonIteration(Solution& u, RHS& f,
-				     FixedPointIteration& fixpoint,
-				     unsigned int maxiter,
-				     real maxdiv, real maxconv, real tol,
-				     unsigned int depth) :
+				 FixedPointIteration& fixpoint,
+				 unsigned int maxiter,
+				 real maxdiv, real maxconv, real tol,
+				 unsigned int depth) :
   Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
 {
   // Do nothing
@@ -78,12 +78,16 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
     dof = dof + element->size();
   }  
 
-  JacobianMatrix J(f.ode);
+  JacobianMatrix J(f);
   Vector res(dof);
   Vector sk(dof);
 
   
+  // Update Jacobian at the left end-point of the interval
+  ElementIterator element(list);
+  J.update(element->endtime(), dof);
 
+  // Compute discrete residual
   int i = 0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
@@ -93,7 +97,8 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
   }
 
   res *= -1.0;
-
+  
+  // Solve linear system
   KrylovSolver solver(KrylovSolver::GMRES);
   solver.solve(J, sk, res);
 
@@ -119,6 +124,8 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)
 {
+  dolfin_error("Not implemented.");
+
   cout << "Newton group" << endl;
 
   // Assume only dG0 for now
@@ -134,9 +141,12 @@ void NewtonIteration::update(ElementGroup& group, Increments& d)
 
   //cout << "dof: " << n << endl;
 
-  JacobianMatrix J(f.ode);
+  JacobianMatrix J(f);
   Vector res(dof);
   Vector sk(dof);
+
+  // Update Jacobian at current time
+  
 
   int i = 0;
   for (ElementIterator element(group); !element.end(); ++element)

@@ -9,7 +9,7 @@
 namespace dolfin
 {
   
-  class ODE;
+  class RHS;
 
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a time slab.
@@ -19,20 +19,30 @@ namespace dolfin
   public:
 
     /// Constructor
-    JacobianMatrix(ODE& ode);
+    JacobianMatrix(RHS& f);
 
     /// Destructor
     ~JacobianMatrix();
 
-    /// Recompute the Jacobian of the right-hand side
-    void update(real t);
+    /// Return dimension of matrix
+    unsigned int size(unsigned int dim) const;
     
     /// Multiplication with vector (use with GMRES solver)
     void mult(const Vector& x, Vector& Ax) const;
 
+    /// Recompute at given time for given number of unknowns
+    void update(real t, unsigned n);
+
   private:
 
+    // The right-hand side
+    RHS& f;
+
+    // A (sparse) Matrix storing the Jacobian of f
     Matrix dfdu;
+
+    // Number of unknowns
+    unsigned int n;
     
   };
 

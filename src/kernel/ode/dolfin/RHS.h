@@ -36,17 +36,26 @@ namespace dolfin {
     /// Number of components
     unsigned int size() const;
 
-    /// Evaluation of the right-hand side
+    /// Evaluation of the right-hand side at given time
     real operator() (unsigned int index, real t);
 
-    /// Evaluation of the right-hand side
+    /// Evaluation of the right-hand side at given node and time
     real operator() (unsigned int index, unsigned int node, real t);
+    
+    /// Evaluation of the right-hand side at current solution and time
+    real operator() (unsigned int index);
 
-    // Compute derivative dfi/duj
+    // Compute derivative dfi/duj at given time
     real dfdu(unsigned int i, unsigned int j, real t);
 
+    // Compute derivative dfi/duj at current solution and time
+    real dfdu(unsigned int i, unsigned int j);
+
+    /// Update solution to given time
+    void update(real t);
+
     /// Friends
-    friend class NewtonIteration;
+    friend class JacobianMatrix;
 
   private:
 
@@ -87,6 +96,9 @@ namespace dolfin {
 
     // Event for illegal value of right-hand side
     Event illegal_number;
+
+    // Current time
+    real t;
 
   };
     

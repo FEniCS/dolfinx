@@ -1,18 +1,35 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/NewArray.h>
+#include <dolfin/RHS.h>
 #include <dolfin/ODE.h>
 #include <dolfin/JacobianMatrix.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-JacobianMatrix::JacobianMatrix(ODE& ode) :
-  Matrix(ode.size(), ode.size(), Matrix::generic), dfdu(ode.size(), ode.size())
+JacobianMatrix::JacobianMatrix(RHS& f) :
+  Matrix(0, 0, Matrix::generic), f(f), dfdu(f.size(), f.size()), n(0)
 {
+
   // Here we should create a sparse matrix with all zeros that
   // has the same sparsity pattern as the ode (use ODE::sparsity)
 
+  cout << "Creating Jacobian matrix" << endl;
+
+  for (unsigned int i = 0; i < dfdu.size(0); i++)
+  {
+    // Get dependencies
+    NewArray<unsigned int>& row = f.ode.sparsity.row(i);
+
+    // Copy sparsity pattern to matrix
+    dfdu.initrow(i, row.size());
+    for (unsigned int pos = 0; pos < row.size(); pos++)
+    {
+      dfdu(i, row[pos]) = 0.0;
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 JacobianMatrix::~JacobianMatrix()
@@ -20,14 +37,31 @@ JacobianMatrix::~JacobianMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void JacobianMatrix::update(real t)
+unsigned int JacobianMatrix::size(unsigned int dim) const
 {
-  // Recompute the Jacobian of the right-hand side
+  return n;
+}
+//-----------------------------------------------------------------------------
+void JacobianMatrix::update(real t, unsigned int n)
+{
+  // Recompute the Jacobian of the right-hand side at given time
 
-  // There should be a virtual method dfdu(i, j) in the ODE class that
-  // people can implement if they want to provide the Jacobian explicitly,
-  // instead of using a numerically computed Jacobian
+  cout << "Updating Jacobian at time t = " << t << endl;
 
+  // Update the right-hand side to given time
+  f.update(t);
+
+  // Compute the Jacobian
+  for (unsigned int i = 0; i < dfdu.size(); i++)
+  {
+     unsigned tmp = 0;
+     const NewArray<unsigned int>& row = f.ode.sparsity.row(i);
+     for (unsigned int pos = 0; pos < row.size(); ++pos)
+       dfdu(i, tmp, pos) = f.dfdu(i, row[pos]);
+  }
+
+  // Update number of unkowns
+  this->n = n;
 }
 //-----------------------------------------------------------------------------
 void JacobianMatrix::mult(const Vector& x, Vector& Ax) const

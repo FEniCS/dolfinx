@@ -160,7 +160,7 @@ private:
 
 int main()
 {
-  //dolfin_set("output", "plain text");
+  dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("tolerance", 1e-3);
@@ -170,6 +170,7 @@ int main()
   //dolfin_set("initial time step", 0.01);
   dolfin_set("number of samples", 10);
   dolfin_set("solve dual problem", false);
+  dolfin_set("stiffness", "stiff");
 
   MedicalAkzoNobel ode(20);
   ode.solve();  

@@ -48,7 +48,7 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
     state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else if ( stiffness == "stiff level 3" )
     state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
-  else if ( stiffness == "newton" )
+  else if ( stiffness == "stiff" )
     state = new NewtonIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else
   {
