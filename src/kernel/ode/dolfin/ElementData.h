@@ -39,25 +39,47 @@ namespace dolfin {
     /// Return last element for given component (null if not in memory)
     Element* last(unsigned int i);
 
-    /// Clear all data
-    void clear();
-    
+    /// Notify that this might be a good time to move to next block
+    void shift();
+
     /// Return number of components
     unsigned int size() const;
+
+    /// Check if given time is within the range of data
+    bool within(real t) const;
 
   private:
 
     // Find block for given time
     ElementBlock* findpos(real t);
 
+    // Update interval
+    void update(real t0, real t1);
+
+    // Check if a new block does not fit into memory
+    bool memfull();
+
+    // Drop the last block (the one furthest from given interval)
+    void droplast(real t0, real t1);
+
     // Size of system;
     int N;
     
     // List of element blocks
     NewList<ElementBlock*> blocks;
+    typedef NewList<ElementBlock*>::iterator BlockIterator;
 
     // Current block
     ElementBlock* current;
+
+    // Interval
+    real t0, t1;
+
+    // True if this block is empty
+    bool empty;
+
+    // Cache size
+    unsigned int cachesize;
 
   };
 

@@ -66,7 +66,10 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     
     // Check if we are done
     if ( timeslab->finished() )
+    {
+      delete timeslab;
       break;
+    }
 
     // Update time
     t = timeslab->endtime();

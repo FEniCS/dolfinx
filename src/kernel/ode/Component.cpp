@@ -20,7 +20,13 @@ Component::Component()
 //-----------------------------------------------------------------------------
 Component::~Component()
 {
-  clear();
+  // Delete elements
+  for (unsigned int i = 0; i < elements.size(); i++)
+  {
+    if ( elements[i] )
+      delete elements[i];
+    elements[i] = 0;
+  }
 }
 //-----------------------------------------------------------------------------
 Element* Component::createElement(const Element::Type type, real t0, real t1,
@@ -57,17 +63,6 @@ Element* Component::last()
     return 0;
 
   return elements.back();
-}
-//-----------------------------------------------------------------------------
-void Component::clear()
-{
-  // Delete elements
-  for (unsigned int i = 0; i < elements.size(); i++) {
-    delete elements[i];
-    elements[i] = 0;
-  }
-  
-  elements.clear();
 }
 //-----------------------------------------------------------------------------
 unsigned int Component::size() const

@@ -30,6 +30,7 @@ namespace dolfin {
       add(Parameter::INT, "max no cg iterations", 1000);
       add(Parameter::INT, "pc iterations", 5);
       add(Parameter::INT, "number of samples", 100);
+      add(Parameter::INT, "element cache size", 32);
        
       add(Parameter::BOOL, "debug time steps", 0);
 

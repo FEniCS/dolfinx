@@ -33,9 +33,6 @@ namespace dolfin {
     /// Return last element
     Element* last();
 
-    /// Clear component
-    void clear();
-
     /// Return number of elements in component
     unsigned int size() const;
 

@@ -24,7 +24,7 @@ namespace dolfin {
     NewList() : std::list<T>() {}
 
     NewList(NewList<T> &x) : std::list<T>(x) {}
-  
+    
   };
   
 }

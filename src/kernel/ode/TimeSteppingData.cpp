@@ -97,17 +97,19 @@ real TimeSteppingData::u(unsigned int i, real t) const
 real TimeSteppingData::k(unsigned int i, real t) const
 {
   Element* element = elmdata.element(i,t);
-  dolfin_assert(element);
+  if ( element )
+    return element->timestep();
 
-  return element->timestep();
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real TimeSteppingData::r(unsigned int i, real t, RHS& f) const
 {
   Element* element = elmdata.element(i,t);
-  dolfin_assert(element);
+  if ( element )
+    return element->computeResidual(f);
 
-  return element->computeResidual(f);
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real TimeSteppingData::tolerance() const
@@ -152,8 +154,8 @@ void TimeSteppingData::shift(TimeSlab& timeslab, RHS& f)
     initval[i] = element->endval();
   }
   
-  // Clear element data
-  elmdata.clear();
+  // Tell element data to create a new block next time
+  elmdata.shift();
 
   // Update time for initial values
   t0 = timeslab.endtime();

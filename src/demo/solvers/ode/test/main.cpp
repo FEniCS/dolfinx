@@ -70,6 +70,7 @@ public:
     real k = (real) (i+1);
     return -k*u(i-N/2);
   }
+
 };
 
 int main()
@@ -82,6 +83,7 @@ int main()
   dolfin_set("partitioning threshold", 1.0);
   dolfin_set("interval threshold", 0.9);
   dolfin_set("number of samples", 100);
+  dolfin_set("element cache size", 32);
 
   Minimal minimal;
   minimal.solve();

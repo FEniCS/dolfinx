@@ -31,12 +31,37 @@ namespace dolfin {
     /// Return last element for given component
     Element* last(unsigned int i);
 
+    /// Save block to given file
+    void save();
+
     /// Return number of components
     unsigned int size() const;
 
+    /// Return number of bytes (approximately) used by this block
+    unsigned int bytes() const;
+
+    /// Return distance to given interval
+    real dist(real t0, real t1) const;
+
+    /// Check if given time is within this block
+    bool within(real t) const;
+
   private:
 
+    // Update interval
+    void update(real t0, real t1);
+
+    // List of components
     NewArray<Component> components;
+
+    // Interval
+    real t0, t1;
+
+    // True if this block is empty
+    bool empty;
+
+    // Number of bytes (approximately) used by this block
+    unsigned int _bytes;
 
   };
 
