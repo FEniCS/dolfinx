@@ -1,3 +1,4 @@
+ - Bug fix for tetrahedral mesh refinement (ingelstrom)
  - Add connectivity face-cell and edge-cell
  - New interface for assembly: Galerkin --> FEM
  - Bug fix for PDE systems of size > 3

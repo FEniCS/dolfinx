@@ -1,7 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Pär Ingelström, 2004.
+// Modified by Par Ingelstrom, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -16,7 +16,7 @@
 #include <dolfin/MeshRefinement.h>
    
 using namespace dolfin;
-   
+
 //-----------------------------------------------------------------------------
 void MeshRefinement::refine(MeshHierarchy& meshes)
 {
@@ -96,8 +96,10 @@ void MeshRefinement::globalRefinement(MeshHierarchy& meshes)
   for (MeshIterator mesh(meshes); !mesh.end(); ++mesh) {
 
     // Close mesh for all levels but the coarsest
-    if ( *mesh != meshes.coarse() )
+    if ( *mesh != meshes.coarse() ) {
+      updateEdgeMarks(*mesh);
       closeMesh(*mesh);
+    }
 
     // Unrefine mesh
     unrefineMesh(*mesh, meshes);
@@ -207,7 +209,7 @@ void MeshRefinement::evaluateMarks(Mesh& mesh)
       if ( edgeOfChildMarkedForRefinement(*c) )
 	c->marker() = Cell::marked_for_reg_ref;
       else
-      	c->marker() = Cell::marked_according_to_ref;
+	c->marker() = Cell::marked_according_to_ref;
     }
 
     // Update edge marks
@@ -233,8 +235,14 @@ void MeshRefinement::closeMesh(Mesh& mesh)
   List<Cell*> cells;
   for (CellIterator c(mesh); !c.end(); ++c) {
 
-    // Note that we check all cells, not only regular (different from Bey)
-    if ( edgeMarkedByOther(*c) ) {
+    // Remove marks for irregular refinement
+    if (c->marker() == Cell::marked_for_irr_ref_1 ||
+	c->marker() == Cell::marked_for_irr_ref_2 ||
+	c->marker() == Cell::marked_for_irr_ref_3 ||
+	c->marker() == Cell::marked_for_irr_ref_4)
+      c->marker() = Cell::marked_for_no_ref;
+    
+    if ( edgeMarkedByOther(*c) && okToRefine(*c) ) {
       cells.add(c);
       closed(c->id()) = false;
     }
@@ -312,6 +320,17 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
   // Mark nodes and cells for reuse
   for (CellIterator c(mesh); !c.end(); ++c) {
 
+    // To avoid removing the entire fine mesh
+    if ( (c->marker() == Cell::marked_for_no_ref) &&
+	 ( c->status() == Cell::unref ) &&
+	 ( c->noChildren() == 1) )
+      c->marker() = Cell::marked_according_to_ref;
+
+    if ( (c->marker() == Cell::marked_for_reg_ref) &&
+	 ( c->status() == Cell::ref_reg ) &&
+	 ( c->noChildren() == 8 ) )
+      c->marker() = Cell::marked_according_to_ref;
+
     // Skip cells which are not marked according to refinement
     if ( c->marker() != Cell::marked_according_to_ref )
       continue;
@@ -322,7 +341,6 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
       for (NodeIterator n(*c->child(i)); !n.end(); ++n)
 	reuse_node(n->id()) = true;
     }
-
   }
 
   // Remove all nodes in the child not marked for re-use
@@ -372,8 +390,8 @@ void MeshRefinement::closeCell(Cell& cell,
 
     // Add neighbors to the list of cells that need to be closed
     for (CellIterator c(cell); !c.end(); ++c)
-      if ( c->haveEdge(*e) && c->status() != Cell::ref_irr && c != cell && closed(c->id()) )
-	  cells.add(c);
+      if ( c->haveEdge(*e) && okToRefine(*c) && c != cell && closed(c->id()) )
+	cells.add(c);
   }
 
   // Remember that the cell has been closed, important since we don't want
@@ -592,3 +610,4 @@ void MeshRefinement::removeCell(Cell& cell, Mesh& mesh)
   mesh.remove(cell);
 }
 //-----------------------------------------------------------------------------
+
