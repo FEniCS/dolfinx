@@ -145,9 +145,31 @@ const Mat NewMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::disp() const
+void NewMatrix::disp(bool sparse) const
 {
-  MatView(A, PETSC_VIEWER_STDOUT_SELF);
+  // Use PETSc sparse output as default
+  if ( sparse )
+  {
+    MatView(A, PETSC_VIEWER_STDOUT_SELF);
+    return;
+  }
+  
+  // Dense output
+  const uint M = size(0);
+  const uint N = size(1);
+  for (uint i = 0; i < M; i++)
+  {
+    cout << "| ";
+    for (uint j = 0; j < N; j++)
+    {
+      const real value = getval(i, j);
+      if ( fabs(value) < DOLFIN_EPS )
+	cout << "0 ";
+      else
+	cout << value << " ";
+    }
+    cout << "|" << endl;
+  }
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const NewMatrix& A)

@@ -13,12 +13,16 @@
 #include "Poisson.h"
 #include "PoissonSolver.h"
 
+// FIXME: Remove when working
+#include "PoissonOld.h"
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
 {
-  // Do nothing
+  // FIXME: Remove when working
+  dolfin_parameter(Parameter::FUNCTION, "source", 0);
 }
 //-----------------------------------------------------------------------------
 const char* PoissonSolver::description()
@@ -28,12 +32,17 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
+  cout << "---------------- Old solver -----------------" << endl;
+
+  solveOld();
+
+  cout << "---------------- New solver -----------------" << endl;
+
   Poisson::FiniteElement element;
 
   // FIXME: Should be able to take f as an argument from main.cpp
   // FIXME: fvalues should be initialized by NewFunction
   NewVector fvalues(mesh.noNodes());
-
   fvalues = 8.0; // Should together with bc give solution 4*x(1-x)
   NewFunction f(mesh, element, fvalues);
 
@@ -43,14 +52,12 @@ void PoissonSolver::solve()
   NewMatrix A;
   NewVector x, b;
 
-  NewFunction u(mesh, element, x);
-  u.rename("u", "temperature");
 
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
 
   // Set boundary conditions
-  dirichletBC(A,b,mesh);
+  dirichletBC(A, b, mesh);
   
   x.init(b.size());
   x = 0.0;
@@ -60,7 +67,7 @@ void PoissonSolver::solve()
   NewGMRES solver;
   solver.solve(A, x, b);
 
-  A.disp();
+  A.disp(false);
   b.disp();
   x.disp();
     
@@ -70,10 +77,45 @@ void PoissonSolver::solve()
 
   // Save the solution
   // FIXME: Implement output for NewFunction
+  //NewFunction u(mesh, element, x);
+  //u.rename("u", "temperature");
+
   Function uold(mesh, xold, 1);
   uold.rename("u", "temperature");
   File file("poisson.m");
   file << uold;
+}
+//-----------------------------------------------------------------------------
+void PoissonSolver::solveOld()
+{
+  // This is for comparison with the old solver, remove when working
+
+  Matrix       A;
+  Vector       x, b;
+  Function     u(mesh, x);
+  Function     f("source");
+  PoissonOld   poisson(f);
+  KrylovSolver solver;
+  File         file("poissonold.m");
+
+  // Discretise
+  FEM::assemble(poisson, mesh, A, b);
+
+  cout << "Old matrix A:" << endl;
+  A.show();
+
+  cout << "Old vector b:" << endl;
+  b.show();
+
+  // Solve the linear system
+  solver.solve(A, x, b);
+
+  cout << "Old solution x:" << endl;
+  x.show();
+
+  // Save the solution
+  u.rename("u", "temperature");
+  file << u;
 }
 //-----------------------------------------------------------------------------
 void PoissonSolver::dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh)

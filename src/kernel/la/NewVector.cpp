@@ -182,7 +182,14 @@ const NewVector& NewVector::operator= (real a)
 //-----------------------------------------------------------------------------
 void NewVector::disp() const
 {
-  VecView(x, PETSC_VIEWER_STDOUT_SELF);
+  // FIXME: Maybe this could be an option?
+  //VecView(x, PETSC_VIEWER_STDOUT_SELF);
+ 
+  const uint M = size();
+  cout << "[ ";
+  for (uint i = 0; i < M; i++)
+    cout << getval(i) << " ";
+  cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
 real NewVector::getval(uint i) const

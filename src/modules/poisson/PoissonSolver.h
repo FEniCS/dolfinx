@@ -17,7 +17,11 @@ namespace dolfin
     
     const char* description();
     void solve();
-    
+  
+  private:
+
+    // FIXME: Remove when working
+    void solveOld();
     void dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh);
 
   };

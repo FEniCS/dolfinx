@@ -19,10 +19,18 @@
 using namespace dolfin;
 
 // Source term
+/*
 real f(real x, real y, real z, real t)
 {
   real pi = DOLFIN_PI;
   return 14.0 * pi*pi * sin(pi*x) * sin(2.0*pi*y) * sin(3.0*pi*z);
+}
+*/
+
+// Modified source term to test the assembler
+real f(real x, real y, real z, real t)
+{
+  return 8.0;
 }
 
 // Boundary conditions
@@ -36,9 +44,10 @@ int main()
   dolfin_set("output", "plain text");
 
   Mesh mesh("mesh.xml.gz");
-
-  Problem poisson("poisson", mesh);
   
+  Problem poisson("poisson", mesh);
+
+  poisson.set("source", f);  
   poisson.set("boundary condition", mybc);
  
   poisson.solve();

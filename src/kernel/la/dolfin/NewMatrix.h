@@ -68,8 +68,8 @@ namespace dolfin
     /// Return PETSc Mat pointer
     const Mat mat() const;
 
-    /// Display matrix
-    void disp() const;
+    /// Display matrix (sparse output is default)
+    void disp(bool sparse = true) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
