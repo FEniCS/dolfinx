@@ -10,7 +10,9 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)*(n+1)), n(n), mesh(n, n, n)
+  WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)*(n+1)), 
+				 n(n), offset(N/2), mesh(n, n, n),
+				 file("solution.dx")
   {
     T = 1.0;
     c = 1.0;
@@ -43,8 +45,22 @@ public:
     // First half of system
     if ( i < offset )
       return u[i + offset];
+    
+    // Second half of system
+    const unsigned int j = i - offset;
+    const unsigned int m = n + 1;
+    const unsigned int jx = j % m;
+    const unsigned int jy = (j / m) % m;
+    const unsigned int jz = j / (m*m);
+    real sum = 6.0*u[j];
+    if ( jx > 0 ) sum += u[j - 1];
+    if ( jy > 0 ) sum += u[j - m];
+    if ( jz > 0 ) sum += u[j - m*m];
+    if ( jx < n ) sum += u[j + 1];
+    if ( jy < n ) sum += u[j + m];
+    if ( jz < n ) sum += u[j + m*m];
 
-    return 0.0;
+    return a*sum;
   }
 
   // Right-hand side, mono-adaptive version
@@ -58,8 +74,8 @@ public:
   // Save solution  
   void save(Sample& sample)
   {
-
-
+    // Create vector from sample and save solution to OpenDX file
+    
 
 
   }
@@ -73,6 +89,7 @@ private:
   unsigned int n;      // Number of cells in each direction
   unsigned int offset; // Offset for second half of system
   UnitCube mesh;       // The mesh
+  File file;           // File for saving solution
 
 };
 
@@ -87,7 +104,9 @@ int main(int argc, const char* argv[])
   unsigned int n = static_cast<unsigned int>(atoi(argv[1]));
 
   // Set parameters
+  dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
+  dolfin_set("method", "mcg");
 
   // Solve the wave equation
   WaveEquation wave(n);
