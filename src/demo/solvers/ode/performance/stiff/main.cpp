@@ -48,10 +48,14 @@ public:
     cout << "deps: " << deps << endl;
   }
 
-  Benchmarkcg(unsigned int n) : ParticleSystem(n, 1)
+  Benchmarkcg(unsigned int n, unsigned int m,
+	      real b) : ParticleSystem(n, 1), m(m), b(b)
   {
     if ( n < 2 )
       dolfin_error("System must have at least 2 particles.");
+
+    cout << "b: " << b << endl;
+    cout << "m: " << m << endl;
 
     // Final time
     T = 1.0;
@@ -60,7 +64,7 @@ public:
     k = 1.0;
 
     // Damping constant
-    b = 100.0;
+    //b = 100.0;
     
     // Grid size
     //h = 1.0 / static_cast<real>(n - 1);
@@ -103,11 +107,21 @@ public:
 	b * (vx(i) - vx(i - 1)) + b * (vx(i+1) - vx(i));
   }
 
+  real timestep(unsigned int i)
+  {
+    if(i == 0)
+      return 0.1 / m;
+    if(i == n)
+      return 0.1 / m;
+    return 0.1;
+  }
+
 protected:
 
   real k;
   real b;
   real h;
+  real m;
   
 };
 
@@ -116,7 +130,7 @@ class Benchmarkdg : public Benchmarkcg
 {
 public:
 
-  Benchmarkdg(unsigned int n) : Benchmarkcg(n)
+  Benchmarkdg(unsigned int n, unsigned int m, real b) : Benchmarkcg(n, m, b)
   {
   }
 
@@ -132,6 +146,9 @@ public:
 int main(int argC, char* argV[])
 {
   int n = 100;
+  int m = 100;
+  real b = 100.0;
+
   std::string method = "mcg";
 
   if(argC > 1)
@@ -145,6 +162,22 @@ int main(int argC, char* argV[])
   if(argC > 2)
   {
     std::string arg = argV[2];
+    std::istringstream argstream(arg);
+    
+    argstream >> m;
+  }
+
+  if(argC > 3)
+  {
+    std::string arg = argV[3];
+    std::istringstream argstream(arg);
+    
+    argstream >> b;
+  }
+
+  if(argC > 4)
+  {
+    std::string arg = argV[4];
     if(arg == "mcg")
       method = "mcg";
     if(arg == "mdg")
@@ -157,17 +190,18 @@ int main(int argC, char* argV[])
 
   dolfin_set("output", "plain text");
   //dolfin_set("tolerance", 0.000001);
-  dolfin_set("tolerance", 1e-3);
-  dolfin_set("number of samples", 900);
+  //dolfin_set("tolerance", 1e-3);
+  dolfin_set("number of samples", 111);
   dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);
   //dolfin_set("save solution", true);
-  dolfin_set("partitioning threshold", 0.5);
+  dolfin_set("partitioning threshold", 0.99);
   //dolfin::dolfin_set("partitioning threshold", 1e-7);
+  dolfin::dolfin_set("fixed time step", true);
 
   //dolfin_set("initial time step", 0.01);
   //dolfin_set("fixed time step", true);
-  dolfin_set("maximum iterations", 4000);
+  dolfin_set("maximum iterations", 20000);
 
 
 
@@ -176,7 +210,7 @@ int main(int argC, char* argV[])
 
   if(method == "mcg")
   {
-    Benchmarkcg bench(n);
+    Benchmarkcg bench(n, m, b);
     bench.solve();
   }
 
@@ -185,7 +219,7 @@ int main(int argC, char* argV[])
     dolfin_set("method", "dg");
     dolfin_set("order", 0);
 
-    Benchmarkdg bench(n);
+    Benchmarkdg bench(n, m, b);
     bench.solve();
   }
 
@@ -193,7 +227,7 @@ int main(int argC, char* argV[])
   {
     dolfin::dolfin_set("partitioning threshold", 1e-7);
 
-    Benchmarkcg bench(n);
+    Benchmarkcg bench(n, m, b);
     bench.solve();
   }
 
@@ -204,7 +238,7 @@ int main(int argC, char* argV[])
     dolfin_set("method", "dg");
     dolfin_set("order", 0);
 
-    Benchmarkdg bench(n);
+    Benchmarkdg bench(n, m, b);
     bench.solve();
   }
 
