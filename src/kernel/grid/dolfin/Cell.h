@@ -171,8 +171,11 @@ namespace dolfin {
     // Return cell status
     CellStatus& status();
 
-    // Return cell closed state
+    // Check if cell is closed
     bool& closed();
+
+    // Check if cell should be reused
+    bool& reuse();
 
     // The cell
     GenericCell* c;

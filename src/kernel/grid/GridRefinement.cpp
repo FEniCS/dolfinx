@@ -58,7 +58,7 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   for (GridIterator grid(grids); !grid.end(); ++grid) {
     if (grid.index() > 0)
       closeGrid(*grid);
-    unrefineGrid(*grid);
+    unrefineGrid(*grid, grids);
     refineGrid(*grid);
   }
 
@@ -157,12 +157,51 @@ void GridRefinement::refineGrid(Grid& grid)
   }
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::unrefineGrid(Grid& grid)
+void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 {
   // Unrefine a grid according to marks.
   // This is algorithm UnrefineGrid() in Bey's paper.
 
+  // Get child grid or create a new child grid
+  Grid* child = 0;
+  if ( grid == grids.fine() )
+    child = grid.createChild();
+  else
+    child = &grid.child();
+
+  // Mark all nodes in the child for not re-use
+  for (NodeIterator n(*child); !n.end(); ++n)
+    n->reuse() = false;
   
+  // Mark all cells in the child for not re-use
+  for (CellIterator c(*child); !c.end(); ++c)
+    c->reuse() = false;
+
+  // Mark nodes and cells for reuse
+  for (CellIterator c(grid); !c.end(); ++c) {
+
+    // Skip cells which are not marked according to refinement
+    if ( c->marker() != marked_according_to_ref )
+      continue;
+
+    // Mark children of the cell for re-use
+    for (int i = 0; i < c->noChildren(); i++) {
+      c->child(i)->reuse() = true;
+      for (NodeIterator n(*c->child(i)); !n.end(); ++n)
+	n->reuse() = true;
+    }
+
+  }
+
+  // Remove all nodes in the child not marked for re-use
+  for (NodeIterator n(*child); !n.end(); ++n)
+    if ( !n->reuse() )
+      child->remove(*n);
+
+  // Remove all cells in the child not marked for re-use
+  for (CellIterator c(*child); !c.end(); ++c)
+    if ( !c->reuse() )
+      child->remove(*c);
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)

@@ -99,6 +99,8 @@ namespace dolfin {
     friend class FaceIterator::BoundaryFaceIterator;
     
   private:
+
+    Grid* createChild();
     
     Node* createNode(Point p);
     Node* createNode(real x, real y, real z);

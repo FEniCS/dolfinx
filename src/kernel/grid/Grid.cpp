@@ -76,9 +76,6 @@ Grid::Grid(const Grid& grid)
 
   // Compute connectivity
   init();
-
-  // Copy cell markers
-  
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -164,7 +161,6 @@ void Grid::refine()
   // After refinement:   g0 <-> g1 <-> g2 <-> ... <-> *this(gd) <-> new(ngd)
   // After swap:         g0 <-> g1 <-> g2 <-> ... <-> new(gd)   <-> *this(ngd)
 
-
   // Get pointer to new grid
   Grid* new_grid = &(grids.fine());
 
@@ -225,6 +221,22 @@ void Grid::show()
   
   cout << "---------------------------------------";
   cout << "----------------------------------------" << endl;
+}
+//-----------------------------------------------------------------------------
+Grid* Grid::createChild()
+{
+  // Make sure that we have not already created a child
+  dolfin_assert(!_child);
+  
+  // Create the new grid
+  Grid* new_grid = new Grid();
+  
+  // Set child and parent info
+  _child = new_grid;
+  new_grid->_parent = this;
+
+  // Return the new grid
+  return new_grid;
 }
 //-----------------------------------------------------------------------------
 Node* Grid::createNode(Point p)

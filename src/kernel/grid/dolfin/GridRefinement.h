@@ -45,7 +45,7 @@ namespace dolfin {
     static void refineGrid(Grid& grid);
 
     // Unrefine a grid according to marks
-    static void unrefineGrid(Grid& grid);
+    static void unrefineGrid(Grid& grid, const GridHierarchy& grids);
 
     ///--- Algorithms working on a given cell ---
     
