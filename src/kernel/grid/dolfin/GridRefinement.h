@@ -61,21 +61,30 @@ namespace dolfin {
     static void closeCell(Cell& cell);
 
     // Refine a cell regularly
-    static void regularRefinement(Cell& cell, Grid& grid);
+    static void regularRefinement    (Cell& cell, Grid& grid);
+    static void regularRefinementTri (Cell& cell, Grid& grid);
+    static void regularRefinementTet (Cell& cell, Grid& grid);
+
+    // Refine a cell irregularly by rule 1
+    static void irregularRefinementRule1    (Cell& c, Grid& grid);
+    static void irregularRefinementRule1Tri (Cell& c, Grid& grid);
+    static void irregularRefinementRule1Tet (Cell& c, Grid& grid);
+
+    // Refine a cell irregularly by rule 2
+    static void irregularRefinementRule2    (Cell& c, Grid& grid);
+    static void irregularRefinementRule2Tri (Cell& c, Grid& grid);
+    static void irregularRefinementRule2Tet (Cell& c, Grid& grid);
     
-    // Refine a triangle regularly
-    static void regularRefinementTri(Cell& cell, Grid& grid);
-
-    // Refine a tetrahedron regularly
-    static void regularRefinementTet(Cell& cell, Grid& grid);
-
-    // Refine a tetrahedron irregularly
-    // (different cases depending on number of marked edges)
-    void irregTetRefByRule1(Cell& cell, Grid& grid);
-    void irregTetRefByRule2(Cell& cell, Grid& grid);
-    void irregTetRefByRule3(Cell& cell, Grid& grid);
-    void irregTetRefByRule4(Cell& cell, Grid& grid);
-
+    // Refine a cell irregularly by rule 3
+    static void irregularRefinementRule3    (Cell& c, Grid& grid);
+    static void irregularRefinementRule3Tri (Cell& c, Grid& grid);
+    static void irregularRefinementRule3Tet (Cell& c, Grid& grid);
+    
+    // Refine a cell irregularly by rule 4
+    static void irregularRefinementRule4    (Cell& c, Grid& grid);
+    static void irregularRefinementRule4Tri (Cell& c, Grid& grid);
+    static void irregularRefinementRule4Tet (Cell& c, Grid& grid);
+    
     ///--- A couple of special functions, placed here rather than in Cell ---
 
     /// Check if all children are marked for coarsening

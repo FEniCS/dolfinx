@@ -152,27 +152,29 @@ void GridRefinement::refineGrid(Grid& grid)
 
     // Refine cell according to refinement
     switch ( c->marker() ) {
-    case marked_for_reg:
-      regularRefinement(*c);
+    case marked_for_reg_ref:
+      regularRefinement(*c, grid);
       break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1: 
-	irregTetRefByRule1((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2: 
-	irregTetRefByRule2((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3: 
-	irregTetRefByRule3((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4: 
-	irregTetRefByRule4((*c.pointer()));
-	break;
-      default:
-	dolfin_error("wrong refinement rule");
-      }
-
-
-
+    case marked_for_irr_ref_1:
+      irregularRefinementRule1(*c, grid);
+      break;
+    case marked_for_irr_ref_2:
+      irregularRefinementRule2(*c, grid);
+      break;
+    case marked_for_irr_ref_3:
+      irregularRefinementRule3(*c, grid);
+      break;
+    case marked_for_irr_ref_4:
+      irregularRefinementRule4(*c, grid);
+      break;
+    case marked_for_no_ref:
+      // Do nothing
+      break;
+    default:
+      // We should not rearch this case, cannot be
+      // marked_for_coarsening or marked_according_to_ref
+      dolfin_error("Inconsistent cell markers.");
+    }
 
   }
 
@@ -315,35 +317,17 @@ void GridRefinement::regularRefinementTet(Cell& cell, Grid& grid)
   cell.addChild(t8);
 }
 //-----------------------------------------------------------------------------
-bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
+void GridRefinement::irregularRefinementRule1(Cell& c, Grid& grid)
 {
-  for (int i = 0; i < cell.noChildren(); i++)
-    if ( cell.child(i)->marker() != marked_for_coarsening )
-      return false;
-    
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool GridRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
-{
-  for (int i = 0; i < cell.noChildren(); i++)
-    for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
-      if ( e->marked() )
-	return true;
 
-  return false;
 }
 //-----------------------------------------------------------------------------
-bool GridRefinement::edgeMarkedByOther(Cell& cell)
+void GridRefinement::irregularRefinementRule1Tri(Cell& c, Grid& grid)
 {
-  for (EdgeIterator e(cell); !e.end(); ++e)
-    if ( e->marked() )
-      return true;
 
-  return false;
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::irregTetRefByRule1(Cell& cell, Grid& grid)
+void GridRefinement::irregularRefinementRule1Tet(Cell& cell, Grid& grid)
 {
   // 3 edges are marked on the same face: 
   // insert 3 new nodes at the midpoints on the marked edges, connect the 
@@ -388,7 +372,17 @@ void GridRefinement::irregTetRefByRule1(Cell& cell, Grid& grid)
   cell.addChild(t4);
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::irregTetRefByRule2(Cell* parent)
+void GridRefinement::irregularRefinementRule1(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tri(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tet(Cell& cell, Grid& grid)
 {
   // 1 edge is marked:
   // Insert 1 new node at the midpoint of the marked edge, then connect 
@@ -425,7 +419,17 @@ void GridRefinement::irregTetRefByRule2(Cell* parent)
   cell.addChild(t2);
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::irregTetRefByRule3(Cell* parent)
+void GridRefinement::irregularRefinementRule1(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tri(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tet(Cell& cell, Grid& grid)
 {
   // 2 edges are marked, on the same face 
   // (here there are 2 possibilities, and the chosen 
@@ -481,7 +485,17 @@ void GridRefinement::irregTetRefByRule3(Cell* parent)
   cell.addChild(t3);
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::irregTetRefByRule4(Cell* parent)
+void GridRefinement::irregularRefinementRule1(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tri(Cell& c, Grid& grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::irregularRefinementRule1Tet(Cell& cell, Grid& grid)
 {
   // 2 edges are marked, opposite to each other: 
   // insert 2 new nodes at the midpoints of the marked edges, 
@@ -525,50 +539,39 @@ void GridRefinement::irregTetRefByRule4(Cell* parent)
   cell.addChild(t4);
 }
 //-----------------------------------------------------------------------------
+bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
+{
+  for (int i = 0; i < cell.noChildren(); i++)
+    if ( cell.child(i)->marker() != marked_for_coarsening )
+      return false;
+    
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
+{
+  for (int i = 0; i < cell.noChildren(); i++)
+    for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
+      if ( e->marked() )
+	return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::edgeMarkedByOther(Cell& cell)
+{
+  for (EdgeIterator e(cell); !e.end(); ++e)
+    if ( e->marked() )
+      return true;
+
+  return false;
+}
+
 
 
 
 
 /*
-
-void GridRefinement::evaluateMarks(int grid_level)
-{
-  List<Cell *> cells;
-  for (CellIterator c(grid); !c.end(); ++c){
-    if (c->level() == grid_level) cells.add(c);
-  }
-      
-  bool sons_marked_for_coarsening,edge_of_son_marked;
-  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
-    if ((*c.pointer())->status() == Cell::REFINED_REGULAR){
-      sons_marked_for_coarsening = true;
-      for (int i=0;i<(*c.pointer())->noChildren();i++){
-	if ((*c.pointer())->child(i)->marker() != Cell::MARKED_FOR_COARSENING){ 
-	  sons_marked_for_coarsening = false;
-	  break;
-	}
-      }
-      if (sons_marked_for_coarsening) (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
-    }
-
-    if ((*c.pointer())->status() == Cell::REFINED_IRREGULAR){
-      edge_of_son_marked = false;
-      for (int i=0;i<(*c.pointer())->noChildren();i++){
-	for (int j=0;j<(*c.pointer())->child(i)->noEdges();j++){
-	  if ((*c.pointer())->child(i)->edge(j)->marked()){
-	    edge_of_son_marked = true;
-	    break;
-	  }
-	}
-	if (edge_of_son_marked) break;
-      }
-      if (edge_of_son_marked) (*c.pointer())->mark(Cell::MARKED_FOR_REGULAR_REFINEMENT);
-      else (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
-    }
-           
-  }
-}
-
 
 void GridRefinement::unrefineGrid(int grid_level)
 {
@@ -617,26 +620,6 @@ void GridRefinement::unrefineGrid(int grid_level)
   }
 
 }
-
-void GridRefinement::refineGrid(int grid_level)
-{
-
-
-      for (int i=0;i<(*c.pointer())->noChildren();i++){
-	(*c.pointer())->child(i)->mark(Cell::MARKED_FOR_NO_REFINEMENT);
-	(*c.pointer())->child(i)->setLevel((*c.pointer())->level()+1);
-	if (((*c.pointer())->level()+1) > grid.finestGridLevel()) 
-	  grid.setFinestGridLevel((*c.pointer())->level()+1);
-      }
-
-    }
-  }
- 
-}
-
-
-
-
 
 List<Cell *> GridRefinement::closeCell(Cell *parent)
 {
