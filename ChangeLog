@@ -1,3 +1,4 @@
+0.5.2 [2005-01-26]
  - Benchmarks for DOLFIN vs PETSc (src/demo/form and src/demo/test)
  - Complete rewrite of the multi-adaptive ODE solver (experimental)
  - Add wrapper for PETSc GMRES solver

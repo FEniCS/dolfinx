@@ -500,3 +500,44 @@ Krylov solve:                 1.41
 Total time:                   6.15
 
 --------------------------------------------------------
+Initializing DOLFIN version 0.5.2
+User:    hoffman
+Date:    Wed Jan 26 06:29:33 2005
+Host:    ozzy
+Machine: i686
+System:  Linux
+Version: 2.4.17
+DOLFIN:  0.5.2
+
+- Assembling 100 times
+- Matrix/vector multiplication 100 times
+- LU factorization
+- LU solve 100 times
+- Krylov solve
+Using Krylov solver for linear system of 100000 unknowns.
+Restarted GMRES converged after 20 iterations (residual = 1.66784e-08, tol*b = 3.16228e-08)
+
+Assembling:                   10.69
+Matrix/vector multiplication: 4.59
+LU factorization:             13.26
+LU solve:                     5.58
+Krylov solve:                 11.42
+
+Total time:                   45.54
+
+--------------------------------------------------------
+Finalizing PETSc.
+--------------------------------------------------------------------------
+Petsc Version 2.2.0, Patch 2, Released May 10, 2004
+       The PETSc Team
+    petsc-maint@mcs.anl.gov
+ http://www.mcs.anl.gov/petsc/
+
+See docs/changes/index.html for recent updates.
+See docs/troubleshooting.html for hints about trouble shooting.
+See docs/index.html for manual pages.
+-----------------------------------------------------------------------
+ on a linux named ozzy by hoffman 
+Libraries linked from /home/hazelsct/petsc-2.2.0/lib/libO/linux
+-----------------------------------------------------------------------
+PETSc ERROR: PetscInitialize() must be called before PetscFinalize()
