@@ -4,19 +4,19 @@
 #ifndef __GRID_DATA_H
 #define __GRID_DATA_H
 
-/// GridData is a container for grid data.
-///
-/// Block linked list is used to store the grid data,
-/// constisting of
-///
-///    a list of all nodes
-///    a list of all cells
-
 #include <dolfin/List.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>
 
 namespace dolfin {
+
+  /// GridData is a container for grid data.
+  ///
+  /// A block-linked list is used to store the grid data,
+  /// constisting of
+  ///
+  ///    a list of all nodes
+  ///    a list of all cells
 
   class GridData {
   public:
