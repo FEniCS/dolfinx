@@ -36,6 +36,12 @@ namespace dolfin {
 	 // Get id
 	 int id() const;
 
+	 // True if equal to zero
+	 bool zero() const;
+
+	 // True if equal to unity
+	 bool one() const;
+	 
 	 // Derivatives
 	 ElementFunction dx() const;
 	 ElementFunction dy() const;

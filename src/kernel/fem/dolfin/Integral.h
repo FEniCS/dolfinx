@@ -27,7 +27,7 @@ namespace dolfin {
 
 		Measure();
 		Measure(const Mapping &mapping, const Quadrature &quadrature);
-		~Measure();
+		virtual ~Measure();
 
 		// Update mapping and quadrature
 		void update(const Mapping &mapping, const Quadrature &quadrature);

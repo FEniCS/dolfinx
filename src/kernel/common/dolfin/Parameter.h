@@ -9,6 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/function.h>
+#include <dolfin/bcfunction.h>
 #include "utils.h"
 
 #define PARAMETER_IDENTIFIER_LENGTH 128
@@ -20,7 +21,7 @@ namespace dolfin {
 	 
   public:
 
-	 enum Type { REAL, INT, BOOL, STRING, FUNCTION, NONE };
+	 enum Type { REAL, INT, BOOL, STRING, FUNCTION, BCFUNCTION, NONE };
 	 
 	 Parameter();
 	 Parameter(Type type, const char *identifier, va_list aptr);
@@ -49,10 +50,11 @@ namespace dolfin {
 	 char identifier[PARAMETER_IDENTIFIER_LENGTH];
 	 
 	 // Values
-	 real      val_real;
-	 int       val_int;
-	 char     *val_string;
-	 function  val_function;
+	 real       val_real;
+	 int        val_int;
+	 char      *val_string;
+	 function   val_function;
+	 bcfunction val_bcfunction;
 	 
 	 // True iff the default value was changed
 	 bool _changed;

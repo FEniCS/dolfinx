@@ -13,7 +13,7 @@ namespace dolfin {
   class XMLGrid : public XMLObject {
   public:
 
-	 XMLGrid(Grid *grid);
+	 XMLGrid(Grid& grid_);
 	 
 	 void startElement (const xmlChar *name, const xmlChar **attrs);
 	 void endElement   (const xmlChar *name);
@@ -34,7 +34,7 @@ namespace dolfin {
 
 	 void initGrid();
 	 
-	 Grid *grid;
+	 Grid& grid;
 	 int nodes;
 	 int cells;
 	 

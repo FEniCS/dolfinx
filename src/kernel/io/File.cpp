@@ -1,10 +1,10 @@
+#include <string>
+#include <iostream>
+
 #include <dolfin/File.h>
 #include "GenericFile.h"
 #include "XMLFile.h"
-
-// FIXME
-#include <string>
-#include <iostream>
+#include "MatlabFile.h"
 
 using namespace dolfin;
 
@@ -15,7 +15,10 @@ File::File(const std::string& filename)
 	 file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
 	 file = new XMLFile(filename);
+  else if ( filename.rfind(".m") != filename.npos )
+	 file = new MatlabFile(filename);
   else{
+	 file = 0;
 	 cout << "Unknown type for file " << filename << endl;
 	 exit(1);
   }
@@ -23,36 +26,50 @@ File::File(const std::string& filename)
 //-----------------------------------------------------------------------------
 File::~File()
 {
-  delete file;
+  if ( file )
+	 delete file;
+  file = 0;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Vector& vector)
+void File::operator>>(Vector& x)
 {
-  *file >> vector;
+  file->read();
+  
+  *file >> x;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(SparseMatrix& sparseMatrix)
+void File::operator>>(Matrix& A)
 {
-  *file >> sparseMatrix;
+  file->read();
+  
+  *file >> A;
 }
 //-----------------------------------------------------------------------------
 void File::operator>>(Grid& grid)
 {
+  file->read();
+  
   *file >> grid;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Vector& vector)
+void File::operator<<(const Vector& x)
 {
-  *file << vector;
+  file->write();
+  
+  *file << x;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const SparseMatrix& sparseMatrix)
+void File::operator<<(const Matrix& A)
 {
-  *file << sparseMatrix;
+  file->write();
+	 
+  *file << A;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(const Grid& grid)
 {
+  file->write();
+  
   *file << grid;
 }
 //-----------------------------------------------------------------------------

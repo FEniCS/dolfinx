@@ -6,27 +6,21 @@
 namespace dolfin {
   
   class DirectSolver;
-  class SparseMatrix;
+  class Matrix;
   
   class DenseMatrix{
   public:
 	 
 	 DenseMatrix(int m, int n);
-	 DenseMatrix(SparseMatrix &A);
+	 DenseMatrix(Matrix& A);
 	 ~DenseMatrix();
 	 
 	 void init(int m, int n);
-
+	 
 	 real& operator() (int i, int j);
 	 real  operator() (int i, int j) const;
-	 
-	 void set (int i, int j, real value);
-	 int  size
-	 (int dim);
-	 real get (int i, int j);
-	 
-	 void DisplayAll();
-	 void DisplayRow(int i);
+
+	 int size(int dim) const;
 	 
 	 friend class DirectSolver;
 	 

@@ -5,7 +5,7 @@
 
 using namespace dolfin;
 
-void main()
+int main()
 {
   Grid grid;
   File file("grid.xml.gz");
@@ -15,4 +15,6 @@ void main()
   cout << grid << endl;
 
   grid.show();
+
+  return 0;
 }

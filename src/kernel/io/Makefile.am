@@ -6,16 +6,16 @@ libdolfin_io_a_SOURCES = File.cpp \
                          File.h \
                          GenericFile.cpp \
                          GenericFile.h \
-                         Value.cpp \
-                         Value.h \
+                         MatlabFile.cpp \
+                         MatlabFile.h \
                          XMLFile.cpp \
                          XMLFile.h \
                          XMLGrid.h \
                          XMLGrid.cpp \
+                         XMLMatrix.h \
+                         XMLMatrix.cpp \
                          XMLObject.h \
                          XMLObject.cpp \
-                         XMLSparseMatrix.h \
-                         XMLSparseMatrix.cpp \
                          XMLVector.h \
                          XMLVector.cpp \
                          matlab.h

@@ -11,9 +11,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLGrid::XMLGrid(Grid *grid) : XMLObject()
+XMLGrid::XMLGrid(Grid& grid_) : XMLObject(), grid(grid_)
 {
-  this->grid = grid;
   state = OUTSIDE;
   nodes = 0;
   cells = 0;
@@ -58,6 +57,9 @@ void XMLGrid::startElement(const xmlChar *name, const xmlChar **attrs)
 		readTetrahedron(name,attrs);
 	 
 	 break;
+
+  default:
+	 ;
   }
   
 }
@@ -74,18 +76,23 @@ void XMLGrid::endElement(const xmlChar *name)
 	 }
 	 
 	 break;
+
   case INSIDE_NODES:
 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
 		state = INSIDE_GRID;
 	 
 	 break;
+
   case INSIDE_CELLS:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 )
 		state = INSIDE_GRID;
 	 
 	 break;
+
+  default:
+	 ;
   }
 
 }
@@ -97,13 +104,13 @@ void XMLGrid::reading(string filename)
 //-----------------------------------------------------------------------------
 void XMLGrid::done()
 {
-  cout << *grid << endl;
+  cout << grid << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)
 {
   // Clear grid
-  grid->clear();
+  grid.clear();
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readNodes(const xmlChar *name, const xmlChar **attrs)
@@ -145,7 +152,7 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", &z);
 
   // Set values
-  grid->createNode(x, y, z);
+  grid.createNode(x, y, z);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.
@@ -166,7 +173,7 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n2", &n2);
 
   // Set values
-  grid->createCell(Cell::TRIANGLE, n0, n1, n2);
+  grid.createCell(Cell::TRIANGLE, n0, n1, n2);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
@@ -189,7 +196,7 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n3", &n3);
 
   // Set values
-  grid->createCell(Cell::TETRAHEDRON, n0, n1, n2, n3);
+  grid.createCell(Cell::TETRAHEDRON, n0, n1, n2, n3);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
@@ -198,6 +205,6 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 void XMLGrid::initGrid()
 {
   // Compute connections
-  grid->init();
+  grid.init();
 }
 //-----------------------------------------------------------------------------

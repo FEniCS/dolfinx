@@ -51,7 +51,7 @@ void Integral::Measure::update(const Mapping &mapping,
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (real a) const
 {
-  return a * q->measure() * m->det();
+  return a * q->measure() * fabs(m->det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
@@ -96,7 +96,6 @@ real Integral::Measure::operator* (const FunctionSpace::Product &v)
 	 return value();
 
   // If the value has not been computed before, we need to compute it
-  
   return integral(v);
 }
 //-----------------------------------------------------------------------------
@@ -155,7 +154,7 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::ShapeFunction &v)
 	 I += q->weight(i) * v(q->point(i));
   
   // Multiply with determinant of mapping (constant if the mapping is linear)
-  I *= m->det();
+  I *= fabs(m->det());
   
   // Set value
   (*table[0])(v.id()).set(I);
@@ -164,18 +163,18 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::ShapeFunction &v)
 }
 //-----------------------------------------------------------------------------
 real Integral::InteriorMeasure::integral(const FunctionSpace::Product &v)
-{ 
+{
   // Compute integral using the quadrature rule
   real I = 0.0;
   for (int i = 0; i < q->size(); i++)
 	 I += q->weight(i) * v(q->point(i));
   
   // Multiply with determinant of mapping (constant if the mapping is linear)
-  I *= m->det();
+  I *= fabs(m->det());
   
   // Set value
   (*table[v.size() - 1])(v.id()).set(I);
-
+  
   return I;
 }
 //-----------------------------------------------------------------------------

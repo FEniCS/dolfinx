@@ -21,10 +21,11 @@ namespace dolfin {
 	 ~Vector ();
 
 	 void init(int size);
-	 int size();
-	 int bytes();
+	 int size() const;
+	 int bytes() const;
 
-	 real& operator()(int index);
+	 real& operator()(int i);
+	 real  operator()(int i) const;
 	 
 	 void operator=(Vector &vector);
 	 void operator=(real scalar);
@@ -40,12 +41,12 @@ namespace dolfin {
 	 void add(real scalar, Vector &vector);
 	 
 	 // Output
-	 void show();
+	 void show() const;
 	 friend ostream& operator << (ostream& output, Vector& vector);
 	 
 	 // Friends
 	 friend class DirectSolver;
-	 friend class SparseMatrix;
+	 friend class Matrix;
 	 friend class SISolver;
 	 
   private:

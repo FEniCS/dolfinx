@@ -19,14 +19,14 @@ namespace dolfin {
 		ShapeFunction v0(tri10);
 		ShapeFunction v1(tri11);
 		ShapeFunction v2(tri12);
-		
+
 		// Add shape functions and specify derivatives
 		add(v0, -1.0, -1.0);
 		add(v1,  1.0,  0.0);
 		add(v2,  0.0,  1.0);
 		
 	 }
-	 
+
 	 // Mapping from local to global degrees of freedom
 	 int dof(int i, const Cell &cell) const {
 		return cell.nodeID(i);

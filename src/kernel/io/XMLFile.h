@@ -12,6 +12,7 @@
 namespace dolfin {
 
   class Vector;
+  class Matrix;
   class XMLObject;
   
   class XMLFile : public GenericFile {
@@ -22,14 +23,14 @@ namespace dolfin {
 	 
 	 // Input
 	 
-	 void operator>> (Vector &vector);
-	 void operator>> (SparseMatrix &sparseMatrix);
+	 void operator>> (Vector &x);
+	 void operator>> (Matrix &A);
 	 void operator>> (Grid &grid);
 	 
 	 // Output
 	 
-	 void operator<< (const Vector &vector);
-	 void operator<< (const SparseMatrix &sparseMatrix);
+	 void operator<< (const Vector &x);
+	 void operator<< (const Matrix &A);
 	 void operator<< (const Grid &grid);
 
 	 // Friends
@@ -43,7 +44,7 @@ namespace dolfin {
 	 void parseSAX();
 
 	 // Data
-	 XMLObject *xmlObject;
+	 XMLObject* xmlObject;
 	 
   };
 

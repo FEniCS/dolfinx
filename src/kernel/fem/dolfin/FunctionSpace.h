@@ -17,29 +17,35 @@ namespace dolfin {
   public:
 
 	 FunctionSpace(int dim);
-	 ~FunctionSpace();
+	 virtual ~FunctionSpace();
 
 	 // Forward declarations of nested classes
 	 class ShapeFunction;
 	 class ElementFunction;
 	 class Product;
-	 
+
 	 // Addition of new shape functions
-	 int add(ShapeFunction v);
+	 void add(ShapeFunction v);
 
-	 int add(ShapeFunction v, ElementFunction dx);
-	 int add(ShapeFunction v, ElementFunction dx, ElementFunction dy);
-	 int add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz);
-	 int add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz, ElementFunction dt);
+	 void add(ShapeFunction v, ElementFunction dx);
+	 void add(ShapeFunction v, ElementFunction dx, ElementFunction dy);
+	 void add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz);
+	 void add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz, ElementFunction dt);
 
-	 int add(ShapeFunction v, real dx);
-	 int add(ShapeFunction v, real dx, real dy);
-	 int add(ShapeFunction v, real dx, real dy, real dz);
-	 int add(ShapeFunction v, real dx, real dy, real dz, real dt);
+	 void add(ShapeFunction v, real dx);
+	 void add(ShapeFunction v, real dx, real dy);
+	 void add(ShapeFunction v, real dx, real dy, real dz);
+	 void add(ShapeFunction v, real dx, real dy, real dz, real dt);
 
 	 // Dimension (number of shape functions)
 	 int dim() const;
 	 
+	 // Mapping from local to global degrees of freedom
+	 virtual int dof(int i, const Cell &cell) const = 0;
+	 
+	 // Evaluation of local degree of freedom
+	 virtual real dof(int i, const Cell &cell, function f, real t) const = 0;
+
 	 // Iterator for shape functions in the function space
 	 class Iterator {
 	 public:
@@ -63,11 +69,43 @@ namespace dolfin {
 		
 	 };
 
-	 // Mapping from local to global degrees of freedom
-	 virtual int dof(int i, const Cell &cell) const = 0;
-	 
-	 // Evaluation of local degree of freedom
-	 virtual real dof(int i, const Cell &cell, function f, real t) const = 0;
+	 // Template for vectors
+	 template <class T> class Vector {
+	 public:
+		
+		Vector(int n) {
+		  this->n = n;
+		  v = new T[n];
+		}
+
+		Vector(const Vector &v) {
+		  this->n = v.n;
+		  this->v = new T[n];
+		  for (int i = 0; i < n; i++)
+			 this->v[i] = v.v[i];
+		}
+		
+		~Vector() {
+		  if ( v )
+			 delete [] v;
+		  v = 0;
+		}
+		  
+		T& operator() (int i) {
+		  return v[i];
+		}
+
+		const ElementFunction operator, (const Vector& v) const {
+		  ElementFunction w(0);
+		  for (int i = 0; i < n; i++)
+			 w += this->v[i] * v.v[i];			 
+		  return w;
+		}
+
+	 private:
+		int n;
+		T* v;
+	 };
 	 
 	 // Friends
 	 friend class Iterator;

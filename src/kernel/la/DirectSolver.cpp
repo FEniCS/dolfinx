@@ -2,7 +2,6 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/DenseMatrix.h>
-#include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/DirectSolver.h>
 

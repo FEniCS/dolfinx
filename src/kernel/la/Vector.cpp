@@ -30,7 +30,7 @@ Vector::Vector(Vector &vector)
 	 values[i] = vector.values[i];
 }
 //-----------------------------------------------------------------------------
-int Vector::bytes()
+int Vector::bytes() const
 {
   return sizeof(Vector) + n*sizeof(real);
 }
@@ -53,7 +53,7 @@ void Vector::init(int size)
 	 values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
-int Vector::size()
+int Vector::size() const
 {
   return n;
 }
@@ -63,21 +63,26 @@ real& Vector::operator()(int i)
   return values[i];
 }
 //-----------------------------------------------------------------------------
+real Vector::operator()(int i) const
+{
+  return values[i];
+}
+//-----------------------------------------------------------------------------
 void Vector::operator=(Vector &vector)
 {
-  for (int i=0; i<n; i++)
+  for (int i = 0; i < n; i++)
 	 values[i] = vector.values[i];    
 }
 //-----------------------------------------------------------------------------
 void Vector::operator=(real scalar)
 {
-  for (int i=0; i<n; i++)
+  for (int i = 0; i < n; i++)
 	 values[i] = scalar;    
 }
 //-----------------------------------------------------------------------------
 void Vector::operator+=(real scalar) 
 {
-  for (int i=0;i<n;i++)
+  for (int i = 0;i < n; i++)
 	 values[i] += scalar;
 }
 //-----------------------------------------------------------------------------
@@ -144,7 +149,7 @@ void Vector::add(real scalar, Vector &vector)
 	 values[i] += scalar * vector.values[i];  
 }
 //-----------------------------------------------------------------------------
-void Vector::show()
+void Vector::show() const
 {
   cout << "[ ";
   for (int i = 0; i < n; i++)

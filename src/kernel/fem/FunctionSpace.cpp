@@ -31,32 +31,32 @@ FunctionSpace::~FunctionSpace()
 
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v)
+void FunctionSpace::add(ShapeFunction v)
 {
   add(v, 0.0, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, ElementFunction dx)
+void FunctionSpace::add(ShapeFunction v, ElementFunction dx)
 {
   add(v, dx, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, ElementFunction dx, ElementFunction dy)
+void FunctionSpace::add(ShapeFunction v, ElementFunction dx, ElementFunction dy)
 {
   add(v, dx, dy, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v,
+void FunctionSpace::add(ShapeFunction v,
 							  ElementFunction dx, ElementFunction dy, ElementFunction dz)
 {
   add(v, dx, dy, dz, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v,
-							  ElementFunction dx,
-							  ElementFunction dy,
-							  ElementFunction dz,
-							  ElementFunction dt)
+void FunctionSpace::add(ShapeFunction v,
+								ElementFunction dx,
+								ElementFunction dy,
+								ElementFunction dz,
+								ElementFunction dt)
 {
   // Set derivatives of shape function
   v.set(dx, dy, dz, dt);
@@ -69,22 +69,22 @@ int FunctionSpace::add(ShapeFunction v,
   }
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, real dx)
+void FunctionSpace::add(ShapeFunction v, real dx)
 {
   add(v, ElementFunction(dx));
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, real dx, real dy)
+void FunctionSpace::add(ShapeFunction v, real dx, real dy)
 {
   add(v, ElementFunction(dx), ElementFunction(dy));
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz)
+void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz)
 {
   add(v, ElementFunction(dx), ElementFunction(dy), ElementFunction(dz));
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
+void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
 {
   add(v,
 		ElementFunction(dx),

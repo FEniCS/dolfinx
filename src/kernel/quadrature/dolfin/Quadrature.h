@@ -17,9 +17,9 @@ namespace dolfin {
 
 	 int size() const;
 	 
-	 Point point(int i) const;  // Get quadrature point
-	 real  weight(int i) const; // Get quadrature weight
-	 real  measure() const;     // Sum of weights (area, volume)
+	 const Point& point(int i) const; // Get quadrature point
+	 real  weight(int i) const;       // Get quadrature weight
+	 real  measure() const;           // Sum of weights (area, volume)
 
   protected:
 

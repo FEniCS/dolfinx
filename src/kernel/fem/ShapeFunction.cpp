@@ -41,6 +41,16 @@ int FunctionSpace::ShapeFunction::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
+bool FunctionSpace::ShapeFunction::zero() const
+{
+  return _id == 0;
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::ShapeFunction::one() const
+{
+  return _id == 1;
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dx() const
 {
   return FunctionList::dx(_id);

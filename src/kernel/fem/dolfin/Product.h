@@ -42,6 +42,12 @@ namespace dolfin {
 	 // Get id
 	 int* id() const;
 
+	 // True if equal to zero
+	 bool zero() const;
+
+	 // True if equal to unity
+	 bool one() const;
+	 
 	 // Get number of factors
 	 int size() const;
 

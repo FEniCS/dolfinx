@@ -44,7 +44,7 @@ Contents
 
 		o	Warnings:
 
-				setenv CXXFLAGS '-Wall'
+				setenv CXXFLAGS '-g -Wall -Werror'
 
 		o	If you want to install locally (not as root), try
 

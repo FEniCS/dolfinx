@@ -1,13 +1,10 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __SOLVER_HH
-#define __SOLVER_HH
+#ifndef __SOLVER_H
+#define __SOLVER_H
 
-#include <dolfin/Galerkin.h>
-#include <dolfin/SISolver.h>
-#include <dolfin/KrylovSolver.h>
-#include <dolfin/Grid.h>
+#include <dolfin.h>
 
 namespace dolfin {
 

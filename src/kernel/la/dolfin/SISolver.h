@@ -4,11 +4,13 @@
 #ifndef __SI_SOLVER_H
 #define __SI_SOLVER_H
 
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/Vector.h>
+#include <dolfin/constants.h>
 
 namespace dolfin {
-  
+
+  class Vector;
+  class Matrix;
+
   class SISolver{
   public:
 
@@ -24,12 +26,12 @@ namespace dolfin {
 	 
   private:
 	 
-	 void iterateRichardson  (SparseMatrix& A, Vector& x, Vector& b);
-	 void iterateJacobi      (SparseMatrix& A, Vector& x, Vector& b);
-	 void iterateGaussSeidel (SparseMatrix& A, Vector& x, Vector& b);
-	 void iterateSOR         (SparseMatrix& A, Vector& x, Vector& b);
+	 void iterateRichardson  (Matrix& A, Vector& x, Vector& b);
+	 void iterateJacobi      (Matrix& A, Vector& x, Vector& b);
+	 void iterateGaussSeidel (Matrix& A, Vector& x, Vector& b);
+	 void iterateSOR         (Matrix& A, Vector& x, Vector& b);
 	 
-	 void computeResidual(SparseMatrix& A, Vector& x, Vector& b);
+	 void computeResidual(Matrix& A, Vector& x, Vector& b);
 	 
 	 Method iterative_method;
 	 

@@ -16,7 +16,11 @@ namespace dolfin {
 	 }
 	 
 	 real lhs(const ShapeFunction &u, const ShapeFunction &v) {
-		return dx(u)*dx(v) * dK;
+		//cout << "Computing integral" << endl;
+		//cout << (grad(u), grad(v)) << endl;
+		real integral = (grad(u), grad(v)) * dK;
+		//cout << "  integral = " << integral << endl;
+		return integral;
 	 }
 	 
 	 real rhs(const ShapeFunction &v) {

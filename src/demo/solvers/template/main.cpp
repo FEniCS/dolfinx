@@ -3,7 +3,9 @@
 
 #include <dolfin.h>
 
-void main()
+int main()
 {
   cout << "This is just an empty template." << endl;
+
+  return 0;
 }

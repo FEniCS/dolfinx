@@ -9,7 +9,7 @@ real f0(real x, real y, real z, real t) { return 1 - x - y; }
 real f1(real x, real y, real z, real t) { return x; }
 real f2(real x, real y, real z, real t) { return y; }
 
-void main()
+int main()
 {
   // Definition of shape functions
   FunctionSpace::ShapeFunction v0(f0);
@@ -53,4 +53,20 @@ void main()
   cout << "u * dK = " << u * dK << endl;         // Should be 15 / 8 = 1.875
   cout << "v * dK = " << v * dK << endl << endl; // Should be 21 / 8 = 2.625
 
+  // Derivatives
+  P1Tri p1Tri;
+ 
+  FunctionSpace::Iterator w(p1Tri);
+
+  cout << "w     = " << *w << endl << endl;
+  
+  cout << "dw/dx = " << (*w).dx() << endl;
+  cout << "dw/dy = " << (*w).dy() << endl;
+  cout << "dw/dz = " << (*w).dz() << endl << endl;
+  
+  cout << "Dw/dx = " << m.dx(*w) << endl;
+  cout << "Dw/dy = " << m.dy(*w) << endl;
+  cout << "Dw/dz = " << m.dz(*w) << endl << endl;
+
+  return 0;
 }

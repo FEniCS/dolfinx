@@ -16,6 +16,8 @@ FunctionSpace::ElementFunction::ElementFunction()
   v = new Product[n]();
 
   a[0] = 0.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a)
@@ -26,6 +28,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a)
   v = new Product[n];
 
   this->a[0] = a;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v)
@@ -36,6 +40,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v)
   this->v = new Product[n](v);
 
   a[0] = 1.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const Product &v)
@@ -46,6 +52,8 @@ FunctionSpace::ElementFunction::ElementFunction(const Product &v)
   this->v = new Product[n](v);
 
   a[0] = 1.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a, const ShapeFunction &v)
@@ -56,6 +64,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const ShapeFunction &v)
   this->v = new Product[n](v);
 
   this->a[0] = a;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v)
@@ -69,6 +79,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v)
 	 a[i] = v.a[i];
 	 this->v[i] = v.v[i];
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a, const Product &v)
@@ -79,6 +91,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const Product &v)
   this->v = new Product[n](v);
 
   this->a[0] = a;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a, const ElementFunction &v)
@@ -92,6 +106,8 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const ElementFunction &v
 	 this->a[i] = a * v.a[i];
 	 this->v[i] = v.v[i];
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -106,6 +122,8 @@ FunctionSpace::ElementFunction::ElementFunction
   v = new Product[n];
   v[0] = v0;
   v[1] = v1;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -120,6 +138,8 @@ FunctionSpace::ElementFunction::ElementFunction
   v = new Product[n];
   v[0] = v0;
   v[1] = v1;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -139,6 +159,8 @@ FunctionSpace::ElementFunction::ElementFunction
 	 a[v0.n + i] = v1.a[i];
 	 v[v0.n + i] = v1.v[i];
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -153,6 +175,8 @@ FunctionSpace::ElementFunction::ElementFunction
   v = new Product[n];
   v[0] = v0;
   v[1] = v1;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -170,6 +194,8 @@ FunctionSpace::ElementFunction::ElementFunction
 	 a[1 + i] = a1 * v1.a[i];
 	 v[1 + i] = v1.v[i];
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -187,6 +213,8 @@ FunctionSpace::ElementFunction::ElementFunction
 	 a[1 + i] = a1 * v1.a[i];
 	 v[1 + i] = v1.v[i];
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
@@ -198,6 +226,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
   v = new Product[n](v0, v1);
 
   a[0] = 1.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const Product &v0,
@@ -209,12 +239,16 @@ FunctionSpace::ElementFunction::ElementFunction(const Product &v0,
   v = new Product[n](v0, v1);
 
   a[0] = 1.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v0,
 																const ElementFunction &v1)
 {
-  n = v0.n + v1.n;
+  //cout << "Product of two element functions" << endl;
+  
+  n = v0.n * v1.n;
 
   a = new real[n];
   v = new Product[n];
@@ -235,6 +269,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
   v = new Product[n](v0, v1);
 
   a[0] = 1.0;
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
@@ -249,6 +285,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
 	 a[i] = v1.a[i];
 	 v[i].set(v0, v1.v[i]); 
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const Product         &v0,
@@ -263,6 +301,8 @@ FunctionSpace::ElementFunction::ElementFunction(const Product         &v0,
 	 a[i] = v1.a[i];
 	 v[i].set(v0, v1.v[i]);
   }
+
+  c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::~ElementFunction()
@@ -276,7 +316,7 @@ FunctionSpace::ElementFunction::~ElementFunction()
 real FunctionSpace::ElementFunction::operator() 
 (real x, real y, real z, real t) const
 {
-  real value = 0.0;
+  real value = c;
   
   for (int i = 0; i < n; i++)
 	 value += a[i] * v[i](x,y,z,t);
@@ -286,7 +326,7 @@ real FunctionSpace::ElementFunction::operator()
 //-----------------------------------------------------------------------------
 real FunctionSpace::ElementFunction::operator() (Point p) const
 {
-  real value = 0.0;
+  real value = c;
 
   for (int i = 0; i < n; i++)
 	 value += a[i] * v[i](p);
@@ -441,7 +481,7 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 (const ElementFunction &v)
 {
-    real *new_a = new real[n + v.n];
+  real *new_a = new real[n + v.n];
   Product *new_v = new Product[n + v.n];
 
   for (int i = 0; i < n; i++) {

@@ -2,6 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/basic.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/SISolver.h>
 
 using namespace dolfin;
@@ -60,8 +62,8 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
 		exit(1);
     }
     computeResidual(A,x,b);
-  }
-  
+	}
+	
 }
 //-----------------------------------------------------------------------------
 void SISolver::set(int noit)
@@ -74,10 +76,9 @@ void SISolver::set(Method method)
   iterative_method = method;
 }
 //-----------------------------------------------------------------------------
-void SISolver::iterateRichardson(SparseMatrix& A, Vector& x, Vector& b)
+void SISolver::iterateRichardson(Matrix& A, Vector& x, Vector& b)
 {
-  real aii,aij,norm_b,Ax;
-  
+  real aij;
   int j;
 
   Vector x0(x);
@@ -95,12 +96,11 @@ void SISolver::iterateRichardson(SparseMatrix& A, Vector& x, Vector& b)
     }
     x(i) += b(i);
   }
-
 }
 //-----------------------------------------------------------------------------
-void SISolver::iterateJacobi(SparseMatrix& A, Vector& x, Vector& b)
+void SISolver::iterateJacobi(Matrix& A, Vector& x, Vector& b)
 {
-  real aii,aij,norm_b,Ax;
+  real aij, aii;
   int j;
 
   Vector x0(x);
@@ -121,10 +121,9 @@ void SISolver::iterateJacobi(SparseMatrix& A, Vector& x, Vector& b)
   }
 }
 //-----------------------------------------------------------------------------
-void SISolver::iterateGaussSeidel(SparseMatrix& A, Vector& x, Vector& b)
+void SISolver::iterateGaussSeidel(Matrix& A, Vector& x, Vector& b)
 {
-  real aii,aij,Ax;
-  
+  real aij, aii;
   int j;
 
   for (int i = 0; i < A.size(0); i++) {
@@ -141,13 +140,11 @@ void SISolver::iterateGaussSeidel(SparseMatrix& A, Vector& x, Vector& b)
     x(i) += b(i);
     x(i) *= 1.0 / aii;
   }
-
 }
 //-----------------------------------------------------------------------------
-void SISolver::iterateSOR(SparseMatrix& A, Vector& x, Vector& b)
+void SISolver::iterateSOR(Matrix& A, Vector& x, Vector& b)
 {
-  real aii,aij,norm_b,Ax;
-  
+  real aij, aii;
   int j;
 
   real omega = 1.0;
@@ -170,7 +167,7 @@ void SISolver::iterateSOR(SparseMatrix& A, Vector& x, Vector& b)
   }
 }
 //-----------------------------------------------------------------------------
-void SISolver::computeResidual(SparseMatrix& A, Vector& x, Vector& b)
+void SISolver::computeResidual(Matrix& A, Vector& x, Vector& b)
 {
   residual = 0.0;
   real Axi;

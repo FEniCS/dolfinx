@@ -4,7 +4,7 @@
 using namespace dolfin;
 
 real zero (real x, real y, real z, real t) { return 0.0; }
-real one  (real x, real y, real z, real t) { return 0.0; }
+real one  (real x, real y, real z, real t) { return 1.0; }
 
 // Initialise static data
 ShortList<FunctionList::FunctionData> FunctionList::list(DOLFIN_PARAMSIZE);
@@ -28,9 +28,9 @@ int FunctionList::add(function f)
 	 id = list.add(FunctionData(f));
   }
 
-  // Increase size of list. Note that size <= list.size()
+  // Increase size of list. Note that _size <= list.size()
   _size += 1;
-  
+
   return id;
 }
 //-----------------------------------------------------------------------------
@@ -58,7 +58,6 @@ real FunctionList::eval(int id, real x, real y, real z, real t)
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction FunctionList::dx(int id)
 {
-  cout << "Returning dx for id = " << id << endl;
   return list(id).dx;
 }
 //-----------------------------------------------------------------------------

@@ -138,7 +138,7 @@ namespace dolfin {
 	 }
 	 
 	 /// Set size of list (useful in combination with init() or resize())
-	 int setsize(int new_size)
+	 void setsize(int new_size)
 	 {
 		_size = new_size;
 	 }

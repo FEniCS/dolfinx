@@ -18,14 +18,7 @@ int main(int argc, char **argv)
 
   cout << b << endl;
   cout << A << endl;
-
   cout << x << endl;
-
-  /*
-  A(1,1) = 0.5;
-  real a = A(1,1);
-  cout << "a = " << a << endl;
-  */
 
   cout << "b = " << b << endl;
 
@@ -35,9 +28,6 @@ int main(int argc, char **argv)
   cout << "x = "; x.show();
 
   KrylovSolver ks;
-
-  //  DenseMatrix D(A);
-  //  D.DisplayAll();
 
   ks.solve(A,x,b);
 
@@ -51,6 +41,4 @@ int main(int argc, char **argv)
   R += b;
 
   cout << "R = "; R.show();
-  
-
 }

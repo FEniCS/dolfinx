@@ -168,7 +168,7 @@ echo "}" >> $HEADER
 echo "" >> $HEADER
 
 # Generate function dolfin_module_settings
-echo "void dolfin_module_init_settings(const char *problem)" >> $HEADER
+echo "dolfin::Settings* dolfin_module_settings(const char *problem)" >> $HEADER
 echo "{" >> $HEADER
 for d in `cat $MODULES | grep -v '#'`; do
  
@@ -187,15 +187,13 @@ for d in `cat $MODULES | grep -v '#'`; do
 		exit 1
 	fi
 
-	echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 ) {" >> $HEADER
-	echo "        dolfin::$SETTINGS settings;" >> $HEADER
-   echo "        return;" >> $HEADER
-   echo "    }" >> $HEADER
+	echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
+	echo "        return new dolfin::$SETTINGS();" >> $HEADER
 done
 
 echo "" >> $HEADER
 echo "    cout << \"Could not find any matching settings for problem \\\"\" << problem << \"\\\"\" << endl;" >> $HEADER
-echo "    exit(1);" >> $HEADER
+echo "    return new dolfin::Settings();" >> $HEADER
 
 echo "" >> $HEADER
 echo "}" >> $HEADER

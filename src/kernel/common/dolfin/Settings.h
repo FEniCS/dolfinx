@@ -18,9 +18,11 @@ namespace dolfin {
 		
 		// Create default parameters
 		
-		add( Parameter::REAL, "start time", 0.0 );
-		add( Parameter::REAL, "end time",   10.0 );
+		add(Parameter::REAL, "start time", 0.0);
+		add(Parameter::REAL, "end time",   10.0);
 
+		add(Parameter::BCFUNCTION, "boundary condition", 0);
+		
 	 }
 	 
   };

@@ -8,19 +8,15 @@
 #ifndef __GALERKIN_H
 #define __GALERKIN_H
 
-#include <dolfin/dolfin_elements.h>
-#include <dolfin/dolfin_quadrature.h>
-#include <dolfin/Mapping.h>
-#include <dolfin/TriLinMapping.h>
-#include <dolfin/TetLinMapping.h>
-#include <dolfin/FiniteElement.h>
-#include <dolfin/Vector.h>
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/Equation.h>
-#include <dolfin/EquationSystem.h>
-#include <dolfin/Grid.h>
-
 namespace dolfin {
+
+  class Vector;
+  class Matrix;
+  class Grid;
+  class Equation;
+  class FiniteElement;
+  class Mapping;
+  class Quadrature;
   
   class Galerkin {
   public:
@@ -31,6 +27,9 @@ namespace dolfin {
 	 // Constructor allowing specification of method
 	 Galerkin(FiniteElement &element, Mapping &mapping, Quadrature &quadrature);
 
+	 // Destructor
+	 ~Galerkin();
+	 
 	 // Assemble and set boundary conditions
 	 void assemble(Equation &equation, Grid &grid, Matrix &A, Vector &b);
 	 
@@ -39,7 +38,7 @@ namespace dolfin {
 	 void assembleRHS(Equation &equation, Grid &grid, Vector &b);
 
 	 // Set boundary conditions
-	 //void setBC(Grid &grid, Matrix &A, Vector &b);
+	 void setBC(Grid &grid, Matrix &A, Vector &b);
   
   private:
 
@@ -53,13 +52,8 @@ namespace dolfin {
 	 Mapping*       mapping;    // Mapping from reference cell
 	 Quadrature*    quadrature; // Quadrature on reference cell
 
-	 // Data for default method
-	 P1TriElement                p1TriElement;
-	 P1TetElement                p1TetElement;
-	 TriLinMapping               triLinMapping;
-	 TetLinMapping               tetLinMapping;
-	 TriangleVertexQuadrature    triangleVertexQuadrature;
-	 TetrahedronVertexQuadrature tetrahedronVertexQuadrature;	 
+	 // True if user specifies method
+	 bool user;
 	 
   };
 

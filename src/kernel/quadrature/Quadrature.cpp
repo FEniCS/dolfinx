@@ -30,7 +30,7 @@ int Quadrature::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-Point Quadrature::point(int i) const
+const Point& Quadrature::point(int i) const
 {
   return p[i];
 }

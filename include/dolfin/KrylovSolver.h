@@ -9,10 +9,10 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
-#include <dolfin/SparseMatrix.h>
-#include <dolfin/Vector.h>
-
 namespace dolfin {
+
+  class Matrix;
+  class Vector;
   
   class KrylovSolver{
   public:
@@ -24,7 +24,6 @@ namespace dolfin {
 	 ~KrylovSolver(){}
 	 
 	 void solve(Matrix &A, Vector &x, Vector &b);
-
 	 void set(Method method);
 	 
   private:
@@ -33,18 +32,8 @@ namespace dolfin {
 	 void solveGMRES   (Matrix &A, Vector &x, Vector &b);
 	 real restartGMRES (Matrix &A, Vector &x, Vector &b, int k_max);
 
-	 void solvePxv     (Matrix &A, Vector &x);
-	 
-	 void applyMatrix(Matrix &A, Vector *x, Vector *Ax);
-	 void applyMatrix(Matrix &A, real **x, int comp);
-	 
-	 void residual (Matrix &A, Vector &x, Vector &b, Vector &r );
+	 void residual (Matrix &A, Vector &x, Vector &b, Vector &r);
 	 real residual (Matrix &A, Vector &x, Vector &b);
-	 
-	 bool TestForOrthogonality (real **v );
-	 
-	 void allocArrays (int n, int k_max);
-	 void deleteArrays(int n, int k_max);
 	 
 	 Method method;
 	 Preconditioner pc;
@@ -56,17 +45,6 @@ namespace dolfin {
 	 int no_pc_sweeps;
 	 int iteration;
 	 	 
-	 // Arrays for tempoary data storage
-	 real **mat_H;
-	 real **mat_r;
-	 real **mat_v;
-	 
-	 real *vec_s;
-	 real *vec_y;
-	 real *vec_w;
-	 real *vec_c;
-	 real *vec_g;
-	 
   };
 
 }

@@ -1,7 +1,21 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_elements.h>
+#include <dolfin/dolfin_quadrature.h>
+#include <dolfin/Mapping.h>
+#include <dolfin/TriLinMapping.h>
+#include <dolfin/TetLinMapping.h>
+#include <dolfin/FiniteElement.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Grid.h>
+#include <dolfin/Settings.h>
+#include <dolfin/bcfunction.h>
+#include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
+#include <dolfin/Equation.h>
+#include <dolfin/EquationSystem.h>
 
 using namespace dolfin;
 
@@ -12,6 +26,9 @@ Galerkin::Galerkin()
   element = 0;
   mapping = 0;
   quadrature = 0;
+
+  // Using default method
+  user = false;
 }
 //-----------------------------------------------------------------------------
 Galerkin::Galerkin(FiniteElement& element,
@@ -21,13 +38,35 @@ Galerkin::Galerkin(FiniteElement& element,
   this->element    = &element;
   this->mapping    = &mapping;
   this->quadrature = &quadrature;
+
+  // User specified method
+  user = true;
+}
+//-----------------------------------------------------------------------------
+Galerkin::~Galerkin()
+{
+  if ( !user ) {
+
+	 if ( element )
+		delete element;
+	 element = 0;
+
+	 if ( mapping )
+		delete mapping;
+	 mapping = 0;
+
+	 if ( quadrature )
+		delete quadrature;
+	 quadrature = 0;
+	 
+  }
 }
 //-----------------------------------------------------------------------------
 void Galerkin::assemble(Equation &equation, Grid &grid, Matrix &A, Vector &b)
 {
   assembleLHS(equation, grid, A);
   assembleRHS(equation, grid, b);
-  //setBC(grid, A, b);
+  setBC(grid, A, b);
 }
 //-----------------------------------------------------------------------------
 void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
@@ -50,7 +89,7 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
 
 	 // Update equation
 	 equation.updateLHS(element, cell, mapping, quadrature);
-	 
+
 	 // Iterate over test and trial functions
 	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
 		for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
@@ -82,7 +121,7 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
 	 // Update equation
 	 equation.updateRHS(element, cell, mapping, quadrature);
 	 
-	 // Iterate over test and trial functions
+	 // Iterate over test functions
 	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
 		b(v.dof(cell)) += equation.rhs(v);
 	 
@@ -92,44 +131,53 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   cout << "Assembling: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-/*
 void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 {
-
-  if ( (A->Size(0) != no_eq*no_nodes ) || ( b->Size() != no_eq*no_nodes ) )
-  	 display->Error("You must assemble the matrix before settings boundary conditions.");
-
-  Point *p;
-  dolfin_bc bc;
+  cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  for (int i=0;i<no_nodes;i++){
+  BoundaryCondition bc;
+  bcfunction bcf;
+  Point p;
+  
+  // Get boundary condition function
+  Settings::get("boundary condition", &bcf);
 
-	 p  = grid->GetNode(i)->GetCoord();
+  // Write a message
+  if ( !bcf )
+	 cout << "Boundary conditions not specified." << endl;
+  
+  // Iterate over all cells in the grid
+  for (NodeIterator node(grid); !node.end(); ++node) {
+
+	 // Get coordinate
+	 p = node->coord();
 	 
-    for (int component=0;component<no_eq;component++){
+	 // Get boundary condition
+	 bc.update(p);
+	 bcf(bc);
 
-      bc = bc_function(p->x,p->y,p->z,i,component+equation->GetStartVectorComponent());
-      
-      switch ( bc.type ){
-      case dirichlet:
-		  A->SetRowIdentity(i*no_eq+component);
-		  b->Set(i*no_eq+component,bc.val);
-		  break;
-      case neumann:
-		  if ( bc.val != 0.0 )
-			 display->Error("Inhomogeneous Neumann boundary conditions not implemented.");
-		  break;
-      default:
-		  display->InternalError("Galerkin::SetBoundaryConditions()",
-										 "Unknown boundary condition type.");
-      }
-    }
-
+	 // Set boundary condition
+	 switch ( bc.type() ) {
+	 case BoundaryCondition::DIRICHLET:
+		A.ident(node->id());
+		b(node->id()) = bc.val();
+		break;
+	 case BoundaryCondition::NEUMANN:
+		if ( bc.val() != 0.0 ) {
+		  // FIXME: Use logging system
+		  cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << endl;
+		  exit(1);
+		}
+		break;
+	 default:
+		// FIXME: Use logging system
+		cout << "Error: Unknown boundary condition." << endl;
+		break;
+	 }
+	 
   }
 
-
 }
-*/
 //-----------------------------------------------------------------------------
 void Galerkin::init(Grid &grid)
 {
@@ -141,22 +189,22 @@ void Galerkin::init(Grid &grid)
   switch ( grid.type() ) {
   case Cell::TRIANGLE:
 	 cout << "Using standard piecewise linears on triangles." << endl;
-	 element    = &p1TriElement;
-	 mapping    = &triLinMapping;
-	 quadrature = &triangleVertexQuadrature;
+	 element    = new P1TriElement();
+	 mapping    = new TriLinMapping();
+	 quadrature = new TriangleMidpointQuadrature();
 	 break;
   case Cell::TETRAHEDRON:
 	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
-	 element    = &p1TetElement;
-	 mapping    = &tetLinMapping;
-	 quadrature = &tetrahedronVertexQuadrature;
-  break;
+	 element    = new P1TetElement();
+	 mapping    = new TetLinMapping();
+	 quadrature = new TetrahedronMidpointQuadrature();
+	 break;
   default:
 	 // FIXME: Use logging system
 	 cout << "Error: No default spaces for this type of cells." << endl;
 	 exit(1);
   }
-
+  
 }
 //-----------------------------------------------------------------------------
 void Galerkin::alloc(Matrix &A, Grid &grid)

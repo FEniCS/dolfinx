@@ -7,7 +7,6 @@
 namespace dolfin {
   
   class DenseMatrix;
-  class SparseMatrix;
   class Vector;
   
   class DirectSolver{

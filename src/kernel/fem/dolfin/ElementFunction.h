@@ -52,7 +52,7 @@ namespace dolfin {
 
 	 // Destructor
 	 ~ElementFunction();
-
+	 
 	 //--- Operators ---
 
 	 // Evaluation
@@ -103,6 +103,7 @@ namespace dolfin {
 
 	 int n;      // Number of terms
 	 real *a;    // Coefficients
+	 real c;     // Constant (offset)
 	 Product *v; // Products
 	 
   };

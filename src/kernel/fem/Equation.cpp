@@ -19,6 +19,11 @@ Equation::Equation(int dim)
   noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
+Equation::~Equation()
+{
+
+}
+//-----------------------------------------------------------------------------
 void Equation::updateLHS(const FiniteElement* element,
 								 const Cell*          cell,
 								 const Mapping*       mapping,
@@ -73,64 +78,75 @@ real Equation::dt(real a) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dx(const ShapeFunction &v) const
+const ElementFunction Equation::dx(const ShapeFunction &v) const
 {
   return mapping->dx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dy(const ShapeFunction &v) const
+const ElementFunction Equation::dy(const ShapeFunction &v) const
 {
   return mapping->dy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dz(const ShapeFunction &v) const
+const ElementFunction Equation::dz(const ShapeFunction &v) const
 {
   return mapping->dz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dt(const ShapeFunction &v) const
+const ElementFunction Equation::dt(const ShapeFunction &v) const
 {
   return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dx(const Product &v) const
+const ElementFunction Equation::dx(const Product &v) const
 {
   return mapping->dx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dy(const Product &v) const
+const ElementFunction Equation::dy(const Product &v) const
 {
   return mapping->dy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dz(const Product &v) const
+const ElementFunction Equation::dz(const Product &v) const
 {
   return mapping->dz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dt(const Product &v) const
+const ElementFunction Equation::dt(const Product &v) const
 {
   return mapping->dt(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dx(const ElementFunction &v) const
+const ElementFunction Equation::dx(const ElementFunction &v) const
 {
   return mapping->dx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dy(const ElementFunction &v) const
+const ElementFunction Equation::dy(const ElementFunction &v) const
 {
   return mapping->dy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dz(const ElementFunction &v) const
+const ElementFunction Equation::dz(const ElementFunction &v) const
 {
   return mapping->dz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& Equation::dt(const ElementFunction &v) const
+const ElementFunction Equation::dt(const ElementFunction &v) const
 {
   return mapping->dt(v);
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::Vector<ElementFunction>
+Equation::grad(const ShapeFunction &v)
+{
+  FunctionSpace::Vector<ElementFunction> w(3);
+  w(0) = mapping->dx(v);
+  w(1) = mapping->dy(v);
+  w(2) = mapping->dz(v);
+
+  return w;
 }
 //-----------------------------------------------------------------------------
 void Equation::add(ElementFunction &v, Function &f)

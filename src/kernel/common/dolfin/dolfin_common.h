@@ -7,4 +7,8 @@
 #include <dolfin/ShortList.h>
 #include <dolfin/Tensor.h>
 
+#include <dolfin/meminfo.h>
+#include <dolfin/sysinfo.h>
+#include <dolfin/timeinfo.h>
+
 #endif

@@ -2,6 +2,7 @@
 
 #include "dolfin_modules.h"
 #include <dolfin/Problem.h>
+#include <dolfin/Settings.h>
 
 using namespace dolfin;
 
@@ -12,7 +13,7 @@ Problem::Problem(const char *problem)
   solver = dolfin_module_solver(problem);
 
   // Initialise settings
-  dolfin_module_init_settings(problem);
+  settings = dolfin_module_settings(problem);
 }
 //-----------------------------------------------------------------------------
 Problem::Problem(const char *problem, Grid &grid)
@@ -21,7 +22,7 @@ Problem::Problem(const char *problem, Grid &grid)
   solver = dolfin_module_solver(problem, grid);
 
   // Initialise settings
-  dolfin_module_init_settings(problem);
+  settings = dolfin_module_settings(problem);
 }
 //-----------------------------------------------------------------------------
 Problem::~Problem()
@@ -29,6 +30,10 @@ Problem::~Problem()
   if ( solver )
 	 delete solver;
   solver = 0;
+
+  if ( settings )
+	 delete settings;
+  settings = 0;
 }
 //-----------------------------------------------------------------------------
 void Problem::set(const char *property, ...)

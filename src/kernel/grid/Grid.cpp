@@ -134,7 +134,8 @@ Cell* Grid::getCell(int id)
 //-----------------------------------------------------------------------------
 void Grid::init()
 {
-  InitGrid initGrid(this);
+  InitGrid initGrid;
+  initGrid.init(*this);
 }
 //-----------------------------------------------------------------------------
 // Additional operators

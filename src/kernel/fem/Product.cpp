@@ -33,25 +33,49 @@ FunctionSpace::Product::Product(const Product &v)
 FunctionSpace::Product::Product(const ShapeFunction &v0,
 										  const ShapeFunction &v1)
 {
-  n = 2;
-  
-  _id = new int[2];
-
-  _id[0] = v0.id();
-  _id[1] = v1.id();
+  if ( v0.one() ) {      // Special case: v0 = 1
+	 n = 1;
+	 _id = new int[1];
+	 _id[0] = v1.id();
+  }
+  else if ( v1.one() ) { // Special case: v1 = 1
+	 n = 1;
+	 _id = new int[1];
+	 _id[0] = v0.id();
+  }
+  else {
+	 n = 2;
+    _id = new int[2];
+	 _id[0] = v0.id();
+	 _id[1] = v1.id();
+  }
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Product::Product(const Product &v0, const Product &v1)
 {
-  n = v0.n + v1.n;
-
-  _id = new int[n];
-
-  for (int i = 0; i < v0.n; i++)
-	 _id[i] = v0._id[i];
-
-  for (int i = 0; i < v1.n; i++)
-	 _id[v0.n + i] = v1._id[i];
+  if ( v0.one() ) {      // Special case: v0 = 1
+	 n = v1.n;
+	 _id = new int[n];
+	 for (int i = 0; i < n; i++)
+		_id[i] = v1._id[i];
+  }
+  else if ( v1.one() ) { // Special case: v1 = 1
+	 n = v0.n;
+	 _id = new int[n];
+	 for (int i = 0; i < n; i++)
+		_id[i] = v0._id[i];
+  }
+  else {
+	 n = v0.n + v1.n;
+	 
+	 _id = new int[n];
+	 
+	 for (int i = 0; i < v0.n; i++)
+		_id[i] = v0._id[i];
+	 
+	 for (int i = 0; i < v1.n; i++)
+		_id[v0.n + i] = v1._id[i];
+  }
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::Product::Product(const ShapeFunction &v0, const Product &v1)
@@ -77,12 +101,22 @@ void FunctionSpace::Product::set(const ShapeFunction &v0,
   if ( n > 0 )
 	 delete [] _id;
 
-  n = 2;
-  
-  _id = new int[n];
-  
-  _id[0] = v0.id();
-  _id[1] = v1.id();
+  if ( v0.one() ) {      // Special case: v0 = 1
+	 n = 1;
+	 _id = new int[1];
+	 _id[0] = v1.id();
+  }
+  else if ( v1.one() ) { // Special case: v1 = 1
+	 n = 1;
+	 _id = new int[1];
+	 _id[0] = v0.id();
+  }
+  else {
+	 n = 2;
+	 _id = new int[2];
+    _id[0] = v0.id();
+	 _id[1] = v1.id();
+  }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::Product::set(const Product &v0, const Product &v1)
@@ -90,15 +124,26 @@ void FunctionSpace::Product::set(const Product &v0, const Product &v1)
   if ( n > 0 )
 	 delete [] _id;
 
-  n = v0.n + v1.n;
-
-  _id = new int[n];
-
-  for (int i = 0; i < v0.n; i++)
-	 _id[i] = v0._id[i];
-
-  for (int i = 0; i < v1.n; i++)
-	 _id[v0.n + i] = v1._id[i];
+  if ( v0.one() ) {      // Special case: v0 = 1
+	 n = v1.n;
+	 _id = new int[n];
+	 for (int i = 0; i < n; i++)
+		_id[i] = v1._id[i];
+  }
+  else if ( v1.one() ) { // Special case: v1 = 1
+	 n = v0.n;
+	 _id = new int[n];
+	 for (int i = 0; i < n; i++)
+		_id[i] = v0._id[i];
+  }
+  else {
+	 n = v0.n + v1.n;
+	 _id = new int[n];
+	 for (int i = 0; i < v0.n; i++)
+		_id[i] = v0._id[i];
+	 for (int i = 0; i < v1.n; i++)
+		_id[v0.n + i] = v1._id[i];
+  }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::Product::set(const ShapeFunction &v0, const Product &v1)
@@ -106,18 +151,39 @@ void FunctionSpace::Product::set(const ShapeFunction &v0, const Product &v1)
   if ( n > 0 )
 	 delete [] _id;
 
-  n = 1 + v1.n;
-
-  _id = new int[n];
-
-  _id[0] = v0.id();
-  for (int i = 0; i < v1.n; i++)
-	 _id[1 + i] = v1._id[i];
+  if ( v0.one() ) {      // Special case: v0 = 1
+	 n = v1.n;
+	 _id = new int[n];
+	 for (int i = 0; i < n; i++)
+		_id[i] = v1._id[i];
+  }
+  else if ( v1.one() ) { // Special case: v1 = 1
+	 n = 1;
+	 _id = new int[1];
+	 _id[0] = v0.id();
+  }
+  else {
+	 n = 1 + v1.n;
+	 _id = new int[n];
+	 _id[0] = v0.id();
+	 for (int i = 0; i < v1.n; i++)
+		_id[1 + i] = v1._id[i];
+  }
 }
 //-----------------------------------------------------------------------------
 int* FunctionSpace::Product::id() const
 {
   return _id;
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::Product::zero() const
+{
+  return n == 1 && _id[0] == 0;
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::Product::one() const
+{
+  return n == 1 && _id[0] == 1;
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::Product::size() const

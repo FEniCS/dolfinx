@@ -1,7 +1,11 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+
 #include <dolfin/basic.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/SISolver.h>
 #include <dolfin/KrylovSolver.h>
@@ -119,10 +123,10 @@ real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
   real norm_residual = r.norm();
 
   // set start column of v to residual/|residual|
-  for (int i=0;i<n;i++) mat_v.set(i,0,r(i)/norm_residual);
+  for (int i = 0; i <n; i++)
+	 mat_v(i, 0) = r(i)/norm_residual;
   
   real rho  = norm_residual;
-  real beta = rho;
 
   vec_g = 0.0;
   vec_g(0) = rho;
@@ -136,9 +140,10 @@ real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
     // 2 steps: First solve Px = v, then apply A to x.
 
     // if P=I => apply A directly: 
-    for (int i=0;i<A.size(0);i++) vec_tmp1(i) = mat_v.get(i,k);
+    for (int i=0;i<A.size(0);i++) vec_tmp1(i) = mat_v(i,k);
     A.mult(vec_tmp1,vec_tmp2);
-    for (int i = 0;i<A.size(0);i++) mat_v.set(i,k+1,vec_tmp2(i));
+    for (int i = 0; i< A.size(0); i++)
+		mat_v(i, k+1) = vec_tmp2(i);
 
     for (int j=0;j<k+1;j++){
       mat_H(j,k) = 0.0;
@@ -166,10 +171,10 @@ real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
 	 
     if ( k > 0 ){
       for (int j=0;j<k;j++){
-	tmp1 = mat_H.get(j,k);
-	tmp2 = mat_H.get(j+1,k);
-	mat_H(j,k) = vec_c(j)*tmp1 - vec_s(j)*tmp2;
-	mat_H(j+1,k) = vec_s(j)*tmp1 + vec_c(j)*tmp2;
+		  tmp1 = mat_H(j,k);
+		  tmp2 = mat_H(j+1,k);
+		  mat_H(j,k) = vec_c(j)*tmp1 - vec_s(j)*tmp2;
+		  mat_H(j+1,k) = vec_s(j)*tmp1 + vec_c(j)*tmp2;
       }
     }
     

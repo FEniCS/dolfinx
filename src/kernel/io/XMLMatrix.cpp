@@ -1,28 +1,27 @@
-#include <dolfin/SparseMatrix.h>
-#include "XMLSparseMatrix.h"
+#include <dolfin/Matrix.h>
+#include "XMLMatrix.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLSparseMatrix::XMLSparseMatrix(SparseMatrix *sparseMatrix) : XMLObject()
+XMLMatrix::XMLMatrix(Matrix& matrix) : XMLObject(), A(matrix)
 {
-  this->sparseMatrix = sparseMatrix;
   state = OUTSIDE;
   row = 0;
 }
 //-----------------------------------------------------------------------------
-void XMLSparseMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state ){
   case OUTSIDE:
 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 ){
-		readSparseMatrix(name,attrs);
-		state = INSIDE_SPARSE_MATRIX;
+		readMatrix(name,attrs);
+		state = INSIDE_MATRIX;
 	 }
 	 
 	 break;
-  case INSIDE_SPARSE_MATRIX:
+  case INSIDE_MATRIX:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 ){
 		readRow(name,attrs);
@@ -37,14 +36,17 @@ void XMLSparseMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
 		readElement(name,attrs);
 	 
 	 break;
+
+  default:
+	 ;
   }
   
 }
 //-----------------------------------------------------------------------------
-void XMLSparseMatrix::endElement(const xmlChar *name)
+void XMLMatrix::endElement(const xmlChar *name)
 {
   switch ( state ){
-  case INSIDE_SPARSE_MATRIX:
+  case INSIDE_MATRIX:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 ){
 		ok = true;
@@ -52,17 +54,22 @@ void XMLSparseMatrix::endElement(const xmlChar *name)
 	 }
 	 
 	 break;
+
   case INSIDE_ROW:
 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 )
-		state = INSIDE_SPARSE_MATRIX;
+		state = INSIDE_MATRIX;
 	 
 	 break;
+
+  default:
+	 ;
   }
+  
 
 }
 //-----------------------------------------------------------------------------
-void XMLSparseMatrix::readSparseMatrix(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int rows = 0;
@@ -73,10 +80,10 @@ void XMLSparseMatrix::readSparseMatrix(const xmlChar *name, const xmlChar **attr
   parseIntegerRequired(name, attrs, "columns", &columns);
 
   // Set values
-  sparseMatrix->init(rows, columns);
+  A.init(rows, columns);
 }
 //-----------------------------------------------------------------------------
-void XMLSparseMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   row = 0;
@@ -87,10 +94,10 @@ void XMLSparseMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "size", &size);
 
   // Set values
-  sparseMatrix->initRow(row, size);
+  A.initRow(row, size);
 }
 //-----------------------------------------------------------------------------
-void XMLSparseMatrix::readElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::readElement(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int column = 0;
@@ -101,6 +108,6 @@ void XMLSparseMatrix::readElement(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired    (name, attrs, "value",  &value);
   
   // Set values
-  (*sparseMatrix)(row,column) = value;
+  A(row,column) = value;
 }
 //-----------------------------------------------------------------------------

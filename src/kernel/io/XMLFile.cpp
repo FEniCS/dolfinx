@@ -1,8 +1,11 @@
 #include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Grid.h>
+
 #include "XMLFile.h"
 #include "XMLObject.h"
 #include "XMLVector.h"
-#include "XMLSparseMatrix.h"
+#include "XMLMatrix.h"
 #include "XMLGrid.h"
 
 using namespace dolfin;
@@ -19,19 +22,19 @@ XMLFile::~XMLFile()
 	 delete xmlObject;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Vector& vector)
+void XMLFile::operator>>(Vector& x)
 {
   if ( xmlObject )
 	 delete xmlObject;
-  xmlObject = new XMLVector(&vector);
+  xmlObject = new XMLVector(x);
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(SparseMatrix& sparseMatrix)
+void XMLFile::operator>>(Matrix& A)
 {
   if ( xmlObject )
 	 delete xmlObject;
-  xmlObject = new XMLSparseMatrix(&sparseMatrix);
+  xmlObject = new XMLMatrix(A);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -39,16 +42,16 @@ void XMLFile::operator>>(Grid& grid)
 {
   if ( xmlObject )
 	 delete xmlObject;
-  xmlObject = new XMLGrid(&grid);
+  xmlObject = new XMLGrid(grid);
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const Vector& vector)
+void XMLFile::operator<<(const Vector& x)
 {
 
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(const SparseMatrix& sparseMatrix)
+void XMLFile::operator<<(const Matrix& A)
 {
 
 }

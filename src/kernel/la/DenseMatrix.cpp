@@ -1,6 +1,6 @@
-#include <stdio.h>
+#include <iostream>
 
-#include <dolfin/SparseMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 
 using namespace dolfin;
@@ -19,7 +19,7 @@ DenseMatrix::DenseMatrix(int m, int n)
   init(m,n);
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(SparseMatrix &A)
+DenseMatrix::DenseMatrix(Matrix& A)
 {
   init(A.size(0), A.size(1));
 
@@ -31,7 +31,7 @@ DenseMatrix::DenseMatrix(SparseMatrix &A)
 		value = A(i,&j,pos);
 		values[i][j] = value;
 	 }
-
+  
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::init(int m, int n)
@@ -67,11 +67,11 @@ void DenseMatrix::init(int m, int n)
 //-----------------------------------------------------------------------------
 DenseMatrix::~DenseMatrix()
 {
-  for (int i=0;i<m;i++)
-	 delete values[i];
+  for (int i = 0; i < m; i++)
+	 delete [] values[i];
 
-  delete values;
-  delete permutation;
+  delete [] values;
+  delete [] permutation;
 }
 //-----------------------------------------------------------------------------
 real& DenseMatrix::operator() (int i, int j)
@@ -84,49 +84,11 @@ real DenseMatrix::operator() (int i, int j) const
   return values[i][j];
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::set(int i, int j, real value)
-{
-  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) ) {
-	 cout << "DenseMatrix::Set(): Indices out of range." << endl;
-	 exit(1);
-  }
-	 
-  values[i][j] = value;
-}
-//-----------------------------------------------------------------------------
-int DenseMatrix::size(int dim)
+int DenseMatrix::size(int dim) const
 {
   if ( dim == 0 )
 	 return m;
   else
 	 return n;
-}
-//-----------------------------------------------------------------------------
-real DenseMatrix::get(int i, int j)
-{
-  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) ) {
-	 cout << "DenseMatrix::Get(): Indices out of range." << endl;
-	 exit(1);
-  }
-
-  return ( values[i][j] );
-}
-
-//-----------------------------------------------------------------------------
-void DenseMatrix::DisplayAll()
-{
-  for (int i=0;i<m;i++){
-	 for (int j=0;j<n;j++)
-		printf("%f ",values[i][j]);
-	 printf("\n");
-  }
-}
-//-----------------------------------------------------------------------------
-void DenseMatrix::DisplayRow(int i)
-{
-  printf("Row %d (%d): ",i,i+1);
-  for (int j=0;j<n;j++)
-	 printf("%f ",values[i][j]);
-  printf("\n");
 }
 //-----------------------------------------------------------------------------

@@ -4,36 +4,39 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLVector::XMLVector(Vector *vector) : XMLObject()
+XMLVector::XMLVector(Vector& vector) : XMLObject(), x(vector)
 {
-  this->vector = vector;
   state = OUTSIDE;
 }
 //-----------------------------------------------------------------------------
 void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state ){
+  switch ( state ) {
   case OUTSIDE:
 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ){
+	 if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
 		readVector(name,attrs);
 		state = INSIDE_VECTOR;
 	 }
 	 
 	 break;
+
   case INSIDE_VECTOR:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "element") == 0 )
 		readElement(name,attrs);
     	
 	 break;
+
+  default:
+	 ;
   }
   
 }
 //-----------------------------------------------------------------------------
 void XMLVector::endElement(const xmlChar *name)
 {
-  switch ( state ){
+  switch ( state ) {
   case INSIDE_VECTOR:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ){
@@ -42,6 +45,9 @@ void XMLVector::endElement(const xmlChar *name)
 	 }
 	 
 	 break;
+
+  default:
+	 ;
   }
 
 }
@@ -55,14 +61,14 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "size", &size);
 
   // Check values
-  if ( size < 0 ){
+  if ( size < 0 ) {
 	 // FIXME: Temporary until we get the logsystem working
 	 cout << "Error reading XML data: size of vector must be positive." << endl;
 	 exit(1);
   }
 
   // Initialise
-  vector->init(size);	 
+  x.init(size);	 
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
@@ -76,15 +82,15 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "value", &value);   
   
   // Check values
-  if ( row < 0 || row >= vector->size() ){
+  if ( row < 0 || row >= x.size() ) {
 	 // FIXME: Temporary until we get the logsystem working
 	 cout << "Error reading XML data: row index " << row
-			<< " for vector out of range (0 - " << vector->size()
+			<< " for vector out of range (0 - " << x.size()
 			<< ")" << endl;
 	 exit(1);
   }
   
   // Set value
-  (*vector)(row) = value;
+  x(row) = value;
 }
 //-----------------------------------------------------------------------------

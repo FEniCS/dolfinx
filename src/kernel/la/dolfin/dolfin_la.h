@@ -5,7 +5,7 @@
 
 #include <dolfin/Vector.h>
 #include <dolfin/DenseMatrix.h>
-#include <dolfin/SparseMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/SISolver.h>
 #include <dolfin/KrylovSolver.h>
 

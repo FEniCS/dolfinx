@@ -6,11 +6,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-InitGrid::InitGrid(Grid *grid)
+InitGrid::InitGrid()
 {
-  int *tmp;
-  int tmpsize, newtmpsize;
 
+
+}
+//-----------------------------------------------------------------------------
+void InitGrid::init(Grid &grid)
+{
   // Reset all previous connections
   clear(grid);
 
@@ -24,7 +27,7 @@ InitGrid::InitGrid(Grid *grid)
   initNodeNode(grid);
 }
 //-----------------------------------------------------------------------------
-void InitGrid::clear(Grid *grid)
+void InitGrid::clear(Grid& grid)
 {  
   // Clear connectivity for nodes
   for (NodeIterator n(grid); !n.end(); ++n){
@@ -37,7 +40,7 @@ void InitGrid::clear(Grid *grid)
 	 c->cc.clear();
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeCell(Grid *grid)
+void InitGrid::initNodeCell(Grid& grid)
 {
   // Go through all cells and add the cell as a neighbour to all its nodes.
   // A couple of extra loops are needed to first count the number of
@@ -58,7 +61,7 @@ void InitGrid::initNodeCell(Grid *grid)
 		n->nc.add(c);  
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initCellCell(Grid *grid)
+void InitGrid::initCellCell(Grid& grid)
 {
   // Go through all cells and count the cell neighbors.
 
@@ -80,7 +83,7 @@ void InitGrid::initCellCell(Grid *grid)
   }
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeNode(Grid *grid)
+void InitGrid::initNodeNode(Grid& grid)
 {
   // Go through all nodes and count the node neighbors.
   // This is done in four sweeps: count (overestimate), allocate, add, and

@@ -26,10 +26,11 @@ void Parameter::clear()
 {
   sprintf(identifier,"%s","");
   
-  val_real     = 0.0;
-  val_int      = 0;
-  val_string   = 0;
-  val_function = 0;
+  val_real       = 0.0;
+  val_int        = 0;
+  val_string     = 0;
+  val_function   = 0;
+  val_bcfunction = 0;
   
   _changed = false;
   
@@ -70,7 +71,7 @@ void Parameter::set(const char *identifier, va_list aptr)
 		  delete val_string;
 		val_string = new char[n];
 		// Save the string value
-		sprintf(val_string,"");
+		sprintf(val_string, "%s", "");
 	 }
 	 else{
 		// Check the length of the string and allocate just enough space
@@ -79,7 +80,7 @@ void Parameter::set(const char *identifier, va_list aptr)
 		  delete [] val_string;
 		val_string = new char[n+1];
 		// Save the string value
-		sprintf(val_string,"%s",string);
+		sprintf(val_string, "%s", string);
 	 }
 	 
 	 break;
@@ -87,6 +88,11 @@ void Parameter::set(const char *identifier, va_list aptr)
   case FUNCTION:
 	 
 	 val_function = va_arg(aptr, function);
+	 break;
+
+  case BCFUNCTION:
+
+	 val_bcfunction = va_arg(aptr, bcfunction);
 	 break;
 	 
   default:
@@ -102,10 +108,11 @@ void Parameter::set(const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 void Parameter::get(va_list aptr)
 {
-  double   *p_real;
-  int      *p_int;
-  char     *p_string;
-  function *p_function;
+  double     *p_real;
+  int        *p_int;
+  char       *p_string;
+  function   *p_function;
+  bcfunction *p_bcfunction;
   
   // Set the value of the parameter
   switch ( type ){
@@ -136,6 +143,12 @@ void Parameter::get(va_list aptr)
 	 p_function = va_arg(aptr,function *);
 	 *p_function = val_function;
 	 break;
+
+  case BCFUNCTION:
+
+	 p_bcfunction = va_arg(aptr,bcfunction *);
+	 *p_bcfunction = val_bcfunction;
+	 break;
 	 
   default:
 	 cout << "Unknown type for parameter \"" << identifier << "\"." << endl;
@@ -156,9 +169,10 @@ void Parameter::operator= (const Parameter &p)
 {
   sprintf(identifier, "%s", p.identifier);
 	 
-  val_real     = p.val_real;
-  val_int      = p.val_int;
-  val_function = p.val_function;
+  val_real       = p.val_real;
+  val_int        = p.val_int;
+  val_function   = p.val_function;
+  val_bcfunction = p.val_bcfunction;
 
   if ( val_string )
 	 delete [] val_string;

@@ -5,6 +5,7 @@ namespace dolfin {
   
   class Grid;
   class Solver;
+  class Settings;
   
   class Problem {
   public:
@@ -20,6 +21,7 @@ namespace dolfin {
   private:
 				
 	 Solver *solver;
+	 Settings *settings;
 
   };
 

@@ -20,8 +20,9 @@ namespace dolfin {
   
   class Equation {
   public:
-
+	 
 	 Equation(int dim);
+	 virtual ~Equation();
 	 
 	 // Variational formulation, left-hand side
 	 virtual real lhs(const ShapeFunction &u, const ShapeFunction &v) = 0;
@@ -33,6 +34,7 @@ namespace dolfin {
 						 const Cell*          cell,
 						 const Mapping*       mapping,
 						 const Quadrature*    quadrature);
+	 
 	 // Update before computation of right-hand side
 	 void updateRHS(const FiniteElement* element,
 						 const Cell*          cell,
@@ -53,22 +55,25 @@ namespace dolfin {
 	 real dt(real a) const;
 
 	 // Derivative of ShapeFunction
-	 const ElementFunction &dx(const ShapeFunction &v) const;
-	 const ElementFunction& dy(const ShapeFunction &v) const;
-	 const ElementFunction& dz(const ShapeFunction &v) const;
-	 const ElementFunction& dt(const ShapeFunction &v) const;
-	 
+	 const ElementFunction dx(const ShapeFunction& v) const;
+	 const ElementFunction dy(const ShapeFunction& v) const;
+	 const ElementFunction dz(const ShapeFunction& v) const;
+	 const ElementFunction dt(const ShapeFunction& v) const;
+
 	 // Derivative of Product
-	 const ElementFunction& dx(const Product &v) const;
-	 const ElementFunction& dy(const Product &v) const;
-	 const ElementFunction& dz(const Product &v) const;
-	 const ElementFunction& dt(const Product &v) const;
+	 const ElementFunction dx(const Product& v) const;
+	 const ElementFunction dy(const Product& v) const;
+	 const ElementFunction dz(const Product& v) const;
+	 const ElementFunction dt(const Product& v) const;
 
 	 // Derivative of ElementFunction
-	 const ElementFunction& dx(const ElementFunction &v) const;
-	 const ElementFunction& dy(const ElementFunction &v) const;
-	 const ElementFunction& dz(const ElementFunction &v) const;
-	 const ElementFunction& dt(const ElementFunction &v) const;
+	 const ElementFunction dx(const ElementFunction& v) const;
+	 const ElementFunction dy(const ElementFunction& v) const;
+	 const ElementFunction dz(const ElementFunction& v) const;
+	 const ElementFunction dt(const ElementFunction& v) const;
+
+	 // Gradients
+	 const FunctionSpace::Vector<ElementFunction> grad(const ShapeFunction &v);
 	 
 	 // Function data
 	 class FunctionPair {
