@@ -1,3 +1,4 @@
+ - Load/save parameters in XML-format
  - Add assembly test
  - Add simple StiffnessMatrix, MassMatrix, and LoadVector
  - Change dK --> dx
