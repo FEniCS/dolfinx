@@ -22,11 +22,9 @@ namespace dolfin {
   class TimeStepper {
   public:
 
-    void solve(ODE& ode, real t0, real t1);
+    static void solve(ODE& ode, real t0, real t1);
 
   private:
-
-
 
   };
 

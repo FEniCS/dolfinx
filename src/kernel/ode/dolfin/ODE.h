@@ -11,9 +11,9 @@ namespace dolfin {
 
   /// ODE represents an initial value problem of the form
   ///
-  ///     u'(t) = f(u(t),t)
+  ///     u'(t) = f(u(t),t) on (0,T],
   ///         
-  ///     u(0)  = u0
+  ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
 
@@ -31,6 +31,9 @@ namespace dolfin {
 
     /// Number of components N
     int size() const;
+
+    /// End time (final time)
+    real endtime() const;
 
     /// Solve ODE
     void solve();
@@ -50,6 +53,7 @@ namespace dolfin {
     /// Sparsity
     Sparsity sparsity;
     
+    /// Initial value
     Vector u0;
 
   protected:

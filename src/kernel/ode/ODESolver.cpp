@@ -9,14 +9,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void ODESolver::solve(ODE& ode, real T)
+void ODESolver::solve(ODE& ode)
 {
-  TimeStepper solver;
-
   // Eventually, this is where we will put the adaptive algorithm,
   // including repeated solution of the primal and dual problems,
   // computation stability factors and error estimates.
 
-  solver.solve(ode, 0.0, T);
+  TimeStepper::solve(ode, 0.0, ode.endtime());
 }
 //-----------------------------------------------------------------------------

@@ -25,10 +25,14 @@ int ODE::size() const
   return N;  
 }
 //-----------------------------------------------------------------------------
+real ODE::endtime() const
+{
+  return T;
+}
+//-----------------------------------------------------------------------------
 void ODE::solve()
 {
-  ODESolver solver;
-  solver.solve(*this, T);
+  ODESolver::solve(*this);
 }
 //-----------------------------------------------------------------------------
 void ODE::sparse(int i, int size)

@@ -12,21 +12,20 @@ namespace dolfin {
 
   /// Solves a given ODE of the form
   ///
-  ///     u'(t) = f(u(t),t)    on (0,T]
+  ///     u'(t) = f(u(t),t) on (0,T],
   ///         
-  ///     u(0)  = u0
+  ///     u(0)  = u0,
   ///
-  /// where u(t) is a vector of length N, using one of
-  /// (or a combination of) the multi-adaptive Galerkin
-  /// methods mcG(q) or mdG(q).
+  /// where u(t) is a vector of length N, using one
+  /// of (or a combination of) the multi-adaptive
+  /// Galerkin methods mcG(q) or mdG(q).
 
   class ODESolver {
   public:
 
-    void solve(ODE& ode, real T);
+    static void solve(ODE& ode);
 
   private:
-
 
   };
 

@@ -58,7 +58,6 @@ int main()
   Vector u(1);
   u(0) = 1;
 
-
   foo = minimal.f(u, 0, 0);
 
   dolfin::cout << foo << dolfin::endl;

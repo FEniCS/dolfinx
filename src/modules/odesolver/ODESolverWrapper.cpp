@@ -18,10 +18,6 @@ const char* ODESolverWrapper::description()
 //-----------------------------------------------------------------------------
 void ODESolverWrapper::solve()
 {
-  // Get final time
-  real T = dolfin_get("final time");
-  
-  // Solve ODE
-  solver.solve(ode, T);
+  ode.solve();
 }
 //-----------------------------------------------------------------------------
