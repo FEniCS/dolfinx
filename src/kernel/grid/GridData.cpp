@@ -3,6 +3,7 @@
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/Cell.h>
 #include <dolfin/GridData.h>
+#include <dolfin/constants.h>
 
 using namespace dolfin;
 
@@ -17,6 +18,19 @@ Node* GridData::createNode()
 //-----------------------------------------------------------------------------
 Node* GridData::createNode(real x, real y, real z)
 {
+  // If a node exists with coordinates (x,y,z) then return a pointer to that 
+  // node, else create a new node and return a pointer to that node.   
+  Point pnt;
+  for (List<Node>::Iterator n(&nodes); !n.end(); ++n){
+    pnt = (n.pointer())->coord();
+    if ( fabs(pnt.x-x)<DOLFIN_EPS ){
+      if ( fabs(pnt.y-y)<DOLFIN_EPS ){
+	if ( fabs(pnt.z-z)<DOLFIN_EPS ){
+	  return (n.pointer());
+	}
+      }
+    }
+  }
   int id;
   Node *n = nodes.create(&id);
   n->setID(id);
