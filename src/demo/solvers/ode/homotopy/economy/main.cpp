@@ -197,10 +197,28 @@ public:
     for (unsigned int i = 0; i < m; i++)
       b[i] = epsilon + dolfin::rand()*(1.0 - epsilon);
 
-    // Special choice of data
-    b[0] = 0.9;
+    // Special choice of data (Eaves and Schmedders, two consumers)
+    a[0][0] = 4.0; a[0][1] = 1.0;
+    a[1][0] = 1.0; a[1][1] = 4.0;
     
-    // Special choice of data
+    w[0][0] = 10.0; w[0][1] =  1.0;
+    w[1][0] =  1.0; w[1][1] = 12.0;
+    
+    b[0] = 0.2;
+    b[1] = 0.2;    
+
+    // Special choice of data (Eaves and Schmedders, one consumer)
+    /*
+    a[0][0] = 4.0; a[0][1] = 1.0;
+    a[1][0] = 1.0; a[1][1] = 4.0;
+    
+    w[0][0] = 10.0; w[0][1] =  1.0;
+    w[1][0] =  0.0; w[1][1] =  0.0;
+    
+    b[0] = 0.2;
+    b[1] = 0.2;
+    */
+
     /*
       a[0][0] = 2.0; a[0][1] = 1.0;
       a[1][0] = 0.5; a[1][1] = 1.0;
@@ -222,7 +240,7 @@ public:
   {
     // First equation: normalization
     y[0] = sum(z) - 1.0;
-
+    
     // Precompute scalar products
     for (unsigned int i = 0; i < m; i++)
       tmp[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
@@ -291,8 +309,6 @@ public:
 
   unsigned int degree(unsigned int i) const
   {
-    return 0;
-
     if ( i == 0 )
       return 1;
     else
@@ -328,16 +344,17 @@ int main()
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
   dolfin_set("adaptive samples", true);
-  dolfin_set("monitor homotopy", true);
-  dolfin_set("tolerance", 0.1);
+  //dolfin_set("monitor homotopy", true);
+  dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.01);
-  dolfin_set("homotopy divergence tolerance", 5.0);
+  dolfin_set("homotopy divergence tolerance", 20.0);
   dolfin_set("linear solver", "direct");
   
   //Leontief leontief(2, 2);
   //leontief.solve();
 
-  CES ces(1, 2, 0.5);
+  CES ces(2, 2, 0.5);
+
   ces.disp();
   ces.solve();
 

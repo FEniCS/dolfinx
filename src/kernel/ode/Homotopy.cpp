@@ -112,6 +112,40 @@ void Homotopy::solve()
   dolfin_info("Total number of solutions found: %d.", nroots);
 }
 //-----------------------------------------------------------------------------
+void Homotopy::G(const complex z[], complex y[])
+{
+  // Implement default starting system if not supplied by user
+
+  // Compute G_i(z_i) = z_i^(p_i + 1) - c_i
+  for (uint i = 0; i < n; i++)
+  {
+    const uint p = degree(i);
+    const complex zi = z[i];
+    complex tmp = zi;
+    for (uint j = 0; j < p; j++)
+      tmp *= zi;
+
+    y[i] = tmp - ci[i];
+  }
+}
+//-----------------------------------------------------------------------------
+void Homotopy::JG(const complex z[], const complex x[], complex y[])
+{
+  // Implement default starting system if not supplied by user
+  
+  // Compute (G'(z)*x)_i = (p_i + 1) z_i^p_i x_i
+  for (uint i = 0; i < n; i++)
+  {
+    const uint p = degree(i);
+    const complex zi = z[i];
+    complex tmp = static_cast<complex>(p + 1);
+    for (uint j = 0; j < p ; j++)
+      tmp *= zi;
+    
+    y[i] = tmp * x[i];
+  }
+}
+//-----------------------------------------------------------------------------
 dolfin::uint Homotopy::countPaths() const
 {
   uint product = 1;
@@ -209,20 +243,23 @@ void Homotopy::randomize()
 
   for (uint i = 0; i < n; i++)
   {
-    //const real r = rand();
-    // const real a = 2.0*DOLFIN_PI*rand();
-    //const complex c = std::polar(r, a);
-    //ci[i] = c;
+    const real r = rand();
+    const real a = 2.0*DOLFIN_PI*rand();
+    const complex c = std::polar(r, a);
+    ci[i] = c;
 
     // FIXMETMP: Remove when working
     // Choice from Morgan's paper
-    const complex c(0.00143289 + static_cast<real>(i), 0.983727);
-    ci[i] = c;
+    //const complex c(0.00143289 + static_cast<real>(i), 0.983727);
+    //ci[i] = c;
   }
 }
 //-----------------------------------------------------------------------------
 void Homotopy::feval(NewVector& F, ComplexODE& ode)
 {
+  // Reuse the right-hand side of the ODE so we don't have to reimplement
+  // the mapping from complex to real numbers
+
   // Get arrays
   const real* xx = x.array();
   real* FF = F.array();

@@ -35,6 +35,12 @@ namespace dolfin
     /// Compute y = F'(z) x
     virtual void JF(const complex z[], const complex x[], complex y[]) = 0;
 
+    /// Compute y = G(z), optional
+    virtual void G(const complex z[], complex y[]);
+
+    /// Compute y = G'(z) x, optional
+    virtual void JG(const complex z[], const complex x[], complex y[]);
+
     /// Return degree of polynomial F_i(z)
     virtual uint degree(uint i) const = 0;
 

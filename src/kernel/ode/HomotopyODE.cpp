@@ -12,12 +12,9 @@ using namespace dolfin;
 HomotopyODE::HomotopyODE(Homotopy& homotopy, uint n)
   : ComplexODE(n), homotopy(homotopy), n(n), _state(ode), tmp(0)
 {
-  if ( homotopy.monitor )
-  {
-    tmp = new complex[n];
-    for (uint i = 0; i < n; i++)
-      tmp[i] = 0.0;
-  }
+  tmp = new complex[n];
+  for (uint i = 0; i < n; i++)
+    tmp[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 HomotopyODE::~HomotopyODE()
@@ -52,13 +49,12 @@ void HomotopyODE::f(const complex z[], real t, complex y[])
   if ( _state == endgame )
     return;
 
-  // Negate F
+  // Call possibly user-supplied function to compute G(z)
+  homotopy.G(z, tmp);
+
+  // Negate F and add G
   for (uint i = 0; i < n; i++)
-    y[i] = -y[i];
-  
-  // Add G(z) = z_i^(p_i + 1) - c_i
-  for (uint i = 0; i < n; i++)
-    y[i] += Gi(z[i], i);
+    y[i] = tmp[i] - y[i];
 }
 //-----------------------------------------------------------------------------
 void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)
@@ -68,20 +64,12 @@ void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)
   // Call user-supplied function to compute F'*x
   homotopy.JF(z, x, y);
 
-  // Multiply by t
-  for (uint i = 0; i < n; i++)
-    y[i] *= t;
+  // Call possible user-supplied function to compute G'*x
+  homotopy.JG(z, x, tmp);
 
-  // Add (1-t) G'*x
+  // Add terms
   for (uint i = 0; i < n; i++)
-  {
-    const uint p = homotopy.degree(i);
-    const complex zi = z[i];
-    complex tmp = static_cast<complex>(p + 1);
-    for (uint j = 0; j < p; j++)
-      tmp *= zi;
-    y[i] += (1.0 - t)* tmp * x[i];
-  }
+    y[i] = (1.0 - t)*tmp[i] + t*y[i];
 }
 //-----------------------------------------------------------------------------
 void HomotopyODE::J(const complex x[], complex y[], const complex z[], real t)
@@ -95,33 +83,28 @@ void HomotopyODE::J(const complex x[], complex y[], const complex z[], real t)
   if ( _state == endgame )
     return;
 
-  // Negate F'*x
-  for (uint i = 0; i < n; i++)
-    y[i] = -y[i];
+  // Call possible user-supplied function to compute G'*x
+  homotopy.JG(z, x, tmp);
 
-  // Add G'*x
+  // Negate F'*x and add G'*x
   for (uint i = 0; i < n; i++)
-  {
-    const uint p = homotopy.degree(i);
-    const complex zi = z[i];
-    complex tmp = static_cast<complex>(p + 1);
-    for (uint j = 0; j < p ; j++)
-      tmp *= zi;
-    y[i] += tmp * x[i];
-  }
+    y[i] = tmp[i] - y[i];
 }
 //-----------------------------------------------------------------------------
 bool HomotopyODE::update(const complex z[], real t, bool end)
 {
+  // FIXME: Maybe this should be a parameter?
+  const real epsilon = 0.5;
+
   // Check if we should monitor the homotopy
-  if ( tmp )
+  if ( homotopy.monitor )
     monitor(z, t);
   
   // Check convergence of (1 - t)*G(z)
-  const real epsilon = 0.5;
+  homotopy.G(z, tmp);
   for (uint i = 0; i < n; i++)
   {
-    real r = std::abs(pow((1.0 - t), 1.0 - epsilon) * Gi(z[i], i));
+    real r = std::abs(pow((1.0 - t), 1.0 - epsilon) * tmp[i]);
     //cout << "checking: r = " << r << endl;
     
     if ( r > homotopy.divtol )
@@ -173,29 +156,34 @@ void HomotopyODE::monitor(const complex z[], real t)
 
   // Monitor homotopy H(z, t) = t*F(z) + (1 - t)*G(z)
 
-  // Evaluate F and compute norm of F
+  // Temporary storage for h
+  complex* h = new complex[n];
+
+  // Evaluate F
   homotopy.F(z, tmp);
   real Fnorm = 0.0;
   for (uint i = 0; i < n; i++)
+  {
+    h[i] = t*tmp[i];
     Fnorm = std::max(Fnorm, std::abs(tmp[i]));
+  }
 
-  // Multiply by t
-  for (uint i = 0; i < n; i++)
-    tmp[i] *= t;
-
-  // Add (1 - t)*G(z) and compute norm of G
+  // Evaluate G
+  homotopy.G(z, tmp);
   real Gnorm = 0.0;
   for (uint i = 0; i < n; i++)
   {
-    complex G = Gi(z[i], i);
-    Gnorm = std::max(Gnorm, std::abs(G));
-    tmp[i] += (1.0 - t)*G;
+    h[i] += (1.0 - t)*tmp[i];
+    Gnorm = std::max(Gnorm, std::abs(tmp[i]));
   }
   
   // Compute norm of H
   real Hnorm = 0.0;
   for (uint i = 0; i < n; i++)
-    Hnorm = std::max(Hnorm, std::abs(tmp[i]));
+    Hnorm = std::max(Hnorm, std::abs(h[i]));
+  
+  // Clear temporary storagexs
+  delete [] h;
 
   dolfin_info("Homotopy: F = %e G = %e H = %e", Fnorm, Gnorm, Hnorm);
 }

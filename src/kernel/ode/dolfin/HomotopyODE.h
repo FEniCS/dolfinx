@@ -63,7 +63,7 @@ namespace dolfin
     // Current state
     State _state;
 
-    // Array of values used for monitoring homotopy
+    // Array of values used for temporary storage
     complex* tmp;
 
   };
