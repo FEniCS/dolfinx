@@ -82,6 +82,7 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
   // Compute residual
   Vector r(b.size());
   real norm_residual = residual(A,x,b,r);
+  real norm_b = b.norm();
 
   // Restarted GMRES
   for (int i = 0; i < max_no_restarts; i++) {
@@ -93,9 +94,10 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
     norm_residual = residual(A,x,b,r);
 
     // Check residual
-    if (norm_residual < (tol*b.norm())){
-      dolfin_info("Restarted GMRES converged after %i iterations (residual %1.5e)",
-		  i*k_max+no_iterations,norm_residual);
+    if (norm_residual < (tol*norm_b))
+    {
+      dolfin_info("Restarted GMRES converged after %i iterations (residual = %1.5e, tol*b = %1.5e)",
+		  i*k_max+no_iterations, norm_residual, tol*norm_b);
       break;
     }
     if (i == max_no_restarts-1)

@@ -64,7 +64,6 @@ namespace dolfin {
 
     void cross(Vector& v, Vector& uxv);
 
-
     void rand();
     
     // Output
@@ -75,6 +74,7 @@ namespace dolfin {
     friend class DirectSolver;
     friend class Matrix;
     friend class SISolver;
+    friend class NewtonIteration;
     
   private:
     

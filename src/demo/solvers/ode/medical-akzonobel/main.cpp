@@ -163,10 +163,9 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
-  dolfin_set("tolerance", 1e-3);
-  dolfin_set("initial time step", 0.001);
-  dolfin_set("maximum time step", 0.01);
-  //dolfin_set("fixed time step", true);
+  dolfin_set("tolerance", 1e-5);
+  dolfin_set("initial time step", 0.01);
+  dolfin_set("fixed time step", true);
   //dolfin_set("initial time step", 0.01);
   dolfin_set("number of samples", 10);
   dolfin_set("solve dual problem", false);

@@ -23,6 +23,7 @@ JacobianMatrix::JacobianMatrix(RHS& f) :
   // has the same sparsity pattern as the ode (use ODE::sparsity)
 
   cout << "Creating Jacobian matrix" << endl;
+  cout << "Size of system: " << f.size() << endl;
 
   for (unsigned int i = 0; i < dfdu.size(0); i++)
   {
@@ -63,7 +64,7 @@ void JacobianMatrix::update(real t)
   f.update(t);
 
   // Compute the Jacobian
-  for (unsigned int i = 0; i < dfdu.size(); i++)
+  for (unsigned int i = 0; i < dfdu.size(0); i++)
   {
      unsigned tmp = 0;
      const NewArray<unsigned int>& row = f.ode.sparsity.row(i);
@@ -82,7 +83,6 @@ unsigned int JacobianMatrix::update(ElementGroupList& elements)
   for (ElementIterator element(elements); !element.end(); ++element)
   {  
     n += element->size();
-    cout << "element.index() = " << element->index() << endl;
     latest[element->index()] = n - 1;
   }
   
@@ -94,7 +94,7 @@ unsigned int JacobianMatrix::update(ElementGroupList& elements)
   return n;
 }
 //-----------------------------------------------------------------------------
-void JacobianMatrix::mult(const Vector& x, Vector& Ax)
+void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
 {
   // Perform the multiplication by iterating over all elements in the slab.
   // For each element, check the component index of that element to pick
@@ -122,7 +122,7 @@ void JacobianMatrix::mult(const Vector& x, Vector& Ax)
 //-----------------------------------------------------------------------------
 unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
 				    unsigned int dof, 
-				    const dolfin::Element& element)
+				    const dolfin::Element& element) const
 {
   // Get the component index
   const unsigned int i = element.index();
@@ -180,7 +180,7 @@ unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
 //-----------------------------------------------------------------------------
 unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
 				    unsigned int dof,
-				    const dolfin::Element& element)
+				    const dolfin::Element& element) const
 {
   //return dof + q + 1;
   return 0;

@@ -277,6 +277,16 @@ real dGqElement::computeElementResidual(RHS& f)
   return values[q] - u0 - integral(q);
 }
 //-----------------------------------------------------------------------------
+void dGqElement::computeElementResidual(RHS& f, real* r)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute element residuals
+  for (unsigned int i = 0; i <= q; i++)
+    r[i] = values[i] - values[0] - integral(i);
+}
+//-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)
 {
   // See comment on cGqElement::feval()

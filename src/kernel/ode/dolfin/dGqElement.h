@@ -43,6 +43,7 @@ namespace dolfin {
 
     real computeTimeStep(real TOL, real r, real kmax) const;
     real computeDiscreteResidual(RHS& f);
+    void computeElementResidual(RHS& f, real* r);
     real computeElementResidual(RHS& f);
     
   private:

@@ -30,7 +30,7 @@ namespace dolfin
     unsigned int size(unsigned int dim) const;
     
     /// Multiplication with vector (use with GMRES solver)
-    void mult(const Vector& x, Vector& Ax);
+    void mult(const Vector& x, Vector& Ax) const;
 
     /// Recompute Jacobian at given time
     void update(real t);
@@ -41,16 +41,16 @@ namespace dolfin
   private:
 
     /// Multiplication for cG(q) elements
-    unsigned int cGmult(const Vector& x, Vector& Ax,
-			unsigned int dof, const dolfin::Element& element);
+    unsigned int cGmult(const Vector& x, Vector& Ax, unsigned int dof,
+			const dolfin::Element& element) const;
 
     /// Multiplication for dG(q) elements
-    unsigned int dGmult(const Vector& x, Vector& Ax,
-			unsigned int dof, const dolfin::Element& element);
+    unsigned int dGmult(const Vector& x, Vector& Ax, unsigned int dof, 
+			const dolfin::Element& element) const;
 
     // The right-hand side
     RHS& f;
-
+    
     // A (sparse) Matrix storing the Jacobian of f
     Matrix dfdu;
 

@@ -108,11 +108,14 @@ namespace dolfin {
     /// Check if element can be accepted for given tolerance
     virtual bool accept(real TOL, real r) = 0;
 
-    // Compute discrete residual
+    // Compute discrete residual for last degree of freedom
     virtual real computeDiscreteResidual(RHS& f) = 0;
 
-    // Compute element residual
+    // Compute element residual for last degree of freedom
     virtual real computeElementResidual(RHS& f) = 0;
+
+    // Compute discrete residual for all degrees of freedom
+    virtual void computeElementResidual(RHS& f, real* r) = 0;
 
     // Compute new time step
     virtual real computeTimeStep(real TOL, real r, real kmax) const = 0;

@@ -276,6 +276,16 @@ real cGqElement::computeElementResidual(RHS& f)
   return values[q] - values[0] - integral(q);
 }
 //-----------------------------------------------------------------------------
+void cGqElement::computeElementResidual(RHS& f, real* r)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute element residuals
+  for (unsigned int i = 1; i <= q; i++)
+    r[i-1] = values[i] - values[0] - integral(i);
+}
+//-----------------------------------------------------------------------------
 void cGqElement::feval(RHS& f)
 {
   // The right-hand side is evaluated once, before the nodal values

@@ -13,11 +13,8 @@
 #include <dolfin/ElementGroupList.h>
 #include <dolfin/ElementGroupIterator.h>
 #include <dolfin/FixedPointIteration.h>
-#include <dolfin/JacobianMatrix.h>
-#include <dolfin/NewtonIteration.h>
-
-// FIXME: Use GMRES::solve() instead
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/NewtonIteration.h>
 
 using namespace dolfin;
 
@@ -27,7 +24,7 @@ NewtonIteration::NewtonIteration(Solution& u, RHS& f,
 				 unsigned int maxiter,
 				 real maxdiv, real maxconv, real tol,
 				 unsigned int depth) :
-  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol, depth), J(f)
 {
   // Do nothing
 }
@@ -44,7 +41,16 @@ Iteration::State NewtonIteration::state() const
 //-----------------------------------------------------------------------------
 void NewtonIteration::start(ElementGroupList& list)
 {
-  // Do nothing
+  // Get the first element
+  ElementIterator element(list);
+
+  // Compute Jacobian at current time
+  J.update(element->endtime());
+
+  // Initialize data
+  unsigned int dof = J.update(list);
+  r.init(dof);
+  dx.init(dof);
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::start(ElementGroup& group)
@@ -69,112 +75,37 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 
   cout << "Newton slab" << endl;
 
-
-  JacobianMatrix J(f);
-
-  
-  // Update Jacobian at the left end-point of the interval
-  ElementIterator element(list);
-  J.update(element->endtime());
-  unsigned int dof = J.update(list);
-
-  Vector res(dof);
-  Vector sk(dof);
-
-  // Compute discrete residual
-  int i = 0;
+  // Compute element residuals for all elements
+  unsigned int dof = 0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
-    res(i) = element->computeDiscreteResidual(f);
-
-    i++;
+    element->computeElementResidual(f, r.values + dof);
+    dof += element->size();
   }
-
-  res *= -1.0;
   
   // Solve linear system
-  KrylovSolver solver(KrylovSolver::GMRES);
-  solver.solve(J, sk, res);
+  KrylovSolver solver;
+  solver.solve(J, dx, r);
 
-  i = 0;
+  // Set values
+  dof = 0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
-    double newval;
-
-    element->get(&newval);
-    newval += sk(i);
-    element->set(&newval);
-
-    i++;
+    element->set(r.values + dof);
+    dof += element->size();
   }
 
-  // Update initial data for all elements
-  for (ElementIterator element(list); !element.end(); ++element)
-    init(*element);
+
+  //for (ElementIterator element(list); !element.end(); ++element)
+  //  init(*element);
 
   // l2 norm of increment
-  d = sk.norm();
+  d = dx.norm();
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)
 {
   dolfin_error("Not implemented.");
-
-  cout << "Newton group" << endl;
-
-  // Assume only dG0 for now
-
-  // Count degrees of freedom
-
-  int dof = 0;
-
-  for (ElementIterator element(group); !element.end(); ++element)
-  {
-    dof = dof + element->size();
-  }  
-
-  //cout << "dof: " << n << endl;
-
-  JacobianMatrix J(f);
-  Vector res(dof);
-  Vector sk(dof);
-
-  // Update Jacobian at current time
-  
-
-  int i = 0;
-  for (ElementIterator element(group); !element.end(); ++element)
-  {
-    res(i) = element->computeDiscreteResidual(f);
-
-    i++;
-  }
-
-  // Compute Jacobian
-
-  res *= -1.0;
-
-  KrylovSolver solver(KrylovSolver::GMRES);
-  solver.solve(J, sk, res);
-
-  i = 0;
-  for (ElementIterator element(group); !element.end(); ++element)
-  {
-    double newval;
-
-    element->get(&newval);
-    newval += sk(i);
-    element->set(&newval);
-
-    i++;
-  }
-
-  // Update initial data for all elements
-  for (ElementIterator element(group); !element.end(); ++element)
-    init(*element);
-
-  // l2 norm of increment
-  d = sk.norm();
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(Element& element, Increments& d)

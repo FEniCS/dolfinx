@@ -6,6 +6,8 @@
 #ifndef __NEWTON_ITERATION_H
 #define __NEWTON_ITERATION_H
 
+#include <dolfin/Vector.h>
+#include <dolfin/JacobianMatrix.h>
 #include <dolfin/Iteration.h>
 
 namespace dolfin
@@ -52,9 +54,9 @@ namespace dolfin
 
   private:
 
-    // FIXME: modify arguments to constructor of JacobianMatrix (or Iteration)
-    // FIXME: so that the initialization is possible (need ODE or at least sparsity)
-    // JacobianMatrix J;
+    JacobianMatrix J; // Jacobian of time slab
+    Vector r;         // Discrete residual
+    Vector dx;        // Increment
 
   };
 

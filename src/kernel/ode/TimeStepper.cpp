@@ -174,8 +174,6 @@ bool TimeStepper::createGeneralTimeSlab()
   
   // Update time
   t = timeslab.endtime();
-
-  
   
   // Save solution
   save(timeslab);
