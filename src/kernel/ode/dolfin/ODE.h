@@ -84,6 +84,7 @@ namespace dolfin
     /// Friends
     friend class Dual;
     friend class RHS;
+    friend class ReducedModel;
 
   protected:
     

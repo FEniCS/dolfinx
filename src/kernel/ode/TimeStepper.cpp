@@ -171,9 +171,11 @@ bool TimeStepper::createGeneralTimeSlab()
     return false;
   }
   */
-
+  
   // Update time
   t = timeslab.endtime();
+
+  
   
   // Save solution
   save(timeslab);
@@ -184,6 +186,7 @@ bool TimeStepper::createGeneralTimeSlab()
 
   // Update progress
   p = t / T;
+  //cout << "t = " << t << " K = " << timeslab.length() << endl;
 
   // Check if we are done
   if ( timeslab.finished() )

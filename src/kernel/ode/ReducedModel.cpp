@@ -16,7 +16,10 @@ ReducedModel::ReducedModel(ODE& ode)
   
   tau     = dolfin_get("average length");
   samples = dolfin_get("average samples");
-  tol     = dolfin_get("tolerance");
+  tol     = dolfin_get("average tolerance");
+
+  // Copy the sparsity
+  sparsity = ode.sparsity;
 
   // Adjust the maximum allowed time step to the initial time step
   real kmax = dolfin_get("initial time step");

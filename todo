@@ -29,3 +29,5 @@ Multi-adaptive solver
 - Error estimates
 - Automatic computation of stability factors as function of time T
 - Use two files for matlab format
+- Speedup interpolation (finding the correct element block)
+- Bug in ElementData::createBlock() when out of memory?

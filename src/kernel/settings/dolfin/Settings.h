@@ -61,6 +61,7 @@ namespace dolfin {
       add(Parameter::REAL, "maximum divergence", 10.0);
       add(Parameter::REAL, "maximum convergence", 0.75);
       add(Parameter::REAL, "average length", 0.1);
+      add(Parameter::REAL, "average tolerance", 0.1);
       
       add(Parameter::STRING, "method", "cg");
       add(Parameter::STRING, "stiffness", "non-stiff");

@@ -13,6 +13,7 @@ public:
   {
     // Final time
     T = 100.0;
+    //T = 4e-7;
 
     // The large spring constant
     k = 1e18;

@@ -10,16 +10,28 @@ M = size(u,2);
 figure(1)
 clf
 
-% Lower left particle
+% Lower left large particle
 x1 = u(1:2,:);
 
-% Upper right particle
+% Upper right large particle
 x2 = u(2*p^2-1:2*p^2,:);
 
-% Radius of structure
-r = sqrt(sum((x1 - x2).^2,1));
+% Lower left small particle
+x3 = u(2*p^2+1:2*p^2+2,:);
 
-plot(t, r)
+% Diameter of the lattice
+D = sqrt(sum((x1 - x2).^2,1));
+
+% Distance between small and large particle
+d = sqrt(sum((x1 - x3).^2,1));
+
+subplot(2,1,1)
+plot(t, D)
+ylabel('D')
+subplot(2,1,2)
+plot(t, d)
+ylabel('d')
+xlabel('t')
 
 figure(2)
 

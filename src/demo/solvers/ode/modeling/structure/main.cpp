@@ -13,6 +13,7 @@ public:
   {
     // Final time
     T = 10.0;
+    //T = 4e-4;
 
     // Distance between large masses
     h = 1.0 / static_cast<real>(p-1);
@@ -21,7 +22,7 @@ public:
     hsmall = 0.5 * sqrt(2.0) * h;
 
     // The small mass
-    m = 0.001;
+    m = 1e-12;
     
     // Compute displacements for the small masses
     dx.init((p-1)*(p-1));
@@ -31,15 +32,17 @@ public:
       unsigned int i1 = i % (p - 1);
       unsigned int i2 = i / (p - 1);
 
+      real d = 0.25;
+
       if ( i1 % 2 == 0 )
-	dx(i) = 0.25*h;
+	dx(i) = d*h;
       else
-	dx(i) = - 0.25*h;
+	dx(i) = - d*h;
 
       if ( i2 % 2 == 0 )
-	dy(i) = - 0.25*h;
+	dy(i) = - d*h;
       else
-	dy(i) = 0.25*h;      
+	dy(i) = d*h;
     }
 
     // Compute sparsity
@@ -67,7 +70,7 @@ public:
   real mass(unsigned int i, real t)
   {
     if ( i < p*p )
-      return 1.0;
+      return 100.0;
     else
       return m;
   }
@@ -272,7 +275,7 @@ public:
       }
 
       // Add force from north-east
-      if ( (i1+ i2) % 2 == 0 )
+      if ( (i1 + i2) % 2 == 0 )
       {
 	real r = dist(i, j + p + 1);
 	fy += (r - hsmall) * (y(j + p + 1) - y(i)) / r;
@@ -297,14 +300,14 @@ private:
 int main()
 {
   dolfin_set("output", "plain text");
-  dolfin_set("tolerance", 0.1);
-  dolfin_set("initial time step", 0.01);
-  dolfin_set("fixed time step", true);
+  dolfin_set("tolerance", 0.001);
+  dolfin_set("initial time step", 0.0000001);
   dolfin_set("solve dual problem", false);
-  dolfin_set("number of samples", 100);
+  dolfin_set("number of samples", 500);
   dolfin_set("automatic modeling", true);
-  dolfin_set("average length", 1.0);
-  dolfin_set("average samples", 1000);
+  dolfin_set("average length", 0.0001);
+  dolfin_set("average samples", 100);
+  dolfin_set("element cache size", 128);
 
   Structure structure(5);
   structure.solve();
