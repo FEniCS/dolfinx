@@ -206,6 +206,9 @@ namespace dolfin
     // Copy data to element group
     void copyData(Values& values, ElementGroup& group);
 
+    // Check if the number is between 0 and inf
+    bool positive(real number) const;
+
     //--- Iteration data ---
 
     Solution& u;

@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -O2
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-template -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -81,7 +81,7 @@ XML2_INCLUDES = -I/usr/include/libxml2
 XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
-SUBDIRS = simple reaction heat nonnormal test
+SUBDIRS = testproblems stabilization
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

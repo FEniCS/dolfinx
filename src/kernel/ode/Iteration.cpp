@@ -196,6 +196,13 @@ real Iteration::computeDivergence(ElementGroupList& list)
     real rhonew = d.d2 / (DOLFIN_EPS + d.d1);
     rho2 = pow(rho2, (nn-1.0)/nn) * pow(rhonew, 1.0/nn);
 
+    // Check the computed convergence rate 
+    if ( !positive(rho2) )
+    {
+      rho2 = 2.0 / alpha;
+      break;
+    }
+
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
       break;
@@ -204,7 +211,7 @@ real Iteration::computeDivergence(ElementGroupList& list)
   // Restore solution values
   copyData(x0, list);
 
-  return rho2;
+  return std::max(2.0, rho2);
 }
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroup& group)
@@ -239,6 +246,13 @@ real Iteration::computeDivergence(ElementGroup& group)
     real rhonew = d.d2 / (DOLFIN_EPS + d.d1);
     rho2 = pow(rho2, (nn-1.0)/nn) * pow(rhonew, 1.0/nn);
 
+    // Check the computed convergence rate 
+    if ( !positive(rho2) )
+    {
+      rho2 = 2.0 / alpha;
+      break;
+    }
+
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
       break;
@@ -247,7 +261,7 @@ real Iteration::computeDivergence(ElementGroup& group)
   // Restore solution values
   copyData(x0, group);
 
-  return rho2;
+  return std::max(2.0, rho2);
 }
 //-----------------------------------------------------------------------------
 void Iteration::updateUnstabilized(ElementGroupList& list, Increments& d)
@@ -295,6 +309,7 @@ real Iteration::computeAlpha(real rho) const
 //-----------------------------------------------------------------------------
 unsigned int Iteration::computeSteps(real rho) const
 {
+  dolfin_assert(rho >= 1.0);
   return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
@@ -393,6 +408,11 @@ void Iteration::copyData(Values& values, ElementGroup& group)
     // Increase offset
     offset += element->size();
   }
+}
+//-----------------------------------------------------------------------------
+bool Iteration::positive(real number) const
+{
+  return number >= 0.0 && number < std::numeric_limits<real>::max();
 }
 //-----------------------------------------------------------------------------
 // Iteration::Values

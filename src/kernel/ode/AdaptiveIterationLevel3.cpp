@@ -165,7 +165,7 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
     
     // Compute alpha
     alpha = computeAlpha(rho);
-
+    
     // Compute number of damping steps
     m = computeSteps(rho);
     j = m;
