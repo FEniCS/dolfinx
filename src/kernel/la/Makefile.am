@@ -17,7 +17,6 @@ libdolfin_la_a_SOURCES = DenseMatrix.cpp \
 	                 KrylovSolver.cpp \
                          Matrix.cpp \
                          MultigridSolver.cpp \
-	                 SISolver.h \
 	                 SISolver.cpp \
                          SparseMatrix.cpp \
                          Vector.cpp

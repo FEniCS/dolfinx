@@ -3,6 +3,7 @@ EXTRA_DIST = dolfin_la.h \
              DirectSolver.h \
              GenericMatrix.h \
              Matrix.h \
+             MultigridSolver.h \
              KrylovSolver.h \
              SISolver.h \
              SparseMatrix.h \
