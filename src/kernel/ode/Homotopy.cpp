@@ -211,7 +211,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
 
     // Check convergence
     real r = F.norm(NewVector::linf);
-    cout << "r = " << r << endl;
+    cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
       cout << "Solution converged: x = ";

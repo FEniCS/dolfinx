@@ -28,47 +28,15 @@ Replace "export PETSC_DIR=" with "setenv PETSC_DIR " if you're using tcsh.
 
 DOLFIN follows GNU standard, so the installation procedure is simple:
 
-	./configure
-	make
+    ./configure
+    make
 
 followed by an optional
 
-	make install
+    make install
 
+Type ./configure --help for a list of available options.
 More information is availabel in the file INSTALL.
-
-A number of options can be given to configure:
-
-	o To use g++ instead of c++:
-
-		./configure CXX=g++
-
-	o To enable optimization:
-
-		./configure CXXFLAGS='-03'
-
-	o To enable profiling:
-
-		./configure CXXFLAGS='-pg'
-
-	o To enable extra debugging code (recommended for developers):
-
-		./configure --enable-debug
-
-	o To disable curses:
-
-		./configure --disable-curses
-
-	o To install locally (not as root):
-
-		./configure --prefix=<dir>
-
-	where <dir> is where you want to install, e.g. /home/logg/local
-
-A note for Solaris users: You probably need to disable curses and use gmake:
-
-	./configure --disable-curses
-	gmake
 
 ------------------------------------------------------------------------------
 3. License
@@ -79,7 +47,7 @@ DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
 
 Feed back, patches, and comments should be sent to
 
-	dolfin@fenics.org
+    dolfin@fenics.org
 
 ------------------------------------------------------------------------------
 5. About
@@ -88,9 +56,8 @@ A hopefully complete list of authors is given in the file AUTHORS.
 
 For more information about DOLFIN, visit
 
-	http://www.fenics.org/dolfin/
+    http://www.fenics.org/dolfin/
 
 -------------------------------------------------------------------------------
 Chicago
-February 2005
-
+March 2005

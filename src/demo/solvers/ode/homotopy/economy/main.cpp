@@ -400,6 +400,89 @@ private:
 
 };
 
+// Economy with two goods from Polemarchakis's "On the transfer paradox"
+
+class Polemarchakis : public Homotopy
+{
+public:
+
+  Polemarchakis() : Homotopy(2), lambda(0), gamma(0), polynomial(true)
+  {
+    lambda = new real[3];
+    gamma = new real[3];
+
+    lambda[0] = 7.0/5.0; lambda[1] = 7.0/10.0; lambda[2] = 13.0/5.0;
+    gamma[0]= -22.0/5.0; gamma[1] = 13.0/5.0;  gamma[2]  = 93.0/85.0;
+  }
+
+  ~Polemarchakis()
+  {
+    if ( lambda ) delete [] lambda;
+    if ( gamma ) delete [] gamma;
+  }
+
+  void F(const complex z[], complex y[])
+  {
+    // First equation
+    if ( polynomial )
+    {
+      y[0] = ( gamma[0]*(z[0] + lambda[1])*(z[0] + lambda[2]) +
+	       gamma[1]*(z[0] + lambda[0])*(z[0] + lambda[2]) +
+	       gamma[2]*(z[0] + lambda[0])*(z[0] + lambda[1]) );
+    }
+    else
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < 3; i++)
+	sum += gamma[i] / (z[0] + lambda[i]);
+      y[0] = sum;
+    }
+
+    // Second equation
+    y[1] = z[1] - 1.0;
+  }
+
+  void JF(const complex z[], const complex x[], complex y[])
+  {
+    // First equation
+    if ( polynomial )
+    {
+      y[0] = ( gamma[0]*(2.0*z[0] + lambda[1] + lambda[2]) + 
+	       gamma[1]*(2.0*z[0] + lambda[0] + lambda[2]) + 
+	       gamma[2]*(2.0*z[0] + lambda[0] + lambda[1]) ) * x[0];
+    }
+    else
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < 3; i++)
+      {
+	const complex tmp = z[0] + lambda[i];
+	sum -= gamma[i] / (tmp*tmp);
+      }
+      y[0] = sum * x[0];
+    }
+    
+    // Second equation
+    y[1] = x[1];
+  }
+
+  unsigned int degree(unsigned int i) const
+  {
+    if ( i == 0 )
+      return 2;
+    else
+      return 1;
+  }
+  
+private:
+
+  real* lambda;
+  real* gamma;
+
+  bool polynomial;
+
+};
+
 int main()
 {
   dolfin_set("method", "cg");
@@ -408,16 +491,19 @@ int main()
   //dolfin_set("homotopy monitoring", true);
   dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.01);
-  dolfin_set("homotopy divergence tolerance", 20.0);
+  dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("homotopy randomize", true);
   dolfin_set("linear solver", "direct");
 
   //Leontief leontief(2, 2);
   //leontief.solve();
 
-  CES ces(2, 2, 0.5);
+  //CES ces(2, 2, 0.5);
+  //ces.disp();
+  //ces.solve();
 
-  ces.disp();
-  ces.solve();
+  Polemarchakis polemarchakis;
+  polemarchakis.solve();
 
   return 0;
 }
