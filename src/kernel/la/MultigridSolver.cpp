@@ -8,12 +8,12 @@
 #include <dolfin/Vector.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/MultigridSolver.h>
-#include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MultigridSolver::solve(Matrix& A, Vector& x, const Vector& b) 
+void MultigridSolver::solve(const Matrix& A, Vector& x, const Vector& b) 
 {
+
 }
 //-----------------------------------------------------------------------------

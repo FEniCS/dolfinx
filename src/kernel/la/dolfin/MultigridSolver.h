@@ -10,7 +10,7 @@ namespace dolfin {
   class Matrix;
   class Vector;
   
-  class MultigridSolver{
+  class MultigridSolver {
   public:
     
     /// Solve Ax = b 

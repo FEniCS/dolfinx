@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Updates by Erik Svensson 2003
 
 #include <stdarg.h>
 
@@ -60,12 +62,79 @@ void XMLFile::operator>>(Function& u)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-  dolfin_warning("Cannot write vectors to XML files.");
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write vector in XML format
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
+  fprintf(fp, " <dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "\t  <vector size=\" %i \"> \n", x.size() );
+  
+  for (int i = 0; i < x.size(); i++) {
+    fprintf(fp, "\t\t  <element row=\"%i\" value=\"%f\"/>\n", i, x(i) );
+    if ( i == (x.size() - 1))
+      fprintf(fp, "\t </vector>\n");
+  }
+  
+  fprintf(fp, "</dolfin>\n");
+  
+  // Close file
+  fclose(fp);
+  
+  // Increase the number of times we have saved the vector
+  ++x;
+  
+  cout << "Saved vector " << x.name() << " (" << x.label()
+       << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
-  dolfin_warning("Cannot write matrices to XML files.");
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write matrix in sparse XML format
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
+  fprintf(fp, " <dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  
+  switch( A.type() ) {
+  case Matrix::sparse:
+
+    fprintf(fp, "\t <sparsematrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1) );
+                                                                                                                             
+    for (int i = 0; i < A.size(0); i++) {
+      fprintf(fp, "\t\t <row row=\"%i\" size=\"%i\">\n", i, A.rowsize(i));
+      for (int pos = 0; !A.endrow(i, pos); pos++) {
+	int j = 0;
+	real aij = A(i, j, pos);
+        fprintf(fp, "\t\t\t <element column=\"%i\" value=\"%f\"/>\n", j, aij);
+        if ( i == (A.size(0) - 1) && pos == (A.rowsize(i)-1)){
+           fprintf(fp, "\t\t </row>\n");
+           fprintf(fp, "\t </sparsematrix>\n");
+        }
+        else if ( pos == (A.rowsize(i)-1))
+          fprintf(fp, "\t\t </row>\n");
+      }
+    }
+    break;
+
+  case Matrix::dense:
+    dolfin_error("Cannot write dense matrices to XML files.");
+    break;
+  default:
+    dolfin_error("Unknown matrix type.");
+  }
+  
+  fprintf(fp, "</dolfin>\n");
+                                                                                                                             
+  // Close file
+  fclose(fp);
+                                                                                                                             
+  // Increase the number of times we have saved the matrix
+  ++A;
+                                                                                                                             
+  cout << "Saved matrix " << A.name() << " (" << A.label()
+       << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Grid& Grid)

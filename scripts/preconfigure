@@ -7,8 +7,13 @@
 #
 # This script should be run from the top level directory.
 
-echo "This script is no longer needed. Use autoreconf instead."
-exit 0
+# We should probably use autoreconf instead of this script,
+# but autoreconf does not seem to regenerate Makefile.in after
+# a change to Makefile.am, and the -f flag to autoreconf does
+# not seem to work.
+#
+#echo "This script is no longer needed. Use autoreconf instead."
+#exit 0
 
 # Simple test to see where we are
 # FIXME: Does not work when typing ./scripts/...

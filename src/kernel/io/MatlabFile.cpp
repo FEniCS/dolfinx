@@ -22,22 +22,47 @@ void MatlabFile::operator<<(Matrix& A)
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
-  
-  // Write matrix in sparse format
-  fprintf(fp, "%s = [", A.name().c_str());
-  for (int i = 0; i < A.size(0); i++) {
-    for (int pos = 0; !A.endrow(i, pos); pos++) {
-      value = A(i, j, pos);
-      fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);		
-      if ( i == (A.size(0) - 1) && A.endrow(i, pos + 1) )
-        fprintf(fp, "];\n");
-      else {
-	fprintf(fp, "\n");
+
+  switch ( A.type() ) {
+  case Matrix::dense:
+
+    for (int i = 0; i < A.size(0); i++) {
+      for (int j = 0; j<A.size(1); j++) {
+        fprintf(fp, "%.16e ", A[i][j]);
+        if ( j < (A.size(1) - 1) && i <= (A.size(0) - 1))
+          fprintf(fp, ", ");
+        else if ( j == (A.size(1) - 1) && i < (A.size(0) - 1))
+          fprintf(fp, ";\n");
+        else
+          fprintf(fp, "];\n");
       }
     }
-  }
-  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
+
+    break;
+
+  case Matrix::sparse:
+
+    // Write matrix in sparse format
+    fprintf(fp, "%s = [", A.name().c_str());
+    for (int i = 0; i < A.size(0); i++) {
+      for (int pos = 0; !A.endrow(i, pos); pos++) {
+	value = A(i, j, pos);
+	fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);		
+	if ( i == (A.size(0) - 1) && A.endrow(i, pos + 1) )
+	  fprintf(fp, "];\n");
+	else {
+	  fprintf(fp, "\n");
+	}
+      }
+    }
+    fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
+    
+    break;
   
+  default:
+    dolfin_error("Unknown matrix format.");
+  }
+
   // Close file
   fclose(fp);
 

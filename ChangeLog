@@ -1,3 +1,4 @@
+ - Fix missing include of DirectSolver.h
 0.3.12
  - Adaptive grid refinement (!)
  - Add User Manual

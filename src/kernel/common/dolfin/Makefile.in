@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_common.h              Array.h              List.h              Table.h              Tensor.h              Variable.h              bcfunction.h              function.h              meminfo.h              sysinfo.h              timeinfo.h              utils.h              vfunction.h
+EXTRA_DIST = dolfin_common.h              Array.h              General.h              List.h              Table.h              Tensor.h              Variable.h              bcfunction.h              function.h              meminfo.h              sysinfo.h              timeinfo.h              utils.h              vfunction.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -94,7 +94,7 @@ TAR = tar
 GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/common/dolfin/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)

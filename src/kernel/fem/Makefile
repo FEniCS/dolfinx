@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -g -O2
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-ode -ldolfin-poisson -ldolfin-template -ldolfin-tanganyika -ldolfin-io -ldolfin-grid -ldolfin-fem -ldolfin-elements -ldolfin-quadrature -ldolfin-grid -ldolfin-io -ldolfin-fem -ldolfin-la -ldolfin-math -ldolfin-common -ldolfin-settings -ldolfin-log -ldolfin-settings -ldolfin-common -ldolfin-main -ldolfin-tanganyika 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -129,7 +129,7 @@ OBJECTS = $(libdolfin_fem_a_OBJECTS)
 all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .S .c .cpp .o .s
-$(srcdir)/Makefile.in: # Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+$(srcdir)/Makefile.in: # Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/fem/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
