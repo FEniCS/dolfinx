@@ -46,6 +46,7 @@ namespace dolfin {
     /// Friends
     friend class NodeIterator::GridNodeIterator;
     friend class CellIterator::GridCellIterator;
+    friend class EdgeIterator::GridEdgeIterator;
     friend class XMLGrid;
     friend class RefineGrid;
     

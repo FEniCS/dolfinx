@@ -11,22 +11,22 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Grid &grid)
 {
-  n = new GridEdgeIterator(grid);
+  e = new GridEdgeIterator(grid);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Grid *grid)
 {
-  n = new GridEdgeIterator(*grid);
+  e = new GridEdgeIterator(*grid);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Cell &cell)
 {
-  n = new CellEdgeIterator(cell);
+  e = new CellEdgeIterator(cell);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const CellIterator &cellIterator)
 {
-  n = new CellEdgeIterator(*cellIterator);
+  e = new CellEdgeIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::operator EdgePointer() const
@@ -71,12 +71,12 @@ Edge* EdgeIterator::operator->() const
   return e->pointer();
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::operator==(const EdgeIterator& n) const
+bool EdgeIterator::operator==(const EdgeIterator& e) const
 {
   return this->e->pointer() == e.e->pointer();
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::operator!=(const EdgeIterator& n) const
+bool EdgeIterator::operator!=(const EdgeIterator& e) const
 {
   return this->e->pointer() != e.e->pointer();
 }

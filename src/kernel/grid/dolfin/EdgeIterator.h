@@ -131,7 +131,7 @@ namespace dolfin {
 	 
   private:
 
-	 GenericEdgeIterator *n;
+	 GenericEdgeIterator *e;
 	 
   };
 
