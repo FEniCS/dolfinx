@@ -25,7 +25,7 @@ namespace dolfin
     virtual ~TimeSlabSolver();
 
     /// Solve system
-    void solve();
+    bool solve();
 
   protected:
 

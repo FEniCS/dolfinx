@@ -83,13 +83,18 @@ void NewTimeStepper::solve(ODE& ode)
 //-----------------------------------------------------------------------------
 real NewTimeStepper::step()
 {
-  // Build time slab
-  t = timeslab->build(t, T);
-  
-  //timeslab->disp();
-  
-  // Solve time slab system
-  timeslab->solve();
+  bool solved = false;
+
+  while(!solved)
+  {
+    // Build time slab
+    t = timeslab->build(t, T);
+    
+    //timeslab->disp();
+    
+    // Solve time slab system
+    solved = timeslab->solve();
+  }
 
   // Save solution
   save();

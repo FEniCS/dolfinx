@@ -78,7 +78,7 @@ int main()
   dolfin_set("use new ode solver", true);
   dolfin_set("method", "mcg");
   dolfin_set("order", 1);
-  dolfin_set("solver", "newton");
+  //dolfin_set("solver", "newton");
 
   Benchmark bench(1000);
   bench.solve();

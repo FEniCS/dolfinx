@@ -183,7 +183,7 @@ real ODE::timestep(uint i)
 //-----------------------------------------------------------------------------
 bool ODE::update(const real u[], real t, bool end)
 {
-  return false;
+  return true;
 }
 //-----------------------------------------------------------------------------
 void ODE::update(RHS& f, Function& u, real t)

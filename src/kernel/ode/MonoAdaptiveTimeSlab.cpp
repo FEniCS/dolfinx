@@ -77,11 +77,11 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
   return b;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveTimeSlab::solve()
+bool MonoAdaptiveTimeSlab::solve()
 {
   //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
-  solver->solve();
+  return solver->solve();
 }
 //-----------------------------------------------------------------------------
 bool MonoAdaptiveTimeSlab::shift()

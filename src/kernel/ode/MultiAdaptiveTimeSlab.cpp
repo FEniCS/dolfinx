@@ -76,11 +76,11 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   return b;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::solve()
+bool MultiAdaptiveTimeSlab::solve()
 {
   dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
-  solver->solve();
+  return solver->solve();
 
   //for (uint i = 0; i < N; i++)
   // {

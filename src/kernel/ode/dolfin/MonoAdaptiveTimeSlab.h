@@ -35,7 +35,7 @@ namespace dolfin
     real build(real a, real b);
 
     /// Solve time slab system
-    void solve();
+    bool solve();
 
     /// Shift time slab (prepare for next time slab)
     bool shift();

@@ -25,7 +25,7 @@ TimeSlabSolver::~TimeSlabSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeSlabSolver::solve()
+bool TimeSlabSolver::solve()
 {
   start();
 
@@ -41,12 +41,13 @@ void TimeSlabSolver::solve()
     {
       end();
       //dolfin_info("Time slab system converged in %d iterations.", iter + 1);
-      return;
+      return true;
     }
   }
 
   end();
   dolfin_error("Time slab system did not converge.");
+  return false;
 }
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::start()

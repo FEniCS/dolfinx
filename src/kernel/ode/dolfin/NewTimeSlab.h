@@ -28,7 +28,7 @@ namespace dolfin
     virtual real build(real a, real b) = 0;
 
     /// Solve time slab system
-    virtual void solve() = 0;
+    virtual bool solve() = 0;
 
     /// Shift time slab (prepare for next time slab)
     virtual bool shift() = 0;
