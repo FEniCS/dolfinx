@@ -1,4 +1,5 @@
- - Make dolfin-config be regenerated every time
+0.3.8
+ - Make sure dolfin-config is regenerated every time
  - Add demo program for cG(q) and dG(q)
  - Add dG(q) precalc of nodal points and weights
  - Add cG(q) precalc of nodal points and weights
