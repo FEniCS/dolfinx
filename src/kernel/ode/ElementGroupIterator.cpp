@@ -7,10 +7,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ElementGroupIterator::ElementGroupIterator(TimeSlab& timeslab)
+ElementGroupIterator::ElementGroupIterator(ElementGroupList& groups)
 {
-  it = timeslab.
-  // Do nothing
+  it = groups.groups->begin();
+  at_end = groups.groups->end();
 }
 //-----------------------------------------------------------------------------
 ElementGroupIterator::~ElementGroupIterator()
@@ -20,32 +20,27 @@ ElementGroupIterator::~ElementGroupIterator()
 //-----------------------------------------------------------------------------
 ElementGroupIterator::operator ElementGroupPointer() const
 {
-  dolfin_assert(group);
-  return group;
+  return *it;
 }
 //-----------------------------------------------------------------------------
 ElementGroupIterator& ElementGroupIterator::operator++()
 {
-  if ( at_end )
-    return *this;
-
+  ++it;
   return *this;
 }
 //-----------------------------------------------------------------------------
 ElementGroup& ElementGroupIterator::operator*() const
 {
-  dolfin_assert(group);
-  return *group;
+  return **it;
 }
 //-----------------------------------------------------------------------------
 ElementGroup* ElementGroupIterator::operator->() const
 {
-  dolfin_assert(group);
-  return group;
+  return *it;
 }
 //-----------------------------------------------------------------------------
 bool ElementGroupIterator::end()
 {
-  return at_end;
+  return it == at_end;
 }
 //-----------------------------------------------------------------------------

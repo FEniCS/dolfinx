@@ -120,7 +120,7 @@ void RecursiveTimeSlab::create(Solution& u, RHS& f,
 {
   int end = 0;
   real K = 0.0;
-
+  
   // Update partitition 
   partition.update(offset, end, K, adaptivity);
   

@@ -86,7 +86,7 @@ include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElemen
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AdaptiveIterationLevel1.cpp                           AdaptiveIterationLevel2.cpp                           AdaptiveIterationLevel3.cpp                           Adaptivity.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Dual.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           ElementGroup.cpp                           ElementGroupList.cpp                           ElementIterator.cpp                           ElementTmpFile.cpp                           EmptySparsity.cpp                           FixedPointIteration.cpp                           FullSparsity.cpp                           GenericSparsity.cpp                           Iteration.cpp                           MatrixSparsity.cpp                           Method.cpp                           NonStiffIteration.cpp                           ODE.cpp                           ODESolver.cpp                           ParticleSystem.cpp                           Partition.cpp                           RecursiveTimeSlab.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           SimpleTimeSlab.cpp                           Solution.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeStepper.cpp
+libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AdaptiveIterationLevel1.cpp                           AdaptiveIterationLevel2.cpp                           AdaptiveIterationLevel3.cpp                           Adaptivity.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Dual.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           ElementGroup.cpp                           ElementGroupIterator.cpp                           ElementGroupList.cpp                           ElementIterator.cpp                           ElementTmpFile.cpp                           EmptySparsity.cpp                           FixedPointIteration.cpp                           FullSparsity.cpp                           GenericSparsity.cpp                           Iteration.cpp                           MatrixSparsity.cpp                           Method.cpp                           NonStiffIteration.cpp                           ODE.cpp                           ODESolver.cpp                           ParticleSystem.cpp                           Partition.cpp                           RecursiveTimeSlab.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           SimpleTimeSlab.cpp                           Solution.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeStepper.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -102,12 +102,13 @@ libdolfin_ode_a_OBJECTS =  cGqElement.o cGqMethod.o cGqMethods.o \
 dGqElement.o dGqMethod.o dGqMethods.o AdaptiveIterationLevel1.o \
 AdaptiveIterationLevel2.o AdaptiveIterationLevel3.o Adaptivity.o \
 AutomaticSparsity.o Component.o Dual.o Element.o ElementBlock.o \
-ElementData.o ElementGroup.o ElementGroupList.o ElementIterator.o \
-ElementTmpFile.o EmptySparsity.o FixedPointIteration.o FullSparsity.o \
-GenericSparsity.o Iteration.o MatrixSparsity.o Method.o \
-NonStiffIteration.o ODE.o ODESolver.o ParticleSystem.o Partition.o \
-RecursiveTimeSlab.o Regulator.o RHS.o Sample.o SimpleTimeSlab.o \
-Solution.o Sparsity.o TableSparsity.o TimeSlab.o TimeStepper.o
+ElementData.o ElementGroup.o ElementGroupIterator.o ElementGroupList.o \
+ElementIterator.o ElementTmpFile.o EmptySparsity.o \
+FixedPointIteration.o FullSparsity.o GenericSparsity.o Iteration.o \
+MatrixSparsity.o Method.o NonStiffIteration.o ODE.o ODESolver.o \
+ParticleSystem.o Partition.o RecursiveTimeSlab.o Regulator.o RHS.o \
+Sample.o SimpleTimeSlab.o Solution.o Sparsity.o TableSparsity.o \
+TimeSlab.o TimeStepper.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -125,9 +126,9 @@ DEP_FILES =  .deps/AdaptiveIterationLevel1.P \
 .deps/AdaptiveIterationLevel2.P .deps/AdaptiveIterationLevel3.P \
 .deps/Adaptivity.P .deps/AutomaticSparsity.P .deps/Component.P \
 .deps/Dual.P .deps/Element.P .deps/ElementBlock.P .deps/ElementData.P \
-.deps/ElementGroup.P .deps/ElementGroupList.P .deps/ElementIterator.P \
-.deps/ElementTmpFile.P .deps/EmptySparsity.P \
-.deps/FixedPointIteration.P .deps/FullSparsity.P \
+.deps/ElementGroup.P .deps/ElementGroupIterator.P \
+.deps/ElementGroupList.P .deps/ElementIterator.P .deps/ElementTmpFile.P \
+.deps/EmptySparsity.P .deps/FixedPointIteration.P .deps/FullSparsity.P \
 .deps/GenericSparsity.P .deps/Iteration.P .deps/MatrixSparsity.P \
 .deps/Method.P .deps/NonStiffIteration.P .deps/ODE.P .deps/ODESolver.P \
 .deps/ParticleSystem.P .deps/Partition.P .deps/RHS.P \

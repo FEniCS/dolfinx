@@ -4,6 +4,7 @@
 #ifndef __ELEMENT_GROUP_LIST_H
 #define __ELEMENT_GROUP_LIST_H
 
+#include <dolfin/ElementIterator.h>
 #include <dolfin/NewArray.h>
 
 namespace dolfin
@@ -25,6 +26,10 @@ namespace dolfin
 
     /// Destructor
     ~ElementGroupList();
+
+    /// Friends
+    friend class ElementGroupIterator;
+    friend class ElementIterator::ElementGroupListElementIterator;
 
   private:
 

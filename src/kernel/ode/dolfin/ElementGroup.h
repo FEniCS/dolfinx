@@ -33,6 +33,7 @@ namespace dolfin
     
     // Friends
     friend class ElementIterator::ElementGroupElementIterator;
+    friend class ElementIterator::ElementGroupListElementIterator;
 
   private:
 

@@ -7,9 +7,11 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroupList.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementIterator.h>
+#include <dolfin/ElementGroupIterator.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/AdaptiveIterationLevel1.h>
 #include <dolfin/AdaptiveIterationLevel2.h>
@@ -47,6 +49,27 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   
   // Create a list of element groups from the time slab
   ElementGroupList groups(timeslab);
+
+
+
+  cout << "Iterating over element groups in time slab: " << endl;
+  for (ElementGroupIterator group(groups); !group.end(); ++group)
+  {
+    cout << "  group containing " << group->size() << " elements" << endl;
+    cout << "  iterating over elements in group" << endl;
+    for (ElementIterator element(*group); !element.end(); ++element)
+    {
+      cout << "    element at [" << element->starttime() 
+	   << " " << element->endtime() << "]" << endl;
+    }
+  }
+
+  cout << "Iterating over elements in time slab: " << endl;
+  for (ElementIterator element(groups); !element.end(); ++element)
+  {
+    cout << "  element at [" << element->starttime() 
+	 << " " << element->endtime() << "]" << endl;
+  }
 
   dolfin_start("Starting time slab iteration");
   

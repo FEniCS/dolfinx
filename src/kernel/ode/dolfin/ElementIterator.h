@@ -10,20 +10,20 @@ namespace dolfin
 {
 
   class Element;
-  class TimeSlab;
   class ElementGroup;
+  class ElementGroupList;
 
   typedef Element* ElementPointer;
 
-  /// Iterator for access to elements stored in time slabs or
-  /// element groups.
+  /// Iterator for access to elements stored in element group lists
+  /// (time slabs) or element groups.
 
   class ElementIterator
   {
   public:
 
-    /// Constructor, create element iterator for given time slab
-    ElementIterator(TimeSlab& timeslab);
+    /// Constructor, create element iterator for given element group list
+    ElementIterator(ElementGroupList& groups);
 
     /// Constructor, create element iterator for given element group
     ElementIterator(ElementGroup& group);
@@ -57,11 +57,11 @@ namespace dolfin
       virtual bool end() = 0;
     };
 
-    /// Iterator for time slab elements
-    class TimeSlabElementIterator : public GenericElementIterator
+    /// Iterator for time element group lists
+    class ElementGroupListElementIterator : public GenericElementIterator
     {
     public:
-      TimeSlabElementIterator(TimeSlab& timeslab);
+      ElementGroupListElementIterator(ElementGroupList& groups);
       void operator++();
       Element& operator*() const;
       Element* operator->() const;
@@ -69,6 +69,10 @@ namespace dolfin
       bool end();
     private:
       Element* element;
+      NewArray<Element*>::iterator element_it;
+      NewArray<Element*>::iterator element_at_end;
+      NewArray<ElementGroup*>::iterator group_it;
+      NewArray<ElementGroup*>::iterator group_at_end;
     };
 
     /// Iterator for element group elements

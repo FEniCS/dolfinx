@@ -2,16 +2,16 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/TimeSlab.h>
 #include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
 #include <dolfin/ElementIterator.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ElementIterator::ElementIterator(TimeSlab& timeslab)
+ElementIterator::ElementIterator(ElementGroupList& groups)
 {
-  it = new TimeSlabElementIterator(timeslab);
+  it = new ElementGroupListElementIterator(groups);
 }
 //-----------------------------------------------------------------------------
 ElementIterator::ElementIterator(ElementGroup& group)
@@ -57,39 +57,58 @@ bool ElementIterator::end()
   return it->end();
 }
 //-----------------------------------------------------------------------------
-// ElementIterator::TimeSlabElementIterator
+// ElementIterator::ElementGroupListElementIterator
 //-----------------------------------------------------------------------------
-ElementIterator::TimeSlabElementIterator::
-TimeSlabElementIterator(TimeSlab& timeslab)
+ElementIterator::ElementGroupListElementIterator::
+ElementGroupListElementIterator(ElementGroupList& groups)
 {
+  // Initialize iterators for element groups
+  group_it = groups.groups->begin();
+  group_at_end = groups.groups->end();
+
+  // Initialize iterators for elements
+  element_it = (*group_it)->elements.begin();
+  element_at_end = (*group_it)->elements.end();
+}
+//-----------------------------------------------------------------------------
+void ElementIterator::ElementGroupListElementIterator::operator++()
+{
+  // Step element iterator
+  ++element_it;
   
+  // Check if we need to step the element group iterator
+  if ( element_it == element_at_end )
+  {
+    cout << "Reached end of group, stepping to next group" << endl;
 
+    ++group_it;
+    if ( group_it != group_at_end )
+    {
+      cout << "Found next group" << endl;
+      element_it = (*group_it)->elements.begin();
+      element_at_end = (*group_it)->elements.end();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
-void ElementIterator::TimeSlabElementIterator::operator++()
+Element& ElementIterator::ElementGroupListElementIterator::operator*() const
 {
-
-
+  return **element_it;
 }
 //-----------------------------------------------------------------------------
-Element& ElementIterator::TimeSlabElementIterator::operator*() const
+Element* ElementIterator::ElementGroupListElementIterator::operator->() const
 {
-  return *element;  
+  return *element_it;
 }
 //-----------------------------------------------------------------------------
-Element* ElementIterator::TimeSlabElementIterator::operator->() const
+Element* ElementIterator::ElementGroupListElementIterator::pointer() const
 {
-  return element;
+  return *element_it;
 }
 //-----------------------------------------------------------------------------
-Element* ElementIterator::TimeSlabElementIterator::pointer() const
+bool ElementIterator::ElementGroupListElementIterator::end()
 {
-  return element;
-}
-//-----------------------------------------------------------------------------
-bool ElementIterator::TimeSlabElementIterator::end()
-{
-  return true;
+  return element_it == element_at_end && group_it == group_at_end;
 }
 //-----------------------------------------------------------------------------
 // ElementIterator::ElementGroupIterator

@@ -91,6 +91,7 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.01);
   dolfin_set("debug time steps", 1);
+  dolfin_set("partitioning threshold", 0.5);
 
   //Single single;
   //single.solve();

@@ -62,6 +62,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementBlock.cpp \
                           ElementData.cpp \
                           ElementGroup.cpp \
+                          ElementGroupIterator.cpp \
                           ElementGroupList.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \

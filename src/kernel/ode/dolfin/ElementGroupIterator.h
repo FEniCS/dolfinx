@@ -19,7 +19,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    ElementGroupIterator(ElementGroupList& list);
+    ElementGroupIterator(ElementGroupList& groups);
     
     /// Destructor
     ~ElementGroupIterator();
