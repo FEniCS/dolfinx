@@ -40,7 +40,7 @@ void GaussianQuadrature::computeWeights()
     
   // Solve the system of equations
   A.hpsolve(x, b);
-  
+
   // Save the weights
   for (int i = 0; i < n; i++)
     weights[i] = x(i);
@@ -57,8 +57,6 @@ bool GaussianQuadrature::check(int q)
   real sum = 0.0;
   for (int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
-
-  dolfin_info("sum = %.16e", sum);
     
   return fabs(sum) < DOLFIN_EPS;
 }

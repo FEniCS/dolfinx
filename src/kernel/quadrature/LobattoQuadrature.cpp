@@ -19,8 +19,8 @@ LobattoQuadrature::LobattoQuadrature(int n) : GaussianQuadrature(n)
 
   if ( !check(2*n-3) )
     dolfin_error("Lobatto quadrature not ok, check failed.");
-  
-  dolfin_info("Lobatto quadrature points (n = %d) computed, check passed.", n);
+
+  dolfin_info("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //----------------------------------------------------------------------------
 void LobattoQuadrature::computePoints()
@@ -72,3 +72,33 @@ void LobattoQuadrature::computePoints()
     points[n/2] = 0.0;
 }
 //----------------------------------------------------------------------------
+// Output
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<<(LogStream& stream, 
+			      const LobattoQuadrature& lobatto)
+{
+  stream << "Lobatto quadrature points and weights on [-1,1] for n = " << lobatto.size() << ":" << dolfin::endl;
+  stream << dolfin::endl;
+
+  char number[32];
+  char point[32];
+  char weight[32];
+
+  stream << " i    points                   weights" << dolfin::endl;
+  stream << "-----------------------------------------------------" << dolfin::endl;
+  for (int i = 0; i < lobatto.size(); i++) {
+
+    sprintf(number, "%2d", i);
+    sprintf(point,  "% .16e", lobatto.point(i).x);
+    sprintf(weight, "% .16e", lobatto.weight(i));
+    
+    stream << number << "   " << point << "  " << weight;
+
+    if ( i < (lobatto.size()-1) )
+      stream << dolfin::endl;
+
+  }
+
+  return stream;
+}
+//-----------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DirectSolver.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 
@@ -114,6 +115,29 @@ int DenseMatrix::size(int dim) const
     return m;
   else
     return n;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::mult(Vector& x, int i) const
+{
+  if ( n != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  real sum = 0.0;
+  for (int j = 0; j < n; j++)
+    sum += values[i][j] * x(j);
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::mult(Vector& x, Vector& Ax) const
+{
+  if ( n != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  Ax.init(m);
+  
+  for (int i = 0; i < m; i++)
+    Ax(i) = mult(x, i);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::solve(Vector& x, const Vector& b)

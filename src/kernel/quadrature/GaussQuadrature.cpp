@@ -18,7 +18,7 @@ GaussQuadrature::GaussQuadrature(int n) : GaussianQuadrature(n)
   if ( !check(2*n-1) )
     dolfin_error("Gauss quadrature not ok, check failed.");
   
-  dolfin_info("Gauss quadrature points (n = %d) computed, check passed.", n);
+  dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::computePoints()
@@ -62,15 +62,15 @@ void GaussQuadrature::computePoints()
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<<(LogStream& stream, const GaussQuadrature& gauss)
 {
-  stream << "Gauss quadrature points and weights on [-1,1]:" << dolfin::endl;
+  stream << "Gauss quadrature points and weights on [-1,1] for n = " << gauss.size() << ":" << dolfin::endl;
   stream << dolfin::endl;
 
   char number[32];
   char point[32];
   char weight[32];
 
-  stream << " i   points                 weights" << dolfin::endl;
-  stream << "----------------------------------------------" << dolfin::endl;
+  stream << " i    points                   weights" << dolfin::endl;
+  stream << "-----------------------------------------------------" << dolfin::endl;
   for (int i = 0; i < gauss.size(); i++) {
 
     sprintf(number, "%2d", i);
@@ -84,5 +84,6 @@ LogStream& dolfin::operator<<(LogStream& stream, const GaussQuadrature& gauss)
 
   }
 
+  return stream;
 }
 //-----------------------------------------------------------------------------

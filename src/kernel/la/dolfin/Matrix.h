@@ -90,13 +90,13 @@ namespace dolfin {
     real      operator()(int i, int j) const;
     
     /// Return maximum norm
-    real norm();
+    real norm() const;
     /// Set all elements 0 on this row except (i,i) = 1
     void ident(int i);
     /// Return element i of Ax
-    real mult(Vector& x, int i);
-    /// Multiplie x with A and put the result in Ax
-    void mult(Vector& x, Vector& Ax);
+    real mult(Vector& x, int i) const;
+    /// Multiply x with A and put the result in Ax
+    void mult(Vector& x, Vector& Ax) const;
     /// Solve the linear system Ax = b
     void solve(Vector& x, Vector& b);
     

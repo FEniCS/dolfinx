@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/DirectSolver.h>
@@ -164,7 +165,7 @@ void DirectSolver::solveLU(const DenseMatrix& LU,
   
   int i,ii=0,ip,j;
   
-  float sum;
+  real sum;
   
   for (i=1;i<=n;i++){
     ip=indx[i-1];
@@ -221,6 +222,12 @@ void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
   // Solve the linear system A x = b to very high precision, by first
   // computing the inverse using Gaussian elimination, and then using the
   // inverse as a preconditioner for Gauss-Seidel iteration.
+  //
+  // This is probably no longer needed (but was needed before when the
+  // LU factorization did not give full precision because of a float lying
+  // around). Now the improvement compared to solveLU() is not astonishing.
+  // Typically, the residual will decrease from about 3e-17 so say 1e-17.
+  // Sometimes it will even increase.
 
   // Check dimensions
   if ( LU.m != LU.n )
@@ -238,8 +245,8 @@ void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
   // Get size
   int n = LU.m;
   
-  // Initialize the solution vector
-  x.init(n);
+  // Start with the solution from LU factorization
+  solveLU(LU, x, b);
 
   // Compute product B = Ainv * A
   DenseMatrix B(n, n);
@@ -256,34 +263,32 @@ void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
   // Compute product c = Ainv * b
   Vector c(n);
   solveLU(LU, c, b);
-  
+
   // Solve B x = c using Gauss-Seidel iteration
   real res = 0.0;
-  do {
+  while ( true ) {
+
+    // Compute the residual
+    res = 0.0;
+    for (int i = 0; i < n; i++)
+      res += sqr(A.mult(x,i) - b(i));
+    res /= real(n);
+    res = sqrt(res);
+
+    // Check residual
+    if ( res < DOLFIN_EPS )
+      break;
     
     // Gauss-Seidel iteration
     for (int i = 0; i < n; i++) {
       real sum = c(i);
       for (int j = 0; j < n; j++)
 	if ( j != i )
-	  sum += B(i,j) * x(j);
+	  sum -= B(i,j) * x(j);
       x(i) = sum / B(i,i);
     }
     
-    // Compute the residual
-    res = 0.0;
-    for (int i = 0; i < n; i++) {
-      real sum = 0.0;
-      for (int j = 0; j < n; j++)
-	sum += A(i,j) * x(j);
-      sum -= b(i);
-      res += sum*sum;
-    }
-    res = sqrt(res);
-    
-    dolfin_info("residual = %.16e", res);
-
-  } while ( res > DOLFIN_EPS );
+  }
   
 }
 //-----------------------------------------------------------------------------

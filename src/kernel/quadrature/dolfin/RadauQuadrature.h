@@ -30,6 +30,8 @@ namespace dolfin {
     void computePoints();
 
   };
+
+  LogStream& operator<<(LogStream& stream, const RadauQuadrature& gauss);
   
 }
 

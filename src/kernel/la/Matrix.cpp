@@ -339,7 +339,7 @@ real Matrix::operator()(int i, int j) const
   return readElement(i, j);
 }
 //-----------------------------------------------------------------------------
-real Matrix::norm()
+real Matrix::norm() const
 {
   real max = 0.0;
   real val;
@@ -371,8 +371,11 @@ void Matrix::ident(int i)
   rowsizes[i] = 1;
 }
 //-----------------------------------------------------------------------------
-real Matrix::mult(Vector &x, int i)
+real Matrix::mult(Vector& x, int i) const
 {
+  if ( n != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
   if ( i < 0 || i >= m )
     dolfin_error1("Illegal row index: i = %d.", i);
   
@@ -384,13 +387,15 @@ real Matrix::mult(Vector &x, int i)
   return sum;
 }
 //-----------------------------------------------------------------------------
-void Matrix::mult(Vector &x, Vector &Ax)
-{
-  if ( x.size() != n || Ax.size() != n )
+void Matrix::mult(Vector& x, Vector& Ax) const
+{ 
+  if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
+
+  Ax.init(m);
   
   for (int i = 0; i < m; i++)
-    Ax(i) = mult(x,i);
+    Ax(i) = mult(x, i);
 }
 //-----------------------------------------------------------------------------
 void Matrix::solve(Vector& x, Vector& b)

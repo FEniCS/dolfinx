@@ -25,7 +25,7 @@ LogStream::LogStream(Type type)
 LogStream::~LogStream()
 {
   if ( buffer )
-	 delete [] buffer;
+    delete [] buffer;
   buffer = 0;
 }
 //-----------------------------------------------------------------------------
@@ -68,6 +68,24 @@ LogStream& LogStream::operator<<(real a)
   sprintf(tmp, "%f", a);
   add(tmp);
   return *this;
+}
+//-----------------------------------------------------------------------------
+void LogStream::show() const
+{
+  // This is used for debugging
+
+  printf("This i a LogStream of type ");
+  switch ( type ) {
+  case COUT:
+    printf("cout.\n");
+    break;
+  default:
+    printf("endl.\n");
+  }
+  printf("My address is 0x%x.\n", this); 
+
+  printf("The buffer size is %d. Currently at position %d. \n",
+	 DOLFIN_LINELENGTH, current);
 }
 //-----------------------------------------------------------------------------
 void LogStream::add(const char* msg)

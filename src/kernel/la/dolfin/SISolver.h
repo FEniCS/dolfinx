@@ -20,7 +20,7 @@ namespace dolfin {
     ~SISolver(){}
     
     void solve(Matrix& A, Vector& x, Vector& b);
-    
+
     void setMethod(Method method);
     void setNoSweeps(int max_no_iterations);
     

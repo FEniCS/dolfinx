@@ -32,6 +32,14 @@ namespace dolfin {
     int size(int dim) const;
 
     //---
+
+    /// Return element i of Ax
+    real mult(Vector& x, int i) const;
+
+    /// Multiply x with A and put the result in Ax
+    void mult(Vector& x, Vector& Ax) const;
+
+    //---
     
     /// Solve Ax = b (and replace A by its LU factorization)
     void solve(Vector& x, const Vector& b);

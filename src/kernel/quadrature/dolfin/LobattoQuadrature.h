@@ -28,6 +28,8 @@ namespace dolfin {
     void computePoints();
     
   };
+
+  LogStream& operator<<(LogStream& stream, const LobattoQuadrature& gauss);
   
 }
 
