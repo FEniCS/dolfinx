@@ -49,6 +49,33 @@ real v0(real x, real y, real z, real t, int i)
 {
   real velocity = 0;
 
+  if(i == 0 && y < 0.7)
+  {
+    velocity += 0.0;
+  }
+
+  /*
+  if(i == 1 && x > 0.5)
+  {
+    velocity += 1.0;
+  }
+
+  if(i == 1 && x < -0.5)
+  {
+    velocity -= 1.0;
+  }
+
+  if(i == 0 && y > 0.5)
+  {
+    velocity -= 1.0;
+  }
+
+  if(i == 0 && y < -0.5)
+  {
+    velocity += 1.0;
+  }
+  */
+
   /*
   if(i == 1 && x > 2.0)
     velocity += 1.0;
@@ -166,15 +193,15 @@ int main(int argc, char **argv)
 
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow02.xml.gz");
-  Mesh mesh("tetmesh-1c.xml.gz");
+  //Mesh mesh("tetmesh-1c.xml.gz");
   //Mesh mesh("minimal2.xml.gz");
-  //Mesh mesh("tetmesh-1.xml.gz");
+  Mesh mesh("tetmesh-1.xml.gz");
   //Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh-8.xml.gz");
 
   //Mesh mesh("diamond-1.xml.gz");
 
-  //mesh.refineUniformly();
+  mesh.refineUniformly();
   //mesh.refineUniformly();
 
   Problem elasticity("elasticity-updated", mesh);

@@ -8,6 +8,7 @@
 
 #include "ElasticityUpdatedSolver.h"
 #include "ElasticityUpdated.h"
+#include "ElasticityClassical.h"
 
 using namespace dolfin;
 
@@ -29,7 +30,7 @@ void ElasticityUpdatedSolver::solve()
 {
   Matrix A;
   Vector residual, stepresidual;
-  Vector x10, x11, x20, x21, xtot, xzero, b, m, xcomp, tmp;
+  Vector x10, x11, x20, x21, s0, s1, xtot, xzero, b, m, xcomp, tmp;
   
   std::cerr << "Elasticity updated" << std::endl;
 
@@ -41,7 +42,8 @@ void ElasticityUpdatedSolver::solve()
   Function::Vector f("source", 3);
   Function::Vector v0("initial velocity", 3);
   
-  ElasticityUpdated   elasticity(f, w0, w1);
+  ElasticityUpdated     elasticity(f, w0, w1);
+  ElasticityClassical   elasticityc(f);
   KrylovSolver solver;
   File solutionfile("ElasticityUpdated.m");
   
@@ -94,6 +96,11 @@ void ElasticityUpdatedSolver::solve()
     x21(id * 3 + 2) = v0z; 
   }
   
+  s0.init(x10.size());
+  s1.init(x11.size());
+  s1 = 0;
+
+  
   m = x21;
 
   elasticity.k = k;
@@ -101,7 +108,7 @@ void ElasticityUpdatedSolver::solve()
 
   cout << "Mass Matrix:" << endl;
 
-  //A.show();
+  A.show();
 
   A.lump(m);
 
@@ -164,6 +171,7 @@ void ElasticityUpdatedSolver::solve()
     x21.show();
     */
 
+    s0 = s1;
     x10 = x11;
     x20 = x21;
 
@@ -172,9 +180,15 @@ void ElasticityUpdatedSolver::solve()
 
     stepresidual.init(x21.size());
 
+    // Alternative 1 - constant sigma
+
+    ///*
+
+    cout << "Method: piecewise constant sigma" << endl;
+
+
     for(int stepiters = 0; stepiters < 1; stepiters++)
     {
-
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
 	int id = (*cell).id();
@@ -195,7 +209,6 @@ void ElasticityUpdatedSolver::solve()
       
       // Lump and solve
       
-      ///*
       //A.lump(m);
       
       for(unsigned int i = 0; i < m.size(); i++)
@@ -203,17 +216,10 @@ void ElasticityUpdatedSolver::solve()
 	//x21(i) = b(i) / m(i);
 	stepresidual(i) = -x21(i) + x20(i) + b(i) / m(i);
       }
-      //*/
       
       // Solve the linear system
-      /*
-      //x21 = 0;
-      
-      //solver.solve(A, x21, b);
-      stepresidual = 0;
-      
-      solver.solve(A, stepresidual, b);
-      */
+      //stepresidual = 0;
+      //solver.solve(A, stepresidual, b);
 
       cout << "step residual: " << stepresidual.norm() << endl;
 
@@ -227,6 +233,63 @@ void ElasticityUpdatedSolver::solve()
 	break;
       }
     }
+    //*/
+
+    /*
+
+    // Alternative 2 - eliminate div sigma
+
+    cout << "Method: eliminated div sigma" << endl;
+
+    FEM::assemble(elasticityc, mesh, A);
+    FEM::assemble(elasticityc, mesh, b);
+
+    //cout << "A:" << endl;
+    //A.show();
+
+    cout << "b:" << endl;
+    b.show();
+
+
+    for(int stepiters = 0; stepiters < 1; stepiters++)
+    {
+      A.mult(x21, s1);
+      tmp = s1;
+      
+      s1 *= -k;
+      s1 += s0;
+
+      for(unsigned int i = 0; i < m.size(); i++)
+      {
+	//stepresidual(i) =
+	//-x21(i) + x20(i) + k * s0(i) + k * b(i) - k * k * tmp(i);
+	stepresidual(i) = -x21(i) + x20(i) + (k * s1(i) + k * b(i)) / m(i);
+	//stepresidual(i) = -x21(i) + x20(i) + (k * s1(i) + k * b(i)) / m(i);
+	//x21(i) = x20(i) + (k * s1(i) + k * b(i)) / m(i);
+	//x21(i) = x20(i) + (k * s0(i) - k * k * tmp(i) + k * b(i)) / m(i);
+	//x21(i) = x20(i) + (k * s1(i) + k * k * tmp(i) + k * b(i)) / m(i);
+	//stepresidual(i) = -x21(i) + x20(i) + b(i) / m(i);
+      }
+
+      
+      cout << "step residual: " << stepresidual.norm() << endl;
+
+      x21 += stepresidual;
+
+      x11 = x10;
+      x11.add(k, x21);
+
+      if(stepresidual.norm() < 1e-5)
+      {
+	break;
+      }
+    }
+
+    cout << "s1: " << endl;
+    s1.show();
+
+    */
+
     
     /*
       cout << "after: " << endl;
@@ -281,6 +344,8 @@ void ElasticityUpdatedSolver::solve()
 
 
 
+    /*
+
     // Move boundary (test for smoother)
 
     for (NodeIterator n(&mesh); !n.end(); ++n)
@@ -302,13 +367,11 @@ void ElasticityUpdatedSolver::solve()
 	Rz(1, 1) = cos(theta);
 	Rz(2, 2) = 1;
 
-	/*
 	Vector w(3);
 
 	w(0) = 0;
 	w(1) = 0;
 	w(2) = 0.1;
-	*/
 
 	Vector center(3), r(3), p(3), v(3), rnew(3);
 
@@ -356,7 +419,7 @@ void ElasticityUpdatedSolver::solve()
       }
     }
 
-
+    */
 
     // Update progress
     p = t / T;
