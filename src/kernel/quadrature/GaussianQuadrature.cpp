@@ -10,6 +10,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+GaussianQuadrature::GaussianQuadrature(int n) : Quadrature(n)
+{
+  // Length of interval [-1,1]
+  m = 2.0;
+}
+//-----------------------------------------------------------------------------
 void GaussianQuadrature::computeWeights()
 {
   // Compute the quadrature weights by solving a linear system of equations
@@ -50,14 +56,17 @@ bool GaussianQuadrature::check(int q)
 {
   // Checks that the points and weights are correct. We compute the
   // value of the integral of the Legendre polynomial of degree q.
-  // This value should be zero.
+  // This value should be zero for q > 0 and 2 for q = 0
   
   Legendre p(q);
   
   real sum = 0.0;
   for (int i = 0; i < n; i++)
     sum += weights[i] * p(points[i]);
-    
+  
+  if ( q == 0 )
+    return fabs(sum - 2.0) < DOLFIN_EPS;
+
   return fabs(sum) < DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------

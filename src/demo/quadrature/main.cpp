@@ -27,11 +27,13 @@ int main(int argc, char** argv)
   else if ( strcasecmp(argv[1], "radau") == 0 ) {
     
     RadauQuadrature q(n);
+    dolfin::cout << q << dolfin:: endl;
 
   }
   else if ( strcasecmp(argv[1], "lobatto") == 0 ) {
 
      LobattoQuadrature q(n);
+     dolfin::cout << q << dolfin:: endl;
      
   }
   else {

@@ -38,7 +38,7 @@ void LobattoQuadrature::computePoints()
   // Special case n = 2
   if ( n == 2 ) {
     points[0] = -1.0;
-    points[0] = 1.0;
+    points[1] = 1.0;
     return;
   }
 
