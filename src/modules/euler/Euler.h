@@ -19,7 +19,8 @@ namespace dolfin
 	  Function FluidViscosity,
 	  Function FluidConductivity,
 	  Function::Vector& ulinear, 
-	  Function::Vector& uprevious) : PDE(3,5)
+	  Function::Vector& uprevious) :
+      PDE(3,5), fm(3), ulin(5), up(5)
     {
       add(fm,    SourceMomentum);
       add(fe,    SourceEnergy);

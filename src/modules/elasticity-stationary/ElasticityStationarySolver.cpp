@@ -32,11 +32,9 @@ void ElasticityStationarySolver::solve()
   Function::Vector w1(mesh, x21, 3);
 
   Function::Vector f("source", 3);
-  Function a("diffusivity");
-  Function::Vector beta("convection");
   
   Galerkin     fem;
-  ElasticityStationary   elasticity(f, u0, w0, a, beta);
+  ElasticityStationary   elasticity(f, u0, w0);
   KrylovSolver solver;
   File         file("elasticitystationary.m");
   

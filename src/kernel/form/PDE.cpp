@@ -141,6 +141,12 @@ void PDE::add(ElementFunction& v, Function& f)
 //-----------------------------------------------------------------------------
 void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 {
+  if (v.size() != f.size())
+  {
+    dolfin_error("Function dimensions don't match.");
+    dolfin_error2("v.size() = %d, f.size() = %d", v.size(), f.size());
+  }
+
   for(int i = 0; i < f.size(); i++)
     add(v(i), f(i));
 }

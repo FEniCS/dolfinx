@@ -14,7 +14,7 @@ namespace dolfin {
     ConvDiff(Function& source,
 	     Function::Vector& previous,
 	     Function& diffusion,
-	     Function::Vector& convection) : PDE(2)
+	     Function::Vector& convection) : PDE(2), up(1), b(3)
     {
       add(f,  source);
       add(up, previous);

@@ -30,7 +30,7 @@ void ConvDiffSolver::solve()
   Function::Vector u1(mesh, x1, 1);
   Function f("source");
   Function a("diffusivity");
-  Function::Vector beta("convection");
+  Function::Vector beta("convection", 1);
   
   Galerkin     fem;
   ConvDiff     convdiff(f, u0, a, beta);

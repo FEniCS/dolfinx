@@ -106,7 +106,7 @@ namespace dolfin {
     class Vector {
     public:
       
-      Vector(int size = 3);
+      Vector(int size);
       Vector(const Vector& v);
       Vector(const ElementFunction& v0, const ElementFunction& v1, const ElementFunction& v2);
       ~Vector();

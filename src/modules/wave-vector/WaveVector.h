@@ -13,7 +13,8 @@ namespace dolfin {
     
     WaveVector(Function::Vector& source,
 	       Function::Vector& uprevious,
-	       Function::Vector& wprevious) : PDE(2, 2)
+	       Function::Vector& wprevious) :
+      PDE(2, 2), f(2), up(2), wp(2)
     {
       add(f,  source);
       add(up, uprevious);

@@ -14,7 +14,8 @@ namespace dolfin {
     NSE_Momentum(Function::Vector& source,
 		 Function::Vector& uprevious,
 		 Function::Vector& convection,
-		 Function::Vector& pressure) : PDE(3, 3)
+		 Function::Vector& pressure) :
+      PDE(3, 3), f(1), up(3), b(3), p(1)
       {
 	add(f,  source);
 	add(up, uprevious);
@@ -88,7 +89,8 @@ namespace dolfin {
   public:
     
     NSE_Continuity(Function::Vector& source,
-		   Function::Vector& convection) : PDE(1, 1)
+		   Function::Vector& convection) :
+      PDE(1, 1), f(1), b(3)
       {
 	add(f,  source);
 	add(b,  convection);

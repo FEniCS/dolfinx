@@ -12,16 +12,13 @@ namespace dolfin {
   public:
     
     ElasticityStationary(Function::Vector& source,
-	       Function::Vector& uprevious,
-	       Function::Vector& wprevious,
-	       Function& diffusion,
-	       Function::Vector& convection) : PDE(3, 3)
+			 Function::Vector& uprevious,
+			 Function::Vector& wprevious) :
+      PDE(3, 3), f(3), up(3), wp(3)
     {
       add(f,  source);
       add(up, uprevious);
       add(wp, wprevious);
-      add(a,  diffusion);
-      add(b,  convection);
     }
     
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
@@ -97,8 +94,6 @@ namespace dolfin {
     ElementFunction::Vector f;  // Source term
     ElementFunction::Vector up; // Displacement value at left end-point
     ElementFunction::Vector wp; // Velocity value at left end-point
-    ElementFunction a;          // Diffusivity
-    ElementFunction::Vector b;  // Convection
   };
   
 }
