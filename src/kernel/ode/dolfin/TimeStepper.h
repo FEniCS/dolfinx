@@ -9,19 +9,17 @@
 namespace dolfin {
 
   class ODE;
-  class TimeSlab;
-  class TimeSteppingData;
   class RHS;
   class File;
+  class Solution;
+  class TimeSlab;
+  class TimeSteppingData;
 
-  /// Used by the ODE solver to integrate an ODE over an interval of
-  /// given length.
-  ///
-  /// This is where the real work takes place (well, actually most of
-  /// it takes place in the time slab or even in the local elements),
-  /// whereas the responsibility of the ODE solver is also to solve
-  /// the dual problem (using this class), compute stability factors
-  /// and compute error estimates.
+  /// TimeStepper computes the solution of a given ODE. This is where
+  /// the real work takes place (most of it takes place in the time
+  /// slab or even in the local elements), whereas the responsibility
+  /// of the ODE solver is also to solve the dual problem (using this
+  /// class), compute stability factors and compute error estimates.
 
   class TimeStepper {
   public:
@@ -31,8 +29,11 @@ namespace dolfin {
 
   private:
 
+    // Prepare for next time slab
+    static void shift(Solution& solution, RHS& f, TimeSteppingData& data, real t);
+
     // Save solution (when necessary)
-    static void save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f, 
+    static void save(Solution& solution, RHS& f, TimeSlab& timeslab,
 		     File& file, real T, unsigned int no_samples);
 
   };

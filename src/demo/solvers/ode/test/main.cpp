@@ -20,13 +20,19 @@ public:
     // Final time
     T = 30.0;
 
-    // Initial values
-    u0(0) = 0.0;
-    u0(1) = 1.0;
-    u0(2) = 1.0;
-
     // Compute sparsity
     sparse();
+  }
+
+  real u0(unsigned int i)
+  {
+    if ( i == 0 )
+      return 0.0;
+
+    if ( i == 1 )
+      return 1.0;
+
+    return 1.0;
   }
 
   real f(const Vector& u, real t, unsigned int i)
@@ -39,7 +45,7 @@ public:
 
     return -lambda2 * u(2);
   }
-
+  
 private:
 
   real lambda1, lambda2;
@@ -55,11 +61,13 @@ public:
     // Final time
     T = 5.0;
 
-    // Initial value
-    u0 = 1.0;
-
     // Compute sparsity
     sparse();
+  }
+
+  real u0(unsigned int i)
+  {
+    return 1.0;
   }
 
   real f(const Vector& u, real t, unsigned int i)

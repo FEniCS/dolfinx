@@ -5,6 +5,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/TimeSteppingData.h>
+#include <dolfin/Solution.h>
 #include <dolfin/TimeSlab.h>
 
 using namespace dolfin;
@@ -70,16 +71,18 @@ void TimeSlab::setsize(real K, const TimeSteppingData& data)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateElements(RHS& f, TimeSteppingData& data)
+void TimeSlab::updateElements(RHS& f, TimeSteppingData& data,
+			      Solution& solution)
 {
   // Update initial values
-  updateu0(data);
+  updateu0(solution);
 
   // Update elements
   for (unsigned int i = 0; i < elements.size(); i++)
   {
     // Get the element
     Element* element = elements[i];
+    dolfin_assert(element);
     
     // Update element
     element->update(f);
@@ -89,14 +92,20 @@ void TimeSlab::updateElements(RHS& f, TimeSteppingData& data)
   }
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateu0(TimeSteppingData& data)
+void TimeSlab::updateu0(Solution& solution)
 {
   // Update initial values
   for (unsigned int i = 0; i < elements.size(); i++)
   {
-    Element* e = elements[i];
-    real u0 = data.u(e->index(), e->starttime());
-    e->update(u0);
+    // Get the element
+    Element* element = elements[i];
+    dolfin_assert(element);
+    
+    // Get initial value for element
+    real u0 = solution(element->index(), element->starttime());
+
+    // Update value
+    element->update(u0);
   }  
 }
 //-----------------------------------------------------------------------------

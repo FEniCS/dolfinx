@@ -26,6 +26,9 @@ namespace dolfin {
     /// Destructor
     virtual ~ODE();
 
+    /// Initial value
+    virtual real u0(unsigned int i) = 0;
+
     /// Right-hand side
     virtual real f(const Vector& u, real t, unsigned int i) = 0;
 
@@ -53,10 +56,6 @@ namespace dolfin {
     /// Sparsity
     Sparsity sparsity;
     
-    // FIXME: Make u0 a function
-    /// Initial value
-    Vector u0;
-
   protected:
     
     unsigned int N;

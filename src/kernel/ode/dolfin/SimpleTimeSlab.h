@@ -11,6 +11,7 @@ namespace dolfin {
   class Element;
   class TimeSteppingData;
   class RHS;
+  class Solution;
 
   /// The simple version of the time slab.
 
@@ -18,18 +19,18 @@ namespace dolfin {
   public:
     
     /// Create time slab, including one iteration
-    SimpleTimeSlab(real t0, real t1, RHS& f, TimeSteppingData& data);
+    SimpleTimeSlab(real t0, real t1, RHS& f, TimeSteppingData& data, Solution& solution);
     
     /// Destructor
     ~SimpleTimeSlab();
     
     /// Update time slab (iteration)
-    void update(RHS& f, TimeSteppingData& data);
+    void update(RHS& f, TimeSteppingData& data, Solution& solution);
 
   private:
     
     // Create new time slab
-    void create(RHS& f, TimeSteppingData& data);  
+    void create(RHS& f, TimeSteppingData& data, Solution& solution);
     
   };
 

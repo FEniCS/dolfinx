@@ -18,13 +18,20 @@ public:
     // Final time
     T = 50.0;
 
-    // Initial value
-    u0(0) = 1.0;
-    u0(1) = 0.0;
-    u0(2) = 0.0;
-
     // Sparsity (not really necessary here)
     sparse();
+  }
+
+  real u0(unsigned int i)
+  {
+    switch (i) {
+    case 0:
+      return 1.0;
+    case 1:
+      return 0.0;
+    default:
+      return 0.0;
+    }
   }
 
   real f(const Vector& u, real t, unsigned int i)

@@ -8,7 +8,7 @@
 
 namespace dolfin {
 
-  class TimeSteppingData;
+  class Solution;
   class RHS;
 
   /// Sample of values at a given point.
@@ -17,7 +17,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    Sample(TimeSteppingData& data, RHS& f, real t);
+    Sample(Solution& solution, RHS& f, real t);
 
     /// Destructor
     ~Sample();
@@ -39,7 +39,7 @@ namespace dolfin {
     
   private:
 
-    TimeSteppingData& data;
+    Solution& solution;
     RHS& f;
     real time;
 

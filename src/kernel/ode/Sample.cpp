@@ -2,15 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/TimeSlab.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Solution.h>
 #include <dolfin/Sample.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Sample::Sample(TimeSteppingData& data, RHS& f, real t) :
-  data(data), f(f), time(t)
+Sample::Sample(Solution& solution, RHS& f, real t) :
+  solution(solution), f(f), time(t)
 {
   // Do nothing
 }
@@ -22,7 +21,7 @@ Sample::~Sample()
 //-----------------------------------------------------------------------------
 unsigned int Sample::size() const
 {
-  return data.size();
+  return solution.size();
 }
 //-----------------------------------------------------------------------------
 real Sample::t() const
@@ -32,22 +31,16 @@ real Sample::t() const
 //-----------------------------------------------------------------------------
 real Sample::u(unsigned int index)
 {
-  //cout << endl;
-  //cout << "Sample: ";
-  //real u = data.u(index, time);
-  //cout << endl;
-  //return u;
-  
-  return data.u(index, time);
+  return solution.u(index, time);
 }
 //-----------------------------------------------------------------------------
 real Sample::k(unsigned int index)
 {
-  return data.k(index, time);
+  return solution.k(index, time);
 }
 //-----------------------------------------------------------------------------
 real Sample::r(unsigned int index)
 {
-  return data.r(index, time, f);
+  return solution.r(index, time, f);
 }
 //-----------------------------------------------------------------------------

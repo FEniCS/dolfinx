@@ -19,6 +19,7 @@ namespace dolfin {
   class TimeSteppingData;
   class Partition;
   class RHS;
+  class Solution;
 
   /// A TimeSlab represents (a subsystem of) the system of ODEs
   /// between synchronized time levels t0 and t1. 
@@ -33,7 +34,7 @@ namespace dolfin {
     virtual ~TimeSlab();
     
     /// Update time slab (iteration)
-    virtual void update(RHS& f, TimeSteppingData& newdata) = 0;
+    virtual void update(RHS& f, TimeSteppingData& data, Solution& solution) = 0;
 
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -59,10 +60,10 @@ namespace dolfin {
     void setsize(real K, const TimeSteppingData& data);
 
     // Update elements (iteration)
-    void updateElements(RHS& f, TimeSteppingData& data);
+    void updateElements(RHS& f, TimeSteppingData& data, Solution& solution);
 
     // Update initial values
-    void updateu0(TimeSteppingData& data);
+    void updateu0(Solution& solution);
 
     //--- Time slab data ---
 

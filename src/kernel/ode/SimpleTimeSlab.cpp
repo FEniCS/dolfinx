@@ -8,15 +8,16 @@
 #include <dolfin/TimeSteppingData.h>
 #include <dolfin/Partition.h>
 #include <dolfin/RHS.h>
+#include <dolfin/Solution.h>
 #include <dolfin/SimpleTimeSlab.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, RHS& f, 
-			       TimeSteppingData& data) : TimeSlab(t0, t1)
+			       TimeSteppingData& data, Solution& solution) : TimeSlab(t0, t1)
 {
-  create(f, data);
+  create(f, data, solution);
 }
 //-----------------------------------------------------------------------------
 SimpleTimeSlab::~SimpleTimeSlab()
@@ -24,12 +25,12 @@ SimpleTimeSlab::~SimpleTimeSlab()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data)
+void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data, Solution& solution)
 {
-  updateElements(f, data);
+  updateElements(f, data, solution);
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
+void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data, Solution& solution)
 {
   // FIXME: choose element and order here
   Element::Type type = Element::cg;
@@ -45,7 +46,7 @@ void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
   for (unsigned int i = 0; i < data.size(); i++)
   {
     // Create element
-    Element *element = data.createElement(type, q, i, t0, t1);
+    Element *element = solution.createElement(type, q, i, t0, t1);
     
     // Write debug info
     data.debug(*element, TimeSteppingData::create);

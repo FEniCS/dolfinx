@@ -2,18 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_settings.h>
-#include <dolfin/ODE.h>
 #include <dolfin/Element.h>
-#include <dolfin/Component.h>
-#include <dolfin/ElementData.h>
-#include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSteppingData.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSteppingData::TimeSteppingData(ODE& ode, ElementData& elmdata) : 
-  elmdata(elmdata), regulators(ode.size()), initval(ode.size()), t0(0)
+TimeSteppingData::TimeSteppingData(unsigned int N) : regulators(N)
 {
   // Get parameters
   TOL                = dolfin_get("tolerance");
@@ -23,15 +18,11 @@ TimeSteppingData::TimeSteppingData(ODE& ode, ElementData& elmdata) :
   real k0            = dolfin_get("initial time step");
 
   // Scale tolerance with the number of components
-  TOL /= static_cast<real>(ode.size());
+  TOL /= static_cast<real>(N);
 
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)
     regulators[i].init(k0);
-
-  // Set initial data
-  for (unsigned int i = 0; i < initval.size(); i++)
-    initval[i] = ode.u0(i);
 
   // Open debug file
   if ( _debug )
@@ -45,21 +36,9 @@ TimeSteppingData::~TimeSteppingData()
     file.close();
 }
 //-----------------------------------------------------------------------------
-Element* TimeSteppingData::createElement(Element::Type type,
-					 unsigned int q, unsigned int index,
-					 real t0, real t1)
-{
-  return elmdata.createElement(type, q, index, t0, t1);
-}
-//-----------------------------------------------------------------------------
-Element* TimeSteppingData::element(unsigned int i, real t)
-{
-  return elmdata.element(i, t);
-}
-//-----------------------------------------------------------------------------
 unsigned int TimeSteppingData::size() const
 {
-  return elmdata.size();
+  return regulators.size();
 }
 //-----------------------------------------------------------------------------
 Regulator& TimeSteppingData::regulator(unsigned int i)
@@ -72,45 +51,6 @@ const Regulator& TimeSteppingData::regulator(unsigned int i) const
 {
   dolfin_assert(i < regulators.size());
   return regulators[i];
-}
-//-----------------------------------------------------------------------------
-real TimeSteppingData::u(unsigned int i, real t) const
-{
-  dolfin_assert(i < initval.size());
-
-  // Note: the logic of this function is nontrivial...
-
-  // Return initial value at t0
-  if ( t == t0 )
-    return initval[i];
-
-  // Try to find the element
-  Element* element = elmdata.element(i,t);
-
-  // Return value from element if we found it
-  if ( element )
-    return element->value(t);
-
-  // Otherwise, return the initial value
-  return initval[i];
-}
-//-----------------------------------------------------------------------------
-real TimeSteppingData::k(unsigned int i, real t) const
-{
-  Element* element = elmdata.element(i,t);
-  if ( element )
-    return element->timestep();
-
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
-real TimeSteppingData::r(unsigned int i, real t, RHS& f) const
-{
-  Element* element = elmdata.element(i,t);
-  if ( element )
-    return element->computeResidual(f);
-
-  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real TimeSteppingData::tolerance() const
@@ -129,37 +69,6 @@ real TimeSteppingData::maxstep() const
 real TimeSteppingData::threshold() const
 {
   return interval_threshold;
-}
-//-----------------------------------------------------------------------------
-void TimeSteppingData::shift(TimeSlab& timeslab, RHS& f)
-{
-  // Specify new initial values for next time slab and compute
-  // new time steps.
-
-  for (unsigned int i = 0; i < elmdata.size(); i++)
-  {
-    // Get last element
-    Element* element = elmdata.last(i);
-    dolfin_assert(element);
-
-    // Compute residual
-    real r = element->computeResidual(f);
-
-    // Compute new time step
-    real k = element->computeTimeStep(TOL, r, kmax);
-
-    // Update regulator
-    regulators[i].update(k, kmax);
-
-    // Update initial value
-    initval[i] = element->endval();
-  }
-  
-  // Tell element data to create a new block next time
-  elmdata.shift();
-
-  // Update time for initial values
-  t0 = timeslab.endtime();
 }
 //-----------------------------------------------------------------------------
 void TimeSteppingData::debug(Element& element, Action action)
