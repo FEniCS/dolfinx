@@ -1,3 +1,6 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <string>
 
 #include <dolfin/Vector.h>
@@ -6,11 +9,11 @@
 #include <dolfin/Function.h>
 
 #include <dolfin/File.h>
-#include "GenericFile.h"
-#include "XMLFile.h"
-#include "MatlabFile.h"
-#include "OctaveFile.h"
-//#include "OpendxFile.h"
+#include <dolfin/GenericFile.h>
+#include <dolfin/XMLFile.h>
+#include <dolfin/MatlabFile.h>
+#include <dolfin/OctaveFile.h>
+#include <dolfin/OpenDXFile.h>
 
 using namespace dolfin;
 
@@ -23,8 +26,8 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new MatlabFile(filename);
-  //  else if ( filename.rfind(".dx") != filename.npos )
-  //    file = new OpendxFile(filename);
+  else if ( filename.rfind(".dx") != filename.npos )
+    file = new OpenDXFile(filename);
   else{
     file = 0;
     dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
@@ -43,9 +46,9 @@ File::File(const std::string& filename, Type type)
   case OCTAVE:
     file = new OctaveFile(filename);
     break;
-    //  case OPENDX:
-    //    file = new OpendxFile(filename);
-    //    break;
+  case OPENDX:
+    file = new OpenDXFile(filename);
+    break;
   default:
     file = 0;
     dolfin_error1("Unknown file type for \"%s\".", filename.c_str());

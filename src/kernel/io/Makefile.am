@@ -1,25 +1,26 @@
 SUBDIRS           = dolfin
 include_HEADERS   = dolfin/dolfin_io.h \
-                    dolfin/File.h
+                    dolfin/File.h \
+                    dolfin/GenericFile.h \
+                    dolfin/MatlabFile.h \
+                    dolfin/MFile.h \
+                    dolfin/OctaveFile.h \
+                    dolfin/OpenDXFile.h \
+                    dolfin/XMLFile.h \
+                    dolfin/XMLGrid.h \
+                    dolfin/XMLMatrix.h \
+                    dolfin/XMLObject.h \
+                    dolfin/XMLVector.h
 INCLUDES          = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES     = libdolfin-io.a
 libdolfin_io_a_SOURCES = File.cpp \
                          GenericFile.cpp \
-                         GenericFile.h \
                          MatlabFile.cpp \
-                         MatlabFile.h \
                          MFile.cpp \
-                         MFile.h \
                          OctaveFile.cpp \
-                         OctaveFile.h \
+                         OpenDXFile.cpp \
                          XMLFile.cpp \
-                         XMLFile.h \
-                         XMLGrid.h \
                          XMLGrid.cpp \
-                         XMLMatrix.h \
                          XMLMatrix.cpp \
-                         XMLObject.h \
                          XMLObject.cpp \
-                         XMLVector.h \
-                         XMLVector.cpp \
-                         matlab.h
+                         XMLVector.cpp

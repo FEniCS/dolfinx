@@ -6,7 +6,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
 #include <dolfin/Function.h>
-#include "MFile.h"
+#include <dolfin/MFile.h>
 
 using namespace dolfin;
 

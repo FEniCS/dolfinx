@@ -6,7 +6,7 @@
 #include <dolfin/Cell.h>
 #include <dolfin/GridData.h>
 #include <dolfin/dolfin_settings.h>
-#include "XMLGrid.h"
+#include<dolfin/XMLGrid.h>
 
 using namespace dolfin;
 
@@ -24,46 +24,45 @@ void XMLGrid::startElement(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state ){
   case OUTSIDE:
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ) {
+      readGrid(name,attrs);
+      state = INSIDE_GRID;
+    }
+    
+    break;
 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ){
-		readGrid(name,attrs);
-		state = INSIDE_GRID;
-	 }
-	 
-	 break;
   case INSIDE_GRID:
-	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 ){
-		readNodes(name,attrs);
-		state = INSIDE_NODES;
-	 }
-	 else if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 ){
-		readCells(name,attrs);
-		state = INSIDE_CELLS;
-	 }
-	 
-	 break;
-	 
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 ) {
+      readNodes(name,attrs);
+      state = INSIDE_NODES;
+    }
+    else if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 ) {
+      readCells(name,attrs);
+      state = INSIDE_CELLS;
+    }
+    
+    break;
+    
   case INSIDE_NODES:
-	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
-		readNode(name,attrs);
-	 
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
+      readNode(name,attrs);
+    
+    break;
+    
   case INSIDE_CELLS:
-
-	 if ( xmlStrcasecmp(name,(xmlChar *) "triangle") == 0 )
-		readTriangle(name,attrs);
-	 if ( xmlStrcasecmp(name,(xmlChar *) "tetrahedron") == 0 )
-		readTetrahedron(name,attrs);
-	 
-	 
-	 
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "triangle") == 0 )
+      readTriangle(name,attrs);
+    if ( xmlStrcasecmp(name,(xmlChar *) "tetrahedron") == 0 )
+      readTetrahedron(name,attrs);
+    
+    break;
+    
   default:
-	 ;
+    ;
   }
   
 }
@@ -73,32 +72,32 @@ void XMLGrid::endElement(const xmlChar *name)
   switch ( state ){
   case INSIDE_GRID:
 	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ){
-		initGrid();
-		ok = true;
-		state = DONE;
-	 }
-	 
-	 break;
-
+    if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ) {
+      initGrid();
+      ok = true;
+      state = DONE;
+    }
+    
+    break;
+    
   case INSIDE_NODES:
-
-	 if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
-		state = INSIDE_GRID;
-	 
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
+      state = INSIDE_GRID;
+    
+    break;
+    
   case INSIDE_CELLS:
 	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 )
-		state = INSIDE_GRID;
-	 
-	 break;
-
+    if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 )
+      state = INSIDE_GRID;
+    
+    break;
+    
   default:
-	 ;
+    ;
   }
-
+  
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::reading(std::string filename)

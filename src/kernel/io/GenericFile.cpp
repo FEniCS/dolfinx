@@ -4,7 +4,7 @@
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
 
-#include "GenericFile.h"
+#include <dolfin/GenericFile.h>
 
 using namespace dolfin;
 

@@ -3,7 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
-#include "XMLVector.h"
+#include <dolfin/XMLVector.h>
 
 using namespace dolfin;
 
@@ -17,23 +17,23 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
 {
   switch ( state ) {
   case OUTSIDE:
-
-	 if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
-		readVector(name,attrs);
-		state = INSIDE_VECTOR;
-	 }
-	 
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
+      readVector(name,attrs);
+      state = INSIDE_VECTOR;
+    }
+    
+    break;
+    
   case INSIDE_VECTOR:
-	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "element") == 0 )
-		readElement(name,attrs);
-    	
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "element") == 0 )
+      readElement(name,attrs);
+    
+    break;
+    
   default:
-	 ;
+    ;
   }
   
 }
@@ -42,18 +42,18 @@ void XMLVector::endElement(const xmlChar *name)
 {
   switch ( state ) {
   case INSIDE_VECTOR:
-	 
-	 if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ){
-		ok = true;
-		state = DONE;
-	 }
-	 
-	 break;
-
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
+      ok = true;
+      state = DONE;
+    }
+    
+    break;
+    
   default:
-	 ;
+    ;
   }
-
+  
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
@@ -63,11 +63,11 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
 
   // Parse values
   parseIntegerRequired(name, attrs, "size", &size);
-
+  
   // Check values
   if ( size < 0 )
-	 dolfin_error("Illegal XML data for Vector: size of vector must be positive.");
-
+    dolfin_error("Illegal XML data for Vector: size of vector must be positive.");
+  
   // Initialise
   x.init(size);	 
 }
@@ -84,7 +84,7 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   
   // Check values
   if ( row < 0 || row >= x.size() )
-	 dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)", row, x.size() - 1);
+    dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)", row, x.size() - 1);
   
   // Set value
   x(row) = value;

@@ -6,11 +6,11 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Function.h>
 
-#include "XMLFile.h"
-#include "XMLObject.h"
-#include "XMLVector.h"
-#include "XMLMatrix.h"
-#include "XMLGrid.h"
+#include <dolfin/XMLFile.h>
+#include <dolfin/XMLObject.h>
+#include <dolfin/XMLVector.h>
+#include <dolfin/XMLMatrix.h>
+#include <dolfin/XMLGrid.h>
 
 using namespace dolfin;
 

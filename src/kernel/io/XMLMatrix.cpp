@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Matrix.h>
-#include "XMLMatrix.h"
+#include <dolfin/XMLMatrix.h>
 
 using namespace dolfin;
 

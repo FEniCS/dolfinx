@@ -10,25 +10,22 @@ int main()
   dolfin_set("create edges",true); 
 
   Grid grid;
-  File file("grid.xml.gz");
+  File file1("grid.xml.gz");
+  File file2("grid_refined.dx");
 
   // Read grid from file
-  file >> grid;
+  file1 >> grid;
   dolfin::cout << grid << dolfin::endl;  
   
   // Show the entire grid
   //grid.show();
 
   // Refine grid
-  //  grid.refine();
+  grid.refine();
   
-  Vector x;
-  x = 0;
-  Function u(grid, x);
+  // Save refined grid to file
+  file2 << grid;
 
-  File filematlab("grid.m");
-  filematlab << u;
-  
   dolfin::cout << grid << dolfin::endl;  
 
   return 0;

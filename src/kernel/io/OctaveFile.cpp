@@ -11,9 +11,8 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
 #include <dolfin/Function.h>
-
-#include "MatlabFile.h"
-#include "OctaveFile.h"
+#include <dolfin/MatlabFile.h>
+#include <dolfin/OctaveFile.h>
 
 using namespace dolfin;
 

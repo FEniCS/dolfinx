@@ -10,8 +10,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
 #include <dolfin/Function.h>
-
-#include "MatlabFile.h"
+#include <dolfin/MatlabFile.h>
 
 using namespace dolfin;
 
