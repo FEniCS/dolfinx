@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 #include <dolfin.h>
+#include "TestProblem1.h"
+#include "TestProblem2.h"
 #include "TestProblem3.h"
 #include "TestProblem7.h"
 #include "TestProblem8.h"
@@ -14,12 +16,14 @@ using namespace dolfin;
 
 void solveTestProblem1()
 {
-  dolfin_info("Not implemented");
+  TestProblem1 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem2()
 {
-  dolfin_info("Not implemented");
+  TestProblem2 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem3()
