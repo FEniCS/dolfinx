@@ -6,6 +6,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/NewFunction.h>
 #include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
 #include <dolfin/MFile.h>
@@ -135,6 +136,49 @@ void MFile::operator<<(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Function& u)
+{
+  // Write mesh the first time
+  if ( u.number() == 0 )
+    *this << u.mesh();
+  
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Move old vector into list if we are saving a new value
+  if ( u.number() == 1 ) {
+    fprintf(fp, "tmp = %s;\n", u.name().c_str());
+    fprintf(fp, "clear %s\n", u.name().c_str());
+    fprintf(fp, "%s{1} = tmp;\n", u.name().c_str());
+    fprintf(fp, "clear tmp\n\n");
+  }
+
+  // Write vector
+  if ( u.number() == 0 )
+  {
+    fprintf(fp, "%s = [", u.name().c_str());
+    for (NodeIterator n(u.mesh()); !n.end(); ++n)
+      fprintf(fp, " %.16f", u(*n));
+    fprintf(fp, " ]';\n\n");
+  }
+  else
+  {
+    fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
+    for (NodeIterator n(u.mesh()); !n.end(); ++n)
+      fprintf(fp, " %.16f", u(*n));
+    fprintf(fp, " ]';\n\n");
+  }
+  
+  // Close file
+  fclose(fp);
+  
+  // Increase the number of times we have saved the function
+  ++u;
+
+  cout << "Saved function " << u.name() << " (" << u.label()
+       << ") to file " << filename << " in Octave/Matlab format." << endl;
+}
+//-----------------------------------------------------------------------------
+void MFile::operator<<(NewFunction& u)
 {
   // Write mesh the first time
   if ( u.number() == 0 )

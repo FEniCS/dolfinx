@@ -19,69 +19,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(BilinearForm& a, LinearForm& L,
-		      NewMatrix& A, NewVector& b, Mesh& mesh,
-		      const NewFiniteElement& element)
-{
-  // Start a progress session
-  Progress p("Assembling matrix and vector (interior contributions)",
-	     mesh.noCells());
-
-  // Initialize element matrix/vector data block
-  unsigned int n = element.spacedim();
-  real* block_A = new real[n*n];
-  real* block_b = new real[n];
-  int* dofs = new int[n];
-
-  // Initialize global matrix 
-  // Max connectivity in NewMatrix::init() is assumed to 
-  // be 50, alternatively use connectivity information to
-  // minimize memory requirements.   
-  unsigned int N = size(mesh, element);
-  A.init(N, N);
-  A = 0.0;
-  b.init(N);
-  b = 0.0;
-  
-  // Debug
-  //   cout << "A inside:" << endl;
-  //   A.disp();
-  
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update form
-    a.update(*cell, element);
-    L.update(*cell, element);
-
-    // Compute mapping from local to global degrees of freedom
-    for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell, mesh);
-   
-    // Compute element matrix and vector 
-    a.interior(block_A);
-    L.interior(block_b);
-    
-    // Add element matrix to global matrix
-    A.add(block_A, dofs, n, dofs, n);
-    
-    // Add element vector to global vector
-    b.add(block_b, dofs, n);
-
-    // Update progress
-    p++;
-  }
-  
-  // Complete assembly
-  A.apply();
-  b.apply();
-
-  // Delete data
-  delete [] block_A;
-  delete [] block_b;
-  delete [] dofs;
-}
-//-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
 		      const NewFiniteElement& element)
 {
@@ -176,6 +113,78 @@ void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh,
   // Delete data
   delete [] block;
   delete [] dofs;
+}
+//-----------------------------------------------------------------------------
+void NewFEM::assemble(BilinearForm& a, LinearForm& L,
+		      NewMatrix& A, NewVector& b, Mesh& mesh,
+		      const NewFiniteElement& element)
+{
+  // Start a progress session
+  Progress p("Assembling matrix and vector (interior contributions)",
+	     mesh.noCells());
+
+  // Initialize element matrix/vector data block
+  unsigned int n = element.spacedim();
+  real* block_A = new real[n*n];
+  real* block_b = new real[n];
+  int* dofs = new int[n];
+
+  // Initialize global matrix 
+  // Max connectivity in NewMatrix::init() is assumed to 
+  // be 50, alternatively use connectivity information to
+  // minimize memory requirements.   
+  unsigned int N = size(mesh, element);
+  A.init(N, N);
+  A = 0.0;
+  b.init(N);
+  b = 0.0;
+  
+  // Debug
+  //   cout << "A inside:" << endl;
+  //   A.disp();
+  
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update form
+    a.update(*cell, element);
+    L.update(*cell, element);
+
+    // Compute mapping from local to global degrees of freedom
+    for (unsigned int i = 0; i < n; i++)
+      dofs[i] = element.dof(i, *cell, mesh);
+   
+    // Compute element matrix and vector 
+    a.interior(block_A);
+    L.interior(block_b);
+    
+    // Add element matrix to global matrix
+    A.add(block_A, dofs, n, dofs, n);
+    
+    // Add element vector to global vector
+    b.add(block_b, dofs, n);
+
+    // Update progress
+    p++;
+  }
+  
+  // Complete assembly
+  A.apply();
+  b.apply();
+
+  // Delete data
+  delete [] block_A;
+  delete [] block_b;
+  delete [] dofs;
+}
+//-----------------------------------------------------------------------------
+void NewFEM::assemble(BilinearForm& a, LinearForm& L,
+		      NewMatrix& A, NewVector& b, Mesh& mesh,
+		      const NewFiniteElement& element,
+		      NewBoundaryCondition& bc)
+{
+  assemble(a, L, A, b, mesh, element);
+  setBC(A, b, mesh, bc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)

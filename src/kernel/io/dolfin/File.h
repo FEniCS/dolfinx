@@ -14,6 +14,7 @@ namespace dolfin {
   class Mesh;
   class Function;
   class Function::Vector;
+  class NewFunction;
   class Sample;
   class NewSample;
   class ParameterList;
@@ -35,6 +36,7 @@ namespace dolfin {
     void operator>> (Mesh& mesh);
     void operator>> (Function& u);
     void operator>> (Function::Vector& u);
+    void operator>> (NewFunction& u);
     void operator>> (Sample& sample);
     void operator>> (NewSample& sample);
     void operator>> (ParameterList& parameters);
@@ -46,6 +48,7 @@ namespace dolfin {
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
     void operator<< (Function::Vector& u);
+    void operator<< (NewFunction& u);
     void operator<< (Sample& sample);
     void operator<< (NewSample& sample);
     void operator<< (ParameterList& parameters);

@@ -18,33 +18,24 @@ PoissonSolver::PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& b
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
+  // Define the bilinear and linear forms
   Poisson::FiniteElement element;
-
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
 
+  // Discretize
   NewMatrix A;
   NewVector x, b;
+  NewFEM::assemble(a, L, A, b, mesh, element, bc);
 
-  // Discretize
-  NewFEM::assemble(a, L, A, b, mesh, element);
-
-  // Set boundary conditions
-  NewFEM::setBC(A, b, mesh, bc);
-  
   // Solve the linear system
-  // FIXME: Make NewGMRES::solve() static
   NewGMRES solver;
   solver.solve(A, x, b);
 
-  // FIXME: Remove this and implement output for NewFunction
-  Vector xold(b.size());
-  for(uint i = 0; i < x.size(); i++)
-    xold(i) = x(i);
-  Function uold(mesh, xold);
-  uold.rename("u", "temperature");
+  // Save function to file
+  NewFunction u(mesh, element, x);
   File file("poisson.m");
-  file << uold;
+  file << u;
 }
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)

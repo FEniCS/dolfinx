@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -52,6 +54,11 @@ void GenericFile::operator>>(Function::Vector& u)
   read_not_impl("Function::Vector");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator>>(NewFunction& u)
+{
+  read_not_impl("NewFunction");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(Sample& sample)
 {
   read_not_impl("Sample");
@@ -90,6 +97,11 @@ void GenericFile::operator<<(Function& u)
 void GenericFile::operator<<(Function::Vector& u)
 {
   write_not_impl("Function");
+}
+//-­---------------------------------------------------------------------------
+void GenericFile::operator<<(NewFunction& u)
+{
+  write_not_impl("NewFunction");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Sample& sample)

@@ -13,6 +13,7 @@
 namespace dolfin
 {
   
+  class Node;
   class Cell;
   class Mesh;
   class NewFiniteElement;
@@ -36,7 +37,7 @@ namespace dolfin
     NewFunction();
 
     /// Create function with given degrees of freedom
-    NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x);
+    NewFunction(Mesh& mesh, const NewFiniteElement& element, NewVector& x);
 
     /// Destructor
     virtual ~NewFunction();
@@ -44,11 +45,20 @@ namespace dolfin
     /// Compute projection of function onto a given local finite element space
     void project(const Cell& cell, const NewFiniteElement& element, real c[]) const;
 
+    /// Evaluate function at given node
+    real operator() (const Node& node) const;
+
     /// Evaluate function at given point
-    virtual real operator() (const Point& p) const;
+    virtual real operator() (const Point& point) const;
 
     /// Evaluate vector-valued function at given point
-    virtual real operator() (const Point& p, uint i) const;
+    virtual real operator() (const Point& point, uint i) const;
+
+    /// Return the mesh on which the function is defined
+    Mesh& mesh();
+
+    /// Return the finite element defining the function space
+    const NewFiniteElement& element() const;
 
   private:
 
@@ -56,9 +66,9 @@ namespace dolfin
     class Data
     {
     public:
-      Data(const Mesh& mesh, const NewFiniteElement& element, NewVector& x)
+      Data(Mesh& mesh, const NewFiniteElement& element, NewVector& x)
 	: mesh(mesh), element(element), x(x) {}
-      const Mesh& mesh;
+      Mesh& mesh;
       const NewFiniteElement& element;
       NewVector& x;
     };

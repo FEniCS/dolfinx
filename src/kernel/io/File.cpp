@@ -113,6 +113,13 @@ void File::operator>>(Function::Vector& u)
   *file >> u;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(NewFunction& u)
+{
+  file->read();
+  
+  *file >> u;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(Sample& sample)
 {
   file->read();
@@ -163,6 +170,13 @@ void File::operator<<(Function& u)
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Function::Vector& u)
+{
+  file->write();
+  
+  *file << u;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(NewFunction& u)
 {
   file->write();
   

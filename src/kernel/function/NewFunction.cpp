@@ -14,7 +14,7 @@ NewFunction::NewFunction() : data(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
+NewFunction::NewFunction(Mesh& mesh, const NewFiniteElement& element,
 			 NewVector& x) : data(0)
 {
   // Create function data
@@ -78,7 +78,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: in x, then we can optimize by just calling
     // FIXME: element::dof() one time with i = 0.
 
-    real *values = data->x.array();
+    real* values = data->x.array();
     for (uint i = 0; i < element.spacedim(); i++)
       c[i] = values[element.dof(i, cell, data->mesh)];
     data->x.restore(values);
@@ -90,15 +90,42 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   dolfin_error("Projection between different finite element spaces not implemented.");
 }
 //-----------------------------------------------------------------------------
-real NewFunction::operator()(const Point& p) const
+real NewFunction::operator() (const Node& node) const
+{
+  // Check if function is user-defined
+  if ( !data )
+    return (*this)(node.coord());
+
+  // Otherwise, evaluate function at the node
+  // FIXME: This is just a temporary fix for linear elements
+  return data->x(node.id());
+}
+//-----------------------------------------------------------------------------
+real NewFunction::operator()(const Point& point) const
 {
   dolfin_error("User-defined function evaluation not implemented.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real NewFunction::operator()(const Point& p, uint i) const
+real NewFunction::operator()(const Point& point, uint i) const
 {
   dolfin_error("User-defined function evaluation not implemented.");
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+Mesh& NewFunction::mesh()
+{
+  if ( !data )
+    dolfin_error("Function is not a finite element function.");
+
+  return data->mesh;
+}
+//-----------------------------------------------------------------------------
+const NewFiniteElement& NewFunction::element() const
+{
+  if ( !data )
+    dolfin_error("Function is not a finite element function.");
+
+  return data->element;
 }
 //-----------------------------------------------------------------------------

@@ -30,16 +30,25 @@ namespace dolfin
   {
   public:
 
+    /// Assemble bilinear form
+    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
+			 const NewFiniteElement& element);
+
+    /// Assemble linear form
+    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
+			 const NewFiniteElement& element);
+
+    /// Assemble bilinear and linear forms
     static void assemble(BilinearForm& a, LinearForm& L, 
 			 NewMatrix& A, NewVector& b, Mesh& mesh,
 			 const NewFiniteElement& element);
 
-    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh,
-			 const NewFiniteElement& element);
+    /// Assemble bilinear and linear forms (including Dirichlet boundary conditions)
+    static void assemble(BilinearForm& a, LinearForm& L, 
+			 NewMatrix& A, NewVector& b, Mesh& mesh,
+			 const NewFiniteElement& element, NewBoundaryCondition& bc);
 
-    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
-			 const NewFiniteElement& element);
-    
+    /// Set Dirichlet boundary conditions
     static void setBC(NewMatrix& A, NewVector& b, Mesh& mesh,
 		      NewBoundaryCondition& bc);
 

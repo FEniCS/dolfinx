@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -14,6 +16,7 @@ namespace dolfin {
   class Mesh;
   class Function;
   class Function::Vector;
+  class NewFunction;
   class Sample;
   class NewSample;
   class ParameterList;
@@ -31,6 +34,7 @@ namespace dolfin {
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Function& u);
     virtual void operator>> (Function::Vector& u);
+    virtual void operator>> (NewFunction& u);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (NewSample& sample);
     virtual void operator>> (ParameterList& parameters);
@@ -42,6 +46,7 @@ namespace dolfin {
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Function::Vector& u);
+    virtual void operator<< (NewFunction& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (NewSample& sample);
     virtual void operator<< (ParameterList& parameters);
