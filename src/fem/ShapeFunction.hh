@@ -7,7 +7,6 @@
 #include <kw_constants.h>
 
 class FunctionSpace;
-class FiniteElement;
 
 class ShapeFunction{
   

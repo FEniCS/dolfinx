@@ -37,7 +37,4 @@ void env_get_mach(char *string);
 void env_get_name(char *string);
 void env_get_vers(char *string);
 
-/// Parameter types
-enum Type { type_none, type_real, type_double, type_int, type_bool, type_string };
-
 #endif

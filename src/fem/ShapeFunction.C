@@ -4,7 +4,7 @@
 #include "ShapeFunction.hh"
 #include "FunctionSpace.hh"
 #include <Settings.hh>
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //-----------------------------------------------------------------------------
 ShapeFunction::ShapeFunction(FunctionSpace *functionspace, int dof)

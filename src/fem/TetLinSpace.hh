@@ -6,14 +6,11 @@
 
 #include "FunctionSpace.hh"
 
-class FiniteElement;
 class TetLinFunction;
 class LocalField;
-
-
 class TriLinFunction;
 
-class TetLinSpace: public FunctionSpace{
+namespace Dolfin{ class TetLinSpace: public FunctionSpace{
 public:
   
   TetLinSpace(FiniteElement *element, int nvc);
@@ -34,6 +31,6 @@ private:
   real j11,j12,j13,j21,j22,j23,j31,j32,j33;
   real det,d;
   
-};
+}; }
   
 #endif

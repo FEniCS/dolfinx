@@ -6,12 +6,10 @@
 
 #include <kw_constants.h>
 
-class FiniteElement;
 class LocalField;
 class ShapeFunction;
 
-class FunctionSpace{
-
+namespace Dolfin{ class FunctionSpace{
 public:
 
   FunctionSpace(FiniteElement *element, int nvc);
@@ -49,6 +47,6 @@ protected:
   int nsd; // Number of space dimensions
   int nvc; // Number of vector components
   
-};
+}; }
 
 #endif

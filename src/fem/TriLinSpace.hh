@@ -6,11 +6,10 @@
 
 #include "FunctionSpace.hh"
 
-class FiniteElement;
 class TriLinFunction;
 class LocalField;
 
-class TriLinSpace: public FunctionSpace{
+namespace Dolfin{ class TriLinSpace: public FunctionSpace{
 public:
   
   TriLinSpace(FiniteElement *element, int nvc);
@@ -30,6 +29,6 @@ private:
   real g1x, g1y, g2x, g2y, g3x, g3y;
   real det,d;
   
-};
+}; }
 
 #endif

@@ -5,14 +5,15 @@
 #define __GLOBALFIELD_HH
 
 #include <kw_constants.h>
+#include <dolfin/Grid.hh>
+#include "Output.hh"
 
-class Grid;
 class Vector;
-class Output;
+
 
 enum Representation { NONE, NODAL, CONSTANT, FUNCTION, LIST };
  
-class GlobalField{
+namespace Dolfin{ class GlobalField{
   
 public:
 
@@ -59,6 +60,6 @@ private:
   real (*function)(real x, real y, real z, real t);
   GlobalField **list;
   
-};
+}; }
 
 #endif

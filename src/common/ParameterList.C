@@ -6,7 +6,7 @@
 #include <sys/utsname.h>
 #include <stdlib.h>
 #include "ParameterList.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //----------------------------------------------------------------------------
 ParameterList::ParameterList()

@@ -1,9 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Grid.hh"
-#include "Cell.hh"
-#include <Display.hh>
+#include <dolfin/Grid.hh>
+#include <dolfin/Cell.hh>
+#include <dolfin/Display.hh>
 #include <Settings.hh>
 #include "FiniteElement.hh"
 #include "FunctionSpace.hh"
@@ -13,8 +13,10 @@
 
 extern Settings *settings;
 
+using namespace Dolfin;
+
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(Grid *grid, int no_eq, ElementType element_type)
+FiniteElement::FiniteElement(Dolfin::Grid *grid, int no_eq, ElementType element_type)
 {
   settings->Get("space dimension", &nsd);
   this->grid = grid;

@@ -5,18 +5,17 @@
 #define __FINITE_ELEMENT_HH
 
 #include <kw_constants.h>
+#include <dolfin/Grid.hh>
 
-class Grid;
 class ShapeFunction;
 class FunctionSpace;
 
 enum ElementType { trilin, tetlin };
 
 class FiniteElement{
-  
 public:
-
-  FiniteElement(Grid *grid, int no_eq, ElementType element_type);
+  
+  FiniteElement(Dolfin::Grid *grid, int no_eq, ElementType element_type);
   ~FiniteElement();
 
   void Update(int cellnumber);

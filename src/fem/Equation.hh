@@ -9,14 +9,10 @@
 #include "GlobalField.hh"
 #include "ShapeFunction.hh"
 
-// FIXME: Temporary for testing
-#include <Display.hh>
-
 class GlobalField;
-class FiniteElement;
 
 ///
-class Equation {
+namespace Dolfin{ class Equation {
 
 public:
   
@@ -60,6 +56,6 @@ protected:
 
   void (*update)();
   
-};
+}; }
 
 #endif

@@ -1,14 +1,14 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <utils.h>
 #include <kw_constants.h>
 #include "TriLinSpace.hh"
 #include "TriLinFunction.hh"
 #include "LocalField.hh"
 #include "FiniteElement.hh"
-#include "Grid.hh"
+#include <dolfin/Grid.hh>
 
 //-----------------------------------------------------------------------------
 TriLinSpace::TriLinSpace(FiniteElement *element,int nvc) : FunctionSpace(element,nvc)

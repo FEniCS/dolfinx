@@ -7,6 +7,18 @@
 #include "ParameterList.hh"
 #include <dolfin.h>
 
+// Data types
+typedef double real;
+enum bc_type { dirichlet , neumann};
+
+// Boundary conditions
+class dolfin_bc{
+public:
+  dolfin_bc(){ type=neumann; val=0.0; }  
+  bc_type type;
+  real val;
+};
+
 ///
 class Settings : public ParameterList {
 public:

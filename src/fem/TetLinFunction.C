@@ -6,7 +6,7 @@
 #include "ShapeFunction.hh"
 #include "FiniteElement.hh"
 #include "LocalField.hh"
-#include <Display.hh> 
+#include <dolfin/Display.hh> 
 
 //-----------------------------------------------------------------------------
 TetLinFunction::TetLinFunction(FunctionSpace *functionspace, int dof) :

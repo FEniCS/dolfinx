@@ -1,12 +1,33 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Triangle.hh"
-#include "Node.hh"
-#include "Grid.hh"
+#include <dolfin/Triangle.hh>
+#include <dolfin/Node.hh>
+#include <dolfin/Grid.hh>
 #include <utils.h>
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+Triangle::Triangle()
+{
+  nodes[0] = 0;
+  nodes[1] = 0;
+  nodes[2] = 0;
+}
+//-----------------------------------------------------------------------------
+Triangle::~Triangle()
+{
+
+}
+//-----------------------------------------------------------------------------
+void Triangle::set(Node *n0, Node *n1, Node *n2)
+{
+  nodes[0] = n0;
+  nodes[1] = n1;
+  nodes[2] = n2;
+}
 //-----------------------------------------------------------------------------
 void Triangle::Set(Node *n1, Node *n2, Node *n3, int material)
 {
@@ -15,6 +36,8 @@ void Triangle::Set(Node *n1, Node *n2, Node *n3, int material)
   nodes[2] = n3;
 
   this->material = material;
+
+  id = -1;
 }
 //----------------------------------------------------------------------------
 int Triangle::GetSize()

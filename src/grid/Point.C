@@ -1,5 +1,5 @@
-#include "Point.hh"
 #include <cmath>
+#include <dolfin/Point.hh>
 
 //-----------------------------------------------------------------------------
 real Point::Distance(Point p)

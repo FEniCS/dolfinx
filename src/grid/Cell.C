@@ -1,14 +1,18 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Cell.hh"
-#include "Display.hh"
+#include <dolfin/Cell.hh>
+#include <dolfin/Display.hh>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Cell::Cell()
 {
   neighbor_cells = 0;
   nc = 0;
+
+  id = -1;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -23,6 +27,11 @@ void Cell::Clear()
   neighbor_cells = 0;
 
   nc = 0;
+}
+//-----------------------------------------------------------------------------
+int Cell::setID(int id)
+{
+  return this->id = id;
 }
 //-----------------------------------------------------------------------------
 int Cell::GetNoCellNeighbors()

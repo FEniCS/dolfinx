@@ -3,7 +3,7 @@
 
 #include "FunctionSpace.hh"
 #include "FiniteElement.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(FiniteElement *element, int nvc)

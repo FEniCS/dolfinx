@@ -5,9 +5,9 @@
 #define __EQUATION_SYSTEM_HH
 
 #include "Equation.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
-class EquationSystem: public Equation{
+namespace Dolfin{ class EquationSystem: public Equation{
 
 public:
   
@@ -29,6 +29,6 @@ public:
     return 0.0;
   }
 
-};
+}; }
 
 #endif

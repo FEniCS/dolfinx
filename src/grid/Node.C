@@ -1,6 +1,8 @@
-#include "Node.hh"
-#include "Cell.hh"
-#include <Display.hh>
+#include <dolfin/Node.hh>
+#include <dolfin/Cell.hh>
+#include <dolfin/Display.hh>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Node::Node()
@@ -9,11 +11,21 @@ Node::Node()
   neighbor_cells = 0;
   nn = 0;
   nc = 0;
+
+
+  id = -1;
 }
 //-----------------------------------------------------------------------------
 Node::~Node()
 {
   Clear();
+}
+//-----------------------------------------------------------------------------
+void Node::set(real x, real y, real z)
+{
+  p.x = x;
+  p.y = y;
+  p.z = z;
 }
 //-----------------------------------------------------------------------------
 void Node::Clear()
@@ -95,6 +107,11 @@ real Node::GetCoord(int i)
 Point* Node::GetCoord()
 {
   return ( &p );
+}
+//-----------------------------------------------------------------------------
+int Node::setID(int id)
+{
+  return this->id = id;
 }
 //-----------------------------------------------------------------------------
 void Node::AllocateForNeighborCells()

@@ -10,6 +10,8 @@
 
 extern Settings *settings;
 
+using namespace Dolfin;
+
 //-----------------------------------------------------------------------------
 LocalField::LocalField()
 {

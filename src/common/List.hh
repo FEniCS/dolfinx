@@ -10,6 +10,7 @@
 // New blocks of size BLOCK_SIZE are allocated when needed.
 
 #include <iostream>
+#include <dolfin/Display.hh>
 
 #define BLOCK_SIZE 1024
 
@@ -64,7 +65,7 @@ public:
 		  if ( !(b->full()) ){
 			 _size += 1;
 			 _empty -= 1;
-			 return b->create();
+			 return b->create(id);
 		  }
 		  if ( !b->next )
 			 break;
@@ -76,7 +77,7 @@ public:
 	 if ( !_current_block->full() ){
 		_size += 1;
 		_empty -= 1;
-		return _current_block->create();
+		return _current_block->create(id);
 	 }
 
 	 // Create new block
@@ -85,7 +86,7 @@ public:
 	 _empty -= 1;
 	 _blocks += 1;
 	 
-	 return _current_block->create();
+	 return _current_block->create(id);
   }
 
   // Creates a new object in the list and returns a unique id
@@ -103,6 +104,29 @@ public:
 	 *new_x = x;
   }
 
+  /// Returns a pointer to the object with the given id
+  T* pointer(int id){
+
+	 // Check current block
+	 if ( id >= _current_block->number*BLOCK_SIZE && id < (_current_block->number+1)*BLOCK_SIZE )
+		return _current_block->pointer(id);
+
+	 // Check all blocks
+	 for (Block *b = _first_block;; b = b->next){
+
+		if ( id >= b->number*BLOCK_SIZE && id < (b->number+1)*BLOCK_SIZE )
+		  return b->pointer(id);
+
+		if ( !b->next )
+		  break;
+
+	 }
+
+	 // No object with given id
+	 return 0;
+
+  }
+  
   /// True if the list is empty
   bool empty(){
 	 return _size == 0;
@@ -133,6 +157,12 @@ public:
 	 friend class Iterator;
 	 
 	 Block(Block *prev){
+
+		// Set block number
+		if ( prev )
+		  number = prev->number + 1;
+		else
+		  number = 0;
 		
 		// Link blocks
 		if ( prev )
@@ -156,6 +186,15 @@ public:
 		delete [] data;
 		delete [] empty;
 	 }
+
+	 T* pointer(int id){
+		id -= number*BLOCK_SIZE;
+
+		if ( id < 0 || id >= BLOCK_SIZE )
+		  return 0;
+
+		return data + id;
+	 }
 	 
 	 bool full(){
 		return used == BLOCK_SIZE;
@@ -177,7 +216,7 @@ public:
 		return -1;
 	 }
 	 
-	 T* create(){
+	 T* create(int *id){
 
 		// Check if the list is full
 		if ( used == BLOCK_SIZE )
@@ -189,6 +228,7 @@ public:
 			 if ( empty[i] ){
 				empty[i] = false;
 				used += 1;
+				*id = number*BLOCK_SIZE + i;
 				return data + i;
 			 }
 		  display->InternalError("Block::create()","Unable to find an empty position");
@@ -196,6 +236,7 @@ public:
 		
 		// Use next available position
 		empty[pos] = false;
+		*id = number*BLOCK_SIZE + pos;
 		pos += 1;
 		used += 1;
 		return data + pos - 1;
@@ -214,6 +255,9 @@ public:
 	 // Next available position and size of list
 	 int pos;
 	 int used;
+
+	 // Number of this block
+	 int number;
 	 
   };
   

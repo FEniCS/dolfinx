@@ -5,8 +5,10 @@
 #include "GlobalField.hh"
 #include "LocalField.hh"
 #include "FiniteElement.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <Settings.hh>
+
+using namespace Dolfin;
 
 //-----------------------------------------------------------------------------
 Equation::Equation(int nsd)

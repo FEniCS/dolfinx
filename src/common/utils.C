@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "utils.h"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 
 char buffer[DOLFIN_LINELENGTH];
 

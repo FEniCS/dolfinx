@@ -6,15 +6,17 @@
 #include <math.h>
 #include <strings.h>
 
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <utils.h>
 #include <kw_constants.h>
-#include <Input.hh>
 
-#include "Grid.hh"
+#include <dolfin/Grid.hh>
+#include <dolfin/Node.hh>
+#include <dolfin/Triangle.hh>
+#include <dolfin/Tetrahedron.hh>
 #include "GridData.hh"
-#include "Tetrahedron.hh"
-#include "Triangle.hh"
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Grid::Grid()
@@ -23,10 +25,24 @@ Grid::Grid()
   no_cells   = 0;
   nodes    = 0;
   cells    = 0;
-  celltype = CELL_NONE;
   mem      = sizeof(Grid);
   h        = 0.0;
-  gd = 0;
+
+  gd = new GridData();
+}
+//-----------------------------------------------------------------------------
+Grid::Grid(const char *filename)
+{
+  no_nodes   = 0;
+  no_cells   = 0;
+  nodes    = 0;
+  cells    = 0;
+  mem      = sizeof(Grid);
+  h        = 0.0;
+
+  gd = new GridData();
+
+  load(filename);
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -46,15 +62,21 @@ Grid::~Grid()
   cells = 0;
 }
 //-----------------------------------------------------------------------------
+void Grid::load(const char *filename)
+{
+  //Input input(filename);
+  //input.loadGrid(gd);
+}
+//-----------------------------------------------------------------------------
 void Grid::Init()
 {
-  ComputeNeighborInfo();
-  ComputeSmallestDiameter();
+  //  ComputeNeighborInfo();
+  // ComputeSmallestDiameter();
 }
 //-----------------------------------------------------------------------------
 void Grid::Clear()
 {
-  ClearNeighborInfo();
+  // ClearNeighborInfo();
 }
 //-----------------------------------------------------------------------------
 int Grid::GetNoNodes()
@@ -108,19 +130,19 @@ void Grid::Display()
 {
   char tmp[DOLFIN_WORDLENGTH];
 
-  switch ( celltype ) {
-  case CELL_TRIANGLE:
-	 sprintf(tmp,"triangles");
-	 break;
-  case CELL_TETRAHEDRON:
-	 sprintf(tmp,"tetrahedrons");
-	 break;
-  default:
-	 sprintf(tmp,"none");
-  }
+  //  switch ( celltype ) {
+  //case CELL_TRIANGLE:
+  // sprintf(tmp,"triangles");
+  //	 break;
+  //case CELL_TETRAHEDRON:
+  //	 sprintf(tmp,"tetrahedrons");
+  //	 break;
+  //default:
+  //	 sprintf(tmp,"none");
+  // }
   
-  display->Message(0,"Grid: %d nodes, %d cells (%s), %d bytes",
-						 no_nodes,no_cells,tmp,mem);
+  //display->Message(0,"Grid: %d nodes, %d cells (%s), %d bytes",
+  //						 no_nodes,no_cells,tmp,mem);
 
 }
 //-----------------------------------------------------------------------------
@@ -163,14 +185,15 @@ void Grid::DisplayAll()
 //-----------------------------------------------------------------------------
 void Grid::Read(const char *filename)
 {
+  /*
   Input input(filename);
 
   int new_no_nodes = 0;
   int new_no_cells = 0;
-  CellType new_celltype = CELL_NONE;
+  //  CellType new_celltype = CELL_NONE;
 
   // Get the number of nodes and elements
-  input.ReadHeader(&new_no_nodes,&new_no_cells,&new_celltype);
+  //  input.ReadHeader(&new_no_nodes,&new_no_cells,&new_celltype);
   
   // Check data
   if ( new_no_nodes <= 0 )
@@ -178,20 +201,22 @@ void Grid::Read(const char *filename)
   if ( new_no_cells <= 0 )
 	 display->Error("Number of cells must be positive. (Reading grid file \"%s\".)",filename);
 
+  */
+	 
   // Allocate memory for the nodes (also sets no_nodes)
-  AllocNodes(new_no_nodes);
+  // AllocNodes(new_no_nodes);
   
   // Read nodes
-  input.ReadNodes(this,new_no_nodes);
+  //input.ReadNodes(this,new_no_nodes);
 
   // Allocate memory for the cells (also sets no_cells)
-  AllocCells(new_no_cells,new_celltype);
+  //AllocCells(new_no_cells,new_celltype);
 
   // Read cells
-  input.ReadCells(this,new_no_cells,new_celltype);
+  //input.ReadCells(this,new_no_cells,new_celltype);
 
   // Compute maximum cell size
-  ComputeMaximumCellSize();
+  //  ComputeMaximumCellSize();
 }
 //-----------------------------------------------------------------------------
 void Grid::Write(const char *filename)
@@ -232,6 +257,7 @@ void Grid::WriteINP(FILE *fp)
   }
 
   // Write cells
+  /*
   switch ( celltype ){
   case CELL_TRIANGLE:
 	 for (int i=0;i<no_cells;i++){
@@ -253,6 +279,7 @@ void Grid::WriteINP(FILE *fp)
 	 display->InternalError("Grid::WriteINP()","Unknown cell type: %d",
 									celltype);
   }
+  */
   
 }
 //-----------------------------------------------------------------------------
@@ -279,6 +306,7 @@ void Grid::AllocNodes(int newsize)
   mem += no_nodes*sizeof(Node);
 }
 //-----------------------------------------------------------------------------
+/*
 void Grid::AllocCells(int newsize, CellType newtype)
 {
   // Delete old cells
@@ -429,4 +457,5 @@ void Grid::ComputeNeighborInfo()
   // Clear temporary storage
   delete [] tmp;
 }
+*/
 //-----------------------------------------------------------------------------

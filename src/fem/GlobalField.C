@@ -2,11 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 
 #include "GlobalField.hh"
-#include <Display.hh>
+#include <dolfin/Display.hh>
 #include <Settings.hh>
-#include <Grid.hh>
+#include <dolfin/Grid.hh>
 #include <Vector.hh>
 #include <Output.hh>
+
+using namespace Dolfin;
 
 //-----------------------------------------------------------------------------
 GlobalField::GlobalField(Grid *grid, real constant)

@@ -3,6 +3,8 @@
 
 #include "EquationSystem.hh"
 
+using namespace Dolfin;
+
 //-----------------------------------------------------------------------------
 EquationSystem::EquationSystem(int no_eq, int nsd) : Equation(nsd)
 {

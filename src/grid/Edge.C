@@ -1,9 +1,9 @@
 #include <utils.h>
 
-#include <Display.hh>
-#include "Edge.hh"
-#include "Node.hh"
-#include "Grid.hh"
+#include <dolfin/Display.hh>
+#include <dolfin/Edge.hh>
+
+using namespace Dolfin;
 
 //-----------------------------------------------------------------------------
 Edge::Edge()

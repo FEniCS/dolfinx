@@ -1,10 +1,33 @@
 #include <utils.h>
 
-#include <Display.hh>
-#include "Tetrahedron.hh"
-#include "Node.hh"
-#include "Grid.hh"
+#include <dolfin/Display.hh>
+#include <dolfin/Tetrahedron.hh>
+#include <dolfin/Node.hh>
+#include <dolfin/Grid.hh>
 
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+Tetrahedron::Tetrahedron()
+{
+  nodes[0] = 0;
+  nodes[1] = 0;
+  nodes[2] = 0;
+  nodes[3] = 0;
+}
+//-----------------------------------------------------------------------------
+Tetrahedron::~Tetrahedron()
+{
+
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::set(Node *n0, Node *n1, Node *n2, Node *n3)
+{
+  nodes[0] = n0;
+  nodes[1] = n1;
+  nodes[2] = n2;
+  nodes[3] = n3;
+}
 //-----------------------------------------------------------------------------
 void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
 {
@@ -14,6 +37,8 @@ void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
   nodes[3] = n4;
   
   this->material = material;
+
+  id = -1;
 }
 //-----------------------------------------------------------------------------
 int Tetrahedron::GetSize()

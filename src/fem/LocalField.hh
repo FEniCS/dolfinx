@@ -5,13 +5,13 @@
 #define __LOCALFIELD_HH
 
 #include <kw_constants.h>
+#include "FiniteElement.hh"
+#include "GlobalField.hh"
 
 class FunctionSpace;
 class ShapeFunction;
-class GlobalField;
-class FiniteElement;
 
-class LocalField {
+namespace Dolfin{ class LocalField {
   
 public:
 
@@ -68,6 +68,6 @@ protected:
   FunctionSpace *functionspace;
   ShapeFunction **shapefunction;
   
-};
+}; }
 
 #endif
