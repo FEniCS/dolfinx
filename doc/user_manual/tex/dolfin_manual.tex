@@ -35,7 +35,7 @@
 \vspace{3cm}
 
 \begin{center}
-\includegraphics[width=6cm]{eps/dolfin.eps}
+  \includegraphics[width=8cm]{eps/dolfin.eps}
 \end{center}
 
 \vfill
@@ -50,8 +50,8 @@
 
 \ 
 \vfill
-This manual has been written by: \\
-Johan Hoffman, Johan Jansson, and Anders Logg.
+\emph{This manual has been written by:} \\
+Johan Hoffman, Johan Jansson, Anders Logg, Andreas Mark, and Andreas Nilsson.
 \thispagestyle{empty}
 
 \cleardoublepage
@@ -81,7 +81,78 @@ In preparation.
 
 %--- New chapter ---
 \cleardoublepage
-\section{Grid management}
+\section{The multigrid solver}
+
+Multigrid solvers were invented to solve partial differential
+equations and in contrast to other iterative solvers its convergence
+rate is independent of the problem size. The multigrid solver solves a
+given PDE using a hierarchy of discretizations, typically Poisson's equation:
+
+\begin{equation}
+  \begin{array}{rcl}
+    -\Delta u &=& f \quad \mbox{in } \Omega,\\
+    u &=& 0 \quad \mbox{on }  \partial\Omega.
+  \end{array}
+\end{equation} 
+
+\subsection{Usage}
+First a variational formulation (a PDE object) has to be defined. Then there are three different ways to call the multigrid solver:
+\begin{itemize}
+\item Call the solver with a MeshHierachy which consisting of arbitrarily refined meshes:
+  
+  \begin{verbatim}
+    MultigridSolver::solve(PDE poisson, Vector& x,
+                           MeshHierarchy& meshes);
+  \end{verbatim}
+  
+\item Call the solver with a mesh which has been refined a number of times (implicitly containing a mesh hierarchy):
+  
+  \begin{verbatim}
+    MultigridSolver::solve(PDE poisson, Vector& x,
+                           Mesh mesh);
+  \end{verbatim}
+
+\item Call the solver with a coarse mesh and a number specifying the number of (uniform) refinements to make:
+  
+  \begin{verbatim}
+    MultigridSolver::solve(PDE poisson,Vector& x, 
+                           Mesh& mesh, int refine);
+  \end{verbatim}
+\end{itemize}
+
+\subsection{An example}
+\begin{verbatim}
+  Mesh     mesh("square.xml");
+  Function f("source");
+  Poisson  poisson(f);
+
+  MultigridSolver::solve(poisson, x, mesh, 5);
+\end{verbatim}
+
+\subsection{Performance}
+
+The solution time for the Multgrid solver has been compared with the Krylov solver
+for tolerance TOL = $10^{-3}$. Figure \ref{fig:multiPerformance}
+shows that the complexity of the multigrid solver is linear and
+that it is faster than the Krylov solver. For large $n$, the multigrid
+solver is still linear while the Krylov solver fails to converge. The test
+was performed on 1.7 GHz Celeron with 256 Mb of RAM running Debian GNU/Linux.
+
+\begin{figure}[H]
+  \begin{center}
+    \includegraphics[width=10cm]{eps/multigrid.eps}
+    \caption{Plot of the solution time for the multigrid solver and the Krylov solver.}
+    \label{fig:multiPerformance}
+  \end{center}
+\end{figure}
+
+\subsection{Limitations}
+
+The solver has only been tested in 2D and it's only written for linear elements.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Mesh management}
 
 In preparation.
 

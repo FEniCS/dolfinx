@@ -12,6 +12,7 @@
 #include <dolfin/Galerkin.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
+#include <dolfin/MultigridSolver.h>
 #include <dolfin/PDE.h>
 #include <dolfin/StiffnessMatrix.h>
 

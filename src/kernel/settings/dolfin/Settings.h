@@ -66,6 +66,13 @@ namespace dolfin {
       add(Parameter::STRING, "method", "cg");
       add(Parameter::STRING, "stiffness", "non-stiff");
 
+      // Parameters for multgrid solver
+
+      add(Parameter::REAL, "multigrid tolerance", 0.001);
+      add(Parameter::INT,  "multigrid pre-smoothing", 9);
+      add(Parameter::INT,  "multigrid post-smoothing", 9);
+      add(Parameter::INT,  "multigrid iterations", 100);
+
      }
     
   };

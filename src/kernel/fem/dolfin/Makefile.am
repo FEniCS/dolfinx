@@ -5,4 +5,5 @@ EXTRA_DIST = dolfin_fem.h \
              Galerkin.h \
              LoadVector.h \
              MassMatrix.h \
+             MultigridSolver.h \
              StiffnessMatrix.h
