@@ -45,8 +45,8 @@ namespace dolfin {
     // Compute derivative dfi/duj
     real dfdu(unsigned int i, unsigned int j, real t);
 
-    // The ODE
-    ODE& ode;
+    /// Friends
+    friend class NewtonIteration;
 
   private:
 
@@ -70,9 +70,11 @@ namespace dolfin {
       return 0.0;
     }
 
+    // The ODE
+    ODE& ode;
+
     // Number of components
     unsigned int N;
-
 
     // Solution
     Solution* solution;
