@@ -240,4 +240,7 @@ Krylov solve:                 2.51
 
 Total time:                   12.40
 
+Note: Performance increase either from installing a
+new kernel or a smaller system load.
+
 --------------------------------------------------------
