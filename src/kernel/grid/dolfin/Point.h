@@ -22,6 +22,8 @@ namespace dolfin {
 	 Point(real x, real y, real z);
 	 
 	 real dist(Point p);
+
+	 Point midpoint(Point p);
 	 
 	 real x;
 	 real y;

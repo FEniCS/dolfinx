@@ -41,6 +41,17 @@ real Point::dist(Point p)
   return sqrt( dx*dx + dy*dy + dz*dz );
 }
 //-----------------------------------------------------------------------------
+Point Point::midpoint(Point p)
+{
+  real mx = 0.5*(x + p.x);
+  real my = 0.5*(y + p.y);
+  real mz = 0.5*(z + p.z);
+
+  Point mp(mx,my,mz);
+
+  return mp;
+}
+//-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
 std::ostream& dolfin::operator << (std::ostream& output, const Point& p)

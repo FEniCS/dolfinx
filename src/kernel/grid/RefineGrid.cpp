@@ -39,53 +39,62 @@ Refinement::UnrefineGrid()
 Refinement::RefineGrid()
 {
 }
+*/
 
 
-
-Refinement::LocalRegularRefinement(Tetrahedron *parent)
+void RefineGrid::RegularRefinement(Cell &parent)
 {
-  Point p01 = parent->GetNode(0)->p.Midpoint(parent->GetNode(1)->p);
-  Point p02 = parent->GetNode(0)->p.Midpoint(parent->GetNode(2)->p);
-  Point p03 = parent->GetNode(0)->p.Midpoint(parent->GetNode(3)->p);
-  Point p12 = parent->GetNode(1)->p.Midpoint(parent->GetNode(2)->p);
-  Point p13 = parent->GetNode(1)->p.Midpoint(parent->GetNode(3)->p);
-  Point p23 = parent->GetNode(2)->p.Midpoint(parent->GetNode(3)->p);
+  // Regular refinement: 
+  //
+  // (1) Triangles: 1 -> 4 
+  // (2) Tetrahedrons: 1 -> 8 
 
-  Node *n01 = grid->createNode();
-  Node *n02 = grid->createNode();
-  Node *n03 = grid->createNode();
-  Node *n11 = grid->createNode();
-  Node *n12 = grid->createNode();
-  Node *n23 = grid->createNode();
-
-  n01->Set(p01);
-  n02->Set(p02);
-  n03->Set(p03);
-  n11->Set(p11);
-  n12->Set(p12);
-  n23->Set(p23);
-
-  Tetrahedron *t1 = grid->createCell();
-  Tetrahedron *t2 = grid->createCell();
-  Tetrahedron *t3 = grid->createCell();
-  Tetrahedron *t4 = grid->createCell();
-  Tetrahedron *t5 = grid->createCell();
-  Tetrahedron *t6 = grid->createCell();
-  Tetrahedron *t7 = grid->createCell();
-  Tetrahedron *t8 = grid->createCell();
-
-  t1->Set(parent->GetNode(0),n01,n02,n03);
-  t2->Set(n01,parent->GetNode(1),n12,n13);
-  t3->Set(n02,n12,parent->GetNode(2),n23);
-  t4->Set(n03,n13,n23,parent->GetNode(3));
-  t5->Set(n01,n02,n03,n13);
-  t6->Set(n01,n02,n12,n13);
-  t7->Set(n02,n03,n13,n23);
-  t8->Set(n02,n12,n13,n23);
-
+  switch (parent.type()) {
+  case Cell::TETRAHEDRON: RegularRefinementTetrahedron(parent);
+  case Cell::TRIANGLE: RegularRefinementTriangle(parent);
+  default: 
+    std::cout << "Error: Cell type not implemented" << std::endl;
+    exit(1);
+  }
 }
 
 
+void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
+{
+  // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
+  // at the midpoints of the edges. 
+  Node *n01 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(1)->coord()));
+  Node *n02 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(2)->coord()));
+  Node *n03 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(3)->coord()));
+  Node *n12 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(2)->coord()));
+  Node *n13 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(3)->coord()));
+  Node *n23 = grid.createNode(parent.node(2)->coord().midpoint(parent.node(3)->coord()));
+
+  Cell *t1 = grid.createCell(Cell::TETRAHEDRON,parent.node(0),n01,n02,n03);
+  Cell *t2 = grid.createCell(Cell::TETRAHEDRON,n01,parent.node(1),n12,n13);
+  Cell *t3 = grid.createCell(Cell::TETRAHEDRON,n02,n12,parent.node(2),n23);
+  Cell *t4 = grid.createCell(Cell::TETRAHEDRON,n03,n13,n23,parent.node(3));
+  Cell *t5 = grid.createCell(Cell::TETRAHEDRON,n01,n02,n03,n13);
+  Cell *t6 = grid.createCell(Cell::TETRAHEDRON,n01,n02,n12,n13);
+  Cell *t7 = grid.createCell(Cell::TETRAHEDRON,n02,n03,n13,n23);
+  Cell *t8 = grid.createCell(Cell::TETRAHEDRON,n02,n12,n13,n23);
+}
+
+void RefineGrid::RegularRefinementTriangle(Cell &parent)
+{
+  // Refine 1 triangle into 4 new ones, introducing new nodes 
+  // at the midpoints of the edges. 
+  Node *n01 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(1)->coord()));
+  Node *n02 = grid.createNode(parent.node(0)->coord().midpoint(parent.node(2)->coord()));
+  Node *n12 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(2)->coord()));
+
+  Cell *t1 = grid.createCell(Cell::TETRAHEDRON,parent.node(0),n01,n02);
+  Cell *t2 = grid.createCell(Cell::TETRAHEDRON,n01,parent.node(1),n12);
+  Cell *t3 = grid.createCell(Cell::TETRAHEDRON,n02,n12,parent.node(2));
+  Cell *t4 = grid.createCell(Cell::TETRAHEDRON,n01,n12,n02);
+}
+
+/*
 Refinement::LocalIrregularRefinement(Tetrahedron *parent)
 {
   bool reg_ref = false;
@@ -153,18 +162,18 @@ Refinement::IrrRef1(Tetrahedron *parent, int marked_face)
   // new nodes to each other, as well as to the node that is not on the 
   // marked face. This gives 4 new tetrahedrons. 
 
-  Node *n01 = grid->createNode();
-  Node *n02 = grid->createNode();
-  Node *n12 = grid->createNode();
+  Node *n01 = grid.createNode();
+  Node *n02 = grid.createNode();
+  Node *n12 = grid.createNode();
   
   n01->Set(parent->GetFace(marked_face)->GetNode(0)->p.Midpoint(parent->GetFace(marked_face)->GetNode(1)->p));
   n02->Set(parent->GetFace(marked_face)->GetNode(0)->p.Midpoint(parent->GetFace(marked_face)->GetNode(2)->p));
   n12->Set(parent->GetFace(marked_face)->GetNode(1)->p.Midpoint(parent->GetFace(marked_face)->GetNode(2)->p));
 	  
-  Tetrahedron *t1 = grid->createCell();
-  Tetrahedron *t2 = grid->createCell();
-  Tetrahedron *t3 = grid->createCell();
-  Tetrahedron *t4 = grid->createCell();
+  Tetrahedron *t1 = grid.createCell();
+  Tetrahedron *t2 = grid.createCell();
+  Tetrahedron *t3 = grid.createCell();
+  Tetrahedron *t4 = grid.createCell();
 
   t1->Set(parent->GetFace(marked_face)->GetNode(0),n01,n02,parent->GetNode(marked_face));
   t2->Set(parent->GetFace(marked_face)->GetNode(1),n01,n12,parent->GetNode(marked_face));
@@ -184,12 +193,12 @@ Refinement::IrrRef2(Tetrahedron *parent, int marked_edge)
   int non_marked_nodes[2];
   int cnt = 0;
 
-  Node *n = grid->createNode();
+  Node *n = grid.createNode();
   
   n->Set(parent->GetEdge(marked_edge)->GetMidpoint());
 
-  Tetrahedron *t1 = grid->createCell();
-  Tetrahedron *t2 = grid->createCell();
+  Tetrahedron *t1 = grid.createCell();
+  Tetrahedron *t2 = grid.createCell();
 
   cnt = 0;
   for (int i=0; i<4; i++){
@@ -227,15 +236,15 @@ Refinement::IrrRef3(Tetrahedron *parent, int marked_edge1, int marked_edge2)
   int once_marked_node[2];
   int node_marks[4];
 
-  Node *n1 = grid->createNode();
-  Node *n2 = grid->createNode();
+  Node *n1 = grid.createNode();
+  Node *n2 = grid.createNode();
   
   n1->Set(parent->GetEdge(marked_edge1)->GetMidpoint());
   n2->Set(parent->GetEdge(marked_edge2)->GetMidpoint());
 
-  Tetrahedron *t1 = grid->createCell();
-  Tetrahedron *t2 = grid->createCell();
-  Tetrahedron *t3 = grid->createCell();
+  Tetrahedron *t1 = grid.createCell();
+  Tetrahedron *t2 = grid.createCell();
+  Tetrahedron *t3 = grid.createCell();
 
   for (int i=0; i<4; i++){
     node_marks[i] = 0;
@@ -274,16 +283,16 @@ Refinement::IrrRef4(Tetrahedron *parent, int marked_edge1, int marked_edge2)
   // insert 4 new edges by connecting the new nodes to the 
   // endpoints of the opposite edges of the respectively new nodes. 
 
-  Node *n1 = grid->createNode();
-  Node *n2 = grid->createNode();
+  Node *n1 = grid.createNode();
+  Node *n2 = grid.createNode();
   
   n1->Set(parent->GetEdge(marked_edge1)->GetMidpoint());
   n2->Set(parent->GetEdge(marked_edge2)->GetMidpoint());
 
-  Tetrahedron *t1 = grid->createCell();
-  Tetrahedron *t2 = grid->createCell();
-  Tetrahedron *t3 = grid->createCell();
-  Tetrahedron *t4 = grid->createCell();
+  Tetrahedron *t1 = grid.createCell();
+  Tetrahedron *t2 = grid.createCell();
+  Tetrahedron *t3 = grid.createCell();
+  Tetrahedron *t4 = grid.createCell();
 
   t1->Set(parent->GetEdge(marked_edge1)->GetEndnode(0),n1,parent->GetEdge(marked_edge2)->GetEndnode(0),n2);
   t2->Set(parent->GetEdge(marked_edge1)->GetEndnode(0),n1,parent->GetEdge(marked_edge2)->GetEndnode(1),n2);

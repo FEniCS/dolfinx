@@ -115,6 +115,11 @@ Cell* Grid::createCell(Cell::Type type)
   return gd->createCell(type);
 }
 //-----------------------------------------------------------------------------
+Node* Grid::createNode(Point p)
+{
+  return gd->createNode(p.x,p.y,p.z);
+}
+//-----------------------------------------------------------------------------
 Node* Grid::createNode(real x, real y, real z)
 {
   return gd->createNode(x,y,z);
@@ -129,6 +134,22 @@ Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2)
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TETRAHEDRONS;
+  
+  return gd->createCell(type,n0,n1,n2,n3);
+}
+//-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TRIANGLES;
+  
+  return gd->createCell(type,n0,n1,n2);
+}
+//-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
 {
   // Warning: grid type will be type of last added cell
   _type = TETRAHEDRONS;

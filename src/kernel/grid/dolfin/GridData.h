@@ -27,6 +27,8 @@ namespace dolfin {
 	 Cell* createCell(Cell::Type type);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2, int n3);
+	 Cell* createCell(Cell::Type type, Node* n0, Node* n1, Node* n2);
+	 Cell* createCell(Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
 
 	 Node* getNode(int id);
 	 Cell* getCell(int id);

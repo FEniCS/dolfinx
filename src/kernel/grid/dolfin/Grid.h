@@ -11,6 +11,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 #include <dolfin/List.h>
+#include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>
 #include <dolfin/InitGrid.h>
@@ -44,15 +45,20 @@ namespace dolfin {
 	 friend class NodeIterator::GridNodeIterator;
 	 friend class CellIterator::GridCellIterator;
 	 friend class XMLGrid;
-	 
+	 friend class RefineGrid;
+ 
   private:
 	 
  	 Node* createNode();
 	 Cell* createCell(Cell::Type type);
 
+ 	 Node* createNode(Point p);
+
 	 Node* createNode(real x, real y, real z);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2, int n3);
+	 Cell* createCell(Cell::Type type, Node* n0, Node* n1, Node* n2);
+	 Cell* createCell(Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
 
 	 Node* getNode(int id);
 	 Cell* getCell(int id);

@@ -13,6 +13,11 @@ namespace dolfin {
 	 
 	 RefineGrid(Grid &grid_) : grid(grid_) {}
 	 
+	 void RegularRefinement(Cell &parent);
+
+	 void RegularRefinementTetrahedron(Cell &parent);
+	 void RegularRefinementTriangle(Cell &parent);
+	 
 	 void refine();
 	 
   private:

@@ -53,6 +53,26 @@ Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
   return c;
 }
 //-----------------------------------------------------------------------------
+Cell* GridData::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2)
+{
+  int id;
+  Cell *c = cells.create(&id);
+  c->init(type);
+  c->setID(id);
+  c->set(n0,n1,n2);
+  return c;
+}
+//-----------------------------------------------------------------------------
+Cell* GridData::createCell(Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
+{
+  int id;
+  Cell *c = cells.create(&id);
+  c->init(type);
+  c->setID(id);
+  c->set(n0,n1,n2,n3);
+  return c;
+}
+//-----------------------------------------------------------------------------
 Node* GridData::getNode(int id)
 {
   return nodes.pointer(id);
