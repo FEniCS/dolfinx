@@ -13,8 +13,10 @@ namespace dolfin {
   class Node;
   class Cell;
   class Edge;
-  class CellIterator;
+  class Face;
   class NodeIterator;
+  class CellIterator;
+  class FaceIterator;
   class GenericCell;
 
   typedef Edge* EdgePointer;
@@ -27,12 +29,12 @@ namespace dolfin {
 
     EdgeIterator(const Node& node);
     EdgeIterator(const NodeIterator& nodeIterator);
-	 
+
     EdgeIterator(const Cell& cell);
     EdgeIterator(const CellIterator& cellIterator);
-	 
-    EdgeIterator(const Edge& edge);
-    EdgeIterator(const EdgeIterator& edgeIterator);
+
+    EdgeIterator(const Face& face);
+    EdgeIterator(const FaceIterator& faceIterator);
 	 
     ~EdgeIterator();
 
@@ -83,6 +85,25 @@ namespace dolfin {
 		
     };
 
+    // Iterator for the edges at a node 
+    class NodeEdgeIterator : public GenericEdgeIterator {
+    public:
+
+      NodeEdgeIterator(const Node& node);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Edge& operator*() const;
+      Edge* operator->() const;
+      Edge* pointer() const;
+		
+    private:
+
+      Array<Edge*>::Iterator edge_iterator;
+		
+    };
 	 
     // Iterator for the edges in a cell
     class CellEdgeIterator : public GenericEdgeIterator {
@@ -102,16 +123,13 @@ namespace dolfin {
 
       Array<Edge*>::Iterator edge_iterator;
 
-      GenericCell* genericCell;
-		
     };
-	 
 
-    // Iterator for the edges at a node 
-    class NodeEdgeIterator : public GenericEdgeIterator {
+    // Iterator for the edges in a face
+    class FaceEdgeIterator : public GenericEdgeIterator {
     public:
 
-      NodeEdgeIterator(const Node& node);
+      FaceEdgeIterator(const Face& face);
       void operator++();
       bool end();
       bool last();
@@ -125,8 +143,6 @@ namespace dolfin {
 
       Array<Edge*>::Iterator edge_iterator;
 
-      GenericCell* genericCell;
-		
     };
 	 
   private:

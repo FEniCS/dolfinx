@@ -39,8 +39,14 @@ namespace dolfin {
     /// Check if face consists of the given edges
     bool equals(Edge* e0, Edge* e1, Edge* e2) const;
 
+    ///--- Output ---
+   
+    /// Display condensed face data
+    friend LogStream& operator<<(LogStream& stream, const Face& face);
+
     /// Friends
     friend class GridData;
+    friend class EdgeIterator::FaceEdgeIterator;
 
   private:
     

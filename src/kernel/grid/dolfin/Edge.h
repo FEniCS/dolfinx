@@ -51,6 +51,11 @@ namespace dolfin {
     
     /// Check if edge consists of the two nodes
     bool equals(Node* n0, Node* n1) const;
+
+    ///--- Output ---
+   
+    /// Display condensed edge data
+    friend LogStream& operator<<(LogStream& stream, const Edge& edge);
     
     // Friends
     friend class Grid;

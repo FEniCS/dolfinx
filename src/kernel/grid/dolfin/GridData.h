@@ -53,6 +53,13 @@ namespace dolfin {
   /// The numbers within brackets indicate in which order the
   /// connectivity is computed. A [0] indicates that the information
   /// is known a priori.
+  ///
+  /// Clarification:
+  ///
+  /// - Two nodes are neighbors if they are part of the same edge.
+  ///   Each node is a neighbor to itself.
+  /// - Two cells are neighbors if they share a common edge.
+  ///   Each cell is a neighbor to itself.
 
   class GridData {
   public:

@@ -4,6 +4,7 @@
 #ifndef __BOUNDARY_DATA_H
 #define __BOUNDARY_DATA_H
 
+#include <dolfin/NodeIterator.h>
 #include <dolfin/List.h>
 
 namespace dolfin {
@@ -47,8 +48,8 @@ namespace dolfin {
     int noFaces() const;
 
     /// Friends
-
     friend class BoundaryInit;
+    friend class NodeIterator::BoundaryNodeIterator;
 
   private:
 

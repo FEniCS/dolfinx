@@ -22,11 +22,11 @@ namespace dolfin {
     CellIterator(const Grid& grid);
     CellIterator(const Grid* grid);
 
-    CellIterator(const Cell& cell);
-    CellIterator(const CellIterator& cellIterator);
-	 
     CellIterator(const Node& node);
     CellIterator(const NodeIterator& nodeIterator);
+
+    CellIterator(const Cell& cell);
+    CellIterator(const CellIterator& cellIterator);
 	 
     ~CellIterator();
 
@@ -78,26 +78,6 @@ namespace dolfin {
 		
     };
 
-    // Iterator for the cell neigbors of a cell
-    class CellCellIterator : public GenericCellIterator {
-    public:
-
-      CellCellIterator(const Cell& cell);
-      void operator++();
-      bool end();
-      bool last();
-      int index();
-
-      Cell& operator*() const;
-      Cell* operator->() const;
-      Cell* pointer() const;
-
-    private:
-
-      Array<Cell*>::Iterator cell_iterator;
-		
-    };
-	 
     // Iterator for the cell neigbors of a node
     class NodeCellIterator : public GenericCellIterator {
     public:
@@ -118,6 +98,26 @@ namespace dolfin {
 		
     };
 
+    // Iterator for the cell neigbors of a cell
+    class CellCellIterator : public GenericCellIterator {
+    public:
+
+      CellCellIterator(const Cell& cell);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Cell& operator*() const;
+      Cell* operator->() const;
+      Cell* pointer() const;
+
+    private:
+
+      Array<Cell*>::Iterator cell_iterator;
+		
+    };
+	 
   private:
 	 
     GenericCellIterator* c;

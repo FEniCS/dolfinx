@@ -32,6 +32,16 @@ EdgeIterator::EdgeIterator(const CellIterator &cellIterator)
   e = new CellEdgeIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const Face& face)
+{
+  e = new FaceEdgeIterator(face);
+}
+//-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const FaceIterator& faceIterator)
+{
+  e = new FaceEdgeIterator(*faceIterator);
+}
+//-----------------------------------------------------------------------------
 EdgeIterator::operator EdgePointer() const
 {
   return e->pointer();
@@ -39,7 +49,9 @@ EdgeIterator::operator EdgePointer() const
 //-----------------------------------------------------------------------------
 EdgeIterator::~EdgeIterator()
 {
-  delete e;
+  if ( e )
+    delete e;
+  e = 0;
 }
 //-----------------------------------------------------------------------------
 EdgeIterator& EdgeIterator::operator++()
@@ -127,6 +139,48 @@ Edge* EdgeIterator::GridEdgeIterator::pointer() const
   return edge_iterator.pointer();
 }
 //-----------------------------------------------------------------------------
+// EdgeIterator::NodeEdgeIterator
+//-----------------------------------------------------------------------------
+EdgeIterator::NodeEdgeIterator::NodeEdgeIterator(const Node &node)
+{
+  edge_iterator = node.ne.begin();
+}
+//-----------------------------------------------------------------------------
+void EdgeIterator::NodeEdgeIterator::operator++()
+{
+  ++edge_iterator;
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::NodeEdgeIterator::end()
+{
+  return edge_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::NodeEdgeIterator::last()
+{
+  return edge_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int EdgeIterator::NodeEdgeIterator::index()
+{
+  return edge_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Edge& EdgeIterator::NodeEdgeIterator::operator*() const
+{
+  return **edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::NodeEdgeIterator::operator->() const
+{
+  return *edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::NodeEdgeIterator::pointer() const
+{
+  return *edge_iterator;
+}
+//-----------------------------------------------------------------------------
 // EdgeIterator::CellEdgeIterator
 //-----------------------------------------------------------------------------
 EdgeIterator::CellEdgeIterator::CellEdgeIterator(const Cell &cell)
@@ -169,44 +223,44 @@ Edge* EdgeIterator::CellEdgeIterator::pointer() const
   return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
-// EdgeIterator::NodeEdgeIterator
+// EdgeIterator::FaceEdgeIterator
 //-----------------------------------------------------------------------------
-EdgeIterator::NodeEdgeIterator::NodeEdgeIterator(const Node &node)
+EdgeIterator::FaceEdgeIterator::FaceEdgeIterator(const Face &face)
 {
-  edge_iterator = node.ne.begin();
+  edge_iterator = face.fe.begin();
 }
 //-----------------------------------------------------------------------------
-void EdgeIterator::NodeEdgeIterator::operator++()
+void EdgeIterator::FaceEdgeIterator::operator++()
 {
   ++edge_iterator;
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::NodeEdgeIterator::end()
+bool EdgeIterator::FaceEdgeIterator::end()
 {
   return edge_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::NodeEdgeIterator::last()
+bool EdgeIterator::FaceEdgeIterator::last()
 {
   return edge_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int EdgeIterator::NodeEdgeIterator::index()
+int EdgeIterator::FaceEdgeIterator::index()
 {
   return edge_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Edge& EdgeIterator::NodeEdgeIterator::operator*() const
+Edge& EdgeIterator::FaceEdgeIterator::operator*() const
 {
   return **edge_iterator;
 }
 //-----------------------------------------------------------------------------
-Edge* EdgeIterator::NodeEdgeIterator::operator->() const
+Edge* EdgeIterator::FaceEdgeIterator::operator->() const
 {
   return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
-Edge* EdgeIterator::NodeEdgeIterator::pointer() const
+Edge* EdgeIterator::FaceEdgeIterator::pointer() const
 {
   return *edge_iterator;
 }

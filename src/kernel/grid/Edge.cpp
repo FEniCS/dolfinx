@@ -95,6 +95,15 @@ bool Edge::equals(Node* n0, Node* n1) const
   return false;
 }
 //-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
+{
+  stream << "[ Edge: id = " << edge.id()
+	 << " n0 = " << edge.node(0)->id()
+	 << " n1 = " << edge.node(1)->id() << " ]";
+  
+  return stream;
+}
+//-----------------------------------------------------------------------------
 int Edge::setID(int id, Grid* grid)
 {
   this->grid = grid;

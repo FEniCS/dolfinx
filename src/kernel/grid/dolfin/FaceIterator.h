@@ -21,6 +21,7 @@ namespace dolfin {
     FaceIterator(const Grid* grid);
 
     FaceIterator(const Cell& cell);
+    FaceIterator(const CellIterator& cellIterator);
 
     ~FaceIterator();
     

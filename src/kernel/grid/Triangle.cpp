@@ -44,26 +44,6 @@ Cell::Type Triangle::type() const
   return Cell::triangle;
 }
 //-----------------------------------------------------------------------------
-bool Triangle::neighbor(GenericCell* cell) const
-{
-  // Two triangles are neighbors if they have a common edge or if they are
-  // the same triangle, i.e. if they have 2 or 3 common nodes.
-
-  if ( !cell )
-    return false;
-
-  if ( cell->type() != Cell::triangle )
-    return false;
-  
-  int count = 0;
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++)
-      if ( cn(i) == cell->cn(j) )
-	count++;
-  
-  return count == 2 || count == 3;
-}
-//-----------------------------------------------------------------------------
 void Triangle::createEdges()
 {
   ce.init(3);

@@ -19,6 +19,9 @@ namespace dolfin {
     /// Destructor
     ~Boundary();
 
+    /// Friends
+    friend class NodeIterator::BoundaryNodeIterator;
+
   private:
 
     // Compute boundary (and clear old data)

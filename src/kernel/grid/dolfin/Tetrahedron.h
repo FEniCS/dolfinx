@@ -27,8 +27,6 @@ namespace dolfin {
     
   private:
     
-    bool neighbor(GenericCell* cell) const;
-    
     void createEdges();
     void createFaces();
 

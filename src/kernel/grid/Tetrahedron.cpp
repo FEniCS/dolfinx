@@ -45,26 +45,6 @@ Cell::Type Tetrahedron::type() const
   return Cell::tetrahedron;
 }
 //-----------------------------------------------------------------------------
-bool Tetrahedron::neighbor(GenericCell* cell) const
-{
-  // Two tetrahedrons are neighbors if they have a common face or if they are
-  // the same tetrahedron, i.e. if they have 3 or 4 common nodes.
-  
-  if ( !cell )
-    return false;
-
-  if ( cell->type() != Cell::tetrahedron )
-    return false;
-  
-  int count = 0;
-  for (int i = 0; i < 4; i++)
-    for (int j = 0; j < 4; j++)
-      if ( cn(i) == cell->cn(j) )
-	count++;
-  
-  return count == 3 || count == 4;
-}
-//-----------------------------------------------------------------------------
 void Tetrahedron::createEdges()
 {
   ce.init(6);

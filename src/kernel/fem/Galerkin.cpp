@@ -209,13 +209,8 @@ void Galerkin::setBC(Grid& grid, Vector& b)
   // Create boundary
   Boundary boundary(grid);
   
-
   // Iterate over all nodes on the boundary
-  for (NodeIterator node(grid); !node.end(); ++node) {
-    
-    // Only set boundary condition for nodes on the boundary
-    if ( node->boundary() == -1 )
-      continue;
+  for (NodeIterator node(boundary); !node.end(); ++node) {
     
     // Get boundary condition
     bc.update(node);

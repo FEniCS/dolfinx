@@ -26,6 +26,11 @@ FaceIterator::FaceIterator(const Cell& cell)
   e = new CellFaceIterator(cell);
 }
 //-----------------------------------------------------------------------------
+FaceIterator::FaceIterator(const CellIterator& cellIterator)
+{
+  e = new CellFaceIterator(*cellIterator);
+}
+//-----------------------------------------------------------------------------
 FaceIterator::operator FacePointer() const
 {
   return e->pointer();

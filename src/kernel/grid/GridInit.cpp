@@ -122,7 +122,7 @@ void GridInit::initCellCell(Grid& grid)
   for (CellIterator c1(grid); !c1.end(); ++c1) {
 
     // Allocate for the maximum number of cell neighbors
-    c1->c->cc.init(c1->noBoundaries() + 1);
+    c1->c->cc.init(c1->noEdges() + 1);
     c1->c->cc.reset();
     
     // Add all unique cell neighbors

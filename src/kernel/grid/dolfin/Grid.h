@@ -74,6 +74,7 @@ namespace dolfin {
     /// Friends
     friend class GenericCell;
     friend class NodeIterator::GridNodeIterator;
+    friend class NodeIterator::BoundaryNodeIterator;
     friend class CellIterator::GridCellIterator;
     friend class EdgeIterator::GridEdgeIterator;
     friend class FaceIterator::GridFaceIterator;

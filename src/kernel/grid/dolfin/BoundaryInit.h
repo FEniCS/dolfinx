@@ -24,6 +24,11 @@ namespace dolfin {
     static void initEdges(Grid& grid);
     static void initNodes(Grid& grid);
 
+    static void initFacesTri(Grid& grid);
+    static void initFacesTet(Grid& grid);
+    static void initEdgesTri(Grid& grid);
+    static void initEdgesTet(Grid& grid);
+
   };
 
 }

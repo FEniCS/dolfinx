@@ -87,8 +87,28 @@ int GenericCell::setID(int id, Grid* grid)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+bool GenericCell::neighbor(GenericCell* cell) const
+{
+  // Two cells are neighbors if they have a common edge or if they are
+  // the same cell, i.e. if they have 2 or 3 common nodes.
+
+  if ( !cell )
+    return false;
+
+  int count = 0;
+  for (int i = 0; i < cn.size(); i++)
+    for (int j = 0; j < cell->cn.size(); j++)
+      if ( cn(i) == cell->cn(j) )
+	count++;
+  
+  return count >= 2;
+}
+//-----------------------------------------------------------------------------
 void GenericCell::createEdge(Node* n0, Node* n1)
 {
+  bool check = ( (n0->id() == 6  && n1->id() == 11) ||
+		 (n0->id() == 11 && n1->id() == 6) );
+
   Edge* edge = 0;
 
   // Check neighbor cells if an edge already exists between the two nodes
@@ -98,9 +118,16 @@ void GenericCell::createEdge(Node* n0, Node* n1)
       break;
   }
 
+
+ 
+
+
+
+
   // Create the new edge if it doesn't exist
   if ( !edge )
     edge = grid->createEdge(n0, n1);
+
 
   // Add the edge at the first empty position
   ce.add(edge);
@@ -120,6 +147,20 @@ void GenericCell::createFace(Edge* e0, Edge* e1, Edge* e2)
   // Create the new face if it doesn't exist
   if ( !face )
     face = grid->createFace(e0, e1, e2);
+
+  
+
+  
+  if ( _id == 30 || _id == 31 ) {
+    
+    cout << "--- Creating face for cell " << _id << " ---" << endl;
+    cout << "face id = " << face->id() << endl;
+    cout << "e0 = " << *e0 << endl;
+    cout << "e1 = " << *e1 << endl;
+    cout << "e2 = " << *e2 << endl;
+    
+  }
+    
 
   // Add the face at the first empty position
   cf.add(face);

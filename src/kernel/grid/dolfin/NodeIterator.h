@@ -5,11 +5,13 @@
 #define __NODE_ITERATOR_H
 
 #include <dolfin/Array.h>
+#include <dolfin/List.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
   
   class Grid;
+  class Boundary;
   class Node;
   class Cell;
   class CellIterator;
@@ -22,6 +24,8 @@ namespace dolfin {
     
     NodeIterator(const Grid& grid);
     NodeIterator(const Grid* grid);
+
+    NodeIterator(const Boundary& boundary);
 
     NodeIterator(const Node& node);
     NodeIterator(const NodeIterator& nodeIterator);
@@ -76,6 +80,26 @@ namespace dolfin {
       Table<Node>::Iterator node_iterator;
       Table<Node>::Iterator at_end;
 		
+    };
+
+    // Iterator for the nodes on a boundary
+    class BoundaryNodeIterator : public GenericNodeIterator {
+    public:
+
+      BoundaryNodeIterator(const Boundary& boundary);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Node& operator*() const;
+      Node* operator->() const;
+      Node* pointer() const;
+		
+    private:
+
+      List<Node*>::Iterator node_iterator;
+      
     };
 
     // Iterator for the node neighbors of a node

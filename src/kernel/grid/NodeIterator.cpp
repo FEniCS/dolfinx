@@ -1,4 +1,8 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <dolfin/Grid.h>
+#include <dolfin/Boundary.h>
 #include <dolfin/Node.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/GenericCell.h>
@@ -17,6 +21,11 @@ NodeIterator::NodeIterator(const Grid &grid)
 NodeIterator::NodeIterator(const Grid *grid)
 {
   n = new GridNodeIterator(*grid);
+}
+//-----------------------------------------------------------------------------
+NodeIterator::NodeIterator(const Boundary& boundary)
+{
+  n = new BoundaryNodeIterator(boundary);
 }
 //-----------------------------------------------------------------------------
 NodeIterator::NodeIterator(const Node &node)
@@ -132,6 +141,49 @@ Node* NodeIterator::GridNodeIterator::operator->() const
 Node* NodeIterator::GridNodeIterator::pointer() const
 {
   return node_iterator.pointer();
+}
+//-----------------------------------------------------------------------------
+// NodeIterator::BoundaryNodeIterator
+//-----------------------------------------------------------------------------
+NodeIterator::BoundaryNodeIterator::BoundaryNodeIterator
+(const Boundary& boundary) : node_iterator(boundary.grid->bd.nodes)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void NodeIterator::BoundaryNodeIterator::operator++()
+{
+  ++node_iterator;
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::BoundaryNodeIterator::end()
+{
+  return node_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::BoundaryNodeIterator::last()
+{
+  return node_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int NodeIterator::BoundaryNodeIterator::index()
+{
+  return node_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Node& NodeIterator::BoundaryNodeIterator::operator*() const
+{
+  return **node_iterator;
+}
+//-----------------------------------------------------------------------------
+Node* NodeIterator::BoundaryNodeIterator::operator->() const
+{
+  return *node_iterator;
+}
+//-----------------------------------------------------------------------------
+Node* NodeIterator::BoundaryNodeIterator::pointer() const
+{
+  return *node_iterator;
 }
 //-----------------------------------------------------------------------------
 // NodeIterator::CellNodeIterator

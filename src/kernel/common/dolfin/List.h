@@ -57,7 +57,10 @@ namespace dolfin {
 		
       /// Check if iterator has reached end of the list
       bool end() const;
-		
+	
+      /// Check if iterator has reached the last element
+      bool last() const;
+
       /// Return current element
       T& operator*() const;
 
@@ -83,6 +86,7 @@ namespace dolfin {
 
       typename std::list<T>::iterator it;
       std::list<T>& l;
+      int _index;
 
     };
 
@@ -100,12 +104,12 @@ namespace dolfin {
   //---------------------------------------------------------------------------
   template <class T> List<T>::List()
   {
-    
+    // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class T> List<T>::~List()
   {
-    
+    // Do nothing
   }
   //---------------------------------------------------------------------------
   template <class T> void List<T>::clear()
@@ -132,16 +136,18 @@ namespace dolfin {
     return l.empty();
   }
   //---------------------------------------------------------------------------
-  // Implementation of List
+  // Implementation of List::Iterator
   //---------------------------------------------------------------------------
   template <class T> List<T>::Iterator::Iterator (List<T>& list) : l(list.l)
   {
     it = l.begin();
+    _index = 0;
   }
   //---------------------------------------------------------------------------
   template <class T> List<T>::Iterator::Iterator(const Iterator& it) : l(it.l)
   {
-    this->it = it;
+    this->it = it.it;
+    this->_index = it._index;
   }
   //---------------------------------------------------------------------------
   template <class T> int List<T>::Iterator::index() const
@@ -152,12 +158,21 @@ namespace dolfin {
   template <class T> typename List<T>::Iterator& List<T>::Iterator::operator++()
   {
     ++it;
+    ++_index;
     return *this;
   }
   //---------------------------------------------------------------------------
   template <class T> bool List<T>::Iterator::end() const
   {
     return it == l.end();
+  }
+  //---------------------------------------------------------------------------
+  template <class T> bool List<T>::Iterator::last() const
+  {
+    // FIXME: This is probably not the correct way to make the check
+    typename std::list<T>::iterator new_it = it;
+    ++new_it;
+    return new_it == l.end();
   }
   //---------------------------------------------------------------------------
   template <class T> T& List<T>::Iterator::operator*() const

@@ -64,6 +64,16 @@ bool Face::equals(Edge* e0, Edge* e1, Edge* e2) const
   return false;
 }
 //-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)
+{
+  stream << "[ Face: id = " << face.id() << " edges = ( ";
+  for (EdgeIterator e(face); !e.end(); ++e)
+    stream << e->id() << " ";
+  stream << ") ]";
+  
+  return stream;
+}
+//-----------------------------------------------------------------------------
 int Face::setID(int id, Grid* grid)
 {
   this->grid = grid;

@@ -61,7 +61,7 @@ namespace dolfin {
     int setID(int id, Grid* grid);
     
     // Check if given cell is a neighbor
-    virtual bool neighbor(GenericCell* cell) const = 0;
+    bool neighbor(GenericCell* cell) const;
 
     // Create edges for the cell
     virtual void createEdges() = 0;
