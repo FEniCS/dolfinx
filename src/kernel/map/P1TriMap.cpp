@@ -178,9 +178,29 @@ unsigned int P1TriMap::edgeNumber(const Edge& edge, const Cell& cell) const
   // care of this, but in the meantime we need to compute the number of
   // the given face by hand. See documentation for the Mesh class for
   // details on the ordering.
+  
+  // Get the three nodes of the triangle
+  Node& n0 = cell.node(0);
+  Node& n1 = cell.node(1);
+  Node& n2 = cell.node(2);
 
-  // Not implemented
+  // Check for edge number 0
+  if ( (edge.node(0) == n0 && edge.node(1) == n1) ||
+       (edge.node(0) == n1 && edge.node(1) == n0) )
+    return 0;
 
+  // Check for edge number 1
+  if ( (edge.node(0) == n1 && edge.node(1) == n2) ||
+       (edge.node(0) == n2 && edge.node(1) == n1) )
+    return 1;
+
+  // Check for edge number 2
+  if ( (edge.node(0) == n2 && edge.node(1) == n0) ||
+       (edge.node(0) == n0 && edge.node(1) == n2) )
+    return 2;
+  
+  // We should not reach this statement
+  dolfin_error("Unable to find local edge number.");
   return 0;
 }
 //-----------------------------------------------------------------------------

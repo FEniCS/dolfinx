@@ -1,3 +1,6 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <dolfin/Quadrature.h>
 #include <dolfin/Map.h>
 #include <dolfin/ShapeFunction.h>

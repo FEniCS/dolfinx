@@ -144,7 +144,36 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  // Copy code from assembleBoundaryTet when finished
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Start a progress session
+  Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
+    
+  // Iterate over all edges in the boundary 
+  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  {
+    // Update map
+    map.update(*edge);
+    
+    // Get internal cell neighbor of edge
+    const Cell& cell = map.cell();
+
+    // Update element
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
+    
+    // Update equation
+    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
+    
+    // Iterate over test and trial functions
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
+        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+    
+    // Update progress
+    p++;
+  }
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
@@ -156,7 +185,7 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
   Boundary boundary(mesh);
 
   // Start a progress session
-  Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());  
+  Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());
     
   // Iterate over all faces in the boundary 
   for (FaceIterator face(boundary); !face.end(); ++face)
@@ -262,7 +291,35 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  // Not implemented
+  // Create boundary
+  Boundary boundary(mesh);
+  
+  // Start a progress session
+  Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
+    
+  // Iterate over all edges in the boundary 
+  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  {
+    // Update map
+    map.update(*edge);
+    
+    // Get internal cell neighbor of edge
+    const Cell& cell = map.cell();
+
+    // Update element
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
+    
+    // Update equation
+    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
+    
+    // Iterate over test and trial functions
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+      b(v.dof(cell)) += pde.rhs(*v);
+    
+    // Update progress
+    p++;
+  }
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
@@ -270,7 +327,35 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  // Not implemented
+  // Create boundary
+  Boundary boundary(mesh);
+  
+  // Start a progress session
+  Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());  
+    
+  // Iterate over all faces in the boundary 
+  for (FaceIterator face(boundary); !face.end(); ++face)
+  {
+    // Update map
+    map.update(*face);
+    
+    // Get internal cell neighbor of face
+    const Cell& cell = map.cell();
+
+    // Update element
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
+    
+    // Update equation
+    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
+    
+    // Iterate over test and trial functions
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+      b(v.dof(cell)) += pde.rhs(*v);
+    
+    // Update progress
+    p++;
+  }
 }
 //-----------------------------------------------------------------------------
 void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)

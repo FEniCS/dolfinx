@@ -15,6 +15,8 @@ Quadrature::Quadrature(unsigned int n)
   
   for (unsigned int i = 0; i < 0; i++)
     weights[i] = 0;
+
+  m = 1.0;
 }
 //-----------------------------------------------------------------------------
 Quadrature::~Quadrature()

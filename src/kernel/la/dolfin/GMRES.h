@@ -34,7 +34,7 @@ namespace dolfin
 		      real tol, unsigned int maxiter);
 
   private:
-    
+
     // The matrix
     const Matrix& A;
     

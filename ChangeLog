@@ -1,3 +1,4 @@
+ - Add integrals on the boundary (ds), partly working
  - Add maps from boundary of reference cell
  - Add evaluation of map from reference cell
  - New Matrix functions: max, min, norm, and sum of rows and columns (erik)
