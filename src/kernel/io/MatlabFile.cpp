@@ -54,13 +54,14 @@ void MatlabFile::operator<<(const Matrix& A)
   
   fprintf(fp, "A = [");
   for (int i = 0; i < A.size(0); i++) {
-    for (int pos = 0; pos < A.rowSize(i); pos++) {
+    for (int pos = 0; !A.endrow(i, pos); pos++) {
       value = A(i, &j, pos);
-      fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);
-      if ( i == (A.size(0) - 1) && pos == (A.rowSize(i) - 1) )
+		fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);		
+		if ( i == (A.size(0) - 1) && A.endrow(i, pos + 1) )
         fprintf(fp, "];\n");
-      else
-        fprintf(fp, "\n");
+		else {
+		  fprintf(fp, "\n");
+		}
     }
   }
   fprintf(fp, "A=spconvert(A);\n");

@@ -300,6 +300,14 @@ int Matrix::rowSize(int i) const
   return rowsizes[i];
 }
 //-----------------------------------------------------------------------------
+bool Matrix::endrow(int i, int pos) const
+{
+  if ( pos >= rowsizes[i] )
+	 return true;
+
+  return columns[i][pos] == -1;
+}
+//-----------------------------------------------------------------------------
 real Matrix::operator()(int i, int *j, int pos) const
 {
   if ( i < 0 || i >= m )

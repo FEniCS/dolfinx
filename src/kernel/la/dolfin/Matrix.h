@@ -76,8 +76,10 @@ namespace dolfin {
 	 void initRow(int i, int rowsize);
 	 /// Set number of nonzero entries in a row (keeping old values)
 	 void resizeRow(int i, int rowsize);
-	 /// Returns size of row i
+	 /// Returns size of row i (number of allocated elements)
 	 int rowSize(int i) const;
+	 /// Returns true if we have not reached end of row
+	 bool endrow(int i, int pos) const;
 	 
 	 /// Indexing: fast alternative
 	 real operator()(int i, int *j, int pos) const;
