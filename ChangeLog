@@ -1,3 +1,6 @@
+0.3.9
+ - Update Krylov solver (Erik, Johan)
+ - Add new LU factorization and LU solve (Niklas)
  - Add benchmark test in src/demo/bench
  - Add silent logger
 0.3.8

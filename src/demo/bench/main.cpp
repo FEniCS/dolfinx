@@ -55,9 +55,9 @@ int main()
   real t1 = toc();
   
   // Matrix-vector multiplication
-  dolfin_info("- Matrix/vector multiplication 1000 times");
+  dolfin_info("- Matrix/vector multiplication 100 times");
   tic();
-  for (int i = 0; i < 1000; i++)
+  for (int i = 0; i < 100; i++)
     AS.mult(bs,xs);
   real t2 = toc();
 
