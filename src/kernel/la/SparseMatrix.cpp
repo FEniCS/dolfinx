@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Contributions by: Georgios Foufas 2002, 2003
+// Modified by: Georgios Foufas 2002, 2003
+//              Erik Svensson, 2003
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -319,7 +320,7 @@ real SparseMatrix::norm() const
   return max;
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::mult(Vector& x, int i) const
+real SparseMatrix::mult(const Vector& x, int i) const
 {
   if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
@@ -331,7 +332,7 @@ real SparseMatrix::mult(Vector& x, int i) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::mult(Vector& x, Vector& Ax) const
+void SparseMatrix::mult(const Vector& x, Vector& Ax) const
 { 
  if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
@@ -340,6 +341,19 @@ void SparseMatrix::mult(Vector& x, Vector& Ax) const
   
   for (int i = 0; i < m; i++)
     Ax(i) = mult(x, i);
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::multt(const Vector& x, Vector& Ax) const
+{
+  if ( m != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  Ax.init(n);
+  Ax = 0.0;
+                                                                                                                                                         
+  for (int i = 0; i < m; i++)
+    for (int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
+      Ax(columns[i][pos]) += values[i][pos] * x(i);
 }
 //-----------------------------------------------------------------------------
 void SparseMatrix::resize()
@@ -404,6 +418,79 @@ void SparseMatrix::ident(int i)
   values[i][0] = 1.0;
 
   rowsizes[i] = 1;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::addrow()
+{
+  real** new_values = new (real *)[m+1];
+  int** new_columns = new (int *)[m+1];
+  int* new_rowsizes = new int[m+1];
+                                                                                                                                                            
+  for (int i = 0; i < m; i++) {
+    new_values[i] = values[i];
+    new_columns[i] = columns[i];
+    new_rowsizes[i] = rowsizes[i];
+  }
+                                                                                                                                                            
+  new_values[m] = new real[1];
+  new_columns[m] = new int[1];
+  new_rowsizes[m] = 1;
+  new_values[m][0] = 0.0;
+  new_columns[m][0] = -1;
+                                                                                                                                                            
+  m = m + 1;
+                                                                                                                                                            
+  delete [] values;
+  delete [] columns;
+  delete [] rowsizes;
+  values = new_values;
+  columns = new_columns;
+  rowsizes = new_rowsizes;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::addrow(const Vector& x)
+{
+  if ( n != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  real **new_values = new (real *)[m+1];
+  int **new_columns = new (int *)[m+1];
+  int *new_rowsizes = new int[m+1];
+                                                                                                                                                            
+  for (int i = 0; i < m; i++) {
+    new_values[i] = values[i];
+    new_columns[i] = columns[i];
+    new_rowsizes[i] = rowsizes[i];
+  }
+                                                                                                                                                            
+  int nonzero = 0;
+  for (int i = 0; i < x.size(); i++)
+    if (fabs(x(i)) > DOLFIN_EPS)
+      nonzero++;
+
+  new_values[m] = new real[nonzero];
+  new_columns[m] = new int[nonzero];
+  new_rowsizes[m] = nonzero;
+                     
+  int pos = 0;
+  for (int i = 0; i < x.size(); i++)
+    if (fabs(x(i)) > DOLFIN_EPS) {
+      new_values[m][pos] = x(i);
+      new_columns[m][pos] = i;
+      pos++;
+    }
+  
+  if (nonzero > allocsize)
+    allocsize = nonzero;
+                                                                                                                                                            
+  m = m + 1;
+                                                                                                                                                            
+  delete [] values;
+  delete [] columns;
+  delete [] rowsizes;
+  values = new_values;
+  columns = new_columns;
+  rowsizes = new_rowsizes;
 }
 //-----------------------------------------------------------------------------
 void SparseMatrix::initrow(int i, int rowsize)

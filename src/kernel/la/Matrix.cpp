@@ -166,14 +166,19 @@ real Matrix::norm() const
   return A->norm();
 }
 //-----------------------------------------------------------------------------
-real Matrix::mult(Vector& x, int i) const
+real Matrix::mult(const Vector& x, int i) const
 {
   return A->mult(x,i);
 }
 //-----------------------------------------------------------------------------
-void Matrix::mult(Vector& x, Vector& Ax) const
+void Matrix::mult(const Vector& x, Vector& Ax) const
 {
   A->mult(x,Ax);
+}
+//-----------------------------------------------------------------------------
+void Matrix::multt(const Vector& x, Vector &Ax) const
+{
+  A->multt(x,Ax);
 }
 //-----------------------------------------------------------------------------
 void Matrix::solve(Vector& x, const Vector& b)
@@ -255,6 +260,16 @@ void Matrix::resize()
 void Matrix::ident(int i)
 {
   A->ident(i);
+}
+//-----------------------------------------------------------------------------
+void Matrix::addrow()
+{
+  A->addrow();
+}
+//-----------------------------------------------------------------------------
+void Matrix::addrow(const Vector& x)
+{
+  A->addrow(x);
 }
 //-----------------------------------------------------------------------------
 void Matrix::initrow(int i, int rowsize)

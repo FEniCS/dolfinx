@@ -39,15 +39,27 @@ namespace dolfin {
     void operator=(const Matrix::Column& col);
 
     void operator+=(const Vector& x);
+    void operator+=(const Matrix::Row& row);
+    void operator+=(const Matrix::Column& col);
     void operator+=(real a);	 
-    void operator*=(real a);
+
     void operator-=(const Vector& x);
+    void operator-=(const Matrix::Row& row);
+    void operator-=(const Matrix::Column& col);
+    void operator-=(real a);
+
+    void operator*=(real a);
     
     real operator*(const Vector& x);
+    real operator*(const Matrix::Row& row);
+    real operator*(const Matrix::Column& col);
     
     real norm () const;
     real norm (int i) const;
+    
     void add(real a, Vector& x);
+    void add(real a, const Matrix::Row& row);
+    void add(real a, const Matrix::Column& col);
     
     // Output
     void show() const;

@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Contributions by: Georgios Foufas 2002, 2003
+// Modified by: Georgios Foufas 2002, 2003
+//              Erik Svensson, 2003
 
 #ifndef __SPARSE_MATRIX_H
 #define __SPARSE_MATRIX_H
@@ -46,11 +47,14 @@ namespace dolfin {
     
     real norm() const;
 
-    real mult (Vector& x, int i) const;
-    void mult (Vector& x, Vector& Ax) const;
+    real mult  (const Vector& x, int i) const;
+    void mult  (const Vector& x, Vector& Ax) const;
+    void multt (const Vector& x, Vector& Ax) const;
 
     void resize();
     void ident(int i);
+    void addrow();
+    void addrow(const Vector& x);
     void initrow(int i, int rowsize);
     bool endrow(int i, int pos) const;
     int  perm(int i) const;

@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Erik Svensson, 2003
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -125,10 +127,13 @@ namespace dolfin {
     real norm() const;
 
     /// Matrix-vector multiplication, component i of Ax
-    real mult(Vector& x, int i) const;
+    real mult(const Vector& x, int i) const;
 
     /// Matrix-vector multiplication
-    void mult(Vector& x, Vector& Ax) const;
+    void mult(const Vector& x, Vector& Ax) const;
+    
+    /// Matrix-vector multiplication with transpose
+    void multt(const Vector& x, Vector &Ax) const;
 
     /// Solve Ax = b (in-place LU for dense and Krylov for sparse)
     void solve(Vector& x, const Vector& b);
@@ -158,6 +163,12 @@ namespace dolfin {
     
     /// Set A(i,j) = d_{ij} on row i
     void ident(int i);
+
+    /// Add a new row
+    void addrow();
+    
+    /// Add a new row given by a vector
+    void addrow(const Vector& x);
 
     /// Specify number of non-zero elements on row i (only sparse)
     void initrow(int i, int rowsize);

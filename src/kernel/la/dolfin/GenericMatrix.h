@@ -37,11 +37,14 @@ namespace dolfin {
     
     virtual real norm() const = 0;
 
-    virtual real mult (Vector& x, int i) const = 0;
-    virtual void mult (Vector& x, Vector& Ax) const = 0;
+    virtual real mult  (const Vector& x, int i) const = 0;
+    virtual void mult  (const Vector& x, Vector& Ax) const = 0;
+    virtual void multt (const Vector& x, Vector& Ax) const = 0;
 
     virtual void resize() = 0;
     virtual void ident(int i) = 0;
+    virtual void addrow() = 0;
+    virtual void addrow(const Vector& x) = 0;
     virtual void initrow(int i, int rowsize) = 0;
     virtual bool endrow(int i, int pos) const = 0;
     virtual int  perm(int i) const = 0;

@@ -154,16 +154,37 @@ void Vector::operator=(const Matrix::Column& col)
     values[i] = col(i);
 }
 //-----------------------------------------------------------------------------
+void Vector::operator+=(const Vector& x)
+{
+  if ( n != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int i = 0; i < n; i++)
+    values[i] += x.values[i];
+}
+//-----------------------------------------------------------------------------
+void Vector::operator+=(const Matrix::Row& row)
+{
+  if ( n != row.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] += row(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::operator+=(const Matrix::Column& col)
+{
+  if ( n != col.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] += col(i);
+}
+//-----------------------------------------------------------------------------
 void Vector::operator+=(real a) 
 {
   for (int i = 0; i < n; i++)
     values[i] += a;
-}
-//-----------------------------------------------------------------------------
-void Vector::operator+=(const Vector& x)
-{
-  for (int i = 0; i < n; i++)
-    values[i] += x.values[i];
 }
 //-----------------------------------------------------------------------------
 void Vector::operator-=(const Vector& x)
@@ -172,18 +193,69 @@ void Vector::operator-=(const Vector& x)
     values[i] -= x.values[i];
 }
 //-----------------------------------------------------------------------------
+void Vector::operator-=(const Matrix::Row& row)
+{
+  if ( n != row.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] -= row(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::operator-=(const Matrix::Column& col)
+{
+  if ( n != col.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] -= col(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::operator-=(real a) 
+{
+  for (int i = 0; i < n; i++)
+    values[i] -= a;
+}
+//-----------------------------------------------------------------------------
 void Vector::operator*=(real a)
 {
-  for (int i=0;i<n;i++)
+  for (int i = 0; i < n; i++)
     values[i] *= a; 
 }
 //-----------------------------------------------------------------------------
 real Vector::operator*(const Vector& x)
 {
+  if ( n != x.n )
+    dolfin_error("Matrix dimensions don't match.");
+
   real sum = 0.0;
-  for (int i=0;i<n;i++)
+  for (int i = 0; i < n; i++)
     sum += values[i] * x.values[i];
   
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real Vector::operator*(const Matrix::Row& row)
+{
+  if ( n != row.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  real sum = 0.0;
+  for (int i = 0; i < n; i++)
+    sum += values[i] * row(i);
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real Vector::operator*(const Matrix::Column& col)
+{
+  if ( n != col.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  real sum = 0.0;
+  for (int i = 0; i < n; i++)
+    sum += values[i] * col(i);
+
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -225,8 +297,29 @@ real Vector::norm(int i) const
 //-----------------------------------------------------------------------------
 void Vector::add(real a, Vector& x)
 {
+  if ( n != x.n )
+    dolfin_error("Matrix dimensions don't match.");
+  
   for (int i = 0; i < n; i++)
     values[i] += a * x.values[i];  
+}
+//-----------------------------------------------------------------------------
+void Vector::add(real a, const Matrix::Row& row)
+{
+  if ( n != row.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] += a * row(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::add(real a, const Matrix::Column& col)
+{
+  if ( n != col.size() )
+    dolfin_error("Matrix dimensions don't match.");
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    values[i] += a * col(i);
 }
 //-----------------------------------------------------------------------------
 void Vector::show() const

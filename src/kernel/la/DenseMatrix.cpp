@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Erik Svensson, 2003
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DirectSolver.h>
@@ -259,7 +261,7 @@ real DenseMatrix::norm() const
   return max;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::mult(Vector& x, int i) const
+real DenseMatrix::mult(const Vector& x, int i) const
 {
   if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
@@ -271,7 +273,7 @@ real DenseMatrix::mult(Vector& x, int i) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::mult(Vector& x, Vector& Ax) const
+void DenseMatrix::mult(const Vector& x, Vector& Ax) const
 {
   if ( n != x.size() )
     dolfin_error("Matrix dimensions don't match.");
@@ -280,6 +282,19 @@ void DenseMatrix::mult(Vector& x, Vector& Ax) const
   
   for (int i = 0; i < m; i++)
     Ax(i) = mult(x, i);
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::multt(const Vector& x, Vector& Ax) const
+{
+  if ( m != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+  
+  Ax.init(n);
+  Ax = 0.0;
+                                                                                                                                                            
+  for (int i = 0; i < m; i++)
+    for (int j = 0; j < n; j++)
+      Ax(j) += values[i][j] * x(i);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::resize()
@@ -292,6 +307,57 @@ void DenseMatrix::ident(int i)
   for (int j = 0; j < n; j++)
     values[i][j] = 0.0;
   values[i][i] = 1.0;
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::addrow()
+{
+  real** new_values = new (real *)[m+1];
+  int* new_permutation = new int[m+1];
+                                                                                                                                                            
+  for (int i = 0; i < m; i++) {
+    new_values[i] = values[i];
+    new_permutation[i] = i;
+  }
+                                                                                                                                                            
+  new_values[m] = new real[n];
+  for (int i = 0; i < n; i++)
+    new_values[m][i] = 0.0;
+  
+  new_permutation[m] = m;
+                                                                                                                                                            
+  m = m + 1;
+                                                                                                                                                            
+  delete [] values;
+  delete [] permutation;
+  values = new_values;
+  permutation = new_permutation;
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::addrow(const Vector &x)
+{
+  if ( x.size() != n)
+    dolfin_error("Matrix dimensions don't match");
+                                                                                                                                                            
+  real** new_values = new (real *)[m+1];
+  int* new_permutation = new int[m+1];
+                                                                                                                                                            
+  for (int i = 0; i < m; i++) {
+    new_values[i] = values[i];
+    new_permutation[i] = i;
+  }
+                                                                                                                                                            
+  new_values[m] = new real[n];
+  for (int i = 0; i < n; i++)
+    new_values[m][i] = x(i);
+                                                                                                                                                            
+  new_permutation[m] = m;
+                                                                                                                                                            
+  m = m + 1;
+                                                                                                                                                            
+  delete [] values;
+  delete [] permutation;
+  values = new_values;
+  permutation = new_permutation;
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::initrow(int i, int rowsize)
