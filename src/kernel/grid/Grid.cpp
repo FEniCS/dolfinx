@@ -109,7 +109,7 @@ Cell* Grid::createCell(Cell::Type type)
 	 _type = TETRAHEDRONS;
 	 break;
   default:
-	 std::cout << "Warning: unknown cell type." << endl;
+	 std::cout << "Warning: unknown cell type." << std::endl;
   }
   
   return gd->createCell(type);

@@ -687,7 +687,7 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
 real FunctionSpace::ElementFunction::operator* (Integral::Measure &dm) const
 {
   // The integral is linear
-  real sum = dm * c;;
+  real sum = c * dm;
   for (int i = 0; i < n; i++)
 	 sum += a[i] * ( dm * v[i] );
   
