@@ -3,6 +3,7 @@
 //
 // Modified by Johan Jansson 2003, 2004.
 
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>

@@ -4,6 +4,7 @@
 #ifndef __ITERATION_H
 #define __ITERATION_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -25,11 +26,26 @@ namespace dolfin
     // Type of iteration
     enum State {nonstiff, stiff1, stiff2, stiff3, stiff};
 
-    // Discrete residuals
+    // Element residuals
     struct Residuals
     {
       Residuals() : r0(0), r1(0), r2(0) {}
+      void operator=(real r) { r1 = r2; r2 = r; }
+      void reset() { r0 = 0.0; r1 = 0.0; r2 = 0.0; }
+      friend LogStream& operator<<(LogStream& stream, const Residuals& r)
+      { stream << "residual: " << r.r1 << " --> " << r.r2; return stream; }
       real r0, r1, r2;
+    };
+
+    // Increments
+    struct Increments
+    {
+      Increments() : d1(0), d2(0), dtot(0) {}
+      void operator=(real d) { d1 = d2; d2 = d; dtot = std::max(dtot, d); }
+      void reset() { d1 = 0.0; d2 = 0.0; dtot = 0.0; }
+      friend LogStream& operator<<(LogStream& stream, const Increments& d)
+      { stream << "increment: " << d.d1 << " --> " << d.d2; return stream; }
+      real d1, d2, dtot;
     };
 
     /// Constructor
@@ -53,13 +69,13 @@ namespace dolfin
     virtual void start(Element& element) = 0;
 
     /// Update group list
-    virtual void update(ElementGroupList& list) = 0;
+    virtual void update(ElementGroupList& list, Increments& d) = 0;
 
     /// Update element group
-    virtual void update(ElementGroup& group) = 0;
+    virtual void update(ElementGroup& group, Increments& d) = 0;
 
     /// Update element
-    virtual void update(Element& element) = 0;
+    virtual void update(Element& element, Increments& d) = 0;
 
     /// Stabilize group list iteration
     virtual void stabilize(ElementGroupList& list, 
@@ -74,22 +90,22 @@ namespace dolfin
 			   const Residuals& r, unsigned int n) = 0;
     
     /// Check convergence for group list
-    virtual bool converged(ElementGroupList& list, Residuals& r, unsigned int n) = 0;
+    virtual bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n) = 0;
 
     /// Check convergence for element group
-    virtual bool converged(ElementGroup& group, Residuals& r, unsigned int n) = 0;
+    virtual bool converged(ElementGroup& group, Residuals& r,  const Increments& d, unsigned int n) = 0;
 
     /// Check convergence for element
-    virtual bool converged(Element& element, Residuals& r, unsigned int n) = 0;
+    virtual bool converged(Element& element, Residuals& r, const Increments& d, unsigned int n) = 0;
 
     /// Check divergence for group list
-    virtual bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+    virtual bool diverged(ElementGroupList& list, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
     
     /// Check divergence for element group
-    virtual bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+    virtual bool diverged(ElementGroup& group, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
 
     /// Check divergence for element
-    virtual bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+    virtual bool diverged(Element& element, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
 
     /// Write a status report
     virtual void report() const = 0;

@@ -27,9 +27,9 @@ namespace dolfin {
     real dx() const;
 
     void update(real u0);
-    void update(RHS& f);
-    void update(RHS& f, real alpha);
-    void update(RHS& f, real alpha, real* values);
+    real update(RHS& f);
+    real update(RHS& f, real alpha);
+    real update(RHS& f, real alpha, real* values);
 
     void set(real u0);
     void set(const real* const values);

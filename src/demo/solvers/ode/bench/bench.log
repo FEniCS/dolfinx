@@ -72,3 +72,41 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 Changes: Optimize evaluation of Lagrange polynomials and element
 evaluations (use node).
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (tor feb  5 08:49:54 CET 2004)
+Compiler flags: -I/usr/local/include -O3
+Elapsed time:   real: 9.039  user: 8.610  sys: 0.240  cpu: 97.91%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Use increments instead of residuals to check convergence at
+element and element group level.
+---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (tor feb  5 08:57:44 CET 2004)
+Compiler flags: -I/usr/local/include -O3
+Elapsed time:   real: 8.932  user: 8.480  sys: 0.230  cpu: 97.51%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Use increments also at time slab level.
+---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (tor feb  5 09:01:07 CET 2004)
+Compiler flags: -I/usr/local/include -O3
+Elapsed time:   real: 7.562  user: 7.160  sys: 0.180  cpu: 97.05%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Increase residual for element residual to better match l2
+norm (not dividing by the number of components).
+---------------------------------------------------------------------------

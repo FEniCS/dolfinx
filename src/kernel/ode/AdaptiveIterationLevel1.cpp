@@ -1,10 +1,11 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
-#include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
 #include <dolfin/ElementGroup.h>
 #include <dolfin/ElementGroupList.h>
@@ -51,24 +52,30 @@ void AdaptiveIterationLevel1::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::update(ElementGroupList& list)
+void AdaptiveIterationLevel1::update(ElementGroupList& list, Increments& d)
 {
-  // Simple update of group list
+  // Iterate on each element group and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
+    increment += sqr(fixpoint.iterate(*group));
+
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::update(ElementGroup& group)
+void AdaptiveIterationLevel1::update(ElementGroup& group, Increments& d)
 {
-  // Simple update of element group
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
+    increment += sqr(fixpoint.iterate(*element));
+
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::update(Element& element)
+void AdaptiveIterationLevel1::update(Element& element, Increments& d)
 {
   // Damped update of element
-  element.update(f, alpha);
+  d = fabs(element.update(f, alpha));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroupList& list,
@@ -96,66 +103,86 @@ void AdaptiveIterationLevel1::stabilize(Element& element,
     alpha = 1.0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(ElementGroupList& list, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(ElementGroupList& list, Residuals& r,
+					const Increments& d, unsigned int n)
 {
+  /*
   // Convergence handled locally when the slab contains only one element group
   if ( list.size() <= 1 )
     return n > 0;
   
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(list);
+  r = residual(list);
 
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
   return r.r2 < tol;
+  */
+
+  // First check increment
+  if ( d.d2 > tol || n == 0 )
+    return false;
+  
+  // If increment is small, then check residual
+  return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(ElementGroup& group, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(ElementGroup& group, Residuals& r,
+					const Increments& d, unsigned int n)
 {
+  /*
   // Convergence handled locally when the group contains only one element
   if ( group.size() == 1 )
     return n > 0;
-  
+
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(group);
+  r = residual(group);
 
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
-
+  
   return r.r2 < tol & n > 0;
+  */
+  
+  return d.d2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(Element& element, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(Element& element, Residuals& r,
+					const Increments& d, unsigned int n)
 {
+  /*
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(element);
+  r = residual(element);
 
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
   return r.r2 < tol & n > 0;
+  */
+
+  return d.d2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(ElementGroupList& list, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
+  
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
+    return false;
+  */
+  
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
     return false;
 
   // Notify change of strategy
@@ -171,15 +198,21 @@ bool AdaptiveIterationLevel1::diverged(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(ElementGroup& group, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
 
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
+    return false;
+  */
+
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
     return false;
   
   // Notify change of strategy
@@ -195,17 +228,23 @@ bool AdaptiveIterationLevel1::diverged(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(Element& element, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
 
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
     return false;
+  */
   
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
+    return false;
+
   // Don't know what to do
   dolfin_error("Local iterations did not converge.");
 

@@ -3,6 +3,7 @@
  - Optimize sparsity: use stl containers
  - Optimize choice of discrete residual for multi-adaptive solver
  - Decrease largest (default) time step to 0.1
+ - Add missing <cmath> in TimeStepper
  - Move real into dolfin namespace
 0.4.5
  - Rename function.h to enable compilation under Cygwin

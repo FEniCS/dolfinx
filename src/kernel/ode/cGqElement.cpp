@@ -86,30 +86,42 @@ void cGqElement::update(real u0)
   values[0] = u0;
 }
 //-----------------------------------------------------------------------------
-void cGqElement::update(RHS& f)
+real cGqElement::update(RHS& f)
 {
   // Evaluate right-hand side
   feval(f);
+
+  // Save old value
+  real u1 = values[q];
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i] = values[0] + integral(i);
+
+  // Return increment
+  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
-void cGqElement::update(RHS& f, real alpha)
+real cGqElement::update(RHS& f, real alpha)
 {
   // Evaluate right-hand side
   feval(f);
 
   // Compute weight for old value
   real w0 = 1.0 - alpha;
+
+  // Save old value
+  real u1 = values[q];
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i] = w0*values[i] + alpha*(values[0] + integral(i));
+
+  // Return increment
+  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
-void cGqElement::update(RHS& f, real alpha, real* values)
+real cGqElement::update(RHS& f, real alpha, real* values)
 {
   // Evaluate right-hand side
   feval(f);
@@ -117,9 +129,15 @@ void cGqElement::update(RHS& f, real alpha, real* values)
   // Compute weight for old value
   real w0 = 1.0 - alpha;
 
+  // Save old value
+  real u1 = values[q];
+
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i-1] = w0*this->values[i] + alpha*(this->values[0] + integral(i));
+
+  // Return increment
+  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
 void cGqElement::set(real u0)

@@ -165,12 +165,12 @@ bool Iteration::stabilize(const Residuals& r, unsigned int n)
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
 {
-  // Successive residuals
-  real r1 = r.r1;
-  real r2 = r.r2;
+  // Residuals for iteration
+  Residuals rr(r);
+  Increments d;
 
   // Successive convergence factors
-  real rho2 = r2 / r1;
+  real rho2 = rr.r2 / rr.r1;
   real rho1 = rho2;
 
   // Save current alpha and change alpha to 1 for divergence computation
@@ -184,15 +184,14 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update time slab
-    update(list);
+    update(list, d);
     
     // Compute residual
-    r1 = r2;
-    r2 = residual(list);
+    rr = residual(list);
   
     // Compute divergence
     rho1 = rho2;
-    rho2 = r2 / (DOLFIN_EPS + r1);
+    rho2 = rr.r2 / (DOLFIN_EPS + rr.r1);
 
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )
@@ -214,12 +213,12 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
 {
-  // Successive residuals
-  real r1 = r.r1;
-  real r2 = r.r2;
+  // Residuals for iteration
+  Residuals rr(r);
+  Increments d;
   
   // Successive convergence factors
-  real rho2 = r2 / r1;
+  real rho2 = rr.r2 / rr.r1;
   real rho1 = rho2;
   
   // Save current alpha and change alpha to 1 for divergence computation
@@ -233,15 +232,14 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update element group
-    update(group);
+    update(group, d);
     
     // Compute residual
-    r1 = r2;
-    r2 = residual(group);
+    rr = residual(group);
   
     // Compute divergence
     rho1 = rho2;
-    rho2 = r2 / (DOLFIN_EPS + r1);
+    rho2 = rr.r2 / (DOLFIN_EPS + rr.r1);
 
     // Check if the divergence factor has converged
     if ( abs(rho2-rho1) < 0.1 * rho1 )

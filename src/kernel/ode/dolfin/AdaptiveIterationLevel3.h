@@ -28,31 +28,31 @@ namespace dolfin
     void start(ElementGroup& group);
     void start(Element& element);
 
-    void update(ElementGroupList& list);
-    void update(ElementGroup& group);
-    void update(Element& element);
+    void update(ElementGroupList& list, Increments& d);
+    void update(ElementGroup& group, Increments& d);
+    void update(Element& element, Increments& d);
     
     void stabilize(ElementGroupList& list, const Residuals& r, unsigned int n);
     void stabilize(ElementGroup& group, const Residuals& r, unsigned int n);
     void stabilize(Element& element, const Residuals& r, unsigned int n);
     
-    bool converged(ElementGroupList& list, Residuals& r, unsigned int n);
-    bool converged(ElementGroup& group, Residuals& r, unsigned int n);
-    bool converged(Element& element, Residuals& r, unsigned int n);
+    bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n);
+    bool converged(ElementGroup& group, Residuals& r, const Increments& d, unsigned int n);
+    bool converged(Element& element, Residuals& r, const Increments& d, unsigned int n);
     
-    bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate);
-    bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate);
-    bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroupList& list, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
+    bool diverged(ElementGroup& group, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
+    bool diverged(Element& element, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
     
     void report() const;
 
   private:
 
     // Simple Gauss-Jacobi update of element group
-    void updateGaussJacobi(ElementGroupList& list);
+    void updateGaussJacobi(ElementGroupList& list, Increments& d);
 
     // Update group with propagation of initial values (Gauss-Seidel in time)
-    void updateGaussSeidel(ElementGroupList& list);
+    void updateGaussSeidel(ElementGroupList& list, Increments& d);
 
   };
 

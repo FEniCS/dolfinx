@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
@@ -8,7 +10,6 @@
 #include <dolfin/ElementGroup.h>
 #include <dolfin/ElementGroupList.h>
 #include <dolfin/ElementGroupIterator.h>
-#include <dolfin/FixedPointIteration.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/NonStiffIteration.h>
 
@@ -50,24 +51,30 @@ void NonStiffIteration::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(ElementGroupList& list)
+void NonStiffIteration::update(ElementGroupList& list, Increments& d)
 {
-  // Simple update of group list
+  // Iterate on each element group and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
+    increment += sqr(fixpoint.iterate(*group));
+
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(ElementGroup& group)
+void NonStiffIteration::update(ElementGroup& group, Increments& d)
 {
-  // Simple update of element group
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
   for (ElementIterator element(group); !element.end(); ++element)
-    fixpoint.iterate(*element);
+    increment += sqr(fixpoint.iterate(*element));
+
+  d = sqrt(increment);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(Element& element)
+void NonStiffIteration::update(Element& element, Increments& d)
 {
   // Simple update of element
-  element.update(f);
+  d = fabs(element.update(f));
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::stabilize(ElementGroupList& list,
@@ -88,66 +95,86 @@ void NonStiffIteration::stabilize(Element& element,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(ElementGroupList& list, 
-				  Residuals& r, unsigned int n)
+bool NonStiffIteration::converged(ElementGroupList& list, Residuals& r,
+				  const Increments& d, unsigned int n)
 {
+  /*
   // Convergence handled locally when the slab contains only one element group
   if ( list.size() <= 1 )
     return n > 0;
   
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(list);
+  r = residual(list);
 
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
   return r.r2 < tol;
+  */
+
+  // First check increment
+  if ( d.d2 > tol || n == 0 )
+    return false;
+
+  // If increment is small, then check residual
+  return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(ElementGroup& group, 
-				  Residuals& r, unsigned int n)
+bool NonStiffIteration::converged(ElementGroup& group, Residuals& r, 
+				  const Increments& d, unsigned int n)
 {
+  /*
   // Convergence handled locally when the group contains only one element
   if ( group.size() == 1 )
-    return n > 0;
+  return n > 0;
   
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(group);
+  r = residual(group);
   
   // Save initial residual
   if ( n == 0 )
-    r.r0 = r.r2;
-  
+  r.r0 = r.r2;
+
   return r.r2 < tol & n > 0;
+  */
+  
+  return d.d2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(Element& element, 
-				  Residuals& r, unsigned int n)
+bool NonStiffIteration::converged(Element& element, Residuals& r,
+				  const Increments& d, unsigned int n)
 {
+  /*
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(element);
+  r = residual(element);
 
   // Save initial residual
   if ( n == 0 )
     r.r0 = r.r2;
   
   return r.r2 < tol & n > 0;
+  */
+
+  return d.d2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::diverged(ElementGroupList& list, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+				 const Residuals& r, const Increments& d,
+				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
 
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
+    return false;
+  */
+
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
     return false;
 
   // Notify change of strategy
@@ -163,17 +190,23 @@ bool NonStiffIteration::diverged(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::diverged(ElementGroup& group, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+				 const Residuals& r, const Increments& d,
+				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
 
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
     return false;
-  
+  */
+
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
+    return false;
+
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, need to stabilize element group iterations.");
   
@@ -187,15 +220,21 @@ bool NonStiffIteration::diverged(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::diverged(Element& element, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+				 const Residuals& r, const Increments& d,
+				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
+  
+  /*
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
+    return false;
+  */
+
+  // Check if the solution converges
+  if ( d.d2 < maxconv * d.d1 )
     return false;
 
   // Notify change of strategy

@@ -56,14 +56,14 @@ void AdaptiveIterationLevel2::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::update(ElementGroupList& list)
+void AdaptiveIterationLevel2::update(ElementGroupList& list, Increments& d)
 {
   // Simple update of time slab
   for (ElementGroupIterator group(list); !group.end(); ++group)
     fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::update(ElementGroup& group)
+void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
 {
   // Reset values
   x1.offset = 0;
@@ -76,7 +76,7 @@ void AdaptiveIterationLevel2::update(ElementGroup& group)
   copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::update(Element& element)
+void AdaptiveIterationLevel2::update(Element& element, Increments& d)
 {
   // Compute new values for element
   element.update(f, alpha, x1.values + x1.offset);
@@ -120,16 +120,15 @@ void AdaptiveIterationLevel2::stabilize(Element& element,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::converged(ElementGroupList& list, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel2::converged(ElementGroupList& list, Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Convergence handled locally when the slab contains only one element group
   if ( list.size() <= 1 )
     return n > 0;
 
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(list);
+  r = residual(list);
 
   // Save initial residual
   if ( n == 0 )
@@ -138,12 +137,11 @@ bool AdaptiveIterationLevel2::converged(ElementGroupList& list,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::converged(ElementGroup& group, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel2::converged(ElementGroup& group, Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Compute residual
-  r.r1 = r.r2;
-  r.r2 = residual(group);
+  r = residual(group);
   
   // Save initial residual
   if ( n == 0 )
@@ -152,16 +150,16 @@ bool AdaptiveIterationLevel2::converged(ElementGroup& group,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::converged(Element& element, 
-					Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel2::converged(Element& element, Residuals& r,
+					const Increments& d, unsigned int n)
 {
   // Iterate one time on each element
   return n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::diverged(ElementGroupList& list, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
 
@@ -187,8 +185,8 @@ bool AdaptiveIterationLevel2::diverged(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::diverged(ElementGroup& group, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   // Don't check divergence for element group, since we want to handle
   // the stabilization ourselves (and not change state).
@@ -196,8 +194,8 @@ bool AdaptiveIterationLevel2::diverged(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::diverged(Element& element, 
-				       Residuals& r, unsigned int n,
-				       Iteration::State& newstate)
+				       const Residuals& r, const Increments& d,
+				       unsigned int n, State& newstate)
 {
   // Don't check divergence for elements
   return false;

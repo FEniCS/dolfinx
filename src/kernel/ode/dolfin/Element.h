@@ -60,13 +60,13 @@ namespace dolfin {
     void update(unsigned int node, real value);
 
     /// Update element (iteration)
-    virtual void update(RHS& f) = 0;
+    virtual real update(RHS& f) = 0;
 
     /// Update element (iteration), damped version
-    virtual void update(RHS& f, real alpha) = 0;
+    virtual real update(RHS& f, real alpha) = 0;
 
     /// Update element (iteration), damped version, non-destructive
-    virtual void update(RHS& f, real alpha, real* values) = 0;
+    virtual real update(RHS& f, real alpha, real* values) = 0;
 
     /// Set all element values to the given value
     virtual void set(real u0) = 0;
