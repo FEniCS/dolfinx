@@ -26,11 +26,17 @@ AC_ARG_ENABLE(curses,
                              [Compile without curses]),
               enable_curses=no)
 
-# Option --with-petsc
+# Option --with-petsc-dir
 AC_ARG_WITH(petsc,
-            AC_HELP_STRING([--with-petsc=<path>],
+            AC_HELP_STRING([--with-petsc-dir=<path>],
                            [Specify path to PETSc]),
-            [PETSC_DIR=$with_petsc],)
+            [PETSC_DIR=$with_petsc_dir],)
+
+# Option --with-petsc-bopt
+AC_ARG_WITH(petsc,
+            AC_HELP_STRING([--with-petsc-dir=<path>],
+                           [Specify path to PETSc (O_c++ or g_c++)]),
+            [BOPT=$with_petsc_bopt],)
 
 # Option --with-petsc-version
 AC_ARG_WITH(petsc-version,
@@ -56,7 +62,9 @@ enable_debug="yes"
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98'
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98 '
+    # We should also add -pedantic, but then we get an error when we try
+    # to include mpio.h (long long not supported by ISO C++)
 fi
 
 # Handle option --enable-optimization
@@ -79,15 +87,20 @@ else
     CURSES_LIBS=''
 fi
 
-# Handle option --with-petsc=<path>. If user supplies this flag,
-# then use this directory for PETSc. If flag is not supported, then
-# the environment variable PETSC_DIR will be used. Otherwise, we
-# just assume that PETSC_DIR is /usr/lib/petsc
+# Handle option --with-petsc-dir=<path>
 if test x$PETSC_DIR = x; then
     echo "assuming path to PETSc is /usr/lib/petsc"
     PETSC_DIR="/usr/lib/petsc/"
 else
     echo "using PETSC_DIR=$PETSC_DIR"
+fi
+
+# Handle option --with-petsc-bopt=<bopt>
+if test x$BOPT = x; then
+    echo "assuming PETSc BOPT is g_c++"
+    PETSC_DIR="g_c++"
+else
+    echo "using BOPT=$BOPT"
 fi
 
 # Handle option --with-petsc-version=<version>. If not supplied,
@@ -109,8 +122,9 @@ if test $PETSC_VERSION = "2.2.0"; then
     AC_CHECK_PROG(petsc_found, petscarch, yes, no)
     if test $petsc_found = yes; then
         PETSC_ARCH=`petscarch`
-        BOPT='O_c++'
-        PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -DPETSC_2_2_0"
+        #BOPT='O_c++'
+        BOPT='g_c++'
+        PETSC_CFLAGS="-I$PETSC_DIR/include -DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_g -DPETSC_USE_EXTERN_CXX -DPETSC_2_2_0"
         AC_SUBST(PETSC_ARCH)
         AC_SUBST(PETSC_DIR)
         AC_SUBST(BOPT)
@@ -126,19 +140,16 @@ if test $PETSC_VERSION = "2.2.0"; then
 else
     AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
     if test $petsc_found = yes; then
-        PETSC_ARCH=`$PETSC_DIR/bin/configarch`
-        BOPT='O_c++'
-        PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_VERSION=$PETSC_VERSION -DPETSC_2_2_1"
-        AC_SUBST(PETSC_ARCH)
-        AC_SUBST(PETSC_DIR)
-        AC_SUBST(BOPT)
-        AC_SUBST(PETSC_CFLAGS)
-        AC_SUBST(PETSC_VERSION)
+        # Extract PETSc variables from PETSC_DIR/bmake/common/variables
+        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs`
+        PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs`
+        # Extra flag to choose correct version
+        PETSC_CFLAGS="$PETSC_CFLAGS -DPETSC_2_2_1"
     else
         echo "*** Unable to find PETSc on your system."
         echo "*** Use --with-petsc=<path> to specify the correct path for PETSc,"
         echo "*** or set the environment variable PETSC_DIR to the correct path."
-        echo "*** Debian users need to install the package petsc-dev."
+        echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
         exit 1
     fi
 fi
@@ -209,7 +220,7 @@ DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_MODULES_NEW $DOLFIN_KERNEL $DOLFIN_KE
 for f in $DIRS; do
     DOLFIN_LIBS="$DOLFIN_LIBS-ldolfin-$f "
 done
-DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $XML2_LIBS"
+DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
 # Export variables to makefiles
