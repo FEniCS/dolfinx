@@ -68,12 +68,14 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
 include_HEADERS = dolfin/Galerkin.hh
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = Equation.hh                           EquationSystem.hh                           GlobalField.C                           GlobalField.hh                           FiniteElement.hh                           FunctionSpace.hh                           LocalField.hh                           ShapeFunction.hh                           TetLinFunction.hh                           TetLinSpace.hh                           TriLinFunction.hh                           TriLinFunction.hh
+libdolfin_fem_a_SOURCES = Equation.hh                           EquationSystem.hh                           GlobalField.cpp                           GlobalField.hh                           FiniteElement.hh                           FunctionSpace.hh                           LocalField.hh                           ShapeFunction.hh                           TetLinFunction.hh                           TetLinSpace.hh                           TriLinFunction.hh                           TriLinFunction.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -110,7 +112,7 @@ OBJECTS = $(libdolfin_fem_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/fem/Makefile
 
@@ -171,7 +173,7 @@ libdolfin-fem.a: $(libdolfin_fem_a_OBJECTS) $(libdolfin_fem_a_DEPENDENCIES)
 	-rm -f libdolfin-fem.a
 	$(AR) cru libdolfin-fem.a $(libdolfin_fem_a_OBJECTS) $(libdolfin_fem_a_LIBADD)
 	$(RANLIB) libdolfin-fem.a
-.C.o:
+.cpp.o:
 	$(CXXCOMPILE) -c $<
 
 install-includeHEADERS: $(include_HEADERS)
@@ -341,7 +343,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 
-%.o: %.C
+%.o: %.cpp
 	@echo '$(CXXCOMPILE) -c $<'; \
 	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-cp .deps/$(*F).pp .deps/$(*F).P; \
@@ -350,7 +352,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).pp
 
-%.lo: %.C
+%.lo: %.cpp
 	@echo '$(LTCXXCOMPILE) -c $<'; \
 	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \

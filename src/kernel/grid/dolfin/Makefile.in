@@ -68,6 +68,8 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 EXTRA_DIST = dolfin_grid.h Grid.hh Node.hh Point.hh Cell.hh Triangle.hh Tetrahedron.hh Edge.hh
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

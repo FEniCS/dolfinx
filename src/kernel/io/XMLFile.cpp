@@ -1,36 +1,36 @@
-#include <dolfin/File.h>
-#include "GenericFile.h"
 #include "XMLFile.h"
 
-// FIXME
-#include <string>
-#include <iostream>
+#include <libxml2/libxml/parser.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-File::File(const std::string& filename)
+XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
 {
-  if ( filename.rfind(".xml") != filename.npos )
-	 file = new XMLFile(filename);
-  else{
-	 cout << "Unknown type for file " << filename << endl;
-	 exit(1);
-  }
+
+
+  
 }
 //-----------------------------------------------------------------------------
-File::~File()
+XMLFile::~XMLFile()
 {
-  delete file;
+
+  
+
+  
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Vector& vector)
+void XMLFile::operator>> (Vector& vector)
 {
-  *file >> vector;
+  
+  
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(const Vector &vector)
+void XMLFile::operator<< (const Vector& vector)
 {
-  *file << vector;
+
+
+
+
 }
 //-----------------------------------------------------------------------------

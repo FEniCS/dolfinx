@@ -1,5 +1,6 @@
+ - Add dependence on libxml2
  - Change from .C to .cpp to make Jim happy. (And everyone else
-   using stupid broken case-insensitive OS...)
+   with stupid broken case-insensitive OS...)
  - Change input/output functionality to streams
  - Change to new data structure for Grid
  - Change to object-oriented API at top level

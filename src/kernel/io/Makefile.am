@@ -1,6 +1,6 @@
 SUBDIRS           = dolfin
 include_HEADERS   = dolfin/Display.hh dolfin/Terminal.hh
-INCLUDES          = @MODULE_INCLUDES@
+INCLUDES          = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES     = libdolfin-io.a
 libdolfin_io_a_SOURCES = Curses.hh \
                          DataInfo.cpp \
@@ -21,4 +21,6 @@ libdolfin_io_a_SOURCES = Curses.hh \
                          Terminal.cpp \
                          Value.cpp \
                          Value.hh \
+                         XMLFile.cpp \
+                         XMLFile.h \
                          matlab.h

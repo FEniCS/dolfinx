@@ -68,6 +68,8 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 SUBDIRS = pre kernel modules config demo utils
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

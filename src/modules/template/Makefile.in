@@ -68,11 +68,13 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-template.a
 include_HEADERS = 
-libdolfin_template_a_SOURCES = EquationTemplate.hh                                ProblemTemplate.C                                SettingsTemplate.hh
+libdolfin_template_a_SOURCES = EquationTemplate.hh                                ProblemTemplate.cpp                                SettingsTemplate.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -109,7 +111,7 @@ OBJECTS = $(libdolfin_template_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/modules/template/Makefile
 
@@ -170,7 +172,7 @@ libdolfin-template.a: $(libdolfin_template_a_OBJECTS) $(libdolfin_template_a_DEP
 	-rm -f libdolfin-template.a
 	$(AR) cru libdolfin-template.a $(libdolfin_template_a_OBJECTS) $(libdolfin_template_a_LIBADD)
 	$(RANLIB) libdolfin-template.a
-.C.o:
+.cpp.o:
 	$(CXXCOMPILE) -c $<
 
 install-includeHEADERS: $(include_HEADERS)
@@ -270,7 +272,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 
-%.o: %.C
+%.o: %.cpp
 	@echo '$(CXXCOMPILE) -c $<'; \
 	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-cp .deps/$(*F).pp .deps/$(*F).P; \
@@ -279,7 +281,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).pp
 
-%.lo: %.C
+%.lo: %.cpp
 	@echo '$(LTCXXCOMPILE) -c $<'; \
 	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \

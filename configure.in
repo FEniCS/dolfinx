@@ -27,14 +27,20 @@ AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
-dnl Checks for libraries.
-dnl Replace `main' with a function in -lgrid:
-dnl AC_CHECK_LIB(grid, main)
-
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
+
+dnl Check for libxml2
+AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
+if test $libxml2_found = yes; then
+	XML2_INCLUDES=`xml2-config --cflags`
+ 	AC_SUBST(XML2_INCLUDES)
+else
+ 	echo "Couldn't find libxml2 on your system."
+	exit
+fi
 
 dnl Check for PETSc
 dnl echo "checking for PETSc..."

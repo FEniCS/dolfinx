@@ -68,6 +68,8 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 EXTRA_DIST = dolfin_la.h Vector.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

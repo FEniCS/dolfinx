@@ -68,12 +68,14 @@ MODULE_INCLUDES = @MODULE_INCLUDES@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
+XML2_INCLUDES = @XML2_INCLUDES@
+libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
 include_HEADERS = dolfin/Display.hh dolfin/Terminal.hh
-INCLUDES = @MODULE_INCLUDES@
+INCLUDES = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES = libdolfin-io.a
-libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.cpp                          DataInfo.hh                          Display.cpp                          DolfinFile.cpp                          DolfinFile.h                          File.cpp                          File.h                          FileType.cpp                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.cpp                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.cpp                          Value.cpp                          Value.hh                          matlab.h
+libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.cpp                          DataInfo.hh                          Display.cpp                          DolfinFile.cpp                          DolfinFile.h                          File.cpp                          File.h                          FileType.cpp                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.cpp                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.cpp                          Value.cpp                          Value.hh                          XMLFile.cpp                          XMLFile.h                          matlab.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -86,7 +88,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_io_a_LIBADD = 
 libdolfin_io_a_OBJECTS =  DataInfo.o Display.o DolfinFile.o File.o \
-FileType.o GenericFile.o Input.o Terminal.o Value.o
+FileType.o GenericFile.o Input.o Terminal.o Value.o XMLFile.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -107,7 +109,7 @@ TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/DataInfo.P .deps/Display.P .deps/DolfinFile.P \
 .deps/File.P .deps/FileType.P .deps/GenericFile.P .deps/Input.P \
-.deps/Terminal.P .deps/Value.P
+.deps/Terminal.P .deps/Value.P .deps/XMLFile.P
 SOURCES = $(libdolfin_io_a_SOURCES)
 OBJECTS = $(libdolfin_io_a_OBJECTS)
 
