@@ -23,12 +23,13 @@ namespace dolfin {
     
   private:
     
-    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_NODES, INSIDE_CELLS, DONE };
+    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_NODES, INSIDE_NODE, INSIDE_CELLS, DONE };
     
     void readMesh        (const xmlChar *name, const xmlChar **attrs);
     void readNodes       (const xmlChar *name, const xmlChar **attrs);
     void readCells       (const xmlChar *name, const xmlChar **attrs);
     void readNode        (const xmlChar *name, const xmlChar **attrs);
+    void readBoundaryID  (const xmlChar *name, const xmlChar **attrs);
     void readTriangle    (const xmlChar *name, const xmlChar **attrs);
     void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
     
@@ -37,6 +38,7 @@ namespace dolfin {
     Mesh& mesh;
     int nodes;
     int cells;
+    Node *node;
     
     bool _create_edges;
     

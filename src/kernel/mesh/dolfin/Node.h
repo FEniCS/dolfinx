@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
@@ -128,6 +129,9 @@ namespace dolfin{
     friend class CellIterator::NodeCellIterator;	 
     friend class EdgeIterator::NodeEdgeIterator;	 
     
+    // Boundary information
+    NewArray<int> boundaryids;
+
   private:
 
     // Specify global node number

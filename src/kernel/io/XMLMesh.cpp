@@ -48,7 +48,17 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
   case INSIDE_NODES:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
+    {
       readNode(name,attrs);
+      state = INSIDE_NODE;
+    }
+
+    break;
+
+  case INSIDE_NODE:
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "boundaryid") == 0 )
+      readBoundaryID(name,attrs);
     
     break;
     
@@ -86,6 +96,13 @@ void XMLMesh::endElement(const xmlChar *name)
     
     if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
       state = INSIDE_MESH;
+    
+    break;
+
+  case INSIDE_NODE:
+    
+    if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
+      state = INSIDE_NODES;
     
     break;
     
@@ -156,7 +173,31 @@ void XMLMesh::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", z);
 
   // Set values
-  mesh.createNode(x, y, z);
+  Node &newnode = mesh.createNode(x, y, z);
+  node = &newnode;
+
+  // FIXME: id of node is completely ignored. We assume that the
+  // nodes are in correct order.
+}
+//-----------------------------------------------------------------------------
+void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
+{
+  // Set default values
+  int id = 0;
+  
+  // Parse values
+  parseIntegerRequired(name, attrs, "name", id);
+
+  // Add Boundary ID to node
+  node->boundaryids.push_back(id);
+
+  /*
+  cout << "boundaryids for node: " << node->id() << endl;
+  for(int i = 0; i < node->boundaryids.size(); i++)
+  {
+    cout << node->boundaryids[i] << endl;
+  }
+  */
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.
