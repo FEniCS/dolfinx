@@ -1,6 +1,7 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewVector.h>
 #include <dolfin/NewTimeSlab.h>
@@ -17,12 +18,17 @@ NewJacobianMatrix::NewJacobianMatrix(ODE& ode, NewTimeSlab& timeslab,
   // Allocate Jacobian row indices
   Jindices = new uint[ode.size()];
 
-  // Compute total number of dependencies
+  // Compute total and maximum number of dependencies
   uint sum = 0;
+  uint maxsize = 0;
   for (uint i = 0; i < ode.size(); i++)
   {
     Jindices[i] = sum;
-    sum += ode.dependencies[i].size();
+
+    const uint size = ode.dependencies[i].size();
+    sum += size;
+    if ( size > maxsize )
+      maxsize = size;
   }
 
   // Allocate Jacobian values
@@ -30,13 +36,17 @@ NewJacobianMatrix::NewJacobianMatrix(ODE& ode, NewTimeSlab& timeslab,
   for (uint pos = 0; pos < sum; pos++)
     Jvalues[pos] = 0.0;
 
+  // Allocate lookup table for dependencies to components with small time steps
+  Jlookup = new real[max(1, maxsize - 1)];
   
   dolfin_info("Generated Jacobian data structure for %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
 NewJacobianMatrix::~NewJacobianMatrix()
 {
-  // Do nothing
+  delete [] Jindices;
+  delete [] Jvalues;
+  delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
 void NewJacobianMatrix::mult(Vec x, Vec y) const
@@ -85,24 +95,37 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
 	yy[j0 + n] -= xp;
     }
 
+    // Reset Jpos
+    uint Jpos = 0;
+
     // Iterate over dependencies for the current component
     const NewArray<uint>& deps = ode.dependencies[i0];
     for (uint pos = 0; pos < deps.size(); pos++)
     {
+      // Get derivative
+      const real dfdu = Jvalues[Jindices[i0] + pos];
+
       // Skip elements which have not been covered
       const uint i1 = deps[pos];
       const int e1 = ts.elast[i1];      
       if ( e1 == -1 )
+      {
+	Jlookup[Jpos++] = dfdu;
+	dolfin_info("Skipping dependency to element %d for component %d", e1, i1);
 	continue;
+      }
 
       // Skip elements with smaller time steps
       const uint s1 = ts.es[e1];
       const real b1 = ts.sb[s1];
       if ( b1 < (a0 + DOLFIN_EPS) )
+      {
+	Jlookup[Jpos++] = dfdu;
+	dolfin_info("Skipping dependency to element %d for component %d", e1, i1);
        	continue;
+      }
       
-      // Get derivative and first dof for other element
-      const real dfdu = Jvalues[Jindices[i0] + pos];
+      // Get first dof for other element
       const uint j1 = e1 * method.nsize();
       
       // Use fast evaluation for elements in the same sub slab
@@ -201,18 +224,66 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
 	    yy[j0 + n] -= tmp0 * sum;
 	  }
 	}
-      }
-      
-
-      // Get first dependency to components with smaller time steps for element
-      //uint d = ts.ed[e0];
-      
-      // Compute number of such dependencies for each nodal point
-      //const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
-      //const uint ndep = (end - d) / method.nsize();
-      //dolfin_assert(ndep * method.nsize() == (end - d));
-      
+      }      
     }
+
+    // Iterate over dependencies to components with smaller time steps
+    const uint start = ts.ed[e0];
+    const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
+    const uint ndep = (end - start) / method.nsize();
+    for (uint d = start; d < end; d++)
+    {
+      // Get element data
+      const uint e1 = ts.de[d];
+      const uint i1 = ts.ei[e1];
+      //const uint j1 = e1 * method.nsize();
+      
+      // We don't know how to index Jvalues here and want to avoid
+      // searching, but we were clever enough to pick out the value
+      // before when we had the chance... :-)
+      const real dfdu = Jlookup[d % ndep];
+       
+      //dolfin_info("Adding dependency to element %d for component %d", e1, i1);
+      dolfin_info("Looks like df_%d/du_%d = %f", i0, i1, dfdu);
+
+    }
+
+    /*
+    if ( method.type() == NewMethod::cG )
+    {
+      // Iterate over dofs of element
+      const real tmp0 = k0 * dfdu;
+      for (uint n = 0; n < method.nsize(); n++)
+      {
+	// Iterate over quadrature points
+	real sum = 0.0;
+	for (uint m = 0; m < method.qsize(); m++)
+	{
+	  const real tau = (a0 + k0*method.qpoint(m) - a1) / k1;
+	  const real tmp1 = method.nweight(n, m);
+	  dolfin_assert(tau >= -DOLFIN_EPS);
+	  dolfin_assert(tau <= 1.0 + DOLFIN_EPS);
+	  
+	  // Add dependency to dof of initial value if any
+	  const int ep = ts.ee[e1];
+	  if ( ep != -1 )
+	  {
+	    const real x0 = xx[ep * method.nsize() + method.nsize() - 1];
+	    sum += tmp1 * method.eval(0, tau) * x0;
+	  }
+	  
+	  // Iterate over dofs of other element and add dependencies
+	  for (uint l = 0; l < method.nsize(); l++)
+	    sum += tmp1 * method.eval(l + 1, tau) * xx[j1 + l];
+	}
+	
+	// Add dependencies
+	yy[j0 + n] -= tmp0 * sum;
+      }
+    }
+
+    */
+    
   }
 
   // Restore PETSc data arrays

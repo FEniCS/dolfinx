@@ -160,7 +160,7 @@ void NewtonSolver::debug()
     for (uint i = 0; i < n; i++)
     {
       real dFdx = (F2(i) - F1(i)) / dx;
-      if ( fabs(dx) > DOLFIN_EPS )
+      if ( fabs(dFdx) > DOLFIN_EPS )
 	B(i, j) = dFdx;
     }
   }

@@ -115,11 +115,11 @@ public:
   {
     switch ( i ) {
     case 0:
-      return u[1];
+      return u[1] + 0.1*u[0] + 0.3*u[2];
     case 1:
-      return -u[0];
+      return -u[0] - 0.2*u[1] + 0.4*u[2];
     default:
-      return cos(t);
+      return cos(t) + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
     }
   }
 
@@ -137,16 +137,12 @@ public:
 
   real dfdu(real u[], real t, unsigned int i, unsigned int j)
   {
-    return 1.0;
-
     real a[3][3] = { {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0} };
     return a[i][j];
   }
 
   real timestep(unsigned int i)
   {
-    return 0.1;
-
     switch ( i ) {
     case 0:
       return 0.16;
@@ -166,8 +162,8 @@ int main()
   dolfin_set("use new ode solver", true);
   dolfin_set("fixed time step", true);
   dolfin_set("maximum time step", 1.0);
-  dolfin_set("method", "dg");
-  dolfin_set("order", 0);
+  dolfin_set("method", "cg");
+  dolfin_set("order", 2);
 
   //Single single;
   //single.solve();

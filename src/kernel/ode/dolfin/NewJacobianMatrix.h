@@ -48,6 +48,9 @@ namespace dolfin
 
     // Indices for first element of each row for the Jacobian df/du
     uint* Jindices;
+
+    // Lookup table for dependencies to components with smaller time steps
+    real* Jlookup;
     
   };
 
