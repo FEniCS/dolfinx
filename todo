@@ -11,7 +11,6 @@ General
 - Use libtool: anyone?
 - Replace stdio with iostream and fstream
 - Replace Array and List with NewArray and NewList
-- Replace int by unsigned int where necessary
 - Update manual: anyone?
 - Fix setprecision() cout
 - Use NewArray<...> instead of ::Vector in assembly classes
