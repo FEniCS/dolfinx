@@ -35,10 +35,10 @@ Iteration::State AdaptiveIterationLevel3::state() const
   return stiff3;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::start(TimeSlab& timeslab)
+void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
-  // Compute total number of values in time slab
-  datasize = dataSize(timeslab);
+  // Compute total number of values in group list
+  datasize = dataSize(list);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
@@ -51,18 +51,18 @@ void AdaptiveIterationLevel3::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::update(TimeSlab& timeslab)
+void AdaptiveIterationLevel3::update(ElementGroupList& list)
 {
   // Choose update method
   if ( method == gauss_jacobi )
-    updateGaussJacobi(timeslab);
+    updateGaussJacobi(list);
   else
-    updateGaussSeidel(timeslab);
+    updateGaussSeidel(list);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroup& group)
 {
-  // Simple update of element list
+  // Simple update of element group
   for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
 }
@@ -79,7 +79,7 @@ void AdaptiveIterationLevel3::update(Element& element)
     element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::stabilize(TimeSlab& timeslab,
+void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 					const Residuals& r, unsigned int n)
 {
   // Make at least one iteration before stabilizing
@@ -89,7 +89,7 @@ void AdaptiveIterationLevel3::stabilize(TimeSlab& timeslab,
   // Compute divergence rate if necessary
   real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
-    rho = computeDivergence(timeslab, r);
+    rho = computeDivergence(list, r);
   
   // Adaptive stabilization
   Iteration::stabilize(r, rho);
@@ -107,12 +107,12 @@ void AdaptiveIterationLevel3::stabilize(Element& element,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::converged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel3::converged(ElementGroupList& list, 
 					Residuals& r, unsigned int n)
 {
   // Compute residual
   r.r1 = r.r2;
-  r.r2 = residual(timeslab);
+  r.r2 = residual(list);
 
   // Save initial residual
   if ( n == 0 )
@@ -135,7 +135,7 @@ bool AdaptiveIterationLevel3::converged(Element& element,
   return n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::diverged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel3::diverged(ElementGroupList& list, 
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
@@ -154,7 +154,7 @@ bool AdaptiveIterationLevel3::diverged(TimeSlab& timeslab,
   
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
-    timeslab.reset(fixpoint);
+    reset(list);
 
   // Change state
   newstate = stiff;
@@ -184,7 +184,7 @@ void AdaptiveIterationLevel3::report() const
        << "fixed point iteration (on time slab level)." << endl;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::updateGaussJacobi(TimeSlab& timeslab)
+void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list)
 {  
 
 
@@ -212,7 +212,7 @@ void AdaptiveIterationLevel3::updateGaussJacobi(TimeSlab& timeslab)
 
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::updateGaussSeidel(TimeSlab& timeslab)
+void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list)
 {
   // Simple update of element list
   /*
@@ -228,7 +228,7 @@ void AdaptiveIterationLevel3::updateGaussSeidel(TimeSlab& timeslab)
   */
 }
 //-----------------------------------------------------------------------------
-real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
+real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,
 						const Residuals& r)
 {
   // Successive residuals
@@ -245,16 +245,16 @@ real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
 
   // Save solution values before iteration
   initData(x0);
-  copyData(timeslab, x0);
+  copyData(list, x0);
 
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update time slab
-    update(timeslab);
+    update(list);
     
     // Compute residual
     r1 = r2;
-    r2 = residual(timeslab);
+    r2 = residual(list);
   
     // Compute divergence
     rho1 = rho2;
@@ -275,7 +275,7 @@ real AdaptiveIterationLevel3::computeDivergence(TimeSlab& timeslab,
   alpha = alpha0;
 
   // Restore solution values
-  copyData(x0, timeslab);
+  copyData(x0, list);
 
   return rho2;
 }
@@ -290,7 +290,7 @@ void AdaptiveIterationLevel3::initData(Values& values)
   values.offset = 0;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::copyData(const TimeSlab& timeslab,
+void AdaptiveIterationLevel3::copyData(const ElementGroupList& list,
 				       Values& values)
 {
 
@@ -313,7 +313,7 @@ void AdaptiveIterationLevel3::copyData(const TimeSlab& timeslab,
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::copyData(const Values& values,
-				       TimeSlab& timeslab) const
+				       ElementGroupList& list) const
 {
   /*
   // Copy data to elements list
@@ -333,7 +333,7 @@ void AdaptiveIterationLevel3::copyData(const Values& values,
   */
 }
 //-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel3::dataSize(const TimeSlab& timeslab) const
+unsigned int AdaptiveIterationLevel3::dataSize(const ElementGroupList& list) const
 {
   // Compute number of values
   int size = 0;

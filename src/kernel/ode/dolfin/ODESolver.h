@@ -28,6 +28,11 @@ namespace dolfin {
     static void solve(ODE& ode, Function& u);
     static void solve(ODE& ode, Function& u, Function& phi);
 
+  private:
+
+    static void solvePrimal(ODE& ode, Function& u);
+    static void solveDual(ODE& ode, Function& u, Function& phi);
+
   };
 
 }

@@ -12,7 +12,7 @@ namespace dolfin
 {
 
   /// State-specific behavior of fixed point iteration for stiff (level 2) problems.
-  /// Adaptive damping used on the element list level.
+  /// Adaptive damping used on the element group level.
 
   class AdaptiveIterationLevel2 : public Iteration
   {
@@ -25,23 +25,23 @@ namespace dolfin
     
     State state() const;
 
-    void start(TimeSlab& timeslab);
+    void start(ElementGroupList& groups);
     void start(ElementGroup& group);
     void start(Element& element);
 
-    void update(TimeSlab& timeslab);
+    void update(ElementGroupList& groups);
     void update(ElementGroup& group);
     void update(Element& element);
     
-    void stabilize(TimeSlab& timeslab, const Residuals& r, unsigned int n);
+    void stabilize(ElementGroupList& groups, const Residuals& r, unsigned int n);
     void stabilize(ElementGroup& group, const Residuals& r, unsigned int n);
     void stabilize(Element& element, const Residuals& r, unsigned int n);
     
-    bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
+    bool converged(ElementGroupList& groups, Residuals& r, unsigned int n);
     bool converged(ElementGroup& group, Residuals& r, unsigned int n);
     bool converged(Element& element, Residuals& r, unsigned int n);
 
-    bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroupList& groups, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
 
@@ -49,10 +49,10 @@ namespace dolfin
 
   private:
 
-    // Gauss-Jacobi iteration on element list
+    // Gauss-Jacobi iteration on element group
     void updateGaussJacobi(ElementGroup& group);
 
-    // Gauss-Seidel iteration on element list
+    // Gauss-Seidel iteration on element group
     void updateGaussSeidel(ElementGroup& group);
     
     // Compute divergence
@@ -61,10 +61,10 @@ namespace dolfin
     // Initialize additional data
     void initData(Values& values);
 
-    // Copy data from element list
+    // Copy data from element group
     void copyData(ElementGroup& group, Values& values);
 
-    // Copy data to element list
+    // Copy data to element group
     void copyData(Values& values, ElementGroup& group);
 
     // Compute size of data
@@ -78,7 +78,7 @@ namespace dolfin
     // Solution values for Gauss-Jacobi iteration
     Values x1;
    
-    // Number of values in current element list
+    // Number of values in current element group
     unsigned int datasize;
 
   };

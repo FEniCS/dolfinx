@@ -10,7 +10,7 @@ namespace dolfin
 {
 
   /// State-specific behavior of fixed point iteration for stiff (level 3) problems.
-  /// Adaptive damping used on the time slab level.
+  /// Adaptive damping used on the element group list level (time slab level).
 
   class AdaptiveIterationLevel3 : public Iteration
   {
@@ -23,23 +23,23 @@ namespace dolfin
     
     State state() const;
 
-    void start(TimeSlab& timeslab);
+    void start(ElementGroupList& list);
     void start(ElementGroup& group);
     void start(Element& element);
 
-    void update(TimeSlab& timeslab);
+    void update(ElementGroupList& list);
     void update(ElementGroup& group);
     void update(Element& element);
     
-    void stabilize(TimeSlab& timeslab, const Residuals& r, unsigned int n);
+    void stabilize(ElementGroupList& list, const Residuals& r, unsigned int n);
     void stabilize(ElementGroup& group, const Residuals& r, unsigned int n);
     void stabilize(Element& element, const Residuals& r, unsigned int n);
     
-    bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
+    bool converged(ElementGroupList& list, Residuals& r, unsigned int n);
     bool converged(ElementGroup& group, Residuals& r, unsigned int n);
     bool converged(Element& element, Residuals& r, unsigned int n);
 
-    bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
 
@@ -47,26 +47,26 @@ namespace dolfin
 
   private:
 
-    // Gauss-Jacobi iteration on time slab
-    void updateGaussJacobi(TimeSlab& timeslab);
+    // Gauss-Jacobi iteration on group list
+    void updateGaussJacobi(ElementGroupList& list);
 
-    // Gauss-Seidel iteration on time slab
-    void updateGaussSeidel(TimeSlab& timeslab);
+    // Gauss-Seidel iteration on group list
+    void updateGaussSeidel(ElementGroupList& list);
     
     // Compute divergence
-    real computeDivergence(TimeSlab& timeslab, const Residuals& r);
+    real computeDivergence(ElementGroupList& list, const Residuals& r);
 
     // Initialize additional data
     void initData(Values& values);
 
-    // Copy data from time slab
-    void copyData(const TimeSlab& timeslab, Values& values);
+    // Copy data from group list
+    void copyData(const ElementGroupList& list, Values& values);
 
-    // Copy data to time slab
-    void copyData(const Values& values, TimeSlab& timeslab) const;
+    // Copy data to group list
+    void copyData(const Values& values, ElementGroupList& list) const;
 
     // Compute size of data
-    unsigned int dataSize(const TimeSlab& timeslab) const;
+    unsigned int dataSize(const ElementGroupList& list) const;
 
     //--- Iteration data ---
    
@@ -76,7 +76,7 @@ namespace dolfin
     // Solution values for Gauss-Jacobi iteration
     Values x1;
    
-    // Number of values in current time slab
+    // Number of values in current element group list
     unsigned int datasize;
 
   };

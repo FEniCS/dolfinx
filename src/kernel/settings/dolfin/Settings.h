@@ -44,7 +44,7 @@ namespace dolfin {
       
       add(Parameter::REAL, "initial time step", 0.01);
       add(Parameter::REAL, "maximum time step", 1.0);
-      add(Parameter::REAL, "partitioning threshold", 1.0);
+      add(Parameter::REAL, "partitioning threshold", 0.5);
       add(Parameter::REAL, "interval threshold", 0.9);
       add(Parameter::REAL, "sparsity check increment", 0.01);
       add(Parameter::REAL, "maximum divergence", 10.0);

@@ -43,15 +43,8 @@ int Partition::index(unsigned int i) const
 //-----------------------------------------------------------------------------
 void Partition::update(int offset, int& end, real& K, Adaptivity& adaptivity)
 {
-  cout << "Creating partition" << endl;
-  cout << "  offset = " << offset << endl;
-  cout << "  end = " << end << endl;
-  cout << "  K = " << K << endl;
-
   // Compute the largest time step
   K = threshold * maximum(offset, adaptivity);
-
-  cout << "  K = " << K << endl;
 
   // Comparison operator
   Less less(K, adaptivity);
@@ -65,8 +58,6 @@ void Partition::update(int offset, int& end, real& K, Adaptivity& adaptivity)
 
   // Compute pivot index
   end = std::distance(indices.begin(), middle);
-
-  cout << "pivot index = " << end << endl;
 }
 //-----------------------------------------------------------------------------
 void Partition::debug(unsigned int offset, unsigned int end, 
@@ -94,10 +85,7 @@ real Partition::maximum(int offset, Adaptivity& adaptivity) const
   real K = 0.0;
 
   for (unsigned int i = offset; i < indices.size(); i++)
-  {
-    cout << "desired time step = " << adaptivity.regulator(indices[i]).timestep() << endl;
     K = max(adaptivity.regulator(indices[i]).timestep(), K);
-  }
 
   return K;
 }

@@ -43,9 +43,16 @@ void Iteration::init(Element& element)
   element.update(u0);
 }
 //-----------------------------------------------------------------------------
+void Iteration::reset(ElementGroupList& groups)
+{
+  // Reset all elements
+  for (ElementIterator element(groups); !element.end(); ++element)
+    reset(*element);
+}
+//-----------------------------------------------------------------------------
 void Iteration::reset(ElementGroup& group)
 {
-  // Reset element group
+  // Reset all elements
   for (ElementIterator element(group); !element.end(); ++element)
     reset(*element);
 }
@@ -59,9 +66,13 @@ void Iteration::reset(Element& element)
   element.set(u0);
 }
 //-----------------------------------------------------------------------------
-real Iteration::residual(TimeSlab& timeslab)
+real Iteration::residual(ElementGroupList& list)
 {
-  return timeslab.elementResidualL2(fixpoint);
+  real r = 0.0;
+  for (ElementIterator element(list); !element.end(); ++element)
+    r += sqr(residual(*element));
+
+  return sqrt(r);
 }
 //-----------------------------------------------------------------------------
 real Iteration::residual(ElementGroup& group)

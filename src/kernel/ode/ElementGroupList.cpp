@@ -32,3 +32,9 @@ ElementGroupList::~ElementGroupList()
   groups = 0;
 }
 //-----------------------------------------------------------------------------
+unsigned int ElementGroupList::size() const
+{
+  dolfin_assert(groups);
+  return groups->size();
+}
+//-----------------------------------------------------------------------------

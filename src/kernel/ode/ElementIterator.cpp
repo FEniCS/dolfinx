@@ -79,12 +79,9 @@ void ElementIterator::ElementGroupListElementIterator::operator++()
   // Check if we need to step the element group iterator
   if ( element_it == element_at_end )
   {
-    cout << "Reached end of group, stepping to next group" << endl;
-
     ++group_it;
     if ( group_it != group_at_end )
     {
-      cout << "Found next group" << endl;
       element_it = (*group_it)->elements.begin();
       element_at_end = (*group_it)->elements.end();
     }

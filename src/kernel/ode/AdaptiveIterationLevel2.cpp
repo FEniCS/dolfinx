@@ -9,8 +9,11 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementGroupIterator.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/AdaptiveIterationLevel2.h>
 
@@ -37,14 +40,14 @@ Iteration::State AdaptiveIterationLevel2::state() const
   return stiff2;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::start(TimeSlab& timeslab)
+void AdaptiveIterationLevel2::start(ElementGroupList& groups)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::start(ElementGroup& group)
 {
-  // Compute total number of values in element list
+  // Compute total number of values in element group
   datasize = dataSize(group);
 }
 //-----------------------------------------------------------------------------
@@ -53,10 +56,11 @@ void AdaptiveIterationLevel2::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::update(TimeSlab& timeslab)
+void AdaptiveIterationLevel2::update(ElementGroupList& groups)
 {
   // Simple update of time slab
-  timeslab.update(fixpoint);
+  for (ElementGroupIterator group(groups); !group.end(); ++group)
+    fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group)
@@ -77,7 +81,7 @@ void AdaptiveIterationLevel2::update(Element& element)
     element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel2::stabilize(TimeSlab& timeslab,
+void AdaptiveIterationLevel2::stabilize(ElementGroupList& groups,
 					const Residuals& r, unsigned int n)
 {
   // Do nothing
@@ -105,16 +109,16 @@ void AdaptiveIterationLevel2::stabilize(Element& element,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::converged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel2::converged(ElementGroupList& groups, 
 					Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the slab contains only one element list
-  if ( timeslab.leaf() )
+  if ( groups.size() <= 1 )
     return n > 0;
 
   // Compute residual
   r.r1 = r.r2;
-  r.r2 = residual(timeslab);
+  r.r2 = residual(groups);
 
   // Save initial residual
   if ( n == 0 )
@@ -144,7 +148,7 @@ bool AdaptiveIterationLevel2::converged(Element& element,
   return n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel2::diverged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel2::diverged(ElementGroupList& groups, 
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
@@ -161,9 +165,9 @@ bool AdaptiveIterationLevel2::diverged(TimeSlab& timeslab,
   // Notify change of strategy
   dolfin_info("Adaptive damping is not enough, trying a stabilizing time step sequence.");
   
-  // Check if we need to reset the element
+  // Check if we need to reset all element groups
   if ( r.r2 > r.r0 )
-    timeslab.reset(fixpoint);
+    fixpoint.reset(groups);
 
   // Change state
   newstate = stiff3;
@@ -175,7 +179,7 @@ bool AdaptiveIterationLevel2::diverged(ElementGroup& group,
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
-  // Don't check divergence for element list, since we want to handle
+  // Don't check divergence for element group, since we want to handle
   // the stabilization ourselves (and not change state).
   return false;
 }
@@ -191,7 +195,7 @@ bool AdaptiveIterationLevel2::diverged(Element& element,
 void AdaptiveIterationLevel2::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
-       << "fixed point iteration (on element list level)." << endl;
+       << "fixed point iteration (on element group level)." << endl;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::updateGaussJacobi(ElementGroup& group)

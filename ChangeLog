@@ -1,3 +1,5 @@
+ - Use iterators instead of recursively calling TimeSlab::update()
+ - Clean up ODESolver
  - Add iterators for elements in time slabs and element groups
  - Add -f to creation of symbolic links
 0.4.4

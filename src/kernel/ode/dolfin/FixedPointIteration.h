@@ -13,8 +13,9 @@ namespace dolfin
   class Solution;
   class RHS;
   class TimeSlab;
-  class ElementGroup;
   class Element;
+  class ElementGroup;
+  class ElementGroupList;
   class Iteration;
 
   /// Damped fixed point iteration on a time slab.
@@ -38,14 +39,17 @@ namespace dolfin
     /// Fixed point iteration on time slab
     bool iterate(TimeSlab& timeslab);
 
+    /// Fixed point iteration on element group list (time slab)
+    bool iterate(ElementGroupList& list);
+
     /// Fixed point iteration on element group
     bool iterate(ElementGroup& group);
     
     /// Fixed point iteration on element
     bool iterate(Element& element);
 
-    // Compute L2 norm of element residual for time slab
-    real residual(TimeSlab& timeslab);
+    // Compute L2 norm of element residual for element group list
+    real residual(ElementGroupList& list);
 
     // Compute L2 norm of element residual for element group
     real residual(ElementGroup& group);
@@ -59,6 +63,9 @@ namespace dolfin
     // Update initial data for element
     void init(Element& element);
 
+    /// Reset element group list
+    void reset(ElementGroupList& groups);
+
     /// Reset element group
     void reset(ElementGroup& group);
 
@@ -70,8 +77,8 @@ namespace dolfin
 
   private:
 
-    // Start iteration on time slab
-    void start(TimeSlab& timeslab);
+    // Start iteration on element group list
+    void start(ElementGroupList& list);
 
     // Start iteration on element group
     void start(ElementGroup& group);
@@ -79,8 +86,8 @@ namespace dolfin
     // Start iteration on element
     void start(Element& element);
 
-    // Update time slab
-    void update(TimeSlab& timeslab);
+    // Update time element group list
+    void update(ElementGroupList& list);
     
     // Update element group
     void update(ElementGroup& group);
@@ -88,8 +95,8 @@ namespace dolfin
     // Update element
     void update(Element& element);
 
-    // Stabilize time slab
-    void stabilize(TimeSlab& timeslab,
+    // Stabilize element group list
+    void stabilize(ElementGroupList& list,
 		   const Iteration::Residuals& r, unsigned int n);
 
     // Stabilize element group
@@ -100,8 +107,8 @@ namespace dolfin
     void stabilize(Element& element,
 		   const Iteration::Residuals& r, unsigned int n);
 
-    // Check convergence for time slab
-    bool converged(TimeSlab& timeslab, Iteration::Residuals& r, unsigned int n);
+    // Check convergence for element group list
+    bool converged(ElementGroupList& list, Iteration::Residuals& r, unsigned int n);
 
     // Check convergence for element group
     bool converged(ElementGroup& group, Iteration::Residuals& r, unsigned int n);
@@ -109,8 +116,8 @@ namespace dolfin
     // Check convergence for element
     bool converged(Element& element, Iteration::Residuals& r, unsigned int n);
 
-    // Check divergence for time slab
-    bool diverged(TimeSlab& timeslab, Iteration::Residuals& r,
+    // Check divergence for element group list
+    bool diverged(ElementGroupList& list, Iteration::Residuals& r,
 		  unsigned int n, Iteration::State& newstate);
     
     // Check divergence for element group

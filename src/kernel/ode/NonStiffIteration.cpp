@@ -4,9 +4,11 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
-#include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementGroupIterator.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/NonStiffIteration.h>
 
@@ -32,7 +34,7 @@ Iteration::State NonStiffIteration::state() const
   return nonstiff;
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::start(TimeSlab& timeslab)
+void NonStiffIteration::start(ElementGroupList& list)
 {
   // Do nothing
 }
@@ -47,15 +49,16 @@ void NonStiffIteration::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(TimeSlab& timeslab)
+void NonStiffIteration::update(ElementGroupList& list)
 {
-  // Simple update of time slab
-  timeslab.update(fixpoint);
+  // Simple update of group list
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+    fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
 void NonStiffIteration::update(ElementGroup& group)
 {
-  // Simple update of element list
+  // Simple update of element group
   for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
 }
@@ -66,7 +69,7 @@ void NonStiffIteration::update(Element& element)
   element.update(f);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(TimeSlab& timeslab,
+void NonStiffIteration::stabilize(ElementGroupList& list,
 				  const Residuals& r, unsigned int n)
 {
   // Do nothing
@@ -84,16 +87,16 @@ void NonStiffIteration::stabilize(Element& element,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(TimeSlab& timeslab, 
+bool NonStiffIteration::converged(ElementGroupList& list, 
 				  Residuals& r, unsigned int n)
 {
-  // Convergence handled locally when the slab contains only one element list
-  if ( timeslab.leaf() )
+  // Convergence handled locally when the slab contains only one element group
+  if ( list.size() <= 1 )
     return n > 0;
 
   // Compute residual
   r.r1 = r.r2;
-  r.r2 = residual(timeslab);
+  r.r2 = residual(list);
 
   // Save initial residual
   if ( n == 0 )
@@ -105,7 +108,7 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
 bool NonStiffIteration::converged(ElementGroup& group, 
 				  Residuals& r, unsigned int n)
 {
-  // Convergence handled locally when the list contains only one element
+  // Convergence handled locally when the group contains only one element
   if ( group.size() == 1 )
     return n > 0;
   
@@ -134,7 +137,7 @@ bool NonStiffIteration::converged(Element& element,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::diverged(TimeSlab& timeslab, 
+bool NonStiffIteration::diverged(ElementGroupList& list, 
 				 Residuals& r, unsigned int n,
 				 Iteration::State& newstate)
 {
@@ -149,8 +152,8 @@ bool NonStiffIteration::diverged(TimeSlab& timeslab,
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying a stabilizing time step sequence.");
   
-  // Reset time slab
-  timeslab.reset(fixpoint);
+  // Reset group list
+  fixpoint.reset(list);
 
   // Change state
   newstate = stiff3;

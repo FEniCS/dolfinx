@@ -5,8 +5,11 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementIterator.h>
+#include <dolfin/ElementGroupIterator.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/AdaptiveIterationLevel1.h>
 
@@ -33,7 +36,7 @@ Iteration::State AdaptiveIterationLevel1::state() const
   return stiff1;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::start(TimeSlab& timeslab)
+void AdaptiveIterationLevel1::start(ElementGroupList& list)
 {
   // Do nothing
 }
@@ -48,15 +51,16 @@ void AdaptiveIterationLevel1::start(Element& element)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::update(TimeSlab& timeslab)
+void AdaptiveIterationLevel1::update(ElementGroupList& list)
 {
-  // Simple update of time slab
-  timeslab.update(fixpoint);
+  // Simple update of group list
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+    fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::update(ElementGroup& group)
 {
-  // Simple update of element list
+  // Simple update of element group
   for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
 }
@@ -67,7 +71,7 @@ void AdaptiveIterationLevel1::update(Element& element)
   element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel1::stabilize(TimeSlab& timeslab,
+void AdaptiveIterationLevel1::stabilize(ElementGroupList& list,
 					const Residuals& r, unsigned int n)
 {
   // Do nothing
@@ -92,16 +96,16 @@ void AdaptiveIterationLevel1::stabilize(Element& element,
     alpha = 1.0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel1::converged(ElementGroupList& list, 
 					Residuals& r, unsigned int n)
 {
-  // Convergence handled locally when the slab contains only one element list
-  if ( timeslab.leaf() )
+  // Convergence handled locally when the slab contains only one element group
+  if ( list.size() <= 1 )
     return n > 0;
   
   // Compute residual
   r.r1 = r.r2;
-  r.r2 = residual(timeslab);
+  r.r2 = residual(list);
 
   // Save initial residual
   if ( n == 0 )
@@ -113,7 +117,7 @@ bool AdaptiveIterationLevel1::converged(TimeSlab& timeslab,
 bool AdaptiveIterationLevel1::converged(ElementGroup& group, 
 					Residuals& r, unsigned int n)
 {
-  // Convergence handled locally when the list contains only one element
+  // Convergence handled locally when the group contains only one element
   if ( group.size() == 1 )
     return n > 0;
   
@@ -142,7 +146,7 @@ bool AdaptiveIterationLevel1::converged(Element& element,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::diverged(TimeSlab& timeslab, 
+bool AdaptiveIterationLevel1::diverged(ElementGroupList& list, 
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
@@ -157,12 +161,12 @@ bool AdaptiveIterationLevel1::diverged(TimeSlab& timeslab,
   // Notify change of strategy
   dolfin_info("Diagonal damping is not enough, trying a stabilizing time step sequence.");
   
-  // Reset time slab
-  timeslab.reset(fixpoint);
+  // Reset group list
+  fixpoint.reset(list);
 
   // Change state
   newstate = stiff3;
-
+  
   return true;
 }
 //-----------------------------------------------------------------------------

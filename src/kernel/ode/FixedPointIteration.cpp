@@ -43,67 +43,52 @@ FixedPointIteration::~FixedPointIteration()
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::iterate(TimeSlab& timeslab)
 {
+  // Create a list of element groups from the time slab
+  ElementGroupList list(timeslab);
+
+  // Iterate on the list of element groups
+  return iterate(list);
+}
+//-----------------------------------------------------------------------------
+bool FixedPointIteration::iterate(ElementGroupList& list)
+{
   Iteration::Residuals r;
   Iteration::State newstate;
   bool retry = true;
-  
-  // Create a list of element groups from the time slab
-  ElementGroupList groups(timeslab);
-
-
-
-  cout << "Iterating over element groups in time slab: " << endl;
-  for (ElementGroupIterator group(groups); !group.end(); ++group)
-  {
-    cout << "  group containing " << group->size() << " elements" << endl;
-    cout << "  iterating over elements in group" << endl;
-    for (ElementIterator element(*group); !element.end(); ++element)
-    {
-      cout << "    element at [" << element->starttime() 
-	   << " " << element->endtime() << "]" << endl;
-    }
-  }
-
-  cout << "Iterating over elements in time slab: " << endl;
-  for (ElementIterator element(groups); !element.end(); ++element)
-  {
-    cout << "  element at [" << element->starttime() 
-	 << " " << element->endtime() << "]" << endl;
-  }
 
   dolfin_start("Starting time slab iteration");
   
   while ( retry )
   {
-    // Start iteration on time slab
-    start(timeslab);
+    // Start iteration on element group list
+    start(list);
     
-    // Fixed point iteration on the time slab  
+    // Fixed point iteration on the element group list
     for (unsigned int n = 0; n < maxiter; n++)
     {
       // Check convergence
-      if ( converged(timeslab, r, n) )
+      if ( converged(list, r, n) )
       {
-	dolfin_end("Time slab iteration converged in %d iterations", n + 1);
+	dolfin_end("Element group list iteration converged in %d iterations", n + 1);
 	return true;
       }
       
       // Check divergence
-      if ( retry = diverged(timeslab, r, n, newstate) )
+      if ( retry = diverged(list, r, n, newstate) )
       {
 	changeState(newstate);
 	break;
       }
       
       // Stabilize iteration
-      stabilize(timeslab, r, n);
+      stabilize(list, r, n);
       
-      // Update time slab
-      update(timeslab);
+      // Update element group list
+      update(list);
     }
   }
 
-  dolfin_end("Time slab iteration did not converge");
+  dolfin_end("Time slab did not converge");
 
   return false;
 }
@@ -238,10 +223,10 @@ bool FixedPointIteration::iterate(Element& element)
   return true;
 }
 //-----------------------------------------------------------------------------
-real FixedPointIteration::residual(TimeSlab& timeslab)
+real FixedPointIteration::residual(ElementGroupList& list)
 {
   dolfin_assert(state);
-  return state->residual(timeslab);
+  return state->residual(list);
 }
 //-----------------------------------------------------------------------------
 real FixedPointIteration::residual(ElementGroup& group)
@@ -268,6 +253,12 @@ void FixedPointIteration::init(Element& element)
   state->init(element);
 }
 //-----------------------------------------------------------------------------
+void FixedPointIteration::reset(ElementGroupList& list)
+{
+  dolfin_assert(state);
+  state->reset(list);
+}
+//-----------------------------------------------------------------------------
 void FixedPointIteration::reset(ElementGroup& group)
 {
   dolfin_assert(state);
@@ -286,10 +277,10 @@ void FixedPointIteration::report() const
   state->report();
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::start(TimeSlab& timeslab)
+void FixedPointIteration::start(ElementGroupList& list)
 {
   dolfin_assert(state);
-  state->start(timeslab);
+  state->start(list);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::start(ElementGroup& group)
@@ -304,10 +295,10 @@ void FixedPointIteration::start(Element& element)
   state->start(element);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(TimeSlab& timeslab)
+void FixedPointIteration::update(ElementGroupList& list)
 {
   dolfin_assert(state);
-  state->update(timeslab);
+  state->update(list);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(ElementGroup& group)
@@ -323,12 +314,12 @@ void FixedPointIteration::update(Element& element)
   state->update(element);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilize(TimeSlab& timeslab, 
+void FixedPointIteration::stabilize(ElementGroupList& list, 
 				    const Iteration::Residuals& r,
 				    unsigned int n)
 {
   dolfin_assert(state);
-  state->stabilize(timeslab, r, n);
+  state->stabilize(list, r, n);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(ElementGroup& group, 
@@ -347,11 +338,11 @@ void FixedPointIteration::stabilize(Element& element,
   state->stabilize(element, r, n);
 }
 //-----------------------------------------------------------------------------
-bool FixedPointIteration::converged(TimeSlab& timeslab,
+bool FixedPointIteration::converged(ElementGroupList& list,
 				    Iteration::Residuals& r, unsigned int n)
 {
   dolfin_assert(state);
-  return state->converged(timeslab, r, n);
+  return state->converged(list, r, n);
 }
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::converged(ElementGroup& group,
@@ -368,12 +359,12 @@ bool FixedPointIteration::converged(Element& element, Iteration::Residuals& r,
   return state->converged(element, r, n);
 }
 //-----------------------------------------------------------------------------
-bool FixedPointIteration::diverged(TimeSlab& timeslab,
+bool FixedPointIteration::diverged(ElementGroupList& list,
 				   Iteration::Residuals& r, unsigned int n,
 				   Iteration::State& newstate)
 {
   dolfin_assert(state);
-  return state->diverged(timeslab, r, n, newstate);
+  return state->diverged(list, r, n, newstate);
 }
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::diverged(ElementGroup& group,

@@ -27,6 +27,9 @@ namespace dolfin
     /// Destructor
     ~ElementGroupList();
 
+    /// Return size of list (number of groups)
+    unsigned int size() const;
+
     /// Friends
     friend class ElementGroupIterator;
     friend class ElementIterator::ElementGroupListElementIterator;

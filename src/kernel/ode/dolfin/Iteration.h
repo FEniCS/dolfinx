@@ -11,8 +11,9 @@ namespace dolfin
   class Solution;
   class RHS;
   class TimeSlab;
-  class ElementGroup;
   class Element;
+  class ElementGroup;
+  class ElementGroupList;
   class FixedPointIteration;
 
   /// Base class for state-specific behavior of fixed point iteration.
@@ -41,8 +42,8 @@ namespace dolfin
     /// Return current current state (type of iteration)
     virtual State state() const = 0;
 
-    // Start iteration on time slab
-    virtual void start(TimeSlab& timeslab) = 0;
+    // Start iteration on element group list
+    virtual void start(ElementGroupList& list) = 0;
 
     // Start iteration on element group
     virtual void start(ElementGroup& group) = 0;
@@ -50,8 +51,8 @@ namespace dolfin
     // Start iteration on element
     virtual void start(Element& element) = 0;
 
-    /// Update time slab
-    virtual void update(TimeSlab& timeslab) = 0;
+    /// Update element group list
+    virtual void update(ElementGroupList& list) = 0;
 
     /// Update element
     virtual void update(Element& element) = 0;
@@ -59,8 +60,8 @@ namespace dolfin
     /// Update element group
     virtual void update(ElementGroup& group) = 0;
 
-    /// Stabilize time slab iteration
-    virtual void stabilize(TimeSlab& timeslab, 
+    /// Stabilize element group list iteration
+    virtual void stabilize(ElementGroupList& list, 
 			   const Residuals& r, unsigned int n) = 0;
     
     /// Stabilize element group iteration
@@ -71,8 +72,8 @@ namespace dolfin
     virtual void stabilize(Element& element,
 			   const Residuals& r, unsigned int n) = 0;
     
-    /// Check convergence for time slab
-    virtual bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n) = 0;
+    /// Check convergence for element group list
+    virtual bool converged(ElementGroupList& list, Residuals& r, unsigned int n) = 0;
 
     /// Check convergence for element group
     virtual bool converged(ElementGroup& group, Residuals& r, unsigned int n) = 0;
@@ -80,8 +81,8 @@ namespace dolfin
     /// Check convergence for element
     virtual bool converged(Element& element, Residuals& r, unsigned int n) = 0;
 
-    /// Check divergence for time slab
-    virtual bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+    /// Check divergence for element group list
+    virtual bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
 
     /// Check divergence for element group
     virtual bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
@@ -98,14 +99,17 @@ namespace dolfin
     // Update initial data for element
     void init(Element& element);
 
+    /// Reset element group list
+    void reset(ElementGroupList& groups);
+
     /// Reset element group
     void reset(ElementGroup& group);
 
     // Reset element
     void reset(Element& element);
 
-    // Compute L2 norm of element residual for time slab
-    real residual(TimeSlab& timeslab);
+    // Compute L2 norm of element residual for element group list
+    real residual(ElementGroupList& list);
 
     // Compute L2 norm of element residual for element group
     real residual(ElementGroup& group);
