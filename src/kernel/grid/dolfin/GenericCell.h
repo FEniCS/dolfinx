@@ -75,7 +75,7 @@ namespace dolfin {
     void setParent(Cell& parent);
 
     // Remove parent cell
-    void removeParent(Cell& parent);
+    void removeParent();
 
     // Set number of children
     void initChildren(int n);

@@ -121,7 +121,7 @@ void GenericCell::setParent(Cell& parent)
   this->_parent = &parent;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::removeParent(Cell& parent)
+void GenericCell::removeParent()
 {
   // Remove parent cell
   this->_parent = 0;

@@ -425,6 +425,10 @@ void GridRefinement::removeCell(Cell& cell, Grid& grid)
 
   }
 
+  // Remove children
+  for (int i = 0; i < cell.noChildren(); i++)
+    removeCell(*cell.child(i), grid.child());
+
   // Update status 
   if ( cell.parent()->noChildren() == 0 )
     cell.parent()->status() = Cell::unref; 
