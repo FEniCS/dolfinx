@@ -1,25 +1,7 @@
-dnl Process this file with autoconf to produce a configure script.
-AC_INIT(README)
+dnl Init autoconf
+AC_INIT(dolfin, 0.3.5, dolfin@math.chalmers.se)
 
-dnl Settings
-PACKAGE=dolfin
-VERSION=0.3.4
-DOLFIN_MAIN="main"
-
-dnl Note: need to be in the correct order, and some are needed twice.
-dnl Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="io grid fem elements quadrature io la math common settings log settings common"
-
-dnl Find modules
-cd src/modules
-./scanmodules.sh
-cd ../..
-DOLFIN_MODULES=""
-for l in `cat src/modules/modules.list | grep -v "#"`; do
-	DOLFIN_MODULES="$DOLFIN_MODULES$l "
-done
-
-dnl Initialize automake
+dnl Init automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 
 dnl Tell automake not to generate Makefile.in unless asked to.
@@ -41,7 +23,7 @@ AC_TYPE_SIZE_T
 
 dnl Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
-if test $libxml2_found = yes; then
+if test $libxml2_found = yes; then	  
 	XML2_INCLUDES=`xml2-config --cflags`
 	XML2_LFLAGS=`xml2-config --libs`
  	AC_SUBST(XML2_INCLUDES)
@@ -55,8 +37,22 @@ fi
 dnl Check for curses
 AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your system."; exit 1)
 
+dnl Note: need to be in the correct order, and some are needed twice.
+dnl Not very pretty... Maybe someone knows how to fix this?
+DOLFIN_KERNEL="io grid fem elements quadrature io la math common settings log settings common"
+
+dnl Find modules
+cd src/modules
+./scanmodules.sh
+cd ../..
+DOLFIN_MODULES=""
+for l in `cat src/modules/modules.list | grep -v "#"`; do
+	DOLFIN_MODULES="$DOLFIN_MODULES$l "
+done
+
 dnl Generate include path for modules (including kernel code)
 MODULE_INCLUDES=""
+DOLFIN_MAIN="main"
 DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
 for f in $DIRS; do
 	MODULE_INCLUDES="$MODULE_INCLUDES-I\$(top_builddir)/src/kernel/$f "

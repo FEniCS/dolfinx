@@ -660,6 +660,7 @@ void CursesLogger::drawTitle()
   attron(COLOR_PAIR(5));
   clearLine(0,0);
   printw("DOLFIN version %s", DOLFIN_VERSION);
+
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::drawProgress()

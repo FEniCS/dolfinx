@@ -1,3 +1,6 @@
+0.3.5
+ - Define version number only in the file configure.in
+ - Fix compilation problem (missing depcomp)
 0.3.4
  - Fix bugs in some of the ElementFunction operators
  - Make convection-diffusion solver work again
