@@ -1,0 +1,28 @@
+Notes about the pdeplot, pdesurf and pdemesh Octave functions:
+
+These functions are Free Software reimplementations of the corresponding
+functions in Matlab's PDE Toolbox.
+
+They require the external program "ivview" included in the open source
+Open Inventor distribution which can be obtained from
+
+	http://oss.sgi.com/projects/inventor/.
+
+Open Inventor also exists in the package system of some Linux
+distributions, such as Debian (the package inventor-clients).
+
+They have been verified to work in Octave 2.1.50.
+
+Example usage:
+
+> pdemesh(points, edges, cells)
+> pdesurf(points, cells, u)
+
+Bugs and comments on features:
+
+The functions use the "popen2" call in Octave to communicate with
+"ivview", and this does not always work correctly, "ivview" can
+sometimes hang. This is presumably an Octave bug.
+
+The pdeplot function is a far from complete reimplementation of the 
+Matlab pdeplot.
