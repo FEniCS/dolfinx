@@ -3,19 +3,22 @@
 
 #include <dolfin/Mesh.h>
 #include <dolfin/NewFiniteElement.h>
+#include <dolfin/LinearTriElement.h>
+#include <dolfin/LinearTetElement.h>
 #include <dolfin/NewVector.h>
 #include <dolfin/NewFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction() : data(0), t(0)
+NewFunction::NewFunction() : data(0), default_element(0), t(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(Mesh& mesh, NewVector& x,
-			 const NewFiniteElement& element) : data(0)
+			 const NewFiniteElement& element) 
+  : data(0), default_element(0), t(0)
 {
   // Create function data
   data = new Data(mesh, x, element);
@@ -26,13 +29,25 @@ NewFunction::NewFunction(Mesh& mesh, NewVector& x,
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(Mesh& mesh, NewVector& x)
 {
-  
+  // Chose default element
+  if ( mesh.type() == Mesh::triangles )
+    default_element = new LinearTriElement();
+  else if ( mesh.type() == Mesh::tetrahedrons )
+    default_element = new LinearTetElement();
+  else
+    dolfin_error("Unknown element type.");
 
+  // Create function data
+  data = new Data(mesh, x, *default_element);
+  
+  // Set name and label
+  rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
   if ( data ) delete data;
+  if ( default_element ) delete default_element;
 }
 //-----------------------------------------------------------------------------
 void NewFunction::project(const Cell& cell, const NewFiniteElement& element,

@@ -30,6 +30,7 @@ link_octave src/demo/solvers/elasticity-stationary/
 
 # Creat links to OpenDX programs
 link_dx src/demo/solvers/ode/bistable/
+link_dx src/demo/bench/ode/
 
 # Create links to plotslab.m
 link_plotslab src/demo/solvers/ode/test/

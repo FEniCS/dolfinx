@@ -80,6 +80,7 @@ namespace dolfin
     public:
       Data(Mesh& mesh, NewVector& x, const NewFiniteElement& element)
 	: mesh(mesh), x(x), element(element) {}
+
       Mesh& mesh;
       NewVector& x;
       const NewFiniteElement& element;
@@ -87,6 +88,9 @@ namespace dolfin
     
     // Pointer to function data (null if not used)
     Data* data;
+
+    // Pointer to default finite element (null if not used)
+    NewFiniteElement* default_element;
 
     // Current time
     real t;

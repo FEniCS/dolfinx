@@ -20,14 +20,11 @@ public:
     h = 1.0 / static_cast<real>(n + 1);
     a = c*c / (h*h);
     offset = N/2;
+
+    // FIXME: Need to compute sparsity here
   }
 
-  ~WaveEquation()
-  {
-    
-
-
-  }
+  ~WaveEquation() {}
 
   // Initial data
   real u0(unsigned int i)
@@ -136,14 +133,17 @@ int main(int argc, const char* argv[])
   if ( argc != 2 )
   {
     dolfin_info("Usage: dolfin-bench-ode n");
+    // FIXME: Should be dolfin-bench-ode method n with method = cg, dg, mcg or mdg
     return 1;
   }
   unsigned int n = static_cast<unsigned int>(atoi(argv[1]));
 
+  // FIXME: Parse method here
+
   // Set parameters
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
-  dolfin_set("method", "mcg");
+  //dolfin_set("method", "mcg");
 
   // Solve the wave equation
   WaveEquation wave(n);

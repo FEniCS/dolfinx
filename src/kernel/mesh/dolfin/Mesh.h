@@ -111,9 +111,6 @@ namespace dolfin {
 
     /// Return number of faces in the mesh
     int noFaces() const;
-    
-
-
 
     // Create a new node at given position
     Node& createNode(Point p);
