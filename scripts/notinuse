@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# notinuse
+#
+# Scan subdirectories for files that may not be in use,
+# that is, old files that should be removed.
+#
+# This script should be run from the top level directory.
+                                                                                                    
+# Simple test to see where we are
+CHECK=`echo $0 | cut -d'/' -f1`
+if [ "$CHECK" != "scripts" ]; then
+        echo "This script must be run from the top level directory."
+        exit 1
+fi
+
+for f in `find . -name '*.h'`; do
+	echo $f
+done
