@@ -97,7 +97,7 @@ real testPETSc2(Mesh& mesh)
   double values[16];
 
   MatCreateSeqAIJ(PETSC_COMM_SELF, mesh.noNodes(), mesh.noNodes(),
-		  16, PETSC_NULL, &A);
+		  17, PETSC_NULL, &A);
   MatSetFromOptions(A);
 
   for (int i = 0; i < 16; i++)
@@ -125,6 +125,7 @@ int main(int argc, char** argv)
   PetscInitialize(&argc, &argv, 0, 0);
 
   Mesh mesh("mesh.xml.gz");
+  mesh.refineUniformly();
   mesh.refineUniformly();
   mesh.refineUniformly();
 
