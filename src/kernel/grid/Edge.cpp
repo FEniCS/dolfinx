@@ -38,7 +38,7 @@ void Edge::set(Node *en0, Node *en1)
   cout << "check1" << endl;
   cout << (*en1) << endl;
   cout << "check1.25" << endl;
-  (*_en0) = (*en0);
+  _en0 = en0;
   cout << "check1" << endl;
   cout << (*_en0) << endl;
   cout << "check1.5" << endl;

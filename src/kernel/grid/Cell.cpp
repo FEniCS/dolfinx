@@ -34,7 +34,6 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
   cn(1) = &n1;
   cn(2) = &n2;
 
-  ce.init(3);
   ce(0)->set(&n0,&n1);
   ce(1)->set(&n0,&n2);
   ce(2)->set(&n1,&n2);
@@ -57,7 +56,6 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
   cn(2) = &n2;
   cn(3) = &n3;
 
-  ce.init(6);
   ce(0)->set(&n0,&n1);
   ce(1)->set(&n0,&n2);
   ce(2)->set(&n0,&n3);
@@ -185,7 +183,6 @@ void Cell::set(Node *n0, Node *n1, Node *n2)
   cn(1) = n1;
   cn(2) = n2;
 
-  ce.init(3);
   ce(0)->set(n0,n1);
   ce(1)->set(n0,n2);
   ce(2)->set(n1,n2);
@@ -208,7 +205,6 @@ void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
   Edge e5(n1,n2);
   Edge e6(n2,n3);
 
-  ce.init(6);
   ce(0) = &e1;
   ce(1) = &e2;
   ce(2) = &e3;
@@ -263,6 +259,7 @@ void Cell::init(Type type)
   }
   
   cn.init(noNodes());
+  ce.init(noEdges());
 }
 //-----------------------------------------------------------------------------
 bool Cell::neighbor(Cell &cell)
