@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal-1.4
+ACLOCAL = aclocal
 AUTOCONF = autoconf
-AUTOMAKE = automake-1.4
+AUTOMAKE = automake
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -88,7 +88,7 @@ mpi_found = yes
 petsc_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/NewBoundaryCondition.h                           dolfin/BoundaryValue.h                           dolfin/DxMatrix.h                           dolfin/DyMatrix.h                           dolfin/DzMatrix.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/NewFEM.h                           dolfin/NewFiniteElement.h                           dolfin/StiffnessMatrix.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/NewBoundaryCondition.h                           dolfin/BoundaryValue.h                           dolfin/DxMatrix.h                           dolfin/DyMatrix.h                           dolfin/DzMatrix.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LinearTetElement.h                           dolfin/LinearTriElement.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/NewFEM.h                           dolfin/NewFiniteElement.h                           dolfin/StiffnessMatrix.h
 
 INCLUDES = -I$(top_builddir)/src/modules -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -DPETSC_2_2_1 -I/usr/include/mpi -I/usr/include/libxml2
 lib_LIBRARIES = libdolfin-fem.a

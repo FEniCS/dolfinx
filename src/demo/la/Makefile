@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal-1.4
+ACLOCAL = aclocal
 AUTOCONF = autoconf
-AUTOMAKE = automake-1.4
+AUTOMAKE = automake
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c

@@ -118,16 +118,14 @@ class Leontief : public Economy
 {
 public:
 
-  Leontief(unsigned int m, unsigned int n) : Economy(m, n)
+  Leontief(unsigned int m, unsigned int n) : Economy(m, n), polynomial(false)
   {
-    // Set condition that guarantees a solution for m = 1, n = 2
-    /*
-      if ( m == 1 && n == 2 )
-      {
-      dolfin_info("Setting condition for existence of solutions.");
-      w[0][0] = a[0][0] * w[0][1] / a[0][1];
-      }
-    */
+    // Special choice of data
+    a[0][0] = 2.0; a[0][1] = 1.0;
+    a[1][0] = 1.0; a[1][1] = 2.0;
+
+    w[0][0] = 1.0; w[0][1] = 2.0;
+    w[1][0] = 2.0; w[1][1] = 1.0;
   }
 
   void F(const complex z[], complex y[])
@@ -181,6 +179,10 @@ public:
     else
       return m;
   }
+
+private:
+
+  bool polynomial;
   
 };
 
@@ -495,15 +497,15 @@ int main()
   dolfin_set("homotopy randomize", true);
   dolfin_set("linear solver", "direct");
 
-  //Leontief leontief(2, 2);
-  //leontief.solve();
+  Leontief leontief(2, 2);
+  leontief.solve();
 
   //CES ces(2, 2, 0.5);
   //ces.disp();
   //ces.solve();
 
-  Polemarchakis polemarchakis;
-  polemarchakis.solve();
+  //Polemarchakis polemarchakis;
+  //polemarchakis.solve();
 
   return 0;
 }
