@@ -10,7 +10,7 @@ Instructions:
 	of your module and edit the .module file.
 
 	3. Include your files in the build system by editing
-	the files configure.in and src/modules/Makefile.am
+	the files configure.ac and src/modules/Makefile.am
 
 	4. Thats all! Now rebuild by
 
