@@ -57,6 +57,8 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
   VecGetArray(x, &xx);
   VecGetArray(y, &yy);
 
+  /*
+
   // Reset dof
   uint j0 = 0;
 
@@ -205,20 +207,18 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
       }
       
 
-      /*
-      
       // Get first dependency to components with smaller time steps for element
-      uint d = ts.ed[e0];
+      //uint d = ts.ed[e0];
       
       // Compute number of such dependencies for each nodal point
-      const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
-      const uint ndep = (end - d) / method.nsize();
-      dolfin_assert(ndep * method.nsize() == (end - d));
-
-      */
+      //const uint end = ( e0 < (ts.ne - 1) ? ts.ed[e0 + 1] : ts.nd );
+      //const uint ndep = (end - d) / method.nsize();
+      //dolfin_assert(ndep * method.nsize() == (end - d));
       
     }
   }
+
+  */
 
   // Restore PETSc data arrays
   VecRestoreArray(x, &xx);

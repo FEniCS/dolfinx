@@ -118,7 +118,11 @@ void VirtualMatrix::disp() const
     x(j) = 1.0;
     mult(x, y);
     for (unsigned int i = 0; i < M; i++)
-      A(i, j) = y(i);
+    {
+      const real value = y(i);
+      if ( fabs(value) > DOLFIN_EPS )
+	A(i, j) = value;
+    }
     x(j) = 0.0;
   }
 
