@@ -5,6 +5,7 @@
 
 #include <dolfin/Buffer.h>
 #include <dolfin/CursesLogger.h>
+#include <dolfin/Event.h>
 #include <dolfin/GenericLogger.h>
 #include <dolfin/Logger.h>
 #include <dolfin/LoggerMacros.h>

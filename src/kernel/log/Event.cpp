@@ -2,23 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/LoggerMacros.h>
-#include <dolfin/Message.h>
+#include <dolfin/Event.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Message::Message(const std::string message, unsigned int maxcount) :
+Event::Event(const std::string message, unsigned int maxcount) :
   message(message), _maxcount(maxcount), _count(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Message::~Message()
+Event::~Event()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Message::display()
+void Event::operator() ()
 {
   if ( _count < _maxcount)
     dolfin_info(message.c_str());
@@ -29,12 +29,12 @@ void Message::display()
     dolfin_info("Last message repeated %d times. Not displaying again.", _count);
 }
 //-----------------------------------------------------------------------------
-unsigned int Message::count() const
+unsigned int Event::count() const
 {
   return _count;
 }
 //-----------------------------------------------------------------------------
-unsigned int Message::maxcount() const
+unsigned int Event::maxcount() const
 {
   return _maxcount;
 }

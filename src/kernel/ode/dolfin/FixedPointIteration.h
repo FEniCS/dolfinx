@@ -4,7 +4,7 @@
 #ifndef __FIXED_POINT_ITERATION_H
 #define __FIXED_POINT_ITERATION_H
 
-#include <dolfin/Message.h>
+#include <dolfin/Event.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -78,13 +78,13 @@ namespace dolfin
     // Right-hand side f
     RHS& f;
 
-    // Messages
-    Message message_diagonal_damping;
-    Message message_accelerating;
-    Message message_scalar_damping;
-    Message message_resetting_element;
-    Message message_resetting_timeslab;
-    Message message_nonconverging;
+    // Events
+    Event event_diag_damping;
+    Event event_accelerating;
+    Event event_scalar_damping;
+    Event event_reset_element;
+    Event event_reset_timeslab;
+    Event event_nonconverging;
 
     // Maximum number of iterations
     unsigned int maxiter;

@@ -1,3 +1,4 @@
+ - New class Event for limited display of messages
  - Fix bug in LogStream (large numbers in floating point format)
  - Specify individual time steps for different components
  - Compile without warnings

@@ -13,14 +13,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : 
-  u(u), f(f),
-  message_diagonal_damping("System is diagonally stiff, trying diagonal damping.", 5),
-  message_accelerating("Slow convergence, need to accelerate convergence.", 5),
-  message_scalar_damping("System is stiff, damping is needed.", 5),
-  message_resetting_element("Element iterations diverged, resetting element.", 5),
-  message_resetting_timeslab("Iterations diverged, resetting time slab.", 5),
-  message_nonconverging("Iterations did not converge, decreasing time step", 5)
+FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f),
+  event_diag_damping("System is diagonally stiff, trying diagonal damping.", 5),
+  event_accelerating("Slow convergence, need to accelerate convergence.", 5),
+  event_scalar_damping("System is stiff, damping is needed.", 5),
+  event_reset_element("Element iterations diverged, resetting element.", 5),
+  event_reset_timeslab("Iterations diverged, resetting time slab.", 5),
+  event_nonconverging("Iterations did not converge, decreasing time step", 5)
 {
   maxiter       = dolfin_get("maximum iterations");
   local_maxiter = dolfin_get("maximum local iterations");
@@ -58,7 +57,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     // Check if we have done too many iterations
     if ( n++ >= maxiter )
     {
-      message_nonconverging.display();
+      event_nonconverging();
       return false;
     }    
   }
@@ -117,13 +116,13 @@ real FixedPointIteration::update(Element& element)
       if ( rho > 0.5 )
       {
 	// Compute diagonal damping
-	message_diagonal_damping.display();
+	event_diag_damping();
 	local_alpha = 1.0 / (1.0 + rho/local_alpha);
 
 	if ( local_r2 > maxdiv * r0 )
 	{
 	  // Need to reset element
-	  message_resetting_element.display();
+	  event_reset_element();
 	  reset(element);
 	}
       }
@@ -195,10 +194,10 @@ void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab)
   if ( r2 < 0.5*r1 )
     return;
   else if ( r2 < r1 )
-    if ( message_scalar_damping.count() == 0 )
-      message_accelerating.display();
+    if ( event_scalar_damping.count() == 0 )
+      event_accelerating();
   else
-    message_scalar_damping.display();
+    event_scalar_damping();
   
   // Compute stabilization
   real rho = computeConvergenceRate();
@@ -208,7 +207,7 @@ void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab)
   // Reset time slab to initial values 
   if ( r2 > maxdiv * r0 )
   {
-    message_resetting_timeslab.display();
+    event_reset_timeslab();
     timeslab.reset(*this);  
   }
 
@@ -258,7 +257,7 @@ void FixedPointIteration::stabilizeIncreasing(TimeSlab& timeslab)
       timeslab.reset(*this);
     
     // Change state
-    message_scalar_damping.display();
+    event_scalar_damping();
     state = damped;
   }
 

@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_log.h              Buffer.h              CursesLogger.h              GenericLogger.h              Logger.h              LoggerMacros.h              LogManager.h              LogStream.h              Message.h              Progress.h              SilentLogger.h              TerminalLogger.h
+EXTRA_DIST = dolfin_log.h              Buffer.h              CursesLogger.h              Message.h              GenericLogger.h              Logger.h              LoggerMacros.h              LogManager.h              LogStream.h              Progress.h              SilentLogger.h              TerminalLogger.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
