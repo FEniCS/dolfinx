@@ -69,8 +69,8 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
   // Initialize element matrix
-  //NewArray<NewArray<real> > AK(pde.size(),pde.size());
   NewArray<NewArray<real> > AK;
+  alloc(pde, AK);
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -116,6 +116,10 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
   // Start a progress session
   Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
     
+  // Initialize element matrix
+  NewArray<NewArray<real> > AK;
+  alloc(pde, AK);
+
   // Iterate over all edges in the boundary 
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
@@ -147,6 +151,10 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
   // Start a progress session
   Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());
     
+  // Initialize element matrix
+  NewArray<NewArray<real> > AK;
+  alloc(pde, AK);
+
   // Iterate over all faces in the boundary 
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
@@ -175,7 +183,9 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());  
   
-  NewArray<real> bK(pde.size());
+  // Initialize element vector
+  NewArray<real> bK;
+  alloc(pde, bK);
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -183,7 +193,7 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
     // Update PDE
     pde.update(*cell);
     
-    // Compute element matrix    
+    // Compute element vector
     pde.interiorElementVector(bK);
 
     // Add entries to global vector
@@ -218,6 +228,10 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Vector& b)
   // Start a progress session
   Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
     
+  // Initialize element vector
+  NewArray<real> bK;
+  alloc(pde, bK);
+
   // Iterate over all edges in the boundary 
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
@@ -246,6 +260,10 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b)
   // Start a progress session
   Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());  
     
+  // Initialize element vector
+  NewArray<real> bK;
+  alloc(pde, bK);
+
   // Iterate over all faces in the boundary 
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
@@ -390,3 +408,27 @@ void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
   b = 0.0;
 }
 //-----------------------------------------------------------------------------
+void alloc(const NewPDE& pde, NewArray<NewArray<real> >& A)
+{
+  // Resize element matrix
+  A.resize(pde.size());
+  for (unsigned int i = 0; i < pde.size(); i++)
+    A[i].resize(pde.size());
+
+  // Set all entries to zero
+  for (unsigned int i = 0; i < pde.size(); i++)
+    for (unsigned int j = 0; j < pde.size(); j++)
+      A[i][j] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void alloc(const NewPDE& pde, NewArray<real>& b)
+{
+  // Resize element vector
+  b.resize(pde.size());
+
+  // Set all entries to zero
+  for (unsigned int i = 0; i < pde.size(); i++)
+    b[i] = 0.0;
+}
+//-----------------------------------------------------------------------------
+

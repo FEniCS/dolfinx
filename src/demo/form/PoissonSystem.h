@@ -36,7 +36,7 @@ namespace dolfin
       return cell.nodeID(i);
     }
     
-    void interiorElementMatrix(NewArray< NewArray<real> >& A) const
+    void interiorElementMatrix(NewArray<NewArray<real> >& A) const
     {
       real tmp0 = det / 6.0;
       

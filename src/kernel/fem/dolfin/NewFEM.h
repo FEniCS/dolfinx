@@ -4,6 +4,8 @@
 #ifndef __NEW_FEM_H
 #define __NEW_FEM_H
 
+#include <dolfin/NewArray.h>
+
 namespace dolfin
 {
 
@@ -42,12 +44,18 @@ namespace dolfin
     static void assembleBoundaryTri (NewPDE& pde, Mesh& mesh, Vector& b);
     static void assembleBoundaryTet (NewPDE& pde, Mesh& mesh, Vector& b);
 
-    /// Allocate matrix
+    /// Allocate global matrix
     static void alloc(const NewPDE& pde, Mesh& mesh, Matrix &A);
-      
-    /// Allocate vector
+
+    /// Allocate global vector
     static void alloc(const NewPDE& pde, Mesh& mesh, Vector& b);
   
+    /// Allocate element matrix
+    static void alloc(const NewPDE& pde, NewArray<NewArray<real> >& A);
+
+    /// Allocate element vector
+    static void alloc(const NewPDE& pde, NewArray<real>& b);
+
     /// FIXME: Temporary strong implementation of BC
     void setBC(const NewPDE& pde, Mesh& mesh, Matrix& A);
     void setBC(const NewPDE& pde, Mesh& mesh, Vector& b);
