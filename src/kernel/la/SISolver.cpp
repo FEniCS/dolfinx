@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Thomas Svedberg, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/basic.h>

@@ -1,3 +1,5 @@
+ - Add BiCGSTAB solver (thsv)
+ - Fix bug in SOR (thsv)
  - Improved visual program for OpenDX
  - Fix OpenDX file format for scalar functions
  - Allow access to samples of multi-adaptive solution

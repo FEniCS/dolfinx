@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Thomas Svedberg, 2004: BiCGSTAB solver
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -62,6 +64,9 @@ void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     break;
   case CG:
     solveCG(A,x,b);
+    break;
+  case BiCGSTAB:
+    solveBiCGSTAB(A,x,b);
     break;
   default:
     dolfin_error("Unknown Krylov method.");
@@ -322,6 +327,90 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
   norm_residual = residual(A,x,b,r);
   dolfin_info("CG converged after %i iterations (residual = %1.5e)."
 	      ,k, norm_residual);
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::solveBiCGSTAB(const Matrix &A, Vector &x, const Vector &b)
+{
+  size_t n (x.size());
+  real rho_1 = 0.0;
+  real rho_2 = 0.0;
+  real alpha = 0.0;
+  real beta  = 0.0;
+  real omega = 0.0;
+  real b_norm(b.norm());
+  
+  Vector r(n);
+  real norm_residual = residual (A, x, b, r);
+  
+  if (norm_residual  < tol * b_norm) return;
+  
+  Vector rtilde (r);
+  
+  Vector p(n), phat(n), s(n), shat(n), t(n), v(n);
+  
+  size_t iter (0);
+  while (1) {
+    
+    rho_1 = rtilde * r;
+    
+    if (fabs (rho_1) < 1e-25) {
+      dolfin_info("BICGSTAB breakdown: rho_1 = %g", rho_1);
+      exit (1);
+    }
+    
+    if (iter == 0)
+      p = r;
+    else {
+      if (fabs (omega) < 1e-25) {
+	dolfin_info("BICGSTAB breakdown: omega = %g", omega);
+	exit (1);
+      }
+      
+      beta = (rho_1 * alpha) / (rho_2 * omega);
+      
+      for (size_t i = 0; i < n; i++)
+	p(i) = r(i) + beta * (p(i) - omega * v(i));
+    }
+    if (pc != NONE) {
+      phat = 0.0;
+      solvePxu (A, phat, p);
+    } else
+      phat = p;
+    
+    A.mult (phat, v);
+    
+    alpha = rho_1 / (v * rtilde);
+    
+    for (size_t i = 0; i < n; i++)
+      s(i) = r(i) - alpha * v(i);
+    
+    if (s.norm() < tol * b_norm) {
+      for (size_t i = 0; i < n; i++)
+	x(i) += alpha * phat(i);
+      dolfin_info("BicCGSTAB converged after %i iterations (residual %1.5e)",
+		  iter, s.norm());
+      break;
+    }
+    
+    if (pc != NONE) {
+      shat = 0.0;
+      solvePxu (A, shat, s);
+    } else
+      shat = s;
+    
+    A.mult (shat, t);
+    
+    omega = (t * s) / (t * t);
+    
+    for (size_t i = 0; i < n; i++) {
+      x(i) += alpha * phat(i) + omega * shat(i);
+      r(i) = s(i) - omega * t(i);
+    }
+    
+    rho_2 = rho_1;
+    
+    ++iter;
+  }
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::solvePxu(const Matrix &A, Vector &x, Vector &u)
