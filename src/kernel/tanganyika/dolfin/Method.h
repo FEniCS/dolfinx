@@ -20,8 +20,8 @@ namespace dolfin {
     Method(int q);
 
     /// Destructor
-    ~Method();
-
+    virtual ~Method();
+    
     /// Return number of points
     int size() const;
     

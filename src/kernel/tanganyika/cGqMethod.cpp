@@ -80,7 +80,7 @@ void cGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void cGqMethod::computeWeights()
 {
-  Matrix A(q, q, Matrix::DENSE);
+  Matrix A(q, q, Matrix::dense);
   
   // Compute matrix coefficients
   for (int i = 1; i < n; i++) {

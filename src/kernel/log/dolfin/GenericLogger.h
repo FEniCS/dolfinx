@@ -32,7 +32,7 @@ namespace dolfin {
     void start();
     void end();
     
-  private:
+  protected:
     
     int level;
     

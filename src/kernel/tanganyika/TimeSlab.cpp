@@ -180,7 +180,7 @@ void TimeSlab::updateTimeSlabs(RHS& f)
 //-----------------------------------------------------------------------------
 void TimeSlab::updateElements(RHS& f)
 {
-  for (List<Element>::Iterator element = first;; ++element) {
+  for (Table<Element>::Iterator element = first;; ++element) {
     element->update(f);
     if ( element == last )
       break;

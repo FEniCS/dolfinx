@@ -16,7 +16,6 @@
 #define __FINITE_ELEMENT_H
 
 #include <dolfin/constants.h>
-#include <dolfin/ShortList.h>
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/ShapeFunction.h>
 

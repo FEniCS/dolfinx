@@ -19,7 +19,7 @@ TimeSlabData::~TimeSlabData()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-List<Element>::Iterator TimeSlabData::createElement(Element::Type type, int q,
+Table<Element>::Iterator TimeSlabData::createElement(Element::Type type, int q,
 						    int index, TimeSlab* timeslab)
 {
   // Create element

@@ -72,7 +72,7 @@ void dGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void dGqMethod::computeWeights()
 {
-  Matrix A(n, n, Matrix::DENSE);
+  Matrix A(n, n, Matrix::dense);
   
   // Compute matrix coefficients
   for (int i = 0; i < n; i++) {

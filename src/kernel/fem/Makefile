@@ -57,18 +57,23 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+host_alias = 
+host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -g -O2
-DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-ode -ldolfin-poisson -ldolfin-template -ldolfin-tanganyika -ldolfin-io -ldolfin-grid -ldolfin-fem -ldolfin-elements -ldolfin-quadrature -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-math -ldolfin-common -ldolfin-settings -ldolfin-log -ldolfin-settings -ldolfin-common -ldolfin-main -ldolfin-tanganyika 
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall
+DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-ode -ldolfin-poisson -ldolfin-template -ldolfin-tanganyika -ldolfin-io -ldolfin-grid -ldolfin-fem -ldolfin-elements -ldolfin-quadrature -ldolfin-grid -ldolfin-io -ldolfin-fem -ldolfin-la -ldolfin-math -ldolfin-common -ldolfin-settings -ldolfin-log -ldolfin-settings -ldolfin-common -ldolfin-main -ldolfin-tanganyika 
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
 LN_S = ln -s
+LTLIB = @LTLIB@
 MAINT = #
-MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/ode -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
+MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/ode -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
 MAKEINFO = makeinfo
-MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika 
+MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika 
 PACKAGE = 
-PACKAGE_NAME = README
+PACKAGE_NAME = dolfin
 PACKAGE_VERSION = 0.3.9
 RANLIB = ranlib
 VERSION = 
@@ -79,7 +84,7 @@ libxml2_found = yes
 SUBDIRS = dolfin
 include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/DofFunction.h                           dolfin/ElementFunction.h                           dolfin/ExpressionFunction.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionList.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/GenericFunction.h                           dolfin/Integral.h                           dolfin/Mapping.h                           dolfin/PDE.h                           dolfin/PDESystem.h                           dolfin/Product.h                           dolfin/ScalarExpressionFunction.h                           dolfin/ShapeFunction.h                           dolfin/TetLinMapping.h                           dolfin/TriLinMapping.h                           dolfin/VectorExpressionFunction.h
 
-INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika 
+INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika 
 lib_LIBRARIES = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = DofFunction.cpp                           ElementFunction.cpp                           ExpressionFunction.cpp                           FiniteElement.cpp                           Function.cpp                           FunctionList.cpp                           FunctionSpace.cpp                           GenericFunction.cpp                           Galerkin.cpp                           Integral.cpp                           Mapping.cpp                           PDE.cpp                           PDESystem.cpp                           Product.cpp                           ScalarExpressionFunction.cpp                           ShapeFunction.cpp                           TetLinMapping.cpp                           TriLinMapping.cpp                           VectorExpressionFunction.cpp
 
@@ -88,7 +93,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS = -DPACKAGE_NAME=\"README\" -DPACKAGE_TARNAME=\"readme\" -DPACKAGE_VERSION=\"0.3.9\" -DPACKAGE_STRING=\"README\ 0.3.9\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.3.9\" -DPACKAGE_STRING=\"dolfin\ 0.3.9\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = -lncurses 

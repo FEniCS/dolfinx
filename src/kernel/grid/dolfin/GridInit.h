@@ -11,33 +11,26 @@ namespace dolfin{
   /// GridInit implements the algorithm for computing the neighbour
   /// information (connections) in a grid.
   ///
-  /// The trick is to compute the connections in the correct order:
-  ///
-  /// 1. All neighbor cells of a node: n-c
-  /// 2. All neighbor cells of a cell: c-c (including the cell itself)
-  /// 3. All neighbor nodes of a node: n-n (including the node itself)
-  /// 4. All neighbor edges of a node: n-e 
-
+  /// The trick is to compute the connections in the correct order, as
+  /// indicated in GridInit.h, to obtain an O(n) algorithm.
+  
   class GridInit {
   public:
     
-    GridInit(Grid& grid_);
-    
-    void init();
+    static void init(Grid& grid);
     
   private:
     
-    void clear();
+    static void clear            (Grid& grid);
     
-    void initNeighbors();
-    void initBoundary();
+    static void initEdges        (Grid& grid);
+    static void initConnectivity (Grid& grid);
+    static void initFaces        (Grid& grid);
     
-    void initNodeCell();
-    void initCellCell();
-    void initNodeNode();
-    void initNodeEdge();
-    
-    Grid& grid;
+    static void initNodeCell     (Grid& grid);
+    static void initCellCell     (Grid& grid);
+    static void initNodeEdge     (Grid& grid);
+    static void initNodeNode     (Grid& grid);
     
   };
 

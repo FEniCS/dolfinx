@@ -6,10 +6,12 @@
 #ifndef __LOGGER_MACROS_H
 #define __LOGGER_MACROS_H
 
+#include <stdarg.h>
 #include <dolfin/LogManager.h>
 
 // Info (does not need to be a macro)
 namespace dolfin { void dolfin_info(const char *msg, ...); }
+namespace dolfin { void dolfin_info_aptr(const char *msg, va_list aptr); }
 
 // Update (force refresh of curses interface)
 namespace dolfin { void dolfin_update(); }
@@ -22,6 +24,12 @@ namespace dolfin { bool dolfin_finished(); }
 
 // Raise a segmentation fault, useful for debugging
 namespace dolfin { void dolfin_segfault(); }
+
+// Task notification
+
+namespace dolfin { void dolfin_start(); }
+namespace dolfin { void dolfin_start(const char* msg, ...); }
+namespace dolfin { void dolfin_end(); }
 
 // Debug macros (with varying number of arguments)
 
@@ -54,10 +62,5 @@ namespace dolfin { void dolfin_segfault(); }
 #else
 #define dolfin_assert(check)
 #endif
-
-// Macros for task notification
-
-#define dolfin_start do { dolfin::LogManager::log.start(); } while ( false )
-#define dolfin_end   do { dolfin::LogManager::log.end();   } while ( false )
 
 #endif

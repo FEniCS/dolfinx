@@ -44,8 +44,8 @@ const FunctionSpace::ElementFunction TetLinMapping::dt
 void TetLinMapping::update(const Cell& cell)
 {
   // Check that cell type is correct
-  if ( cell.type() != Cell::TETRAHEDRON )
-	 dolfin_error("Wrong cell type for mapping (must be a tetrahedron).");
+  if ( cell.type() != Cell::tetrahedron )
+    dolfin_error("Wrong cell type for mapping (must be a tetrahedron).");
   
   // Reset values
   reset();

@@ -118,7 +118,8 @@ void SISolver::iterateRichardson(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 void SISolver::iterateJacobi(const Matrix& A, Vector& x, const Vector& b)
 {
-  real aii,aij;
+  real aii = 0.0;
+  real aij = 0.0;
   Vector x0(x);
 
   int j;
@@ -136,7 +137,8 @@ void SISolver::iterateJacobi(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 void SISolver::iterateGaussSeidel(const Matrix& A, Vector& x, const Vector& b)
 {
-  real aii,aij;
+  real aii = 0.0;
+  real aij = 0.0;
 
   int j;
   for (int i = 0; i < A.size(0); i++) {
@@ -153,7 +155,8 @@ void SISolver::iterateGaussSeidel(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 void SISolver::iterateSOR(const Matrix& A, Vector& x, const Vector& b)
 {
-  real aij, aii;
+  real aij = 0.0;
+  real aii = 0.0;
   real omega = 1.0;
 
   int j;

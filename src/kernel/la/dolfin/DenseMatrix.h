@@ -88,7 +88,6 @@ namespace dolfin {
 
   private:
     
-    int m, n;
     real** values;
 
     int* permutation;

@@ -27,6 +27,8 @@ real dGqElement::eval(real t) const
   real sum = 0.0;
   for (int i = 0; i <= q; i++)
     sum += values[i] * dG(q).basis(i,tau);
+  
+  return sum;
 }
 //-----------------------------------------------------------------------------
 real dGqElement::eval(int node) const
@@ -70,7 +72,6 @@ void dGqElement::feval(RHS& f)
 real dGqElement::integral(int i) const
 {
   real k = 0.1;
-  real t0 = 0.0;
 
   real sum = 0.0;
   for (int j = 0; j <= q; j++)

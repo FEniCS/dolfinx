@@ -8,83 +8,62 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/constants.h>
-#include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/File.h>
 #include <dolfin/GridInit.h>
 #include <dolfin/GridRefinement.h>
-#include <dolfin/GridData.h>
 #include <dolfin/Grid.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Grid::Grid()
+Grid::Grid() : gd(this), bd(this), rd(this)
 {
-  gd = 0;
-  clear();
-
-  gd->setFinestGridLevel(0);
-  
   rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
-Grid::Grid(const char* filename)
+Grid::Grid(const char* filename) : gd(this), bd(this), rd(this)
 {
-  gd = 0;
-  clear();
-  
   // Read grid from file
   File file(filename);
   file >> *this;
-
-  gd->setFinestGridLevel(0);
 
   rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
 {
-  if ( gd )
-    delete gd;  
+  clear();
 }
 //-----------------------------------------------------------------------------
 void Grid::clear()
 {
-  if ( gd )
-    delete gd;
-  gd = new GridData();
-  
-  _type = TRIANGLES;
-}
-//-----------------------------------------------------------------------------
-void Grid::operator = (const Grid& grid)
-{
-  init();  
-  
-  (*this->gd) = (*grid.gd);
-}
-//-----------------------------------------------------------------------------
-void Grid::refine()
-{
-  GridRefinement refine(*this);
+  gd.clear();
+  bd.clear();
+  rd.clear();
+  _type = triangles;
 }
 //-----------------------------------------------------------------------------
 int Grid::noNodes() const
 {
-  return gd->noNodes();
+  return gd.noNodes();
 }
 //-----------------------------------------------------------------------------
 int Grid::noCells() const
 {
-  return gd->noCells();
+  return gd.noCells();
 }
 //-----------------------------------------------------------------------------
 int Grid::noEdges() const
 {
-  return gd->noEdges();
+  return gd.noEdges();
+}
+//-----------------------------------------------------------------------------
+int Grid::noFaces() const
+{
+  return gd.noFaces();
 }
 //-----------------------------------------------------------------------------
 Grid::Type Grid::type() const
@@ -92,10 +71,23 @@ Grid::Type Grid::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
+void Grid::mark(Cell* cell)
+{
+  rd.mark(cell);
+}
+//-----------------------------------------------------------------------------
+void Grid::refine()
+{
+  GridRefinement::refine(*this);
+}
+//-----------------------------------------------------------------------------
 void Grid::show()
 {
-  cout << "-------------------------------------------------------------------------------" << endl;
-  cout << "Grid with " << noNodes() << " nodes and " << noCells() << " cells:" << endl;
+  cout << "---------------------------------------";
+  cout << "----------------------------------------" << endl;
+
+  cout << "Grid with " << noNodes() << " nodes and " 
+       << noCells() << " cells:" << endl;
   cout << endl;
 
   for (NodeIterator n(this); !n.end(); ++n)
@@ -108,107 +100,100 @@ void Grid::show()
   
   cout << endl;
   
-  cout << "-------------------------------------------------------------------------------" << endl;
+  cout << "---------------------------------------";
+  cout << "----------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
-void Grid::setFinestGridLevel(int gl)
+Node* Grid::createNode(Point p)
 {
-  gd->setFinestGridLevel(gl);
+  return gd.createNode(p);
 }
 //-----------------------------------------------------------------------------
-int Grid::finestGridLevel()
+Node* Grid::createNode(real x, real y, real z)
 {
-  return gd->finestGridLevel();
+  return gd.createNode(x, y, z);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(int level)
-{
-  return gd->createNode(level);
-}
-//-----------------------------------------------------------------------------
-Cell* Grid::createCell(int level, Cell::Type type)
+Cell* Grid::createCell(int n0, int n1, int n2)
 {
   // Warning: grid type will be type of last added cell
-  switch ( type ) {
-  case Cell::TRIANGLE:
-    _type = TRIANGLES;
-    break;
-  case Cell::TETRAHEDRON:
-    _type = TETRAHEDRONS;
-    break;
-  default:
-    dolfin_error("Unknown cell type.");
-  }
+  _type = triangles;
   
-  return gd->createCell(level,type);
+  return gd.createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(int level, Point p)
-{
-  return gd->createNode(level,p.x,p.y,p.z);
-}
-//-----------------------------------------------------------------------------
-Node* Grid::createNode(int level, real x, real y, real z)
-{
-  return gd->createNode(level,x,y,z);
-}
-//-----------------------------------------------------------------------------
-Cell* Grid::createCell(int level, Cell::Type type, int n0, int n1, int n2)
+Cell* Grid::createCell(int n0, int n1, int n2, int n3)
 {
   // Warning: grid type will be type of last added cell
-  _type = TRIANGLES;
+  _type = tetrahedrons;
   
-  return gd->createCell(level,type,n0,n1,n2);
+  return gd.createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3)
+Cell* Grid::createCell(Node* n0, Node* n1, Node* n2)
 {
   // Warning: grid type will be type of last added cell
-  _type = TETRAHEDRONS;
+  _type = triangles;
   
-  return gd->createCell(level,type,n0,n1,n2,n3);
+  return gd.createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2)
+Cell* Grid::createCell(Node* n0, Node* n1, Node* n2, Node* n3)
 {
   // Warning: grid type will be type of last added cell
-  _type = TRIANGLES;
+  _type = tetrahedrons;
   
-  return gd->createCell(level,type,n0,n1,n2);
+  return gd.createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
+Edge* Grid::createEdge(int n0, int n1)
 {
-  // Warning: grid type will be type of last added cell
-  _type = TETRAHEDRONS;
-  
-  return gd->createCell(level,type,n0,n1,n2,n3);
+  return gd.createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
-void Grid::createEdges(Cell* cell)
+Edge* Grid::createEdge(Node* n0, Node* n1)
 {
-  gd->createEdges(cell);
+  return gd.createEdge(n0, n1);
+}
+//-----------------------------------------------------------------------------
+Face* Grid::createFace(int e0, int e1, int e2)
+{
+  return gd.createFace(e0, e1, e2);
+}
+//-----------------------------------------------------------------------------
+Face* Grid::createFace(Edge* e0, Edge* e1, Edge* e2)
+{
+  return gd.createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)
 {
-  return gd->getNode(id);
+  return gd.getNode(id);
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::getCell(int id)
 {
-  return gd->getCell(id);
+  return gd.getCell(id);
 }
 //-----------------------------------------------------------------------------
 Edge* Grid::getEdge(int id)
 {
-  return gd->getEdge(id);
+  return gd.getEdge(id);
+}
+//-----------------------------------------------------------------------------
+Face* Grid::getFace(int id)
+{
+  return gd.getFace(id);
+}
+//-----------------------------------------------------------------------------
+bool Grid::hasEdge(Node* n0, Node* n1) const
+{
+  return gd.hasEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
 void Grid::init()
 {
-  GridInit gridInit(*this);
-  gridInit.init();
+  GridInit::init(*this);
 }
 //-----------------------------------------------------------------------------
 // Additional operators
@@ -219,10 +204,10 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Grid& grid)
 	 << grid.noCells() << " cells ";
 
   switch ( grid.type() ) {
-  case Grid::TRIANGLES:
+  case Grid::triangles:
     stream << "(triangles)";
     break;
-  case Grid::TETRAHEDRONS:
+  case Grid::tetrahedrons:
     stream << "(tetrahedrons)";
     break;
   default:

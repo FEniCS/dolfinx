@@ -5,6 +5,7 @@
 #define __FUNCTION_LIST_H
 
 #include <dolfin/function.h>
+#include <dolfin/Array.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/ElementFunction.h>
 
@@ -56,7 +57,7 @@ namespace dolfin {
       FunctionData();
       FunctionData(function f);
       
-      // Needed for ShortList
+      // 
       void operator= (int zero);
       bool operator! () const;
       
@@ -75,7 +76,7 @@ namespace dolfin {
     
     static void init();
     
-    static ShortList<FunctionData> list;
+    static Array<FunctionData> list;
     static int _size;
     static bool initialised;
     

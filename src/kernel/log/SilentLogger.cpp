@@ -58,7 +58,7 @@ void SilentLogger::quit()
 //-----------------------------------------------------------------------------
 bool SilentLogger::finished()
 {
-
+  return false;
 }
 //-----------------------------------------------------------------------------
 void SilentLogger::progress_add(Progress* p)

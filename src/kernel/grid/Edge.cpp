@@ -12,34 +12,106 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Edge::Edge()
 {
+  grid = 0;
   _id = -1;
 
-  _en0 = NULL;
-  _en1 = NULL;
+  n0 = 0;
+  n1 = 0;
 
+  // FIXME: Remove?
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
-Edge::Edge(Node *en0, Node *en1)
+Edge::Edge(Node* n0, Node* n1)
 {
+  grid = 0;
   _id = -1;
 
-  _en0 = en0;
-  _en1 = en1;
+  this->n0 = n0;
+  this->n1 = n1;
 
+  // FIXME: Remove?
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
 Edge::~Edge()
 {
+
 }
 //-----------------------------------------------------------------------------
-void Edge::set(Node *en0, Node *en1)
+int Edge::id() const
 {
-  _en0 = en0;
-  _en1 = en1;
+  return _id;
 }
 //-----------------------------------------------------------------------------
+Node* Edge::node(int i) const
+{
+  if ( i == 0 )
+    return n0;
+
+  if ( i == 1 )
+    return n1;
+
+  dolfin_error("Node number must 0 or 1.");
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+Point Edge::coord(int i) const
+{
+  if ( i == 0 )
+    return n0->coord();
+
+  if ( i == 1 )
+    return n1->coord();
+
+  dolfin_error("Node number must 0 or 1.");
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+real Edge::length() const
+{
+  return n0->dist(*n1);
+}
+//-----------------------------------------------------------------------------
+Point Edge::midpoint() const
+{
+  Point p = n0->coord();
+  p += n1->coord();
+  p /= 2.0;
+
+  return p;
+}
+//-----------------------------------------------------------------------------
+bool Edge::equals(Node* n0, Node* n1) const
+{
+  if ( this->n0 == n0 && this->n1 == n1 )
+    return true;
+
+  if ( this->n0 == n1 && this->n1 == n0 )
+    return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+int Edge::setID(int id, Grid* grid)
+{
+  this->grid = grid;
+  return _id = id;
+}
+//-----------------------------------------------------------------------------
+void Edge::set(Node* n0, Node* n1)
+{
+  this->n0 = n0;
+  this->n1 = n1;
+}
+//-----------------------------------------------------------------------------
+
+
+
+// FIXME: Remove?
+
 void Edge::setMarkedForReUse(bool re_use)
 {
   _marked_for_re_use = re_use;
@@ -48,16 +120,6 @@ void Edge::setMarkedForReUse(bool re_use)
 bool Edge::markedForReUse()
 {
   return _marked_for_re_use;
-}
-//-----------------------------------------------------------------------------
-int Edge::id() const
-{
-  return _id;
-}
-//-----------------------------------------------------------------------------
-void Edge::setID(int id)
-{
-  _id = id;
 }
 //-----------------------------------------------------------------------------
 int Edge::level() const
@@ -86,26 +148,6 @@ void Edge::setRefinedByCell(Cell* c)
   _no_cells_refined++;
 }
 //-----------------------------------------------------------------------------
-Node* Edge::node(int node)
-{
-  if ( (node<0) || (node>=2) )
-    dolfin_error("Illegal node.");
-
-  if ( node == 0 ) return _en0;
-  if ( node == 1 ) return _en1;
-  dolfin_error("edge end node must be 0 or 1");
-}
-//-----------------------------------------------------------------------------
-Point Edge::coord(int node)
-{
-  if ( (node<0) || (node>=2) )
-    dolfin_error("Illegal node.");
-  
-  if ( node == 0 ) return _en0->coord();
-  if ( node == 1 ) return _en1->coord();
-  dolfin_error("edge end node must be 0 or 1");
-}
-//-----------------------------------------------------------------------------
 bool Edge::marked()
 {
   return marked_for_refinement;
@@ -119,35 +161,5 @@ void Edge::mark()
 void Edge::unmark()
 {
   marked_for_refinement = false;
-}
-//-----------------------------------------------------------------------------
-real Edge::length()
-{
-  // Get the coordinates
-  Point p1 = _en0->coord();
-  Point p2 = _en1->coord();
-
-  return p1.dist(p2);
-}
-//-----------------------------------------------------------------------------
-Point Edge::midpoint()
-{
-  // Get the coordinates
-  Point p1 = _en0->coord();
-  Point p2 = _en1->coord();
-
-  // Make sure we get full precision
-  real x1, x2, y1, y2, z1, z2;
-
-  x1 = real(p1.x); y1 = real(p1.y); z1 = real(p1.z);
-  x2 = real(p2.x); y2 = real(p2.y); z2 = real(p2.z);
-
-  // The midpoint of the edge 
-  Point mp;
-  mp.x = 0.5*(x1+x2);
-  mp.y = 0.5*(y1+y2);
-  mp.z = 0.5*(z1+z2);
-  
-  return ( mp );
 }
 //-----------------------------------------------------------------------------

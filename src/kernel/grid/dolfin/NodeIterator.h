@@ -4,8 +4,8 @@
 #ifndef __NODE_ITERATOR_H
 #define __NODE_ITERATOR_H
 
-#include <dolfin/List.h>
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
+#include <dolfin/Table.h>
 
 namespace dolfin {
   
@@ -14,115 +14,113 @@ namespace dolfin {
   class Cell;
   class CellIterator;
   class GenericCell;
-
+  
   typedef Node* NodePointer;
   
   class NodeIterator {
   public:
-	 
-	 NodeIterator(const Grid& grid);
-	 NodeIterator(const Grid* grid);
+    
+    NodeIterator(const Grid& grid);
+    NodeIterator(const Grid* grid);
 
-	 NodeIterator(const Node& node);
-	 NodeIterator(const NodeIterator& nodeIterator);
+    NodeIterator(const Node& node);
+    NodeIterator(const NodeIterator& nodeIterator);
 	 
-	 NodeIterator(const Cell& cell);
-	 NodeIterator(const CellIterator& cellIterator);
+    NodeIterator(const Cell& cell);
+    NodeIterator(const CellIterator& cellIterator);
 	 
-	 ~NodeIterator();
+    ~NodeIterator();
 
-	 operator NodePointer() const;
+    operator NodePointer() const;
 	
- 	 NodeIterator& operator++();
-	 bool end();
-	 bool last();
-	 int index();
+    NodeIterator& operator++();
+    bool end();
+    bool last();
+    int index();
 	 
-	 Node& operator*() const;
-	 Node* operator->() const;
-	 bool  operator==(const NodeIterator& n) const;
-	 bool  operator!=(const NodeIterator& n) const;
+    Node& operator*() const;
+    Node* operator->() const;
+    bool  operator==(const NodeIterator& n) const;
+    bool  operator!=(const NodeIterator& n) const;
 	 
-	 // Base class for node iterators
-	 class GenericNodeIterator {
-	 public:
+    // Base class for node iterators
+    class GenericNodeIterator {
+    public:
 		
-		virtual void operator++() = 0;
-		virtual bool end() = 0;
-		virtual bool last() = 0;
-		virtual int index() = 0;
+      virtual void operator++() = 0;
+      virtual bool end() = 0;
+      virtual bool last() = 0;
+      virtual int index() = 0;
 		
-		virtual Node& operator*() const = 0;
-		virtual Node* operator->() const = 0;
-		virtual Node* pointer() const = 0;
+      virtual Node& operator*() const = 0;
+      virtual Node* operator->() const = 0;
+      virtual Node* pointer() const = 0;
 		
-	 };
+    };
 	 
-	 // Iterator for the nodes in a grid
-	 class GridNodeIterator : public GenericNodeIterator {
-	 public:
+    // Iterator for the nodes in a grid
+    class GridNodeIterator : public GenericNodeIterator {
+    public:
 		
-		GridNodeIterator(const Grid &grid); 
+      GridNodeIterator(const Grid& grid); 
 		
-		void operator++();
-		bool end();
-		bool last();
-		int index();
+      void operator++();
+      bool end();
+      bool last();
+      int index();
 		
-		Node& operator*() const;
-		Node* operator->() const;
-		Node* pointer() const;
+      Node& operator*() const;
+      Node* operator->() const;
+      Node* pointer() const;
 
-		List<Node>::Iterator node_iterator;
-		List<Node>::Iterator at_end;
+      Table<Node>::Iterator node_iterator;
+      Table<Node>::Iterator at_end;
 		
-	 };
+    };
 
-	 // Iterator for the node neighbors of a node
-	 class NodeNodeIterator : public GenericNodeIterator {
-	 public:
+    // Iterator for the node neighbors of a node
+    class NodeNodeIterator : public GenericNodeIterator {
+    public:
 
-		NodeNodeIterator(const Node &node);
-		void operator++();
-		bool end();
-		bool last();
-		int index();
+      NodeNodeIterator(const Node& node);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
 
-		Node& operator*() const;
-		Node* operator->() const;
-		Node* pointer() const;
+      Node& operator*() const;
+      Node* operator->() const;
+      Node* pointer() const;
 		
-	 private:
+    private:
 
-		ShortList<Node *>::Iterator node_iterator;
+      Array<Node*>::Iterator node_iterator;
 		
-	 };
+    };
 	 
-	 // Iterator for the nodes in a cell
-	 class CellNodeIterator : public GenericNodeIterator {
-	 public:
+    // Iterator for the nodes in a cell
+    class CellNodeIterator : public GenericNodeIterator {
+    public:
 
-		CellNodeIterator(const Cell &cell);
-		void operator++();
-		bool end();
-		bool last();
-		int index();
+      CellNodeIterator(const Cell& cell);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
 
-		Node& operator*() const;
-		Node* operator->() const;
-		Node* pointer() const;
+      Node& operator*() const;
+      Node* operator->() const;
+      Node* pointer() const;
 		
-	 private:
+    private:
 
-		ShortList<Node *>::Iterator node_iterator;
-
-		GenericCell *genericCell;
+      Array<Node*>::Iterator node_iterator;
 		
-	 };
+    };
 	 
   private:
 
-	 GenericNodeIterator *n;
+    GenericNodeIterator* n;
 	 
   };
 

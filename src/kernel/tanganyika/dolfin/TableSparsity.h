@@ -4,7 +4,7 @@
 #ifndef __TABLE_SPARSITY_H
 #define __TABLE_SPARSITY_H
 
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
 #include <dolfin/GenericSparsity.h>
 
 namespace dolfin {
@@ -44,7 +44,7 @@ namespace dolfin {
 
   private:
 
-    ShortList<int>* list;
+    Array<int>* list;
 
   };
 

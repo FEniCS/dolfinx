@@ -65,7 +65,7 @@ void MFile::operator<<(Grid& grid)
     
     p = n->coord();
     
-    if ( grid.type() == Grid::TRIANGLES ) {
+    if ( grid.type() == Grid::triangles ) {
       if ( n.last() )
 	fprintf(fp,"%.16f %.16f]';\n", p.x, p.y);
       else

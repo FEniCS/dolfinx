@@ -39,7 +39,7 @@ void GaussianQuadrature::computeWeights()
     return;
   }
  
-  Matrix A(n, n, Matrix::DENSE);
+  Matrix A(n, n, Matrix::dense);
   Vector x(n), b(n);
    
   // Compute the matrix coefficients

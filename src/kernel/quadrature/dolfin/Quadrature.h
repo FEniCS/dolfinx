@@ -4,7 +4,6 @@
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
 
-#include <dolfin/ShortList.h>
 #include <dolfin/Point.h>
 
 namespace dolfin {
@@ -13,7 +12,7 @@ namespace dolfin {
   public:
     
     Quadrature(int n);
-    ~Quadrature();
+    virtual ~Quadrature();
     
     /// Return number of quadrature points
     int size() const;

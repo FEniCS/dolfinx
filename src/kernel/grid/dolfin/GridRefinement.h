@@ -3,8 +3,6 @@
 
 // A couple of comments:
 //
-//   - Maybe not so many methods should be public?
-//   - Why _create_edges and not create_edges?
 //   - Return List<Cell *> from closeCell() won't work?
 //   - Rename refineGrid(int level) and unrefineGrid(int level) to refine(int level) and unrefine(int level)?
 //   - Should there be an unrefine()?
@@ -21,17 +19,17 @@ namespace dolfin {
   class GridRefinement {
   public:
 
-    GridRefinement(Grid &grid);
-    GridRefinement(Grid &grid0, Grid &grid1);
+    static void refine(Grid& grid);
     
   private:
 
+    /*
     void globalRegularRefinement();
-    
     void globalRefinement();
     
     void evaluateMarks(int grid_level);
-    void closeGrid(int grid_level);
+    staticvoid closeGrid(int grid_level);
+
     List<Cell *> closeCell(Cell *parent);
     
     void refineGrid(int grid_level);
@@ -52,6 +50,7 @@ namespace dolfin {
     void refine();
     
     bool _create_edges;
+    */
 
   };
 

@@ -9,26 +9,23 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  dolfin_set("create edges",true); 
-
   Grid grid;
-  File file1("grid.xml.gz");
-  File file2("grid_refined.dx");
+  File in("grid.xml.gz");
+  File out("grid_refined.dx");
 
   // Read grid from file
-  file1 >> grid;
-  dolfin::cout << grid << dolfin::endl;  
-  
-  // Show the entire grid
-  //grid.show();
+  in >> grid;
 
+  // Mark nodes for refinement
+  for (CellIterator cell(grid); !cell.end(); ++cell)
+    if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
+      cell->mark();
+  
   // Refine grid
   grid.refine();
   
   // Save refined grid to file
-  file2 << grid;
-
-  dolfin::cout << grid << dolfin::endl;  
+  out << grid;
 
   return 0;
 }

@@ -15,7 +15,6 @@ namespace dolfin {
   class Vector;
   class GenericMatrix;
 
-  /// A MatrixIndex is a special index for a Matrix. This is declared outside
   enum MatrixRange { all };
   enum MatrixIndex { first, last };
 
@@ -36,19 +35,19 @@ namespace dolfin {
   public:
 
     /// Matrix type, sparse or dense
-    enum Type {DENSE, SPARSE};
+    enum Type {sparse, dense, generic};
 
     /// Create an empty matrix
-    Matrix(Type type = SPARSE);
+    Matrix(Type type = sparse);
 
     /// Create matrix with given dimensions
-    Matrix(int m, int n, Type type = SPARSE);
+    Matrix(int m, int n, Type type = sparse);
 
     /// Create a copy of a given matrix
     Matrix(const Matrix& A);
 
     /// Destructor
-    ~Matrix ();
+    virtual ~Matrix();
 
     // Forward declaration of nested classes
     class Element;
@@ -58,140 +57,140 @@ namespace dolfin {
     ///--- Basic operations
 
     /// Initialize to a zero matrix with given dimensions
-    void init(int m, int n);
+    virtual void init(int m, int n);
 
     /// Clear all data
-    void clear();
+    virtual void clear();
 
     ///--- Simple functions
     
     /// Return matrix type, sparse or dense
-    Type type() const;
+    virtual Type type() const;
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    int size(int dim) const;
+    virtual int size(int dim) const;
 
     /// Return number of non-zero elements (only sparse)
-    int size() const;
+    virtual int size() const;
 
     /// Return number of non-zero elements on row i (only sparse)
-    int rowsize(int i) const;
+    virtual int rowsize(int i) const;
 
     /// Return size of matrix in bytes (approximately)
-    int bytes() const;
+    virtual int bytes() const;
 
     ///--- Operators
 
     /// Index operator
-    real operator()(int i, int j) const;
+    virtual real operator()(int i, int j) const;
 
     /// Index operator
-    Element operator()(int i, int j);
+    virtual Element operator()(int i, int j);
 
     /// Index operator
-    Row operator()(int i, MatrixRange j);
+    virtual Row operator()(int i, MatrixRange j);
 
     /// Index operator
-    Row operator()(MatrixIndex i, MatrixRange j);
+    virtual Row operator()(MatrixIndex i, MatrixRange j);
     
     /// Index operator
-    Column operator()(MatrixRange i, int j);
+    virtual Column operator()(MatrixRange i, int j);
 
     /// Index operator
-    Column operator()(MatrixRange i, MatrixIndex j);
+    virtual Column operator()(MatrixRange i, MatrixIndex j);
 
     /// Index operator (only dense, quick access)
-    real* operator[](int i) const;
+    virtual real* operator[](int i) const;
 
     /// Index operator (only sparse, quick access)
-    real operator()(int i, int& j, int pos) const;
+    virtual real operator()(int i, int& j, int pos) const;
 
     /// Assignment from scalar (affects only already non-zero elements for sparse)
-    void operator=(real a);
+    virtual void operator=(real a);
 
     /// Assignment from a given matrix
-    void operator=(const Matrix& A);
+    virtual void operator=(const Matrix& A);
 
     /// Add a given matrix
-    void operator+=(const Matrix& A);
+    virtual void operator+=(const Matrix& A);
 
     /// Subtract a given matrix
-    void operator-=(const Matrix& A);
+    virtual void operator-=(const Matrix& A);
 
     /// Multiplication with a given scalar
-    void operator*=(real a);    
+    virtual void operator*=(real a);    
     
     ///--- Matrix operations
 
     /// Compute maximum norm
-    real norm() const;
+    virtual real norm() const;
 
     /// Matrix-vector multiplication, component i of Ax
-    real mult(const Vector& x, int i) const;
+    virtual real mult(const Vector& x, int i) const;
 
     /// Matrix-vector multiplication
-    void mult(const Vector& x, Vector& Ax) const;
+    virtual void mult(const Vector& x, Vector& Ax) const;
     
     /// Matrix-vector multiplication with transpose
-    void multt(const Vector& x, Vector &Ax) const;
+    virtual void multt(const Vector& x, Vector &Ax) const;
 
     /// Scalar product with row
-    real multrow(const Vector& x, int i) const;
+    virtual real multrow(const Vector& x, int i) const;
 
     /// Scalar product with column
-    real multcol(const Vector& x, int j) const;
+    virtual real multcol(const Vector& x, int j) const;
 
     /// Compute transpose
-    void transp(Matrix& At) const;
+    virtual void transp(Matrix& At) const;
 
     /// Solve Ax = b (in-place LU for dense and Krylov for sparse)
-    void solve(Vector& x, const Vector& b);
+    virtual void solve(Vector& x, const Vector& b);
 
     /// Compute inverse (only dense)
-    void inverse(Matrix& Ainv);
+    virtual void inverse(Matrix& Ainv);
 
     /// Solve Ax = b with high precision (only dense, not in-place)
-    void hpsolve(Vector& x, const Vector& b) const;
+    virtual void hpsolve(Vector& x, const Vector& b) const;
 
     /// Compute LU factorization (only dense, in-place)
-    void lu();
+    virtual void lu();
 
     /// Solve A x = b using a computed lu factorization (only dense)
-    void solveLU(Vector& x, const Vector& b) const;
+    virtual void solveLU(Vector& x, const Vector& b) const;
 
     /// Compute inverse using a computed lu factorization (only dense)
-    void inverseLU(Matrix& Ainv) const;
+    virtual void inverseLU(Matrix& Ainv) const;
 
     /// Solve A x = b with high precision using a computed lu factorization (only dense)
-    void hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const;
+    virtual void hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const;
     
     /// --- Special functions
 
     /// Clear unused elements (only sparse)
-    void resize();
+    virtual void resize();
     
     /// Set A(i,j) = d_{ij} on row i
-    void ident(int i);
+    virtual void ident(int i);
 
     /// Add a new row
-    void addrow();
+    virtual void addrow();
     
     /// Add a new row given by a vector
-    void addrow(const Vector& x);
+    virtual void addrow(const Vector& x);
 
     /// Specify number of non-zero elements on row i (only sparse)
-    void initrow(int i, int rowsize);
+    virtual void initrow(int i, int rowsize);
 
     /// True if we have reached the end of the row (only sparse)
-    bool endrow(int i, int pos) const;
+    virtual bool endrow(int i, int pos) const;
     
     /// Set this matrix to the transpose of the given matrix
-    void settransp(const Matrix& A);
+    virtual void settransp(const Matrix& A);
 
     /// --- Output
 
     /// Display entire matrix
-    void show() const;
+    virtual void show() const;
 
     /// Condensed information in one line
     friend LogStream& operator<< (LogStream& stream, const Matrix& A);

@@ -5,7 +5,7 @@
 #define __PARTITION_H
 
 #include <dolfin/constants.h>
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
 
 namespace dolfin {
 
@@ -54,7 +54,7 @@ namespace dolfin {
     real maximum(int offset);
 
     // List of components
-    ShortList<Component> components;
+    Array<Component> components;
 
   };
 

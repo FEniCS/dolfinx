@@ -4,6 +4,7 @@
 #ifndef __AUTOMATIC_SPARSITY_H
 #define __AUTOMATIC_SPARSITY_H
 
+#include <dolfin/Array.h>
 #include <dolfin/GenericSparsity.h>
 
 namespace dolfin {
@@ -46,7 +47,7 @@ namespace dolfin {
     void computeSparsity(ODE& ode);
     bool checkdep(ODE& ode, Vector& u, real f0, int i, int j);
 
-    ShortList<int>* list;
+    Array<int>* list;
     real increment;
 
   };

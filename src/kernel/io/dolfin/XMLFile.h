@@ -7,7 +7,7 @@
 #include <libxml/parser.h>
 
 #include <dolfin/constants.h>
-#include "GenericFile.h"
+#include <dolfin/GenericFile.h>
 
 namespace dolfin {
   

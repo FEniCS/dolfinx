@@ -1,6 +1,7 @@
 EXTRA_DIST = dolfin_common.h \
+             Array.h \
              List.h \
-             ShortList.h \
+             Table.h \
              Tensor.h \
              Variable.h \
              bcfunction.h \

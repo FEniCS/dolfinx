@@ -193,7 +193,6 @@ void DenseMatrix::operator=(const SparseMatrix& A)
   (*this) = 0.0;
 
   int j;
-  real a;
   for (int i = 0; i < m; i++)
     for (int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
@@ -219,7 +218,6 @@ void DenseMatrix::operator+=(const SparseMatrix& A)
   init(A.m, A.n);
 
   int j;
-  real a;
   for (int i = 0; i < m; i++)
     for (int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
@@ -245,7 +243,6 @@ void DenseMatrix::operator-=(const SparseMatrix& A)
   init(A.m, A.n);
 
   int j;
-  real a;
   for (int i = 0; i < m; i++)
     for (int pos = 0; !A.endrow(i,pos); pos++) {
       real a = A(i,j,pos);
@@ -326,6 +323,8 @@ real DenseMatrix::multcol(const Vector& x, int j) const
   real sum = 0.0;
   for (int i = 0; i < m; i++)
     sum += values[i][j] * x(j);
+
+  return sum;
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::resize()
@@ -405,9 +404,7 @@ void DenseMatrix::settransp(const SparseMatrix& A)
 {
   init(A.n, A.m);
                                                                                                                                                             
-  int j;
-  real a;
-                                                                                                                                                            
+  int j;                                                                                                                                                            
   for (int i = 0; i < n; i++)
     for (int pos = 0; !A.endrow(i,pos); pos++)
       values[j][i] = A(i,j,pos);
@@ -430,6 +427,8 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const DenseMatrix& A)
   int n = A.size(1);
   
   stream << "[ Dense matrix of size " << m << " x " << n << " ]";
+
+  return stream;
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::alloc(int m, int n)

@@ -37,9 +37,14 @@ Point::Point(real x, real y, real z)
 //-----------------------------------------------------------------------------
 real Point::dist(Point p) const
 {
-  real dx = x - p.x;
-  real dy = y - p.y;
-  real dz = z - p.z;
+  return dist(p.x, p.y, p.z);
+}
+//-----------------------------------------------------------------------------
+real Point::dist(real x, real y, real z) const
+{
+  real dx = x - this->x;
+  real dy = y - this->y;
+  real dz = z - this->z;
 
   return sqrt( dx*dx + dy*dy + dz*dz );
 }
@@ -65,6 +70,24 @@ void Point::operator= (real x)
 Point::operator real() const
 {
   return x;
+}
+//-----------------------------------------------------------------------------
+Point Point::operator+= (const Point& p)
+{
+  x += p.x;
+  y += p.y;
+  z += p.z;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+Point Point::operator/= (real a)
+{
+  x /= a;
+  y /= a;
+  z /= a;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 // Output

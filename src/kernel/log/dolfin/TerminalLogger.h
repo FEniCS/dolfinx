@@ -28,6 +28,10 @@ namespace dolfin {
     
     void progress_add    (Progress* p);
     void progress_remove (Progress *p);
+
+  private:
+
+    void indent();
     
   };
 

@@ -14,7 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DofFunction::DofFunction(Grid& grid, Vector& dofs, int dim, int size) :
-  x(dofs), GenericFunction(dim, size)
+  GenericFunction(dim, size), x(dofs)
 {
   // FIXME: assumes nodal basis
   x.init(grid.noNodes());

@@ -75,7 +75,7 @@ Vector::~Vector()
 void Vector::init(int size)
 {
   if ( size <= 0 )
-    dolfin_error("Size must be positive.");
+    dolfin_error1("Size must be positive. (size = %d)", size);
   
   // Two cases:
   //

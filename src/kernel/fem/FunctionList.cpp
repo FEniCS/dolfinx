@@ -13,7 +13,7 @@ namespace dolfin {
 using namespace dolfin;
 
 // Initialise static data
-ShortList<FunctionList::FunctionData> FunctionList::list(DOLFIN_PARAMSIZE);
+Array<FunctionList::FunctionData> FunctionList::list(DOLFIN_PARAMSIZE);
 int FunctionList::_size = 0;
 bool FunctionList::initialised = false;
 FunctionList functionList;
@@ -22,7 +22,7 @@ FunctionList functionList;
 FunctionList::FunctionList()
 {
   if ( !initialised )
-	 init();
+    init();
 }
 //-----------------------------------------------------------------------------
 int FunctionList::add(function f)
@@ -33,10 +33,10 @@ int FunctionList::add(function f)
     list.resize(2*list.size());
     id = list.add(FunctionData(f));
   }
-
+  
   // Increase size of list. Note that _size <= list.size()
   _size += 1;
-
+  
   return id;
 }
 //-----------------------------------------------------------------------------

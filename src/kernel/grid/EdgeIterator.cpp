@@ -1,3 +1,6 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <dolfin/Grid.h>
 #include <dolfin/Edge.h>
 #include <dolfin/EdgeIterator.h>
@@ -85,8 +88,8 @@ bool EdgeIterator::operator!=(const EdgeIterator& e) const
 //-----------------------------------------------------------------------------
 EdgeIterator::GridEdgeIterator::GridEdgeIterator(const Grid& grid)
 {
-  edge_iterator = grid.gd->edges.begin();
-  at_end = grid.gd->edges.end();
+  edge_iterator = grid.gd.edges.begin();
+  at_end = grid.gd.edges.end();
 }
 //-----------------------------------------------------------------------------
 void EdgeIterator::GridEdgeIterator::operator++()
@@ -128,7 +131,7 @@ Edge* EdgeIterator::GridEdgeIterator::pointer() const
 //-----------------------------------------------------------------------------
 EdgeIterator::CellEdgeIterator::CellEdgeIterator(const Cell &cell)
 {
-  edge_iterator = cell.ce.begin();
+  edge_iterator = cell.c->ce.begin();
 }
 //-----------------------------------------------------------------------------
 void EdgeIterator::CellEdgeIterator::operator++()

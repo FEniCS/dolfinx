@@ -4,26 +4,34 @@
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
 
+#include <dolfin/Array.h>
 #include <dolfin/GenericCell.h>
 
 namespace dolfin {
 
+  class Node;
   class Cell;
   
   class Triangle : public GenericCell {
   public:
-	 
-	 int noNodes() const;
-	 int noEdges() const;
-	 int noFaces() const;
-	 int noBound() const;
-	 
-	 Cell::Type type() const;
+    
+    Triangle(Node* n0, Node* n1, Node* n2);
 
+    int noNodes() const;
+    int noEdges() const;
+    int noFaces() const;
+
+    int noBoundaries() const;
+    
+    Cell::Type type() const;
+    
   private:
+    
+    bool neighbor(GenericCell* cell) const;
 
-	 bool neighbor(ShortList<Node *> &cn, Cell &cell) const;
-
+    void createEdges();
+    void createFaces();
+    
   };
 
 }

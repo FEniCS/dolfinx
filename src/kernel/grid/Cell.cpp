@@ -15,81 +15,68 @@ using namespace dolfin;
 Cell::Cell()
 {
   _level = -1;
-  _id = -1;
   c = 0;
+
+  // Remove?
   _marker = MARKED_FOR_NO_REFINEMENT;
   _status = UNREFINED;
-
   _no_marked_edges = 0;
-  _no_children = 0;
-
   _marked_for_re_use = true;
-
   _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
-Cell::Cell(Node &n0, Node &n1, Node &n2)
+Cell::Cell(Node* n0, Node* n1, Node* n2)
 {
+  c = new Triangle(n0, n1, n2);
+
+  // FIXME: Remove?
   _level = -1;
-  _id = -1;
-
-  c = 0;
-  init(TRIANGLE);
-
-  cn(0) = &n0;
-  cn(1) = &n1;
-  cn(2) = &n2;
-
   _marker = MARKED_FOR_NO_REFINEMENT;
   _status = UNREFINED;
-
   _no_marked_edges = 0;
-  _no_children = 0;
-
   _marked_for_re_use = true;
-
   _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
-Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
+Cell::Cell(Node* n0, Node* n1, Node* n2, Node* n3)
 {
+  c = new Tetrahedron(n0, n1, n2, n3);
+
+  // FIXME: Remove?
   _level = -1;
-  _id = -1;
-
-  c = 0;
-  init(TETRAHEDRON);
-
-  cn(0) = &n0;
-  cn(1) = &n1;
-  cn(2) = &n2;
-  cn(3) = &n3;
-
   _marker = MARKED_FOR_NO_REFINEMENT;
   _status = UNREFINED;
-
   _no_marked_edges = 0;
-  _no_children = 0;
-
   _marked_for_re_use = true;
-
   _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
 {
   if ( c )
-	 delete c;
+    delete c;
 }
 //-----------------------------------------------------------------------------
-GenericCell* Cell::operator->() const
+int Cell::id() const
 {
-  return c;
+  if ( c )
+    return c->id();
+
+  return -1;
+}
+//-----------------------------------------------------------------------------
+Cell::Type Cell::type() const
+{
+  if ( c )
+    return c->type();
+
+  return none;
 }
 //-----------------------------------------------------------------------------
 int Cell::noNodes() const
 {
   if ( c )
-	 return c->noNodes();
+    return c->noNodes();
 
   return 0;
 }
@@ -97,7 +84,7 @@ int Cell::noNodes() const
 int Cell::noEdges() const
 {
   if ( c )
-	 return c->noEdges();
+    return c->noEdges();
 
   return 0;
 }
@@ -105,77 +92,190 @@ int Cell::noEdges() const
 int Cell::noFaces() const
 {
   if ( c )
-	 return c->noFaces();
+    return c->noFaces();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noBound() const
+int Cell::noBoundaries() const
 {
   if ( c )
-	 return c->noBound();
+    return c->noBoundaries();
 
   return 0;
-}
-//-----------------------------------------------------------------------------
-int Cell::noChildren() const
-{
-  return _no_children;
-}
-//-----------------------------------------------------------------------------
-Node* Cell::node(int i) const
-{
-  return cn(i);
-}
-//-----------------------------------------------------------------------------
-Edge* Cell::edge(int i) const
-{
-  return ce(i);
-}
-//-----------------------------------------------------------------------------
-Cell* Cell::neighbor(int i) const
-{
-  return cc(i);
-}
-//-----------------------------------------------------------------------------
-Cell* Cell::child(int i) const
-{
-  return children(i);
-}
-//-----------------------------------------------------------------------------
-void Cell::addChild(Cell* child) 
-{
-  children.add(child);
-  _no_children++;
-}
-//-----------------------------------------------------------------------------
-Point Cell::coord(int i) const
-{
-  return cn(i)->coord();
-}
-//-----------------------------------------------------------------------------
-Cell::Type Cell::type() const
-{
-  if ( c )
-	 return c->type();
-
-  return NONE;
 }
 //-----------------------------------------------------------------------------
 int Cell::noCellNeighbors() const
 {
-  return cc.size();
+  if ( c )
+    return c->noCellNeighbors();
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 int Cell::noNodeNeighbors() const
 {
-  return cn.size();
+  if ( c )
+    return c->noNodeNeighbors();
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::id() const
+Node* Cell::node(int i) const
 {
-  return _id;
+  if ( c )
+    return c->node(i);
+
+  return 0;
 }
+//-----------------------------------------------------------------------------
+Edge* Cell::edge(int i) const
+{
+  if ( c )
+    return c->edge(i);
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+Cell* Cell::neighbor(int i) const
+{
+  if ( c )
+    return c->neighbor(i);
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+Point Cell::coord(int i) const
+{ 
+  if ( c )
+    return c->coord(i);
+
+  Point p;
+  return p;
+}
+//-----------------------------------------------------------------------------
+Point Cell::midpoint() const
+{
+  if ( c )
+    return c->midpoint();
+
+  Point p;
+  return p;
+}
+//-----------------------------------------------------------------------------
+int Cell::nodeID(int i) const
+{
+  if ( c )
+    return c->nodeID(i);
+  
+  return -1;
+}
+//-----------------------------------------------------------------------------
+void Cell::mark()
+{
+  if ( !c )
+    dolfin_error("You cannot mark an unspecified cell.");
+  
+  c->mark(this);
+}
+//-----------------------------------------------------------------------------
+int Cell::setID(int id, Grid* grid)
+{
+  dolfin_assert(c);
+  return c->setID(id, grid);
+}
+//-----------------------------------------------------------------------------
+void Cell::set(Node* n0, Node* n1, Node* n2)
+{
+  if ( c )
+    delete c;
+  
+  c = new Triangle(n0, n1, n2);
+}
+//-----------------------------------------------------------------------------
+void Cell::set(Node* n0, Node* n1, Node* n2, Node* n3)
+{
+  if ( c )
+    delete c;
+
+  c = new Tetrahedron(n0, n1, n2, n3);
+}
+//-----------------------------------------------------------------------------
+bool Cell::neighbor(Cell& cell)
+{
+  if ( c )
+    return c->neighbor(cell.c);
+  
+  return false;
+}
+//-----------------------------------------------------------------------------
+void Cell::createEdges()
+{
+  dolfin_assert(c);
+  c->createEdges();
+}
+//-----------------------------------------------------------------------------
+void Cell::createFaces()
+{
+  dolfin_assert(c);
+  c->createFaces();
+}
+//-----------------------------------------------------------------------------
+void Cell::createEdge(Node* n0, Node* n1)
+{
+  dolfin_assert(c);
+  c->createEdge(n0, n1);
+}
+//-----------------------------------------------------------------------------
+void Cell::createFace(Edge* e0, Edge* e1, Edge* e2)
+{
+  dolfin_assert(c);
+  c->createFace(e0, e1, e2);
+}
+//-----------------------------------------------------------------------------
+Edge* Cell::findEdge(Node* n0, Node* n1)
+{
+  dolfin_assert(c);
+  return c->findEdge(n0, n1);
+}
+//-----------------------------------------------------------------------------
+Face* Cell::findFace(Edge* e0, Edge* e1, Edge* e2)
+{
+  dolfin_assert(c);
+  return c->findFace(e0, e1, e2);
+}
+//-----------------------------------------------------------------------------
+// Additional operators
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
+{
+  switch ( cell.type() ){
+  case Cell::triangle:
+    stream << "[Cell (triangle) with nodes ( ";
+    for (NodeIterator n(cell); !n.end(); ++n)
+      stream << n->id() << " ";
+    stream << "]";
+    break;
+  case Cell::tetrahedron:
+    stream << "[Cell (tetrahedron) with nodes ( ";
+    for (NodeIterator n(cell); !n.end(); ++n)
+      stream << n->id() << " ";
+    stream << "]";
+    break;
+  default:
+    dolfin_error("Unknown cell type");
+  }	 
+  
+  return stream;
+}
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
+/*
 //-----------------------------------------------------------------------------
 int Cell::level() const
 {
@@ -190,16 +290,6 @@ int Cell::nodeID(int i) const
 void Cell::setEdge(Edge* e, int i)
 {
   ce(i) = e;
-}
-//-----------------------------------------------------------------------------
-void Cell::mark(Marker marker)
-{
-  _marker = marker;
-}
-//-----------------------------------------------------------------------------
-Cell::Marker Cell::marker() const
-{
-  return _marker;
 }
 //-----------------------------------------------------------------------------
 void Cell::setMarkedForReUse(bool re_use)
@@ -222,36 +312,11 @@ Cell::Status Cell::status() const
   return _status;
 }
 //-----------------------------------------------------------------------------
-void Cell::set(Node *n0, Node *n1, Node *n2)
-{
-  if ( cn.size() != 3 )
-	 dolfin_error("Wrong number of nodes for this cell type.");
-
-  cn(0) = n0;
-  cn(1) = n1;
-  cn(2) = n2;
-}
-//-----------------------------------------------------------------------------
-void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
-{
-  if ( cn.size() != 4 )
-	 dolfin_error("Wrong number of nodes for this cell type.");
-
-  cn(0) = n0;
-  cn(1) = n1;
-  cn(2) = n2;
-  cn(3) = n3;
-}
-//-----------------------------------------------------------------------------
-void Cell::setID(int id)
-{
-  _id = id;
-}
-//-----------------------------------------------------------------------------
 void Cell::setLevel(int level)
 {
   _level = level;
 }
+
 //-----------------------------------------------------------------------------
 void Cell::markEdge(int edge)
 {
@@ -260,7 +325,8 @@ void Cell::markEdge(int edge)
     ce(edge)->setRefinedByCell(this);
     _no_marked_edges++;
   }
-}	 
+}
+ 
 //-----------------------------------------------------------------------------
 void Cell::unmarkEdge(int edge)
 {
@@ -289,10 +355,10 @@ bool Cell::markedEdgesOnSameFace()
 {
   bool marked_node[4];
   switch (type()) {
-  case TRIANGLE:
+  case triangle:
     return true;
     break;
-  case TETRAHEDRON:
+  case tetrahedron:
     switch (_no_marked_edges) {
     case 1:
       return true;
@@ -345,55 +411,4 @@ bool Cell::markedEdgesOnSameFace()
   }
 }
 //-----------------------------------------------------------------------------
-void Cell::init(Type type)
-{
-  if ( c )
-	 delete c;
-  
-  switch (type) {
-  case TRIANGLE:
-	 c = new Triangle();
-	 break;
-  case TETRAHEDRON:
-	 c = new Tetrahedron();
-	 break;
-  default:
-	 dolfin_error("Unknown cell type.");
-  }
-  
-  cn.init(noNodes());
-  ce.init(noEdges());
-}
-//-----------------------------------------------------------------------------
-bool Cell::neighbor(Cell &cell)
-{
-  if ( c )
-	 return c->neighbor(cn,cell);
-
-  return false;
-}
-//-----------------------------------------------------------------------------
-// Additional operators
-//-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
-{
-  switch ( cell.type() ){
-  case Cell::TRIANGLE:
-	 stream << "[Cell (triangle) with nodes ( ";
-	 for (NodeIterator n(cell); !n.end(); ++n)
-		stream << n->id() << " ";
-	 stream << "]";
-	 break;
-  case Cell::TETRAHEDRON:
-	 stream << "[Cell (tetrahedron) with nodes ( ";
-	 for (NodeIterator n(cell); !n.end(); ++n)
-		stream << n->id() << " ";
-	 stream << "]";
-	 break;
-  default:
-	 dolfin_error("Unknown cell type");
-  }	 
-  
-  return stream;
-}
-//-----------------------------------------------------------------------------
+*/

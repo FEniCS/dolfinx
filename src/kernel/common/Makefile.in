@@ -57,12 +57,17 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
 AWK = @AWK@
 CC = @CC@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@
 DOLFIN_LFLAGS = @DOLFIN_LFLAGS@
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
 LN_S = @LN_S@
+LTLIB = @LTLIB@
 MAINT = @MAINT@
 MAIN_INCLUDES = @MAIN_INCLUDES@
 MAKEINFO = @MAKEINFO@
@@ -77,10 +82,14 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_common.h                         dolfin/List.h                         dolfin/System.h                         dolfin/ShortList.h                         dolfin/Tensor.h                         dolfin/Variable.h                         dolfin/bcfunction.h                         dolfin/meminfo.h                         dolfin/function.h                         dolfin/sysinfo.h                         dolfin/timeinfo.h                         dolfin/utils.h                         dolfin/vfunction.h
+
+include_HEADERS = dolfin/dolfin_common.h                   dolfin/Array.h                   dolfin/List.h                   dolfin/System.h                   dolfin/Table.h                   dolfin/Tensor.h                   dolfin/Variable.h                   dolfin/bcfunction.h                   dolfin/meminfo.h                   dolfin/function.h                   dolfin/sysinfo.h                   dolfin/timeinfo.h                   dolfin/utils.h                   dolfin/vfunction.h
+
 
 INCLUDES = @MODULE_INCLUDES@
+
 lib_LIBRARIES = libdolfin-common.a
+
 libdolfin_common_a_SOURCES = System.cpp                              Variable.cpp                              meminfo.cpp                              sysinfo.cpp                              timeinfo.cpp                              utils.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs

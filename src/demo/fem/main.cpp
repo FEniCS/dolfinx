@@ -35,7 +35,7 @@ int main()
   Node n1(5.0, 1.0);
   Node n2(4.0, 4.0);
   
-  Cell triangle(n0, n1, n2);
+  Cell triangle(&n0, &n1, &n2);
 
   // Define a quadrature rule
   TriangleMidpointQuadrature q;

@@ -20,6 +20,9 @@ namespace dolfin {
     /// Constructor for ODE solver
     Solver(ODE& ode_);
     
+    /// Destructor
+    virtual ~Solver();
+
     /// Problem description
     virtual const char* description() = 0;
     
@@ -39,7 +42,7 @@ namespace dolfin {
 
     class DummyODE : public ODE {
     public:
-      DummyODE() : ODE(0) {}
+      DummyODE() : ODE(1) {}
       real f(const Vector& u, real t, int i) { return 0.0; }
     };
 

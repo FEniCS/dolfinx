@@ -6,8 +6,8 @@
 
 #include <stdarg.h>
 
-#include <dolfin/ShortList.h>
-#include "Parameter.h"
+#include <dolfin/List.h>
+#include <dolfin/Parameter.h>
 
 namespace dolfin {
   
@@ -35,10 +35,9 @@ namespace dolfin {
     
   private:
     
-    int getIndex(const char *identifier);
+    Parameter* find(const char *identifier);
     
-    ShortList<Parameter> list;
-    bool _empty;
+    List<Parameter> list;
     
   };
   

@@ -4,7 +4,7 @@
 #ifndef __DGQ_METHODS_H
 #define __DGQ_METHODS_H
 
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
 #include <dolfin/dGqMethod.h>
 
 namespace dolfin {
@@ -35,7 +35,7 @@ namespace dolfin {
 
   private:
 
-    ShortList<dGqMethod*> methods;
+    Array<dGqMethod*> methods;
 
   };
   

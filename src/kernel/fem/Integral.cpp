@@ -35,11 +35,8 @@ Integral::Measure::Measure(const Mapping& mapping,
 //-----------------------------------------------------------------------------
 Integral::Measure::~Measure()
 {
-  if ( table ) {
-    for (int i = 0; i < order; i++)
-      delete table[i];
+  if ( table )
     delete [] table;
-  }
   table = 0;
 }
 //-----------------------------------------------------------------------------
@@ -65,7 +62,7 @@ real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
     resize(order, FunctionList::size());
   
   // Get value
-  Value value = (*(table[0]))(id);
+  Value value = table[0](id);
   
   // Check if integral has already been computed
   if ( value.ok() )
@@ -90,7 +87,7 @@ real Integral::Measure::operator* (const FunctionSpace::Product &v)
     resize(size, n);
   
   // Get value
-  Value value = (*(table[size - 1]))(id);
+  Value value = table[size - 1](id);
   
   // Check if integral has already been computed
   if ( value.ok() )
@@ -114,9 +111,9 @@ void Integral::Measure::init()
   n = FunctionList::size();
   
   // Initialise the table
-  table = new (Tensor<Value> *)[order];
+  table = new Tensor<Value>[order];
   for (int i = 0; i < order; i++)
-    table[i] = new Tensor<Value>(i+1, n);
+    table[i].init(i+1, n);
 }
 //-----------------------------------------------------------------------------
 void Integral::Measure::resize(int new_order, int new_n)
@@ -126,17 +123,11 @@ void Integral::Measure::resize(int new_order, int new_n)
   dolfin_debug1("Number of functions: %d",  new_n);
   
   // Create a new table
-  Tensor<Value> **new_table = new (Tensor<Value> *)[new_order];
+  Tensor<Value>* new_table = new Tensor<Value>[new_order];
   for (int i = 0; i < new_order; i++)
-    new_table[i] = new Tensor<Value>(i+1, new_n);
-  
-  // Copy the old values
-  for (int i = 0; i < new_order & i < order; i++)
-    new_table[i]->copy(*(table[i]));
+    new_table[i].init(i+1, new_n);
   
   // Delete old table
-  for (int i = 0; i < order; i++)
-    delete table[i];
   delete [] table;
   
   // Use the new table
@@ -155,7 +146,7 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::ShapeFunction &v)
     I += q->weight(i) * v(q->point(i));
   
   // Set value
-  (*table[0])(v.id()).set(I);
+  table[0](v.id()).set(I);
 
   return I;
 }
@@ -168,7 +159,7 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::Product &v)
     I += q->weight(i) * v(q->point(i));
   
   // Set value
-  (*table[v.size() - 1])(v.id()).set(I);
+  table[v.size() - 1](v.id()).set(I);
   
   return I;
 }

@@ -242,13 +242,13 @@ void Galerkin::init(Grid &grid)
 
   // Create default finite element
   switch ( grid.type() ) {
-  case Grid::TRIANGLES:
+  case Grid::triangles:
     cout << "Using standard piecewise linears on triangles." << endl;
     element    = new P1TriElement();
     mapping    = new TriLinMapping();
     quadrature = new TriangleMidpointQuadrature();
     break;
-  case Grid::TETRAHEDRONS:
+  case Grid::tetrahedrons:
     cout << "Using standard piecewise linears on tetrahedrons." << endl;
     element    = new P1TetElement();
     mapping    = new TetLinMapping();

@@ -57,6 +57,8 @@ int Component::add(Element& element, real t1)
 
   // Add the slab to the list
   elements(next++) = element;
+
+  return n;
 }
 //-----------------------------------------------------------------------------
 Element& Component::last()
@@ -78,7 +80,7 @@ Element Component::findpos(real t)
   // Try to compute the position (correct if the time steps for this
   // component are constant within the time slab)
   
-  int resolution = 1000;
+  //int resolution = 1000;
   int n = elements.size(); // What if we don't use all elements?
   //current = max((t*n) / resolution, n);
 
@@ -110,5 +112,6 @@ Element Component::findpos(real t)
 
   }
 
+  return element;
 }
 //-----------------------------------------------------------------------------

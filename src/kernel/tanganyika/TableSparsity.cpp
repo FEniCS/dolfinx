@@ -9,7 +9,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TableSparsity::TableSparsity(int N) : GenericSparsity(N)
 {
-  list = new ShortList<int>[N];
+  list = new Array<int>[N];
 }
 //-----------------------------------------------------------------------------
 TableSparsity::~TableSparsity()

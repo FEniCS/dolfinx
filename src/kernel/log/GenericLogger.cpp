@@ -19,8 +19,8 @@ void GenericLogger::start()
 void GenericLogger::end()
 {
   level--;
-
+  
   if ( level < 0 )
-	 level = 0;
+    level = 0;
 }
 //-----------------------------------------------------------------------------

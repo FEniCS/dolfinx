@@ -30,14 +30,13 @@ namespace dolfin {
     void solveCG    (const Matrix &A, Vector &x, const Vector &b);
     void solveGMRES (const Matrix &A, Vector &x, const Vector &b);
     
-    int restartedGMRES(const Matrix &A, Vector &x, const Vector &b, int k_max);
+    int restartedGMRES(const Matrix &A, Vector &x, const Vector &b, Vector& r, int k_max);
     
     void solvePxu(const Matrix &A, Vector &x, Vector &u);
 
     bool reorthog(const Matrix& A, Matrix& v, Vector &x, int k);   
 
     real residual (const Matrix &A, Vector &x, const Vector &b, Vector &r);
-    real residual (const Matrix &A, Vector &x, const Vector &b);
     
     Method method;
     Preconditioner pc;

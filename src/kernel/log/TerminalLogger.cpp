@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include <dolfin/utils.h>
+#include <dolfin/LoggerMacros.h>
 #include <dolfin/TerminalLogger.h>
 
 using namespace dolfin;
@@ -23,29 +24,34 @@ TerminalLogger::~TerminalLogger()
 //-----------------------------------------------------------------------------
 void TerminalLogger::info(const char* msg)
 {
+  indent();
   std::cout << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::debug(const char* msg, const char* location)
 {
+  indent();
   std::cout << "[Debug at " << location << "]: " << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::warning(const char* msg, const char* location)
 {
+  indent();
   std::cout << "[Warning at " << location << "]: " << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::error(const char* msg, const char* location)
 {
+  indent();
   std::cout << "[Error at " << location << "]: " << msg << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::dassert(const char* msg, const char* location)
 {
+  indent();
   std::cout << "[Assertion " << msg << " failed at " << location << "]: " << msg << std::endl;
-  exit(1);
+  dolfin_segfault();
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::progress(const char* title, const char* label, real p)
@@ -95,5 +101,12 @@ void TerminalLogger::progress_add(Progress* p)
 void TerminalLogger::progress_remove(Progress *p)
 {
   // Do nothing here
+}
+//-----------------------------------------------------------------------------
+void TerminalLogger::indent()
+{
+  // Indent output to indicate the level
+  for (int i = 0; i < level; i++)
+    std::cout << "  ";
 }
 //-----------------------------------------------------------------------------

@@ -19,6 +19,9 @@ namespace dolfin {
 
     /// Return distance to given point p
     real dist(Point p) const;
+
+    /// Return distance to given point (x,y,z)
+    real dist(real x, real y, real z) const;
     
     /// Return midpoint on line to given point p
     Point midpoint(Point p) const;
@@ -26,8 +29,14 @@ namespace dolfin {
     /// Assignment from real, giving p = (x,0,0)
     void operator= (real x);
 
-    /// Convesion to real, returning x
+    /// Cast to real, returning x
     operator real() const;
+
+    /// Add point
+    Point operator+= (const Point& p);
+
+    /// Divide by scalar
+    Point operator/= (real a);
 
     /// The three coordinates
     real x;

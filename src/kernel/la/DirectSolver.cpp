@@ -245,7 +245,7 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
 //-----------------------------------------------------------------------------
 void DirectSolver::check(const Matrix& A) const
 {
-  if ( A.type() != Matrix::DENSE )
+  if ( A.type() != Matrix::dense )
     dolfin_error("Matrix must be dense to use the direct solver. Consider using dense().");
 }
 //-----------------------------------------------------------------------------

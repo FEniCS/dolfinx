@@ -32,10 +32,15 @@ void KrylovSolver::setPreconditioner(Preconditioner pc)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
 {
-  if ( A.size(0) != A.size(1) )
+  if ( A.size(0) != A.size(1) ) {
+    cout << "A = " << A << endl;
     dolfin_error("Matrix must be square.");
-  if ( A.size(0) != b.size() )
+  }
+  if ( A.size(0) != b.size() ) {
+    cout << "A = " << A << endl;
+    cout << "b = " << b << endl;
     dolfin_error("Incompatible matrix and vector dimensions.");
+  }
   
   cout << "Using Krylov solver for linear system of " << b.size() << " unknowns." << endl;
   
@@ -63,41 +68,48 @@ void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
 {
-  int k_max,max_no_restarts;
-  max_no_restarts = dolfin_get("max no krylov restarts"); // max no restarts
-  k_max = dolfin_get("max no stored krylov vectors"); // no iterations before restart
+  // Get parameters
+  int max_no_restarts = dolfin_get("max no krylov restarts"); // max no restarts
+  int k_max = dolfin_get("max no stored krylov vectors"); // no iterations before restart
 
-  int no_iterations;
+  // Compute residual
+  Vector r(b.size());
+  real norm_residual = residual(A,x,b,r);
 
-  real norm_residual = residual(A,x,b);
-  for (int i=0;i<max_no_restarts;i++){
-    no_iterations = restartedGMRES(A,x,b,k_max);
-    norm_residual = residual(A,x,b);
+  // Restarted GMRES
+  for (int i = 0; i < max_no_restarts; i++) {
+    
+    // Krylov iterations
+    int no_iterations = restartedGMRES(A,x,b,r,k_max);
+
+    // Evaluate residual
+    norm_residual = residual(A,x,b,r);
+
+    // Check residual
     if (norm_residual < (tol*b.norm())){
       dolfin_info("Restarted GMRES converged after %i iterations (residual %1.5e)",
 		  i*k_max+no_iterations,norm_residual);
       break;
     }
-    if (i == max_no_restarts-1) {
-      dolfin_info("Restarted GMRES did not converged (%i iterations, residual %1.5e)",
+    if (i == max_no_restarts-1)
+      dolfin_error2("Restarted GMRES did not converge (%i iterations, residual %1.5e)",
 		    i*k_max+no_iterations,norm_residual);
-      exit(1);
-    }
+
   }
 }
 //-----------------------------------------------------------------------------
-int KrylovSolver::restartedGMRES(const Matrix& A,
-				 Vector& x, const Vector& b, int k_max)
+int KrylovSolver::restartedGMRES(const Matrix& A, Vector& x, const Vector& b,
+				 Vector& r, int k_max)
 {
   //Flexible GMRES with right preconditioner.
 
-  // number of unknowns
+  // Number of unknowns
   int n = x.size();
   
-  // initialization of temporary variables 
-  Matrix mat_h(k_max+1,k_max+1, Matrix::DENSE);
-  Matrix mat_v(1,n, Matrix::DENSE);
-  Matrix mat_z(1,n, Matrix::DENSE);
+  // Initialization of temporary variables 
+  Matrix mat_h(k_max+1,k_max+1, Matrix::dense);
+  Matrix mat_v(1,n, Matrix::dense);
+  Matrix mat_z(1,n, Matrix::dense);
 
   Vector vec_s(k_max+1);  
   Vector vec_c(k_max+1); 
@@ -105,10 +117,10 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
   Vector vec_z(n);
   Vector vec_v(n);
 
-  real tmp1,tmp2,nu,norm_v,htmp;
+  real tmp1, tmp2, nu;
+  real htmp = 0.0;
   
-  // Compute start residual = b-Ax.
-  Vector r(n);
+  // Compute start residual = b - Ax.
   real norm_residual = residual(A,x,b,r);
 
   // Set start values for v. 
@@ -124,8 +136,11 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
   vec_g = 0.0;
   vec_g(0) = norm_residual;
 
-  int k,k_end;
-  for (k=0;k<k_max;k++){
+  int k = 0;
+  int k_end = 0;
+
+  for (k=0;k<k_max;k++) {
+
     // Use the modified Gram-Schmidt process with reorthogonalization to
     // find orthogonal Krylov vectors.
     
@@ -206,7 +221,7 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
   k = k_end;
  
   // Postprocess to obtain solution by solving system Ry=w.
-  Matrix mat_r(k_max+1,k_max+1, Matrix::DENSE);
+  Matrix mat_r(k_max+1,k_max+1, Matrix::dense);
   mat_r = mat_h;
   Vector vec_w(vec_g);
   Vector vec_y(k_end+1); 
@@ -292,7 +307,7 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
     }
 
     if (k == k_max-1){
-      norm_residual = residual(A,x,b);
+      norm_residual = residual(A,x,b,r);
       dolfin_info("CG iterations did not converge: residual = %1.5e",
 		  norm_residual);
       exit(1);
@@ -302,7 +317,7 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
     if (tmp  < tol*b.norm() ) break;
   }
 
-  norm_residual = residual(A,x,b);
+  norm_residual = residual(A,x,b,r);
   dolfin_info("CG converged after %i iterations (residual = %1.5e)."
 	      ,k, norm_residual);
 }
@@ -337,22 +352,21 @@ void KrylovSolver::solvePxu(const Matrix &A, Vector &x, Vector &u)
   sisolver.solve(A,x,u);
 }
 //-----------------------------------------------------------------------
-real KrylovSolver::residual(const Matrix& A, Vector& x,const Vector& b, Vector& r)
+real KrylovSolver::residual(const Matrix& A, Vector& x, const Vector& b, 
+			    Vector& r)
 {
-  r.init(x.size());
-  for (int i = 0; i < A.size(0); i++) 
-    r(i) = b(i) - A.mult(x,i);
-  
-  return r.norm();
-}
-//-----------------------------------------------------------------------------
-real KrylovSolver::residual(const Matrix& A, Vector& x, const Vector& b)
-{
-  real norm_r = 0.0;
-  for (int i = 0; i < A.size(0); i++)
-    norm_r += sqr(b(i) - A.mult(x,i));
+  int n = b.size();
 
-  return sqrt(norm_r);
+  r.init(n);
+  A.mult(x,r);
+
+  real sum = 0.0;
+  for (int i = 0; i < n; i++) {
+    r(i) = b(i) - r(i);
+    sum += r(i)*r(i);
+  }
+  
+  return sqrt(sum);
 }
 //-----------------------------------------------------------------------------
 bool KrylovSolver::reorthog(const Matrix& A, Matrix& v, Vector &x, int k)

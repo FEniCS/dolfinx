@@ -91,9 +91,6 @@ namespace dolfin {
 
     void resizeRow(int i, int rowsize);
     
-    // Dimension
-    int m, n;
-    
     // Data
     int*   rowsizes;
     int**  columns;

@@ -12,232 +12,118 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GridData::GridData()
+GridData::GridData(Grid* grid)
 {
-  _finest_grid_level = 0;
+  this->grid = grid;
 }
 //-----------------------------------------------------------------------------
-Node* GridData::createNode(int level)
-{ 
-  int id;
-  Node *n = nodes.create(&id);
-  n->setID(id);
-  n->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
-  return n;
+GridData::~GridData()
+{
+  clear();
 }
 //-----------------------------------------------------------------------------
-Node* GridData::createNode(int level, real x, real y, real z)
+void GridData::clear()
+{
+  nodes.clear();
+  cells.clear();
+  edges.clear();
+  faces.clear();
+}
+//-----------------------------------------------------------------------------
+Node* GridData::createNode(Point p)
+{
+  return createNode(p.x, p.y, p.z);
+}
+//-----------------------------------------------------------------------------
+Node* GridData::createNode(real x, real y, real z)
 {
   // If a node exists with coordinates (x,y,z) then return a pointer to that 
   // node, else create a new node and return a pointer to that node.   
-  Point pnt;
-  for (List<Node>::Iterator n(nodes); !n.end(); ++n){
-    pnt = (n.pointer())->coord();
-    if ( fabs(pnt.x-x)<DOLFIN_EPS ){
-      if ( fabs(pnt.y-y)<DOLFIN_EPS ){
-	if ( fabs(pnt.z-z)<DOLFIN_EPS ){
-	  if ((n.pointer())->level() == level) return (n.pointer());
-	}
-      } 
-    }
+
+  // FIXME: Is this necessary?
+  for (Table<Node>::Iterator n(nodes); !n.end(); ++n){
+    Point p = n->coord();
+    if ( p.dist(x,y,z) < DOLFIN_EPS )
+      return n;
   }
+
   int id;
-  Node *n = nodes.create(&id);
-  n->setID(id);
+  Node* n = nodes.create(&id);
   n->set(x,y,z);  
-  n->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
+  n->setID(id, grid);
   return n;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int level, Cell::Type type)
+Cell* GridData::createCell(int n0, int n1, int n2)
 {
   int id;
-  Cell *c = cells.create(&id);
-  c->setID(id);
-  c->init(type);
-  c->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
+  Cell* c = cells.create(&id);
+  c->set(getNode(n0), getNode(n1), getNode(n2));
+  c->setID(id, grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2)
+Cell* GridData::createCell(int n0, int n1, int n2, int n3)
 {
   int id;
-  Cell *c = cells.create(&id);
-  c->init(type);
-  c->setID(id);
-  c->set(getNode(n0),getNode(n1),getNode(n2));
-  c->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
+  Cell* c = cells.create(&id);
+  c->set(getNode(n0), getNode(n1), getNode(n2), getNode(n3));
+  c->setID(id, grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3)
+Cell* GridData::createCell(Node* n0, Node* n1, Node* n2)
 {
   int id;
-  Cell *c = cells.create(&id);
-  c->init(type);
-  c->setID(id);
-  c->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
-  c->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
+  Cell* c = cells.create(&id);
+  c->set(n0, n1, n2);
+  c->setID(id, grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2)
+Cell* GridData::createCell(Node* n0, Node* n1, Node* n2, Node* n3)
 {
   int id;
-  Cell *c = cells.create(&id);
-  c->init(type);
-  c->setID(id);
-  c->set(n0,n1,n2);
-  c->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
+  Cell* c = cells.create(&id);
+  c->set(n0, n1, n2, n3);
+  c->setID(id, grid);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
+Edge* GridData::createEdge(int n0, int n1)
 {
   int id;
-  Cell *c = cells.create(&id);
-  c->init(type);
-  c->setID(id);
-  c->set(n0,n1,n2,n3);
-  c->setLevel(level);
-  if (level > _finest_grid_level) _finest_grid_level = level; 
-  return c;
+  Edge* e = edges.create(&id);
+  e->set(getNode(n0), getNode(n1));
+  e->setID(id, grid);
+  return e;
 }
 //-----------------------------------------------------------------------------
-void GridData::createEdges(Cell* c)
+Edge* GridData::createEdge(Node* n0, Node* n1)
 {
-  // If an edge exists with nodes n0 and n1 then return a pointer to that 
-  // edge, else create a new edge and return a pointer to that edge.   
-  Edge *edge;
   int id;
-  bool edge_exists;
-  for (int i=0;i<c->noEdges();i++){ 
-    edge_exists = false;
-    for (List<Edge>::Iterator e(edges); !e.end(); ++e){
-      switch(i){ 
-      case 0: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      case 1: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      case 2: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      case 3: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      case 4: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      case 5: 
-	if ( ( ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ||
-	     ( ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
-	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
-	       ((e.pointer())->level() == c->level()) ) ){
-	  c->setEdge(e.pointer(),i);
-	  edge_exists = true;
-	  break;
-	}
-	break;
-      default:
-	dolfin_error("wrong counter value on i");
-      }
-    }
-    
-    if (!edge_exists){
-      edge = edges.create(&id);
-      edge->setID(id);
-      switch(i){ 
-      case 0: 
-	edge->set(c->node(0),c->node(1));
-	break;
-      case 1: 
-	edge->set(c->node(0),c->node(2));
-	break;
-      case 2: 
-	edge->set(c->node(0),c->node(3));
-	break;
-      case 3: 
-	edge->set(c->node(1),c->node(2));
-	break;
-      case 4: 
-	edge->set(c->node(1),c->node(3));
-	break;
-      case 5: 
-	edge->set(c->node(2),c->node(3));
-	break;
-      default:
-	dolfin_error("wrong counter value on i");
-      }
-      edge->setLevel(c->level());
-      if (c->level() > _finest_grid_level) _finest_grid_level = c->level(); 
-      c->setEdge(edge,i);
-    }    
-  }
+  Edge* e = edges.create(&id);
+  e->set(n0, n1);
+  e->setID(id, grid);
+  return e;
 }
 //-----------------------------------------------------------------------------
-void GridData::setFinestGridLevel(int gl)
+Face* GridData::createFace(int e0, int e1, int e2)
 {
-  _finest_grid_level = gl;
+  int id;
+  Face* f = faces.create(&id);
+  f->set(getEdge(e0), getEdge(e1), getEdge(e2));
+  f->setID(id, grid);
+  return f;
 }
 //-----------------------------------------------------------------------------
-int GridData::finestGridLevel()
+Face* GridData::createFace(Edge* e0, Edge* e1, Edge* e2)
 {
-  return _finest_grid_level;
+  int id;
+  Face* f = faces.create(&id);
+  f->set(e0, e1, e2);
+  f->setID(id, grid);
+  return f;
 }
 //-----------------------------------------------------------------------------
 Node* GridData::getNode(int id)
@@ -255,6 +141,11 @@ Edge* GridData::getEdge(int id)
   return edges.pointer(id);
 }
 //-----------------------------------------------------------------------------
+Face* GridData::getFace(int id)
+{
+  return faces.pointer(id);
+}
+//-----------------------------------------------------------------------------
 int GridData::noNodes() const
 {
   return nodes.size();
@@ -268,5 +159,19 @@ int GridData::noCells() const
 int GridData::noEdges() const
 {
   return edges.size();
+}
+//-----------------------------------------------------------------------------
+int GridData::noFaces() const
+{
+  return faces.size();
+}
+//-----------------------------------------------------------------------------
+bool GridData::hasEdge(Node* n0, Node* n1) const
+{
+  for (Table<Edge>::Iterator e(edges); !e.end(); ++e)
+    if ( (e->n0 == n0 && e->n1 == n1) || (e->n0 == n1 && e->n1 == n0) )
+      return true;
+
+  return false;
 }
 //-----------------------------------------------------------------------------

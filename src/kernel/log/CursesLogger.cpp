@@ -666,7 +666,7 @@ void CursesLogger::getAnyKey()
   nodelay(win, false);
 
   // Get a character
-  char c = getch();
+  getch();
 
   // Reset input state to normal
   nodelay(win, true);
@@ -677,8 +677,7 @@ void CursesLogger::drawTitle()
   attron(A_BOLD);
   attron(COLOR_PAIR(5));
   clearLine(0,0);
-  //  printw("DOLFIN version %s", DOLFIN_VERSION);
-
+  printw("DOLFIN version %s", DOLFIN_VERSION);
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::drawProgress()
@@ -758,6 +757,7 @@ void CursesLogger::drawBuffer()
 
     // Print line from the buffer
     clearLine(line, 0);
+    indent();
     printw(buffer.get(i));
 
     // Step to previous line
@@ -861,5 +861,12 @@ void CursesLogger::redraw()
 
   // Call curses to refresh the window
   refresh();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::indent()
+{
+  // Indent output to indicate the level
+  for (int i = 0; i < level; i++)
+    printw("  ");
 }
 //-----------------------------------------------------------------------------

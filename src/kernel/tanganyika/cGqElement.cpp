@@ -22,6 +22,8 @@ real cGqElement::eval(real t) const
   real sum = 0.0;
   for (int i = 0; i <= q; i++)
     sum += values[i] * cG(q).basis(i,tau);
+  
+  return sum;
 }
 //-----------------------------------------------------------------------------
 real cGqElement::eval(int node) const
@@ -76,7 +78,6 @@ void cGqElement::feval(RHS& f)
 real cGqElement::integral(int i) const
 {
   real k = 0.1;
-  real t0 = 0.0;
 
   real sum = 0.0;
   for (int j = 0; j <= q; j++)

@@ -4,9 +4,8 @@
 #ifndef __COMPONENT_H
 #define __COMPONENT_H
 
-
 #include <dolfin/constants.h>
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
 
 namespace dolfin {
 
@@ -43,7 +42,7 @@ namespace dolfin {
     Element findpos(real t);
 
     // A list of elements for this component
-    ShortList<Element> elements;
+    Array<Element> elements;
 
     // Current position (latest position)
     int current;

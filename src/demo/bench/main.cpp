@@ -25,7 +25,7 @@ int main()
   bs = 1.0;
 
   // Create dense matrix and vectors
-  Matrix AD(ND,ND, Matrix::DENSE);
+  Matrix AD(ND,ND, Matrix::dense);
   Vector xd(ND);
   Vector bd(ND);
   bd = 1.0;

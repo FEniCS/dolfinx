@@ -14,7 +14,7 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-ParameterList::ParameterList() : list(DOLFIN_PARAMSIZE), _empty(true)
+ParameterList::ParameterList()
 {
 
 }
@@ -35,13 +35,8 @@ void ParameterList::add_aptr(Parameter::Type type, const char *identifier,
   // Create the parameter
   Parameter p(type, identifier, aptr);
   
-  // Add the parameter to the list (resize if necessary)
-  if ( !list.add(p) ) {
-    list.resize(2*list.size());
-    list.add(p);
-  }
-  
-  _empty = false;
+  // Add the parameter to the list
+  list.add(p);
 }
 //----------------------------------------------------------------------------
 void ParameterList::set(const char *identifier, ...)
@@ -56,11 +51,11 @@ void ParameterList::set(const char *identifier, ...)
 //----------------------------------------------------------------------------
 void ParameterList::set_aptr(const char *identifier, va_list aptr)
 {
-  int index = getIndex(identifier);
-
-  if ( index >= 0 ) {
-	 list(index).set(identifier, aptr);
-	 return;
+  Parameter* p = find(identifier);
+  
+  if ( p ) {
+    p->set(identifier, aptr);
+    return;
   }
 
   // Couldn't find the parameter
@@ -69,36 +64,40 @@ void ParameterList::set_aptr(const char *identifier, va_list aptr)
 //----------------------------------------------------------------------------
 Parameter ParameterList::get(const char *identifier)
 {
-  int index = getIndex(identifier);
+  Parameter* p = find(identifier);
   
-  if ( index >= 0 )
-    return list(index);
+  if ( p )
+    return *p;
   
   // Couldn't find the parameter
   dolfin_error1("Unknown parameter \"%s\".", identifier);
+
+  return *p;
 }
 //----------------------------------------------------------------------------
 bool ParameterList::changed(const char *identifier)
 {
-  int index = getIndex(identifier);
+  Parameter* p = find(identifier);
 
-  if ( index >= 0 )
-	 return list(index).changed();
+  if ( p )
+    return p->changed();
 
   dolfin_error1("Unknown parameter \"%s\".", identifier);
+
+  return *p;
 }
 //----------------------------------------------------------------------------
 bool ParameterList::empty()
 {
-  return _empty;
+  return list.empty();
 }
 //----------------------------------------------------------------------------
-int ParameterList::getIndex(const char *identifier)
+Parameter* ParameterList::find(const char *identifier)
 {
-  for (ShortList<Parameter>::Iterator it = list.begin(); !it.end(); ++it)
-    if ( it->matches(identifier) )
-      return it.index();
-  
-  return -1;
+  for (List<Parameter>::Iterator p(list); !p.end(); ++p)
+    if ( p->matches(identifier) )
+      return p;
+
+  return 0;
 }
 //----------------------------------------------------------------------------

@@ -12,7 +12,7 @@ namespace dolfin {
     enum Type { empty, full, automatic, table, matrix };
 
     GenericSparsity(int N);
-    ~GenericSparsity();
+    virtual ~GenericSparsity();
 
     virtual void setsize(int i, int size);
     virtual void set(int i, int j);
@@ -23,7 +23,7 @@ namespace dolfin {
     public:
 
       Iterator(int i);
-      ~Iterator();
+      virtual ~Iterator();
 
       virtual Iterator& operator++() = 0;
       virtual int operator*() const = 0;

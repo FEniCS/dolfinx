@@ -73,9 +73,6 @@ void Parameter::set(Type type, const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 void Parameter::set(const char *identifier, va_list aptr)
 {
-  char *string;
-  int n;
-  
   // Save the value of the parameter
   switch ( type ) {
   case REAL:

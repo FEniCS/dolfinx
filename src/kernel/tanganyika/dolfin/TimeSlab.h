@@ -4,8 +4,8 @@
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
-#include <dolfin/List.h>
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
+#include <dolfin/Table.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
@@ -79,11 +79,11 @@ namespace dolfin {
     bool reached_endtime;
 
     // List of elements within this time slab
-    List<Element>::Iterator first;
-    List<Element>::Iterator last;
+    Table<Element>::Iterator first;
+    Table<Element>::Iterator last;
 
     // List of time slabs within this time slab
-    ShortList<TimeSlab*> timeslabs;
+    Array<TimeSlab*> timeslabs;
 
   };
 

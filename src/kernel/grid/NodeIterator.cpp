@@ -95,8 +95,8 @@ bool NodeIterator::operator!=(const NodeIterator& n) const
 //-----------------------------------------------------------------------------
 NodeIterator::GridNodeIterator::GridNodeIterator(const Grid& grid)
 {
-  node_iterator = grid.gd->nodes.begin();
-  at_end = grid.gd->nodes.end();
+  node_iterator = grid.gd.nodes.begin();
+  at_end = grid.gd.nodes.end();
 }
 //-----------------------------------------------------------------------------
 void NodeIterator::GridNodeIterator::operator++()
@@ -138,7 +138,7 @@ Node* NodeIterator::GridNodeIterator::pointer() const
 //-----------------------------------------------------------------------------
 NodeIterator::CellNodeIterator::CellNodeIterator(const Cell &cell)
 {
-  node_iterator = cell.cn.begin();
+  node_iterator = cell.c->cn.begin();
 }
 //-----------------------------------------------------------------------------
 void NodeIterator::CellNodeIterator::operator++()

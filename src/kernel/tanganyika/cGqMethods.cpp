@@ -13,7 +13,7 @@ cGqMethods dolfin::cG;
 cGqMethods::cGqMethods()
 {
   methods.init(DOLFIN_PARAMSIZE);
-  methods = 0;
+  methods.reset();
 }
 //-----------------------------------------------------------------------------
 cGqMethods::~cGqMethods()

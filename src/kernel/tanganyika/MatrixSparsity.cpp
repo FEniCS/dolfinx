@@ -12,7 +12,7 @@ MatrixSparsity::MatrixSparsity(int N, const Matrix& A_) :
   GenericSparsity(N), A(A_)
 {
   // Check that the matrix is full
-  if ( A.type() != Matrix::SPARSE )
+  if ( A.type() != Matrix::sparse )
     dolfin_error("You need to use a sparse matrix to specify sparsity.");
 }
 //-----------------------------------------------------------------------------

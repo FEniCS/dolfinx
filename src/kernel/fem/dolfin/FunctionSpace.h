@@ -5,7 +5,7 @@
 #define __FUNCTION_SPACE_H
 
 #include <dolfin/Cell.h>
-#include <dolfin/ShortList.h>
+#include <dolfin/Array.h>
 #include <dolfin/shapefunctions.h>
 
 namespace dolfin {
@@ -69,7 +69,7 @@ namespace dolfin {
     private:
       
       const FunctionSpace &V;
-      ShortList<ShapeFunction>::Iterator v;
+      Array<ShapeFunction>::Iterator v;
       
     };
     
@@ -79,8 +79,8 @@ namespace dolfin {
     
   protected:
     
-    int _dim;                   // Dimension (number of shape functions)
-    ShortList<ShapeFunction> v; // Shape functions
+    int _dim;               // Dimension (number of shape functions)
+    Array<ShapeFunction> v; // Shape functions
     
   };
   

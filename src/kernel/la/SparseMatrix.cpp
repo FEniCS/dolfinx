@@ -641,7 +641,7 @@ void SparseMatrix::show() const
   }
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream, const SparseMatrix& A)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const SparseMatrix& A)
 {
   int size = A.size();
   int bytes = A.bytes();
@@ -653,12 +653,12 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const SparseMatrix& A)
   stream << " nonzero entries, approx ";
   
   if ( bytes > 1024*1024 )
-	 stream << bytes/1024 << " Mb. ]";
+    stream << bytes/1024 << " Mb. ]";
   else if ( bytes > 1024 )
-	 stream << bytes/1024 << " kb. ]";
+    stream << bytes/1024 << " kb. ]";
   else
-	 stream << bytes << " bytes ]";
-  
+    stream << bytes << " bytes ]";
+
   return stream;
 }
 //-----------------------------------------------------------------------------

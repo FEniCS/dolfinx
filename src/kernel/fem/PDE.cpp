@@ -138,10 +138,7 @@ PDE::grad(const ShapeFunction &v)
 void PDE::add(ElementFunction& v, Function& f)
 {
   FunctionPair p(v, f);
-  if ( functions.add(p) == -1 ) {
-    functions.resize(functions.size() + 1);
-    functions.add(p);
-  }
+  functions.add(p);
 }
 //-----------------------------------------------------------------------------
 void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
@@ -152,14 +149,14 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 }
 //-----------------------------------------------------------------------------
 void PDE::update(const FiniteElement* element,
-		      const Cell*          cell,
-		      const Mapping*       mapping,
-		      const Quadrature*    quadrature)
+		 const Cell*          cell,
+		 const Mapping*       mapping,
+		 const Quadrature*    quadrature)
 {
   // Update element functions
-  for (ShortList<FunctionPair>::Iterator p(functions); !p.end(); ++p)
-	 p->update(*element, *cell, t);
-
+  for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
+    p->update(*element, *cell, t);
+  
   // Update integral measures
   dK.update(*mapping, *quadrature);
   dS.update(*mapping, *quadrature);
@@ -186,19 +183,5 @@ void PDE::FunctionPair::update
 (const FiniteElement &element, const Cell &cell, real t)
 {  
   f->update(*v, element, cell, t);
-}
-//-----------------------------------------------------------------------------
-void PDE::FunctionPair::operator= (int zero)
-{
-  if ( zero != 0 )
-	 dolfin_error("Assignment to int must be zero.");
-  
-  v = 0;
-  f = 0;
-}
-//-----------------------------------------------------------------------------
-bool PDE::FunctionPair::operator! () const
-{
-  return v == 0;
 }
 //-----------------------------------------------------------------------------

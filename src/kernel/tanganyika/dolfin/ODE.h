@@ -23,6 +23,9 @@ namespace dolfin {
     /// Constructor
     ODE(int N);
 
+    /// Destructor
+    virtual ~ODE();
+
     /// Right-hand side
     virtual real f(const Vector& u, real t, int i) = 0;
 

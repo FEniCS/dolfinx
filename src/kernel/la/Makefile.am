@@ -13,9 +13,10 @@ INCLUDES               = @MODULE_INCLUDES@
 lib_LIBRARIES          = libdolfin-la.a
 libdolfin_la_a_SOURCES = DenseMatrix.cpp \
                          DirectSolver.cpp \
+                         GenericMatrix.cpp \
+	                 KrylovSolver.cpp \
                          Matrix.cpp \
-                         Vector.cpp \
 	                 SISolver.h \
 	                 SISolver.cpp \
-	                 KrylovSolver.cpp \
-                         SparseMatrix.cpp
+                         SparseMatrix.cpp \
+                         Vector.cpp

@@ -16,7 +16,7 @@ namespace dolfin {
   public:
     
     GenericElement(int q, int index, int pos, TimeSlab* timeslab);
-    ~GenericElement();
+    virtual ~GenericElement();
     
     virtual real eval(real t) const = 0;
     virtual real eval(int node) const = 0;

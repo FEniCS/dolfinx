@@ -5,6 +5,7 @@
 #define __PDE_H
 
 #include <dolfin/constants.h>
+#include <dolfin/List.h>
 #include <dolfin/Mapping.h>
 #include <dolfin/Function.h>
 #include <dolfin/ElementFunction.h>
@@ -83,10 +84,6 @@ namespace dolfin {
       FunctionPair();
       FunctionPair(ElementFunction& v, Function& f);
       
-      // Needed for ShortList
-      void operator= (int zero);
-      bool operator! () const;
-		
       // Update element function to current element
       void update(const FiniteElement& element,
 		  const Cell& cell, real t);
@@ -111,7 +108,7 @@ namespace dolfin {
     virtual void updateRHS() {};
     
     // List of element functions that need to be updated
-    ShortList<FunctionPair> functions;
+    List<FunctionPair> functions;
     
     // Mapping from reference element
     const Mapping* mapping;

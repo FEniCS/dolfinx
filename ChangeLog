@@ -1,3 +1,31 @@
+ - Make dolfin_start() and dolfin_end() work
+ - Make dolfin_assert() raise segmentation fault for plain text mode
+ - Add configure option --enable-debug
+ - Use autoreconf instead of scripts/preconfigure
+ - Rename configure.in -> configure.ac
+ - New class FaceIterator
+ - New class Face
+ - Move computation of boundary from GridInit to BoundaryInit
+ - New class BoundaryData
+ - New class BoundaryInit
+ - New class Boundary
+ - Make InitGrid compute edges
+ - Add test program for generic matrix in src/demo/la
+ - Clean up Grid classes
+ - Add new class GridRefinementData
+ - Move data from Cell to GenericCell
+ - Make GMRES work with user defined matrix, only mult() needed
+ - GMRES now uses only one function to compute residual()
+ - Change Matrix structure (a modified envelope/letter)
+ - Update script checkerror.m for Poisson 
+ - Add function dolfin_info_aptr()
+ - Add cast to element pointer for iterators
+ - Clean up and improve the Tensor class
+ - New class: List
+ - Name change: List -> Table
+ - Name change: ShortList -> Array
+ - Make functions in GridRefinement static
+ - Make functions in GridInit static
  - Fix bug in GridInit (eriksv)
  - Add output to OpenDX format for 3D grids
  - Clean up ShortList class
@@ -6,7 +34,7 @@
  - Add Lorenz test problem
  - Add new problem type for ODEs
  - Add new module ode
- - Work on multi-adaptive ODE solver
+ - Work on multi-adaptive ODE solver (lots of new stuff)
  - Work on grid refinement
  - Write all macros in LoggerMacros in one line
  - Add transpose functions to Matrix (Erik)

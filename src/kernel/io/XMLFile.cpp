@@ -1,3 +1,6 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <stdarg.h>
 
 #include <dolfin/dolfin_log.h>
@@ -123,7 +126,7 @@ void dolfin::sax_end_document(void *ctx)
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_start_element(void *ctx,
-										 const xmlChar *name, const xmlChar **attrs)
+			       const xmlChar *name, const xmlChar **attrs)
 {
   ( (XMLObject *) ctx )->startElement(name, attrs);
 }
@@ -138,9 +141,8 @@ void dolfin::sax_warning(void *ctx, const char *msg, ...)
   va_list args;
   
   va_start(args, msg);
-  // FIXME: Temporary until we get the logsystem working
-  printf("Warning from XML parser:\n");
-  vprintf(msg, args);
+  dolfin_info_aptr(msg, args);
+  dolfin_warning("Incomplete XML data.");
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -149,9 +151,8 @@ void dolfin::sax_error(void *ctx, const char *msg, ...)
   va_list args;
   
   va_start(args, msg);
-  // FIXME: Temporary until we get the logsystem working
-  printf("Error from XML parser:\n");
-  vprintf(msg, args);
+  dolfin_info_aptr(msg, args);
+  dolfin_error("Illegal XML data.");
   va_end(args);
 }
 //-----------------------------------------------------------------------------
@@ -160,9 +161,8 @@ void dolfin::sax_fatal_error(void *ctx, const char *msg, ...)
   va_list args;
   
   va_start(args, msg);
-  // FIXME: Temporary until we get the logsystem working
-  printf("Fatal error from XML parser:\n");
-  vprintf(msg, args);
+  dolfin_info_aptr(msg, args);
+  dolfin_error("Illegal XML data.");
   va_end(args);
 }
 //-----------------------------------------------------------------------------

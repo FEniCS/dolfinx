@@ -31,15 +31,11 @@ void PoissonSolver::solve()
   // Discretise
   fem.assemble(poisson, grid, A, b);
 
-  file << A;
-  
   // Solve the linear system
   solver.solve(A, x, b);
 
   // Save the solution
   u.rename("u", "temperature");
   file << u;
-
-
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 #ifndef __XML_GRID_H
 #define __XML_GRID_H
 
-#include "XMLObject.h"
+#include <dolfin/XMLObject.h>
 
 namespace dolfin {
 

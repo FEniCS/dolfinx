@@ -6,27 +6,20 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/dolfin_settings.h>
-#include <dolfin/ShortList.h>
 #include <dolfin/GridRefinement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GridRefinement::GridRefinement(Grid &grid)
+void GridRefinement::refine(Grid& grid)
 {
+  dolfin_start("Refining grid:");
+  cout << grid.rd.noMarkedCells() << " cells marked for refinement." << endl;
 
-  
+  // Refine grid here ...
 
 
-}
-//-----------------------------------------------------------------------------
-void GridRefinement::refine()
-{
-  cout << "Refining grid: " << grid << endl;
-
-  _create_edges = dolfin_get("create edges"); 
-
-  globalRegularRefinement();
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------
 
@@ -34,7 +27,7 @@ void GridRefinement::refine()
 Refinement::GlobalRefinement()
 {
 }
-*/
+
 
 
 void GridRefinement::globalRegularRefinement()
@@ -507,11 +500,10 @@ void GridRefinement::irregularRefinementBy1(Cell* parent)
   int cnt_1 = 0;
   int cnt_2 = 0;
 
-  /*
-  parent->markEdge(0);
-  parent->markEdge(1);
-  parent->markEdge(3);
-  */
+  // parent->markEdge(0);
+  // parent->markEdge(1);
+  // parent->markEdge(3);
+
   bool taken;
   for (int i=0;i<parent->noEdges();i++){
     if (parent->edge(i)->marked()){
@@ -551,18 +543,14 @@ void GridRefinement::irregularRefinementBy1(Cell* parent)
     } 
   }
   
-  /*
-    cout << "1. marked edges = " << marked_edges[0] << endl;
-    cout << "2. marked edges = " << marked_edges[1] << endl;
-    cout << "3. marked edges = " << marked_edges[2] << endl;
-    
-    cout << "1. marked edges = " << parent->edge(marked_edges[0])->midpoint() << endl;
-    cout << "2. marked edges = " << parent->edge(marked_edges[1])->midpoint() << endl;
-    cout << "3. marked edges = " << parent->edge(marked_edges[2])->midpoint() << endl;
-    
-    cout << "1. level = " << parent->level()+1 << endl;
-  */
-  
+  // cout << "1. marked edges = " << marked_edges[0] << endl;
+  // cout << "2. marked edges = " << marked_edges[1] << endl;
+  // cout << "3. marked edges = " << marked_edges[2] << endl;
+  // 
+  // cout << "1. marked edges = " << parent->edge(marked_edges[0])->midpoint() << endl;
+  // cout << "2. marked edges = " << parent->edge(marked_edges[1])->midpoint() << endl;
+  // cout << "3. marked edges = " << parent->edge(marked_edges[2])->midpoint() << endl;
+  //  cout << "1. level = " << parent->level()+1 << endl;
 
   Node *nf = grid.createNode(parent->level()+1,parent->node(face_node)->coord());
   Node *n0 = grid.createNode(parent->level()+1,parent->node(marked_nodes[0])->coord());
@@ -687,10 +675,8 @@ void GridRefinement::irregularRefinementBy3(Cell* parent)
 
   cout << "parent = " << parent->id() << endl;
 
-  /*
-  parent->markEdge(0);  
-  parent->markEdge(4);
-  */
+  // parent->markEdge(0);  
+  // parent->markEdge(4);
 
   if (parent->noMarkedEdges() != 2) dolfin_error("wrong size of refinement edges");
   if (!parent->markedEdgesOnSameFace()) dolfin_error("marked edges not on the same face");
@@ -814,10 +800,8 @@ void GridRefinement::irregularRefinementBy4(Cell* parent)
 
   cout << "parent = " << parent->id() << endl;
 
-  /*
-  parent->markEdge(0);
-  parent->markEdge(2);
-  */
+  //parent->markEdge(0);
+  //parent->markEdge(2);
 
   int cnt = 0;
   int marked_edge[2];
@@ -862,8 +846,4 @@ void GridRefinement::irregularRefinementBy4(Cell* parent)
     parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
-
-
-
-
-
+*/

@@ -44,7 +44,7 @@ const FunctionSpace::ElementFunction TriLinMapping::dt
 void TriLinMapping::update(const Cell& cell)
 {
   // Check that cell type is correct
-  if ( cell.type() != Cell::TRIANGLE )
+  if ( cell.type() != Cell::triangle )
     dolfin_error("Wrong cell type for mapping (must be a triangle).");
   
   // Reset values

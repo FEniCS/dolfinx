@@ -7,6 +7,9 @@
 #
 # This script should be run from the top level directory.
 
+echo "This script is no longer needed. Use autoreconf instead."
+exit 0
+
 # Simple test to see where we are
 # FIXME: Does not work when typing ./scripts/...
 CHECK=`echo $0 | cut -d'/' -f1`

@@ -15,31 +15,49 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Matrix::Matrix(Type type)
 {
-  if ( type == DENSE )
+  switch ( type ) {
+  case dense:
     A = new DenseMatrix();
-  else
+    break;
+  case sparse:
     A = new SparseMatrix();
+    break;
+  default:
+    A = new GenericMatrix();
+  }
   
   _type = type;
 }
 //-----------------------------------------------------------------------------
 Matrix::Matrix(int m, int n, Type type)
 {
-  if ( type == DENSE )
+  switch ( type ) {
+  case dense:
     A = new DenseMatrix(m,n);
-  else
+    break;
+  case sparse:
     A = new SparseMatrix(m,n);
+    break;
+  default:
+    A = new GenericMatrix(m,n);
+  }
 
   _type = type;
 }
 //-----------------------------------------------------------------------------
 Matrix::Matrix(const Matrix& A)
 {
-  if ( A._type == DENSE )
+  switch ( A._type ) {
+  case dense:
     this->A = new DenseMatrix(*((DenseMatrix *) A.A));
-  else
+    break;
+  case sparse:
     this->A = new SparseMatrix(*((SparseMatrix *) A.A));
-
+    break;
+  default:
+    this->A = new GenericMatrix(A.size(0), A.size(1));
+  }
+  
   _type = A._type;
 }
 //-----------------------------------------------------------------------------
@@ -134,26 +152,44 @@ void Matrix::operator=(real a)
 //-----------------------------------------------------------------------------
 void Matrix::operator=(const Matrix& A)
 {
-  if ( A._type == DENSE )
+  switch ( A._type == dense ) {
+  case dense:
     *(this->A) = *((DenseMatrix *) A.A);
-  else
+    break;
+  case sparse:
     *(this->A) = *((SparseMatrix *) A.A);
+    break;
+  default:
+    *(this->A) = *((GenericMatrix *) A.A);
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::operator+=(const Matrix& A)
 {
-  if ( A._type == DENSE )
+  switch ( A._type ) {
+  case dense:
     *(this->A) += *((DenseMatrix *) A.A);
-  else
+    break;
+  case sparse:
     *(this->A) += *((SparseMatrix *) A.A);
+    break;
+  default:
+    *(this->A) += *((GenericMatrix *) A.A);
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::operator-=(const Matrix& A)
 {
-  if ( A._type == DENSE )
+  switch ( A._type ) {
+  case dense:
     *(this->A) -= *((DenseMatrix *) A.A);
-  else
+    break;
+  case sparse:
     *(this->A) -= *((SparseMatrix *) A.A);
+    break;
+  default:
+    *(this->A) -= *((GenericMatrix *) A.A);
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::operator*=(real a)
@@ -203,68 +239,127 @@ void Matrix::solve(Vector& x, const Vector& b)
   // No one else but Matrix should be concerned with different types
   // of matrices.
   
-  if ( _type == DENSE ) {
-    DirectSolver solver;
-    solver.solve(*this, x, b);
-  }
-  else {
-    KrylovSolver solver;
-    solver.solve(*this, x, b);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.solve(*this, x, b);
+    }
+    break;
+  case sparse:
+    {
+      KrylovSolver solver;
+      solver.solve(*this, x, b);
+    }
+    break;
+  default:
+    {
+      KrylovSolver solver;
+      solver.solve(*this, x, b);
+    }
   }
 }
 //-----------------------------------------------------------------------------
 void Matrix::inverse(Matrix& Ainv)
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-
-  DirectSolver solver;
-  solver.inverse(*this, Ainv);
+  switch ( _type ) {
+  case dense: 
+    {
+      DirectSolver solver;
+      solver.inverse(*this, Ainv);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::hpsolve(Vector& x, const Vector& b) const
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-
-  DirectSolver solver;
-  solver.hpsolve(*this, x, b);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.hpsolve(*this, x, b);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::lu()
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-  
-  DirectSolver solver;
-  solver.lu(*this);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.lu(*this);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::solveLU(Vector& x, const Vector& b) const
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-
-  DirectSolver solver;
-  solver.solveLU(*this, x, b);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.solveLU(*this, x, b);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::inverseLU(Matrix& Ainv) const
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-
-  DirectSolver solver;
-  solver.inverseLU(*this, Ainv);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.inverseLU(*this, Ainv);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const
 {
-  if ( _type == SPARSE )
-    dolfin_error("Not implemented for sparse matrices. Consider using dense().");
-
-  DirectSolver solver;
-  solver.hpsolveLU(LU, *this, x, b);
+  switch ( _type ) {
+  case dense:
+    {
+      DirectSolver solver;
+      solver.hpsolveLU(LU, *this, x, b);
+    }
+    break;
+  case sparse:
+    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
+    break;
+  default:
+    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::resize()
@@ -299,10 +394,16 @@ bool Matrix::endrow(int i, int pos) const
 //-----------------------------------------------------------------------------
 void Matrix::settransp(const Matrix& A)
 {
-  if ( A._type == DENSE )
+  switch ( A._type ) {
+  case dense:
     this->A->settransp(*((DenseMatrix *) A.A));
-  else
+    break;
+  case sparse:
     this->A->settransp(*((SparseMatrix *) A.A));
+    break;
+  default:
+    this->A->settransp(*((GenericMatrix *) A.A));
+  }
 }
 //-----------------------------------------------------------------------------
 void Matrix::show() const
@@ -312,10 +413,16 @@ void Matrix::show() const
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
 {
-  if ( A.type() == Matrix::DENSE )
+  switch ( A.type() ) {
+  case Matrix::dense:
     stream << *((DenseMatrix *) A.A);
-  else
+    break;
+  case Matrix::sparse:
     stream << *((SparseMatrix *) A.A);
+    break;
+  default:
+    stream << *((GenericMatrix *) A.A);
+  }
 
   return stream;
 }

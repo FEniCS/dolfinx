@@ -9,7 +9,7 @@ int main()
 {
   dolfin::cout << "Test" << " test" << dolfin::endl;
 
-  Matrix A(3,3, Matrix::DENSE);
+  Matrix A(3,3, Matrix::dense);
 
   A(0,0) = 1.0;
   A(0,2) = 2.0;

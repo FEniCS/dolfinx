@@ -6,15 +6,13 @@
 #include <dolfin/Cell.h>
 #include <dolfin/GridData.h>
 #include <dolfin/dolfin_settings.h>
-#include<dolfin/XMLGrid.h>
+#include <dolfin/XMLGrid.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLGrid::XMLGrid(Grid& grid_) : XMLObject(), grid(grid_)
 {
-  _create_edges = dolfin_get("create edges"); 
-
   state = OUTSIDE;
   nodes = 0;
   cells = 0;
@@ -102,12 +100,12 @@ void XMLGrid::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLGrid::reading(std::string filename)
 {
-  cout << "Reading grid: \"" << filename << "\"." << endl;
+  cout << "Reading grid from file \"" << filename << "\"." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::done()
 {
-  cout << "Reading grid: " << grid << endl;
+  //cout << "Reading grid: " << grid << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)
@@ -154,7 +152,7 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", &z);
 
   // Set values
-  grid.createNode(0,x,y,z);
+  grid.createNode(x, y, z);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.
@@ -174,15 +172,9 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n1", &n1);
   parseIntegerRequired(name, attrs, "n2", &n2);
 
-  // Set initial level to 0
-  int level = 0;
-
   // Set values
-  Cell* c = grid.createCell(level, Cell::TRIANGLE, n0, n1, n2);
+  grid.createCell(n0, n1, n2);
 
-  // Create edges
-  if (_create_edges) grid.createEdges(c);
-  
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }
@@ -203,15 +195,9 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n2", &n2);
   parseIntegerRequired(name, attrs, "n3", &n3);
 
-  // Set initial level to 0
-  int level = 0;
-                   
   // Set values
-  Cell* c = grid.createCell(level, Cell::TETRAHEDRON, n0, n1, n2, n3);
+  grid.createCell(n0, n1, n2, n3);
 
-  // Create edges
-  if (_create_edges) grid.createEdges(c);
-  
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }

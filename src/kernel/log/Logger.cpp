@@ -172,7 +172,7 @@ void Logger::init()
 
   // Get output type
   string type = dolfin_get("output");
-  
+
   if ( type == "plain text" )
     log = new TerminalLogger();
   else if ( type == "curses" )

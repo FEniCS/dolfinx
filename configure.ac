@@ -1,14 +1,20 @@
-dnl Init autoconf
-AC_INIT(README, 0.3.9, dolfin@math.chalmers.se)
+# Init autoconf
+AC_INIT(dolfin, 0.3.9, dolfin@math.chalmers.se)
 
-dnl Init automake
+# Init automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 
-dnl Tell automake not to generate Makefile.in unless asked to.
-dnl This way the code can be installed on systems without automake installed.
+# Tell automake not to generate Makefile.in unless asked to.
+# This way the code can be installed on systems without automake installed.
 AM_MAINTAINER_MODE
 
-dnl Checks for programs
+# Option --enable-dev
+AC_ARG_ENABLE(debug,
+              AC_HELP_STRING([--enable-debug],
+                             [Turn on debugging and warnings]),
+              CXXFLAGS='-DDEBUG=1 -g -O2 -Wall')
+
+# Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
@@ -16,12 +22,12 @@ AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
-dnl Checks for typedefs, structures, and compiler characteristics.
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-dnl Check for libxml2
+# Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
 if test $libxml2_found = yes; then	  
 	XML2_INCLUDES=`xml2-config --cflags`
@@ -34,14 +40,14 @@ else
 	exit 1
 fi
 
-dnl Check for curses
+# Check for curses
 AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your system."; exit 1)
 
-dnl Note: need to be in the correct order, and some are needed twice.
-dnl Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="tanganyika io grid fem elements quadrature grid io la math common settings log settings common main tanganyika"
+# Note: need to be in the correct order, and some are needed twice.
+# Not very pretty... Maybe someone knows how to fix this?
+DOLFIN_KERNEL="tanganyika io grid fem elements quadrature grid io fem la math common settings log settings common main tanganyika"
 
-dnl Find modules
+# Find modules
 cd src/modules
 ./scanmodules.sh
 cd ../..
@@ -50,7 +56,7 @@ for l in `cat src/modules/modules.list | grep -v "#"`; do
 	DOLFIN_MODULES="$DOLFIN_MODULES$l "
 done
 
-dnl Generate include path for modules (including kernel code)
+# Generate include path for modules (including kernel code)
 MODULE_INCLUDES=""
 DOLFIN_MAIN="main"
 DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
@@ -59,7 +65,7 @@ for f in $DIRS; do
 done
 AC_SUBST(MODULE_INCLUDES)
 
-dnl Generate include path for main (including also module code)
+# Generate include path for main (including also module code)
 MAIN_INCLUDES=""
 DIRS="$DOLFIN_MODULES"
 for f in $DIRS; do
@@ -68,7 +74,7 @@ done
 MAIN_INCLUDES="$MODULE_INCLUDES $MAIN_INCLUDES"
 AC_SUBST(MAIN_INCLUDES)
 
-dnl Generate library list for linking in the correct order.
+# Generate library list for linking in the correct order.
 DOLFIN_LFLAGS=""
 DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_KERNEL"
 for f in $DIRS; do
@@ -76,17 +82,16 @@ for f in $DIRS; do
 done
 AC_SUBST(DOLFIN_LFLAGS)
 
-dnl Seems to be needed for CXXFLAGS to get to src/config
+# Seems to be needed for CXXFLAGS to get to src/config
 AC_SUBST(CXXFLAGS)
 
-dnl Export variables to makefiles
+# Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 
-dnl Create Makefiles
-dnl Seems like automake cannot handle a variable containing the
-dnl list of files, so this cannot be done automatically. We have
-dnl to list all the files.
+# Create Makefiles Seems like automake cannot handle a variable
+# containing the list of files, so this cannot be done
+# automatically. We have to list all the files.
 AC_OUTPUT( Makefile \
            src/Makefile \
            src/pre/Makefile \
@@ -124,6 +129,7 @@ AC_OUTPUT( Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
+           src/demo/la/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/ode/Makefile \
            src/utils/Makefile \

@@ -6,7 +6,6 @@
 
 #include <curses.h>
 
-#include <dolfin/ShortList.h>
 #include <dolfin/constants.h>
 #include <dolfin/Buffer.h>
 #include <dolfin/Progress.h>
@@ -89,6 +88,8 @@ namespace dolfin {
     void drawCommands();
     
     void redraw();
+
+    void indent();
     
   };
   

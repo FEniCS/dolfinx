@@ -20,7 +20,8 @@ FunctionSpace::FunctionSpace(int dim)
   _dim = dim;
   
   // Initialise the list of shape functions
-  v.resize(_dim);
+  v.init(_dim);
+  v.reset();
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()

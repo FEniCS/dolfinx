@@ -4,26 +4,34 @@
 #ifndef __TETRAHEDRON_H
 #define __TETRAHEDRON_H
 
+#include <dolfin/Array.h>
 #include <dolfin/GenericCell.h>
 
 namespace dolfin {
 
+  class Node;
   class Cell;
   
   class Tetrahedron : public GenericCell {
   public:
-	 
-	 int noNodes() const;
-	 int noEdges() const;
-	 int noFaces() const;
-	 int noBound() const;
-	 
-	 Cell::Type type() const;
 
+    Tetrahedron(Node* n0, Node* n1, Node* n2, Node* n3);
+	 
+    int noNodes() const;
+    int noEdges() const;
+    int noFaces() const;
+
+    int noBoundaries() const;
+    
+    Cell::Type type() const;
+    
   private:
-	 
-	 bool neighbor(ShortList<Node *> &cn, Cell &cell) const;
-	 
+    
+    bool neighbor(GenericCell* cell) const;
+    
+    void createEdges();
+    void createFaces();
+
   };
 
 }

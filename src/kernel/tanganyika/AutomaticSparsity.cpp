@@ -14,7 +14,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 AutomaticSparsity::AutomaticSparsity(int N, ODE& ode) : GenericSparsity(N)
 {
-  list = new ShortList<int>[N];
+  list = new Array<int>[N];
   increment = dolfin_get("sparsity check increment");
 
   computeSparsity(ode);
@@ -119,6 +119,8 @@ AutomaticSparsity::Iterator& AutomaticSparsity::Iterator::operator++()
     at_end = true;
   else
     pos++;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 int AutomaticSparsity::Iterator::operator*() const

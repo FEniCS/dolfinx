@@ -15,11 +15,12 @@ PDESystem::PDESystem(int dim, int noeq) : PDE(dim)
 real PDESystem::lhs(const ShapeFunction &u, const ShapeFunction &v)
 {
   dolfin_error("Using PDESystem for equation with only one component.");
-  exit(1);
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 real PDESystem::rhs(const ShapeFunction &v)
 {
   dolfin_error("Using PDESystem for equation with only one component.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
