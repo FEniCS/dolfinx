@@ -56,6 +56,11 @@ void WaveSolver::solve()
   Vector b2;
 
 
+  x21(0) = -1.0;
+  x21(1) = 1.0;
+  x21(2) = 1.0;
+  x21(3) = -1.0;                                                              
+
   // Start a progress session
   Progress p("Time-stepping");
 
@@ -77,7 +82,7 @@ void WaveSolver::solve()
     wave.t = t;
     FEM::assemble(wave, mesh, b);
 
-    ///*
+    /*
 
     // dG(0)
 
@@ -96,9 +101,9 @@ void WaveSolver::solve()
 
     b2.add(1, xtmp);
 
-    //*/
+    */
 
-    /*
+    ///*
 
     // cG(1)
 
@@ -131,9 +136,9 @@ void WaveSolver::solve()
 
     b2.add(1, xtmp);
 
-    */
+    //*/
 
-    /*
+    ///*
     // Compare assembled matrices and vectors
 
     cout << "A: " << endl;
@@ -144,28 +149,28 @@ void WaveSolver::solve()
     b.show();
     cout << "b2: " << endl;
     b2.show();
-    */
+    //*/
 
     x11 = 0;
     //solver.solve(A2, x11, b2);
     solver.solve(A, x11, b);
     
-    ///*
+    /*
     // dG(0)
 
     x21 = x11;
     x21.add(-1, x10);
     x21 *= 1 / k;
-    //*/
+    */
 
-    /*
+    ///*
     // cG(1)
 
     x21 = 0;
     x21.add(2 / k, x11);
     x21.add(-2 / k, x10);
     x21.add(-1, x20);
-    */
+    //*/
 
 
     // Save the solution

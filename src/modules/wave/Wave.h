@@ -25,9 +25,9 @@ namespace dolfin {
       /*
       // dG(0) in time
 
-      return (1 / k * u*v + k *
-	      (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dx;
-      //*/
+      return (u*v + k * k *
+	      (grad(u), grad(v))) * dx;
+      */
 
       ///*
       // cG(1) in time
@@ -43,7 +43,7 @@ namespace dolfin {
       /*
       // dG(0) in time
 
-      return (k * f * v + wp * v + 1 / k * up * v) * dx;
+      return (k * k * f * v + k * wp * v + up * v) * dx;
       */
 
       ///*

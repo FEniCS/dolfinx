@@ -61,18 +61,6 @@ namespace dolfin {
     virtual const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction& v) const = 0;
     virtual const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction& v) const = 0;
     
-    /// Return derivative of product
-    const FunctionSpace::ElementFunction ddx(const FunctionSpace::Product& v) const;
-    const FunctionSpace::ElementFunction ddy(const FunctionSpace::Product& v) const;
-    const FunctionSpace::ElementFunction ddz(const FunctionSpace::Product& v) const;
-    const FunctionSpace::ElementFunction ddt(const FunctionSpace::Product& v) const;
-    
-    /// Return derivative of element function
-    const FunctionSpace::ElementFunction ddx(const FunctionSpace::ElementFunction& v) const;
-    const FunctionSpace::ElementFunction ddy(const FunctionSpace::ElementFunction& v) const;
-    const FunctionSpace::ElementFunction ddz(const FunctionSpace::ElementFunction& v) const;
-    const FunctionSpace::ElementFunction ddt(const FunctionSpace::ElementFunction& v) const;
-        
   protected:
     
     void reset();

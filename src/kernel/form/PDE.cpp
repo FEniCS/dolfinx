@@ -90,42 +90,50 @@ const ElementFunction& PDE::ddt(const ShapeFunction &v) const
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddx(const Product &v) const
 {
-  return map_->ddx(v);
+  return v.ddx();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddy(const Product &v) const
 {
-  return map_->ddy(v);
+  return v.ddy();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddz(const Product &v) const
 {
-  return map_->ddz(v);
+  return v.ddz();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddt(const Product &v) const
 {
-  return map_->ddt(v);
+  dolfin_warning("Time derivative not implemented.");
+
+  ElementFunction w;
+
+  return w;
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddx(const ElementFunction &v) const
 {
-  return map_->ddx(v);
+  return v.ddx();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddy(const ElementFunction &v) const
 {
-  return map_->ddy(v);
+  return v.ddy();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddz(const ElementFunction &v) const
 {
-  return map_->ddz(v);
+  return v.ddz();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddt(const ElementFunction &v) const
 {
-  return map_->ddt(v);
+  dolfin_warning("Time derivative not implemented.");
+
+  ElementFunction w;
+
+  return w;
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction::Vector
@@ -145,7 +153,7 @@ PDE::grad(const ElementFunction &v)
 void PDE::add(ElementFunction& v, Function& f)
 {
   FunctionPair p(v, f);
-  functions.add(p);
+  functions.push_back(p);
 }
 //-----------------------------------------------------------------------------
 void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
@@ -170,8 +178,14 @@ const void PDE::update(FiniteElement::Vector& element,
   // We assume that the element dependency is only on the grid, therefore
   // any element, such as the 0th is sufficient
   
-  for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
+  for(NewList<FunctionPair>::iterator p = functions.begin();
+      p != functions.end(); p++)
+  { 
     p->update(*(element(0)), *(map.cell()), t);
+  }
+
+  //for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
+  //p->update(*(element(0)), *(map.cell()), t);
   
   // Update integral measures
   dx.update(map, interior_quadrature);

@@ -8,6 +8,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/List.h>
+#include <dolfin/NewList.h>
 #include <dolfin/Map.h>
 #include <dolfin/Function.h>
 #include <dolfin/ElementFunction.h>
@@ -138,7 +139,7 @@ namespace dolfin {
     virtual void updateRHS() {};
     
     // List of element functions that need to be updated
-    List<FunctionPair> functions;
+    NewList<FunctionPair> functions;
     
     // Map from reference element
     const Map* map_;
