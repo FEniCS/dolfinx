@@ -9,6 +9,7 @@
 using namespace dolfin;
 
 #define N 2 // Number of times to do the assembly
+#define M 3 // Number of times to refine the mesh 
 
 // Test old assembly
 real testOld(Mesh& mesh)
@@ -69,14 +70,8 @@ real testFFCPETSc(Mesh& mesh)
   return toc();
 }
 
-int main()
+int testAssembly(Mesh& mesh)
 {
-  dolfin_set("output", "plain text");
-  
-  Mesh mesh("mesh.xml.gz");
-  mesh.refineUniformly();
-  mesh.refineUniformly();
-  
   dolfin_log(false);
   
   real t1 = testOld(mesh);
@@ -86,13 +81,28 @@ int main()
 
   dolfin_log(true);
 
-  //testFFC(mesh);
-  //testFFCPETSc(mesh);
-
+  cout << "---------------------------------------------" << endl;
+  cout << "Mesh size: " << mesh.noNodes() << " nodes, and " << mesh.noCells() << " cells" << endl;
   cout << "DOLFIN + DOLFIN: " << t1 << endl;
   cout << "DOLFIN + OPTIM:  " << t2 << endl;
   cout << "DOLFIN + FFC:    " << t3 << endl;
   cout << "PETSc  + FFC:    " << t4 << endl;
+  cout << "---------------------------------------------" << endl;
 
+  return 0;
+}
+
+
+int main()
+{
+  dolfin_set("output", "plain text");
+  
+  Mesh mesh("mesh.xml.gz");
+  testAssembly(mesh);
+  for (int i=0; i<M; i++){
+    mesh.refineUniformly();
+    testAssembly(mesh);
+  }
+  
   return 0;
 }

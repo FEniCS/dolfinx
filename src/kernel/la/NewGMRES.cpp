@@ -97,28 +97,28 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::changeRtol(real rt)
+void NewGMRES::setRtol(real rt)
 {
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
   rtol = rt;
   KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::changeAbstol(real at)
+void NewGMRES::setAbstol(real at)
 {
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
   abstol = at;
   KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::changeDtol(real dt)
+void NewGMRES::setDtol(real dt)
 {
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
   dtol = dt;
   KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::changeMaxits(int mi)
+void NewGMRES::setMaxits(int mi)
 {
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
   maxits = mi;

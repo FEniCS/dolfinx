@@ -35,16 +35,16 @@ namespace dolfin
     void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
     /// Change rtol
-    void changeRtol(real rt);
+    void setRtol(real rt);
       
     /// Change abstol
-    void changeAbstol(real at);
+    void setAbstol(real at);
       
     /// Change dtol
-    void changeDtol(real dt);
+    void setDtol(real dt);
       
     /// Change maxits
-    void changeMaxits(int mi);
+    void setMaxits(int mi);
 
     /// Return PETSc solver pointer
     KSP solver();
