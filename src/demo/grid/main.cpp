@@ -38,11 +38,17 @@ void refine2D(int refinements)
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
     
-    // Mark nodes for refinement
+    // Mark cells with a node at x = (0,0)
     for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
-	cell->mark();
+      for (NodeIterator node(cell); !node.end(); ++node)
+	if ( node->dist(0.0, 0.0) < DOLFIN_EPS )
+	  cell->mark();
     
+    // Mark cells which have a midpoint close to x = (1,1)
+    for (CellIterator cell(grid); !cell.end(); ++cell)
+      if ( cell->midpoint().dist(1.0, 1.0) < 0.3 )
+	cell->mark();
+      
     // Refine grid
     grid.refine();
 

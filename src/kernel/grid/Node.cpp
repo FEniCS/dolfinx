@@ -125,6 +125,11 @@ real Node::dist(const Point& p) const
   return this->p.dist(p);
 }
 //-----------------------------------------------------------------------------
+real Node::dist(real x, real y, real z) const
+{
+  return p.dist(x, y, z);
+}
+//-----------------------------------------------------------------------------
 bool Node::neighbor(const Node& n) const
 {
   for (NodeIterator neighbor(*this); !neighbor.end(); ++neighbor)

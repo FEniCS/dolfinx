@@ -84,6 +84,9 @@ namespace dolfin{
     /// Return distance to given point
     real dist(const Point& p) const;    
     
+    /// Return distance to point with given coordinates
+    real dist(real x, real y = 0.0, real z = 0.0) const;
+
     /// Check if given node is a neighbor
     bool neighbor(const Node& n) const;
 

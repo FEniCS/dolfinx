@@ -48,26 +48,35 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
-    if ( *grid != grids.fine() ) {
-      cout << "--- Evaluate marks at level " << grid.index() << endl;
+
+    // Evaluate marks for all levels but the finest
+    if ( *grid != grids.fine() )
       evaluateMarks(*grid);
-    }
-    cout << "--- Close grid at level " << grid.index() << endl;
+    
+    // Close grid
     closeGrid(*grid);
   }
 
-  cout << endl;
+  // Info message
+  dolfin_info("Level 0: Initial grid has %d cells",
+	      grids.coarse().noCells());
 
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if ( *grid != grids.coarse() ) {
-      cout << "--- Close grid at level " << grid.index() << endl;
+
+    // Close grid for all levels but the coarsest
+    if ( *grid != grids.coarse() )
       closeGrid(*grid);
-    }
-    cout << "--- Unrefine at level " << grid.index() << endl;
+
+    // Unrefine grid
     unrefineGrid(*grid, grids);
-    cout << "--- Refine at level " << grid.index() << endl;
+    
+    // Refine grid
     refineGrid(*grid);
+
+    // Info message
+    dolfin_info("Level %d: Refined grid has %d cells",
+		grid.index() + 1, grid->child().noCells());
   }
 
   // Update grid hierarchy
@@ -92,8 +101,6 @@ void GridRefinement::checkPreCondition(GridHierarchy& grids)
 	 ( c->marker() != Cell::marked_for_no_ref )  &&
 	 ( c->marker() != Cell::marked_for_coarsening ) )
       dolfin_error("Finest grid does not satisfy pre-condition for grid refinement.");
-  
-  dolfin_debug("Checked pre-condition for grids.");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::checkPostCondition(GridHierarchy& grids)
@@ -110,8 +117,6 @@ void GridRefinement::checkPostCondition(GridHierarchy& grids)
   for (CellIterator c(grids.fine()); !c.end(); ++c)
     if ( c->marker() != Cell::marked_for_no_ref )
       dolfin_error("Finest grid does not satisfy post-condition for grid refinement.");
-
-  dolfin_debug("Checked post-condition for grids.");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::checkNumbering(GridHierarchy& grids)
@@ -193,25 +198,14 @@ void GridRefinement::closeGrid(Grid& grid)
   // Keep track of which cells are in the list
   Array<bool> closed(grid.noCells());
   closed = true;
-
+  
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c) {
-    
-    if ( c->midpoint().dist(0.333, 0.333) < 0.01 ) {
-      cout << "  Checking if cell needs to be closed: " << *c << endl;
-      for (EdgeIterator e(c); !e.end(); ++e)
-	cout << "    edge = " << *e << " marked = " << e->marked() 
-	     << " midpoint = " << e->midpoint() << endl;
-    }
-
     if ( c->status() == Cell::ref_reg || c->status() == Cell::unref ) {
       if ( edgeMarkedByOther(*c) ) {
 	cells.add(c);
-	closed(c->id()) = false;	
-
-	if ( c->midpoint().dist(0.333, 0.333) < 0.01 )
-	  cout << "  Needs to be closed!" << endl;
+	closed(c->id()) = false;
       }
     }
   }
@@ -224,7 +218,7 @@ void GridRefinement::closeGrid(Grid& grid)
 
     // Close cell
     closeCell(*cell, cells, closed);
-
+    
   }
 
 }
@@ -258,8 +252,6 @@ void GridRefinement::refineGrid(Grid& grid)
 
   // Update edge marks
   updateEdgeMarks(grid.child());
-
-  cout << "Refined grid has " << grid.noCells() << " cells." << endl;
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
@@ -324,18 +316,9 @@ void GridRefinement::closeCell(Cell& cell,
   // First count the number of marked edges in the cell
   int no_marked_edges = noMarkedEdges(cell);
 
-  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 ) {
-    cout << "    Closing cell with midpoint = " << cell.midpoint() << endl;
-    cout << "    number of marked edges = " << no_marked_edges << endl;
-  }
-
   // Check which rule should be applied
   if ( checkRule(cell, no_marked_edges) )
     return;
-
-  if ( cell.midpoint().dist(0.333, 0.333) < 0.01 ) {
-    cout << "    Unable to find refinement rule" << endl;
-  }
 
   // If we didn't find a matching refinement rule, mark cell for regular
   // refinement and add cells containing the previously unmarked edges
