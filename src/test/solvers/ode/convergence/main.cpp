@@ -41,9 +41,9 @@ public:
   real timestep(unsigned int i)
   {
     if ( i == 0 )
-      return 10.0;
+      return 2.0;
     else
-      return 10.0;
+      return 2.0;
   }
 };
 
