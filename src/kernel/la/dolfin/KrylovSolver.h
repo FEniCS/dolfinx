@@ -9,7 +9,6 @@
 namespace dolfin {
 
   class Matrix;
-  class DenseMatrix;
   class Vector;
 
   /// Krylov solver, including conjugate gradient (CG) and GMRES
@@ -21,25 +20,25 @@ namespace dolfin {
     
     KrylovSolver(Method method = GMRES);
     
-    void solve(Matrix& A, Vector& x, Vector& b);
+    void solve(const Matrix& A, Vector& x, const Vector& b);
 
     void setMethod(Method method);
     
   private:
     
-    void solveCG(Matrix &A, Vector &x, Vector &b);
-    void solveGMRES(Matrix &A, Vector &x, Vector &b);
+    void solveCG    (const Matrix& A, Vector& x, const Vector& b);
+    void solveGMRES (const Matrix& A, Vector& x, const Vector& b);
     
-    int restartedGMRES(Matrix &A, Vector &x, Vector &b, int k_max);
+    int restartedGMRES(const Matrix& A, Vector& x, const Vector& b, int k_max);
     
-    void solvePxv(Matrix &A, Vector &x, DenseMatrix &v, int k);
-    void solvePxu(Matrix &A, Vector &x, Vector &u);
-    void applyPxu(Matrix &A, Vector &x, Vector &u);
+    void solvePxv (const Matrix& A, Vector& x, Matrix& v, int k);
+    void solvePxu (const Matrix& A, Vector& x, Vector& u);
+    void applyPxu (const Matrix& A, Vector& x, Vector& u);
     
-    bool reOrthogonalize(Matrix &A, DenseMatrix &v, int k);
+    bool reorthog (const Matrix& A, Matrix& v, int k);
     
-    real getResidual(Matrix &A, Vector &x, Vector &b, Vector &r);
-    real getResidual(Matrix &A, Vector &x, Vector &b);
+    real residual (const Matrix& A, Vector& x, const Vector& b, Vector& r);
+    real residual (const Matrix& A, Vector& x, const Vector& b);
     
     Method method;
     Preconditioner pc;

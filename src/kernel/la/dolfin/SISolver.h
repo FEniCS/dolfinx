@@ -19,19 +19,19 @@ namespace dolfin {
     SISolver();
     ~SISolver(){}
     
-    void solve(Matrix& A, Vector& x, Vector& b);
+    void solve(const Matrix& A, Vector& x, const Vector& b);
 
     void setMethod(Method method);
     void setNoSweeps(int max_no_iterations);
     
   private:
     
-    void iterateRichardson  (Matrix& A, Vector& x, Vector& b);
-    void iterateJacobi      (Matrix& A, Vector& x, Vector& b);
-    void iterateGaussSeidel (Matrix& A, Vector& x, Vector& b);
-    void iterateSOR         (Matrix& A, Vector& x, Vector& b);
+    void iterateRichardson  (const Matrix& A, Vector& x, const Vector& b);
+    void iterateJacobi      (const Matrix& A, Vector& x, const Vector& b);
+    void iterateGaussSeidel (const Matrix& A, Vector& x, const Vector& b);
+    void iterateSOR         (const Matrix& A, Vector& x, const Vector& b);
     
-    real getResidual(Matrix& A, Vector& x, Vector& b);
+    real residual(const Matrix& A, Vector& x, const Vector& b);
     
     Method method;
     

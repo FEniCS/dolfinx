@@ -25,6 +25,7 @@ namespace dolfin {
     ~Vector ();
     
     void init(int size);
+    void clear();
     int size() const;
     int bytes() const;
     
@@ -41,8 +42,8 @@ namespace dolfin {
     
     real operator*(const Vector &vector);
     
-    real norm ();
-    real norm (int i);
+    real norm () const;
+    real norm (int i) const;
     void add(real scalar, Vector &vector);
     
     // Output
@@ -56,6 +57,8 @@ namespace dolfin {
     
   private:
     
+    void alloc(int size);
+
     int n;
     real *values;
     

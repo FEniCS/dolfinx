@@ -6,7 +6,7 @@
 
 namespace dolfin {
   
-  class DenseMatrix;
+  class Matrix;
   class Vector;
   
   class DirectSolver{
@@ -16,27 +16,32 @@ namespace dolfin {
     ~DirectSolver(){}
     
     /// Solve Ax = b (and replace A by its LU factorization)
-    void solve(DenseMatrix& A, Vector& x, const Vector& b) const;
+    void solve(Matrix& A, Vector& x, const Vector& b) const;
 
     /// Compute inverse (and replace A by its LU factorization)
-    void inverse(DenseMatrix& A, DenseMatrix& Ainv) const;
+    void inverse(Matrix& A, Matrix& Ainv) const;
 
     /// Solve Ax = b with high precision (not replacing A by its LU factorization)
-    void hpsolve(const DenseMatrix& A, Vector& x, const Vector& b) const;
+    void hpsolve(const Matrix& A, Vector& x, const Vector& b) const;
 
     //---
 
     /// Compute LU factorization (in-place)
-    void lu(DenseMatrix& A) const;
+    void lu(Matrix& A) const;
 
     /// Solve A x = b using a computed lu factorization
-    void solveLU(const DenseMatrix& LU, Vector& x, const Vector& b) const;
+    void solveLU(const Matrix& LU, Vector& x, const Vector& b) const;
 
     /// Compute inverse using a computed lu factorization
-    void inverseLU(const DenseMatrix& LU, DenseMatrix& Ainv) const;
+    void inverseLU(const Matrix& LU, Matrix& Ainv) const;
 
     /// Solve A x = b with high precision using a computed lu factorization
-    void hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A, Vector& x, const Vector& b) const;
+    void hpsolveLU(const Matrix& LU, const Matrix& A, Vector& x, const Vector& b) const;
+
+  private:
+    
+    /// Check that the matrix is dense
+    void check(const Matrix& A) const;
 
   };
   

@@ -28,7 +28,7 @@ void MatlabFile::operator<<(Matrix& A)
   fprintf(fp, "%s = [", A.name().c_str());
   for (int i = 0; i < A.size(0); i++) {
     for (int pos = 0; !A.endrow(i, pos); pos++) {
-      value = A(i, &j, pos);
+      value = A(i, j, pos);
       fprintf(fp, " %i %i %.16e", i + 1, j + 1, value);		
       if ( i == (A.size(0) - 1) && A.endrow(i, pos + 1) )
         fprintf(fp, "];\n");

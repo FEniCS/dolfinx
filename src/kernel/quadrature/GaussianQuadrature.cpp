@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
@@ -32,7 +33,7 @@ void GaussianQuadrature::computeWeights()
     return;
   }
  
-  DenseMatrix A(n, n);
+  Matrix A(n, n, Matrix::DENSE);
   Vector x(n), b(n);
    
   // Compute the matrix coefficients

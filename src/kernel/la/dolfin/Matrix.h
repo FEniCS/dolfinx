@@ -1,128 +1,234 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
-//
-// Modifications by Georgios Foufas 2002, 2003
 
-#ifndef __MATRIX_HH
-#define __MATRIX_HH
+#ifndef __MATRIX_H
+#define __MATRIX_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Variable.h>
 #include <dolfin/constants.h>
+#include <dolfin/Variable.h>
 
 namespace dolfin {
-  
-  class Vector;
 
-  /// Sparse matrix with given number of rows m and columns n
+  class Vector;
+  class GenericMatrix;
+
+  /// Matrix with given number of rows and columns that can
+  /// be either sparse (default) or dense.
+  ///
+  /// Some of the operations only work on one type of matrix,
+  /// like the LU factorization which is implemented only for
+  /// a dense matrix. Such functions are marked by
+  ///
+  ///     (only dense)
+  /// or  (only sparse)
+  ///
+  /// Using a sparse function on a dense matrix (or the opposite)
+  /// will give a warning or an error.
+
   class Matrix : public Variable {
   public:
-    
-    Matrix  ();
-    Matrix  (int m, int n);
+
+    /// Matrix type, sparse or dense
+    enum Type {DENSE, SPARSE};
+
+    /// Create an empty matrix
+    Matrix(Type type = SPARSE);
+
+    /// Create matrix with given dimensions
+    Matrix(int m, int n, Type type = SPARSE);
+
+    /// Create a copy of a given matrix
+    Matrix(const Matrix& A);
+
+    /// Destructor
     ~Matrix ();
+
+    // Forward declaration of nested classes
+    class Element;
+    class Row;
+    class Column;
+
+    ///--- Basic operations
+
+    /// Initialize to a zero matrix with given dimensions
+    void init(int m, int n);
+
+    /// Clear all data
+    void clear();
+
+    ///--- Simple functions
     
-    // Enable different indexing for copy and write (thanks Jim)
-    class Reference {
+    /// Return matrix type, sparse or dense
+    Type type() const;
+
+    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
+    int size(int dim) const;
+
+    /// Return number of non-zero elements (only sparse)
+    int size() const;
+
+    /// Return number of non-zero elements on row i (only sparse)
+    int rowsize(int i) const;
+
+    /// Return size of matrix in bytes (approximately)
+    int bytes() const;
+
+    ///--- Operators
+
+    /// Index operator
+    Element operator()(int i, int j);
+
+    /// Index operator
+    real operator()(int i, int j) const;
+
+    /// Index operator (only sparse)
+    real operator()(int i, int& j, int pos) const;
+
+    /// Assignment from scalar (affects only already non-zero elements for sparse)
+    void operator=(real a);
+
+    /// Assignment from a given matrix
+    void operator=(const Matrix& A);
+
+    /// Add a given matrix
+    void operator+=(const Matrix& A);
+
+    /// Subtract a given matrix
+    void operator-=(const Matrix& A);
+
+    /// Multiplication with a given scalar
+    void operator*=(real a);    
+    
+    ///--- Matrix operations
+
+    /// Compute maximum norm
+    real norm() const;
+
+    /// Matrix-vector multiplication, component i of Ax
+    real mult(Vector& x, int i) const;
+
+    /// Matrix-vector multiplication
+    void mult(Vector& x, Vector& Ax) const;
+
+    /// Solve Ax = b (in-place LU for dense and Krylov for sparse)
+    void solve(Vector& x, const Vector& b);
+
+    /// Compute inverse (only dense)
+    void inverse(Matrix& Ainv);
+
+    /// Solve Ax = b with high precision (only dense, not in-place)
+    void hpsolve(Vector& x, const Vector& b) const;
+
+    /// Compute LU factorization (only dense, in-place)
+    void lu();
+
+    /// Solve A x = b using a computed lu factorization (only dense)
+    void solveLU(Vector& x, const Vector& b) const;
+
+    /// Compute inverse using a computed lu factorization (only dense)
+    void inverseLU(Matrix& Ainv) const;
+
+    /// Solve A x = b with high precision using a computed lu factorization (only dense)
+    void hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const;
+    
+    /// --- Special functions
+
+    /// Clear unused elements (only sparse)
+    void resize();
+    
+    /// Set A(i,j) = d_{ij} on row i
+    void ident(int i);
+
+    /// Specify number of non-zero elements on row i (only sparse)
+    void initrow(int i, int rowsize);
+
+    /// True if we have reached the end of the row (only sparse)
+    bool endrow(int i, int pos) const;
+
+    /// Permutation (only dense)
+    int perm(int i) const;
+
+    /// --- Output
+
+    /// Display entire matrix
+    void show() const;
+
+    /// Condensed information in one line
+    friend LogStream& operator<< (LogStream& stream, const Matrix& A);
+
+    ///--- Nested classes
+
+    /// Nested class Element, reference to a position in the matrix
+    class Element {
     public:
+    
+      Element(Matrix& matrix, int i, int j);
       
-      Reference(Matrix& matrix, int i, int j) : A(matrix)
-      {
-	this->i = i;
-	this->j = j;
-      }
+      operator real() const;
       
-      operator real() const {
-	return A.readElement(i, j);
-      }
+      void operator=  (real a);
+      void operator=  (const Element& e);
+      void operator+= (real a);
+      void operator-= (real a);
+      void operator*= (real a);
+      void operator/= (real a);
       
-      void operator= (real value) {
-	A.writeElement(i, j, value);
-      }
-      
-      void operator= (const Reference& r) {
-	A.writeElement(i, j, r.A(r.i, r.j));
-      }
-      
-      void operator+= (real value) {
-	A.addtoElement(i, j, value);
-      }
-      
+
     protected:
+    
       Matrix& A;
       int i;
       int j;
+
     };
+
+    /// Nested class Row, reference to a row in the matrix
+    class Row {
+    public:
     
-    friend class Reference;
+      Row(Matrix& matrix, int i);
+      
+    protected:
     
-    /// Operators
-    void operator=  (const Matrix& A);
-    void operator+= (const Matrix& A);
-    void operator-= (const Matrix& A);
-    void operator*= (real a);
+      Matrix& A;
+      int i;
+
+    };
+
+    /// Nested class Column, reference to a column in the matrix
+    class Column {
+    public:
     
-    /// Resize to empty matrix of given size
-    void init(int m, int n);
-    /// Resize matrix (clear unused elements)
-    void resize();
-    /// Clear matrix
-    void clear();
-    /// Return size (0 for rows, 1 for columns)
-    int size(int dim) const;
-    /// Return number of nonzero elements
-    int size() const;
-    /// Return size of matrix in bytes (approximately)
-    int bytes() const;
-    /// Set number of nonzero entries in a row (clearing old values)
-    void initRow(int i, int rowsize);
-    /// Set number of nonzero entries in a row (keeping old values)
-    void resizeRow(int i, int rowsize);
-    /// Return size of row i (number of allocated elements)
-    int rowSize(int i) const;
-    /// Return true if we have not reached end of row
-    bool endrow(int i, int pos) const;
+      Column(Matrix& matrix, int j);
+      
+    protected:
     
-    /// Indexing, fast alternative
-    real operator()(int i, int* j, int pos) const;
-    /// Indexing, slow alternative
-    Reference operator()(int i, int j);
-    real      operator()(int i, int j) const;
-    
-    /// Return maximum norm
-    real norm() const;
-    /// Set all elements 0 on this row except (i,i) = 1
-    void ident(int i);
-    /// Return element i of Ax
-    real mult(Vector& x, int i) const;
-    /// Multiply x with A and put the result in Ax
-    void mult(Vector& x, Vector& Ax) const;
-    /// Solve the linear system Ax = b
-    void solve(Vector& x, Vector& b);
-    
-    /// Output
-    void show() const;
-    friend LogStream& operator<< (LogStream& stream, const Matrix& A);
-    
-  protected:
-    
-    real readElement  (int i, int j) const;
-    void writeElement (int i, int j, real value);
-    void addtoElement (int i, int j, real value);
-    
+      Matrix& A;
+      int j;
+
+    };
+
+    friend class DirectSolver;
+    friend class Element;
+
   private:
     
-    // Dimension
-    int m, n;
+    /// Return matrix values
+    real** values();
+
+    /// Return matrix values
+    const real** values() const;
     
-    // Data
-    int*   rowsizes;
-    int**  columns;
-    real** values;
-    
-    // Additional size to allocate when needed
-    int allocsize;
-    
+    /// Return permutation (only dense)
+    int* permutation();
+
+    /// Return permutation (only dense)
+    const int* permutation() const;
+
+    GenericMatrix* A;
+    Type _type;
+
   };
   
 }

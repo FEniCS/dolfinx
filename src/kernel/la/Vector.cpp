@@ -61,20 +61,36 @@ Vector::Vector(real x0, real x1, real x2) : Variable("x", "A vector")
 //-----------------------------------------------------------------------------
 Vector::~Vector()
 {
-  delete [] values;
+  clear();
 }
 //-----------------------------------------------------------------------------
 void Vector::init(int size)
 {
+  if ( size <= 0 )
+    dolfin_error("Size must be positive.");
+  
+  // Two cases:
+  //
+  //   1. Already allocated and dimension changes -> reallocate
+  //   2. Not allocated -> allocate
+  //
+  // Otherwise do nothing
+  
+  if ( n != size ) {
+    clear();      
+    alloc(size);
+  }
+  else
+    alloc(size);
+}
+//-----------------------------------------------------------------------------
+void Vector::clear()
+{
   if ( values )
     delete [] values;
-  
-  n = size;
-  
-  values = new real[n];
-  
-  for (int i=0;i<n;i++)
-    values[i] = 0.0;
+  values = 0;
+
+  n = 0;
 }
 //-----------------------------------------------------------------------------
 int Vector::size() const
@@ -144,38 +160,38 @@ real Vector::operator*(const Vector &vector)
   return sum;
 }
 //-----------------------------------------------------------------------------
-real Vector::norm()
+real Vector::norm() const
 {
   return norm(2);
 }
 //-----------------------------------------------------------------------------
-real Vector::norm(int i)
+real Vector::norm(int i) const
 {
   real norm = 0.0; 
 
   switch(i){
   case 0:
     // max-norm
-    for (int i=0; i<n; i++)
-		if ( fabs(values[i]) > norm )
-		  norm = fabs(values[i]);
+    for (int i = 0; i < n; i++)
+      if ( fabs(values[i]) > norm )
+	norm = fabs(values[i]);
     return norm;
     break;
   case 1:
     // l1-norm
-    for (int i=0; i<n; i++)
-		norm += fabs(values[i]);
+    for (int i = 0; i < n; i++)
+      norm += fabs(values[i]);
     return norm;
     break;
   case 2:
     // l2-norm
-    for (int i=0; i<n; i++)
-		norm += values[i] * values[i];
+    for (int i = 0; i < n; i++)
+      norm += values[i] * values[i];
     return sqrt(norm);
     break;
   default:
-	 cout << "Unknown vector norm" << endl;
-	 exit(1);
+    cout << "Unknown vector norm" << endl;
+    exit(1);
   }  
 
 }
@@ -183,33 +199,41 @@ real Vector::norm(int i)
 void Vector::add(real scalar, Vector &vector)
 {
   for (int i = 0; i < n; i++)
-	 values[i] += scalar * vector.values[i];  
+    values[i] += scalar * vector.values[i];  
 }
 //-----------------------------------------------------------------------------
 void Vector::show() const
 {
   cout << "[ ";
   for (int i = 0; i < n; i++)
-	 cout << values[i] << " ";
+    cout << values[i] << " ";
   cout << "]" << endl;
 }
-//-----------------------------------------------------------------------------
-// Additional operators
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& vector)
 {
   stream << "[ Vector of size " << vector.size()
-			<< ", approximatetly ";
+	 << ", approximatetly ";
   
   int bytes = vector.bytes();
   
   if ( bytes > 1024*1024 )
-	 stream << bytes/1024 << " Mb. ]";
+    stream << bytes/1024 << " Mb. ]";
   else if ( bytes > 1024 )
-	 stream << bytes/1024 << " kb. ]";
+    stream << bytes/1024 << " kb. ]";
   else
-	 stream << bytes << " bytes ]";
+    stream << bytes << " bytes ]";
   
   return stream;
+}
+//-----------------------------------------------------------------------------
+void Vector::alloc(int size)
+{
+  // Use with caution. Only for internal use.
+  
+  values = new real[size];
+  for (int i = 0; i < n; i++)
+    values[i] = 0.0;
+  n = size;
 }
 //-----------------------------------------------------------------------------

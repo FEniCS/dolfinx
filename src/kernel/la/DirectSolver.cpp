@@ -4,7 +4,7 @@
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/DenseMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/DirectSolver.h>
 #include <cmath>
@@ -12,28 +12,38 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DirectSolver::solve(DenseMatrix& A, Vector& x, const Vector& b) const
+void DirectSolver::solve(Matrix& A, Vector& x, const Vector& b) const
 {
+  check(A);
   lu(A);
   solveLU(A, x, b);
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::hpsolve(const DenseMatrix& A,
+void DirectSolver::hpsolve(const Matrix& A,
 			   Vector& x, const Vector& b) const
 {
-  DenseMatrix LU(A);
+  check(A);
+  Matrix LU(A);
   lu(LU);
   hpsolveLU(LU, A, x, b);
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::inverse(DenseMatrix& A, DenseMatrix& Ainv) const
+void DirectSolver::inverse(Matrix& A, Matrix& Ainv) const
 {
+  check(A);
   lu(A);
   inverseLU(A, Ainv);
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::lu(DenseMatrix& A) const
-{
+void DirectSolver::lu(Matrix& A) const
+{ 
+  // Check that the matrix is dense
+  check(A);
+  
+  // Get values
+  real** a = A.values();
+  int* indx = A.permutation();
+  
   // This function replaces the matrix with its LU factorization.
   //
   // Algorithm from "Numerical Recipes in C", except for the following
@@ -49,11 +59,9 @@ void DirectSolver::lu(DenseMatrix& A) const
     dolfin_error("Matrix is not square.");
   
   // Prepare the variables for the notation in the algorithm
-  real **a = A.values;       // The matrix
   real TINY = 1e-20;           // A small number
   int n = A.size(0);         // Dimension
   real d;                      // Even or odd number of row interchanges
-  int *indx = A.permutation; // Permutation of rows
   
   //  void ludcmp(float **a, int n, int *indx, float *d)
   
@@ -116,20 +124,21 @@ void DirectSolver::lu(DenseMatrix& A) const
   delete [] vv;
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::solveLU(const DenseMatrix& LU,
-			   Vector& x, const Vector& b) const
+void DirectSolver::solveLU(const Matrix& LU, Vector& x, const Vector& b) const
 {
+  check(LU);
+
   // Solve the linear system A x = b using a computed LU factorization
 
   // Check dimensions
-  if ( LU.m != LU.n )
+  if ( LU.size(0) != LU.size(1) )
     dolfin_error("LU factorization must be a square matrix.");
 
-  if ( LU.m != b.n )
+  if ( LU.size(0) != b.size() )
     dolfin_error("Non-matching dimensions for matrix and vector.");
 
   // Get size
-  int n = LU.m;
+  int n = LU.size(0);
   
   // Initialize solution vector
   x.init(n);
@@ -145,9 +154,6 @@ void DirectSolver::solveLU(const DenseMatrix& LU,
   //    removed comments
   //    changed from [i][j] to [i-1][j-1]
 
-  // Prepare the variables for the notation in the algorithm
-  real **a = LU.values;       // The matrix
-  int *indx = LU.permutation; // Permutation
   
   // Copy b to x
   for (int i=0;i<n;i++)
@@ -168,32 +174,35 @@ void DirectSolver::solveLU(const DenseMatrix& LU,
   real sum;
   
   for (i=1;i<=n;i++){
-    ip=indx[i-1];
+    ip=LU.perm(i-1);
     sum=x.values[ip-1];
     x.values[ip-1]=x.values[i-1];
-    if (ii)	for (j=ii;j<=i-1;j++) sum -= a[i-1][j-1]*x.values[j-1];
+    if (ii)	for (j=ii;j<=i-1;j++) sum -= LU(i-1,j-1)*x.values[j-1];
     else if (sum) ii=i;
     x.values[i-1]=sum;
   }
   
   for (i=n;i>=1;i--){
     sum=x.values[i-1];
-    for (j=i+1;j<=n;j++) sum -= a[i-1][j-1]*x.values[j-1];
-    x.values[i-1]=sum/a[i-1][i-1]; 
+    for (j=i+1;j<=n;j++) sum -= LU(i-1,j-1)*x.values[j-1];
+    x.values[i-1]=sum/LU(i-1,i-1);
   }
   
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::inverseLU(const DenseMatrix& LU, DenseMatrix& Ainv) const
+void DirectSolver::inverseLU(const Matrix& LU, Matrix& Ainv) const
 {
+  check(LU);
+  check(Ainv);
+
   // Compute inverse using a computed LU factorization
 
   // Check dimensions
-  if ( LU.m != LU.n )
+  if ( LU.size(0) != LU.size(1) )
     dolfin_error("LU factorization must be a square matrix.");
 
   // Get size
-  int n = LU.m;
+  int n = LU.size(0);
 
   // Initialize inverse
   Ainv.init(n, n);
@@ -216,7 +225,7 @@ void DirectSolver::inverseLU(const DenseMatrix& LU, DenseMatrix& Ainv) const
 
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
+void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
 			     Vector& x, const Vector& b) const
 {
   // Solve the linear system A x = b to very high precision, by first
@@ -229,27 +238,31 @@ void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
   // Typically, the residual will decrease from about 3e-17 so say 1e-17.
   // Sometimes it will even increase.
 
+  // Check that matrices are dense
+  check(LU);
+  check(A);
+
   // Check dimensions
-  if ( LU.m != LU.n )
+  if ( LU.size(0) != LU.size(1) )
     dolfin_error("LU factorization must be a square matrix.");
 
-  if ( A.m != A.n )
+  if ( A.size(0) != A.size(1) )
     dolfin_error("Matrix must be square.");
 
-  if ( LU.m != b.n )
+  if ( LU.size(0) != b.size() )
     dolfin_error("Non-matching dimensions for matrix and vector.");
 
-  if ( LU.m != A.m )
+  if ( LU.size(0) != A.size(1) )
     dolfin_error("Non-matching matrix dimensions.");
   
   // Get size
-  int n = LU.m;
+  int n = LU.size(0);
   
   // Start with the solution from LU factorization
   solveLU(LU, x, b);
 
   // Compute product B = Ainv * A
-  DenseMatrix B(n, n);
+  Matrix B(n, n);
   Vector colA(n);
   Vector colB(n);
   for (int j = 0; j < n; j++) {
@@ -290,5 +303,11 @@ void DirectSolver::hpsolveLU(const DenseMatrix& LU, const DenseMatrix& A,
     
   }
   
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::check(const Matrix& A) const
+{
+  if ( A.type() != Matrix::DENSE )
+    dolfin_error("Matrix must be dense to use the direct solver. Consider using dense().");
 }
 //-----------------------------------------------------------------------------

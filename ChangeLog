@@ -1,3 +1,4 @@
+ - Include missing cmath in Legendre.cpp and GaussianQuadrature.cpp
 0.3.6
  - Add output functionality in DenseMatrix
  - Add high precision solver to DirectSolver
