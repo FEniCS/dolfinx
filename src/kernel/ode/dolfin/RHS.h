@@ -37,7 +37,7 @@ namespace dolfin {
     real operator() (unsigned int index, unsigned int node, real t);
 
     // Compute derivative dfi/duj
-    real dFdU(unsigned int i, unsigned int j, real t);
+    real dfdu(unsigned int i, unsigned int j, real t);
 
   private:
 

@@ -69,30 +69,36 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 real FixedPointIteration::update(Element& element)
 {
-  // Get initial value for element
-  real u0 = u(element.index(), element.starttime());
-  
-  // Update value
-  element.update(u0);    
-
   // Save end value for element
   real u1 = element.endval();
 
-  // Local iteration number
-  unsigned int local_n = 0;
+  // Update initial value
+  real u0 = u(element.index(), element.starttime());
+  element.update(u0);
 
-  // Local alpha
+  // Local variables
   real local_alpha = 1.0;
-  
-  // Local discrete residuals
   real local_r0 = 0.0;
   real local_r1 = 0.0;
   real local_r2 = 0.0;
 
+  // Start with damping if we have used it before
+  bool local_damping = event_diag_damping.count() > 0;
+
   // Fixed point iteration on the element
-  while ( true )
+  for (unsigned int i = 0; i < local_maxiter; i++)
   {
+    // Compute local damping
+    if ( local_damping )
+    {
+      unsigned int index = element.index();
+      real dfdu = f.dfdu(index, index, element.endtime());
+      real rho = element.timestep() * fabs(dfdu);
+      local_alpha = 1.0 / (1.0 + rho);
+    }
+    
     // Update element
+    u.debug(element, Solution::update);
     if ( alpha == 1.0 && local_alpha == 1.0 )
       element.update(f);
     else
@@ -101,41 +107,30 @@ real FixedPointIteration::update(Element& element)
     // Compute discrete residual
     local_r1 = local_r2;
     local_r2 = fabs(element.computeDiscreteResidual(f));
-
-    // Save initial discrete residual
-    if ( n == 0 )
+    if ( i == 0 )
       local_r0 = local_r2;
-    
-    // Write debug info
-    u.debug(element, Solution::update);
-    
-    // Check stabilization
-    if ( local_n >= 2 )
-    {
-      real rho = local_r2 / (DOLFIN_EPS + local_r1);
-      if ( rho > 0.5 )
-      {
-	// Compute diagonal damping
-	event_diag_damping();
-	local_alpha = 1.0 / (1.0 + rho/local_alpha);
-
-	if ( local_r2 > maxdiv * r0 )
-	{
-	  // Need to reset element
-	  event_reset_element();
-	  reset(element);
-	}
-      }
-    }
-
-    // Check if we have done too many iterations
-    if ( local_n++ >= local_maxiter )
-      break;
 
     // Check convergence
     if ( local_r2 < tol )
       break;
 
+    if ( i > 0 )
+    {
+      // Check if local damping is needed
+      if ( local_r2 > local_r1 )
+      {
+	event_diag_damping();
+	local_damping = true;
+      }
+
+      // Check if we need to reset the element
+      if ( local_r2 > maxdiv * local_r0 )
+      {
+	event_reset_element();
+	reset(element);
+      }
+
+    }
   }
 
   // Return change in end value

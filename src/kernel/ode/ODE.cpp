@@ -24,7 +24,6 @@ ODE::ODE(unsigned int N) : sparsity(N)
   
   // Choose order
   default_order = dolfin_get("order");
-  cout << "ODE order = " << default_order << endl;
 
   // Choose time step
   default_timestep = dolfin_get("initial time step");

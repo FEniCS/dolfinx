@@ -43,7 +43,7 @@ real RHS::operator() (unsigned int index, unsigned int node, real t)
   return ode.f(u, t, index);
 }
 //-----------------------------------------------------------------------------
-real RHS::dFdU(unsigned int i, unsigned int j, real t)
+real RHS::dfdu(unsigned int i, unsigned int j, real t)
 {
   // Update u(j) in case f(i) does not depend on u(j)
   u(j) = 0.0;
@@ -52,14 +52,12 @@ real RHS::dFdU(unsigned int i, unsigned int j, real t)
   update(i, t);
   
   // Small change in u_j
-  double dU = DOLFIN_SQRT_EPS * abs(u(j));
-  if ( dU == 0.0 )
-    dU = DOLFIN_SQRT_EPS;
+  double dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(u(j)));
 
   // Save value of u_j
   real uj = u(j);
   
-  // F values
+  // Compute F values
   u(j) -= 0.5 * dU;
   real f1 = ode.f(u, t, i);
   

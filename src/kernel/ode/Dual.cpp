@@ -39,7 +39,7 @@ real Dual::f(const Vector& phi, real t, unsigned int i)
 
   real sum = 0.0;  
   for (Sparsity::Iterator j(i, sparsity); !j.end(); ++j)
-    sum += rhs.dFdU(j, i, T - t) * phi(j);
+    sum += rhs.dfdu(j, i, T - t) * phi(j);
   
   return sum;
 }
