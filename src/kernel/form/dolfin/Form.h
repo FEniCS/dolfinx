@@ -60,7 +60,7 @@ namespace dolfin
     NewArray<const NewFunction*> functions;
     
     // Coefficients of functions projected to current element
-    real** c;
+    real** w;
 
     // Number of functions
     uint nfunctions;

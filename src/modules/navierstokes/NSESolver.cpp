@@ -21,7 +21,7 @@ void NSESolver::solve()
   NewFunction up;
   
   NSEMomentum::FiniteElement element_mom;
-  NSEMomentum::BilinearForm a_mom;
+  NSEMomentum::BilinearForm a_mom(uc);
   NSEMomentum::LinearForm L_mom(f,u0);
 
   NSEContinuity::FiniteElement element_con;

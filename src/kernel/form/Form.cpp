@@ -15,7 +15,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form() : c(0), nfunctions(0)
+Form::Form() : w(0), nfunctions(0)
 {
   // Reset data
   det = 0.0;
@@ -31,18 +31,18 @@ Form::Form() : c(0), nfunctions(0)
 //-----------------------------------------------------------------------------
 Form::~Form()
 {
-  if ( c )
+  if ( w )
   {
     for (uint i = 0; i < nfunctions; i++)
-      delete [] c[i];
-    delete [] c;
+      delete [] w[i];
+    delete [] w;
   }
 }
 //-----------------------------------------------------------------------------
 void Form::init(uint nfunctions, uint spacedim)
 {
   dolfin_assert(nfunctions > 0);
-  dolfin_assert(c == 0);
+  dolfin_assert(w == 0);
 
   // Save the number of functions
   this->nfunctions = nfunctions;
@@ -52,12 +52,12 @@ void Form::init(uint nfunctions, uint spacedim)
   functions.reserve(nfunctions);
 
   // Initialize coefficients
-  c = new real* [nfunctions];
+  w = new real* [nfunctions];
   for (uint i = 0; i < nfunctions; i++)
   {
-    c[i] = new real[spacedim];
+    w[i] = new real[spacedim];
     for (uint j = 0; j < spacedim; j++)
-      c[i][j] = 0.0;
+      w[i][j] = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -168,7 +168,7 @@ void Form::updateCoefficients(const Cell& cell, const NewFiniteElement& element)
   for (uint i = 0; i < nfunctions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->project(cell, element, c[i]);
+    functions[i]->project(cell, element, w[i]);
   }
 }
 //-----------------------------------------------------------------------------

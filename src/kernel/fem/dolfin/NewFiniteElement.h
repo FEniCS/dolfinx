@@ -4,6 +4,7 @@
 #ifndef __NEW_FINITE_ELEMENT_H
 #define __NEW_FINITE_ELEMENT_H
 
+#include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
