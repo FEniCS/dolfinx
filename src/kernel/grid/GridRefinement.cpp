@@ -98,12 +98,10 @@ void GridRefinement::evaluateMarks(Grid& grid)
       c->marker() = marked_for_no_ref;
     
     if ( c->status() == ref_irr ) {
-      
       if ( edgeOfChildMarkedForRefinement(*c) )
 	c->marker() = marked_for_reg_ref;
       else
 	c->marker() = marked_for_no_ref;
-
     }
    
   }

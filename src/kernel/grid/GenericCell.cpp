@@ -224,3 +224,9 @@ CellStatus& GenericCell::status()
   return rd->status;
 }
 //-----------------------------------------------------------------------------
+bool& GenericCell::closed()
+{
+  dolfin_assert(rd);
+  return rd->closed;
+}
+//-----------------------------------------------------------------------------

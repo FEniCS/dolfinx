@@ -104,6 +104,9 @@ namespace dolfin {
     // Return cell status
     CellStatus& status();
 
+    // Return cell closed state
+    bool& closed();
+
     // The grid containing this cell
     Grid* grid;
 

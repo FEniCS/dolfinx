@@ -129,12 +129,6 @@ Cell* Cell::neighbor(int i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-bool Cell::haveEdge(Edge& edge) const
-{
-  dolfin_assert(c);
-  return c->haveEdge(edge);
-}
-//-----------------------------------------------------------------------------
 Cell* Cell::parent() const
 {
   dolfin_assert(c);
@@ -241,12 +235,18 @@ void Cell::set(Node* n0, Node* n1, Node* n2, Node* n3)
   c = new Tetrahedron(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-bool Cell::neighbor(Cell& cell)
+bool Cell::neighbor(Cell& cell) const
 {
   if ( c )
     return c->neighbor(cell.c);
   
   return false;
+}
+//-----------------------------------------------------------------------------
+bool Cell::haveEdge(Edge& edge) const
+{
+  dolfin_assert(c);
+  return c->haveEdge(edge);
 }
 //-----------------------------------------------------------------------------
 void Cell::createEdges()
@@ -301,5 +301,11 @@ CellStatus& Cell::status()
 {
   dolfin_assert(c);
   return c->status();
+}
+//-----------------------------------------------------------------------------
+bool& Cell::closed()
+{
+  dolfin_assert(c);
+  return c->closed();
 }
 //-----------------------------------------------------------------------------
