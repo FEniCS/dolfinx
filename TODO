@@ -17,6 +17,7 @@ Assembly
 * Use MatSetOption(A, MAT_USE_HASH_TABLE)?
 * Make two forms share the same map and only update the map
 * Update DOLFIN with latest output from FFC
+* Compute number of nonzeros before assembly
 
 o [hoffman, logg] Optimize form evaluation
 o [hoffman, logg] Boundary conditions, fix ds (May 04, partly fixed)
