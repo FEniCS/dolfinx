@@ -75,6 +75,8 @@ void ElasticitySolver::solve()
   // Start a progress session
   Progress p("Time-stepping");
   
+  int counter = 0;
+
   // Start time-stepping
   while ( t < T ) {
   
@@ -112,7 +114,11 @@ void ElasticitySolver::solve()
     // Save the solution
     u1(0).update(t);
     //u1(0).t = t;
-    file << u1;
+    if(counter % 33 == 0)
+    {
+      file << u1;
+    }
+    counter++;
 
     // Update progress
     p = t / T;

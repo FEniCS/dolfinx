@@ -322,7 +322,7 @@ void DenseMatrix::mult(const DenseMatrix& B, DenseMatrix& AB) const
   if ( n != B.m )
     dolfin_error("Matrix dimensions don't match.");
 
-  dolfin_info("Dense matrix multiplication");
+  //dolfin_info("Dense matrix multiplication");
   
   AB.init(m,B.size(1));
   AB = 0.0;

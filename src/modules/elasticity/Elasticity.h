@@ -22,8 +22,13 @@ namespace dolfin {
     
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
     {
-      real lambda = 1.0;
-      real mu = 1.0;
+      real b = 0.05;
+      real E = 20.0;
+      real nu = 0.3;
+
+
+      real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+      real mu = E / (2 * (1 + nu));
 
       ElementFunction
 	epsilon00, epsilon01, epsilon02,

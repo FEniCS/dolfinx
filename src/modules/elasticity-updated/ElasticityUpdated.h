@@ -31,71 +31,96 @@ public:
 
       // Debug
 
-      /*
-      // Derivatives
-      ElementFunction wx0 = wp(0).ddx();
-      ElementFunction wy0 = wp(0).ddy();
-      ElementFunction wz0 = wp(0).ddz();
-
-      ElementFunction wx1 = wp(1).ddx();
-      ElementFunction wy1 = wp(1).ddy();
-      ElementFunction wz1 = wp(1).ddz();
-
-      ElementFunction wx2 = wp(2).ddx();
-      ElementFunction wy2 = wp(2).ddy();
-      ElementFunction wz2 = wp(2).ddz();
-
-      std::cout << "wp(0).ddx(): " << wx0(mp) << std::endl;
-      std::cout << "wp(0).ddy(): " << wy0(cell_->coord(0)) << std::endl;
-      std::cout << "wp(0).ddz(): " << wz0(cell_->coord(0)) << std::endl;
-
-      std::cout << "wp(1).ddx(): " << wx1(cell_->coord(0)) << std::endl;
-      std::cout << "wp(1).ddy(): " << wy1(cell_->coord(0)) << std::endl;
-      std::cout << "wp(1).ddz(): " << wz1(cell_->coord(0)) << std::endl;
-
-      std::cout << "wp(2).ddx(): " << wx2(cell_->coord(0)) << std::endl;
-      std::cout << "wp(2).ddy(): " << wy2(cell_->coord(0)) << std::endl;
-      std::cout << "wp(2).ddz(): " << wz2(cell_->coord(0)) << std::endl;
-      */
 
       // Material parameters
       
-      real b = 0.05;
-
-      real E = 500.0;
+      real b = 0.5;
+      real E = 50.0;
       real nu = 0.3;
-      
+
+
       real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
       real mu = E / (2 * (1 + nu));
       
-      //real lambda = 20.0;
-      //real mu = 5.0;
-      
       // Compute sigma
       
-      static Matrix sigma(3, 3), epsilon(3, 3), vsigma(3, 3); 
+      static Matrix
+	gradwp(3, 3, Matrix::dense),
+	gradwptransp(3, 3, Matrix::dense),
+	sigma(3, 3, Matrix::dense),
+	epsilon(3, 3, Matrix::dense),
+	vsigma(3, 3, Matrix::dense),
+	F(3, 3, Matrix::dense),
+	Ftransp(3, 3, Matrix::dense),
+	F0transp(3, 3, Matrix::dense),
+	tmp1(3, 3, Matrix::dense),
+	tmp2(3, 3, Matrix::dense); 
 
       if(!computedsigma[cell_->id()])
       {
+	gradwp(0, 0) = (wp(0).ddx())(mp);
+	gradwp(0, 1) = (wp(0).ddy())(mp);
+	gradwp(0, 2) = (wp(0).ddz())(mp);
 	
-	static ElementFunction
-	  epsilon00, epsilon01, epsilon02,
-	  epsilon10, epsilon11, epsilon12,
-	  epsilon20, epsilon21, epsilon22;
+	gradwp(1, 0) = (wp(1).ddx())(mp);
+	gradwp(1, 1) = (wp(1).ddy())(mp);
+	gradwp(1, 2) = (wp(1).ddz())(mp);
 	
-	epsilon(0, 0) = (wp(0).ddx() + wp(0).ddx())(mp);
-	epsilon(0, 1) = (wp(0).ddy() + wp(1).ddx())(mp);
-	epsilon(0, 2) = (wp(0).ddz() + wp(2).ddx())(mp);
+	gradwp(2, 0) = (wp(2).ddx())(mp);
+	gradwp(2, 1) = (wp(2).ddy())(mp);
+	gradwp(2, 2) = (wp(2).ddz())(mp);
 	
-	epsilon(1, 0) = (wp(1).ddx() + wp(0).ddy())(mp);
-	epsilon(1, 1) = (wp(1).ddy() + wp(1).ddy())(mp);
-	epsilon(1, 2) = (wp(1).ddz() + wp(2).ddy())(mp);
+	gradwp.transp(gradwptransp);
 	
-	epsilon(2, 0) = (wp(2).ddx() + wp(0).ddz())(mp);
-	epsilon(2, 1) = (wp(2).ddy() + wp(1).ddz())(mp);
-	epsilon(2, 2) = (wp(2).ddz() + wp(2).ddz())(mp);
+	Matrix &F0 = *(F0array[cell_->id()]);
+	Matrix &F1 = *(F1array[cell_->id()]);
 	
+	//gradwp.mult(F0, F);
+	F0.mult(gradwp, F);
 	
+	F *= k;
+	F += F0;
+	F1 = F; 
+
+
+	//cout << "F1 on cell " << cell_->id() << ": " << endl;
+	//F1.show();
+
+	F.transp(Ftransp);
+	F0.transp(F0transp);
+
+	// Alternative 1
+
+	///*
+	epsilon = gradwp;
+	epsilon += gradwptransp;
+	//*/
+
+	/*
+	// Alternative 2
+
+	Ftransp.mult(F, epsilon);
+	epsilon(0, 0) -= 1;
+	epsilon(1, 1) -= 1;
+	epsilon(2, 2) -= 1;
+	*/
+
+
+	// Alternative 3
+
+	/*
+	Ftransp.mult(gradwptransp, tmp1);
+	tmp1.mult(F0, tmp2);
+
+	epsilon = tmp2;
+	
+	Ftransp.mult(gradwp, tmp1);
+	tmp1.mult(F0, tmp2);
+
+	epsilon += tmp2;
+	*/
+
+
 	//cout << "epsilon on cell " << cell_->id() << ": " << endl;
 	//epsilon.show();
       
@@ -115,23 +140,27 @@ public:
 	sigma(0, 1) = mu * epsilon(0, 1);
 	sigma(1, 0) = sigma(0, 1);
 	
-	vsigma = epsilon;
+	//vsigma = epsilon;
+
+	vsigma = gradwp;
+	vsigma += gradwptransp;
+
 	vsigma *= b;
 
 	//cout << "sigma on cell " << cell_->id() << ": " << endl;
 	//sigma.show();
       
-	Matrix *sigma0, *sigma1; // *vsigma1;
-	
-	sigma0 = sigma0array[cell_->id()];
-	sigma1 = sigma1array[cell_->id()];
+	Matrix &sigma0 = *(sigma0array[cell_->id()]);
+	Matrix &sigma1 = *(sigma1array[cell_->id()]);
+	Matrix &vsigma1 = *(vsigmaarray[cell_->id()]);
       
 	sigma *= k;
-	sigma += *sigma0;
-	*sigma1 = sigma; 
+	sigma += sigma0;
 
-	*(vsigmaarray[cell_->id()]) = vsigma;
-	
+	sigma1 = sigma; 
+	vsigma1 = vsigma;
+
+
 	//cout << "sigma0 on cell " << cell_->id() << ": " << endl;
 	//sigma0->show();
 	//cout << "sigma1 on cell " << cell_->id() << ": " << endl;
@@ -141,10 +170,7 @@ public:
       }
       else
       {
-	Matrix *sigma1;
-	sigma1 = sigma1array[cell_->id()];
-
-	sigma = *sigma1;
+	sigma = *(sigma1array[cell_->id()]);
 	vsigma = *(vsigmaarray[cell_->id()]);
       }
 
@@ -173,7 +199,8 @@ public:
       //return (wp(0) * v(0) + wp(1) * v(1) + wp(2) * v(2)) * dx;
       }
     
-  NewArray<Matrix *> sigma0array, sigma1array, vsigmaarray;
+  NewArray<Matrix *> sigma0array, sigma1array, vsigmaarray,
+    F0array, F1array;
   NewArray<bool>     computedsigma;
   
  private:    

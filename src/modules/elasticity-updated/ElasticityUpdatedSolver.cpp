@@ -50,14 +50,26 @@ void ElasticityUpdatedSolver::solve()
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    Matrix *sigma0i, *sigma1i, *vsigmai;
+    Matrix *sigma0i, *sigma1i, *F0i, *F1i, *vsigmai;
 
-    sigma0i = new Matrix(3, 3);
-    sigma1i = new Matrix(3, 3);
-    vsigmai = new Matrix(3, 3);
+    sigma0i = new Matrix(3, 3, Matrix::dense);
+    sigma1i = new Matrix(3, 3, Matrix::dense);
+    F0i = new Matrix(3, 3, Matrix::dense);
+    F1i = new Matrix(3, 3, Matrix::dense);
+    vsigmai = new Matrix(3, 3, Matrix::dense);
+
+    F0i->ident(0);
+    F0i->ident(1);
+    F0i->ident(2);
+
+    F1i->ident(0);
+    F1i->ident(1);
+    F1i->ident(2);
 
     elasticity.sigma0array.push_back(sigma0i);
     elasticity.sigma1array.push_back(sigma1i);
+    elasticity.F0array.push_back(F0i);
+    elasticity.F1array.push_back(F1i);
     elasticity.vsigmaarray.push_back(vsigmai);
   }
 
@@ -92,7 +104,8 @@ void ElasticityUpdatedSolver::solve()
   int counter = 0;
 
   // Start time-stepping
-  while ( t < T ) {
+  while ( t < T )
+  {
     if(counter % 33 == 0)
     {
       Function::Vector uzero(mesh, xzero, 3);
@@ -187,12 +200,16 @@ void ElasticityUpdatedSolver::solve()
 
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      Matrix *sigma0i, *sigma1i;
+      Matrix *sigma0i, *sigma1i, *F0i, *F1i;
       
       sigma0i = elasticity.sigma0array[cell->id()];
       sigma1i = elasticity.sigma1array[cell->id()];
 
+      F0i = elasticity.F0array[cell->id()];
+      F1i = elasticity.F1array[cell->id()];
+
       *sigma0i = *sigma1i;
+      *F0i = *F1i;
     }
 
     // Update progress
