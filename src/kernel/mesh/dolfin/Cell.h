@@ -97,6 +97,12 @@ namespace dolfin
     /// Return child cell (null if no child)
     Cell* child(int i) const;
 
+    /// Return the mesh containing the cell
+    Mesh& mesh();
+    
+    /// Return the mesh containing the cell (const version)
+    const Mesh& mesh() const;
+
     /// Return coordinate for node i
     Point& coord(int i) const;
 

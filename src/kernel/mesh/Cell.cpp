@@ -147,6 +147,18 @@ Cell* Cell::child(int i) const
   return c->child(i);
 }
 //-----------------------------------------------------------------------------
+Mesh& Cell::mesh()
+{
+  dolfin_assert(c);
+  return *(c->_mesh);
+}
+//-----------------------------------------------------------------------------
+const Mesh& Cell::mesh() const
+{
+  dolfin_assert(c);
+  return *(c->_mesh);
+}
+//-----------------------------------------------------------------------------
 Point& Cell::coord(int i) const
 { 
   dolfin_assert(c);

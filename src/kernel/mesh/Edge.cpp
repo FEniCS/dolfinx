@@ -30,7 +30,7 @@ Edge::~Edge()
 //-----------------------------------------------------------------------------
 void Edge::clear()
 {
-  mesh = 0;
+  _mesh = 0;
   _id = -1;
   n0 = 0;
   n1 = 0;
@@ -65,6 +65,16 @@ Node& Edge::node(int i) const
 Cell& Edge::cell(int i) const
 {
   return *ec(i);
+}
+//-----------------------------------------------------------------------------
+Mesh& Edge::mesh()
+{
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------
+const Mesh& Edge::mesh() const
+{
+  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 Point& Edge::coord(int i) const
@@ -123,13 +133,13 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
 //-----------------------------------------------------------------------------
 int Edge::setID(int id, Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
 void Edge::setMesh(Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
 void Edge::set(Node& n0, Node& n1)

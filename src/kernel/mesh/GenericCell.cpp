@@ -13,7 +13,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 GenericCell::GenericCell()
 {
-  mesh = 0;
+  _mesh = 0;
   _id = -1;
   _parent = 0;
   rd = 0;
@@ -105,13 +105,13 @@ void GenericCell::mark()
 //-----------------------------------------------------------------------------
 int GenericCell::setID(int id, Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
 void GenericCell::setMesh(Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
 void GenericCell::setParent(Cell& parent)
@@ -190,7 +190,7 @@ void GenericCell::createEdge(Node& n0, Node& n1)
 
   // Create the new edge if it doesn't exist
   if ( !edge )
-    edge = &mesh->createEdge(n0, n1);
+    edge = &_mesh->createEdge(n0, n1);
 
 
   // Add the edge at the first empty position
@@ -210,7 +210,7 @@ void GenericCell::createFace(Edge& e0, Edge& e1, Edge& e2)
 
   // Create the new face if it doesn't exist
   if ( !face )
-    face = &mesh->createFace(e0, e1, e2);
+    face = &_mesh->createFace(e0, e1, e2);
 
   // Add the face at the first empty position
   cf.add(face);

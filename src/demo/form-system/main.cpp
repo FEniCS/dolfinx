@@ -13,6 +13,8 @@
 
 using namespace dolfin;
 
+/*
+
 #define N 1 // Number of times to do the assembly
 #define M 1 // Number of times to refine the mesh 
 
@@ -139,6 +141,8 @@ int testAssembly(Mesh& mesh)
   return 0;
 }
 
+*/
+
 int main()
 {
 
@@ -151,7 +155,7 @@ int main()
   
   //Mesh mesh("mesh.xml.gz");
   Mesh mesh("minimal.xml.gz");
-  testAssembly(mesh);
+  //testAssembly(mesh);
   /*
   for (unsigned int i = 0; i < M; i++)
   {

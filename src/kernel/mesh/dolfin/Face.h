@@ -43,6 +43,12 @@ namespace dolfin {
     /// Return cell neighbor number i
     Cell& cell(int i) const;
 
+    /// Return the mesh containing the face
+    Mesh& mesh();
+    
+    /// Return the mesh containing the face (const version)
+    const Mesh& mesh() const;
+
     /// Check if face consists of the given edges
     bool equals(const Edge& e0, const Edge& e1, const  Edge& e2) const;
     
@@ -74,7 +80,7 @@ namespace dolfin {
     void set(Edge& e0, Edge& e1, Edge& e2);
     
     // The mesh containing this face
-    Mesh* mesh;
+    Mesh* _mesh;
 
     // Global face number
     int _id;

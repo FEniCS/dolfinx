@@ -19,7 +19,7 @@ Face::~Face()
 //-----------------------------------------------------------------------------
 void Face::clear()
 {
-  mesh = 0;
+  _mesh = 0;
   _id = -1;
   fe.clear();
 }
@@ -47,6 +47,16 @@ Edge& Face::edge(int i) const
 Cell& Face::cell(int i) const
 {
   return *fc(i);
+}
+//-----------------------------------------------------------------------------
+Mesh& Face::mesh()
+{
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------
+const Mesh& Face::mesh() const
+{
+  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 bool Face::equals(const Edge& e0, const Edge& e1, const Edge& e2) const
@@ -94,13 +104,13 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)
 //-----------------------------------------------------------------------------
 int Face::setID(int id, Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
 void Face::setMesh(Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
 void Face::set(Edge& e0, Edge& e1, Edge& e2)

@@ -129,7 +129,7 @@ namespace dolfin {
     //--- Cell data ---
 
     // The mesh containing this cell
-    Mesh* mesh;
+    Mesh* _mesh;
 
     // Global cell number
     int _id;

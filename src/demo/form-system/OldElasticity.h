@@ -19,8 +19,8 @@ namespace dolfin {
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
     {
       //real b = 0.1;
-      real E = 100.0;
-      real nu = 0.3;
+      //real E = 100.0;
+      //real nu = 0.3;
 
       //real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
       //real mu = E / (2 * (1 + nu));

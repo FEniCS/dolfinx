@@ -47,6 +47,12 @@ namespace dolfin {
     /// Return cell neighbor number i
     Cell& cell(int i) const;
 
+    /// Return the mesh containing the edge
+    Mesh& mesh();
+    
+    /// Return the mesh containing the edge (const version)
+    const Mesh& mesh() const;
+
     /// Get coordinates of node number i
     Point& coord(int i) const;
     
@@ -115,7 +121,7 @@ namespace dolfin {
     //--- Edge data ---
     
     // The mesh containing this edge
-    Mesh* mesh;
+    Mesh* _mesh;
     
     // Global edge number
     int _id;

@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal-1.4
+ACLOCAL = /home/logg/work/tmp/dolfin/dolfin/missing aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = automake-1.4
+AUTOMAKE = /home/logg/work/tmp/dolfin/dolfin/missing automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -63,7 +63,7 @@ AWK = mawk
 BOPT = O_c++
 CC = gcc
 CXX = g++
-CXXFLAGS = -g -O2
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98
 DOLFIN_LIBS = -ldolfin-main -ldolfin-convdiff -ldolfin-elasticity -ldolfin-elasticity-stationary -ldolfin-elasticity-updated -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-poisson-multigrid -ldolfin-template -ldolfin-wave -ldolfin-wave-vector -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common  -lncurses -L/usr/lib -lxml2 -lz -lpthread -lm
 HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -DPETSC_DIR=/usr/lib/petsc -DPETSC_ARCH=linux -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -I/usr/include/mpi -I/usr/include/libxml2

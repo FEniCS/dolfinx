@@ -40,7 +40,7 @@ Node::~Node()
 //-----------------------------------------------------------------------------
 void Node::clear()
 {
-  mesh = 0;
+  _mesh = 0;
   _id = -1;
 
   p.x = 0.0;
@@ -98,6 +98,16 @@ Node* Node::parent() const
 Node* Node::child() const
 {
   return _child;
+}
+//-----------------------------------------------------------------------------
+Mesh& Node::mesh()
+{
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------
+const Mesh& Node::mesh() const
+{
+  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 Point& Node::coord()
@@ -212,13 +222,13 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Node& node)
 //-----------------------------------------------------------------------------
 int Node::setID(int id, Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
 void Node::setMesh(Mesh& mesh)
 {
-  this->mesh = &mesh;
+  _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
 void Node::setParent(Node& parent)

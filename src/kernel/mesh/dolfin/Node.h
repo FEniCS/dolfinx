@@ -70,6 +70,12 @@ namespace dolfin{
     /// Return child node (null if no child)
     Node* child() const;
 
+    /// Return the mesh containing the node
+    Mesh& mesh();
+    
+    /// Return the mesh containing the node (const version)
+    const Mesh& mesh() const;
+
     /// Return node coordinate
     Point& coord();
 
@@ -158,7 +164,7 @@ namespace dolfin{
     //--- Node data ---
     
     // The mesh containing this node
-    Mesh* mesh;
+    Mesh* _mesh;
 
     // Global node number
     int _id;

@@ -7,7 +7,7 @@ be deleted from this list and moved to the ChangeLog.
 Ideally, each task should be assigned to a developer, including an
 estimate of when the task should be ready.
 
-Send suggestions, comments, and corrections to dolfin@math.chalmers.se.
+Send suggestions, comments, and corrections to dolfin@fenics.org.
 
 Assembly
 --------
@@ -18,43 +18,28 @@ Assembly
 * Make two forms share the same map and only update the map
 * Update DOLFIN with latest output from FFC
 * Compute number of nonzeros before assembly
-
-o [hoffman, logg] Optimize form evaluation
-o [hoffman, logg] Boundary conditions, fix ds (May 04, partly fixed)
-* Replace FiniteElement::Vector with FiniteElement
-* Implementation of arbitrary finite elements
-* Add i,j in vector PDE?
-* Use NewArray<...> instead of ::Vector in assembly classes?
-* Remove specification of dim from PDE
-* Connect ElementFunction to Function through initialization (not PDE::add())
-* Implement algorithms from SISolver as Preconditioner/LinearSolver
-* Move algoritms from KrylovSolver to new classes CG, GMRES BiCGSTAB
+* Make coefficients work (NewFunction)
+* Boundary conditions
+* Parallel assembly
 
 Mesh
 ----
 
 * Make MeshInit sort nodes locally
-
+* Speed up uniform mesh refinement
+* Optimize mesh refinement
 o [jj] Schema for mesh XML format
-* Connectivity, automate computation all 16 connections
+* Connectivity, automate computation of all 16 connections
 * Geometry representation, including boundaries
 * Mesh generation using triangle or tetgen?
 * Clean up iterators?
-* Fix local ordering and orientation
 * Seems to be something wrong with trimesh-32.xml.gz
 
 Linear Algebra
 --------------
 
-o [hoffman, jj, logg] Implement NewMatrix and NewMatrix PETSc wrappers
-o [hoffman, jj] Implement wrappers for PETSc solvers
-* Create wrapper for MatShell (matrix-free)?
-
-o [foufas] Wrapper for LAPACK?
-o [erik] Matrix-matrix multiplication?
-o [erik] Algebraic multigrid?
-* Expression templates?
-* Decision on strategy: use PETSc
+o [jj] Add wrapper for PETSc preconditioners
+* Cleanup and PETSc linear algebra wrappers
 
 Function
 --------
@@ -64,33 +49,32 @@ o [hoffman, jj, logg] General function representations
 Input/Output
 ------------
 
-o [erik?] Save edges in MATLAB format
+* Save edges in MATLAB format
 
 Multi-adaptive solver
 ---------------------
 
+o [jj, logg] Implement mono-adaptive solver: fixed point and Newton
+o [jj, logg] Implement preconditioner for multi-adaptive Newton
 o [jj, logg] Save dual solution backwards
 o [jj, logg] Error estimates
 o [jj, logg] Automatic computation of stability factors as function of time T
 o [jj, logg] Use two files for matlab format
-o [jj, logg] Speedup interpolation
-o [jj, logg] Bug in ElementData::createBlock() when out of memory?
-o [jj, logg] Automatic local reduction of time steps when stabilization doesn't work
 
 Modules
 -------
 
+* Move all modules to new format
 o [hoffman] Navier-Stokes module
-o [harald] Euler module
-o [foufas] Finance module
+o [harald] Euler module?
+o [foufas] Finance module?
 
 General
 -------
 
-* Replace ::show() with ::disp() for all classes (?)
-* Replace unsigned int with uint (?)
-
-* Replace Array and List with NewArray and NewList
+* Replace ::show() with ::disp() for all classes
+* Replace unsigned int and int with uint when possible
+* Replace Array and List with NewArray and NewList everywhere
 * Use libtool?
 * Cleanup Parameter and ParameterList
 * Update manual
@@ -98,7 +82,6 @@ General
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
 * Automatically load parameters from dolfin.xml
-* Change int --> unsigned int where appropriate
 
 Some suggestions for PETSc
 --------------------------

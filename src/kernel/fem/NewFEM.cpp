@@ -22,7 +22,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 real** NewFEM::allocElementMatrix(const NewFiniteElement& element)
 {
-  unsigned int ncomponents;
+  unsigned int ncomponents = 0;
 
   if(element.rank() == 0)
   {
