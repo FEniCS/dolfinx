@@ -45,6 +45,9 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 
   reset();
 
+  //cout << "-----------------------------------------------" << endl;
+  //dolfin_start("Starting fixed point iteration");
+
   while ( !converged(timeslab) )
   {
     // Check stabilization
@@ -57,11 +60,16 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     // Check if we have done too many iterations
     if ( ++n >= maxiter )
     {
+      cout << "Did not converge" << endl;
+
       event_nonconverging();
       reset();
       return false;
     }    
   }
+
+  //dolfin_end("Converged after %d iterations", n);
+  //cout << "-----------------------------------------------" << endl;
 
   reset();
   return true;
@@ -69,6 +77,8 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 real FixedPointIteration::update(Element& element)
 {
+  //dolfin_start("Starting local iterations for component %d", element.index());
+
   // Save end value for element
   real u1 = element.endval();
 
@@ -97,17 +107,17 @@ real FixedPointIteration::update(Element& element)
     if ( local_damping )
     {
       real dfdu = f.dfdu(index, index, t1);
-      real rho = element.timestep() * fabs(dfdu);
+      real rho = - element.timestep() * dfdu;
       local_alpha = computeDamping(rho);
     }
-    
+
     // Update element
     u.debug(element, Solution::update);
-    if ( alpha == 1.0 && local_alpha == 1.0 )
+    if ( state == undamped && !local_damping )
       element.update(f);
     else
       element.update(f, alpha*local_alpha);
-
+    
     // Compute discrete residual
     local_r1 = local_r2;
     local_r2 = fabs(element.computeDiscreteResidual(f));
@@ -135,6 +145,13 @@ real FixedPointIteration::update(Element& element)
       }
     }
   }
+  
+  /*
+  if ( local_r2 < tol )
+    dolfin_end("Local iterations converged");
+  else
+    dolfin_end("Local iterations did not converge");
+  */
   
   // Return change in end value
   return fabs(element.endval() - u1);
@@ -273,11 +290,15 @@ real FixedPointIteration::computeConvergenceRate()
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeDamping(real rho)
 {
-  return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
+  if ( rho >= 0.0 || rho < -1.0 )
+    return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
+
+  return 1.0;
 }
 //-----------------------------------------------------------------------------
 unsigned int FixedPointIteration::computeDampingSteps(real rho)
 {
+  dolfin_assert(rho >= 0.0);
   return 1 + 2*ceil_int(log(1.0 + rho));
 }
 //-----------------------------------------------------------------------------
@@ -291,6 +312,8 @@ bool FixedPointIteration::converged(TimeSlab& timeslab)
   if ( n == 0 )
     r0 = r2;
   
+  //cout << "global residual = " << r2 << endl;
+
   return r2 < tol;
 }
 //-----------------------------------------------------------------------------

@@ -81,7 +81,7 @@ XML2_INCLUDES = -I/usr/include/libxml2
 XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
-SUBDIRS = simple reaction
+SUBDIRS = simple reaction nondiagonal
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

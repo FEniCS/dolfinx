@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dual.h>
 #include <dolfin/Function.h>
@@ -25,6 +26,9 @@ void ODESolver::solve(ODE& ode, Function& u)
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode, Function& u, Function& phi)
 {
+  // Check if we should solve the dual problem
+  bool solve_dual = dolfin_get("solve dual problem");
+
   dolfin_start("Solving ODE");
   
   // Get size of system
@@ -43,6 +47,12 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
   TimeStepper::solve(ode, u);
 
   dolfin_end();
+
+  if ( !solve_dual )
+  {
+    dolfin_info("Not solving dual problem as requested.");
+    return;
+  }
 
   dolfin_start("Solving dual problem");
   

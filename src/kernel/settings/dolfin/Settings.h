@@ -35,6 +35,7 @@ namespace dolfin {
 
       add(Parameter::BOOL, "debug time steps", 0);
       add(Parameter::BOOL, "fixed time step", false);
+      add(Parameter::BOOL, "solve dual problem", true);
 
       add(Parameter::INT, "number of samples", 100);
       add(Parameter::INT, "element cache size", 32);

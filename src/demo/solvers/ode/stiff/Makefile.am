@@ -1,1 +1,1 @@
-SUBDIRS = simple reaction
+SUBDIRS = simple reaction nondiagonal

@@ -68,6 +68,18 @@ void dolfin::dolfin_end()
   LogManager::log.end();
 }
 //-----------------------------------------------------------------------------
+void dolfin::dolfin_end(const char* msg, ...)
+{
+  LogManager::log.end();
+
+  va_list aptr;
+  va_start(aptr, msg);
+
+  LogManager::log.info(msg, aptr);
+
+  va_end(aptr);
+}
+//-----------------------------------------------------------------------------
 void dolfin::dolfin_log(bool state)
 {
   LogManager::log.active(state);

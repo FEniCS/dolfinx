@@ -1,3 +1,4 @@
+ - New function dolfin_end(const char* msg, ...)
  - Move numerical differentiation to RHS
  - New class Event for limited display of messages
  - Fix bug in LogStream (large numbers in floating point format)

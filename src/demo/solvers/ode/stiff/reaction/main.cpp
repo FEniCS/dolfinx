@@ -4,8 +4,6 @@
 // Updates by Anders Logg 2003.
 
 #include <dolfin.h>
-#include <dolfin/Partition.h>
-#include <dolfin/TimeSlab.h>
 
 using namespace dolfin;
 

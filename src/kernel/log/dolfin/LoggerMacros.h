@@ -30,6 +30,7 @@ namespace dolfin { void dolfin_segfault(); }
 namespace dolfin { void dolfin_start(); }
 namespace dolfin { void dolfin_start(const char* msg, ...); }
 namespace dolfin { void dolfin_end(); }
+namespace dolfin { void dolfin_end(const char* msg, ...); }
 
 // Switch logging on or off
 namespace dolfin { void dolfin_log(bool state); }
