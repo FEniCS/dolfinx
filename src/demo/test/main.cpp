@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 // Number of vertices in each dimension
-#define SIZE 100
+#define SIZE 50
 
 // Number of matrix-vector multiplications
 #define M 10
@@ -26,7 +26,7 @@ void setdofs(int i, int j, int k, int dofs[])
   for (int ii = 0; ii < 2; ii++)
     for (int jj = 0; jj < 2; jj++)
       for (int kk = 0; kk < 2; kk++)
-	dofs[pos++] = N2*(k + kk) + N*(j + jj) + i + ii;
+	dofs[pos++] = N2*(i + ii) + N*(j + jj) + k + kk;
 }
 
 void testDOLFIN(double& t1, double& t2, double& t3)
@@ -35,7 +35,6 @@ void testDOLFIN(double& t1, double& t2, double& t3)
   tic();
   
   Matrix A(N3, N3, 27);
-
   for (int i = 0; i < (N-1); i++)
   {
     for (int j = 0; j < (N-1); j++)
@@ -96,8 +95,8 @@ void testPETSc(double& t1, double& t2, double& t3)
   Mat A;
   MatCreateSeqAIJ(PETSC_COMM_SELF, N3, N3, 27, PETSC_NULL, &A);
   MatSetFromOptions(A);
-  //MatSetOption(A, MAT_ROWS_SORTED);
-  //MatSetOption(A, MAT_COLUMNS_SORTED);
+  MatSetOption(A, MAT_ROWS_SORTED);
+  MatSetOption(A, MAT_COLUMNS_SORTED);
   MatSetOption(A, MAT_USE_HASH_TABLE);
   
   for (int i = 0; i < (N-1); i++)
@@ -107,7 +106,7 @@ void testPETSc(double& t1, double& t2, double& t3)
       for (int k = 0; k < (N-1); k++)
       {
 	setdofs(i, j, k, dofs);
-	
+
 	MatSetValues(A, 8, dofs, 8, dofs, values, ADD_VALUES);
       }
     }
