@@ -125,7 +125,7 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   {
     // Not the First element, get u0 from previous element
     Element &prevelement = last();
-    real u0i = prevelement.endval();
+    real u0i = prevelement.eval();
     element->update(u0i);
   }
   

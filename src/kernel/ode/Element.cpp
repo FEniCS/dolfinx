@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/RHS.h>
 #include <dolfin/Element.h>
 
 using namespace dolfin;
@@ -47,7 +48,15 @@ Element::~Element()
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-real Element::endval() const
+real Element::eval(int node) const
+{
+  dolfin_assert(node >= 0);
+  dolfin_assert(node <= q);
+  
+  return values[node];
+}
+//-----------------------------------------------------------------------------
+real Element::eval() const
 {
   return values[q];
 }
@@ -79,5 +88,10 @@ real Element::timestep() const
 {
   dolfin_assert(timeslab);
   return timeslab->length();
+}
+//-----------------------------------------------------------------------------
+real Element::computeResidual(RHS& f)
+{
+  return dx() - f(index, q, endtime(), timeslab);
 }
 //-----------------------------------------------------------------------------

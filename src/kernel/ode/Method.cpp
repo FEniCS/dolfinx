@@ -36,6 +36,11 @@ Method::Method(int q)
   for (int i = 0; i < n; i++)
     qweights[i] = 0.0;
 
+  // Allocate derivatives
+  derivatives = new real[n];
+  for (int i = 0; i < n; i++)
+    derivatives[i] = 0.0;
+
   trial = 0;
   test = 0;
 }
@@ -60,6 +65,11 @@ Method::~Method()
     delete [] qweights;
   qweights = 0;
   
+  // Clear derivatives
+  if ( derivatives )
+    delete [] derivatives;
+  derivatives = 0;
+
   // Clear trial basis
   if ( trial )
     delete trial;
@@ -122,10 +132,35 @@ real Method::basis(int i, real t) const
   return trial->eval(i, t);
 }
 //-----------------------------------------------------------------------------
+real Method::derivative(int i, real t) const
+{
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < n);
+  dolfin_assert(trial);
+
+  return trial->dx(i, t);
+}
+//-----------------------------------------------------------------------------
+real Method::derivative(int i) const
+{
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < n);
+  dolfin_assert(trial);
+
+  return derivatives[i];
+}
+//-----------------------------------------------------------------------------
 void Method::init()
 {
   computeQuadrature();
   computeBasis();
   computeWeights();
+  computeDerivatives();
+}
+//-----------------------------------------------------------------------------
+void Method::computeDerivatives()
+{
+  for (int i = 0; i < n; i++)
+    derivatives[i] = derivative(i, 1.0);
 }
 //-----------------------------------------------------------------------------

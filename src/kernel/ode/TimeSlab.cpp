@@ -16,19 +16,19 @@ TimeSlab::TimeSlab(real t0, real t1, RHS& f,
 		   TimeSlabData& data, Partition& partition, int offset)
 {
   dolfin_debug2("Creating time slab: [%f %f]", t0, t1);
-
+  
   // Set data for this time slab
   this->t0 = t0;
   this->t1 = t1;
   reached_endtime = false;
-
+  
   // If this is the top level time slab, notify TimeSlabData
-  if ( offset == 0 )
+  if ( offset == 0 ) 
   {
     data.setslab(this);
     dolfin_debug("setslab");
   }
-
+  
   create(f, data, partition, offset);
 }
 //-----------------------------------------------------------------------------

@@ -156,6 +156,7 @@ void Lagrange::init()
   if ( constants == 0 )
     constants = new real[n];
 
+  // Compute constants
   for (int i = 0; i < n; i++) {
     real product = 1.0;
     for (int j = 0; j < n; j++)
@@ -165,7 +166,7 @@ void Lagrange::init()
       dolfin_error("Nodal points for Lagrange polynomial must be distinct.");
     constants[i] = 1.0 / product;
   }
-
+  
   updated = true;
 }
 //-----------------------------------------------------------------------------

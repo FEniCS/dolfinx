@@ -37,9 +37,15 @@ namespace dolfin {
     /// Return quadrature weight (including only quadrature)
     real weight(int i) const;
 
-    /// Evaluation of Lagrange basis function at given point t within [0,1]
+    /// Evaluation of basis function i at given point t within [0,1]
     real basis(int i, real t) const;
 
+    /// Evaluation of derivative of basis function i at given point t within [0,1]
+    real derivative(int i, real t) const;
+    
+    /// Evaluation of derivative of basis function i at t = 1
+    real derivative(int i) const;
+    
     /// Display method data
     virtual void show() const = 0;
 
@@ -51,12 +57,15 @@ namespace dolfin {
     virtual void computeBasis      () = 0;
     virtual void computeWeights    () = 0;
 
+    void computeDerivatives();
+
     int q; // Polynomial order
     int n; // Number of nodal points
 
     real*  points;
     real** weights;
     real*  qweights;
+    real*  derivatives;
 
     Lagrange* trial;
     Lagrange* test;

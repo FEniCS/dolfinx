@@ -36,15 +36,14 @@ real cGqElement::eval(real t) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real cGqElement::eval(int node) const
+real cGqElement::dx() const
 {
-  dolfin_debug1("Eval cGqElement: %p", this);
+  real dudx = 0.0;
 
-  dolfin_assert(node >= 0);
-  dolfin_assert(node <= q);
+  for (int i = 0; i <= q; i++)
+    dudx += values[i] * cG(q).derivative(i);
 
-  
-  return values[node];
+  return dudx;
 }
 //-----------------------------------------------------------------------------
 void cGqElement::update(real u0)
@@ -66,14 +65,6 @@ void cGqElement::update(RHS& f)
   // Update nodal values
   for (int i = 1; i <= q; i++)
     values[i] = values[0] + integral(i);
-}
-//-----------------------------------------------------------------------------
-real cGqElement::newTimeStep() const
-{
-  // Compute new time step based on residual and current time step
-
-  // Not implemented, return a random time step
-  return dolfin::rand();
 }
 //-----------------------------------------------------------------------------
 void cGqElement::feval(RHS& f)
@@ -111,5 +102,13 @@ real cGqElement::integral(int i) const
   //dolfin_debug1("result: %lf", k * sum);
 
   return k * sum;
+}
+//-----------------------------------------------------------------------------
+real cGqElement::computeTimeStep() const
+{
+  // Compute new time step based on residual and current time step
+
+  // Not implemented, return a random time step
+  return dolfin::rand();
 }
 //-----------------------------------------------------------------------------

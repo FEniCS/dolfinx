@@ -18,17 +18,16 @@ namespace dolfin {
     cGqElement(int q, int index, TimeSlab* timeslab);
 
     real eval(real t) const;
-    real eval(int node) const;
+    real dx() const;
 
     void update(real u0);
     void update(RHS& f);
-
-    real newTimeStep() const;
     
   private:
     
     void feval(RHS& f);
     real integral(int i) const;
+    real computeTimeStep() const;
     
   };   
     

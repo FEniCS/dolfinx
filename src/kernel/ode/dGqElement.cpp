@@ -31,14 +31,6 @@ real dGqElement::eval(real t) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real dGqElement::eval(int node) const
-{
-  dolfin_assert(node >= 0);
-  dolfin_assert(node <= q);
-  
-  return values[node];
-}
-//-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f)
 {
   // Evaluate right-hand side
@@ -47,15 +39,6 @@ void dGqElement::update(RHS& f)
   // Update nodal values
   for (int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
-}
-//-----------------------------------------------------------------------------
-real dGqElement::newTimeStep() const
-{
-  // Compute new time step based on residual and current time step
-  
-  
-  // Not implemented, return a random time step
-  return dolfin::rand();
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)
@@ -78,5 +61,13 @@ real dGqElement::integral(int i) const
     sum += dG(q).weight(i,j) * f(j);
 
   return k * sum;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeTimeStep() const
+{
+  // Compute new time step based on residual and current time step
+  
+  // Not implemented, return a random time step
+  return dolfin::rand();
 }
 //-----------------------------------------------------------------------------

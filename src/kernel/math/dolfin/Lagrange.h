@@ -54,7 +54,7 @@ namespace dolfin {
 
     /// Return derivate of polynomial i at given point x
     real dx(int i, real x);
-    
+
     /// Return derivative q (a constant) of polynomial
     real dqx(int i);
 

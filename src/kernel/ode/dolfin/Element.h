@@ -31,10 +31,13 @@ namespace dolfin {
     virtual real eval(real t) const = 0;
 
     /// Evaluate element at given node within element
-    virtual real eval(int node) const = 0;
+    real eval(int node) const;
 
     /// Evaluate element at the end point
-    real endval() const;
+    real eval() const;
+
+    /// Evaluate derivative at the end point
+    virtual real dx() const = 0;
 
     /// Update initial value
     virtual void update(real u0) = 0;
@@ -57,9 +60,6 @@ namespace dolfin {
     /// Return the size of the time step
     real timestep() const;
 
-    /// Compute new time step
-    virtual real newTimeStep() const = 0;
-
     /// Component index
     int index;
 
@@ -70,6 +70,12 @@ namespace dolfin {
 
     // Compute integral for degree of freedom i using quadrature
     virtual real integral(int i) const = 0;
+
+    // Compute residual
+    real computeResidual(RHS& f);
+
+    // Compute new time step
+    virtual real computeTimeStep() const = 0;
 
     // Temporary storage for function evaluations (common to all elements).
     static Vector f;
