@@ -4,10 +4,10 @@ EXTRA_DIST = dolfin_grid.h \
              BoundaryInit.h \
              Cell.h \
              CellIterator.h \
-             CellMarker.h \
+             CellRefData.h \
              Edge.h \
              EdgeIterator.h \
-             EdgeMarker.h \
+             EdgeRefData.h \
              Face.h \
              FaceIterator.h \
              GenericCell.h \

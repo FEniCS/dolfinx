@@ -5,6 +5,7 @@
 #include <dolfin/Point.h>
 #include <dolfin/Grid.h>
 #include <dolfin/Cell.h>
+#include <dolfin/CellRefData.h>
 #include <dolfin/GenericCell.h>
 
 using namespace dolfin;
@@ -15,14 +16,14 @@ GenericCell::GenericCell()
   grid = 0;
   _id = -1;
   _parent = 0;
-  _marker = 0;
+  rd = 0;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
 {
-  if ( _marker )
-    delete _marker;
-  _marker = 0;
+  if ( rd )
+    delete rd;
+  rd = 0;
 }
 //-----------------------------------------------------------------------------
 int GenericCell::id() const
@@ -199,14 +200,19 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
 //-----------------------------------------------------------------------------
 void GenericCell::initMarker()
 {
-  if ( !_marker )
-    _marker = new CellMarker();
+  if ( !rd )
+    rd = new CellRefData();
 }
 //-----------------------------------------------------------------------------
-CellMarker& GenericCell::marker() const
+CellMarker& GenericCell::marker()
 {
-  dolfin_assert(_marker);
-
-  return *_marker;
+  dolfin_assert(rd);
+  return rd->marker;
+}
+//-----------------------------------------------------------------------------
+CellStatus& GenericCell::status()
+{
+  dolfin_assert(rd);
+  return rd->status;
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,6 @@
 #ifndef __GRID_REFINEMENT_DATA_H
 #define __GRID_REFINEMENT_DATA_H
 
-#include <dolfin/CellMarker.h>
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
 

@@ -6,5 +6,4 @@ EXTRA_DIST = dolfin_la.h \
              KrylovSolver.h \
              SISolver.h \
              SparseMatrix.h \
-             Vector.h \
-             VirtualMatrix.h
+             Vector.h

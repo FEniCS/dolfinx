@@ -82,10 +82,10 @@ namespace dolfin {
     static bool childrenMarkedForCoarsening(Cell& cell);
 
     /// Check if at least one edge of a child is marked for refinement
-    static bool oneEdgeOfChildMarkedForRefinement(Cell& cell);
+    static bool edgeOfChildMarkedForRefinement(Cell& cell);
 
-    /// Check if the cell has at least on edge that is marked
-    static bool oneEdgeMarkedForRefinement(Cell& cell);
+    /// Check if the cell has at least one edge marked by another cell (but not the cell itself)
+    static bool edgeMarkedByOther(Cell& cell);
     
 
  

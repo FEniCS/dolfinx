@@ -4,10 +4,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/Grid.h>
-#include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
-#include <dolfin/CellMarker.h>
-#include <dolfin/EdgeMarker.h>
+#include <dolfin/Edge.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/GridIterator.h>
 #include <dolfin/GridRefinement.h>
@@ -22,7 +20,7 @@ void GridRefinement::refine(GridHierarchy& grids)
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
   
-  // Init marks for the finest grid
+  // Init marks for the finest grid (others already exist)
   initMarks(grids.fine());
 
   // Refine grid hierarchy
@@ -80,11 +78,11 @@ void GridRefinement::initMarks(Grid& grid)
   for (List<Cell*>::Iterator c(grid.rd->marked_cells); !c.end(); ++c) {
 
     // Mark cell for regular refinement
-    (*c)->marker().mark = marked_for_reg_ref;
+    (*c)->marker() = marked_for_reg_ref;
 
     // Mark edges of the cell
     for (EdgeIterator e(**c); !e.end(); ++e)
-      e->marker().cells.add(*c);
+      e->mark(**c);
 
   }
 }
@@ -96,20 +94,19 @@ void GridRefinement::evaluateMarks(Grid& grid)
 
   for (CellIterator c(grid); !c.end(); ++c) {
 
-    if ( c->marker().status == ref_reg && childrenMarkedForCoarsening(*c) )
-      c->marker().mark = marked_for_no_ref;
+    if ( c->status() == ref_reg && childrenMarkedForCoarsening(*c) )
+      c->marker() = marked_for_no_ref;
     
-    if ( c->marker().status == ref_irr ) {
+    if ( c->status() == ref_irr ) {
       
-      if ( oneEdgeOfChildMarkedForRefinement(*c) )
-	c->marker().mark = marked_for_reg_ref;
+      if ( edgeOfChildMarkedForRefinement(*c) )
+	c->marker() = marked_for_reg_ref;
       else
-	c->marker().mark = marked_for_no_ref;
+	c->marker() = marked_for_no_ref;
 
     }
    
   }
-
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeGrid(Grid& grid)
@@ -119,11 +116,9 @@ void GridRefinement::closeGrid(Grid& grid)
 
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
-  for (CellIterator c(grid); !c.end(); ++c) {
-
-    // Check condition ...
-
-  }
+  for (CellIterator c(grid); !c.end(); ++c)
+    if ( edgeMarkedByOther(*c) )
+      cells.add(c);
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
@@ -135,13 +130,51 @@ void GridRefinement::closeGrid(Grid& grid)
     closeCell(*cell);
 
   }
-
+  
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::refineGrid(Grid& grid)
 {
   // Refine a grid according to marks.
   // This is algorithm RefineGrid() in Bey's paper.
+
+  // Change markers from marked_for_coarsening to marked_for_no_ref
+  for (CellIterator c(grid); c.end(); ++c)
+    if ( c->marker() == marked_for_coarsening )
+      c->marker() = marked_for_no_ref;
+  
+  // Refine other cells
+  for (CellIterator c(grid); !c.end(); ++c) {
+    
+    // Skip cells which are marked_according_to_ref
+    if ( c->marker() == marked_according_to_ref )
+      continue;
+
+    // Refine cell according to refinement
+    switch ( c->marker() ) {
+    case marked_for_reg:
+      regularRefinement(*c);
+      break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1: 
+	irregTetRefByRule1((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2: 
+	irregTetRefByRule2((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3: 
+	irregTetRefByRule3((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4: 
+	irregTetRefByRule4((*c.pointer()));
+	break;
+      default:
+	dolfin_error("wrong refinement rule");
+      }
+
+
+
+
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -158,6 +191,8 @@ void GridRefinement::closeCell(Cell& cell)
   // Close a cell, either by regular or irregular refinement.
   // This is algorithm CloseElement() in Bey's paper.
 
+
+  
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::regularRefinement(Cell& cell, Grid& grid)
@@ -283,13 +318,13 @@ void GridRefinement::regularRefinementTet(Cell& cell, Grid& grid)
 bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
 {
   for (int i = 0; i < cell.noChildren(); i++)
-    if ( cell.child(i)->marker().mark != marked_for_coarsening )
+    if ( cell.child(i)->marker() != marked_for_coarsening )
       return false;
     
   return true;
 }
 //-----------------------------------------------------------------------------
-bool GridRefinement::oneEdgeOfChildMarkedForRefinement(Cell& cell)
+bool GridRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
 {
   for (int i = 0; i < cell.noChildren(); i++)
     for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
@@ -299,7 +334,7 @@ bool GridRefinement::oneEdgeOfChildMarkedForRefinement(Cell& cell)
   return false;
 }
 //-----------------------------------------------------------------------------
-static bool GridRefinement::oneEdgeMarkedForRefinement(Cell& cell)
+bool GridRefinement::edgeMarkedByOther(Cell& cell)
 {
   for (EdgeIterator e(cell); !e.end(); ++e)
     if ( e->marked() )
@@ -316,7 +351,7 @@ void GridRefinement::irregTetRefByRule1(Cell& cell, Grid& grid)
   // marked face. This gives 4 new tetrahedrons. 
 
   // Check if the cell is marked correctly 
-  dolfin_assert(cell.marker.status()==CellMarker::ref_irr_by_1);
+  dolfin_assert(cell.status() == ref_irr_by_1);
 
   // Create new nodes with the same coordinates as the old nodes
   Node *n_m1 = grid.createNode(cell.markedNode(0).coord());
@@ -361,7 +396,7 @@ void GridRefinement::irregTetRefByRule2(Cell* parent)
   // tetrahedrons. 
   
   // Check if the cell is marked correctly 
-  dolfin_assert(cell.marker.status()==CellMarker::ref_irr_by_2);
+  dolfin_assert(cell.status() == ref_irr_by_2);
 
   // Create new nodes with the same coordinates as the old nodes
   Node *n_m1  = grid.createNode(cell.markedNode(0).coord());
@@ -585,38 +620,7 @@ void GridRefinement::unrefineGrid(int grid_level)
 
 void GridRefinement::refineGrid(int grid_level)
 {
-  List<Cell *> cells;
-  for (CellIterator c(grid); !c.end(); ++c){
-    if (c->level() == grid_level) cells.add(c);
-  }
-      
-  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
-    if ((*c.pointer())->marker() == Cell::MARKED_FOR_COARSENING){
-      (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
-    }
-  }
 
-  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
-    if ((*c.pointer())->marker() != Cell::MARKED_ACCORDING_TO_REFINEMENT){
-      switch((*c.pointer())->marker()){ 
-      case Cell::MARKED_FOR_REGULAR_REFINEMENT: 
-	regularRefinement((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1: 
-	irregTetRefByRule1((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2: 
-	irregTetRefByRule2((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3: 
-	irregTetRefByRule3((*c.pointer()));
-	break;
-      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4: 
-	irregTetRefByRule4((*c.pointer()));
-	break;
-      default:
-	dolfin_error("wrong refinement rule");
-      }
 
       for (int i=0;i<(*c.pointer())->noChildren();i++){
 	(*c.pointer())->child(i)->mark(Cell::MARKED_FOR_NO_REFINEMENT);

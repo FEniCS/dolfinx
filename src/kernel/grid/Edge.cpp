@@ -3,9 +3,9 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-
-#include <dolfin/Edge.h>
 #include <dolfin/Node.h>
+#include <dolfin/EdgeRefData.h>
+#include <dolfin/Edge.h>
 
 using namespace dolfin;
 
@@ -14,7 +14,7 @@ Edge::Edge()
 {
   grid = 0;
   _id = -1;
-  _marker = 0;
+  rd = 0;
 
   n0 = 0;
   n1 = 0;
@@ -24,7 +24,7 @@ Edge::Edge(Node* n0, Node* n1)
 {
   grid = 0;
   _id = -1;
-  _marker = 0;
+  rd = 0;
 
   this->n0 = n0;
   this->n1 = n1;
@@ -32,9 +32,9 @@ Edge::Edge(Node* n0, Node* n1)
 //-----------------------------------------------------------------------------
 Edge::~Edge()
 {
-  if ( _marker )
-    delete _marker;
-  _marker = 0;
+  if ( rd )
+    delete rd;
+  rd = 0;
 }
 //-----------------------------------------------------------------------------
 int Edge::id() const
@@ -116,25 +116,19 @@ void Edge::set(Node* n0, Node* n1)
 //-----------------------------------------------------------------------------
 void Edge::initMarker()
 {
-  if ( !_marker )
-    _marker = new EdgeMarker();
-}
-//-----------------------------------------------------------------------------
-EdgeMarker& Edge::marker() const
-{
-  dolfin_assert(_marker);
-  return *_marker;
+  if ( !rd )
+    rd = new EdgeRefData();
 }
 //-----------------------------------------------------------------------------
 bool Edge::marked() const
 {
-  dolfin_assert(_marker);
-  return _marker->marked();
+  dolfin_assert(rd);
+  return rd->marked();
 }
 //-----------------------------------------------------------------------------
 void Edge::mark(Cell& cell)
 {
-  dolfin_assert(_marker);
-  _marker->mark(cell);
+  dolfin_assert(rd);
+  rd->mark(cell);
 }
 //-----------------------------------------------------------------------------

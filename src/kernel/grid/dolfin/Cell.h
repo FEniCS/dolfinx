@@ -16,7 +16,7 @@
 #include <dolfin/NodeIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
-#include <dolfin/CellMarker.h>
+#include <dolfin/CellRefData.h>
 
 namespace dolfin {  
 
@@ -27,6 +27,7 @@ namespace dolfin {
   class Tetrahedron;
   class Grid;
   class GridInit;
+  class CellRefData;
   
   class Cell {
   public:
@@ -103,25 +104,6 @@ namespace dolfin {
     /// Mark cell for refinement
     void mark();
     
-    // FIXME: Remove?
-    
-    /*
-      void addChild(Cell* child);
-      void setEdge(Edge* e, int i);
-      int level() const;
-      void setLevel(int level);
-      void setMarkedForReUse(bool re_use);
-      bool markedForReUse();
-      void refineByFaceRule(bool refined_by_face_rule);
-      bool refinedByFaceRule();
-      void markEdge(int edge);
-      void unmarkEdge(int edge);
-      int noMarkedEdges();
-      bool markedEdgesOnSameFace();
-      void setStatus(Status status);
-      Status status() const; 
-    */
-    
     ///--- Output ---
 
     /// Display condensed cell data
@@ -178,8 +160,11 @@ namespace dolfin {
     // Initialize marker (if not already done)
     void initMarker();
 
-    // Return marker for cell
-    CellMarker& marker() const;
+    // Return cell marker
+    CellMarker& marker();
+
+    // Return cell status
+    CellStatus& status();
 
     // The cell
     GenericCell* c;

@@ -5,10 +5,10 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/BoundaryInit.h \
                            dolfin/Cell.h \
                            dolfin/CellIterator.h \
-                           dolfin/CellMarker.h \
+                           dolfin/CellRefData.h \
                            dolfin/Edge.h \
                            dolfin/EdgeIterator.h \
-                           dolfin/EdgeMarker.h \
+                           dolfin/EdgeRefData.h \
                            dolfin/Face.h \
                            dolfin/FaceIterator.h \
                            dolfin/GenericCell.h \
@@ -33,7 +33,7 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            CellIterator.cpp \
                            Edge.cpp \
                            EdgeIterator.cpp \
-                           EdgeMarker.cpp \
+                           EdgeRefData.cpp \
                            Face.cpp \
                            FaceIterator.cpp \
                            GenericCell.cpp \

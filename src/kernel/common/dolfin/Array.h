@@ -84,11 +84,11 @@ namespace dolfin {
     /// Check if array is empty
     bool empty() const;
         
-    /// Search array for given element
-    bool contains(T element);
+    /// Check if the array contains a given element
+    bool contains(const T& element);
     
     /// Remove given element (first one matching)
-    void remove(T element);
+    void remove(const T& element);
 
     /// Swap two elements
     void swap(int i, int j);
@@ -254,7 +254,7 @@ namespace dolfin {
     return _size == 0;
   }
   //---------------------------------------------------------------------------    
-  template <class T> bool Array<T>::contains(T element)
+  template <class T> bool Array<T>::contains(const T& element)
   {
     for (int i = 0; i < _size; i++)
       if ( array[i] == element )
@@ -262,7 +262,7 @@ namespace dolfin {
     return false;
   }
   //---------------------------------------------------------------------------    
-  template <class T> void Array<T>::remove(T element)
+  template <class T> void Array<T>::remove(const T& element)
   {
     for (int i = 0; i < _size; i++)
       if ( array[i] == element ) {

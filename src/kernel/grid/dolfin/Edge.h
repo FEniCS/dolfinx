@@ -9,12 +9,13 @@
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
-#include <dolfin/EdgeMarker.h>
+#include <dolfin/EdgeRefData.h>
 
 namespace dolfin {
 
   class Point;
   class Grid;
+  class EdgeRefData;
 
   class Edge{
   public:
@@ -77,9 +78,6 @@ namespace dolfin {
     // Initialize marker (if not already done)
     void initMarker();
 
-    /// Return marker for edge
-    EdgeMarker& marker() const;
-
     /// Check if cell has been marked for refinement
     bool marked() const;
 
@@ -96,8 +94,8 @@ namespace dolfin {
     Node* n0;
     Node* n1;
 
-    /// Edge marker (only used during refinement)
-    EdgeMarker* _marker;
+    /// Edge refinement data (only used during refinement)
+    EdgeRefData* rd;
 
   };
   

@@ -10,7 +10,6 @@
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
-#include <dolfin/CellMarker.h>
 #include <dolfin/Array.h>
 
 namespace dolfin {
@@ -19,6 +18,7 @@ namespace dolfin {
   class Node;
   class Cell;
   class Grid;
+  class CellRefData;
   
   class GenericCell {
   public:
@@ -95,8 +95,11 @@ namespace dolfin {
     // Initialize marker (if not already done)
     void initMarker();
 
-    /// Return marker for cell
-    CellMarker& marker() const;
+    // Return cell marker
+    CellMarker& marker();
+
+    // Return cell status
+    CellStatus& status();
 
     // The grid containing this cell
     Grid* grid;
@@ -114,8 +117,8 @@ namespace dolfin {
     Cell* _parent;
     Array<Cell*> children;
 
-    /// Cell marker (only used during refinement)
-    CellMarker* _marker;
+    /// Cell refinement data (only used during refinement)
+    CellRefData* rd;
     
   };
 

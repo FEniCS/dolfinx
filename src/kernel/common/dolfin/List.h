@@ -33,6 +33,15 @@ namespace dolfin {
 
     /// Check if list is empty
     bool empty() const;
+
+    /// Check if the list contains a given element
+    bool contains(const T& element);
+
+    /// Remove given element (first one matching)
+    void remove(const T& element);
+
+    /// Get first element in the list and remove it
+    T pop() const;
     
     /// Iterator for the List class. Should be used as follows:
     ///
@@ -134,6 +143,32 @@ namespace dolfin {
   template <class T> bool List<T>::empty() const
   {
     return l.empty();
+  }
+  //---------------------------------------------------------------------------
+  template <class T> bool List<T>::contains(const T& element)
+  {
+    for (typename std::list<T>::iterator it = l.begin(); it != l.end(); ++it)
+      if ( *it == element )
+	return true;
+
+    return false;
+  }
+  //---------------------------------------------------------------------------
+  template <class T> void List<T>::remove(const T& element)
+  {
+    for (typename std::list<T>::iterator it = l.begin(); it != l.end(); ++it)
+      if ( *it == element ) {
+	l.erase(it);
+	return;
+      }
+    dolfin_error("Element is not in the list.");
+  }
+  //---------------------------------------------------------------------------
+  template <class T> T List<T>::pop() const
+  {
+    T first = l.front();
+    l.pop_front();
+    return first;
   }
   //---------------------------------------------------------------------------
   // Implementation of List::Iterator
