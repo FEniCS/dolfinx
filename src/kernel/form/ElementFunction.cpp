@@ -593,6 +593,8 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+
 FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 (const ShapeFunction& v)
 {
+  // FIXME: Leaks memory. Why?
+
   real *new_a = new real[n + 1];
   Product *new_v = new Product[n + 1];
 
@@ -617,6 +619,8 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 (const Product& v)
 {
+  // FIXME: Leaks memory. Why?
+
   real *new_a = new real[n + 1];
   Product *new_v = new Product[n + 1];
 
@@ -641,6 +645,8 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
 (const ElementFunction& v)
 {
+  // FIXME: Leaks memory. Why?
+
   real *new_a = new real[n + v.n];
   Product *new_v = new Product[n + v.n];
 
