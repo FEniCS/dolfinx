@@ -220,23 +220,24 @@ void MeshInit::initNodeNode(Mesh& mesh)
   // Go through all nodes and compute the node neighbors of each node
   // from the edge neighbors.
 
-  for (NodeIterator n(mesh); !n.end(); ++n) {
-
+  for (NodeIterator n(mesh); !n.end(); ++n)
+  {
     // Allocate the list of nodes
     n->nn.init(1 + n->ne.size());
 
     // First add the node itself
     n->nn(0) = n;
-
+    
     // Then add the other nodes
-    for (int i = 0; i < n->ne.size(); i++) {
+    for (int i = 0; i < n->ne.size(); i++)
+    {
       Edge* e = n->ne(i);
-      if ( &e->node(0) != n )
-	n->nn(i+1) = &n->node(0);
-      else
-	n->nn(i+1) = &n->node(1);
-    }
 
+      if ( &e->node(0) != n )
+	n->nn(i+1) = &e->node(0);
+      else
+	n->nn(i+1) = &e->node(1);
+    }
   }
 }
 //-----------------------------------------------------------------------------

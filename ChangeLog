@@ -1,3 +1,5 @@
+ - Add script for running stiff test problems, plot solutions
+ - Fix bug in MeshInit (node neighbors of node)
  - Modify output of sysinfo()
 0.4.7
  - Make all stiff test problems work

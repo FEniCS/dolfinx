@@ -34,11 +34,10 @@ void refine2D(int refinements)
   file << mesh;
 
   // Refine a couple of times
-  for (int i = 0; i < refinements; i++) {
-    
-
-    for (CellIterator cell(mesh); !cell.end(); ++cell) {
-      
+  for (int i = 0; i < refinements; i++)
+  {
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
       // Mark cells close to y = x
       for (NodeIterator node(cell); !node.end(); ++node)
 	if ( fabs(node->coord().x - node->coord().y) < DOLFIN_EPS )
@@ -50,7 +49,6 @@ void refine2D(int refinements)
 	   cell->midpoint().dist(1.0, 1.0) < 0.25 ||
 	   cell->midpoint().dist(0.0, 1.0) < 0.25 )
 	cell->mark();
-      
     }
 
     // Refine mesh
@@ -79,8 +77,8 @@ void refine3D(int refinements)
   unref << mesh;
 
   // Refine a couple of times
-  for (int i = 0; i < refinements; i++) {
-    
+  for (int i = 0; i < refinements; i++)
+  {
     // Mark cells close to (0,0,0)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
       if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
@@ -88,7 +86,6 @@ void refine3D(int refinements)
     
     // Refine mesh
     mesh.refine();
-
   }
 
   // Save refined mesh in OpenDX format
