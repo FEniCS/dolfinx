@@ -1,11 +1,11 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Triangle.hh>
-#include <dolfin/Node.hh>
+#include <dolfin/Triangle.h>
+#include <dolfin/Node.h>
 #include <dolfin/Grid.h>
 #include <utils.h>
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
 
 using namespace dolfin;
 

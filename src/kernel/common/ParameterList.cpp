@@ -5,8 +5,8 @@
 #include <time.h>
 #include <sys/utsname.h>
 #include <stdlib.h>
-#include "ParameterList.hh"
-#include <dolfin/Display.hh>
+#include "ParameterList.h"
+#include <dolfin/Display.h>
 
 //----------------------------------------------------------------------------
 ParameterList::ParameterList()

@@ -3,7 +3,7 @@
 //
 // Modifications by Georgios Foufas (2002)
 
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
 #include <dolfin/Vector.h>
 #include <math.h>
 #include "utils.h"

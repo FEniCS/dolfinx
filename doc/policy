@@ -4,42 +4,39 @@ Guidelines for writing DOLFIN code.
 In order to streamline the code a bit perhaps we should
 keep sort of the same style when writing the code.
 
-1. Class files are named exactly the same as the class name:
+- Class files are named exactly the same as the class name:
 
-		GridGeometry.hh
+		GridGeometry.h
 
-2. Class header files end with .hh
-   Other header files with .h
-   Body files with .C
-   Large letter only for class files: utils.h
+- All header files end with .h
+  Implementation files with .cpp
 
-3. Mixing of small and large letters in internal code:
+  Large letter only for class files: utils.h
+
+- Mixing of small and large letters in internal code:
 
 		Settings::SetBoundaryConditions()
 
-4. Small letters only in DOLFIN functions:
-
-		dolfin_set_boundary_conditions()
-
-5. DOLFIN stuff in dolfin.h starts with dolfin:
-
-		dolfin_init()
-
-6. DOLFIN constants start with DOLFIN and large letters:
+- DOLFIN constants start with DOLFIN and large letters:
 
 		DOLFIN_BCTYPE_DIRICHLET
 
-7. Header files start and end with something like
+- Header files start and end with something like
 
-		#ifndef __GRID_GEOMETRY_HH
-		#define __GRID_GEOMETRY_HH
+		#ifndef __GRID_GEOMETRY_H
+		#define __GRID_GEOMETRY_H
 
 		...
 
 		#endif
 
-8. Applying the GPL should look something like this at the top
-   of all source files:
+- Applying the GPL should look something like this at the top
+  of all source files:
+
+	// (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
+	// Licensed under the GNU GPL Version 2.
+
+  or
 
 	// (c) 1999 Rickard Bergström, Chalmers Finite Element Center.
 	// Licensed under the GNU GPL Version 2.
@@ -49,18 +46,25 @@ keep sort of the same style when writing the code.
 	//   Johan Hoffman, Chalmers Finite Element Center
 	//   Anders Logg,   Chalmers Finite Element Center
 
-   or
-
-	// (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
-	// Licensed under the GNU GPL Version 2.
-
-9. Include private header files as
+- Include private header files as
 
 	#include "file.h"
 
-   and public header files as
+  and public header files as
 
 	#include <dolfin/file.h>
 
-   Private headers are those only used internally. Public headers are those
-   that should be installed on the system.
+  Private headers are those only used internally. Public headers are those
+  that should be installed on the system.
+
+- Names of variables:
+
+	int no_nodes;
+	int size;
+	int my_long_name;
+
+- Names of functions:
+
+	int noNodes();
+	int size();
+	int myLongName();

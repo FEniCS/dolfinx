@@ -1,8 +1,8 @@
 // Copyright (C) 2002 [fill in name]
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemTemplate.hh"
-#include "EquationTemplate.hh"
+#include "ProblemTemplate.h"
+#include "EquationTemplate.h"
 
 //-----------------------------------------------------------------------------
 const char *ProblemTemplate::Description()

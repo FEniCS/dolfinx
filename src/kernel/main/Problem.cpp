@@ -1,4 +1,4 @@
-#include <dolfin/Problem.hh>
+#include <dolfin/Problem.h>
 #include "dolfin_modules.h"
 
 using namespace dolfin;

@@ -1,6 +1,7 @@
+SUBDIRS               = dolfin
+include_HEADERS       = dolfin/List.h
 INCLUDES              = @MODULE_INCLUDES@
 lib_LIBRARIES         = libdolfin-common.a
-include_HEADERS       = 
 libdolfin_common_a_SOURCES = kw_constants.h \
                              utils.cpp \
                              utils.h \

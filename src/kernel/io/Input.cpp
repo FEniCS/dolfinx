@@ -1,5 +1,5 @@
-#include "Input.hh"
-#include <dolfin/Display.hh>
+#include "Input.h"
+#include <dolfin/Display.h>
 
 //#include "inp.h"
 //#include "gid.h"

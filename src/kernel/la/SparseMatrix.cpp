@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.hh>
-#include "DenseMatrix.hh"
+#include <dolfin/Display.h>
+#include "DenseMatrix.h"
 #include <dolfin/Vector.h>
 #include <dolfin/SparseMatrix.h>
 
@@ -286,7 +286,6 @@ void SparseMatrix::writeElement(int i, int j, real value)
   display->InternalError("SparseMatrix::writeElement()","Row %d is full.",i);
 }
 //-----------------------------------------------------------------------------
-
 namespace dolfin {
 
   //---------------------------------------------------------------------------

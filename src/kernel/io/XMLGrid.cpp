@@ -134,7 +134,7 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", &z);
 
   // Set values
-  grid->gridData->createNode(x,y,z);
+  grid->createNode(x,y,z);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.
@@ -155,7 +155,7 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n2", &n2);
 
   // Set values
-  grid->gridData->createTriangle(n0,n1,n2);
+  grid->createTriangle(n0,n1,n2);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
@@ -178,7 +178,7 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "n3", &n3);
 
   // Set values
-  grid->gridData->createTetrahedron(n0,n1,n2,n3);
+  grid->createTetrahedron(n0,n1,n2,n3);
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.

@@ -1,9 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemConvDiff.hh"
-#include "EquationConvDiff_cG1dG0.hh"
-#include "EquationConvDiff2d_cG1dG0.hh"
+#include "ProblemConvDiff.h"
+#include "EquationConvDiff_cG1dG0.h"
+#include "EquationConvDiff2d_cG1dG0.h"
 #include <stdlib.h>
 
 //-----------------------------------------------------------------------------

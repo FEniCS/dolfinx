@@ -1,8 +1,8 @@
 #include <stdio.h>
 
-#include "DenseMatrix.hh"
+#include "DenseMatrix.h"
 #include <dolfin/SparseMatrix.h>
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
 
 using namespace dolfin;
 

@@ -1,8 +1,8 @@
 #include <utils.h>
 
-#include <dolfin/Display.hh>
-#include <dolfin/Tetrahedron.hh>
-#include <dolfin/Node.hh>
+#include <dolfin/Display.h>
+#include <dolfin/Tetrahedron.h>
+#include <dolfin/Node.h>
 #include <dolfin/Grid.h>
 
 using namespace dolfin;

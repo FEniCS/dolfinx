@@ -1,24 +1,24 @@
 SUBDIRS           = dolfin
-include_HEADERS   = dolfin/Display.hh dolfin/Terminal.hh
+include_HEADERS   = dolfin/Display.h dolfin/Terminal.h
 INCLUDES          = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES     = libdolfin-io.a
-libdolfin_io_a_SOURCES = Curses.hh \
+libdolfin_io_a_SOURCES = Curses.h \
                          DataInfo.cpp \
-                         DataInfo.hh \
+                         DataInfo.h \
                          Display.cpp \
                          File.cpp \
                          File.h \
                          FileType.cpp \
-                         FileType.hh \
+                         FileType.h \
                          GenericFile.cpp \
                          GenericFile.h \
                          Input.cpp \
-                         Input.hh \
-                         MatlabOld.hh \
-                         Output.hh \
+                         Input.h \
+                         MatlabOld.h \
+                         Output.h \
                          Terminal.cpp \
                          Value.cpp \
-                         Value.hh \
+                         Value.h \
                          XMLFile.cpp \
                          XMLFile.h \
                          XMLGrid.h \

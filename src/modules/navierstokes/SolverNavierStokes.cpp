@@ -1,15 +1,15 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemNS.hh"
-#include "EquationVel_cG1cG1.hh"
-#include "EquationPre_cG1cG1.hh"
-#include "EquationVel2d_cG1cG1.hh"
-#include "EquationPre2d_cG1cG1.hh"
-#include <Grid.hh>
-#include <Vector.hh>
-#include <SparseMatrix.hh>
-#include <MatlabOld.hh>
+#include "ProblemNS.h"
+#include "EquationVel_cG1cG1.h"
+#include "EquationPre_cG1cG1.h"
+#include "EquationVel2d_cG1cG1.h"
+#include "EquationPre2d_cG1cG1.h"
+#include <Grid.h>
+#include <Vector.h>
+#include <SparseMatrix.h>
+#include <MatlabOld.h>
 #include <unistd.h>
 
 //----------------------------------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.hh>
-#include "KrylovSolver.hh"
-#include "SISolver.hh"
+#include <dolfin/Display.h>
+#include "KrylovSolver.h"
+#include "SISolver.h"
 #include <unistd.h>
 #include "utils.h"
 

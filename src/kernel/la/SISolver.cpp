@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.hh>
-#include "SISolver.hh"
+#include <dolfin/Display.h>
+#include "SISolver.h"
 #include "utils.h"
 
 using namespace dolfin;

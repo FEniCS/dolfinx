@@ -4,10 +4,10 @@
 // DOLFIN grid classes
 
 #include <dolfin/Grid.h>
-#include <dolfin/Point.hh>
-#include <dolfin/Node.hh>
-#include <dolfin/Cell.hh>
-#include <dolfin/Triangle.hh>
-#include <dolfin/Tetrahedron.hh>
+#include <dolfin/Point.h>
+#include <dolfin/Node.h>
+#include <dolfin/Cell.h>
+#include <dolfin/Triangle.h>
+#include <dolfin/Tetrahedron.h>
 
 #endif

@@ -4,13 +4,20 @@
 #ifndef __GRID_HH
 #define __GRID_HH
 
-#include <dolfin/dolfin_constants.h>
+// FIXME: remove
 #include <stdio.h>
+
+#include <iostream>
+
+#include <dolfin/dolfin_constants.h>
+#include <dolfin/List.h>
 
 namespace dolfin{
 
   class Node;
   class Cell;
+  class Triangle;
+  class Tetrahedron;
   class GridData;
   
   class Grid{
@@ -21,7 +28,16 @@ namespace dolfin{
 	 ~Grid();
 
 	 void clear();
+
+	 int noNodes();
+	 int noCells();
+
+	 /// Output
+	 void show();
+	 friend ostream& operator << (ostream& output, Grid& grid);
 	 
+	 /// Friends
+	 friend class NodeIterator;
 	 friend class XMLGrid;
 	 
 	 // old functions below
@@ -55,10 +71,23 @@ namespace dolfin{
 	 void Read(const char *filename);
 	 /// Save grid to file (type determined from prefix)
 	 void Write(const char *filename);
-
-	 
 	 
   private:
+	 
+ 	 Node*        createNode();
+	 Triangle*    createTriangle();
+	 Tetrahedron* createTetrahedron();
+	 
+	 Node*        createNode(real x, real y, real z);
+	 Triangle*    createTriangle(int n0, int n1, int n2);
+	 Tetrahedron* createTetrahedron(int n0, int n1, int n2, int n3);
+
+	 Node*        getNode(int id);
+	 Triangle*    getTriangle(int id);
+	 Tetrahedron* getTetrahedron(int id);
+
+	 // old functions below
+	 
 	 
 	 /// Save grid to inp file
 	 void WriteINP(FILE *fp);
@@ -80,10 +109,6 @@ namespace dolfin{
 	 
 	 /// --- Grid data ---
 	 
-	 /// Number of nodes
-	 int no_nodes;
-	 /// Number of cells
-	 int no_cells;
 	 /// Maximum cell size (maximum number of nodes in cells)
 	 int maxcellsize;
 	 /// Size of grid (bytes)
@@ -96,8 +121,12 @@ namespace dolfin{
 	 
 	 /// --- Grid data (main part) ---
 
-	 GridData *gridData;
-  
+	 GridData *grid_data;
+	 int no_nodes;
+	 int no_cells;
+
+	 // old data
+	 
 	 /// Nodes (positions)
 	 Node *nodes;
 	 /// Cells (connections)
@@ -105,6 +134,29 @@ namespace dolfin{
 	 
   };
 
+  // Iterators
+
+  class NodeIterator {
+  public:
+
+	 NodeIterator(Grid& grid); 
+
+	 NodeIterator& operator++();
+	 bool end();
+	 
+	 Node  operator*() const;
+	 Node* operator->() const;
+	 bool  operator==(const NodeIterator& n) const;
+	 bool  operator!=(const NodeIterator& n) const;
+
+	 
+  private:
+
+	 List<Node>::Iterator node_iterator;
+	 List<Node>::Iterator at_end;
+	 
+  };
+  
 }
 
 #endif

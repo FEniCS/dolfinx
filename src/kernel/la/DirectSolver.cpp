@@ -1,11 +1,11 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "DenseMatrix.hh"
+#include "DenseMatrix.h"
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/Display.hh>
-#include "DirectSolver.hh"
+#include <dolfin/Display.h>
+#include "DirectSolver.h"
 
 using namespace dolfin;
 

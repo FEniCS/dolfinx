@@ -90,6 +90,7 @@ AC_OUTPUT( Makefile \
            src/pre/Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
+           src/kernel/common/dolfin/Makefile \
            src/kernel/fem/Makefile \
            src/kernel/fem/dolfin/Makefile \
            src/kernel/grid/Makefile \

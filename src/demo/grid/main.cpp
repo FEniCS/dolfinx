@@ -15,4 +15,8 @@ int main(int argc, char **argv)
 
   file >> grid;
 
+  cout << grid << endl;
+
+  grid.show();
+  
 }

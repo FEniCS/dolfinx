@@ -1,7 +1,6 @@
-#include "SysInfo.hh"
-
 #include "utils.h"
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
+#include "SysInfo.h"
 
 //-----------------------------------------------------------------------------
 SysInfo::SysInfo()

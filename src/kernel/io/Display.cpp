@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
 
 //-----------------------------------------------------------------------------
 int Display::StringLength(const char *string)

@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Terminal.hh>
+#include <dolfin/Terminal.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdlib.h>

@@ -1,5 +1,5 @@
 #include <dolfin.h>
-#include <dolfin/Terminal.hh>
+#include <dolfin/Terminal.h>
 
 Display *display = 0;
 

@@ -1,6 +1,6 @@
-#include "Output.hh"
-#include <dolfin/Display.hh>
-#include <Settings.hh>
+#include "Output.h"
+#include <dolfin/Display.h>
+#include <Settings.h>
 #include <utils.h>
 
 //#include "matlab.h"

@@ -3,8 +3,8 @@
 //
 // Modifications by Georgios Foufas (2002)
 
-#ifndef __VECTOR_HH
-#define __VECTOR_HH
+#ifndef __VECTOR_H
+#define __VECTOR_H
 
 #include <iostream>
 

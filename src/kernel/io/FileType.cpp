@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "FileType.hh"
+#include "FileType.h"
 #include "utils.h"
 
 //-----------------------------------------------------------------------------

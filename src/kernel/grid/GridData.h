@@ -12,7 +12,7 @@
 ///    a list of all nodes
 ///    a list of all cells
 
-#include <List.h>
+#include <dolfin/List.h>
 
 namespace dolfin {
 
@@ -33,10 +33,13 @@ namespace dolfin {
 	 Node*        createNode(real x, real y, real z);
 	 Triangle*    createTriangle(int n0, int n1, int n2);
 	 Tetrahedron* createTetrahedron(int n0, int n1, int n2, int n3);
-	 
+
 	 Node*        getNode(int id);
 	 Triangle*    getTriangle(int id);
 	 Tetrahedron* getTetrahedron(int id);
+
+	 // Friends
+	 friend class NodeIterator;
 	 
   private:
 	 
@@ -45,7 +48,7 @@ namespace dolfin {
 	 List<Tetrahedron> tetrahedrons;
 	 
   };
-
+  
 }
   
 #endif

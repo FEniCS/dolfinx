@@ -6,14 +6,14 @@
 #include <math.h>
 #include <strings.h>
 
-#include <dolfin/Display.hh>
+#include <dolfin/Display.h>
 #include <utils.h>
 #include <kw_constants.h>
 
 #include <dolfin/Grid.h>
-#include <dolfin/Node.hh>
-#include <dolfin/Triangle.hh>
-#include <dolfin/Tetrahedron.hh>
+#include <dolfin/Node.h>
+#include <dolfin/Triangle.h>
+#include <dolfin/Tetrahedron.h>
 #include "GridData.h"
 
 using namespace dolfin;
@@ -21,14 +21,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Grid::Grid()
 {
-  no_nodes   = 0;
-  no_cells   = 0;
-  nodes    = 0;
-  cells    = 0;
-  mem      = sizeof(Grid);
-  h        = 0.0;
+  grid_data = 0;
 
-  gridData = new GridData();
+  clear();
+
+  grid_data = new GridData();
 }
 //-----------------------------------------------------------------------------
 Grid::Grid(const char *filename)
@@ -42,7 +39,7 @@ Grid::Grid(const char *filename)
   mem      = sizeof(Grid);
   h        = 0.0;
 
-  gridData = new GridData();
+  grid_data = new GridData();
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -51,8 +48,8 @@ Grid::~Grid()
 	 delete [] nodes;
   nodes = 0;
   
-  if ( gridData )
-	 delete gridData;
+  if ( grid_data )
+	 delete grid_data;
   
   if ( cells ){
 	 for (int i=0;i<no_cells;i++)
@@ -64,10 +61,50 @@ Grid::~Grid()
 //-----------------------------------------------------------------------------
 void Grid::clear()
 {
-  if ( gridData )
-	 delete gridData;
-  gridData = new GridData();
+  if ( grid_data )
+	 delete grid_data;
+  grid_data = new GridData();
+
+  no_nodes = 0;
+  no_cells = 0;
+
+  
+  nodes    = 0;
+  cells    = 0;
+  mem      = sizeof(Grid);
+  h        = 0.0;
+  
 }
+//-----------------------------------------------------------------------------
+int Grid::noNodes()
+{
+  return no_nodes;
+}
+//-----------------------------------------------------------------------------
+int Grid::noCells()
+{
+  return no_cells;
+}
+//-----------------------------------------------------------------------------
+void Grid::show()
+{
+  cout << "-------------------------------------------------------------------------------" << endl;
+  cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells." << endl;
+
+  for (NodeIterator n(*this); !n.end(); ++n){
+
+	 
+
+
+  }
+
+
+
+  cout << "-------------------------------------------------------------------------------" << endl;
+}
+//-----------------------------------------------------------------------------
+
+
 //-----------------------------------------------------------------------------
 void Grid::Init()
 {
@@ -241,6 +278,76 @@ void Grid::Write(const char *filename)
   // Close the file
   fclose(fp);
 }
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+Node* Grid::createNode()
+{
+  no_nodes++;
+  return grid_data->createNode();
+}
+//-----------------------------------------------------------------------------
+Triangle* Grid::createTriangle()
+{
+  no_cells++;
+  return grid_data->createTriangle();
+}
+//-----------------------------------------------------------------------------
+Tetrahedron* Grid::createTetrahedron()
+{
+  no_cells++;
+  return grid_data->createTetrahedron();
+}
+//-----------------------------------------------------------------------------
+Node* Grid::createNode(real x, real y, real z)
+{
+  no_nodes++;
+  return grid_data->createNode(x,y,z);
+}
+//-----------------------------------------------------------------------------
+Triangle* Grid::createTriangle(int n0, int n1, int n2)
+{
+  no_cells++;
+  return grid_data->createTriangle();
+}
+//-----------------------------------------------------------------------------
+Tetrahedron* Grid::createTetrahedron(int n0, int n1, int n2, int n3)
+{
+  no_cells++;
+  return grid_data->createTetrahedron(n0,n1,n2,n3);
+}
+//-----------------------------------------------------------------------------
+Node* Grid::getNode(int id)
+{
+  Node *node = grid_data->getNode(id);
+
+  return node;
+}
+//-----------------------------------------------------------------------------
+Triangle* Grid::getTriangle(int id)
+{
+  Triangle *triangle = grid_data->getTriangle(id);
+
+  return triangle;
+}
+//-----------------------------------------------------------------------------
+Tetrahedron* Grid::getTetrahedron(int id)
+{
+  Tetrahedron *tetrahedron = grid_data->getTetrahedron(id);
+
+  return tetrahedron;
+}
+//-----------------------------------------------------------------------------
+
+
+
+
 //-----------------------------------------------------------------------------
 void Grid::WriteINP(FILE *fp)
 {
@@ -460,3 +567,60 @@ void Grid::ComputeNeighborInfo()
 }
 */
 //-----------------------------------------------------------------------------
+NodeIterator::NodeIterator(Grid& grid)
+{
+  node_iterator = grid.grid_data->nodes.begin();
+  at_end = grid.grid_data->nodes.end();
+}
+//-----------------------------------------------------------------------------
+NodeIterator& NodeIterator::operator++()
+{
+  ++node_iterator;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::end()
+{
+  return node_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+Node NodeIterator::operator*() const
+{
+  return *node_iterator;
+}
+//-----------------------------------------------------------------------------
+Node* NodeIterator::operator->() const
+{
+  return &(*node_iterator);
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::operator==(const NodeIterator& n) const
+{
+  return ( node_iterator == n.node_iterator );
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::operator!=(const NodeIterator& n) const
+{
+  return !( *this == n );
+}
+//---------------------------------------------------------------------------
+
+namespace dolfin {
+
+  //---------------------------------------------------------------------------
+  ostream& operator << (ostream& output, Grid& grid)
+  {
+	 int no_nodes = grid.noNodes();
+	 int no_cells = grid.noCells();
+
+	 output << "[ Grid with " << no_nodes << " nodes and "
+			  << no_cells << " cells. ]";
+
+	 return output;
+  }
+  //---------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+

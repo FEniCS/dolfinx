@@ -1,6 +1,6 @@
-#include <dolfin/Node.hh>
-#include <dolfin/Cell.hh>
-#include <dolfin/Display.hh>
+#include <dolfin/Node.h>
+#include <dolfin/Cell.h>
+#include <dolfin/Display.h>
 
 using namespace dolfin;
 

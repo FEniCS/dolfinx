@@ -1,9 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemPoisson.hh"
-#include "EquationPoisson.hh"
-#include "EquationPoisson2d.hh"
+#include "ProblemPoisson.h"
+#include "EquationPoisson.h"
+#include "EquationPoisson2d.h"
 
 //-----------------------------------------------------------------------------
 const char *ProblemPoisson::Description()
