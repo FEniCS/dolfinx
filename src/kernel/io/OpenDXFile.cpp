@@ -7,6 +7,7 @@
 #include <dolfin/System.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/NewFunction.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/OpenDXFile.h>
 
@@ -51,6 +52,32 @@ void OpenDXFile::operator<<(Mesh& mesh)
 }
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Function& u)
+{
+  event_saving_function();
+
+  // Open file
+  FILE* fp = fopen(filename.c_str(), "r+");
+  fseek(fp, 0L, SEEK_END);
+
+  // Remove previous time series 
+  if ( frames.size() > 0 )
+    removeSeries(fp);
+
+  // Write mesh
+  if ( frames.size() == 0 || save_each_mesh )
+    writeMesh(fp, u.mesh());
+
+  // Write function
+  writeFunction(fp, u);
+
+  // Write time series
+  writeSeries(fp, u);
+
+  // Close file
+  fclose(fp);
+}
+//-­---------------------------------------------------------------------------
+void OpenDXFile::operator<<(NewFunction& u)
 {
   event_saving_function();
 
@@ -200,7 +227,59 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   frames.push_back(frame);
 }
 //-­---------------------------------------------------------------------------
+void OpenDXFile::writeFunction(FILE* fp, NewFunction& u)
+{
+  // Write header for object
+  fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), frames.size());
+  fprintf(fp,"object \"data %d\" class array type float rank 1 shape 1 items %d lsb binary data follows\n",
+	  frames.size(), u.mesh().noNodes());
+  
+  // Write data
+  for (NodeIterator n(u.mesh()); !n.end(); ++n)
+  {
+    float value = static_cast<float>(u(*n));
+    fwrite(&value, sizeof(float), 1, fp);
+  }
+  fprintf(fp,"\n");
+  fprintf(fp,"attribute \"dep\" string \"positions\"\n\n");
+  
+  // Write field
+  fprintf(fp,"# Field for [%s], frame %d\n", u.label().c_str(), frames.size());
+  fprintf(fp,"object \"field %d\" class field\n", frames.size());
+  if ( save_each_mesh )
+    fprintf(fp,"component \"positions\" value \"nodes %d\"\n", frames.size());
+  else
+    fprintf(fp,"component \"positions\" value \"nodes 0\"\n");
+  if ( save_each_mesh )
+    fprintf(fp,"component \"connections\" value \"cells %d\"\n", frames.size());
+  else
+    fprintf(fp,"component \"connections\" value \"cells 0\"\n");
+  fprintf(fp,"component \"data\" value \"data %d\"\n\n", frames.size());
+  
+  // Add the new frame
+  Frame frame(u.time());
+  frames.push_back(frame);
+}
+//-­---------------------------------------------------------------------------
 void OpenDXFile::writeSeries(FILE* fp, Function& u)
+{
+  // Get position in file at start of series
+  series_pos = ftell(fp);
+
+  // Write the time series
+  fprintf(fp,"# Time series for [%s]\n", u.label().c_str());
+  fprintf(fp,"object \"Time series\" class series\n");
+  
+  for (unsigned int i = 0; i < frames.size(); i++)
+  {
+    fprintf(fp,"member %d value \"field %d\" position %f\n",
+	    i, i, frames[i].time);
+  }
+  
+  fprintf(fp,"\n");
+}
+//-­---------------------------------------------------------------------------
+void OpenDXFile::writeSeries(FILE* fp, NewFunction& u)
 {
   // Get position in file at start of series
   series_pos = ftell(fp);

@@ -9,19 +9,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction() : data(0)
+NewFunction::NewFunction() : data(0), t(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(Mesh& mesh, const NewFiniteElement& element,
-			 NewVector& x) : data(0)
+NewFunction::NewFunction(Mesh& mesh, NewVector& x,
+			 const NewFiniteElement& element) : data(0)
 {
   // Create function data
-  data = new Data(mesh, element, x);
+  data = new Data(mesh, x, element);
   
   // Set name and label
   rename("u", "An unspecified function");
+}
+//-----------------------------------------------------------------------------
+NewFunction::NewFunction(Mesh& mesh, NewVector& x)
+{
+  
+
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
@@ -127,5 +133,15 @@ const NewFiniteElement& NewFunction::element() const
     dolfin_error("Function is not a finite element function.");
 
   return data->element;
+}
+//-----------------------------------------------------------------------------
+real NewFunction::time() const
+{
+  return t;
+}
+//-----------------------------------------------------------------------------
+void NewFunction::set(real time)
+{
+  t = time;
 }
 //-----------------------------------------------------------------------------

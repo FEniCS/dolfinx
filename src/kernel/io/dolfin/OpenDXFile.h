@@ -1,4 +1,4 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __OPEN_DX_FILE_H
@@ -15,6 +15,7 @@ namespace dolfin {
   
   class Mesh;
   class Function;
+  class NewFunction;
   
   class OpenDXFile : public GenericFile {
   public:
@@ -28,6 +29,7 @@ namespace dolfin {
     
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
+    void operator<< (NewFunction& u);
 
   private:
 
@@ -35,7 +37,9 @@ namespace dolfin {
     void writeMesh     (FILE* fp, Mesh& mesh);
     void writeMeshData (FILE* fp, Mesh& mesh);
     void writeFunction (FILE* fp, Function& u);
+    void writeFunction (FILE* fp, NewFunction& u);
     void writeSeries   (FILE* fp, Function& u);
+    void writeSeries   (FILE* fp, NewFunction& u);
   
     void removeSeries  (FILE* fp);
 

@@ -6,6 +6,9 @@
 #ifndef __NEW_FUNCTION_H
 #define __NEW_FUNCTION_H
 
+
+#define HEJ 0.1
+
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/Variable.h>
@@ -36,8 +39,11 @@ namespace dolfin
     /// Create user-defined function
     NewFunction();
 
-    /// Create function with given degrees of freedom
-    NewFunction(Mesh& mesh, const NewFiniteElement& element, NewVector& x);
+    /// Create a function in the function space defined by a finite element
+    NewFunction(Mesh& mesh, NewVector& x, const NewFiniteElement& element);
+
+    /// Create a piecewise linear function
+    NewFunction(Mesh& mesh, NewVector& x);
 
     /// Destructor
     virtual ~NewFunction();
@@ -60,21 +66,30 @@ namespace dolfin
     /// Return the finite element defining the function space
     const NewFiniteElement& element() const;
 
+    /// Return current time
+    real time() const;
+
+    /// Set current time
+    void set(real time);
+
   private:
 
     // Collect function data in one place
     class Data
     {
     public:
-      Data(Mesh& mesh, const NewFiniteElement& element, NewVector& x)
-	: mesh(mesh), element(element), x(x) {}
+      Data(Mesh& mesh, NewVector& x, const NewFiniteElement& element)
+	: mesh(mesh), x(x), element(element) {}
       Mesh& mesh;
-      const NewFiniteElement& element;
       NewVector& x;
+      const NewFiniteElement& element;
     };
     
     // Pointer to function data (null if not used)
     Data* data;
+
+    // Current time
+    real t;
     
   };
 

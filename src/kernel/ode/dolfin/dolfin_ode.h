@@ -39,6 +39,7 @@
 #include <dolfin/ReducedModel.h>
 #include <dolfin/Regulator.h>
 #include <dolfin/Sample.h>
+#include <dolfin/NewSample.h>
 #include <dolfin/Solution.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/TimeSlab.h>

@@ -41,7 +41,7 @@ public:
     Function u(mesh, ux);
     Function k(mesh, kx);
     u.rename("u", "Solution of the bistable equation");
-    u.rename("k", "Time steps for the bistable equation");
+    k.rename("k", "Time steps for the bistable equation");
 
     // Get the degrees of freedom and set current time
     u.update(sample.t());

@@ -19,6 +19,8 @@
 #include <dolfin/NewFiniteElement.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementMethod.h>
+#include <dolfin/LinearTriElement.h>
+#include <dolfin/LinearTetElement.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
 #include <dolfin/MultigridSolver.h>

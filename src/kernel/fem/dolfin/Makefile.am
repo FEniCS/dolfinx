@@ -9,6 +9,8 @@ EXTRA_DIST = dolfin_fem.h \
              FiniteElement.h \
              FiniteElementMethod.h \
              FunctionSpace.h \
+             LinearTetElement.h\
+             LinearTriElement.h \
              LoadVector.h \
              MassMatrix.h \
              MultigridSolver.h \

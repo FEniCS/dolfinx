@@ -10,6 +10,8 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/FiniteElement.h \
                           dolfin/FiniteElementMethod.h \
                           dolfin/FunctionSpace.h \
+                          dolfin/LinearTetElement.h\
+                          dolfin/LinearTriElement.h \
                           dolfin/LoadVector.h \
                           dolfin/MassMatrix.h \
                           dolfin/MultigridSolver.h \

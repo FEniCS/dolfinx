@@ -76,7 +76,7 @@ namespace dolfin
     /// Addition (AXPY)
     void axpy(const real a, const NewVector& x) const;
 
-    /// Add block of values
+    /// Add block of values to vector
     void add(const real block[], const int cols[], int n); 
 
     /// Apply changes to vector
