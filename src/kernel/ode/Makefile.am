@@ -23,6 +23,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/FixedPointIteration.h \
                           dolfin/Iteration.h \
                           dolfin/Method.h \
+                          dolfin/NewtonIteration.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
@@ -62,6 +63,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           FixedPointIteration.cpp \
                           Iteration.cpp \
                           Method.cpp \
+                          NewtonIteration.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \

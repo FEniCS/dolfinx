@@ -19,6 +19,8 @@
 #include <dolfin/AdaptiveIterationLevel3.h>
 #include <dolfin/FixedPointIteration.h>
 
+#include <dolfin/NewtonIteration.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -44,6 +46,8 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
     state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else if ( stiffness == "stiff level 3" )
     state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  else if ( stiffness == "newton" )
+    state = new NewtonIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
   else
   {
     dolfin_warning1("Unknown stiffness: %s, assuming problem is non-stiff.", stiffness.c_str());
@@ -421,6 +425,9 @@ void FixedPointIteration::changeState(Iteration::State newstate)
     break;
   case Iteration::stiff3:
     state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
+    break;
+  case Iteration::newton:
+    state = new NewtonIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, depth);
     break;
   case Iteration::stiff:
     dolfin_error("Not implemented.");

@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     // Type of iteration
-    enum State {nonstiff, stiff1, stiff2, stiff3, stiff};
+    enum State {nonstiff, stiff1, stiff2, stiff3, stiff, newton};
 
     // Element residuals
     struct Residuals
