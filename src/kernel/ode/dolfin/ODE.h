@@ -8,8 +8,8 @@
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 
-namespace dolfin {
-
+namespace dolfin
+{
   class Vector;
   class Function;
 
@@ -21,12 +21,13 @@ namespace dolfin {
   ///
   /// where u(t) is a vector of length N.
 
-  class ODE {
+  class ODE
+  {
   public:
-
+    
     /// Constructor
     ODE(unsigned int N);
-
+    
     /// Destructor
     virtual ~ODE();
 

@@ -25,6 +25,7 @@
 #include <dolfin/GenericSparsity.h>
 #include <dolfin/Iteration.h>
 #include <dolfin/MatrixSparsity.h>
+#include <dolfin/MechanicalSystem.h>
 #include <dolfin/Method.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/ODE.h>
