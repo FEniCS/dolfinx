@@ -52,8 +52,8 @@ void MFile::operator<<(Mesh& mesh)
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Create a list if we save the mesh a second time
-  if ( no_meshes == 1 ) {
-
+  if ( no_meshes == 1 )
+  {
     fprintf(fp, "tmp = points;\n");
     fprintf(fp, "clear points\n");
     fprintf(fp, "points{1} = tmp;\n");
@@ -68,7 +68,6 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp, "clear edges\n");
     fprintf(fp, "edges{1} = tmp;\n");
     fprintf(fp, "clear tmp\n\n");
-
   }
   
   // Write nodes
@@ -101,8 +100,8 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"cells = [");
   else
     fprintf(fp,"cells{%d} = [", no_meshes + 1);
-  for (CellIterator c(mesh); !c.end(); ++c) {
-    
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
     for (NodeIterator n(c); !n.end(); ++n)
       fprintf(fp, "%d ", n->id() + 1);
     
@@ -110,7 +109,6 @@ void MFile::operator<<(Mesh& mesh)
       fprintf(fp, "]';\n");
     else
       fprintf(fp, "\n");
-    
   }
   fprintf(fp,"\n");
   
@@ -153,13 +151,15 @@ void MFile::operator<<(Function& u)
   }
 
   // Write vector
-  if ( u.number() == 0 ) {
+  if ( u.number() == 0 )
+  {
     fprintf(fp, "%s = [", u.name().c_str());
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
-  else {
+  else
+  {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
@@ -190,7 +190,7 @@ void MFile::operator<< (Sample& sample)
     fprintf(fp, "r = [];\n");
     fprintf(fp, "\n");
   }
-
+  
   // Save time
   fprintf(fp, "t = [t %.16e];\n", sample.t());
 
@@ -238,7 +238,8 @@ void MFile::operator<<(Function::Vector& u)
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Move old vector into list if we are saving a new value
-  if ( u(0).number() == 1 ) {
+  if ( u(0).number() == 1 )
+  {
     fprintf(fp, "tmp = %s;\n", u(0).name().c_str());
     fprintf(fp, "clear %s\n", u(0).name().c_str());
     fprintf(fp, "%s{1} = tmp;\n", u(0).name().c_str());

@@ -15,11 +15,11 @@ class RadiationDiffusion : public ODE
 public:
 
   RadiationDiffusion(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh), 
-				   A(2*mesh.noNodes(), 2*mesh.noNodes()),
-				   Dx(2*mesh.noNodes(), 2*mesh.noNodes()),
-				   Dy(2*mesh.noNodes(), 2*mesh.noNodes()),
-				   b(2*mesh.noNodes()),
-				   ufile("solution.m"), kfile("timesteps.m")
+				   A(N, N), Dx(N, N), Dy(N, N),
+				   ufile("solution.m"), kfile("timesteps.m"),
+				   u1x(N/2), u2x(N/2), k1x(N/2), k2x(N/2),
+				   u1(mesh, u1x), u2(mesh, u2x),
+				   k1(mesh, k1x), k2(mesh, k2x)
   {
     // Parameters
     T  = 3.0;
@@ -29,8 +29,16 @@ public:
     
     // Create data for space discretization of system
     createStiffnessMatrix(mesh);
-    createLoadVector(mesh);
     createDerivatives(mesh);
+
+    // Set names for samples
+    u1.rename("u1", "Radiation energy (E)");
+    u2.rename("u2", "Material temperature (T)");
+    k1.rename("k1", "Time steps for the radiation energy (E)");
+    k2.rename("k2", "Time steps for the material temperature (T)");
+    
+    // Automatically detect sparsity
+    sparse();
   }
   
   /// Initial condition
@@ -51,9 +59,9 @@ public:
   real f(const Vector& u, real t, unsigned int i)
   {
     if ( i < N/2 )
-      return (radiation1(u, i) + diffusion1(u, i)) / b(i);
+      return radiation1(u, i) + diffusion1(u, i);
     else
-      return (radiation2(u, i) + diffusion2(u, i)) / b(i);
+      return radiation2(u, i) + diffusion2(u, i);
   }
 
   /// Radiation for first component
@@ -94,7 +102,6 @@ public:
     real epsilon = kappa * pow(u2, 2.5);
 
     return epsilon * A.mult(u, i);
-
   }
   
   /// Atomic number
@@ -115,35 +122,27 @@ public:
     // We only need to compute the gradient of u1
     dolfin_assert(i < N/2);
 
-    return 1.0;
+    real dx = Dx.mult(u, i);
+    real dy = Dy.mult(u, i);
+
+    return sqrt(dx*dx + dy*dy);
   }
 
   /// Create system stiffness matrix from simple stiffness matrix
   void createStiffnessMatrix(Mesh& mesh)
   {
     StiffnessMatrix A0(mesh);
-   
+    LoadVector b(mesh); // Same as lumped mass matrix
+
     for (unsigned int i = 0; i < N/2; i++)
     {
       for (unsigned int pos = 0; !A0.endrow(i, pos); pos++)
       {
         unsigned int j = 0;
         real element = A0(i, j, pos);
-        A(i, j) = element;
-        A(i + N/2, j + N/2) = element;
+        A(i, j) = -element / b(i);
+        A(i + N/2, j + N/2) = -element / b(i);
       }
-    }
-  }
-
-  /// Create system load vector from simple load vector
-  void createLoadVector(Mesh& mesh)
-  {
-    LoadVector b0(mesh);
-
-    for (unsigned int i = 0; i < N/2; i++)
-    {
-      b(i) = b0(i);
-      b(i + N/2) = b0(i);
     }
   }
 
@@ -162,25 +161,17 @@ public:
 	Dx(i, j) = element;
       }
 
-      for (unsigned int pos = 0; !Dx0.endrow(i, pos); pos++)
+      for (unsigned int pos = 0; !Dy0.endrow(i, pos); pos++)
       {
 	unsigned int j = 0;
 	real element = Dy0(i, j, pos);
 	Dy(i, j) = element;
       }
      }
-   }
+  }
 
   void save(Sample& sample)
   {
-    // Create  mesh-dependent functions from the sample
-    Vector u1x(N/2), u2x(N/2), k1x(N/2), k2x(N/2);
-    Function u1(mesh, u1x), u2(mesh, u2x), k1(mesh, k1x), k2(mesh, k2x);
-    u1.rename("u1", "Radiation energy (E)");
-    u2.rename("u2", "Material temperature (T)");
-    k1.rename("k1", "Time steps for the radiation energy (E)");
-    k2.rename("k2", "Time steps for the material temperature (T)");
-
     // Set current time
     u1.update(sample.t());
     u2.update(sample.t());
@@ -209,27 +200,29 @@ private:
   Matrix A;   // Stiffness matrix
   Matrix Dx;  // Derivative in x-direction
   Matrix Dy;  // Derivative in y-direction
-  Vector b;   // Load vector
   File ufile; // File for storing the solution
   File kfile; // File for storing the time steps
-
+  
   real h;     // Half size of box with higher density
   real Z0;    // Large density
   real kappa; // Diffusion parameter 
+
+  Vector u1x, u2x, k1x, k2x; // Sample of solution (data)
+  Function u1, u2, k1, k2;   // Sample of solution (functions)
 };
 
 int main()
 {
   // Settings
-  dolfin_set("output", "plain text");
+  //dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);
-  dolfin_set("number of samples", 100);
+  dolfin_set("number of samples", 10);
   dolfin_set("progress step", 0.01);
 
   // Number of refinements
-  unsigned int refinements = 2;
+  unsigned int refinements = 3;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");
