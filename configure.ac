@@ -64,7 +64,7 @@ fi
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS='-O3 -Wall -Werror -pedantic -ansi -std=c++98'
+    CXXFLAGS='-O3 -Wall -Werror -ansi -std=c++98'
 fi
 
 # Handle option --disable-curses

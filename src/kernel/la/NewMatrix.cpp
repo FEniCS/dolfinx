@@ -65,12 +65,9 @@ void NewMatrix::init(uint M, uint N)
       MatDestroy(A);
   }
   
-  //  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
-  //  MatSetFromOptions(A);
-
-  // Creates a sparse matrix in block AIJ (block compressed row) format.
-  // Assuming blocksize bs=1, and max no connectivity = 50 
-  MatCreateSeqBAIJ(PETSC_COMM_SELF, 1, M, N, 50, PETSC_NULL, &A);
+  // Create a sparse matrix in compressed row format
+  MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::init(uint M, uint N, uint bs)
