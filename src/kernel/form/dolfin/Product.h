@@ -79,6 +79,14 @@ namespace dolfin {
     // Integration
     real operator* (Integral::Measure &dm) const;
     
+    // Derivatives
+    ElementFunction ddx() const;
+    ElementFunction ddy() const;
+    ElementFunction ddz() const;
+
+    // Set the number of factors
+    void init(int size);
+
     // Output
     friend LogStream& operator<<(LogStream& stream, const Product &v);
     

@@ -321,6 +321,120 @@ FunctionSpace::ElementFunction dolfin::operator*
   return v * a;
 }
 //-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::Product::ddx() const
+{
+  // Product rule
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+    Product pi;
+
+    wi = FunctionList::ddx(_id[i]);
+
+    pi.init(n - 1);
+
+    for (int j = 0; j < n - 1; j++)
+    {
+      if(j < i)
+      {
+	pi._id[j] = _id[j];
+      }
+      else if(j > i)
+      {
+	pi._id[j] = _id[j + 1];
+      }
+    }
+
+    w += wi * pi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::Product::ddy() const
+{
+  // Product rule
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+    Product pi;
+
+    wi = FunctionList::ddy(_id[i]);
+
+    pi.init(n - 1);
+
+    for (int j = 0; j < n - 1; j++)
+    {
+      if(j < i)
+      {
+	pi._id[j] = _id[j];
+      }
+      else if(j > i)
+      {
+	pi._id[j] = _id[j + 1];
+      }
+    }
+
+    w += wi * pi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::Product::ddz() const
+{
+  // Product rule
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+    Product pi;
+
+    wi = FunctionList::ddz(_id[i]);
+
+    pi.init(n - 1);
+
+    for (int j = 0; j < n - 1; j++)
+    {
+      if(j < i)
+      {
+	pi._id[j] = _id[j];
+      }
+      else if(j > i)
+      {
+	pi._id[j] = _id[j + 1];
+      }
+    }
+
+    w += wi * pi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::Product::init(int size)
+{
+  if ( n == size )
+	 return;
+
+  n = size;
+  
+  delete [] _id;
+
+  _id = new int[n];
+
+  for (int i = 0; i < n; i++)
+    _id[i] = 0;
+}
+//-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream,

@@ -87,6 +87,11 @@ namespace dolfin {
     ElementFunction  operator* (const Product         &v) const;
     ElementFunction  operator* (const ElementFunction &v) const;
 
+    // Derivatives
+    ElementFunction ddx() const;
+    ElementFunction ddy() const;
+    ElementFunction ddz() const;
+
     // Set the number of terms
     void init(int size);
     

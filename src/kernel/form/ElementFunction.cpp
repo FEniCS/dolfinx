@@ -725,6 +725,60 @@ real FunctionSpace::ElementFunction::operator* (Integral::Measure& dm) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddx() const
+{
+  // Derivative of the sum of products
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+
+    wi = a[i] * v[i].ddx();
+
+    w += wi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddy() const
+{
+  // Derivative of the sum of products
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+
+    wi = a[i] * v[i].ddy();
+
+    w += wi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::ddz() const
+{
+  // Derivative of the sum of products
+
+  ElementFunction w;
+
+  for (int i = 0; i < n; i++)
+  {
+    ElementFunction wi;
+
+    wi = a[i] * v[i].ddz();
+
+    w += wi;
+  }
+
+  return w;
+}
+//-----------------------------------------------------------------------------
 void FunctionSpace::ElementFunction::init(int size)
 {
   if ( n == size )
