@@ -63,7 +63,13 @@ real TimeStepper::step()
     while ( !createFirstTimeSlab() );
   }
   else
+  {
+    // Prepare for next time slab
+    shift();
+  
+    // Create time slab
     while ( !createGeneralTimeSlab() );
+  }
 
   return t;
 }
@@ -121,9 +127,6 @@ bool TimeStepper::createFirstTimeSlab()
 //-----------------------------------------------------------------------------
 bool TimeStepper::createGeneralTimeSlab()
 {
-  // Prepare for next time slab
-  shift();
-  
   // Create the time slab
   RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
 
