@@ -29,6 +29,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Iteration.h \
                           dolfin/JacobianMatrix.h \
                           dolfin/Method.h \
+                          dolfin/MonoAdaptiveTimeSlab.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
@@ -88,6 +89,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Iteration.cpp \
                           JacobianMatrix.cpp \
                           Method.cpp \
+                          MonoAdaptiveTimeSlab.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
