@@ -11,7 +11,7 @@ class Economy : public Homotopy
 {
 public:
 
-  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0), tmp(0)
+  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0), tmp0(0), tmp1(0)
   {
     a = new real * [m];
     w = new real * [m];
@@ -26,9 +26,13 @@ public:
       }
     }
 
-    tmp = new complex[m];
+    tmp0 = new complex[m];
+    tmp1 = new complex[m];
     for (unsigned int i = 0; i < m; i++)
-      tmp[i] = 0.0;
+    {
+      tmp0[i] = 0.0;
+      tmp1[i] = 0.0;
+    }
   }
 
   ~Economy()
@@ -40,7 +44,8 @@ public:
     }
     delete [] a;
     delete [] w;
-    delete [] tmp;
+    delete [] tmp0;
+    delete [] tmp1;
   }
 
   void disp()
@@ -108,7 +113,8 @@ protected:
   real** a; // Matrix of traders' preferences
   real** w; // Matrix of traders' initial endowments
 
-  complex* tmp; // Temporary storage for scalar products
+  complex* tmp0; // Temporary storage for scalar products
+  complex* tmp1; // Temporary storage for scalar products
   
 };
 
@@ -118,7 +124,8 @@ class Leontief : public Economy
 {
 public:
 
-  Leontief(unsigned int m, unsigned int n) : Economy(m, n), polynomial(false)
+  Leontief(unsigned int m, unsigned int n, bool polynomial = false)
+    : Economy(m, n), polynomial(polynomial)
   {
     // Special choice of data
     a[0][0] = 2.0; a[0][1] = 1.0;
@@ -133,17 +140,50 @@ public:
     // First equation: normalization
     y[0] = sum(z) - 1.0;
 
-    // Precompute scalar products
-    for (unsigned int i = 0; i < m; i++)
-      tmp[i] = dot(w[i], z) / dot(a[i], z);
-
-    // Evaluate right-hand side
-    for (unsigned int j = 1; j < n; j++)
+    if ( polynomial )
     {
-      complex sum = 0.0;
+      // Precompute scalar products a*z
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * tmp[i] - w[i][j];
-      y[j] = sum;
+	tmp0[i] = dot(a[i], z);
+     
+      // Precompute special products
+      for (unsigned int i = 0; i < m; i++)
+      {
+	complex tmp = dot(w[i], z);
+	for (unsigned int k = 0; k < m; k++)
+	  if ( k != i )
+	    tmp *= tmp0[k];
+	tmp1[i] = tmp;
+      }
+      
+      // Precompute special product
+      complex tmp = 1.0;
+      for (unsigned int i = 0; i < m; i++)
+	tmp *= tmp0[i];
+
+      // Evaluate right-hand side
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += a[i][j] * tmp1[i] - w[i][j] * tmp;
+	y[j] = sum;
+      }
+    }
+    else
+    {
+      // Precompute scalar products
+      for (unsigned int i = 0; i < m; i++)
+	tmp0[i] = dot(w[i], z) / dot(a[i], z);
+      
+      // Evaluate right-hand side
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += a[i][j] * tmp0[i] - w[i][j];
+	y[j] = sum;
+      }
     }
   }
 
@@ -152,23 +192,92 @@ public:
     // First equation: normalization
     y[0] = sum(x);
 
-    // Precompute scalar products
-    for (unsigned int i = 0; i < m; i++)
+    if ( polynomial )
     {
-      const complex az = dot(a[i], z);
-      const complex wz = dot(w[i], z);
-      const complex ax = dot(a[i], x);
-      const complex wx = dot(w[i], x);
-      tmp[i] = (az*wx - wz*ax) / (az*az);
-    }
-
-    // Evaluate right-hand side
-    for (unsigned int j = 1; j < n; j++)
-    {
-      complex sum = 0.0;
+      // Precompute scalar products a*z
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * tmp[i];
-      y[j] = sum;
+	tmp0[i] = dot(a[i], z);
+      
+      // Evaluate first term
+      for (unsigned int i = 0; i < m; i++)
+      {
+	complex tmp = dot(w[i], x);
+	for (unsigned int k = 0; k < m; k++)
+	  if ( k != i )
+	    tmp *= tmp0[k];
+	tmp1[i] = tmp;
+      }
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += a[i][j] * tmp1[i];
+	y[j] = sum;
+      }
+      
+      // Evaluate second term
+      for (unsigned int i = 0; i < m; i++)
+      {
+	complex sum = 0.0;
+	for (unsigned int k = 0; k < m; k++)
+	{
+	  if ( k != i )
+	  {
+	    complex product = 1.0;
+	    for (unsigned int r = 0; r < m; r++)
+	      if ( r != i && r != k )
+		product *= tmp0[r];
+	    sum += dot(a[k], x);
+	  }
+	}
+	tmp1[i] = dot(w[i], z) * sum;
+      }
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += a[i][j] * tmp1[i];
+	y[j] += sum;
+      }
+
+      // Evaluate third term
+      complex tmp = 0.0;
+      for (unsigned int k = 0; k < m; k++)
+      {
+	complex product = dot(a[k], x);
+	for (unsigned int r = 0; r < m; r++)
+	  if ( r != k )
+	    product *= tmp0[r];
+	tmp += product;
+      }
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += w[i][j] * tmp;
+	y[j] -= sum;
+      }
+    }
+    else
+    {
+      // Precompute scalar products
+      for (unsigned int i = 0; i < m; i++)
+      {
+	const complex az = dot(a[i], z);
+	const complex wz = dot(w[i], z);
+	const complex ax = dot(a[i], x);
+	const complex wx = dot(w[i], x);
+	tmp0[i] = (az*wx - wz*ax) / (az*az);
+      }
+      
+      // Evaluate right-hand side
+      for (unsigned int j = 1; j < n; j++)
+      {
+	complex sum = 0.0;
+	for (unsigned int i = 0; i < m; i++)
+	  sum += a[i][j] * tmp0[i];
+	y[j] = sum;
+      }
     }
   }
 
@@ -178,6 +287,13 @@ public:
       return 1;
     else
       return m;
+
+    /*
+    if ( i == 0 )
+      return 0;
+    else
+      return m - 1;
+    */
   }
 
 private:
@@ -255,14 +371,14 @@ public:
     
     // Precompute scalar products
     for (unsigned int i = 0; i < m; i++)
-      tmp[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
+      tmp0[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
     
     // Evaluate right-hand side
     for (unsigned int j = 1; j < n; j++)
     {
       complex sum = 0.0;
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp0[i] - w[i][j];
       y[j] = sum;
     }
   }
@@ -277,13 +393,13 @@ public:
     {
       const complex wx = dot(w[i], x);
       const complex az = bdot(a[i], z, 1.0 - b[i]);
-      tmp[i] = wx / az;
+      tmp0[i] = wx / az;
     }
     for (unsigned int j = 1; j < n; j++)
     {
       complex sum = 0.0;
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp0[i];
       y[j] = sum;
     }
 
@@ -292,13 +408,13 @@ public:
     {
       const complex wz = dot(w[i], z);
       const complex az = bdot(a[i], z, 1.0 - b[i]);
-      tmp[i] = b[i] * wz / az;
+      tmp0[i] = b[i] * wz / az;
     }
     for (unsigned int j = 1; j < n; j++)
     {
       complex sum = 0.0;
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
+	sum += a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp0[i];
       y[j] -= sum;
     }
 
@@ -308,13 +424,13 @@ public:
       const complex wz  = dot(w[i], z);
       const complex az  = bdot(a[i], z, 1.0 - b[i]);
       const complex axz = bdot(a[i], x, z, -b[i]);
-      tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
+      tmp0[i] = (1.0 - b[i]) * wz * axz / (az * az);
     }
     for (unsigned int j = 1; j < n; j++)
     {
       complex sum = 0.0;
       for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp0[i];
       y[j] -= sum;
     }
   }
@@ -330,11 +446,11 @@ public:
     const unsigned int i = 0;
 
     // Precompute scalar product
-    tmp[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
+    tmp0[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
     
     // Evaluate right-hand side
     for (unsigned int j = 1; j < n; j++)
-      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp0[i] - w[i][j];
   }
 
   void JG(const complex z[], const complex x[], complex y[])
@@ -348,24 +464,24 @@ public:
     // First term
     complex wx = dot(w[i], x);
     complex az = bdot(a[i], z, 1.0 - b[i]);
-    tmp[i] = wx / az;
+    tmp0[i] = wx / az;
     for (unsigned int j = 1; j < n; j++)
-      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp0[i];
 
     // Second term
     complex wz = dot(w[i], z);
     az = bdot(a[i], z, 1.0 - b[i]);
-    tmp[i] = b[i] * wz / az;
+    tmp0[i] = b[i] * wz / az;
     for (unsigned int j = 1; j < n; j++)
-	y[j] -= a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
+	y[j] -= a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp0[i];
     
     // Third term
     wz  = dot(w[i], z);
     az  = bdot(a[i], z, 1.0 - b[i]);
     complex axz = bdot(a[i], x, z, -b[i]);
-    tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
+    tmp0[i] = (1.0 - b[i]) * wz * axz / (az * az);
     for (unsigned int j = 1; j < n; j++)
-      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp0[i];
   }
 
   */
@@ -408,7 +524,8 @@ class Polemarchakis : public Homotopy
 {
 public:
 
-  Polemarchakis() : Homotopy(2), lambda(0), gamma(0), polynomial(true)
+  Polemarchakis(bool polynomial = false)
+    : Homotopy(2), lambda(0), gamma(0), polynomial(polynomial)
   {
     lambda = new real[3];
     gamma = new real[3];
@@ -458,8 +575,8 @@ public:
       complex sum = 0.0;
       for (unsigned int i = 0; i < 3; i++)
       {
-	const complex tmp = z[0] + lambda[i];
-	sum -= gamma[i] / (tmp*tmp);
+	const complex tmp0 = z[0] + lambda[i];
+	sum -= gamma[i] / (tmp0*tmp0);
       }
       y[0] = sum * x[0];
     }
@@ -497,7 +614,7 @@ int main()
   dolfin_set("homotopy randomize", true);
   dolfin_set("linear solver", "direct");
 
-  Leontief leontief(2, 2);
+  Leontief leontief(2, 2, true);
   leontief.solve();
 
   //CES ces(2, 2, 0.5);

@@ -37,6 +37,8 @@ Homotopy::Homotopy(uint n)
 
   // Get type of initial data (random or morgan)
   random = dolfin_get("homotopy randomize");
+  if ( random )
+    dolfin_info("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
   maxiter = dolfin_get("maximum iterations");
