@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/NewMethod.h>
 
@@ -93,7 +94,7 @@ real NewMethod::update(real x0, real f[], real k, real values[]) const
   }
 
   // Return increment
-  return values[nn - 1] - x1;
+  return fabs(values[nn - 1] - x1);
 }
 //-----------------------------------------------------------------------------
 void NewMethod::computeDerivatives()

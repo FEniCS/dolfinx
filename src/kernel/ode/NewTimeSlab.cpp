@@ -94,6 +94,12 @@ void NewTimeSlab::solve()
 
   solver->solve();
 
+  //for (uint i = 0; i < N; i++)
+  // {
+  //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
+  //  dolfin_info("i = %d: u = %.16e", i, endval);
+  // }
+
   cout << "Experimental time slab: system solved" << endl;
 }
 //-----------------------------------------------------------------------------

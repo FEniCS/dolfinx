@@ -16,7 +16,7 @@ public:
     r = 28.0;
     
     // Final time
-    T = 50.0;
+    T = 20.0;
   }
 
   real u0(unsigned int i)
@@ -43,6 +43,18 @@ public:
     }
   }
 
+  real f(const Vector& u, real t, unsigned int i)
+  {
+    switch (i) {
+    case 0:
+      return s*(u(1) - u(0));
+    case 1:
+      return r*u(0) - u(1) - u(0)*u(2);
+    default:
+      return u(0)*u(1) - b*u(2);
+    }
+  }
+  
   private:
 
     real s;
@@ -56,14 +68,14 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("number of samples", 500);
   dolfin_set("solve dual problem", false);
-  dolfin_set("initial time step", 0.05);
+  dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
   dolfin_set("use new ode solver", true);
   dolfin_set("method", "cg");
-  dolfin_set("order", 10);
-  dolfin_set("tolerance", 1e-10);
+  dolfin_set("order", 1);
+  dolfin_set("tolerance", 1e-12);
   //dolfin_set("save solution", false);
-
+  
   Lorenz lorenz;
   lorenz.solve();
   
