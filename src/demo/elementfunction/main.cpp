@@ -25,10 +25,10 @@ public:
     ElementFunction wy = wp(0).ddy();
     ElementFunction wz = wp(0).ddz();
 
-    std::cout << "cell(): " << cell->id() << std::endl;
-    std::cout << "ddx(0): " << wx(cell->coord(0)) << std::endl;
-    std::cout << "ddy(0): " << wy(cell->coord(0)) << std::endl;
-    std::cout << "ddz(0): " << wz(cell->coord(0)) << std::endl;
+    std::cout << "cell(): " << cell_->id() << std::endl;
+    std::cout << "ddx(0): " << wx(cell_->coord(0)) << std::endl;
+    std::cout << "ddy(0): " << wy(cell_->coord(0)) << std::endl;
+    std::cout << "ddz(0): " << wz(cell_->coord(0)) << std::endl;
 
     return 0;
   }

@@ -22,6 +22,8 @@ void mybc(BoundaryCondition& bc)
 
 int main()
 {
+  dolfin_set("output", "plain text");
+
   Mesh mesh("trimesh-32.xml.gz");
   Problem wave("wave", mesh);
 

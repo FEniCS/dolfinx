@@ -49,6 +49,13 @@ void WaveSolver::solve()
   wave.k = k;
   FEM::assemble(wave, mesh, A);
 
+  StiffnessMatrix Astiff(mesh);
+  MassMatrix Mmass(mesh);
+
+  Matrix A2;
+  Vector b2;
+
+
   // Start a progress session
   Progress p("Time-stepping");
 
@@ -70,35 +77,98 @@ void WaveSolver::solve()
     wave.t = t;
     FEM::assemble(wave, mesh, b);
 
-    // Solve the linear system
-    //solver.solve(A, x21, b);
+    ///*
+
+    // dG(0)
+
+    A2 = Astiff;
+    A2 *= k * k;
+    A2 += Mmass;
+
+    Vector xtmp(x10.size());
+
+    Mmass.mult(x10, xtmp);
+
+    b2 = xtmp;
+
+    Mmass.mult(x20, xtmp);
+    xtmp *= k;
+
+    b2.add(1, xtmp);
+
+    //*/
+
+    /*
+
+    // cG(1)
+
+    Matrix Atmp;
+
+    A2 = Astiff;
+    A2 *= k / 2;
+
+    Atmp = Mmass;
+    Atmp *= 2 / k;
+
+    A2 += Atmp;
+
+    Vector xtmp(x10.size());
+
+    Mmass.mult(x20, xtmp);
+    xtmp *= 2;
+
+    b2 = xtmp;
+
+    Mmass.mult(x10, xtmp);
+    xtmp *= 2 / k;
+
+    b2.add(1, xtmp);
+
+    Astiff.mult(x10, xtmp);
+    xtmp *= -k / 2;
+
+    //xtmp.show();
+
+    b2.add(1, xtmp);
+
+    */
+
+    /*
+    // Compare assembled matrices and vectors
+
+    cout << "A: " << endl;
+    A.show();
+    cout << "A2: " << endl;
+    A2.show();
+    cout << "b: " << endl;
+    b.show();
+    cout << "b2: " << endl;
+    b2.show();
+    */
+
+    x11 = 0;
+    //solver.solve(A2, x11, b2);
     solver.solve(A, x11, b);
     
-    //x11.show();
-
-    //dolfin_debug("A:");
-
-    //A.show();
-
-    //dolfin_debug("b:");
-
-    //b.show();
-
-    //x11.show();
+    ///*
+    // dG(0)
 
     x21 = x11;
     x21.add(-1, x10);
     x21 *= 1 / k;
+    //*/
 
-    //x21 = x11;
-    //x21.add(-1, x10);
-    //x21 *= 2 / k;
-    //x21.add(-1, x20);
+    /*
+    // cG(1)
 
-    //x21.show();
+    x21 = 0;
+    x21.add(2 / k, x11);
+    x21.add(-2 / k, x10);
+    x21.add(-1, x20);
+    */
+
 
     // Save the solution
-    //u1.t = t;
     u1.update(t);
     file << u1;
 

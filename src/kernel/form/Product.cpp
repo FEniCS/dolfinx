@@ -327,28 +327,35 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddx() const
 
   ElementFunction w;
 
-  for (int i = 0; i < n; i++)
+  if(n == 1)
   {
-    ElementFunction wi;
-    Product pi;
-
-    wi = FunctionList::ddx(_id[i]);
-
-    pi.init(n - 1);
-
-    for (int j = 0; j < n - 1; j++)
+    w = FunctionList::ddx(_id[0]);
+  }
+  else
+  {
+    for (int i = 0; i < n; i++)
     {
-      if(j < i)
+      ElementFunction wi;
+      Product pi;
+      
+      wi = FunctionList::ddx(_id[i]);
+      
+      pi.init(n - 1);
+      
+      for (int j = 0; j < n - 1; j++)
       {
-	pi._id[j] = _id[j];
+	if(j < i)
+	{
+	  pi._id[j] = _id[j];
+	}
+	else if(j > i)
+	{
+	  pi._id[j] = _id[j + 1];
+	}
       }
-      else if(j > i)
-      {
-	pi._id[j] = _id[j + 1];
-      }
+      
+      w += wi * pi;
     }
-
-    w += wi * pi;
   }
 
   return w;
@@ -360,28 +367,35 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddy() const
 
   ElementFunction w;
 
-  for (int i = 0; i < n; i++)
+  if(n == 1)
   {
-    ElementFunction wi;
-    Product pi;
-
-    wi = FunctionList::ddy(_id[i]);
-
-    pi.init(n - 1);
-
-    for (int j = 0; j < n - 1; j++)
+    w = FunctionList::ddy(_id[0]);
+  }
+  else
+  {
+    for (int i = 0; i < n; i++)
     {
-      if(j < i)
+      ElementFunction wi;
+      Product pi;
+      
+      wi = FunctionList::ddy(_id[i]);
+      
+      pi.init(n - 1);
+      
+      for (int j = 0; j < n - 1; j++)
       {
-	pi._id[j] = _id[j];
+	if(j < i)
+	{
+	  pi._id[j] = _id[j];
+	}
+	else if(j > i)
+	{
+	  pi._id[j] = _id[j + 1];
+	}
       }
-      else if(j > i)
-      {
-	pi._id[j] = _id[j + 1];
-      }
+      
+      w += wi * pi;
     }
-
-    w += wi * pi;
   }
 
   return w;
@@ -393,28 +407,35 @@ FunctionSpace::ElementFunction FunctionSpace::Product::ddz() const
 
   ElementFunction w;
 
-  for (int i = 0; i < n; i++)
+  if(n == 1)
   {
-    ElementFunction wi;
-    Product pi;
-
-    wi = FunctionList::ddz(_id[i]);
-
-    pi.init(n - 1);
-
-    for (int j = 0; j < n - 1; j++)
+    w = FunctionList::ddz(_id[0]);
+  }
+  else
+  {
+    for (int i = 0; i < n; i++)
     {
-      if(j < i)
+      ElementFunction wi;
+      Product pi;
+      
+      wi = FunctionList::ddz(_id[i]);
+      
+      pi.init(n - 1);
+      
+      for (int j = 0; j < n - 1; j++)
       {
-	pi._id[j] = _id[j];
+	if(j < i)
+	{
+	  pi._id[j] = _id[j];
+	}
+	else if(j > i)
+	{
+	  pi._id[j] = _id[j + 1];
+	}
       }
-      else if(j > i)
-      {
-	pi._id[j] = _id[j + 1];
-      }
+      
+      w += wi * pi;
     }
-
-    w += wi * pi;
   }
 
   return w;
