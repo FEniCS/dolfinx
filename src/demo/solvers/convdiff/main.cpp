@@ -5,9 +5,18 @@
 //
 //     du/dt + b.grad u - div a grad u = f
 //
-// around a hot dolphin in 2D, with convection given by
+// around a hot dolphin in 2D, with diffusivity given by
 //
-//     b(x,y,t) = (-10,0).
+//     a(x,y,t) = 0.1
+//
+// and convection given by
+//
+//     b(x,y,t) = (-5,0).
+//
+// This program illustrates the need for stabilisation, for
+// instance streamline-diffusion, for large values of b. For
+// |b| > 10 oscillations start to appear. Try b = (-100,0)
+// to see som quite large oscillations.
 
 #include <dolfin.h>
 
@@ -29,7 +38,7 @@ real a(real x, real y, real z, real t)
 real b(real x, real y, real z, real t, int i)
 {
   if ( i == 0 )
-    return 1.0;
+    return -5.0;
 
   return 0.0;
 }
@@ -38,11 +47,15 @@ real b(real x, real y, real z, real t, int i)
 void mybc(BoundaryCondition& bc)
 {
   // u = 0 on the inflow boundary
-  if ( bc.coord().x == 1.0 )
+  if ( bc.coord().x == 0.0 )
+    bc.set(BoundaryCondition::NEUMANN, 0.0);
+  else if ( bc.coord().x == 1.0 )
     bc.set(BoundaryCondition::DIRICHLET, 0.0);
-
-  // u = 1 on the dolphin
-  if ( bc.node() < 77 )
+  else if ( bc.coord().y == 0.0)
+    bc.set(BoundaryCondition::NEUMANN, 0.0);
+  else if ( bc.coord().y == 1.0 )
+    bc.set(BoundaryCondition::NEUMANN, 0.0);
+  else
     bc.set(BoundaryCondition::DIRICHLET, 1.0);
 }
 

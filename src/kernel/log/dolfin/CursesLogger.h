@@ -54,6 +54,8 @@ namespace dolfin {
     Buffer buffer;    // Buffer
     char*  guiinfo;   // Message from the curses interface (not program)
 
+    void initColors();
+
     void updateInternal();
 
     void updateRunning (char c);

@@ -69,7 +69,7 @@ void Buffer::add(const char* msg, Type type)
     last = 0;
     full = true;
   }
-
+  
   // Step first
   if ( full ) {
     first++;
@@ -105,7 +105,7 @@ Buffer::Type Buffer::type(int line) const
   if ( line >= lines )
     dolfin_error1("Line number too large: %d.", line);
 
-  return types[line];
+  return types[(first + line) % lines];
 }
 //-----------------------------------------------------------------------------
 void Buffer::clear()

@@ -309,11 +309,11 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction& v0,
   c = 0.0;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
+FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction&   v0,
 						const ElementFunction& v1)
 {
   n = v1.n + 1;
-
+  
   a = new real[n];
   v = new Product[n];
   
@@ -328,7 +328,7 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
   c = 0.0;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction::ElementFunction(const Product         &v0,
+FunctionSpace::ElementFunction::ElementFunction(const Product&         v0,
 						const ElementFunction& v1)
 {
   n = v1.n + 1;
@@ -362,11 +362,13 @@ FunctionSpace::ElementFunction::ElementFunction(const ElementFunction& v0,
   // Terms from constant * sum
   n += v0.n + v1.n + v2.n + w0.n + w1.n + w2.n;
 
+  // Compute the constant
+  c = v0.c*w0.c + v1.c*w1.c + v2.c*w2.c;
+
   // Check if all components are constant
   if ( n == 0 ) {
     a = 0;
     v = 0;
-    c = v0.c*w0.c + v1.c*w1.c + v2.c*w2.c;
     return;
   }
 
@@ -710,7 +712,7 @@ real FunctionSpace::ElementFunction::operator* (Integral::Measure& dm) const
   real sum = c * dm;
   for (int i = 0; i < n; i++)
     sum += a[i] * ( dm * v[i] );
-
+  
   return sum;
 }
 //-----------------------------------------------------------------------------

@@ -68,17 +68,6 @@ CursesLogger::CursesLogger() : GenericLogger()
   // Don't wait if no character is typed
   nodelay(win, true);
 
-  // Initialise colors
-  if ( !has_colors() )
-    dolfin_warning("Your terminal has no colors.");
-  start_color();
-  init_pair(1, COLOR_BLUE,  COLOR_WHITE);
-  init_pair(2, COLOR_GREEN, COLOR_WHITE);
-  init_pair(3, COLOR_RED,   COLOR_WHITE);
-  init_pair(4, COLOR_WHITE, COLOR_BLACK);
-  init_pair(5, COLOR_WHITE, COLOR_BLUE);
-  init_pair(6, COLOR_BLACK, COLOR_WHITE);
-
   // Initialise progress bars
   pbars = new (Progress *)[DOLFIN_PROGRESS_BARS];
   for (int i = 0; i < DOLFIN_PROGRESS_BARS; i++)
@@ -104,6 +93,9 @@ CursesLogger::CursesLogger() : GenericLogger()
   // Set signals to catch alarms
   setSignals();
   
+  // Initialise colors
+  initColors();
+
   // Draw window
   redraw();
 }
@@ -270,6 +262,33 @@ void CursesLogger::progress_flush()
     
   }
 
+}
+//----------------------------------------------------------------------------- 
+void CursesLogger::initColors()
+{
+  if ( !has_colors() ) {
+    buffer.add("Your terminal has no colors.", Buffer::WARNING);
+    return;
+  }
+
+  start_color();
+
+  if ( !can_change_color() )
+    buffer.add("Unable to change colors. Using default colors.", Buffer::WARNING);
+  else {
+    init_color(COLOR_BLUE,  0, 0, 1000);
+    init_color(COLOR_GREEN, 0, 1000, 0);
+    init_color(COLOR_RED,   1000, 0, 0);
+    init_color(COLOR_WHITE, 1000, 1000, 1000);
+    init_color(COLOR_BLACK, 0, 0, 0);
+  }
+
+  init_pair(1, COLOR_BLUE,  COLOR_WHITE);
+  init_pair(2, COLOR_GREEN, COLOR_WHITE);
+  init_pair(3, COLOR_RED,   COLOR_WHITE);
+  init_pair(4, COLOR_WHITE, COLOR_BLACK);
+  init_pair(5, COLOR_WHITE, COLOR_BLUE);
+  init_pair(6, COLOR_BLACK, COLOR_WHITE);
 }
 //----------------------------------------------------------------------------- 
 void CursesLogger::updateInternal()
