@@ -21,8 +21,8 @@ namespace dolfin
 
   /// This class implements Newton's method on time slabs. In each
   /// iteration, the system F(x) is evaluated at the current solution
-  /// and then the linear system A dx = F(x) is solved for the
-  /// increment dx with A = F' the Jacobian of F.
+  /// and then the linear system A dx = b is solved for the increment
+  /// dx with A = F' the Jacobian of F and b = -F(x)
 
   class NewtonSolver : public TimeSlabSolver
   {
@@ -47,12 +47,13 @@ namespace dolfin
 
   private:
 
-    // Evaluate F at current x
-    void Feval();
+    // Evaluate b = -F(x) at current x
+    void beval();
 
     real* f;             // Values of right-hand side at quadrature points
     NewJacobianMatrix A; // Jacobian of time slab system
     NewVector dx;        // Increment for Newton's method
+    NewVector b;         // Right-hand side -F(x)
     NewGMRES solver;     // GMRES solver
     
   };

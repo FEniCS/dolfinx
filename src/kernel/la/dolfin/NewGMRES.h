@@ -1,8 +1,10 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg 2005.
 
-#ifndef __NEWGMRES_H
-#define __NEWGMRES_H
+#ifndef __NEW_GMRES_H
+#define __NEW_GMRES_H
 
 #include <dolfin/constants.h>
 
@@ -11,6 +13,7 @@ namespace dolfin
   
   class NewMatrix;
   class NewVector;
+  class VirtualMatrix;
 
   /// This is just a template. Write documentation here.
   
@@ -26,6 +29,9 @@ namespace dolfin
 
     /// Solve linear system Ax = b for a given right-hand side b
     void solve(const NewMatrix& A, NewVector& x, const NewVector& b);
+
+    /// Solve linear system Ax = b for a given right-hand side b
+    void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
   private:
 
