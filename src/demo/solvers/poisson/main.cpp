@@ -21,30 +21,14 @@
 
 using namespace dolfin;
 
-// Source term
-// Example using NewFunction
-
-class f : public NewFunction
+// Right-hand side
+class MyFunction : public NewFunction
 {
-public:
-  f(const Mesh& mesh, const NewFiniteElement& element, NewVector& x) :
-    NewFunction(mesh, element, x)
+  real operator() (const Point& p) const
   {
-  }
-  virtual real operator()(const Point& p)
-  {
-    real pi = DOLFIN_PI;
-    return 14.0 * pi*pi * sin(pi*p.x) * sin(2.0*pi*p.y) * sin(3.0*pi*p.z);
+    return 8.0;
   }
 };
-
-/*
-real f(real x, real y, real z, real t)
-{
-  real pi = DOLFIN_PI;
-  return 14.0 * pi*pi * sin(pi*x) * sin(2.0*pi*y) * sin(3.0*pi*z);
-}
-*/
 
 // Boundary condition
 class MyBC : public NewBoundaryCondition
@@ -62,8 +46,10 @@ class MyBC : public NewBoundaryCondition
 int main()
 {
   Mesh mesh("mesh.xml.gz");
+  MyFunction f;
   MyBC bc;
-  PoissonSolver::solve(mesh, bc);
+  
+  PoissonSolver::solve(mesh, f, bc);
   
   return 0;
 }

@@ -26,8 +26,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PoissonSolver::PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc)
-  : mesh(mesh), bc(bc)
+PoissonSolver::PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)
+  : mesh(mesh), f(f), bc(bc)
 {
   // Do nothing
 }
@@ -35,12 +35,6 @@ PoissonSolver::PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc)
 void PoissonSolver::solve()
 {
   Poisson::FiniteElement element;
-
-  // FIXME: Should be able to take f as an argument from main.cpp
-  // FIXME: fvalues should be initialized by NewFunction
-  NewVector fvalues(mesh.noNodes());
-  fvalues = 8.0; // Should together with bc give solution 4*x(1-x)
-  NewFunction f(mesh, element, fvalues);
 
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
@@ -69,9 +63,9 @@ void PoissonSolver::solve()
   file << uold;
 }
 //-----------------------------------------------------------------------------
-void PoissonSolver::solve(Mesh& mesh, NewBoundaryCondition& bc)
+void PoissonSolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)
 {
-  PoissonSolver solver(mesh, bc);
+  PoissonSolver solver(mesh, f, bc);
   solver.solve();
 }
 //-----------------------------------------------------------------------------

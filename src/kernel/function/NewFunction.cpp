@@ -36,7 +36,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   if ( !data )
   {
     for (uint i = 0; i < element.spacedim(); i++)
-      c[i] = (*this)(element.coord(i, cell, data->mesh));
+      c[i] = (*this)(element.coord(i, cell, cell.mesh()));
 
     return;
   }
