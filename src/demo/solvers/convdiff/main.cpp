@@ -39,7 +39,7 @@ void mybc(BoundaryCondition& bc)
 
 int main(int argc, char **argv)
 {
-  Grid grid("grid.xml.gz");
+  Grid grid("dolfin.xml.gz");
   Problem convdiff("convection-diffusion", grid);
 
   convdiff.set("source", f);

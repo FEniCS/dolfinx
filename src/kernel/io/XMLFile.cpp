@@ -23,13 +23,13 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
 XMLFile::~XMLFile()
 {
   if ( xmlObject )
-	 delete xmlObject;
+    delete xmlObject;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Vector& x)
 {
   if ( xmlObject )
-	 delete xmlObject;
+    delete xmlObject;
   xmlObject = new XMLVector(x);
   parseFile();
 }
@@ -37,7 +37,7 @@ void XMLFile::operator>>(Vector& x)
 void XMLFile::operator>>(Matrix& A)
 {
   if ( xmlObject )
-	 delete xmlObject;
+    delete xmlObject;
   xmlObject = new XMLMatrix(A);
   parseFile();
 }
@@ -45,7 +45,7 @@ void XMLFile::operator>>(Matrix& A)
 void XMLFile::operator>>(Grid& grid)
 {
   if ( xmlObject )
-	 delete xmlObject;
+    delete xmlObject;
   xmlObject = new XMLGrid(grid);
   parseFile();
 }
@@ -82,11 +82,11 @@ void XMLFile::parseFile()
 
   // Parse file using the SAX interface
   parseSAX();
-
+  
   // Check that we got the data
   if ( !xmlObject->dataOK() )
-	 dolfin_error("Unable to find data in XML file.");
-
+    dolfin_error("Unable to find data in XML file.");
+  
   // Write a message
   xmlObject->done();
 }

@@ -2,6 +2,5 @@
 
 NAME     = "convdiff"
 KEYWORD  = "convection-diffusion"
-SOLVER   = "SolverConvDiff"
-SETTINGS = "SettingsConvDiff"
+SOLVER   = "ConvDiffSolver"
 GRID     = "yes"
