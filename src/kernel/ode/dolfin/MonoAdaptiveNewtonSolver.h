@@ -54,6 +54,9 @@ namespace dolfin
     // Evaluate b = -F(x) for explicit system: u' = f
     void bevalImplicit();
 	
+    // Choose linear solver
+    NewLinearSolver* chooseLinearSolver() const;
+
     // Numerical evaluation of the Jacobian used for testing
     void debug();
 

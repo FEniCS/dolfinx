@@ -31,13 +31,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
   }
 
   // Choose linear solver
-  solver = new NewGMRES();
-
-  // Make GMRES solver not report the number iterations
-  ((NewGMRES *) solver)->setReport(false);
-
-  // Set tolerances for GMRES solver
-  ((NewGMRES *) solver)->setAtol(0.01*tol); // FIXME: Is this a good choice?
+  solver = chooseLinearSolver();
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
@@ -225,6 +219,40 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   
   //cout << "b = ";
   //b.disp();
+}
+//-----------------------------------------------------------------------------
+NewLinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
+{
+  std::string choice = dolfin_get("linear solver");
+
+  if ( choice == "iterative" )
+  {
+    dolfin_info("Using iterative linear solver: GMRES.");
+    NewGMRES* solver = new NewGMRES();
+    solver->setReport(false);
+    solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
+    return solver;
+  }
+  else if ( choice == "direct" )
+  {
+    dolfin_info("Using direct linear solver: LU.");
+    LU* solver = new LU();
+    return solver;
+  }
+  else if ( choice == "default" )
+  {
+    dolfin_info("Using iterative linear solver: GMRES (default).");
+    NewGMRES* solver = new NewGMRES();
+    solver->setReport(false);
+    solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
+    return solver;
+  }
+  else
+  {
+    dolfin_error1("Uknown linear solver type: %s.", choice.c_str());
+  }
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()

@@ -72,6 +72,7 @@ namespace dolfin {
       
       add(Parameter::STRING, "method", "cg");
       add(Parameter::STRING, "solver", "default");
+      add(Parameter::STRING, "linear solver", "default");
       add(Parameter::STRING, "stiffness", "non-stiff");
 
       // FIXME: Temporary until we get ODE functions working
