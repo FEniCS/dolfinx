@@ -1,3 +1,4 @@
+ - Write all macros in LoggerMacros in one line
  - Add transpose functions to Matrix (Erik)
 0.3.9
  - Update Krylov solver (Erik, Johan)
