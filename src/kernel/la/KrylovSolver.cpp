@@ -331,7 +331,7 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveBiCGSTAB(const Matrix &A, Vector &x, const Vector &b)
 {
-  size_t n (x.size());
+  unsigned int n (x.size());
   real rho_1 = 0.0;
   real rho_2 = 0.0;
   real alpha = 0.0;
