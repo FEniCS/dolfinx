@@ -1,7 +1,7 @@
 #ifndef __DOLFIN_CONSTANTS_H
 #define __DOLFIN_CONSTANTS_H
 
-#define DOLFIN_VERSION       "0.3.1"
+#define DOLFIN_VERSION       "0.3.2"
 #define DOLFIN_LINELENGTH    1024
 #define DOLFIN_WORDLENGTH    128
 #define DOLFIN_PARAMSIZE     128
