@@ -4,8 +4,8 @@
 #ifndef __NEW_PDE_H
 #define __NEW_PDE_H
 
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
+#include <dolfin/constants.h>
+#include <dolfin/NewArray.h>
 
 namespace dolfin
 {
@@ -22,16 +22,16 @@ namespace dolfin
     /// Destructor
     virtual ~NewPDE();
 
-    /// Evaluation of left-hand side
-    virtual real lhs(Form::TrialFunction u, Form::TestFunction v);
+    /// Evaluate left-hand side (compute element stiffness matrix)
+    virtual void lhs(NewArray< NewArray<real> >& A);
 
-    /// Evaluation of right-hand side
-    virtual real rhs(Form::TestFunction v);
+    /// Evaluate right-hand side (compute element load vector)
+    virtual void rhs(NewArray<real>& b);
 
-  private:
+  protected:
 
-    BilinearForm a;
-    LinearForm l;
+    real det;
+    real g00, g01, g02, g10, g11, g12, g20, g21, g22;
 
   };
 
