@@ -1,8 +1,6 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
-
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewVector.h>
@@ -51,26 +49,19 @@ NewJacobianMatrix::~NewJacobianMatrix()
   delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::mult(Vec x, Vec y) const
+void NewJacobianMatrix::mult(const NewVector& x, NewVector& y) const
 {
   // We iterate over all degrees of freedom j in the time slab and compute
   // y_j = (Ax)_j for each degree of freedom of the system. Note that this
   // implementation will probably not work with parallel vectors since we
   // use VecGetArray to access the local arrays of the vectors
 
-  std::cout << "pointer before: " << x << std::endl;
-  NewVector xxx(x);
-  x = xxx.vec();
-  std::cout << "pointer after:  " << x << std::endl;
-
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
-  VecCopy(x, y);
+  VecCopy(x.vec(), y.vec());
 
   // Get data arrays from the PETSc vectors
-  real* xx(0);
-  real* yy(0);
-  VecGetArray(x, &xx);
-  VecGetArray(y, &yy);
+  const real* xx = x.array();
+  real* yy = y.array();
 
   // Choose method
   if ( method.type() == NewMethod::cG )
@@ -79,8 +70,8 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
     dGmult(xx, yy);
 
   // Restore PETSc data arrays
-  VecRestoreArray(x, &xx);
-  VecRestoreArray(y, &yy);
+  x.restore(xx);
+  y.restore(yy);
 }
 //-----------------------------------------------------------------------------
 void NewJacobianMatrix::update()
@@ -102,7 +93,7 @@ void NewJacobianMatrix::update()
   }
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::cGmult(real x[], real y[]) const
+void NewJacobianMatrix::cGmult(const real x[], real y[]) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -299,7 +290,7 @@ void NewJacobianMatrix::cGmult(real x[], real y[]) const
   }
 }
 //-----------------------------------------------------------------------------
-void NewJacobianMatrix::dGmult(real x[], real y[]) const
+void NewJacobianMatrix::dGmult(const real x[], real y[]) const
 {
   // Reset current sub slab
   int s0 = -1;

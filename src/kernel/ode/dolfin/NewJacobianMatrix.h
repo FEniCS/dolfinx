@@ -27,7 +27,7 @@ namespace dolfin
     ~NewJacobianMatrix();
 
     /// Compute product y = Ax
-    void mult(Vec x, Vec y) const;
+    void mult(const NewVector& x, NewVector& y) const;
 
     /// Recompute Jacobian
     void update();
@@ -35,10 +35,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(real x[], real y[]) const;
+    void cGmult(const real x[], real y[]) const;
 
     // Compute product for mdG(q)
-    void dGmult(real x[], real y[]) const;
+    void dGmult(const real x[], real y[]) const;
 
     // The ODE
     ODE& ode;

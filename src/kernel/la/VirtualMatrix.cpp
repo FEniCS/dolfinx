@@ -17,7 +17,8 @@ namespace dolfin
   {
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    ((VirtualMatrix*) ctx)->mult(x, y);
+    NewVector xx(x), yy(y);
+    ((VirtualMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
 
@@ -95,11 +96,6 @@ Mat VirtualMatrix::mat()
 const Mat VirtualMatrix::mat() const
 {
   return A;
-}
-//-----------------------------------------------------------------------------
-void VirtualMatrix::mult(const NewVector& x, NewVector& y) const
-{
-  mult(x.vec(), y.vec());
 }
 //-----------------------------------------------------------------------------
 void VirtualMatrix::disp() const
