@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = /home/logg/work/src/fenics/dolfin/current/dolfin/missing aclocal-1.4
+ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = /home/logg/work/src/fenics/dolfin/current/dolfin/missing automake-1.4
+AUTOMAKE = automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -67,7 +67,7 @@ KERNEL_CFLAGS = -I$(top_builddir)/src/modules -I$(top_builddir)/src/kernel/main 
 LN_S = ln -s
 MAINT = #
 MAIN_CFLAGS = -I$(top_builddir)/src/modules -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common   -DPETSC_DIR=/usr/lib/petsc -DPETSC_ARCH=linux -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -I/usr/include/mpi -I/usr/include/libxml2 -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/elasticity -I$(top_builddir)/src/modules/elasticity-stationary -I$(top_builddir)/src/modules/elasticity-updated -I$(top_builddir)/src/modules/heat -I$(top_builddir)/src/modules/odesolver -I$(top_builddir)/src/modules/poisson-multigrid -I$(top_builddir)/src/modules/template -I$(top_builddir)/src/modules/wave -I$(top_builddir)/src/modules/wave-vector -I$(top_builddir)/src/modules/poisson 
-MAKEINFO = makeinfo
+MAKEINFO = /home/hoffman/tmp/dolfin/missing makeinfo
 MPI_CFLAGS = -I/usr/include/mpi
 PACKAGE = 
 PACKAGE_NAME = dolfin

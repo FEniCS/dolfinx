@@ -1,15 +1,16 @@
 // Copyright (C) 2005 Johan Hoffman 
 // Licensed under the GNU GPL Version 2.
 
-//#include <dolfin/NSE.h>
+//#include <dolfin/NSEMomentum.h>
+//#include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NSESolver::NSESolver(Mesh& mesh, NewFunction& f, 
-		     NewBoundaryCondition& bc, NewFunction& u0)
-  : mesh(mesh), f(f), bc(bc), u0(u0)
+NSESolver::NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
+		     NewBoundaryCondition& bc_con, NewFunction& u0)
+  : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), u0(u0)
 {
   // Do nothing
 }
@@ -27,8 +28,22 @@ void NSESolver::solve()
   NSEContinuity::BilinearForm a_con;
   NSEContinuity::LinearForm L_con(f,u0);
 
-  NewMatrix A;
-  NewVector x, b;
+  NewMatrix A_mom,A_con;
+  NewVector x_mom, x_con, b_mom, b_con;
+
+  // Discretize Continuity equation 
+  NewFEM::assemble(a_con, L_con, A_con, b_con, mesh, element_con);
+
+  // Set boundary conditions
+  NewFEM::setBC(A_con, b_con, mesh, bc);
+
+  while (t<T) 
+  {
+
+  // Discretize Continuity equation 
+  NewFEM::assemble(L_con, b_con, mesh, element_con);
+
+  
 
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
@@ -41,6 +56,9 @@ void NSESolver::solve()
   NewGMRES solver;
   solver.solve(A, x, b);
 
+  }
+
+
   // FIXME: Remove this and implement output for NewFunction
   Vector xold(b.size());
   for(uint i = 0; i < x.size(); i++)
@@ -52,10 +70,10 @@ void NSESolver::solve()
   */
 }
 //-----------------------------------------------------------------------------
-void NSESolver::solve(Mesh& mesh, NewFunction& f, 
-		      NewBoundaryCondition& bc, NewFunction& u0)
+void NSESolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
+		      NewBoundaryCondition& bc_con, NewFunction& u0)
 {
-  NSESolver solver(mesh, f, bc, u0);
+  NSESolver solver(mesh, f, bc_mom, bc_con, u0);
   solver.solve();
 }
 //-----------------------------------------------------------------------------

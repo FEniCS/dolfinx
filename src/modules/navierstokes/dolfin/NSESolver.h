@@ -14,19 +14,22 @@ namespace dolfin
   public:
     
     // Create Navier-Stokes solver
-    NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc, NewFunction& u0);
+    NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
+	      NewBoundaryCondition& bc_con, NewFunction& u0);
     
     // Solve Navier-Stokes equations
     void solve();
 
     // Solve Navier-Stokes equations (static version)
-    static void solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc, NewFunction& u0);
+    static void solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
+		      NewBoundaryCondition& bc_con, NewFunction& u0);
   
   private:
 
     Mesh& mesh;
     NewFunction& f;
-    NewBoundaryCondition& bc;
+    NewBoundaryCondition& bc_mom;
+    NewBoundaryCondition& bc_con;
     NewFunction& u0;
 
   };
