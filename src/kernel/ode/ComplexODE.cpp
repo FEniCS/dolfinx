@@ -10,6 +10,8 @@ using namespace dolfin;
 ComplexODE::ComplexODE(uint n) : ODE(2*n), n(n), j(0.0, 1.0),
 				 zvalues(0), fvalues(0), yvalues(0)
 {
+  dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);
+  
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];
   fvalues = new complex[n];
@@ -18,8 +20,6 @@ ComplexODE::ComplexODE(uint n) : ODE(2*n), n(n), j(0.0, 1.0),
     zvalues[i] = 0.0;
     fvalues[i] = 0.0;
   }
-
-  dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);
 }
 //-----------------------------------------------------------------------------
 ComplexODE::~ComplexODE()

@@ -27,7 +27,10 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
 
   // Get initial data
   for (uint i = 0; i < N; i++)
+  {
     u0[i] = ode.u0(i);
+    cout << "u0[" << i << "] = " << u0[i] << endl;
+  }
 }
 //-----------------------------------------------------------------------------
 NewTimeSlab::~NewTimeSlab()

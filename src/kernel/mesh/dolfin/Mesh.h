@@ -86,6 +86,12 @@ namespace dolfin {
     /// Create mesh from given file
     Mesh(const char *filename);
 
+    /// Create uniform 2D mesh of the unit square
+    Mesh(uint nx, uint ny);
+    
+    /// Create uniform 3D mesh of the unit cube
+    Mesh(uint nx, uint ny, uint nz);
+
     /// Copy constructor
     Mesh(const Mesh& mesh);
 
@@ -143,16 +149,16 @@ namespace dolfin {
     Type type() const;
 
     /// Return given node (can also use a node iterator)
-    Node& node(unsigned int id);
+    Node& node(uint id);
 
     /// Return given cell (can also use a cell iterator)
-    Cell& cell(unsigned int id);
+    Cell& cell(uint id);
 
     /// Return given edge (can also use an edge iterator)
-    Edge& edge(unsigned int id);
+    Edge& edge(uint id);
 
     /// Return given face (can also use a face iterator)
-    Face& face(unsigned int id);
+    Face& face(uint id);
 
     /// Return boundary 
     Boundary boundary();

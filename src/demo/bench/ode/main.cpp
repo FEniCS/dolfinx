@@ -10,7 +10,7 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(unsigned int n) : ODE((n+1)*(n+1)*(n+1))
+  WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)*(n+1)), n(n)
   {
     T = 1.0;
     c = 1.0;
@@ -30,7 +30,21 @@ public:
   // Initial data
   real u0(unsigned int i)
   {
-    return 0.0;
+    if ( i < offset )
+    {
+      // Put data at (x, y, z) = (0.5, 0.5, 0.5)
+      unsigned int dx = i % (n + 1) - n/2;
+      unsigned int dy = (i / (n + 1)) % (n + 1) - n/2;
+      unsigned int dz = i / ((n + 1)*(n + 1)) - n/2;
+      unsigned int r2 = dx*dx + dy*dy + dz*dz;
+
+      if ( r2 == 0 )
+	return 1.0;
+      else
+	return 0.0;
+    }
+    else
+      return 0.0;
   }
 
   // Right-hand side, multi-adaptive version
@@ -51,12 +65,22 @@ public:
       y[i] = y[i + offset];
   }
 
+  // Save solution  
+  void save(Sample& sample)
+  {
+
+
+
+
+  }
+
 private:
 
   real c; // Speed of light
   real h; // Mesh size
   real a; // Product (c/h)^2
   
+  unsigned int n;      // Number of cells in each direction
   unsigned int offset; // Offset for second half of system
 
 };
@@ -70,6 +94,9 @@ int main(int argc, const char* argv[])
     return 1;
   }
   unsigned int n = static_cast<unsigned int>(atoi(argv[1]));
+
+  // Set parameters
+  dolfin_set("use new ode solver", true);
 
   // Solve the wave equation
   WaveEquation wave(n);

@@ -29,6 +29,101 @@ void MeshInit::init(Mesh& mesh)
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
+void MeshInit::init(Mesh& mesh, uint nx, uint ny)
+{
+
+  dolfin_error("in preparation...");
+
+  // Assuming mesh has been cleared
+
+  /*
+
+  // Create nodes
+  for (uint iy = 0; iy <= ny; iy++)
+  {
+    const real y = static_cast<real>(iy) / ny;
+    for (uint ix = 0; ix <= nx; ix++)
+    {
+      const real x = static_cast<real>(ix) / nx;
+      const Point p(x, y);
+      mesh->createNode(p);
+    }
+  }
+
+  // Create triangles
+  for (uint iy = 0; iy < ny; iy++)
+  {
+    for (uint ix = 0; ix < nx; ix++)
+    {
+      const uint n0 = iy*(n+1) + ix;
+      const uint n1 = n0 + 1;
+      const uint n2 = n0 + n + 1;
+      const uint n3 = n1 + n + 1;
+
+      createCell(n0, n1, n3);
+      createCell(n0, n3, n2);
+    }
+  }
+
+  // Compute connectivity
+  init(mesh);
+
+  */
+}
+//-----------------------------------------------------------------------------
+void MeshInit::init(Mesh& mesh, uint nx, uint ny, uint nz)
+{
+  
+  dolfin_error("in preparation...");
+
+  // Assuming mesh has been cleared
+  
+  /*
+
+  // Create nodes
+  for (uint iz = 0; iz <= nz; iz++)
+  {
+    const real z = static_cast<real>(iz) / nz;
+    for (uint iy = 0; iy <= ny; iy++)
+    {
+      const real y = static_cast<real>(iy) / ny;
+      for (uint ix = 0; ix <= nx; ix++)
+      {
+	const real x = static_cast<real>(ix) / nx;
+	const Point p(x, y, z);
+	mesh->createNode(p);
+      }
+    }
+  }
+
+  // Create tetrahedrons
+  for (uint iz = 0; iz < nz; iz++)
+  {
+    for (uint iy = 0; iy < ny; iy++)
+    {
+      for (uint ix = 0; ix < nx; ix++)
+      {
+	const uint n0 = iz*(n+1)*(n+1) + iy*(n+1) + ix;
+	const uint n1 = n0 + 1;
+	const uint n2 = n0 + n + 1;
+	const uint n3 = n1 + n + 1;
+	const uint n4 = n0 + (n+1)*(n+1);
+	const uint n5 = n1 + (n+1)*(n+1);
+	const uint n6 = n2 + (n+1)*(n+1);
+	const uint n7 = n3 + (n+1)*(n+1);
+
+	createCell(n0, n1, n3, n5);
+	
+      }
+    }
+  }
+
+  // Compute connectivity
+  init(mesh);
+
+  */
+}
+//-----------------------------------------------------------------------------
 void MeshInit::renumber(Mesh& mesh)
 {
   // Renumber nodes

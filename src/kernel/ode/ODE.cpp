@@ -18,6 +18,8 @@ ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N),
 		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
 		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
 {
+  dolfin_info("Creating ODE of size %d.", N);
+
   // Choose method
   string method = dolfin_get("method");
   if ( method == "cg" )

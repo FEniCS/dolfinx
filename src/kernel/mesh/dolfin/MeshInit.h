@@ -1,10 +1,13 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __MESH_INIT_H
 #define __MESH_INIT_H
 
-namespace dolfin{
+#include <dolfin/constants.h>
+
+namespace dolfin
+{
 
   class Mesh;
 
@@ -18,6 +21,8 @@ namespace dolfin{
   public:
     
     static void init     (Mesh& mesh);
+    static void init     (Mesh& mesh, uint nx, uint ny);
+    static void init     (Mesh& mesh, uint nx, uint ny, uint nz);
     static void renumber (Mesh& mesh);
     
   private:
