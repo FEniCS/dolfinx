@@ -14,7 +14,6 @@ Multi-adaptive solver
 General
 -------
 
-- Use libtool: anyone?
 - Optimize form evaluation: Hoffman, Logg
 - Save edges in matlab format: Svensson?
 - General boundary conditions: Kraft?
@@ -22,3 +21,6 @@ General
 - Vector valued PDE: Hoffman, Logg (Bengzon, Jansson ?)
 - General function representations: Hoffman, Logg, Jansson
 - i/o for functions, in particular in OpenDX format: Logg
+- Use libtool: anyone?
+- Replace stdio with iostream and fstream
+- Replace Array and List with NewArray and NewList
