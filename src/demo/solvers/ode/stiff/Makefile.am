@@ -1,1 +1,1 @@
-SUBDIRS = simple reaction nondiagonal
+SUBDIRS = simple reaction nondiagonal heat

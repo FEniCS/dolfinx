@@ -45,14 +45,14 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 
   reset();
 
-  //cout << "-----------------------------------------------" << endl;
-  //dolfin_start("Starting fixed point iteration");
+  cout << "-----------------------------------------------" << endl;
+  dolfin_start("Starting fixed point iteration");
 
   while ( !converged(timeslab) )
   {
     // Check stabilization
-    if ( n >= 2 )
-      stabilize(timeslab);
+    //if ( n >= 2 )
+    //stabilize(timeslab);
 
     // Update time slab
     update(timeslab);
@@ -68,8 +68,8 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     }    
   }
 
-  //dolfin_end("Converged after %d iterations", n);
-  //cout << "-----------------------------------------------" << endl;
+  dolfin_end("Converged after %d iterations", n);
+  cout << "-----------------------------------------------" << endl;
 
   reset();
   return true;
@@ -77,7 +77,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 real FixedPointIteration::update(Element& element)
 {
-  //dolfin_start("Starting local iterations for component %d", element.index());
+  dolfin_start("Starting local iterations for component %d", element.index());
 
   // Save end value for element
   real u1 = element.endval();
@@ -146,12 +146,10 @@ real FixedPointIteration::update(Element& element)
     }
   }
   
-  /*
   if ( local_r2 < tol )
     dolfin_end("Local iterations converged");
   else
     dolfin_end("Local iterations did not converge");
-  */
   
   // Return change in end value
   return fabs(element.endval() - u1);
@@ -312,7 +310,7 @@ bool FixedPointIteration::converged(TimeSlab& timeslab)
   if ( n == 0 )
     r0 = r2;
   
-  //cout << "global residual = " << r2 << endl;
+  cout << "global residual = " << r2 << endl;
 
   return r2 < tol;
 }
