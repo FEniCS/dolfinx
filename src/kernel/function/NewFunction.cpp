@@ -24,6 +24,16 @@ NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
   rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
+NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
+			 NewVector& x, int no_comp) : data(0)
+{
+  // Create function data
+  data = new Data(mesh, element, x, no_comp);
+  
+  // Set name and label
+  rename("u", "An unspecified function");
+}
+//-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
   if ( data ) delete data;
@@ -35,9 +45,16 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   // Check if function is user-defined
   if ( !data )
   {
-    for (uint i = 0; i < element.spacedim(); i++)
+    if (data->no_comp > 1)
+    {
+      for (uint i = 0; i < element.spacedim(); i++)
+	for (int j = 0; j < data->no_comp; j++)
+	  /// FIXME: Same ordering as in FFC? 
+          c[i*data->no_comp+j] = (*this)(element.coord(i, cell, cell.mesh()),j);
+    } else{ 
+      for (uint i = 0; i < element.spacedim(); i++)
       c[i] = (*this)(element.coord(i, cell, cell.mesh()));
-
+    }
     return;
   }
 
@@ -55,8 +72,16 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: element::dof() one time with i = 0.
 
     real *values = data->x.array();
+    if (data->no_comp > 1)
+    {
+    for (uint i = 0; i < element.spacedim(); i++)
+      for (uint j = 0; j < element.spacedim(); j++)
+	/// FIXME: Same ordering as in FFC? 
+	c[i*data->no_comp+j] = values[element.dof(i, cell, data->mesh)*data->no_comp+j];
+    } else{
     for (uint i = 0; i < element.spacedim(); i++)
       c[i] = values[element.dof(i, cell, data->mesh)];
+    }
     data->x.restore(values);
 
     return;
@@ -67,6 +92,12 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 real NewFunction::operator()(const Point& p) const
+{
+  dolfin_error("User-defined function evaluation not implemented.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real NewFunction::operator()(const Point& p, int i) const
 {
   dolfin_error("User-defined function evaluation not implemented.");
   return 0.0;

@@ -22,6 +22,13 @@ namespace dolfin
   /// is defined in terms of a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
 
+  /// FIXME: Same ordering as in FFC? 
+  /// Vector functions are initialized by a vector x containing the 
+  /// function values for all three vector components and no_comp, 
+  /// the number of vector components.  
+  /// The function values in x should be ordered as: 
+  /// vector component j at dof i is listed at i*no_comp+j.   
+
   class NewFunction : public Variable
   {
   public:
@@ -31,6 +38,7 @@ namespace dolfin
 
     /// Create function with given degrees of freedom
     NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x);
+    NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x, int no_comp);
 
     /// Destructor
     virtual ~NewFunction();
@@ -40,6 +48,7 @@ namespace dolfin
 
     /// Evaluate function at given point
     virtual real operator() (const Point& p) const;
+    virtual real operator() (const Point& p, int i) const;
 
   private:
 
@@ -48,10 +57,13 @@ namespace dolfin
     {
     public:
       Data(const Mesh& mesh, const NewFiniteElement& element, NewVector& x)
-	: mesh(mesh), element(element), x(x) {}
+	: mesh(mesh), element(element), x(x), no_comp(1) {}
+      Data(const Mesh& mesh, const NewFiniteElement& element, NewVector& x, int no_comp)
+	: mesh(mesh), element(element), x(x), no_comp(no_comp) {}
       const Mesh& mesh;
       const NewFiniteElement& element;
       NewVector& x;
+      int no_comp;
     };
     
     // Pointer to function data (null if not used)
