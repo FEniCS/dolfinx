@@ -11,10 +11,11 @@
 #include <dolfin/Product.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FunctionSpace.h>
-#include <dolfin/Equation.h>
 #include <dolfin/Integral.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
+#include <dolfin/PDE.h>
+#include <dolfin/PDESystem.h>
 
 #include <dolfin/TriLinMapping.h>
 #include <dolfin/TetLinMapping.h>

@@ -291,15 +291,15 @@ void CursesLogger::initColors()
 
   start_color();
 
-  if ( !can_change_color() )
-    buffer.add("Unable to change colors. Using default colors.", Buffer::warning);
-  else {
-    init_color(COLOR_BLUE,  0, 0, 1000);
-    init_color(COLOR_GREEN, 0, 1000, 0);
-    init_color(COLOR_RED,   1000, 0, 0);
-    init_color(COLOR_WHITE, 1000, 1000, 1000);
-    init_color(COLOR_BLACK, 0, 0, 0);
-  }
+  //if ( !can_change_color() )
+  //  buffer.add("Unable to change colors. Using default colors.", Buffer::warning);
+  //else {
+  //  init_color(COLOR_BLUE,  0, 0, 1000);
+  //  init_color(COLOR_GREEN, 0, 1000, 0);
+  //  init_color(COLOR_RED,   1000, 0, 0);
+  //  init_color(COLOR_WHITE, 1000, 1000, 1000);
+  //  init_color(COLOR_BLACK, 0, 0, 0);
+  //}
 
   init_pair(1, COLOR_BLUE,  COLOR_WHITE);
   init_pair(2, COLOR_GREEN, COLOR_WHITE);
@@ -781,7 +781,7 @@ void CursesLogger::drawAbout()
   move(line +  1, 2);  printw("Johan Hoffman (hoffman@cims.nyu.edu)");
   move(line +  2, 2);  printw("Anders Logg   (logg@math.chalmers.se)");
   
-  move(line +  4, 2); printw("For a complete list of author/contributors, see");
+  move(line +  4, 2); printw("For a complete list of authors/contributors, see");
   move(line +  5, 2); printw("the file AUTHORS in the source distribution.");
 
   move(line +  7, 2); printw("For more information about DOLFIN, please visit");

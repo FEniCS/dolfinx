@@ -54,7 +54,7 @@ void DirectSolver::lu(Matrix& A) const
   real** a   = A.values();
   int* index = A.permutation();
   
-  // Comput the LU factorization
+  // Compute the LU factorization
   for (int j = 0; j < (n-1); j++) {
     
     // Partial pivoting, find the largest element on and below the diagonal

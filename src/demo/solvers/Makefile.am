@@ -1,1 +1,1 @@
-SUBDIRS = template poisson convdiff
+SUBDIRS = template poisson convdiff ode

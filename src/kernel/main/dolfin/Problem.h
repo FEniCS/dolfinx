@@ -14,6 +14,7 @@ namespace dolfin {
     
     Problem(const char* problem);
     Problem(const char* problem, Grid& grid);
+    Problem(const char* problem, ODE& ode);
     
     ~Problem();
     

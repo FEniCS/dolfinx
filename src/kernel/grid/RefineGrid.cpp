@@ -42,7 +42,7 @@ void RefineGrid::globalRegularRefinement()
   for (CellIterator c(grid); !c.end(); ++c)
     cells.add(c);
   
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
     regularRefinement((*c.pointer()));
   }
   
@@ -78,7 +78,7 @@ void RefineGrid::evaluateMarks(int grid_level)
   }
       
   bool sons_marked_for_coarsening,edge_of_son_marked;
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
     if ((*c.pointer())->status() == Cell::REFINED_REGULAR){
       sons_marked_for_coarsening = true;
       for (int i=0;i<(*c.pointer())->noChildren();i++){
@@ -121,13 +121,13 @@ void RefineGrid::unrefineGrid(int grid_level)
     if (c->level() == grid_level+1) ccells.add(c);
   }
       
-  for (List<Cell *>::Iterator c(&ccells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(ccells); !c.end(); ++c){
     (*c.pointer())->setMarkedForReUse(false);
     for (int i=0;i<(*c.pointer())->noNodes();i++) (*c.pointer())->node(i)->setMarkedForReUse(false);
     for (int i=0;i<(*c.pointer())->noEdges();i++) (*c.pointer())->edge(i)->setMarkedForReUse(false);
   }
 
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
     if ((*c.pointer())->marker() == Cell::MARKED_ACCORDING_TO_REFINEMENT){
       for (int i=0;i<(*c.pointer())->noChildren();i++){
 	(*c.pointer())->child(i)->setMarkedForReUse(true);
@@ -135,7 +135,7 @@ void RefineGrid::unrefineGrid(int grid_level)
     }
   }
 
-  for (List<Cell *>::Iterator c(&ccells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(ccells); !c.end(); ++c){
     //if (!(*c.pointer())->markedForReUse()) grid.removeCell((*c.pointer()));
   }
   
@@ -143,7 +143,7 @@ void RefineGrid::unrefineGrid(int grid_level)
   for (NodeIterator n(grid); !n.end(); ++n){
     if (n->level() == grid_level+1) cnodes.add(n);
   }
-  for (List<Node*>::Iterator n(&cnodes); !n.end(); ++n){
+  for (List<Node*>::Iterator n(cnodes); !n.end(); ++n){
     //if (!(*n.pointer())->markedForReUse()) grid.removeNode((*n.pointer()));
   }
 
@@ -151,7 +151,7 @@ void RefineGrid::unrefineGrid(int grid_level)
   for (EdgeIterator e(grid); !e.end(); ++e){
     if (e->level() == grid_level+1) cedges.add(e);
   }
-  for (List<Edge*>::Iterator e(&cedges); !e.end(); ++e){
+  for (List<Edge*>::Iterator e(cedges); !e.end(); ++e){
     //if (!(*e.pointer())->markedForReUse()) grid.removeEdge((*e.pointer()));
   }
 
@@ -164,13 +164,13 @@ void RefineGrid::refineGrid(int grid_level)
     if (c->level() == grid_level) cells.add(c);
   }
       
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
     if ((*c.pointer())->marker() == Cell::MARKED_FOR_COARSENING){
       (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
     }
   }
 
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
     if ((*c.pointer())->marker() != Cell::MARKED_ACCORDING_TO_REFINEMENT){
       switch((*c.pointer())->marker()){ 
       case Cell::MARKED_FOR_REGULAR_REFINEMENT: 
@@ -235,9 +235,9 @@ void RefineGrid::closeGrid(int grid_level)
     new_cells = closeCell((*cells.pointer(0)));
     //    cells.remove(cells(0));
 
-    for (List<Cell *>::Iterator cn(&new_cells); !cn.end(); ++cn){
+    for (List<Cell *>::Iterator cn(new_cells); !cn.end(); ++cn){
       cell_is_member = false;      
-      for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+      for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
 	if ((*cn.pointer())->id() == (*c.pointer())->id()){
 	  cell_is_member = true;
 	  break;

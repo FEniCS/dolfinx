@@ -155,7 +155,7 @@ real Progress::checkBounds(int i)
 {
   if ( i < 0 )
     return 0.0;
-  if ( i >= n )
+  if ( i >= (n-1) )
     return 1.0;
   return ((real) i) / ((real) n);
 }

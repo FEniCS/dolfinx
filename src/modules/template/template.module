@@ -3,4 +3,4 @@
 NAME     = "template"
 KEYWORD  = "my problem"
 SOLVER   = "TemplateSolver"
-GRID     = "yes"
+NEEDS    = "grid"

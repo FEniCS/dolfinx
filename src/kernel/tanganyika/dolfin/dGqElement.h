@@ -4,17 +4,35 @@
 #ifndef __DGQ_ELEMENT_H
 #define __DGQ_ELEMENT_H
 
+#include <dolfin/constants.h>
 #include <dolfin/GenericElement.h>
 
 namespace dolfin {
 
+  class RHS;
+  class TimeSlab;
+
   class dGqElement : public GenericElement {
   public:
     
-    dGqElement(int q) : GenericElement(q) {};
+    dGqElement(int q, int index, int pos, TimeSlab* timeslab);
 
-    void update();
+    real eval(real t) const;
+    real eval(int node) const;
+
+    void update(real u0);
+    void update(RHS& f);
+
+    real newTimeStep() const;
     
+  private:
+
+    void feval(RHS& f);
+    real integral(int i) const;
+
+    // End value from previous interval
+    real u0;
+
   };   
     
 }

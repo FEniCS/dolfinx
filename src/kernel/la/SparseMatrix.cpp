@@ -526,6 +526,8 @@ void SparseMatrix::initrow(int i, int rowsize)
 //-----------------------------------------------------------------------------
 bool SparseMatrix::endrow(int i, int pos) const
 {
+  // FIXME: Replace with an iterator
+
   if ( pos >= rowsizes[i] )
     return true;
   

@@ -4,14 +4,14 @@
 #ifndef __TEMPLATE_H
 #define __TEMPLATE_H
 
-#include <dolfin/Equation.h>
+#include <dolfin/PDE.h>
 
 namespace dolfin {
 
-  class Template : public Equation {
+  class Template : public PDE {
   public:
 	 
-	 Template() : Equation(3) {}
+	 Template() : PDE(3) {}
 	 
 	 real lhs(ShapeFunction &u, ShapeFunction &v) {
 		return 1.0;

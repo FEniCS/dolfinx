@@ -60,6 +60,8 @@ namespace dolfin {
     void add(real a, Vector& x);
     void add(real a, const Matrix::Row& row);
     void add(real a, const Matrix::Column& col);
+
+    void rand();
     
     // Output
     void show() const;

@@ -16,6 +16,8 @@ Method::Method(int q)
   this->q = q;
   n = q + 1;
 
+  dolfin_debug1("Initialized method with n = %d", n);
+
   // Allocate points
   points  = new real[n];
   for (int i = 0; i < n; i++)
@@ -81,6 +83,8 @@ int Method::degree() const
 //-----------------------------------------------------------------------------
 real Method::point(int i) const
 {
+  dolfin_debug2("i = %d n = %d", i, n);
+
   dolfin_assert(i >= 0);
   dolfin_assert(i < n);
   dolfin_assert(points);
@@ -107,6 +111,15 @@ real Method::weight(int i) const
   dolfin_assert(qweights);
 
   return qweights[i];
+}
+//-----------------------------------------------------------------------------
+real Method::basis(int i, real t) const
+{
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < n);
+  dolfin_assert(trial);
+
+  return trial->eval(i, t);
 }
 //-----------------------------------------------------------------------------
 void Method::init()

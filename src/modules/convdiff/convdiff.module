@@ -3,4 +3,4 @@
 NAME     = "convdiff"
 KEYWORD  = "convection-diffusion"
 SOLVER   = "ConvDiffSolver"
-GRID     = "yes"
+NEEDS    = "grid"

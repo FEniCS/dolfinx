@@ -4,17 +4,17 @@
 #ifndef __CONV_DIFF_H
 #define __CONV_DIFF_H
 
-#include <dolfin/Equation.h>
+#include <dolfin/PDE.h>
 
 namespace dolfin {
   
-  class ConvDiff : public Equation {
+  class ConvDiff : public PDE {
   public:
     
     ConvDiff(Function& source,
 	     Function& previous,
 	     Function& diffusion,
-	     Function::Vector& convection) : Equation(3)
+	     Function::Vector& convection) : PDE(3)
     {
       add(f,  source);
       add(up, previous);

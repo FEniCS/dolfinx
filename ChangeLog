@@ -1,3 +1,11 @@
+ - Clean up ShortList class
+ - Clean up List class
+ - New class ODE, Equation replaced by PDE
+ - Add Lorenz test problem
+ - Add new problem type for ODEs
+ - Add new module ode
+ - Work on multi-adaptive ODE solver
+ - Work on grid refinement
  - Write all macros in LoggerMacros in one line
  - Add transpose functions to Matrix (Erik)
 0.3.9

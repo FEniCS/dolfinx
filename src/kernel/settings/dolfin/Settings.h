@@ -17,6 +17,7 @@ namespace dolfin {
       
       add(Parameter::REAL, "start time", 0.0);
       add(Parameter::REAL, "end time",   10.0);
+      add(Parameter::REAL, "sparsity check increment", 0.01);
       
       add(Parameter::INT, "max no krylov restarts", 100);
       add(Parameter::INT, "max no stored krylov vectors", 100);

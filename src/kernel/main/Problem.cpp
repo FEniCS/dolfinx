@@ -9,16 +9,22 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Problem::Problem(const char *problem)
+Problem::Problem(const char* problem)
 {
   // Initialise the solver
   solver = dolfin_module_solver(problem);
 }
 //-----------------------------------------------------------------------------
-Problem::Problem(const char *problem, Grid &grid)
+Problem::Problem(const char* problem, Grid& grid)
 {
   // Initialise the solver
   solver = dolfin_module_solver(problem, grid);
+}
+//-----------------------------------------------------------------------------
+Problem::Problem(const char* problem, ODE& ode)
+{
+  // Initialise the solver
+  solver = dolfin_module_solver(problem, ode);
 }
 //-----------------------------------------------------------------------------
 Problem::~Problem()

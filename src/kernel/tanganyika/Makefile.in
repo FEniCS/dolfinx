@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -77,11 +77,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_tanganyika.h                                  dolfin/cGqElement.h                                  dolfin/cGqMethod.h                                  dolfin/dGqElement.h                                  dolfin/dGqMethod.h                                  dolfin/Element.h                                  dolfin/GenericElement.h                                  dolfin/Method.h
+include_HEADERS = dolfin/dolfin_tanganyika.h                                  dolfin/cGqElement.h                                  dolfin/cGqMethod.h                                  dolfin/cGqMethods.h                                  dolfin/dGqElement.h                                  dolfin/dGqMethod.h                                  dolfin/dGqMethods.h                                  dolfin/AutomaticSparsity.h                                  dolfin/Component.h                                  dolfin/AutomaticSparsity.h                                  dolfin/Element.h                                  dolfin/EmptySparsity.h                                  dolfin/FullSparsity.h                                  dolfin/GenericElement.h                                  dolfin/GenericSparsity.h                                  dolfin/MatrixSparsity.h                                  dolfin/Method.h                                  dolfin/ODE.h                                  dolfin/ODESolver.h                                  dolfin/Partition.h                                  dolfin/RHS.h                                  dolfin/Sparsity.h                                  dolfin/TableSparsity.h                                  dolfin/TimeSlab.h                                  dolfin/TimeSlabData.h                                  dolfin/TimeStepper.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-tanganyika.a
-libdolfin_tanganyika_a_SOURCES = cGqElement.cpp                                  cGqMethod.cpp                                  dGqElement.cpp                                  dGqMethod.cpp                                  Element.cpp                                  GenericElement.cpp                                  Method.cpp
+libdolfin_tanganyika_a_SOURCES = cGqElement.cpp                                  cGqMethod.cpp                                  cGqMethods.cpp                                  dGqElement.cpp                                  dGqMethod.cpp                                  dGqMethods.cpp                                  AutomaticSparsity.cpp                                  Component.cpp                                  Element.cpp                                  EmptySparsity.cpp                                  FullSparsity.cpp                                  GenericElement.cpp                                  GenericSparsity.cpp                                  MatrixSparsity.cpp                                  Method.cpp                                  ODE.cpp                                  ODESolver.cpp                                  Partition.cpp                                  RHS.cpp                                  Sparsity.cpp                                  TableSparsity.cpp                                  TimeSlab.cpp                                  TimeSlabData.cpp                                  TimeStepper.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -93,8 +93,12 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_tanganyika_a_LIBADD = 
-libdolfin_tanganyika_a_OBJECTS =  cGqElement.o cGqMethod.o dGqElement.o \
-dGqMethod.o Element.o GenericElement.o Method.o
+libdolfin_tanganyika_a_OBJECTS =  cGqElement.o cGqMethod.o cGqMethods.o \
+dGqElement.o dGqMethod.o dGqMethods.o AutomaticSparsity.o Component.o \
+Element.o EmptySparsity.o FullSparsity.o GenericElement.o \
+GenericSparsity.o MatrixSparsity.o Method.o ODE.o ODESolver.o \
+Partition.o RHS.o Sparsity.o TableSparsity.o TimeSlab.o TimeSlabData.o \
+TimeStepper.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -108,9 +112,14 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Element.P .deps/GenericElement.P .deps/Method.P \
-.deps/cGqElement.P .deps/cGqMethod.P .deps/dGqElement.P \
-.deps/dGqMethod.P
+DEP_FILES =  .deps/AutomaticSparsity.P .deps/Component.P .deps/Element.P \
+.deps/EmptySparsity.P .deps/FullSparsity.P .deps/GenericElement.P \
+.deps/GenericSparsity.P .deps/MatrixSparsity.P .deps/Method.P \
+.deps/ODE.P .deps/ODESolver.P .deps/Partition.P .deps/RHS.P \
+.deps/Sparsity.P .deps/TableSparsity.P .deps/TimeSlab.P \
+.deps/TimeSlabData.P .deps/TimeStepper.P .deps/cGqElement.P \
+.deps/cGqMethod.P .deps/cGqMethods.P .deps/dGqElement.P \
+.deps/dGqMethod.P .deps/dGqMethods.P
 SOURCES = $(libdolfin_tanganyika_a_SOURCES)
 OBJECTS = $(libdolfin_tanganyika_a_OBJECTS)
 
@@ -231,7 +240,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" != "." || dot_seen=yes; \
+	  test "$$subdir" = "." && dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -273,7 +282,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

@@ -39,7 +39,7 @@ AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your syste
 
 dnl Note: need to be in the correct order, and some are needed twice.
 dnl Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="tanganyika io grid fem elements quadrature grid io la math common settings log settings common"
+DOLFIN_KERNEL="tanganyika io grid fem elements quadrature grid io la math common settings log settings common main tanganyika"
 
 dnl Find modules
 cd src/modules
@@ -116,14 +116,16 @@ AC_OUTPUT( Makefile \
            src/kernel/tanganyika/Makefile \
            src/kernel/tanganyika/dolfin/Makefile \
            src/modules/Makefile \
+           src/modules/template/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \
            src/modules/navierstokes/Makefile \
-           src/modules/template/Makefile \
+           src/modules/ode/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
            src/demo/solvers/Makefile \
+           src/demo/solvers/ode/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/greeting/Makefile )

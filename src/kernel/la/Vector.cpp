@@ -4,6 +4,7 @@
 // Contributions by: Georgios Foufas (2002)
 //                   Johan Jansson (2003)
 
+#include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <cmath>
@@ -306,6 +307,12 @@ void Vector::add(real a, const Matrix::Column& col)
                                                                                                                                                             
   for (int i = 0; i < n; i++)
     values[i] += a * col(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::rand()
+{
+  for (int i = 0; i < n; i++)
+    values[i] = dolfin::rand();
 }
 //-----------------------------------------------------------------------------
 void Vector::show() const

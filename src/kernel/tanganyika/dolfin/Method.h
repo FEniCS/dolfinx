@@ -21,7 +21,7 @@ namespace dolfin {
 
     /// Destructor
     ~Method();
-    
+
     /// Return number of points
     int size() const;
     
@@ -36,6 +36,9 @@ namespace dolfin {
 
     /// Return quadrature weight (including only quadrature)
     real weight(int i) const;
+
+    /// Evaluation of Lagrange basis function at given point t within [0,1]
+    real basis(int i, real t) const;
 
     /// Display method data
     virtual void show() const = 0;

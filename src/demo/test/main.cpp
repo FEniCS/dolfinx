@@ -25,5 +25,8 @@ int main()
 
   x.show();
 
+  File file("matrix.m");
+  file << A;
+
   return 0;
 }

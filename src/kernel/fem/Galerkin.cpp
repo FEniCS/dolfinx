@@ -16,8 +16,8 @@
 #include <dolfin/bcfunction.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
-#include <dolfin/Equation.h>
-#include <dolfin/EquationSystem.h>
+#include <dolfin/PDE.h>
+#include <dolfin/PDESystem.h>
 
 using namespace dolfin;
 
@@ -64,25 +64,25 @@ Galerkin::~Galerkin()
   }
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assemble(Equation& equation, Grid& grid, Matrix& A, Vector& b)
+void Galerkin::assemble(PDE& pde, Grid& grid, Matrix& A, Vector& b)
 {
-  assemble(equation, grid, A);
-  assemble(equation, grid, b);
+  assemble(pde, grid, A);
+  assemble(pde, grid, b);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assemble(Equation& equation, Grid& grid, Matrix& A)
+void Galerkin::assemble(PDE& pde, Grid& grid, Matrix& A)
 {
-  assembleLHS(equation, grid, A);
+  assembleLHS(pde, grid, A);
   setBC(grid, A);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assemble(Equation& equation, Grid& grid, Vector& b)
+void Galerkin::assemble(PDE& pde, Grid& grid, Vector& b)
 {
-  assembleRHS(equation, grid, b);
+  assembleRHS(pde, grid, b);
   setBC(grid, b);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleLHS(Equation& equation, Grid& grid, Matrix& A)
+void Galerkin::assembleLHS(PDE& pde, Grid& grid, Matrix& A)
 {  
   // Make sure that we have chosen trial and test spaces
   init(grid);
@@ -104,12 +104,12 @@ void Galerkin::assembleLHS(Equation& equation, Grid& grid, Matrix& A)
     element->update(mapping);
     
     // Update equation
-    equation.updateLHS(element, cell, mapping, quadrature);
+    pde.updateLHS(element, cell, mapping, quadrature);
     
     // Iterate over test and trial functions
     for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
       for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
-	A(v.dof(cell), u.dof(cell)) += equation.lhs(u, v);
+	A(v.dof(cell), u.dof(cell)) += pde.lhs(u, v);
     
     // Update progress
     p++;
@@ -123,7 +123,7 @@ void Galerkin::assembleLHS(Equation& equation, Grid& grid, Matrix& A)
   cout << "Assembled: " << A << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleRHS(Equation& equation, Grid& grid, Vector& b)
+void Galerkin::assembleRHS(PDE& pde, Grid& grid, Vector& b)
 {
   // Make sure that we have chosen trial and test spaces
   init(grid);
@@ -141,11 +141,11 @@ void Galerkin::assembleRHS(Equation& equation, Grid& grid, Vector& b)
     mapping->update(cell);
     
     // Update equation
-    equation.updateRHS(element, cell, mapping, quadrature);
+    pde.updateRHS(element, cell, mapping, quadrature);
     
     // Iterate over test functions
     for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += equation.rhs(v);
+      b(v.dof(cell)) += pde.rhs(v);
     
     // Update progress
     p++;

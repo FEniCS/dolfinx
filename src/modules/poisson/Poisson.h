@@ -4,14 +4,14 @@
 #ifndef __POISSON_H
 #define __POISSON_H
 
-#include <dolfin/Equation.h>
+#include <dolfin/PDE.h>
 
 namespace dolfin {
   
-  class Poisson : public Equation {
+  class Poisson : public PDE {
   public:
     
-    Poisson(Function& source) : Equation(3)
+    Poisson(Function& source) : PDE(3)
     {
       add(f, source);
     }

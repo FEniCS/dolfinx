@@ -27,7 +27,7 @@ Node* GridData::createNode(int level, real x, real y, real z)
   // If a node exists with coordinates (x,y,z) then return a pointer to that 
   // node, else create a new node and return a pointer to that node.   
   Point pnt;
-  for (List<Node>::Iterator n(&nodes); !n.end(); ++n){
+  for (List<Node>::Iterator n(nodes); !n.end(); ++n){
     pnt = (n.pointer())->coord();
     if ( fabs(pnt.x-x)<DOLFIN_EPS ){
       if ( fabs(pnt.y-y)<DOLFIN_EPS ){
@@ -114,7 +114,7 @@ void GridData::createEdges(Cell* c)
   bool edge_exists;
   for (int i=0;i<c->noEdges();i++){ 
     edge_exists = false;
-    for (List<Edge>::Iterator e(&edges); !e.end(); ++e){
+    for (List<Edge>::Iterator e(edges); !e.end(); ++e){
       switch(i){ 
       case 0: 
 	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 

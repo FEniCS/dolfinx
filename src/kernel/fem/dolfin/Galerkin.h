@@ -1,10 +1,6 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// Assembling from variational formulation. It is assumed that
-// each degree of freedom is associated with a node. The id of
-// the node is used as an index for the degrees of freedom.
-
 #ifndef __GALERKIN_H
 #define __GALERKIN_H
 
@@ -13,11 +9,15 @@ namespace dolfin {
   class Vector;
   class Matrix;
   class Grid;
-  class Equation;
+  class PDE;
   class FiniteElement;
   class Mapping;
   class Quadrature;
   
+  /// Assembling from variational formulation. It is assumed that
+  /// each degree of freedom is associated with a node. The id of
+  /// the node is used as an index for the degrees of freedom.
+
   class Galerkin {
   public:
     
@@ -31,15 +31,15 @@ namespace dolfin {
     ~Galerkin();
     
     // Assemble and set boundary conditions
-    void assemble(Equation& equation, Grid& grid, Matrix& A, Vector& b);
+    void assemble(PDE& pde, Grid& grid, Matrix& A, Vector& b);
     
     // Assemble A and b individually and set boundary conditions
-    void assemble(Equation& equation, Grid& grid, Matrix& A);
-    void assemble(Equation& equation, Grid& grid, Vector& b);
+    void assemble(PDE& pde, Grid& grid, Matrix& A);
+    void assemble(PDE& pde, Grid& grid, Vector& b);
 
     // Assemble A and b individually, without setting boundary conditions
-    void assembleLHS(Equation& equation, Grid& grid, Matrix& A);
-    void assembleRHS(Equation& equation, Grid& grid, Vector& b);
+    void assembleLHS(PDE& pde, Grid& grid, Matrix& A);
+    void assembleRHS(PDE& pde, Grid& grid, Vector& b);
     
     // Set boundary conditions
     void setBC(Grid& grid, Matrix& A);
