@@ -2,6 +2,7 @@
  - Optimize Lagrange polynomials
  - Optimize sparsity: use stl containers
  - Optimize choice of discrete residual for multi-adaptive solver
+ - Don't check residual on first slab for fixed time step
  - Decrease largest (default) time step to 0.1
  - Add missing <cmath> in TimeStepper
  - Move real into dolfin namespace

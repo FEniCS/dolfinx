@@ -80,13 +80,16 @@ bool TimeStepper::createFirstTimeSlab()
     return false;
   }
 
-  // Check if the residual is small enough
-  if ( !adaptivity.accept(timeslab, f) )
+  // Check if the residual is small enough if the time step is not fixed
+  if ( !adaptivity.fixed() )
   {
-    cout << "Residual is too large, creating a new time slab." << endl;
-    adaptivity.shift(u, f);
-    u.reset();
-    return false;
+    if ( !adaptivity.accept(timeslab, f) )
+    {
+      cout << "Residual is too large, creating a new time slab." << endl;
+      adaptivity.shift(u, f);
+      u.reset();
+      return false;
+    }
   }
 
   // Update time
