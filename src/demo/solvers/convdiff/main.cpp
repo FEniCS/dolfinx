@@ -62,6 +62,8 @@ void mybc(BoundaryCondition& bc)
 int main(int argc, char **argv)
 {
   Mesh mesh("dolfin.xml.gz");
+
+  /*
   Problem convdiff("convection-diffusion", mesh);
 
   convdiff.set("source", f);
@@ -72,6 +74,7 @@ int main(int argc, char **argv)
   convdiff.set("time step", 0.1);
 
   convdiff.solve();
+  */
 
   return 0;
 }

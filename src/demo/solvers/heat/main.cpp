@@ -37,6 +37,7 @@ void mybc(BoundaryCondition& bc)
 int main(int argc, char **argv)
 {
   Mesh mesh("two_particles.xml.gz");
+  /*
   Problem heat("heat", mesh);
 
   heat.set("source", f);
@@ -46,6 +47,6 @@ int main(int argc, char **argv)
   heat.set("time step", 0.1);
 
   heat.solve();
-  
+  */
   return 0;
 }

@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "ConvDiffSolver.h"
-#include "ConvDiff.h"
+#include "dolfin/ConvDiffSolver.h"
+#include "dolfin/ConvDiff.h"
 
 using namespace dolfin;
 

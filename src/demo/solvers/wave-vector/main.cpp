@@ -36,6 +36,8 @@ int main(int argc, char **argv)
   dolfin_set("output", "plain text");
 
   Mesh mesh("trimesh-32.xml.gz");
+
+  /*
   Problem wavevector("wave-vector", mesh);
 
   wavevector.set("source", f);
@@ -44,6 +46,6 @@ int main(int argc, char **argv)
   wavevector.set("time step", 0.01);
 
   wavevector.solve();
-  
+  */
   return 0;
 }

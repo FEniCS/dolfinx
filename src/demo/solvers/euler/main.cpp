@@ -153,6 +153,7 @@ int main(int argc, char **argv)
 
   Mesh mesh("dolfin.xml.gz");
 
+  /*
   Problem euler("euler", mesh);
 
   euler.set("Source Momentum",fm);
@@ -164,6 +165,7 @@ int main(int argc, char **argv)
   euler.set("time step", 0.01);
 
   euler.solve();
+  */
 
   return 0;
 }

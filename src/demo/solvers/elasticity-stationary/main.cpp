@@ -100,6 +100,8 @@ void mybc(BoundaryCondition& bc)
 int main(int argc, char **argv)
 {
   Mesh mesh("tetmesh-4.xml.gz");
+
+  /*
   Problem elasticitystationary("elasticity-stationary", mesh);
 
   mesh.refineUniformly();
@@ -110,6 +112,7 @@ int main(int argc, char **argv)
   elasticitystationary.set("time step", 0.1);
 
   elasticitystationary.solve();
-  
+  */
+
   return 0;
 }

@@ -34,12 +34,13 @@ void mybc(BoundaryCondition& bc)
 int main()
 {
   Mesh mesh("mesh.xml.gz");
+  /*
   Problem poisson("poisson with multigrid", mesh);
   
   poisson.set("source", f);
   poisson.set("boundary condition", mybc);
  
   poisson.solve();
-  
+  */
   return 0;
 }

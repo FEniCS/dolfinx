@@ -72,6 +72,7 @@ int main(int argc, char **argv)
 
   Mesh mesh("unitcube0.xml.gz");
 
+  /*
   Problem elasticity("elasticity", mesh);
 
   elasticity.set("source", f);
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
   elasticity.set("time step", 0.1);
 
   elasticity.solve();
-  
+  */
+
   return 0;
 }

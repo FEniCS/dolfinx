@@ -30,6 +30,8 @@ int main()
 
   //Mesh mesh("trimesh-32.xml.gz");
   Mesh mesh("trimesh-1.xml.gz");
+
+  /*
   Problem wave("wave", mesh);
 
   wave.set("source", f);
@@ -38,6 +40,7 @@ int main()
   wave.set("time step", 0.01);
 
   wave.solve();
-  
+  */
+
   return 0;
 }

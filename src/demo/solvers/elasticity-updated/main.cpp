@@ -204,6 +204,7 @@ int main(int argc, char **argv)
   mesh.refineUniformly();
   //mesh.refineUniformly();
 
+  /*
   Problem elasticity("elasticity-updated", mesh);
   //Problem elasticity("elasticity", mesh);
 
@@ -214,6 +215,7 @@ int main(int argc, char **argv)
   elasticity.set("time step", 0.001);
 
   elasticity.solve();
-  
+  */
+
   return 0;
 }

@@ -193,6 +193,7 @@ AC_OUTPUT( Makefile \
            src/modules/poisson/dolfin/Makefile \
            src/modules/poisson-multigrid/Makefile \
            src/modules/convdiff/Makefile \
+           src/modules/convdiff/dolfin/Makefile \
            src/modules/euler/Makefile \
            src/modules/heat/Makefile \
            src/modules/navierstokes/Makefile \
