@@ -17,7 +17,7 @@ KrylovSolver::KrylovSolver(Method method)
 {
   this->method = method;
   pc  = NONE;
-  tol = 1.0e-10;
+  tol = dolfin_get("krylov tolerance");
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::setMethod(Method method)
@@ -42,6 +42,8 @@ void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     dolfin_error("Incompatible matrix and vector dimensions.");
   }
   
+  tol = dolfin_get("krylov tolerance");
+
   cout << "Using Krylov solver for linear system of " << b.size() << " unknowns." << endl;
   
   // Check if we need to resize x

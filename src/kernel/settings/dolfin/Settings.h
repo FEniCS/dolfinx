@@ -24,7 +24,8 @@ namespace dolfin {
       add(Parameter::REAL, "partitioning threshold", 1.0);
       add(Parameter::REAL, "interval threshold", 0.9);
       add(Parameter::REAL, "sparsity check increment", 0.01);
-      
+      add(Parameter::REAL, "krylov tolerance", 1.0e-10);
+
       add(Parameter::INT, "max no krylov restarts", 100);
       add(Parameter::INT, "max no stored krylov vectors", 100);
       add(Parameter::INT, "max no cg iterations", 1000);

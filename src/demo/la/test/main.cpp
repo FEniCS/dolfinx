@@ -65,6 +65,13 @@ int main(int argc, char **argv)
   KrylovSolver ks;
   Vector R;
 
+
+  dolfin_set("krylov tolerance",1.0e-10);
+  dolfin_set("max no krylov restarts", 100);
+  dolfin_set("max no stored krylov vectors", 100);
+  dolfin_set("max no cg iterations", 100);
+  dolfin_set("pc iterations", 5);
+
   x = 1.0;
   ks.setMethod(KrylovSolver::GMRES);
   ks.solve(A,x,b);
