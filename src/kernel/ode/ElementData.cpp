@@ -81,13 +81,18 @@ Element* ElementData::last(unsigned int i)
   return block->last(i);
 }
 //-----------------------------------------------------------------------------
-void ElementData::shift()
+void ElementData::save()
 {
   dolfin_assert(current);
   
   // Save current block
   tmpfile.write(*current);
-
+}
+//-----------------------------------------------------------------------------
+void ElementData::shift()
+{
+  dolfin_assert(current);
+  
   // Set current to null so that a new block will be created next time
   current = 0;
 }
@@ -141,9 +146,12 @@ ElementBlock* ElementData::findBlock(real t)
 {
   // First check current block
   if ( current )
+  {
     if ( current->within(t) )
+    {
       return current;
-
+    }
+  }
   // Return null if time is not within range of data
   if ( !within(t) )
     return 0;

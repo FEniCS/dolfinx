@@ -26,6 +26,7 @@ TimeStepper::TimeStepper(ODE& ode, Function& function) :
   u(ode, function), ode(ode), f(ode, u), fixpoint(u, f, adaptivity), 
   file(u.label() + ".m"), p("Time-stepping"), _finished(false),
   save_solution(dolfin_get("save solution")),
+  solve_dual(dolfin_get("solve dual problem")),
   adaptive_samples(dolfin_get("adaptive samples")),
   no_samples(dolfin_get("number of samples")),
   sample_density(dolfin_get("sample density"))
@@ -103,9 +104,6 @@ bool TimeStepper::createFirstTimeSlab()
   // Save solution
   save(timeslab);
   
-  // Prepare for next time slab
-  shift();
-  
   // Update progress
   p = t / T;
 
@@ -123,6 +121,9 @@ bool TimeStepper::createFirstTimeSlab()
 //-----------------------------------------------------------------------------
 bool TimeStepper::createGeneralTimeSlab()
 {
+  // Prepare for next time slab
+  shift();
+  
   // Create the time slab
   RecursiveTimeSlab timeslab(t, T, u, f, adaptivity, fixpoint, partition, 0);
 
@@ -151,9 +152,6 @@ bool TimeStepper::createGeneralTimeSlab()
   // Save solution
   save(timeslab);
   
-  // Prepare for next time slab
-  shift();
-  
   // Update progress
   p = t / T;
 
@@ -180,15 +178,21 @@ void TimeStepper::shift()
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab)
 {
-  // Check if we should save the solution
-  if ( !save_solution )
-    return;
+  if(solve_dual)
+  {
+    // Save solution for dual problem
+    u.save(t);
+  }
 
-  // Choose method for saving the solution
-  if ( adaptive_samples )
-    saveAdaptiveSamples(timeslab);
-  else
-    saveFixedSamples(timeslab);
+  // Check if we should save the solution
+  if(save_solution)
+  {
+    // Choose method for saving the solution
+    if ( adaptive_samples )
+      saveAdaptiveSamples(timeslab);
+    else
+      saveFixedSamples(timeslab);
+  }
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::saveFixedSamples(TimeSlab& timeslab)

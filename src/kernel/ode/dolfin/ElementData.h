@@ -47,6 +47,9 @@ namespace dolfin {
     /// Notify that this might be a good time to move to next block
     void shift();
 
+    /// Save data to disk
+    void save();
+
     /// Drop last block
     void dropLast();
 

@@ -165,11 +165,17 @@ void Solution::shift(real t0)
     u0[i] = element->endval();
   }
   
-  // Update time for initial values
-  this->t0 = t0;
-
   // Tell element data to create a new block next time
   elmdata.shift();
+
+  // Update time for initial values
+  this->t0 = t0;
+}
+//-----------------------------------------------------------------------------
+void Solution::save(real t0)
+{
+  // Save data to disk
+  elmdata.save();
 }
 //-----------------------------------------------------------------------------
 void Solution::reset()

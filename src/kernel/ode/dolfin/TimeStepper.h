@@ -119,6 +119,9 @@ namespace dolfin {
     // True if we should save the solution
     bool save_solution;
 
+    // True if we should solve the dual
+    bool solve_dual;
+
     // True if we should use adaptive samples
     bool adaptive_samples;
 
