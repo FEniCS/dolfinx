@@ -123,7 +123,7 @@ public:
       if ( jy < n ) sum += u[j + m];
       if ( jz < n ) sum += u[j + m*m];
       
-      y[i] = sum;
+      y[i] = a*sum;
     }
   }
 
