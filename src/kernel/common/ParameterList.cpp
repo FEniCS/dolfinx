@@ -1,10 +1,14 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <sys/utsname.h>
 #include <stdlib.h>
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterList.h>
 
 using namespace dolfin;
@@ -53,7 +57,7 @@ void ParameterList::set_aptr(const char *identifier, va_list aptr)
   }
 
   // Couldn't find the parameter
-  std::cout << "Warning: Trying to set value of unknown parameter \"" << identifier << "\"." << std::endl;
+  dolfin_warning1("Unknown parameter \"%s\".", identifier);
 }
 //----------------------------------------------------------------------------
 void ParameterList::get(const char *identifier, ...)
@@ -76,7 +80,7 @@ void ParameterList::get_aptr(const char *identifier, va_list aptr)
   }
   
   // Couldn't find the parameter
-  std::cout << "Warning: Unknown parameter \"" << identifier << "\"" << std::endl;
+  dolfin_warning1("Unknown parameter \"%s\".", identifier);
 }
 //----------------------------------------------------------------------------
 bool ParameterList::changed(const char *identifier)
@@ -86,8 +90,7 @@ bool ParameterList::changed(const char *identifier)
   if ( index >= 0 )
 	 return list(index).changed();
 
-  std::cout << "Error: Status for unknown parameter <" << identifier << "> not available." << std::endl;
-  exit(1);
+  dolfin_warning1("Unknown parameter \"%s\".", identifier);
 }
 //----------------------------------------------------------------------------
 bool ParameterList::empty()

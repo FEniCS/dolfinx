@@ -1,3 +1,6 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <cmath>
 #include <dolfin/Point.h>
 
@@ -54,9 +57,9 @@ Point Point::midpoint(Point p)
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, const Point& p)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Point& p)
 {
-  output << "[ Point x = " << p.x << " y = " << p.y << " z = " << p.z << " ]";
-  return output;
+  stream << "[ Point x = " << p.x << " y = " << p.y << " z = " << p.z << " ]";
+  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 #ifndef __CELL_H
 #define __CELL_H
 
-#include <iostream>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/NodeIterator.h>
@@ -56,7 +56,7 @@ namespace dolfin {
 	 GenericCell* operator->() const;
 	 
 	 /// Output
-	 friend std::ostream& operator << (std::ostream& output, const Cell& cell);
+	 friend LogStream& operator<<(LogStream& stream, const Cell& cell);
 	 
 	 // Friends
 	 friend class GridData;

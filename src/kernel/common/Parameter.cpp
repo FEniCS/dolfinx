@@ -1,3 +1,7 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/Parameter.h>
 
@@ -96,7 +100,7 @@ void Parameter::set(const char *identifier, va_list aptr)
 	 break;
 	 
   default:
-	 std::cout << "Unknown type for parameter \"" << identifier << "\"." << std::endl;
+	 dolfin_warning1("Unknown type for parameter \"%s\".", identifier);
   }
   
   // Save the identifier
@@ -132,7 +136,7 @@ void Parameter::get(va_list aptr)
 	 
 	 p_string = va_arg(aptr,char *);
 	 if ( !p_string ){
-		std::cout << "Parameter:get(): Unable to write parameter to null pointer." << std::endl;
+		dolfin_warning("Cannot write parameter value to supplied null pointer.");
 		return;
 	 }
 	 sprintf(p_string,"%s",val_string);
@@ -151,7 +155,7 @@ void Parameter::get(va_list aptr)
 	 break;
 	 
   default:
-	 std::cout << "Unknown type for parameter \"" << identifier << "\"." << std::endl;
+	 dolfin_warning1("Unknown type for parameter \"%s\".", identifier);
   }
 }
 //-----------------------------------------------------------------------------
@@ -189,11 +193,9 @@ void Parameter::operator= (const Parameter &p)
 //-----------------------------------------------------------------------------
 void Parameter::operator= (int zero)
 {
-  // FIXME: Use logging system
-  if ( zero != 0 ) {
-	 std::cout << "Assignment to int must be zero." << std::endl;
-	 exit(1);
-  }
+  if ( zero != 0 )
+	 dolfin_error("Assignment to int must be zero.");
+  
   clear();
 }
 //-----------------------------------------------------------------------------

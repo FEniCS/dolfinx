@@ -78,10 +78,10 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   // Allocate and reset matrix
   alloc(A, grid);
   
-  // Write a message
-  cout << "hejsan ..." << endl;
+  // Start a progress session
+  Progress p("Assembling", grid.noCells());  
   dolfin_info("Assembling: system size is %d x %d.", A.size(0), A.size(1));
-
+  
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
 
@@ -98,6 +98,9 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
 	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
 		for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
 		  A(v.dof(cell), u.dof(cell)) += equation.lhs(u, v);
+
+	 // Update progress
+	 p++;
 	 
   }
   

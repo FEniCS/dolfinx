@@ -14,6 +14,6 @@ const char *TemplateSolver::description()
 //-----------------------------------------------------------------------------
 void TemplateSolver::solve()
 {
-  std::cout << "Solving..." << std::endl;
+  cout << "Solving..." << endl;
 }
 //-----------------------------------------------------------------------------

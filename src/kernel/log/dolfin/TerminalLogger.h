@@ -4,6 +4,7 @@
 #ifndef __TERMINAL_LOGGER_H
 #define __TERMINAL_LOGGER_H
 
+#include <dolfin/constants.h>
 #include <dolfin/GenericLogger.h>
 
 namespace dolfin {
@@ -15,9 +16,10 @@ namespace dolfin {
 	 ~TerminalLogger();
 	 
 	 void info    (const char* msg);
-	 void debug   (const char* msg);
-	 void warning (const char* msg);
-	 void error   (const char* msg);
+	 void debug   (const char* msg, const char* location);
+	 void warning (const char* msg, const char* location);
+	 void error   (const char* msg, const char* location);
+	 void progress(const char* title, const char* label, real p);
 	 
   };
 

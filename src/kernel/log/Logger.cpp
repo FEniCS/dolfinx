@@ -15,6 +15,7 @@ Logger::Logger()
 {
   log = new TerminalLogger();
   buffer = new char[DOLFIN_LINELENGTH];
+  location  = new char[DOLFIN_LINELENGTH];
 }
 //-----------------------------------------------------------------------------
 Logger::~Logger()
@@ -26,6 +27,10 @@ Logger::~Logger()
   if ( buffer )
 	 delete [] buffer;
   buffer = 0;
+
+  if ( location )
+	 delete [] location;
+  location = 0;
 }
 //-----------------------------------------------------------------------------
 void Logger::info(const char* msg)
@@ -42,23 +47,27 @@ void Logger::info(const char* format, va_list aptr)
 void Logger::debug(const char* file, unsigned long line,
 						 const char* function, const char* format, ...)
 {
+  sprintf(location, "%s:%d: %s()", file, line, function);
+  
   va_list aptr;
   va_start(aptr, format);
   
   vsprintf(buffer, format, aptr);
-  log->debug(buffer);
-
+  log->debug(buffer, location);
+  
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
 void Logger::warning(const char* file, unsigned long line,
 							const char* function, const char* format, ...)
 {
+  sprintf(location, "%s:%d: %s()", file, line, function);
+  
   va_list aptr;
   va_start(aptr, format);
   
   vsprintf(buffer, format, aptr);
-  log->warning(buffer);
+  log->warning(buffer, location);
 
   va_end(aptr);
 }
@@ -66,13 +75,20 @@ void Logger::warning(const char* file, unsigned long line,
 void Logger::error(const char* file, unsigned long line,
 						 const char* function, const char* format, ...)
 {
+  sprintf(location, "%s:%d: %s()", file, line, function);
+  
   va_list aptr;
   va_start(aptr, format);
   
   vsprintf(buffer, format, aptr);
-  log->error(buffer);
+  log->error(buffer, location);
 
   va_end(aptr);
+}
+//-----------------------------------------------------------------------------
+void Logger::progress(const char* title, const char* label, real p)
+{
+  log->progress(title, label, p);
 }
 //-----------------------------------------------------------------------------
 void Logger::start()

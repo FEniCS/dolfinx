@@ -1,5 +1,7 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/sysinfo.h>
 #include <dolfin/System.h>
 
@@ -20,13 +22,13 @@ void System::update()
   sysinfo_name(_name);
   sysinfo_vers(_vers);
   
-  std::cout << "Reading system info:" << std::endl;
-  std::cout << "  user    = " << _user << std::endl;
-  std::cout << "  date    = " << _date << std::endl;
-  std::cout << "  host    = " << _host << std::endl;
-  std::cout << "  machine = " << _mach << std::endl;
-  std::cout << "  sysname = " << _name << std::endl;
-  std::cout << "  version = " << _vers << std::endl;
+  cout << "Reading system info:"  << endl;
+  cout << "  user    = " << _user << endl;
+  cout << "  date    = " << _date << endl;
+  cout << "  host    = " << _host << endl;
+  cout << "  machine = " << _mach << endl;
+  cout << "  sysname = " << _name << endl;
+  cout << "  version = " << _vers << endl;
 }
 //-----------------------------------------------------------------------------
 const char* System::user() const

@@ -52,8 +52,7 @@ void RefineGrid::RegularRefinement(Cell &parent)
   case Cell::TETRAHEDRON: RegularRefinementTetrahedron(parent);
   case Cell::TRIANGLE: RegularRefinementTriangle(parent);
   default: 
-    std::cout << "Error: Cell type not implemented" << std::endl;
-    exit(1);
+    dolfin_error("Cell type not implemented.");
   }
 }
 

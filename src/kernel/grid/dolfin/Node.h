@@ -4,7 +4,7 @@
 #ifndef __NODE_HH
 #define __NODE_HH
 
-#include <iostream>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
@@ -35,7 +35,7 @@ namespace dolfin{
 	 int   noCellNeighbors() const;
 	 
 	 /// Output
-	 friend std::ostream& operator << (std::ostream& output, const Node& node);
+	 friend LogStream& operator<<(LogStream& stream, const Node& node);
 	 void show();
 	 
 	 /// Friends

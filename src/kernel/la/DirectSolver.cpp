@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/DirectSolver.h>
@@ -27,10 +28,8 @@ void DirectSolver::LU(DenseMatrix &A)
   //    changed from [i][j] to [i-1][j-1]
   
   // Check that the matrix is square
-  if ( A.size(0) != A.size(1) ) {
-	 std::cout << "DenseMatrix::LU(): Matrix is not square." << std::endl;
-	 exit(1);
-  }
+  if ( A.size(0) != A.size(1) )
+	 dolfin_error("Matrix is not square.");
 	 
   // Prepare the variables for the notation in the algorithm
   real **a = A.values;       // The matrix
@@ -58,10 +57,8 @@ void DirectSolver::LU(DenseMatrix &A)
 	 big=0.0;
 	 for (j=1;j<=n;j++)
 		if ((temp=fabs(a[i-1][j-1])) > big) big=temp;
-	 if (big == 0.0) {
-		std::cout << "DirectSolver::LU(): Matrix is singular." << std::endl;
-		exit(1);
-	 }
+	 if (big == 0.0)
+		dolfin_error("Matrix is singular.");
 	 vv[i-1]=1.0/big;
   }
   
@@ -116,12 +113,12 @@ void DirectSolver::solveLU(DenseMatrix &LU, Vector &x, Vector &b)
   //    changed from [i][j] to [i-1][j-1]
   
   //Check dimensions
+  if ( LU.size(0) != LU.size(1) )
+	 dolfin_error("Matrix must be square.");
+  if ( LU.size(1) != b.size() )
+	 dolfin_error("Incompatible matrix and vector dimensions.");
   if ( LU.size(0) != x.size() )
 	 x.init(LU.size(0));
-  if ( LU.size(1) != b.size() ) {
-	 std::cout << "DenseMatrix::LU(): Matrix is not square." << std::endl;
-	 exit(1);
-  }
   
   // Prepare the variables for the notation in the algorithm
   real **a = LU.values;       // The matrix

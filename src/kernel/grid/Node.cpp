@@ -86,14 +86,14 @@ int Node::setID(int id)
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, const Node& node)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Node& node)
 {
   int id = node.id();
   Point p = node.coord();
   
-  output << "[ Node: id = " << id
+  stream << "[ Node: id = " << id
 			<< " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -1,4 +1,7 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Mapping.h>
 #include <dolfin/FunctionList.h>
 
@@ -130,11 +133,8 @@ FunctionList::FunctionData::FunctionData(function f)
 //-----------------------------------------------------------------------------
 void FunctionList::FunctionData::operator= (int zero)
 {
-  // FIXME: Use logging system
-  if ( zero != 0 ) {
-	 std::cout << "Assignment to int must be zero." << std::endl;
-	 exit(1);
-  }
+  if ( zero != 0 )
+	 dolfin_error("Assignment to int must be zero.");
   
   f = 0;
 }

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
@@ -42,11 +43,8 @@ const FunctionSpace::ElementFunction TriLinMapping::dt
 void TriLinMapping::update(const Cell& cell)
 {
   // Check that cell type is correct
-  if ( cell.type() != Cell::TRIANGLE ) {
-	 // FIXME: Use logging system
-	 std::cout << "Error: Wrong cell type for mapping (must be a triangle)." << std::endl;
-	 exit(1);
-  }
+  if ( cell.type() != Cell::TRIANGLE )
+	 dolfin_error("Wrong cell type for mapping (must be a triangle).");
   
   // Reset values
   reset();
@@ -65,11 +63,8 @@ void TriLinMapping::update(const Cell& cell)
   d = f11 * f22 - f12 * f21;
 
   // Check determinant
-  if ( fabs(d) < DOLFIN_EPS ) {
-	 // FIXME: Use logging system
-	 std::cout << "Error: mapping from reference element is singular." << std::endl;
-	 exit(1);
-  }
+  if ( fabs(d) < DOLFIN_EPS )
+	 dolfin_error("Mapping from reference element is singular.");
   
   // Compute inverse
   g11 =   f22 / d; g12 = - f12 / d;

@@ -7,6 +7,7 @@
 #define __LOGGER_H
 
 #include <stdarg.h>
+#include <dolfin/constants.h>
 #include <dolfin/GenericLogger.h>
 
 namespace dolfin {
@@ -24,6 +25,8 @@ namespace dolfin {
 	 void warning (const char* file, unsigned long line, const char* function, const char* format, ...);
 	 void error   (const char* file, unsigned long line, const char* function, const char* format, ...);
 
+	 void progress(const char* title, const char* label, real p);
+	 
 	 void start();
 	 void end();
 	 
@@ -31,6 +34,7 @@ namespace dolfin {
 
 	 GenericLogger* log;
 	 char* buffer;
+	 char* location;
 	 
   };
 

@@ -1,5 +1,7 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 
@@ -8,10 +10,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(int m, int n)
 {
-  if ( (m<=0) || (n<=0) ) {
-	 std::cout << "DenseMatrix::DenseMatrix(): Illegal dimensions" << std::endl;
-	 exit(1);
-  }
+  if ( (m<=0) || (n<=0) )
+	 dolfin_error("Illegal dimensions.");
   
   values = 0;
   permutation = 0;
@@ -36,33 +36,31 @@ DenseMatrix::DenseMatrix(Matrix& A)
 //-----------------------------------------------------------------------------
 void DenseMatrix::init(int m, int n)
 {
-  if ( m <= 0 || n <= 0 ) {
-	 std::cout << "DenseMatrix::init(): Illegal dimensions" << std::endl;
-	 exit(1);
+  if ( m <= 0 || n <= 0 )
+	 dolfin_error("DenseMatrix::init(): Illegal dimensions.");
+  
+  if ( values ){
+	 for (int i=0;i<m;i++)
+		delete values[i];
+	 
+	 delete values;
+	 delete permutation;
   }
- 
- if ( values ){
-	for (int i=0;i<m;i++)
-	  delete values[i];
-	
-	delete values;
-	delete permutation;
- }
-
- this->m = m;
- this->n = n;
- 
- values = new (real *)[m];
- for (int i=0;i<m;i++)
-	values[i] = new real[n];
- 
- for (int i=0;i<m;i++)
-	for (int j=0;j<n;j++)
-	  values[i][j] = 0.0;
- 
- permutation = new int[m]; // for LU factorization
- for (int i=0;i<m;i++)
-	permutation[i] = i;  
+  
+  this->m = m;
+  this->n = n;
+  
+  values = new (real *)[m];
+  for (int i=0;i<m;i++)
+	 values[i] = new real[n];
+  
+  for (int i=0;i<m;i++)
+	 for (int j=0;j<n;j++)
+		values[i][j] = 0.0;
+  
+  permutation = new int[m]; // for LU factorization
+  for (int i=0;i<m;i++)
+	 permutation[i] = i;  
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::~DenseMatrix()

@@ -1,4 +1,7 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/sysinfo.h>

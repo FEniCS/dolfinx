@@ -32,7 +32,7 @@ echo " " >> $HEADER
 echo "#ifndef __DOLFIN_MODULES_H" >> $HEADER
 echo "#define __DOLFIN_MODULES_H" >> $HEADER
 echo " " >> $HEADER
-echo "#include <iostream>" >> $HEADER
+echo "#include <dolfin/dolfin_log.h>" >> $HEADER
 echo "#include <dolfin/Solver.h>" >> $HEADER
 
 # Include files
@@ -115,7 +115,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 	# Include only modules that don't want to use a grid
 	if [ $GRID = 'yes' ]; then
 		echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 ) {" >> $HEADER
-		echo "        std::cout << \"Solver for problem \\\"\" << problem << \"\\\" needs a grid.\" << std::endl;" >> $HEADER
+		echo "        dolfin_error1(\"Solver for problem \\\"%s\\\" needs a grid.\", problem);" >> $HEADER
 		echo "    }" >> $HEADER
 	else
 		echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
@@ -125,8 +125,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 done
 
 echo "" >> $HEADER
-echo "    std::cout << \"Could not find any matching solver for problem \\\"\" << problem << \"\\\"\" << std::endl;" >> $HEADER
-echo "    exit(1);" >> $HEADER
+echo "    dolfin_error1(\"Unable to find a matching solver for problem \\\"%s\\\".\", problem);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
@@ -158,14 +157,13 @@ for d in `cat $MODULES | grep -v '#'`; do
 		echo "        return new dolfin::$SOLVER(grid);" >> $HEADER
 	else
 		echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
-		echo "        std::cout << \"Solver for problem \\\"\" << problem << \"\\\" needs a grid.\" << std::endl;" >> $HEADER
+		echo "        dolfin_error1(\"Solver for problem \\\"\%s\\\" needs a grid.\", problem);" >> $HEADER
 	fi
 
 done
 
 echo "" >> $HEADER
-echo "    std::cout << \"Could not find any matching solver for problem \\\"\" << problem << \"\\\"\" << std::endl;" >> $HEADER
-echo "    exit(1);" >> $HEADER
+echo "    dolfin_error1(\"Unable to find a matching solver for problem \\\"%s\\\".\", problem);" >> $HEADER
 echo "" >> $HEADER
 echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
@@ -196,7 +194,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 done
 
 echo "" >> $HEADER
-echo "    std::cout << \"Could not find any matching settings for problem \\\"\" << problem << \"\\\"\" << std::endl;" >> $HEADER
+echo "    dolfin_error1(\"Unable to find matching settings for problem \\\"%s\\\".\", problem);" >> $HEADER
 echo "    return new dolfin::Settings();" >> $HEADER
 
 echo "" >> $HEADER

@@ -1,7 +1,6 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
 #include <stdarg.h>
 #include <dolfin/Settings.h>
 

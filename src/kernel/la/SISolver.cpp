@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/basic.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -19,17 +20,14 @@ SISolver::SISolver()
 void SISolver::solve(Matrix& A, Vector& x, Vector& b)
 {
   // Solve linear system of equations Ax=b, using a stationary iterative (SI) method 
-  if ( A.size(0) != A.size(1) ) {
-    std::cout << "Must be a square matrix." << std::endl;
-    exit(1);
-  }
-  if ( A.size(0) != b.size() ) {
-    std::cout << "Not compatible matrix and vector sizes." << std::endl;
-    exit(1);
-  }
-  if ( x.size() != b.size() ) x.init(b.size());
+  if ( A.size(0) != A.size(1) )
+    dolfin_error("Matrix must be square.");
+  if ( A.size(0) != b.size() )
+    dolfin_error("Incompatible matrix and vector dimensions.");
+  if ( x.size() != b.size() )
+	 x.init(b.size());
   
-  std::cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << std::endl;
+  cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << endl;
   
   // Check if b=0 => x=0
   real norm_b = b.norm();
@@ -56,13 +54,12 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
       iterateSOR(A,x,b);
       break;
     default:
-      std::cout << "Unknown stationary iterative method" << std::endl;
-      exit(1);
+      dolfin_error("Unknown stationary iterative method.");
     }
     
     if (iteration == (max_no_iterations - 1)){
       break;
-      //std::cout << "SI iterations did not converge: residual = " << norm_r << std::endl;
+      //cout << "SI iterations did not converge: residual = " << norm_r << endl;
       //exit(1);
     }
     norm_r = getResidual(A,x,b);
@@ -70,26 +67,25 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   
   switch ( method ) { 
   case RICHARDSON:
-    std::cout << "Richardson";
+    cout << "Richardson";
     break;
   case JACOBI:
-    std::cout << "Jacobi";
+    cout << "Jacobi";
     break;
   case GAUSS_SEIDEL:
-    std::cout << "Gauss-Seidel";
+    cout << "Gauss-Seidel";
     break;
   case SOR:
-    std::cout << "SOR";
+    cout << "SOR";
     break;
   default:
-    std::cout << "Unknown stationary iterative method" << std::endl;
-    exit(1);
+    dolfin_error("Unknown stationary iterative method.");
   }
-  if (norm_r < tol*norm_b){
-    std::cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << std::endl;
-  } else{
-    std::cout << " iterations did not converge: residual = " << norm_r << std::endl;
-  }
+  
+  if (norm_r < tol*norm_b)
+	 cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << endl;
+  else
+    cout << " iterations did not converge: residual = " << norm_r << endl;
 }
 //-----------------------------------------------------------------------------
 void SISolver::setNoSweeps(int max_no_iterations)

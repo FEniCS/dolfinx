@@ -3,9 +3,9 @@
 //
 // New output format for Matrix added by Erik Svensson 2003
 
-// FIXME: Use streams rather than stdio
 #include <stdio.h>
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
@@ -18,54 +18,50 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Vector& x)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot read vectors from Matlab files." << std::endl;
+  dolfin_warning("Cannot read vectors from Matlab files.");
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Matrix& A)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot read matrices from Matlab files." << std::endl;
+  dolfin_warning("Cannot read matrices from Matlab files.");
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Grid& grid)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot read grids from Matlab files." << std::endl;
+  dolfin_warning("Cannot read grids from Matlab files.");
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator>>(Function& u)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot read functions from Matlab files." << std::endl;
+  dolfin_warning("Cannot read functions from Matlab files.");
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Vector& x)
 {
   writeVector(x, filename, x.name(), x.label());
-  std::cout << "Saved vector " << x.name() << " (" << x.label()
-				<< ") to file " << filename << " in Matlab format." << std::endl;
+  cout << "Saved vector " << x.name() << " (" << x.label()
+		 << ") to file " << filename << " in Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Matrix& A)
 {
   writeMatrix(A, filename, A.name(), A.label());
-  std::cout << "Saved matrix " << A.name() << " (" << A.label()
-				<< ") to file " << filename << " in Matlab format." << std::endl;
+  cout << "Saved matrix " << A.name() << " (" << A.label()
+		 << ") to file " << filename << " in Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Grid& grid)
 {
   writeGrid(grid, filename, grid.name(), grid.label());
-  std::cout << "Saved grid " << grid.name() << " (" << grid.label()
-				<< ") to file " << filename << " in Matlab format." << std::endl;
+  cout << "Saved grid " << grid.name() << " (" << grid.label()
+		 << ") to file " << filename << " in Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(const Function& u)
 {
   writeFunction(u, filename, u.name(), u.label());
-  std::cout << "Saved function " << u.name() << " (" << u.label()
-				<< ") to file " << filename << " in Matlab format." << std::endl;
+  cout << "Saved function " << u.name() << " (" << u.label()
+		 << ") to file " << filename << " in Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
 void MatlabFile::writeVector(const Vector& x,

@@ -5,8 +5,10 @@ dnl Settings
 PACKAGE=dolfin
 VERSION=0.3.1
 DOLFIN_MAIN="main"
-# Note: need to be in the correct order, and yes io should be included twice...
-DOLFIN_KERNEL="io grid fem elements common quadrature io la math log"
+
+dnl Note: need to be in the correct order, and some are needed twice.
+dnl Not very pretty... Maybe someone knows how to fix this?
+DOLFIN_KERNEL="io grid fem elements quadrature io la math common log common"
 
 dnl Find modules
 cd src/modules

@@ -1,5 +1,8 @@
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <mtl/mtl.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/sysinfo.h>
 #include <dolfin/meminfo.h>
 #include <dolfin/timeinfo.h>

@@ -1,6 +1,7 @@
-//FIXME: Temporary until we get the logsystem working
-#include <iostream>
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include "XMLObject.h"
 
 using namespace dolfin;
@@ -20,23 +21,18 @@ void XMLObject::parseIntegerRequired(const xmlChar *name, const xmlChar **attrs,
 												 const char *attribute, int *value)
 {
   // Check that we got the data
-  if ( !attrs ){
-  	 // FIXME: Temporary until we get the logsystem working
-	 std::cout << "Missing attributes for <" << name << "> in XML file." << std::endl;
-	 exit(1);
-  }
+  if ( !attrs )
+	 dolfin_error1("Missing attributes for <%s> in XML file.", name);
   
   // Parse data
-  for (int i=0;attrs[i];i++){
+  for (int i = 0; attrs[i]; i++) {
 	 
 	 // Check for attribute
-	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
-		if ( !attrs[i+1] ){
-		  // FIXME: Temporary until we get the logsystem working
-		  std::cout << "Value for attribute \"" << attribute << "\" in <"
-						<< name << "> is missing in XML file ." << std::endl;
-		  exit(1);
-		}
+	 if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 ){
+
+		if ( !attrs[i+1] )
+		  dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+		
 		*value = atoi( (char *) attrs[i+1] );
 		return;
 	 }
@@ -44,10 +40,7 @@ void XMLObject::parseIntegerRequired(const xmlChar *name, const xmlChar **attrs,
   }
   
   // Didn't get the value
-  // FIXME: Temporary until we get the logsystem working
-  std::cout << "Missing attribute \"" << attribute << "\" for <"
-				<< name << "> in XML file." << std::endl;
-  exit(1);
+  dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
 }
 //-----------------------------------------------------------------------------
 void XMLObject::parseIntegerOptional(const xmlChar *name, const xmlChar **attrs,
@@ -58,16 +51,12 @@ void XMLObject::parseIntegerOptional(const xmlChar *name, const xmlChar **attrs,
 	 return;
   
   // Parse data
-  for (int i=0;attrs[i];i++){
+  for (int i = 0; attrs[i]; i++) {
 	 
 	 // Check for attribute
-	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
-		if ( !attrs[i+1] ){
-		  // FIXME: Temporary until we get the logsystem working
-		  std::cout << "Value for attribute \"" << attribute << "\" in <"
-						<< name << "> is missing in XML file ." << std::endl;
-		  exit(1);
-		}
+	 if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 ){
+		if ( !attrs[i+1] )
+		  dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
 		*value = atoi( (char *) attrs[i+1] );
 		return;
 	 }
@@ -80,35 +69,23 @@ void XMLObject::parseRealRequired(const xmlChar *name, const xmlChar **attrs,
 										  const char *attribute, real *value)
 {
   // Check that we got the data
-  if ( !attrs ){
-  	 // FIXME: Temporary until we get the logsystem working
-	 std::cout << "Missing attributes for <"
-				  << name << "> in XML file." << std::endl;
-	 exit(1);
-  }
+  if ( !attrs )
+	 dolfin_error1("Missing attributes for <%s> in XML file.", name);
   
   // Parse data
-  for (int i=0;attrs[i];i++){
+  for (int i = 0; attrs[i]; i++){
 	 
 	 // Check for attribute
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
-		if ( !attrs[i+1] ){
-		  // FIXME: Temporary until we get the logsystem working
-		  std::cout << "Value for attribute \"" << attribute << "\" in <"
-						<< name << "> is missing in XML file ." << std::endl;
-		  exit(1);
-		}
+		if ( !attrs[i+1] )
+		  dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
 		*value = (real) atof( (char *) attrs[i+1] );
 		return;
 	 }
 	 
   }
   
-  // Didn't get the value
-  // FIXME: Temporary until we get the logsystem working
-  std::cout << "Missing attribute \"" << attribute << "\" for <"
-				<< name << "> in XML file." << std::endl;
-  exit(1);
+  dolfin_error2("Missing attribute \"%s\" for <%s> in XML file.", attribute, name);
 }
 //-----------------------------------------------------------------------------
 void XMLObject::parseRealOptional(const xmlChar *name, const xmlChar **attrs,
@@ -119,16 +96,12 @@ void XMLObject::parseRealOptional(const xmlChar *name, const xmlChar **attrs,
 	 return;
   
   // Parse data
-  for (int i=0;attrs[i];i++){
+  for (int i = 0; attrs[i]; i++) {
 	 
 	 // Check for attribute
 	 if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
-		if ( !attrs[i+1] ){
-		  // FIXME: Temporary until we get the logsystem working
-		  std::cout << "Value for attribute \"" << attribute << "\" in <"
-						<< name << "> is missing in XML file ." << std::endl;
-		  exit(1);
-		}
+		if ( !attrs[i+1] )
+		  dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
 		*value = (real) atof( (char *) attrs[i+1] );
 		return;
 	 }

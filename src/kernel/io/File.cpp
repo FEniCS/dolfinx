@@ -1,5 +1,4 @@
 #include <string>
-#include <iostream>
 
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -25,8 +24,7 @@ File::File(const std::string& filename)
 	 file = new MatlabFile(filename);
   else{
 	 file = 0;
-	 std::cout << "Unknown file type for " << filename << std::endl;
-	 exit(1);
+	 dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -44,8 +42,7 @@ File::File(const std::string& filename, Type type)
 	 break;
   default:
 	 file = 0;
-	 std::cout << "Unknown file type for " << filename << std::endl;
-	 exit(1);
+	 dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
   }
 }
 //-----------------------------------------------------------------------------

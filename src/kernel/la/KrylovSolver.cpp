@@ -1,8 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/basic.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -28,16 +27,12 @@ void KrylovSolver::setMethod(Method method)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 {
-  if ( A.size(0) != A.size(1) ) {
-    std::cout << "Must be a square matrix." << std::endl;
-    exit(1);
-  }
-  if ( A.size(0) != b.size() ) {
-    std::cout << "Not compatible matrix and vector sizes." << std::endl;
-    exit(1);
-  }
+  if ( A.size(0) != A.size(1) )
+    dolfin_error("Matrix must be square.");
+  if ( A.size(0) != b.size() )
+    dolfin_error("Incompatible matrix and vector dimensions.");
   
-  std::cout << "Using Krylov solver for linear system of " << b.size() << " unknowns" << std::endl;
+  cout << "Using Krylov solver for linear system of " << b.size() << " unknowns" << endl;
   
   // Check if we need to resize x
   if (x.size() != b.size()) x.init(b.size());
@@ -57,7 +52,7 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
     solveCG(A,x,b);
     break;
   default:
-    std::cout << "Krylov method not implemented" << std::endl;
+    dolfin_error("Unknown Krylov method.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -74,13 +69,13 @@ void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
     no_iterations = restartedGMRES(A,x,b,k_max);
     norm_residual = getResidual(A,x,b);
     if (norm_residual < (tol*b.norm())){
-      if ( i > 0 ) std::cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
-      else std::cout << "GMRES converged after " << no_iterations << " iterations";
-      std::cout << " (residual = " << norm_residual << ")." << std::endl;
+      if ( i > 0 ) cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
+      else cout << "GMRES converged after " << no_iterations << " iterations";
+      cout << " (residual = " << norm_residual << ")." << endl;
       break;
     }
     if (i == max_no_restarts-1) {
-      std::cout << "GMRES iterations did not converge: residual = " << norm_residual << std::endl;
+      cout << "GMRES iterations did not converge: residual = " << norm_residual << endl;
       exit(1);
     }
   }
@@ -283,7 +278,7 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
 
     if (k == k_max-1){
       norm_residual = getResidual(A,x,b);
-      std::cout << "CG iterations did not converge: residual = " << norm_residual << std::endl;
+      cout << "CG iterations did not converge: residual = " << norm_residual << endl;
       exit(1);
     }
 
@@ -291,8 +286,8 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
   }
 
   norm_residual = getResidual(A,x,b);
-  std::cout << "CG converged after " << k << " iterations" 
-       << " (residual = " << norm_residual << ")." << std::endl;
+  cout << "CG converged after " << k << " iterations" 
+       << " (residual = " << norm_residual << ")." << endl;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::applyPxu(Matrix &A, Vector &x, Vector &u)
@@ -318,8 +313,7 @@ void KrylovSolver::applyPxu(Matrix &A, Vector &x, Vector &u)
     return;
     break;
   default:
-    std::cout << "Unknown preconditioner" << std::endl;
-    exit(1);
+	 dolfin_error("Unknown preconditioner.");
   }
 
   sisolver.setNoSweeps(no_pc_sweeps);
@@ -349,8 +343,7 @@ void KrylovSolver::solvePxu(Matrix &A, Vector &x, Vector &u)
     return;
     break;
   default:
-    std::cout << "Unknown preconditioner" << std::endl;
-    exit(1);
+    dolfin_error("Unknown preconditioner.");
   }
 
   sisolver.setNoSweeps(no_pc_sweeps);
@@ -380,8 +373,7 @@ void KrylovSolver::solvePxv(Matrix &A, Vector &x, DenseMatrix &v, int k)
     return;
     break;
   default:
-    std::cout << "Unknown preconditioner" << std::endl;
-    exit(1);
+    dolfin_error("Unknown preconditioner.");
   }
 
   Vector tmp(v.size(0));

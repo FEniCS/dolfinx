@@ -40,7 +40,7 @@ real Mapping::dt(real a) const
 const FunctionSpace::ElementFunction Mapping::dx
 (const FunctionSpace::Product &v) const
 {
-  std::cout << "Warning: derivative of Product not implemented." << std::endl;
+  dolfin_warning("Derivative of Product not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -49,7 +49,7 @@ const FunctionSpace::ElementFunction Mapping::dx
 const FunctionSpace::ElementFunction Mapping::dy
 (const FunctionSpace::Product &v) const
 {
-  std::cout << "Warning: derivative of Product not implemented." << std::endl;
+  dolfin_warning("Derivative of Product not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -58,7 +58,7 @@ const FunctionSpace::ElementFunction Mapping::dy
 const FunctionSpace::ElementFunction Mapping::dz
 (const FunctionSpace::Product &v) const
 {
-  std::cout << "Warning: derivative of Product not implemented." << std::endl;
+  dolfin_warning("Derivative of Product not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -67,7 +67,7 @@ const FunctionSpace::ElementFunction Mapping::dz
 const FunctionSpace::ElementFunction Mapping::dt
 (const FunctionSpace::Product &v) const
 {
-  std::cout << "Warning: derivative of Product not implemented." << std::endl;
+  dolfin_warning("Derivative of Product not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -76,7 +76,7 @@ const FunctionSpace::ElementFunction Mapping::dt
 const FunctionSpace::ElementFunction Mapping::dx
 (const FunctionSpace::ElementFunction &v) const
 {
-  std::cout << "Warning: derivative of ElementFunction not implemented." << std::endl;
+  dolfin_warning("Derivative of ElementFunction not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -85,7 +85,7 @@ const FunctionSpace::ElementFunction Mapping::dx
 const FunctionSpace::ElementFunction Mapping::dy
 (const FunctionSpace::ElementFunction &v) const
 {
-  std::cout << "Warning: derivative of ElementFunction not implemented." << std::endl;
+  dolfin_warning("Derivative of ElementFunction not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -94,7 +94,7 @@ const FunctionSpace::ElementFunction Mapping::dy
 const FunctionSpace::ElementFunction Mapping::dz
 (const FunctionSpace::ElementFunction &v) const
 {
-  std::cout << "Warning: derivative of ElementFunction not implemented." << std::endl;
+  dolfin_warning("Derivative of ElementFunction not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;
@@ -103,7 +103,7 @@ const FunctionSpace::ElementFunction Mapping::dz
 const FunctionSpace::ElementFunction Mapping::dt
 (const FunctionSpace::ElementFunction &v) const
 {
-  std::cout << "Warning: derivative of ElementFunction not implemented." << std::endl;
+  dolfin_warning("Derivative of ElementFunction not implemented.");
   
   FunctionSpace::ElementFunction w;
   return w;

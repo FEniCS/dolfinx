@@ -1,3 +1,7 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include "XMLVector.h"
 
@@ -61,11 +65,8 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "size", &size);
 
   // Check values
-  if ( size < 0 ) {
-	 // FIXME: Temporary until we get the logsystem working
-	 std::cout << "Error reading XML data: size of vector must be positive." << std::endl;
-	 exit(1);
-  }
+  if ( size < 0 )
+	 dolfin_error("Illegal XML data for Vector: size of vector must be positive.");
 
   // Initialise
   x.init(size);	 
@@ -82,13 +83,8 @@ void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "value", &value);   
   
   // Check values
-  if ( row < 0 || row >= x.size() ) {
-	 // FIXME: Temporary until we get the logsystem working
-	 std::cout << "Error reading XML data: row index " << row
-				  << " for vector out of range (0 - " << x.size()
-				  << ")" << std::endl;
-	 exit(1);
-  }
+  if ( row < 0 || row >= x.size() )
+	 dolfin_error2("Illegal XML data for Vector: row index %d out of range (0 - %d)", row, x.size() - 1);
   
   // Set value
   x(row) = value;

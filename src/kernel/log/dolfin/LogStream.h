@@ -4,7 +4,6 @@
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
 
-#include <iostream>
 #include <string>
 #include <dolfin/constants.h>
 
@@ -19,7 +18,7 @@ namespace dolfin {
 	 ~LogStream();
 	 
 	 LogStream& operator<<(const char* s);
-	 LogStream& operator<<(const string s);
+	 LogStream& operator<<(const string& s);
 	 LogStream& operator<<(int a);
 	 LogStream& operator<<(real a);
 	 LogStream& operator<<(const LogStream& stream);

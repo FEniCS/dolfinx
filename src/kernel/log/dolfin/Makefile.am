@@ -4,4 +4,5 @@ EXTRA_DIST = dolfin_log.h \
              LoggerMacros.h \
              LogManager.h \
              LogStream.h \
+             Progress.h \
              TerminalLogger.h

@@ -1,8 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/Product.h>
@@ -15,11 +14,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(int dim)
 {
-  // FIXME: Use logging system
-  if ( dim <= 0 ) {
-	 std::cout << "Error: dimension for function space must be positive" << std::endl;
-	 exit(1);
-  }
+  if ( dim <= 0 )
+	 dolfin_error("Dimension of function space must be positive");
 
   _dim = dim;
   
@@ -63,11 +59,8 @@ void FunctionSpace::add(ShapeFunction v,
   v.set(dx, dy, dz, dt);
   
   // Add shape function
-  if ( this->v.add(v) == -1 ) {
-	 // FIXME: Use logging system
-	 std::cout << "Error: function space is full." << std::endl;
-	 exit(1);
-  }
+  if ( this->v.add(v) == -1 )
+	 dolfin_error("Function space is full.");
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v, real dx)

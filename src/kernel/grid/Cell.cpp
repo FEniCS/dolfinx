@@ -1,3 +1,7 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Node.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/Triangle.h>
@@ -126,9 +130,7 @@ int Cell::nodeID(int i) const
 //-----------------------------------------------------------------------------
 int Cell::edgeID(int i) const
 {
-  // FIXME: Use logging system
-  std::cout << "Cell::edgeID() is not implemented." << std::endl;
-  exit(1);
+  dolfin_error("Not implemented.");
 }
 //-----------------------------------------------------------------------------
 void Cell::mark()
@@ -153,11 +155,8 @@ Cell::Marker Cell::marker() const
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2)
 {
-  if ( cn.size() != 3 ) {
-	 // FIXME: Temporary until we fix the log system
-	 std::cout << "Wrong number of nodes for this cell type." << std::endl;
-	 exit(1);
-  }
+  if ( cn.size() != 3 )
+	 dolfin_error("Wrong number of nodes for this cell type.");
 
   cn(0) = n0;
   cn(1) = n1;
@@ -166,11 +165,8 @@ void Cell::set(Node *n0, Node *n1, Node *n2)
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
-  if ( cn.size() != 4 ) {
-	 // FIXME: Temporary until we fix the log system
-	 std::cout << "Wrong number of nodes for this cell type." << std::endl;
-	 exit(1);
-  }
+  if ( cn.size() != 4 )
+	 dolfin_error("Wrong number of nodes for this cell type.");
 
   cn(0) = n0;
   cn(1) = n1;
@@ -196,9 +192,7 @@ void Cell::init(Type type)
 	 c = new Tetrahedron();
 	 break;
   default:
-	 // FIXME: Temporary until we fix the log system
-	 std::cout << "Unknown cell type" << std::endl;
-	 exit(1);
+	 dolfin_error("Unknown cell type.");
   }
   
   cn.init(noNodes());
@@ -214,27 +208,25 @@ bool Cell::neighbor(Cell &cell)
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, const Cell& cell)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
 {
   switch ( cell.type() ){
   case Cell::TRIANGLE:
-	 output << "[Cell (triangle) with nodes ( ";
+	 stream << "[Cell (triangle) with nodes ( ";
 	 for (NodeIterator n(cell); !n.end(); ++n)
-		output << n->id() << " ";
-	 output << "]";
+		stream << n->id() << " ";
+	 stream << "]";
 	 break;
   case Cell::TETRAHEDRON:
-	 output << "[Cell (tetrahedron) with nodes ( ";
+	 stream << "[Cell (tetrahedron) with nodes ( ";
 	 for (NodeIterator n(cell); !n.end(); ++n)
-		output << n->id() << " ";
-	 output << "]";
+		stream << n->id() << " ";
+	 stream << "]";
 	 break;
   default:
-	 // FIXME: Temporary until we fix the log system
-	 std::cout << "Unknown cell type" << std::endl;
-	 exit(1);
+	 dolfin_error("Unknown cell type");
   }	 
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

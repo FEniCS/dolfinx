@@ -1,5 +1,9 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <time.h>
-#include <iostream>
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/timeinfo.h>
 
 using namespace dolfin;
@@ -22,7 +26,7 @@ real dolfin::toc()
 
   double elapsed_time = ((double) (__toc_time - __tic_time)) / CLOCKS_PER_SEC;
 
-  std::cout << "- Elapsed time: " << elapsed_time << " seconds" << std::endl;
+  cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 
   return elapsed_time;
 }

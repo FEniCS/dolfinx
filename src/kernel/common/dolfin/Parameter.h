@@ -4,14 +4,12 @@
 #ifndef __PARAMETER_HH
 #define __PARAMETER_HH
 
-#include <iostream>
-#include <string.h>
 #include <stdarg.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/function.h>
 #include <dolfin/bcfunction.h>
-#include "utils.h"
+#include <dolfin/utils.h>
 
 #define PARAMETER_IDENTIFIER_LENGTH 128
 

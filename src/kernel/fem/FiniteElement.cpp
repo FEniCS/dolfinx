@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/FiniteElement.h>
 
@@ -14,12 +15,9 @@ int FiniteElement::dim() const
 //-----------------------------------------------------------------------------
 void FiniteElement::update(const Mapping* mapping)
 {
+  // Maybe this can be optimized if we use the same trial and test spaces?
   P.update(*mapping);
-
-  if ( &P != &Q )
-	 Q.update(*mapping);
-  else
-	 std::cout << "Same test and trial spaces" << std::endl;
+  Q.update(*mapping);
 }
 //-----------------------------------------------------------------------------
 // FiniteElement::TrialFunctionIterator

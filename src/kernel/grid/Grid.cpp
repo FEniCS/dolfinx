@@ -5,6 +5,7 @@
 #include <math.h>
 #include <strings.h>
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/constants.h>
 #include <dolfin/Grid.h>
@@ -75,21 +76,21 @@ Grid::Type Grid::type() const
 //-----------------------------------------------------------------------------
 void Grid::show()
 {
-  std::cout << "-------------------------------------------------------------------------------" << std::endl;
-  std::cout << "Grid with " << noNodes() << " nodes and " << noCells() << " cells:" << std::endl;
-  std::cout << std::endl;
+  cout << "-------------------------------------------------------------------------------" << endl;
+  cout << "Grid with " << noNodes() << " nodes and " << noCells() << " cells:" << endl;
+  cout << endl;
 
   for (NodeIterator n(this); !n.end(); ++n)
-	 std::cout << "  " << *n << std::endl;
+	 cout << "  " << *n << endl;
 
-  std::cout << std::endl;
+  cout << endl;
   
   for (CellIterator c(this); !c.end(); ++c)
-	 std::cout << "  " << *c << std::endl;
+	 cout << "  " << *c << endl;
   
-  std::cout << std::endl;
+  cout << endl;
   
-  std::cout << "-------------------------------------------------------------------------------" << std::endl;
+  cout << "-------------------------------------------------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
 Node* Grid::createNode()
@@ -108,7 +109,7 @@ Cell* Grid::createCell(Cell::Type type)
 	 _type = TETRAHEDRONS;
 	 break;
   default:
-	 std::cout << "Warning: unknown cell type." << std::endl;
+	 dolfin_error("Unknown cell type.");
   }
   
   return gd->createCell(type);

@@ -35,7 +35,7 @@ LogStream& LogStream::operator<<(const char* s)
   return *this;
 }
 //-----------------------------------------------------------------------------
-LogStream& LogStream::operator<<(const string s)
+LogStream& LogStream::operator<<(const std::string& s)
 {
   add(s.c_str());
   return *this;
@@ -73,9 +73,10 @@ LogStream& LogStream::operator<<(real a)
 void LogStream::add(const char* msg)
 {
   for (int i = 0; msg[i]; i++) {
-	 if ( current >= DOLFIN_LINELENGTH )
+	 if ( current >= (DOLFIN_LINELENGTH-1) )
 		dolfin_error("Capacity of buffer for cout exceeded.");
 	 buffer[current++] = msg[i];
   }
+  buffer[current] = '\0';
 }
 //-----------------------------------------------------------------------------

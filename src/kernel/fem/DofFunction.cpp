@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
@@ -33,9 +34,7 @@ real DofFunction::operator() (const Node& n, real t)  const
 //-----------------------------------------------------------------------------
 real DofFunction::operator() (const Point& p, real t) const
 {
-  // FIXME: Needs implementation
-  std::cout << "Evaluation of function at given point not implemented." << std::endl;
-  exit(1);
+  dolfin_error("Evaluation of function at given point not implemented.");
 
   return 0.0;
 }

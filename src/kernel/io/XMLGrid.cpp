@@ -1,12 +1,10 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Grid.h>
 #include <dolfin/GridData.h>
 #include "XMLGrid.h"
-
-// Fixme: temporary
-#include <iostream>
 
 using namespace dolfin;
 

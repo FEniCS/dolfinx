@@ -1,8 +1,12 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <stdio.h>
 #include <sys/utsname.h>
 #include <stdlib.h>
 #include <time.h>
-#include <iostream>
+
+#include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/constants.h>
 #include <dolfin/sysinfo.h>
@@ -14,25 +18,25 @@ void dolfin::sysinfo()
 {
   char string[DOLFIN_WORDLENGTH];
 
-  std::cout << "- System info:" << std::endl;
+  cout << "- System info:" << endl;
   
   sysinfo_user(string);
-  std::cout << "- User:    " << string << std::endl;
+  cout << "- User:    " << string << endl;
   
   sysinfo_date(string);
-  std::cout << "- Date:    " << string << std::endl;
+  cout << "- Date:    " << string << endl;
   
   sysinfo_host(string);
-  std::cout << "- Host:    " << string << std::endl;
+  cout << "- Host:    " << string << endl;
   
   sysinfo_mach(string);
-  std::cout << "- Machine: " << string << std::endl;
+  cout << "- Machine: " << string << endl;
   
   sysinfo_name(string);
-  std::cout << "- System:  " << string << std::endl;
+  cout << "- System:  " << string << endl;
   
   sysinfo_vers(string);
-  std::cout << "- Version: " << string << std::endl;
+  cout << "- Version: " << string << endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::sysinfo_user(char* string)

@@ -1,7 +1,13 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <dolfin/dolfin_log.h>
+#include <dolfin/utils.h>
 #include <dolfin/constants.h>
 #include <dolfin/meminfo.h>
 
@@ -13,20 +19,28 @@ void dolfin::meminfo()
   // Get process id
   int pid = (int) getpid();
 
-  // Read values
+  // Write values from /proc to temporary file
   char command[DOLFIN_WORDLENGTH];
-
+  
   system("/bin/rm -f meminfo.tmp");
-
-  sprintf(command, "echo \"- Memory usage for process %d\" >> meminfo.tmp", pid);
+  
+  sprintf(command, "cat /proc/%d/status | grep VmSize | /usr/bin/awk '{print \" \"$2\" \"$3}' >> meminfo.tmp", pid);
   system(command);
   
-  sprintf(command, "cat /proc/%d/status | grep VmSize | /usr/bin/awk '{print \"- Size:     \"$2\" \"$3}' >> meminfo.tmp", pid);
-  system(command);
-  
-  sprintf(command, "cat /proc/%d/status | grep VmRSS  | /usr/bin/awk '{print \"- Resident: \"$2\" \"$3}' >> meminfo.tmp", pid);
+  sprintf(command, "cat /proc/%d/status | grep VmRSS  | /usr/bin/awk '{print \" \"$2\" \"$3}' >> meminfo.tmp", pid);
   system(command);
 
-  system("cat meminfo.tmp");
+  // Get variables and print
+  FILE *fp = fopen("meminfo.tmp", "r");
+
+  dolfin_info("Memory usage for process %d:", pid);
+
+  fgets(command, DOLFIN_WORDLENGTH, fp); remove_newline(command);
+  dolfin_info("Size:     %s", command);
+
+  fgets(command, DOLFIN_WORDLENGTH, fp); remove_newline(command);
+  dolfin_info("Resident: %s", command);
+
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 #include <stdarg.h>
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
@@ -51,32 +52,27 @@ void XMLFile::operator>>(Grid& grid)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Function& u)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot read functions from XML files." << std::endl;  
+  dolfin_warning("Cannot read functions from XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Vector& x)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot write vectors to XML files." << std::endl;  
+  dolfin_warning("Cannot write vectors to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Matrix& A)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot write matrices to XML files." << std::endl;  
+  dolfin_warning("Cannot write matrices to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Grid& Grid)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot write grids to XML files." << std::endl;  
+  dolfin_warning("Cannot write grids to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Function& u)
 {
-  // FIXME: Use logging system
-  std::cout << "Warning: Cannot write functions to XML files." << std::endl;  
+  dolfin_warning("Cannot write functions to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseFile()
@@ -88,11 +84,8 @@ void XMLFile::parseFile()
   parseSAX();
 
   // Check that we got the data
-  // FIXME: Temporary until we get the logsystem working  
-  if ( !xmlObject->dataOK() ){
-	 std::cout << "Unable to find data in XML file" << std::endl;
-	 exit(1);
-  }
+  if ( !xmlObject->dataOK() )
+	 dolfin_error("Unable to find data in XML file.");
 
   // Write a message
   xmlObject->done();

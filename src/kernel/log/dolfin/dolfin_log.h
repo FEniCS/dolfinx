@@ -36,12 +36,31 @@
 //
 //     cout << "Assembling matrix: " << A << endl;
 //     cout << "Refining grid: " << grid << endl;
+//
+// To notify progress by a progress session, use the class
+// Progress.
+//
+// Examples of usage:
+//
+//     Progress p("Assembling", grid.noNodes());
+//
+//     for (CellIterator c(grid); !c.end(); ++c) {
+//         ...
+//         p++;
+//     }
+//
+// Progress also supports the following usage:
+//
+//     (1) p = i;   // Specify step number
+//     (2) p = 0.5; // Specify percentage
+//     (3) p.update(t/T, "Time is t = %f", t);
 
-#include <dolfin/Logger.h>
-#include <dolfin/LogManager.h>
 #include <dolfin/GenericLogger.h>
+#include <dolfin/Logger.h>
 #include <dolfin/LoggerMacros.h>
+#include <dolfin/LogManager.h>
 #include <dolfin/LogStream.h>
+#include <dolfin/Progress.h>
 #include <dolfin/TerminalLogger.h>
 
 #endif
