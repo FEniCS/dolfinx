@@ -11,13 +11,14 @@ using namespace dolfin;
 
 // Initialise static data
 ShortList<Parameter> ParameterList::list(DOLFIN_PARAMSIZE);
+bool ParameterList::_empty(true);
 
 //----------------------------------------------------------------------------
 void ParameterList::add(Parameter::Type type, const char *identifier, ...)
 {
   va_list aptr;
   va_start(aptr,identifier);
-
+  
   // Create the parameter
   Parameter p(type, identifier, aptr);
   
@@ -28,6 +29,8 @@ void ParameterList::add(Parameter::Type type, const char *identifier, ...)
   }
   
   va_end(aptr);
+
+  _empty = false;
 }
 //----------------------------------------------------------------------------
 void ParameterList::set(const char *identifier, ...)
@@ -85,6 +88,11 @@ bool ParameterList::changed(const char *identifier)
 
   std::cout << "Error: Status for unknown parameter <" << identifier << "> not available." << std::endl;
   exit(1);
+}
+//----------------------------------------------------------------------------
+bool ParameterList::empty()
+{
+  return _empty;
 }
 //----------------------------------------------------------------------------
 int ParameterList::getIndex(const char *identifier)

@@ -28,6 +28,9 @@ namespace dolfin {
 		add(Parameter::BCFUNCTION, "boundary condition", 0);
 		
 	 }
+
+	 static void get(const char *identifier, ...);
+	 static void set(const char *identifier, ...);
 	 
   };
   

@@ -78,7 +78,7 @@ include_HEADERS = dolfin/List.h                         dolfin/function.h       
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-common.a
-libdolfin_common_a_SOURCES = Parameter.cpp                              ParameterList.cpp                              System.cpp                              Variable.cpp                              meminfo.cpp                              sysinfo.cpp                              timeinfo.cpp                              utils.cpp
+libdolfin_common_a_SOURCES = Parameter.cpp                              ParameterList.cpp                              Settings.cpp                              System.cpp                              Variable.cpp                              meminfo.cpp                              sysinfo.cpp                              timeinfo.cpp                              utils.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -90,8 +90,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_common_a_LIBADD = 
-libdolfin_common_a_OBJECTS =  Parameter.o ParameterList.o System.o \
-Variable.o meminfo.o sysinfo.o timeinfo.o utils.o
+libdolfin_common_a_OBJECTS =  Parameter.o ParameterList.o Settings.o \
+System.o Variable.o meminfo.o sysinfo.o timeinfo.o utils.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -106,9 +106,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Parameter.P .deps/ParameterList.P .deps/System.P \
-.deps/Variable.P .deps/meminfo.P .deps/sysinfo.P .deps/timeinfo.P \
-.deps/utils.P
+DEP_FILES =  .deps/Parameter.P .deps/ParameterList.P .deps/Settings.P \
+.deps/System.P .deps/Variable.P .deps/meminfo.P .deps/sysinfo.P \
+.deps/timeinfo.P .deps/utils.P
 SOURCES = $(libdolfin_common_a_SOURCES)
 OBJECTS = $(libdolfin_common_a_OBJECTS)
 

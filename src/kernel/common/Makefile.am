@@ -14,6 +14,7 @@ INCLUDES              = @MODULE_INCLUDES@
 lib_LIBRARIES         = libdolfin-common.a
 libdolfin_common_a_SOURCES = Parameter.cpp \
                              ParameterList.cpp \
+                             Settings.cpp \
                              System.cpp \
                              Variable.cpp \
                              meminfo.cpp \

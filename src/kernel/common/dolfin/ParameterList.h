@@ -27,12 +27,16 @@ namespace dolfin {
 	 
 	 /// Check if the parameter has been changed
 	 static bool changed(const char *identifier);
+
+	 /// Check if the list is empty
+	 static bool empty();
 	 
   private:
 	 
 	 static int getIndex(const char *identifier);
 	 
 	 static ShortList<Parameter> list;
+	 static bool _empty;
 	 
   };
 
