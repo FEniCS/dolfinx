@@ -34,8 +34,6 @@ public:
   
   complex f(const complex z[], real t, unsigned int i)
   {
-    cout << "f at t = " << t << ": " << (z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0) << endl;
-
     return z[0]*z[0]*z[0] - c + z[0]*z[0] - 1.0;
   }
 

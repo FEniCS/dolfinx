@@ -167,11 +167,6 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
     for (uint i = 0; i < ts.N; i++)
       bb[noffset + i] = Mu0[i];
     
-    cout << "Mu0:";
-    for (uint i = 0; i < ts.N; i++)
-      cout << " " << Mu0[i];
-    cout << endl;
-
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
@@ -179,12 +174,6 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
 	bb[noffset + i] += tmp * ts.f[moffset + i];
-
-      cout << "k*f:";
-      for (uint i = 0; i < ts.N; i++)
-	cout << " " << tmp*ts.f[i];
-      cout << endl;
-      
     }
   }
   
@@ -205,19 +194,9 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
       const real t = a + method.npoint(n) * k;
       ode.M(xx + noffset, z, xx + noffset, t);
     }
+
     for (uint i = 0; i < ts.N; i++)
       bb[noffset + i] -= z[i];
-
-    cout << "Mu1:";
-    for (uint i = 0; i < ts.N; i++)
-      cout << " " << z[i];
-    cout << endl;
-
-    cout << "b:  ";
-    for (uint i = 0; i < ts.N; i++)
-      cout << " " << bb[i];
-    cout << endl;
-
   }
 
   // Restore arrays
