@@ -27,7 +27,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Allocate and reset matrix
-  //  alloc(A, mesh, pde);
+  alloc(pde, mesh, A);
   
   // Assemble interior
   assembleInterior(pde, mesh, A);
@@ -39,7 +39,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
   A.resize();
 
   // FIXME: This should be removed
-  //setBC(mesh, A, pde);
+  //setBC(pde, mesh, A);
 
   // Write a message
   cout << "Assembled: " << A << endl; 
@@ -47,8 +47,8 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
 {
-  // Allocate and reset matrix
-  //alloc(b, mesh, pde);
+  // Allocate and reset vector
+  alloc(pde, mesh, b);
   
   // Assemble interior
   assembleInterior(pde, mesh, b);
@@ -57,7 +57,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
   assembleBoundary(pde, mesh, b);
 
   // FIXME: This should be removed
-  //setBC(mesh, b, pde);
+  //setBC(pde, mesh, b);
 
   // Write a message
   cout << "Assembled: " << b << endl;
@@ -259,7 +259,7 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b)
   }
 }
 //-----------------------------------------------------------------------------
-void NewFEM::setBC(Mesh& mesh, Matrix& A, NewPDE& pde)
+void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
@@ -300,7 +300,7 @@ void NewFEM::setBC(Mesh& mesh, Matrix& A, NewPDE& pde)
   }
 }
 //-----------------------------------------------------------------------------
-void NewFEM::setBC(Mesh& mesh, Vector& b, NewPDE& pde)
+void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Vector& b)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
@@ -337,63 +337,49 @@ void NewFEM::setBC(Mesh& mesh, Vector& b, NewPDE& pde)
   }
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(Matrix &A, Mesh &mesh, NewPDE& pde)
+void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Matrix& A)
 {
-  // Count the degrees of freedoml
-  // Assume square matrix. 
-
-  unsigned int imax = 0;
-  //unsigned int jmax = 0;
-  
+  // Count the degrees of freedom (check maximum index)
+  unsigned int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    
-    for (unsigned int sf = 0; sf < pde.size(); sf++)
+    for (unsigned int i = 0; i < pde.size(); i++)
     {
-      unsigned int i = pde.dof(sf,*cell);
-      if ( i > imax )
-	imax = i;
+      unsigned int dof = pde.dof(i, *cell);
+      if ( dof > dofmax )
+	dofmax = dof;
     }
-    
   }
   
-  // Size of the matrix
-  unsigned int m = (imax + 1) * pde.dim();
-  //unsigned int n = (jmax + 1) * pde.dim();
-  
   // Initialise matrix
-  if ( A.size(0) != m || A.size(1) != m )
-    A.init(m, m);
-  //if ( A.size(0) != m || A.size(1) != n )
-  //  A.init(m, n);
+  dofmax++;
+  if ( A.size(0) != dofmax || A.size(1) != dofmax )
+    A.init(dofmax, dofmax);
 
-  // Set all entries to zero (for repeated assembling)
+  // Set all entries to zero (for repeated assembly)
   A = 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(Vector &b, Mesh &mesh, NewPDE& pde)
+void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
 {
-  // Count the degrees of freedom
-  unsigned int imax = 0;
+  // Count the degrees of freedom (check maximum index)
+  unsigned int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (unsigned int sf = 0; sf < pde.size(); sf++)
+    for (unsigned int i = 0; i < pde.size(); i++)
     {
-      unsigned int i = pde.dof(sf,*cell);
-      if ( i > imax )
-	imax = i;
+      unsigned int dof = pde.dof(i, *cell);
+      if ( dof > dofmax )
+	dofmax = dof;
     }
-    
   }
   
-  // Size of vector
-  unsigned int m = (imax + 1) * pde.dim();
-  
   // Initialise vector
-  if ( b.size() != m )
-    b.init(m);
-  
-  // Set all entries to zero
+  dofmax++;
+  if ( b.size() != dofmax )
+    b.init(dofmax);
+
+  // Set all entries to zero (for repeated assembly)
   b = 0.0;
 }
 //-----------------------------------------------------------------------------

@@ -30,25 +30,27 @@ namespace dolfin
 
   private:
     
-    static void assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A);
-    static void assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A);
-    static void assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A);
-    static void assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A);
+    /// Assemble matrix
+    static void assembleInterior    (NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundary    (NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundaryTri (NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundaryTet (NewPDE& pde, Mesh& mesh, Matrix& A);
 
-    static void assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b);
-    static void assembleBoundary(NewPDE& pde, Mesh& mesh, Vector& b);
-    static void assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Vector& b);
-    static void assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b);
+    /// Assemble vector
+    static void assembleInterior    (NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundary    (NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundaryTri (NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundaryTet (NewPDE& pde, Mesh& mesh, Vector& b);
 
     /// Allocate matrix
-    void alloc(Matrix &A, Mesh &mesh, NewPDE& pde);
+    static void alloc(const NewPDE& pde, Mesh& mesh, Matrix &A);
       
     /// Allocate vector
-    void alloc(Vector &b, Mesh &mesh, NewPDE& pde);
+    static void alloc(const NewPDE& pde, Mesh& mesh, Vector& b);
   
     /// FIXME: Temporary strong implementation of BC
-    void setBC(Mesh& mesh, Matrix& A, NewPDE& pde);
-    void setBC(Mesh& mesh, Vector& b, NewPDE& pde);
+    void setBC(const NewPDE& pde, Mesh& mesh, Matrix& A);
+    void setBC(const NewPDE& pde, Mesh& mesh, Vector& b);
 
   };
 
