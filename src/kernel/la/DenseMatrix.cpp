@@ -3,6 +3,7 @@
 //
 // Modified by Erik Svensson, 2003
 
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DirectSolver.h>
 #include <dolfin/Vector.h>

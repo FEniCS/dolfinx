@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix(Type type = SPARSE)
+Matrix::Matrix(Type type)
 {
   if ( type == DENSE )
     A = new DenseMatrix();
@@ -23,7 +23,7 @@ Matrix::Matrix(Type type = SPARSE)
   _type = type;
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(int m, int n, Type type = SPARSE)
+Matrix::Matrix(int m, int n, Type type)
 {
   if ( type == DENSE )
     A = new DenseMatrix(m,n);

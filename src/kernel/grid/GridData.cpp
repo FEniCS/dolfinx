@@ -1,3 +1,7 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <cmath>
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
