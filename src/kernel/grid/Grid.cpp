@@ -1,7 +1,6 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
 #include <stdio.h>
 #include <math.h>
 #include <strings.h>
@@ -178,11 +177,11 @@ void Grid::init()
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, Grid& grid)
+dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Grid& grid)
 {
-  output << "[ Grid with " << grid.noNodes() << " nodes and "
+  stream << "[ Grid with " << grid.noNodes() << " nodes and "
 			<< grid.noCells() << " cells. ]";
-  
-  return output;
+
+  return stream;
 }
 //-----------------------------------------------------------------------------

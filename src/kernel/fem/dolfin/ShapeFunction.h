@@ -4,8 +4,7 @@
 #ifndef __SHAPE_FUNCTION_H
 #define __SHAPE_FUNCTION_H
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/function.h>
 #include <dolfin/Point.h>
@@ -89,7 +88,7 @@ namespace dolfin {
 	 bool operator! () const;
 	 
 	 // Output
-	 friend std::ostream& operator << (std::ostream& output, const ShapeFunction &v);
+	 friend LogStream& operator<<(LogStream& stream, const ShapeFunction &v);
 	 
   private:
 

@@ -25,25 +25,6 @@ FILE="./dolfin-config"
 TEMPLATE="./dolfin-config.template"
 DOLFIN_MAIN_INCLUDE="../kernel/main/dolfin.h"
 
-# Find all libraries (.a files)
-DOLFIN_LIBS=""
-echo "Scanning for DOLFIN libraries..."
-for f in `find .. -name '*.a'`; do
-	 lib=`echo $f | xargs basename | cut -d'b' -f2-0 | cut -d'.' -f1`
-#	 lflag="-l$lib"
-	 DOLFIN_LIBS="$DOLFIN_LIBS $f"
-#	 LIBS_DOLFIN="$LFLAGS_INSOURCE $lflag"
-	 echo "  Found: $lib"
-done
-
-# Find all dolfin include files
-DOLFIN_INCLUDES=""
-echo "Scanning for DOLFIN include files..."
-for f in `find .. -name '*.h*' | grep dolfin | grep -v '~'`; do
-	 DOLFIN_INCLUDES="$DOLFIN_INCLUDES $f"
-	 echo "  Found: $f"
-done
-
 # Generate configure script
 echo "Generating data for dolfin-config..."
 rm -f ./dolfin-config
@@ -60,11 +41,3 @@ echo VERSION=\"$VERSION\" >> $FILE
 echo >> $FILE
 cat $TEMPLATE >> $FILE
 chmod 0755 $FILE
-
-# Copy include files and libraries
-echo Copying main include file to ../../include
-cp $DOLFIN_MAIN_INCLUDE ../../include
-echo Copying include files to ../../include/dolfin
-cp $DOLFIN_INCLUDES ../../include/dolfin
-echo Copying library files to ../../lib
-cp $DOLFIN_LIBS ../../lib

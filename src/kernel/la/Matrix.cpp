@@ -3,7 +3,7 @@
 //
 // Contributions by: Georgios Foufas 2002, 2003
 
-#include <iostream>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 
@@ -63,7 +63,7 @@ void Matrix::operator+= (const Matrix& A)
 {
   if ( A.m != m || A.n != n ) {
 	// FIXME: Use logging system
-	std::cout << "Matrix::operator= (): Matrices not compatible." << std::endl;
+	cout << "Matrix::operator= (): Matrices not compatible." << endl;
 	exit(1);
   }
 
@@ -80,7 +80,7 @@ void Matrix::operator-= (const Matrix& A)
 {
   if ( A.m != m || A.n != n ) {
 	// FIXME: Use logging system
-	std::cout << "Matrix::operator= (): Matrices not compatible." << std::endl;
+	cout << "Matrix::operator= (): Matrices not compatible." << endl;
 	exit(1);
   }
 
@@ -106,11 +106,11 @@ void Matrix::init(int m, int n)
 
   // FIXME: Use logging system
   if ( m < 0 ) {
-    std::cout << "Matrix::init(): Number of rows must be positive." << std::endl;
+    cout << "Matrix::init(): Number of rows must be positive." << endl;
 	 exit(1);
   }
   if ( n < 0 ) {
-    std::cout << "Matrix::init(): Number of columns must be positive." << std::endl;
+    cout << "Matrix::init(): Number of columns must be positive." << endl;
 	 exit(1);
   }
   
@@ -126,7 +126,7 @@ void Matrix::init(int m, int n)
   values   = new (real *)[m];
   
   if ( !columns || !values ) {
-	 std::cout << "Unable to allocate memory for sparse matrix." << std::endl;
+	 cout << "Unable to allocate memory for sparse matrix." << endl;
 	 exit(1);
   }
 	 
@@ -188,7 +188,7 @@ void Matrix::resize()
   }
 
   // Write a message
-  std::cout << "Clearing " << (oldsize - newsize) << " unused elements." << std::endl;
+  cout << "Clearing " << (oldsize - newsize) << " unused elements." << endl;
 }
 //-----------------------------------------------------------------------------
 void Matrix::clear()
@@ -226,11 +226,11 @@ int Matrix::size(int dim) const
   else if ( dim == 1 )
 	 return n;
 
-  std::cout << "Matrix::size(): Illegal dimension" << std::endl;
+  cout << "Matrix::size(): Illegal dimension" << endl;
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Matrix::size()
+int Matrix::size() const
 {  
   int size = 0;
   for (int i = 0; i < m; i++)
@@ -241,7 +241,7 @@ int Matrix::size()
   return size;
 }
 //-----------------------------------------------------------------------------
-int Matrix::bytes()
+int Matrix::bytes() const
 {
   int bytes = 0;
   
@@ -258,9 +258,9 @@ int Matrix::bytes()
 void Matrix::initRow(int i, int rowsize)
 {
   if ( i < 0 || i >= m )
-    std::cout << "Matrix::initRow(): Illegal row index" << std::endl;
+    cout << "Matrix::initRow(): Illegal row index" << endl;
   if ( rowsize < 0 )
-    std::cout << "Matrix::initRow(): Illegal row size" << std::endl;
+    cout << "Matrix::initRow(): Illegal row size" << endl;
   
   if ( columns[i] ){
 	 delete [] columns[i];
@@ -316,7 +316,7 @@ void Matrix::resizeRow(int i, int rowsize)
 int Matrix::rowSize(int i) const
 {
   if ( i < 0 || i >= m )
-    std::cout << "Matrix::rowSize(): Illegal row index" << std::endl;
+    cout << "Matrix::rowSize(): Illegal row index" << endl;
 
   return rowsizes[i];
 }
@@ -332,10 +332,10 @@ bool Matrix::endrow(int i, int pos) const
 real Matrix::operator()(int i, int *j, int pos) const
 {
   if ( i < 0 || i >= m )
-	 std::cout << "Matrix::operator (): Illegal row index" << std::endl;
+	 cout << "Matrix::operator (): Illegal row index" << endl;
 
   if ( pos >= rowsizes[i] )
-	 std::cout << "Matrix::operator (): Illegal position" << std::endl;
+	 cout << "Matrix::operator (): Illegal position" << endl;
 
   *j = columns[i][pos];
   
@@ -368,7 +368,7 @@ real Matrix::norm()
 void Matrix::ident(int i)
 {
   if ( i < 0 || i >= m )
-    std::cout << "Matrix::setRowIdentity(): Illegal row index" << std::endl;
+    cout << "Matrix::setRowIdentity(): Illegal row index" << endl;
 
   if ( columns[i] )
 	 delete [] columns[i];
@@ -387,7 +387,7 @@ void Matrix::ident(int i)
 real Matrix::mult(Vector &x, int i)
 {
   if ( i < 0 || i >= m )
-    std::cout << "Matrix::mult(): Illegal row index" << std::endl;
+    cout << "Matrix::mult(): Illegal row index" << endl;
 
   real sum = 0.0;
 
@@ -400,7 +400,7 @@ real Matrix::mult(Vector &x, int i)
 void Matrix::mult(Vector &x, Vector &Ax)
 {
   if ( x.size() != n || Ax.size() != n )
-	 std::cout << "Matrix::mult(): Matrix dimensions don't match." << std::endl;
+	 cout << "Matrix::mult(): Matrix dimensions don't match." << endl;
   
   for (int i = 0; i < m; i++)
 	 Ax(i) = mult(x,i);
@@ -410,20 +410,20 @@ void Matrix::show()
 {
   for (int i = 0; i < m; i++) {
 	 if ( i == 0 )
-		std::cout << "| ";
+		cout << "| ";
 	 else
-		std::cout << "| ";
+		cout << "| ";
 	 for (int j = 0; j < n; j++){
-		std::cout << (*this)(i,j) << " ";
+		cout << (*this)(i,j) << " ";
 	 }
-	 std::cout << "|" << std::endl;
+	 cout << "|" << endl;
   }
 }
 //-----------------------------------------------------------------------------
 real Matrix::readElement(int i, int j) const
 {
   if ( i < 0 || i >= m || j < 0 || j >= n )
-    std::cout << "Matrix::readElement(): Illegal indices" << std::endl;
+    cout << "Matrix::readElement(): Illegal indices" << endl;
 
   for (int pos = 0; pos < rowsizes[i]; pos++)
 	 if ( columns[i][pos] == j )
@@ -435,7 +435,7 @@ real Matrix::readElement(int i, int j) const
 void Matrix::writeElement(int i, int j, real value)
 {
   if ( i < 0 || i >= m || j < 0 || j >= n )
-    std::cout << "Matrix::operator(): Illegal indices" << std::endl;
+    cout << "Matrix::operator(): Illegal indices" << endl;
 
   // Find position (i,j)
   int pos = 0;
@@ -464,7 +464,7 @@ void Matrix::writeElement(int i, int j, real value)
 void Matrix::addtoElement(int i, int j, real value)
 {
   if ( i < 0 || i >= m || j < 0 || j >= n )
-    std::cout << "Matrix::operator(): Illegal indices" << std::endl;
+    cout << "Matrix::operator(): Illegal indices" << endl;
 
   // Use first empty position
   int pos = 0;
@@ -490,7 +490,7 @@ void Matrix::addtoElement(int i, int j, real value)
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, Matrix& A)
+dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
 {
   int size = A.size();
   int bytes = A.bytes();
@@ -498,16 +498,16 @@ std::ostream& dolfin::operator << (std::ostream& output, Matrix& A)
   int m = A.size(0);
   int n = A.size(1);
   
-  output << "[ Sparse matrix of size " << m << " x " << n << " with " << size;
-  output << " nonzero entries, approx ";
+  stream << "[ Sparse matrix of size " << m << " x " << n << " with " << size;
+  stream << " nonzero entries, approx ";
   
   if ( bytes > 1024*1024 )
-	 output << bytes/1024 << " Mb. ]";
+	 stream << bytes/1024 << " Mb. ]";
   else if ( bytes > 1024 )
-	 output << bytes/1024 << " kb. ]";
+	 stream << bytes/1024 << " kb. ]";
   else
-	 output << bytes << " bytes. ]";
+	 stream << bytes << " bytes. ]";
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -5,6 +5,7 @@
 //                   Johan Jansson (2003)
 
 #include <math.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 
 using namespace dolfin;
@@ -152,7 +153,7 @@ real Vector::norm(int i)
     return sqrt(norm);
     break;
   default:
-	 std::cout << "Unknown vector norm" << std::endl;
+	 cout << "Unknown vector norm" << endl;
 	 exit(1);
   }  
 
@@ -166,28 +167,28 @@ void Vector::add(real scalar, Vector &vector)
 //-----------------------------------------------------------------------------
 void Vector::show() const
 {
-  std::cout << "[ ";
+  cout << "[ ";
   for (int i = 0; i < n; i++)
-	 std::cout << values[i] << " ";
-  std::cout << "]" << std::endl;
+	 cout << values[i] << " ";
+  cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output, Vector& vector)
+dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& vector)
 {
-  output << "[ Vector of size " << vector.size()
+  stream << "[ Vector of size " << vector.size()
 			<< ", approximatetly ";
   
   int bytes = vector.bytes();
   
   if ( bytes > 1024*1024 )
-	 output << bytes/1024 << " Mb. ]";
+	 stream << bytes/1024 << " Mb. ]";
   else if ( bytes > 1024 )
-	 output << bytes/1024 << " kb. ]";
+	 stream << bytes/1024 << " kb. ]";
   else
-	 output << bytes << " bytes. ]";
+	 stream << bytes << " bytes. ]";
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

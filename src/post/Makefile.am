@@ -1,0 +1,2 @@
+all:
+	sh post.sh

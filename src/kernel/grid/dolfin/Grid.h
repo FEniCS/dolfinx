@@ -7,7 +7,7 @@
 // FIXME: remove
 #include <stdio.h>
 
-#include <iostream>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 #include <dolfin/List.h>
@@ -39,7 +39,7 @@ namespace dolfin {
 
 	 /// Output
 	 void show();
-	 friend std::ostream& operator << (std::ostream& output, Grid& grid);
+	 friend LogStream& operator<< (LogStream& stream, const Grid& grid);
 	 
 	 /// Friends
 	 friend class NodeIterator::GridNodeIterator;

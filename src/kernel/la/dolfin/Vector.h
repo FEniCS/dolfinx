@@ -7,9 +7,9 @@
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
-#include <iostream>
-#include <dolfin/Variable.h>
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Variable.h>
 
 namespace dolfin {
   
@@ -46,7 +46,7 @@ namespace dolfin {
 	 
 	 // Output
 	 void show() const;
-	 friend std::ostream& operator << (std::ostream& output, Vector& vector);
+	 friend LogStream& operator<< (LogStream& stream, const Vector& vector);
 	 
 	 // Friends
 	 friend class DirectSolver;

@@ -4,6 +4,8 @@ EXTRA_DIST  = $(bin_SCRIPTS)
 
 TMPFILE="var.tmp"
 
+all: dolfin-config
+
 dolfin-config:
 	rm -f $(TMPFILE)
 	echo "COMPILER=\"$(CXX)\"" >> $(TMPFILE)

@@ -215,11 +215,11 @@ FunctionSpace::ElementFunction dolfin::operator*
   return v * a;
 }
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output,
-											  const FunctionSpace::ShapeFunction &v)
+dolfin::LogStream& dolfin::operator<< (LogStream& stream,
+													const FunctionSpace::ShapeFunction &v)
 {
-  output << "[ ShapeFunction with id = " << v._id << " ]";
+  stream << "[ ShapeFunction with id = " << v._id << " ]";
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

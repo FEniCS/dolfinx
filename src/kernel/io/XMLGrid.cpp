@@ -99,17 +99,16 @@ void XMLGrid::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLGrid::reading(std::string filename)
 {
-  std::cout << "Reading grid: \"" << filename << "\"." << std::endl;
+  cout << "Reading grid: \"" << filename << "\"." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::done()
 {
-  std::cout << "Reading grid: " << grid << std::endl;
+  cout << "Reading grid: " << grid << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)
 {
-  // Clear grid
   grid.clear();
 }
 //-----------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #ifndef __DOLFIN_LA_H
 #define __DOLFIN_LA_H
 
-// DOLFIN linear algebra classes
+// DOLFIN linear algebra
 
 #include <dolfin/Vector.h>
 #include <dolfin/DenseMatrix.h>

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_elements.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/Mapping.h>
@@ -76,10 +77,10 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
     
   // Allocate and reset matrix
   alloc(A, grid);
-
+  
   // Write a message
-  std::cout << "Assembling: system size is ";
-  std::cout << A.size(0) << " x " << A.size(1) << "." << std::endl;
+  cout << "hejsan ..." << endl;
+  dolfin_info("Assembling: system size is %d x %d.", A.size(0), A.size(1));
 
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
@@ -104,7 +105,7 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   A.resize();
 
   // Write a message
-  std::cout << "Assembling: " << A << std::endl;
+  cout << "Assembling: " << A << endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
@@ -131,12 +132,12 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   }
   
   // Write a message
-  std::cout << "Assembling: " << b << std::endl;
+  cout << "Assembling: " << b << endl;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 {
-  std::cout << "Setting boundary condition: Works only for nodal basis." << std::endl;
+  cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
   BoundaryCondition bc;
   bcfunction bcf;
@@ -147,7 +148,7 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 
   // Write a message
   if ( !bcf )
-	 std::cout << "Boundary conditions not specified." << std::endl;
+	 cout << "Boundary conditions not specified." << endl;
   
   // Iterate over all nodes on the boundary
   for (NodeIterator node(grid); !node.end(); ++node) {
@@ -172,13 +173,13 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 	 case BoundaryCondition::NEUMANN:
 		if ( bc.val() != 0.0 ) {
 		  // FIXME: Use logging system
-		  std::cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << std::endl;
+		  cout << "Error: Inhomogeneous Neumann boundary conditions not implemented." << endl;
 		  exit(1);
 		}
 		break;
 	 default:
 		// FIXME: Use logging system
-		std::cout << "Error: Unknown boundary condition." << std::endl;
+		cout << "Error: Unknown boundary condition." << endl;
 		break;
 	 }
 	 
@@ -195,20 +196,20 @@ void Galerkin::init(Grid &grid)
   // Create default finite element
   switch ( grid.type() ) {
   case Grid::TRIANGLES:
-	 std::cout << "Using standard piecewise linears on triangles." << std::endl;
+	 cout << "Using standard piecewise linears on triangles." << endl;
 	 element    = new P1TriElement();
 	 mapping    = new TriLinMapping();
 	 quadrature = new TriangleMidpointQuadrature();
 	 break;
   case Grid::TETRAHEDRONS:
-	 std::cout << "Using standard piecewise linears on tetrahedrons." << std::endl;
+	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
 	 element    = new P1TetElement();
 	 mapping    = new TetLinMapping();
 	 quadrature = new TetrahedronMidpointQuadrature();
 	 break;
   default:
 	 // FIXME: Use logging system
-	 std::cout << "Error: No default spaces for this type of cells." << std::endl;
+	 cout << "Error: No default spaces for this type of cells." << endl;
 	 exit(1);
   }
   

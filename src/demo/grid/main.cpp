@@ -3,7 +3,6 @@
 
 #include <dolfin.h>
 
-using namespace std;
 using namespace dolfin;
 
 int main()
@@ -13,8 +12,8 @@ int main()
 
   // Read grid from file
   file >> grid;
-  cout << grid << endl;  
-
+  dolfin::cout << grid << dolfin::endl;  
+  
   // Show the entire grid
   //grid.show();
 

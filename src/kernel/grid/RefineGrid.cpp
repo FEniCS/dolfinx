@@ -1,8 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Grid.h>
 #include <dolfin/RefineGrid.h>
 
@@ -11,7 +10,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void RefineGrid::refine()
 {
-  std::cout << "Refining grid: " << grid << std::endl;
+  cout << "Refining grid: " << grid << endl;
 }
 //-----------------------------------------------------------------------------
 

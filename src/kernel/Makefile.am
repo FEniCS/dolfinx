@@ -1,1 +1,1 @@
-SUBDIRS = math fem common grid io la quadrature elements main
+SUBDIRS = math fem common grid io la quadrature elements log main

@@ -4,8 +4,7 @@
 #ifndef __ELEMENT_FUNCTION_H
 #define __ELEMENT_FUNCTION_H
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
@@ -98,7 +97,7 @@ namespace dolfin {
 	 real operator* (Integral::Measure &dm) const;
 
 	 // Output
-	 friend std::ostream& operator << (std::ostream& output, const ElementFunction &v);
+	 friend LogStream& operator<<(LogStream& stream, const ElementFunction &v);
 
 	 // Friends
 	 friend class Function;

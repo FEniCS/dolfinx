@@ -6,7 +6,7 @@
 #ifndef __MATRIX_HH
 #define __MATRIX_HH
 
-#include <iostream>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 
@@ -70,9 +70,9 @@ namespace dolfin {
 	 /// Returns size (0 for rows, 1 for columns)
 	 int size(int dim) const;
 	 /// Returns number of nonzero elements
-	 int size();
+	 int size() const;
 	 /// Returns size of matrix in bytes (approximately)
-	 int bytes();
+	 int bytes() const;
 	 /// Set number of nonzero entries in a row (clearing old values)
 	 void initRow(int i, int rowsize);
 	 /// Set number of nonzero entries in a row (keeping old values)
@@ -99,7 +99,7 @@ namespace dolfin {
 
 	 /// Output
 	 void show();
-	 friend std::ostream& operator << (std::ostream& output, Matrix& sparseMatrix);
+	 friend LogStream& operator<< (LogStream& stream, const Matrix& A);
 
   protected:
 
