@@ -43,8 +43,11 @@ REMOVE5=`find $DISTDIR | grep '\.deps'`
 REMOVE=$REMOVE1' '$REMOVE2' '$REMOVE3' '$REMOVE4' '$REMOVE5
 echo 'Removing unecessary files'
 rm -rf $REMOVE
+
+# Remove files used to create the relase
 rm -f scripts/preparedist
 rm -f scripts/makedist
+rm -r doc/releasing
 
 # Create the archive
 TARBALL='dolfin-'$VERSION'.tar.gz'

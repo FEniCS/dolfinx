@@ -1,24 +1,10 @@
 Check list for releasing new versions of DOLFIN
 -----------------------------------------------
 
-(Assuming the current version number is 0.2.0.)
+1. Run scripts/preparedist
 
-1. Edit the file ChangeLog using proper formatting
+2. Run scripts/makedist (after checking out a new version)
 
-2. Change the version number in configure.in
-
-3. Commit changes to cvs and do
-
-	cvs rtag v0_2_0 dolfin
-
-4. Checkout a clean version and run the script
-
-	scripts/makedist
-
-   Remember to check the output in make-*.log
-
-5. Update the web page with the version number and the release date
-
-6. Update at freshmeat
+3. Update at freshmeat
 
 That should be all...
