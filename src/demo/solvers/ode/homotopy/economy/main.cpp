@@ -5,71 +5,20 @@
 
 using namespace dolfin;
 
+// Base class for economies
+
 class Economy : public Homotopy
 {
 public:
 
-  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0)
+  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0), tmp(0)
   {
-    // Initialize matrices a and w
     a = new real * [m];
     w = new real * [m];
     for (unsigned int i = 0; i < m; i++)
     {
       a[i] = new real[n];
       w[i] = new real[n];
-      for (unsigned int j = 0; j < n; j++)
-      {
-	a[i][j] = 0.0;
-	w[i][j] = 0.0;
-      }
-    }
-  }
-
-  ~Economy()
-  {
-    for (unsigned i = 0; i < m; i++)
-    {
-      delete [] a[i];
-      delete [] w[i];
-    }
-    delete [] a;
-    delete [] w;
-  }
-
-protected:
-
-  unsigned int m; // Number of traders
-  unsigned int n; // Number of goods
-  
-  real** a; // Matrix of traders' preferences
-  real** w; // Matrix of traders' initial endowments
-  
-};
-
-class Leontief : public Homotopy
-{
-public:
-
-  Leontief(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), tmp(0)
-  {
-    // Initialize temporary storage
-    tmp = new complex[m];
-    for (unsigned int i = 0; i < m; i++)
-      tmp[i] = 0.0;
-
-    // Initialize matrices a and w
-    a = new real * [m];
-    w = new real * [m];
-    for (unsigned int i = 0; i < m; i++)
-    {
-      a[i] = new real[n];
-      w[i] = new real[n];
-    }
-    
-    // Randomize a and w
-    for (unsigned int i = 0; i < m; i++)
-    {
       for (unsigned int j = 0; j < n; j++)
       {
 	a[i][j] = dolfin::rand();
@@ -77,6 +26,52 @@ public:
       }
     }
 
+    tmp = new complex[m];
+    for (unsigned int i = 0; i < m; i++)
+      tmp[i] = 0.0;
+  }
+
+  ~Economy()
+  {
+    for (unsigned int i = 0; i < m; i++)
+    {
+      delete [] a[i];
+      delete [] w[i];
+    }
+    delete [] a;
+    delete [] w;
+    delete [] tmp;
+  }
+
+protected:
+
+  // Compute scalar product x . y
+  complex dot(const real x[], const complex y[]) const
+  {
+    complex sum = 0.0;
+    for (unsigned int i = 0; i < n; i++)
+      sum += x[i] * y[i];
+    return sum;
+  }
+
+  unsigned int m; // Number of traders
+  unsigned int n; // Number of goods
+  
+  real** a; // Matrix of traders' preferences
+  real** w; // Matrix of traders' initial endowments
+
+  complex* tmp; // Temporary storage for scalar products
+  
+};
+
+// Leontief economy
+
+class Leontief : public Economy
+{
+public:
+
+  Leontief(unsigned int m, unsigned int n) : Economy(m, n)
+  {
     // Set condition that guarantees a solution for m = 1, n = 2
     /*
       if ( m == 1 && n == 2 )
@@ -85,18 +80,6 @@ public:
       w[0][0] = a[0][0] * w[0][1] / a[0][1];
       }
     */
-  }
-
-  ~Leontief()
-  {
-    if ( tmp ) delete [] tmp;
-    for (unsigned i = 0; i < m; i++)
-    {
-      delete [] a[i];
-      delete [] w[i];
-    }
-    delete [] a;
-    delete [] w;
   }
 
   void F(const complex z[], complex y[])
@@ -142,23 +125,127 @@ public:
     return m;
   }
   
+};
+
+// Constant elasticity of substitution (CES) economy
+
+class CES : public Economy
+{
+public:
+
+  CES(unsigned int m, unsigned int n, real epsilon) : Economy(m, n)
+  {
+    // Choose b such that epsilon < b_i < 1 for all i
+    b = new real[m];
+    for (unsigned int i = 0; i < n; i++)
+      b[i] = epsilon + dolfin::rand()*(1.0 - epsilon);
+
+    // Set condition that guarantees a solution for m = 1, n = 2
+    /*
+      if ( m == 1 && n == 2 )
+      {
+      dolfin_info("Setting condition for existence of solutions.");
+      w[0][0] = a[0][0] * w[0][1] / a[0][1];
+      }
+    */
+  }
+
+  ~CES()
+  {
+    delete [] b;
+  }
+  
+  void F(const complex z[], complex y[])
+  {
+    // Precompute scalar products
+    for (unsigned int i = 0; i < m; i++)
+      tmp[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
+    
+    // Evaluate right-hand side
+    for (unsigned int j = 0; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
+      y[j] = sum;
+    }
+  }
+
+  void JF(const complex z[], const complex x[], complex y[])
+  {
+    // First term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wx = dot(w[i], x);
+      const complex az = bdot(a[i], z, 1.0 - b[i]);
+      tmp[i] = wx / az;
+    }
+    for (unsigned int j = 0; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] = sum;
+    }
+
+    // Second term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wz = dot(w[i], z);
+      const complex az = bdot(a[i], z, 1.0 - b[i]);
+      tmp[i] = b[i] * wz / az;
+    }
+    for (unsigned int j = 0; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
+      y[j] -= sum;
+    }
+
+    // Third term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wz  = dot(w[i], z);
+      const complex az  = bdot(a[i], z, 1.0 - b[i]);
+      const complex axz = bdot(a[i], x, z, -b[i]);
+      tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
+    }
+    for (unsigned int j = 0; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] -= sum;
+    }
+  }
+
+  unsigned int degree(unsigned int i) const
+  {
+    return m;
+  }
+  
 private:
 
-  complex dot(const real x[], const complex y[]) const
+  // Compute special scalar product x . y.^b
+  complex bdot(const real x[], const complex y[], real b) const
   {
     complex sum = 0.0;
     for (unsigned int i = 0; i < n; i++)
-      sum += x[i] * y[i];
+      sum += x[i] * std::pow(y[i], b);
     return sum;
   }
 
-  unsigned int m; // Number of traders
-  unsigned int n; // Number of goods
-  
-  real** a; // Matrix of traders' preferences
-  real** w; // Matrix of traders' initial endowments
+  // Compute special scalar product x . y. z^b
+  complex bdot(const real x[], const complex y[], const complex z[], real b) const
+  {
+    complex sum = 0.0;
+    for (unsigned int i = 0; i < n; i++)
+      sum += x[i] * y[i] * std::pow(z[i], b);
+    return sum;
+  }
 
-  complex* tmp; // Temporary storage for scalar products
+  real* b;
 
 };
 
@@ -169,8 +256,11 @@ int main()
   dolfin_set("adaptive samples", true);
   dolfin_set("tolerance", 0.05);
 
-  Leontief leontief(1, 2);
-  leontief.solve();
+  //Leontief leontief(1, 2);
+  //leontief.solve();
+
+  CES ces(1, 1, 0.5);
+  ces.solve();
 
   return 0;
 }
