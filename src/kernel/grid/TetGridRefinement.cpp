@@ -39,22 +39,22 @@ void TetGridRefinement::refine(Cell& cell, Grid& grid)
 {
   // Refine cell according to marker
   switch ( cell.marker() ) {
-  case marked_for_reg_ref:
+  case Cell::marked_for_reg_ref:
     refineRegular(cell, grid);
     break;
-  case marked_for_irr_ref_1:
+  case Cell::marked_for_irr_ref_1:
     refineIrregular1(cell, grid);
     break;
-  case marked_for_irr_ref_2:
+  case Cell::marked_for_irr_ref_2:
     refineIrregular2(cell, grid);
     break;
-  case marked_for_irr_ref_3:
+  case Cell::marked_for_irr_ref_3:
     refineIrregular3(cell, grid);
     break;
-  case marked_for_irr_ref_4:
+  case Cell::marked_for_irr_ref_4:
     refineIrregular4(cell, grid);
     break;
-  case marked_for_no_ref:
+  case Cell::marked_for_no_ref:
     // Do nothing
     break;
   default:
@@ -72,7 +72,7 @@ bool TetGridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 6 )
     return false;
 
-  cell.marker() = marked_for_reg_ref;
+  cell.marker() = Cell::marked_for_reg_ref;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ bool TetGridRefinement::checkRuleIrregular1(Cell& cell, int no_marked_edges)
   if ( !markedEdgesOnSameFace(cell) )
     return false;
 
-  cell.marker() = marked_for_irr_ref_1;
+  cell.marker() = Cell::marked_for_irr_ref_1;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ bool TetGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 1 )
     return false;
 
-  cell.marker() = marked_for_irr_ref_2;
+  cell.marker() = Cell::marked_for_irr_ref_2;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ bool TetGridRefinement::checkRuleIrregular3(Cell& cell, int no_marked_edges)
   if ( !markedEdgesOnSameFace(cell) )
     return false;
 
-  cell.marker() = marked_for_irr_ref_3;
+  cell.marker() = Cell::marked_for_irr_ref_3;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -127,7 +127,7 @@ bool TetGridRefinement::checkRuleIrregular4(Cell& cell, int no_marked_edges)
   if ( markedEdgesOnSameFace(cell) )
     return false;
 
-  cell.marker() = marked_for_irr_ref_4;
+  cell.marker() = Cell::marked_for_irr_ref_4;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // at the midpoints of the edges.
 
   // Check that the cell is marked correctly 
-  dolfin_assert(cell.marker() == marked_for_reg_ref);
+  dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
   
   // Create new nodes with the same coordinates as existing nodes
   Node* n0 = grid.createNode(cell.coord(0));
@@ -197,7 +197,7 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   // face. This gives 4 new tetrahedrons.
 
   // Check that the cell is marked correctly 
-  dolfin_assert(cell.marker() == marked_for_irr_ref_1);
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
   
   // Sort nodes by the number of marked edges
   Array<Node*> nodes(4);
@@ -245,7 +245,7 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // the marked edge. This gives 2 new tetrahedrons.
 
   // Check that the cell is marked correctly 
-  dolfin_assert(cell.marker() == marked_for_irr_ref_2);
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
   // Sort nodes by the number of marked edges
   Array<Node*> nodes(4);
@@ -295,7 +295,7 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   //       that is not common with marked edge 2.
 
   // Check that the cell is marked correctly 
-  dolfin_assert(cell.marker() == marked_for_irr_ref_3);
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_3);
 
   // Sort nodes by the number of marked edges
   Array<Node*> nodes(4);
@@ -354,7 +354,7 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   // the new nodes to the endpoints of the opposite edges.
 
   // Check that the cell is marked correctly 
-  dolfin_assert(cell.marker() == marked_for_irr_ref_4);
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_4);
 
   // Find the two marked edges
   Array<Edge*> marked_edges(2);

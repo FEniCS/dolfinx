@@ -285,27 +285,15 @@ Face* Cell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return c->findFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-void Cell::initMarker()
-{
-  dolfin_assert(c);
-  c->initMarker();
-}
-//-----------------------------------------------------------------------------
-CellMarker& Cell::marker()
+Cell::Marker& Cell::marker()
 {
   dolfin_assert(c);
   return c->marker();
 }
 //-----------------------------------------------------------------------------
-CellStatus& Cell::status()
+Cell::Status& Cell::status()
 {
   dolfin_assert(c);
   return c->status();
-}
-//-----------------------------------------------------------------------------
-bool& Cell::closed()
-{
-  dolfin_assert(c);
-  return c->closed();
 }
 //-----------------------------------------------------------------------------

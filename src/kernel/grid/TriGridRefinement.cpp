@@ -33,13 +33,13 @@ void TriGridRefinement::refine(Cell& cell, Grid& grid)
 {
   // Refine cell according to marker
   switch ( cell.marker() ) {
-  case marked_for_reg_ref:
+  case Cell::marked_for_reg_ref:
     refineRegular(cell, grid);
     break;
-  case marked_for_irr_ref_1:
+  case Cell::marked_for_irr_ref_1:
     refineIrregular1(cell, grid);
     break;
-  case marked_for_irr_ref_2:
+  case Cell::marked_for_irr_ref_2:
     refineIrregular1(cell, grid);
     break;
   default:
@@ -56,7 +56,7 @@ bool TriGridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 4 )
     return false;
 
-  cell.marker() = marked_for_reg_ref;
+  cell.marker() = Cell::marked_for_reg_ref;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ bool TriGridRefinement::checkRuleIrregular1(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 1 )
     return false;
 
-  cell.marker() = marked_for_irr_ref_1;
+  cell.marker() = Cell::marked_for_irr_ref_1;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -78,7 +78,7 @@ bool TriGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 2 )
     return false;
 
-  cell.marker() = marked_for_irr_ref_2;
+  cell.marker() = Cell::marked_for_irr_ref_2;
   return true;
 }
 //-----------------------------------------------------------------------------

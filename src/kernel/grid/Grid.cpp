@@ -351,6 +351,30 @@ void Grid::remove(Face& face)
   gd->remove(face);
 }
 //-----------------------------------------------------------------------------
+Cell::Marker& Grid::cellMarker(int id)
+{
+  dolfin_assert(rd);
+  return rd->cellMarker(id);
+}
+//-----------------------------------------------------------------------------
+void Grid::edgeMark(int id, Cell& cell)
+{
+  dolfin_assert(rd);
+  rd->edgeMark(id, cell);
+}
+//-----------------------------------------------------------------------------
+bool Grid::edgeMarked(int id)
+{
+  dolfin_assert(rd);
+  return rd->edgeMarked(id);
+}
+//-----------------------------------------------------------------------------
+bool Grid::edgeMarked(int id, Cell& cell)
+{
+  dolfin_assert(rd);
+  return rd->edgeMarked(id, cell);
+}
+//-----------------------------------------------------------------------------
 void Grid::init()
 {
   GridInit::init(*this);
@@ -378,6 +402,9 @@ void Grid::swap(Grid& grid)
   grid._parent = tmp_parent;
   grid._child  = tmp_child;
   grid._type   = tmp_type;
+
+  // FIXME: Need to change the grid pointer within all data structures
+  dolfin_error("Does not work yet...");
 }
 //-----------------------------------------------------------------------------
 // Additional operators

@@ -22,16 +22,45 @@ void GridRefinement::refine(GridHierarchy& grids)
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement in finest grid." << endl;
   
-  // Init marks for the finest grid (others already exist)
-  initMarks(grids.fine());
+  // Set initial markers for all grids
+  initMarks(grids);
 
   // Refine grid hierarchy
   globalRefinement(grids);
+
+  // Clear refinement data
+  clearMarks(grids);
 
   // Write a message
   cout << "Grid hierarchy consists of " << grids.size() << " grids." << endl;
 
   dolfin_end();
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::initMarks(GridHierarchy& grids)
+{
+  // Create markers for all grids
+  for (GridIterator grid(grids); !grid.end(); ++grid)
+    grid->rd->initMarkers();
+
+  // Set markers for the finest grid
+  for (List<Cell*>::Iterator c(grids.fine().rd->marked_cells); !c.end(); ++c) {
+    
+    // Mark cell for regular refinement
+    (*c)->marker() = Cell::marked_for_reg_ref;
+    
+    // Mark edges of the cell
+    for (EdgeIterator e(**c); !e.end(); ++e)
+      e->mark(**c);
+
+  }
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::clearMarks(GridHierarchy& grids)
+{
+  // Clear grid refinement data
+  for (GridIterator grid(grids); !grid.end(); ++grid)
+    grid->rd->clear();
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::globalRefinement(GridHierarchy& grids)
@@ -63,33 +92,6 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::initMarks(Grid& grid)
-{
-  dolfin_debug("check");
-
-  // Make sure that all cells have markers
-  for (CellIterator c(grid); !c.end(); ++c)
-    c->initMarker();
-
-  // Make sure that all edges have markers
-  for (EdgeIterator e(grid); !e.end(); ++e)
-    e->initMarker();
-
-  // Set markers for cells and edges
-  for (List<Cell*>::Iterator c(grid.rd->marked_cells); !c.end(); ++c) {
-
-    // Mark cell for regular refinement
-    (*c)->marker() = marked_for_reg_ref;
-
-    // Mark edges of the cell
-    for (EdgeIterator e(**c); !e.end(); ++e)
-      e->mark(**c);
-
-  }
-
-  dolfin_debug("check");
-}
-//-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
 {
   // Evaluate and adjust marks for a grid.
@@ -97,14 +99,14 @@ void GridRefinement::evaluateMarks(Grid& grid)
 
   for (CellIterator c(grid); !c.end(); ++c) {
 
-    if ( c->status() == ref_reg && childrenMarkedForCoarsening(*c) )
-      c->marker() = marked_for_no_ref;
+    if ( c->status() == Cell::ref_reg && childrenMarkedForCoarsening(*c) )
+      c->marker() = Cell::marked_for_no_ref;
     
-    if ( c->status() == ref_irr ) {
+    if ( c->status() == Cell::ref_irr ) {
       if ( edgeOfChildMarkedForRefinement(*c) )
-	c->marker() = marked_for_reg_ref;
+	c->marker() = Cell::marked_for_reg_ref;
       else
-	c->marker() = marked_for_no_ref;
+	c->marker() = Cell::marked_for_no_ref;
     }
    
   }
@@ -112,22 +114,24 @@ void GridRefinement::evaluateMarks(Grid& grid)
 //-----------------------------------------------------------------------------
 void GridRefinement::closeGrid(Grid& grid)
 {
-  // Perform the green closer on a grid.
+  // Perform the green closure on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
 
   dolfin_debug("check");
 
+  // Keep track of which cells are in the list
+  Array<bool> closed(grid.noCells());
+  closed = true;
+
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c) {
-    if ( c->status() == ref_reg ) {
+    if ( c->status() == Cell::ref_reg ) {
       if ( edgeMarkedByOther(*c) ) {
 	cells.add(c);
-	c->closed() = false;
+	closed(c->id()) = false;
       }
     }
-    else
-      c->closed() = true;
   }
 
   // Repeat until the list of elements is empty
@@ -137,7 +141,7 @@ void GridRefinement::closeGrid(Grid& grid)
     Cell* cell = cells.pop();
 
     // Close cell
-    closeCell(*cell, cells);
+    closeCell(*cell, cells, closed);
 
   }
 
@@ -152,15 +156,20 @@ void GridRefinement::refineGrid(Grid& grid)
   dolfin_debug("check");
 
   // Change markers from marked_for_coarsening to marked_for_no_ref
-  for (CellIterator c(grid); c.end(); ++c)
-    if ( c->marker() == marked_for_coarsening )
-      c->marker() = marked_for_no_ref;
-  
+  for (CellIterator c(grid); !c.end(); ++c)
+    if ( c->marker() == Cell::marked_for_coarsening )
+      c->marker() = Cell::marked_for_no_ref;
+
   // Refine cells which are not marked_according_to_ref
   for (CellIterator c(grid); !c.end(); ++c) {
+
+    if ( c->id() > 383 ) {
+      cout << "Här blir det fel, antagligen för att vi lägger till celler i nätet (genom refine) " 
+	   << "samtidigt som vi loopar igenom cellerna i nätet." << endl;
+    }
     
     // Skip cells which are marked_according_to_ref
-    if ( c->marker() == marked_according_to_ref )
+    if ( c->marker() == Cell::marked_according_to_ref )
       continue;
 
     // Refine according to refinement rule
@@ -198,7 +207,7 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   for (CellIterator c(grid); !c.end(); ++c) {
 
     // Skip cells which are not marked according to refinement
-    if ( c->marker() != marked_according_to_ref )
+    if ( c->marker() != Cell::marked_according_to_ref )
       continue;
 
     // Mark children of the cell for re-use
@@ -224,7 +233,8 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
+void GridRefinement::closeCell(Cell& cell,
+			       List<Cell*>& cells, Array<bool>& closed)
 {
   // Close a cell, either by regular or irregular refinement. We check all
   // edges of the cell and try to find a matching refinement rule. This rule
@@ -253,16 +263,16 @@ void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
 
     // Add neighbors to the list of cells that need to be closed
     for (CellIterator c(cell); !c.end(); ++c)
-      if ( c->haveEdge(*e) && c->closed() && c->status() == ref_reg && c != cell )
+      if ( c->haveEdge(*e) && c->status() == Cell::ref_reg && c != cell && closed(cell.id()) )
 	  cells.add(c);
   }
 
   // Mark cell for regular refinement
-  cell.marker() = marked_for_reg_ref;
+  cell.marker() = Cell::marked_for_reg_ref;
 
   // Remember that the cell has been closed, important since we don't want
   // to add cells which are not yet closed (and are already in the list).
-  cell.closed() = true;
+  closed(cell.id()) = true;
 }
 //-----------------------------------------------------------------------------
 bool GridRefinement::checkRule(Cell& cell, int no_marked_edges)
@@ -298,7 +308,7 @@ void GridRefinement::refine(Cell& cell, Grid& grid)
 bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
 {
   for (int i = 0; i < cell.noChildren(); i++)
-    if ( cell.child(i)->marker() != marked_for_coarsening )
+    if ( cell.child(i)->marker() != Cell::marked_for_coarsening )
       return false;
     
   return true;

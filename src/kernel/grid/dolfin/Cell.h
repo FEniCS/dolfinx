@@ -16,7 +16,6 @@
 #include <dolfin/NodeIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
-#include <dolfin/CellRefData.h>
 
 namespace dolfin {  
 
@@ -31,7 +30,7 @@ namespace dolfin {
   
   class Cell {
   public:
-    
+
     enum Type   { triangle, tetrahedron, none };
 
     /// Create an empty cell
@@ -110,19 +109,35 @@ namespace dolfin {
     friend LogStream& operator<<(LogStream& stream, const Cell& cell);
     
     // Friends
+    friend class Grid;
     friend class GridData;
     friend class GridInit;
     friend class GridRefinement;
+    friend class GridRefinementData;
     friend class TriGridRefinement;
     friend class TetGridRefinement;
     friend class GenericCell;
+    friend class CellRefData;
     friend class NodeIterator::CellNodeIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
     friend class FaceIterator::CellFaceIterator;
     
   private:
-
+    
+    enum Marker { marked_for_reg_ref,        // Marked for regular refinement
+		  marked_for_irr_ref_1,      // Marked for irregular refinement by rule 1
+		  marked_for_irr_ref_2,      // Marked for irregular refinement by rule 2
+		  marked_for_irr_ref_3,      // Marked for irregular refinement by rule 3
+		  marked_for_irr_ref_4,      // Marked for irregular refinement by rule 4
+		  marked_for_no_ref,         // Marked for no refinement
+		  marked_for_coarsening,     // Marked for coarsening
+		  marked_according_to_ref }; // Marked according to refinement
+    
+    enum Status { ref_reg,                   // Refined regularly
+		  ref_irr,                   // Refined irregularly
+		  unref };                   // Unrefined
+    
     // Specify global cell number
     int setID(int id, Grid* grid);
     
@@ -162,17 +177,13 @@ namespace dolfin {
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
 
-    // Initialize marker (if not already done)
-    void initMarker();
-
     // Return cell marker
-    CellMarker& marker();
+    Marker& marker();
 
     // Return cell status
-    CellStatus& status();
+    Status& status();
 
-    // Check if cell is closed
-    bool& closed();
+    //--- Cell data ---
 
     // The cell
     GenericCell* c;

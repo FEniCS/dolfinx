@@ -16,14 +16,12 @@ GenericCell::GenericCell()
   grid = 0;
   _id = -1;
   _parent = 0;
-  rd = 0;
+  _status = Cell::unref;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
 {
-  if ( rd )
-    delete rd;
-  rd = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 int GenericCell::id() const
@@ -206,27 +204,14 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return 0;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::initMarker()
+Cell::Marker& GenericCell::marker()
 {
-  if ( !rd )
-    rd = new CellRefData();
+  // The marker is stored (temporarily) in GridRefinementData
+  return grid->cellMarker(_id);
 }
 //-----------------------------------------------------------------------------
-CellMarker& GenericCell::marker()
+Cell::Status& GenericCell::status()
 {
-  dolfin_assert(rd);
-  return rd->marker;
-}
-//-----------------------------------------------------------------------------
-CellStatus& GenericCell::status()
-{
-  dolfin_assert(rd);
-  return rd->status;
-}
-//-----------------------------------------------------------------------------
-bool& GenericCell::closed()
-{
-  dolfin_assert(rd);
-  return rd->closed;
+  return _status;
 }
 //-----------------------------------------------------------------------------

@@ -88,6 +88,7 @@ namespace dolfin {
     
     /// Friends
     friend class GenericCell;
+    friend class Edge;
     friend class XMLGrid;
     friend class GridInit;
     friend class GridRefinement;
@@ -139,12 +140,26 @@ namespace dolfin {
     void remove(Edge& edge);
     void remove(Face& face);
 
+    // Return cell marker
+    Cell::Marker& cellMarker(int id);
+    
+    // Mark edge by given cell
+    void edgeMark(int id, Cell& cell);
+
+    // Check if edge is marked
+    bool edgeMarked(int id);
+
+    // Check if edge is marked by given cell
+    bool edgeMarked(int id, Cell& cell);
+
     /// Compute connectivity
     void init();
 
     /// Swap data with given grid
     void swap(Grid& grid);
-    
+
+    //--- Grid data ---
+
     // Grid data
     GridData* gd;
 

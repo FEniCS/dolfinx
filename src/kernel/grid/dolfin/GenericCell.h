@@ -99,13 +99,10 @@ namespace dolfin {
     void initMarker();
 
     // Return cell marker
-    CellMarker& marker();
+    Cell::Marker& marker();
 
     // Return cell status
-    CellStatus& status();
-
-    // Check if cell is closed
-    bool& closed();
+    Cell::Status& status();
 
     //--- Cell data ---
 
@@ -121,12 +118,12 @@ namespace dolfin {
     Array<Edge*> ce;
     Array<Face*> cf;
 
-    /// Parent-child info
+    // Parent-child info
     Cell* _parent;
     Array<Cell*> children;
 
-    /// Cell refinement data (only used during refinement)
-    CellRefData* rd;
+    // Cell status
+    Cell::Status _status;
     
   };
 

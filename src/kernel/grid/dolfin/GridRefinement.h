@@ -27,10 +27,13 @@ namespace dolfin {
     // The global algorithm
     static void globalRefinement(GridHierarchy& grids);
 
-    //--- Algorithms working on the grid on a given level ---
+    // Set initial markers for all grids
+    static void initMarks(GridHierarchy& grids);
 
-    // Set initial marks for cells and edges
-    static void initMarks(Grid& grid);
+    // Clear grid refinement data
+    static void clearMarks(GridHierarchy& grids);
+
+    //--- Algorithms working on the grid on a given level ---
 
     // Evaluate and adjust marks for a grid
     static void evaluateMarks(Grid& grid);
@@ -47,7 +50,7 @@ namespace dolfin {
     ///--- Algorithms working on a given cell ---
     
     // Close a cell
-    static void closeCell(Cell& cell, List<Cell*>& cells);
+    static void closeCell(Cell& cell, List<Cell*>& cells, Array<bool>& closed);
 
     /// Check refinement rule for given cell
     static bool checkRule(Cell& cell, int no_marked_edges);
