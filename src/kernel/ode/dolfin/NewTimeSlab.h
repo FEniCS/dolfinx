@@ -116,10 +116,10 @@ namespace dolfin
     bool within(real a0, real b0, real a1, real b1) const;
 
     // Cover all elements in current sub slab
-    int cover(int subslab, uint element);
+    uint cover(int subslab, uint element);
 
-    // Cover time for given component
-    uint cover(uint i, real t);
+    // Cover given time for all components
+    void cover(real t);
 
     // Evaluate right-hand side at quadrature points of given element
     void feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);

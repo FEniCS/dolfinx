@@ -88,7 +88,7 @@ const Mat NewMatrix::mat() const
   return A;
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::show() const
+void NewMatrix::disp() const
 {
   MatView(A, PETSC_VIEWER_STDOUT_SELF);
 }

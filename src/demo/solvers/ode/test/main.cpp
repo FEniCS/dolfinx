@@ -93,10 +93,10 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 0.64;
+    T = 6.4;
 
     // Compute sparsity
-    dependencies.detect(*this);
+    //dependencies.detect(*this);
   }
 
   real u0(unsigned int i)

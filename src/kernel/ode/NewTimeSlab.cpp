@@ -98,6 +98,9 @@ void NewTimeSlab::solve()
 //-----------------------------------------------------------------------------
 void NewTimeSlab::shift()
 {
+  // Cover end time
+  cover(_b);
+  
   // Update the solution vector at the end time for each component
   for (uint i = 0; i < N; i++)
   {
@@ -145,9 +148,13 @@ void NewTimeSlab::shift()
 //-----------------------------------------------------------------------------
 void NewTimeSlab::sample(real t)
 {
-  // FIXME: Not implemented
+  // Cover the given time
+  cover(t);
 
-
+  //cout << "t = " << t << " elast: ";
+  //for (uint i = 0; i < N; i++)
+  //  cout << elast[i] << " ";
+  //cout << endl;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewTimeSlab::size() const
@@ -172,9 +179,10 @@ real NewTimeSlab::length() const
 //-----------------------------------------------------------------------------
 real NewTimeSlab::usample(uint i, real t)
 {
-  // Step to the correct element
-  uint e = cover(i, t);
-  
+  // Get element
+  const int e = elast[i];
+  dolfin_assert(e != -1);
+
   // Get element data
   const uint s = es[e];
   const uint j = ej[e];
@@ -195,8 +203,9 @@ real NewTimeSlab::usample(uint i, real t)
 //-----------------------------------------------------------------------------
 real NewTimeSlab::ksample(uint i, real t)
 {
-  // Step to the correct element
-  uint e = cover(i, t);
+  // Get element
+  const int e = elast[i];
+  dolfin_assert(e != -1);
 
   // Get element data
   const uint s = es[e];
@@ -303,9 +312,18 @@ void NewTimeSlab::create_s(real a0, real b0, uint offset, uint end)
   // Create mapping ed
   for (uint n = offset; n < end; n++)
   {
-    const int index = partition.index(n);
-    ed[elast[index]] = size_d.next;
+    const uint index = partition.index(n);
+    const int element = elast[index];
+    dolfin_assert(element != -1);
+
+    // Count number of dependencies from element
     size_d.next += countDependencies(index, b0);
+
+    // Update mapping ed
+    if ( element == 0 )
+      ed[element] = 0;
+    if ( element < static_cast<int>(ne - 1) )
+      ed[element + 1] = size_d.next;
   }
 }
 //-----------------------------------------------------------------------------
@@ -396,8 +414,8 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
 	
 	//cout << "    --- Creating dependency to element = " << element << endl;
 	//cout << "    --- Starting at ed = " << ed[e1] << endl;
-	//Alloc::disp(ed, ne);
-	//Alloc::disp(de, nd);	
+	//cout << "    de = "; Alloc::disp(ed, ne);
+	//cout << "    nd = "; Alloc::disp(de, nd);	
 
 	for (uint d = ed[e1]; d < ed[e1 + 1]; d++)
 	{
@@ -598,7 +616,7 @@ bool NewTimeSlab::within(real a0, real b0, real a1, real b1) const
 	   ( a1 <= (a0 - DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1 ) );
 }
 //-----------------------------------------------------------------------------
-int NewTimeSlab::cover(int subslab, uint element)
+dolfin::uint NewTimeSlab::cover(int subslab, uint element)
 {
   // Check if we are still on the same sub slab
   if ( subslab == static_cast<int>(es[element]) )
@@ -621,70 +639,93 @@ int NewTimeSlab::cover(int subslab, uint element)
   return subslab;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewTimeSlab::cover(uint index, real t)
+void NewTimeSlab::cover(real t)
 {
-  //cout << "Covering t = " << t << " for i = " << index << endl;
+  //cout << "Covering t = " << t << endl;
 
-  // Reset sampling if necessary
-  int el = elast[index];
-  if ( emax >= ne )
-    emax = 0;
-  if ( el > static_cast<int>(emax) )
-    el = elast[index] = -1;
-
-  // Check if current element is ok
-  if ( el != -1 )
+  // Check if t is covered for all components
+  bool ok = true;
+  for (uint i = 0; i < N; i++)
   {
-    const uint s = es[el];
+    // Get last covered element for the component
+    const int e = elast[i];
+
+    // Check if we need to start from the beginning
+    if ( e == -1 )
+    {
+      //cout << "Need to start from the beginning since e = -1" << endl;
+      emax = 0;
+      ok = false;
+      break;
+    }
+
+    // Get element data
+    const uint s = es[e];
     const real a = sa[s];
     const real b = sb[s];
 
-    //cout << "  Checking current element: " << endl;
-    //cout << "    e = " << el << endl;
-    //cout << "    i = " << index << endl;
-    //cout << "    a = " << a << endl;
-    //cout << "    b = " << b << endl;
+    // Check if we need to start from the beginning
+    if ( t < (a + DOLFIN_EPS) )
+    {
+      //cout << "Need to start from the beginning since we have stepped to far" << endl;
+      emax = 0;
+      ok = false;
+      break;
+    }
 
-    if ( within(t, a, b) || t == _a )
-      return el;
+    // Check if we need to search forward, starting at e = emax
+    if ( t > (b + DOLFIN_EPS) )
+    {
+      //cout << "Need to search forward" << endl;
+      ok = false;
+      break;
+    }
   }
 
-  // Check if we need to start from the beginning of the slab
-  if ( t < (sa[es[emax]] - DOLFIN_EPS) )
-    emax = 0;
+  // If ok is true, then a + DOLFIN_EPS <= t <= b + DOLFIN_EPS for all components
+  if ( ok )
+    return;
 
-  //cout << "  Starting search at e = " << emax << endl;
-  
-  // Search for the correct element
+  // Reset sampling if necessary
+  if ( emax >= ne )
+    emax = 0;
+  else
+  {
+    const uint s = es[emax];
+    const real a = sa[s];
+    
+    if ( t < (a + DOLFIN_EPS) )
+      emax = 0;
+  }
+
+  //cout << "Starting search at e = " << emax << endl;
+
+  // Iterate forward until t is covered for all components
   for (uint e = emax; e < ne; e++)
   {
+    // Get element data
     const uint s = es[e];
     const uint i = ei[e];
     const real a = sa[s];
-    const real b = sb[s];
 
     //cout << "  Checking element:" << endl;
     //cout << "    e = " << e << endl;
     //cout << "    i = " << i << endl;
     //cout << "    a = " << a << endl;
-    //cout << "    b = " << b << endl;
+    //cout << "    t = " << t << endl;
+
+    // Check if we have stepped far enough
+    if ( t < (a + DOLFIN_EPS) && _a < (a - DOLFIN_EPS) )
+      break;
+
+    //cout << "  Element covered" << endl;
 
     // Cover element
     elast[i] = e;
     emax = e;
-
-    // Skip other components
-    if ( i != index )
-      continue;
-
-    // Element is covered if the given time is within the element
-    if ( within(t, a, b) || t == _a )
-      return e;
   }
 
-  dolfin_error1("Unable to find element at time t = %f", t);
-  
-  return 0;
+  //cout << "Time covered" << endl << endl;
 }
 //-----------------------------------------------------------------------------
 void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 

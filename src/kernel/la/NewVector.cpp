@@ -79,7 +79,7 @@ unsigned int NewVector::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
-void NewVector::show() const
+void NewVector::disp() const
 {
   VecView(v, PETSC_VIEWER_STDOUT_SELF);
 }

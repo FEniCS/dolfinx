@@ -7,6 +7,7 @@
 #define __NEW_ARRAY_H
 
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
 #include <vector>
 
 namespace dolfin {

@@ -30,7 +30,7 @@ namespace dolfin
     void clear();
     unsigned int size() const;
 
-    void show() const;
+    void disp() const;
 
   protected:
 

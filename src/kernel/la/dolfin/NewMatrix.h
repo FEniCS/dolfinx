@@ -52,9 +52,9 @@ namespace dolfin
     const Mat mat() const;
 
     /// Display matrix
-    void show() const;
+    void disp() const;
 
-    /// Condensed output
+    /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
     
   private:
