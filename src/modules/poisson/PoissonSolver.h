@@ -18,6 +18,8 @@ namespace dolfin
     const char* description();
     void solve();
     
+    void dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh);
+
   };
 
 }
