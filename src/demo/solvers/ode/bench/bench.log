@@ -227,3 +227,14 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.5.1 (ons nov 10 10:10:22 CST 2004)
+Compiler flags: -I/usr/local/include -O3 -Wall -Werror -pedantic -ansi -std=c++98
+Elapsed time:   real: 2.222  user: 2.183  sys: 0.039  cpu: 99.98%
+ 
+Linux galerkin 2.6.8-3 #3 Tue Sep 21 10:05:26 CDT 2004 i686 GNU/Linux
+g++ (GCC) 3.4.2 (Debian 3.4.2-3)
+Copyright (C) 2004 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+---------------------------------------------------------------------------
