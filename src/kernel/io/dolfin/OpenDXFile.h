@@ -56,6 +56,9 @@ namespace dolfin {
     // Start position for latest time series
     long series_pos;
 
+    // Check if we should save each mesh
+    bool save_each_mesh;
+
     // Events
     Event event_saving_mesh;
     Event event_saving_function;

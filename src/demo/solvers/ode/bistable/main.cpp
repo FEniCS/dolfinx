@@ -117,9 +117,10 @@ int main()
   dolfin_set("tolerance", 0.001);
   dolfin_set("number of samples", 100);
   dolfin_set("progress step", 0.01);
+  dolfin_set("save each mesh", true);
 
   // Number of refinements
-  unsigned int refinements = 5;
+  unsigned int refinements = 2;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");

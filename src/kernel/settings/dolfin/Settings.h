@@ -16,6 +16,8 @@ namespace dolfin {
     
     Settings() : ParameterList() {
       
+      // General parameters
+
       add(Parameter::REAL, "tolerance", 0.1);
       add(Parameter::REAL, "start time", 0.0);
       add(Parameter::REAL, "end time",   10.0);
@@ -31,6 +33,8 @@ namespace dolfin {
       add(Parameter::STRING, "temporary directory", "/tmp");
 
       add(Parameter::BCFUNCTION, "boundary condition", 0);
+      
+      add(Parameter::BOOL, "save each mesh", false);
 
       // Parameters for multi-adaptive solver
 

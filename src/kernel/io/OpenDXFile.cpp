@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <stdio.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
 #include <dolfin/System.h>
 #include <dolfin/Mesh.h>
@@ -14,6 +15,7 @@ using namespace dolfin;
 //-­---------------------------------------------------------------------------
 OpenDXFile::OpenDXFile(const std::string filename) : 
   GenericFile(filename),
+  save_each_mesh(dolfin_get("save each mesh")),
   event_saving_mesh("Saving mesh to OpenDX file."),
   event_saving_function("Saving function to OpenDX file.")
 {
@@ -61,7 +63,8 @@ void OpenDXFile::operator<<(Function& u)
     removeSeries(fp);
 
   // Write mesh
-  writeMesh(fp, u.mesh());
+  if ( frames.size() == 0 || save_each_mesh )
+    writeMesh(fp, u.mesh());
 
   // Write function
   writeFunction(fp, u);
@@ -182,8 +185,14 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   // Write field
   fprintf(fp,"# Field for [%s], frame %d\n", u.label().c_str(), frames.size());
   fprintf(fp,"object \"field %d\" class field\n", frames.size());
-  fprintf(fp,"component \"positions\" value \"nodes %d\"\n", frames.size());
-  fprintf(fp,"component \"connections\" value \"cells %d\"\n", frames.size());
+  if ( save_each_mesh )
+    fprintf(fp,"component \"positions\" value \"nodes %d\"\n", frames.size());
+  else
+    fprintf(fp,"component \"positions\" value \"nodes 0\"\n");
+  if ( save_each_mesh )
+    fprintf(fp,"component \"connections\" value \"cells %d\"\n", frames.size());
+  else
+    fprintf(fp,"component \"connections\" value \"cells 0\"\n");
   fprintf(fp,"component \"data\" value \"data %d\"\n\n", frames.size());
   
   // Add the new frame
