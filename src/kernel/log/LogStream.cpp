@@ -93,7 +93,6 @@ void LogStream::show() const
   default:
     printf("endl.\n");
   }
-  printf("My address is 0x%x.\n", this); 
 
   printf("The buffer size is %d. Currently at position %d. \n",
 	 DOLFIN_LINELENGTH, current);
