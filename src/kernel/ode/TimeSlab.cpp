@@ -70,6 +70,36 @@ void TimeSlab::setsize(real K, const TimeSteppingData& data)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
+void TimeSlab::updateElements(RHS& f, TimeSteppingData& data)
+{
+  // Update initial values
+  updateu0(data);
+
+  // Update elements
+  for (unsigned int i = 0; i < elements.size(); i++)
+  {
+    // Get the element
+    Element* element = elements[i];
+    
+    // Update element
+    element->update(f);
+    
+    // Write debug info
+    data.debug(*element, TimeSteppingData::update);
+  }
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::updateu0(TimeSteppingData& data)
+{
+  // Update initial values
+  for (unsigned int i = 0; i < elements.size(); i++)
+  {
+    Element* e = elements[i];
+    real u0 = data.u(e->index(), e->starttime());
+    e->update(u0);
+  }  
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const TimeSlab& timeslab)
 {
   stream << "[ TimeSlab of length " << timeslab.length()

@@ -26,18 +26,7 @@ SimpleTimeSlab::~SimpleTimeSlab()
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data)
 {
-  // Update all elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    
-    // Update element
-    element->update(f);
-    
-    // Write debug info
-    data.debug(*element, TimeSteppingData::update);
-  }
+  updateElements(f, data);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
@@ -58,7 +47,7 @@ void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
   for (unsigned int i = 0; i < data.size(); i++)
   {
     // Create element
-    Element *element = data.createElement(type, q, i, this);
+    Element *element = data.createElement(type, t0, t1, q, i);
     
     // Write debug info
     data.debug(*element, TimeSteppingData::create);

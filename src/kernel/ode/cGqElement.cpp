@@ -9,15 +9,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqElement::cGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) :
-  Element(q, index, timeslab)
+cGqElement::cGqElement(real t0, real t1, unsigned int q, unsigned int index) :
+  Element(t0, t1, q, index)
 {  
   cG.init(q);
 }
 //-----------------------------------------------------------------------------
+cGqElement::~cGqElement()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 real cGqElement::value(real t) const
 {
-  real tau = (t - starttime()) / timestep();
+  real tau = (t - t0) / (t1 - t0);
 
   real sum = 0.0;
   for (unsigned int i = 0; i <= q; i++)
@@ -38,22 +43,11 @@ real cGqElement::dx() const
 //-----------------------------------------------------------------------------
 void cGqElement::update(real u0)
 {
-  // FIXME: Maybe only the initial value should be updated, but the all
-  // values updated the first time? Maybe the initial value must be
-  // supplied to the constructor? Maybe the difference between the new
-  // initial value and the previous should be added to all values?
-
   values[0] = u0;
-
-  // Update nodal values
-  //for (unsigned int i = 0; i <= q; i++)
-  //values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 void cGqElement::update(RHS& f)
 {
-  //dolfin_debug1("Updating cG(%d) element", q);
-
   // Evaluate right-hand side
   feval(f);
 
@@ -83,16 +77,15 @@ void cGqElement::feval(RHS& f)
   // higher order methods (where we have more degrees of freedom) and
   // when function evaluations are expensive.
 
-  real t0 = starttime();
-  real k = timestep();
+  real k = t1 - t0;
 
   for (unsigned int i = 0; i <= q; i++)
-    this->f(i) = f(_index, i, t0 + cG(q).point(i)*k, timeslab);
+    this->f(i) = f(_index, i, t0 + cG(q).point(i)*k);
 }
 //-----------------------------------------------------------------------------
 real cGqElement::integral(unsigned int i) const
 {
-  real k = timestep();
+  real k = t1 - t0;
 
   real sum = 0.0;
   for (unsigned int j = 0; j <= q; j++)

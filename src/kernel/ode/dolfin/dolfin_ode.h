@@ -18,13 +18,13 @@
 #include <dolfin/ElementData.h>
 #include <dolfin/EmptySparsity.h>
 #include <dolfin/FullSparsity.h>
-#include <dolfin/GenericElement.h>
 #include <dolfin/GenericSparsity.h>
 #include <dolfin/MatrixSparsity.h>
 #include <dolfin/Method.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ODESolver.h>
 #include <dolfin/RHS.h>
+#include <dolfin/Sample.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/TableSparsity.h>
 #include <dolfin/TimeStepper.h>

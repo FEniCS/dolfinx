@@ -12,6 +12,7 @@
 
 namespace dolfin {
 
+  class ODE;
   class ElementData;
 
   /// TimeSteppingData contains data for adaptive time-stepping,
@@ -21,25 +22,35 @@ namespace dolfin {
   public:
 
     /// Constructor
-    TimeSteppingData(ElementData& elmdata);
+    TimeSteppingData(ODE& ode, ElementData& elmdata, real t0);
 
     /// Destructor
     ~TimeSteppingData();
+
+    /// Create a new element
+    Element* createElement(Element::Type type, real t0, real t1, int q, int index);
+
+    /// Return element for given component at given time (null if not found)
+    Element* element(unsigned int i, real t);
     
     /// Return number of components
     unsigned int size() const;
-    /// Return given component
-    Component& component(unsigned int i);
-
-    /// Return given component
-    const Component& component(unsigned int i) const;
-
+    
     /// Return time step regulator for given component
     Regulator& regulator(unsigned int i);
 
     /// Return time step regulator for given component
     const Regulator& regulator(unsigned int i) const;
 
+    /// Return value for given component at given time
+    real u(unsigned int i, real t) const;
+
+    /// Return time step at given time
+    real k(unsigned int i, real t) const;
+
+    /// Return residual at given time
+    real r(unsigned int i, real t, RHS& f) const;
+    
     /// Return tolerance
     real tolerance() const;
 
@@ -49,8 +60,8 @@ namespace dolfin {
     /// Return threshold for reaching end of interval
     real threshold() const;
 
-    /// Create a new element
-    Element* createElement(Element::Type type, int q, int index, TimeSlab* timeslab);
+    /// Update initial value for given component
+    real updateu0(unsigned int i, real t, real u0);
 
     /// Prepare for next time slab
     void shift(TimeSlab& timeslab, RHS& f);
@@ -64,8 +75,14 @@ namespace dolfin {
     // Element data
     ElementData& elmdata;
 
-    // List of regulators
+    // Regulators, one for each component
     NewArray<Regulator> regulators;
+
+    // Initial values, one for each component
+    NewArray<real> initval;
+
+    // Time where current initial values are specified
+    real t0;
 
     // Tolerance
     real TOL;

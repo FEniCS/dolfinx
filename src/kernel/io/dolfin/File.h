@@ -12,7 +12,7 @@ namespace dolfin {
   class Matrix;
   class Mesh;
   class Function;
-  class TimeSlabSample;
+  class Sample;
   class GenericFile;
   
   class File {
@@ -30,7 +30,7 @@ namespace dolfin {
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (Function& u);
-    void operator>> (TimeSlabSample& sample);
+    void operator>> (Sample& sample);
     
     // Output
     
@@ -38,7 +38,7 @@ namespace dolfin {
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
-    void operator<< (TimeSlabSample& sample);
+    void operator<< (Sample& sample);
     
   private:
     

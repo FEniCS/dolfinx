@@ -58,6 +58,12 @@ namespace dolfin {
     // Specify and adjust the time step
     void setsize(real K, const TimeSteppingData& data);
 
+    // Update elements (iteration)
+    void updateElements(RHS& f, TimeSteppingData& data);
+
+    // Update initial values
+    void updateu0(TimeSteppingData& data);
+
     //--- Time slab data ---
 
     // Start and end time for time slab
@@ -66,6 +72,9 @@ namespace dolfin {
 
     // True if we reached the given end time
     bool reached_endtime;
+
+    // List of elements within this time slab
+    std::vector<Element*> elements;
 
   };
 

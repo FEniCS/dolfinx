@@ -86,9 +86,6 @@ void RecursiveTimeSlab::createTimeSlabs(RHS& f, TimeSteppingData& data,
     // Step to next time slab
     t = timeslab->endtime();
   }
-
-  // Remove unused time slabs
-  //timeslabs.resize();
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::createElements(RHS& f, TimeSteppingData& data,
@@ -102,7 +99,7 @@ void RecursiveTimeSlab::createElements(RHS& f, TimeSteppingData& data,
   for (int i = offset; i < end; i++) {
 
     // Create element
-    Element *element = data.createElement(type, q, partition.index(i), this);
+    Element *element = data.createElement(type, t0, t1, q, partition.index(i));
 
     // Write debug info
     data.debug(*element, TimeSteppingData::create);
@@ -123,41 +120,6 @@ void RecursiveTimeSlab::updateTimeSlabs(RHS& f, TimeSteppingData& data)
   // Update time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
     timeslabs[i]->update(f, data);
-}
-//-----------------------------------------------------------------------------
-void RecursiveTimeSlab::updateElements(RHS& f, TimeSteppingData& data)
-{
-  // Update initial condition for elements
-    updateu0(data);
-
-  // Update elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-        
-    // Update element
-    element->update(f);
-    
-    // Write debug info
-    data.debug(*element, TimeSteppingData::update);
-  }
-}
-//-----------------------------------------------------------------------------
-void RecursiveTimeSlab::updateu0(TimeSteppingData& data)
-{
-  // FIXME: Can we be sure that we get the correct value? Maybe we obtain
-  // FIXME: the value from this element and not the previous? We should
-  // FIXME: probably ask explicitly for the last value of the previous
-  // FIXME: element.
-
-  // Update initial values
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    Element* e = elements[i];
-    real u0 = data.component(e->index())(e->starttime());
-    e->update(u0);
-  }  
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSteppingData& data)

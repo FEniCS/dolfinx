@@ -9,10 +9,10 @@ EXTRA_DIST = dolfin_tanganyika.h \
              AutomaticSparsity.h \
              Component.h \
              Element.h \
+             ElementBlock.h \
              ElementData.h \
              EmptySparsity.h \
              FullSparsity.h \
-             GenericElement.h \
              GenericSparsity.h \
              MatrixSparsity.h \
              Method.h \
@@ -22,10 +22,10 @@ EXTRA_DIST = dolfin_tanganyika.h \
              RHS.h \
              RecursiveTimeSlab.h \
              Regulator.h \
+             Sample.h \
              SimpleTimeSlab.h \
              Sparsity.h \
              TableSparsity.h \
              TimeSlab.h \
-             TimeSlabSample.h \
              TimeStepper.h \
              TimeSteppingData.h

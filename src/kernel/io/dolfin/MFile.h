@@ -13,6 +13,7 @@ namespace dolfin {
   class Matrix;
   class Mesh;
   class Function;
+  class Sample;
   
   class MFile : public GenericFile {
   public:
@@ -28,6 +29,7 @@ namespace dolfin {
     virtual void operator<< (Matrix& A) = 0;
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
+    void operator<< (Sample& sample);
 
   };
   

@@ -9,15 +9,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dGqElement::dGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) : 
-  Element(q, index, timeslab)
+dGqElement::dGqElement(real t0, real t1, unsigned int q, unsigned int index) : 
+  Element(t0, t1, q, index)
 {  
   dG.init(q);
 }
 //-----------------------------------------------------------------------------
+dGqElement::~dGqElement()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 real dGqElement::value(real t) const
 {
-  real tau = (t - starttime()) / timestep();
+  real tau = (t - t0) / (t1 - t0);
 
   real sum = 0.0;
   for (unsigned int i = 0; i <= q; i++)
@@ -38,30 +43,17 @@ real dGqElement::dx() const
 //-----------------------------------------------------------------------------
 void dGqElement::update(real u0)
 {
-  // FIXME: See comment on dGqElement::update()
-
-  // Update initial value
   this->u0 = u0;
-
-  // Update nodal values
-  for (unsigned int i = 0; i <= q; i++)
-    values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f)
 {
-  dolfin_debug4("Updating dG(%d) element: %d, %lf-%lf",
-		q, _index, starttime(), endtime());
-
-  dolfin::cout << "values[0]: " << values[0] << dolfin::endl;
-
   // Evaluate right-hand side
   feval(f);
-
+  
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
-    //values[i] = values[0] + integral(i);
 }
 //-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
@@ -80,16 +72,15 @@ void dGqElement::feval(RHS& f)
 {
   // See comment on cGqElement::feval()
 
-  real t0 = starttime();
-  real k = timestep();
+  real k = t1 - t0;
   
   for (unsigned int i = 0; i <= q; i++)
-    this->f(i) = f(_index, i, t0 + dG(q).point(i)*k, timeslab);
+    this->f(i) = f(_index, i, t0 + dG(q).point(i)*k);
 }
 //-----------------------------------------------------------------------------
 real dGqElement::integral(unsigned int i) const
 {
-  real k = timestep();
+  real k = t1 - t0;
 
   real sum = 0.0;
   for (unsigned int j = 0; j <= q; j++)

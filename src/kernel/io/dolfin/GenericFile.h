@@ -14,7 +14,7 @@ namespace dolfin {
   class Matrix;
   class Mesh;
   class Function;
-  class TimeSlabSample;
+  class Sample;
   
   class GenericFile {
   public:
@@ -28,7 +28,7 @@ namespace dolfin {
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Function& u);
-    virtual void operator>> (TimeSlabSample& sample);
+    virtual void operator>> (Sample& sample);
     
     // Output
     
@@ -36,7 +36,7 @@ namespace dolfin {
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
-    virtual void operator<< (TimeSlabSample& sample);
+    virtual void operator<< (Sample& sample);
     
     void read();
     void write();

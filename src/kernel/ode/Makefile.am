@@ -10,10 +10,10 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Component.h \
                           dolfin/AutomaticSparsity.h \
                           dolfin/Element.h \
+                          dolfin/ElementBlock.h \
                           dolfin/ElementData.h \
                           dolfin/EmptySparsity.h \
                           dolfin/FullSparsity.h \
-                          dolfin/GenericElement.h \
                           dolfin/GenericSparsity.h \
                           dolfin/MatrixSparsity.h \
                           dolfin/Method.h \
@@ -23,11 +23,11 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/RecursiveTimeSlab.h \
                           dolfin/Regulator.h \
                           dolfin/RHS.h \
+                          dolfin/Sample.h \
                           dolfin/SimpleTimeSlab.h \
                           dolfin/Sparsity.h \
                           dolfin/TableSparsity.h \
                           dolfin/TimeSlab.h \
-                          dolfin/TimeSlabSample.h \
                           dolfin/TimeStepper.h \
                           dolfin/TimeSteppingData.h
 INCLUDES                = @MODULE_INCLUDES@
@@ -41,10 +41,10 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           AutomaticSparsity.cpp \
                           Component.cpp \
                           Element.cpp \
+                          ElementBlock.cpp \
                           ElementData.cpp \
                           EmptySparsity.cpp \
                           FullSparsity.cpp \
-                          GenericElement.cpp \
                           GenericSparsity.cpp \
                           MatrixSparsity.cpp \
                           Method.cpp \
@@ -54,10 +54,10 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           RecursiveTimeSlab.cpp \
                           Regulator.cpp \
                           RHS.cpp \
+                          Sample.cpp \
                           SimpleTimeSlab.cpp \
                           Sparsity.cpp \
                           TableSparsity.cpp \
                           TimeSlab.cpp \
-                          TimeSlabSample.cpp \
                           TimeStepper.cpp \
                           TimeSteppingData.cpp

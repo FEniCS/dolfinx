@@ -16,7 +16,7 @@ public:
     r = 28.0;
 
     // Final time
-    T = 10.0;
+    T = 50.0;
 
     // Initial value
     u0(0) = 1.0;
@@ -50,6 +50,8 @@ public:
 int main()
 {
   dolfin_set("output", "plain text");
+  dolfin_set("number of samples", 500);
+  dolfin_set("debug time steps", 1);
 
   Lorenz lorenz;
   lorenz.solve();

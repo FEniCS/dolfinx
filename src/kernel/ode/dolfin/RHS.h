@@ -10,8 +10,7 @@
 namespace dolfin {
 
   class ODE;
-  class TimeSlab;
-  class ElementData;
+  class TimeSteppingData;
 
   /// RHS takes care of evaluating the right-hand side f(u,t)
   /// for a given component at a given time. The vector u is
@@ -22,14 +21,13 @@ namespace dolfin {
   public:
 
     /// Constructor
-    RHS(ODE& ode, ElementData& elmdata);
+    RHS(ODE& ode, TimeSteppingData& data);
 
     /// Destructor
     ~RHS();
     
     /// Evaluation of the right-hand side
-    real operator() (unsigned int index, unsigned int node, real t,
-		     TimeSlab* timeslab);
+    real operator() (unsigned int index, unsigned int node, real t);
 
     /// Number of components
     unsigned int size() const;
@@ -37,16 +35,16 @@ namespace dolfin {
   private:
 
     // Update components that influence the current component at time t
-    void update(unsigned int index, unsigned int node, real t, TimeSlab* timeslab);
+    void update(unsigned int index, unsigned int node, real t);
 
-    // Solution vector
-    Vector u;
-    
-    // The ODE to be integrated
+    // The ODE
     ODE& ode;
 
     // Element data
-    ElementData& elmdata;
+    TimeSteppingData& data;
+
+    // Solution vector
+    Vector u;
 
   };   
     

@@ -1,3 +1,5 @@
+0.4.1
+ - First version of multi-adaptive solver working
  - Clean up file formats
  - Start changing from int to unsigned int where necessary
  - Fix bool->int when using stdard in Parameter

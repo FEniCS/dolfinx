@@ -10,7 +10,6 @@
 namespace dolfin {
   
   class Matrix;
-  class TimeSlabSample;
   
   class MatlabFile : public MFile {
   public:
@@ -23,7 +22,6 @@ namespace dolfin {
     // Output
 
     void operator<< (Matrix& A);
-    void operator<< (TimeSlabSample& sample);
         
   };
   

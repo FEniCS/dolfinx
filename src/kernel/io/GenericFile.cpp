@@ -47,9 +47,9 @@ void GenericFile::operator>>(Function& u)
   read_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator>>(TimeSlabSample& sample)
+void GenericFile::operator>>(Sample& sample)
 {
-  read_not_impl("TimeSlabSample");
+  read_not_impl("Sample");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Vector& x)
@@ -72,9 +72,9 @@ void GenericFile::operator<<(Function& u)
   write_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator<<(TimeSlabSample& sample)
+void GenericFile::operator<<(Sample& sample)
 {
-  write_not_impl("TimeSlabSample");
+  write_not_impl("Sample");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::read()

@@ -10,12 +10,12 @@
 namespace dolfin {
 
   class RHS;
-  class TimeSlab;
 
   class cGqElement : public Element {
   public:
     
-    cGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab);
+    cGqElement(real t0, real t1, unsigned int q, unsigned int index);
+    ~cGqElement();
 
     real value(real t) const;
     real dx() const;

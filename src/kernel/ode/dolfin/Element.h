@@ -10,7 +10,6 @@
 namespace dolfin {
 
   class RHS;
-  class TimeSlab;
 
   /// An Element is the basic building block of the time slabs used in
   /// the multi-adaptive time-stepping and represents the restriction of
@@ -22,7 +21,7 @@ namespace dolfin {
     enum Type {cg, dg};
 
     /// Constructor
-    Element(unsigned int q, unsigned int index, TimeSlab* timeslab);
+    Element(real t0, real t1, unsigned int q, unsigned int index);
 
     /// Destructor
     virtual ~Element();
@@ -45,12 +44,8 @@ namespace dolfin {
     /// Update element (iteration)
     virtual void update(RHS& f) = 0;
 
-
     /// Check if given time is within the element
     bool within(real t) const;
-
-    /// Check if the element is within the given time slab
-    bool within(TimeSlab* timeslab) const;
 
     /// Return component index
     unsigned int index() const;
@@ -82,19 +77,19 @@ namespace dolfin {
     static Vector f;
 
     //--- Element data ---
-
-    /// Component index
-    unsigned int _index;
+    
+    // Interval
+    real t0, t1;
 
     // Order
     unsigned int q;
+
+    /// Component index
+    unsigned int _index;
     
     // Nodal values
     real* values;
     
-    // The time slab this element belongs to
-    TimeSlab* timeslab;
-
   };   
     
 }

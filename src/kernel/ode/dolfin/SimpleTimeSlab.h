@@ -29,12 +29,7 @@ namespace dolfin {
   private:
     
     // Create new time slab
-    void create(RHS& f, TimeSteppingData& data);
-
-    //--- Time slab data ---
-
-    // List of elements within this time slab
-    std::vector<Element*> elements;
+    void create(RHS& f, TimeSteppingData& data);  
     
   };
 

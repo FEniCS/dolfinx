@@ -4,48 +4,50 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSteppingData.h>
-#include <dolfin/TimeSlabSample.h>
+#include <dolfin/Sample.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabSample::TimeSlabSample(TimeSlab& timeslab, TimeSteppingData& data, 
-			       RHS& f, real t) :
-  timeslab(timeslab), data(data), f(f), t(t)
-{
-  // Check that the given time is within the interval
-
-  if ( t < timeslab.starttime() || t > timeslab.endtime() )
-    dolfin_error("Sample point must be within the time slab.");
-}
-//-----------------------------------------------------------------------------
-TimeSlabSample::~TimeSlabSample()
+Sample::Sample(TimeSteppingData& data, RHS& f, real t) :
+  data(data), f(f), time(t)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int TimeSlabSample::size() const
+Sample::~Sample()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+unsigned int Sample::size() const
 {
   return data.size();
 }
 //-----------------------------------------------------------------------------
-real TimeSlabSample::time() const
+real Sample::t() const
 {
-  return t;
+  return time;
 }
 //-----------------------------------------------------------------------------
-real TimeSlabSample::value(unsigned int index)
+real Sample::u(unsigned int index)
 {
-  return data.component(index)(t);
+  //cout << endl;
+  //cout << "Sample: ";
+  //real u = data.u(index, time);
+  //cout << endl;
+  //return u;
+  
+  return data.u(index, time);
 }
 //-----------------------------------------------------------------------------
-real TimeSlabSample::timestep(unsigned int index)
+real Sample::k(unsigned int index)
 {
-  return data.component(index).timestep(t);
+  return data.k(index, time);
 }
 //-----------------------------------------------------------------------------
-real TimeSlabSample::residual(unsigned int index)
+real Sample::r(unsigned int index)
 {
-  return data.component(index).residual(t, f);
+  return data.r(index, time, f);
 }
 //-----------------------------------------------------------------------------

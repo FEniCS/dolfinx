@@ -21,48 +21,23 @@ namespace dolfin {
     /// Constructor
     Component();
 
-    /// Constructor
-    Component(int size);
-
     /// Destructor
     ~Component();
 
+    /// Create a new element
+    Element* createElement(Element::Type type, real t0, real t1, int q, int index);
+
     /// Return element at given time
-    Element& element(real t);
+    Element* element(real t);
 
     /// Return last element
-    Element& last();
-    
-    /// Return number of elements in component
-    int size() const;
-
-    /// Return value at given time
-    real value(real t);
-
-    /// Return time step at given time
-    real timestep(real t);
-
-    /// Return residual at given time
-    real residual(real t, RHS& f);
-
-    /// Evaluation operator
-    real operator() (real t);
-    
-    /// Evaluation operator
-    real operator() (int node, real t, TimeSlab* timeslab);
-
-    /// Create a new element
-    Element* createElement(Element::Type type,
-			   int q, int index, TimeSlab* timeslab);
+    Element* last();
 
     /// Clear component
     void clear();
 
-    /// Specify initial value
-    void setu0(real u0);
-
-    /// Output
-    friend LogStream& operator<<(LogStream& stream, const Component& data);
+    /// Return number of elements in component
+    unsigned int size() const;
 
   private:
 
@@ -83,9 +58,6 @@ namespace dolfin {
 
     // A list of elements for this component
     std::vector<Element*> elements;
-
-    // Initial value
-    real u0;
 
   };
 

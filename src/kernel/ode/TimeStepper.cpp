@@ -19,8 +19,8 @@
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/TimeSlabSample.h>
 #include <dolfin/TimeSteppingData.h>
+#include <dolfin/Sample.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
@@ -35,10 +35,10 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   int N = ode.size();
 
   // Create data for time-stepping
-  ElementData elmdata(ode);
-  TimeSteppingData data(elmdata);
-  RHS f(ode, elmdata);
+  ElementData elmdata(N);
   Partition partition(N);
+  TimeSteppingData data(ode, elmdata, t0);
+  RHS f(ode, data);
   TimeSlab* timeslab = 0;
   real t = t0;
 
@@ -93,14 +93,14 @@ void TimeStepper::save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f,
   // Save samples
   while ( t < timeslab.endtime() )
   {
-    TimeSlabSample sample(timeslab, data, f, t);    
+    Sample sample(data, f, t);    
     file << sample;
     t += K;
   }
   
   // Save end time value
   if ( timeslab.finished() ) {
-    TimeSlabSample sample(timeslab, data, f, timeslab.endtime());
+    Sample sample(data, f, timeslab.endtime());
     file << sample;
   }
 }

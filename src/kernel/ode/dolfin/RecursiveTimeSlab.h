@@ -48,19 +48,10 @@ namespace dolfin {
     // Update time slabs (iteration)
     void updateTimeSlabs(RHS& f, TimeSteppingData& data);
     
-    // Update elements (iteration)
-    void updateElements(RHS& f, TimeSteppingData& data);
-
-    // Update initial value
-    void updateu0(TimeSteppingData& data);
-
     // Compute residuals and new time steps
     void computeResiduals(RHS& f, TimeSteppingData& data);
 
     //--- Time slab data ---
-
-    // List of elements within this time slab
-    std::vector<Element*> elements;
 
     // List of time slabs within this time slab
     std::vector<TimeSlab*> timeslabs;

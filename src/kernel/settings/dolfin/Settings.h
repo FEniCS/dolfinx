@@ -29,7 +29,7 @@ namespace dolfin {
       add(Parameter::INT, "max no stored krylov vectors", 100);
       add(Parameter::INT, "max no cg iterations", 1000);
       add(Parameter::INT, "pc iterations", 5);
-      add(Parameter::INT, "number of samples", 10);
+      add(Parameter::INT, "number of samples", 100);
        
       add(Parameter::BOOL, "debug time steps", 0);
 

@@ -6,6 +6,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/Sample.h>
 #include <dolfin/MFile.h>
 
 using namespace dolfin;
@@ -173,5 +174,54 @@ void MFile::operator<<(Function& u)
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
+}
+//-----------------------------------------------------------------------------
+void MFile::operator<< (Sample& sample)
+{
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+
+  // Initialize data structures first time
+  if ( no_frames == 0 )
+  {
+    fprintf(fp, "t = [];\n");
+    fprintf(fp, "u = [];\n");
+    fprintf(fp, "k = [];\n");
+    fprintf(fp, "r = [];\n");
+    fprintf(fp, "\n");
+  }
+
+  // Save time
+  fprintf(fp, "t = [t %.16e];\n", sample.t());
+
+  // Save solution
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.u(i));  
+  fprintf(fp, "];\n");
+  fprintf(fp, "u = [u tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Save time steps
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.k(i));
+  fprintf(fp, "];\n");
+  fprintf(fp, "k = [k tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Save residuals
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.r(i));
+  fprintf(fp, "];\n");
+  fprintf(fp, "r = [r tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Increase frame counter
+  no_frames++;
+  
+  // Close file
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------
