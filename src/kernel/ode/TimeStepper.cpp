@@ -69,8 +69,6 @@ bool TimeStepper::finished() const
 //-----------------------------------------------------------------------------
 bool TimeStepper::createTimeSlab()
 {
-  cout << "--- Creating new time slab ---" << endl;
-
   if ( t == 0.0 )
     return createFirstTimeSlab();
   else

@@ -132,8 +132,6 @@ bool Iteration::stabilize(const Increments& d, unsigned int n, real r)
   if ( n < 1 )
     return false;
   
-  cout << "j = " << j << endl;
-
   switch ( j ) {
   case 0:
     // Increase alpha with a factor 2 towards alpha = 1
@@ -150,10 +148,7 @@ bool Iteration::stabilize(const Increments& d, unsigned int n, real r)
 
       // Choose a slightly larger alpha if convergence is monotone
       if ( d.d2 < 0.75*d.d1 && d.d1 < 0.75*d0 )
-      {
-	cout << "Increasing alpha by a factor 1.1" << endl;
 	alpha *= 1.1;
-      }      
 
       // Save increment at start of stabilizing iterations
       d0 = d.d2;
@@ -169,21 +164,21 @@ bool Iteration::stabilize(const Increments& d, unsigned int n, real r)
     j -= 1;
   }
 
-  if ( r > d.d2 )
-    cout << "Seems to be diverging (residual condition): " << d << endl;
-
-  if ( d.d2 > d.d1 )
-    cout << "Seems to be diverging (increment condition): " << d << endl;
-
   // Assume that we should accept the solution
   _accept = true;
-  
+
   // Check if stabilization is needed
   if ( d.d2 > d.d1 && d.d1 > d0 )
+  {
+    _accept = false;
     return true;
+  }
 
   if ( d.d2 > d.d1 && j == 0 )
+  {
+    _accept = false;
     return true;
+  }
 
   if ( r > d.d2 && j == 0 )
   {
@@ -422,8 +417,6 @@ void Iteration::copyData(Values& values, ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void Iteration::copyData(ElementGroup& group, Values& values)
 {
-  cout << "  Saving data" << endl;
-  
   // Copy data from element group
   unsigned int offset = 0;
   for (ElementIterator element(group); !element.end(); ++element)

@@ -9,7 +9,7 @@ class TestProblem7 : public ODE
 {
 public:
   
-  TestProblem7() : ODE(11)
+  TestProblem7() : ODE(101)
   {
     dolfin_info("The heat equation on [0,1] with h = %f", h);
     

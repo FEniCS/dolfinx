@@ -32,7 +32,9 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
 
   // FIXME: Convergence should be determined by the error control
   tol = dolfin_get("tolerance");
-  tol *= 0.1;
+  tol *= 0.01;
+
+  cout << "Fixed point tolerance: " << tol << endl;
 
   // Choose initial stiffness
   std::string stiffness = dolfin_get("stiffness");
@@ -101,7 +103,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       
       // Write debug info
       if ( debug_iter )
-	debug(list, d);
+	debug(list, d, n);
 
       // Update group list
       update(list, d);
@@ -133,7 +135,6 @@ real FixedPointIteration::iterate(ElementGroup& group)
       // Check convergence
       if ( converged(group, d, n) )
       {
-	cout << "Converged after " << n << " iterations" << endl;
 	end(group);
 	return d.dtot;
       }
@@ -152,7 +153,7 @@ real FixedPointIteration::iterate(ElementGroup& group)
 
       // Write debug info
       if ( debug_iter )
-	debug(group, d);
+	debug(group, d, n);
 
       // Update element group
       update(group, d);
@@ -199,7 +200,7 @@ real FixedPointIteration::iterate(Element& element)
 
       // Write debug info
       if ( debug_iter )
-	debug(element, d);
+	debug(element, d, n);
       
       // Update element
       update(element, d);
@@ -432,10 +433,15 @@ void FixedPointIteration::changeState(Iteration::State newstate)
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::debug(ElementGroupList& list,
-				const Iteration::Increments& d)
+				const Iteration::Increments& d,
+				unsigned int n)
 {
   // Don't write debug info if iteration wasn't accepted
   if ( !state->accept() )
+    return;
+
+  // Don't write debug info before the first iteration
+  if ( n == 0 )
     return;
 
   real r = 0.0;
@@ -454,12 +460,16 @@ void FixedPointIteration::debug(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::debug(ElementGroup& group,
-				const Iteration::Increments& d)
+				const Iteration::Increments& d,
+				unsigned int n)
 {
   // Don't write debug info if iteration wasn't accepted
   if ( !state->accept() )
     return;
 
+  // Don't write debug info before the first iteration
+  if ( n == 0 )
+    return;
 
   real r = 0.0;
   real alpha = 0.0;
@@ -477,10 +487,15 @@ void FixedPointIteration::debug(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::debug(Element& element,
-				const Iteration::Increments& d)
+				const Iteration::Increments& d,
+				unsigned int n)
 {
   // Don't write debug info if iteration wasn't accepted
   if ( !state->accept() )
+    return;
+
+  // Don't write debug info before the first iteration
+  if ( n == 0 )
     return;
 
   real r = 0.0;

@@ -43,8 +43,8 @@ void solveTestProblem4()
 
 void solveTestProblem5()
 {
-  // Need to decrease the tolerance
-  dolfin_set("tolerance", 0.01);
+  //dolfin_set("tolerance", 0.01);
+
   TestProblem5 testProblem;
   testProblem.solve();
 }
@@ -57,15 +57,18 @@ void solveTestProblem6()
 
 void solveTestProblem7()
 {
-  dolfin_set("tolerance", 0.01);
+  // Decrease partitioning threshold for efficiency
+  dolfin_set("partitioning threshold", 0.1);
+  
   TestProblem7 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem8()
 {
-  // Need to decrease the tolerance
+  // Decrease tolerance to resolve 2:nd component
   dolfin_set("tolerance", 0.001);
+  
   TestProblem8 testProblem;
   testProblem.solve();
 }
@@ -107,14 +110,9 @@ int main(int argc, char* argv[])
   dolfin_set("order", 0);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.1);
-  //dolfin_set("adaptive samples", true);
+  dolfin_set("adaptive samples", true);
   dolfin_set("solve dual problem", false);
-  
-  dolfin_set("debug iterations", true);
-  dolfin_set("initial time step", 1.0);
-  dolfin_set("fixed time step", true);
-  dolfin_set("stiffness", "stiff level 3");
-  
+    
   // Choose test problem
   switch (n) {
   case 1:

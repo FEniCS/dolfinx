@@ -137,14 +137,17 @@ namespace dolfin
     void changeState(Iteration::State newstate);
 
     // Write debug info for group list iteration
-    void debug(ElementGroupList& list, const Iteration::Increments& d);
+    void debug(ElementGroupList& list, const Iteration::Increments& d,
+	       unsigned int n);
     
     // Write debug info for element group iteration
-    void debug(ElementGroup& group, const Iteration::Increments& d);
-
+    void debug(ElementGroup& group, const Iteration::Increments& d,
+	       unsigned int n);
+    
     // Write debug info for element iteration
-    void debug(Element& element, const Iteration::Increments& d);
-
+    void debug(Element& element, const Iteration::Increments& d,
+	       unsigned int n);
+    
     //--- Data for fixed point iteration ---
 
     // Solution

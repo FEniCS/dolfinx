@@ -69,8 +69,6 @@ void AdaptiveIterationLevel2::update(ElementGroupList& list, Increments& d)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group, Increments& d)
 {
-  cout << "Updating, saving data" << endl;
-
   // Save values before iteration (to restore when diverging)
   copyData(group, x0);
 
@@ -108,13 +106,10 @@ void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 {
   // Compute residual (needed for j = 0)
   real r = (j == 0 ? residual(group) : 0.0);
-  cout << "residual = " << r << endl;
 
   // Stabilize if necessary
   if ( Iteration::stabilize(d, n, r) )
   {
-    cout << "Stabilizing" << endl;
-
     // Compute divergence
     real rho = computeDivergence(group);
 

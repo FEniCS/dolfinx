@@ -57,7 +57,7 @@ int main()
   dolfin_set("maximum time step", 1.0);
   dolfin_set("fixed time step", true);
   dolfin_set("solve dual problem", false);
-  dolfin_set("stiffness", "stiff level 2");
+  dolfin_set("stiffness", "stiff level 3");
   dolfin_set("maximum iterations", 1000);
   dolfin_set("debug iterations", true);
 
