@@ -83,6 +83,10 @@ void Grid::mark(Cell* cell)
 //-----------------------------------------------------------------------------
 void Grid::refine()
 {
+  // Check that this is the finest grid
+  if ( _child )
+    dolfin_error("Only the finest grid in a grid hierarchy can be refined.");
+
   // Create grid hierarchy
   GridHierarchy grids(*this);
 
