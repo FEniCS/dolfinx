@@ -111,6 +111,9 @@ namespace dolfin
     // Evaluate right-hand side at quadrature points of given element
     void feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
+    // Choose solver
+    TimeSlabSolver* chooseSolver();
+
     //--- Time slab data ---
 
     real* sa; // Mapping s --> start time t of sub slab s

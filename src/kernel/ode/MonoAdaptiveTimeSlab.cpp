@@ -1,6 +1,9 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <string>
+#include <dolfin/dolfin_settings.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveFixedPointSolver.h>
@@ -14,8 +17,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : NewTimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
 {
   // Choose solver
-  //solver = new MonoAdaptiveFixedPointSolver(*this);
-  solver = new MonoAdaptiveNewtonSolver(*this);
+  solver = chooseSolver();
 
   // Initialize dofs
   dofs = new real[method->nsize()];
@@ -216,5 +218,44 @@ void MonoAdaptiveTimeSlab::feval(uint m)
     ode.feval(xx + m*N, t, f + m*N);    
     x.restore(xx);
   }
+}
+//-----------------------------------------------------------------------------
+TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
+{
+  bool implicit = dolfin_get("implicit");
+  std::string solver = dolfin_get("solver");
+
+  if ( solver == "fixed point" )
+  {
+    if ( implicit )
+      dolfin_error("Newton solver must be used for implicit ODE.");
+
+    dolfin_info("Using mono-adaptive fixed point solver.");
+    return new MonoAdaptiveFixedPointSolver(*this);
+  }
+  else if ( solver == "newton" )
+  {
+    dolfin_info("Using mono-adaptive Newton solver.");
+    return new MonoAdaptiveNewtonSolver(*this, implicit);
+  }
+  else if ( solver == "default" )
+  {
+    if ( implicit )
+    {      
+      dolfin_info("Using mono-adaptive Newton solver (default for implicit ODEs).");
+      return new MonoAdaptiveNewtonSolver(*this, implicit);
+    }
+    else
+    {
+      dolfin_info("Using mono-adaptive fixed point solver (default for c/dG(q)).");
+      return new MonoAdaptiveFixedPointSolver(*this);
+    }
+  }
+  else
+  {
+    dolfin_error1("Uknown solver type: %s.", solver.c_str());
+  }
+
+  return 0;
 }
 //-----------------------------------------------------------------------------

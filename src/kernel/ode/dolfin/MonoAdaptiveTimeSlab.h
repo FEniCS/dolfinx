@@ -64,6 +64,9 @@ namespace dolfin
 
     // Evaluate right-hand side at given quadrature point
     void feval(uint m);
+    
+    // Choose solver
+    TimeSlabSolver* chooseSolver();
 
     TimeSlabSolver* solver;    // The solver
     MonoAdaptivity adaptivity; // Adaptive time step regulation

@@ -49,6 +49,7 @@ namespace dolfin {
       add(Parameter::BOOL, "debug iterations", false);
       add(Parameter::BOOL, "automatic modeling", false);
       add(Parameter::BOOL, "use new ode solver", false);
+      add(Parameter::BOOL, "implicit", false);
 
       add(Parameter::INT, "number of samples", 101);
       add(Parameter::INT, "sample density", 1);
@@ -68,6 +69,7 @@ namespace dolfin {
       add(Parameter::REAL, "average tolerance", 0.1);
       
       add(Parameter::STRING, "method", "cg");
+      add(Parameter::STRING, "solver", "default");
       add(Parameter::STRING, "stiffness", "non-stiff");
 
       // Parameters for multgrid solver

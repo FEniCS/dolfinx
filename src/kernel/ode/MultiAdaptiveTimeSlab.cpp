@@ -20,11 +20,8 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
   elast(N), u(0), emax(0)
 {
-  cout << "Multi-adaptive time slab: creating" << endl;
-
   // Choose solver
-  //solver = new MultiAdaptiveFixedPointSolver(*this);
-  solver = new MultiAdaptiveNewtonSolver(*this);
+  solver = chooseSolver();
 
   // Initialize solution vector
   u = new real[N];
@@ -824,5 +821,36 @@ void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     // Evaluate right-hand side
     f[m] = ode.f(u, t, i0);
   }
+}
+//-----------------------------------------------------------------------------
+TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
+{
+  bool implicit = dolfin_get("implicit");
+  std::string solver = dolfin_get("solver");
+
+  if ( implicit )
+    dolfin_error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
+
+  if ( solver == "fixed point" )
+  {
+    dolfin_info("Using multi-adaptive fixed point solver.");
+    return new MultiAdaptiveFixedPointSolver(*this);
+  }
+  else if ( solver == "newton" )
+  {
+    dolfin_info("Using multi-adaptive Newton solver.");
+    return new MultiAdaptiveNewtonSolver(*this);
+  }
+  else if ( solver == "default" )
+  {
+    dolfin_info("Using multi-adaptive fixed point solver (default for mc/dG(q)).");
+    return new MultiAdaptiveFixedPointSolver(*this);
+  }
+  else
+  {
+    dolfin_error1("Uknown solver type: %s.", solver.c_str());
+  }
+
+  return 0;
 }
 //-----------------------------------------------------------------------------

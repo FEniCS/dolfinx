@@ -29,11 +29,14 @@ NewTimeStepper::NewTimeStepper(ODE& ode, Function& u) :
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
+  // Create time slab
   std::string method = dolfin_get("method");
-  if ( method == "cg" || method == "dg" )
-    timeslab = new MonoAdaptiveTimeSlab(ode);
-  else    
+  if ( method == "mcg" || method == "mdg" )
+  {
     timeslab = new MultiAdaptiveTimeSlab(ode);
+  }
+  else    
+    timeslab = new MonoAdaptiveTimeSlab(ode);
 }
 //-----------------------------------------------------------------------------
 NewTimeStepper::~NewTimeStepper()

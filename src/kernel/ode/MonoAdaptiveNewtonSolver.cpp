@@ -15,8 +15,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
-(MonoAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab)
+(MonoAdaptiveTimeSlab& timeslab, bool implicit)
+  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab), implicit(implicit)
 {
   // Do nothing
 }

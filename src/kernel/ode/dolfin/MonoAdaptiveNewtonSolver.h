@@ -27,7 +27,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MonoAdaptiveNewtonSolver(MonoAdaptiveTimeSlab& timeslab);
+    MonoAdaptiveNewtonSolver(MonoAdaptiveTimeSlab& timeslab, bool implicit = false);
 
     /// Destructor
     ~MonoAdaptiveNewtonSolver();
@@ -56,6 +56,7 @@ namespace dolfin
     NewVector dx;             // Increment for Newton's method
     NewVector b;              // Right-hand side -F(x)
     NewGMRES solver;          // GMRES solver
+    bool implicit;            // True if ODE is implicit
     
   };
 
