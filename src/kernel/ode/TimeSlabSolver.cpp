@@ -12,8 +12,9 @@ TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0)
 {
   // Get tolerance
-  tol = dolfin_get("tolerance");
-  tol *= 0.001;
+  const real TOL = dolfin_get("tolerance");
+  const real alpha = dolfin_get("discrete tolerance");
+  tol = alpha * TOL;
   cout << "Using tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations

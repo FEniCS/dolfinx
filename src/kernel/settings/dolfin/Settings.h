@@ -58,6 +58,7 @@ namespace dolfin {
       add(Parameter::INT, "order", 1);
       add(Parameter::INT, "average samples", 1000);
       
+      add(Parameter::REAL, "discrete tolerance", 0.001);
       add(Parameter::REAL, "initial time step", 0.01);
       add(Parameter::REAL, "maximum time step", 0.1);
       add(Parameter::REAL, "partitioning threshold", 0.5);

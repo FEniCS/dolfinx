@@ -58,6 +58,7 @@ void test2()
 
 /// Leontief test problem (rational form)
 /// Has one unique solution: p = (0.5, 0.5)
+/// (Also p = (0, 1) with first equation removed)
 
 void test3()
 {
@@ -75,6 +76,7 @@ void test3()
 
 /// Leontief test problem (polynomial form)
 /// Has one unique solution: p = (0.5, 0.5)
+/// (Also p = (0, 1) with first equation removed)
 
 void test4()
 {
@@ -117,16 +119,17 @@ void test6()
 int main()
 {
   dolfin_set("method", "cg");
-  dolfin_set("order", 2);
-  dolfin_set("tolerance", 0.005);
-  dolfin_set("initial time step", 0.01);
+  dolfin_set("order", 1);
+  dolfin_set("tolerance", 0.1);
+  dolfin_set("discrete tolerance", 1e-10);
+  dolfin_set("initial time step", 0.1);
   dolfin_set("linear solver", "direct");
-  dolfin_set("adaptive samples", true);
+  dolfin_set("adaptive samples", false);
   dolfin_set("homotopy monitoring", false);
-  dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("homotopy divergence tolerance", 100.0);
   dolfin_set("homotopy randomize", true);
 
-  test2();
+  test4();
 
   return 0;
 }
