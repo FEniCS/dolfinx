@@ -61,9 +61,15 @@ namespace dolfin
 
   private:
 
+    // Evaluate right-hand side at given quadrature point
+    void feval(uint m);
+
     TimeSlabSolver* solver; // The solver
     uint nj;                // Number of dofs
-    NewVector u;            // Degrees of freedom for the solution
+
+    real* dofs;             // Local dofs for an element used for interpolation
+    real* f;                // Values of right-hand side at all quadrature points
+    NewVector x;            // Degrees of freedom for the solution
 
   };
 

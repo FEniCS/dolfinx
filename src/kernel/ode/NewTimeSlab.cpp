@@ -1,6 +1,7 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <string>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewcGqMethod.h>

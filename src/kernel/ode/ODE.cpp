@@ -46,6 +46,15 @@ real ODE::f(const Vector& u, real t, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
+void ODE::feval(real u[], real t, real f[])
+{
+  // If a user of the mono-adaptive solver does not supply this function,
+  // then call f() for each component.
+
+  for (uint i = 0; i < N; i++)
+    f[i] = this->f(u, t, i);
+}
+//-----------------------------------------------------------------------------
 real ODE::dfdu(real u[], real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user

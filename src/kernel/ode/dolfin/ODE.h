@@ -41,11 +41,15 @@ namespace dolfin
     /// Initial value
     virtual real u0(uint i) = 0;
 
-    /// Right-hand side (new version, will be made abstract)
+    /// Evaluate right-hand side (multi-adaptive version)
+    // FIXME:: make this abstract?
     virtual real f(real u[], real t, uint i);
 
     /// Right-hand side (old version, will be removed)
     virtual real f(const Vector& u, real t, uint i);
+
+    /// Evaluate right-hand side (mono-adaptive version)
+    virtual void feval(real u[], real t, real f[]);
 
     /// Jacobian (optional)
     virtual real dfdu(real u[], real t, uint i, uint j);

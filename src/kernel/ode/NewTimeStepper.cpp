@@ -4,12 +4,14 @@
 // Modified by Johan Jansson 2003, 2004.
 
 #include <cmath>
+#include <string>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/NewSample.h>
+#include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/NewTimeStepper.h>
 
@@ -27,7 +29,11 @@ NewTimeStepper::NewTimeStepper(ODE& ode, Function& u) :
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
-  timeslab = new MultiAdaptiveTimeSlab(ode);
+  std::string method = dolfin_get("method");
+  if ( method == "cg" || method == "dg" )
+    timeslab = new MonoAdaptiveTimeSlab(ode);
+  else    
+    timeslab = new MultiAdaptiveTimeSlab(ode);
 }
 //-----------------------------------------------------------------------------
 NewTimeStepper::~NewTimeStepper()

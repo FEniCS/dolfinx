@@ -204,6 +204,8 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 {
+  // FIXME: not implemented
+
   // Step to the correct element
   //uint e = cover(i, t);
   
