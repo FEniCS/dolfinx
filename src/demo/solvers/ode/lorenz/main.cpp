@@ -56,9 +56,9 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("number of samples", 500);
   dolfin_set("debug time steps", 1);
+  dolfin_set("solve dual problem", false);
 
   Lorenz lorenz;
   lorenz.solve();

@@ -67,8 +67,6 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
-  dolfin_set("debug time steps", 1);
   dolfin_set("tolerance", 0.01);
 
   Simple simple;

@@ -18,7 +18,7 @@ public:
     k = 5.0;
     
     // Damping constant
-    b = 0.0;
+    b = 1.0;
 
     // Compute sparsity
     sparse();

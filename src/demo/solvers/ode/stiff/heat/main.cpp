@@ -46,10 +46,10 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 1e-3);
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
+  dolfin_set("solve dual problem", false);
 
   Heat heat(10);
   heat.solve();
