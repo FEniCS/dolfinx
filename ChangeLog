@@ -1,3 +1,5 @@
+ - Update writexml.m
+ - Add new grid files and rename old grid files
 0.3.11
  - Add configure option --disable-curses
  - Grid refinement updates

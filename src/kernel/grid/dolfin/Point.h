@@ -21,7 +21,7 @@ namespace dolfin {
     real dist(Point p) const;
 
     /// Return distance to given point (x,y,z)
-    real dist(real x, real y, real z) const;
+    real dist(real x, real y = 0.0, real z = 0.0) const;
     
     /// Return midpoint on line to given point p
     Point midpoint(Point p) const;

@@ -14,6 +14,18 @@
 
 using namespace dolfin;
 
+/*
+
+Comments:
+
+ - In closeGrid(), shouldn't Q be the set of all regular *or unrefined*
+   cells which have an edge marked by another cell? (Not only regular?)
+
+ - Should ref_reg and unref be the same status?
+
+*/
+
+
 //-----------------------------------------------------------------------------
 void GridRefinement::refine(GridHierarchy& grids)
 {
@@ -30,9 +42,6 @@ void GridRefinement::refine(GridHierarchy& grids)
 
   // Clear refinement data
   clearMarks(grids);
-
-  // Write a message
-  cout << "Grid hierarchy consists of " << grids.size() << " grids." << endl;
 
   dolfin_end();
 }
@@ -126,13 +135,15 @@ void GridRefinement::closeGrid(Grid& grid)
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
   for (CellIterator c(grid); !c.end(); ++c) {
-    if ( c->status() == Cell::ref_reg ) {
+    if ( c->status() == Cell::ref_reg || c->status() == Cell::unref ) {
       if ( edgeMarkedByOther(*c) ) {
 	cells.add(c);
 	closed(c->id()) = false;
       }
     }
   }
+
+  dolfin_debug1("Number of cells to close: %d", cells.size());
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
@@ -166,8 +177,6 @@ void GridRefinement::refineGrid(Grid& grid)
     // Skip cells which are marked_according_to_ref
     if ( c->marker() == Cell::marked_according_to_ref )
       continue;
-
-    cout << "Marker = " << c->marker() << endl;
 
     // Refine according to refinement rule
     refine(*c, grid.child());
@@ -339,22 +348,25 @@ void GridRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
   // Count the number of marked edges for each node
   Array<int> no_marked_edges(nodes.size());
   no_marked_edges = 0;
-  for (EdgeIterator e(cell); !e.end(); ++e)
+  for (EdgeIterator e(cell); !e.end(); ++e) {
     if ( e->marked() ) {
       no_marked_edges(nodeNumber(*e->node(0), cell))++;
       no_marked_edges(nodeNumber(*e->node(1), cell))++;
     }
+  }
 
   // Sort the nodes according to the number of marked edges, the node
   // with the most number of edges is placed first.
   int max_edges = no_marked_edges.max();
   int pos = 0;
-  for (int i = max_edges; i >= 0; i--)
-    for (int j = 0; j < nodes.size(); j++)
+  for (int i = max_edges; i >= 0; i--) {
+    for (int j = 0; j < nodes.size(); j++) {
       if ( no_marked_edges(j) >= i ) {
 	nodes(pos++) = cell.node(j);
 	no_marked_edges(j) = -1;
       }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 int GridRefinement::noMarkedEdges(const Cell& cell)

@@ -93,13 +93,9 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node* n2 = grid.createNode(cell.coord(2));
 
   // Update parent-child info 
-  n0->setParent(cell.node(0));
-  n1->setParent(cell.node(1));
-  n2->setParent(cell.node(2));
-
-  cell.node(0)->setParent(n0);
-  cell.node(1)->setParent(n1);
-  cell.node(2)->setParent(n2);
+  n0->setParent(cell.node(0)); cell.node(0)->setChild(n0);
+  n1->setParent(cell.node(1)); cell.node(1)->setChild(n1);
+  n2->setParent(cell.node(2)); cell.node(2)->setChild(n2);
   
   // Create new nodes with the new coordinates 
   Node* n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
@@ -125,12 +121,6 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
 
   // Set marker of cell to "marked_according_to_ref" 
   cell.marker() = Cell::marked_according_to_ref;
-
-  // Set marker of children to "marked_for_no_ref" 
-  t1->marker() = Cell::marked_for_no_ref;
-  t2->marker() = Cell::marked_for_no_ref;
-  t3->marker() = Cell::marked_for_no_ref;
-  t4->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
@@ -144,21 +134,25 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node* n_m1 = grid.createNode(nodes(0)->coord());
-  Node* n_m2 = grid.createNode(nodes(1)->coord());
-  Node* n_nm = grid.createNode(nodes(2)->coord());
+  Node* n0 = grid.createNode(nodes(0)->coord());
+  Node* n1 = grid.createNode(nodes(1)->coord());
+  Node* nn = grid.createNode(nodes(2)->coord()); // Not marked
 
   // Update parent-child info
-  n_m1->setParent(nodes(0));
-  n_m2->setParent(nodes(1));
-  n_nm->setParent(nodes(2));
+  n0->setParent(nodes(0)); nodes(0)->setChild(n0);
+  n1->setParent(nodes(1)); nodes(1)->setChild(n1);
+  nn->setParent(nodes(2)); nodes(2)->setChild(nn);
+
+  // Find edge
+  Edge* e = cell.findEdge(nodes(0), nodes(1));
+  dolfin_assert(e);
 
   // Create new node on marked edge 
-  Node* n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
+  Node* ne = grid.createNode(e->midpoint());
   
   // Create new cells 
-  Cell* t1 = grid.createCell(n_e, n_nm, n_m1);
-  Cell* t2 = grid.createCell(n_e, n_nm, n_m2);
+  Cell* t1 = grid.createCell(ne, nn, n0);
+  Cell* t2 = grid.createCell(ne, nn, n1);
   
   // Update parent-child info
   t1->setParent(&cell);
@@ -169,10 +163,6 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
 
   // Set marker of cell to "marked_according_to_ref" 
   cell.marker() = Cell::marked_according_to_ref;
-
-  // Set marker of children to "marked_for_no_ref" 
-  t1->marker() = Cell::marked_for_no_ref;
-  t2->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
@@ -187,22 +177,28 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
 
   // Create new nodes with the same coordinates as the old nodes
   Node* n_dm = grid.createNode(nodes(0)->coord());
-  Node* n_m1 = grid.createNode(nodes(1)->coord());
-  Node* n_m2 = grid.createNode(nodes(2)->coord());
+  Node* n_m0 = grid.createNode(nodes(1)->coord());
+  Node* n_m1 = grid.createNode(nodes(2)->coord());
 
   // Update parent-child info
-  n_dm->setParent(nodes(0));
-  n_m1->setParent(nodes(1));
-  n_m2->setParent(nodes(2));
+  n_dm->setParent(nodes(0)); nodes(0)->setChild(n_dm);
+  n_m0->setParent(nodes(1)); nodes(1)->setChild(n_m0);
+  n_m1->setParent(nodes(2)); nodes(2)->setChild(n_m1);
+
+  // Find the edges
+  Edge* e0 = cell.findEdge(nodes(0), nodes(1));
+  Edge* e1 = cell.findEdge(nodes(0), nodes(2));
+  dolfin_assert(e0);
+  dolfin_assert(e1);
 
   // Create new nodes on marked edges 
-  Node* n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
-  Node* n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
+  Node* n_e0 = grid.createNode(e0->midpoint());
+  Node* n_e1 = grid.createNode(e1->midpoint());
 
   // Create new cells 
-  Cell* t1 = grid.createCell(n_dm, n_e1, n_e2);
-  Cell* t2 = grid.createCell(n_m1, n_e1, n_e2);
-  Cell* t3 = grid.createCell(n_e2, n_m1, n_m2);
+  Cell* t1 = grid.createCell(n_dm, n_e0, n_e1);
+  Cell* t2 = grid.createCell(n_m0, n_e0, n_e1);
+  Cell* t3 = grid.createCell(n_e1, n_m0, n_m1);
   
   // Update parent-child info
   t1->setParent(&cell);
@@ -215,10 +211,5 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
 
   // Set marker of cell to "marked_according_to_ref" 
   cell.marker() = Cell::marked_according_to_ref;
-
-  // Set marker of children to "marked_for_no_ref" 
-  t1->marker() = Cell::marked_for_no_ref;
-  t2->marker() = Cell::marked_for_no_ref;
-  t3->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
