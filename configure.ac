@@ -38,12 +38,6 @@ AC_ARG_WITH(petsc-bopt,
                            [Specify compiler flag BOPT for PETSc (O_c++ or g_c++)]),
             [BOPT=$with_petsc_bopt],)
 
-# Option --with-petsc-version
-AC_ARG_WITH(petsc-version,
-            AC_HELP_STRING([--with-petsc-version=<version>],
-                           [Specify PETSc version]),
-            [PETSC_VERSION=$with_petsc_version],)
-
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
@@ -106,55 +100,18 @@ else
     echo "using BOPT=$BOPT"
 fi
 
-# Handle option --with-petsc-version=<version>. If not supplied,
-# we assume the version is 2.2.1. We can only handle 2.2.0 or 2.2.1.
-if test x$PETSC_VERSION = x; then
-    echo "assuming PETSc version is 2.2.1"
-    PETSC_VERSION="2.2.1"
-elif test $PETSC_VERSION = "2.2.0"; then
-    echo "using PETSc version $PETSC_VERSION"
-elif test $PETSC_VERSION = "2.2.1"; then
-    echo "using PETSc version $PETSC_VERSION"
-else
-    echo "*** Can only handle PETSc version 2.2.0 or 2.2.1."
-    exit 1
-fi
-
 # Check for PETSc
-if test $PETSC_VERSION = "2.2.0"; then
-    AC_CHECK_PROG(petsc_found, petscarch, yes, no)
-    if test $petsc_found = yes; then
-        PETSC_ARCH=`petscarch`
-        #BOPT='O_c++'
-        BOPT='g_c++'
-        PETSC_CFLAGS="-I$PETSC_DIR/include -DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_g -DPETSC_USE_EXTERN_CXX -DPETSC_2_2_0"
-        AC_SUBST(PETSC_ARCH)
-        AC_SUBST(PETSC_DIR)
-        AC_SUBST(BOPT)
-        AC_SUBST(PETSC_CFLAGS)
-        AC_SUBST(PETSC_VERSION)
-    else
-        echo "*** Unable to find PETSc on your system."
-        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-        echo "*** or set the environment variable PETSC_DIR to the correct path."
-        echo "*** Debian users need to install the package petsc-dev."
-        exit 1
-    fi
+AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
+if test $petsc_found = yes; then
+    # Extract PETSc variables from PETSC_DIR/bmake/common/variables
+    PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
+    PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
 else
-    AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
-    if test $petsc_found = yes; then
-        # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
-        PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
-        # Extra flag to choose correct version
-        PETSC_CFLAGS="$PETSC_CFLAGS -DPETSC_2_2_1"
-    else
-        echo "*** Unable to find PETSc on your system."
-        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-        echo "*** or set the environment variable PETSC_DIR to the correct path."
-        echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
-        exit 1
-    fi
+    echo "*** Unable to find PETSc 2.2.1 on your system."
+    echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
+    echo "*** or set the environment variable PETSC_DIR to the correct path."
+    echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
+    exit 1
 fi
 
 # Check for MPI (needed by PETSc)

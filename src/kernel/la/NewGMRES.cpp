@@ -30,8 +30,7 @@ NewGMRES::NewGMRES() : NewLinearSolver(), report(true), ksp(0), B(0)
   PCSetType(pc, PCILU);
   
   // Display tolerances
-  real _rtol(0.0), _atol(0.0), _dtol(0.0);
-  int _maxiter(0);
+  real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
   dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
 	      _rtol, _atol, _dtol, _maxiter);
@@ -57,13 +56,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
-#ifdef PETSC_2_2_1
   KSPSolve(ksp, b.vec(), x.vec());
-#else
-  KSPSetRhs(ksp, b.vec());
-  KSPSetSolution(ksp, x.vec());
-  KSPSolve(ksp);
-#endif
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -74,7 +67,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   // Report number of iterations
   if ( report )
   {
-    KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
+    //KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
     int its = 0;
     KSPGetIterationNumber(ksp, &its);
     dolfin_info("GMRES converged in %d iterations.", its);
@@ -101,14 +94,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_PRECONDITIONER);
-
-#ifdef PETSC_2_2_1
   KSPSolve(ksp, b.vec(), x.vec());
-#else
-  KSPSetRhs(ksp, b.vec());
-  KSPSetSolution(ksp, x.vec());
-  KSPSolve(ksp);
-#endif
 
   // Check if the solution converged
   KSPConvergedReason reason;
