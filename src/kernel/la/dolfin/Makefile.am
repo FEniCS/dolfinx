@@ -11,6 +11,8 @@ EXTRA_DIST = dolfin_la.h \
              KrylovSolver.h \
              LinearSolver.h \
              Matrix.h \
+             NewMatrix.h \
+             PETScManager.h \
              Preconditioner.h \
              Richardson.h \
              SOR.h \

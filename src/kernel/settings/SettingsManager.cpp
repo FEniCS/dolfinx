@@ -3,5 +3,5 @@
 
 #include <dolfin/SettingsManager.h>
 
-// Initialise static data
+// Initialize static data
 dolfin::Settings dolfin::SettingsManager::settings;

@@ -80,7 +80,7 @@ real testFFCPETSc(Mesh& mesh)
 int main()
 {
   dolfin_set("output", "plain text");
-
+  
   Mesh mesh("mesh.xml.gz");
   mesh.refineUniformly();
   mesh.refineUniformly();

@@ -10,6 +10,7 @@
 #include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/NewMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/NewFiniteElement.h>
@@ -277,12 +278,7 @@ void NewFEM::freeElementVector(real*& bK, const NewFiniteElement& element)
 //-----------------------------------------------------------------------------
 void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh)
 {
-  Mat A;
-  MatCreateSeqAIJ(PETSC_COMM_SELF, 100, 100, 10, PETSC_NULL, &A);
-  int m;
-  int n;
-  MatGetSize(A, &m, &n);
-  
-  dolfin_info("Size of PETSc matrix: %d x %d", m, n);
+  NewMatrix A(10, 10);
+  cout << "Size of matrix: " << A.size(0) << " " << A.size(1) << endl;
 }
 //-----------------------------------------------------------------------------

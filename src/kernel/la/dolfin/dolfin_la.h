@@ -14,6 +14,7 @@
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/Richardson.h>
 #include <dolfin/SOR.h>

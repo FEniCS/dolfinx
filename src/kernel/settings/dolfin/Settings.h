@@ -4,6 +4,7 @@
 #ifndef __SETTINGS_H
 #define __SETTINGS_H
 
+#include <iostream>
 #include <dolfin/constants.h>
 #include <dolfin/ParameterList.h>
 
@@ -15,6 +16,8 @@ namespace dolfin {
   public:
     
     Settings() : ParameterList() {
+
+      std::cout << "Initializing DOLFIN version " << DOLFIN_VERSION << std::endl;
       
       // General parameters
 
