@@ -22,4 +22,4 @@ General
 - Replace stdio with iostream and fstream
 - Replace Array and List with NewArray and NewList
 - Replace int by unsigned int where necessary
-- Update manual
+- Update manual: anyone?

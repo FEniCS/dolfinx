@@ -79,11 +79,17 @@ real GenericFunction::time() const
 Mesh& GenericFunction::mesh() const
 {
   dolfin_error("Function is not defined on a mesh.");
+
+  // Avoid warning, we will not reach this statement
+  exit(1);
 }
 //-----------------------------------------------------------------------------
 ElementData& GenericFunction::elmdata()
 {
   dolfin_error("Function does not contain element data.");
+
+  // Avoid warning, we will not reach this statement
+  exit(1);
 }
 //-----------------------------------------------------------------------------
 void GenericFunction::update(FunctionSpace::ElementFunction &v,

@@ -120,6 +120,9 @@ void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
   
   // Shift solution
   u.shift(t);
+  
+  // Shift adaptivity
+  adaptivity.shift();
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
@@ -148,16 +151,8 @@ void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity, Solution& u)
 {
   dolfin_warning("Fixed point iteration did not converge, decreasing time steps.");
 
-  for (unsigned int i = 0; i < adaptivity.size(); i++)
-  {
-    // Get old time step
-    real k = adaptivity.regulator(i).timestep();
-
-    // Specify new time step
-    adaptivity.regulator(i).init(k/2.0);
-
-    cout << "New time step: " << k/2.0 << endl;
-  }
+  // FIXME: Maybe this should be a parameter
+  adaptivity.decreaseTimeStep(0.5);
 
   // Throw away solution values for current time slab
   u.reset();

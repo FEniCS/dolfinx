@@ -1,3 +1,5 @@
+ - Compile without warnings
+ - Add -Werror to option enable-debug
  - Different methods for different components
  - Fix bug in dGqMethods
  - Fix bug (delete old block) in ElementData

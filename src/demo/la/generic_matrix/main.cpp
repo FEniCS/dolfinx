@@ -8,14 +8,14 @@ using namespace dolfin;
 class MyMatrix : public Matrix {
 public:
 
-  MyMatrix(int m, int n) : Matrix(m,n, Matrix::generic)
+  MyMatrix(unsigned int m, unsigned int n) : Matrix(m,n, Matrix::generic)
   {
     dolfin::cout << "Creating a generic matrix" << dolfin::endl;
   }
 
   void mult(const Vector& x, Vector& Ax) const
   {
-    for (int i = 0; i < size(0); i++) {
+    for (unsigned int i = 0; i < size(0); i++) {
       if ( i == 0 )
 	Ax(i) = 2.0*x(i) - x(i+1);
       else if ( i == (size(0) - 1) ) 
@@ -32,7 +32,7 @@ int main()
   dolfin_set("output", "plain text");
   
   // Number of unknowns
-  int m = 5;
+  unsigned int m = 5;
 
   // A generic matrix
   MyMatrix A(m,m);

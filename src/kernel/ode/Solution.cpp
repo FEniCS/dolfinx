@@ -118,15 +118,11 @@ unsigned int Solution::size() const
 //-----------------------------------------------------------------------------
 Element::Type Solution::method(unsigned int i)
 {
-  cout << "method = " << ode.method(i) << endl;
-
   return ode.method(i);
 }
 //-----------------------------------------------------------------------------
 unsigned int Solution::order(unsigned int i)
 {
-  cout << "order = " << ode.order(i) << endl;
-
   return ode.order(i);
 }
 //-----------------------------------------------------------------------------

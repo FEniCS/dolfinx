@@ -228,14 +228,14 @@ real FixedPointIteration::computeConvergenceRate()
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeDamping(real rho)
 {
+  dolfin_assert(rho > 0.0);
   return 0.99 / (1 + rho);    
 }
 //-----------------------------------------------------------------------------
 unsigned int FixedPointIteration::computeDampingSteps(real rho)
 {
-  cout << "  rho = " << rho << endl;
-
-  return 2*ceil_int(log(rho));
+  dolfin_assert(rho > 0.0);
+  return 1 + 2*ceil_int(log(1.0 + rho));
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::clear()

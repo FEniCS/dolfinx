@@ -32,6 +32,9 @@ namespace dolfin {
     /// Return maximum time step
     real maxstep() const;
 
+    /// Decrease maximum time step (temporarily) with given factor
+    void decreaseTimeStep(real factor);
+    
     /// Return whether we use fixed time steps or not
     bool fixed() const;
 
@@ -40,6 +43,9 @@ namespace dolfin {
 
     /// Return number of components
     unsigned int size() const;
+
+    /// Prepare for next time slab
+    void shift();
 
   private:
 
@@ -51,6 +57,9 @@ namespace dolfin {
 
     // Maximum and minimum allowed time step
     real kmax;
+
+    // Current maximum time step
+    real kmax_current;
 
     // Flag for fixed time steps
     bool kfixed;
