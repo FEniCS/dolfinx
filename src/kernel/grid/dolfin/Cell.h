@@ -80,6 +80,9 @@ namespace dolfin {
     /// Return edge number i
     Edge* edge(int i) const;
 
+    /// Return face number i
+    Face* face(int i) const;
+
     /// Return cell neighbor number i
     Cell* neighbor(int i) const;
 
@@ -159,6 +162,9 @@ namespace dolfin {
     // Check if given edge is contained in the cell
     bool haveEdge(Edge& edge) const;
 
+    // Check if given node is contained in the cell
+    bool haveNode(Node& node) const;
+
     // Create edges for the cell
     void createEdges();
 
@@ -176,6 +182,7 @@ namespace dolfin {
 
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
+    Face* findFace(Edge* e0, Edge* e1);
 
     // Return cell marker
     Marker& marker();

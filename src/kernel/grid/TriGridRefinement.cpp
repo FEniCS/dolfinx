@@ -122,6 +122,15 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   cell.addChild(t2);
   cell.addChild(t3);
   cell.addChild(t4);
+
+  // Set marker of cell to "marked_according_to_ref" 
+  cell.marker() = Cell::marked_according_to_ref;
+
+  // Set marker of children to "marked_for_no_ref" 
+  t1->marker() = Cell::marked_for_no_ref;
+  t2->marker() = Cell::marked_for_no_ref;
+  t3->marker() = Cell::marked_for_no_ref;
+  t4->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
@@ -157,6 +166,13 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   
   cell.addChild(t1);
   cell.addChild(t2);
+
+  // Set marker of cell to "marked_according_to_ref" 
+  cell.marker() = Cell::marked_according_to_ref;
+
+  // Set marker of children to "marked_for_no_ref" 
+  t1->marker() = Cell::marked_for_no_ref;
+  t2->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
@@ -196,5 +212,13 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   cell.addChild(t1);
   cell.addChild(t2);
   cell.addChild(t3);
+
+  // Set marker of cell to "marked_according_to_ref" 
+  cell.marker() = Cell::marked_according_to_ref;
+
+  // Set marker of children to "marked_for_no_ref" 
+  t1->marker() = Cell::marked_for_no_ref;
+  t2->marker() = Cell::marked_for_no_ref;
+  t3->marker() = Cell::marked_for_no_ref;
 }
 //-----------------------------------------------------------------------------

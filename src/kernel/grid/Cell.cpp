@@ -121,6 +121,14 @@ Edge* Cell::edge(int i) const
   return 0;
 }
 //-----------------------------------------------------------------------------
+Face* Cell::face(int i) const
+{
+  if ( c )
+    return c->face(i);
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 Cell* Cell::neighbor(int i) const
 {
   if ( c )
@@ -249,6 +257,12 @@ bool Cell::haveEdge(Edge& edge) const
   return c->haveEdge(edge);
 }
 //-----------------------------------------------------------------------------
+bool Cell::haveNode(Node& node) const
+{
+  dolfin_assert(c);
+  return c->haveNode(node);
+}
+//-----------------------------------------------------------------------------
 void Cell::createEdges()
 {
   dolfin_assert(c);
@@ -283,6 +297,12 @@ Face* Cell::findFace(Edge* e0, Edge* e1, Edge* e2)
 {
   dolfin_assert(c);
   return c->findFace(e0, e1, e2);
+}
+//-----------------------------------------------------------------------------
+Face* Cell::findFace(Edge* e0, Edge* e1)
+{
+  dolfin_assert(c);
+  return c->findFace(e0, e1);
 }
 //-----------------------------------------------------------------------------
 Cell::Marker& Cell::marker()

@@ -43,6 +43,10 @@ bool Face::equals(Edge* e0, Edge* e1, Edge* e2) const
 {
   dolfin_assert(fe.size() == 3);
 
+  // Should be enough with 2 edges for identification? 
+  equals(e0,e1);
+
+  /*
   if ( fe(0) == e0 && fe(1) == e1 && fe(2) == e2 )
     return true;
 
@@ -59,6 +63,32 @@ bool Face::equals(Edge* e0, Edge* e1, Edge* e2) const
     return true;
 
   if ( fe(0) == e2 && fe(1) == e1 && fe(2) == e0 )
+    return true;
+  */
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool Face::equals(Edge* e0, Edge* e1) const
+{
+  dolfin_assert(fe.size() == 3);
+
+  if ( fe(0) == e0 && fe(1) == e1 )
+    return true;
+
+  if ( fe(0) == e0 && fe(2) == e1 )
+    return true;
+
+  if ( fe(0) == e1 && fe(1) == e0 )
+    return true;
+
+  if ( fe(0) == e1 && fe(2) == e0 )
+    return true;
+
+  if ( fe(1) == e0 && fe(2) == e1 )
+    return true;
+
+  if ( fe(1) == e1 && fe(2) == e0 )
     return true;
 
   return false;

@@ -40,6 +40,7 @@ namespace dolfin {
 
     Node* node(int i) const;
     Edge* edge(int i) const;
+    Face* face(int i) const;
     Cell* neighbor(int i) const;
     Cell* parent() const;
     Cell* child(int i) const;
@@ -74,6 +75,9 @@ namespace dolfin {
     // Check if given cell is a neighbor
     bool neighbor(GenericCell* cell) const;
 
+    // Check if given node is contained in the cell
+    bool haveNode(Node& node) const;
+
     // Check if given edge is contained in the cell
     bool haveEdge(Edge& edge) const;
 
@@ -94,6 +98,7 @@ namespace dolfin {
 
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
+    Face* findFace(Edge* e0, Edge* e1);
 
     // Initialize marker (if not already done)
     void initMarker();

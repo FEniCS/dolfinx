@@ -54,6 +54,11 @@ Edge* GenericCell::edge(int i) const
   return ce(i);
 }
 //-----------------------------------------------------------------------------
+Face* GenericCell::face(int i) const
+{
+  return cf(i);
+}
+//-----------------------------------------------------------------------------
 Cell* GenericCell::neighbor(int i) const
 {
   return cc(i);
@@ -137,6 +142,14 @@ bool GenericCell::neighbor(GenericCell* cell) const
   return count >= 2;
 }
 //-----------------------------------------------------------------------------
+bool GenericCell::haveNode(Node& node) const
+{
+  for (Array<Node*>::Iterator n(cn); !n.end(); ++n)
+    if ( *n == &node )
+      return true;
+  return false;
+}
+//-----------------------------------------------------------------------------
 bool GenericCell::haveEdge(Edge& edge) const
 {
   for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
@@ -199,6 +212,16 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
   for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
       if ( (*f)->equals(e0, e1, e2) )
+	return *f;
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+Face* GenericCell::findFace(Edge* e0, Edge* e1)
+{
+  for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
+    if ( *f )
+      if ( (*f)->equals(e0, e1) )
 	return *f;
 
   return 0;

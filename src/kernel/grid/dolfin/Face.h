@@ -38,6 +38,7 @@ namespace dolfin {
 
     /// Check if face consists of the given edges
     bool equals(Edge* e0, Edge* e1, Edge* e2) const;
+    bool equals(Edge* e0, Edge* e1) const;
 
     ///--- Output ---
    
