@@ -204,6 +204,7 @@ AC_OUTPUT( Makefile \
            src/modules/euler/Makefile \
            src/modules/heat/Makefile \
            src/modules/navierstokes/Makefile \
+           src/modules/navierstokes/dolfin/Makefile \
            src/modules/odesolver/Makefile \
            src/modules/wave/Makefile \
            src/modules/wave-vector/Makefile \

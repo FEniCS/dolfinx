@@ -36,9 +36,9 @@ class MyVectorFunction : public NewFunction
 {
   real operator() (const Point& p, int i) const
   {
-    if (i==0)      return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
-    else if (i==1) return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
-    else dolfin_error("Wrong vector component index");
+    if (i==0) return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
+    if (i==1) return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
+    dolfin_error("Wrong vector component index");
   }
 };
 
@@ -67,7 +67,9 @@ class MyVectorBC : public NewBoundaryCondition
     } else if (i==1){
       if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
 	value.set(0.0);
-    } else dolfin_error("Wrong vector component index");
+    } else{
+      dolfin_error("Wrong vector component index");
+    }
 
     return value;
   }
