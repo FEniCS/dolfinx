@@ -2,5 +2,6 @@
 
 NAME     = "navierstokes"
 KEYWORD  = "navier-stokes"
-PROBLEM  = "ProblemNS"
+SOLVER   = "SolverNavierStokes"
 SETTINGS = "SettingsNavierStokes"
+GRID     = "yes"

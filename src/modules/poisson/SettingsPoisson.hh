@@ -3,16 +3,19 @@
 
 #include "Settings.hh"
 
-///
-class SettingsPoisson : public Settings {
-public:
+namespace dolfin {
   
-  SettingsPoisson() : Settings() {
-
-	 AddFunction("source");
+  class SettingsPoisson : public Settings {
+  public:
+	 
+	 SettingsPoisson() : Settings() {
+		
+		AddFunction("source");
+		
+	 };
 	 
   };
-  
-};
+
+}
 
 #endif

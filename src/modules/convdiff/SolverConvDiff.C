@@ -15,7 +15,7 @@ const char *ProblemConvDiff::Description()
 	 return "Convection-Diffusion equation (3D)";
 }
 //-----------------------------------------------------------------------------
-void ProblemConvDiff::Solve()
+void ProblemConvDiff::solve()
 {
   Equation *equation;
   SparseMatrix A;

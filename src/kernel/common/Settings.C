@@ -3,6 +3,8 @@
 
 #include "Settings.hh"
 
+using namespace dolfin;
+
 //----------------------------------------------------------------------------
 void Settings::Initialize()
 {

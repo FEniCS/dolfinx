@@ -5,7 +5,7 @@ dnl Settings
 PACKAGE=dolfin
 VERSION=0.2.11-1
 DOLFIN_MAIN="main"
-DOLFIN_KERNEL="grid io la common"
+DOLFIN_KERNEL="fem grid io la common"
 
 dnl Find modules
 cd src/modules
@@ -15,10 +15,6 @@ DOLFIN_MODULES=""
 for l in `cat src/modules/modules.list | grep -v "#"`; do
 	DOLFIN_MODULES="$DOLFIN_MODULES$l "
 done
-echo $DOLFIN_MODULES
-
-dnl Modules temporarily disabled
-DOLFIN_MODULES=""
 
 dnl Initialize automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)

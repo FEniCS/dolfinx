@@ -10,7 +10,7 @@ const char *ProblemTemplate::Description()
 	return "My new equation";
 }
 //-----------------------------------------------------------------------------
-void ProblemTemplate::Solve()
+void ProblemTemplate::solve()
 {
 	display->Message(0,"Solving...");	
 }

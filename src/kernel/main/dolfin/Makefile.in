@@ -69,7 +69,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 
-EXTRA_DIST = dolfin_constants.h
+EXTRA_DIST = dolfin_constants.h Problem.hh
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

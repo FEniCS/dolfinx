@@ -10,4 +10,7 @@ int main(int argc, char **argv)
 {
   dolfin::Grid grid("grid.inp");
 
+
+  // Temporary: FIXME
+  delete display;
 }

@@ -190,7 +190,7 @@ const char *ProblemNS::Description()
   return "Navier-Stokes equations";
 }
 //----------------------------------------------------------------------------------------------------
-void ProblemNS::Solve()
+void ProblemNS::solve()
 {
   display->Status(0,"Solving Navier-Stokes primal problem");
   

@@ -2,5 +2,6 @@
 
 NAME     = "template"
 KEYWORD  = "my problem"
-PROBLEM  = "ProblemTemplate"
+SOLVER   = "SolverTemplate"
 SETTINGS = "SettingsTemplate"
+GRID     = "yes"

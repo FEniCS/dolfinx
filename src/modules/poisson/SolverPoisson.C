@@ -14,7 +14,7 @@ const char *ProblemPoisson::Description()
 	 return "Poisson's equation (2D)";
 }
 //-----------------------------------------------------------------------------
-void ProblemPoisson::Solve()
+void ProblemPoisson::solve()
 {
   Equation *equation;
   SparseMatrix A;
