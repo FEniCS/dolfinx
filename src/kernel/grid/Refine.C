@@ -5,18 +5,34 @@
 
 
 
-Refinement::UniformRefinement(){
-
-
+Refinement::GlobalRefinement()
+{
 }
 
-Refinement::AdaptiveRefinement(){
-
-
+Refinement::EvaluateMarks()
+{
 }
 
-Refinement::LocalRegularRefinement(Tetrahedron *parent){
+Refinement::CloseGrid()
+{
+}
 
+Refinement::CloseElement()
+{
+}
+
+Refinement::UnrefineGrid()
+{
+}
+
+Refinement::RefineGrid()
+{
+}
+
+
+
+Refinement::LocalRegularRefinement(Tetrahedron *parent)
+{
   Point p01 = parent->GetNode(0)->p.Midpoint(parent->GetNode(1)->p);
   Point p02 = parent->GetNode(0)->p.Midpoint(parent->GetNode(2)->p);
   Point p03 = parent->GetNode(0)->p.Midpoint(parent->GetNode(3)->p);
@@ -69,7 +85,7 @@ Refinement::LocalIrregularRefinement(Tetrahedron *parent)
   
   switch(parent->GetNoMarkedEdges()){ 
   case 4: 
-    LocalUniformRefinement(parent);
+    LocalRegularRefinement(parent);
     break;
   case 3: 
     reg_ref = true;
@@ -79,7 +95,7 @@ Refinement::LocalIrregularRefinement(Tetrahedron *parent)
 	reg_ref = false;
       }
     }
-    if (reg_ref) LocalUniformRefinement(parent);    
+    if (reg_ref) LocalRegularRefinement(parent);    
     break;
   case 2: 
     for (int i=0; i<4; i++){
@@ -181,6 +197,19 @@ Refinement::IrrRef2(Tetrahedron *parent, int marked_edge)
 
 Refinement::IrrRef3(Tetrahedron *parent, int marked_edge1, int marked_edge2)
 {      
+  // 2 edges are marked, on the same face 
+  // (here there are 2 possibilities, and the chosen 
+  // alternative must match the corresponding face 
+  // of the neighbor tetrahedron): 
+  // insert 2 new nodes at the midpoints of the marked edges, 
+  // insert 3 new edges by connecting the two new nodes to each 
+  // other and the node opposite the face of the 2 marked edges, 
+  // and insert 1 new edge by 
+  // alt.1: connecting new node 1 with the endnode of marked edge 2, 
+  // that is not common with marked edge 1, or 
+  // alt.2: connecting new node 2 with the endnode of marked edge 1, 
+  // that is not common with marked edge 2.
+
   int non_marked_node;
   int double_marked_node;
   
@@ -230,7 +259,9 @@ Refinement::IrrRef3(Tetrahedron *parent, int marked_edge1, int marked_edge2)
 Refinement::IrrRef4(Tetrahedron *parent, int marked_edge1, int marked_edge2)
 {      
   // 2 edges are marked, opposite to each other: 
-  // 
+  // insert 2 new nodes at the midpoints of the marked edges, 
+  // insert 4 new edges by connecting the new nodes to the 
+  // endpoints of the opposite edges of the respectively new nodes. 
 
   Node *n1 = grid->createNode();
   Node *n2 = grid->createNode();
