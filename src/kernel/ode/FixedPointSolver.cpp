@@ -10,8 +10,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FixedPointSolver::FixedPointSolver(NewTimeSlab& timeslab, const NewMethod& method)
-  : TimeSlabSolver(timeslab, method), f(0)
+FixedPointSolver::FixedPointSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method)
+  : TimeSlabSolver(ode, timeslab, method), f(0)
 {
   f = new real[method.qsize()];
 }

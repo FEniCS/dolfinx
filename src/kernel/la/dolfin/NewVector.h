@@ -48,6 +48,14 @@ namespace dolfin
     /// Return PETSc Vec pointer
     const Vec vec() const;
 
+    /// Return a contiguous array containing this processor's portion
+    /// of the data. After usage, the function restore() must be
+    /// called.
+    real* array();
+
+    /// Restore array after a call to array()
+    void restore(real data[]);
+
     /// Element assignment
     void setvalue(int i, const real r);
 
@@ -72,7 +80,6 @@ namespace dolfin
       int i;
       NewVector &v;
     };
-
 
   protected:
     // PETSc Vec pointer

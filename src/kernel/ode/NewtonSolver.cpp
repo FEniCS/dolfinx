@@ -2,8 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/Alloc.h>
+#include <dolfin/ODE.h>
 #include <dolfin/NewTimeSlab.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/NewtonSolver.h>
@@ -11,26 +11,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(NewTimeSlab& timeslab, const NewMethod& method)
-  : TimeSlabSolver(timeslab, method), f(0), A(0), x(0)
+NewtonSolver::NewtonSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method)
+  : TimeSlabSolver(ode, timeslab, method), f(0), A(ode, timeslab, method)
 {
   // Initialize local array
   f = new real[method.qsize()];
-
-  // Initialize PETSc
-  PETScManager::init();
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
   // Delete local array
   if ( f ) delete [] f;
-
-  // Delete PETSc matrix if necessary
-  if ( A ) MatDestroy(A);
-
-  // Delete PETSc vector if necessary
-  if ( x ) VecDestroy(x);
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::start()
@@ -38,93 +29,40 @@ void NewtonSolver::start()
   // Get size of system
   int nj = static_cast<int>(ts.nj);
 
-  // Create matrix and vector the first time
-  if ( !A )
-  {
-    cout << "Creating matrix for the first time" << endl;
+  // Initialize increment vector
+  dx.init(nj);
 
-    // Create vector
-    VecCreate(PETSC_COMM_WORLD, &x);
-    VecSetSizes(x, PETSC_DECIDE, nj);
-    VecSetFromOptions(x);
-    
-    // Extract local partitioning needed to create the matrix
-    int m = 0;
-    VecGetLocalSize(x, &m);
-    cout << "m = " << m << endl;
-    
-    // Create matrix
-    MatCreateShell(PETSC_COMM_WORLD, m, nj, nj, nj, (void*) this, &A);
-    return;
-  }
-  
+  // Initialize Jacobian matrix
+  A.init(dx, dx);
 
-  
-  
-  
-
-  // Check if we need to change the size of the matrix
-  int m = 0;
-  int n = 0;
-  MatGetSize(A, &m, &n);
-  if ( m != nj || n != nj )
-  {
-    cout << "Need to change size of matrix: m = " << m << " nj = " << nj << endl;
-    MatDestroy(A);
-    MatCreateShell(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, nj, nj, 
-		   (void*) this, &A);
-  }
+  // Compute Jacobian
+  A.update(ts.starttime());
 }
 //-----------------------------------------------------------------------------
 real NewtonSolver::iteration()
 {
-  dolfin_error("Not implemented");
+  // Evaluate F at current x
+  Feval();
   
-  // Reset dof
-  uint j = 0;
+  // Solve linear system F for dx
+  //solver.solve(A, dx, F);
 
-  // Reset current sub slab
-  int s = -1;
+  // Get array containing the increments (assumes uniprocessor case)
+  real* dxvals = dx.array();
 
-  // Reset elast
-  ts.elast = -1;
+  // Update solution x -> x - dx
+  for (uint j = 0; j < ts.nj; j++)
+    ts.jx[j] -= dxvals[j];
 
-  // Reset maximum increment
-  real max_increment = 0.0;
+  // Restor array
+  dx.restore(dxvals);
+  
+  return 0.01;
+}
+//-----------------------------------------------------------------------------
+void NewtonSolver::Feval()
+{
+  
 
-  // Iterate over all elements
-  for (uint e = 0; e < ts.ne; e++)
-  {
-    // Cover all elements in current sub slab
-    s = ts.cover(s, e);
-
-    // Get element data
-    const uint i = ts.ei[e];
-    const real a = ts.sa[s];
-    const real b = ts.sb[s];
-    const real k = b - a;
-
-    // Get initial value for element
-    const int ep = ts.ee[e];
-    const uint jp = ep * method.nsize();
-    const real x0 = ( ep != -1 ? ts.jx[jp + method.nsize() - 1] : ts.u0[i] );
-
-    // Evaluate right-hand side at quadrature points of element
-    ts.feval(f, s, e, i, a, b, k);
-    //cout << "f = "; Alloc::disp(f, method.qsize());
-
-    // Update values on element using fixed point iteration
-    const real increment = method.update(x0, f, k, ts.jx + j);
-    //cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
-    
-    // Update maximum increment
-    if ( increment > max_increment )
-      max_increment = increment;
-    
-    // Update dof
-    j += method.nsize();
-  }
-
-  return max_increment;
 }
 //-----------------------------------------------------------------------------

@@ -12,13 +12,20 @@ namespace dolfin
 
   class NewTimeSlab;
   class NewMethod;
+  
+  /// This class implements fixed point iteration on time slabs. In
+  /// each iteration, the solution is updated according to the fixed
+  /// point iteration x = g(x). The iteration is performed forward in
+  /// time Gauss-Seidel style, i.e., the degrees of freedom on an
+  /// element are updated according to x = g(x) and the new values are
+  /// used when updating the remaining elements.
 
   class FixedPointSolver : public TimeSlabSolver
   {
   public:
 
     /// Constructor
-    FixedPointSolver(NewTimeSlab& timeslab, const NewMethod& method);
+    FixedPointSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method);
 
     /// Destructor
     ~FixedPointSolver();

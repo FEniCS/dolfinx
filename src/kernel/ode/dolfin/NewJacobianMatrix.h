@@ -33,7 +33,7 @@ namespace dolfin
     void update(real t);
 
     /// Show Jacobian of the system of equations on the time slab
-    void show() const;
+    void disp() const;
 
   private:
 
@@ -46,6 +46,12 @@ namespace dolfin
     // Method, mcG(q) or mdG(q)
     const NewMethod& method;
 
+    // Values of the Jacobian df/du of the right-hand side
+    real* Jvalues;
+
+    // Indices for first element of each row for the Jacobian df/du
+    uint* Jindices;
+    
   };
 
 }

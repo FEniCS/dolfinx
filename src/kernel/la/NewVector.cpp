@@ -61,7 +61,7 @@ void NewVector::init(unsigned int size)
   //
   // Otherwise do nothing
   
-  if(v)
+  if (v)
   {
     unsigned int n = this->size();
 
@@ -134,6 +134,18 @@ Vec NewVector::vec()
 const Vec NewVector::vec() const
 {
   return v;
+}
+//-----------------------------------------------------------------------------
+real* NewVector::array()
+{
+  real* data = 0;
+  VecGetArray(v, &data);
+  return data;
+}
+//-----------------------------------------------------------------------------
+void NewVector::restore(real data[])
+{
+  VecRestoreArray(v, &data);
 }
 //-----------------------------------------------------------------------------
 NewVector::Index NewVector::operator()(int i)

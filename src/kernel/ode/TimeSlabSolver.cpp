@@ -7,8 +7,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab, const NewMethod& method)
-  : ts(timeslab), method(method), tol(0.0), maxiter(0)
+TimeSlabSolver::TimeSlabSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method)
+  : ode(ode), ts(timeslab), method(method), tol(0.0), maxiter(0)
 {
   // Get tolerance
   tol = dolfin_get("tolerance");

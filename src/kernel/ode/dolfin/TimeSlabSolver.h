@@ -7,6 +7,7 @@
 namespace dolfin
 {
 
+  class ODE;
   class NewTimeSlab;
   class NewMethod;
   
@@ -15,7 +16,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    TimeSlabSolver(NewTimeSlab& timeslab, const NewMethod& method);
+    TimeSlabSolver(ODE& ode, NewTimeSlab& timeslab, const NewMethod& method);
 
     /// Destructor
     virtual ~TimeSlabSolver();
@@ -34,6 +35,7 @@ namespace dolfin
     /// Make an iteration
     virtual real iteration() = 0;
 
+    ODE& ode;
     NewTimeSlab& ts;
     const NewMethod& method;
     
