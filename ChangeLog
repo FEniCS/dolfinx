@@ -1,3 +1,4 @@
+ - Update class Point with new operators
  - Complete rewrite of the multi-adaptive solver to improve performance
  - Add PETSc wrappers NewMatrix and NewVector
  - Add DOLFIN/PETSc benchmarks

@@ -76,7 +76,7 @@ void dGqMethod::computeQuadrature()
 
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < n; i++)
-    points[i] = 1.0 - (quadrature.point(n-1-i) + 1.0) / 2.0;
+    points[i] = 1.0 - (quadrature.point(n-1-i).x + 1.0) / 2.0;
 
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < n; i++)

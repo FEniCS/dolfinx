@@ -60,9 +60,12 @@ namespace dolfin
     virtual real timestep(uint i);
 
     /// Update ODE (optional)
+    virtual void update(real u[], real t);
+
+    /// Update ODE (old version, will be removed)
     virtual void update(RHS& f, Function& u, real t);
 
-    /// Update ODE (optional)
+    /// Update ODE (old version, will be removed)
     virtual void update(Solution& u, Adaptivity& adaptivity, real t);
 
     /// Save sample (old version, will be removed)

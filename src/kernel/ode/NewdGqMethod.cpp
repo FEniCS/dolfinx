@@ -102,7 +102,7 @@ void NewdGqMethod::computeQuadrature()
   // Get points, rescale from [-1,1] to [0,1], and reverse the points
   for (unsigned int i = 0; i < nq; i++)
   {
-    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i) + 1.0) / 2.0;
+    qpoints[i] = 1.0 - (quadrature.point(nq - 1 - i).x + 1.0) / 2.0;
     npoints[i] = qpoints[i];
   }
 

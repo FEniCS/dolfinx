@@ -7,32 +7,29 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Point::Point()
+Point::Point() : x(0.0), y(0.0), z(0.0)
 {
-  x = 0.0;
-  y = 0.0;
-  z = 0.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Point::Point(real x)
+Point::Point(real x) : x(x), y(0.0), z(0.0)
 {
-  this->x = x;
-  y = 0.0;
-  z = 0.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Point::Point(real x, real y)
+Point::Point(real x, real y) : x(x), y(y), z(0.0)
 {
-  this->x = x;
-  this->y = y;
-  z = 0.0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Point::Point(real x, real y, real z)
+Point::Point(real x, real y, real z) : x(x), y(y), z(z)
 {
-  this->x = x;
-  this->y = y;
-  this->z = z;
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Point::Point(const Point& p) : x(p.x), y(p.y), z(p.z)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 real Point::dist(Point p) const
@@ -60,19 +57,40 @@ Point Point::midpoint(Point p) const
   return mp;
 }
 //-----------------------------------------------------------------------------
-void Point::operator= (real x)
-{
-  this->x = x;
-  this->y = 0.0;
-  this->z = 0.0;
-}
-//-----------------------------------------------------------------------------
 Point::operator real() const
 {
   return x;
 }
 //-----------------------------------------------------------------------------
-Point Point::operator+= (const Point& p)
+const Point& Point::operator= (real x)
+{
+  this->x = x;
+  this->y = 0.0;
+  this->z = 0.0;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+Point Point::operator+ (const Point& p) const
+{
+  Point q(*this);
+  q += p;  
+  return q;
+}
+//-----------------------------------------------------------------------------
+Point Point::operator- (const Point& p) const
+{
+  Point q(*this);
+  q -= p;
+  return q;
+}
+//-----------------------------------------------------------------------------
+real Point::operator* (const Point& p) const
+{
+  return x*p.x + y*p.y + z*p.z;
+}
+//-----------------------------------------------------------------------------
+const Point& Point::operator+= (const Point& p)
 {
   x += p.x;
   y += p.y;
@@ -81,7 +99,16 @@ Point Point::operator+= (const Point& p)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Point Point::operator*= (real a)
+const Point& Point::operator-= (const Point& p)
+{
+  x -= p.x;
+  y -= p.y;
+  z -= p.z;
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Point& Point::operator*= (real a)
 {
   x *= a;
   y *= a;
@@ -90,7 +117,7 @@ Point Point::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Point Point::operator/= (real a)
+const Point& Point::operator/= (real a)
 {
   x /= a;
   y /= a;

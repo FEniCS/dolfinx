@@ -150,6 +150,9 @@ void NewTimeSlab::shift()
     adaptivity.update(i, r, *method);
   }
 
+  // Let user update ODE
+  ode.update(u, _b);
+
   // Set initial value to end-time value (needs to be done last)
   for (uint i = 0; i < N; i++)
     u0[i] = u[i];

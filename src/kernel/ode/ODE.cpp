@@ -92,6 +92,11 @@ real ODE::timestep(uint i)
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
+void ODE::update(real u[], real t)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void ODE::update(RHS& f, Function& u, real t)
 {
   // Do nothing

@@ -78,7 +78,7 @@ void cGqMethod::computeQuadrature()
 
   // Get points and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < n; i++)
-    points[i] = (quadrature.point(i) + 1.0) / 2.0;
+    points[i] = (quadrature.point(i).x + 1.0) / 2.0;
 
   // Get weights and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < n; i++)
@@ -100,7 +100,7 @@ void cGqMethod::computeBasis()
   if ( q > 1 ) {
     LobattoQuadrature lobatto(n-1);
     for (unsigned int i = 0; i < (n-1); i++)
-      test->set(i, (lobatto.point(i) + 1.0) / 2.0);
+      test->set(i, (lobatto.point(i).x + 1.0) / 2.0);
   }
   else
     test->set(0, 1.0);
