@@ -21,7 +21,7 @@ TimeStepper::TimeStepper(ODE& ode, Function& function) :
   no_samples(dolfin_get("number of samples")), N(ode.size()), t(0),
   T(ode.endtime()), partition(N), adaptivity(ode), u(ode, function), f(ode, u),
   fixpoint(u, f, adaptivity), file(u.label() + ".m"), p("Time-stepping"),
-  _finished(false)
+  _finished(false), save_solution(dolfin_get("save solution"))
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
@@ -171,6 +171,10 @@ void TimeStepper::shift()
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab)
 {
+  // Check if we should save the solution
+  if ( !save_solution )
+    return;
+
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
   real t = ceil(timeslab.starttime()/K) * K;

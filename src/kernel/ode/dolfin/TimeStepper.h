@@ -113,6 +113,9 @@ namespace dolfin {
     // True if we have reached the given end time
     bool _finished;
 
+    // True if we should save the solution
+    bool save_solution;
+
   };
 
 }

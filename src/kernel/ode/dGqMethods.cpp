@@ -10,40 +10,41 @@ using namespace dolfin;
 dGqMethods dolfin::dG;
 
 //-----------------------------------------------------------------------------
-dGqMethods::dGqMethods()
+dGqMethods::dGqMethods() : methods(0), size(0)
 {
-  methods.init(DOLFIN_PARAMSIZE);
-  methods = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 dGqMethods::~dGqMethods()
 {
-  for (int i = 0; i < methods.size(); i++) {
-    if ( methods(i) )
-      delete methods(i);
-    methods(i) = 0;
+  for (unsigned int i = 0; i < size; i++)
+  {
+    if ( methods[i] )
+      delete methods[i];
+    methods[i] = 0;
   }
-}
-//-----------------------------------------------------------------------------
-const dGqMethod& dGqMethods::operator() (unsigned int q) const
-{
-  dolfin_assert(q < static_cast<unsigned int>(methods.size()));
-  dolfin_assert(methods(q));
-
-  return *methods(q);
 }
 //-----------------------------------------------------------------------------
 void dGqMethods::init(unsigned int q)
 {
   // Check if we need to increase the size of the list
-  if ( q >= static_cast<unsigned int>(methods.size()) )
-    dG.methods.resize(max(q+1,2*methods.size()));
-   
+  if ( (q+1) > size )
+  {
+    dGqMethod** new_methods = new (dGqMethod*)[q+1];
+    for (unsigned int i = 0; i < (q+1); i++)
+      new_methods[i] = 0;
+    for (unsigned int i = 0; i < size; i++)
+      new_methods[i] = methods[i];
+    delete [] methods;
+    methods = new_methods;
+    size = q+1;
+  }
+
   // Check if the method has already been initialized
-  if ( dG.methods(q) )
+  if ( methods[q] )
     return;
 
   // Initialize the method
-  dG.methods(q) = new dGqMethod(q);
+  methods[q] = new dGqMethod(q);
 }
 //-----------------------------------------------------------------------------

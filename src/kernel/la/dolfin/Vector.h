@@ -31,9 +31,9 @@ namespace dolfin {
     unsigned int size() const;
     unsigned int bytes() const;
 
-    real  operator()(unsigned int i) const;    
+    real  operator()(unsigned int i) const;
     real& operator()(unsigned int i);
-    
+
     void operator=(const Vector& x);
     void operator=(real scalar);
     void operator=(const Matrix::Row& row);

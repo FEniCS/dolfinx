@@ -80,8 +80,8 @@ namespace dolfin {
     /// Get element values (not including initial data)
     virtual void get(real* const values) const = 0;
 
-    /// Check if given time is within the element
-    bool within(real t) const;
+    /// Check if given time is within the element (inline optimized)
+    inline bool within(real t) const { return (t0 < t) && (t <= t1); }
 
     /// Return component index
     unsigned int index() const;

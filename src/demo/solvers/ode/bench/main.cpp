@@ -67,6 +67,8 @@ int main()
   dolfin_set("tolerance", 0.01);
   dolfin_set("number of samples", 1000);
   dolfin_set("solve dual problem", false);
+  dolfin_set("save solution", false);
+  //dolfin_set("save solution", true);
 
   Benchmark bench(100);
   bench.solve();

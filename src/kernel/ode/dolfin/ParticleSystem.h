@@ -72,23 +72,18 @@ namespace dolfin
 
   protected:
 
-    // Return x-component of current position
-    virtual real x(unsigned int i);
-
-    // Return y-component of current position
-    virtual real y(unsigned int i);
-
-    // Return z-component of current position
-    virtual real z(unsigned int i);
-
-    // Return x-component of current velocity
-    virtual real vx(unsigned int i);
-
-    // Return y-component of current velocity
-    virtual real vy(unsigned int i);
-
-    // Return z-component of current velocity
-    virtual real vz(unsigned int i);
+    // Return x-component of current position (inline optimized)
+    real x(unsigned int i) { return (*u)(dim*i); }
+    // Return y-component of current position (inline optimized)
+    real y(unsigned int i) { return (*u)(dim*i + 1); }
+    // Return z-component of current position (inline optimized)
+    real z(unsigned int i) { return (*u)(dim*i + 2); }
+    // Return x-component of current velocity (inline optimized)
+    real vx(unsigned int i) { return (*u)(offset + dim*i); }
+    // Return y-component of current velocity (inline optimized)
+    real vy(unsigned int i) { return (*u)(offset + dim*i + 1); }
+    // Return z-component of current velocity (inline optimized)
+    real vz(unsigned int i) { return (*u)(offset + dim*i + 2); }
 
     // Number of particles
     unsigned int n;

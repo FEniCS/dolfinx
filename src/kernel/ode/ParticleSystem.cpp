@@ -146,39 +146,3 @@ real ParticleSystem::f(const Vector& u, real t, unsigned int i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real ParticleSystem::x(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(dim*i);
-}
-//-----------------------------------------------------------------------------
-real ParticleSystem::y(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(dim*i + 1);
-}
-//-----------------------------------------------------------------------------
-real ParticleSystem::z(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(dim*i + 2);
-}
-//-----------------------------------------------------------------------------
-real ParticleSystem::vx(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(offset + dim*i);
-}
-//-----------------------------------------------------------------------------
-real ParticleSystem::vy(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(offset + dim*i + 1);
-}
-//-----------------------------------------------------------------------------
-real ParticleSystem::vz(unsigned int i)
-{
-  dolfin_assert(u);
-  return (*u)(offset + dim*i + 2);
-}
-//-----------------------------------------------------------------------------

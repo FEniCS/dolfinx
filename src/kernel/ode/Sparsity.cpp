@@ -152,11 +152,6 @@ void Sparsity::detect(ODE& ode)
   dolfin_info("Automatically detected %d dependencies.", sum);
 }
 //-----------------------------------------------------------------------------
-bool Sparsity::sparse() const
-{
-  return !pattern.empty();
-}
-//-----------------------------------------------------------------------------
 NewArray<unsigned int>& Sparsity::row(unsigned int i)
 {
   dolfin_assert(sparse());

@@ -44,8 +44,8 @@ namespace dolfin
     /// Automatically detect dependencies
     void detect(ODE& ode);
 
-    /// Check if the dependency pattern is sparse
-    bool sparse() const;
+    /// Check if the dependency pattern is sparse (inline optimized)
+    inline bool sparse() const { return !pattern.empty(); }
 
     /// Get dependencies for given component
     NewArray<unsigned int>& row(unsigned int i);

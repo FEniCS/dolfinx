@@ -4,7 +4,6 @@
 #ifndef __CGQ_METHODS_H
 #define __CGQ_METHODS_H
 
-#include <dolfin/Array.h>
 #include <dolfin/cGqMethod.h>
 
 namespace dolfin {
@@ -27,16 +26,23 @@ namespace dolfin {
     /// Destructor
     ~cGqMethods();
     
-    /// Return given cG(q) method
-    const cGqMethod& operator() (unsigned int q) const;
+    /// Return given cG(q) method (inline optimized)
+    inline const cGqMethod& operator() (unsigned int q) const
+    {
+      dolfin_assert(q >= 1);
+      dolfin_assert(q < size);
+      dolfin_assert(methods[q]);
+      
+      return *(methods[q]);
+    }
 
     /// Initialize given cG(q) method
     void init(unsigned int q);
 
   private:
-
-    // FIXME: Use NewArray
-    Array<cGqMethod*> methods;
+    
+    cGqMethod** methods;
+    unsigned int size;
 
   };
   

@@ -4,7 +4,6 @@
 #ifndef __DGQ_METHODS_H
 #define __DGQ_METHODS_H
 
-#include <dolfin/Array.h>
 #include <dolfin/dGqMethod.h>
 
 namespace dolfin {
@@ -27,16 +26,22 @@ namespace dolfin {
     /// Destructor
     ~dGqMethods();
     
-    /// Return given dG(q) method
-    const dGqMethod& operator() (unsigned int q) const;
+    /// Return given dG(q) method (inline optimized)
+    inline const dGqMethod& operator() (unsigned int q) const
+    {
+      dolfin_assert(q < size);
+      dolfin_assert(methods[q]);
+      
+      return *methods[q];
+    }
 
     /// Initialize given dG(q) method
     void init(unsigned int q);
 
   private:
 
-    // FIXME: Use NewArray
-    Array<dGqMethod*> methods;
+    dGqMethod** methods;
+    unsigned int size;
 
   };
   

@@ -63,11 +63,6 @@ void Element::update(unsigned int node, real value)
   values[node] = value;
 }
 //-----------------------------------------------------------------------------
-bool Element::within(real t) const
-{
-  return (t0 < t) && (t <= t1);
-}
-//-----------------------------------------------------------------------------
 unsigned int Element::index() const
 {
   return _index;

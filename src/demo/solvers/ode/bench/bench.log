@@ -122,3 +122,27 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 Changes: Cache last used element in Component::element().
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (mån feb  9 16:24:51 CET 2004)
+Compiler flags: -I/usr/local/include -Wall -O3
+Elapsed time:   real: 4.979  user: 4.670  sys: 0.140  cpu: 96.60%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Don't save solution in benchmark problem.
+---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (mån feb  9 18:04:25 CET 2004)
+Compiler flags: -I/usr/local/include -Wall -O3
+Elapsed time:   real: 4.523  user: 4.420  sys: 0.100  cpu: 99.92%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Inlining of important functions.
+---------------------------------------------------------------------------
