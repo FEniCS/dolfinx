@@ -5,7 +5,6 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/GenericMatrix.h \
                          dolfin/KrylovSolver.h \
                          dolfin/Matrix.h \
-                         dolfin/MultigridSolver.h \
                          dolfin/SISolver.h \
                          dolfin/SparseMatrix.h \
                          dolfin/Vector.h
@@ -16,7 +15,6 @@ libdolfin_la_a_SOURCES = DenseMatrix.cpp \
                          GenericMatrix.cpp \
 	                 KrylovSolver.cpp \
                          Matrix.cpp \
-                         MultigridSolver.cpp \
 	                 SISolver.cpp \
                          SparseMatrix.cpp \
                          Vector.cpp
