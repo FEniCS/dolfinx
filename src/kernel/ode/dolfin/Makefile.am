@@ -14,6 +14,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              NewAdaptivity.h \
              Alloc.h \
              Component.h \
+             Dependencies.h \
              Dual.h \
              Element.h \
              ElementBlock.h \

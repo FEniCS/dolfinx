@@ -104,7 +104,10 @@ namespace dolfin
     real computeDataSize(real a, real b, uint offset);
     
     // Compute number of dependencies to components with smaller time steps
-    uint countDependencies(uint index);
+    uint countDependencies(uint i0);
+
+    // Compute number of dependencies to components with smaller time steps
+    uint countDependencies(uint i0, real b0);
 
     // Check if the given time is within the given interval
     bool within(real t, real a, real b) const;

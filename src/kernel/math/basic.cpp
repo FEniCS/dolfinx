@@ -52,7 +52,7 @@ real dolfin::rand()
     srand48(seed);
     rand_seeded = true;
   }
-
+  
   return (real) drand48();
 }
 //-----------------------------------------------------------------------------

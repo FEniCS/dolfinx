@@ -113,8 +113,6 @@ public:
 
   real f(real u[], real t, unsigned int i)
   {
-    return 0.0;
-
     switch ( i ) {
     case 0:
       return u[1] - 0.1*u[0]*abs(u[2]);
@@ -139,8 +137,6 @@ public:
 
   real timestep(unsigned int i)
   {
-    return 0.16;
-
     switch ( i ) {
     case 0:
       return 0.16;

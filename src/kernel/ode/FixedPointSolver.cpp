@@ -51,8 +51,6 @@ real FixedPointSolver::iteration()
     const int ep = ts.ee[e];
     const real x0 = ( ep != -1 ? ts.jx[ts.ej[ep] + method.nsize() - 1] : ts.u0[i] );
 
-    cout << "i = " << i << " x0 = " << x0 << " u0 = " << ts.u0[i] << endl;
-
     // Evaluate right-hand side at quadrature points of element
     ts.feval(f, s, e, i, a, b, k);
     //cout << "f = "; Alloc::disp(f, method.qsize());

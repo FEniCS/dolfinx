@@ -303,40 +303,12 @@ void NewTimeSlab::create_s(real a0, real b0, uint offset, uint end)
   for (uint n = offset; n < end; n++)
     create_e(partition.index(n), pos, a0, b0);
 
-  // Count dependencies
+  // Create mapping ed
   for (uint n = offset; n < end; n++)
   {
-    // Get index
-    const uint index = partition.index(n);
-
-    // Update ed for last element of component
+    const int index = partition.index(n);
     ed[elast[index]] = size_d.next;
-
-    // Get list of dependencies for current component index
-    const NewArray<uint>& row = ode.sparsity.row(index);
-    
-    // Iterate over dependencies
-    for (uint pos = 0; pos < row.size(); pos++)
-    {
-      // Get element data of other element
-      const uint i1 = row[pos];
-      const int e1 = elast[i1];
-
-      // Count dependencies on components with smaller time steps
-      if ( e1 == -1 )
-      {
-	size_d.next += method->nsize();
-	continue;
-      }
-
-      // Need to check end time value of element
-      const uint s1 = es[e1];
-      const real b1 = sb[s1];
-
-      // Count dependencies on components with smaller time steps
-      if ( b1 < (b0 - DOLFIN_EPS) )
-	size_d.next += method->nsize();
-    }
+    size_d.next += countDependencies(index, b0);
   }
 }
 //-----------------------------------------------------------------------------
@@ -547,27 +519,106 @@ real NewTimeSlab::computeDataSize(real a, real b, uint offset)
   return b;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewTimeSlab::countDependencies(uint index)
+dolfin::uint NewTimeSlab::countDependencies(uint i0)
 {
   // Count the number of dependencies to components with smaller time steps
-  // for the given component
+  // for the given component. This version is used before any elements are
+  // created when we recursively compute the data size. We then use the
+  // array u to store the latest time value for each component.
 
   uint n = 0;
 
-  // Get list of dependencies for current component index
-  const NewArray<uint>& row = ode.sparsity.row(index);
-
-  // Iterate over dependencies
-  for (uint pos = 0; pos < row.size(); pos++)
+  if ( ode.sparsity.sparse() )
   {
-    // Get index of other component
-    const uint i1 = row[pos];
-
-    // Use u to keep track of the latest time value for each component here
-    if ( u[index] > u[i1] )
-      n += method->nsize();
+    // Get list of dependencies for current component index
+    const NewArray<uint>& row = ode.sparsity.row(i0);
+    
+    // Iterate over dependencies
+    for (uint pos = 0; pos < row.size(); pos++)
+    {
+      // Get index of other component
+      const uint i1 = row[pos];
+      
+      // Use u to keep track of the latest time value for each component here
+      if ( u[i0] > u[i1] )
+	n += method->nsize();
+    }
+  }
+  else
+  {
+    // Iterate over dependencies
+    for (uint i1 = 0; i1 < N; i1++)
+      if ( u[i0] > u[i1] )
+	n += method->nsize();
   }
   
+  return n;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewTimeSlab::countDependencies(uint i0, real b0)
+{
+  // Count the number of dependencies to components with smaller time steps
+  // for the given component. This version is used at the time of creation
+  // of elements and we may then get the time values of already created
+  // elements.
+
+  uint n = 0;
+
+  if ( ode.sparsity.sparse() )
+  {
+    // Get list of dependencies for current component index
+    const NewArray<uint>& row = ode.sparsity.row(i0);
+    
+    // Iterate over dependencies
+    for (uint pos = 0; pos < row.size(); pos++)
+    {
+      // Get index of other component
+      const uint i1 = row[pos];
+      
+      // Get last element for component
+      const int e1 = elast[i1];
+      
+      // If we have not yet created the element, then it has not reached b0
+      if ( e1 == -1 )
+      {
+	n += method->nsize();
+	continue;
+      }
+      
+      // Need to check end time value of element
+      const uint s1 = es[e1];
+      const real b1 = sb[s1];
+      
+      // Check if the component has reached b0
+      if ( b1 < (b0 - DOLFIN_EPS) )
+	n += method->nsize();
+    }
+  }
+  else
+  {
+    // Iterate over dependencies
+    for (uint i1 = 0; i1 < N; i1++)
+    {
+      // Get last element for component
+      const int e1 = elast[i1];
+      
+      // If we have not yet created the element, then it has not reached b0
+      if ( e1 == -1 )
+      {
+	n += method->nsize();
+	continue;
+      }
+      
+      // Need to check end time value of element
+      const uint s1 = es[e1];
+      const real b1 = sb[s1];
+      
+      // Check if the component has reached b0
+      if ( b1 < (b0 - DOLFIN_EPS) )
+	n += method->nsize();
+    }
+  }
+
   return n;
 }
 //-----------------------------------------------------------------------------
