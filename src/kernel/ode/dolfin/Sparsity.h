@@ -33,7 +33,7 @@ namespace dolfin
     void setsize(unsigned int i, unsigned int size);
     
     /// Set sparsity (component i depends on component j)
-    void set(unsigned int i, unsigned int j);
+    void set(unsigned int i, unsigned int j, bool checknew = false);
     
     /// Set sparsity defined by a sparse matrix
     void set(const Matrix& A);

@@ -15,7 +15,7 @@ class RadiationDiffusion : public ODE
 public:
 
   RadiationDiffusion(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh), 
-				   A(N, N), Dx(N, N), Dy(N, N),
+				   A(N, N), B(N, N), Dx(N, N), Dy(N, N), bnd(N/2),
 				   ufile("solution.m"), kfile("timesteps.m"),
 				   u1x(N/2), u2x(N/2), k1x(N/2), k2x(N/2),
 				   u1(mesh, u1x), u2(mesh, u2x),
@@ -26,9 +26,10 @@ public:
     h  = 1.0 / 6.0;
     Z0 = 10.0;
     kappa = 0.005;
-    
+
     // Create data for space discretization of system
     createStiffnessMatrix(mesh);
+    createBoundaryConditions(mesh);
     createDerivatives(mesh);
 
     // Set names for samples
@@ -37,15 +38,13 @@ public:
     k1.rename("k1", "Time steps for the radiation energy (E)");
     k2.rename("k2", "Time steps for the material temperature (T)");
     
-    // Automatically detect sparsity
-    sparse();
+    // Specify sparsity pattern
+    setSparsity();
   }
   
   /// Initial condition
   real u0(unsigned int i)
   {
-    // Using constant initial conditions throughout the domain
-    
     real E0 = 1.0e-5;
     real T0 = pow(E0, 0.25);
     
@@ -64,6 +63,8 @@ public:
       return radiation2(u, i) + diffusion2(u, i);
   }
 
+private:
+
   /// Radiation for first component
   real radiation1(const Vector& u, unsigned int i)
   {
@@ -81,7 +82,7 @@ public:
     real u2 = u(i);
     const Point& p = mesh.node(i - N/2).coord();
 
-    return - sigma(p.x, p.y, u2) * (pow(u2, 4.0) - u1);
+    return - sigma(p.x, p.y, u2) * (pow(u2, 4.0) - u1);    
   }
 
   /// Diffusion for first component
@@ -90,9 +91,14 @@ public:
     real u1 = u(i);
     real u2 = u(i + N/2);
     const Point& p = mesh.node(i).coord();
-    real epsilon = 1.0 / (3.0*sigma(p.x, p.y, u2) + grad(u, i) / u1);
+    real s = sigma(p.x, p.y, u2);
+    real epsilon = 1.0 / (3.0*s + grad(u, i) / u1);
+    real bc = 0.0;
 
-    return epsilon * A.mult(u, i);
+    if ( fabs(p.x - 0.0) < DOLFIN_EPS )
+      bc = 6.0*s*bnd(i);
+    
+    return epsilon * (A.mult(u, i) + 1.5*s*B.mult(u, i) + bc);
   }
 
   /// Diffusion for second component
@@ -100,7 +106,7 @@ public:
   {
     real u2 = u(i);
     real epsilon = kappa * pow(u2, 2.5);
-
+    
     return epsilon * A.mult(u, i);
   }
   
@@ -116,7 +122,7 @@ public:
     return pow(z(x, y) / u2, 3.0);
   }
 
-  /// Compute norm of gradient of the first component
+  /// Compute norm of gradient, used only for first component
   real grad(const Vector& u, unsigned int i)
   {
     // We only need to compute the gradient of u1
@@ -128,7 +134,8 @@ public:
     return sqrt(dx*dx + dy*dy);
   }
 
-  /// Create system stiffness matrix from simple stiffness matrix
+  /// Create system stiffness matrix from simple stiffness matrix,
+  /// used for both components
   void createStiffnessMatrix(Mesh& mesh)
   {
     StiffnessMatrix A0(mesh);
@@ -146,7 +153,36 @@ public:
     }
   }
 
-  /// Create matrices for derivative of first component
+  /// Create matrix for boundary conditions, used only for first component
+  void createBoundaryConditions(Mesh& mesh)
+  {
+    Boundary boundary(mesh);
+    LoadVector b(mesh); // Same as lumped mass matrix
+
+    for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+    {
+      Point& p0 = edge->node(0).coord();
+      Point& p1 = edge->node(1).coord();
+      unsigned int i = edge->node(0).id();
+      unsigned int j = edge->node(1).id();
+
+      if ( (fabs(p0.x - 0.0) < DOLFIN_EPS && fabs(p1.x - 0.0) < DOLFIN_EPS) ||
+	   (fabs(p0.x - 1.0) < DOLFIN_EPS && fabs(p1.x - 1.0) < DOLFIN_EPS) )
+      {
+	real h = p0.dist(p1);
+
+	B(i, i) -= (h/3.0) / b(i);
+	B(i, j) -= (h/6.0) / b(i);
+	B(j, i) -= (h/6.0) / b(j);
+	B(j, j) -= (h/3.0) / b(j);
+
+	bnd(i) += (h/2.0) / b(i);
+	bnd(j) += (h/2.0) / b(j);
+      }
+    }
+  }
+
+  /// Create matrices for derivative, used only for first component
   void createDerivatives(Mesh& mesh)
   {
     DxMatrix Dx0(mesh);
@@ -169,6 +205,57 @@ public:
       }
      }
   }
+  
+  void setSparsity()
+  {
+    cout << "Setting sparsity pattern." << endl;
+
+    sparsity.clear();
+
+    // Allocate number of dependencies
+    for (NodeIterator n(mesh); !n.end(); ++n)
+    {
+      sparsity.setsize(n->id(), n->noNodeNeighbors() + 1);
+      sparsity.setsize(n->id() + N/2, n->noNodeNeighbors() + 1);
+    }
+
+    // Set dependencies
+    for (unsigned int i = 0; i < N/2; i++)
+    {
+      // First component
+      unsigned int j = 0;
+      for (unsigned int pos = 0; !A.endrow(i, pos); pos++)
+      {
+	real element = A(i, j, pos);
+	if ( fabs(element) > DOLFIN_EPS )
+	  sparsity.set(i, j, true);
+      }
+      for (unsigned int pos = 0; !Dx.endrow(i, pos); pos++)
+      {
+	real element = Dx(i, j, pos);
+	if ( fabs(element) > DOLFIN_EPS )
+	  sparsity.set(i, j, true);
+      }
+      for (unsigned int pos = 0; !Dx.endrow(i, pos); pos++)
+      {
+	real element = Dx(i, j, pos);
+	if ( fabs(element) > DOLFIN_EPS )
+	  sparsity.set(i, j, true);
+      }
+      sparsity.set(i, i + N/2, true);
+
+      // Second component
+      for (unsigned int pos = 0; !A.endrow(i + N/2, pos); pos++)
+      {
+	real element = A(i + N/2, j, pos);
+	if ( fabs(element) > DOLFIN_EPS )
+	  sparsity.set(i + N/2, j, true);
+      }
+      sparsity.set(i + N/2, i, true);
+    }
+
+    cout << "Done." << endl;
+  }
 
   void save(Sample& sample)
   {
@@ -188,18 +275,39 @@ public:
     }
 
     // Save solution and time steps to file
+    dolfin_log(false);
     ufile << u1;
     ufile << u2;
     kfile << k1;
     kfile << k2;
+    dolfin_log(true);
+  }
+
+  void test()
+  {
+    cout << "Checking gradient" << endl;
+
+    Vector x(N);
+    
+    for (NodeIterator n(mesh); !n.end(); ++n)
+    {
+      const Point& p = n->coord();
+      x(n->id()) = p.x*p.y;
+      cout << "exact gradient = " << sqrt(p.x*p.x + p.y*p.y) << endl;
+    }
+
+    for (unsigned int i = 0; i < x.size()/2; i++)
+      cout << "approximate gradient = " << grad(x, i) << endl;
   }
   
 private:
-
+  
   Mesh& mesh; // The mesh
   Matrix A;   // Stiffness matrix
+  Matrix B;   // Matrix for boundary conditions
   Matrix Dx;  // Derivative in x-direction
   Matrix Dy;  // Derivative in y-direction
+  Vector bnd; // Load vector for boundary conditions
   File ufile; // File for storing the solution
   File kfile; // File for storing the time steps
   
@@ -208,21 +316,26 @@ private:
   real kappa; // Diffusion parameter 
 
   Vector u1x, u2x, k1x, k2x; // Sample of solution (data)
-  Function u1, u2, k1, k2;   // Sample of solution (functions)
+  Function u1, u2, k1, k2;   // Sample of solution (functions)  
 };
 
 int main()
 {
   // Settings
   //dolfin_set("output", "plain text");
+  dolfin_set("fixed time step", true);
+  dolfin_set("initial time step", 1e-3);
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
-  dolfin_set("tolerance", 0.001);
-  dolfin_set("number of samples", 10);
+  dolfin_set("tolerance", 1e-10);
+  dolfin_set("number of samples", 20);
   dolfin_set("progress step", 0.01);
 
+  dolfin_info("This code does not yet produce correct results.");
+  delay(1.0);
+
   // Number of refinements
-  unsigned int refinements = 3;
+  unsigned int refinements = 6;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");

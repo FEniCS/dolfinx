@@ -55,11 +55,20 @@ void Sparsity::setsize(unsigned int i, unsigned int size)
   pattern[i].reserve(size);
 }
 //-----------------------------------------------------------------------------
-void Sparsity::set(unsigned int i, unsigned int j)
+void Sparsity::set(unsigned int i, unsigned int j, bool checknew)
 {
   if ( pattern.empty() )
     dolfin_error("Number of dependencies for given components has not been specified.");
 
+  // Check if the dependency already exists
+  if ( checknew )
+  {
+    for (unsigned int k = 0; k < pattern[i].size(); k++)
+      if ( pattern[i][k] == j )
+	return;
+  }
+
+  // Add the dependency
   pattern[i].push_back(j);
 }
 //-----------------------------------------------------------------------------

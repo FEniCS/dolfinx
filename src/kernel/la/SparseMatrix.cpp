@@ -809,10 +809,16 @@ real SparseMatrix::colnorm(unsigned int i,unsigned int type) const
 //-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
-  for (unsigned int i = 0; i < m; i++) {
+  for (unsigned int i = 0; i < m; i++)
+  {
     cout << "| ";
-    for (unsigned int j = 0; j < n; j++){
-      cout << (*this)(i,j) << " ";
+    for (unsigned int j = 0; j < n; j++)
+    {
+      real element = (*this)(i, j);
+      if ( fabs(element) < DOLFIN_EPS )
+	cout << "0 ";
+      else
+	cout << element << " ";
     }
     cout << "|" << endl;
   }
