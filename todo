@@ -19,6 +19,7 @@ General
 - Fix assembly for systems of more than 3 equations
 - Add multigrid solver
 - Remove specification of dim from PDE
+- Use symbolic links for meshes (see example src/demo/fem)
 
 Multi-adaptive solver
 ---------------------

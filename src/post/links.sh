@@ -34,3 +34,6 @@ link_dx src/demo/solvers/ode/bistable/
 # Create links to plotslab.m
 link_plotslab src/demo/solvers/ode/test/
 link_plotslab src/demo/solvers/ode/stiff/testproblems/
+
+# Create links to meshes
+ln -s $TOPLEVEL/meshes/tetrahedron.xml.gz src/demo/fem/mesh.xml.gz
