@@ -241,6 +241,7 @@ void Cell::markEdge(int edge)
 {
   if (!ce(edge)->marked()){
     ce(edge)->mark();
+    ce(edge)->setRefinedByCell(this);
     _no_marked_edges++;
   }
 }	 

@@ -109,6 +109,65 @@ void RefineGrid::EvaluateMarks(int grid_level)
   }
 }
 
+void RefineGrid::CloseGrid(int grid_level)
+{
+  bool marked_for_ref_by_cell;
+  List<Cell *> cells;
+  for (CellIterator c(grid); !c.end(); ++c){
+    if ( (c->level() == grid_level) && (c->status() == Cell::REFINED_REGULARLY) ){ 
+      marked_for_ref_by_cell = false;
+      for (int i=0;i<c->noEdges();i++){
+	if (marked_for_ref_by_cell) break;
+	if (c->edge(i)->marked()){
+	  for (int j=0;j<c->edge(j)->refinedByCells();j++){
+	    if (marked_for_ref_by_cell) break;
+	    if (c->edge(i)->refinedByCell(j)->id() == c->id()){
+	      marked_for_ref_by_cell = true;
+	      cells.add(c);
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+
+  
+
+
+
+}
+
+
+void RefineGrid::CloseCell(Cell *parent)
+{
+  switch(parent->noMarkedEdges()){ 
+  case 6: 
+    RegularRefinementTetrahedron(parent);
+    break;
+  case 5: 
+    RegularRefinementTetrahedron(parent);
+    break;
+  case 4: 
+    RegularRefinementTetrahedron(parent);
+    break;
+  case 3: 
+    if (parent->markedEdgesOnSameFace()) IrrRef1(parent);
+    else RegularRefinementTetrahedron(parent);    
+    break;
+  case 2: 
+    if (parent->markedEdgesOnSameFace()) IrrRef3(parent);
+    else IrrRef4(parent);  
+    break;
+  case 1: 
+    IrrRef2(parent);  
+    break;
+  default:
+    dolfin_error("wrong number of marked edges");
+  }
+}
+
+
 
 void RefineGrid::RegularRefinement(Cell* parent)
 {

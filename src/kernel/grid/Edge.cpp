@@ -60,6 +60,22 @@ void Edge::setLevel(int level)
   _level = level;
 }
 //-----------------------------------------------------------------------------
+int Edge::refinedByCells() 
+{
+  return _no_cells_refined;
+}
+//-----------------------------------------------------------------------------
+Cell* Edge::refinedByCell(int i) 
+{
+  return refined_by_cell(i);
+}
+//-----------------------------------------------------------------------------
+void Edge::setRefinedByCell(Cell* c) 
+{
+  refined_by_cell.add(c);
+  _no_cells_refined++;
+}
+//-----------------------------------------------------------------------------
 Node* Edge::node(int node)
 {
   if ( (node<0) || (node>=2) )

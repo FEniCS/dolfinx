@@ -18,6 +18,8 @@ namespace dolfin {
 	 void GlobalRegularRefinement();
 
 	 void EvaluateMarks(int grid_level);
+	 void CloseGrid(int grid_level);
+	 void CloseCell(Cell *parent);
 
 	 void RegularRefinement(Cell* parent);
 
