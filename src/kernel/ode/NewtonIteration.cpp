@@ -13,6 +13,7 @@
 #include <dolfin/ElementGroupList.h>
 #include <dolfin/ElementGroupIterator.h>
 #include <dolfin/FixedPointIteration.h>
+#include <dolfin/JacobianMatrix.h>
 #include <dolfin/NewtonIteration.h>
 
 // FIXME: Use GMRES::solve() instead
@@ -70,66 +71,26 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 
   // Count degrees of freedom
 
-  int n = 0;
+  int dof = 0;
+
   for (ElementIterator element(list); !element.end(); ++element)
   {
-    n++;
+    dof = dof + element->size();
   }  
 
-  //cout << "dof: " << n << endl;
+  JacobianMatrix J(f.ode);
+  Vector res(dof);
+  Vector sk(dof);
 
-  Matrix J(n, n);
-  Vector res(n);
-  Vector sk(n);
+  
 
   int i = 0;
   for (ElementIterator element(list); !element.end(); ++element)
   {
-    //cout << "u0: " << u0.values[element->index()] << endl;
-
-    // Update initial value for element
-    //element->update(u0.values[element->index()]);
-
     res(i) = element->computeDiscreteResidual(f);
 
     i++;
   }
-
-  //res.show();
-
-  // Compute Jacobian
-
-  i = 0;
-  for (ElementIterator element1(list); !element1.end(); ++element1)
-  {
-    double h = 1e-12;
-
-    double origval;
-    double pertval;
-    element1->get(&origval);
-
-    pertval = origval + h;
-    element1->set(&pertval);
-
-    int j = 0;
-    for (ElementIterator element2(list); !element2.end(); ++element2)
-    {
-      double res1;
-      double res2;
-
-      res1 = element2->computeDiscreteResidual(f);
-      res2 = res(j);
-
-      J(i, j) = (res1 - res2) / h;
-
-      j++;
-    }
-
-    element1->set(&origval);
-    i++;
-  }  
-
-  //J.show();
 
   res *= -1.0;
 
@@ -152,6 +113,8 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
   for (ElementIterator element(list); !element.end(); ++element)
     init(*element);
 
+  // l2 norm of increment
+  d = sk.norm();
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)
@@ -162,66 +125,28 @@ void NewtonIteration::update(ElementGroup& group, Increments& d)
 
   // Count degrees of freedom
 
-  int n = 0;
+  int dof = 0;
+
   for (ElementIterator element(group); !element.end(); ++element)
   {
-    n++;
+    dof = dof + element->size();
   }  
 
   //cout << "dof: " << n << endl;
 
-  Matrix J(n, n);
-  Vector res(n);
-  Vector sk(n);
+  JacobianMatrix J(f.ode);
+  Vector res(dof);
+  Vector sk(dof);
 
   int i = 0;
   for (ElementIterator element(group); !element.end(); ++element)
   {
-    //cout << "u0: " << u0.values[element->index()] << endl;
-
-    // Update initial value for element
-    //element->update(u0.values[element->index()]);
-
     res(i) = element->computeDiscreteResidual(f);
 
     i++;
   }
 
-  //res.show();
-
   // Compute Jacobian
-
-  i = 0;
-  for (ElementIterator element1(group); !element1.end(); ++element1)
-  {
-    double h = 1e-8;
-
-    double origval;
-    double pertval;
-    element1->get(&origval);
-
-    pertval = origval + h;
-    element1->set(&pertval);
-
-    int j = 0;
-    for (ElementIterator element2(group); !element2.end(); ++element2)
-    {
-      double res1;
-      double res2;
-
-      res1 = element2->computeDiscreteResidual(f);
-      res2 = res(j);
-
-      J(i, j) = (res1 - res2) / h;
-
-      j++;
-    }
-
-    element1->set(&origval);
-    i++;
-  }  
-
-  //J.show();
 
   res *= -1.0;
 
@@ -244,7 +169,8 @@ void NewtonIteration::update(ElementGroup& group, Increments& d)
   for (ElementIterator element(group); !element.end(); ++element)
     init(*element);
 
-
+  // l2 norm of increment
+  d = sk.norm();
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(Element& element, Increments& d)

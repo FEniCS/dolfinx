@@ -44,6 +44,9 @@ namespace dolfin {
     // Compute derivative dfi/duj
     real dfdu(unsigned int i, unsigned int j, real t);
 
+    // The ODE
+    ODE& ode;
+
   private:
 
     // Update components that influence the current component at time t
@@ -69,8 +72,6 @@ namespace dolfin {
     // Number of components
     unsigned int N;
 
-    // The ODE
-    ODE& ode;
 
     // Solution
     Solution* solution;
