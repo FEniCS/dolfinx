@@ -112,15 +112,15 @@ private:
 int main()
 {
   // Settings
+  dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);
   dolfin_set("number of samples", 100);
   dolfin_set("progress step", 0.01);
-  dolfin_set("save solution", false);
 
   // Number of refinements
-  unsigned int refinements = 2;
+  unsigned int refinements = 5;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");
