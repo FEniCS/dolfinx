@@ -7,6 +7,7 @@
 #include <dolfin/LobattoQuadrature.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/LU.h>
 #include <dolfin/NewcGqMethod.h>
 
 using namespace dolfin;
@@ -136,9 +137,7 @@ void NewcGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void NewcGqMethod::computeWeights()
 {
-  dolfin_error("This function needs to be updated to the new format.");
-  /*
-  Matrix A(q, q, Matrix::dense);
+  Matrix A(q, q);
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -153,7 +152,7 @@ void NewcGqMethod::computeWeights()
 	integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
       
-      A[i][j] = integral;
+      A(i, j) = integral;
     }
   }
 
@@ -171,12 +170,14 @@ void NewcGqMethod::computeWeights()
       b(j) = test->eval(j, x);
     
     // Solve for the weight functions at the nodal point
-    A.hpsolve(w, b);
+    // FIXME: Do we get high enough precision?
+    LU lu;
+    lu.solve(A, w, b);
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * w(j);
   }
-  */
+
 }
 //-----------------------------------------------------------------------------

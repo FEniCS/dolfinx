@@ -195,9 +195,6 @@ void Homotopy::computePath(uint m)
 //-----------------------------------------------------------------------------
 void Homotopy::computeSolution(HomotopyODE& ode)
 {
-  dolfin_error("This function needs to be updated to the new format.");
-
-/*
   // Create right-hand side and increment vector
   Vector F(2*n), dx(2*n);
 
@@ -246,7 +243,6 @@ void Homotopy::computeSolution(HomotopyODE& ode)
   }
 
   dolfin_error("Solution did not converge.");
-*/
 }
 //-----------------------------------------------------------------------------
 void Homotopy::saveSolution()

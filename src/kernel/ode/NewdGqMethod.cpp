@@ -7,6 +7,7 @@
 #include <dolfin/RadauQuadrature.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/LU.h>
 #include <dolfin/NewdGqMethod.h>
 
 using namespace dolfin;
@@ -133,10 +134,7 @@ void NewdGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void NewdGqMethod::computeWeights()
 {
-  dolfin_error("This function needs to be updated to the new format.");
-
-  /*
-  Matrix A(nn, nn, Matrix::dense);
+  Matrix A(nn, nn);
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -151,7 +149,7 @@ void NewdGqMethod::computeWeights()
 	integral += qweights[k] * trial->ddx(j, x) * test->eval(i, x);
       }
       
-      A[i][j] = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
+      A(i, j) = integral + trial->eval(j, 0.0) * test->eval(i, 0.0);
     }
   }
 
@@ -167,15 +165,15 @@ void NewdGqMethod::computeWeights()
     // Evaluate test functions at current nodal point
     for (unsigned int j = 0; j < nn; j++)
       b(j) = test->eval(j, x);
-    
+
     // Solve for the weight functions at the nodal point
-    A.hpsolve(w, b);
+    // FIXME: Do we get high enough precision?
+    LU lu;
+    lu.solve(A, w, b);
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * w(j);
   }
-
-  */
 }
 //-----------------------------------------------------------------------------
