@@ -1,0 +1,10 @@
+This is a list of known bugs in DOLFIN.
+
+Send bugs to dolfin@math.chalmers.se if you find them.
+
+Build System
+------------
+
+* The wrong library can be linked to the "libs" directory if several
+versions with the same name exist in a directory tree
+(johanjan@math.chalmers.se).
