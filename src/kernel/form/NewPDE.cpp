@@ -131,6 +131,9 @@ void NewPDE::updateTriLinMap(const Cell& cell)
   // Reset unused variables
   f02 = f12 = f20 = f21 = f22 = 0.0;
   g02 = g12 = g20 = g21 = g22 = 0.0;
+
+  // Take absolute value of determinant
+  det = fabs(det);
 }
 //-----------------------------------------------------------------------------
 void NewPDE::updateTetLinMap(const Cell& cell)
@@ -174,5 +177,8 @@ void NewPDE::updateTetLinMap(const Cell& cell)
   g00 = d00 / det; g01 = d10 / det; g02 = d20 / det;
   g10 = d01 / det; g11 = d11 / det; g12 = d21 / det;
   g20 = d02 / det; g21 = d12 / det; g22 = d22 / det;
+
+  // Take absolute value of determinant
+  det = fabs(det);
 }
 //-----------------------------------------------------------------------------

@@ -43,6 +43,7 @@ namespace dolfin
     virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
 
     /// Return map from local degree of freedom to global coordinate
+    /// FIXME: replace by projection operator
     virtual const Point& coord(unsigned int i, const Cell& cell) const = 0;
    
     /// Update map

@@ -94,6 +94,7 @@ int main()
 
   Mesh mesh("mesh.xml.gz");
   File file("poisson.m");
+  mesh.refineUniformly();
   
   dolfin_log(false);
   
