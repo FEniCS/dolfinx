@@ -1,7 +1,7 @@
 //
-// time: Tue Mar  2 11:44:12 2004
+// time: Wed Mar  3 01:16:20 2004
 //
-// version: 3.2.0 (format), 4.3.0 (DX)
+// version: 3.1.2 (format), 4.2.0 (DX)
 //
 //
 // MODULE main
@@ -28,18 +28,18 @@ macro main(
 ) -> (
 ) {
     // 
-    // node FileSelector[3]: x = 20, y = 124, inputs = 0, label = FileSelector
+    // node FileSelector[3]: x = 20, y = 93, inputs = 0, label = FileSelector
     // output[1]: visible = 1, type = 32, value = "/home/logg/work/src/dolfin/dolfin/src/demo/solvers/heat/heat.dx"
     // output[2]: visible = 1, type = 32, value = "heat.dx"
     // page group: Import
     //
     // 
-    // node StringList[1]: x = 100, y = 279, inputs = 0, label = StringList
+    // node StringList[1]: x = 200, y = 93, inputs = 0, label = StringList
     // output[1]: visible = 1, type = 16777248, value = { "Mesh", "u" }
     // page group: Import
     //
     // 
-    // node Selector[3]: x = 120, y = 124, inputs = 7, label = Selector
+    // node Selector[3]: x = 120, y = 93, inputs = 7, label = Selector
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Selector_3"
     // input[2]: defaulting = 0, visible = 0, type = 32, value = "Mesh" 
     // input[3]: defaulting = 0, visible = 0, type = 29, value = 0 
@@ -61,12 +61,12 @@ main_Selector_3_out_2[cache: 2] =
     main_Selector_3_in_7
     ) [instance: 3, cache: 1];
     // 
-    // node String[1]: x = 80, y = 341, inputs = 0, label = String
+    // node String[1]: x = 100, y = 217, inputs = 0, label = String
     // output[1]: visible = 1, type = 32, value = "dx"
     // page group: Import
     //
     // 
-    // node Import[1]: x = 20, y = 279, inputs = 6, label = Import
+    // node Import[1]: x = 20, y = 217, inputs = 6, label = Import
     // page group: Import
     //
 main_Import_1_out_1 = 
@@ -79,12 +79,12 @@ main_Import_1_out_1 =
     main_Import_1_in_6
     ) [instance: 1, cache: 1];
     // 
-    // node Transmitter[8]: x = 20, y = 341, inputs = 1, label = Dataset
+    // node Transmitter[8]: x = 20, y = 279, inputs = 1, label = Dataset
     // page group: Import
     //
 Dataset = main_Import_1_out_1;
     // 
-    // node Receiver[3]: x = 20, y = 124, inputs = 1, label = Dataset
+    // node Receiver[3]: x = 20, y = 93, inputs = 1, label = Dataset
     // page group: Variable
     //
 main_Receiver_3_out_1[cache: 0] = Dataset;
@@ -100,7 +100,7 @@ main_Inquire_3_out_1 =
     main_Inquire_3_in_3
     ) [instance: 3, cache: 1];
     // 
-    // node Selector[2]: x = 340, y = 217, inputs = 7, label = Selector
+    // node Selector[2]: x = 220, y = 93, inputs = 7, label = Selector
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Selector_2"
     // input[2]: defaulting = 0, visible = 0, type = 32, value = "on" 
     // input[3]: defaulting = 0, visible = 0, type = 29, value = 1 
@@ -122,7 +122,7 @@ main_Selector_2_out_2[cache: 2] =
     main_Selector_2_in_7
     ) [instance: 2, cache: 1];
     // 
-    // node Select[1]: x = 280, y = 217, inputs = 3, label = Select
+    // node Select[1]: x = 300, y = 93, inputs = 3, label = Select
     // page group: Variable
     //
 main_Select_1_out_1 = 
@@ -142,12 +142,12 @@ main_Switch_6_out_1 =
     main_Select_1_out_1
     ) [instance: 6, cache: 1];
     // 
-    // node Transmitter[9]: x = 300, y = 403, inputs = 1, label = Variable
+    // node Transmitter[9]: x = 220, y = 403, inputs = 1, label = Variable
     // page group: Variable
     //
 Variable = main_Switch_6_out_1;
     // 
-    // node Receiver[4]: x = 20, y = 124, inputs = 1, label = Variable
+    // node Receiver[4]: x = 20, y = 93, inputs = 1, label = Variable
     // page group: Frame
     //
 main_Receiver_4_out_1[cache: 0] = Variable;
@@ -221,7 +221,7 @@ main_Switch_7_out_1 =
     //
 Field = main_Switch_7_out_1;
     // 
-    // node Receiver[1]: x = 20, y = 124, inputs = 1, label = Field
+    // node Receiver[1]: x = 20, y = 93, inputs = 1, label = Field
     // page group: Iso surface
     //
 main_Receiver_1_out_1[cache: 0] = Field;
@@ -249,7 +249,7 @@ main_Compute_1_out_1 =
     main_Receiver_1_out_1
     ) [instance: 1, cache: 1];
     // 
-    // node Switch[10]: x = 20, y = 279, inputs = 3, label = Switch
+    // node Switch[10]: x = 20, y = 310, inputs = 3, label = Switch
     // page group: Iso surface
     //
 main_Switch_10_out_1 = 
@@ -259,7 +259,7 @@ main_Switch_10_out_1 =
     main_Compute_1_out_1
     ) [instance: 10, cache: 1];
     // 
-    // node Inquire[7]: x = 20, y = 372, inputs = 3, label = Inquire
+    // node Inquire[7]: x = 20, y = 403, inputs = 3, label = Inquire
     // input[2]: defaulting = 0, visible = 1, type = 32, value = "is data dependent"
     // input[3]: defaulting = 0, visible = 1, type = 32, value = "positions"
     // page group: Iso surface
@@ -354,17 +354,17 @@ main_Switch_11_out_1 =
     //
 Isosurface = main_Switch_11_out_1;
     // 
-    // node Receiver[7]: x = 260, y = 124, inputs = 1, label = Isosurface
+    // node Receiver[7]: x = 260, y = 93, inputs = 1, label = Isosurface
     // page group: Image
     //
 main_Receiver_7_out_1[cache: 0] = Isosurface;
     // 
-    // node Receiver[6]: x = 20, y = 124, inputs = 1, label = Field
+    // node Receiver[6]: x = 20, y = 93, inputs = 1, label = Field
     // page group: Colorslice
     //
 main_Receiver_6_out_1[cache: 0] = Field;
     // 
-    // node Vector[8]: x = 140, y = 155, inputs = 11, label = Vector
+    // node Vector[8]: x = 120, y = 124, inputs = 11, label = Vector
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_8"
     // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 0.5 0.5 0.5 ]
     // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
@@ -375,7 +375,7 @@ main_Receiver_6_out_1[cache: 0] = Field;
     // page group: Colorslice
     //
     // 
-    // node Vector[1]: x = 200, y = 155, inputs = 11, label = Vector
+    // node Vector[1]: x = 180, y = 124, inputs = 11, label = Vector
     // input[1]: defaulting = 0, visible = 0, type = 32, value = "Vector_1"
     // input[3]: defaulting = 0, visible = 0, type = 8, value = [ 0 0 1 ]
     // input[5]: defaulting = 1, visible = 0, type = 8, value = [ -1000000.0 -1000000.0 -1000000.0 ]
@@ -396,7 +396,7 @@ main_MapToPlane_1_out_1 =
     main_Vector_1_out_1
     ) [instance: 1, cache: 1];
     // 
-    // node AutoColor[5]: x = 20, y = 279, inputs = 10, label = AutoColor
+    // node AutoColor[5]: x = 20, y = 310, inputs = 10, label = AutoColor
     // page group: Colorslice
     //
 main_AutoColor_5_out_1,
@@ -414,12 +414,12 @@ main_AutoColor_5_out_2 =
     main_AutoColor_5_in_10
     ) [instance: 5, cache: 1];
     // 
-    // node Transmitter[12]: x = 20, y = 372, inputs = 1, label = Colorslice
+    // node Transmitter[12]: x = 120, y = 310, inputs = 1, label = Colorslice
     // page group: Colorslice
     //
 Colorslice = main_AutoColor_5_out_1;
     // 
-    // node Receiver[9]: x = 420, y = 124, inputs = 1, label = Colorslice
+    // node Receiver[9]: x = 420, y = 93, inputs = 1, label = Colorslice
     // page group: Image
     //
 main_Receiver_9_out_1[cache: 0] = Colorslice;
@@ -461,7 +461,7 @@ main_Collect_2_out_1 =
     //
 Geometry = main_Collect_2_out_1;
     // 
-    // node Receiver[19]: x = 340, y = 124, inputs = 1, label = Geometry
+    // node Receiver[19]: x = 340, y = 93, inputs = 1, label = Geometry
     // page group: Image
     //
 main_Receiver_19_out_1[cache: 0] = Geometry;
@@ -493,7 +493,7 @@ main_AutoCamera_1_out_1 =
     main_AutoCamera_1_in_9
     ) [instance: 1, cache: 1];
     // 
-    // node Receiver[12]: x = 20, y = 124, inputs = 1, label = Field
+    // node Receiver[12]: x = 20, y = 93, inputs = 1, label = Field
     // page group: Streamlines
     //
 main_Receiver_12_out_1[cache: 0] = Field;
@@ -573,7 +573,7 @@ main_AutoColor_1_out_2 =
     main_AutoColor_1_in_10
     ) [instance: 1, cache: 1];
     // 
-    // node Receiver[21]: x = 20, y = 124, inputs = 1, label = Field
+    // node Receiver[21]: x = 20, y = 93, inputs = 1, label = Field
     // page group: Arrows
     //
 main_Receiver_21_out_1[cache: 0] = Field;
@@ -689,7 +689,7 @@ main_AutoColor_3_out_2 =
     main_AutoColor_3_in_10
     ) [instance: 3, cache: 1];
     // 
-    // node Receiver[24]: x = 20, y = 124, inputs = 1, label = Field
+    // node Receiver[24]: x = 20, y = 93, inputs = 1, label = Field
     // page group: Vorticity
     //
 main_Receiver_24_out_1[cache: 0] = Field;
@@ -936,7 +936,7 @@ main_Switch_8_out_1 =
     //
 Streamlines = main_AutoColor_1_out_1;
     // 
-    // node Receiver[13]: x = 20, y = 124, inputs = 1, label = Streamlines
+    // node Receiver[13]: x = 20, y = 93, inputs = 1, label = Streamlines
     // page group: Image
     //
 main_Receiver_13_out_1[cache: 0] = Streamlines;
@@ -946,7 +946,7 @@ main_Receiver_13_out_1[cache: 0] = Streamlines;
     //
 Arrows = main_AutoColor_3_out_1;
     // 
-    // node Receiver[23]: x = 120, y = 124, inputs = 1, label = Arrows
+    // node Receiver[23]: x = 120, y = 93, inputs = 1, label = Arrows
     // page group: Image
     //
 main_Receiver_23_out_1[cache: 0] = Arrows;
@@ -956,7 +956,7 @@ main_Receiver_23_out_1[cache: 0] = Arrows;
     //
 Vorticity = main_AutoColor_4_out_1;
     // 
-    // node Receiver[25]: x = 180, y = 124, inputs = 1, label = Vorticity
+    // node Receiver[25]: x = 180, y = 93, inputs = 1, label = Vorticity
     // page group: Image
     //
 main_Receiver_25_out_1[cache: 0] = Vorticity;
@@ -1731,7 +1731,7 @@ main_Switch_8_out_1 = NULL;
 main_Transmitter_17_out_1 = NULL;
 main_Transmitter_23_out_1 = NULL;
 main_Transmitter_24_out_1 = NULL;
-Executive("product version 4 3 0");
+Executive("product version 4 2 0");
 $sync
 
 sequence main();

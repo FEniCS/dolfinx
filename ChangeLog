@@ -1,3 +1,4 @@
+ - Allow access to samples of multi-adaptive solution
  - New patch from thsv for gcc 3.4.0 and 3.5.0
  - Make progress step a parameter
  - New function ODE::sparse(const Matrix& A)

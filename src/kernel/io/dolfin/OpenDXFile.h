@@ -5,7 +5,9 @@
 #define __OPEN_DX_FILE_H
 
 #include <string>
+#include <stdio.h>
 #include <dolfin/constants.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin {
@@ -25,7 +27,33 @@ namespace dolfin {
     
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
-    void operator<< (Function::Vector& u);
+
+  private:
+
+    void writeHeader   (FILE* fp);
+    void writeMesh     (FILE* fp, Mesh& mesh);
+    void writeMeshData (FILE* fp, Mesh& mesh);
+    void writeFunction (FILE* fp, Function& u);
+    void writeSeries   (FILE* fp, Function& u);
+  
+    void removeSeries  (FILE* fp);
+
+    // Data for each frame
+    class Frame {
+    public:
+
+      Frame(real time);
+      ~Frame();
+      
+      real time;
+
+    };
+
+    // Frame data
+    NewArray<Frame> frames;
+
+    // Start position for latest time series
+    long series_pos;
     
   };
   
