@@ -18,6 +18,8 @@ General
 - dx --> ddx in PDE
 - dK --> dx in PDE
 - Load parameters from dolfin.xml
+- Add GiD file format (Harald)
+- Fix assembly for systems of more than 3 equations
 
 Multi-adaptive solver
 ---------------------
