@@ -27,7 +27,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode, ElementData& elmdata)
+void TimeStepper::solve(ODE& ode, Function& function)
 {
   unsigned int no_samples = dolfin_get("number of samples");
   unsigned int N = ode.size();
@@ -38,11 +38,11 @@ void TimeStepper::solve(ODE& ode, ElementData& elmdata)
   // Create data for time-stepping
   Partition partition(N);
   Adaptivity adaptivity(N);
-  Solution u(ode, elmdata);
+  Solution u(ode, function);
   RHS f(ode, u);
 
   // Create file for storing the solution
-  File file("solution.m");
+  File file(u.label() + ".m");
 
   // The time-stepping loop
   Progress p("Time-stepping");
@@ -60,7 +60,7 @@ void TimeStepper::solve(ODE& ode, ElementData& elmdata)
 
     // Update time
     t = timeslab->endtime();
-
+    
     // Save solution
     save(u, f, *timeslab, file, T, no_samples);
 
@@ -109,8 +109,8 @@ void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
   u.shift(t);
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab, File& file, 
-		       real T, unsigned int no_samples)
+void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
+		       File& file, real T, unsigned int no_samples)
 {
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
@@ -119,7 +119,7 @@ void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab, File& file,
   // Save samples
   while ( t < timeslab.endtime() )
   {
-    Sample sample(u, f, t);    
+    Sample sample(u, f, t);
     file << sample;
     t += K;
   }

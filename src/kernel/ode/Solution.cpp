@@ -4,14 +4,15 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
+#include <dolfin/Function.h>
 #include <dolfin/ElementData.h>
 #include <dolfin/Solution.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Solution::Solution(ODE& ode, ElementData& elmdata) :
-  elmdata(elmdata), u0(ode.size()), t0(0)
+Solution::Solution(ODE& ode, Function& u) :
+  elmdata(u.elmdata()), u0(ode.size()), t0(0)
 {
   // Get parameters
   _debug  = dolfin_get("debug time steps");
@@ -23,6 +24,9 @@ Solution::Solution(ODE& ode, ElementData& elmdata) :
   // Open debug file
   if ( _debug )
     file.open("timesteps.debug", std::ios::out);
+
+  // Set name and label of solution (same as function)
+  rename(u.name(), u.label());
 }
 //-----------------------------------------------------------------------------
 Solution::~Solution()

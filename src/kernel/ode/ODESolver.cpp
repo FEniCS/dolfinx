@@ -15,7 +15,6 @@ void ODESolver::solve(ODE& ode)
 {
   Function u, phi;
   solve(ode, u, phi);
-
 }
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode, Function& u)
@@ -31,13 +30,17 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
   // Get size of system
   unsigned int N = ode.size();
 
+  // Rename primal and dual solutions
+  u.rename("u", "primal");
+  phi.rename("phi", "dual");
+
   dolfin_start("Solving primal problem");
 
   // Initialize primal solution
   u.init(N);
-
+  
   // Solve primal problem
-  TimeStepper::solve(ode, u.elmdata());
+  TimeStepper::solve(ode, u);
 
   dolfin_end();
 
@@ -50,7 +53,7 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
   phi.init(N);
   
   // Solve dual problem
-  TimeStepper::solve(dual, phi.elmdata());
+  TimeStepper::solve(dual, phi);
 
   dolfin_end();
 

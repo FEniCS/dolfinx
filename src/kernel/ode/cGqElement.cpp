@@ -52,7 +52,7 @@ real cGqElement::dx() const
   for (unsigned int i = 0; i <= q; i++)
     dudx += values[i] * cG(q).derivative(i);
 
-  return dudx;
+  return dudx / (t1 - t0);
 }
 //-----------------------------------------------------------------------------
 void cGqElement::update(real u0)

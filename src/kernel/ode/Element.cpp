@@ -14,6 +14,8 @@ Vector dolfin::Element::f;
 Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
   q(q), _index(index), t0(t0), t1(t1)
 {
+  dolfin_assert(t1 > t0);
+  
   // Allocate the list of nodal values
   values = new real[q+1];
 

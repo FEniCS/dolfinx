@@ -13,9 +13,10 @@ namespace dolfin {
 
   /// Sample of values at a given point.
 
-  class Sample {
+  class Sample : public Variable
+  {
   public:
-
+    
     /// Constructor
     Sample(Solution& solution, RHS& f, real t);
 

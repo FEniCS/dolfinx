@@ -17,7 +17,7 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-1) )
     dolfin_error("Gauss quadrature not ok, check failed.");
   
-  dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
+  //dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void GaussQuadrature::show() const

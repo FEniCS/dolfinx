@@ -16,7 +16,7 @@ RadauQuadrature::RadauQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-2) )
     dolfin_error("Radau quadrature not ok, check failed.");
 
-  dolfin_info("Radau quadrature computed for n = %d, check passed.", n);
+  //dolfin_info("Radau quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void RadauQuadrature::show() const

@@ -52,7 +52,7 @@ real dGqElement::dx() const
   for (unsigned int i = 0; i <= q; i++)
     dudx += values[i] * dG(q).derivative(i);
 
-  return dudx;
+  return dudx / (t1 - t0);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::update(real u0)

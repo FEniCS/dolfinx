@@ -19,7 +19,7 @@ LobattoQuadrature::LobattoQuadrature(unsigned int n) : GaussianQuadrature(n)
   if ( !check(2*n-3) )
     dolfin_error("Lobatto quadrature not ok, check failed.");
 
-  dolfin_info("Lobatto quadrature computed for n = %d, check passed.", n);
+  //dolfin_info("Lobatto quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
 void LobattoQuadrature::show() const

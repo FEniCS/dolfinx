@@ -11,7 +11,8 @@ using namespace dolfin;
 Sample::Sample(Solution& solution, RHS& f, real t) :
   solution(solution), f(f), time(t)
 {
-  // Do nothing
+  // Set name and label (same as solution)
+  rename(solution.name(), solution.label());
 }
 //-----------------------------------------------------------------------------
 Sample::~Sample()

@@ -25,7 +25,7 @@ namespace dolfin {
   public:
 
     /// Solve given ODE
-    static void solve(ODE& ode, ElementData& elmdata);
+    static void solve(ODE& ode, Function& function);
 
   private:
 

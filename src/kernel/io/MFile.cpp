@@ -185,7 +185,7 @@ void MFile::operator<< (Sample& sample)
   if ( no_frames == 0 )
   {
     fprintf(fp, "t = [];\n");
-    fprintf(fp, "u = [];\n");
+    fprintf(fp, "%s = [];\n", sample.name().c_str());
     fprintf(fp, "k = [];\n");
     fprintf(fp, "r = [];\n");
     fprintf(fp, "\n");
@@ -199,7 +199,8 @@ void MFile::operator<< (Sample& sample)
   for (unsigned int i = 0; i < sample.size(); i++)
     fprintf(fp, "%.16e ", sample.u(i));  
   fprintf(fp, "];\n");
-  fprintf(fp, "u = [u tmp'];\n");
+  fprintf(fp, "%s = [%s tmp'];\n", 
+	  sample.name().c_str(), sample.name().c_str());
   fprintf(fp, "clear tmp;\n");
 
   // Save time steps

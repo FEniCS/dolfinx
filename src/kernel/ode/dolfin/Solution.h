@@ -8,11 +8,13 @@
 #include <dolfin/constants.h>
 #include <dolfin/Element.h>
 #include <dolfin/NewArray.h>
+#include <dolfin/Variable.h>
 
 namespace dolfin {
 
   class ODE;
   class RHS;
+  class Function;
   class ElementData;
 
   /// Solution represents the solution currently being computed.
@@ -26,12 +28,12 @@ namespace dolfin {
   /// - It can create new elements.
   /// - It can save debug info to a file.
 
-  class Solution
+  class Solution : public Variable
   {
   public:
     
     /// Constructor
-    Solution(ODE& ode, ElementData& elmdata);
+    Solution(ODE& ode, Function& u);
 
     /// Destructor
     ~Solution();
