@@ -76,6 +76,7 @@ namespace dolfin
     real tol;                // Tolerance for Newton's method
     real divtol;             // Tolerance for divergence of homotopy path
     bool monitor;            // True if we should monitor the homotopy
+    bool random;             // True if we should choose random initial data
     NewLinearSolver* solver; // GMRES solver
     FILE* fp;                // File pointer for saving solution
     uint* mi;                // Array of local path numbers

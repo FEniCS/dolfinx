@@ -15,8 +15,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
-  : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false),
-    solver(0), fp(0), mi(0), ci(0), x(2*n)
+  : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false), random(false),
+  solver(0), fp(0), mi(0), ci(0), x(2*n)
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -33,7 +33,10 @@ Homotopy::Homotopy(uint n)
   divtol = dolfin_get("homotopy divergence tolerance");
 
   // Check if we should monitor the homotopy
-  monitor = dolfin_get("monitor homotopy");
+  monitor = dolfin_get("homotopy monitoring");
+
+  // Get type of initial data (random or morgan)
+  random = dolfin_get("homotopy randomize");
 
   // Get maximum number of iterations
   maxiter = dolfin_get("maximum iterations");
@@ -253,19 +256,22 @@ void Homotopy::saveSolution()
 //-----------------------------------------------------------------------------
 void Homotopy::randomize()
 {
-  // Randomize each c in the unit circle
-
   for (uint i = 0; i < n; i++)
   {
-    const real r = rand();
-    const real a = 2.0*DOLFIN_PI*rand();
-    const complex c = std::polar(r, a);
-    ci[i] = c;
-
-    // FIXMETMP: Remove when working
-    // Choice from Morgan's paper
-    //const complex c(0.00143289 + static_cast<real>(i), 0.983727);
-    //ci[i] = c;
+    if ( random )
+    {
+      // Randomize each c in the unit circle
+      const real r = rand();
+      const real a = 2.0*DOLFIN_PI*rand();
+      const complex c = std::polar(r, a);
+      ci[i] = c;
+    }
+    else
+    {
+      // Choice from Morgan's paper
+      const complex c(0.00143289 + static_cast<real>(i), 0.983727);
+      ci[i] = c;
+    }
   }
 }
 //-----------------------------------------------------------------------------

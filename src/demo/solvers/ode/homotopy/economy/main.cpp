@@ -344,7 +344,7 @@ int main()
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
   dolfin_set("adaptive samples", true);
-  //dolfin_set("monitor homotopy", true);
+  dolfin_set("homotopy monitoring", true);
   dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.01);
   dolfin_set("homotopy divergence tolerance", 20.0);

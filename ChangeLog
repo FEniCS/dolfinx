@@ -1,3 +1,4 @@
+ - Improve functionality of homotopy solver
  - Simple creation of piecewise linear functions (without having an element)
  - Simple creation of piecewise linear elements
  - Add support of automatic creation of simple meshes (unit cube, unit square)
