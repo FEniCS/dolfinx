@@ -113,9 +113,11 @@ private:
 int main()
 {
   dolfin_set("method", "cg");
-  dolfin_set("order", 2);
+  dolfin_set("order", 1);
+  dolfin_set("adaptive samples", true);
+  dolfin_set("tolerance", 0.05);
 
-  Leontief leontief(2, 2);
+  Leontief leontief(3, 3);
   leontief.solve();
 
   return 0;

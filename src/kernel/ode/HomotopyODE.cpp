@@ -117,9 +117,8 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
 {
   // Compute the size of (1 - t)*G(z) and see that it does not diverge;
   // it should converge to zero
-
-  const real tol = 5.0;
-
+  const real tol = 10.0;
+  const real epsilon = 0.5;
   for (uint i = 0; i < n; i++)
   {
     const uint p = homotopy.degree(i);
@@ -128,8 +127,8 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     complex tmp = zi;
     for (uint j = 0; j < p; j++)
       tmp *= zi;
-    real r = std::abs((1 - t) * (tmp - ci));
-    cout << "checking: r = " << r << endl;
+    real r = std::abs(pow((1.0 - t), 1.0 - epsilon) * (tmp - ci));
+    //cout << "checking: r = " << r << endl;
     
     if ( r > tol )
     {
@@ -137,21 +136,22 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
       dolfin_info("Homotopy path seems to be diverging.");
       return false;
     }
+  }
 
-    if ( end )
+  // Check if we reached the end of the integration
+  if ( end )
+  {
+    dolfin_info("Reached end of integration, saving solution.");
+    _state = endgame;
+    
+    real* xx = homotopy.x.array();
+    for (uint i = 0; i < n; i++)
     {
-      dolfin_info("Reached end of integration, saving solution.");
-      _state = endgame;
-
-      real* xx = homotopy.x.array();
-      for (uint i = 0; i < n; i++)
-      {
-	const complex zi = z[i];
-	xx[2*i] = zi.real();
-	xx[2*i + 1] = zi.imag();
-      }
-      homotopy.x.restore(xx);
+      const complex zi = z[i];
+      xx[2*i] = zi.real();
+      xx[2*i + 1] = zi.imag();
     }
+    homotopy.x.restore(xx);
   }
   
   return true;

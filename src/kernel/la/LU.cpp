@@ -46,9 +46,9 @@ void LU::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 //-----------------------------------------------------------------------------
 void LU::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
-  cout << "LU got matrix:" << endl;
-  cout << "A = "; A.disp(false);
-  cout << "b = "; b.disp();
+  //cout << "LU got matrix:" << endl;
+  //cout << "A = "; A.disp(false);
+  //cout << "b = "; b.disp();
 
   // Copy data to dense matrix
   const real Anorm = copyToDense(A);

@@ -13,7 +13,7 @@ TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
 {
   // Get tolerance
   tol = dolfin_get("tolerance");
-  tol *= 0.01;
+  tol *= 0.001;
   cout << "Using tolerance tol = " << tol << endl;
 
   // Get maximum number of iterations

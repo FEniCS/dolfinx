@@ -67,6 +67,8 @@ Homotopy::~Homotopy()
 //-----------------------------------------------------------------------------
 void Homotopy::solve()
 {
+  uint nroots = 0;
+
   // Compute the total number of paths
   M = countPaths();
   dolfin_info("Total number of paths is %d.", M);
@@ -94,8 +96,11 @@ void Homotopy::solve()
       dolfin_info("Homotopy path converged, using Newton's method to improve solution.");
       computeSolution(ode);
       saveSolution();
+      nroots += 1;
     }
   }
+
+  dolfin_info("Total number of solutions found: %d.", nroots);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Homotopy::countPaths() const
@@ -154,26 +159,21 @@ void Homotopy::computeSolution(HomotopyODE& ode)
       return;
     }
     
-    cout << "x = "; x.disp();
-    cout << "F = "; F.disp();
-    cout << "dx = "; dx.disp();
-    cout << "J = "; J.disp(false);
-    cout << endl;
+    //cout << "x = "; x.disp();
+    //cout << "F = "; F.disp();
+    //cout << "dx = "; dx.disp();
+    //cout << "J = "; J.disp(false);
+    //cout << endl;
 
     // Solve linear system, seems like we need to scale the right-hand
     // side to make it work with the PETSc GMRES solver
-    r += DOLFIN_EPS;
-    F /= r;
-
+    //r += DOLFIN_EPS;
+    //F /= r;
     //gmres.solve(J, dx, F);
+    //dx *= r;
+    
+    // Solve linear system using LU factorization
     lu.solve(J, dx, F);
-
-    cout << "dx = "; dx.disp();
-    dx *= r;
-
-    // FIXMETMP: Remove when working
-    dx /= dx.norm(NewVector::linf);
-    cout << "dx = "; dx.disp();
 
     // Subtract increment
     x -= dx;
