@@ -20,7 +20,7 @@ namespace dolfin {
   class File {
   public:
     
-    enum Type { XML, MATLAB, OCTAVE, OPENDX };
+    enum Type { XML, MATLAB, OCTAVE, OPENDX, GID };
     
     File(const std::string& filename);
     File(const std::string& filename, Type type);

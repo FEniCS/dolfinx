@@ -1,3 +1,4 @@
+ - Add support for GiD file format
  - Add performance tests for multi-adaptivity (both stiff and non-stiff)
  - First version of Newton for the multi-adaptive solver
  - Test for Newton for the multi-adaptive solver

@@ -9,6 +9,7 @@
 #include <dolfin/MatlabFile.h>
 #include <dolfin/OctaveFile.h>
 #include <dolfin/OpenDXFile.h>
+#include <dolfin/GiDFile.h>
 
 using namespace dolfin;
 
@@ -17,16 +18,24 @@ File::File(const std::string& filename)
 {
   // Choose file type base on suffix. Note that MATLAB is chosen as
   // default instead of Octave. Should be changed.
-  
+
+  // FIXME: Use correct funtion to find the suffix; using rfind() makes
+  // FIXME: it essential that the suffixes are checked in the correct order.
+
   if ( filename.rfind(".xml") != filename.npos )
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
     file = new XMLFile(filename);
+  else if ( filename.rfind(".msh") != filename.npos )
+    file = new GiDFile(filename);
+  else if ( filename.rfind(".res") != filename.npos )
+    file = new GiDFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new MatlabFile(filename);
   else if ( filename.rfind(".dx") != filename.npos )
     file = new OpenDXFile(filename);
-  else{
+  else
+  {
     file = 0;
     dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
   }
@@ -46,6 +55,9 @@ File::File(const std::string& filename, Type type)
     break;
   case OPENDX:
     file = new OpenDXFile(filename);
+    break;
+  case GID:
+    file = new GiDFile(filename);
     break;
   default:
     file = 0;
