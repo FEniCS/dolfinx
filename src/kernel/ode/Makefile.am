@@ -38,6 +38,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
                           dolfin/ParticleSystem.h \
+                          dolfin/PropagatingPreconditioner.h \
                           dolfin/NewParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/NewPartition.h \
@@ -95,6 +96,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
                           ParticleSystem.cpp \
+                          PropagatingPreconditioner.h \
                           NewParticleSystem.cpp \
                           Partition.cpp \
                           NewPartition.cpp \

@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -87,11 +87,11 @@ mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_la.h                          dolfin/BiCGSTAB.h                          dolfin/CG.h                          dolfin/DenseMatrix.h                          dolfin/DirectSolver.h                          dolfin/FGMRES.h                          dolfin/GaussSeidel.h                          dolfin/GenericMatrix.h                          dolfin/GMRES.h                          dolfin/NewGMRES.h                          dolfin/Jacobi.h                          dolfin/KrylovSolver.h                          dolfin/LinearSolver.h                          dolfin/Matrix.h                          dolfin/NewMatrix.h                          dolfin/PETScManager.h                          dolfin/Preconditioner.h                          dolfin/Richardson.h                          dolfin/SOR.h                          dolfin/SISolver.h                          dolfin/SparseMatrix.h                          dolfin/Vector.h                          dolfin/VirtualMatrix.h                          dolfin/NewVector.h
+include_HEADERS = dolfin/dolfin_la.h                          dolfin/BiCGSTAB.h                          dolfin/CG.h                          dolfin/DenseMatrix.h                          dolfin/DirectSolver.h                          dolfin/FGMRES.h                          dolfin/GaussSeidel.h                          dolfin/GenericMatrix.h                          dolfin/GMRES.h                          dolfin/NewGMRES.h                          dolfin/Jacobi.h                          dolfin/KrylovSolver.h                          dolfin/LinearSolver.h                          dolfin/Matrix.h                          dolfin/NewMatrix.h                          dolfin/PETScManager.h                          dolfin/Preconditioner.h                          dolfin/NewPreconditioner.h                          dolfin/Richardson.h                          dolfin/SOR.h                          dolfin/SISolver.h                          dolfin/SparseMatrix.h                          dolfin/Vector.h                          dolfin/VirtualMatrix.h                          dolfin/NewVector.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-la.a
-libdolfin_la_a_SOURCES = BiCGSTAB.cpp                          CG.cpp                          DenseMatrix.cpp                          DirectSolver.cpp                          FGMRES.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp                          GMRES.cpp                          NewGMRES.cpp 	                 Jacobi.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp                          NewMatrix.cpp                          PETScManager.cpp                          Preconditioner.cpp 	                 Richardson.cpp 	                 SOR.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp                          VirtualMatrix.cpp                          NewVector.cpp
+libdolfin_la_a_SOURCES = BiCGSTAB.cpp                          CG.cpp                          DenseMatrix.cpp                          DirectSolver.cpp                          FGMRES.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp                          GMRES.cpp                          NewGMRES.cpp 	                 Jacobi.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp                          NewMatrix.cpp                          PETScManager.cpp                          Preconditioner.cpp                          NewPreconditioner.cpp 	                 Richardson.cpp 	                 SOR.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp                          VirtualMatrix.cpp                          NewVector.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -106,8 +106,8 @@ libdolfin_la_a_LIBADD =
 libdolfin_la_a_OBJECTS =  BiCGSTAB.o CG.o DenseMatrix.o DirectSolver.o \
 FGMRES.o GaussSeidel.o GenericMatrix.o GMRES.o NewGMRES.o Jacobi.o \
 KrylovSolver.o LinearSolver.o Matrix.o NewMatrix.o PETScManager.o \
-Preconditioner.o Richardson.o SOR.o SISolver.o SparseMatrix.o Vector.o \
-VirtualMatrix.o NewVector.o
+Preconditioner.o NewPreconditioner.o Richardson.o SOR.o SISolver.o \
+SparseMatrix.o Vector.o VirtualMatrix.o NewVector.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -125,9 +125,9 @@ DEP_FILES =  .deps/BiCGSTAB.P .deps/CG.P .deps/DenseMatrix.P \
 .deps/DirectSolver.P .deps/FGMRES.P .deps/GMRES.P .deps/GaussSeidel.P \
 .deps/GenericMatrix.P .deps/Jacobi.P .deps/KrylovSolver.P \
 .deps/LinearSolver.P .deps/Matrix.P .deps/NewGMRES.P .deps/NewMatrix.P \
-.deps/NewVector.P .deps/PETScManager.P .deps/Preconditioner.P \
-.deps/Richardson.P .deps/SISolver.P .deps/SOR.P .deps/SparseMatrix.P \
-.deps/Vector.P .deps/VirtualMatrix.P
+.deps/NewPreconditioner.P .deps/NewVector.P .deps/PETScManager.P \
+.deps/Preconditioner.P .deps/Richardson.P .deps/SISolver.P .deps/SOR.P \
+.deps/SparseMatrix.P .deps/Vector.P .deps/VirtualMatrix.P
 SOURCES = $(libdolfin_la_a_SOURCES)
 OBJECTS = $(libdolfin_la_a_OBJECTS)
 
@@ -248,7 +248,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" != "." || dot_seen=yes; \
+	  test "$$subdir" = "." && dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -290,7 +290,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

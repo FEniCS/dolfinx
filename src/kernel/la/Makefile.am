@@ -16,6 +16,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/NewMatrix.h \
                          dolfin/PETScManager.h \
                          dolfin/Preconditioner.h \
+                         dolfin/NewPreconditioner.h \
                          dolfin/Richardson.h \
                          dolfin/SOR.h \
                          dolfin/SISolver.h \
@@ -41,6 +42,7 @@ libdolfin_la_a_SOURCES = BiCGSTAB.cpp \
                          NewMatrix.cpp \
                          PETScManager.cpp \
                          Preconditioner.cpp \
+                         NewPreconditioner.cpp \
 	                 Richardson.cpp \
 	                 SOR.cpp \
 	                 SISolver.cpp \
