@@ -7,6 +7,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
 #include <dolfin/Event.h>
+#include <dolfin/Iteration.h>
 
 namespace dolfin
 {
@@ -14,8 +15,15 @@ namespace dolfin
   class RHS;
   class TimeSlab;
   class Element;
+  class Iteration;
 
   /// Damped fixed point iteration on a time slab.
+  ///
+  /// The fixed point iteration is implemented as a state machine,
+  /// with the class FixedPointIteration working as interface to the
+  /// outside world ("context") and the class Iteration working as a
+  /// base class ("state") for the different subclasses implementing
+  /// state-specific behavior.
 
   class FixedPointIteration
   {
@@ -48,8 +56,14 @@ namespace dolfin
     /// Update initial data for element list
     void init(NewArray<Element*>& elements);
 
+    // Update initial data for element
+    void init(Element& element);
+
     /// Reset element list
     void reset(NewArray<Element*>& elements);
+
+    // Reset element
+    void reset(Element& element);
 
     /// Display a status report
     void report() const;
@@ -59,27 +73,6 @@ namespace dolfin
 
   private:
 
-    // Current state (type of problem)
-    enum State { nonstiff, diagonal, parabolic, nonnormal };
-
-    // Current damping for problems of type {parabolic}
-    enum SubState { undamped, damped, increasing };
-
-    // Discrete residuals
-    struct Residuals
-    {
-      Residuals() : r0(0), r1(0), r2(0) {}
-      real r0, r1, r2;
-    };
-
-    // Damping
-    struct Damping
-    {
-      Damping() : alpha(0), m(0) {}
-      real alpha;
-      unsigned int m;
-    };
-    
     // Update time slab
     void update(TimeSlab& timeslab);
     
@@ -89,65 +82,23 @@ namespace dolfin
     // Update element
     void update(Element& element);
 
-    // Check if time slab has converged
-    bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
-
-    // Check if element list has converged
-    bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
-
-    // Check if element has converged
-    bool converged(Element& element, Residuals& r, unsigned int n);
-
     // Stabilize time slab
-    void stabilize(TimeSlab& timeslab, const Residuals& r);
+    void stabilize(TimeSlab& timeslab, const Iteration::Residuals& r);
 
     // Stabilize element list
-    void stabilize(NewArray<Element*>& elements, const Residuals& r);
+    void stabilize(NewArray<Element*>& elements, const Iteration::Residuals& r);
 
     // Stabilize element
-    void stabilize(Element& element, const Residuals& r);
+    void stabilize(Element& element, const Iteration::Residuals& r);
 
-    // Simple undamped update of element
-    void updateUndamped(Element& element);
+    // Check if time slab has converged
+    bool converged(TimeSlab& timeslab, Iteration::Residuals& r, unsigned int n);
 
-    // Locally damped update of element
-    void updateLocalDamping(Element& element);
+    // Check if element list has converged
+    bool converged(NewArray<Element*>& elements, Iteration::Residuals& r, unsigned int n);
 
-    // Globaly damped update of element
-    void updateGlobalDamping(Element& element);
-
-    // Compute stabilization for state {nonstiff}
-    void stabilizeNonStiff(TimeSlab& timeslab, const Residuals& r);
-
-    // Compute stabilization for state {diagonal}
-    void stabilizeDiagonal(TimeSlab& timeslab, const Residuals& r);
-
-    // Compute stabilization for state {parabolic} using damping {undamped}
-    void stabilizeParabolicUndamped(TimeSlab& timeslab, const Residuals& r);
-
-    // Compute stabilization for state {parabolic} using damping {damped}
-    void stabilizeParabolicDamped(TimeSlab& timeslab, const Residuals& r);
-
-    // Compute stabilization for state {parabolic} using damping {increasing}
-    void stabilizeParabolicIncreasing(TimeSlab& timeslab, const Residuals& r);
-
-    // Compute stabilization for state {nonnormal}
-    void stabilizeNonNormal(TimeSlab& timeslab, const Residuals& r);
-
-    // Update initial data for element
-    void init(Element& element);
-
-    // Reset element
-    void reset(Element& element);
-
-    // Compute convergence rate
-    real computeConvergenceRate(const Residuals& r);
-
-    // Compute alpha
-    real computeDamping(real rho);
-
-    // Compute m
-    unsigned int computeDampingSteps(real rho);
+    // Check if element has converged
+    bool converged(Element& element, Iteration::Residuals& r, unsigned int n);
 
     //--- Data for fixed point iteration
 
@@ -156,14 +107,6 @@ namespace dolfin
 
     // Right-hand side f
     RHS& f;
-
-    // Events
-    Event event_diag_damping;
-    Event event_accelerating;
-    Event event_scalar_damping;
-    Event event_reset_element;
-    Event event_reset_timeslab;
-    Event event_nonconverging;
 
     // Maximum number of iterations
     unsigned int maxiter;
@@ -181,18 +124,7 @@ namespace dolfin
     real tol;
 
     // Current state
-    State state;
-
-    //--- Temporary data (cleared between iterations)
-
-    // Sub state for parabolic damping
-    SubState substate;
-
-    // Remaining number of iterations with small alpha
-    unsigned int m;
-
-    // Current damping
-    real alpha;
+    Iteration* state;
 
   };
 

@@ -18,6 +18,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              FixedPointIteration.h \
              FullSparsity.h \
              GenericSparsity.h \
+             Iteration.h \
              MatrixSparsity.h \
              Method.h \
              NonStiffIteration.h \

@@ -19,6 +19,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/FixedPointIteration.h \
                           dolfin/FullSparsity.h \
                           dolfin/GenericSparsity.h \
+                          dolfin/Iteration.h \
                           dolfin/MatrixSparsity.h \
                           dolfin/Method.h \
                           dolfin/NonStiffIteration.h \
@@ -55,6 +56,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           FixedPointIteration.cpp \
                           FullSparsity.cpp \
                           GenericSparsity.cpp \
+                          Iteration.cpp \
                           MatrixSparsity.cpp \
                           Method.cpp \
                           NonStiffIteration.cpp \

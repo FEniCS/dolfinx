@@ -5,29 +5,35 @@
 #define __NON_STIFF_ITERATION_H
 
 #include <dolfin/NewArray.h>
-#include <dolfin/FixedPointIteration.h>
+#include <dolfin/Iteration.h>
 
 namespace dolfin
 {
-  class TimeSlab;
-  class Element;
 
-  /// Non-stiff fixed point iteration.
+  /// State-specific behavior of fixed point iteration for non-stiff problems.
 
-  class NonStiffIteration
+  class NonStiffIteration : public Iteration
   {
   public:
-    
-    static void stabilize(TimeSlab& timeslab, 
-			  const FixedPointIteration::Residuals& r);
 
-    static void stabilize(NewArray<Element*>& elements,
-			  const FixedPointIteration::Residuals& r);
-    
-    static void stabilize(Element& element,
-			  const FixedPointIteration::Residuals& r);
+    NonStiffIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
+		      real maxdiv, real maxconv, real tol);
 
-    static void update(Element& element);
+    ~NonStiffIteration();
+
+    void update(TimeSlab& timeslab);
+    void update(Element& element);
+    void update(NewArray<Element*>& elements);
+    
+    void stabilize(TimeSlab& timeslab, const Residuals& r);
+    void stabilize(NewArray<Element*>& elements, const Residuals& r);
+    void stabilize(Element& element, const Residuals& r);
+    
+    bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
+    bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
+    bool converged(Element& element, Residuals& r, unsigned int n);
+
+    void report() const;
 
   };
 
