@@ -8,6 +8,7 @@
 
 using namespace dolfin;
 
+/*
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
 			 NewVector& x) : mesh(mesh), element(element), x(x)
@@ -45,5 +46,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   {
     dolfin_error("Projection between different finite element spaces not implemented.");
   }
+
 }
 //-----------------------------------------------------------------------------
+*/

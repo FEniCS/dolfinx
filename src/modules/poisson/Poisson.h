@@ -1,17 +1,17 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __POISSON_H
-#define __POISSON_H
+#ifndef __OLDPOISSON_H
+#define __OLDPOISSON_H
 
 #include <dolfin/PDE.h>
 
 namespace dolfin {
   
-  class Poisson : public PDE {
+  class OldPoisson : public PDE {
   public:
     
-    Poisson(Function& source) : PDE(3)
+    OldPoisson(Function& source) : PDE(3)
     {
       add(f, source);
     }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include "PoissonSolver.h"
-#include "Poisson.h"
+#include "FFCPoisson.h"
 
 using namespace dolfin;
 
@@ -19,22 +19,29 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  Matrix       A;
-  Vector       x, b;
-  Function     u(mesh, x);
-  Function     f("source");
-  Poisson      poisson(f);
-  KrylovSolver solver;
+  FFCPoissonFiniteElement element;
+  FFCPoissonBilinearForm a(element);
+  //  FFCPoissonLinearForm L(element);
+  NewMatrix A;
+  NewVector x,b;
+
+  b.init(A.size(0));
+  b = 1.0;
+
+  //  NewFunction  u(mesh, x);
+  //  NewFunction  f("source");
+  //  NewGMRES     solver;
   File         file("poisson.m");
 
   // Discretise
-  FEM::assemble(poisson, mesh, A, b);
+  //NewFEM::assemble(a, L, mesh, A, b);
+  NewFEM::assemble(a, mesh, A);
 
   // Solve the linear system
-  solver.solve(A, x, b);
+  //solver.solve(A, x, b);
 
   // Save the solution
-  u.rename("u", "temperature");
-  file << u;
+  //u.rename("u", "temperature");
+  //file << u;
 }
 //-----------------------------------------------------------------------------
