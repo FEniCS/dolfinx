@@ -203,7 +203,7 @@ void Logger::init(const char* type)
   {
 #ifdef NO_CURSES
     log = new TerminalLogger();
-    dolfin_warning1("DOLFIN compiled without curses, using plain text.");
+    dolfin_warning("DOLFIN compiled without curses, using plain text.");
     return;
 #else
     log = new CursesLogger();

@@ -24,7 +24,7 @@ AC_ARG_ENABLE(optimization,
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
-              enable_curses=no)
+              disable_curses=yes)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -76,7 +76,7 @@ if test x$disable_curses = x; then
     CURSES_CFLAGS=''
     CURSES_LIBS='-lncurses'
 else
-    echo "disabling curses, use --enable-curses to enable"
+    echo "disabling curses"
     CURSES_CFLAGS='-DNO_CURSES=1'
     CURSES_LIBS=''
 fi
