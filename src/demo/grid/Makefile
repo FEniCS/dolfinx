@@ -4,9 +4,9 @@
 #CXX     = `dolfin-config --compiler`
 
 # For demo programs in the DOLFIN source tree
-CFLAGS  = `../../../config/dolfin-config --cflags_insource`
-LFLAGS  = `../../../config/dolfin-config --lflags_insource`
-CXX     = `../../../config/dolfin-config --compiler`
+CFLAGS  = `../../config/dolfin-config --cflags_insource`
+LFLAGS  = `../../config/dolfin-config --lflags_insource`
+CXX     = `../../config/dolfin-config --compiler`
 
 #OPTFLAGS = -O6 -finline-functions -funroll-loops -fstrict-aliasing -felide-constructors
 #OPTFLAGS = -p
@@ -14,7 +14,7 @@ CXX     = `../../../config/dolfin-config --compiler`
 OPTFLAGS = -g
 
 CXXFLAGS = $(CFLAGS) $(OPTFLAGS)
-DEST     = dolfin-poisson
+DEST     = dolfin-grid
 OBJECTS  = main.o
 
 CXXLINK  = $(CXX) -o $@

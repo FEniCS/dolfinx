@@ -1,4 +1,3 @@
-# Generated automatically from Makefile.in by configure.
 # Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
 # Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
@@ -15,7 +14,8 @@
 SHELL = /bin/sh
 
 srcdir = .
-top_srcdir = ../../..
+top_srcdir = ../../../..
+
 prefix = /usr/local
 exec_prefix = ${prefix}
 
@@ -38,7 +38,7 @@ pkgdatadir = $(datadir)/dolfin
 pkglibdir = $(libdir)/dolfin
 pkgincludedir = $(includedir)/dolfin
 
-top_builddir = ../../..
+top_builddir = ../../../..
 
 ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
@@ -48,7 +48,7 @@ AUTOHEADER = autoheader
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL} $(AM_INSTALL_PROGRAM_FLAGS)
 INSTALL_DATA = ${INSTALL} -m 644
-INSTALL_SCRIPT = ${INSTALL_PROGRAM}
+INSTALL_SCRIPT = ${INSTALL}
 transform = s,x,x,
 
 NORMAL_INSTALL = :
@@ -59,12 +59,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 AWK = mawk
 CC = gcc
-CXX = c++
-DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-poisson -ldolfin-template -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
+CXX = g++
+DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common 
 LN_S = ln -s
-MAIN_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/navierstokes -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
+MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common  -I$(top_builddir)/src/modules/convdiff 
 MAKEINFO = makeinfo
-MODULE_INCLUDES = -I$(top_builddir)/src/main -I$(top_builddir)/src/fem -I$(top_builddir)/src/grid -I$(top_builddir)/src/io -I$(top_builddir)/src/la -I$(top_builddir)/src/common 
+MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/common 
 PACKAGE = dolfin
 RANLIB = ranlib
 VERSION = 0.2.11-1
@@ -82,7 +82,7 @@ GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/problems/navierstokes/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/demo/solvers/navierstokes/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -180,14 +180,14 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-subdir = src/problems/navierstokes
+subdir = src/demo/solvers/navierstokes
 
 distdir: $(DISTFILES)
 	here=`cd $(top_builddir) && pwd`; \
 	top_distdir=`cd $(top_distdir) && pwd`; \
 	distdir=`cd $(distdir) && pwd`; \
 	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/problems/navierstokes/Makefile
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/demo/solvers/navierstokes/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \

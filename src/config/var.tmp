@@ -1,5 +1,0 @@
-COMPILER="c++"
-CFLAGS=""
-LFLAGS="-ldolfin-main -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-poisson -ldolfin-template -ldolfin-fem -ldolfin-grid -ldolfin-io -ldolfin-la -ldolfin-common  "
-PACKAGE="dolfin"
-VERSION="0.2.11-1"

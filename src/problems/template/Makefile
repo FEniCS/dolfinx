@@ -4,9 +4,9 @@
 #CXX     = `dolfin-config --compiler`
 
 # For test problems in subdir 'problems'
-CFLAGS  = `../../config/dolfin-config --cflags_insource`
-LFLAGS  = `../../config/dolfin-config --lflags_insource`
-CXX     = `../../config/dolfin-config --compiler`
+CFLAGS  = `../../../config/dolfin-config --cflags_insource`
+LFLAGS  = `../../../config/dolfin-config --lflags_insource`
+CXX     = `../../../config/dolfin-config --compiler`
 
 #OPTFLAGS = -O6 -finline-functions -funroll-loops -fstrict-aliasing -felide-constructors
 #OPTFLAGS = -p
