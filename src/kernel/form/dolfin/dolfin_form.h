@@ -17,5 +17,6 @@
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Form.h>
+#include <dolfin/FunctionPair.h>
 
 #endif

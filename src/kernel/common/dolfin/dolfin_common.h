@@ -7,6 +7,7 @@
 
 #include <dolfin/Array.h>
 #include <dolfin/NewArray.h>
+#include <dolfin/IndexPair.h>
 #include <dolfin/List.h>
 #include <dolfin/NewList.h>
 #include <dolfin/Table.h>

@@ -165,22 +165,3 @@ void NewPDE::updateTetLinMap(const Cell& cell)
   g20 = d02 / det; g21 = d12 / det; g22 = d22 / det;
 }
 //-----------------------------------------------------------------------------
-// NewPDE::FunctionPair
-//-----------------------------------------------------------------------------
-NewPDE::FunctionPair::FunctionPair() : w(0), f(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-NewPDE::FunctionPair::FunctionPair(NewArray<real>& w, Function& f)
-{
-  this->w = &w;
-  this->f = &f;
-}
-//-----------------------------------------------------------------------------
-void NewPDE::FunctionPair::update(const Cell& cell, real t)
-{
-  // Update local values from global values
-  //f->update(w, cell, t);
-}
-//-----------------------------------------------------------------------------

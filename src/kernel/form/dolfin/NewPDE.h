@@ -5,6 +5,8 @@
 #define __NEW_PDE_H
 
 #include <dolfin/constants.h>
+#include <dolfin/IndexPair.h>
+#include <dolfin/FunctionPair.h>
 #include <dolfin/NewArray.h>
 
 namespace dolfin
@@ -81,26 +83,10 @@ namespace dolfin
     // Current time
     real t;
 
-    /// Function pair of local and global functions
-    class FunctionPair
-    {
-    public:
+    // List of nonzero indices
+    NewArray<IndexPair> nonzero;
 
-      /// Create empty function pair
-      FunctionPair();
-
-      /// Create function pair from given functions
-      FunctionPair(NewArray<real>& w, Function& f);
-      
-      /// Update local values on given cell
-      void update(const Cell& cell, real t);
-      
-    private:
-
-      NewArray<real>* w;
-      Function* f;
-      
-    };
+  private:
 
     // List of function pairs
     NewArray<FunctionPair> functions;
