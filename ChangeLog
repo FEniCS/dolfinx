@@ -1,3 +1,9 @@
+ - Add support for systems (patch from jj and bengzon)
+ - Add new module wave
+ - Add new module wave-vector
+ - Add new module elasticity
+ - Add new module elasticity-stationary
+ - Multi-adaptive updates
  - Fix compilation error in LogStream
  - Fix local Newton iteration for higher order elements
  - Init matrix to given type
