@@ -70,12 +70,13 @@ void NewPDE::update(const Cell& cell)
   updateFunctions(cell);
 }
 //-----------------------------------------------------------------------------
-void NewPDE::interiorElementMatrix(NewArray<NewArray<real> >& A) const
+void NewPDE::interiorElementMatrix(real** A) const
+
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewPDE::boundaryElementMatrix(NewArray<NewArray<real> >& A) const
+void NewPDE::boundaryElementMatrix(real** A) const
 {
   // Do nothing
 }

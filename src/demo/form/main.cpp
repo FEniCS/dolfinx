@@ -32,7 +32,12 @@ real testOld(Mesh& mesh, File& file)
   Matrix A;
   Vector b;
   tic();
-  FEM::assemble(poisson, mesh, A, b);
+  for(int i = 0; i < 100; i++)
+  {
+    A = 0.0;
+    FEM::assemble(poisson, mesh, A);
+  }
+  FEM::assemble(poisson, mesh, b);
   real t = toc();
 
   // Solve system
@@ -65,7 +70,12 @@ real testNew(Mesh& mesh, File& file)
   Matrix A;
   Vector b;
   tic();
-  NewFEM::assemble(poisson, mesh, A, b);
+  for(int i = 0; i < 100; i++)
+  {
+    A = 0.0;
+    NewFEM::assemble(poisson, mesh, A);
+  }
+  NewFEM::assemble(poisson, mesh, b);
   real t = toc();
 
   // Solve system

@@ -50,10 +50,10 @@ namespace dolfin
     virtual void update(const Cell& cell);
 
     /// Compute interior element matrix
-    virtual void interiorElementMatrix(NewArray<NewArray<real> >& A) const;
+    virtual void interiorElementMatrix(real** A) const;
 
     /// Compute boundary element matrix
-    virtual void boundaryElementMatrix(NewArray<NewArray<real> >& A) const;
+    virtual void boundaryElementMatrix(real** A) const;
 
     /// Compute interior element vector
     virtual void interiorElementVector(NewArray<real>& b) const;

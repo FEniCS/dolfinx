@@ -69,7 +69,7 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
   // Initialize element matrix
-  NewArray<NewArray<real> > AK;
+  real** AK;
   alloc(pde, AK);
 
   // Iterate over all cells in the mesh
@@ -91,6 +91,10 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Update progress
     p++;
   }
+
+  for (unsigned int i = 0; i < pde.size(); i++)
+    delete [] AK[i];
+  delete [] AK;
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A)
@@ -120,7 +124,7 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
   Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
     
   // Initialize element matrix
-  NewArray<NewArray<real> > AK;
+  real** AK;
   alloc(pde, AK);
 
   // Iterate over all edges in the boundary 
@@ -144,6 +148,10 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Update progress
     p++;
   }
+
+  for (unsigned int i = 0; i < pde.size(); i++)
+    delete [] AK[i];
+  delete [] AK;
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
@@ -155,7 +163,7 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
   Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());
     
   // Initialize element matrix
-  NewArray<NewArray<real> > AK;
+  real** AK;
   alloc(pde, AK);
 
   // Iterate over all faces in the boundary 
@@ -179,6 +187,10 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Update progress
     p++;
   }
+
+  for (unsigned int i = 0; i < pde.size(); i++)
+    delete [] AK[i];
+  delete [] AK;
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
@@ -414,14 +426,16 @@ void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
   b = 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewPDE& pde, NewArray<NewArray<real> >& A)
+//-----------------------------------------------------------------------------
+void NewFEM::alloc(const NewPDE& pde, real**& A)
 {
-  // Resize element matrix
-  A.resize(pde.size());
-  for (unsigned int i = 0; i < pde.size(); i++)
-    A[i].resize(pde.size());
+  // Allocate element matrix
 
-  // Set all entries to zero
+  A = new real*[pde.size()];
+  for (unsigned int i = 0; i < pde.size(); i++)
+    A[i] = new real [pde.size()];
+  
+  // Set all entries to zero                                                    
   for (unsigned int i = 0; i < pde.size(); i++)
     for (unsigned int j = 0; j < pde.size(); j++)
       A[i][j] = 0.0;

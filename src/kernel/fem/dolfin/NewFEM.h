@@ -51,7 +51,7 @@ namespace dolfin
     static void alloc(const NewPDE& pde, Mesh& mesh, Vector& b);
   
     /// Allocate element matrix
-    static void alloc(const NewPDE& pde, NewArray<NewArray<real> >& A);
+    static void alloc(const NewPDE& pde, real**& A);
 
     /// Allocate element vector
     static void alloc(const NewPDE& pde, NewArray<real>& b);

@@ -59,7 +59,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = 
 host_triplet = @host@
-AWK = mawk
+AWK = gawk
 CC = gcc
 CXX = g++
 CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98
