@@ -1,5 +1,4 @@
-Main authors:
--------------
+DOLFIN has been written mainly by:
 
 	Johan Hoffman	email: hoffman@cims.nyu.edu
 			www:   http://www.cims.nyu.edu/~hoffman/
@@ -7,48 +6,26 @@ Main authors:
 	Anders Logg	email: logg@math.chalmers.se
 			www:   http://www.math.chalmers.se/~logg
 
-Contributors (in alphabetical order:
-------------------------------------
+DOLFIN is currently maintained by:
 
-- Fredrik Bengzon (bengzon@math.chalmers.se)
+	Johan Hoffman		<hoffman@cims.nyu.edu>
+	Johan Jansson		<johanjan@math.chalmers.se>
+	Anders Logg		<logg@math.chalmers.se>
 
-    PDE systems
-    Elasticity and wave modules
+Contributors in alphabetical order:
 
-- Niklas Ericsson (nen@math.chalmers.se)
-  
-    LU factorization and LU solve
-
-- Georgios Foufas (foufas@math.chalmers.se)
-  
-    Operators in Vector and Matrix
-    Save vectors and matrices from Octave/Matlab
-
-- Johan Jansson (johanjan@math.chalmers.se)
-  
-    Multi-adaptive ODE solver
-    Updates of Vector
-    PDE systems
-    Elasticity and wave modules
-    3D support for Open Inventor
-
-- Karin Kraft (kakr@math.chalmers.se)
-  
-    Matrix updates
-	
-- Erik Svensson (eriksv@math.chalmers.se)
-
-    New Matlab format for sparse matrix
-
-- Jim Tilander (jt@dd.chalmers.se)
-
-    Logsystem
-
-- Rasmus Hemph       (PDE project course 2001/2002)
-  Aleksandra Krusper (PDE project course 2001/2002)
-  Walter Villanueva  (PDE project course 2001/2002)
-
-    GiD file format
+	Fredrik Bengzon		<bengzon@math.chalmers.se>
+	Niklas Ericsson		<nen@math.chalmers.se>
+	Georgios Foufas		<foufas@math.chalmers.se>
+	Rasmus Hemph		<PDE project course 2001/2002>
+	Johan Hoffman		<hoffman@cims.nyu.edu>
+	Aleksandra Krusper	<PDE project course 2001/2002>
+	Johan Jansson		<johanjan@math.chalmers.se>
+	Anders Logg		<logg@math.chalmers.se>
+	Karin Kraft		<kakr@math.chalmers.se>
+	Erik Svensson		<eriksv@math.chalmers.se>
+	Jim Tilander		<jt@dd.chalmers.se>
+	Walter Villanueva	<PDE project course 2001/2002>
 
 Missing credits? Please tell us and we will fix it.
 Send an email to dolfin@math.chalmers.se.

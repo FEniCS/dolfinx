@@ -71,20 +71,6 @@ DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
 ------------------------------------------------------------------------------
 5. About
 
-DOLFIN is maintained by:
-
-	Johan Hoffman
-	Courant Institute of Mathematical Sciences
-	New York
-	USA
-	email: hoffman@courant.nyu.edu
-
-	Anders Logg
-	Department of Computational Mathematics
-	Goteborg
-	Sweden
-	email: logg@math.chalmers.se
-
 A (hopefully) complete list of authors is given in the file AUTHORS.
 
 For more information about DOLFIN, visit
