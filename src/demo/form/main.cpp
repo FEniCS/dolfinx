@@ -8,8 +8,8 @@
 
 using namespace dolfin;
 
-#define N 2 // Number of times to do the assembly
-#define M 3 // Number of times to refine the mesh 
+#define N 10 // Number of times to do the assembly
+#define M 4 // Number of times to refine the mesh 
 
 // Test old assembly
 real testOld(Mesh& mesh)
@@ -81,8 +81,8 @@ int testAssembly(Mesh& mesh)
 
   dolfin_log(true);
 
-  cout << "---------------------------------------------" << endl;
   cout << "Mesh size: " << mesh.noNodes() << " nodes, and " << mesh.noCells() << " cells" << endl;
+  cout << "---------------------------------------------" << endl;
   cout << "DOLFIN + DOLFIN: " << t1 << endl;
   cout << "DOLFIN + OPTIM:  " << t2 << endl;
   cout << "DOLFIN + FFC:    " << t3 << endl;
@@ -96,10 +96,13 @@ int testAssembly(Mesh& mesh)
 int main()
 {
   dolfin_set("output", "plain text");
+
+  cout << "Doing assembly 10 times..." << endl;
   
   Mesh mesh("mesh.xml.gz");
   testAssembly(mesh);
-  for (int i=0; i<M; i++){
+  for (unsigned int i = 0; i < M; i++)
+  {
     mesh.refineUniformly();
     testAssembly(mesh);
   }
