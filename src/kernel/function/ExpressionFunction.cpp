@@ -10,9 +10,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ExpressionFunction::ExpressionFunction(int dim, int size) :
-  GenericFunction(dim, size)
+ExpressionFunction::ExpressionFunction()
 {
-
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+ExpressionFunction::~ExpressionFunction()
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------

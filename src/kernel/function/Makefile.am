@@ -4,6 +4,7 @@ include_HEADERS              = dolfin/dolfin_function.h \
                                dolfin/ExpressionFunction.h \
                                dolfin/Function.h \
                                dolfin/GenericFunction.h \
+                               dolfin/ODEFunction.h \
                                dolfin/ScalarExpressionFunction.h \
                                dolfin/VectorExpressionFunction.h
 INCLUDES                     = @MODULE_INCLUDES@
@@ -12,5 +13,6 @@ libdolfin_function_a_SOURCES = DofFunction.cpp \
                                ExpressionFunction.cpp \
                                Function.cpp \
                                GenericFunction.cpp \
+                               ODEFunction.cpp \
                                ScalarExpressionFunction.cpp \
                                VectorExpressionFunction.cpp

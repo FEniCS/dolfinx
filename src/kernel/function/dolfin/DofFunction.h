@@ -18,20 +18,33 @@ namespace dolfin {
   public:
     
     DofFunction(Mesh& mesh, Vector& dofs, int dim, int size);
+    ~DofFunction();
 	 
+    // Evaluation of function
+    real operator() (const Node&  n, real t) const;
+
+    // Update function to given time
+    void update(real t);
+
+    // Return current time
+    real time() const;
+
+    // Return the mesh
+    Mesh& mesh() const;
+
     // Update values of element function
     void update(FunctionSpace::ElementFunction &v,
 		const FiniteElement &element,
-		const Cell &cell,
-		real t) const;
+		const Cell &cell, real t) const;
     
-    // Evaluation of function
-    real operator() (const Node&  n, real t) const;
-    real operator() (const Point& p, real t) const;
-
   private:
-
+    
+    Mesh& _mesh;
     Vector& x;
+    real t;
+
+    unsigned int dim;
+    unsigned int size;
     
   };
 

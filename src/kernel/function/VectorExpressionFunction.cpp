@@ -11,26 +11,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 VectorExpressionFunction::VectorExpressionFunction(vfunction f, int dim, int size) :
-  ExpressionFunction(dim, size)
+  f(f), dim(dim), size(size)
 {
-  this->f = f;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void VectorExpressionFunction::update(FunctionSpace::ElementFunction& v,
-				      const FiniteElement& element,
-				      const Cell& cell,
-				      real t) const
+VectorExpressionFunction::~VectorExpressionFunction()
 {
-  for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-    v.set(phi.index(), phi, phi.dof(cell, *this, t));
-}
-//-----------------------------------------------------------------------------
-real VectorExpressionFunction::operator()(real x, real y, real z, real t) const
-{
-  if ( f == 0 )
-    return 0.0;
-
-  return f(x, y, z, t, dim);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 real VectorExpressionFunction::operator() (const Node& n, real t)  const
@@ -48,5 +36,21 @@ real VectorExpressionFunction::operator() (const Point& p, real t) const
     return 0.0;
   
   return f(p.x, p.y, p.z, t, dim);
+}
+//-----------------------------------------------------------------------------
+real VectorExpressionFunction::operator() (real x, real y, real z, real t) const
+{
+  if ( f == 0 )
+    return 0.0;
+  
+  return f(x, y, z, t, dim);
+}
+//-----------------------------------------------------------------------------
+void VectorExpressionFunction::update(FunctionSpace::ElementFunction& v,
+				      const FiniteElement& element,
+				      const Cell& cell, real t) const
+{
+  for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
+    v.set(phi.index(), phi, phi.dof(cell, *this, t));
 }
 //-----------------------------------------------------------------------------

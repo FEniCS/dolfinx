@@ -11,26 +11,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ScalarExpressionFunction::ScalarExpressionFunction(function f) :
-  ExpressionFunction(0, 1)
+  ExpressionFunction(), f(f)
 {
-  this->f = f;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void ScalarExpressionFunction::update(FunctionSpace::ElementFunction& v,
-				      const FiniteElement& element,
-				      const Cell& cell,
-				      real t) const
+ScalarExpressionFunction::~ScalarExpressionFunction()
 {
-  for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-    v.set(phi.index(), phi, phi.dof(cell, *this, t));
-}
-//-----------------------------------------------------------------------------
-real ScalarExpressionFunction::operator()(real x, real y, real z, real t) const
-{
-  if ( f == 0 )
-    return 0.0;
-
-  return f(x, y, z, t);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 real ScalarExpressionFunction::operator() (const Node& n, real t)  const
@@ -48,5 +36,22 @@ real ScalarExpressionFunction::operator() (const Point& p, real t) const
     return 0.0;
   
   return f(p.x, p.y, p.z, t);
+}
+//-----------------------------------------------------------------------------
+real ScalarExpressionFunction::operator() (real x, real y, real z, real t) const
+{
+  if ( f == 0 )
+    return 0.0;
+  
+  return f(x, y, z, t);
+}
+//-----------------------------------------------------------------------------
+void ScalarExpressionFunction::update(FunctionSpace::ElementFunction& v,
+				      const FiniteElement& element,
+				      const Cell& cell,
+				      real t) const
+{
+  for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
+    v.set(phi.index(), phi, phi.dof(cell, *this, t));
 }
 //-----------------------------------------------------------------------------

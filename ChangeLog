@@ -1,3 +1,4 @@
+ - Update function class hierarchies
  - Move functions to a separate directory
  - Store multi-adaptive solution binary on disk with cache
 0.4.1

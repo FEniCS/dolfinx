@@ -14,8 +14,8 @@ namespace dolfin {
   public:
     
     // Definition of the local function space
-    P1Tet() : FunctionSpace(4) {
-      
+    P1Tet() : FunctionSpace(4)
+    {
       // Define shape functions
       ShapeFunction v0(tet10);
       ShapeFunction v1(tet11);
@@ -27,16 +27,17 @@ namespace dolfin {
       add(v1,  1.0,  0.0,  0.0);
       add(v2,  0.0,  1.0,  0.0);
       add(v3,  0.0,  0.0,  1.0);
-      
     }
     
     // Mapping from local to global degrees of freedom
-    int dof(int i, const Cell& cell) const {
+    int dof(int i, const Cell& cell) const
+    {
       return cell.nodeID(i);
     }
     
     // Evalutation of degrees of freedom
-    real dof(int i, const Cell& cell, const ExpressionFunction& f, real t) const {
+    real dof(int i, const Cell& cell, const ExpressionFunction& f, real t) const
+    {
       Point p = cell.coord(i);
       return f(p.x, p.y, p.z, t);
     }

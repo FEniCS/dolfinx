@@ -15,18 +15,18 @@ namespace dolfin {
   class ExpressionFunction : public GenericFunction {
   public:
     
-    ExpressionFunction(int dim, int size);
+    ExpressionFunction();
+    virtual ~ExpressionFunction();
+
+    // Evaluation of function
+    virtual real operator() (const Node&  n, real t) const = 0;
+    virtual real operator() (const Point& p, real t) const = 0;
+    virtual real operator() (real x, real y, real z, real t) const = 0;
 
     // Update values of element function
     virtual void update(FunctionSpace::ElementFunction& v,
 			const FiniteElement& element,
-			const Cell& cell,
-			real t) const = 0;
-    
-    // Evaluation of function
-    virtual real operator() (real x, real y, real z, real t) const = 0;
-    virtual real operator() (const Node&  n, real t) const = 0;
-    virtual real operator() (const Point& p, real t) const = 0;
+			const Cell& cell, real t) const = 0;
     
   };
 

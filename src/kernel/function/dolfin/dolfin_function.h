@@ -10,6 +10,7 @@
 #include <dolfin/ExpressionFunction.h>
 #include <dolfin/Function.h>
 #include <dolfin/GenericFunction.h>
+#include <dolfin/ODEFunction.h>
 #include <dolfin/ScalarExpressionFunction.h>
 #include <dolfin/VectorExpressionFunction.h>
 

@@ -16,22 +16,31 @@ namespace dolfin {
   class GenericFunction {
   public:
     
-    GenericFunction(int dim, int size);
+    GenericFunction();
+    virtual ~GenericFunction();
 
+    // Evaluation of function
+    virtual real operator() (const Node&  n, real t) const;
+    virtual real operator() (const Point& p, real t) const;
+    virtual real operator() (real x, real y, real z, real t) const;
+    virtual real operator() (unsigned int i, real t) const;
+
+    // Update function to given time
+    void update(real t);
+
+    // Return current time
+    real time() const;
+
+    // FIXME: Special member functions below: Should they be removed?
+    //---------------------------------------------------------------
+
+    // Return the mesh
+    virtual Mesh& mesh() const;
+    
     // Update values of element function
     virtual void update(FunctionSpace::ElementFunction &v,
-			const FiniteElement &element,
-			const Cell &cell,
-			real t) const = 0;
-    
-    // Evaluation of function
-    virtual real operator() (const Node&  n, real t) const = 0;
-    virtual real operator() (const Point& p, real t) const = 0;
-
-  protected:
-
-    int dim;
-    int size;
+			const FiniteElement &element, 
+			const Cell &cell, real t) const;
     
   };
   

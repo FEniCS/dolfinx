@@ -27,8 +27,8 @@ void HeatSolver::solve()
   
   Function u0(mesh, x0);
   Function u1(mesh, x1);
-  Function f(mesh, "source");
-  Function a(mesh, "diffusivity");
+  Function f("source");
+  Function a("diffusivity");
   
   Galerkin     fem;
   Heat         heat(f, u0, a);
@@ -67,7 +67,7 @@ void HeatSolver::solve()
     solver.solve(A, x1, b);
     
     // Save the solution
-    u1.t = t;
+    u1.update(t);
     // file << u1;
 
     // Update progress

@@ -27,6 +27,10 @@ Element::Type cGqElement::type() const
 //-----------------------------------------------------------------------------
 real cGqElement::value(real t) const
 {
+  // Special case: initial value
+  if ( t == t0 )
+    return values[0];
+
   real tau = (t - t0) / (t1 - t0);
 
   real sum = 0.0;

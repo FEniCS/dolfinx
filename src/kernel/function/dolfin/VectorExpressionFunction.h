@@ -16,21 +16,24 @@ namespace dolfin {
   public:
     
     VectorExpressionFunction(vfunction f, int dim, int size);
+    ~VectorExpressionFunction();
     
+    // Evaluation of function
+    real operator() (const Node&  n, real t) const;
+    real operator() (const Point& p, real t) const;
+    real operator() (real x, real y, real z, real t) const;
+
     // Update values of element function
     void update(FunctionSpace::ElementFunction &v,
 		const FiniteElement& element,
-		const Cell& cell,
-		real t) const;
-    
-    // Evaluation of function
-    real operator() (real x, real y, real z, real t) const;
-    real operator() (const Node&  n, real t) const;
-    real operator() (const Point& p, real t) const;
-    
+		const Cell& cell, real t) const;
+
   private:
     
     vfunction f;
+   
+    unsigned int dim;
+    unsigned int size;
     
   };
 

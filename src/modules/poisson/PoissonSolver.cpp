@@ -23,7 +23,7 @@ void PoissonSolver::solve()
   Matrix       A;
   Vector       x, b;
   Function     u(mesh, x);
-  Function     f(mesh, "source");
+  Function     f("source");
   Poisson      poisson(f);
   KrylovSolver solver;
   File         file("poisson.m");

@@ -17,33 +17,35 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size) :
-  _mesh(mesh)
+Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size)
 {
   f = new DofFunction(mesh, x, dim, size);
-  t = 0.0;
-  
   rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh &mesh, const char *name, int dim, int size) : 
-  _mesh(mesh)
+Function::Function(const char *name, int dim, int size)
 {
   function fp;
   vfunction vfp;
   
-  if ( size == 1 ) {
+  if ( size == 1 )
+  {
     fp = dolfin_get(name);
     f = new ScalarExpressionFunction(fp);
   }
-  else {
+  else
+  {
     vfp = dolfin_get(name);
     f = new VectorExpressionFunction(vfp, dim, size);
   }
 
-  t = 0.0;
-
   rename("u", "A function");
+}
+//-----------------------------------------------------------------------------
+Function::Function(ElementData& elmdata)
+{
+  //f = new ODEFunction(elmdata);
+  f = 0;
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
@@ -51,6 +53,41 @@ Function::~Function()
   if ( f != 0 )
     delete f;
   f = 0;
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Node& n, real t) const
+{
+  return (*f)(n, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Point& p, real t) const
+{
+  return (*f)(p, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (real x, real y, real z, real t) const
+{
+  return (*f)(x, y, z, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (unsigned int i, real t) const
+{
+  return (*f)(i, t);
+}
+//-----------------------------------------------------------------------------
+void Function::update(real t)
+{
+  f->update(t);
+}
+//-----------------------------------------------------------------------------
+real Function::time() const
+{
+  return f->time();
+}
+//-----------------------------------------------------------------------------
+Mesh& Function::mesh() const
+{
+  return f->mesh();
 }
 //-----------------------------------------------------------------------------
 void Function::update(FunctionSpace::ElementFunction& v,
@@ -67,21 +104,6 @@ void Function::update(FunctionSpace::ElementFunction& v,
   f->update(v, element, cell, t);
 }
 //-----------------------------------------------------------------------------
-real Function::operator() (const Node& n, real t) const
-{
-  return (*f)(n, t);
-}
-//-----------------------------------------------------------------------------
-real Function::operator() (const Point& p, real t) const
-{
-  return (*f)(p, t);
-}
-//-----------------------------------------------------------------------------
-Mesh& Function::mesh() const
-{
-  return _mesh;
-}
-//-----------------------------------------------------------------------------
 // Vector function
 //-----------------------------------------------------------------------------
 Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
@@ -94,12 +116,12 @@ Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
   _size = size;
 }
 //-----------------------------------------------------------------------------
-Function::Vector::Vector(Mesh& mesh, const char* name, int size)
+Function::Vector::Vector(const char* name, int size)
 {
   f = new (Function *)[size];
 
   for (int i = 0; i < size; i++)
-    f[i] = new Function(mesh, name, i, size);
+    f[i] = new Function(name, i, size);
   
   _size = size;
 }

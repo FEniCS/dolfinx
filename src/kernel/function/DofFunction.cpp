@@ -13,11 +13,36 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofFunction::DofFunction(Mesh& mesh, Vector& dofs, int dim, int size) :
-  GenericFunction(dim, size), x(dofs)
+DofFunction::DofFunction(Mesh& mesh, Vector& x, int dim, int size) :
+  GenericFunction(), _mesh(mesh), x(x), t(0), dim(dim), size(size)
 {
   // FIXME: assumes nodal basis
   x.init(mesh.noNodes());
+}
+//-----------------------------------------------------------------------------
+DofFunction::~DofFunction()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+real DofFunction::operator() (const Node& n, real t)  const
+{
+  return x(n.id()*size + dim);
+}
+//-----------------------------------------------------------------------------
+void DofFunction::update(real t)
+{
+  this->t = t;
+}
+//-----------------------------------------------------------------------------
+real DofFunction::time() const
+{
+  return t;
+}
+//-----------------------------------------------------------------------------
+Mesh& DofFunction::mesh() const
+{
+  return _mesh;
 }
 //-----------------------------------------------------------------------------
 void DofFunction::update(FunctionSpace::ElementFunction &v,
@@ -27,17 +52,5 @@ void DofFunction::update(FunctionSpace::ElementFunction &v,
 {
   for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
     v.set(phi.index(), phi, x(phi.dof(cell)));
-}
-//-----------------------------------------------------------------------------
-real DofFunction::operator() (const Node& n, real t)  const
-{
-  return x(n.id()*size + dim);
-}
-//-----------------------------------------------------------------------------
-real DofFunction::operator() (const Point& p, real t) const
-{
-  dolfin_error("Evaluation of function at given point not implemented.");
-  
-  return 0.0;
 }
 //-----------------------------------------------------------------------------

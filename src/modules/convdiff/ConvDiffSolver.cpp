@@ -28,9 +28,9 @@ void ConvDiffSolver::solve()
   
   Function u0(mesh, x0);
   Function u1(mesh, x1);
-  Function f(mesh, "source");
-  Function a(mesh, "diffusivity");
-  Function::Vector beta(mesh, "convection");
+  Function f("source");
+  Function a("diffusivity");
+  Function::Vector beta("convection");
   
   Galerkin     fem;
   ConvDiff     convdiff(f, u0, a, beta);
@@ -68,7 +68,7 @@ void ConvDiffSolver::solve()
     solver.solve(A, x1, b);
     
     // Save the solution
-    u1.t = t;
+    u1.update(t);
     file << u1;
 
     // Update progress
