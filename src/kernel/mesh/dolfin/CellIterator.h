@@ -30,7 +30,6 @@ namespace dolfin {
 	 
     ~CellIterator();
 
-    operator Cell&() const;
     operator CellPointer() const;
 	 
     CellIterator& operator++();

@@ -29,10 +29,10 @@ int Face::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-int Face::size() const
-{
-  return fe.size();
-}
+//int Face::size() const
+//{
+//  return fe.size();
+//}
 //-----------------------------------------------------------------------------
 Edge& Face::edge(int i) const
 {

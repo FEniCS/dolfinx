@@ -30,7 +30,7 @@ namespace dolfin {
     FaceIterator(const CellIterator& cellIterator);
 
     ~FaceIterator();
-    
+
     operator FacePointer() const;
     
     FaceIterator& operator++();

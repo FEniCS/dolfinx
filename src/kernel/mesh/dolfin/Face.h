@@ -31,7 +31,7 @@ namespace dolfin {
     int id() const;
 
     /// Return the number of edges
-    int size() const;
+    //int size() const;
 
     /// Return edge number i
     Edge& edge(int i) const;

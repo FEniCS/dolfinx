@@ -16,9 +16,8 @@ namespace dolfin {
     
     P1TriMap();
     
-    void update(const Cell &cell);
-    void update(const Edge& bnd_edge);
-    void update(const Face& bnd_face);
+    void update(const Cell& cell);
+    void update(const Edge& edge);
 
     const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;

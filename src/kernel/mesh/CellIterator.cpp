@@ -49,11 +49,6 @@ CellIterator::operator CellPointer() const
   return c->pointer();
 }
 //-----------------------------------------------------------------------------
-CellIterator::operator Cell&() const
-{
-  return *(*c);
-}
-//-----------------------------------------------------------------------------
 CellIterator& CellIterator::operator++()
 {
   ++(*c);

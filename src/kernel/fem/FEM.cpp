@@ -100,7 +100,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update map
-    map.update(cell);
+    map.update(*cell);
     
     // Update element
     for (unsigned int i = 0; i < element.size(); ++i)
@@ -112,7 +112,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
     // Iterate over test and trial functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
       for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+        A(v.dof(*cell), u.dof(*cell)) += pde.lhs(*u, *v);
     
     // Update progress
     p++;
@@ -200,7 +200,7 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
     // Update map
-    //map.update(face);
+    map.update(*face);
     
     // Update element
     //for (unsigned int i = 0; i < element.size(); ++i)
@@ -264,14 +264,14 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     // Update map
-    map.update(cell);
+    map.update(*cell);
     
     // Update equation
     pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(*v);
+      b(v.dof(*cell)) += pde.rhs(*v);
     
     // Update progress
     p++;
@@ -454,14 +454,14 @@ void FEM::alloc(Matrix &A, Mesh &mesh, FiniteElement::Vector& element)
     
     for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
     {
-      unsigned int i = v.dof(cell);
+      unsigned int i = v.dof(*cell);
       if ( i > imax )
 	imax = i;
     }
     
     for (FiniteElement::TrialFunctionIterator u(element(0)); !u.end(); ++u)
     {
-      unsigned int j = u.dof(cell);
+      unsigned int j = u.dof(*cell);
       if ( j > jmax )
 	jmax = j;
     }
@@ -485,7 +485,7 @@ void FEM::alloc(Vector &b, Mesh &mesh, FiniteElement::Vector& element)
   {
     for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
     {
-      unsigned int i = v.dof(cell);
+      unsigned int i = v.dof(*cell);
       if ( i > imax )
 	imax = i;
     }

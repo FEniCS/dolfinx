@@ -68,45 +68,16 @@ void P1TetMap::update(const Cell& cell)
   g31 = d13 / d; g32 = d23 / d; g33 = d33 / d;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddx
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g11*v.ddX() + g21*v.ddY() + g31*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddy
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g12*v.ddX() + g22*v.ddY() + g32*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddz
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return g13*v.ddX() + g23*v.ddY() + g33*v.ddZ();
-}
-//-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::ddt
-(const FunctionSpace::ShapeFunction &v) const
-{
-  return v.ddT();
-}
-//-----------------------------------------------------------------------------
-void P1TetMap::update(const Edge& bnd_edge)
-{
-  dolfin_error("Edge map not implemented for 3D maps.");
-}
-//-----------------------------------------------------------------------------
-void P1TetMap::update(const Face& bnd_face)
+void P1TetMap::update(const Face& face)
 {
   // Update map to interior of cell
-  update(bnd_face.cell(0));
+  update(face.cell(0));
 
   // The determinant is given by the norm of the cross product
   
   // Get the first two edges
-  Edge& e0 = bnd_face.edge(0);
-  Edge& e1 = bnd_face.edge(1);
+  Edge& e0 = face.edge(0);
+  Edge& e1 = face.edge(1);
 
   // Get coordinates
   Point& p00 = e0.coord(0);
@@ -133,5 +104,29 @@ void P1TetMap::update(const Face& bnd_face)
   // Check determinant
   if ( fabs(bd) < DOLFIN_EPS )
     dolfin_error("Map to boundary of cell is singular.");
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddx
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g11*v.ddX() + g21*v.ddY() + g31*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddy
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g12*v.ddX() + g22*v.ddY() + g32*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddz
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return g13*v.ddX() + g23*v.ddY() + g33*v.ddZ();
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction P1TetMap::ddt
+(const FunctionSpace::ShapeFunction &v) const
+{
+  return v.ddT();
 }
 //-----------------------------------------------------------------------------

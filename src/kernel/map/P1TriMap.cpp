@@ -51,6 +51,19 @@ void P1TriMap::update(const Cell& cell)
   g21 = - f21 / d; g22 =   f11 / d;
 }
 //-----------------------------------------------------------------------------
+void P1TriMap::update(const Edge& edge)
+{
+  // Update map to interior of cell
+  update(edge.cell(0));
+
+  // The determinant is given by the length of the edge
+  bd = edge.length();
+
+  // Check determinant
+  if ( fabs(bd) < DOLFIN_EPS )
+    dolfin_error("Map to boundary of cell is singular.");
+}
+//-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1TriMap::ddx
 (const FunctionSpace::ShapeFunction& v) const
 {
@@ -73,23 +86,5 @@ const FunctionSpace::ElementFunction P1TriMap::ddt
 (const FunctionSpace::ShapeFunction& v) const
 {
   return v.ddT();
-}
-//-----------------------------------------------------------------------------
-void P1TriMap::update(const Edge& bnd_edge)
-{
-  // Update map to interior of cell
-  update(bnd_edge.cell(0));
-
-  // The determinant is given by the edge length
-  bd = bnd_edge.length();
-
-  // Check determinant
-  if ( fabs(bd) < DOLFIN_EPS )
-    dolfin_error("Map to boundary of cell is singular.");
-}
-//-----------------------------------------------------------------------------
-void P1TriMap::update(const Face& bnd_face)
-{
-  dolfin_error("Face map not implemented for 2D maps.");
 }
 //-----------------------------------------------------------------------------

@@ -27,19 +27,15 @@ real Map::bdet() const
   return bd;
 }
 //-----------------------------------------------------------------------------
-/*
-void Map::update(const Edge& bnd_edge)
+void Map::update(const Edge& edge)
 {
   dolfin_error("Non-matching update of map to boundary of cell.");
 }
-*/
 //-----------------------------------------------------------------------------
-/*
-void Map::update(const Face& bnd_face)
+void Map::update(const Face& face)
 {
   dolfin_error("Non-matching update of map to boundary of cell.");
 }
-*/
 //-----------------------------------------------------------------------------
 real Map::ddx(real a) const
 {

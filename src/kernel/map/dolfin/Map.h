@@ -37,14 +37,14 @@ namespace dolfin {
     /// Return determinant of derivative of map to boundary of cell
     real bdet() const;
 
-    /// Update map to interior of cell
+    /// Update map to given cell
     virtual void update(const Cell& cell) = 0;
 
-    /// Update map to interior and boundary of cell
-    virtual void update(const Edge& bnd_edge) = 0;
+    /// Update map to cell of given edge
+    virtual void update(const Edge& edge);
 
-    /// Update map to interior and boundary of cell
-    virtual void update(const Face& bnd_face) = 0;
+    /// Update map to cell of given face
+    virtual void update(const Face& face);
     
     /// Get cell 
     const Cell* cell() const;
