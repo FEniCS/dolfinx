@@ -11,30 +11,30 @@ namespace dolfin {
 
   class LogStream {
   public:
-
-	 enum Type {COUT, ENDL};
-	 
-	 LogStream(Type type);
-	 ~LogStream();
-	 
-	 LogStream& operator<<(const char* s);
-	 LogStream& operator<<(const std::string& s);
-	 LogStream& operator<<(int a);
-	 LogStream& operator<<(real a);
-	 LogStream& operator<<(const LogStream& stream);
-
+    
+    enum Type {COUT, ENDL};
+    
+    LogStream(Type type);
+    ~LogStream();
+    
+    LogStream& operator<<(const char* s);
+    LogStream& operator<<(const std::string& s);
+    LogStream& operator<<(int a);
+    LogStream& operator<<(real a);
+    LogStream& operator<<(const LogStream& stream);
+    
   private:
-
-	 void add(const char* msg);
-
-	 Type type;
-	 char* buffer;
-	 int current;
-	 
+    
+    void add(const char* msg);
+    
+    Type type;
+    char* buffer;
+    int current;
+    
   };
-
-  extern LogStream cout;
-  extern LogStream endl;
+  
+  extern LogStream dolfin::cout;
+  extern LogStream dolfin::endl;
   
 }
 
