@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
