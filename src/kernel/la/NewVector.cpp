@@ -89,6 +89,7 @@ const Vec NewVector::vec() const
   return v;
 }
 //-----------------------------------------------------------------------------
+/*
 real NewVector::operator()(unsigned int i) const
 {
   // Assumes uniprocessor case.
@@ -101,6 +102,7 @@ real NewVector::operator()(unsigned int i) const
 
   return val;
 }
+*/
 //-----------------------------------------------------------------------------
 NewVector::Index NewVector::operator()(unsigned int i)
 {
@@ -114,11 +116,30 @@ void NewVector::disp() const
   VecView(v, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-void NewVector::Index::operator=(const real r)
+NewVector::Index::Index(unsigned int i, NewVector &v) : i(i), v(v)
+{
+}
+//-----------------------------------------------------------------------------
+void NewVector::Index::operator =(const real r)
 {
   Vec petscv;
   petscv = v.vec();
 
   VecSetValue(petscv, i, r, INSERT_VALUES);
+}
+//-----------------------------------------------------------------------------
+NewVector::Index::operator real() const
+{
+  // Assumes uniprocessor case.
+
+  Vec petscv;
+  petscv = v.vec();
+
+  PetscScalar    *array;
+  VecGetArray(petscv, &array);
+  real val = array[i];
+  VecRestoreArray(petscv, &array);
+
+  return val;
 }
 //-----------------------------------------------------------------------------

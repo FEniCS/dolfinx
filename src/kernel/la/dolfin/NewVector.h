@@ -47,7 +47,7 @@ namespace dolfin
     const Vec vec() const;
 
     /// Element access operator
-    real operator()(unsigned int i) const;
+    //real operator()(unsigned int i) const;
 
     /// Element assignment operator
     Index operator()(unsigned int i);
@@ -57,6 +57,7 @@ namespace dolfin
     public:
       Index(unsigned int i, NewVector &v);
 
+      operator real() const;
       void operator=(const real r);
 
     protected:

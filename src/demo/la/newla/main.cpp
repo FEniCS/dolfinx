@@ -13,15 +13,18 @@ int main(int argc, char **argv)
   dolfin::cout << "Test new LA matrix notation" << dolfin::endl;
   dolfin::cout << "--------------------------------------" << dolfin::endl;
   
-  Vector c(10);
-  c.show();
+  NewVector c(10);
+  dolfin::cout << "c: " << dolfin::endl;
+  c.disp();
 
   c(3) = 12.3;
   c(7) = 45.6;
 
-  c.show();
+  dolfin::cout << "c: " << dolfin::endl;
+  c.disp();
 
-  real r = c(7);
+  real r;
+  r = c(7);
 
   dolfin::cout << "c(7): " << r << dolfin::endl;
 
