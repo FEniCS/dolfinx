@@ -12,20 +12,25 @@ namespace dolfin
   class Mesh;
   class NewVector;
   class NewMatrix;
+  class NewBoundaryCondition;
   
-  //class PoissonSolver : public Solver
   class PoissonSolver 
   {
   public:
     
-    PoissonSolver(Mesh& mesh);
+    // Create Poisson solver
+    PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc);
     
-    const char* description();
+    // Solve Poisson's equation
     void solve();
+
+    // Solve Poisson's equation (static version)
+    static void solve(Mesh& mesh, NewBoundaryCondition& bc);
   
   private:
 
     Mesh& mesh;
+    NewBoundaryCondition& bc;
 
     // FIXME: Remove when working
     void solveOld();

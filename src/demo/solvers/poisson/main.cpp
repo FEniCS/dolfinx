@@ -46,31 +46,24 @@ real f(real x, real y, real z, real t)
 }
 */
 
-// Modified source term to test the assembler
-// real f(real x, real y, real z, real t)
-// {
-//   return 8.0;
-// }
-
-// Boundary conditions
-void mybc(BoundaryCondition& bc)
+// Boundary condition
+class MyBC : public NewBoundaryCondition
 {
-  const Point p = bc.node().coord();
-  if ( fabs(p.x - 0.0) < DOLFIN_EPS || fabs(p.x - 1.0) < DOLFIN_EPS )
-    bc.set(BoundaryCondition::DIRICHLET, 0.0);
-}
+  const BoundaryValue operator() (const Point& p)
+  {
+    BoundaryValue value;
+    if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
+      value.set(0.0);
+    
+    return value;
+  }
+};
 
 int main()
 {
   Mesh mesh("mesh.xml.gz");
-  
-  //Problem poisson("poisson", mesh);
-  PoissonSolver poisson(mesh);
-
-  //poisson.set("source", f);  
-  //poisson.set("boundary condition", mybc);
- 
-  poisson.solve();
+  MyBC bc;
+  PoissonSolver::solve(mesh, bc);
   
   return 0;
 }

@@ -31,29 +31,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-class MyBC : public NewBoundaryCondition
-{
-  const BoundaryValue operator() (const Point& p)
-  {
-    BoundaryValue value;
-    if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
-      value.set(0.0);
-    
-    return value;
-  }
-};
 
 //-----------------------------------------------------------------------------
-//PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
-PoissonSolver::PoissonSolver(Mesh& mesh) : mesh(mesh)
+PoissonSolver::PoissonSolver(Mesh& mesh, NewBoundaryCondition& bc)
+  : mesh(mesh), bc(bc)
 {
-  // FIXME: Remove when working
-  dolfin_parameter(Parameter::FUNCTION, "source", 0);
-}
-//-----------------------------------------------------------------------------
-const char* PoissonSolver::description()
-{
-  return "Poisson's equation";
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
@@ -61,9 +44,6 @@ void PoissonSolver::solve()
   //cout << "---------------- Old solver -----------------" << endl;
   //solveOld();
   //cout << "---------------- New solver -----------------" << endl;
-
-  // FIXME: This should be input to the solver
-  MyBC bc;
 
   Poisson::FiniteElement element;
 
@@ -103,35 +83,9 @@ void PoissonSolver::solve()
   file << uold;
 }
 //-----------------------------------------------------------------------------
-void PoissonSolver::solveOld()
+void PoissonSolver::solve(Mesh& mesh, NewBoundaryCondition& bc)
 {
-  // This is for comparison with the old solver, remove when working
-
-  Matrix       A;
-  Vector       x, b;
-  Function     u(mesh, x);
-  Function     f("source");
-  PoissonOld   poisson(f);
-  KrylovSolver solver;
-  File         file("poissonold.m");
-
-  // Discretise
-  FEM::assemble(poisson, mesh, A, b);
-
-  cout << "Old matrix A:" << endl;
-  A.show();
-
-  cout << "Old vector b:" << endl;
-  b.show();
-
-  // Solve the linear system
-  solver.solve(A, x, b);
-
-  cout << "Old solution x:" << endl;
-  x.show();
-
-  // Save the solution
-  u.rename("u", "temperature");
-  file << u;
+  PoissonSolver solver(mesh, bc);
+  solver.solve();
 }
 //-----------------------------------------------------------------------------
