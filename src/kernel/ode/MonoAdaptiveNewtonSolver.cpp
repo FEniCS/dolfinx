@@ -37,7 +37,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
   if ( Mu0 ) delete [] Mu0;
-  if ( solver ) delete [] solver;
+  if ( solver ) delete solver;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
