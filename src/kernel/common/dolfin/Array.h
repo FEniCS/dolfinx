@@ -277,12 +277,12 @@ namespace dolfin {
   //---------------------------------------------------------------------------	 
   template <class T> T& Array<T>::max() const
   {
-    T max_element = array[0];
+    int pos = 0;
     for (int i = 1; i < _size; i++)
-      if ( max_element < array[i] )
-	max_element = array[i];
+      if ( array[pos] < array[i] )
+	pos = i;
     
-    return max_element;
+    return array[pos];
   }
   //---------------------------------------------------------------------------
   template <class T> void Array<T>::swap(int i, int j)

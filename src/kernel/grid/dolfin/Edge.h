@@ -83,11 +83,14 @@ namespace dolfin {
     // Initialize marker (if not already done)
     void initMarker();
 
+    /// Mark by given cell
+    void mark(Cell& cell);
+
     /// Check if cell has been marked for refinement
     bool marked() const;
 
-    /// Mark by given cell
-    void mark(Cell& cell);
+    /// Check if cell has been marked for refinement by given cell
+    bool marked(Cell& cell) const;
     
     // The grid containing this edge
     Grid* grid;

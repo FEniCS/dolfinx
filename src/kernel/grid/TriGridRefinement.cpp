@@ -15,11 +15,17 @@ bool TriGridRefinement::checkRule(Cell& cell, int no_marked_edges)
   dolfin_assert(cell.type() == Cell::triangle);
 
   // Choose refinement rule
+
   if ( checkRuleRegular(cell, no_marked_edges) )
     return true;
 
-  // Which other rules do we have for triangles?
+  if ( checkRuleIrregular1(cell, no_marked_edges) )
+    return true;
 
+  if ( checkRuleIrregular2(cell, no_marked_edges) )
+    return true;
+
+  // We didn't find a matching rule for refinement
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -29,6 +35,12 @@ void TriGridRefinement::refine(Cell& cell, Grid& grid)
   switch ( cell.marker() ) {
   case marked_for_reg_ref:
     refineRegular(cell, grid);
+    break;
+  case marked_for_irr_ref_1:
+    refineIrregular1(cell, grid);
+    break;
+  case marked_for_irr_ref_2:
+    refineIrregular1(cell, grid);
     break;
   default:
     // We should not rearch this case, cell cannot be
@@ -50,15 +62,23 @@ bool TriGridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
 //-----------------------------------------------------------------------------
 bool TriGridRefinement::checkRuleIrregular1(Cell& cell, int no_marked_edges)
 {
-  // Do we have this rule for triangles?
-  
+  // Check if cell matches irregular refinement rule 1
+
+  if ( no_marked_edges != 1 )
+    return false;
+
+  cell.marker() = marked_for_irr_ref_1;
   return true;
 }
 //-----------------------------------------------------------------------------
 bool TriGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
 {
-  // Do we have this rule for triangles?
-  
+  // Check if cell matches irregular refinement rule 2
+
+  if ( no_marked_edges != 2 )
+    return false;
+
+  cell.marker() = marked_for_irr_ref_2;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -68,9 +88,9 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // at the midpoints of the edges. 
 
   // Create new nodes with the same coordinates as the previous nodes in cell  
-  Node *n0 = grid.createNode(cell.coord(0));
-  Node *n1 = grid.createNode(cell.coord(1));
-  Node *n2 = grid.createNode(cell.coord(2));
+  Node* n0 = grid.createNode(cell.coord(0));
+  Node* n1 = grid.createNode(cell.coord(1));
+  Node* n2 = grid.createNode(cell.coord(2));
 
   // Update parent-child info 
   n0->setParent(cell.node(0));
@@ -82,15 +102,15 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   cell.node(2)->setParent(n2);
   
   // Create new nodes with the new coordinates 
-  Node *n01 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(1)->coord()));
-  Node *n02 = grid.createNode(cell.node(0)->coord().midpoint(cell.node(2)->coord()));
-  Node *n12 = grid.createNode(cell.node(1)->coord().midpoint(cell.node(2)->coord()));
+  Node* n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
+  Node* n02 = grid.createNode(cell.node(0)->midpoint(*cell.node(2)));
+  Node* n12 = grid.createNode(cell.node(1)->midpoint(*cell.node(2)));
 
   // Create new cells 
-  Cell *t1 = grid.createCell(n0, n01,n02);
-  Cell *t2 = grid.createCell(n01,n1, n12);
-  Cell *t3 = grid.createCell(n02,n12,n2 );
-  Cell *t4 = grid.createCell(n01,n12,n02);
+  Cell* t1 = grid.createCell(n0,  n01, n02);
+  Cell* t2 = grid.createCell(n01, n1,  n12);
+  Cell* t3 = grid.createCell(n02, n12, n2 );
+  Cell* t4 = grid.createCell(n01, n12, n02);
 
   // Update parent-child info 
   t1->setParent(&cell);
@@ -115,9 +135,9 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node *n_m1 = grid.createNode(nodes(0)->coord());
-  Node *n_m2 = grid.createNode(nodes(1)->coord());
-  Node *n_nm = grid.createNode(nodes(2)->coord());
+  Node* n_m1 = grid.createNode(nodes(0)->coord());
+  Node* n_m2 = grid.createNode(nodes(1)->coord());
+  Node* n_nm = grid.createNode(nodes(2)->coord());
 
   // Update parent-child info
   n_m1->setParent(nodes(0));
@@ -125,11 +145,11 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   n_nm->setParent(nodes(2));
 
   // Create new node on marked edge 
-  Node *n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
+  Node* n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
   
   // Create new cells 
-  Cell *t1 = grid.createCell(n_e,n_nm,n_m1);
-  Cell *t2 = grid.createCell(n_e,n_nm,n_m2);
+  Cell* t1 = grid.createCell(n_e, n_nm, n_m1);
+  Cell* t2 = grid.createCell(n_e, n_nm, n_m2);
   
   // Update parent-child info
   t1->setParent(&cell);
@@ -150,9 +170,9 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node *n_dm = grid.createNode(nodes(0)->coord());
-  Node *n_m1 = grid.createNode(nodes(1)->coord());
-  Node *n_m2 = grid.createNode(nodes(2)->coord());
+  Node* n_dm = grid.createNode(nodes(0)->coord());
+  Node* n_m1 = grid.createNode(nodes(1)->coord());
+  Node* n_m2 = grid.createNode(nodes(2)->coord());
 
   // Update parent-child info
   n_dm->setParent(nodes(0));
@@ -160,13 +180,13 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   n_m2->setParent(nodes(2));
 
   // Create new nodes on marked edges 
-  Node *n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
-  Node *n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
+  Node* n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
+  Node* n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
 
   // Create new cells 
-  Cell *t1 = grid.createCell(n_dm,n_e1,n_e2);
-  Cell *t2 = grid.createCell(n_m1,n_e1,n_e2);
-  Cell *t3 = grid.createCell(n_e2,n_m1,n_m2);
+  Cell* t1 = grid.createCell(n_dm, n_e1, n_e2);
+  Cell* t2 = grid.createCell(n_m1, n_e1, n_e2);
+  Cell* t3 = grid.createCell(n_e2, n_m1, n_m2);
   
   // Update parent-child info
   t1->setParent(&cell);

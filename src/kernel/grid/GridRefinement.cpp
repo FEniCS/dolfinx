@@ -18,9 +18,9 @@ using namespace dolfin;
 void GridRefinement::refine(GridHierarchy& grids)
 {
   // Write a message
-  dolfin_start("Refining grid:");
+  dolfin_start("Refining grids:");
   cout << grids.fine().rd->noMarkedCells()
-       << " cells marked for refinement." << endl;
+       << " cells marked for refinement in finest grid." << endl;
   
   // Init marks for the finest grid (others already exist)
   initMarks(grids.fine());
@@ -34,19 +34,12 @@ void GridRefinement::refine(GridHierarchy& grids)
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
-void GridRefinement::createFineGrid(GridHierarchy& grids)
-{
-  // Create the new grid
-  //Grid* grid = new Grid(grids.fine());
-
-  // Add the grid to the grid hierarchy
-  //grids.add(*grid);
-}
-//-----------------------------------------------------------------------------
 void GridRefinement::globalRefinement(GridHierarchy& grids)
 {
   // The global grid refinement algorithm working on the whole grid hierarchy.
   // This is algorithm GlobalRefinement() in Beys paper.
+
+  dolfin_debug("check");
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
@@ -54,7 +47,9 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
     closeGrid(*grid);
   }
   
-  // Phase II: Vist all grids bottom-up
+  dolfin_debug("check");
+
+  // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
     if (grid.index() > 0)
       closeGrid(*grid);
@@ -62,12 +57,16 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
     refineGrid(*grid);
   }
 
-  // FIXME: k = k + 1 ?
+  // Update grid hierarchy
+  grids.init(grids.coarse());
 
+  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::initMarks(Grid& grid)
 {
+  dolfin_debug("check");
+
   // Make sure that all cells have markers
   for (CellIterator c(grid); !c.end(); ++c)
     c->initMarker();
@@ -87,6 +86,8 @@ void GridRefinement::initMarks(Grid& grid)
       e->mark(**c);
 
   }
+
+  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
@@ -114,13 +115,20 @@ void GridRefinement::closeGrid(Grid& grid)
   // Perform the green closer on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
 
+  dolfin_debug("check");
+
   // Create a list of all elements that need to be closed
   List<Cell*> cells;
-  for (CellIterator c(grid); !c.end(); ++c)
-    if ( edgeMarkedByOther(*c) ) {
-      cells.add(c);
-      c->closed() = false;
+  for (CellIterator c(grid); !c.end(); ++c) {
+    if ( c->status() == ref_reg ) {
+      if ( edgeMarkedByOther(*c) ) {
+	cells.add(c);
+	c->closed() = false;
+      }
     }
+    else
+      c->closed() = true;
+  }
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
@@ -132,6 +140,8 @@ void GridRefinement::closeGrid(Grid& grid)
     closeCell(*cell, cells);
 
   }
+
+  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::refineGrid(Grid& grid)
@@ -139,12 +149,14 @@ void GridRefinement::refineGrid(Grid& grid)
   // Refine a grid according to marks.
   // This is algorithm RefineGrid() in Bey's paper.
 
+  dolfin_debug("check");
+
   // Change markers from marked_for_coarsening to marked_for_no_ref
   for (CellIterator c(grid); c.end(); ++c)
     if ( c->marker() == marked_for_coarsening )
       c->marker() = marked_for_no_ref;
   
-  // Refine other cells
+  // Refine cells which are not marked_according_to_ref
   for (CellIterator c(grid); !c.end(); ++c) {
     
     // Skip cells which are marked_according_to_ref
@@ -155,12 +167,17 @@ void GridRefinement::refineGrid(Grid& grid)
     refine(*c, grid);
     
   }
+
+  dolfin_debug("check");
+
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 {
   // Unrefine a grid according to marks.
   // This is algorithm UnrefineGrid() in Bey's paper.
+
+  dolfin_debug("check");
 
   // Get child grid or create a new child grid
   Grid* child = 0;
@@ -202,6 +219,9 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   for (CellIterator c(*child); !c.end(); ++c)
     if ( !reuse_cell(c->id()) )
       child->remove(*c);
+
+  dolfin_debug("check");
+
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
@@ -212,10 +232,7 @@ void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
   // This is algorithm CloseElement() in Bey's paper.
   
   // First count the number of marked edges in the cell
-  int no_marked_edges = 0;
-  for (EdgeIterator e(cell); !e.end(); ++e)
-    if ( e->marked() )
-      no_marked_edges++;
+  int no_marked_edges = noMarkedEdges(cell);
 
   // Check which rule should be applied
   if ( checkRule(cell, no_marked_edges) )
@@ -230,7 +247,7 @@ void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
     // Skip marked edges
     if ( e->marked() )
       continue;
-    
+
     // Mark edge by this cell
     e->mark(cell);
 
@@ -239,6 +256,9 @@ void GridRefinement::closeCell(Cell& cell, List<Cell*>& cells)
       if ( c->haveEdge(*e) && c->closed() && c->status() == ref_reg && c != cell )
 	  cells.add(c);
   }
+
+  // Mark cell for regular refinement
+  cell.marker() = marked_for_reg_ref;
 
   // Remember that the cell has been closed, important since we don't want
   // to add cells which are not yet closed (and are already in the list).
@@ -296,11 +316,10 @@ bool GridRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
 //-----------------------------------------------------------------------------
 bool GridRefinement::edgeMarkedByOther(Cell& cell)
 {
-  // FIXME: Doesn't seem to be correct
-
   for (EdgeIterator e(cell); !e.end(); ++e)
     if ( e->marked() )
-      return true;
+      if ( !e->marked(cell) )
+	return true;
 
   return false;
 }
@@ -324,17 +343,23 @@ void GridRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
   int max_edges = no_marked_edges.max();
   int pos = 0;
   for (int i = max_edges; i >= 0; i--)
-    for (int j = 0; j < nodes.size(); j++) {
-      if ( no_marked_edges(j) == -1 )
-	continue;
-      if ( no_marked_edges(j) <= max_edges ) {
+    for (int j = 0; j < nodes.size(); j++)
+      if ( no_marked_edges(j) >= i ) {
 	nodes(pos++) = cell.node(j);
 	no_marked_edges(j) = -1;
       }
-    }
 }
 //-----------------------------------------------------------------------------
-int nodeNumber(const Node& node, const Cell& cell)
+int GridRefinement::noMarkedEdges(const Cell& cell)
+{
+  int count = 0;
+  for (EdgeIterator e(cell); !e.end(); ++e)
+    if ( e->marked() )
+      count++;
+  return count;
+}
+//-----------------------------------------------------------------------------
+int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
 {
   // Find the local node number for a given node within a cell
   for (NodeIterator n(cell); !n.end(); ++n)
@@ -343,5 +368,6 @@ int nodeNumber(const Node& node, const Cell& cell)
   
   // Didn't find the node
   dolfin_error("Unable to find node within cell.");
+  return -1;
 }
 //-----------------------------------------------------------------------------

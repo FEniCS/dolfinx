@@ -128,15 +128,21 @@ void Edge::initMarker()
     rd = new EdgeRefData();
 }
 //-----------------------------------------------------------------------------
+void Edge::mark(Cell& cell)
+{
+  dolfin_assert(rd);
+  rd->mark(cell);
+}
+//-----------------------------------------------------------------------------
 bool Edge::marked() const
 {
   dolfin_assert(rd);
   return rd->marked();
 }
 //-----------------------------------------------------------------------------
-void Edge::mark(Cell& cell)
+bool Edge::marked(Cell& cell) const
 {
   dolfin_assert(rd);
-  rd->mark(cell);
+  return rd->marked(cell);
 }
 //-----------------------------------------------------------------------------

@@ -24,10 +24,7 @@ namespace dolfin {
     
     //--- Algorithms working on the whole grid hierarchy ---
 
-    // Create the new finest grid
-    static void createFineGrid(GridHierarchy& grids);
-
-    // The global algorithm working on the whole grid hierarchy
+    // The global algorithm
     static void globalRefinement(GridHierarchy& grids);
 
     //--- Algorithms working on the grid on a given level ---
@@ -71,6 +68,9 @@ namespace dolfin {
 
     /// Sort nodes, placing the node belonging to the most number of marked edges first
     static void sortNodes(const Cell& cell, Array<Node*>& nodes);
+    
+    /// Count the number of marked edges within a cell
+    static int noMarkedEdges(const Cell& cell);
 
     /// Mapping from global node number to local number within cell
     static int nodeNumber(const Node& node, const Cell& cell);

@@ -16,9 +16,6 @@ int main()
   // Read grid from file
   in >> grid;
   
-  dolfin::cout << "no nodes = " << grid.noNodes() << dolfin::endl;
-  dolfin::cout << "no cells = " << grid.noCells() << dolfin::endl;
-
   // Mark nodes for refinement
   for (CellIterator cell(grid); !cell.end(); ++cell)
     if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
@@ -26,9 +23,6 @@ int main()
   
   // Refine grid
   grid.refine();
-  
-  dolfin::cout << "no nodes = " << grid.noNodes() << dolfin::endl;
-  dolfin::cout << "no cells = " << grid.noCells() << dolfin::endl;
 
   // Save refined grid to file
   out << grid;

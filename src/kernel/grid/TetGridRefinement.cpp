@@ -12,7 +12,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 bool TetGridRefinement::checkRule(Cell& cell, int no_marked_edges)
 {
-  dolfin_assert(cell.type() == Cell::triangle);
+  dolfin_assert(cell.type() == Cell::tetrahedron);
 
   // Choose refinement rule
   
@@ -58,7 +58,7 @@ void TetGridRefinement::refine(Cell& cell, Grid& grid)
     // Do nothing
     break;
   default:
-    // We should not rearch this case, cell cannot be
+    // We should not reach this case, cell cannot be
     // marked_for_coarsening or marked_according_to_ref
     dolfin_error("Inconsistent cell markers.");
   }
@@ -78,8 +78,7 @@ bool TetGridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
 //-----------------------------------------------------------------------------
 bool TetGridRefinement::checkRuleIrregular1(Cell& cell, int no_marked_edges)
 {
-  // Check if cell matches irregular refinement rule 1.
-  // 
+  // Check if cell matches irregular refinement rule 1
 
   if ( no_marked_edges != 3 )
     return false;
@@ -141,10 +140,10 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   dolfin_assert(cell.marker() == marked_for_reg_ref);
   
   // Create new nodes with the same coordinates as existing nodes
-  Node *n0 = grid.createNode(cell.coord(0));
-  Node *n1 = grid.createNode(cell.coord(1));
-  Node *n2 = grid.createNode(cell.coord(2));
-  Node *n3 = grid.createNode(cell.coord(3));
+  Node* n0 = grid.createNode(cell.coord(0));
+  Node* n1 = grid.createNode(cell.coord(1));
+  Node* n2 = grid.createNode(cell.coord(2));
+  Node* n3 = grid.createNode(cell.coord(3));
 
   // Update parent-child info 
   n0->setParent(cell.node(0));
@@ -153,22 +152,22 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   n3->setParent(cell.node(3));
 
   // Create new nodes with the new coordinates 
-  Node *n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
-  Node *n02 = grid.createNode(cell.node(0)->midpoint(*cell.node(2)));
-  Node *n03 = grid.createNode(cell.node(0)->midpoint(*cell.node(3)));
-  Node *n12 = grid.createNode(cell.node(1)->midpoint(*cell.node(2)));
-  Node *n13 = grid.createNode(cell.node(1)->midpoint(*cell.node(3)));
-  Node *n23 = grid.createNode(cell.node(2)->midpoint(*cell.node(3)));
+  Node* n01 = grid.createNode(cell.node(0)->midpoint(*cell.node(1)));
+  Node* n02 = grid.createNode(cell.node(0)->midpoint(*cell.node(2)));
+  Node* n03 = grid.createNode(cell.node(0)->midpoint(*cell.node(3)));
+  Node* n12 = grid.createNode(cell.node(1)->midpoint(*cell.node(2)));
+  Node* n13 = grid.createNode(cell.node(1)->midpoint(*cell.node(3)));
+  Node* n23 = grid.createNode(cell.node(2)->midpoint(*cell.node(3)));
 
   // Create new cells 
-  Cell *t1 = grid.createCell(n0,  n01, n02, n03);
-  Cell *t2 = grid.createCell(n01, n1,  n12, n13);
-  Cell *t3 = grid.createCell(n02, n12, n2,  n23);
-  Cell *t4 = grid.createCell(n03, n13, n23, n3 );
-  Cell *t5 = grid.createCell(n01, n02, n03, n13);
-  Cell *t6 = grid.createCell(n01, n02, n12, n13);
-  Cell *t7 = grid.createCell(n02, n03, n13, n23);
-  Cell *t8 = grid.createCell(n02, n12, n13, n23);
+  Cell* t1 = grid.createCell(n0,  n01, n02, n03);
+  Cell* t2 = grid.createCell(n01, n1,  n12, n13);
+  Cell* t3 = grid.createCell(n02, n12, n2,  n23);
+  Cell* t4 = grid.createCell(n03, n13, n23, n3 );
+  Cell* t5 = grid.createCell(n01, n02, n03, n13);
+  Cell* t6 = grid.createCell(n01, n02, n12, n13);
+  Cell* t7 = grid.createCell(n02, n03, n13, n23);
+  Cell* t8 = grid.createCell(n02, n12, n13, n23);
 
   // Update parent-child info 
   t1->setParent(&cell);
@@ -205,10 +204,10 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node *n_m1 = grid.createNode(nodes(0)->coord());
-  Node *n_m2 = grid.createNode(nodes(1)->coord());
-  Node *n_m3 = grid.createNode(nodes(2)->coord());
-  Node *n_nm = grid.createNode(nodes(3)->coord());
+  Node* n_m1 = grid.createNode(nodes(0)->coord());
+  Node* n_m2 = grid.createNode(nodes(1)->coord());
+  Node* n_m3 = grid.createNode(nodes(2)->coord());
+  Node* n_nm = grid.createNode(nodes(3)->coord());
          
   // Update parent-child info
   n_m1->setParent(nodes(0));
@@ -217,15 +216,15 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   n_nm->setParent(nodes(3));
 
   // Create new nodes on the edges of the marked face
-  Node *n_e12 = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
-  Node *n_e13 = grid.createNode(cell.findEdge(n_m1,n_m3)->midpoint());
-  Node *n_e23 = grid.createNode(cell.findEdge(n_m2,n_m3)->midpoint());
+  Node* n_e12 = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
+  Node* n_e13 = grid.createNode(cell.findEdge(n_m1,n_m3)->midpoint());
+  Node* n_e23 = grid.createNode(cell.findEdge(n_m2,n_m3)->midpoint());
   
   // Create new cells 
-  Cell *t1 = grid.createCell(n_nm,n_e12,n_e13,n_e23);
-  Cell *t2 = grid.createCell(n_nm,n_e12,n_e13,n_m1);
-  Cell *t3 = grid.createCell(n_nm,n_e12,n_e23,n_m2);
-  Cell *t4 = grid.createCell(n_nm,n_e13,n_e23,n_m3);
+  Cell* t1 = grid.createCell(n_nm, n_e12, n_e13, n_e23);
+  Cell* t2 = grid.createCell(n_nm, n_e12, n_e13, n_m1);
+  Cell* t3 = grid.createCell(n_nm, n_e12, n_e23, n_m2);
+  Cell* t4 = grid.createCell(n_nm, n_e13, n_e23, n_m3);
   
   // Update parent-child info
   t1->setParent(&cell);
@@ -253,10 +252,10 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
-  Node *n_m1  = grid.createNode(nodes(0)->coord());
-  Node *n_m2  = grid.createNode(nodes(1)->coord());
-  Node *n_nm1 = grid.createNode(nodes(2)->coord());
-  Node *n_nm2 = grid.createNode(nodes(3)->coord());
+  Node* n_m1  = grid.createNode(nodes(0)->coord());
+  Node* n_m2  = grid.createNode(nodes(1)->coord());
+  Node* n_nm1 = grid.createNode(nodes(2)->coord());
+  Node* n_nm2 = grid.createNode(nodes(3)->coord());
 
   // Update parent-child info
   n_m1->setParent(nodes(0));
@@ -265,11 +264,11 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   n_nm2->setParent(nodes(3));
 
   // Create new node on marked edge 
-  Node *n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
+  Node* n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
   
   // Create new cells 
-  Cell *t1 = grid.createCell(n_e,n_nm1,n_nm2,n_m1);
-  Cell *t2 = grid.createCell(n_e,n_nm1,n_nm2,n_m2);
+  Cell* t1 = grid.createCell(n_e, n_nm1, n_nm2, n_m1);
+  Cell* t2 = grid.createCell(n_e, n_nm1, n_nm2, n_m2);
   
   // Update parent-child info
   t1->setParent(&cell);
@@ -304,10 +303,10 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
 
   // Create new nodes with the same coordinates as the old nodes
   // (assuming that the node that is marked by two edges has the lowest index) 
-  Node *n_dm  = grid.createNode(nodes(0)->coord());
-  Node *n_m1  = grid.createNode(nodes(1)->coord());
-  Node *n_m2  = grid.createNode(nodes(2)->coord());
-  Node *n_nm  = grid.createNode(nodes(3)->coord());
+  Node* n_dm  = grid.createNode(nodes(0)->coord());
+  Node* n_m1  = grid.createNode(nodes(1)->coord());
+  Node* n_m2  = grid.createNode(nodes(2)->coord());
+  Node* n_nm  = grid.createNode(nodes(3)->coord());
 
   // Update parent-child info
   n_dm->setParent(nodes(0)); 
@@ -315,17 +314,21 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   n_m2->setParent(nodes(2)); 
   n_nm->setParent(nodes(3));
 
+  dolfin_error("Refinement rule 3 not finished.");
+
+  /*
+
   // Create new node on marked edge 
-  Node *n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
-  Node *n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
+  Node* n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
+  Node* n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
 
   // Create new cells 
-  Cell *t1;
-  Cell *t2;
-  Cell *t3;
+  Cell* t1;
+  Cell* t2;
+  Cell* t3;
 
   // Check neighbor face to marked face to refine correctly 
-  
+
   //    t1 = grid.createCell(n_e1,n_e2,n_e11,n_e21);
   //    t2 = grid.createCell(n_e1,n_e2,n_e11,n_e22);
   //    t3 = grid.createCell(n_e1,n_e2,n_e12,n_e21);
@@ -338,6 +341,9 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   cell.addChild(t1);
   cell.addChild(t2);
   cell.addChild(t3);
+
+  */
+
 }
 //-----------------------------------------------------------------------------
 void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
@@ -350,17 +356,18 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == marked_for_irr_ref_4);
 
-  // Create new nodes with the same coordinates as the old nodes
+  // Find the two marked edges
   Array<Edge*> marked_edges(2);
   marked_edges = 0;
   int cnt = 0;
   for (EdgeIterator e(cell); !e.end(); ++e)
     if (e->marked()) marked_edges(cnt++) = e;
 
-  Node *n_e11 = grid.createNode(marked_edges(0)->node(0)->coord());
-  Node *n_e12 = grid.createNode(marked_edges(0)->node(1)->coord());
-  Node *n_e21 = grid.createNode(marked_edges(1)->node(0)->coord());
-  Node *n_e22 = grid.createNode(marked_edges(1)->node(1)->coord());
+  // Create new nodes with the same coordinates as the old nodes
+  Node* n_e11 = grid.createNode(marked_edges(0)->node(0)->coord());
+  Node* n_e12 = grid.createNode(marked_edges(0)->node(1)->coord());
+  Node* n_e21 = grid.createNode(marked_edges(1)->node(0)->coord());
+  Node* n_e22 = grid.createNode(marked_edges(1)->node(1)->coord());
 
   // Update parent-child info
   n_e11->setParent(marked_edges(0)->node(0));
@@ -369,14 +376,14 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   n_e22->setParent(marked_edges(1)->node(1));
 
   // Create new node on marked edge 
-  Node *n_e1 = grid.createNode(marked_edges(0)->midpoint());
-  Node *n_e2 = grid.createNode(marked_edges(1)->midpoint());
+  Node* n_e1 = grid.createNode(marked_edges(0)->midpoint());
+  Node* n_e2 = grid.createNode(marked_edges(1)->midpoint());
 
   // Create new cells 
-  Cell *t1 = grid.createCell(n_e1,n_e2,n_e11,n_e21);
-  Cell *t2 = grid.createCell(n_e1,n_e2,n_e11,n_e22);
-  Cell *t3 = grid.createCell(n_e1,n_e2,n_e12,n_e21);
-  Cell *t4 = grid.createCell(n_e1,n_e2,n_e12,n_e22);
+  Cell* t1 = grid.createCell(n_e1, n_e2, n_e11, n_e21);
+  Cell* t2 = grid.createCell(n_e1, n_e2, n_e11, n_e22);
+  Cell* t3 = grid.createCell(n_e1, n_e2, n_e12, n_e21);
+  Cell* t4 = grid.createCell(n_e1, n_e2, n_e12, n_e22);
 
   // Update parent-child info
   t1->setParent(&cell);
@@ -393,29 +400,34 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
 bool TetGridRefinement::markedEdgesOnSameFace(Cell& cell)
 {
   // Check if the marked edges of cell are on the same face: 
-  // 0 marked edge  -> false 
-  // 1 marked edge  -> true 
-  // 2 marked edges -> true if edges have any common nodes
-  // 3 marked edges -> true if there is a face with the marked edges 
-  // 4 marked edges -> false 
-  // 5 marked edges -> false 
-  // 6 marked edges -> false 
+  //
+  //   0 marked edge  -> false 
+  //   1 marked edge  -> true 
+  //   2 marked edges -> true if edges have any common nodes
+  //   3 marked edges -> true if there is a face with the marked edges 
+  //   4 marked edges -> false 
+  //   5 marked edges -> false 
+  //   6 marked edges -> false 
 
+  // Count the number of marked edges
   int cnt = 0; 
   for (EdgeIterator e(cell); !e.end(); ++e)
     if (e->marked()) cnt++;
 
+  // Case 0, 1, 4, 5, 6
   dolfin_assert(cnt >= 0 && cnt <= 6);
   if (cnt == 0) return false;
   if (cnt == 1) return true;
   if (cnt > 3)  return false;
   
+  // Create a list of the marked edges
   Array<Edge*> marked_edges(cnt);
   marked_edges = 0;
   cnt = 0; 
   for (EdgeIterator e(cell); !e.end(); ++e)
     if (e->marked()) marked_edges(cnt++) = e;
   
+  // Case 2
   dolfin_assert(cnt == 2 || cnt == 3);
   if (cnt == 2){
     if (marked_edges(0)->contains(marked_edges(1)->node(0)) || 
@@ -423,6 +435,8 @@ bool TetGridRefinement::markedEdgesOnSameFace(Cell& cell)
       return true;
     return false;
   }
+
+  // Case 3
   if (cnt == 3){
     for (FaceIterator f(cell); !f.end(); ++f){
       if (f->equals(marked_edges(0),marked_edges(1),marked_edges(2)))
@@ -431,6 +445,8 @@ bool TetGridRefinement::markedEdgesOnSameFace(Cell& cell)
     return false;
   }
   
+  // We shouldn't reach this case
+  dolfin_error("Inconsistent cell markers.");
   return false;
 }
 //-----------------------------------------------------------------------------
