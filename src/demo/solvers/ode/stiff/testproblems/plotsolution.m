@@ -1,4 +1,11 @@
+% Copyright (C) 2004 Johan Hoffman and Anders Logg.
+% Licensed under the GNU GPL Version 2.
+%
+% Plot solution and time steps for the stiff test problems.
+
 %--- Test problem 1 ---
+
+disp('Plotting solution and time steps for test problem 1')
 
 primal_1
 figure(1); clf
@@ -34,6 +41,8 @@ pause
 
 %--- Test problem 2 ---
 
+disp('Plotting solution and time steps for test problem 2')
+
 primal_2
 figure(1); clf
 
@@ -67,6 +76,8 @@ disp('Press any key to continue')
 pause
 
 %--- Test problem 3 ---
+
+disp('Plotting solution and time steps for test problem 3')
 
 primal_3
 figure(1); clf
@@ -102,6 +113,8 @@ pause
 
 %--- Test problem 4 ---
 
+disp('Plotting solution and time steps for test problem 4')
+
 primal_4
 figure(1); clf
 
@@ -135,6 +148,8 @@ disp('Press any key to continue')
 pause
 
 %--- Test problem 5 ---
+
+disp('Plotting solution and time steps for test problem 5')
 
 primal_5
 figure(1); clf
@@ -170,6 +185,8 @@ pause
 
 %--- Test problem 6 ---
 
+disp('Plotting solution and time steps for test problem 6')
+
 primal_6
 figure(1); clf
 
@@ -195,6 +212,93 @@ ylabel('k')
 subplot(2,2,4)
 plot(t',k')
 axis([38 48 -0.05 1.05])
+grid on
+xlabel('t')
+ylabel('k')
+
+disp('Press any key to continue')
+pause
+
+%--- Test problem 7 ---
+
+disp('Plotting solution and time steps for test problem 7')
+
+primal_7
+figure(1); clf
+
+subplot(2,1,1)
+plot(t',u')
+axis([-0.01 1 -0.01 0.3])
+xlabel('t')
+ylabel('u')
+
+subplot(2,1,2)
+semilogy(t',k')
+axis([-0.01 1 5e-6 2])
+grid on
+xlabel('t')
+ylabel('k')
+
+disp('Press any key to continue')
+pause
+
+%--- Test problem 8 ---
+
+disp('Plotting solution and time steps for test problem 8')
+
+primal_8
+figure(1); clf
+
+subplot(4,2,1)
+plot(t,u(1,:))
+axis([-0.01 0.3 0.988 1.001])
+xlabel('t')
+ylabel('u1')
+
+subplot(4,2,3)
+plot(t,u(3,:))
+axis([-0.01 0.3 -0.001 0.012])
+xlabel('t')
+ylabel('u3')
+
+subplot(2,2,2)
+plot(t,u(2,:))
+axis([-0.01 0.3 -1e-6 4e-5])
+xlabel('t')
+ylabel('u2')
+
+subplot(2,1,2)
+semilogy(t',k')
+axis([-0.005 0.3 1e-3 1])
+grid on
+xlabel('t')
+ylabel('k')
+
+disp('Press any key to continue')
+pause
+
+%--- Test problem 9 ---
+
+disp('Plotting solution and time steps for test problem 9')
+
+primal_9
+figure(1); clf
+
+subplot(2,2,1)
+plot(t',u')
+axis([-0.5 30 -1.05 1.05])
+xlabel('t')
+ylabel('u')
+
+subplot(2,2,2)
+plot(t',u')
+axis([-0.005 0.3 -1.05 1.05])
+xlabel('t')
+ylabel('u')
+
+subplot(2,1,2)
+plot(t',k')
+axis([-0.25 30 -0.05 1.05])
 grid on
 xlabel('t')
 ylabel('k')

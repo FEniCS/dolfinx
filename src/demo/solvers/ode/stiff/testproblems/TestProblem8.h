@@ -17,7 +17,7 @@ public:
     dolfin_info("Hairer and Wanner, page 3.");
 
     // Final time
-    T = 0.5;
+    T = 0.3;
 
     // Compute sparsity
     sparse();

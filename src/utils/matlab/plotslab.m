@@ -1,6 +1,6 @@
-function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps)
+function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps, savepng)
 
-% Usage: M = plotslab(debugfile, interval, drawupdates, drawtext, saveps)
+% Usage: M = plotslab(debugfile, interval, drawupdates, drawtext, saveps, savepng)
 %
 % Draws and creates a movie M of a time slab. A debug file
 % is created by DOLFIN when the option 'debug time steps'
@@ -12,7 +12,8 @@ function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps)
 %   interval    - plot elements within interval
 %   drawupdates - blink element updates
 %   drawtext    - draw extra text
-%   saveps      - save a postscript file for every frame
+%   saveps      - save a postscript file for each frame
+%   savepng     - save a png file for each frame
 %
 % Copyright (C) 2003 Johan Hoffman and Anders Logg.
 % Licensed under the GNU GPL Version 2.
@@ -112,8 +113,10 @@ for j = i:size(timesteps, 1)
       % Save frame
       drawnow
       M(framecount) = getframe;
-      if ( saveps )
-	print('-depsc',['frame_' num2str(framecount) '.eps'])
+      if saveps
+	print('-depsc', ['frame_' sprintf('%.4d', framecount) '.eps'])
+      elseif savepng
+	print('-dpng', '-r0', ['frame_' sprintf('%.4d', framecount) '.png'])
       else
 	disp('Press any key to continue')
 	pause
@@ -130,8 +133,10 @@ for j = i:size(timesteps, 1)
   % Save frame
   drawnow
   M(framecount) = getframe;
-  if ( saveps )
-    print('-depsc',['frame_' num2str(framecount) '.eps'])
+  if saveps
+    print('-depsc', ['frame_' sprintf('%.4d', framecount) '.eps'])
+  elseif savepng
+    print('-dpng', '-r0', ['frame_' sprintf('%.4d', framecount) '.png'])
   else
     disp('Press any key to continue')
     pause

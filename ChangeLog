@@ -1,3 +1,5 @@
+ - Fix numbering of frames from plotslab script
+ - Add png output for plotslab script
  - Add script for running stiff test problems, plot solutions
  - Fix bug in MeshInit (node neighbors of node)
  - Modify output of sysinfo()

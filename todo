@@ -1,11 +1,3 @@
-Multi-adaptive solver
----------------------
-
-- Stiff problems: diagonal iteration for dG(1)
-- Save dual solution backwards
-- Error estimates
-- Automatic computation of stability factors as function of time T
-
 General
 -------
 
@@ -21,3 +13,12 @@ General
 - Replace Array and List with NewArray and NewList
 - Replace int by unsigned int where necessary
 - Update manual: anyone?
+
+Multi-adaptive solver
+---------------------
+
+- Stiff problems: diagonal iteration for dG(1)
+- Save dual solution backwards
+- Error estimates
+- Automatic computation of stability factors as function of time T
+- Use two files for matlab format
