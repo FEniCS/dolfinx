@@ -60,7 +60,9 @@ public:
 
       // Material parameters
       
-      real E = 5.0;
+      real b = 0.05;
+
+      real E = 500.0;
       real nu = 0.3;
       
       real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
@@ -71,7 +73,7 @@ public:
       
       // Compute sigma
       
-      static Matrix sigma(3, 3), epsilon(3, 3); 
+      static Matrix sigma(3, 3), epsilon(3, 3), vsigma(3, 3); 
 
       if(!computedsigma[cell_->id()])
       {
@@ -94,8 +96,8 @@ public:
 	epsilon(2, 2) = (wp(2).ddz() + wp(2).ddz())(mp);
 	
 	
-	cout << "epsilon on cell " << cell_->id() << ": " << endl;
-	epsilon.show();
+	//cout << "epsilon on cell " << cell_->id() << ": " << endl;
+	//epsilon.show();
       
 	sigma(0, 0) =
 	  (lambda + 2 * mu) * epsilon(0, 0) +
@@ -113,10 +115,13 @@ public:
 	sigma(0, 1) = mu * epsilon(0, 1);
 	sigma(1, 0) = sigma(0, 1);
 	
+	vsigma = epsilon;
+	vsigma *= b;
+
 	//cout << "sigma on cell " << cell_->id() << ": " << endl;
 	//sigma.show();
       
-	Matrix *sigma0, *sigma1;
+	Matrix *sigma0, *sigma1, *vsigma1;
 	
 	sigma0 = sigma0array[cell_->id()];
 	sigma1 = sigma1array[cell_->id()];
@@ -124,11 +129,13 @@ public:
 	sigma *= k;
 	sigma += *sigma0;
 	*sigma1 = sigma; 
+
+	*(vsigmaarray[cell_->id()]) = vsigma;
 	
-	cout << "sigma0 on cell " << cell_->id() << ": " << endl;
-	sigma0->show();
-	cout << "sigma1 on cell " << cell_->id() << ": " << endl;
-	sigma1->show();
+	//cout << "sigma0 on cell " << cell_->id() << ": " << endl;
+	//sigma0->show();
+	//cout << "sigma1 on cell " << cell_->id() << ": " << endl;
+	//sigma1->show();
 
 	computedsigma[cell_->id()] = true;
       }
@@ -138,6 +145,7 @@ public:
 	sigma1 = sigma1array[cell_->id()];
 
 	sigma = *sigma1;
+	vsigma = *(vsigmaarray[cell_->id()]);
       }
 
 	
@@ -151,12 +159,21 @@ public:
 		   sigma(1, 2) * v(1).ddz() +
 		   sigma(2, 0) * v(2).ddx() +
 		   sigma(2, 1) * v(2).ddy() +
-		   sigma(2, 2) * v(2).ddz())) * dx;
+		   sigma(2, 2) * v(2).ddz()) -
+	      k * (vsigma(0, 0) * v(0).ddx() +
+		   vsigma(0, 1) * v(0).ddy() +
+		   vsigma(0, 2) * v(0).ddz() +
+		   vsigma(1, 0) * v(1).ddx() +
+		   vsigma(1, 1) * v(1).ddy() +
+		   vsigma(1, 2) * v(1).ddz() +
+		   vsigma(2, 0) * v(2).ddx() +
+		   vsigma(2, 1) * v(2).ddy() +
+		   vsigma(2, 2) * v(2).ddz())) * dx;
 
       //return (wp(0) * v(0) + wp(1) * v(1) + wp(2) * v(2)) * dx;
-    }
+      }
     
-  NewArray<Matrix *> sigma0array, sigma1array;
+  NewArray<Matrix *> sigma0array, sigma1array, vsigmaarray;
   NewArray<bool>     computedsigma;
   
  private:    

@@ -50,13 +50,15 @@ void ElasticityUpdatedSolver::solve()
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    Matrix *sigma0i, *sigma1i;
+    Matrix *sigma0i, *sigma1i, *vsigmai;
 
     sigma0i = new Matrix(3, 3);
     sigma1i = new Matrix(3, 3);
+    vsigmai = new Matrix(3, 3);
 
     elasticity.sigma0array.push_back(sigma0i);
     elasticity.sigma1array.push_back(sigma1i);
+    elasticity.vsigmaarray.push_back(vsigmai);
   }
 
   elasticity.computedsigma.resize(mesh.noCells());
@@ -91,26 +93,28 @@ void ElasticityUpdatedSolver::solve()
 
   // Start time-stepping
   while ( t < T ) {
-    Function::Vector uzero(mesh, xzero, 3);
-
-    std::ostringstream fileid, filename;
-    fileid.fill('0');
-    fileid.width(6);
-
-    fileid << counter;
-
-    filename << "mesh" << fileid.str() << ".m";
-
-    std::cout << "writing: " << filename.str() << std::endl;
-
-    std::string foo = filename.str();
-    const char *fname = foo.c_str();
-    
-    File meshfile(fname);
-
-    meshfile << uzero;
-
-
+    if(counter % 33 == 0)
+    {
+      Function::Vector uzero(mesh, xzero, 3);
+      
+      std::ostringstream fileid, filename;
+      fileid.fill('0');
+      fileid.width(6);
+      
+      fileid << counter;
+      
+      filename << "mesh" << fileid.str() << ".m";
+      
+      std::cout << "writing: " << filename.str() << std::endl;
+      
+      std::string foo = filename.str();
+      const char *fname = foo.c_str();
+      
+      File meshfile(fname);
+      
+      meshfile << uzero;
+    }
+      
     counter++;
 
     // Make time step

@@ -48,6 +48,53 @@ function h = mesh2ko(p, e, t, fname)
     fprintf(fd, '</element>\n');
   end
 
+
+  for i = 1:size(t, 2)
+    
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(2, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(1, i)) - p(:, t(2, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(3, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(1, i)) - p(:, t(3, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(1, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(1, i)) - p(:, t(4, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(2, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(3, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(2, i)) - p(:, t(3, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(2, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(2, i)) - p(:, t(4, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+
+    fprintf(fd, '<connection>\n');
+    fprintf(fd, '<element1>%d</element1>\n', t(3, i));
+    fprintf(fd, '<element2>%d</element2>\n', t(4, i));
+    fprintf(fd, '<length>%f</length>\n', norm(p(:, t(3, i)) - p(:, t(4, i))));
+    fprintf(fd, '<transient>false</transient>\n');
+    fprintf(fd, '</connection>\n');
+  end
+
+
   fprintf(fd, '</physical>\n');
 
   fclose(fd);

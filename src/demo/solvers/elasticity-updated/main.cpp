@@ -8,29 +8,65 @@ using namespace dolfin;
 // Source term
 real f(real x, real y, real z, real t, int i)
 {
-  return 0.0;
+  real density = 1;
+
+  real force = 0;
+
+
+  ///*
+  if(i == 1)
+    force += -density * 9.81;
+  //*/
+
+  if(i == 1 && x > 0.7 && y > 0.7)
+  {
+    force += 30;
+  }
+
+  if(i == 0 && x > 0.7 && y > 0.7)
+  {
+    force += 30;
+  }
+
+  return force;
 }
 
 // Initial velocity
 real v0(real x, real y, real z, real t, int i)
 {
-  if(i == 0)
-    return 1.0;
+  real velocity = 0;
 
-  return 0.0;
+  ///*
+
+
+  /*
+  if(i == 0 && x > 0.8)
+    velocity += 3.0;
+  */
+
+  //  if(i == 0 && x < 0.4)
+  //    velocity -= 1.0;
+
+  //  if(i == 0 && y < 0.4)
+  //    velocity += 3.0;
+
+  //*/
+
+  return velocity;
 }
 
 // Boundary conditions
 void mybc(BoundaryCondition& bc)
 {
   ///*
-  if ( bc.coord().x == 0.0 )
+  //if ( bc.coord().x == 0.0 && bc.coord().y == 0.0)
+  if (bc.coord().x == 0.0)
   {
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
     bc.set(BoundaryCondition::DIRICHLET, 0.0, 2);
   }
-  ///*/
+  //*/
 }
 
 int main(int argc, char **argv)
@@ -47,9 +83,11 @@ int main(int argc, char **argv)
 
   //Mesh mesh("minimal.xml.gz");
   //Mesh mesh("minimal.xml.gz");
-  //Mesh mesh("tetmesh-1.xml.gz");
-  Mesh mesh("tetmesh-4.xml.gz");
+  Mesh mesh("tetmesh-1.xml.gz");
+  //Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh-8.xml.gz");
+
+  mesh.refineUniformly();
 
   Problem elasticity("elasticity-updated", mesh);
   //Problem elasticity("elasticity", mesh);
@@ -57,8 +95,8 @@ int main(int argc, char **argv)
   elasticity.set("source", f);
   elasticity.set("initial velocity", v0);
   elasticity.set("boundary condition", mybc);
-  elasticity.set("final time", 2.0);
-  elasticity.set("time step", 0.01);
+  elasticity.set("final time", 5.0);
+  elasticity.set("time step", 0.001);
 
   elasticity.solve();
   
