@@ -43,9 +43,9 @@ public:
     delete [] w;
    
     if ( tmp0 ) delete [] tmp0;
-    if ( tmp1 ) delete [] tmp0;
-    if ( tmp2 ) delete [] tmp0;
-    if ( tmp3 ) delete [] tmp0;
+    if ( tmp1 ) delete [] tmp1;
+    if ( tmp2 ) delete [] tmp2;
+    if ( tmp3 ) delete [] tmp3;
   }
 
   void disp()

@@ -17,13 +17,6 @@ public:
 
   Leontief(unsigned int m, unsigned int n) : Economy(m, n)
   {
-    // Special choice of data
-    a[0][0] = 2.0; a[0][1] = 1.0;
-    a[1][0] = 1.0; a[1][1] = 2.0;
-    
-    w[0][0] = 1.0; w[0][1] = 2.0;
-    w[1][0] = 2.0; w[1][1] = 1.0;
-
     init(&tmp0);
     init(&tmp1);
   }

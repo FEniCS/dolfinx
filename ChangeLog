@@ -1,3 +1,6 @@
+ - Implement polynomial for of CES economy
+ - Rename all new linear algebra classes: NewFoo --> Foo
+ - Clean out old linear algebra
  - Speedup setting of boundary conditions (add MAT_KEEP_ZEROED_ROWS)
  - Fix bug for option --disable-curses
 0.5.4 [2005-03-29]
