@@ -10,14 +10,18 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
-			 NewVector& x) : mesh(mesh), element(element), x(x)
+			 NewVector& x) : data(0)
 {
+  // Create function data
+  data = new Data(mesh, element, x);
+  
+  // Set name and label
   rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
-  // Do nothing
+  if ( data ) delete data;
 }
 //-----------------------------------------------------------------------------
 void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
@@ -25,7 +29,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
 {
   // Check if we're computing the projection onto a cell of the same
   // mesh for the same element (the easy case...)
-  if ( &(cell.mesh()) == &mesh && &element == &(this->element) )
+  if ( &(cell.mesh()) == &(data->mesh) && &element == &(data->element) )
   {
     // FIXME: Assumes uniprocessor case. Why isn't there a function
     // FIXME: VecGetValues() in PETSc? Possible answer: since if we're
@@ -36,10 +40,10 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: in x, then we can optimize by just calling
     // FIXME: element::dof() one time with i = 0.
 
-    real *values = x.array();
+    real *values = data->x.array();
     for (uint i = 0; i < element.spacedim(); i++)
-      c[i] = values[element.dof(i, cell, mesh)];
-    x.restore(values);
+      c[i] = values[element.dof(i, cell, data->mesh)];
+    data->x.restore(values);
   }
   else
   {
@@ -54,3 +58,4 @@ real NewFunction::operator()(const Point& p)
 
   return 0.0;
 }
+//-----------------------------------------------------------------------------
