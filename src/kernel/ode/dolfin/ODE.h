@@ -5,6 +5,7 @@
 #define __ODE_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 
 namespace dolfin {
@@ -22,7 +23,7 @@ namespace dolfin {
 
   class ODE {
   public:
-    
+
     /// Constructor
     ODE(unsigned int N);
 
@@ -34,6 +35,12 @@ namespace dolfin {
 
     /// Right-hand side
     virtual real f(const Vector& u, real t, unsigned int i) = 0;
+
+    /// Method to use for given component (default: cg)
+    virtual Element::Type method(unsigned int i);
+
+    /// Order to use for given component (default: cg)
+    virtual unsigned int order(unsigned int i);
 
     /// Number of components N
     unsigned int size() const;
@@ -70,6 +77,10 @@ namespace dolfin {
     unsigned int N;
     real T;
 
+  private:
+
+    Element::Type default_method;
+    unsigned int default_order;
 
   };
 

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/Function.h>
 #include <dolfin/Vector.h>
 #include <dolfin/ODESolver.h>
@@ -13,11 +14,32 @@ ODE::ODE(unsigned int N) : sparsity(N)
 {
   this->N = N;
   T = 1.0;
+
+  // Choose method
+  string method = dolfin_get("method");
+  if ( method == "cg" )
+    default_method = Element::cg;
+  else
+    default_method = Element::dg;
+  
+  // Choose order
+  default_order = dolfin_get("order");
+  cout << "ODE order = " << default_order << endl;
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+Element::Type ODE::method(unsigned int i)
+{
+  return default_method;
+}
+//-----------------------------------------------------------------------------
+unsigned int ODE::order(unsigned int i)
+{
+  return default_order;
 }
 //-----------------------------------------------------------------------------
 unsigned int ODE::size() const

@@ -12,7 +12,7 @@ AM_MAINTAINER_MODE
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
                              [Turn on debugging and warnings]),
-              CXXFLAGS='-DDEBUG=1 -g -O2 -Wall')
+              CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror')
 
 # Option --disable-curses
 AC_ARG_ENABLE(curses,

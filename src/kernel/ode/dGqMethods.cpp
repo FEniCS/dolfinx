@@ -25,19 +25,18 @@ dGqMethods::~dGqMethods()
   }
 }
 //-----------------------------------------------------------------------------
-const dGqMethod& dGqMethods::operator() (int q) const
+const dGqMethod& dGqMethods::operator() (unsigned int q) const
 {
-  dolfin_assert(q >= 1);
-  dolfin_assert(q < methods.size());
+  dolfin_assert(q < static_cast<unsigned int>(methods.size()));
   dolfin_assert(methods(q));
 
   return *methods(q);
 }
 //-----------------------------------------------------------------------------
-void dGqMethods::init(int q)
+void dGqMethods::init(unsigned int q)
 {
   // Check if we need to increase the size of the list
-  if ( q >= methods.size() )
+  if ( q >= static_cast<unsigned int>(methods.size()) )
     dG.methods.resize(max(q+1,2*methods.size()));
    
   // Check if the method has already been initialized

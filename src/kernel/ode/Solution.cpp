@@ -12,7 +12,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Solution::Solution(ODE& ode, Function& u) :
-  elmdata(u.elmdata()), u0(ode.size()), t0(0)
+  ode(ode), elmdata(u.elmdata()), u0(ode.size()), t0(0)
 {
   // Get parameters
   _debug  = dolfin_get("debug time steps");
@@ -40,7 +40,15 @@ Element* Solution::createElement(Element::Type type,
 				 unsigned int q, unsigned int index, 
 				 real t0, real t1)
 {
-  return elmdata.createElement(type, q, index, t0, t1);
+  // Create element
+  Element* element = elmdata.createElement(type, q, index, t0, t1);
+  
+  // Specify initial data
+  dolfin_assert(element);
+  element->reset(u0[index]);
+
+  // Return the element
+  return element;
 }
 //-----------------------------------------------------------------------------
 Element* Solution::element(unsigned int i, real t)
@@ -72,10 +80,10 @@ real Solution::u(unsigned int i, real t)
   // First check if the initial value is requested. We don't want to ask
   // elmdata for the element, since elmdata might go looking for the element
   // on disk if it is not available.
-  
+ 
   if ( t == t0 )
     return u0[i];
-  
+
   // Then try to find the element and return the value if we found it
   Element* element = elmdata.element(i,t);
   if ( element )
@@ -106,6 +114,20 @@ real Solution::r(unsigned int i, real t, RHS& f)
 unsigned int Solution::size() const
 {
   return elmdata.size();
+}
+//-----------------------------------------------------------------------------
+Element::Type Solution::method(unsigned int i)
+{
+  cout << "method = " << ode.method(i) << endl;
+
+  return ode.method(i);
+}
+//-----------------------------------------------------------------------------
+unsigned int Solution::order(unsigned int i)
+{
+  cout << "order = " << ode.order(i) << endl;
+
+  return ode.order(i);
 }
 //-----------------------------------------------------------------------------
 void Solution::shift(real t0)

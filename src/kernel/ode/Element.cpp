@@ -29,6 +29,9 @@ Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
   
   if ( (q+1) > f.size() )
     f.init(q+1);
+
+  //cout << "Creating element for component " << index 
+  //     << "[" << t0 << ", " << t1 << "]" << endl;
 }
 //-----------------------------------------------------------------------------
 Element::~Element()

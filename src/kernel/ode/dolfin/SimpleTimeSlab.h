@@ -20,8 +20,7 @@ namespace dolfin {
   public:
     
     /// Create time slab, including one iteration
-    SimpleTimeSlab(Element::Type type, unsigned int q,
-		   real t0, real t1, Solution& u, Adaptivity& adaptivity);
+    SimpleTimeSlab(real t0, real t1, Solution& u, Adaptivity& adaptivity);
     
     /// Destructor
     ~SimpleTimeSlab();
@@ -38,7 +37,7 @@ namespace dolfin {
   private:
     
     // Create new time slab
-    void create(Element::Type type, unsigned int q, Solution& u, Adaptivity& adaptivity);
+    void create(Solution& u, Adaptivity& adaptivity);
     
   };
 

@@ -38,15 +38,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
   real t = 0.0;
   TimeSlab* timeslab = 0;
 
-  // Choose method and order
-  Element::Type type;
-  string method = dolfin_get("method");
-  if ( method == "cg" )
-    type = Element::cg;
-  else
-    type = Element::dg;
-  unsigned int order = dolfin_get("order");
-  
   // Create data for time-stepping
   Partition partition(N);
   Adaptivity adaptivity(N);
@@ -63,9 +54,9 @@ void TimeStepper::solve(ODE& ode, Function& function)
     
     // Create a new time slab
     if ( t == 0.0 )
-      timeslab = new SimpleTimeSlab(type, order, t, T, u, adaptivity);
+      timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
-      timeslab = new RecursiveTimeSlab(type, order, t, T, u, f, adaptivity, fixpoint, partition, 0);
+      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
     
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )

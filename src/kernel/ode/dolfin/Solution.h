@@ -65,6 +65,12 @@ namespace dolfin {
     /// Return number of components
     unsigned int size() const;
 
+    /// Return method to use for given component
+    Element::Type method(unsigned int i);
+
+    /// Return order to use for given component
+    unsigned int order(unsigned int i);
+
     /// Prepare for next time slab (propagate values)
     void shift(real t0);
 
@@ -76,6 +82,9 @@ namespace dolfin {
     void debug(Element& element, Action action);
 
   private:
+
+    // The ODE
+    ODE& ode;
 
     // Element data
     ElementData& elmdata;

@@ -1,3 +1,5 @@
+ - Different methods for different components
+ - Fix bug in dGqMethods
  - Fix bug (delete old block) in ElementData
  - Add parameters for method and order
  - Stabilization of multi-adaptive solver (experimental)

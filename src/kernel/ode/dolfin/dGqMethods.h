@@ -28,13 +28,14 @@ namespace dolfin {
     ~dGqMethods();
     
     /// Return given dG(q) method
-    const dGqMethod& operator() (int q) const;
+    const dGqMethod& operator() (unsigned int q) const;
 
     /// Initialize given dG(q) method
-    void init(int q);
+    void init(unsigned int q);
 
   private:
 
+    // FIXME: Use NewArray
     Array<dGqMethod*> methods;
 
   };

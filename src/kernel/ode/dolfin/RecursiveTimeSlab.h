@@ -23,8 +23,7 @@ namespace dolfin {
   public:
 
     /// Create time slab, including one iteration
-    RecursiveTimeSlab(Element::Type type, unsigned int q,
-		      real t0, real t1, Solution& u, RHS& f, 
+    RecursiveTimeSlab(real t0, real t1, Solution& u, RHS& f, 
 		      Adaptivity& adaptivity, FixedPointIteration& fixpoint,
 		      Partition& partition, int offset);
     
@@ -43,20 +42,17 @@ namespace dolfin {
   private:
     
     // Create new time slab
-    void create(Element::Type type, unsigned int q,
-		Solution& u, RHS& f, Adaptivity& adaptivity,
+    void create(Solution& u, RHS& f, Adaptivity& adaptivity,
 		FixedPointIteration& fixpoint,
 		Partition& partition, int offset);
     
     // Create list of time slabs within the time slab
-    void createTimeSlabs(Element::Type type, unsigned int q,
-			 Solution& u, RHS& f, Adaptivity& adaptivity,
+    void createTimeSlabs(Solution& u, RHS& f, Adaptivity& adaptivity,
 			 FixedPointIteration& fixpoint,
 			 Partition& partition, int offset);
 
     // Create list of elements within the time slab
-    void createElements(Element::Type type, unsigned int q,
-			Solution& u, RHS& f, Adaptivity& adaptivity,
+    void createElements(Solution& u, RHS& f, Adaptivity& adaptivity,
 			FixedPointIteration& fixpoint,
 			Partition& partition, int offset, int end);
 

@@ -12,11 +12,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SimpleTimeSlab::SimpleTimeSlab(Element::Type type, unsigned int q,
-			       real t0, real t1, Solution& u, 
+SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, Solution& u, 
 			       Adaptivity& adaptivity) : TimeSlab(t0, t1)
 {
-  create(type, q, u, adaptivity);
+  create(u, adaptivity);
 }
 //-----------------------------------------------------------------------------
 SimpleTimeSlab::~SimpleTimeSlab()
@@ -39,8 +38,7 @@ real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)
   return computeMaxRdElements(u, f);
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::create(Element::Type type, unsigned int q,
-			    Solution& u, Adaptivity& adaptivity)
+void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
 {
   // Get initial time step (same for all components)
   real k = adaptivity.regulator(0).timestep();
@@ -52,7 +50,7 @@ void SimpleTimeSlab::create(Element::Type type, unsigned int q,
   for (unsigned int i = 0; i < u.size(); i++)
   {
     // Create element
-    Element *element = u.createElement(type, q, i, t0, t1);
+    Element *element = u.createElement(u.method(i), u.order(i), i, t0, t1);
     
     // Write debug info
     u.debug(*element, Solution::create);

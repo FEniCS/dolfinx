@@ -44,6 +44,22 @@ public:
 
     return -lambda * u(2);
   }
+
+  Element::Type method(unsigned int i)
+  {
+    if ( i == 2 )
+      return Element::dg;
+    
+    return Element::cg;
+  }
+
+  unsigned int order(unsigned int i)
+  {
+    if ( i == 2 )
+      return 0;
+    
+    return 1;
+  }
   
 private:
 
