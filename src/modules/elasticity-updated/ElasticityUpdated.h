@@ -33,8 +33,13 @@ public:
 
 
       // Material parameters
-      real b = 0.1;
-      real E = 500.0;
+      //real b = 0.1;
+      //real E = 500.0;
+      //real nu = 0.3;
+
+      real b = 10.0;
+      real b_p = 300.0;
+      real E = 100.0;
       real nu = 0.3;
 
 
@@ -49,11 +54,17 @@ public:
 	sigma(3, 3, Matrix::dense),
 	epsilon(3, 3, Matrix::dense),
 	vsigma(3, 3, Matrix::dense),
+	psigma(3, 3, Matrix::dense),
 	F(3, 3, Matrix::dense),
 	Ftransp(3, 3, Matrix::dense),
 	F0transp(3, 3, Matrix::dense),
 	tmp1(3, 3, Matrix::dense),
 	tmp2(3, 3, Matrix::dense); 
+
+      Matrix &sigma0 = *(sigma0array[cell_->id()]);
+      Matrix &sigma1 = *(sigma1array[cell_->id()]);
+      Matrix &vsigma1 = *(vsigmaarray[cell_->id()]);
+
 
       if(!computedsigma[cell_->id()])
       {
@@ -123,6 +134,42 @@ public:
 	//cout << "epsilon on cell " << cell_->id() << ": " << endl;
 	//epsilon.show();
       
+	
+	//vsigma = epsilon;
+
+	// Viscosity
+
+	vsigma = gradwp;
+	vsigma += gradwptransp;
+
+	vsigma *= b;
+
+	// Plasticity
+
+	///*
+	real psigmanorm;
+
+	psigma = sigma0;
+	psigmanorm = psigma.norm();
+	//psigmanorm = 0.5;
+
+	cout << "psigmanorm on cell " << cell_->id() << ": " << endl;
+	cout << psigmanorm << endl;
+
+
+	if(psigmanorm > 1)
+	{
+	  psigma *= -1.0 / psigmanorm;
+	  psigma += sigma0;
+
+	  psigma *= -1.0 / b_p;
+
+	  epsilon += psigma;
+	}
+	//*/
+
+	// Elasticity
+
 	sigma(0, 0) =
 	  (lambda + 2 * mu) * epsilon(0, 0) +
 	  lambda * epsilon(1, 1) + lambda * epsilon(2, 2);
@@ -138,25 +185,15 @@ public:
 	sigma(0, 2) = sigma(2, 0); 
 	sigma(0, 1) = mu * epsilon(0, 1);
 	sigma(1, 0) = sigma(0, 1);
-	
-	//vsigma = epsilon;
 
-	// Viscosity
 
-	vsigma = gradwp;
-	vsigma += gradwptransp;
 
-	vsigma *= b;
 
 	//cout << "sigma on cell " << cell_->id() << ": " << endl;
 	//sigma.show();
       
-	Matrix &sigma0 = *(sigma0array[cell_->id()]);
-	Matrix &sigma1 = *(sigma1array[cell_->id()]);
-	Matrix &vsigma1 = *(vsigmaarray[cell_->id()]);
       
 	// Update sigma
-
 	sigma *= k;
 	sigma += sigma0;
 
