@@ -10,6 +10,7 @@
 #include <dolfin/FGMRES.h>
 #include <dolfin/GaussSeidel.h>
 #include <dolfin/GMRES.h>
+#include <dolfin/NewGMRES.h>
 #include <dolfin/Jacobi.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
