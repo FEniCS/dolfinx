@@ -1,6 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#ifndef NO_CURSES
+
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
@@ -872,3 +874,5 @@ void CursesLogger::indent(int _level)
     printw("  ");
 }
 //-----------------------------------------------------------------------------
+
+#endif

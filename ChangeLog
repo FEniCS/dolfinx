@@ -1,3 +1,4 @@
+ - Add configure option --disable-curses
  - Grid refinement updates
  - Make OpenDX file format work for grids (output)
  - Add volume() and diameter() in cell

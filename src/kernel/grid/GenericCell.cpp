@@ -214,16 +214,11 @@ Edge* GenericCell::findEdge(Node* n0, Node* n1)
 //-----------------------------------------------------------------------------
 Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
 {
-  cout << endl;
-
   for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
-      if ( (*f)->equals(e0, e1, e2) ) {
-	cout << "Face [" << e0->id() << " " << e1->id() << " " << e2->id() << "]: found!" << endl;
+      if ( (*f)->equals(e0, e1, e2) )
 	return *f;
-      }
 
-  cout << "Face [" << e0->id() << " " << e1->id() << " " << e2->id() << "]: not found" << endl;
   return 0;
 }
 //-----------------------------------------------------------------------------

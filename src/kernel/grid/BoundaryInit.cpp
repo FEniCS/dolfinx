@@ -106,8 +106,6 @@ void BoundaryInit::initFacesTet(Grid& grid)
   
   // Add faces with only one cell neighbor to the boundary
   for (FaceIterator f(grid); !f.end(); ++f) {
-    cout << "Face " << f->id() << " has " << cellcount(f->id()) << " cell neighbors" << endl;
-
     if ( cellcount(f->id()) == 1 )
       grid.bd->add(f);
     else if ( cellcount(f->id()) != 2 )

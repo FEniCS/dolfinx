@@ -14,6 +14,12 @@ AC_ARG_ENABLE(debug,
                              [Turn on debugging and warnings]),
               CXXFLAGS='-DDEBUG=1 -g -O2 -Wall')
 
+# Option --disable-curses
+AC_ARG_ENABLE(curses,
+              AC_HELP_STRING([--disable-curses],
+                             [Compile without curses]),
+              CXXFLAGS=$CXXFLAGS' -DNO_CURSES=1')
+
 # Checks for programs
 AC_PROG_CC
 AC_PROG_CXX

@@ -4,6 +4,8 @@
 #ifndef __CURSES_LOGGER_H
 #define __CURSES_LOGGER_H
 
+#ifndef NO_CURSES
+
 #include <curses.h>
 
 #include <dolfin/constants.h>
@@ -94,5 +96,10 @@ namespace dolfin {
   };
   
 }
+
+#else
+#include <dolfin/TerminalLogger.h>
+namespace dolfin { typedef TerminalLogger CursesLogger; }
+#endif
 
 #endif
