@@ -47,6 +47,9 @@ void Regulator::update(real k, real kmax, bool kfixed)
   // Check kmax
   if(this->k > kmax )
     this->k = kmax;
+
+  cout << "kmax = " << kmax << endl;
+  cout << "new time step: " << k << endl;
 }
 //-----------------------------------------------------------------------------
 real Regulator::timestep() const

@@ -60,27 +60,18 @@ void dGqElement::update(real u0)
   this->u0 = u0;
 }
 //-----------------------------------------------------------------------------
-real dGqElement::update(RHS& f)
+void dGqElement::update(RHS& f)
 {
-  // Save old end-value
-  real u1 = values[q];
-
   // Evaluate right-hand side
   feval(f);
   
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
-
-  // Return change in end-value
-  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
-real dGqElement::update(RHS& f, real alpha)
+void dGqElement::update(RHS& f, real alpha)
 {
-  // Save old end-value
-  real u1 = values[q];
-
   // Evaluate right-hand side
   feval(f);
 
@@ -90,9 +81,6 @@ real dGqElement::update(RHS& f, real alpha)
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = w0*values[i] + alpha*(u0 + integral(i));
-
-  // Return change in end-value
-  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
 void dGqElement::reset(real u0)

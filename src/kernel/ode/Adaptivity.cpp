@@ -2,30 +2,30 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/ODE.h>
 #include <dolfin/Element.h>
 #include <dolfin/Adaptivity.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Adaptivity::Adaptivity(unsigned int N) : regulators(N)
+Adaptivity::Adaptivity(ODE& ode) : regulators(ode.size())
 {
   // Get parameters
   TOL     = dolfin_get("tolerance");
   kmax    = dolfin_get("maximum time step");
   kfixed  = dolfin_get("fixed time step");
   beta    = dolfin_get("interval threshold");
-  real k0 = dolfin_get("initial time step");
 
   // Start with given maximum time step
   kmax_current = kmax;
 
   // Scale tolerance with the number of components
-  TOL /= static_cast<real>(N);
+  TOL /= static_cast<real>(ode.size());
 
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)
-    regulators[i].init(k0);
+    regulators[i].init(ode.timestep(i));
 }
 //-----------------------------------------------------------------------------
 Adaptivity::~Adaptivity()
@@ -52,24 +52,27 @@ real Adaptivity::tolerance() const
 //-----------------------------------------------------------------------------
 real Adaptivity::maxstep() const
 {
-  // FIXME: Should we have an individual kmax for each component?
-  // FIXME: In that case we should put kmax into the Regulator class.
-
   return kmax_current;
+}
+//-----------------------------------------------------------------------------
+real Adaptivity::minstep() const
+{
+  real kmin = regulators[0].timestep();
+  for (unsigned int i = 1; i < regulators.size(); i++)
+    kmin = std::min(kmin, regulators[i].timestep());
+  
+  return std::min(kmin, kmax_current);
 }
 //-----------------------------------------------------------------------------
 void Adaptivity::decreaseTimeStep(real factor)
 {
   dolfin_assert(factor >= 0.0);
   dolfin_assert(factor <= 1.0);
-  kmax_current *= factor;
+  kmax_current = factor * minstep();
 }
 //-----------------------------------------------------------------------------
 bool Adaptivity::fixed() const
 {
-  // FIXME: Should we have an individual kmax for each component?
-  // FIXME: In that case we should put kmax into the Regulator class.
-
   return kfixed;
 }
 //-----------------------------------------------------------------------------

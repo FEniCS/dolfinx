@@ -1,6 +1,8 @@
+ - Fix bug in LogStream (large numbers in floating point format)
+ - Specify individual time steps for different components
  - Compile without warnings
  - Add -Werror to option enable-debug
- - Different methods for different components
+ - Specify individual methods for different components
  - Fix bug in dGqMethods
  - Fix bug (delete old block) in ElementData
  - Add parameters for method and order

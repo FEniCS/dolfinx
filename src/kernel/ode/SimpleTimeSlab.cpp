@@ -40,11 +40,11 @@ real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
 {
-  // Get initial time step (same for all components)
-  real k = adaptivity.regulator(0).timestep();
+  // Use the minimal time step for all components
+  real kmin = adaptivity.minstep();
 
   // Set size of this time slab
-  setsize(k, adaptivity);
+  setsize(kmin, adaptivity);
 
   // Create elements
   for (unsigned int i = 0; i < u.size(); i++)

@@ -40,7 +40,7 @@ void TimeStepper::solve(ODE& ode, Function& function)
 
   // Create data for time-stepping
   Partition partition(N);
-  Adaptivity adaptivity(N);
+  Adaptivity adaptivity(ode);
   Solution u(ode, function);
   RHS f(ode, u);
   FixedPointIteration fixpoint(u, f);

@@ -9,13 +9,15 @@
 
 namespace dolfin {
 
+  class ODE;
+
   /// Adaptivity controls the adaptive time-stepping.
 
   class Adaptivity {
   public:
 
     /// Constructor
-    Adaptivity(unsigned int N);
+    Adaptivity(ODE& ode);
 
     /// Destructor
     ~Adaptivity();
@@ -32,6 +34,9 @@ namespace dolfin {
     /// Return maximum time step
     real maxstep() const;
 
+    /// Return minimum time step
+    real minstep() const;
+    
     /// Decrease maximum time step (temporarily) with given factor
     void decreaseTimeStep(real factor);
     

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <stdio.h>
-
+#include <cmath>
 #include <dolfin/constants.h>
 #include <dolfin/LoggerMacros.h>
 #include <dolfin/LogManager.h>
@@ -73,7 +73,10 @@ LogStream& LogStream::operator<<(unsigned int a)
 LogStream& LogStream::operator<<(real a)
 {
   char tmp[DOLFIN_WORDLENGTH];
-  sprintf(tmp, "%f", a);
+  if ( fabs(a) < 1e-5 || fabs(a) > 1e5 )
+    sprintf(tmp, "%e", a);
+  else
+    sprintf(tmp, "%f", a);
   add(tmp);
   return *this;
 }

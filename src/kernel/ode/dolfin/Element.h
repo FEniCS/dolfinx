@@ -54,10 +54,10 @@ namespace dolfin {
     void update(unsigned int node, real value);
 
     /// Update element (iteration)
-    virtual real update(RHS& f) = 0;
+    virtual void update(RHS& f) = 0;
 
     /// Update element (iteration), damped version
-    virtual real update(RHS& f, real alpha) = 0;
+    virtual void update(RHS& f, real alpha) = 0;
 
     /// Reset all element values to the given initial value
     virtual void reset(real u0) = 0;

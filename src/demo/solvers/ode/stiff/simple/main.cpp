@@ -14,7 +14,7 @@ public:
   Simple() : ODE(3)
   {
     // Parameters
-    lambda = 100.0;
+    lambda = 1000.0;
 
     // Final time
     T = 30.0;
@@ -37,10 +37,10 @@ public:
   real f(const Vector& u, real t, unsigned int i)
   {
     if ( i == 0 )
-      return 0.0; //return u(1);
+      return u(1);
 
     if ( i == 1 )
-      return 0.0; //return -u(0);
+      return -u(0);
 
     return -lambda * u(2);
   }
@@ -60,6 +60,16 @@ public:
     
     return 1;
   }
+
+  /*
+  real timestep(unsigned int i)
+  {
+    if ( i == 2 )
+      return 1e-3;
+
+    return 0.1;
+  }
+  */
   
 private:
 
@@ -72,7 +82,7 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("debug time steps", 1);
   dolfin_set("tolerance", 0.01);
-  dolfin_set("initial time step", 0.01);
+  dolfin_set("initial time step", 0.1);
   //dolfin_set("maximum time step", 1.0);
   //dolfin_set("fixed time step", true);
   dolfin_set("partitioning threshold", 1.0);

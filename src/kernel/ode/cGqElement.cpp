@@ -60,27 +60,18 @@ void cGqElement::update(real u0)
   values[0] = u0;
 }
 //-----------------------------------------------------------------------------
-real cGqElement::update(RHS& f)
+void cGqElement::update(RHS& f)
 {
-  // Save old end-value
-  real u1 = values[q];
-
   // Evaluate right-hand side
   feval(f);
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i] = values[0] + integral(i);
-
-  // Return change in end-value
-  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
-real cGqElement::update(RHS& f, real alpha)
+void cGqElement::update(RHS& f, real alpha)
 {
-  // Save old end-value
-  real u1 = values[q];
-
   // Evaluate right-hand side
   feval(f);
 
@@ -90,9 +81,6 @@ real cGqElement::update(RHS& f, real alpha)
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i] = w0*values[i] + alpha*(values[0] + integral(i));
-
-  // Return change in end-value
-  return values[q] - u1;
 }
 //-----------------------------------------------------------------------------
 void cGqElement::reset(real u0)

@@ -36,11 +36,14 @@ namespace dolfin {
     /// Right-hand side
     virtual real f(const Vector& u, real t, unsigned int i) = 0;
 
-    /// Method to use for given component (default: cg)
+    /// Method to use for given component (optional)
     virtual Element::Type method(unsigned int i);
 
-    /// Order to use for given component (default: cg)
+    /// Order to use for given component (optional)
     virtual unsigned int order(unsigned int i);
+
+    /// Time step to use for given component (optional)
+    virtual real timestep(unsigned int i);
 
     /// Number of components N
     unsigned int size() const;
@@ -81,6 +84,7 @@ namespace dolfin {
 
     Element::Type default_method;
     unsigned int default_order;
+    real default_timestep;
 
   };
 

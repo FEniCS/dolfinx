@@ -8,7 +8,6 @@
 
 namespace dolfin
 {
-
   class Solution;
   class RHS;
   class TimeSlab;
@@ -35,7 +34,7 @@ namespace dolfin
   private:
 
     // States
-    enum State { undamped, scalar_small, scalar_increasing, diagonal_small, diagonal_increasing };
+    enum State { undamped, damped, increasing };
 
     // Check if the time slab has converged
     bool converged(TimeSlab& timeslab);
@@ -50,16 +49,10 @@ namespace dolfin
     void stabilizeUndamped(TimeSlab& timeslab);
 
     // Compute stabilization for scalar damping with small alpha
-    void stabilizeScalarSmall(TimeSlab& timeslab);
+    void stabilizeDamped(TimeSlab& timeslab);
 
     // Compute stabilization for scalar damping with increasing alpha
-    void stabilizeScalarIncreasing(TimeSlab& timeslab);
-
-    // Compute stabilization for diagonal damping with small alpha
-    void stabilizeDiagonalSmall(TimeSlab& timeslab);
-
-    // Compute stabilization for diagonal damping with increasing alpha
-    void stabilizeDiagonalIncreasing(TimeSlab& timeslab);
+    void stabilizeIncreasing(TimeSlab& timeslab);
 
     // Compute convergence rate
     real computeConvergenceRate();
@@ -70,8 +63,8 @@ namespace dolfin
     // Compute m
     unsigned int computeDampingSteps(real rho);
 
-    // Clear data from previous iteration
-    void clear();
+    // Reset fixed point iteration
+    void reset();
 
     //--- Data for fixed point iteration
 
@@ -83,9 +76,12 @@ namespace dolfin
 
     // Iteration number
     unsigned int n;
-
+    
     // Maximum number of iterations
     unsigned int maxiter;
+
+    // Maximum number of local iterations
+    unsigned int local_maxiter;
 
     // Current state
     State state;
@@ -101,6 +97,9 @@ namespace dolfin
 
     // Discrete residuals
     real r0, r1, r2;
+
+    // Tolerance for discrete residual
+    real tol;
 
   };
 

@@ -16,6 +16,13 @@ using namespace dolfin;
 FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
 {
   maxiter = dolfin_get("maximum iterations");
+
+  // FIXME: Maybe this should be a parameter?
+  local_maxiter = 10;
+
+  // FIXME: Convergence should be determined by the error control
+  tol = 1e-3;
+
   clear();
 }
 //-----------------------------------------------------------------------------
@@ -31,13 +38,15 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   // The time slabs will call FixedPointIteration::update() on all elements
   // within the time slabs.
 
-  clear();
+  reset();
 
-  cout << "-------------------------------------------------------" << endl;
+  cout << "===========================================================" << endl;
+
 
   while ( !converged(timeslab) )
   {
-    // Check convergence
+    cout << "--- n = " << n << "---------------------------------------------" << endl;   
+    // Check stabilization
     if ( n >= 2 )
       stabilize(timeslab);
 
@@ -51,10 +60,12 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     cout << endl;
 
   }
-
+ 
+  cout << "-----------------------------------------------------------" << endl;
   cout << "Converged in " << n << " iterations" << endl;
+  cout << "===========================================================" << endl;
 
-  clear();
+  reset();
 
   return true;
 }
@@ -66,23 +77,59 @@ real FixedPointIteration::update(Element& element)
   
   // Update value
   element.update(u0);    
-  
-  real d = 0.0;
-  if ( state == undamped )
-    d = element.update(f);
-  else
-    d = element.update(f, alpha);
-  
-  // Write debug info
-  u.debug(element, Solution::update);
 
-  return fabs(d);
+  // Save end value for element
+  real u1 = element.endval();
+
+  // Local iteration number
+  unsigned int local_n = 0;
+
+  // Local alpha
+  real local_alpha = 1.0;
+  
+  // Local discrete residuals
+  real local_r1 = 0.0;
+  real local_r2 = 0.0;
+
+  // Fixed point iteration on the element
+  while ( true )
+  {
+    // Update element
+    if ( alpha == 1.0 && local_alpha == 1.0 )
+      element.update(f);
+    else
+      element.update(f, alpha*local_alpha);
+
+    // Compute discrete residual
+    local_r1 = local_r2;
+    local_r2 = fabs(element.computeDiscreteResidual(f));
+    
+    // Write debug info
+    u.debug(element, Solution::update);
+    
+    // Check stabilization
+    if ( local_n >= 2 )
+    {
+      real rho = local_r2 / (DOLFIN_EPS + local_r1);
+      if ( rho > 0.5 )
+	local_alpha = 1.0 / (1.0 + rho/local_alpha);
+    }
+
+    // Check if we have done too many iterations
+    if ( local_n++ >= local_maxiter )
+      break;
+
+    // Check convergence
+    if ( local_r2 < tol )
+      break;
+  }
+  
+  // Return change in end value
+  return fabs(element.endval() - u1);
 }
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::converged(TimeSlab& timeslab)
 {
-  // FIXME: Convergence should be determined by the error control
-
   // Compute maximum discrete residual
   r1 = r2;
   r2 = timeslab.computeMaxRd(u, f);
@@ -90,10 +137,10 @@ bool FixedPointIteration::converged(TimeSlab& timeslab)
   // Save initial discrete residual
   if ( n == 0 )
     r0 = r2;
-
+  
   cout << "Checking convergence: " << r1 << " --> " << r2 << endl;
 
-  return r2 < 1e-3;
+  return r2 < tol;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(TimeSlab& timeslab)
@@ -113,17 +160,11 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab)
   case undamped:
     stabilizeUndamped(timeslab);
     break;
-  case scalar_small:
-    stabilizeScalarSmall(timeslab);
+  case damped:
+    stabilizeDamped(timeslab);
     break;
-  case scalar_increasing:
-    stabilizeScalarIncreasing(timeslab);
-    break;
-  case diagonal_small:
-    stabilizeDiagonalSmall(timeslab);
-    break;
-  case diagonal_increasing:
-    stabilizeDiagonalIncreasing(timeslab);
+  case increasing:
+    stabilizeIncreasing(timeslab);
     break;
   default:
     dolfin_error("Unknown state.");
@@ -150,10 +191,10 @@ void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab)
     timeslab.reset(u);
   
   // Change state
-  state = scalar_small;
+  state = damped;
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
+void FixedPointIteration::stabilizeDamped(TimeSlab& timeslab)
 {
   // Decrease the remaining number of iterations with small alpha
   m--;
@@ -164,7 +205,7 @@ void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
   if ( m == 0 )
   {
     alpha *= 2.0;
-    state = scalar_increasing;
+    state = increasing;
   }
 
   // Adjust alpha if the solution diverges
@@ -179,7 +220,7 @@ void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
   }
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab)
+void FixedPointIteration::stabilizeIncreasing(TimeSlab& timeslab)
 {
   // Increase alpha
   alpha *= 2.0;
@@ -197,7 +238,7 @@ void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab)
       timeslab.reset(u);
     
     // Change state
-    state = scalar_small;
+    state = damped;
   }
 
   // Check if we're done
@@ -206,16 +247,6 @@ void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab)
     alpha = 1.0;
     state = undamped;
   }
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonalSmall(TimeSlab& timeslab)
-{
-  dolfin_error("Diagonal damping not implemented.");
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonalIncreasing(TimeSlab& timeslab)
-{
-  dolfin_error("Diagonal damping not implemented.");
 }
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeConvergenceRate()
@@ -240,7 +271,7 @@ unsigned int FixedPointIteration::computeDampingSteps(real rho)
   return 1 + 2*ceil_int(log(1.0 + rho));
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::clear()
+void FixedPointIteration::reset()
 {
   n = 0;
   state = undamped;
