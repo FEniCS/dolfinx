@@ -14,13 +14,11 @@ ElasticitySolver::ElasticitySolver(Mesh& mesh) : Solver(mesh)
   dolfin_parameter(Parameter::REAL,      "final time",  1.0);
   dolfin_parameter(Parameter::REAL,      "time step",   0.1);
   dolfin_parameter(Parameter::VFUNCTION,  "source",      0);
-  dolfin_parameter(Parameter::FUNCTION,  "diffusivity", 0);
-  dolfin_parameter(Parameter::VFUNCTION, "convection",  0);
 }
 //-----------------------------------------------------------------------------
 const char* ElasticitySolver::description()
 {
-  return "Convection-diffusion";
+  return "Elasticity";
 }
 //-----------------------------------------------------------------------------
 void ElasticitySolver::solve()

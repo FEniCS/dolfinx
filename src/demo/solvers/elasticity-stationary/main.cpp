@@ -20,68 +20,6 @@ real f(real x, real y, real z, real t, int i)
     }
   }
 
-  /*
-  if(i == 2)
-  {
-    return 10;
-  } 
-  */
-  ///*
-  /*
-  if(i == 0)
-  {
-    return 25.0/26.0*y*(-1.0+2.0*z)*(-1.0+y)*(-1.0+2.0*x);
-  } 
-  if(i == 1)  
-  {
-    return 25.0/26.0*x*(-1.0+2.0*z)*(-1.0+2.0*y)*(-1.0+x);
-  } 
-  if(i == 2)  
-  {
-    return 10.0/13.0*y*z-10.0/13.0*y*z*z-10.0/13.0*y*y*z
-      +10.0/13.0*y*y*z*z+10.0/13.0*x*z-10.0/13.0*x*z*z-10.0/13.0*x*x*z
-      +10.0/13.0*x*x*z*z+35.0/13.0*x*y-35.0/13.0*x*y*y-35.0/13.0*x*x*y
-      +35.0/13.0*x*x*y*y;
-  } 
-  */
-  //*/
-
-  /*
-  if(i == 0)                                                                   
-  {
-    return 5;
-  } 
-  */
-
-  /*
-  if(i == 0)
-  {
-    if(t > 0.0 && t < 0.5 && x > 0.99)
-    {
-      return -10.0;
-    }
-    else if(t > 0.0 && t < 0.5 && x < 0.01)
-    {
-      return 10.0;
-    }
-  }
-  */
-  return 0.0;
-}
-
-// Diffusivity
-real a(real x, real y, real z, real t)
-{
-  //return 0.2;
-  return 0.0;
-}
-
-// Convection
-real b(real x, real y, real z, real t, int i)
-{
-  //if ( i == 0 )
-  //return -5.0;
-
   return 0.0;
 }
 
@@ -165,8 +103,6 @@ int main(int argc, char **argv)
   Problem elasticitystationary("elasticity-stationary", mesh);
 
   elasticitystationary.set("source", f);
-  elasticitystationary.set("diffusivity", a);
-  elasticitystationary.set("convection", b);
   elasticitystationary.set("boundary condition", mybc);
   elasticitystationary.set("final time", 2.0);
   elasticitystationary.set("time step", 0.1);
