@@ -26,11 +26,17 @@ Regulator::~Regulator()
 //-----------------------------------------------------------------------------
 void Regulator::init(real k)
 {
+  cout << "Initializing regulator, k = " << k << endl;
   this->k = k;
 }
 //-----------------------------------------------------------------------------
 void Regulator::update(real k, real kmax, bool kfixed)
 {
+  if ( kfixed )
+    cout << "Choosing fixed time step" << endl;
+
+  cout << "k0 = " << k << endl;
+
   // Old time step
   real k0 = this->k;
 
@@ -47,6 +53,9 @@ void Regulator::update(real k, real kmax, bool kfixed)
   // Check kmax
   if(this->k > kmax )
     this->k = kmax;
+
+  cout << "k1 = " << this->k << endl;
+  cout << "kmax = " << kmax << endl;
 }
 //-----------------------------------------------------------------------------
 real Regulator::timestep() const

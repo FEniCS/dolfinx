@@ -43,6 +43,9 @@ namespace dolfin {
     // Compute largest time step
     real maximum(int offset, Adaptivity& adaptivity) const;
 
+    // Compute smallest time step
+    real minimum(int offset, Adaptivity& adaptivity, int end) const;
+    
     // Comparison operator for the partition
     struct Less : public std::unary_function<unsigned int, bool> 
     {

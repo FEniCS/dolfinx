@@ -35,7 +35,15 @@ public:
   real f(const Vector& u, real t, unsigned int i)
   {
     return -A.mult(u, i);
-  }  
+  }
+
+  real timestep(unsigned int i)
+  {
+    if (i == 0)
+      return 0.1;
+
+    return 0.01;
+  }
 
 private:
   
@@ -50,7 +58,7 @@ int main()
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("initial time step", 0.1);
-  //dolfin_set("fixed time step", true);
+  dolfin_set("fixed time step", true);
 
   NonNormal nonnormal;
   nonnormal.solve();

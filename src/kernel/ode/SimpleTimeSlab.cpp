@@ -52,6 +52,8 @@ void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
   // Use the minimal time step for all components
   real kmin = adaptivity.minstep();
 
+  cout << "Choosing minimal time step: " << kmin << endl;
+
   // Set size of this time slab
   setsize(kmin, adaptivity);
 
