@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-SUBDIRS = test lorenz stiff mechanical bench bistable performance newton modeling
+SUBDIRS = test lorenz stiff mechanical bench bistable performance newton modeling radiation-diffusion
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

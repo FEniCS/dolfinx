@@ -1,3 +1,4 @@
+ - Added check of matrix dimensions for ODE sparsity pattern
  - Include missing cmath in Function.cpp
 0.5.0
  - First prototype of new form evaluation system
