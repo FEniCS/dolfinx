@@ -4,6 +4,11 @@
 #include <dolfin/NewArray.h>
 #include <dolfin/RHS.h>
 #include <dolfin/ODE.h>
+#include <dolfin/Element.h>
+#include <dolfin/ElementIterator.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/cGqElement.h>
+#include <dolfin/dGqElement.h>
 #include <dolfin/JacobianMatrix.h>
 
 using namespace dolfin;
@@ -21,7 +26,7 @@ JacobianMatrix::JacobianMatrix(RHS& f) :
   for (unsigned int i = 0; i < dfdu.size(0); i++)
   {
     // Get dependencies
-    NewArray<unsigned int>& row = f.ode.sparsity.row(i);
+    const NewArray<unsigned int>& row = f.ode.sparsity.row(i);
 
     // Copy sparsity pattern to matrix
     dfdu.initrow(i, row.size());
@@ -66,12 +71,6 @@ void JacobianMatrix::update(real t, unsigned int n)
 //-----------------------------------------------------------------------------
 void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
 {
-  // Perform multiplication with vector, using the Jacobian dfdu of the
-  // right-hand side f and the structure of the time slab
-
-  // Note that we should use the new interface to the GMRES solver:
-  // GMRES::solve(A, x, b)
-
   // Perform the multiplication by iterating over all elements in the slab.
   // For each element, check the component index of that element to pick
   // the correct elements from the Jacobian dfdu. Update a counter while
@@ -81,7 +80,84 @@ void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
   // predecessor, we need to include the derivative -1 with respect to the
   // end time value of the previous element.
   
-  
+  /*
+  unsigned int dof = 0;
+  for (ElementIterator element(list); !element.end(); ++element)
+  { 
+    // Check element type
+    if ( element->type() == Element::cg )
+      dof = cGmult(x, Ax, dof, *element);
+    else
+      dof = dGmult(x, Ax, dof, *element);
+  }
+  */
+}
+//-----------------------------------------------------------------------------
+unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
+				    unsigned int dof, 
+				    const cGqElement& element)
+{
+  /*
 
+  // Get the component index
+  unsigned int i = element.index();
+
+  // Get the degree
+  unsigned int q = element.order();
+
+  // Iterate over local degrees of freedom
+  for (unsigned int m = 0; m < q; m++)
+  {
+    // Global number of current degree of freedom
+    const unsigned int current = dof + m;
+
+    // Derivative w.r.t. the current degree of freedom
+    Ax(current) = x(current);
+
+    // Derivative w.r.t. the end-time value of the previous element
+    if ( latest[i] != -1 )
+      Ax(current) -= x(latest[i]);
+    
+    // Iterate over dependencies
+    unsigned int j;
+    for (unsigned int pos = 0; pos < row.size(); ++pos)
+    {
+      // Get derivative
+      dfiduj = dfdu(i, j, pos);
+
+      // Check if the component depends on itself
+      if ( i == j )
+      {
+	// Derivative w.r.t. internal degrees of freedom on the element
+	for (unsigned int n = 0; n < q; n++)
+	{
+	  
+	  
+	}
+      }
+      else
+      {
+	// Derivative w.r.t. the latest degree of freedom for other component
+
+
+
+      }
+    }
+  }
+
+  // Increase the degree of freedom
+  return dof + q;
+
+  */
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
+				    unsigned int dof,
+				    const dGqElement& element)
+{
+  //return dof + q + 1;
+  return 0;
 }
 //-----------------------------------------------------------------------------

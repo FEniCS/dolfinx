@@ -27,9 +27,6 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
-  cout << "size = " << a.element.spacedim() << endl;
-
-
   // Allocate and reset matrix
   alloc(a.element, mesh, A);
   
@@ -237,9 +234,6 @@ void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Vector& b)
 //-----------------------------------------------------------------------------
 real** NewFEM::allocElementMatrix(const NewFiniteElement& element)
 {
-  cout << "Allocating local matrix of size: " << element.spacedim() << endl;
-
-
   // Allocate element matrix
   real** AK = new real*[element.spacedim()];
   for (unsigned int i = 0; i < element.spacedim(); i++)

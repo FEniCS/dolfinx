@@ -10,6 +10,8 @@ namespace dolfin
 {
   
   class RHS;
+  class cGqElement;
+  class dGqElement;
 
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a time slab.
@@ -34,6 +36,14 @@ namespace dolfin
     void update(real t, unsigned n);
 
   private:
+
+    /// Multiplication for cG(q) elements
+    unsigned int cGmult(const Vector& x, Vector& Ax,
+			unsigned int dof, const cGqElement& element);
+
+    /// Multiplication for dG(q) elements
+    unsigned int dGmult(const Vector& x, Vector& Ax,
+			unsigned int dof, const dGqElement& element);
 
     // The right-hand side
     RHS& f;

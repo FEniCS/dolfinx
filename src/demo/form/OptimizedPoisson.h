@@ -9,24 +9,25 @@
 
 using namespace dolfin;
 
-/// The finite element for which the form is generated.
+/// This is the finite element for which the form is generated,
+/// providing the information neccessary to do assembly.
 
 class OptimizedPoissonFiniteElement : public NewFiniteElement
 {
 public:
   
   OptimizedPoissonFiniteElement() : NewFiniteElement() {}
-
+  
   unsigned int spacedim() const
   {
     return 4;
   }
-
+  
   unsigned int shapedim() const
   {
     return 3;
   }
-
+    
   unsigned int vectordim() const
   {
     return 1;
@@ -36,12 +37,12 @@ public:
   {
     return cell.nodeID(i);
   }
-
+  
   const Point& coord(unsigned int i, const Cell& cell) const
   {
     return cell.node(i).coord();
   }
-
+  
 };
 
 /// This is a hand-optimized version of the bilinear form for
@@ -58,7 +59,8 @@ public:
   bool interior(real** A) const
   {
     real tmp0 = det / 6.0;
-    
+
+    // Compute geometry tensors
     real G00 = tmp0*(g00*g00 + g01*g01 + g02*g02);
     real G01 = tmp0*(g00*g10 + g01*g11 + g02*g12);
     real G02 = tmp0*(g00*g20 + g01*g21 + g02*g22);
@@ -66,6 +68,7 @@ public:
     real G12 = tmp0*(g10*g20 + g11*g21 + g12*g22); 
     real G22 = tmp0*(g20*g20 + g21*g21 + g22*g22);
     
+    // Compute element tensor
     A[1][1] = G00;
     A[1][2] = G01;
     A[1][3] = G02;

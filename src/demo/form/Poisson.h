@@ -16,7 +16,8 @@ public:
   
   real lhs(const ShapeFunction& u, const ShapeFunction& v)
   {
-    return (grad(u),grad(v)) * dx;
+    //return (grad(u),grad(v)) * dx;
+    return u*v*dx;
   }
   
 };
