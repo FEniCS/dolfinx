@@ -46,30 +46,6 @@ Mesh::Mesh(const char* filename)
   file >> *this;
 }
 //-----------------------------------------------------------------------------
-Mesh::Mesh(uint nx, uint ny)
-{
-  md = new MeshData(*this);
-  bd = new BoundaryData(*this);
-  _parent = 0;
-
-  rename("mesh", "Uniform mesh of the unit square.");
-  clear();
-
-  MeshInit::init(*this, nx, ny);
-}
-//-----------------------------------------------------------------------------
-Mesh::Mesh(uint nx, uint ny, uint nz)
-{
-  md = new MeshData(*this);
-  bd = new BoundaryData(*this);
-  _parent = 0;
-
-  rename("mesh", "Uniform mesh of the unit cube.");
-  clear();
-
-  MeshInit::init(*this, nx, ny, nz);
-}
-//-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
 {
   md = new MeshData(*this);

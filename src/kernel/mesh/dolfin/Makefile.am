@@ -23,4 +23,6 @@ EXTRA_DIST = dolfin_mesh.h \
              TetMeshRefinement.h \
              Tetrahedron.h \
              TriMeshRefinement.h \
-             Triangle.h
+             Triangle.h \
+             UnitCube.h \
+             UnitSquare.h

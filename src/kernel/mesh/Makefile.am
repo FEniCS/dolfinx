@@ -24,7 +24,9 @@ include_HEADERS          = dolfin/dolfin_mesh.h \
                            dolfin/TetMeshRefinement.h \
                            dolfin/Tetrahedron.h \
                            dolfin/TriMeshRefinement.h \
-                           dolfin/Triangle.h
+                           dolfin/Triangle.h \
+                           dolfin/UnitCube.h \
+                           dolfin/UnitSquare.h
 INCLUDES                 = @KERNEL_CFLAGS@
 lib_LIBRARIES            = libdolfin-mesh.a
 libdolfin_mesh_a_SOURCES = Boundary.cpp \
@@ -50,4 +52,6 @@ libdolfin_mesh_a_SOURCES = Boundary.cpp \
                            TetMeshRefinement.cpp \
                            Tetrahedron.cpp \
                            TriMeshRefinement.cpp \
-                           Triangle.cpp
+                           Triangle.cpp \
+                           UnitCube.cpp \
+                           UnitSquare.cpp

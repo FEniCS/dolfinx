@@ -21,8 +21,6 @@ namespace dolfin
   public:
     
     static void init     (Mesh& mesh);
-    static void init     (Mesh& mesh, uint nx, uint ny);
-    static void init     (Mesh& mesh, uint nx, uint ny, uint nz);
     static void renumber (Mesh& mesh);
     
   private:
