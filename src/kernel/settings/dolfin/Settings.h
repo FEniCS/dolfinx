@@ -32,7 +32,6 @@ namespace dolfin {
       add(Parameter::INT, "max no cg iterations", 1000);
       add(Parameter::INT, "pc iterations", 5);
 
-      add(Parameter::STRING, "output", "curses");
       add(Parameter::STRING, "temporary directory", "/tmp");
 
       add(Parameter::BCFUNCTION, "boundary condition", 0);
