@@ -40,14 +40,10 @@ public:
   }
   real timestep(unsigned int i)
   {
-//     if ( i == 0 )
-//       return 0.32;
-//     else
-//       return 0.01;
     if ( i == 0 )
-      return 0.01;
+      return 10.0;
     else
-      return 0.01;
+      return 10.0;
   }
 };
 
