@@ -5,11 +5,11 @@
 #include <iostream>
 //#include "OptimizedPoisson.h"
 //#include "FFCPoisson.h"
-#include "Poisson.h" 
-#include "OldPoisson.h" 
-#include "PoissonSystem.h" 
-#include "Elasticity.h" 
-#include "OldElasticity.h" 
+//#include "Poisson.h" 
+//#include "OldPoisson.h" 
+//#include "PoissonSystem.h" 
+//#include "Elasticity.h" 
+//#include "OldElasticity.h" 
 
 using namespace dolfin;
 

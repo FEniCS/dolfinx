@@ -111,7 +111,7 @@ public:
     }
   }
 
-  real f(real u[], real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     switch ( i ) {
     case 0:

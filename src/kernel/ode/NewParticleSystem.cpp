@@ -123,7 +123,7 @@ real NewParticleSystem::u0(unsigned int i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real NewParticleSystem::f(real u[], real t, unsigned int i)
+real NewParticleSystem::f(const real u[], real t, unsigned int i)
 {
   // Return velocity
   if ( i < offset )

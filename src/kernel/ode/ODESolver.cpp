@@ -57,7 +57,7 @@ void ODESolver::solvePrimal(ODE& ode, Function& u)
   
   // Solve primal problem
   if ( dolfin_get("use new ode solver") )
-    NewTimeStepper::solve(ode, u);
+    NewTimeStepper::solve(ode);
   else
     TimeStepper::solve(ode, u);
 
@@ -77,7 +77,7 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   
   // Solve dual problem
   if ( dolfin_get("use new ode solver") )
-    NewTimeStepper::solve(dual, phi);
+    NewTimeStepper::solve(ode);
   else
     TimeStepper::solve(dual, phi);
 

@@ -30,26 +30,29 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
     y = x;
 
   // Get data arrays (assumes uniprocessor case)
+  const real* uu = ts.x.array();
   const real* xx = x.array();
   real* yy = y.array();
 
   // Temporary data array used to store multiplications
   real* z = ts.tmp();
 
+  // Compute size of time step
+  const real a = ts.starttime();
+  const real k = ts.length();
+
   // Compute product y = Mx for each stage for implicit system
   if ( implicit )
   {
     for (uint n = 0; n < method.nsize(); n++)
     {
+      const real t = a + method.npoint(n) * k;
       const uint noffset = n * ts.N;
-      ode.M(xx + noffset, z);
+      ode.M(xx + noffset, z, uu + noffset, t);
       for (uint i = 0; i < ts.N; i++)
 	yy[noffset + i] = z[i];
     }
   }
-
-  // Compute size of time step
-  const real k = ts.length();
 
   // Iterate over the stages
   for (uint n = 0; n < method.nsize(); n++)
@@ -89,6 +92,7 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   }
 
   // Restore data arrays
+  ts.x.restore(uu);
   x.restore(xx);
   y.restore(yy);
 }

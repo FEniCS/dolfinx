@@ -7,6 +7,7 @@
 #define __ODE_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Event.h>
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/Dependencies.h>
@@ -45,19 +46,19 @@ namespace dolfin
 
     /// Evaluate right-hand side (multi-adaptive version)
     // FIXME:: make this abstract?
-    virtual real f(real u[], real t, uint i);
+    virtual real f(const real u[], real t, uint i);
 
     /// Right-hand side (old version, will be removed)
     virtual real f(const Vector& u, real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void feval(real u[], real t, real f[]);
+    virtual void feval(const real u[], real t, real f[]);
 
     /// Compute product y = Mx
-    virtual void M(const real x[], real y[]);
+    virtual void M(const real x[], real y[], const real u[], real t);
 
     /// Jacobian (optional)
-    virtual real dfdu(real u[], real t, uint i, uint j);
+    virtual real dfdu(const real u[], real t, uint i, uint j);
 
     /// Jacobian (old version, will be removed)
     virtual real dfdu(const Vector& u, real t, uint i, uint j);
@@ -75,7 +76,7 @@ namespace dolfin
     virtual real timestep(uint i);
 
     /// Update ODE (optional)
-    virtual void update(real u[], real t);
+    virtual void update(const real u[], real t);
 
     /// Update ODE (old version, will be removed)
     virtual void update(RHS& f, Function& u, real t);
@@ -147,6 +148,9 @@ namespace dolfin
 
     Element::Type default_method;
     uint default_order;
+    
+    Event implicit_identity;
+    Event feval_not_impl;
 
   };
 

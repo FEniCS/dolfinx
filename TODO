@@ -12,7 +12,6 @@ Send suggestions, comments, and corrections to dolfin@fenics.org.
 Assembly
 --------
 
-* FFC should put data directly into block to avoid copying
 * Use MatSetOption(A, MAT_ROWS_SORTED), MatSetOption(A, MAT_COLUMNS_SORTED)?
 * Use MatSetOption(A, MAT_USE_HASH_TABLE)?
 * Make two forms share the same map and only update the map
@@ -55,7 +54,7 @@ Input/Output
 Multi-adaptive solver
 ---------------------
 
-o [jj, logg] Implement mono-adaptive solver: fixed point and Newton
+o [jj, logg] Save solution for new solver
 o [jj, logg] Implement preconditioner for multi-adaptive Newton
 o [jj, logg] Save dual solution backwards
 o [jj, logg] Error estimates
@@ -73,6 +72,7 @@ o [foufas] Finance module?
 General
 -------
 
+* Add complex to LogStream
 * Replace ::show() with ::disp() for all classes
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere
@@ -83,6 +83,7 @@ General
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
 * Automatically load parameters from dolfin.xml
+* Collect diagnostic and error messages into one file? Translations?
 
 Some suggestions for PETSc
 --------------------------

@@ -1,3 +1,7 @@
+ - Make all ODE solvers automatically handle complex ODEs: (M) z' = f(z,t)
+ - Implement version of mono-adaptive solver for implicit ODEs: M u' = f(u,t)
+ - Implement Newton's method for multi- and mono-adaptive ODE solvers
+ - Update PETSc wrappers NewVector, NewMatrix, and NewGMRES
  - Fix initialization of PETSc
  - Add mono-adaptive cG(q) and dG(q) solvers (experimental)
  - Implementation of new assebly: NewFEM, using output from FFC 

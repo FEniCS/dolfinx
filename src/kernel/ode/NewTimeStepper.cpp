@@ -18,10 +18,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewTimeStepper::NewTimeStepper(ODE& ode, Function& u) :
+NewTimeStepper::NewTimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), u(u), timeslab(0), file(u.label() + ".m"), p("Time-stepping"), 
-  _finished(false), save_solution(dolfin_get("save solution")),
+  ode(ode), timeslab(0), file(dolfin_get("file name")),
+  p("Time-stepping"), _finished(false),
+  save_solution(dolfin_get("save solution")),
   solve_dual(dolfin_get("solve dual problem")),
   adaptive_samples(dolfin_get("adaptive samples")),
   no_samples(dolfin_get("number of samples")),
@@ -44,7 +45,7 @@ NewTimeStepper::~NewTimeStepper()
   if ( timeslab ) delete timeslab;
 }
 //-----------------------------------------------------------------------------
-void NewTimeStepper::solve(ODE& ode, Function& u)
+void NewTimeStepper::solve(ODE& ode)
 {
   // Start timing
   tic();  
@@ -52,22 +53,24 @@ void NewTimeStepper::solve(ODE& ode, Function& u)
   // Check if we should create a reduced model (automatic modeling)
   if ( dolfin_get("automatic modeling") )
   {
+    dolfin_error("Not implemented.");
+
     dolfin_info("Creating reduced model (automatic modeling).");
 
     // Create the reduced model
-    ReducedModel reducedModel(ode);
+    //ReducedModel reducedModel(ode);
 
     // Create a time stepper object
-    NewTimeStepper timeStepper(reducedModel, u);
+    //NewTimeStepper timeStepper(reducedModel, u);
     
     // Do time stepping
-    while ( !timeStepper.finished() )
-      timeStepper.step();
+    //while ( !timeStepper.finished() )
+    //  timeStepper.step();
   }
   else
   {
     // Create a time stepper object
-    NewTimeStepper timeStepper(ode, u);
+    NewTimeStepper timeStepper(ode);
     
     // Do time stepping
     while ( !timeStepper.finished() )
@@ -127,7 +130,8 @@ void NewTimeStepper::saveFixedSamples()
   // Save initial value
   if ( t0 == 0.0 )
   {
-    NewSample sample(*timeslab, 0.0, u.name(), u.label());
+    //NewSample sample(*timeslab, 0.0, u.name(), u.label());
+    NewSample sample(*timeslab, 0.0, "u", "unknown");
     file << sample;
     ode.save(sample);
   }
@@ -150,7 +154,8 @@ void NewTimeStepper::saveFixedSamples()
     if ( fabs(t - t1) < DOLFIN_EPS )
       t = t1;
 
-    NewSample sample(*timeslab, t, u.name(), u.label());
+    //NewSample sample(*timeslab, t, u.name(), u.label());
+    NewSample sample(*timeslab, t, "u", "uknown");
     file << sample;
     ode.save(sample);
   }
@@ -165,7 +170,8 @@ void NewTimeStepper::saveAdaptiveSamples()
   // Save initial value
   if ( t0 == 0.0 )
   {
-    NewSample sample(*timeslab, 0.0, u.name(), u.label());
+    //NewSample sample(*timeslab, 0.0, u.name(), u.label());
+    NewSample sample(*timeslab, 0.0, "u", "unknown");
     file << sample;
     ode.save(sample);
   }
@@ -183,7 +189,8 @@ void NewTimeStepper::saveAdaptiveSamples()
       t = t1;
     
     // Create and save the sample
-    NewSample sample(*timeslab, t, u.name(), u.label());
+    //NewSample sample(*timeslab, t, u.name(), u.label());
+    NewSample sample(*timeslab, t, "u", "unknown");
     file << sample;
     ode.save(sample);
   }

@@ -73,7 +73,7 @@ namespace dolfin
     real u0(unsigned int i);
 
     /// Return right-hand side for ODE
-    real f(real u[], real t, unsigned int i);
+    real f(const real u[], real t, unsigned int i);
 
     /// Return time step for ODE
     real timestep(unsigned int i);
@@ -106,7 +106,7 @@ namespace dolfin
     unsigned int offset;
 
     // Solution vector
-    real* u;
+    const real* u;
 
   };
 

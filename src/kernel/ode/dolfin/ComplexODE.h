@@ -17,7 +17,8 @@ namespace dolfin
   ///
   ///     z(0) = z0,
   ///
-  /// where z(t) is a complex-valued vector of length n.
+  /// where z(t) is a complex-valued vector of length n. The imaginary
+  /// unit is provided by the member variable j satisfying j^2 = -1.
   ///
   /// This class is a wrapper for a standard real-valued ODE, and
   /// provides an interface that automatically translates the given
@@ -43,10 +44,13 @@ namespace dolfin
     virtual complex z0(uint i) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
-    virtual complex f(complex z[], real t, uint i);
+    virtual complex f(const complex z[], real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void feval(complex z[], real t, complex f[]);
+    virtual void feval(const complex z[], real t, complex f[]);
+    
+    // Compute product y = Mx
+    virtual void M(const complex x[], complex y[], const complex z[], real t);
 
     /// Return time step for component i
     virtual real k(uint i);
@@ -55,10 +59,13 @@ namespace dolfin
     real u0(uint i);
 
     /// Return right-hand side for real-valued ODE
-    real f(real u[], real t, uint i);
+    real f(const real u[], real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void feval(real u[], real t, real f[]);
+    void feval(const real u[], real t, real f[]);
+
+    /// Compute product y = Mx for real-valued ODE
+    void M(const real x[], real y[], const real u[], real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
@@ -68,11 +75,19 @@ namespace dolfin
     // Number of complex components
     unsigned int n;
 
+    // Imaginary unit
+    complex j;
+
+  private:
+
     // Complex-valued solution vector
     complex* zvalues;
 
     // Complex-valued right-hand side
     complex* fvalues;
+
+    // Extra array for computing product y = Mx, initialized if needed
+    complex* yvalues;
 
   };
 

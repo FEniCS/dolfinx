@@ -11,20 +11,18 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N)
+ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N),
+		   default_timestep(dolfin_get("initial time step")),
+		   default_order(dolfin_get("order")),
+		   implicit_identity("Warning: multiplication with M not implemented, assuming identity."),
+		   feval_not_impl("Warning: consider implementing feval() improve efficiency.")
 {
-  // Choose time step
-  default_timestep = dolfin_get("initial time step");
-
   // Choose method
   string method = dolfin_get("method");
   if ( method == "cg" )
     default_method = Element::cg;
   else
     default_method = Element::dg;
-  
-  // Choose order
-  default_order = dolfin_get("order");
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
@@ -32,7 +30,7 @@ ODE::~ODE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real ODE::f(real u[], real t, uint i)
+real ODE::f(const real u[], real t, uint i)
 {
   dolfin_error("Not implemented");
 
@@ -46,45 +44,53 @@ real ODE::f(const Vector& u, real t, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::feval(real u[], real t, real f[])
+void ODE::feval(const real u[], real t, real f[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
+
+  feval_not_impl();
 
   for (uint i = 0; i < N; i++)
     f[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-void ODE::M(const real x[], real y[])
+void ODE::M(const real x[], real y[], const real u[], real t)
 {
   // Assume M is the identity if not supplied by user: y = x
+  
+  implicit_identity();
 
   for (uint i = 0; i < N; i++)
     y[i] = x[i];
 }
 //-----------------------------------------------------------------------------
-real ODE::dfdu(real u[], real t, uint i, uint j)
+real ODE::dfdu(const real u[], real t, uint i, uint j)
 {
   // Compute Jacobian numerically if dfdu() is not implemented by user
   
+  // We are not allowed to change u, but we restore it afterwards,
+  // so maybe we can cheat a little...
+  real* uu = const_cast<real*>(u);
+
   // Save value of u_j
-  real uj = u[j];
+  real uj = uu[j];
   
   // Small change in u_j
   real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
   
   // Compute F values
-  u[j] -= 0.5 * dU;
-  real f1 = f(u, t, i);
+  uu[j] -= 0.5 * dU;
+  real f1 = f(uu, t, i);
   
-  u[j] = uj + 0.5*dU;
-  real f2 = f(u, t, i);
+  uu[j] = uj + 0.5*dU;
+  real f2 = f(uu, t, i);
          
   // Compute derivative
   if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
     return 0.0;
 
-  u[j] = uj;
+  uu[j] = uj;
 
   return (f2 - f1) / dU;
 }
@@ -140,7 +146,7 @@ real ODE::timestep(uint i)
   return timestep();
 }
 //-----------------------------------------------------------------------------
-void ODE::update(real u[], real t)
+void ODE::update(const real u[], real t)
 {
   // Do nothing
 }

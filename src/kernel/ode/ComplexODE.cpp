@@ -7,7 +7,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ComplexODE::ComplexODE(uint n) : ODE(2*n), zvalues(0), fvalues(0)
+ComplexODE::ComplexODE(uint n) : ODE(2*n), n(n), j(0.0, 1.0),
+				 zvalues(0), fvalues(0), yvalues(0)
 {
   // Initialize complex solution vector and right-hand side
   zvalues = new complex[n];
@@ -18,16 +19,17 @@ ComplexODE::ComplexODE(uint n) : ODE(2*n), zvalues(0), fvalues(0)
     fvalues[i] = 0.0;
   }
 
-  dolfin_info("Creating complex ODE of size %d (%d complex compoents).", N, n);
+  dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);
 }
 //-----------------------------------------------------------------------------
 ComplexODE::~ComplexODE()
 {
   if ( zvalues ) delete [] zvalues;
   if ( fvalues ) delete [] fvalues;
+  if ( yvalues ) delete [] yvalues;
 }
 //-----------------------------------------------------------------------------
-complex ComplexODE::f(complex z[], real t, uint i)
+complex ComplexODE::f(const complex z[], real t, uint i)
 {
   dolfin_error("Not implemented.");
   
@@ -35,13 +37,21 @@ complex ComplexODE::f(complex z[], real t, uint i)
   return zvalue;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::feval(complex z[], real t, complex f[])
+void ComplexODE::feval(const complex z[], real t, complex f[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
   
   for (uint i = 0; i < n; i++)
     f[i] = this->f(z, t, i);
+}
+//-----------------------------------------------------------------------------
+void ComplexODE::M(const complex x[], complex y[], const complex z[], real t)
+{
+  // Assume M is the identity if not supplied by user: y = x
+
+  for (uint i = 0; i < n; i++)
+    y[i] = x[i];
 }
 //-----------------------------------------------------------------------------
 real ComplexODE::k(uint i)
@@ -56,7 +66,7 @@ real ComplexODE::u0(uint i)
   return ( i % 2 == 0 ? z.real() : z.imag() );
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(real u[], real t, uint i)
+real ComplexODE::f(const real u[], real t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
   // u_i depends on u_j, then u_i depends on both the real and
@@ -84,7 +94,7 @@ real ComplexODE::f(real u[], real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::feval(real u[], real t, real f[])
+void ComplexODE::feval(const real u[], real t, real f[])
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -102,6 +112,37 @@ void ComplexODE::feval(real u[], real t, real f[])
     const complex fvalue = fvalues[i];
     f[2*i] = fvalue.real();
     f[2*i + 1] = fvalue.imag();
+  }
+}
+//-----------------------------------------------------------------------------
+void ComplexODE::M(const real x[], real y[], const real u[], real t)
+{
+  // Update zvalues and fvalues for all components
+  for (uint i = 0; i < n; i++)
+  {
+    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex xvalue(x[2*i], x[2*i + 1]);
+    zvalues[i] = zvalue;
+    fvalues[i] = xvalue; // Use fvalues for x
+  }
+
+  // Use additional array for y, initialize the first time
+  if ( !yvalues )
+  {
+    yvalues = new complex[n];
+    for (uint i = 0; i < n; i++)
+      yvalues[i] = 0.0;
+  }
+  
+  // Call user-supplied function M(x, y, z, t)
+  M(fvalues, yvalues, zvalues, t);
+
+  // Copy values to y
+  for (uint i = 0; i < n; i++)
+  {
+    const complex yvalue = yvalues[i];
+    y[2*i] = yvalue.real();
+    y[2*i + 1] = yvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------

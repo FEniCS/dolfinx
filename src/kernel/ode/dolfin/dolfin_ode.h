@@ -15,6 +15,7 @@
 #include <dolfin/AdaptiveIterationLevel1.h>
 #include <dolfin/AdaptiveIterationLevel2.h>
 #include <dolfin/Adaptivity.h>
+#include <dolfin/ComplexODE.h>
 #include <dolfin/Component.h>
 #include <dolfin/Dual.h>
 #include <dolfin/Element.h>

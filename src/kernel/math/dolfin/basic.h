@@ -1,14 +1,17 @@
+// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #ifndef __BASIC_H
 #define __BASIC_H
 
 #include <cmath>
 #include <dolfin/constants.h>
 
-namespace dolfin {
-
+namespace dolfin
+{
   int max(int x, int y);
   int min(int x, int y);
-
+  
   /// Return the absolute value of x
   real abs(real x);
 
@@ -27,7 +30,6 @@ namespace dolfin {
   int round_int(real x);
   int floor_int(real x);
   int ceil_int(real x);
-
 }
 
 #endif

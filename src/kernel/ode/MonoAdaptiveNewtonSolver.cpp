@@ -52,7 +52,7 @@ void MonoAdaptiveNewtonSolver::start()
 
   // Precompute product M*u0
   if ( implicit )
-    ode.M(ts.u0, Mu0);
+    ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 
   //debug();
   //A.disp();
@@ -150,6 +150,7 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   real* z = new real[ts.N];
 
   // Compute size of time step
+  const real a = ts.starttime();
   const real k = ts.length();
 
   // Evaluate right-hand side at all quadrature points
@@ -179,8 +180,9 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   // we can't use z...)
   for (uint n = 0; n < method.nsize(); n++)
   {
+    const real t = a + method.npoint(n) * k;
     const uint noffset = n * ts.N;
-    ode.M(xx + noffset, z);
+    ode.M(xx + noffset, z, xx + noffset, t);
     for (uint i = 0; i < ts.N; i++)
       bb[noffset + i] -= z[i];
   }

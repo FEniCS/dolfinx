@@ -86,7 +86,8 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-SUBDIRS = test lorenz stiff mechanical bench bistable performance newton modeling radiation-diffusion medical-akzonobel
+SUBDIRS = bench           bistable           complex           homotopy           lorenz           mechanical           medical-akzonobel           modeling           newton           performance           radiation-diffusion           stiff           test
+
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

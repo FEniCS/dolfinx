@@ -2,12 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
-#include "FFCPoisson.h"
+//#include "FFCPoisson.h"
 
 using namespace dolfin;
 
 #define N 10 // Number of times to do the assembly
 #define M 1 // Number of times to refine the mesh 
+
+/*
 
 real testFFCPETSc(Mesh& mesh)
 {
@@ -39,9 +41,12 @@ int testAssembly(Mesh& mesh)
   return 0;
 }
 
+*/
+
 
 int main()
 {
+  /*
   dolfin_set("output", "plain text");
 
   cout << "Doing assembly " << N << " times..." << endl;
@@ -53,6 +58,7 @@ int main()
     mesh.refineUniformly();
     testAssembly(mesh);
   }
+  */
   
   return 0;
 }

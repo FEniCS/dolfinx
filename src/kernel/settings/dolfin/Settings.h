@@ -72,6 +72,9 @@ namespace dolfin {
       add(Parameter::STRING, "solver", "default");
       add(Parameter::STRING, "stiffness", "non-stiff");
 
+      // FIXME: Temporary until we get ODE functions working
+      add(Parameter::STRING, "file name", "primal.m");
+
       // Parameters for multgrid solver
 
       add(Parameter::REAL, "multigrid tolerance", 1.0e-10);

@@ -13,7 +13,6 @@ namespace dolfin
 {
 
   class ODE;
-  class Function;
   class NewTimeSlab;
 
   /// TimeStepper computes the solution of a given ODE. This is where
@@ -39,13 +38,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    NewTimeStepper(ODE& ode, Function& u);
+    NewTimeStepper(ODE& ode);
 
     /// Destructor
     ~NewTimeStepper();
     
     /// Solve given ODE
-    static void solve(ODE& ode, Function& u);
+    static void solve(ODE& ode);
 
     /// Step solution, return current time
     real step();
@@ -77,9 +76,6 @@ namespace dolfin
 
     // The ODE being solved
     ODE& ode;
-
-    // The solution being computed
-    Function& u;
 
     // The time slab
     NewTimeSlab* timeslab;

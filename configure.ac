@@ -211,6 +211,7 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/ode/stiff/Makefile \
            src/demo/solvers/ode/mechanical/Makefile \
            src/demo/solvers/ode/modeling/Makefile \
+           src/demo/solvers/ode/homotopy/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/greeting/Makefile )

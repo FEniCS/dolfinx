@@ -54,7 +54,7 @@ public:
     }
   }
 
-  real f(real u[], real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     switch (i) {
     case 0:
@@ -66,7 +66,7 @@ public:
     }
   }
 
-  void update(real u[], real t)
+  void update(const real u[], real t)
   {
     // Check in which region the point is
     Point p(u[0], u[1], u[2]);
