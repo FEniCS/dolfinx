@@ -7,6 +7,7 @@
 #include <petsc/petscvec.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
@@ -24,8 +25,9 @@ namespace dolfin
     class Index;
 
     NewVector();
-    NewVector(int size);
+    NewVector(unsigned int size);
     NewVector(const NewVector& x);
+    NewVector(const Vector& x);
     ~NewVector ();
 
     /// Initialize vector data
@@ -46,22 +48,25 @@ namespace dolfin
     /// Return PETSc Vec pointer
     const Vec vec() const;
 
-    /// Element access operator
-    //real operator()(unsigned int i) const;
+    /// Element assignment
+    void setvalue(int i, const real r);
+
+    /// Element access
+    real getvalue(int i) const;
 
     /// Element assignment operator
-    Index operator()(unsigned int i);
+    Index operator()(int i);
 
     class Index
     {
     public:
-      Index(unsigned int i, NewVector &v);
+      Index(int i, NewVector &v);
 
       operator real() const;
       void operator=(const real r);
 
     protected:
-      unsigned int i;
+      int i;
       NewVector &v;
     };
 
@@ -69,11 +74,7 @@ namespace dolfin
   protected:
     // PETSc Vec pointer
     Vec v;
-    unsigned int n;
-
   };
-
-
 }
 
 #endif

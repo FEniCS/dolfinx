@@ -7,6 +7,7 @@
 #include <petsc/petscmat.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Matrix.h>
 
 namespace dolfin
 {
@@ -21,11 +22,16 @@ namespace dolfin
   {
   public:
 
+    class Index;
+
     /// Constructor
     NewMatrix();
 
     /// Constructor
     NewMatrix(int m, int n);
+
+    /// Constructor
+    NewMatrix(const Matrix &B);
 
     /// Destructor
     ~NewMatrix();
@@ -42,6 +48,13 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
+    /// Element assignment
+    void setvalue(int i, int j, const real r);
+
+    /// Element access
+    real getvalue(int i, int j) const;
+
+
     /// Apply changes to matrix
     void apply();
 
@@ -57,6 +70,23 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
     
+    /// Element assignment operator
+    Index operator()(int i, int j);
+
+    class Index
+    {
+    public:
+      Index(int i, int j, NewMatrix &m);
+
+      operator real() const;
+      void operator=(const real r);
+
+    protected:
+      int i, j;
+      NewMatrix &m;
+    };
+
+
   private:
 
     // PETSc Mat pointer

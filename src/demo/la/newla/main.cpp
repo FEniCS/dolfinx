@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
+#include <dolfin/NewGMRES.h>
 
 using namespace dolfin;
 
@@ -27,6 +28,88 @@ int main(int argc, char **argv)
   r = c(7);
 
   dolfin::cout << "c(7): " << r << dolfin::endl;
+
+
+  NewMatrix B(4, 4);
+  B.apply();
+
+  B(2, 3) = 1.234;
+
+  real b11 = B(1, 1);
+  real b23 = B(2, 3);
+
+  dolfin::cout << "B: " << dolfin::endl;
+  B.disp();
+
+  dolfin::cout << "B(1, 1): " << b11 << dolfin::endl;
+  dolfin::cout << "B(2, 3): " << b23 << dolfin::endl;
+
+
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+  dolfin::cout << "Test file i/o" << dolfin::endl;
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+
+  Vector bold, xold;
+  Matrix Aold;
+
+  File file("data.xml");
+
+  file >> bold;
+  file >> Aold;
+  
+  dolfin::cout << "bold = "; 
+  bold.show();
+
+  dolfin::cout << "Aold = "; 
+  Aold.show();
+
+  NewVector b(bold), x(b.size());
+  NewMatrix A(Aold);
+
+  dolfin::cout << "b: " << dolfin::endl;
+  b.disp();
+
+  dolfin::cout << "A: " << dolfin::endl;
+  A.disp();
+  
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+  dolfin::cout << "Test Krylov solvers" << dolfin::endl;
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+
+
+  KrylovSolver ks;
+  Vector Rold;
+
+
+  dolfin_set("krylov tolerance",1.0e-10);
+  dolfin_set("max no krylov restarts", 100);
+  dolfin_set("max no stored krylov vectors", 100);
+  dolfin_set("max no cg iterations", 100);
+  dolfin_set("pc iterations", 5);
+
+  xold = 1.0;
+  ks.setMethod(KrylovSolver::GMRES);
+  ks.solve(Aold,xold,bold);
+
+  Rold.init(xold.size());
+  Aold.mult(xold, Rold);
+  Rold -= bold;
+
+  dolfin::cout << "xold = ";
+  xold.show();
+  dolfin::cout << "Rold = ";
+  Rold.show();
+
+
+
+  NewGMRES newsolver;
+  //NewVector R;
+
+  newsolver.solve(A, x, b);
+
+  dolfin::cout << "x: " << dolfin::endl;
+  x.disp();
+
 
   /*
   dolfin::cout << "--------------------------------------" << dolfin::endl;

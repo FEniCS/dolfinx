@@ -19,7 +19,7 @@ NewVector::NewVector()
   v = 0;
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(int size)
+NewVector::NewVector(unsigned int size)
 {
   if(size < 0)
     dolfin_error("Size of vector must be non-negative.");
@@ -29,7 +29,22 @@ NewVector::NewVector(int size)
 
   // Create PETSc vector
   v = 0;
-  init(static_cast<unsigned int>(size));
+  init(size);
+}
+//-----------------------------------------------------------------------------
+NewVector::NewVector(const Vector &x)
+{
+  // Initialize PETSc
+  PETScManager::init();
+
+  // Create PETSc vector
+  v = 0;
+  init(x.size());
+
+  unsigned int n = size();
+
+  for(unsigned int i = 0; i < n; i++)
+    setvalue(i, x(i));
 }
 //-----------------------------------------------------------------------------
 NewVector::~NewVector()
@@ -48,6 +63,8 @@ void NewVector::init(unsigned int size)
   
   if(v)
   {
+    unsigned int n = this->size();
+
     if(n == size)
     {
       return;      
@@ -63,6 +80,28 @@ void NewVector::init(unsigned int size)
   VecSetFromOptions(v);
 }
 //-----------------------------------------------------------------------------
+void NewVector::setvalue(int i, const real r)
+{
+  VecSetValue(v, i, r, INSERT_VALUES);
+
+  VecAssemblyBegin(v);
+  VecAssemblyEnd(v);
+}
+//-----------------------------------------------------------------------------
+real NewVector::getvalue(int i) const
+{
+  // Assumes uniprocessor case.
+
+  real val;
+
+  PetscScalar    *array;
+  VecGetArray(v, &array);
+  val = array[i];
+  VecRestoreArray(v, &array);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
 void NewVector::clear()
 {
   if(v)
@@ -75,6 +114,10 @@ void NewVector::clear()
 //-----------------------------------------------------------------------------
 unsigned int NewVector::size() const
 {
+  int n;
+
+  VecGetSize(v, &n);
+
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -88,22 +131,7 @@ const Vec NewVector::vec() const
   return v;
 }
 //-----------------------------------------------------------------------------
-/*
-real NewVector::operator()(unsigned int i) const
-{
-  // Assumes uniprocessor case.
-  
-  PetscScalar    *array;
-  VecGetArray(v, &array);
-  VecRestoreArray(v, &array);
-  
-  real val = array[i];
-
-  return val;
-}
-*/
-//-----------------------------------------------------------------------------
-NewVector::Index NewVector::operator()(unsigned int i)
+NewVector::Index NewVector::operator()(int i)
 {
   Index ind(i, *this);
 
@@ -115,30 +143,17 @@ void NewVector::disp() const
   VecView(v, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-NewVector::Index::Index(unsigned int i, NewVector &v) : i(i), v(v)
+NewVector::Index::Index(int i, NewVector &v) : i(i), v(v)
 {
 }
 //-----------------------------------------------------------------------------
 void NewVector::Index::operator =(const real r)
 {
-  Vec petscv;
-  petscv = v.vec();
-
-  VecSetValue(petscv, i, r, INSERT_VALUES);
+  v.setvalue(i, r);
 }
 //-----------------------------------------------------------------------------
 NewVector::Index::operator real() const
 {
-  // Assumes uniprocessor case.
-
-  Vec petscv;
-  petscv = v.vec();
-
-  PetscScalar    *array;
-  VecGetArray(petscv, &array);
-  real val = array[i];
-  VecRestoreArray(petscv, &array);
-
-  return val;
+  return v.getvalue(i);
 }
 //-----------------------------------------------------------------------------

@@ -323,6 +323,7 @@ namespace dolfin {
 
     friend class DirectSolver;
     friend class Element;
+    friend class NewMatrix;
 
   private:
     
