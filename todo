@@ -1,6 +1,20 @@
+Multi-adaptive solver
+---------------------
+
+- Computation of residuals
+- Adaptive time-stepping: implement regulator
+- Solution of the dual problem
+- Error estimates
+- Saving the solution: new version of the Function class?
+- Optimization and benchmarks, including control of the error estimates
+- Automatic computation of stability factors as function of time T
+- Stiff problems, adaptive damping
+- Examples: Lorenz, sin-cos, stiff problems, cow, solar system
+
+General
+-------
+
 - Save edges in matlab format
 - General boundary conditions
 - Multigrid
-- Multi-adaptive ODE-solver
-- Fix the Navier-Stokes module
 - Grid generation (octree) from given CAD model
