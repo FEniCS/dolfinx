@@ -22,7 +22,7 @@ namespace dolfin {
     
     real lhs(ShapeFunction::Vector& u, ShapeFunction::Vector& v)
     {
-      real b = 0.05;
+      //real b = 0.05;
       real E = 20.0;
       real nu = 0.3;
 
