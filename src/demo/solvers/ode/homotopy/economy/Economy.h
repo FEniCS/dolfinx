@@ -14,7 +14,9 @@ class Economy : public Homotopy
 {
 public:
 
-  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0), tmp0(0), tmp1(0)
+  Economy(unsigned int m, unsigned int n) :
+    Homotopy(n), m(m), n(n), a(0), w(0),
+    tmp0(0), tmp1(0), tmp2(0), tmp3(0)
   {
     a = new real * [m];
     w = new real * [m];
@@ -28,14 +30,6 @@ public:
 	w[i][j] = dolfin::rand();
       }
     }
-
-    tmp0 = new complex[m];
-    tmp1 = new complex[m];
-    for (unsigned int i = 0; i < m; i++)
-    {
-      tmp0[i] = 0.0;
-      tmp1[i] = 0.0;
-    }
   }
 
   ~Economy()
@@ -47,8 +41,11 @@ public:
     }
     delete [] a;
     delete [] w;
-    delete [] tmp0;
-    delete [] tmp1;
+   
+    if ( tmp0 ) delete [] tmp0;
+    if ( tmp1 ) delete [] tmp0;
+    if ( tmp2 ) delete [] tmp0;
+    if ( tmp3 ) delete [] tmp0;
   }
 
   void disp()
@@ -139,9 +136,19 @@ protected:
       dolfin::cout << z[j] << " ";
     dolfin::cout << "]" << endl;
   }
+
+  // Initialize temporary storage for scalar products
+  void init(complex** tmp)
+  {
+    *tmp = new complex[m];
+    for (unsigned int i = 0; i < m; i++)
+      (*tmp)[i] = 0.0;
+  }
   
   complex* tmp0; // Temporary storage for scalar products
   complex* tmp1; // Temporary storage for scalar products
+  complex* tmp2; // Temporary storage for scalar products
+  complex* tmp3; // Temporary storage for scalar products
   
 };
 

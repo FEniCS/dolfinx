@@ -23,12 +23,12 @@ int main()
   //Leontief leontief(2, 2, true);
   //leontief.solve();
 
-  //CES ces(2, 2, 0.5);
-  //ces.disp();
-  //ces.solve();
+  //CES economy(2, 2, 0.5);
+  PolynomialCES economy(2, 2, 0.5);
 
   //Polemarchakis economy;
-  PolynomialPolemarchakis economy;
+  //PolynomialPolemarchakis economy;
+
   economy.solve();
 
   return 0;
