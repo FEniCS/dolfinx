@@ -57,8 +57,8 @@ namespace dolfin
     static void alloc(const NewPDE& pde, NewArray<real>& b);
 
     /// FIXME: Temporary strong implementation of BC
-    void setBC(const NewPDE& pde, Mesh& mesh, Matrix& A);
-    void setBC(const NewPDE& pde, Mesh& mesh, Vector& b);
+    static void setBC(const NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void setBC(const NewPDE& pde, Mesh& mesh, Vector& b);
 
   };
 

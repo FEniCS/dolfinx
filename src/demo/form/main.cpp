@@ -14,9 +14,16 @@ real source(real x, real y, real z, real t)
   return 14.0 * pi*pi * sin(pi*x) * sin(2.0*pi*y) * sin(3.0*pi*z);
 }
 
+// Boundary conditions
+void mybc(BoundaryCondition& bc)
+{
+  bc.set(BoundaryCondition::DIRICHLET, 0.0);
+}
+
 int main()
 {
   dolfin_set("output", "plain text");
+  dolfin_set("boundary condition", mybc);
 
   // Create variational formulation
   Function f(source);
@@ -39,5 +46,9 @@ int main()
   u.rename("u", "temperature");
   file << u;
   
+  //  File mat("A.m");
+  //  mat << A;
+  //A.show();
+
   return 0;
 }

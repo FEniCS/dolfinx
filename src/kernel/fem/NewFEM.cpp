@@ -39,7 +39,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
   A.resize();
 
   // FIXME: This should be removed
-  //setBC(pde, mesh, A);
+  setBC(pde, mesh, A);
 
   // Write a message
   cout << "Assembled: " << A << endl; 
@@ -47,7 +47,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
 {
-  // Allocate and reset vector
+  // Allocate and reset matrix
   alloc(pde, mesh, b);
   
   // Assemble interior
@@ -57,7 +57,7 @@ void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
   assembleBoundary(pde, mesh, b);
 
   // FIXME: This should be removed
-  //setBC(pde, mesh, b);
+  setBC(pde, mesh, b);
 
   // Write a message
   cout << "Assembled: " << b << endl;
@@ -95,6 +95,9 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
 //-----------------------------------------------------------------------------
 void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
+  // FIXME: Not implemented yet!
+  return;
+
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
@@ -207,6 +210,9 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
 //-----------------------------------------------------------------------------
 void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Vector& b)
 {
+  // FIXME: Not implemented yet!
+  return;
+
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
@@ -301,7 +307,7 @@ void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Matrix& A)
   for (NodeIterator node(boundary); !node.end(); ++node)
   {
     // Get boundary condition
-    //bc.update(node);
+    bc.update(node);
     bcf(bc);
     
     // Set boundary condition
@@ -342,7 +348,7 @@ void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Vector& b)
   for (NodeIterator node(boundary); !node.end(); ++node)
   {
     // Get boundary condition
-    //bc.update(node);
+    bc.update(node);
     bcf(bc);
     
     // Set boundary condition

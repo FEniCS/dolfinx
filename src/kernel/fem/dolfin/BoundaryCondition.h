@@ -59,7 +59,7 @@ namespace dolfin {
 
     friend class FEM;
     
-  private:
+    //private:
     
     void update(Node* np) {
       this->np = np;
@@ -70,6 +70,8 @@ namespace dolfin {
 	_val[i]  = 0.0;
       }
     }
+    
+  private:
     
     Node* np;
     
