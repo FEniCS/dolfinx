@@ -226,6 +226,10 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
     // Update map
     map.update(*cell);
     
+    // Update element
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
+
     // Update equation
     pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
     

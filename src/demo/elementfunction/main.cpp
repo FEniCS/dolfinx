@@ -20,6 +20,11 @@ public:
 
   real lhs(const ShapeFunction& u, const ShapeFunction& v)
   {
+    return 0;
+  }
+
+  real rhs(const ShapeFunction& v)
+  {
     // Derivatives
     ElementFunction wx = wp.ddx();
     ElementFunction wy = wp.ddy();
@@ -33,11 +38,6 @@ public:
     std::cout << "wp(1): " << wp(1, 0, 0, 0) << std::endl;
     std::cout << "wp(2): " << wp(0, 1, 0, 0) << std::endl;
 
-    return 0;
-  }
-
-  real rhs(const ShapeFunction& v)
-  {
     return 0;
   }
   
