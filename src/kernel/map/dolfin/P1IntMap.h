@@ -1,8 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// Map from reference element (0,0) - (1,0) - (0,1)
-// to a given triangle in R^2 (i.e. z = 0).
+// Map from the reference cell defined by the nodes
+// (0,0,0) - (1,0,0) to a given line in R^3.
 
 #ifndef __P1_INT_MAP_H
 #define __P1_INT_MAP_H

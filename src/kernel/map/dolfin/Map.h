@@ -1,19 +1,17 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// Map from reference cell to actual cell, including
-// derivatives of the map and the inverse of derivatives.
+// Map from reference cell to actual cell, including the
+// derivative of the map and the inverse of the derivative.
 //
-// It is assumed that the map is linear and the reference
+// It is assumed that the map is affine and the reference
 // cells are given by
 //
-//   (0) - (1)                             in 1D
+//   (0,0,0) - (1,0,0)                     for mapping to line
 //
-//   (0,0) - (1,0) - (0,1)                 in 2D
+//   (0,0,0) - (1,0,0) - (0,1,0)           for mapping to triangle
 //
-//   (0,0,0) - (1,0,0) - (0,1,0) - (0,0,1) in 3D
-//
-// It is also assumed that x = y = 0 in 1D and z = 0 in 2D.
+//   (0,0,0) - (1,0,0) - (0,1,0) - (0,0,1) for mapping to tetrahedron
 
 #ifndef __MAP_H
 #define __MAP_H
@@ -70,7 +68,7 @@ namespace dolfin {
     real f11, f12, f13;
     real f21, f22, f23;
     real f31, f32, f33;
-
+    
     // Inverse of F
     real g11, g12, g13;
     real g21, g22, g23;
