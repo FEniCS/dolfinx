@@ -235,6 +235,16 @@ public:
   {
     delete [] b;
   }
+
+  /*
+  complex z0(unsigned int i)
+  {
+    if ( i == 0 )
+      return 1.01362052581566e-02;
+    else
+      return 9.89863794741843e-01;
+  }
+  */
   
   void F(const complex z[], complex y[])
   {
@@ -307,25 +317,22 @@ public:
     }
   }
 
+  /*
+
   void G(const complex z[], complex y[])
   {
     // First equation: normalization
     y[0] = sum(z) - 1.0;
     
     // Only one consumer
-    const unsigned int k = 0;
+    const unsigned int i = 0;
 
     // Precompute scalar product
-    const complex tmp = dot(w[0], z) / bdot(a[0], z, 1.0 - b[0]);
+    tmp[i] = dot(w[i], z) / bdot(a[i], z, 1.0 - b[i]);
     
     // Evaluate right-hand side
     for (unsigned int j = 1; j < n; j++)
-    {
-      complex sum = 0.0;
-      for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
-      y[j] = sum;
-    }
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
   }
 
   void JG(const complex z[], const complex x[], complex y[])
@@ -333,52 +340,33 @@ public:
     // First equation: normalization
     y[0] = sum(x);
 
+    // Only one consumer
+    const unsigned int i = 0;
+
     // First term
-    for (unsigned int i = 0; i < m; i++)
-    {
-      const complex wx = dot(w[i], x);
-      const complex az = bdot(a[i], z, 1.0 - b[i]);
-      tmp[i] = wx / az;
-    }
+    complex wx = dot(w[i], x);
+    complex az = bdot(a[i], z, 1.0 - b[i]);
+    tmp[i] = wx / az;
     for (unsigned int j = 1; j < n; j++)
-    {
-      complex sum = 0.0;
-      for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
-      y[j] = sum;
-    }
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
 
     // Second term
-    for (unsigned int i = 0; i < m; i++)
-    {
-      const complex wz = dot(w[i], z);
-      const complex az = bdot(a[i], z, 1.0 - b[i]);
-      tmp[i] = b[i] * wz / az;
-    }
+    complex wz = dot(w[i], z);
+    az = bdot(a[i], z, 1.0 - b[i]);
+    tmp[i] = b[i] * wz / az;
     for (unsigned int j = 1; j < n; j++)
-    {
-      complex sum = 0.0;
-      for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
-      y[j] -= sum;
-    }
-
+	y[j] -= a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
+    
     // Third term
-    for (unsigned int i = 0; i < m; i++)
-    {
-      const complex wz  = dot(w[i], z);
-      const complex az  = bdot(a[i], z, 1.0 - b[i]);
-      const complex axz = bdot(a[i], x, z, -b[i]);
-      tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
-    }
+    wz  = dot(w[i], z);
+    az  = bdot(a[i], z, 1.0 - b[i]);
+    complex axz = bdot(a[i], x, z, -b[i]);
+    tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
     for (unsigned int j = 1; j < n; j++)
-    {
-      complex sum = 0.0;
-      for (unsigned int i = 0; i < m; i++)
-	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
-      y[j] -= sum;
-    }
+      y[j] = a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
   }
+
+  */
 
   unsigned int degree(unsigned int i) const
   {
@@ -417,12 +405,12 @@ int main()
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
   dolfin_set("adaptive samples", true);
-  dolfin_set("homotopy monitoring", true);
+  //dolfin_set("homotopy monitoring", true);
   dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.01);
   dolfin_set("homotopy divergence tolerance", 20.0);
   dolfin_set("linear solver", "direct");
-  
+
   //Leontief leontief(2, 2);
   //leontief.solve();
 
