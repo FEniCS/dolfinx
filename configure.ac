@@ -14,6 +14,12 @@ AC_ARG_ENABLE(debug,
                              [Turn on debugging and warnings]),
               enable_debug=yes)
 
+# Option --enable-optimization
+AC_ARG_ENABLE(optimization,
+              AC_HELP_STRING([--enable-optimization],
+                             [Turn on optimization]),
+              enable_optimization=yes)
+
 # Option --disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
@@ -43,6 +49,11 @@ AC_TYPE_SIZE_T
 # Modify compiler flags when debug is enabled
 if test x$enable_debug = xyes; then
     CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98'
+fi
+
+# Modify compiler flags when optimization is enabled
+if test x$enable_debug = xyes; then
+    CXXFLAGS='-O3 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
 # Check for curses
