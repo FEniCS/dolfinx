@@ -54,9 +54,9 @@ namespace dolfin {
     void alloc(Vector& b, Mesh& mesh);
     
     // Method data
-    FiniteElement::Vector* element;    // The finite element
-    Map*       map;    // Map from reference cell
-    Quadrature*    quadrature; // Quadrature on reference cell
+    FiniteElement::Vector* element; // The finite element
+    Map* map;                       // Map from reference cell
+    Quadrature* quadrature;         // Quadrature on reference cell
     
     // True if user specifies method
     bool user;

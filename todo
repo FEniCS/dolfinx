@@ -18,6 +18,7 @@ General
 - Add GiD file format (Harald)
 - Fix assembly for systems of more than 3 equations
 - Add multigrid solver
+- Remove specification of dim from PDE
 
 Multi-adaptive solver
 ---------------------

@@ -81,14 +81,14 @@ namespace dolfin {
 	((u(0) * v(0) + u(1) * v(1) + u(2) * v(2)) + k * k *
 	 (sigma00 * epsilonv00 + sigma01 * epsilonv01 + sigma02 * epsilonv02 +
 	  sigma10 * epsilonv10 + sigma11 * epsilonv11 + sigma12 * epsilonv12 +
-	  sigma20 * epsilonv20 + sigma21 * epsilonv21 + sigma22 * epsilonv22)) * dK;
+	  sigma20 * epsilonv20 + sigma21 * epsilonv21 + sigma22 * epsilonv22)) * dx;
     }
     
     real rhs(ShapeFunction::Vector& v)
     {
       return ((up(0) * v(0) + up(1) * v(1) + up(2) * v(2)) +
 	      k * (wp(0) * v(0) + wp(1) * v(1) + wp(2) * v(2)) +
-	      k * k * (f(0) * v(0) + f(1) * v(1) + f(2) * v(2))) * dK;
+	      k * k * (f(0) * v(0) + f(1) * v(1) + f(2) * v(2))) * dx;
     }
     
   private:    

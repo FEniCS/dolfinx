@@ -1,63 +1,22 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
-class Stiffness : public PDE {
-public:
-  
-  Stiffness(real epsilon) : PDE(3), epsilon(epsilon) {}
-  
-  real lhs(const ShapeFunction& u, const ShapeFunction& v)
-  {
-    return epsilon*(grad(u),grad(v)) * dK;
-  }
-  
-  real rhs(const ShapeFunction& v)
-  {
-    return 1.0*v * dK;
-  }
-
-private:
-
-  real epsilon;
-
-};
-
-class Mass : public PDE {
-public:
-  
-  Mass() : PDE(3) {}
-
-  real lhs(const ShapeFunction& u, const ShapeFunction& v)
-  {
-    return u*v * dK;
-  }
-
-};
-
 class Bistable : public ODE {
 public:
 
   Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), 
+			 A(mesh, 0.001), b(mesh),
 			 ufile("solution.dx"), kfile("timesteps.dx")
   {
     // Parameters
     T = 20.0;
-    real epsilon = 0.001;
     
-    Galerkin fem;
-    
-    // Assemble stiffness matrix
-    Stiffness stiffness(epsilon);
-    fem.assemble(stiffness, mesh, A, b);
-    
-    // Assemble lumped mass matrix
-    Matrix M;
-    Mass mass;
-    fem.assemble(mass, mesh, M);
+    // Create lumped mass matrix
+    MassMatrix M(mesh);
     M.lump(m);
 
     // Compute sparsity
@@ -100,12 +59,13 @@ public:
   
 private:
 
-  Mesh& mesh; // The mesh
+  Mesh& mesh;        // The mesh
+  StiffnessMatrix A; // The stiffness matrix
+  LoadVector b;      // The load vector
+  Vector m;          // Lumped mass matrix
+
   File ufile; // OpenDX file for the solution
   File kfile; // OpenDX file for the time steps
-  Matrix A;   // Stiffness matrix
-  Vector m;   // Lumped mass matrix
-  Vector b;   // Weights for right-hand side
 
 };
 

@@ -24,16 +24,16 @@ namespace dolfin {
     {
       return
 	(1 / k * u(0) * v(0) + k *
-	 (u(0).ddx() * v(0).ddx() + u(0).ddy() * v(0).ddy())) * dK +
+	 (u(0).ddx() * v(0).ddx() + u(0).ddy() * v(0).ddy())) * dx +
 	(1 / k * u(1) * v(1) + k *
-	 (u(1).ddx() * v(1).ddx() + u(1).ddy() * v(1).ddy())) * dK;
+	 (u(1).ddx() * v(1).ddx() + u(1).ddy() * v(1).ddy())) * dx;
     }
     
     real rhs(ShapeFunction::Vector& v)
     {
 	return
-	  (k * f(0) * v(0) + wp(0) * v(0) + 1 / k * up(0) * v(0)) * dK +
-	  (k * f(1) * v(1) + wp(1) * v(1) + 1 / k * up(1) * v(1)) * dK;
+	  (k * f(0) * v(0) + wp(0) * v(0) + 1 / k * up(0) * v(0)) * dx +
+	  (k * f(1) * v(1) + wp(1) * v(1) + 1 / k * up(1) * v(1)) * dx;
     }
     
   private:

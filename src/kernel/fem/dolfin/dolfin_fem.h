@@ -10,6 +10,9 @@
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
+#include <dolfin/LoadVector.h>
+#include <dolfin/MassMatrix.h>
 #include <dolfin/PDE.h>
+#include <dolfin/StiffnessMatrix.h>
 
 #endif

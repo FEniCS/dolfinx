@@ -158,8 +158,8 @@ void PDE::update(FiniteElement::Vector* element,
     p->update(*((*element)(0)), *cell, t);
   
   // Update integral measures
-  dK.update(*map, *quadrature);
-  dS.update(*map, *quadrature);
+  dx.update(*map, *quadrature);
+  ds.update(*map, *quadrature);
   h = cell->diameter();
   
   // Save map (to compute derivatives)

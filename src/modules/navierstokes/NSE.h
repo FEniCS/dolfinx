@@ -42,7 +42,7 @@ namespace dolfin {
 	  (nu*((grad(u(0)),grad(v(0))) + (grad(u(1)),grad(v(1))) + (grad(u(2)),grad(v(2)))) + 
 	   (b,grad(u(0)))*v(0) + (b,grad(u(1)))*v(1) + (b,grad(u(2)))*v(2) + 
 	   d1*((b,grad(u(0)))*(b,grad(v(0))) + (b,grad(u(1)))*(b,grad(v(1))) + (b,grad(u(2)))*(b,grad(v(2)))) + 
-	   d2*(ddx(u(0))+ddy(u(1))+ddz(u(2)))*(ddx(v(0))+ddy(v(1))+ddz(v(2)))) ) * dK;
+	   d2*(ddx(u(0))+ddy(u(1))+ddz(u(2)))*(ddx(v(0))+ddy(v(1))+ddz(v(2)))) ) * dx;
 
     }
     
@@ -69,7 +69,7 @@ namespace dolfin {
 	       (b(0)*ddx(up(2)) + b(1)*ddy(up(2)) + b(2)*ddz(up(2)))*(b,grad(v(0)))) + 
 	   d2*(ddx(up(0))+ddy(up(1))+ddz(up(2)))*(ddx(v(0))+ddy(v(1))+ddz(v(2)))) -
 	  d1*(ddx(p(0))*(b,grad(v(0))) + ddy(p(0))*(b,grad(v(1))) + ddz(p(0))*(b,grad(v(2)))) + 
-	  p(0)*(ddx(v(0))+ddy(v(1))+ddz(v(2))) ) * dK;
+	  p(0)*(ddx(v(0))+ddy(v(1))+ddz(v(2))) ) * dx;
 
     }
     
@@ -101,7 +101,7 @@ namespace dolfin {
     {
 
       return
-	( (grad(u),grad(v)) ) * dK;
+	( (grad(u),grad(v)) ) * dx;
 
     }
     
@@ -116,15 +116,17 @@ namespace dolfin {
 	( (-1.0)*((b(0)*ddx(b(0)) + b(1)*ddy(b(0)) + b(2)*ddz(b(0)))*v.ddx() + 
 		  (b(0)*ddx(b(1)) + b(1)*ddy(b(1)) + b(2)*ddz(b(1)))*v.ddy() + 
 		  (b(0)*ddx(b(2)) + b(1)*ddy(b(2)) + b(2)*ddz(b(2)))*v.ddz()) -  
-	  (1.0/d1)*(ddx(b(0)) + ddy(b(1)) + ddz(b(2)))*v ) * dK;
+	  (1.0/d1)*(ddx(b(0)) + ddy(b(1)) + ddz(b(2)))*v ) * dx;
       
     }
     
-  private:    
+  private:
+
     ElementFunction::Vector f;   // Source term
     ElementFunction::Vector b;   // Convection = linearized velocity
 
     real nu,d1,d2,C1,C2,unorm;
+
   };
   
 

@@ -143,8 +143,8 @@ namespace dolfin {
     const Cell* cell;
     
     // Integral measures
-    Integral::InteriorMeasure dK;
-    Integral::BoundaryMeasure dS;
+    Integral::InteriorMeasure dx;
+    Integral::BoundaryMeasure ds;
     
     int dim;  // Space dimension
     int noeq; // Number of equations

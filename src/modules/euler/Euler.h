@@ -71,7 +71,7 @@ namespace dolfin
 
        Aij_Diff = Aij_Diff_Continuity + am*Aij_Diff_Momentum + ae*Aij_Diff_Energy;
 
-      return ( ( Aij_Time +  k*(Aij_Conv + Aij_Pres + Aij_Diff) ) *dK );
+      return ( ( Aij_Time +  k*(Aij_Conv + Aij_Pres + Aij_Diff) ) *dx );
     }
 
 
@@ -111,7 +111,7 @@ namespace dolfin
 
       bj_Load = bj_Load_Continuity + bj_Load_Momentum + bj_Load_Energy;
 
-      return ( ( bj_Time +  k*(bj_Conv + bj_Diff + bj_Load) )*dK );    
+      return ( ( bj_Time +  k*(bj_Conv + bj_Diff + bj_Load) )*dx );    
     }
 
   private:

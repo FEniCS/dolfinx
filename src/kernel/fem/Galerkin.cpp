@@ -159,13 +159,8 @@ void Galerkin::assembleRHS(PDE& pde, Mesh& mesh, Vector& b)
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-    {
       b(v.dof(cell)) += pde.rhs(*v);
- 
-      //dolfin_debug1("assembling: (%d)", v.dof(cell));
-
-      //dolfin_debug1("rhs: %lf", pde.rhs(*v));
-    }
+    
     // Update progress
     p++;
   }

@@ -23,12 +23,12 @@ namespace dolfin {
     real lhs(const ShapeFunction& u, const ShapeFunction& v)
     {
       return (1 / k * u*v + k *
-	      (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dK;
+	      (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dx;
     }
     
     real rhs(const ShapeFunction& v)
     {
-      return (k * f * v + wp * v + 1 / k * up * v) * dK;
+      return (k * f * v + wp * v + 1 / k * up * v) * dx;
     }
     
   private:    
