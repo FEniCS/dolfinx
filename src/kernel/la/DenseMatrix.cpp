@@ -392,6 +392,27 @@ bool DenseMatrix::endrow(int i, int pos) const
   return pos < n;
 }
 //-----------------------------------------------------------------------------
+void DenseMatrix::settransp(const DenseMatrix& A)
+{
+  init(A.n, A.m);
+                                                                                                                                                            
+  for (int i = 0; i < m; i++)
+    for (int j = 0; j < n; j++)
+      values[i][j] = A.values[j][i];
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::settransp(const SparseMatrix& A)
+{
+  init(A.n, A.m);
+                                                                                                                                                            
+  int j;
+  real a;
+                                                                                                                                                            
+  for (int i = 0; i < n; i++)
+    for (int pos = 0; !A.endrow(i,pos); pos++)
+      values[j][i] = A(i,j,pos);
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::show() const 
 {
   for (int i = 0; i < m; i++) {

@@ -191,6 +191,11 @@ real Matrix::multcol(const Vector& x, int j) const
   return A->multcol(x,j);
 }
 //-----------------------------------------------------------------------------
+void Matrix::transp(Matrix& A) const
+{
+  A.settransp(*this);
+}
+//-----------------------------------------------------------------------------
 void Matrix::solve(Vector& x, const Vector& b)
 {
   // Note that these need to be handled here and not redirected to
@@ -290,6 +295,14 @@ void Matrix::initrow(int i, int rowsize)
 bool Matrix::endrow(int i, int pos) const
 {
   return A->endrow(i, pos);
+}
+//-----------------------------------------------------------------------------
+void Matrix::settransp(const Matrix& A)
+{
+  if ( A._type == DENSE )
+    this->A->settransp(*((DenseMatrix *) A.A));
+  else
+    this->A->settransp(*((SparseMatrix *) A.A));
 }
 //-----------------------------------------------------------------------------
 void Matrix::show() const

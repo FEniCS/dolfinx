@@ -49,6 +49,8 @@ namespace dolfin {
     virtual void addrow(const Vector& x) = 0;
     virtual void initrow(int i, int rowsize) = 0;
     virtual bool endrow(int i, int pos) const = 0;
+    virtual void settransp(const DenseMatrix& A) = 0;
+    virtual void settransp(const SparseMatrix& A) = 0;
 
     virtual void show() const = 0;
 

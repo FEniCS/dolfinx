@@ -532,6 +532,99 @@ bool SparseMatrix::endrow(int i, int pos) const
   return columns[i][pos] == -1;
 }
 //-----------------------------------------------------------------------------
+void SparseMatrix::settransp(const SparseMatrix& A)
+{
+  clear();
+                                                                                                                                                            
+  this->m = A.n;
+  this->n = A.m;
+                                                                                                                                                            
+  // Allocate memory
+  rowsizes = new int[m];
+  columns  = new (int *)[m];
+  values   = new (real *)[m];
+
+  // Current position in row
+  int* rowpos = new int[m];
+
+  // Reset row sizes
+  for (int i = 0; i < m; i++) {
+    rowsizes[i] = 0;
+    rowpos[i] = 0;
+  }
+
+  // Sum up row sizes
+  for (int i = 0; i < n; i++ )
+    for (int pos = 0; pos < A.rowsizes[i]; pos++)
+      ++rowsizes[A.columns[i][pos]];
+  
+  // Allocate memory
+  allocsize = 0;
+  for (int i = 0; i < m; i++) {
+    columns[i] = new int[rowsizes[i]];
+    values[i] = new real[rowsizes[i]];
+    allocsize = (rowsizes[i] > allocsize ) ? rowsizes[i] : allocsize;
+  }
+
+  // Set values
+  for (int i = 0; i < n; i++)
+    for (int pos = 0; pos < A.rowsizes[i]; pos++) {
+      int k = A.columns[i][pos];
+      values[k][rowpos[k]] = A.values[i][pos];
+      columns[k][rowpos[k]] = i;
+      ++rowpos[k];
+    }
+                                                                                                                                                            
+  delete [] rowpos;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::settransp(const DenseMatrix& A)
+{
+  clear();
+                                                                                                                                                            
+  this->m = A.n;
+  this->n = A.m;
+
+  // Allocate memory
+  rowsizes = new int[m];
+  columns = new (int *)[m];
+  values = new (real *)[m];
+
+  // Current position in row
+  int* rowpos = new (int)[m];
+          
+  // Reset row sizes
+  for (int i = 0; i < m; i++) {
+    rowsizes[i] = 0;
+    rowpos[i] = 0;
+  }
+
+  // Sum up row sizes
+  for (int i = 0; i < n; i++ )
+    for (int j = 0; j < m; j++)
+      if (fabs(A.values[i][j]) > DOLFIN_EPS)
+        ++rowsizes[j];
+
+  // Allocate memory
+  allocsize = 0;
+  for (int i = 0; i < m; i++) {
+    columns[i] = new int[rowsizes[i]];
+    values[i] = new real[rowsizes[i]];
+    allocsize = (rowsizes[i] > allocsize) ? rowsizes[i] : allocsize;
+  }
+
+  // Set values
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < m; j++)
+      if (fabs(A.values[i][j]) > DOLFIN_EPS) {
+        values[j][rowpos[j]] = A.values[i][j];
+        columns[j][rowpos[j]] = i;
+        ++rowpos[j];
+      }
+  
+  delete [] rowpos;
+}
+//-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
   cout << "Sparse matrix" << endl;

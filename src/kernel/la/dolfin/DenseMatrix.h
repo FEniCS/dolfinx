@@ -58,6 +58,8 @@ namespace dolfin {
     void addrow(const Vector& x);
     void initrow(int i, int rowsize);
     bool endrow(int i, int pos) const;
+    void settransp(const DenseMatrix& A);
+    void settransp(const SparseMatrix& A);
 
     void show() const;
     friend LogStream& operator<< (LogStream& stream, const DenseMatrix& A);

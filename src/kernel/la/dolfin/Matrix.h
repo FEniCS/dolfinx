@@ -141,6 +141,9 @@ namespace dolfin {
     /// Scalar product with column
     real multcol(const Vector& x, int j) const;
 
+    /// Compute transpose
+    void transp(Matrix& At) const;
+
     /// Solve Ax = b (in-place LU for dense and Krylov for sparse)
     void solve(Vector& x, const Vector& b);
 
@@ -181,6 +184,9 @@ namespace dolfin {
 
     /// True if we have reached the end of the row (only sparse)
     bool endrow(int i, int pos) const;
+    
+    /// Set this matrix to the transpose of the given matrix
+    void settransp(const Matrix& A);
 
     /// --- Output
 

@@ -1,3 +1,4 @@
+ - Add transpose functions to Matrix (Erik)
 0.3.9
  - Update Krylov solver (Erik, Johan)
  - Add new LU factorization and LU solve (Niklas)
