@@ -6,11 +6,9 @@
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
-#include <vector>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Array.h>
-#include <dolfin/Table.h>
 #include <dolfin/constants.h>
+#include <dolfin/NewArray.h>
 
 namespace dolfin {
 
@@ -34,7 +32,7 @@ namespace dolfin {
     virtual ~TimeSlab();
     
     /// Update time slab (iteration)
-    virtual real update(FixedPointIteration& fixpoint) = 0;
+    virtual void update(FixedPointIteration& fixpoint) = 0;
 
     /// Reset time slab to initial values
     virtual void reset(FixedPointIteration& fixpoint) = 0;
@@ -65,13 +63,7 @@ namespace dolfin {
     // Specify and adjust the time step
     void setsize(real K, const Adaptivity& adaptivity);
 
-    // Update elements (iteration)
-    real updateElements(FixedPointIteration& fixpoint);
-
-    /// Reset elements to initial values
-    void resetElements(FixedPointIteration& fixpoint);
-
-    /// Compute maximum discrete residual for elements
+    // Compute maximum discrete residual for elements
     real computeMaxRdElements(Solution& u, RHS& f);
 
     //--- Time slab data ---
@@ -84,7 +76,7 @@ namespace dolfin {
     bool reached_endtime;
 
     // List of elements within this time slab
-    std::vector<Element*> elements;
+    NewArray<Element*> elements;
 
   };
 

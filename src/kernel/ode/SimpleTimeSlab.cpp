@@ -7,6 +7,7 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/SimpleTimeSlab.h>
 
 using namespace dolfin;
@@ -23,14 +24,14 @@ SimpleTimeSlab::~SimpleTimeSlab()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real SimpleTimeSlab::update(FixedPointIteration& fixpoint)
+void SimpleTimeSlab::update(FixedPointIteration& fixpoint)
 {
-  return updateElements(fixpoint);
+  fixpoint.iterate(elements);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
 {
-  resetElements(fixpoint);
+  fixpoint.reset(elements);
 }
 //-----------------------------------------------------------------------------
 real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)

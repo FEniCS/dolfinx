@@ -5,6 +5,7 @@
 #define __FIXED_POINT_ITERATION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Event.h>
 
 namespace dolfin
@@ -29,11 +30,14 @@ namespace dolfin
     /// Fixed point iteration on a time slab
     bool iterate(TimeSlab& timeslab);
 
-    /// Update a given element
-    real update(Element& element);
+    /// Fixed point iteration on an element list
+    bool iterate(NewArray<Element*>& elements);
+    
+    /// Fixed point iteration on an element
+    bool iterate(Element& element);
 
-    /// Reset a given element
-    void reset(Element& element);
+    /// Reset a list of elements
+    void reset(NewArray<Element*>& elements);
 
     /// Display a status report
     void report() const;
@@ -46,50 +50,78 @@ namespace dolfin
     // Current damping for problems of type {parabolic}
     enum Damping { undamped, damped, increasing };
 
+    // Discrete residuals
+    struct Residuals
+    {
+      Residuals() : r0(0), r1(0), r2(0) {}
+      real r0, r1, r2;
+    };
+
     // Update time slab
     void update(TimeSlab& timeslab);
+    
+    // Update element list
+    void update(NewArray<Element*>& elements);
+
+    // Update element
+    void update(Element& element);
+
+    // Check if time slab has converged
+    bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
+
+    // Check if element list has converged
+    bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
+
+    // Check if element has converged
+    bool converged(Element& element, Residuals& r, unsigned int n);
+    
+    // Stabilize time slab
+    void stabilize(TimeSlab& timeslab, const Residuals& r);
+
+    // Stabilize element list
+    void stabilize(NewArray<Element*>& elements, const Residuals& r);
+
+    // Stabilize element
+    void stabilize(Element& element, const Residuals& r);
 
     // Simple undamped update of element
-    real updateUndamped(Element& element);
+    void updateUndamped(Element& element);
 
     // Locally damped update of element
-    real updateLocalDamping(Element& element);
+    void updateLocalDamping(Element& element);
 
     // Globaly damped update of element
-    real updateGlobalDamping(Element& element);
-
-    // Compute stabilization
-    void stabilize(TimeSlab& timeslab);
+    void updateGlobalDamping(Element& element);
 
     // Compute stabilization for state {nonstiff}
-    void stabilizeNonStiff(TimeSlab& timeslab);
+    void stabilizeNonStiff(TimeSlab& timeslab, const Residuals& r);
 
     // Compute stabilization for state {diagonal}
-    void stabilizeDiagonal(TimeSlab& timeslab);
+    void stabilizeDiagonal(TimeSlab& timeslab, const Residuals& r);
 
     // Compute stabilization for state {parabolic} using damping {undamped}
-    void stabilizeParabolicUndamped(TimeSlab& timeslab);
+    void stabilizeParabolicUndamped(TimeSlab& timeslab, const Residuals& r);
 
     // Compute stabilization for state {parabolic} using damping {damped}
-    void stabilizeParabolicDamped(TimeSlab& timeslab);
+    void stabilizeParabolicDamped(TimeSlab& timeslab, const Residuals& r);
 
     // Compute stabilization for state {parabolic} using damping {increasing}
-    void stabilizeParabolicIncreasing(TimeSlab& timeslab);
+    void stabilizeParabolicIncreasing(TimeSlab& timeslab, const Residuals& r);
 
     // Compute stabilization for state {nonnormal}
-    void stabilizeNonNormal(TimeSlab& timeslab);
+    void stabilizeNonNormal(TimeSlab& timeslab, const Residuals& r);
+
+    // Reset element
+    void reset(Element& element);
 
     // Compute convergence rate
-    real computeConvergenceRate();
+    real computeConvergenceRate(const Residuals& r);
 
     // Compute alpha
     real computeDamping(real rho);
 
     // Compute m
     unsigned int computeDampingSteps(real rho);
-
-    // Check if the time slab has converged
-    bool converged(TimeSlab& timeslab);
 
     // Reset fixed point iteration
     void reset();
@@ -133,20 +165,11 @@ namespace dolfin
     // Current damping
     Damping damping;
 
-    // Iteration number
-    unsigned int n;    
-
     // Remaining number of iterations with small alpha
     unsigned int m;
 
     // Current damping
     real alpha;
-
-    // Increments
-    real d1, d2;
-
-    // Discrete residuals
-    real r0, r1, r2;
 
   };
 

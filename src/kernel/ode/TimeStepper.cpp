@@ -100,7 +100,7 @@ void TimeStepper::solve(ODE& ode, Function& function)
   }
 
   // Display status report
-  cout << "Solution computed in " << toc() << endl;
+  cout << "Solution computed in " << toc() << " seconds." << endl;
   fixpoint.report();
 }
 //-----------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+ - Add missing include file in Components.h (kakr)
  - New function dolfin_end(const char* msg, ...)
  - Move numerical differentiation to RHS
  - New class Event for limited display of messages
@@ -169,7 +170,7 @@
  - Convert grids in data/grids to xml.gz
  - Add iterators for Nodes and Cells
  - Change from .hh to .h
- - Add operators to Vector class (Foufas)
+ - Add operators to Vector class (foufas)
  - Add dependence on libxml2
  - Change from .C to .cpp to make Jim happy.
  - Change input/output functionality to streams

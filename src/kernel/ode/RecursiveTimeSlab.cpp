@@ -11,6 +11,7 @@
 #include <dolfin/Partition.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/RecursiveTimeSlab.h>
 
 using namespace dolfin;
@@ -37,15 +38,13 @@ RecursiveTimeSlab::~RecursiveTimeSlab()
   }
 }
 //-----------------------------------------------------------------------------
-real RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
+void RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
 {
   // First update the time slabs
-  real ds = updateTimeSlabs(fixpoint);
+  updateTimeSlabs(fixpoint);
 
-  // Then update the elements
-  real de = updateElements(fixpoint);
-
-  return std::max(ds, de);
+  // Then iterate on the elements
+  fixpoint.iterate(elements);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
@@ -54,7 +53,7 @@ void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
   resetTimeSlabs(fixpoint);
 
   // Then reset the elements
-  resetElements(fixpoint);
+  fixpoint.reset(elements);
 }
 //-----------------------------------------------------------------------------
 real RecursiveTimeSlab::computeMaxRd(Solution& u, RHS& f)
@@ -141,24 +140,20 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
   }
 
   // Reset elements
-  resetElements(fixpoint);
+  fixpoint.reset(elements);
 
-  // Update elements
-  updateElements(fixpoint);
+  // Iterate on the elements
+  fixpoint.iterate(elements);
 
   // Compute residuals and new time steps
   computeResiduals(f, adaptivity);
 }
 //-----------------------------------------------------------------------------
-real RecursiveTimeSlab::updateTimeSlabs(FixedPointIteration& fixpoint)
+void RecursiveTimeSlab::updateTimeSlabs(FixedPointIteration& fixpoint)
 {
-  real dmax = 0.0;
-
   // Update time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
-    dmax = std::max(dmax, timeslabs[i]->update(fixpoint));
-  
-  return dmax;
+    timeslabs[i]->update(fixpoint);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::resetTimeSlabs(FixedPointIteration& fixpoint)

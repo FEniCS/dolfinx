@@ -26,7 +26,7 @@ namespace dolfin {
     ~SimpleTimeSlab();
     
     /// Update time slab (iteration)
-    real update(FixedPointIteration& fixpoint);
+    void update(FixedPointIteration& fixpoint);
     
     /// Reset time slab to initial values
     void reset(FixedPointIteration& fixpoint);

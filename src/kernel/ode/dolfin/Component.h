@@ -4,6 +4,7 @@
 #ifndef __COMPONENT_H
 #define __COMPONENT_H
 
+#include <functional>
 #include <vector>
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>

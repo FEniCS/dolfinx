@@ -31,7 +31,7 @@ namespace dolfin {
     ~RecursiveTimeSlab();
     
     /// Update time slab (iteration)
-    real update(FixedPointIteration& fixpoint);
+    void update(FixedPointIteration& fixpoint);
 
     /// Reset time slab to initial values
     void reset(FixedPointIteration& fixpoint);
@@ -57,7 +57,7 @@ namespace dolfin {
 			Partition& partition, int offset, int end);
 
     // Update time slabs (iteration)
-    real updateTimeSlabs(FixedPointIteration& fixpoint);
+    void updateTimeSlabs(FixedPointIteration& fixpoint);
 
     // Reset time slabs to initial values
     void resetTimeSlabs(FixedPointIteration& fixpoint);

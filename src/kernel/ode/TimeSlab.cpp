@@ -72,38 +72,6 @@ void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-real TimeSlab::updateElements(FixedPointIteration& fixpoint)
-{
-  real dmax = 0.0;
-
-  // Update elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Update element
-    dmax = std::max(dmax, fixpoint.update(*element));
-  }
-
-  return dmax;
-}
-//-----------------------------------------------------------------------------
-void TimeSlab::resetElements(FixedPointIteration& fixpoint)
-{
-  // Reset elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Reset element
-    fixpoint.reset(*element);
-  }
-}
-//-----------------------------------------------------------------------------
 real TimeSlab::computeMaxRdElements(Solution& u, RHS& f)
 {
   real maxrd = 0.0;
