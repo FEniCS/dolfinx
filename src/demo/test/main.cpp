@@ -9,9 +9,21 @@ int main()
 {
   dolfin::cout << "Test" << " test" << dolfin::endl;
 
-  Lagrange p(0);
-  p.set(0, 0.0);
-  dolfin::cout << "p(0.2) = " << p(0, 0.2) << dolfin::endl;
+  Matrix A(3,3, Matrix::DENSE);
+
+  A(0,0) = 1.0;
+  A(0,2) = 2.0;
+  A(1,0) = 3.0;
+  A(2,1) = 1.0;
+  A(2,2) = 2.0;
+
+  Vector b(3);
+  b = 1.0;
+
+  Vector x;
+  A.solve(x,b);
+
+  x.show();
 
   return 0;
 }

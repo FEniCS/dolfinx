@@ -92,6 +92,8 @@ void DenseMatrix::init(int m, int n)
   }
   else
     alloc(m,n);
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::clear()
@@ -103,9 +105,7 @@ void DenseMatrix::clear()
     values = 0;
   }
 
-  if ( permutation )
-    delete [] permutation;
-  permutation = 0;
+  clearperm();
   
   m = 0;
   n = 0;
@@ -180,8 +180,11 @@ void DenseMatrix::operator=(const DenseMatrix& A)
     for (int j = 0; j < n; j++)
       values[i][j] = A.values[i][j];
 
-  for (int i = 0; i < m; i++)
-    permutation[i] = A.permutation[i];
+  if ( A.permutation ) {
+    initperm();
+    for (int i = 0; i < m; i++)
+      permutation[i] = A.permutation[i];
+  }
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator=(const SparseMatrix& A)
@@ -196,6 +199,8 @@ void DenseMatrix::operator=(const SparseMatrix& A)
       real a = A(i,j,pos);
       values[i][j] = a;
     }
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator+=(const DenseMatrix& A)
@@ -205,6 +210,8 @@ void DenseMatrix::operator+=(const DenseMatrix& A)
   for (int i = 0; i < m; i++)
     for (int j = 0; j < n; j++)
       values[i][j] += A.values[i][j];
+  
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator+=(const SparseMatrix& A)
@@ -218,6 +225,8 @@ void DenseMatrix::operator+=(const SparseMatrix& A)
       real a = A(i,j,pos);
       values[i][j] += a;
     }
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator-=(const DenseMatrix& A)
@@ -227,6 +236,8 @@ void DenseMatrix::operator-=(const DenseMatrix& A)
   for (int i = 0; i < m; i++)
     for (int j = 0; j < n; j++)
       values[i][j] -= A.values[i][j];
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator-=(const SparseMatrix& A)
@@ -240,6 +251,8 @@ void DenseMatrix::operator-=(const SparseMatrix& A)
       real a = A(i,j,pos);
       values[i][j] -= a;
     }
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::operator*=(real a)
@@ -247,6 +260,8 @@ void DenseMatrix::operator*=(real a)
   for (int i = 0; i < m; i++)
     for (int j = 0; j < n; j++)
       values[i][j] *= a;
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 real DenseMatrix::norm() const
@@ -328,25 +343,20 @@ void DenseMatrix::ident(int i)
 void DenseMatrix::addrow()
 {
   real** new_values = new (real *)[m+1];
-  int* new_permutation = new int[m+1];
                                                                                                                                                             
-  for (int i = 0; i < m; i++) {
+  for (int i = 0; i < m; i++)
     new_values[i] = values[i];
-    new_permutation[i] = i;
-  }
                                                                                                                                                             
   new_values[m] = new real[n];
   for (int i = 0; i < n; i++)
     new_values[m][i] = 0.0;
   
-  new_permutation[m] = m;
-                                                                                                                                                            
   m = m + 1;
-                                                                                                                                                            
+  
   delete [] values;
-  delete [] permutation;
   values = new_values;
-  permutation = new_permutation;
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::addrow(const Vector &x)
@@ -355,25 +365,20 @@ void DenseMatrix::addrow(const Vector &x)
     dolfin_error("Matrix dimensions don't match");
                                                                                                                                                             
   real** new_values = new (real *)[m+1];
-  int* new_permutation = new int[m+1];
                                                                                                                                                             
-  for (int i = 0; i < m; i++) {
+  for (int i = 0; i < m; i++)
     new_values[i] = values[i];
-    new_permutation[i] = i;
-  }
                                                                                                                                                             
   new_values[m] = new real[n];
   for (int i = 0; i < n; i++)
     new_values[m][i] = x(i);
                                                                                                                                                             
-  new_permutation[m] = m;
-                                                                                                                                                            
   m = m + 1;
                                                                                                                                                             
   delete [] values;
-  delete [] permutation;
   values = new_values;
-  permutation = new_permutation;
+
+  clearperm();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::initrow(int i, int rowsize)
@@ -385,11 +390,6 @@ bool DenseMatrix::endrow(int i, int pos) const
 {
   dolfin_warning("You probably don't want to use endrow() for a dense matrix.");
   return pos < n;
-}
-//-----------------------------------------------------------------------------
-int DenseMatrix::perm(int i) const
-{
-  return permutation[i];
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::show() const 
@@ -416,7 +416,6 @@ void DenseMatrix::alloc(int m, int n)
   // Use with caution. Only for internal use.
 
   values = new (real *)[m];
-  permutation = new int[m];
   
   for (int i = 0; i < m; i++)
     values[i] = new real[n];
@@ -424,10 +423,7 @@ void DenseMatrix::alloc(int m, int n)
   for (int i = 0; i < m; i++)
     for (int j = 0; j < n; j++)
       values[i][j] = 0.0;
-  
-  for (int i = 0; i < m; i++)
-    permutation[i] = i;  
-
+ 
   this->m = m;
   this->n = n;
 }
@@ -467,7 +463,33 @@ real** DenseMatrix::getvalues()
   return values;
 }
 //-----------------------------------------------------------------------------
+real** const DenseMatrix::getvalues() const
+{
+  return values;
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::initperm()
+{
+  if ( !permutation )
+    permutation = new int[m];
+  
+  for (int i = 0; i < m; i++)
+    permutation[i] = i;
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::clearperm()
+{
+  if ( permutation )
+    delete [] permutation;
+  permutation = 0;
+}
+//-----------------------------------------------------------------------------
 int* DenseMatrix::getperm()
+{
+  return permutation;
+}
+//-----------------------------------------------------------------------------
+int* const DenseMatrix::getperm() const
 {
   return permutation;
 }

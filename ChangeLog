@@ -1,3 +1,4 @@
+ - Add benchmark test in src/demo/bench
  - Add silent logger
 0.3.8
  - Make sure dolfin-config is regenerated every time

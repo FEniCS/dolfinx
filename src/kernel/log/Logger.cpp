@@ -9,6 +9,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/TerminalLogger.h>
 #include <dolfin/CursesLogger.h>
+#include <dolfin/SilentLogger.h>
 #include <dolfin/Logger.h>
 
 using namespace dolfin;

@@ -532,13 +532,6 @@ bool SparseMatrix::endrow(int i, int pos) const
   return columns[i][pos] == -1;
 }
 //-----------------------------------------------------------------------------
-int SparseMatrix::perm(int i) const
-{
-  dolfin_warning("Trying to access permutation for a sparse matrix.");
-
-  return i;
-}
-//-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
   cout << "Sparse matrix" << endl;
@@ -692,7 +685,29 @@ real** SparseMatrix::getvalues()
   return values;
 }
 //-----------------------------------------------------------------------------
+real** const SparseMatrix::getvalues() const
+{
+  return values;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::initperm()
+{
+  dolfin_error("Trying to initialize permutation for a sparse matrix.");
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::clearperm()
+{
+  dolfin_error("Trying to clear permutation for a sparse matrix.");
+}
+//-----------------------------------------------------------------------------
 int* SparseMatrix::getperm()
+{
+  dolfin_error("Trying to access permutation for a sparse matrix.");
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int* const SparseMatrix::getperm() const
 {
   dolfin_error("Trying to access permutation for a sparse matrix.");
 

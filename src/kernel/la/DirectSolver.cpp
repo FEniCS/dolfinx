@@ -38,198 +38,130 @@ void DirectSolver::inverse(Matrix& A, Matrix& Ainv) const
 }
 //-----------------------------------------------------------------------------
 void DirectSolver::lu(Matrix& A) const
-{
+{  
   // Check that the matrix is dense
   check(A);
-   
-  // Get values
-  real** a = A.values();
-  int* indx = A.permutation();
-   
-  // This function replaces the matrix with its LU factorization.
-  //
-  // Algorithm from "Numerical Recipes in C", except for the following
-  // changes:
-  //
-  //    float replaced by real
-  //    removed comments
-  //    changed *d to d
-  //    changed from [i][j] to [i-1][j-1]
-                                                                                                                                                            
+  
   // Check that the matrix is square
   if ( A.size(0) != A.size(1) )
     dolfin_error("Matrix is not square.");
-                                                                                                                                                            
-  // Prepare the variables for the notation in the algorithm
-  real TINY = 1e-20;           // A small number
-  int n = A.size(0);         // Dimension
-  real d;                      // Even or odd number of row interchanges
-                                                                                                                                                            
-  //  void ludcmp(float **a, int n, int *indx, float *d)
-                                                                                                                                                            
-  // Given a matrix a[1..n][1..n], this routine replaces it by the LU decomposition of a rowwise
-  // permutation of itself. a and n are input. a is output, arranged as in equation (2.3.14) above;
-  // indx[1..n] is an output vector that records the row permutation effected by the partial
-  // pivoting; d is output as +/- 1 depending on whether the number of row interchanges was even
-  // or odd, respectively. This routine is used in combination with lubksb to solve linear equations
-  // or invert a matrix.
-                                                                                                                                                            
-  int i,imax,j,k;
-  imax = 0;
-  real big,dum,sum,temp;
-  real* vv = new real[n];
-  d = 1.0;
-                                                                                                                                                            
-  for (i=1;i<=n;i++){
-    big=0.0;
-    for (j=1;j<=n;j++)
-      if ((temp=fabs(a[i-1][j-1])) > big) big=temp;
-    if (big == 0.0)
-      dolfin_error("Matrix is singular.");
-    vv[i-1]=1.0/big;
-  }
-                                                                                                                                                            
+  
+  // Initialize permutation
+  A.initperm();
 
- for (j=1;j<=n;j++){
-    for (i=1;i<j;i++){
-      sum=a[i-1][j-1];
-      for (k=1;k<i;k++) sum -= a[i-1][k-1]*a[k-1][j-1];
-      a[i-1][j-1]=sum;
+  // Get data from matrix
+  int n      = A.size(0);
+  real** a   = A.values();
+  int* index = A.permutation();
+  
+  // Comput the LU factorization
+  for (int j = 0; j < (n-1); j++) {
+    
+    // Partial pivoting, find the largest element on and below the diagonal
+    int imax = j;    
+    for (int i = j+1; i < n; i++)
+      if ( fabs(a[i][j]) > fabs(a[imax][j]) )
+	imax = i;
+    
+    // Get diagonal element
+    real diag = a[imax][j];
+    if ( fabs(diag) < DOLFIN_EPS )
+      dolfin_error("Matrix is singular to working precision.");
+    
+    // Swap permutation vector
+    int tmp1 = index[j];
+    index[j] = index[imax];
+    index[imax] = tmp1;
+
+    // Swap matrix rows
+    real* tmp2 = a[j];
+    a[j] = a[imax];
+    a[imax] = tmp2;
+    
+    // Gaussian elimination
+    for (int i = j+1; i < n; i++) {
+      real alpha = a[i][j] / diag;
+      a[i][j] = alpha;
+      for (int k = j+1; k < n; k++)
+	a[i][k] -= alpha * a[j][k];
     }
-    big=0.0;
-    for (i=j;i<=n;i++){
-      sum=a[i-1][j-1];
-      for (k=1;k<j;k++)
-        sum -= a[i-1][k-1]*a[k-1][j-1];
-      a[i-1][j-1]=sum;
-      if ( (dum=vv[i-1]*fabs(sum)) >= big) {
-        big=dum;
-        imax=i;
-      }
-    }
-    if (j != imax){
-      for (k=1;k<=n;k++){
-        dum=a[imax-1][k-1];
-        a[imax-1][k-1]=a[j-1][k-1];
-        a[j-1][k-1]=dum;
-      }
-      d = -(d);
-      vv[imax-1]=vv[j-1];
-    }
-    indx[j-1]=imax;
-    if (a[j-1][j-1] == 0.0) a[j-1][j-1]=TINY;
-    if (j != n) {
-      dum=1.0/(a[j-1][j-1]);
-      for (i=j+1;i<=n;i++) a[i-1][j-1] *= dum;
-    }
+
   }
-                                                                                                                                                            
-  delete [] vv;
 }
 //-----------------------------------------------------------------------------
 void DirectSolver::solveLU(const Matrix& LU, Vector& x, const Vector& b) const
-
 {
+  // Check that the matrix is dense
   check(LU);
-                                                                                                                                                            
-  // Solve the linear system A x = b using a computed LU factorization
-                                                                                                                                                            
+  
   // Check dimensions
   if ( LU.size(0) != LU.size(1) )
     dolfin_error("LU factorization must be a square matrix.");
-                                                                                                                                                            
   if ( LU.size(0) != b.size() )
     dolfin_error("Non-matching dimensions for matrix and vector.");
-                                                                                                                                                            
-  // Get size
+
+  // Get data from matrix
   int n = LU.size(0);
-                                                                                                                                                            
+  real** const a   = LU.values();
+  int* const index = LU.permutation();
+  
+  // Check that the matrix has been LU factorized
+  if ( !index )
+    dolfin_error("Matrix is not LU factorized.");
+
   // Initialize solution vector
   x.init(n);
-                                                                                                                                                            
-  // This function solves for the right-hand side b
-  //
-  // Note! The matrix must be LU factorized first!
-  //
-  // Algorithm from "Numerical Recipes in C", except for the following
-  // changes:
-  //
-  //    float replaced by real
-  //    removed comments
-  //    changed from [i][j] to [i-1][j-1]
-                                                                                                                                                            
-                                                                                                                                                            
-  // Copy b to x
-  for (int i=0;i<n;i++)
-    x.values[i] = b.values[i];
-                                                                                                                                                            
-  //  void lubksb(float **a, int n, int *indx, float b[])
-                                                                                                                                                            
-  // Solves the set of n linear equations A X = B. Here a[1..n][1..n] is input, not as the matrix
-  // A but rather as its LU decomposition, determined by the routine ludcmp. indx[1..n] is input
-  // as the permutation vector returned by ludcmp. b[1..n] is input as the right-hand side vector
-  // B, and returns with the solution vector X. a, n, and indx are not modified by this routine
-  // and can be left in place for successive calls with different right-hand sides b. This routine takes
-  // into account the possibility that b will begin with many zero elements, so it is efficient for use
-  // in matrix inversion.
-                                                                                                                                                            
-  int i,ii=0,ip,j;
-                                                                                                                                                            
-  real sum;
-                                                                                                                                                            
-  for (i=1;i<=n;i++){
-    ip=LU.perm(i-1);
-    sum=x.values[ip-1];
-    x.values[ip-1]=x.values[i-1];
-    if (ii)     for (j=ii;j<=i-1;j++) sum -= LU(i-1,j-1)*x.values[j-1];
-    else if (sum) ii=i;
-    x.values[i-1]=sum;
+
+  // First solve Lx = b by forward substitution
+  for (int i = 0; i < n; i++) {
+    real sum = b(index[i]);
+    for (int j = 0; j < i; j++)
+      sum -= a[i][j] * x(j);
+    x(i) = sum;
   }
-                                                                                                                                                            
-  for (i=n;i>=1;i--){
-    sum=x.values[i-1];
-    for (j=i+1;j<=n;j++) sum -= LU(i-1,j-1)*x.values[j-1];
-    x.values[i-1]=sum/LU(i-1,i-1);
+ 
+  // Then solve Ux = x by backsubstitution
+  for (int i = n-1; i >= 0; i--) {
+    real sum = x(i);
+    for (int j = i+1; j < n; j++)
+      sum -= a[i][j] * x(j);
+    x(i) = sum / a[i][i];
   }
-                                                                                                                                                            
 }
-
-
-
 //-----------------------------------------------------------------------------
 void DirectSolver::inverseLU(const Matrix& LU, Matrix& Ainv) const
 {
   check(LU);
   check(Ainv);
-
+ 
   // Compute inverse using a computed LU factorization
-
+ 
   // Check dimensions
   if ( LU.size(0) != LU.size(1) )
     dolfin_error("LU factorization must be a square matrix.");
-
+ 
   // Get size
   int n = LU.size(0);
-
+ 
   // Initialize inverse
   Ainv.init(n, n);
-
+ 
   // Unit vector and solution
   Vector e(n);
   Vector x;
-
+ 
   // Compute inverse
   for (int j = 0; j < n; j++) {
-
+                                                                                                                                                            
     e(j) = 1.0;
     solveLU(LU, x, e);
     e(j) = 0.0;
-
+                                                                                                                                                            
     for (int i = 0; i < n; i++)
       Ainv(i, j) = x(i);
-
+                                                                                                                                                            
   }
-
+                                                                                                                                                            
 }
 //-----------------------------------------------------------------------------
 void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,

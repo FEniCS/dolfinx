@@ -292,11 +292,6 @@ bool Matrix::endrow(int i, int pos) const
   return A->endrow(i, pos);
 }
 //-----------------------------------------------------------------------------
-int Matrix::perm(int i) const
-{
-  return A->perm(i);
-}
-//-----------------------------------------------------------------------------
 void Matrix::show() const
 {
   A->show();
@@ -483,16 +478,42 @@ real Matrix::Column::operator* (const Vector& x) const
 //-----------------------------------------------------------------------------
 real** Matrix::values()
 {
-  // Matrix::values() and GenericMatrix::values() are the "same" functions
+  // Matrix::values() and GenericMatrix::getvalues() are the "same" functions
   // but have different names, since otherwise there would be a conflict
   // with the variable values in DenseMatrix and SparseMatrix.
 
   return A->getvalues();
 }
 //-----------------------------------------------------------------------------
+real** const Matrix::values() const
+{
+  // Matrix::values() and GenericMatrix::getvalues() are the "same" functions
+  // but have different names, since otherwise there would be a conflict
+  // with the variable values in DenseMatrix and SparseMatrix.
+  
+  return A->getvalues();
+}
+//-----------------------------------------------------------------------------
+void Matrix::initperm()
+{
+  A->initperm();
+}
+//-----------------------------------------------------------------------------
+void Matrix::clearperm()
+{
+  A->clearperm();
+}
+//-----------------------------------------------------------------------------
 int* Matrix::permutation()
 {
-  // Set comment in Matrix::values() above
+  // See comment in Matrix::values() above
+  
+  return A->getperm();
+}
+//-----------------------------------------------------------------------------
+int* const Matrix::permutation() const
+{
+  // See comment in Matrix::values() above
   
   return A->getperm();
 }

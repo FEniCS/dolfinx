@@ -18,25 +18,28 @@ void dolfin::sysinfo()
 {
   char string[DOLFIN_WORDLENGTH];
 
-  cout << "- System info:" << endl;
+  cout << "- System info:" << endl << endl;
   
   sysinfo_user(string);
-  cout << "- User:    " << string << endl;
+  cout << "  User:    " << string << endl;
   
   sysinfo_date(string);
-  cout << "- Date:    " << string << endl;
+  cout << "  Date:    " << string << endl;
   
   sysinfo_host(string);
-  cout << "- Host:    " << string << endl;
+  cout << "  Host:    " << string << endl;
   
   sysinfo_mach(string);
-  cout << "- Machine: " << string << endl;
+  cout << "  Machine: " << string << endl;
   
   sysinfo_name(string);
-  cout << "- System:  " << string << endl;
+  cout << "  System:  " << string << endl;
   
   sysinfo_vers(string);
-  cout << "- Version: " << string << endl;
+  cout << "  Version: " << string << endl;
+
+  sysinfo_dolfin(string);
+  cout << "  DOLFIN:  " << string << endl;
 }
 //-----------------------------------------------------------------------------
 void dolfin::sysinfo_user(char* string)
@@ -75,17 +78,22 @@ void dolfin::sysinfo_name(char* string)
 {
   struct utsname buf;
   if ( uname(&buf) == 0 )
-	 sprintf(string,"%s",buf.sysname);
+	 sprintf(string, "%s", buf.sysname);
   else
-	 sprintf(string,"<unknown>");
+	 sprintf(string, "<unknown>");
 }
 //-----------------------------------------------------------------------------
 void dolfin::sysinfo_vers(char* string)
 {
   struct utsname buf;
   if ( uname(&buf) == 0 )
-	 sprintf(string,"%s",buf.release);
+	 sprintf(string, "%s", buf.release);
   else
-	 sprintf(string,"<unknown>");
+	 sprintf(string, "<unknown>");
+}
+//-----------------------------------------------------------------------------
+void dolfin::sysinfo_dolfin(char* string)
+{
+  sprintf(string, "%s", DOLFIN_VERSION);
 }
 //-----------------------------------------------------------------------------

@@ -49,7 +49,6 @@ namespace dolfin {
     virtual void addrow(const Vector& x) = 0;
     virtual void initrow(int i, int rowsize) = 0;
     virtual bool endrow(int i, int pos) const = 0;
-    virtual int  perm(int i) const = 0;
 
     virtual void show() const = 0;
 
@@ -68,7 +67,13 @@ namespace dolfin {
     virtual void div   (int i, int j, real value) = 0;
 
     virtual real** getvalues() = 0;
+    virtual real** const getvalues() const = 0;
+
+    virtual void initperm() = 0;
+    virtual void clearperm() = 0;
+
     virtual int* getperm() = 0;
+    virtual int* const getperm() const = 0;
 
   };
 

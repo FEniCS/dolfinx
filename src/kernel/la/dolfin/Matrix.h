@@ -182,9 +182,6 @@ namespace dolfin {
     /// True if we have reached the end of the row (only sparse)
     bool endrow(int i, int pos) const;
 
-    /// Permutation (only dense)
-    int perm(int i) const;
-
     /// --- Output
 
     /// Display entire matrix
@@ -284,13 +281,19 @@ namespace dolfin {
     real** values();
 
     /// Return matrix values
-    const real** values() const;
+    real** const values() const;
     
+    /// Initialize permutation (only dense)
+    void initperm();
+
+    /// Clear permutation (only dense)
+    void clearperm();
+
     /// Return permutation (only dense)
     int* permutation();
 
     /// Return permutation (only dense)
-    const int* permutation() const;
+    int* const permutation() const;
 
     GenericMatrix* A;
     Type _type;

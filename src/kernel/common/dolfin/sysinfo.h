@@ -15,6 +15,8 @@ namespace dolfin {
   void sysinfo_name(char* string);
   void sysinfo_vers(char* string);
 
+  void sysinfo_dolfin(char* string);
+
 }
   
 #endif

@@ -59,7 +59,6 @@ namespace dolfin {
     void addrow(const Vector& x);
     void initrow(int i, int rowsize);
     bool endrow(int i, int pos) const;
-    int  perm(int i) const;
 
     void show() const;
     friend LogStream& operator<< (LogStream& stream, const SparseMatrix& A);
@@ -78,7 +77,13 @@ namespace dolfin {
     void div   (int i, int j, real value);
 
     real** getvalues();
-    int*   getperm();
+    real** const getvalues() const;
+
+    void initperm();
+    void clearperm();
+
+    int* getperm();
+    int* const getperm() const;
     
   private:
 
