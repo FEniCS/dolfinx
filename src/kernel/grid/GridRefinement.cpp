@@ -7,6 +7,7 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/GridHierarchy.h>
+#include <dolfin/GridIterator.h>
 #include <dolfin/GridRefinement.h>
 
 using namespace dolfin;
@@ -18,6 +19,9 @@ void GridRefinement::refine(GridHierarchy& grids)
   dolfin_start("Refining grid:");
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
+  
+  // Create the new finest grid
+  createFineGrid(grids);
 
   // Refine grid hierarchy
   globalRefinement(grids);
@@ -28,16 +32,27 @@ void GridRefinement::refine(GridHierarchy& grids)
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
-void globalRefinement(GridHierarchy& grids)
+void GridRefinement::createFineGrid(GridHierarchy& grids)
+{
+  // Create the new grid
+  Grid* grid = new Grid(grids.fine());
+
+  // Add the grid to the grid hierarchy
+  grids.add(*grid);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::globalRefinement(GridHierarchy& grids)
 {
   // The global grid refinement algorithm working on the whole grid hierarchy.
   // This is algorithm GlobalRefinement() in Beys paper.
 
+  // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
     evaluateMarks(*grid);
     closeGrid(*grid);
   }
-
+  
+  // Phase II: Vist all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
     if (grid.index() > 0)
       closeGrid(*grid);
@@ -47,7 +62,7 @@ void globalRefinement(GridHierarchy& grids)
 
 }
 //-----------------------------------------------------------------------------
-void evaluateMarks(Grid& grid)
+void GridRefinement::evaluateMarks(Grid& grid)
 {
   // Evaluate and adjust marks for a grid.
   // This is algorithm EvaluateMarks() in Beys paper.
@@ -57,7 +72,7 @@ void evaluateMarks(Grid& grid)
 
 }
 //-----------------------------------------------------------------------------
-void closeGrid(Grid& grid)
+void GridRefinement::closeGrid(Grid& grid)
 {
   // Perform the green closer on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
@@ -67,14 +82,14 @@ void closeGrid(Grid& grid)
 
 }
 //-----------------------------------------------------------------------------
-void refineGrid(Grid& grid)
+void GridRefinement::refineGrid(Grid& grid)
 {
   // Refine a grid according to marks.
   // This is algorithm RefineGrid() in Bey's paper.
 
 }
 //-----------------------------------------------------------------------------
-void unrefineGrid(Grid& grid)
+void GridRefinement::unrefineGrid(Grid& grid)
 {
   // Unrefine a grid according to marks.
   // This is algorithm UnrefineGrid() in Bey's paper.
@@ -82,7 +97,7 @@ void unrefineGrid(Grid& grid)
   
 }
 //-----------------------------------------------------------------------------
-void closeCell(Cell& cell)
+void GridRefinement::closeCell(Cell& cell)
 {
   // Close a cell, either by regular or irregular refinement.
   // This is algorithm CloseElement() in Bey's paper.
@@ -117,9 +132,9 @@ void GridRefinement::regularRefinementTri(Cell& cell)
   // Refine 1 triangle into 4 new ones, introducing new nodes 
   // at the midpoints of the edges. 
 
-  Node *n0 = g.createNode(parent->node(0)->coord());
-  Node *n1 = g.createNode(parent->node(1)->coord());
-  Node *n2 = g.createNode(parent->node(2)->coord());
+  Node *n0 = g.createNode(cell->coord(0));
+  Node *n1 = g.createNode(cell->coord(1));
+  Node *n2 = g.createNode(cell->coord(2));
 
   parent->node(0)->setChild(n0);
   parent->node(1)->setChild(n1);
@@ -154,10 +169,10 @@ void GridRefinement::regularRefinementTet(Cell& cell)
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges.
   
-  Node *n0 = g.createNode(parent->node(0)->coord());
-  Node *n1 = g.createNode(parent->node(1)->coord());
-  Node *n2 = g.createNode(parent->node(2)->coord());
-  Node *n3 = g.createNode(parent->node(3)->coord());
+  Node *n0 = g.createNode(cell->coord(0));
+  Node *n1 = g.createNode(cell->coord(1));
+  Node *n2 = g.createNode(cell->coord(2));
+  Node *n3 = g.createNode(cell->coord(3));
 
   parent->node(0)->setChild(n0);
   parent->node(1)->setChild(n1);

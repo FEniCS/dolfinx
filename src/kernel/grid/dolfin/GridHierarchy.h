@@ -28,6 +28,9 @@ namespace dolfin {
     /// Clear grid hierarchy
     void clear();
 
+    /// Add a grid to the grid hierarchy
+    void add(Grid& grid);
+
     /// Return grid at given level
     Grid& operator() (int level) const;
 

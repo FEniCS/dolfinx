@@ -32,6 +32,9 @@ namespace dolfin {
     /// Create grid from given file
     Grid(const char *filename);
 
+    /// Copy constructor
+    Grid(const Grid& grid);
+
     /// Destructor
     ~Grid();
 

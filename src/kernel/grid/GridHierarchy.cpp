@@ -54,6 +54,12 @@ void GridHierarchy::clear()
   grids.clear();
 }
 //-----------------------------------------------------------------------------
+void GridHierarchy::add(Grid& grid)
+{
+  
+
+}
+//-----------------------------------------------------------------------------
 Grid& GridHierarchy::operator() (int level) const
 {
   if ( empty() )

@@ -129,7 +129,7 @@ namespace dolfin {
       Iterator(const Array<T>& array);
 
       /// Create an iterator positioned at the given position
-      Iterator(const Array<T>& array, Index pos);
+      Iterator(const Array<T>& array, Index index);
 
       Iterator& operator++();
 
@@ -366,10 +366,10 @@ namespace dolfin {
   }
   //---------------------------------------------------------------------------      
   template <class T> Array<T>::Iterator::Iterator
-  (const Array<T> &array, Index pos)
+  (const Array<T> &array, Index index)
   {
-    switch (pos) {
-    case first:
+    switch (index) {
+    case dolfin::first:
       
       if ( array._size > 0 ){
 	element = array.array;
@@ -386,7 +386,7 @@ namespace dolfin {
       
       break;
 
-    case last:
+    case dolfin::last:
       
       if ( array._size > 0 ){
 	element = array.array + array._size - 1;

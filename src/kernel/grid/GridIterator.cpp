@@ -13,6 +13,12 @@ GridIterator::GridIterator(const GridHierarchy& grids) : it(grids.grids)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+GridIterator::GridIterator
+(const GridHierarchy& grids, Index index) : it(grids.grids, index)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 GridIterator::~GridIterator()
 {
   // Do nothing

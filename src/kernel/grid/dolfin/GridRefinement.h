@@ -32,6 +32,9 @@ namespace dolfin {
     
     //--- Algorithms working on the whole grid hierarchy ---
 
+    // Create the new finest grid
+    static void createFineGrid(GridHierarchy& grids);
+
     // The global algorithm working on the whole grid hierarchy
     static void globalRefinement(GridHierarchy& grids);
 
@@ -44,10 +47,10 @@ namespace dolfin {
     static void closeGrid(Grid& grid);
 
     // Refine a grid according to marks
-    void refineGrid(Grid& grid);
+    static void refineGrid(Grid& grid);
 
     // Unrefine a grid according to marks
-    void unrefineGrid(Grid& grid);
+    static void unrefineGrid(Grid& grid);
 
     ///--- Algorithms working on a given cell ---
     

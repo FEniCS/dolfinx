@@ -11,6 +11,7 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/NodeIterator.h>
+#include <dolfin/CellIterator.h>
 #include <dolfin/File.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/GridInit.h>
@@ -44,6 +45,40 @@ Grid::Grid(const char* filename)
   // Read grid from file
   File file(filename);
   file >> *this;
+}
+//-----------------------------------------------------------------------------
+Grid::Grid(const Grid& grid)
+{
+  gd = new GridData(this);
+  bd = new BoundaryData(this);
+  rd = new GridRefinementData(this);
+  _parent = 0;
+
+  rename("grid", "no description");
+  clear();
+
+  // Specify nodes
+  for (NodeIterator n(grid); !n.end(); ++n)
+    createNode(n->coord());
+  
+  // Specify cells
+  for (CellIterator c(grid); !c.end(); ++c)
+    switch (c->type()) {
+    case Cell::triangle:
+      createCell(c->node(0), c->node(1), c->node(2));
+      break;
+    case Cell::tetrahedron:
+      createCell(c->node(0), c->node(1), c->node(2), c->node(3));
+      break;
+    default:
+      dolfin_error("Unknown cell type.");
+    }
+
+  // Compute connectivity
+  init();
+
+  // Copy cell markers
+  
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()

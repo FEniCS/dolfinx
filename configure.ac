@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 # This way the code can be installed on systems without automake installed.
 AM_MAINTAINER_MODE
 
-# Option --enable-dev
+# Option --enable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
                              [Turn on debugging and warnings]),
