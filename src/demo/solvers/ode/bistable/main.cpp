@@ -41,7 +41,7 @@ public:
 class Bistable : public ODE {
 public:
 
-  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh)
+  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), file("solution.dx")
   {
     // Parameters
     T = 10.0;
@@ -72,10 +72,26 @@ public:
   {
     return (-A.mult(u, i) + b(i)*u(i)*(1.0 - u(i)*u(i))) / m(i);
   }
+
+  void save(Sample& sample)
+  {
+    // Create a mesh-dependent function from the sample
+    Vector x(N);
+    Function u(mesh, x);
+
+    // Get the degrees of freedom and set current time
+    u.update(sample.t());
+    for (unsigned int i = 0; i < N; i++)
+      x(i) = sample.u(i);
+
+    // Save solution to file
+    file << u;
+  }
   
 private:
 
   Mesh& mesh; // The mesh
+  File file;  // OpenDX file for the solution
   Matrix A;   // Stiffness matrix
   Vector m;   // Lumped mass matrix
   Vector b;   // Weights for right-hand side

@@ -23,7 +23,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode, Function& function) :
   N(ode.size()), t(0), T(ode.endtime()), partition(N), adaptivity(ode),
-  u(ode, function), f(ode, u), fixpoint(u, f, adaptivity), 
+  u(ode, function), ode(ode), f(ode, u), fixpoint(u, f, adaptivity), 
   file(u.label() + ".m"), p("Time-stepping"), _finished(false),
   save_solution(dolfin_get("save solution")),
   adaptive_samples(dolfin_get("adaptive samples")),
@@ -202,6 +202,7 @@ void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
   {
     Sample sample(u, f, t);
     file << sample;
+    ode.save(sample);
     t += K;
   }
   
@@ -209,6 +210,7 @@ void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
   if ( timeslab.finished() ) {
     Sample sample(u, f, timeslab.endtime());
     file << sample;
+    ode.save(sample);
   }
 }
 //-----------------------------------------------------------------------------
@@ -223,6 +225,7 @@ void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
   {
     Sample sample(u, f, 0.0);
     file << sample;
+    ode.save(sample);
   }
 
   // Create a list of element groups from the time slab
@@ -256,6 +259,7 @@ void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
       // Create and save the sample
       Sample sample(u, f, t0 + (static_cast<real>(n)+1.0)*dk);
       file << sample;
+      ode.save(sample);
     }
   }
 }

@@ -46,6 +46,11 @@ real ODE::timestep(unsigned int i)
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
+void ODE::save(Sample& sample)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 unsigned int ODE::size() const
 {
   return N;  

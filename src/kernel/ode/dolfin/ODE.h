@@ -7,6 +7,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
+#include <dolfin/Sample.h>
 
 namespace dolfin
 {
@@ -45,6 +46,9 @@ namespace dolfin
 
     /// Time step to use for given component (optional)
     virtual real timestep(unsigned int i);
+
+    /// Save sample (optional)
+    virtual void save(Sample& sample);
 
     /// Number of components N
     unsigned int size() const;

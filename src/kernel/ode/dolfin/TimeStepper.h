@@ -98,6 +98,9 @@ namespace dolfin {
     // The solution being computed
     Solution u;
 
+    /// The ODE being solved
+    ODE& ode;
+
     // The right-hand side
     RHS f;
 

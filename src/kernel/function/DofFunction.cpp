@@ -37,8 +37,6 @@ real DofFunction::operator() (const Node& n, real t)
 //-----------------------------------------------------------------------------
 void DofFunction::update(real t)
 {
-  dolfin_debug("Updating function");
-
   this->t = t;
 }
 //-----------------------------------------------------------------------------
