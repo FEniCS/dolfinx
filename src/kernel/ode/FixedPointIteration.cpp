@@ -229,20 +229,6 @@ void FixedPointIteration::report() const
 {
   dolfin_assert(state);
   state->report();
-
-  /*
-  case parabolic:
-    cout << "System appears to be parabolically stiff, solution computed with "
-	 << "adaptively damped fixed point iteration." << endl;
-    break;
-  case nonnormal:
-    cout << "System is stiff, solution computed with "
-	 << "adaptively stabilizing time step sequence." << endl;
-    break;
-  default:
-    dolfin_error("Unknown state");
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(TimeSlab& timeslab,
