@@ -32,7 +32,7 @@ public:
 
 int main(int argc, char **argv)
 {  
-  dolfin_set("output", "plain text");
+  //dolfin_set("output", "plain text");
 
   dolfin::cout << "--------------------------------------" << dolfin::endl;
   dolfin::cout << "Test new LA matrix notation" << dolfin::endl;
