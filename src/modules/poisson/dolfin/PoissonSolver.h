@@ -4,12 +4,17 @@
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H
 
-#include <dolfin/Solver.h>
+//#include <dolfin/Solver.h>
 
 namespace dolfin
 {
+
+  class Mesh;
+  class NewVector;
+  class NewMatrix;
   
-  class PoissonSolver : public Solver
+  //class PoissonSolver : public Solver
+  class PoissonSolver 
   {
   public:
     
@@ -19,6 +24,8 @@ namespace dolfin
     void solve();
   
   private:
+
+    Mesh& mesh;
 
     // FIXME: Remove when working
     void solveOld();
