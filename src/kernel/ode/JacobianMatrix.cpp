@@ -14,7 +14,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-JacobianMatrix::JacobianMatrix(RHS& f) :
+JacobianMatrix::JacobianMatrix(RHS& f) : f(f){
+dolfin_error("This function needs to be updated to the new format.");
+/*
+
+:
   Matrix(0, 0, Matrix::generic),
   f(f), dfdu(f.size(), f.size()), n(0), elements(0), latest(f.size()), t0(0)
 {
@@ -42,6 +46,7 @@ JacobianMatrix::JacobianMatrix(RHS& f) :
     // throughout the multiplication.
     latest[i] = 0;
   }
+*/
 }
 //-----------------------------------------------------------------------------
 JacobianMatrix::~JacobianMatrix()
@@ -56,6 +61,8 @@ unsigned int JacobianMatrix::size(unsigned int dim) const
 //-----------------------------------------------------------------------------
 void JacobianMatrix::update(real t)
 {
+dolfin_error("This function needs to be updated to the new format.");
+/*
   // Update the right-hand side to given time
   f.update(t);
 
@@ -67,6 +74,7 @@ void JacobianMatrix::update(real t)
      for (unsigned int pos = 0; pos < row.size(); ++pos)
        dfdu(i, tmp, pos) = f.dfdu(i, row[pos]);
   }
+*/
 }
 //-----------------------------------------------------------------------------
 unsigned int JacobianMatrix::update(ElementGroupList& elements)
@@ -104,6 +112,8 @@ unsigned int JacobianMatrix::update(ElementGroupList& elements)
 //-----------------------------------------------------------------------------
 void JacobianMatrix::show() const
 {
+dolfin_error("This function needs to be updated to the new format.");
+/*
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
 
@@ -122,6 +132,7 @@ void JacobianMatrix::show() const
   }
 
   A.show();
+*/
 }
 //-----------------------------------------------------------------------------
 void JacobianMatrix::mult(const Vector& x, Vector& Ax) const
@@ -157,6 +168,8 @@ unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
 				    unsigned int dof, 
 				    const dolfin::Element& element) const
 {
+dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Get the component index
   const unsigned int i = element.index();
 
@@ -212,12 +225,17 @@ unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
 
   // Increase the degree of freedom
   return dof + q;
+  */
+ return 0; // Take out!!
 }
 //-----------------------------------------------------------------------------
 unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
 				    unsigned int dof,
 				    const dolfin::Element& element) const
 {
+dolfin_error("This function needs to be updated to the new format.");
+
+/*
   // Get the component index
   const unsigned int i = element.index();
 
@@ -273,5 +291,7 @@ unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
 
   // Increase the degree of freedom
   return dof + q + 1;
+*/
+ return 0; // Take out!!
 }
 //-----------------------------------------------------------------------------

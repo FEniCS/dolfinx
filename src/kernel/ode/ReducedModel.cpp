@@ -113,15 +113,20 @@ void ReducedModel::update(Solution& u, Adaptivity& adaptivity, real t)
   // Remember that we have created the model
   reduced = true;
 }
+/*
 //-----------------------------------------------------------------------------
 void ReducedModel::save(Sample& sample)
 {
   ode.save(sample);
 }
+*/
 //-----------------------------------------------------------------------------
 void ReducedModel::computeAverages(RHS& f, Function& u,
 				   Vector& fbar, Vector& ubar)
 {
+dolfin_error("This function needs to be updated to the new format.");
+
+/*
   // Sample length
   real k = tau / static_cast<real>(samples);
 
@@ -223,6 +228,7 @@ void ReducedModel::computeAverages(RHS& f, Function& u,
     // Save average
     ubar(i) = 0.5*(ubar(i) + ubar2(i));
   }
+*/
 }
 //-----------------------------------------------------------------------------
 // ReducedModel::Model

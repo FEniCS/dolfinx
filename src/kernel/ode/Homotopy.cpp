@@ -5,7 +5,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/LU.h>
-#include <dolfin/NewGMRES.h>
+#include <dolfin/GMRES.h>
 #include <dolfin/ComplexODE.h>
 #include <dolfin/HomotopyJacobian.h>
 #include <dolfin/HomotopyODE.h>
@@ -47,9 +47,9 @@ Homotopy::Homotopy(uint n)
   tol = 1e-14;
   
   // Choose solver
-  //solver = new NewGMRES();
-  //((NewGMRES *) solver)->setAtol(0.1*tol);
-  //((NewGMRES *) solver)->setReport(false);
+  //solver = new GMRES();
+  //((GMRES *) solver)->setAtol(0.1*tol);
+  //((GMRES *) solver)->setReport(false);
   solver = new LU();
 
   // Open file
@@ -195,8 +195,11 @@ void Homotopy::computePath(uint m)
 //-----------------------------------------------------------------------------
 void Homotopy::computeSolution(HomotopyODE& ode)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+/*
   // Create right-hand side and increment vector
-  NewVector F(2*n), dx(2*n);
+  Vector F(2*n), dx(2*n);
 
   // Create matrix-free Jacobian
   HomotopyJacobian J(ode, x);
@@ -212,7 +215,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(NewVector::linf);
+    real r = F.norm(Vector::linf);
     cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
@@ -243,6 +246,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
   }
 
   dolfin_error("Solution did not converge.");
+*/
 }
 //-----------------------------------------------------------------------------
 void Homotopy::saveSolution()
@@ -277,7 +281,7 @@ void Homotopy::randomize()
   }
 }
 //-----------------------------------------------------------------------------
-void Homotopy::feval(NewVector& F, ComplexODE& ode)
+void Homotopy::feval(Vector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
   // the mapping from complex to real numbers

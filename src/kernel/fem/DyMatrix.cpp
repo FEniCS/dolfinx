@@ -32,6 +32,9 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 DyMatrix::DyMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   DyForm form;
 
   // Assemble form for derivative
@@ -51,5 +54,6 @@ DyMatrix::DyMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
       (*this)(i, j, pos) /= m(i);
     }
   }      
+  */
 }
 //-----------------------------------------------------------------------------

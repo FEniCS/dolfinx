@@ -31,9 +31,13 @@ namespace dolfin
 StiffnessMatrix::StiffnessMatrix(Mesh& mesh, real epsilon)
   : Matrix(mesh.noNodes(), mesh.noNodes())
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   StiffnessForm form;
 
   FEM::assemble(form, mesh, *this);
   (*this) *= epsilon;
+  */
 }
 //-----------------------------------------------------------------------------

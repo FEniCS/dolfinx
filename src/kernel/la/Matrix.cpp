@@ -1,782 +1,295 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
-//
-// Modified by Georgios Foufas 2002, 2003.
-// Modified by Erik Svensson, 2003, 2004.
 
-#include <dolfin/DirectSolver.h>
-#include <dolfin/KrylovSolver.h>
-#include <dolfin/Vector.h>
-#include <dolfin/DenseMatrix.h>
-#include <dolfin/SparseMatrix.h>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix(Type type)
+Matrix::Matrix() : A(0)
 {
-  switch ( type ) {
-  case dense:
-    A = new DenseMatrix();
-    break;
-  case sparse:
-    A = new SparseMatrix();
-    break;
-  default:
-    A = new GenericMatrix();
-  }
-  
-  _type = type;
+  // Initialize PETSc
+  PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(unsigned int m, unsigned int n, Type type)
+Matrix::Matrix(uint M, uint N) : A(0)
 {
-  switch ( type ) {
-  case dense:
-    A = new DenseMatrix(m,n);
-    break;
-  case sparse:
-    A = new SparseMatrix(m,n);
-    break;
-  default:
-    A = new GenericMatrix(m,n);
-  }
+  // Initialize PETSc
+  PETScManager::init();
 
-  _type = type;
+  // Create PETSc matrix
+  init(M, N);
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(unsigned int m, unsigned int n, unsigned int nz)
+Matrix::Matrix(const Matrix& B) : A(0)
 {
-  A = new SparseMatrix(m, n, nz);
-  _type = sparse;
-}
-//-----------------------------------------------------------------------------
-Matrix::Matrix(const Matrix& A)
-{
-  switch ( A._type ) {
-  case dense:
-    this->A = new DenseMatrix(*((DenseMatrix *) A.A));
-    break;
-  case sparse:
-    this->A = new SparseMatrix(*((SparseMatrix *) A.A));
-    break;
-  default:
-    this->A = new GenericMatrix(A.size(0), A.size(1));
-  }
-  
-  _type = A._type;
-}
-//-----------------------------------------------------------------------------
-Matrix::~Matrix ()
-{
-  if ( A )
-    delete A;
-  A = 0;
-}
-//-----------------------------------------------------------------------------
-void Matrix::init(unsigned int m, unsigned int n, Type type)
-{
-  dolfin_assert(A);
+  // Initialize PETSc
+  PETScManager::init();
 
-  // Check if we need to change the type
-  if ( _type != type )
+  // Create PETSc matrix
+  init(B.size(0), B.size(1));
+  
+  uint M = B.size(0);
+  uint N = B.size(1);
+
+  // FIXME: Use PETSc function to copy
+  for(uint i = 0; i < M; i++)
   {
-    switch ( type ) {
-    case dense:
-      A = new DenseMatrix(m, n);
-      break;
-    case sparse:
-      A = new SparseMatrix(m, n);
-      break;
-    default:
-      A = new GenericMatrix(m, n);
+    for(uint j = 0; j < N; j++)
+    {
+      setval(i, j, B(i, j));
     }
   }
-  else
-    A->init(m, n);
 }
 //-----------------------------------------------------------------------------
-void Matrix::clear()
+Matrix::~Matrix()
 {
-  A->clear();
+  // Free memory of matrix
+  if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-Matrix::Type Matrix::type() const
+void Matrix::init(uint M, uint N)
 {
-  return _type;
-}
-//-----------------------------------------------------------------------------
-unsigned int Matrix::size(unsigned int dim) const
-{
-  return A->size(dim);
-}
-//-----------------------------------------------------------------------------
-unsigned int Matrix::size() const
-{
-  return A->size();
-}
-//-----------------------------------------------------------------------------
-unsigned int Matrix::rowsize(unsigned int dim) const
-{
-  return A->rowsize(dim);
-}
-//-----------------------------------------------------------------------------
-unsigned int Matrix::bytes() const
-{
-  return A->bytes();
-}
-//-----------------------------------------------------------------------------
-real Matrix::operator()(unsigned int i, unsigned int j) const
-{
-  // This operator is used when the object is const
-  return (*A)(i,j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Element Matrix::operator()(unsigned int i, unsigned int j)
-{
-  // This operator is used when the object is non-const and is slower
-  return Element(*this, i, j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Row Matrix::operator()(unsigned int i, Range j)
-{
-  return Row(*this, i, j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Row Matrix::operator()(Index i, Range j)
-{
-  return Row(*this, i, j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Column Matrix::operator()(Range i, unsigned int j)
-{
-  return Column(*this, i, j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Column Matrix::operator()(Range i, Index j)
-{
-  return Column(*this, i, j);
-}
-//-----------------------------------------------------------------------------
-real Matrix::operator()(unsigned int i, unsigned int& j, unsigned int pos) const
-{
-  return (*A)(i, j, pos);
-}
-//-----------------------------------------------------------------------------
-real& Matrix::operator()(unsigned int i, unsigned int& j, unsigned int pos)
-{
-  return (*A)(i, j, pos);
-}
-//-----------------------------------------------------------------------------
-real* Matrix::operator[](unsigned int i) const
-{
-  return (*A)[i];
-}
-//-----------------------------------------------------------------------------
-void Matrix::operator=(real a)
-{
-  (*A) = 0.0;
-}
-//-----------------------------------------------------------------------------
-void Matrix::operator=(const Matrix& A)
-{
-  switch ( A._type == dense ) {
-  case dense:
-    *(this->A) = *((DenseMatrix *) A.A);
-    break;
-  case sparse:
-    *(this->A) = *((SparseMatrix *) A.A);
-    break;
-  default:
-    *(this->A) = *((GenericMatrix *) A.A);
+  // Free previously allocated memory if necessary
+  if ( A )
+  {
+    if ( M == size(0) && N == size(1) )
+      return;
+    else
+      MatDestroy(A);
   }
+  
+  // Create a sparse matrix in compressed row format
+  MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator+=(const Matrix& A)
+void Matrix::init(uint M, uint N, uint bs)
 {
-  switch ( A._type ) {
-  case dense:
-    *(this->A) += *((DenseMatrix *) A.A);
-    break;
-  case sparse:
-    *(this->A) += *((SparseMatrix *) A.A);
-    break;
-  default:
-    *(this->A) += *((GenericMatrix *) A.A);
+  // Free previously allocated memory if necessary
+  if ( A )
+  {
+    if ( M == size(0) && N == size(1) )
+      return;
+    else
+      MatDestroy(A);
   }
+  
+  // Creates a sparse matrix in block AIJ (block compressed row) format.
+  // Given blocksize bs, and assuming max no connectivity = 50. 
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, 50, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator-=(const Matrix& A)
+void Matrix::init(uint M, uint N, uint bs, uint mnc)
 {
-  switch ( A._type ) {
-  case dense:
-    *(this->A) -= *((DenseMatrix *) A.A);
-    break;
-  case sparse:
-    *(this->A) -= *((SparseMatrix *) A.A);
-    break;
-  default:
-    *(this->A) -= *((GenericMatrix *) A.A);
+  // Free previously allocated memory if necessary
+  if ( A )
+  {
+    if ( M == size(0) && N == size(1) )
+      return;
+    else
+      MatDestroy(A);
   }
+  
+  // Creates a sparse matrix in block AIJ (block compressed row) format.
+  // Given blocksize bs, and max no connectivity mnc.  
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, mnc, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator*=(real a)
+dolfin::uint Matrix::size(uint dim) const
 {
-  *(this->A) *= a;
+  int M = 0;
+  int N = 0;
+  MatGetSize(A, &M, &N);
+  return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-real Matrix::norm() const
+Matrix& Matrix::operator= (real zero)
 {
-  return A->norm();
+  if ( zero != 0.0 )
+    dolfin_error("Argument must be zero.");
+  MatZeroEntries(A);
+  return *this;
 }
 //-----------------------------------------------------------------------------
-real Matrix::mult(const Vector& x, unsigned int i) const
+void Matrix::add(const real block[],
+		    const int rows[], int m,
+		    const int cols[], int n)
 {
-  return A->mult(x,i);
+  MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
+}
+//-----------------------------------------------------------------------------
+void Matrix::ident(const int rows[], int m)
+{
+  IS is = 0;
+  ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
+  real one = 1.0;
+  MatZeroRows(A, is, &one);
+  ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
 void Matrix::mult(const Vector& x, Vector& Ax) const
 {
-  A->mult(x,Ax);
+  MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-void Matrix::multt(const Vector& x, Vector &Ax) const
+void Matrix::apply()
 {
-  A->multt(x,Ax);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void Matrix::mult(const Matrix& B, Matrix& AB) const
+Mat Matrix::mat()
 {
-  switch ( _type ) {
-  case dense:
-    
-    if ( B._type != dense || AB._type != dense )
-      dolfin_error("Not implemented.");
-    
-    A->mult(*static_cast<DenseMatrix*>(B.A), 
-	    *static_cast<DenseMatrix*>(AB.A));
-    
-    break;
-    
-  case sparse:
-    
-    if ( B._type != sparse || AB._type != sparse )
-      dolfin_error("Not implemented.");
-    
-    A->mult(*static_cast<SparseMatrix*>(B.A), 
-	    *static_cast<SparseMatrix*>(AB.A));
-    
-    break;
+  return A;
+}
+//-----------------------------------------------------------------------------
+const Mat Matrix::mat() const
+{
+  return A;
+}
+//-----------------------------------------------------------------------------
+void Matrix::disp(bool sparse, int precision) const
+{
+  // Use PETSc sparse output as default
+  if ( sparse )
+  {
+    MatView(A, PETSC_VIEWER_STDOUT_SELF);
+    return;
+  }
 
-  default:
-    dolfin_error("Not implemented.");
-  }
-}
-//-----------------------------------------------------------------------------
-real Matrix::multrow(const Vector& x, unsigned int i) const
-{
-  return A->multrow(x,i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::multcol(const Vector& x, unsigned int j) const
-{
-  return A->multcol(x,j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::transp(Matrix& A) const
-{
-  A.settransp(*this);
-}
-//-----------------------------------------------------------------------------
-void Matrix::solve(Vector& x, const Vector& b)
-{
-  // Note that these need to be handled here and not redirected to
-  // GenericMatrix, since the solvers expect a Matrix as argument.
-  // No one else but Matrix should be concerned with different types
-  // of matrices.
-  
-  switch ( _type ) {
-  case dense:
+  // Dense output
+  const uint M = size(0);
+  const uint N = size(1);
+
+  for (uint i = 0; i < M; i++)
+  {
+    std::stringstream line;  
+    line << std::setprecision(precision);
+    line << "| ";
+
+    for (uint j = 0; j < N; j++)
     {
-      DirectSolver solver;
-      solver.solve(*this, x, b);
+      real value = getval(i, j);
+      if ( fabs(value) < DOLFIN_EPS )
+	value = 0.0;
+
+      line << std::setw(precision + 3) << value << " ";
     }
-    break;
-  case sparse:
-    {
-      KrylovSolver solver;
-      solver.solve(*this, x, b);
-    }
-    break;
-  default:
-    {
-      KrylovSolver solver;
-      solver.solve(*this, x, b);
-    }
+    line << "|";
+
+    cout << line.str().c_str() << endl;
   }
-}
-//-----------------------------------------------------------------------------
-void Matrix::inverse(Matrix& Ainv)
-{
-  switch ( _type ) {
-  case dense: 
-    {
-      DirectSolver solver;
-      solver.inverse(*this, Ainv);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::hpsolve(Vector& x, const Vector& b) const
-{
-  switch ( _type ) {
-  case dense:
-    {
-      DirectSolver solver;
-      solver.hpsolve(*this, x, b);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::lu()
-{
-  switch ( _type ) {
-  case dense:
-    {
-      DirectSolver solver;
-      solver.lu(*this);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::solveLU(Vector& x, const Vector& b) const
-{
-  switch ( _type ) {
-  case dense:
-    {
-      DirectSolver solver;
-      solver.solveLU(*this, x, b);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::inverseLU(Matrix& Ainv) const
-{
-  switch ( _type ) {
-  case dense:
-    {
-      DirectSolver solver;
-      solver.inverseLU(*this, Ainv);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::hpsolveLU(const Matrix& LU, Vector& x, const Vector& b) const
-{
-  switch ( _type ) {
-  case dense:
-    {
-      DirectSolver solver;
-      solver.hpsolveLU(LU, *this, x, b);
-    }
-    break;
-  case sparse:
-    dolfin_error("Not implemented for a sparse matrix. Consider using a dense matrix.");
-    break;
-  default:
-    dolfin_error("Not implemented for a generic matrix. Consider using a dense matrix.");
-  }
-}
-//-----------------------------------------------------------------------------
-void Matrix::resize()
-{
-  A->resize();
-}
-//-----------------------------------------------------------------------------
-void Matrix::ident(unsigned int i)
-{
-  A->ident(i);
-}
-//-----------------------------------------------------------------------------
-void Matrix::lump(Vector& a) const
-{
-  A->lump(a);
-}
-//-----------------------------------------------------------------------------
-void Matrix::addrow()
-{
-  A->addrow();
-}
-//-----------------------------------------------------------------------------
-void Matrix::addrow(const Vector& x)
-{
-  A->addrow(x);
-}
-//-----------------------------------------------------------------------------
-void Matrix::initrow(unsigned int i, unsigned int rowsize)
-{
-  A->initrow(i, rowsize);
-}
-//-----------------------------------------------------------------------------
-bool Matrix::endrow(unsigned int i, unsigned int pos) const
-{
-  return A->endrow(i, pos);
-}
-//-----------------------------------------------------------------------------
-void Matrix::settransp(const Matrix& A)
-{
-  switch ( A._type ) {
-  case dense:
-    this->A->settransp(*((DenseMatrix *) A.A));
-    break;
-  case sparse:
-    this->A->settransp(*((SparseMatrix *) A.A));
-    break;
-  default:
-    this->A->settransp(*((GenericMatrix *) A.A));
-  }
-}
-//-----------------------------------------------------------------------------
-real Matrix::rowmax(unsigned int i) const
-{
-  return A->rowmax(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::colmax(unsigned int i) const
-{
-  return A->colmax(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::rowmin(unsigned int i) const
-{
-  return A->rowmin(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::colmin(unsigned int i) const
-{
-  return A->colmin(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::rowsum(unsigned int i) const
-{
-  return A->rowsum(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::colsum(unsigned int i) const
-{
-  return A->colsum(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::rownorm(unsigned int i, unsigned int type) const
-{
-  return A->rownorm(i, type);
-}
-//-----------------------------------------------------------------------------
-real Matrix::colnorm(unsigned int i, unsigned int type) const
-{
-  return A->colnorm(i, type);
-}
-//-----------------------------------------------------------------------------
-void Matrix::show() const
-{
-  A->show();
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
 {
-  switch ( A.type() ) {
-  case Matrix::dense:
-    stream << *((DenseMatrix *) A.A);
-    break;
-  case Matrix::sparse:
-    stream << *((SparseMatrix *) A.A);
-    break;
-  default:
-    stream << *((GenericMatrix *) A.A);
-  }
+  MatType type = 0;
+  MatGetType(A.mat(), &type);
+  int m = A.size(0);
+  int n = A.size(1);
+  stream << "[ PETSc matrix (type " << type << ") of size "
+	 << m << " x " << n << " ]";
 
   return stream;
 }
 //-----------------------------------------------------------------------------
-Matrix::Element::Element(Matrix& matrix, unsigned int i, unsigned int j) : A(matrix)
+Matrix::Element Matrix::operator()(uint i, uint j)
 {
-  this->i = i;
-  this->j = j;
+  Element element(i, j, *this);
+
+  return element;
+}
+//-----------------------------------------------------------------------------
+real Matrix::operator() (uint i, uint j) const
+{
+  return getval(i, j);
+}
+//-----------------------------------------------------------------------------
+real Matrix::getval(uint i, uint j) const
+{
+  const int ii = static_cast<int>(i);
+  const int jj = static_cast<int>(j);
+
+  dolfin_assert(A);
+  PetscScalar val;
+  MatGetValues(A, 1, &ii, 1, &jj, &val);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+void Matrix::setval(uint i, uint j, const real a)
+{
+  MatSetValue(A, i, j, a, INSERT_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
+void Matrix::addval(uint i, uint j, const real a)
+{
+  MatSetValue(A, i, j, a, ADD_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
+// Matrix::Element
+//-----------------------------------------------------------------------------
+Matrix::Element::Element(uint i, uint j, Matrix& A) : i(i), j(j), A(A)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Matrix::Element::operator real() const
 {
-  //dolfin_debug("Conversion to real");
+  return A.getval(i, j);
+}
+//-----------------------------------------------------------------------------
+const Matrix::Element& Matrix::Element::operator=(const real a)
+{
+  A.setval(i, j, a);
 
-  return A.A->read(i,j);
+  return *this;
 }
 //-----------------------------------------------------------------------------
-void Matrix::Element::operator=(real a)
+const Matrix::Element& Matrix::Element::operator=(const Element& e)
 {
-  A.A->write(i, j, a);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Element::operator=(const Element& e)
-{
-  A.A->write(i, j, e.A.A->read(e.i, e.j));
-}
-//-----------------------------------------------------------------------------
-void Matrix::Element::operator+=(real a)
-{
-  A.A->add(i, j, a);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Element::operator-=(real a)
-{
-  A.A->sub(i, j, a);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Element::operator*=(real a)
-{
-  A.A->mult(i, j, a);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Element::operator/=(real a)
-{
-  A.A->div(i, j, a);
-}
-//-----------------------------------------------------------------------------
-Matrix::Row::Row(Matrix& matrix, unsigned int i, Range) : A(matrix)
-{
-  this->i = i;
-  this->j = j;
-}
-//-----------------------------------------------------------------------------
-Matrix::Row::Row(Matrix& matrix, Index i, Range j) : A(matrix)
-{
-  if ( i == first )
-    this->i = 0;
-  else
-    this->i = A.size(0) - 1;
+  A.setval(i, j, e.A.getval(e.i, e.j));
 
-  this->j = j;
+  return *this;
 }
 //-----------------------------------------------------------------------------
-unsigned int Matrix::Row::size() const
+const Matrix::Element& Matrix::Element::operator+=(const real a)
 {
-  return A.size(1);
+  A.addval(i, j, a);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
-real Matrix::Row::max() const
+const Matrix::Element& Matrix::Element::operator-=(const real a)
 {
-  return A.rowmax(i);
+  A.addval(i, j, -a);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
-real Matrix::Row::min() const
+const Matrix::Element& Matrix::Element::operator*=(const real a)
 {
-  return A.rowmin(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Row::sum() const
-{
-  return A.rowsum(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Row::norm(unsigned int type) const
-{
-  return A.rownorm(i, type);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Row::operator()(unsigned int j) const
-{
-  return A(i,j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Element Matrix::Row::operator()(unsigned int j)
-{
-  return Element(A, i, j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Row::operator=(const Row& row)
-{
-  if ( A.size(1) != row.A.size(1) )
-    dolfin_error("Matrix dimensions don't match.");
+  const real val = A.getval(i, j) * a;
+  A.setval(i, j, val);
   
-  for (unsigned int j = 0; j < A.size(1); j++)
-    A(i,j) = row.A(row.i,j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Row::operator=(const Column& col)
-{
-  if ( A.size(1) != col.A.size(0) )
-    dolfin_error("Matrix dimensions don't match.");
-
-  for (unsigned int j = 0; j < A.size(1); j++)
-    A(i,j) = col.A(j,col.j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Row::operator=(const Vector& x)
-{
-  if ( x.size() != A.size(1) )
-    dolfin_error("Matrix imensions don't match.");
-
-  for (unsigned int j = 0; j < x.size(); j++)
-    A(i,j) = x(j);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Row::operator* (const Vector& x) const
-{
-  return A.multrow(x,i);
-}
-//-----------------------------------------------------------------------------
-Matrix::Column::Column(Matrix& matrix, Range i, unsigned int j) : A(matrix)
-{
-  this->i = i;
-  this->j = j;
-}
-//-----------------------------------------------------------------------------
-Matrix::Column::Column(Matrix& matrix, Range i, Index j) : A(matrix)
-{
-  this->i = i;
-  
-  if ( j == first )
-    this->j = 0;
-  else
-    this->j = A.size(1) - 1;
-}
-//-----------------------------------------------------------------------------
-unsigned int Matrix::Column::size() const
-{
-  return A.size(0);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::max() const
-{
-  return A.colmax(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::min() const
-{
-  return A.colmin(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::sum() const
-{
-  return A.colsum(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::norm(unsigned int type) const
-{
-  return A.colnorm(i, type);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::operator()(unsigned int i) const
-{
-  return A(i,j);
-}
-//-----------------------------------------------------------------------------
-Matrix::Element Matrix::Column::operator()(unsigned int i)
-{
-  return Element(A, i, j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Column::operator=(const Column& col)
-{
-  if ( A.size(0) != col.A.size(0) )
-    dolfin_error("Matrix dimensions don't match.");
-
-  for (unsigned int i = 0; i < A.size(0); i++)
-    A(i,j) = col.A(i,j);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Column::operator=(const Row& row)
-{
-  if ( A.size(0) != row.A.size(1) )
-    dolfin_error("Matrix dimensions don't match.");
-
-  for (unsigned int i = 0; i < A.size(0); i++)
-    A(i,j) = row.A(row.i,i);
-}
-//-----------------------------------------------------------------------------
-void Matrix::Column::operator=(const Vector& x)
-{
-  if ( x.size() != A.size(0) )
-    dolfin_error("Matrix imensions don't match.");
-
-  for (unsigned int i = 0; i < x.size(); i++)
-    A(i,j) = x(i);
-}
-//-----------------------------------------------------------------------------
-real Matrix::Column::operator* (const Vector& x) const
-{
-  return A.multcol(x,j);
-}
-//-----------------------------------------------------------------------------
-real** Matrix::values()
-{
-  // Matrix::values() and GenericMatrix::getvalues() are the "same" functions
-  // but have different names, since otherwise there would be a conflict
-  // with the variable values in DenseMatrix and SparseMatrix.
-
-  return A->getvalues();
-}
-//-----------------------------------------------------------------------------
-real** const Matrix::values() const
-{
-  // Matrix::values() and GenericMatrix::getvalues() are the "same" functions
-  // but have different names, since otherwise there would be a conflict
-  // with the variable values in DenseMatrix and SparseMatrix.
-  
-  return A->getvalues();
-}
-//-----------------------------------------------------------------------------
-void Matrix::initperm()
-{
-  A->initperm();
-}
-//-----------------------------------------------------------------------------
-void Matrix::clearperm()
-{
-  A->clearperm();
-}
-//-----------------------------------------------------------------------------
-unsigned int* Matrix::permutation()
-{
-  // See comment in Matrix::values() above
-  
-  return A->getperm();
-}
-//-----------------------------------------------------------------------------
-unsigned int* const Matrix::permutation() const
-{
-  // See comment in Matrix::values() above
-  
-  return A->getperm();
+  return *this;
 }
 //-----------------------------------------------------------------------------

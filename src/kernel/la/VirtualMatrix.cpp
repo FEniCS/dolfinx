@@ -5,8 +5,8 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/NewVector.h>
-#include <dolfin/NewMatrix.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/VirtualMatrix.h>
 
 using namespace dolfin;
@@ -19,7 +19,7 @@ namespace dolfin
   {
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    NewVector xx(x), yy(y);
+    Vector xx(x), yy(y);
     ((VirtualMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
@@ -33,7 +33,7 @@ VirtualMatrix::VirtualMatrix() : A(0)
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(const NewVector& x, const NewVector& y) : A(0)
+VirtualMatrix::VirtualMatrix(const Vector& x, const Vector& y) : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -48,7 +48,7 @@ VirtualMatrix::~VirtualMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(const NewVector& x, const NewVector& y)
+void VirtualMatrix::init(const Vector& x, const Vector& y)
 {
   // Get size and local size of given vector
   int m(0), n(0), M(0), N(0);
@@ -103,8 +103,8 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   
   uint M = size(0);
   uint N = size(1);
-  NewVector x(N), y(M);
-  NewMatrix A(M, N);
+  Vector x(N), y(M);
+  Matrix A(M, N);
   
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)

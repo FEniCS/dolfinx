@@ -6,9 +6,9 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewGMRES.h>
+#include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
-#include <dolfin/NewMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
@@ -77,7 +77,7 @@ real MonoAdaptiveNewtonSolver::iteration()
 
   // Solve linear system, seems like we need to scale the right-hand
   // side to make it work with the PETSc GMRES solver
-  const real r = b.norm(NewVector::linf) + DOLFIN_EPS;
+  const real r = b.norm(Vector::linf) + DOLFIN_EPS;
   b /= r;
   solver->solve(A, dx, b);
   dx *= r;
@@ -221,14 +221,14 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   //b.disp();
 }
 //-----------------------------------------------------------------------------
-NewLinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
+LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
 {
   std::string choice = dolfin_get("linear solver");
 
   if ( choice == "iterative" )
   {
     dolfin_info("Using iterative linear solver: GMRES.");
-    NewGMRES* solver = new NewGMRES();
+    GMRES* solver = new GMRES();
     solver->setReport(false);
     solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
     return solver;
@@ -242,7 +242,7 @@ NewLinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   else if ( choice == "default" )
   {
     dolfin_info("Using iterative linear solver: GMRES (default).");
-    NewGMRES* solver = new NewGMRES();
+    GMRES* solver = new GMRES();
     solver->setReport(false);
     solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
     return solver;
@@ -258,8 +258,8 @@ NewLinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
 void MonoAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  NewMatrix B(n, n);
-  NewVector F1(n), F2(n);
+  Matrix B(n, n);
+  Vector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

@@ -70,6 +70,9 @@ void NewtonIteration::start(Element& element)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroupList& list, Increments& d)
 {
+dolfin_error("This function needs to be updated to the new format.");
+
+/*
   // Compute element residuals for all elements
   unsigned int dof = 0;
   for (ElementIterator element(list); !element.end(); ++element)
@@ -108,6 +111,7 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 
   // l2 norm of increment
   d = dx.norm();
+*/
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)

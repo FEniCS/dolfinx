@@ -4,13 +4,13 @@
 #ifndef __PROPAGATING_PRECONDITIONER_H
 #define __PROPAGATING_PRECONDITIONER_H
 
-#include <dolfin/NewPreconditioner.h>
+#include <dolfin/Preconditioner.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class NewVector;
+  class Vector;
   class NewMethod;
   class MultiAdaptiveTimeSlab;
   class MultiAdaptiveJacobian;
@@ -21,7 +21,7 @@ namespace dolfin
   /// diagonally scaled dG(0), and is responsible for propagating the
   /// values forward in time in each GMRES iteration.
 
-  class MultiAdaptivePreconditioner : public NewPreconditioner
+  class MultiAdaptivePreconditioner : public Preconditioner
   {
   public:
 
@@ -32,7 +32,7 @@ namespace dolfin
     ~MultiAdaptivePreconditioner();
     
     /// Solve linear system approximately for given right-hand side b
-    void solve(NewVector& x, const NewVector& b);
+    void solve(Vector& x, const Vector& b);
 
   private:
 

@@ -28,6 +28,9 @@ OctaveFile::~OctaveFile()
 //-----------------------------------------------------------------------------
 void OctaveFile::operator<<(Matrix& A)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Octave file format for Matrix is not the same as the Matlab format,
   // since octave cannot handle sparse matrices.
   
@@ -59,5 +62,6 @@ void OctaveFile::operator<<(Matrix& A)
 
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in Octave format." << endl;
+  */
 }
 //-----------------------------------------------------------------------------

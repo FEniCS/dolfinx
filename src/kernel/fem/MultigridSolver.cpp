@@ -63,6 +63,9 @@ void MultigridSolver::solve(PDE& pde, Vector& x, Mesh& mesh,
 void MultigridSolver::mainIteration(PDE& pde, Vector& x, 
 				    const MeshHierarchy& meshes)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Here is the work common for all different versions of solve().
   
   unsigned int noLevels = meshes.size();
@@ -103,12 +106,16 @@ void MultigridSolver::mainIteration(PDE& pde, Vector& x,
   dolfin_info("Multigrid converged in %d iterations.", i + 1);
 
   tocd();
+  */
 }
 //-----------------------------------------------------------------------------
 void MultigridSolver::fullVCycle(Vector& x, const Vector& r_fine,
 				 const MeshHierarchy& meshes,
 				 const Matrices& A)
 {	      
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   unsigned int noLevels = meshes.size();
   Vector z;            // correction to the initial guess x
   Vectors r(noLevels); // residuals on all meshes
@@ -134,12 +141,15 @@ void MultigridSolver::fullVCycle(Vector& x, const Vector& r_fine,
   
   // Add correction to initial guess
   x -= z;
+  */
 }
 //----------------------------------------------------------------------------
 void MultigridSolver::vCycle(Vector& x, const Vector& rhs,
 			     const MeshHierarchy& meshes, const Matrices& A,
 			     unsigned int level)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   if ( level == 0 )
   {
     Matrix A0(Matrix::dense);
@@ -162,12 +172,15 @@ void MultigridSolver::vCycle(Vector& x, const Vector& rhs,
 
     smooth(x, rhs, noPostSmooth, A, level);    
   }
+  */
 }
 //---------------------------------------------------------------------------
 void MultigridSolver::smooth(Vector& x, const Vector& rhs, 
 			     unsigned int noSmoothings, const Matrices& A,
 			     unsigned int level)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   real aii = 0.0;
   real aij = 0.0;
   unsigned int j;	
@@ -185,11 +198,15 @@ void MultigridSolver::smooth(Vector& x, const Vector& rhs,
       x(i) /= aii;
     }
   }	
+  */
 }
 //----------------------------------------------------------------------------
 void MultigridSolver::restr(Vector& xf, const MeshHierarchy& meshes,
                                unsigned int level)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Restrict from i -> i-1
   
   Vector xc(meshes(level-1).noNodes());
@@ -218,11 +235,14 @@ void MultigridSolver::restr(Vector& xf, const MeshHierarchy& meshes,
   
   // We want to "return" xc 
   xf = xc;
+  */
 }
 //----------------------------------------------------------------------------
 void MultigridSolver::interp(Vector& xc, const MeshHierarchy& meshes, 
 			     unsigned int level)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   unsigned int k=0;
   real tmp=0;
   Node* cnode; // node on the course grid
@@ -253,5 +273,6 @@ void MultigridSolver::interp(Vector& xc, const MeshHierarchy& meshes,
   }
   
   xc = xf;
+  */
 }
 //------------------------------------------------------------------------------

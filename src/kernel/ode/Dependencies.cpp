@@ -59,6 +59,9 @@ void Dependencies::set(uint i, uint j, bool checknew)
 //-----------------------------------------------------------------------------
 void Dependencies::set(const Matrix& A)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Prepare sparse pattern if necessary
   makeSparse();
 
@@ -78,6 +81,7 @@ void Dependencies::set(const Matrix& A)
 	sdep[i].push_back(j);
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)

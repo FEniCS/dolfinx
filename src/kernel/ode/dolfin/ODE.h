@@ -11,7 +11,7 @@
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/Dependencies.h>
-#include <dolfin/Sample.h>
+//#include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Function.h>
@@ -87,8 +87,10 @@ namespace dolfin
     /// Update ODE (old version, will be removed)
     virtual void update(Solution& u, Adaptivity& adaptivity, real t);
 
+    /*
     /// Save sample (old version, will be removed)
     virtual void save(Sample& sample);
+    */
 
     /// Save sample (optional)
     virtual void save(NewSample& sample);

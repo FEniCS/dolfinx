@@ -3,13 +3,13 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ComplexODE.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/HomotopyJacobian.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, NewVector& u) 
+HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, Vector& u) 
   : ode(ode), u(u)
 {
   // Do nothing
@@ -20,7 +20,7 @@ HomotopyJacobian::~HomotopyJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void HomotopyJacobian::mult(const NewVector& x, NewVector& y) const
+void HomotopyJacobian::mult(const Vector& x, Vector& y) const
 {
   // Get arrays (assumes uniprocessor case)
   const real* uu = u.array();

@@ -32,6 +32,8 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 DxMatrix::DxMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   DxForm form;
 
   // Assemble form for derivative
@@ -51,5 +53,6 @@ DxMatrix::DxMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
       (*this)(i, j, pos) /= m(i);
     }
   }      
+  */
 }
 //-----------------------------------------------------------------------------

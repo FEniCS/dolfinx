@@ -27,7 +27,7 @@ namespace dolfin
     ~TimeSlabJacobian();
 
     /// Compute product y = Ax
-    virtual void mult(const NewVector& x, NewVector& y) const = 0;
+    virtual void mult(const Vector& x, Vector& y) const = 0;
 
     /// Recompute Jacobian if necessary
     virtual void update();

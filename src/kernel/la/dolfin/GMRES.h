@@ -1,48 +1,80 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
+// Modified by Johan Hoffman, 2005.
 
 #ifndef __GMRES_H
 #define __GMRES_H
 
+#include <petscksp.h>
 #include <dolfin/constants.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {
-  
-  class Matrix;
-  class Vector;
 
-  /// This is just a template. Write documentation here.
+  /// This class implements the GMRES method for linear systems
+  /// of the form Ax = b. It is a wrapper for the GMRES solver
+  /// of PETSc.
   
-  class GMRES : public Preconditioner, public LinearSolver
+  class GMRES : public LinearSolver
   {
   public:
 
-    /// Create GMRES preconditioner/solver for a given matrix
-    GMRES(const Matrix& A, real tol, unsigned int maxiter);
+    /// Create GMRES solver
+    GMRES();
 
     /// Destructor
     ~GMRES();
 
-    /// Solve linear system Ax = b for a given right-hand side b
-    void solve(Vector& x, const Vector& b);
+    /// Solve linear system Ax = b
+    void solve(const Matrix& A, Vector& x, const Vector& b);
 
-    /// Solve linear system Ax = b for a given right-hand side b
-    static void solve(const Matrix& A, Vector& x, const Vector& b,
-		      real tol, unsigned int maxiter);
+    /// Solve linear system Ax = b (matrix-free version)
+    void solve(const VirtualMatrix& A, Vector& x, const Vector& b);
 
+    /// FIXME: Options below should be moved to some parameter system,
+    /// FIXME: not very nice to have a long list of setFoo() functions.
+
+    /// Change whether solver should report the number iterations
+    void setReport(bool report);
+
+    /// Change rtol
+    void setRtol(real rtol);
+      
+    /// Change abstol
+    void setAtol(real atol);
+      
+    /// Change dtol
+    void setDtol(real dtol);
+      
+    /// Change maxiter
+    void setMaxiter(int maxiter);
+
+    /// Set preconditioner
+    void setPreconditioner(Preconditioner &pc);
+
+    /// Return PETSc solver pointer
+    KSP solver();
+
+    /// Display GMRES solver data
+    void disp() const;
+     
   private:
 
-    // The matrix
-    const Matrix& A;
-    
-    // Tolerance
-    real tol;
+    // Create preconditioner matrix for virtual matrix
+    void createVirtualPreconditioner(const VirtualMatrix& A);
 
-    // Maximum number of iterations
-    unsigned int maxiter;
+    // True if we should report the number of iterations
+    bool report;
+
+    // PETSc solver pointer
+    KSP ksp;
+
+    // Diagonal matrix used for preconditioning with virtual matrix
+    Mat B;
 
   };
 

@@ -154,6 +154,8 @@ real cGqElement::update(RHS& f, real alpha, real* values)
 //-----------------------------------------------------------------------------
 real cGqElement::updateLocalNewton(RHS& f)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Evaluate right-hand side
   feval(f);
 
@@ -187,10 +189,15 @@ real cGqElement::updateLocalNewton(RHS& f)
 
   // Return increment
   return values[q] - u1;
+  */
+  return 0.0; // Take out!!!
 }
 //-----------------------------------------------------------------------------
 real cGqElement::updateLocalNewton(RHS& f, real* values)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Evaluate right-hand side
   feval(f);
   
@@ -221,6 +228,8 @@ real cGqElement::updateLocalNewton(RHS& f, real* values)
 
   // Return increment
   return values[q] - this->values[q];
+  */
+  return 0.0; // Take out!!!
 }
 //-----------------------------------------------------------------------------
 void cGqElement::set(real u0)

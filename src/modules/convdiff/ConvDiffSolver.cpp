@@ -23,6 +23,8 @@ const char* ConvDiffSolver::description()
 //-----------------------------------------------------------------------------
 void ConvDiffSolver::solve()
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   Matrix A;
   Vector x0, x1, b;
   
@@ -75,6 +77,6 @@ void ConvDiffSolver::solve()
     p = t / T;
 
   }
-
+  */
 }
 //-----------------------------------------------------------------------------

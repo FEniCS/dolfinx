@@ -74,6 +74,8 @@ void Sparsity::set(unsigned int i, unsigned int j, bool checknew)
 //-----------------------------------------------------------------------------
 void Sparsity::set(const Matrix& A)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   //cout << "N: " << N << endl;
   //cout << "A.size(0): " << A.size(0) << endl;
 
@@ -95,10 +97,13 @@ void Sparsity::set(const Matrix& A)
 	pattern[i].push_back(j);
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void Sparsity::transp(const Sparsity& sparsity)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Clear previous dependencies
   clear();
 
@@ -127,10 +132,13 @@ void Sparsity::transp(const Sparsity& sparsity)
     for (unsigned int pos = 0; pos < row.size(); ++pos)
       set(row[pos], i);
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void Sparsity::detect(ODE& ode)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Clear previous dependencies
   clear();
 
@@ -166,6 +174,7 @@ void Sparsity::detect(ODE& ode)
   }
 
   dolfin_info("Automatically detected %d dependencies.", sum);
+  */
 }
 //-----------------------------------------------------------------------------
 NewArray<unsigned int>& Sparsity::row(unsigned int i)

@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LU::LU() : NewLinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -34,7 +34,7 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-void LU::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
+void LU::solve(const Matrix& A, Vector& x, const Vector& b)
 {
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
@@ -44,7 +44,7 @@ void LU::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   KSPSolve(ksp, b.vec(), x.vec());
 }
 //-----------------------------------------------------------------------------
-void LU::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
+void LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
 {
   //cout << "LU got matrix:" << endl;
   //cout << "A = "; A.disp(false);
@@ -61,8 +61,8 @@ void LU::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Estimate condition number for l1 norm
-  const real xnorm = x.norm(NewVector::l1);
-  const real bnorm = b.norm(NewVector::l1) + DOLFIN_EPS;
+  const real xnorm = x.norm(Vector::l1);
+  const real bnorm = b.norm(Vector::l1) + DOLFIN_EPS;
   const real kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
@@ -123,7 +123,7 @@ real LU::copyToDense(const VirtualMatrix& A)
     e(j) = 0.0;
     
     // Compute l1 norm of matrix (maximum column sum)
-    const real colsum = y.norm(NewVector::l1);
+    const real colsum = y.norm(Vector::l1);
     if ( colsum > maxcolsum )
       maxcolsum = colsum;
   }

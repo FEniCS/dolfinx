@@ -21,6 +21,9 @@ NewArray<Vector> dolfin::Element::x;
 Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
   q(q), _index(index), t0(t0), t1(t1)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   dolfin_assert(t1 > t0);
   
   // Allocate the list of nodal values
@@ -61,6 +64,7 @@ Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
       b.push_back(xx);
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 Element::~Element()

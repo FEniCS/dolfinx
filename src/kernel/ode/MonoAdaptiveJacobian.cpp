@@ -3,7 +3,7 @@
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
@@ -24,7 +24,7 @@ MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
+void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
 {
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   if ( !implicit )

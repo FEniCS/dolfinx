@@ -7,7 +7,7 @@
 #include <petscksp.h>
 #include <petscmat.h>
 
-#include <dolfin/NewLinearSolver.h>
+#include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {
@@ -16,7 +16,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
   
-  class LU : public NewLinearSolver
+  class LU : public LinearSolver
   {
   public:
     
@@ -27,10 +27,10 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
-    void solve(const NewMatrix& A, NewVector& x, const NewVector& b);
+    void solve(const Matrix& A, Vector& x, const Vector& b);
 
     /// Solve linear system Ax = b (matrix-free version)
-    void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
+    void solve(const VirtualMatrix& A, Vector& x, const Vector& b);
 
     /// Display LU solver data
     void disp() const;
@@ -46,8 +46,8 @@ namespace dolfin
     int* idxm;
     int* idxn;
 
-    NewVector e;
-    NewVector y;
+    Vector e;
+    Vector y;
 
   };
 

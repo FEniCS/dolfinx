@@ -1,90 +1,150 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Contributions by: Georgios Foufas (2002)
-//                   Johan Jansson (2003)
+// Modified by Anders Logg, 2005.
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
 
+#include <petscvec.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Variable.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class Vector : public Variable {
+  /// This class represents a vector of dimension n. It is a
+  /// simple wrapper for a PETSc vector (Vec). The interface is
+  /// intentionally simple. For advanced usage, access the PETSc Vec
+  /// pointer using the function vec() and use the standard PETSc
+  /// interface.
+
+  class Vector
+  {
   public:
-	 
+
+    class Element;
+
+    /// Empty vector
     Vector();
-    Vector(int size);
-    Vector(unsigned int size);
+
+    /// Create vector of given size
+    Vector(uint size);
+
+    /// Create vector from given PETSc Vec pointer
+    Vector(Vec x);
+
+    /// Copy constructor
     Vector(const Vector& x);
-    Vector(real x0);
-    Vector(real x0, real x1);
-    Vector(real x0, real x1, real x2);
+    
+    /// Destructor
     ~Vector ();
-    
-    void init(unsigned int size);
+
+    /// Initialize vector data
+    void init(uint size);
+
+    /// Clear vector data
     void clear();
-    unsigned int size() const;
-    unsigned int bytes() const;
 
-    real  operator()(unsigned int i) const;
-    real& operator()(unsigned int i);
+    /// Return size of vector
+    uint size() const;
 
-    void operator=(const Vector& x);
-    void operator=(real scalar);
-    void operator=(const Matrix::Row& row);
-    void operator=(const Matrix::Column& col);
+    /// Return PETSc Vec pointer
+    Vec vec();
 
-    void operator+=(const Vector& x);
-    void operator+=(const Matrix::Row& row);
-    void operator+=(const Matrix::Column& col);
-    void operator+=(real a);	 
+    /// Return PETSc Vec pointer, const version
+    const Vec vec() const;
 
-    void operator-=(const Vector& x);
-    void operator-=(const Matrix::Row& row);
-    void operator-=(const Matrix::Column& col);
-    void operator-=(real a);
+    /// Return array containing this processor's portion of the data.
+    /// After usage, the function restore() must be called.
+    real* array();
 
-    void operator*=(real a);
-    
-    real operator*(const Vector& x) const;
-    real operator*(const Matrix::Row& row) const;
-    real operator*(const Matrix::Column& col) const;
-    
-    real norm () const;
-    real norm (unsigned int i) const;
-    
-    void add(real a, Vector& x);
-    void add(real a, const Matrix::Row& row);
-    void add(real a, const Matrix::Column& col);
+    /// Return array containing this processor's portion of the data.
+    /// After usage, the function restore() must be called. (const version)
+    const real* array() const;
 
-    void cross(Vector& v, Vector& uxv);
+    /// Restore array after a call to array()
+    void restore(real data[]);
 
-    void rand();
-    
-    // Output
-    void show() const;
-    friend LogStream& operator<< (LogStream& stream, const Vector& vector);
-    
-    // Friends
-    friend class DirectSolver;
-    friend class Matrix;
-    friend class SISolver;
-    friend class NewtonIteration;
-    
+    /// Restore array after a call to array(), const version
+    void restore(const real data[]) const;
+
+    /// Addition (AXPY)
+    void axpy(const real a, const Vector& x) const;
+
+    /// Add block of values to vector
+    void add(const real block[], const int cols[], int n); 
+
+    /// Apply changes to vector
+    void apply();
+
+    /// Element access operator (needed for const objects)
+    real operator() (uint i) const;
+
+    /// Element assignment operator
+    Element operator() (uint i);
+
+    /// Assignment of vector
+    const Vector& operator= (const Vector& x);
+
+    /// Assignment of all elements to a single scalar value
+    const Vector& operator= (real a);
+
+    /// Add vector x
+    const Vector& operator+= (const Vector& x);
+
+    /// Subtract vector x
+    const Vector& operator-= (const Vector& x);
+
+    /// Multiply vector with scalar
+    const Vector& operator*= (real a);
+
+    /// Divide vector by scalar
+    const Vector& operator/= (real a);
+
+    /// Compute norm of vector
+    enum NormType { l1, l2, linf };
+    real norm(NormType type = l2) const;
+
+    /// Display vector
+    void disp() const;
+
+    /// Reference to an element of the vector
+    class Element
+    {
+    public:
+      Element(uint i, Vector& x);
+      operator real() const;
+      const Element& operator=(const real a);
+      const Element& operator+=(const real a);
+      const Element& operator-=(const real a);
+      const Element& operator*=(const real a);
+    protected:
+      uint i;
+      Vector& x;
+    };
+
+  protected:
+
+    // Element access
+    real getval(uint i) const;
+
+    // Set value of element
+    void setval(uint i, const real a);
+
+    // Add value to element
+    void addval(uint i, const real a);
+
   private:
-    
-    void alloc(unsigned int size);
 
-    unsigned int n;
-    real *values;
+    // PETSc Vec pointer
+    Vec x;
     
+    // True if the pointer is a copy of someone else's data
+    bool copy;
+
   };
-
 }
 
 #endif

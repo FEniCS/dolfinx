@@ -5,8 +5,8 @@
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewGMRES.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/GMRES.h>
+#include <dolfin/Vector.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/TimeSlabSolver.h>
@@ -55,9 +55,9 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts; // The time slab;
     MultiAdaptiveJacobian A;   // Jacobian of time slab system
     real* f;                   // Values of right-hand side at quadrature points
-    NewVector dx;              // Increment for Newton's method
-    NewVector b;               // Right-hand side -F(x)
-    NewGMRES solver;           // GMRES solver
+    Vector dx;              // Increment for Newton's method
+    Vector b;               // Right-hand side -F(x)
+    GMRES solver;           // GMRES solver
     MultiAdaptivePreconditioner mpc; // Preconditioner
   };
 

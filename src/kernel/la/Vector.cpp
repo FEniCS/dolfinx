@@ -1,81 +1,39 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// - Updates by Georgios Foufas (2002)
-// - Updates by Johan Jansson (2003)
+// Modified by Anders Logg 2005.
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/Vector.h>
 #include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Vector::Vector() : Variable("x", "A vector")
+Vector::Vector() : x(0), copy(false)
 {
-  values = 0;
-  n = 0;
+  // Initialize PETSc
+  PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(int size) : Variable("x", "A vector")
+Vector::Vector(uint size) : x(0), copy(false)
 {
-  if ( size < 0 )
+  if(size < 0)
     dolfin_error("Size of vector must be non-negative.");
-  
-  values = 0;
-  n = 0;
-  
-  init(static_cast<unsigned int>(size));
-}
-//-----------------------------------------------------------------------------
-Vector::Vector(unsigned int size) : Variable("x", "A vector")
-{
-  values = 0;
-  n = 0;
-  
+
+  // Initialize PETSc
+  PETScManager::init();
+
+  // Create PETSc vector
   init(size);
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector& x) : Variable(x.name(), x.label())
+Vector::Vector(Vec x) : x(x), copy(true)
 {
-  values = 0;
-  n = 0;
-
-  init(x.size());
-
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = x.values[i];
-}
-//-----------------------------------------------------------------------------
-Vector::Vector(real x0) : Variable("x", "A vector")
-{
-  values = 0;
-  n = 0;
-  
-  init(1);
-  values[0] = x0;
-}
-//-----------------------------------------------------------------------------
-Vector::Vector(real x0, real x1) : Variable("x", "A vector")
-{
-  values = 0;
-  n = 0;
-  
-  init(2);
-  values[0] = x0;
-  values[1] = x1;
-}
-//-----------------------------------------------------------------------------
-Vector::Vector(real x0, real x1, real x2) : Variable("x", "A vector")
-{
-  values = 0;
-  n = 0;
-  
-  init(3);
-  values[0] = x0;
-  values[1] = x1;
-  values[2] = x2;
+  // Initialize PETSc 
+  PETScManager::init();
 }
 //-----------------------------------------------------------------------------
 Vector::~Vector()
@@ -83,7 +41,7 @@ Vector::~Vector()
   clear();
 }
 //-----------------------------------------------------------------------------
-void Vector::init(unsigned int size)
+void Vector::init(uint size)
 {
   // Two cases:
   //
@@ -92,281 +50,263 @@ void Vector::init(unsigned int size)
   //
   // Otherwise do nothing
   
-  if ( values ) {
-    if ( n != size ) {
-      clear();      
-      alloc(size);
+  if (x)
+  {
+    const uint n = this->size();
+
+    if (n == size)
+    {
+      return;      
     }
   }
   else
-    alloc(size);
+  {
+    clear();
+  }
+
+  // Create vector
+  VecCreate(PETSC_COMM_SELF, &x);
+  VecSetSizes(x, PETSC_DECIDE, size);
+  VecSetFromOptions(x);
+
+  // Set all entries to zero
+  real a = 0.0;
+  VecSet(&a, x);
+}
+//-----------------------------------------------------------------------------
+void Vector::axpy(const real a, const Vector& x) const
+{
+  VecAXPY(&a, x.vec(), this->x);
+}
+//-----------------------------------------------------------------------------
+void Vector::add(const real block[], const int cols[], int n)
+{
+  VecSetValues(x, n, cols, block, ADD_VALUES); 
+}
+//-----------------------------------------------------------------------------
+void Vector::apply()
+{
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 void Vector::clear()
 {
-  if ( values )
-    delete [] values;
-  values = 0;
+  if ( x && !copy )
+  {
+    VecDestroy(x);
+  }
 
-  n = 0;
+  x = 0;
 }
 //-----------------------------------------------------------------------------
-unsigned int Vector::size() const
+dolfin::uint Vector::size() const
 {
-  return n;
-}
-//-----------------------------------------------------------------------------
-unsigned int Vector::bytes() const
-{
-  return sizeof(Vector) + n*sizeof(real);
-}
-//-----------------------------------------------------------------------------
-real Vector::operator()(unsigned int i) const
-{
-  return values[i];
-}
-//-----------------------------------------------------------------------------
-real& Vector::operator()(unsigned int i)
-{
-  return values[i];
-}
-//-----------------------------------------------------------------------------
-void Vector::operator=(const Vector& x)
-{
-  init(x.size());
+  int n = 0;
+  VecGetSize(x, &n);
 
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = x.values[i];    
+  return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-void Vector::operator=(real a)
+Vec Vector::vec()
 {
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = a;    
+  return x;
 }
 //-----------------------------------------------------------------------------
-void Vector::operator=(const Matrix::Row& row)
+const Vec Vector::vec() const
 {
-  if ( n != row.size() )
-    dolfin_error("Matrix dimensions don't match.");
+  return x;
+}
+//-----------------------------------------------------------------------------
+real* Vector::array()
+{
+  dolfin_assert(x);
 
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = row(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::operator=(const Matrix::Column& col)
-{
-  if ( n != col.size() )
-    dolfin_error("Matrix dimensions don't match.");
+  real* data = 0;
+  VecGetArray(x, &data);
+  dolfin_assert(data);
 
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = col(i);
+  return data;
 }
 //-----------------------------------------------------------------------------
-void Vector::operator+=(const Vector& x)
+const real* Vector::array() const
 {
-  if ( n != x.size() )
-    dolfin_error("Matrix dimensions don't match.");
+  dolfin_assert(x);
 
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += x.values[i];
-}
-//-----------------------------------------------------------------------------
-void Vector::operator+=(const Matrix::Row& row)
-{
-  if ( n != row.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += row(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::operator+=(const Matrix::Column& col)
-{
-  if ( n != col.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += col(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::operator+=(real a) 
-{
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += a;
-}
-//-----------------------------------------------------------------------------
-void Vector::operator-=(const Vector& x)
-{
-  for (unsigned int i = 0; i < n; i++)
-    values[i] -= x.values[i];
-}
-//-----------------------------------------------------------------------------
-void Vector::operator-=(const Matrix::Row& row)
-{
-  if ( n != row.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] -= row(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::operator-=(const Matrix::Column& col)
-{
-  if ( n != col.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] -= col(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::operator-=(real a) 
-{
-  for (unsigned int i = 0; i < n; i++)
-    values[i] -= a;
-}
-//-----------------------------------------------------------------------------
-void Vector::operator*=(real a)
-{
-  for (unsigned int i = 0; i < n; i++)
-    values[i] *= a; 
-}
-//-----------------------------------------------------------------------------
-real Vector::operator*(const Vector& x) const
-{
-  if ( n != x.n )
-    dolfin_error("Matrix dimensions don't match.");
+  real* data = 0;
+  VecGetArray(x, &data);
 
-  real sum = 0.0;
-  for (unsigned int i = 0; i < n; i++)
-    sum += values[i] * x.values[i];
+  return data;
+}
+//-----------------------------------------------------------------------------
+void Vector::restore(real data[])
+{
+  VecRestoreArray(x, &data);
+}
+//-----------------------------------------------------------------------------
+void Vector::restore(const real data[]) const
+{
+  // Cast away the constness and trust PETSc to do the right thing
+  real* tmp = const_cast<real *>(data);
+  VecRestoreArray(x, &tmp);
+}
+//-----------------------------------------------------------------------------
+real Vector::operator() (uint i) const
+{
+  return getval(i);
+}
+//-----------------------------------------------------------------------------
+Vector::Element Vector::operator() (uint i)
+{
+  Element index(i, *this);
+
+  return index;
+}
+//-----------------------------------------------------------------------------
+const Vector& Vector::operator= (const Vector& x)
+{
+  VecCopy(x.vec(), this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector& Vector::operator= (real a)
+{
+  VecSet(&a, x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector& Vector::operator+= (const Vector& x)
+{
+  const real a = 1.0;
+  VecAXPY(&a, x.x, this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector& Vector::operator-= (const Vector& x)
+{
+  const real a = -1.0;
+  VecAXPY(&a, x.x, this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector& Vector::operator*= (real a)
+{
+  VecScale(&a, x);
   
-  return sum;
+  return *this;
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Matrix::Row& row) const
+const Vector& Vector::operator/= (real a)
 {
-  return row * (*this);
+  dolfin_assert(a != 0.0);
+  const real b = 1.0 / a;
+  VecScale(&b, x);
+  
+  return *this;
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Matrix::Column& col) const
+real Vector::norm(NormType type) const
 {
-  return col * (*this);
-}
-//-----------------------------------------------------------------------------
-real Vector::norm() const
-{
-  return norm(2);
-}
-//-----------------------------------------------------------------------------
-real Vector::norm(unsigned int i) const
-{
-  real norm = 0.0; 
+  real value = 0.0;
 
-  switch(i){
-  case 0:
-    // max-norm
-    for (unsigned int i = 0; i < n; i++)
-      if ( fabs(values[i]) > norm )
-	norm = fabs(values[i]);
-    return norm;
+  switch (type) {
+  case l1:
+    VecNorm(x, NORM_1, &value);
     break;
-  case 1:
-    // l1-norm
-    for (unsigned int i = 0; i < n; i++)
-      norm += fabs(values[i]);
-    return norm;
-    break;
-  case 2:
-    // l2-norm
-    for (unsigned int i = 0; i < n; i++)
-      norm += values[i] * values[i];
-    return sqrt(norm);
+  case l2:
+    VecNorm(x, NORM_2, &value);
     break;
   default:
-    cout << "Unknown vector norm" << endl;
-    exit(1);
-  }  
-
-}
-//-----------------------------------------------------------------------------
-void Vector::add(real a, Vector& x)
-{
-  if ( n != x.n )
-    dolfin_error("Matrix dimensions don't match.");
+    VecNorm(x, NORM_INFINITY, &value);
+  }
   
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += a * x.values[i];  
+  return value;
 }
 //-----------------------------------------------------------------------------
-void Vector::add(real a, const Matrix::Row& row)
+void Vector::disp() const
 {
-  if ( n != row.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += a * row(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::add(real a, const Matrix::Column& col)
-{
-  if ( n != col.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  for (unsigned int i = 0; i < n; i++)
-    values[i] += a * col(i);
-}
-//-----------------------------------------------------------------------------
-void Vector::cross(Vector &v, Vector &uxv)
-{
-  if(size() != 3 || v.size() != 3)
-    dolfin_error("Cross product only defined for 3-element vectors.");
-
-  Vector &u = *this;
-
-  uxv(0) = u(1) * v(2) - u(2) * v(1);
-  uxv(1) = u(2) * v(0) - u(0) * v(2);
-  uxv(2) = u(0) * v(1) - u(1) * v(0);
-}
-//-----------------------------------------------------------------------------
-void Vector::rand()
-{
-  for (unsigned int i = 0; i < n; i++)
-    values[i] = dolfin::rand();
-}
-//-----------------------------------------------------------------------------
-void Vector::show() const
-{
+  // FIXME: Maybe this could be an option?
+  //VecView(x, PETSC_VIEWER_STDOUT_SELF);
+ 
+  const uint M = size();
   cout << "[ ";
-  for (unsigned int i = 0; i < n; i++)
-    cout << values[i] << " ";
+  for (uint i = 0; i < M; i++)
+    cout << getval(i) << " ";
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
+real Vector::getval(uint i) const
 {
-  stream << "[ Vector of size " << x.size()
-	 << ", approximatetly ";
-  
-  unsigned int bytes = x.bytes();
-  
-  if ( bytes > 1024*1024 )
-    stream << bytes/1024 << " Mb. ]";
-  else if ( bytes > 1024 )
-    stream << bytes/1024 << " kb. ]";
-  else
-    stream << bytes << " bytes ]";
-  
-  return stream;
+  // Assumes uniprocessor case
+
+  real val = 0.0;
+
+  PetscScalar *array = 0;
+  VecGetArray(x, &array);
+  val = array[i];
+  VecRestoreArray(x, &array);
+
+  return val;
 }
 //-----------------------------------------------------------------------------
-void Vector::alloc(unsigned int size)
+void Vector::setval(uint i, const real a)
 {
-  // Use with caution. Only for internal use.
+  VecSetValue(x, static_cast<int>(i), a, INSERT_VALUES);
 
-  values = new real[size];
-  for (unsigned int i = 0; i < size; i++)
-    values[i] = 0.0;
-  n = size;
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
+//-----------------------------------------------------------------------------
+void Vector::addval(uint i, const real a)
+{
+  VecSetValue(x, static_cast<int>(i), a, ADD_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
+//-----------------------------------------------------------------------------
+// Vector::Element
+//-----------------------------------------------------------------------------
+Vector::Element::Element(uint i, Vector& x) : i(i), x(x)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Vector::Element::operator real() const
+{
+  return x.getval(i);
+}
+//-----------------------------------------------------------------------------
+const Vector::Element& Vector::Element::operator=(const real a)
+{
+  x.setval(i, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector::Element& Vector::Element::operator+=(const real a)
+{
+  x.addval(i, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector::Element& Vector::Element::operator-=(const real a)
+{
+  x.addval(i, -a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const Vector::Element& Vector::Element::operator*=(const real a)
+{
+  const real val = x.getval(i) * a;
+  x.setval(i, val);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------

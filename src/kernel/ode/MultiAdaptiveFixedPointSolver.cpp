@@ -6,7 +6,7 @@
 #include <dolfin/NewMethod.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 
 using namespace dolfin;
 
@@ -24,7 +24,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveFixedPointSolver::iteration()
 {
-  NewVector Rd(ts.ne), Rdprev(ts.ne);
+  Vector Rd(ts.ne), Rdprev(ts.ne);
 
   // Reset dof
   uint j = 0;
@@ -77,7 +77,7 @@ real MultiAdaptiveFixedPointSolver::iteration()
 
   // Debug
 
-//   NewVector Rho(ts.ne), krecommend(ts.ne), comp(ts.ne);
+//   Vector Rho(ts.ne), krecommend(ts.ne), comp(ts.ne);
 //   real rho;
 
 //   rho = Rd.norm() / Rdprev.norm();
@@ -87,7 +87,7 @@ real MultiAdaptiveFixedPointSolver::iteration()
 //   // Compute Rho
 //   for (uint e = 0; e < ts.ne; e++)
 //   {
-//     Rho(e) = fabs(Rd(e)) / Rdprev.norm(NewVector::linf);
+//     Rho(e) = fabs(Rd(e)) / Rdprev.norm(Vector::linf);
 //     //krecommend(e) = 1.0 / (2.0 * Rho(e));
 //     if(Rho(e) < 0.01)
 //     {

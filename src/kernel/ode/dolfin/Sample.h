@@ -13,6 +13,8 @@ namespace dolfin {
 
   /// Sample of values at a given point.
 
+
+  /*
   class Sample : public Variable
   {
   public:
@@ -45,6 +47,7 @@ namespace dolfin {
     real time;
 
   };
+  */
 
 }
 

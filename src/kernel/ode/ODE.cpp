@@ -198,10 +198,13 @@ void ODE::update(Solution& u, Adaptivity& adaptivity, real t)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+/*
 void ODE::save(Sample& sample)
+dolfin_error("This function needs to be updated to the new format.");
 {
   // Do nothing
 }
+*/
 //-----------------------------------------------------------------------------
 void ODE::save(NewSample& sample)
 {

@@ -89,6 +89,9 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Set default values
   row = 0;
   int size = 0;
@@ -99,6 +102,7 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 
   // Set values
   A.initrow(row, size);
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::readElement(const xmlChar *name, const xmlChar **attrs)

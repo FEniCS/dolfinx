@@ -25,7 +25,7 @@ namespace dolfin
     ~MultiAdaptiveJacobian();
 
     /// Compute product y = Ax
-    void mult(const NewVector& x, NewVector& y) const;
+    void mult(const Vector& x, Vector& y) const;
 
     /// Recompute Jacobian if necessary
     void update();

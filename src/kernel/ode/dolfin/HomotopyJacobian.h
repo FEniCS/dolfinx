@@ -11,7 +11,7 @@ namespace dolfin
 {
 
   class ComplexODE;
-  class NewVector;
+  class Vector;
 
   /// This class implements a matrix-free Jacobian for a homotopy
   /// system. It uses the fact that the Jacobian is already
@@ -23,13 +23,13 @@ namespace dolfin
   public:
 
     /// Constructor
-    HomotopyJacobian(ComplexODE& ode, NewVector& u);
+    HomotopyJacobian(ComplexODE& ode, Vector& u);
 
     /// Destructor
     ~HomotopyJacobian();
 
     /// Compute product y = Ax
-    void mult(const NewVector& x, NewVector& y) const;
+    void mult(const Vector& x, Vector& y) const;
 
   private:
     
@@ -37,7 +37,7 @@ namespace dolfin
     ComplexODE& ode;
 
     // Current solution to linearize around
-    NewVector& u;
+    Vector& u;
 
   };
 

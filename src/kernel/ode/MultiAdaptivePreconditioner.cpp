@@ -3,7 +3,7 @@
 
 #include <dolfin/ODE.h>
 #include <dolfin/NewArray.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
@@ -24,7 +24,7 @@ MultiAdaptivePreconditioner::~MultiAdaptivePreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivePreconditioner::solve(NewVector& x, const NewVector& b)
+void MultiAdaptivePreconditioner::solve(Vector& x, const Vector& b)
 {
   cout << "preconditioning (multi-adaptive)" << endl;
 

@@ -7,7 +7,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/NewFunction.h>
-#include <dolfin/Sample.h>
+//#include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
 #include <dolfin/MFile.h>
 
@@ -27,6 +27,8 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -44,6 +46,7 @@ void MFile::operator<<(Vector& x)
 
   cout << "Saved vector " << x.name() << " (" << x.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
@@ -223,6 +226,8 @@ void MFile::operator<<(NewFunction& u)
 //-----------------------------------------------------------------------------
 void MFile::operator<< (Sample& sample)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
@@ -269,6 +274,7 @@ void MFile::operator<< (Sample& sample)
   
   // Close file
   fclose(fp);
+  */
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<< (NewSample& sample)

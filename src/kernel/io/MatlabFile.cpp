@@ -24,6 +24,9 @@ MatlabFile::~MatlabFile()
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(Matrix& A)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   real value;
   unsigned int j;
 
@@ -78,5 +81,6 @@ void MatlabFile::operator<<(Matrix& A)
   
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in Matlab format." << endl;
+  */
 }
 //-----------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/NewArray.h>
 
 namespace dolfin {

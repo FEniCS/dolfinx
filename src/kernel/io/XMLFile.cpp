@@ -69,6 +69,9 @@ void XMLFile::operator>>(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -93,10 +96,14 @@ void XMLFile::operator<<(Vector& x)
   
   cout << "Saved vector " << x.name() << " (" << x.label()
        << ") to file " << filename << " in XML format." << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -142,6 +149,7 @@ void XMLFile::operator<<(Matrix& A)
                                                                                                                              
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in XML format." << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)

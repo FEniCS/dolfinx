@@ -7,6 +7,8 @@
 
 using namespace dolfin;
 
+
+/*
 //-----------------------------------------------------------------------------
 Sample::Sample(Solution& solution, RHS& f, real t) :
   solution(solution), f(f), time(t)
@@ -45,3 +47,4 @@ real Sample::r(unsigned int index)
   return solution.r(index, time, f);
 }
 //-----------------------------------------------------------------------------
+*/

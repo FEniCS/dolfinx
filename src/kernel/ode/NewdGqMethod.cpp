@@ -133,6 +133,9 @@ void NewdGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void NewdGqMethod::computeWeights()
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   Matrix A(nn, nn, Matrix::dense);
   
   // Compute matrix coefficients
@@ -172,5 +175,7 @@ void NewdGqMethod::computeWeights()
     for (unsigned int j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * w(j);
   }
+
+  */
 }
 //-----------------------------------------------------------------------------

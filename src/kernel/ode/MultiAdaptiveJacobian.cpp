@@ -3,7 +3,7 @@
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
@@ -68,7 +68,7 @@ void MultiAdaptiveJacobian::update()
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
+void MultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
 {
   // We iterate over all degrees of freedom j in the time slab and compute
   // y_j = (Ax)_j for each degree of freedom of the system. Note that this

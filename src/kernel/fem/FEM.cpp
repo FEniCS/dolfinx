@@ -67,6 +67,8 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
 		   Quadrature& interior_quadrature, 
 		   Quadrature& boundary_quadrature)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Allocate and reset matrix
   alloc(A, mesh, element);
   
@@ -86,6 +88,7 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
 
   // Write a message
   cout << "Assembled: " << A << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
@@ -218,6 +221,8 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
 		   Quadrature& interior_quadrature, 
 		   Quadrature& boundary_quadrature)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Allocate and reset matrix
   alloc(b, mesh, element);
   
@@ -234,6 +239,7 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
 
   // Write a message
   cout << "Assembled: " << b << endl;
+  */
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
@@ -360,6 +366,9 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 //-----------------------------------------------------------------------------
 void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
   BoundaryCondition bc(element.size());
@@ -397,6 +406,7 @@ void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
       break;
     }    
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void FEM::setBC(Mesh& mesh, Vector& b, FiniteElement::Vector& element)

@@ -11,7 +11,7 @@
 namespace dolfin
 {
 
-  class NewVector;
+  class Vector;
   
   /// This class represents a matrix-free matrix of dimension m x m.
   /// It is a simple wrapper for a PETSc shell matrix. The interface
@@ -34,13 +34,13 @@ namespace dolfin
     VirtualMatrix();
 
     /// Create a virtual matrix matching the given vectors
-    VirtualMatrix(const NewVector& x, const NewVector& y);
+    VirtualMatrix(const Vector& x, const Vector& y);
 
     /// Destructor
     virtual ~VirtualMatrix();
 
     /// Initialize virtual matrix matching the given vectors
-    void init(const NewVector& x, const NewVector& y);
+    void init(const Vector& x, const Vector& y);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;
@@ -52,7 +52,7 @@ namespace dolfin
     const Mat mat() const;
 
     /// Compute product y = Ax
-    virtual void mult(const NewVector& x, NewVector& y) const = 0;
+    virtual void mult(const Vector& x, Vector& y) const = 0;
 
     /// Display matrix (sparse output is default)
     void disp(bool sparse = true, int precision = 2) const;

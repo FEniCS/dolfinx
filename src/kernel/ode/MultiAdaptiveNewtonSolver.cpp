@@ -5,7 +5,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewMatrix.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
@@ -136,8 +136,8 @@ void MultiAdaptiveNewtonSolver::beval()
 void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  NewMatrix B(n, n);
-  NewVector F1(n), F2(n);
+  Matrix B(n, n);
+  Vector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

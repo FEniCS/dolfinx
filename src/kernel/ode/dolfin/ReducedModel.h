@@ -59,8 +59,10 @@ namespace dolfin
     /// Map update function
     void update(Solution& u, Adaptivity& adaptivity, real t);
 
+    /*
     /// Map the save function
     void save(Sample& sample);
+    */
 
   private:
 

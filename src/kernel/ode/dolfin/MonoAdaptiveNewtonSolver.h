@@ -5,7 +5,7 @@
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewVector.h>
+#include <dolfin/Vector.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
 
@@ -15,7 +15,7 @@ namespace dolfin
   class ODE;
   class MonoAdaptiveTimeSlab;
   class NewMethod;
-  class NewLinearSolver;
+  class LinearSolver;
 
   /// This class implements Newton's method on mono-adaptive time
   /// slabs. In each iteration, the system F(x) is evaluated at the
@@ -55,7 +55,7 @@ namespace dolfin
     void bevalImplicit();
 	
     // Choose linear solver
-    NewLinearSolver* chooseLinearSolver() const;
+    LinearSolver* chooseLinearSolver() const;
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
@@ -65,9 +65,9 @@ namespace dolfin
 
     MonoAdaptiveTimeSlab& ts; // The time slab;
     MonoAdaptiveJacobian A;   // Jacobian of time slab system
-    NewVector dx;             // Increment for Newton's method
-    NewVector b;              // Right-hand side -F(x)
-    NewLinearSolver* solver;  // Linear solver
+    Vector dx;             // Increment for Newton's method
+    Vector b;              // Right-hand side -F(x)
+    LinearSolver* solver;  // Linear solver
     real* Mu0;                // Precomputed product M*u0 for implicit system
     
   };

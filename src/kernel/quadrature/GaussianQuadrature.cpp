@@ -25,6 +25,9 @@ void GaussianQuadrature::init()
 //-----------------------------------------------------------------------------
 void GaussianQuadrature::computeWeights()
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   // Compute the quadrature weights by solving a linear system of equations
   // for exact integration of polynomials. We compute the integrals over
   // [-1,1] of the Legendre polynomials of degree <= n - 1; These integrals
@@ -57,6 +60,7 @@ void GaussianQuadrature::computeWeights()
   // Save the weights
   for (unsigned int i = 0; i < n; i++)
     weights[i] = x(i);
+  */
 }
 //-----------------------------------------------------------------------------
 bool GaussianQuadrature::check(unsigned int q) const

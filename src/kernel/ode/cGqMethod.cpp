@@ -108,6 +108,9 @@ void cGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void cGqMethod::computeWeights()
 {
+  dolfin_error("This function needs to be updated to the new format.");
+
+  /*
   Matrix A(q, q, Matrix::dense);
   
   // Compute matrix coefficients
@@ -151,5 +154,6 @@ void cGqMethod::computeWeights()
   // Set weights for i = 0 (not used)
   for (unsigned int j = 0; j < n; j++)
     weights[0][j] = 0.0;
+  */
 }
 //-----------------------------------------------------------------------------

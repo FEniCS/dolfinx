@@ -233,6 +233,8 @@ void TimeStepper::save(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
   real t = ceil(timeslab.starttime()/K) * K;
@@ -248,10 +250,14 @@ void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
     ode.save(sample);
     t += K;
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
 {
+  dolfin_error("This function needs to be updated to the new format.");
+  /*
+
   // Get start time of time slab
   real t0 = timeslab.starttime();
   real t1 = t0;
@@ -298,6 +304,7 @@ void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
       ode.save(sample);
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::stabilize(real K)
