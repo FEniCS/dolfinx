@@ -1,3 +1,4 @@
+0.4.5
  - Rename function.h to enable compilation under Cygwin
  - Add new benchmark problem for multi-adaptive solver
  - Bug fix for ParticleSystem

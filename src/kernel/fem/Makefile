@@ -74,7 +74,7 @@ MAKEINFO = makeinfo
 MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.4.4
+PACKAGE_VERSION = 0.4.5
 RANLIB = ranlib
 VERSION = 
 XML2_INCLUDES = -I/usr/include/libxml2
@@ -93,7 +93,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.4.4\" -DPACKAGE_STRING=\"dolfin\ 0.4.4\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.4.5\" -DPACKAGE_STRING=\"dolfin\ 0.4.5\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = -lncurses 

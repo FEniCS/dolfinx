@@ -244,3 +244,30 @@ Note: Performance increase either from installing a
 new kernel or a smaller system load.
 
 --------------------------------------------------------
+- System info:
+
+  User:    logg
+  Date:    Mon Feb  2 11:31:10 2004
+  Host:    elrond
+  Machine: i686
+  System:  Linux
+  Version: 2.4.24
+  DOLFIN:  0.4.5
+
+- Assembling 100 times
+- Matrix/vector multiplication 100 times
+- LU factorization
+- LU solve 100 times
+- Krylov solve
+Using Krylov solver for linear system of 100000 unknowns.
+Restarted GMRES converged after 20 iterations (residual 1.66784e-08)
+
+Assembling:                   2.99
+Matrix/vector multiplication: 1.04
+LU factorization:             4.37
+LU solve:                     1.77
+Krylov solve:                 2.56
+
+Total time:                   12.73
+
+--------------------------------------------------------
