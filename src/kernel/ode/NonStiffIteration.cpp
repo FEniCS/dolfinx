@@ -88,7 +88,7 @@ Iteration::State NonStiffIteration::stabilize(NewArray<Element*>& elements,
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
     return nonstiff;
-
+  
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying parabolic damping.");
   
@@ -137,6 +137,8 @@ Iteration::State NonStiffIteration::stabilize(Element& element,
 bool NonStiffIteration::converged(TimeSlab& timeslab, 
 				   Residuals& r, unsigned int n)
 {
+  cout << "time slab residual = " << residual(timeslab) << endl;
+
   // Convergence handled locally when the slab contains only one element list
   if ( timeslab.leaf() )
     return n >= 1;
@@ -155,6 +157,8 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
 bool NonStiffIteration::converged(NewArray<Element*>& elements, 
 				   Residuals& r, unsigned int n)
 {
+  cout << "element list residual = " << residual(elements) << endl;
+  
   // Convergence handled locally when the list contains only one element
   if ( elements.size() == 1 )
     return n >= 1;
@@ -173,6 +177,8 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
 bool NonStiffIteration::converged(Element& element, 
 				  Residuals& r, unsigned int n)
 {
+  cout << "element residual = " << residual(element) << endl;
+
   // Compute discrete residual
   r.r1 = r.r2;
   r.r2 = residual(element);

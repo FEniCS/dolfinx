@@ -58,7 +58,7 @@ void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
 //-----------------------------------------------------------------------------
 bool RecursiveTimeSlab::leaf() const
 {
-  return timeslabs.size() > 0;
+  return timeslabs.size() == 0;
 }
 //-----------------------------------------------------------------------------
 real RecursiveTimeSlab::computeMaxRd(FixedPointIteration& fixpoint)

@@ -48,7 +48,7 @@ namespace dolfin
     real residual(TimeSlab& timeslab);
 
     // Compute maximum discrete residual for element list
-    real residual(NewArray<Element*> elements);
+    real residual(NewArray<Element*>& elements);
 
     // Compute discrete residual for element
     real residual(Element& element);

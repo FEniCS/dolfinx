@@ -75,7 +75,7 @@ real Iteration::residual(TimeSlab& timeslab)
   return timeslab.computeMaxRd(fixpoint);
 }
 //-----------------------------------------------------------------------------
-real Iteration::residual(NewArray<Element*> elements)
+real Iteration::residual(NewArray<Element*>& elements)
 {
   real rmax = 0.0;
   

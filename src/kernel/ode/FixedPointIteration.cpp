@@ -53,8 +53,6 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
       return true;
     }
 
-    cout << "Time slab residual = " << r.r2 << endl;
-  
     // Check stabilization
     if ( n >= 2 )
       stabilize(timeslab, r, d);
@@ -62,7 +60,6 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     // Update time slab
     update(timeslab);
   }
-
 
   dolfin_end("Time slab iteration did not converge");
 
@@ -78,7 +75,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
   init(elements);
   
   dolfin_start("Starting element list iteration");
-
+  
   // Fixed point iteration on the element list
   for (unsigned int n = 0; n < local_maxiter; n++)
   {
@@ -88,8 +85,9 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       dolfin_end("Element list iteration converged");
       return true;
     }
-    
-    cout << "Element list residual = " << r.r2 << endl;
+
+    if ( n > 0 )
+      cout << "Extra iteration for element list!" << endl;
 
     // Check stabilization
     if ( n >= 2 )
@@ -118,10 +116,9 @@ bool FixedPointIteration::iterate(Element& element)
     if ( converged(element, r, n) )
     {
       dolfin_end("Element iteration converged");
+      //cout << "u(" << element.index() << "," << element.endtime() << ") = " << element.endval() << endl;
       return true;
     }
-
-    cout << "Element residual = " << r.r2 << endl;
 
     // Check stabilization
     if ( n >= 2 )
@@ -142,7 +139,7 @@ real FixedPointIteration::residual(TimeSlab& timeslab)
   return state->residual(timeslab);
 }
 //-----------------------------------------------------------------------------
-real FixedPointIteration::residual(NewArray<Element*> elements)
+real FixedPointIteration::residual(NewArray<Element*>& elements)
 {
   dolfin_assert(state);
   return state->residual(elements);
