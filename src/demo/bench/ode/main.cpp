@@ -50,7 +50,7 @@ public:
     const unsigned int jy = (j / m) % m;
     const unsigned int jz = j / (m*m);
 
-    real sum = 6.0*u[j];
+    real sum = -6.0*u[j];
     if ( jx > 0 ) sum += u[j - 1];
     if ( jy > 0 ) sum += u[j - m];
     if ( jz > 0 ) sum += u[j - m*m];
@@ -77,7 +77,7 @@ public:
       const unsigned int jy = (j / m) % m;
       const unsigned int jz = j / (m*m);
 
-      real sum = 6.0*u[j];
+      real sum = -6.0*u[j];
       if ( jx > 0 ) sum += u[j - 1];
       if ( jy > 0 ) sum += u[j - m];
       if ( jz > 0 ) sum += u[j - m*m];

@@ -43,6 +43,27 @@ public:
     delete [] tmp;
   }
 
+  void disp()
+  {
+    cout << "Utility parameters:" << endl;
+    for (unsigned int i = 0; i < m; i++)
+    {
+      cout << "  trader " << i << ":";
+      for (unsigned int j = 0; j < n; j++)
+	cout << " " << a[i][j];
+      cout << endl;
+    }
+
+    cout << "Initial endowments:" << endl;
+    for (unsigned int i = 0; i < m; i++)
+    {
+      cout << "  trader " << i << ":";
+      for (unsigned int j = 0; j < n; j++)
+	cout << " " << w[i][j];
+      cout << endl;
+    }
+  }
+
 protected:
 
   // Compute sum of elements
@@ -173,17 +194,23 @@ public:
   {
     // Choose b such that epsilon < b_i < 1 for all i
     b = new real[m];
-    for (unsigned int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < m; i++)
       b[i] = epsilon + dolfin::rand()*(1.0 - epsilon);
+
+    // Special choice of data
+    b[0] = 0.9;
     
     // Special choice of data
-    a[0][0] = 2.0; a[0][1] = 1.0;
-    a[1][0] = 0.5; a[1][1] = 1.0;
-
-    w[0][0] = 1.0; w[0][1] = 0.0;
-    w[1][0] = 0.0; w[1][1] = 1.0;
-
-    b[0] = 0.1; b[1] = 0.1;
+    /*
+      a[0][0] = 2.0; a[0][1] = 1.0;
+      a[1][0] = 0.5; a[1][1] = 1.0;
+      
+      w[0][0] = 1.0; w[0][1] = 0.0;
+      w[1][0] = 0.0; w[1][1] = 1.0;
+      
+      b[0] = 0.1;
+      b[1] = 0.1;
+    */
   }
 
   ~CES()
@@ -264,6 +291,8 @@ public:
 
   unsigned int degree(unsigned int i) const
   {
+    return 0;
+
     if ( i == 0 )
       return 1;
     else
@@ -290,7 +319,7 @@ private:
     return sum;
   }
 
-  real* b;
+  real* b; // Vector of exponents
 
 };
 
@@ -300,15 +329,16 @@ int main()
   dolfin_set("order", 1);
   dolfin_set("adaptive samples", true);
   dolfin_set("monitor homotopy", true);
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("tolerance", 0.1);
   dolfin_set("initial time step", 0.01);
-  dolfin_set("homotopy divergence tolerance", 10.0);
+  dolfin_set("homotopy divergence tolerance", 5.0);
   dolfin_set("linear solver", "direct");
   
   //Leontief leontief(2, 2);
   //leontief.solve();
 
-  CES ces(2, 2, 0.5);
+  CES ces(1, 2, 0.5);
+  ces.disp();
   ces.solve();
 
   return 0;
