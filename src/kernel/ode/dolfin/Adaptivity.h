@@ -19,7 +19,7 @@ namespace dolfin {
 
     /// Destructor
     ~Adaptivity();
-        
+
     /// Return time step regulator for given component
     Regulator& regulator(unsigned int i);
 

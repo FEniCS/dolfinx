@@ -70,6 +70,8 @@ real Dual::dFdU(unsigned int i, unsigned int j, real t)
   if ( abs(f1-f2) < DOLFIN_EPS * max(abs(f1),abs(f2)) )
     return 0.0;
 
+  cout << "Dual: " << fabs(f2-f1)/dU << endl;
+
   return (f2-f1) / dU;
 }
 //-----------------------------------------------------------------------------

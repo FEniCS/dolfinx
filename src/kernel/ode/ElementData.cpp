@@ -92,6 +92,12 @@ void ElementData::shift()
   current = 0;
 }
 //-----------------------------------------------------------------------------
+void ElementData::reset()
+{
+  delete current;
+  current = new ElementBlock(N);
+}
+//-----------------------------------------------------------------------------
 unsigned int ElementData::size() const
 {
   return N;
@@ -245,5 +251,7 @@ void ElementData::dropBlock(real t0, real t1)
   // Delete the last block
   dolfin_assert(last != blocks.end());
   blocks.erase(last);
+  
+  dolfin_warning("Maybe we should delete the block as well?");
 }
 //-----------------------------------------------------------------------------

@@ -68,6 +68,9 @@ namespace dolfin {
     /// Prepare for next time slab (propagate values)
     void shift(real t0);
 
+    /// Reset current element block
+    void reset();
+
     /// Save debug info
     enum Action { create = 0, update };
     void debug(Element& element, Action action);

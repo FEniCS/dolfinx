@@ -24,7 +24,7 @@ FixedPointIteration::~FixedPointIteration()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::iterate(TimeSlab& timeslab)
+bool FixedPointIteration::iterate(TimeSlab& timeslab)
 {
   // Since elements are stored recursively in the time slabs, the fixed
   // point iteration needs help from the time slabs to do the iteration.
@@ -46,15 +46,15 @@ void FixedPointIteration::iterate(TimeSlab& timeslab)
 
     // Check if we have done too many iterations
     if ( n++ >= maxiter )
-    {
-      dolfin_info("Solution did not converge.");
-      dolfin_error1("Reached maximum number of iterations (%d).", maxiter);
-    }
-
+      return false;
+    
     cout << endl;
+
   }
 
   cout << "Converged in " << n << " iterations" << endl;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 real FixedPointIteration::update(Element& element)
@@ -105,30 +105,23 @@ void FixedPointIteration::update(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(TimeSlab& timeslab)
 {
-  cout << "Checking if we need to stabilize" << endl;
-
-  // Compute convergence rate
-  dolfin_assert(d1 > DOLFIN_EPS);
-  dolfin_assert(r1 > DOLFIN_EPS);
-  real rho = std::max(d2 / d1, r2 / r1);
-
-  cout << "  rho = " << rho << endl;
+  cout << "State = " << state << endl;
 
   switch ( state ) {
   case undamped:
-    stabilizeUndamped(timeslab, rho);
+    stabilizeUndamped(timeslab);
     break;
   case scalar_small:
-    stabilizeScalarSmall(timeslab, rho);
+    stabilizeScalarSmall(timeslab);
     break;
   case scalar_increasing:
-    stabilizeScalarIncreasing(timeslab, rho);
+    stabilizeScalarIncreasing(timeslab);
     break;
   case diagonal_small:
-    stabilizeDiagonalSmall(timeslab, rho);
+    stabilizeDiagonalSmall(timeslab);
     break;
   case diagonal_increasing:
-    stabilizeDiagonalIncreasing(timeslab, rho);
+    stabilizeDiagonalIncreasing(timeslab);
     break;
   default:
     dolfin_error("Unknown state.");
@@ -137,14 +130,16 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab)
   cout << "  Damping with alpha = " << alpha << endl;
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab)
 {
-  if ( rho < 0.5 )
+  // Check if the solution converges
+  if ( r2 < 0.5*r0 )
     return;
 
   cout << "  Need to stabilize: " << r1 << " --> " << r2 << endl;   
   
   // Compute stabilization
+  real rho = computeConvergenceRate();
   alpha = computeDamping(rho);
   m = computeDampingSteps(rho);
   
@@ -156,10 +151,12 @@ void FixedPointIteration::stabilizeUndamped(TimeSlab& timeslab, real rho)
   state = scalar_small;
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab)
 {
   // Decrease the remaining number of iterations with small alpha
   m--;
+
+  cout << "  m = " << m << endl;
 
   // Adjust alpha if the solution diverges
   if ( r2 > r1 )
@@ -180,7 +177,7 @@ void FixedPointIteration::stabilizeScalarSmall(TimeSlab& timeslab, real rho)
   }
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab)
 {
   // Increase alpha
   alpha *= 2.0;
@@ -189,6 +186,7 @@ void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab, real rho
   if ( r2 > r1 )
   {    
     // Compute stabilization
+    real rho = computeConvergenceRate();
     alpha = computeDamping(rho/alpha);
     m = computeDampingSteps(rho);
     
@@ -208,14 +206,19 @@ void FixedPointIteration::stabilizeScalarIncreasing(TimeSlab& timeslab, real rho
   }
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonalSmall(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeDiagonalSmall(TimeSlab& timeslab)
 {
   dolfin_error("Diagonal damping not implemented.");
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeDiagonalIncreasing(TimeSlab& timeslab, real rho)
+void FixedPointIteration::stabilizeDiagonalIncreasing(TimeSlab& timeslab)
 {
   dolfin_error("Diagonal damping not implemented.");
+}
+//-----------------------------------------------------------------------------
+real FixedPointIteration::computeConvergenceRate()
+{
+  return std::max(d2 / (DOLFIN_EPS + d1), r2 / (DOLFIN_EPS + r1));
 }
 //-----------------------------------------------------------------------------
 real FixedPointIteration::computeDamping(real rho)

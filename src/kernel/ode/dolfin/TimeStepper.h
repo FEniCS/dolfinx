@@ -36,6 +36,9 @@ namespace dolfin {
     static void save(Solution& u, RHS& f, TimeSlab& timeslab, File& file,
 		     real T, unsigned int no_samples);
 
+    // Decrease the time step
+    static void decreaseTimeStep(Adaptivity& adaptivity);
+
   };
 
 }

@@ -27,7 +27,7 @@ namespace dolfin
     ~FixedPointIteration();
 
     /// Fixed point iteration on a time slab
-    void iterate(TimeSlab& timeslab);
+    bool iterate(TimeSlab& timeslab);
 
     /// Update a given element
     real update(Element& element);
@@ -47,19 +47,22 @@ namespace dolfin
     void stabilize(TimeSlab& timeslab);
 
     // Compute stabilization for undamped state
-    void stabilizeUndamped(TimeSlab& timeslab, real rho);
+    void stabilizeUndamped(TimeSlab& timeslab);
 
     // Compute stabilization for scalar damping with small alpha
-    void stabilizeScalarSmall(TimeSlab& timeslab, real rho);
+    void stabilizeScalarSmall(TimeSlab& timeslab);
 
     // Compute stabilization for scalar damping with increasing alpha
-    void stabilizeScalarIncreasing(TimeSlab& timeslab, real rho);
+    void stabilizeScalarIncreasing(TimeSlab& timeslab);
 
     // Compute stabilization for diagonal damping with small alpha
-    void stabilizeDiagonalSmall(TimeSlab& timeslab, real rho);
+    void stabilizeDiagonalSmall(TimeSlab& timeslab);
 
     // Compute stabilization for diagonal damping with increasing alpha
-    void stabilizeDiagonalIncreasing(TimeSlab& timeslab, real rho);
+    void stabilizeDiagonalIncreasing(TimeSlab& timeslab);
+
+    // Compute convergence rate
+    real computeConvergenceRate();
 
     // Compute alpha
     real computeDamping(real rho);

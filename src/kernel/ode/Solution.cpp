@@ -128,6 +128,11 @@ void Solution::shift(real t0)
   elmdata.shift();
 }
 //-----------------------------------------------------------------------------
+void Solution::reset()
+{
+  elmdata.reset();
+}
+//-----------------------------------------------------------------------------
 void Solution::debug(Element& element, Action action)
 {
   if ( !_debug )

@@ -47,6 +47,9 @@ namespace dolfin {
     /// Notify that this might be a good time to move to next block
     void shift();
 
+    /// Reset current element block
+    void reset();
+
     /// Return number of components
     unsigned int size() const;
 
