@@ -15,9 +15,6 @@ Dual::Dual(ODE& primal, Function& u) :
   // Set sparsity to transpose of sparsity for the primal
   sparsity.transp(primal.sparsity);
 
-  primal.sparsity.show();
-  sparsity.show();
-
   // Set end time
   T = primal.endtime();
 }
@@ -29,7 +26,7 @@ Dual::~Dual()
 //-----------------------------------------------------------------------------
 real Dual::u0(unsigned int i)
 {
-  return 1.0;
+  return 1.0 / sqrt(static_cast<real>(N));
 }
 //-----------------------------------------------------------------------------
 real Dual::f(const Vector& phi, real t, unsigned int i)
@@ -41,29 +38,11 @@ real Dual::f(const Vector& phi, real t, unsigned int i)
   // FIXME: dependencies into account and then updating the buffer values
   // FIXME: outside the sum.
 
-  if ( i == 2 )
-  {
-    
-    return - phi(2);
-
-
-
-
-  }
-
-  real sum = 0.0;
-  
+  real sum = 0.0;  
   for (Sparsity::Iterator j(i, sparsity); !j.end(); ++j)
     sum += dFdU(j, i, T - t) * phi(j);
+  
   return sum;
-  
-  if ( i == 0 )
-    return phi(1);
-  
-  if ( i == 1 )
-    return -phi(0);
-  
-  return - phi(2);
 }
 //-----------------------------------------------------------------------------
 real Dual::dFdU(unsigned int i, unsigned int j, real t)
@@ -88,7 +67,7 @@ real Dual::dFdU(unsigned int i, unsigned int j, real t)
   real f2 = primal.f(buffer, t, i);
          
   // Compute derivative
-  if ( abs(f1-f2) < DOLFIN_SQRT_EPS * max(abs(f1),abs(f2)) )
+  if ( abs(f1-f2) < DOLFIN_EPS * max(abs(f1),abs(f2)) )
     return 0.0;
 
   return (f2-f1) / dU;

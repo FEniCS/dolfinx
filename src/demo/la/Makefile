@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = /home/logg/work/src/dolfin/dolfin/missing aclocal-1.4
+ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = /home/logg/work/src/dolfin/dolfin/missing automake-1.4
+AUTOMAKE = automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c

@@ -1,7 +1,7 @@
 Multi-adaptive solver
 ---------------------
 
-- Solution of the dual problem
+- Save dual solution backwards
 - Error estimates
 - Optimization and benchmarks, including control of the error estimates
 - Automatic computation of stability factors as function of time T

@@ -20,7 +20,7 @@ public:
     T = 30.0;
 
     // Compute sparsity
-    //sparse();
+    sparse();
   }
 
   real u0(unsigned int i)

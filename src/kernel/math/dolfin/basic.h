@@ -1,6 +1,7 @@
 #ifndef __BASIC_H
 #define __BASIC_H
 
+#include <cmath>
 #include <dolfin/constants.h>
 
 namespace dolfin {
