@@ -13,6 +13,7 @@ namespace dolfin {
 
   class Element;
   class TimeSlab;
+  class RHS;
 
   class Component {
   public:
@@ -26,25 +27,37 @@ namespace dolfin {
     /// Destructor
     ~Component();
 
-    /// Evaluation at given time
-    real operator() (real t);
-
-    /// Evaluation at given time
-    real operator() (int node, real t, TimeSlab* timeslab);
-
     /// Return element at given time
     Element& element(real t);
 
+    /// Return last element
+    Element& last();
+    
     /// Return number of elements in component
     int size() const;
+
+    /// Return value at given time
+    real value(real t);
+
+    /// Return time step at given time
+    real timestep(real t);
+
+    /// Return residual at given time
+    real residual(real t, RHS& f);
+
+    /// Evaluation operator
+    real operator() (real t);
+    
+    /// Evaluation operator
+    real operator() (int node, real t, TimeSlab* timeslab);
 
     /// Create a new element
     Element* createElement(Element::Type type,
 			   int q, int index, TimeSlab* timeslab);
-    
-    /// Return last element
-    Element& last();
-    
+
+    /// Clear component
+    void clear();
+        
     friend class TimeSlabData;
 
     /// Output

@@ -15,7 +15,7 @@ dGqElement::dGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) :
   dG.init(q);
 }
 //-----------------------------------------------------------------------------
-real dGqElement::eval(real t) const
+real dGqElement::value(real t) const
 {
   real tau = (t - starttime()) / timestep();
 

@@ -17,7 +17,7 @@ cGqElement::cGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab) :
   //dolfin_debug1("cGqElement::ctor: %p", this);
 }
 //-----------------------------------------------------------------------------
-real cGqElement::eval(real t) const
+real cGqElement::value(real t) const
 {
   //dolfin_debug1("t: %lf", t);
   

@@ -27,26 +27,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, real t0, real t1)
 {
-  // Create time slab data
+  // Get parameters
+  int no_samples = dolfin_get("number of samples");
+
+  // Create data for time-stepping
   TimeSlabData data(ode);
-
-  // Create partition
   Partition partition(ode.size());
-
-  // Create right-hand side
   RHS f(ode, data);
+  TimeSlab* timeslab = 0;
+  real t = t0;
 
   // Create file for storing the solution
   File file("solution.m");
-
-  // Get the number of output samples
-  int no_samples = dolfin_get("number of samples");
-
-  // Start time
-  real t = t0;
-
-  // The time slab
-  TimeSlab* timeslab = 0;
 
   // The time-stepping loop
   Progress p("Time-stepping");
@@ -77,8 +69,8 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     // Update progress
     p = (t - t0) / (t1 - t0);
 
-    // Shift solution at endtime to new u0
-    data.shift(*timeslab);
+    // Prepare for next time slab
+    data.shift(*timeslab, f);
 
     // Delete time slab
     delete timeslab;

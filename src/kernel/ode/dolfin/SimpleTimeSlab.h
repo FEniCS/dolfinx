@@ -25,7 +25,7 @@ namespace dolfin {
     
     /// Update time slab (iteration)
     void update(RHS& f, TimeSlabData& data);
-    
+
   private:
     
     // Create new time slab

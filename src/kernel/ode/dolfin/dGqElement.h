@@ -17,7 +17,7 @@ namespace dolfin {
     
     dGqElement(unsigned int q, unsigned int index, TimeSlab* timeslab);
 
-    real eval(real t) const;
+    real value(real t) const;
     real dx() const;
 
     void update(real u0);

@@ -129,39 +129,19 @@ void RecursiveTimeSlab::createElements(RHS& f, TimeSlabData& data,
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::updateTimeSlabs(RHS& f, TimeSlabData& data)
 {
+  // Update time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
-  {
-    //if(i > 0)
-    //{
-    //  timeslabs[i]->updateu0(*(timeslabs[i - 1]));
-    //}
-
     timeslabs[i]->update(f, data);
-  }
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::updateElements(RHS& f, TimeSlabData& data)
 {
-  // Update all elements
-  
-  //dolfin_debug1("elements: %d", elements.size());
-  //dolfin_debug2("timeslab: %lf-%lf", starttime(), endtime());
+  // Update initial condition for elements
+    updateu0(data);
 
-  updateu0(data);
-
-  //for(int i = 0; i < 3; i++)
-  // {
-  //  dolfin::cout << "iteration: " << i << dolfin::endl;
-    
+  // Update elements
   for (unsigned int i = 0; i < elements.size(); i++)
   {
-    //if(e->starttime() == data
-    // Update u0 (from the end values of previous slabs)
-    //Component &c = data.component(e->index);
-    //real u0 = c(e->starttime());
-    
-    //e->update(u0);
-    
     // Get the element
     Element* element = elements[i];
         
@@ -170,20 +150,17 @@ void RecursiveTimeSlab::updateElements(RHS& f, TimeSlabData& data)
     
     // Write debug info
     data.debug(*element, TimeSlabData::update);
-    
-    //real residual = element->computeResidual(f);
-    //real value = element->eval(element->starttime());
-    //dolfin::cout << "element value at starttime: " << value << dolfin::endl;
-    //value = element->eval(element->endtime());
-    //dolfin::cout << "element value at endtime: " << value << dolfin::endl;
-    //dolfin::cout << "element residual at endtime: " << residual << dolfin::endl;
   }
-
-  //}
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::updateu0(TimeSlabData& data)
 {
+  // FIXME: Can we be sure that we get the correct value? Maybe we obtain
+  // FIXME: the value from this element and not the previous? We should
+  // FIXME: probably ask explicitly for the last value of the previous
+  // FIXME: element.
+
+  // Update initial values
   for (unsigned int i = 0; i < elements.size(); i++)
   {
     Element* e = elements[i];
@@ -194,6 +171,7 @@ void RecursiveTimeSlab::updateu0(TimeSlabData& data)
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSlabData& data)
 {
+  // Compute residuals and new time steps
   for (unsigned int i = 0; i < elements.size(); i++)
   {
     // Get element
@@ -206,7 +184,7 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSlabData& data)
     real k = element->computeTimeStep(r);
 
     // Update regulator
-    data.regulator(element->index()).update(k);
+    data.regulator(element->index()).update(k, data.maxstep());
    }
  }
 //-----------------------------------------------------------------------------

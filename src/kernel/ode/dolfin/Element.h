@@ -27,16 +27,16 @@ namespace dolfin {
     /// Destructor
     virtual ~Element();
     
-    /// Evaluate element at given time
-    virtual real eval(real t) const = 0;
+    /// Return value of element at given time
+    virtual real value(real t) const = 0;
 
-    /// Evaluate element at given node within element
-    real eval(unsigned int node) const;
+    /// Return value of element at given node within element
+    real value(unsigned int node) const;
 
-    /// Evaluate element at the end point
-    real eval() const;
+    /// Return value of element at the end point
+    real endval() const;
 
-    /// Evaluate derivative at the end point
+    /// Return derivative at the end point
     virtual real dx() const = 0;
 
     /// Update initial value

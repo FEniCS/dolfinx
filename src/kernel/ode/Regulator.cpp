@@ -27,11 +27,19 @@ void Regulator::init(real k)
   this->k = k;
 }
 //-----------------------------------------------------------------------------
-void Regulator::update(real k)
+void Regulator::update(real k, real kmax)
 {
+  // Old time step
   real k0 = this->k;
+
+  // Desired time step
   real k1 = k;
 
+  // Check kmax
+  if ( k1 > kmax )
+    k1 = kmax;
+
+  // Compute new time step
   this->k = 2.0 * k0 * k1 / (k0 + k1);
 }
 //-----------------------------------------------------------------------------

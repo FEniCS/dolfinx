@@ -33,7 +33,7 @@ namespace dolfin {
     
     /// Update time slab (iteration)
     virtual void update(RHS& f, TimeSlabData& data) = 0;
-    
+
     /// Check if the given time is within the time slab
     bool within(real t) const;
     

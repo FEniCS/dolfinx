@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
+#include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabData.h>
 
@@ -15,6 +16,7 @@ TimeSlabData::TimeSlabData(ODE& ode) :
   // Get parameters
   _debug = dolfin_get("debug time slab");
   real k = dolfin_get("initial time step");
+  kmax = dolfin_get("maximum time step");
   interval_threshold = dolfin_get("interval threshold");
 
   // Get initial data
@@ -80,37 +82,46 @@ const Regulator& TimeSlabData::regulator(unsigned int i) const
   return regulators[i];
 }
 //-----------------------------------------------------------------------------
+real TimeSlabData::maxstep() const
+{
+  // FIXME: Should we have an individual kmax for each component?
+  // In that case we should put kmax into the Regulator class.
+
+  return kmax;
+}
+//-----------------------------------------------------------------------------
 real TimeSlabData::threshold() const
 {
   return interval_threshold;
 }
 //-----------------------------------------------------------------------------
-void TimeSlabData::shift(TimeSlab& timeslab)
+void TimeSlabData::shift(TimeSlab& timeslab, RHS& f)
 {
-  /// Clear data for the current interval and shift values to the next interval
+  // Specify new initial values for next time slab and compute
+  // new time steps.
 
-  //dolfin_debug("foo");
-
-  typedef std::vector<Component>::iterator dataiterator;
-  for (dataiterator it = components.begin(); it != components.end(); it++)
+  for (unsigned int i = 0; i < components.size(); i++)
   {
-    Component &c = *it;
-    
-    //dolfin_debug1("c.size(): %d", c.size());
+    // Get last element
+    Element& element = components[i].last();
 
-    real u0i = c.last().eval(timeslab.endtime());
-    //real u0i = c(topslab->endtime());
-    
-    //dolfin_debug("--- Calling c = Component()");
-    c = Component();
-    //dolfin_debug("--- Done");
+    // Get value at the endpoint
+    real u0 = element.endval();
 
-    c.u0 = u0i;
+    // Compute residual
+    real r = element.computeResidual(f);
 
-    //dolfin::cout << "Last element at: " << c.last().starttime() << "-" <<
-    //c.last().endtime() << dolfin::endl;
-    //dolfin_debug2("u0i: %d, %lf", it - components.begin(), u0i);
+    // Compute new time step
+    real k = element.computeTimeStep(r);
 
+    // Update regulator
+    regulators[i].update(k, kmax);
+
+    // Clear component
+    components[i].clear();
+
+    // Specify new initial value
+    components[i].u0 = u0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -119,7 +130,7 @@ void TimeSlabData::debug(Element& element, Action action)
   if ( !_debug )
     return;
 
-  //Write debug info to file
+  // Write debug info to file
   file << action << " "
        << element.index() << " " 
        << element.starttime() << " " 

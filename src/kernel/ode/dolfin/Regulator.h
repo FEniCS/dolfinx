@@ -26,7 +26,7 @@ namespace dolfin {
     void init(real k);
 
     /// Update time step (set new desired value)
-    void update(real k);
+    void update(real k, real kmax);
     
     /// Return time step
     real timestep() const;

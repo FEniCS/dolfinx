@@ -14,6 +14,7 @@
 namespace dolfin {
 
   class ODE;
+  class RHS;
   class TimeSlab;
 
   /// TimeSlabData is a container for time slab data (elements).
@@ -49,11 +50,14 @@ namespace dolfin {
     /// Return given regulator
     const Regulator& regulator(unsigned int i) const;
 
+    /// Return maximum time step
+    real maxstep() const;
+
     /// Return threshold for reaching end of interval
     real threshold() const;
     
-    /// Shift solution at endtime to new u0
-    void shift(TimeSlab& timeslab);
+    /// Prepare for next time slab
+    void shift(TimeSlab& timeslab, RHS& f);
 
     /// Save debug info
     enum Action { create = 0, update };
@@ -73,6 +77,9 @@ namespace dolfin {
     // Save debug info to file 'timeslab.debug'
     bool _debug;
     std::ofstream file;
+
+    // Maximum allowed time step
+    real kmax;
     
     // Threshold for reaching end of interval
     real interval_threshold;

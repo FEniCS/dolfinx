@@ -13,25 +13,63 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Component::Component() : u0(0.0)
+Component::Component() : u0(0)
 {
-  //dolfin_debug("Component constructor 1");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Component::Component(int size) : elements(size), u0(0.0)
+Component::Component(int size) : elements(size), u0(0)
 {
-  //dolfin_debug("Component constructor 2");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Component::~Component()
 {
-  //dolfin_debug("Component destructor");
+  clear();
+}
+//-----------------------------------------------------------------------------
+Element& Component::element(real t)
+{
+  Element* element = findpos(t);
+  dolfin_assert(element);
 
-  // Delete elements
-  for (unsigned int i = 0; i < elements.size(); i++)
-    delete elements[i];
+  return *element;
+}
+//-----------------------------------------------------------------------------
+Element& Component::last()
+{
+  dolfin_assert(elements.size() > 0);
+
+  return *(elements.back());
+}
+//-----------------------------------------------------------------------------
+int Component::size() const
+{
+  return elements.size();
+}
+//-----------------------------------------------------------------------------
+real Component::value(real t)
+{
+  Element* element = findpos(t);
+  dolfin_assert(element);
+
+  return element->value(t);
+}
+//-----------------------------------------------------------------------------
+real Component::timestep(real t)
+{
+  Element* element = findpos(t);
+  dolfin_assert(element);
+
+  return element->timestep();
+}
+//-----------------------------------------------------------------------------
+real Component::residual(real t, RHS& f)
+{
+  Element* element = findpos(t);
+  dolfin_assert(element);
+
+  return element->computeResidual(f);
 }
 //-----------------------------------------------------------------------------
 real Component::operator()(real t)
@@ -72,7 +110,7 @@ real Component::operator()(real t)
     {
       const Element* element = findpos(t);
       dolfin_assert(element);
-      return element->eval(t);
+      return element->value(t);
     }
   }
   else
@@ -104,19 +142,6 @@ real Component::operator() (int node, real t, TimeSlab* timeslab)
   return operator()(t);
 }
 //-----------------------------------------------------------------------------
-Element& Component::element(real t)
-{
-  Element* element = findpos(t);
-  dolfin_assert(element);
-
-  return *element;
-}
-//-----------------------------------------------------------------------------
-int Component::size() const
-{
-  return elements.size();
-}
-//-----------------------------------------------------------------------------
 Element* Component::createElement(const Element::Type type, int q, int index, 
 				  TimeSlab* timeslab)
 {
@@ -143,7 +168,7 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   else
   {
     // Not the First element, get u0 from previous element
-    element->update(last().eval());
+    element->update(last().endval());
   }
   
   // Add element to list
@@ -152,11 +177,16 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   return element;
 }
 //-----------------------------------------------------------------------------
-Element& Component::last()
+void Component::clear()
 {
-  dolfin_assert(elements.size() > 0);
-
-  return *(elements.back());
+  // Delete elements
+  for (unsigned int i = 0; i < elements.size(); i++) {
+    delete elements[i];
+    elements[i] = 0;
+  }
+  
+  elements.clear();
+  u0 = 0.0;
 }
 //-----------------------------------------------------------------------------
 Element* Component::findpos(real t) 

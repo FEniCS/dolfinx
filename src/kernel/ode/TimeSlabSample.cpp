@@ -41,11 +41,11 @@ real TimeSlabSample::value(unsigned int index)
 //-----------------------------------------------------------------------------
 real TimeSlabSample::timestep(unsigned int index)
 {
-  return data.component(index).element(t).timestep();
+  return data.component(index).timestep(t);
 }
 //-----------------------------------------------------------------------------
 real TimeSlabSample::residual(unsigned int index)
 {
-  return data.component(index).element(t).computeResidual(f);
+  return data.component(index).residual(t, f);
 }
 //-----------------------------------------------------------------------------

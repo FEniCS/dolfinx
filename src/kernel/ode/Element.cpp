@@ -50,7 +50,7 @@ Element::~Element()
   values = 0;
 }
 //-----------------------------------------------------------------------------
-real Element::eval(unsigned int node) const
+real Element::value(unsigned int node) const
 {
   dolfin_assert(node >= 0);
   dolfin_assert(node <= q);
@@ -58,7 +58,7 @@ real Element::eval(unsigned int node) const
   return values[node];
 }
 //-----------------------------------------------------------------------------
-real Element::eval() const
+real Element::endval() const
 {
   return values[q];
 }
