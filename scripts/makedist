@@ -79,3 +79,7 @@ echo 'Copying ChangeLog to web server'
 scp ChangeLog logg@mathtest4.math.chalmers.se:work/current/www-phi/pub/software/dolfin
 echo 'Copying tarball to web server'
 scp $TARBALL  logg@mathtest4.math.chalmers.se:work/current/www-phi/pub/software/dolfin/v0.3
+
+# Write a message
+echo ' '
+echo 'Now update the version number on the web page and update at freshmeat.'
