@@ -37,23 +37,44 @@ namespace dolfin
 
   private:
 
-    // Current state
-    enum State { undamped, damped, increasing };
+    // Current state (type of problem)
+    enum State { nonstiff, diagonal, parabolic, nonnormal };
+
+    // Current damping for problems of type {parabolic}
+    enum Damping { undamped, damped, increasing };
 
     // Update time slab
     void update(TimeSlab& timeslab);
 
+    // Simple undamped update of element
+    real updateUndamped(Element& element);
+
+    // Locally damped update of element
+    real updateLocalDamping(Element& element);
+
+    // Globaly damped update of element
+    real updateGlobalDamping(Element& element);
+
     // Compute stabilization
     void stabilize(TimeSlab& timeslab);
 
-    // Compute stabilization for state {undamped}
-    void stabilizeUndamped(TimeSlab& timeslab);
+    // Compute stabilization for state {nonstiff}
+    void stabilizeNonStiff(TimeSlab& timeslab);
 
-    // Compute stabilization for state {damped}
-    void stabilizeDamped(TimeSlab& timeslab);
+    // Compute stabilization for state {diagonal}
+    void stabilizeDiagonal(TimeSlab& timeslab);
 
-    // Compute stabilization for state {increasing}
-    void stabilizeIncreasing(TimeSlab& timeslab);
+    // Compute stabilization for state {parabolic} using damping {undamped}
+    void stabilizeParabolicUndamped(TimeSlab& timeslab);
+
+    // Compute stabilization for state {parabolic} using damping {damped}
+    void stabilizeParabolicDamped(TimeSlab& timeslab);
+
+    // Compute stabilization for state {parabolic} using damping {increasing}
+    void stabilizeParabolicIncreasing(TimeSlab& timeslab);
+
+    // Compute stabilization for state {nonnormal}
+    void stabilizeNonNormal(TimeSlab& timeslab);
 
     // Compute convergence rate
     real computeConvergenceRate();
@@ -98,10 +119,13 @@ namespace dolfin
     // Tolerance for discrete residual
     real tol;
 
-    //--- Temporary data (cleared between iterations)
-
     // Current state
     State state;
+
+    //--- Temporary data (cleared between iterations)
+
+    // Current damping
+    Damping damping;
 
     // Iteration number
     unsigned int n;    

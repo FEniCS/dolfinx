@@ -51,10 +51,10 @@ int main()
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("solve dual problem", false);
-  //dolfin_set("initial time step", 0.001);
-  //dolfin_set("fixed time step", true);
+  dolfin_set("initial time step", 0.1);
+  dolfin_set("fixed time step", true);
 
-  Heat heat(5);
+  Heat heat(10);
   heat.solve();
   
   return 0;
