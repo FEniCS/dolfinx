@@ -1,54 +1,123 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
-
+#include <dolfin/Node.h>
+#include <dolfin/GenericCell.h>
+#include <dolfin/Triangle.h>
+#include <dolfin/Tetrahedron.h>
 #include <dolfin/Cell.h>
-#include <dolfin/Display.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Cell::Cell()
 {
-  neighbor_cells = 0;
-  nc = 0;
-
-  id = -1;
+  c = 0;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
 {
-  Clear();
+  if ( c )
+	 delete c;
 }
 //-----------------------------------------------------------------------------
-void Cell::Clear()
+int Cell::id() const
 {
-  if ( neighbor_cells )
-	 delete [] neighbor_cells;
-  neighbor_cells = 0;
+  if ( c )
+	 return c->id();
 
-  nc = 0;
+  return -1;
 }
 //-----------------------------------------------------------------------------
-int Cell::setID(int id)
+Cell::Type Cell::type() const
 {
-  return this->id = id;
-}
-//-----------------------------------------------------------------------------
-int Cell::GetNoCellNeighbors()
-{
-  return ( nc );
-}
-//-----------------------------------------------------------------------------
-int Cell::GetCellNeighbor(int i)
-{
-  if ( (i<0) || (i>=nc) )
-	 display->InternalError("Cell::GetCellNeighbor()","Illegal index: %d",i);
+  if ( c )
+	 return c->type();
 
-  return ( neighbor_cells[i] );
+  return NONE;
+}  
+//-----------------------------------------------------------------------------
+void Cell::set(Node *n0, Node *n1, Node *n2)
+{
+  if ( !c ){
+	 // FIXME: Temporary until we fix the log system
+	 cout << "Cannot set cell nodes for unitialised cell." << endl;
+	 exit(1);
+  }
+  
+  switch ( c->type() ){
+  case TRIANGLE:
+	 ( (Triangle *) c )->set(n0,n1,n2);
+	 break;
+  default:
+	 // FIXME: Temporary until we fix the log system
+	 cout << "Cannot set four nodes for this cell type." << endl;
+	 exit(1);
+  }
 }
 //-----------------------------------------------------------------------------
-int Cell::GetMaterial()
+void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
-  return ( material );
+  if ( !c ){
+	 cout << "Cannot set cell nodes for unitialised cell." << endl;
+	 exit(1);
+  }
+  
+  switch ( c->type() ){
+  case TETRAHEDRON:
+	 ( (Tetrahedron *) c )->set(n0,n1,n2,n3);
+	 break;
+  default:
+	 // FIXME: Temporary until we fix the log system
+	 cout << "Cannot set four nodes for this cell type." << endl;
+	 exit(1);
+  }
+}
+//-----------------------------------------------------------------------------
+void Cell::setID(int id)
+{
+  if ( c )
+	 c->setID(id);
+}
+//-----------------------------------------------------------------------------
+void Cell::init(Type type)
+{
+  if ( c )
+	 delete c;
+  
+  switch (type){
+  case TRIANGLE:
+	 c = new Triangle();
+	 break;
+  case TETRAHEDRON:
+	 c = new Tetrahedron();
+	 break;
+  default:
+	 // FIXME: Temporary until we fix the log system
+	 cout << "Unknown cell type" << endl;
+	 exit(1);
+  }
+
+}
+//-----------------------------------------------------------------------------
+namespace dolfin {
+
+  //---------------------------------------------------------------------------
+  std::ostream& operator << (std::ostream& output, const Cell& cell)
+  {
+	 switch ( cell.type() ){
+	 case Cell::TRIANGLE:
+		output << *( (Triangle *) cell.c );
+		break;
+	 case Cell::TETRAHEDRON:
+		output << *( (Tetrahedron *) cell.c );
+		break;
+	 default:
+		// FIXME: Temporary until we fix the log system
+		cout << "Unknown cell type" << endl;
+		exit(1);
+	 }	 
+
+	 return output;
+  }
+  //---------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------

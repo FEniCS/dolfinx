@@ -1,6 +1,7 @@
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/Cell.h>
 #include "GridData.h"
 
 using namespace dolfin;
@@ -26,20 +27,13 @@ Node* GridData::createNode()
   return n;
 }
 //-----------------------------------------------------------------------------
-Triangle* GridData::createTriangle()
+Cell* GridData::createCell(Cell::Type type)
 {
   int id;
-  Triangle *t = triangles.create(&id);
-  t->setID(id);
-  return t;
-}
-//-----------------------------------------------------------------------------
-Tetrahedron* GridData::createTetrahedron()
-{
-  int id;
-  Tetrahedron *t = tetrahedrons.create(&id);
-  t->setID(id);
-  return t;
+  Cell *c = cells.create(&id);
+  c->setID(id);
+  c->init(type);
+  return c;
 }
 //-----------------------------------------------------------------------------
 Node* GridData::createNode(real x, real y, real z)
@@ -51,22 +45,24 @@ Node* GridData::createNode(real x, real y, real z)
   return n;
 }
 //-----------------------------------------------------------------------------
-Triangle* GridData::createTriangle(int n0, int n1, int n2)
+Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2)
 {
   int id;
-  Triangle *t = triangles.create(&id);
-  t->setID(id);
-  t->set(getNode(n0),getNode(n1),getNode(n2));
-  return t;
+  Cell *c = cells.create(&id);
+  c->init(type);
+  c->setID(id);
+  c->set(getNode(n0),getNode(n1),getNode(n2));
+  return c;
 }
 //-----------------------------------------------------------------------------
-Tetrahedron* GridData::createTetrahedron(int n0, int n1, int n2, int n3)
+Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
 {
   int id;
-  Tetrahedron *t = tetrahedrons.create(&id);
-  t->setID(id);
-  t->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
-  return t;
+  Cell *c = cells.create(&id);
+  c->init(type);
+  c->setID(id);
+  c->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
+  return c;
 }
 //-----------------------------------------------------------------------------
 Node* GridData::getNode(int id)
@@ -74,13 +70,8 @@ Node* GridData::getNode(int id)
   return nodes.pointer(id);
 }
 //-----------------------------------------------------------------------------
-Triangle* GridData::getTriangle(int id)
+Cell* GridData::getCell(int id)
 {
-  return triangles.pointer(id);
-}
-//-----------------------------------------------------------------------------
-Tetrahedron* GridData::getTetrahedron(int id)
-{
-  return tetrahedrons.pointer(id);
+  return cells.pointer(id);
 }
 //-----------------------------------------------------------------------------

@@ -5,17 +5,20 @@
 #define __TRIANGLE_H
 
 #include <dolfin/Cell.h>
+#include <dolfin/GenericCell.h>
 
-namespace dolfin{
+namespace dolfin {
 
   class Node;
   class Grid;
   
-  class Triangle : public Cell{
+  class Triangle : public GenericCell {
   public:
 	 
 	 Triangle();
 	 ~Triangle();
+
+	 Cell::Type type();
 	 
 	 void set(Node *n0, Node *n1, Node *n2);
 	 
@@ -27,6 +30,9 @@ namespace dolfin{
 	 real ComputeVolume       (Grid *grid);
 	 real ComputeCircumRadius (Grid *grid);
 	 real ComputeCircumRadius (Grid *grid, real volume);
+
+	 /// Output
+	 friend std::ostream& operator << (std::ostream& output, const Triangle& t);
 	 
 	 /// Friends
 	 friend class Grid;

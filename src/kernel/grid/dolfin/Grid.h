@@ -11,11 +11,11 @@
 
 #include <dolfin/dolfin_constants.h>
 #include <dolfin/List.h>
+#include <dolfin/Cell.h>
 
 namespace dolfin{
 
   class Node;
-  class Cell;
   class Triangle;
   class Tetrahedron;
   class GridData;
@@ -34,10 +34,11 @@ namespace dolfin{
 
 	 /// Output
 	 void show();
-	 friend ostream& operator << (ostream& output, Grid& grid);
+	 friend std::ostream& operator << (std::ostream& output, Grid& grid);
 	 
 	 /// Friends
 	 friend class NodeIterator;
+	 friend class CellIterator;
 	 friend class XMLGrid;
 	 
 	 // old functions below
@@ -74,17 +75,15 @@ namespace dolfin{
 	 
   private:
 	 
- 	 Node*        createNode();
-	 Triangle*    createTriangle();
-	 Tetrahedron* createTetrahedron();
-	 
-	 Node*        createNode(real x, real y, real z);
-	 Triangle*    createTriangle(int n0, int n1, int n2);
-	 Tetrahedron* createTetrahedron(int n0, int n1, int n2, int n3);
+ 	 Node* createNode();
+	 Cell* createCell(Cell::Type type);
 
-	 Node*        getNode(int id);
-	 Triangle*    getTriangle(int id);
-	 Tetrahedron* getTetrahedron(int id);
+	 Node* createNode(real x, real y, real z);
+	 Cell* createCell(Cell::Type type, int n0, int n1, int n2);
+	 Cell* createCell(Cell::Type type, int n0, int n1, int n2, int n3);
+
+	 Node* getNode(int id);
+	 Cell* getCell(int id);
 
 	 // old functions below
 	 
@@ -145,15 +144,28 @@ namespace dolfin{
 	 bool end();
 	 
 	 Node  operator*() const;
-	 Node* operator->() const;
-	 bool  operator==(const NodeIterator& n) const;
-	 bool  operator!=(const NodeIterator& n) const;
-
 	 
   private:
 
 	 List<Node>::Iterator node_iterator;
 	 List<Node>::Iterator at_end;
+	 
+  };
+
+  class CellIterator {
+  public:
+
+	 CellIterator(Grid& grid); 
+
+ 	 CellIterator& operator++();
+	 bool end();
+	 
+	 Cell  operator*() const;
+	 
+  private:
+
+	 List<Cell>::Iterator cell_iterator;
+	 List<Cell>::Iterator at_end;
 	 
   };
   

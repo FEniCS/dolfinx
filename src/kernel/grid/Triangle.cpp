@@ -22,6 +22,11 @@ Triangle::~Triangle()
 
 }
 //-----------------------------------------------------------------------------
+Cell::Type Triangle::type()
+{
+  return Cell::TRIANGLE;
+}
+//-----------------------------------------------------------------------------
 void Triangle::set(Node *n0, Node *n1, Node *n2)
 {
   nodes[0] = n0;
@@ -36,8 +41,6 @@ void Triangle::Set(Node *n1, Node *n2, Node *n3, int material)
   nodes[2] = n3;
 
   this->material = material;
-
-  id = -1;
 }
 //----------------------------------------------------------------------------
 int Triangle::GetSize()
@@ -157,6 +160,22 @@ void Triangle::ComputeCellNeighbors(Node *node_list, int thiscell)
 	 neighbor_cells[nc] = c;
 	 nc += 1;
   }
+
+}
+//-----------------------------------------------------------------------------
+namespace dolfin {
+
+  //---------------------------------------------------------------------------
+  std::ostream& operator << (std::ostream& output, const Triangle& t)
+  {
+	 output << "[ Triangle: id = " << t.id() << " " << "nodes = ("
+			  << t.nodes[0]->id() << ","
+			  << t.nodes[1]->id() << ","
+			  << t.nodes[2]->id() << ") ]";
+
+	 return output;
+  }
+  //---------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

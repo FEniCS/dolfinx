@@ -1,5 +1,5 @@
 #include <dolfin/Node.h>
-#include <dolfin/Cell.h>
+#include <dolfin/GenericCell.h>
 #include <dolfin/Display.h>
 
 using namespace dolfin;
@@ -12,8 +12,7 @@ Node::Node()
   nn = 0;
   nc = 0;
 
-
-  id = -1;
+  _id = -1;
 }
 //-----------------------------------------------------------------------------
 Node::~Node()
@@ -26,6 +25,16 @@ void Node::set(real x, real y, real z)
   p.x = x;
   p.y = y;
   p.z = z;
+}
+//-----------------------------------------------------------------------------
+int Node::id() const
+{
+  return _id;
+}
+//-----------------------------------------------------------------------------
+Point Node::coord() const
+{
+  return p;
 }
 //-----------------------------------------------------------------------------
 void Node::Clear()
@@ -111,7 +120,7 @@ Point* Node::GetCoord()
 //-----------------------------------------------------------------------------
 int Node::setID(int id)
 {
-  return this->id = id;
+  return _id = id;
 }
 //-----------------------------------------------------------------------------
 void Node::AllocateForNeighborCells()
@@ -164,7 +173,7 @@ bool Node::CommonCell(Node *n1, Node *n2, int thiscell, int *cellnumber)
   return false;
 }
 //-----------------------------------------------------------------------------
-int Node::GetMaxNodeNeighbors(Cell **cell_list)
+int Node::GetMaxNodeNeighbors(GenericCell **cell_list)
 {
   int max = 0;
 
@@ -173,12 +182,12 @@ int Node::GetMaxNodeNeighbors(Cell **cell_list)
   
   // Add all other nodes in cell neighbors
   for (int i=0;i<nc;i++)
-	 max += (cell_list[neighbor_cells[i]]->GetSize() - 1);
-
+  	 max += (cell_list[neighbor_cells[i]]->GetSize() - 1);
+  
   return ( max );
 }
 //-----------------------------------------------------------------------------
-void Node::ComputeNodeNeighbors(Cell **cell_list, int thisnode, int *tmp)
+void Node::ComputeNodeNeighbors(GenericCell **cell_list, int thisnode, int *tmp)
 {
   // tmp is allocated for the maximum number of node neighbors
   
@@ -197,5 +206,22 @@ void Node::ComputeNodeNeighbors(Cell **cell_list, int thisnode, int *tmp)
   neighbor_nodes = new int[nn];
   for (int i=0;i<nn;i++)
 	 neighbor_nodes[i] = tmp[i];
+}
+//-----------------------------------------------------------------------------
+namespace dolfin {
+
+  //---------------------------------------------------------------------------
+  std::ostream& operator << (std::ostream& output, const Node& node)
+  {
+	 int id = node.id();
+	 Point p = node.coord();
+	 
+	 output << "[ Node: id = " << id
+			  << " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
+
+	 return output;
+  }
+  //---------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------

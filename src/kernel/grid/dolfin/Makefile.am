@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_grid.h Grid.hh Node.hh Point.hh Cell.hh Triangle.hh Tetrahedron.hh Edge.hh
+EXTRA_DIST = dolfin_grid.h Grid.h Node.h Point.h Cell.h GenericCell.h Triangle.h Tetrahedron.h Edge.h

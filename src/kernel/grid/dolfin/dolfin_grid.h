@@ -6,7 +6,7 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
-#include <dolfin/Cell.h>
+#include <dolfin/GenericCell.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 

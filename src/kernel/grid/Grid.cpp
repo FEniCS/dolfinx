@@ -44,19 +44,8 @@ Grid::Grid(const char *filename)
 //-----------------------------------------------------------------------------
 Grid::~Grid()
 {
-  if ( nodes )
-	 delete [] nodes;
-  nodes = 0;
-  
   if ( grid_data )
-	 delete grid_data;
-  
-  if ( cells ){
-	 for (int i=0;i<no_cells;i++)
-		delete cells[i];
-	 delete [] cells;
-  }
-  cells = 0;
+	 delete grid_data;  
 }
 //-----------------------------------------------------------------------------
 void Grid::clear()
@@ -89,17 +78,19 @@ int Grid::noCells()
 void Grid::show()
 {
   cout << "-------------------------------------------------------------------------------" << endl;
-  cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells." << endl;
+  cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells:" << endl;
+  cout << endl;
+  
+  for (NodeIterator n(*this); !n.end(); ++n)
+	 cout << "  " << *n << endl;
 
-  for (NodeIterator n(*this); !n.end(); ++n){
+  cout << endl;
 
-	 
-
-
-  }
-
-
-
+  for (CellIterator c(*this); !c.end(); ++c)
+	 cout << "  " << *c << endl;
+  
+  cout << endl;
+  
   cout << "-------------------------------------------------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
@@ -186,38 +177,6 @@ void Grid::Display()
 //-----------------------------------------------------------------------------
 void Grid::DisplayAll()
 {
-  Display();
-  
-  Node n;
-  Point *p;
-  Cell *c;
-  
-  display->Message(0,"");
-
-  for (int i=0;i<no_nodes;i++){
-	 n = nodes[i];
-	 p = n.GetCoord();
-	 printf("n = %d x = (%f,%f,%f) n-n = [ ",i,p->x,p->y,p->z);
-	 for (int j=0;j<n.GetNoNodeNeighbors();j++)
-		printf("%d ",n.GetNodeNeighbor(j));
-	 printf("] n-c = [ ");
-	 for (int j=0;j<n.GetNoCellNeighbors();j++)
-		printf("%d ",n.GetCellNeighbor(j));
-	 printf("]\n");
-  }
-  printf("\n");
-  
-  for (int i=0;i<no_cells;i++){
-	 c = cells[i];
-	 printf("c = %d n = ( ",i);
-	 for (int j=0;j<c->GetSize();j++)
-		printf("%d ",c->GetNode(j));
-	 printf(") c-c = [ ");
-	 for (int j=0;j<c->GetNoCellNeighbors();j++)
-		printf("%d ",c->GetCellNeighbor(j));
-	 printf("]\n");
-  }
-  printf("\n");
 
 }
 //-----------------------------------------------------------------------------
@@ -293,16 +252,10 @@ Node* Grid::createNode()
   return grid_data->createNode();
 }
 //-----------------------------------------------------------------------------
-Triangle* Grid::createTriangle()
+Cell* Grid::createCell(Cell::Type type)
 {
   no_cells++;
-  return grid_data->createTriangle();
-}
-//-----------------------------------------------------------------------------
-Tetrahedron* Grid::createTetrahedron()
-{
-  no_cells++;
-  return grid_data->createTetrahedron();
+  return grid_data->createCell(type);
 }
 //-----------------------------------------------------------------------------
 Node* Grid::createNode(real x, real y, real z)
@@ -311,16 +264,16 @@ Node* Grid::createNode(real x, real y, real z)
   return grid_data->createNode(x,y,z);
 }
 //-----------------------------------------------------------------------------
-Triangle* Grid::createTriangle(int n0, int n1, int n2)
+Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2)
 {
   no_cells++;
-  return grid_data->createTriangle();
+  return grid_data->createCell(type,n0,n1,n2);
 }
 //-----------------------------------------------------------------------------
-Tetrahedron* Grid::createTetrahedron(int n0, int n1, int n2, int n3)
+Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
 {
   no_cells++;
-  return grid_data->createTetrahedron(n0,n1,n2,n3);
+  return grid_data->createCell(type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)
@@ -330,21 +283,13 @@ Node* Grid::getNode(int id)
   return node;
 }
 //-----------------------------------------------------------------------------
-Triangle* Grid::getTriangle(int id)
+Cell* Grid::getCell(int id)
 {
-  Triangle *triangle = grid_data->getTriangle(id);
+  Cell *cell = grid_data->getCell(id);
 
-  return triangle;
+  return cell;
 }
 //-----------------------------------------------------------------------------
-Tetrahedron* Grid::getTetrahedron(int id)
-{
-  Tetrahedron *tetrahedron = grid_data->getTetrahedron(id);
-
-  return tetrahedron;
-}
-//-----------------------------------------------------------------------------
-
 
 
 
@@ -590,26 +535,33 @@ Node NodeIterator::operator*() const
   return *node_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::operator->() const
+CellIterator::CellIterator(Grid& grid)
 {
-  return &(*node_iterator);
+  cell_iterator = grid.grid_data->cells.begin();
+  at_end = grid.grid_data->cells.end();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::operator==(const NodeIterator& n) const
+CellIterator& CellIterator::operator++()
 {
-  return ( node_iterator == n.node_iterator );
-}
-//-----------------------------------------------------------------------------
-bool NodeIterator::operator!=(const NodeIterator& n) const
-{
-  return !( *this == n );
-}
-//---------------------------------------------------------------------------
+  ++cell_iterator;
 
+  return *this;
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::end()
+{
+  return cell_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+Cell CellIterator::operator*() const
+{
+  return *cell_iterator;
+}
+//-----------------------------------------------------------------------------
 namespace dolfin {
 
   //---------------------------------------------------------------------------
-  ostream& operator << (ostream& output, Grid& grid)
+  std::ostream& operator << (std::ostream& output, Grid& grid)
   {
 	 int no_nodes = grid.noNodes();
 	 int no_cells = grid.noCells();

@@ -1,85 +1,43 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __CELL_HH
-#define __CELL_HH
+#ifndef __CELL_H
+#define __CELL_H
 
-// A cell is the geometric part of an element. An element contains
-// basis functions, but a cell contains only the geometric information.
-//
-// Similarly to a Node, the a Cell should be small and simple to keep
-// the total data size as small as possible.
+#include <iostream>
 
-#include <dolfin/dolfin_constants.h>
-
-namespace dolfin{
+namespace dolfin {  
 
   class Node;
-  
-  class Cell{
+  class GenericCell;
+   
+  class Cell {
   public:
-	 
+
 	 Cell();
 	 ~Cell();
+
+	 enum Type { TRIANGLE, TETRAHEDRON, NONE };
+ 
+	 int id() const;
+	 Cell::Type type() const;
 	 
-	 void Clear();
+	 void set(Node *n0, Node *n1, Node *n2);
+	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
+ 
+	 /// Output
+	 friend std::ostream& operator << (std::ostream& output, const Cell& cell);
 	 
-	 /// --- Neighbor information
-	 
-	 /// Get number of cell neighbors
-	 int GetNoCellNeighbors();
-	 /// Get cell neighbor number i
-	 int GetCellNeighbor(int i);
-	 
-	 /// --- Accessor functions for stored data
-	 
-	 /// Get material type
-	 int GetMaterial();
-	 /// Return the number of nodes in the cell
-	 virtual int GetSize() = 0;
-	 /// Return global node number of node number <node> in the cell
-	 virtual Node* GetNode(int node) = 0;
-	 
-	 /// --- Functions that require computation (every time!)
-	 
-	 /// Compute and return the volume of the cell
-	 //  virtual real ComputeVolume(Grid *grid) = 0;
-	 /// Compute and return radius of circum-written circle
-	 //virtual real ComputeCircumRadius(Grid *grid) = 0;
-	 /// Compute and return radius of circum-written circle (faster version)
-	 //virtual real ComputeCircumRadius(Grid *grid, real volume) = 0;
-    
-	 /// Give access to the special functions below
-	 //friend class Grid;
-	 friend class Node;
-	 friend class Tetrahedron;
-	 friend class Triangle;
+	 // Friends
 	 friend class GridData;
 	 
-  protected:
-	 
-	 int setID(int id);
-	 
-	 /// Member functions used for computing neighbor information
-	 
-	 /// Add this cell to the count of cell neighbors in all cell nodes
-	 virtual void CountCell(Node *node_list) = 0;
-	 /// Add this cell to the list of cell neighbors in all cell nodes
-	 virtual void AddCell(Node *node_list, int *current, int thiscell) = 0;
-	 /// Add *new* nodes from this to a list of nodes
-	 virtual void AddNodes(int exclude_node, int *new_nodes, int *pos) = 0;
-	 /// Compute all cell neighbors
-	 virtual void ComputeCellNeighbors(Node *node_list, int thiscell) = 0;
-	 
   private:
+
+	 void setID(int id);
+	 void init(Type type);
 	 
-	 int id;
-	 
-	 int *neighbor_cells;
-	 int nc;
-	 
-	 int material;
-	 
+	 GenericCell *c;
+
   };
 
 }

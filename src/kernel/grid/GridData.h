@@ -13,6 +13,7 @@
 ///    a list of all cells
 
 #include <dolfin/List.h>
+#include <dolfin/Cell.h>
 
 namespace dolfin {
 
@@ -26,26 +27,24 @@ namespace dolfin {
 	 GridData();
 	 ~GridData();
 	 
-	 Node*        createNode();
-	 Triangle*    createTriangle();
-	 Tetrahedron* createTetrahedron();
-	 
-	 Node*        createNode(real x, real y, real z);
-	 Triangle*    createTriangle(int n0, int n1, int n2);
-	 Tetrahedron* createTetrahedron(int n0, int n1, int n2, int n3);
+	 Node* createNode();
+	 Cell* createCell(Cell::Type type);
 
-	 Node*        getNode(int id);
-	 Triangle*    getTriangle(int id);
-	 Tetrahedron* getTetrahedron(int id);
+	 Node* createNode(real x, real y, real z);
+	 Cell* createCell(Cell::Type type, int n0, int n1, int n2);
+	 Cell* createCell(Cell::Type type, int n0, int n1, int n2, int n3);
+
+	 Node* getNode(int id);
+	 Cell* getCell(int id);
 
 	 // Friends
 	 friend class NodeIterator;
+	 friend class CellIterator;
 	 
   private:
 	 
 	 List<Node> nodes;
-	 List<Triangle> triangles;
-	 List<Tetrahedron> tetrahedrons;
+	 List<Cell> cells;
 	 
   };
   

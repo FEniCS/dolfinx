@@ -21,6 +21,11 @@ Tetrahedron::~Tetrahedron()
 
 }
 //-----------------------------------------------------------------------------
+Cell::Type Tetrahedron::type()
+{
+  return Cell::TETRAHEDRON;
+}
+//-----------------------------------------------------------------------------
 void Tetrahedron::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
   nodes[0] = n0;
@@ -37,8 +42,6 @@ void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
   nodes[3] = n4;
   
   this->material = material;
-
-  id = -1;
 }
 //-----------------------------------------------------------------------------
 int Tetrahedron::GetSize()
@@ -191,5 +194,22 @@ void Tetrahedron::ComputeCellNeighbors(Node *node_list, int thiscell)
 	 nc += 1;
   }
 
+}
+//-----------------------------------------------------------------------------
+namespace dolfin {
+
+  //---------------------------------------------------------------------------
+  std::ostream& operator << (std::ostream& output, const Tetrahedron &t)
+  {
+	 output << "[ Tetrahedron: id = " << t.id() << " nodes = ("
+			  << t.nodes[0]->id() << ","
+			  << t.nodes[1]->id() << ","
+			  << t.nodes[2]->id() << ","
+			  << t.nodes[3]->id() << ") ]";
+	 
+	 return output;
+  }
+  //---------------------------------------------------------------------------
+  
 }
 //-----------------------------------------------------------------------------

@@ -10,7 +10,7 @@
 
 namespace dolfin{
 
-  class Cell;
+  class GenericCell;
   
   class Node{
   public:
@@ -18,9 +18,14 @@ namespace dolfin{
 	 Node();
 	 ~Node();
 	 
-	 void set(real x, real y, real z);
+	 void  set(real x, real y, real z);
+	 int   id() const;
+	 Point coord() const;
 	 
-	 
+	 /// Output
+	 void show();
+	 friend std::ostream& operator << (std::ostream& output, const Node& node);
+
 	 void Clear();
 	 
 	 /// --- Neigbor information
@@ -47,13 +52,6 @@ namespace dolfin{
 	 /// Get all coordinates
 	 Point* GetCoord();
 	 
-	 /// Output
-	 friend std::ostream &operator<<(std::ostream &os, const Node &node)
-	 {
-		os << "Node: x = [" << node.p.x << " " << node.p.y << " " << node.p.z << "]";
-		return os;
-	 }
-	 
 	 /// Friends
 	 friend class Grid;
 	 friend class Triangle;
@@ -61,9 +59,7 @@ namespace dolfin{
 	 friend class GridData;
 	 
   protected:
-	 
-	 int setID(int id);
-	 
+	
 	 /// Member functions used for computing neighbor information
 	 
 	 /// Allocate memory for list of neighbor cells
@@ -73,15 +69,17 @@ namespace dolfin{
 	 /// Check if this and the other two nodes have a common cell neighbor
 	 bool CommonCell(Node *n1, Node *n2, int thiscell, int *cellnumber);
 	 /// Return an upper bound for the number of node neighbors
-	 int GetMaxNodeNeighbors(Cell **cell_list);
+	 int GetMaxNodeNeighbors(GenericCell **cell_list);
 	 /// Compute node neighbors of the node
-	 void ComputeNodeNeighbors(Cell **cell_list, int thisnode, int *tmp);
+	 void ComputeNodeNeighbors(GenericCell **cell_list, int thisnode, int *tmp);
 	 
   private:
+
+	 int setID(int id);
 	 
 	 Point p;
 	 
-	 int id;
+	 int _id;
 	 
 	 int global_node_number;
 	 
