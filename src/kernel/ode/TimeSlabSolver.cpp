@@ -12,6 +12,7 @@ TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab, const NewMethod& method)
 {
   // Get tolerance
   tol = dolfin_get("tolerance");
+  tol *= 0.01;
   cout << "Using tolerance tol = " << tol << endl;
 
   // Get maximum number of iterations
@@ -25,8 +26,6 @@ TimeSlabSolver::~TimeSlabSolver()
 //-----------------------------------------------------------------------------
 void TimeSlabSolver::solve()
 {
-  cout << "Solving time slab system." << endl;
-  
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
@@ -36,10 +35,7 @@ void TimeSlabSolver::solve()
 
     // Check convergenge
     if ( increment < tol )
-    {
-      cout << "Time slab system converged." << endl;
       return;
-    }
   }
 
   dolfin_error("Time slab system did not converge.");

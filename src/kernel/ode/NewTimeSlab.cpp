@@ -5,6 +5,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
+#include <dolfin/Dependencies.h>
 #include <dolfin/NewcGqMethod.h>
 #include <dolfin/NewdGqMethod.h>
 #include <dolfin/FixedPointSolver.h>
@@ -14,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewTimeSlab::NewTimeSlab(ODE& ode) : 
-  se(0), sa(0), sb(0), ej(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
+  sa(0), sb(0), ej(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), N(ode.size()), _a(0), _b(0),
   ode(ode), method(0), solver(0), adaptivity(ode), partition(N),
   elast(N), u0(N), u(0), emax(0)
@@ -40,15 +41,14 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
   // Initialize solution vector
   u = new real[N];
 
-  // Initialize transpose of sparsity if necessary
-  dolfin_info("Computing transpose (inverse) of sparsity pattern.");
-  if ( ode.sparsity.sparse() && !ode.transpose.sparse() )
-    ode.transpose.transp(ode.sparsity);
+  // Initialize transpose of dependencies if necessary
+  dolfin_info("Computing transpose (inverse) of dependency pattern.");
+  if ( ode.dependencies.sparse() && !ode.transpose.sparse() )
+    ode.transpose.transp(ode.dependencies);
 }
 //-----------------------------------------------------------------------------
 NewTimeSlab::~NewTimeSlab()
 {
-  if ( se ) delete [] se;
   if ( sa ) delete [] sa;
   if ( sb ) delete [] sb;
   if ( ej ) delete [] ej;
@@ -228,7 +228,6 @@ void NewTimeSlab::disp() const
   dolfin_info("j: size = %d alloc = %d", nj, size_j.size);
   dolfin_info("d: size = %d alloc = %d", nd, size_d.size);
 
-  cout << "se = "; Alloc::disp(se, ns);
   cout << "sa = "; Alloc::disp(sa, ns);
   cout << "sb = "; Alloc::disp(sb, ns);
  
@@ -236,7 +235,6 @@ void NewTimeSlab::disp() const
 
   cout << "ej = "; Alloc::disp(ej, ne);
   cout << "ei = "; Alloc::disp(ei, ne);
-  cout << "es = "; Alloc::disp(es, ne);
   cout << "ee = "; Alloc::disp(ee, ne);
   cout << "ed = "; Alloc::disp(ed, ne);
 
@@ -295,7 +293,6 @@ void NewTimeSlab::create_s(real a0, real b0, uint offset, uint end)
   uint pos = size_s.next++;
 
   // Create new sub slab
-  se[pos] = size_e.next;
   sa[pos] = a0;
   sb[pos] = b0;
 
@@ -356,13 +353,13 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
   //dolfin_info("Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
-  const NewArray<uint>& row = ode.transpose.row(index);
+  const NewArray<uint>& deps = ode.transpose[index];
   
   // Iterate over dependencies
-  for (uint pos = 0; pos < row.size(); pos++)
+  for (uint pos = 0; pos < deps.size(); pos++)
   {
     // Get component index of other component
-    const uint i1 = row[pos];
+    const uint i1 = deps[pos];
         
     // Get other element
     const int e1  = elast[i1];
@@ -425,7 +422,6 @@ void NewTimeSlab::alloc_s(uint newsize)
 
   dolfin_info("Reallocating: ns = %d", newsize);
 
-  Alloc::realloc(&se, size_s.size, newsize);
   Alloc::realloc(&sa, size_s.size, newsize);
   Alloc::realloc(&sb, size_s.size, newsize);
 
@@ -528,28 +524,18 @@ dolfin::uint NewTimeSlab::countDependencies(uint i0)
 
   uint n = 0;
 
-  if ( ode.sparsity.sparse() )
+  // Get list of dependencies for current component index
+  const NewArray<uint>& deps = ode.dependencies[i0];
+  
+  // Iterate over dependencies
+  for (uint pos = 0; pos < deps.size(); pos++)
   {
-    // Get list of dependencies for current component index
-    const NewArray<uint>& row = ode.sparsity.row(i0);
+    // Get index of other component
+    const uint i1 = deps[pos];
     
-    // Iterate over dependencies
-    for (uint pos = 0; pos < row.size(); pos++)
-    {
-      // Get index of other component
-      const uint i1 = row[pos];
-      
-      // Use u to keep track of the latest time value for each component here
-      if ( u[i0] > u[i1] )
-	n += method->nsize();
-    }
-  }
-  else
-  {
-    // Iterate over dependencies
-    for (uint i1 = 0; i1 < N; i1++)
-      if ( u[i0] > u[i1] )
-	n += method->nsize();
+    // Use u to keep track of the latest time value for each component here
+    if ( u[i0] > (u[i1] + DOLFIN_EPS) )
+      n += method->nsize();
   }
   
   return n;
@@ -564,59 +550,32 @@ dolfin::uint NewTimeSlab::countDependencies(uint i0, real b0)
 
   uint n = 0;
 
-  if ( ode.sparsity.sparse() )
+  // Get list of dependencies for current component index
+  const NewArray<uint>& deps = ode.dependencies[i0];
+  
+  // Iterate over dependencies
+  for (uint pos = 0; pos < deps.size(); pos++)
   {
-    // Get list of dependencies for current component index
-    const NewArray<uint>& row = ode.sparsity.row(i0);
+    // Get index of other component
+    const uint i1 = deps[pos];
     
-    // Iterate over dependencies
-    for (uint pos = 0; pos < row.size(); pos++)
+    // Get last element for component
+    const int e1 = elast[i1];
+    
+    // If we have not yet created the element, then it has not reached b0
+    if ( e1 == -1 )
     {
-      // Get index of other component
-      const uint i1 = row[pos];
-      
-      // Get last element for component
-      const int e1 = elast[i1];
-      
-      // If we have not yet created the element, then it has not reached b0
-      if ( e1 == -1 )
-      {
-	n += method->nsize();
-	continue;
-      }
-      
-      // Need to check end time value of element
-      const uint s1 = es[e1];
-      const real b1 = sb[s1];
-      
-      // Check if the component has reached b0
-      if ( b1 < (b0 - DOLFIN_EPS) )
-	n += method->nsize();
+      n += method->nsize();
+      continue;
     }
-  }
-  else
-  {
-    // Iterate over dependencies
-    for (uint i1 = 0; i1 < N; i1++)
-    {
-      // Get last element for component
-      const int e1 = elast[i1];
-      
-      // If we have not yet created the element, then it has not reached b0
-      if ( e1 == -1 )
-      {
-	n += method->nsize();
-	continue;
-      }
-      
-      // Need to check end time value of element
-      const uint s1 = es[e1];
-      const real b1 = sb[s1];
-      
-      // Check if the component has reached b0
-      if ( b1 < (b0 - DOLFIN_EPS) )
-	n += method->nsize();
-    }
+    
+    // Need to check end time value of element
+    const uint s1 = es[e1];
+    const real b1 = sb[s1];
+    
+    // Check if the component has reached b0
+    if ( b1 < (b0 - DOLFIN_EPS) )
+      n += method->nsize();
   }
 
   return n;
@@ -735,7 +694,7 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
   //     << ": i = " << i0 << " a0 = " << a0 << " b0 = " << b0 << endl;
 
   // Get list of dependencies for given component index
-  const NewArray<uint>& row = ode.sparsity.row(i0);
+  const NewArray<uint>& deps = ode.dependencies[i0];
 
   // Get first dependency to components with smaller time steps for element
   uint d = ed[e0];
@@ -757,18 +716,28 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     // Update values for components with larger and equal time steps,
     // also including the initial value from components with small
     // time steps (needed for cG)
-    for (uint pos = 0; pos < row.size(); pos++)
+    for (uint pos = 0; pos < deps.size(); pos++)
     {
+      // Get element
+      const uint i1 = deps[pos];
+      const int e1 = elast[i1];
+
+      // Special case, component has no latest element
+      if ( e1 == -1 )
+      {
+	if ( t < (a0 + DOLFIN_EPS) )
+	  u[i1] = u0[i1];
+	continue;
+      }
+
       // Get element data
-      const uint i1 = row[pos];
-      const uint e1 = elast[i1];
       const uint s1 = es[e1];
       const real b1 = sb[s1];
 
       // Skip components with smaller time steps
       if ( b1 < (t - DOLFIN_EPS) )
        	continue;
-
+      
       //cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
       
       // Get initial value for element (only necessary for cG)
@@ -777,13 +746,13 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
 
       // Use fast evaluation for elements in the same sub slab
       if ( s0 == s1 )
-	u[i1] = method->ueval(x0, jx + e1, n);
+	u[i1] = method->ueval(x0, jx + ej[e1], n);
       else
       {
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
-	u[i1] = method->ueval(x0, jx + e1, tau);
+	u[i1] = method->ueval(x0, jx + ej[e1], tau);
       }
     }
 
@@ -805,14 +774,14 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
 	const real k1 = b1 - a1;
 	
 	//cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
-	
+
 	// Get initial value for element (only necessary for cG)
 	const int ep = ee[e1];
 	const real x0 = ( ep != -1 ? jx[ej[ep] + method->nsize() - 1] : u0[i1] );
-	
+
 	// Evaluate component
 	const real tau = (t - a1) / k1;
-	u[i1] = method->ueval(x0, jx + e1, tau);
+	u[i1] = method->ueval(x0, jx + ej[e1], tau);
       }
     }
     

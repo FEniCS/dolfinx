@@ -7,6 +7,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
+#include <dolfin/Dependencies.h>
 #include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
 #include <dolfin/RHS.h>
@@ -106,11 +107,14 @@ namespace dolfin
     // Final time
     real T;
     
-    // Sparsity
+    // Sparsity (old version, will be removed)
     Sparsity sparsity;
 
-    // Transpose of sparsity
-    Sparsity transpose;
+    // Depdendencies
+    Dependencies dependencies;
+
+    // Transpose of dependencies
+    Dependencies transpose;
 
   private:
 

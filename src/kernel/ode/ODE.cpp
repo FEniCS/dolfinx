@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), transpose(N)
+ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N)
 {
   // Choose method
   string method = dolfin_get("method");
@@ -139,11 +139,13 @@ void ODE::solve(Function& u, Function& phi)
 //-----------------------------------------------------------------------------
 void ODE::sparse()
 {
+  // FIXME: Change to new version
   sparsity.detect(*this);
 }
 //-----------------------------------------------------------------------------
 void ODE::sparse(const Matrix& A)
 {
+  // FIXME: Change to new version
   sparsity.set(A);
 }
 //-----------------------------------------------------------------------------

@@ -126,7 +126,8 @@ namespace dolfin
 
     //--- Time slab data ---
 
-    uint* se; // Mapping s --> first element e of sub slab s
+    // FIXME: Remove ej (not needed)
+
     real* sa; // Mapping s --> start time t of sub slab s
     real* sb; // Mapping s --> end time t of sub slab s
         

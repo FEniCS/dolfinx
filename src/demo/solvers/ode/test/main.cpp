@@ -96,7 +96,7 @@ public:
     T = 0.64;
 
     // Compute sparsity
-    sparse();
+    dependencies.detect(*this);
   }
 
   real u0(unsigned int i)
@@ -107,7 +107,7 @@ public:
     case 1:
       return 1.0;
     default:
-      return 0.0;
+      return 2.0;
     }
   }
 
@@ -115,11 +115,11 @@ public:
   {
     switch ( i ) {
     case 0:
-      return u[1] - 0.1*u[0]*abs(u[2]);
+      return u[1];
     case 1:
-      return -u[0] - 0.1*u[1]*abs(u[2]);
+      return -u[0];
     default:
-      return cos(t) - 0.1*u[2]*abs(u[0]*u[1]);
+      return cos(t);
     }
   }
 
@@ -127,11 +127,11 @@ public:
   {
     switch ( i ) {
     case 0:
-      return u(1) - 0.1*u(0)*abs(u(2));
+      return u(1);
     case 1:
-      return -u(0) - 0.1*u(1)*abs(u(2));
+      return -u(0);
     default:
-      return cos(t) - 0.1*u(2)*abs(u(0)*u(1));
+      return cos(t);
     }
   }
 
