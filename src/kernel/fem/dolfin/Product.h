@@ -4,8 +4,7 @@
 #ifndef __PRODUCT_H
 #define __PRODUCT_H
 
-#include <iostream>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
@@ -81,7 +80,7 @@ namespace dolfin {
 	 real operator* (Integral::Measure &dm) const;
 
 	 // Output
-	 friend std::ostream& operator << (std::ostream& output, const Product &v);
+	 friend LogStream& operator<<(LogStream& stream, const Product &v);
 	 
   private:
 	 

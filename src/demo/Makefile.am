@@ -1,1 +1,1 @@
-SUBDIRS = grid la fem solvers
+SUBDIRS = test grid la fem solvers

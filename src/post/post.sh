@@ -2,6 +2,9 @@
 
 # Generate configure script dolfin-config
 
+# Main include file
+MAIN_INCLUDE="../kernel/main/dolfin.h"
+
 # Find all libraries (.a files)
 DOLFIN_LIBS=""
 echo "Scanning for DOLFIN libraries..."
@@ -12,7 +15,7 @@ for f in `find .. -name '*.a'`; do
 done
 
 # Find all dolfin include files
-DOLFIN_INCLUDES="../kernel/main/dolfin.h"
+DOLFIN_INCLUDES=""
 echo "Scanning for DOLFIN include files..."
 for f in `find .. -name '*.h*' | grep dolfin | grep -v 'dolfin.h' | grep -v '~'`; do
 	 DOLFIN_INCLUDES="$DOLFIN_INCLUDES $f"
@@ -20,6 +23,8 @@ for f in `find .. -name '*.h*' | grep dolfin | grep -v 'dolfin.h' | grep -v '~'`
 done
 
 # Copy include files and libraries
+echo Copying main include file to ../../include
+cp $MAIN_INCLUDE ../../include
 echo Copying include files to ../../include/dolfin
 cp $DOLFIN_INCLUDES ../../include/dolfin
 echo Copying library files to ../../lib

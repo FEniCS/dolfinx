@@ -323,16 +323,16 @@ FunctionSpace::ElementFunction dolfin::operator*
 //-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
-std::ostream& dolfin::operator << (std::ostream& output,
-											  const FunctionSpace::Product &v)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream,
+												  const FunctionSpace::Product &v)
 {
-  output << "[ Product with " << v.n << " factors: ";
+  stream << "[ Product with " << v.n << " factors: ";
   
   for (int  i = 0; i < v.n; i++)
-	 output << v._id[i] << " ";
+	 stream << v._id[i] << " ";
   
-  output << "]";
+  stream << "]";
   
-  return output;
+  return stream;
 }
 //-----------------------------------------------------------------------------

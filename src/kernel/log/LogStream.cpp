@@ -46,6 +46,7 @@ LogStream& LogStream::operator<<(const LogStream& stream)
   if ( stream.type == ENDL ) {
 	 LogManager::log.info(buffer);
 	 current = 0;
+	 buffer[0] = '\0';
   }
   else
 	 add(stream.buffer);

@@ -730,9 +730,11 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 												  const FunctionSpace::ElementFunction &v)
 {
   stream << "[ ElementFunction with " << v.n
-			<< " terms and offset = " << v.c << " ]" << endl;
-  
+			<< " terms and offset = " << v.c << " ]";
+
   for (int  i = 0; i < v.n; i++) {
+	 if ( i == 0 )
+		stream << endl;
 	 stream << "  " << v.a[i] << " * " << v.v[i];
 	 if ( i < (v.n - 1) )
 		stream << endl;
