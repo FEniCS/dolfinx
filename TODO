@@ -45,7 +45,8 @@ Function
 --------
 
 o [hoffman, jj, logg] General function representations
-   
+* Optimize NewFunction::project()
+
 Input/Output
 ------------
 
