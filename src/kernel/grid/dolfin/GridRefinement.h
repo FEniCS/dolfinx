@@ -15,6 +15,11 @@ namespace dolfin {
   class Grid;
   class Edge;
   class Cell;
+
+  /// Algorithm for the refinement of a triangular or tetrahedral grid.
+  ///
+  /// Based on the algorithm described in the paper "Tetrahedral Grid Refinement"
+  /// by Jürgen Bey, in Computing 55, pp. 355-378 (1995).
   
   class GridRefinement {
   public:
