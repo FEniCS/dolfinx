@@ -67,7 +67,7 @@ void Iteration::reset(Element& element)
   real u0 = u(element.index(), element.starttime());
 
   // Reset element
-  element.reset(u0);
+  element.set(u0);
 }
 //-----------------------------------------------------------------------------
 real Iteration::residual(TimeSlab& timeslab)

@@ -49,6 +49,15 @@ namespace dolfin
     /// Return current current state (type of iteration)
     virtual State state() const = 0;
 
+    // Start iteration on time slab
+    virtual void start(TimeSlab& timeslab) = 0;
+
+    // Start iteration on element list
+    virtual void start(NewArray<Element*>& elements) = 0;
+
+    // Start iteration on element
+    virtual void start(Element& element) = 0;
+
     /// Update time slab
     virtual void update(TimeSlab& timeslab, const Damping& d) = 0;
 

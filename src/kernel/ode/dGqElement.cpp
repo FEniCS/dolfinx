@@ -25,6 +25,11 @@ Element::Type dGqElement::type() const
   return Element::dg;
 }
 //-----------------------------------------------------------------------------
+unsigned int dGqElement::size() const
+{
+  return q + 1;
+}
+//-----------------------------------------------------------------------------
 real dGqElement::value(real t) const
 {
   // Special case: initial value
@@ -83,7 +88,7 @@ void dGqElement::update(RHS& f, real alpha)
     values[i] = w0*values[i] + alpha*(u0 + integral(i));
 }
 //-----------------------------------------------------------------------------
-void dGqElement::update(RHS& f, real alpha, real *newvalues)
+void dGqElement::update(RHS& f, real alpha, real* values)
 {
   // Evaluate right-hand side
   feval(f);
@@ -93,14 +98,20 @@ void dGqElement::update(RHS& f, real alpha, real *newvalues)
  
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
-    newvalues[i] = w0*values[i] + alpha*(u0 + integral(i));
+    values[i] = w0*this->values[i] + alpha*(u0 + integral(i));
 }
 //-----------------------------------------------------------------------------
-void dGqElement::reset(real u0)
+void dGqElement::set(real u0)
 {
   this->u0 = u0;
   for (unsigned int i = 0; i <= q; i++)
     values[i] = u0;
+}
+//-----------------------------------------------------------------------------
+void dGqElement::set(const real* const values)
+{
+  for (unsigned int i = 0; i <= q; i++)
+    this->values[i] = values[i];
 }
 //-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real TOL, real r, real kmax) const

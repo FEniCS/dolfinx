@@ -70,6 +70,15 @@ namespace dolfin
 
   private:
 
+    // Start iteration on time slab
+    void start(TimeSlab& timeslab);
+
+    // Start iteration on element list
+    void start(NewArray<Element*>& elements);
+
+    // Start iteration on element
+    void start(Element& element);
+
     // Update time slab
     void update(TimeSlab& timeslab, const Iteration::Damping& d);
     

@@ -30,6 +30,21 @@ Iteration::State NonStiffIteration::state() const
   return nonstiff;
 }
 //-----------------------------------------------------------------------------
+void NonStiffIteration::start(TimeSlab& timeslab)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void NonStiffIteration::start(NewArray<Element*>& elements)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void NonStiffIteration::start(Element& element)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void NonStiffIteration::update(TimeSlab& timeslab, const Damping& d)
 {
   // Simple update of time slab

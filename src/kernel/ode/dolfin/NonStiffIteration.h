@@ -23,9 +23,13 @@ namespace dolfin
 
     State state() const;
 
+    void start(TimeSlab& timeslab);
+    void start(NewArray<Element*>& elements);
+    void start(Element& element);
+    
     void update(TimeSlab& timeslab, const Damping& d);
-    void update(Element& element, const Damping& d);
     void update(NewArray<Element*>& elements, const Damping& d);
+    void update(Element& element, const Damping& d);
     
     void stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
     void stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);

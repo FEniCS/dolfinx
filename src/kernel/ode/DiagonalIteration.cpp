@@ -30,6 +30,21 @@ Iteration::State DiagonalIteration::state() const
   return diagonal;
 }
 //-----------------------------------------------------------------------------
+void DiagonalIteration::start(TimeSlab& timeslab)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void DiagonalIteration::start(NewArray<Element*>& elements)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void DiagonalIteration::start(Element& element)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void DiagonalIteration::update(TimeSlab& timeslab, const Damping& d)
 {
   // Simple update of time slab

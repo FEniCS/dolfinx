@@ -19,6 +19,8 @@ namespace dolfin {
 
     Type type() const;
 
+    unsigned int size() const;
+
     real value(real t) const;
     real initval() const;
     real dx() const;
@@ -26,9 +28,10 @@ namespace dolfin {
     void update(real u0);
     void update(RHS& f);
     void update(RHS& f, real alpha);
-    void update(RHS& f, real alpha, real *newvalues);
+    void update(RHS& f, real alpha, real* values);
 
-    void reset(real u0);
+    void set(real u0);
+    void set(const real* const values);
 
     real computeTimeStep(real TOL, real r, real kmax) const;
     real computeDiscreteResidual(RHS& f);

@@ -49,7 +49,7 @@ Element* Solution::createElement(Element::Type type,
   
   // Specify initial data
   dolfin_assert(element);
-  element->reset(u0[index]);
+  element->set(u0[index]);
 
   // Return the element
   return element;

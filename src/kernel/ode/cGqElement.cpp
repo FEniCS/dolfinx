@@ -25,6 +25,11 @@ Element::Type cGqElement::type() const
   return Element::cg;
 }
 //-----------------------------------------------------------------------------
+unsigned int cGqElement::size() const
+{
+  return q;
+}
+//-----------------------------------------------------------------------------
 real cGqElement::value(real t) const
 {
   // Special case: initial value
@@ -83,7 +88,7 @@ void cGqElement::update(RHS& f, real alpha)
     values[i] = w0*values[i] + alpha*(values[0] + integral(i));
 }
 //-----------------------------------------------------------------------------
-void cGqElement::update(RHS& f, real alpha, real *newvalues)
+void cGqElement::update(RHS& f, real alpha, real* values)
 {
   // Evaluate right-hand side
   feval(f);
@@ -93,13 +98,19 @@ void cGqElement::update(RHS& f, real alpha, real *newvalues)
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
-    newvalues[i] = w0*values[i] + alpha*(values[0] + integral(i));
+    values[i-1] = w0*this->values[i] + alpha*(values[0] + integral(i));
 }
 //-----------------------------------------------------------------------------
-void cGqElement::reset(real u0)
+void cGqElement::set(real u0)
 {
   for (unsigned int i = 0; i <= q; i++)
     values[i] = u0;
+}
+//-----------------------------------------------------------------------------
+void cGqElement::set(const real* const values)
+{
+  for (unsigned int i = 1; i <= q; i++)
+    this->values[i] = values[i-1];
 }
 //-----------------------------------------------------------------------------
 real cGqElement::computeTimeStep(real TOL, real r, real kmax) const

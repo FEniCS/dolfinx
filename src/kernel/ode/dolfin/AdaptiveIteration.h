@@ -25,9 +25,13 @@ namespace dolfin
     
     State state() const;
 
+    void start(TimeSlab& timeslab);
+    void start(NewArray<Element*>& elements);
+    void start(Element& element);
+
     void update(TimeSlab& timeslab, const Damping& d);
-    void update(Element& element, const Damping& d);
     void update(NewArray<Element*>& elements, const Damping& d);
+    void update(Element& element, const Damping& d);
     
     void stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
     void stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);
@@ -43,10 +47,44 @@ namespace dolfin
 
     void report() const;
 
-  protected:
+  private:
+
+    // Type of iteration
+    enum Method {gauss_jacobi, gauss_seidel};
+
+    // Additional data for Gauss-Jacobi iteration
+    struct Values
+    {
+      Values();
+      ~Values();
+
+      void init(unsigned int size);
+
+      real* values;
+      unsigned int size;
+      unsigned int offset;
+    };
+
+    // Gauss-Jacobi iteration on element list
+    void updateGaussJacobi(NewArray<Element*>& elements, const Damping& d);
+
+    // Gauss-Seidel iteration on element list
+    void updateGaussSeidel(NewArray<Element*>& elements, const Damping& d);
     
-    real* newvalues;
-    unsigned int offset;
+    // Initialize additional data
+    void initData(const NewArray<Element*>& elements);
+
+    // Copy data to element list
+    void copyData(NewArray<Element*>& elements) const;
+
+    // Compute size of data
+    unsigned int dataSize(const NewArray<Element*>& elements) const;
+
+    // Current method
+    Method method;
+    
+    // Additional data for Gauss-Jacobi iteration
+    Values values;
     
   };
 

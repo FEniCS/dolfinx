@@ -32,14 +32,14 @@ namespace dolfin {
     /// Return order of element
     unsigned int order() const;
 
+    /// Return number of degrees of freedom
+    virtual unsigned int size() const = 0;
+
     /// Return value of element at given time
     virtual real value(real t) const = 0;
 
     /// Return value of element at given node within element
     real value(unsigned int node) const;
-
-    /// Set all values
-    real setvalues(real *newvalues);
 
     /// Return initial value of element
     virtual real initval() const = 0;
@@ -63,10 +63,13 @@ namespace dolfin {
     virtual void update(RHS& f, real alpha) = 0;
 
     /// Update element (iteration), damped version, non-destructive
-    virtual void update(RHS& f, real alpha, real *newvalues) = 0;
+    virtual void update(RHS& f, real alpha, real* values) = 0;
 
-    /// Reset all element values to the given initial value
-    virtual void reset(real u0) = 0;
+    /// Set all element values to the given value
+    virtual void set(real u0) = 0;
+
+    /// Set element values to given values (not including initial data)
+    virtual void set(const real* const values) = 0;
 
     /// Check if given time is within the element
     bool within(real t) const;
