@@ -4,27 +4,39 @@
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
 
-#include <dolfin/constants.h>
+#include <dolfin/NewArray.h>
+#include <dolfin/IndexPair.h>
 #include <dolfin/Form.h>
 
 namespace dolfin
 {
 
-  /// EXPERIMENTAL: Redesign of the evaluation of variational forms
-
+  class NewFiniteElement;
+  
   class BilinearForm : public Form
   {
   public:
     
     /// Constructor
-    BilinearForm();
+    BilinearForm(const NewFiniteElement& element);
     
     /// Destructor
-    ~BilinearForm();
-
-    /// Evaluation of bilinear form
-    real operator() (TrialFunction u, TestFunction v);
+    virtual ~BilinearForm();
     
+    /// Compute element matrix (interior contribution)
+    virtual bool interior(real** A) const;
+    
+    /// Compute element matrix (boundary contribution)
+    virtual bool boundary(real** A) const;
+    
+    /// Friends
+    friend class NewFEM;
+
+  protected:
+    
+    //List of nonzero indices
+    NewArray<IndexPair> nonzero;
+
   };
 
 }

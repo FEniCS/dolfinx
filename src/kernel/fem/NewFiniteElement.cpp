@@ -1,17 +1,17 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/NewPDE.h>
+#include <dolfin/NewFiniteElement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewPDE::NewPDE(BilinearForm& a, LinearForm& L) : a(a), L(L)
+NewFiniteElement::NewFiniteElement()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewPDE::~NewPDE()
+NewFiniteElement::~NewFiniteElement()
 {
   // Do nothing
 }

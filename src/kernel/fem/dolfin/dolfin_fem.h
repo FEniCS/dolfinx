@@ -14,6 +14,7 @@
 #include <dolfin/DzMatrix.h>
 #include <dolfin/FEM.h>
 #include <dolfin/NewFEM.h>
+#include <dolfin/NewFiniteElement.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementMethod.h>
 #include <dolfin/LoadVector.h>

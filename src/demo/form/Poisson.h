@@ -6,34 +6,19 @@
 
 #include <dolfin/PDE.h>
 
-namespace dolfin
+using namespace dolfin;
+  
+class Poisson : public PDE
 {
+public:
   
-  class Poisson : public PDE
+  Poisson() : PDE(3) {}
+  
+  real lhs(const ShapeFunction& u, const ShapeFunction& v)
   {
-  public:
-    
-    Poisson(Function& source) : PDE(3)
-    {
-      add(f, source);
-    }
-    
-    real lhs(const ShapeFunction& u, const ShapeFunction& v)
-    {
-      return (grad(u),grad(v))*dx;
-    }
-    
-    real rhs(const ShapeFunction& v)
-    {
-      return f*v*dx;
-    }
-    
-  private:
-    
-    ElementFunction f;
-    
-  };
+    return (grad(u),grad(v)) * dx;
+  }
   
-}
+};
 
 #endif

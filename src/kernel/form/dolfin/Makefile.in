@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_form.h              ElementFunction.h              FunctionList.h              Integral.h              PDE.h              Product.h              ShapeFunction.h
+EXTRA_DIST = dolfin_form.h              BilinearForm.h              ElementFunction.h              Form.h              FunctionList.h              Integral.h              LinearForm.h              PDE.h              NewPDE.h              Product.h              ShapeFunction.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

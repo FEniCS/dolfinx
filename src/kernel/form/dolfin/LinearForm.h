@@ -4,26 +4,28 @@
 #ifndef __LINEAR_FORM_H
 #define __LINEAR_FORM_H
 
-#include <dolfin/constants.h>
 #include <dolfin/Form.h>
 
 namespace dolfin
 {
 
-  /// EXPERIMENTAL: Redesign of the evaluation of variational forms
+  class NewFiniteElement;
   
   class LinearForm : public Form
   {
   public:
     
     /// Constructor
-    LinearForm();
+    LinearForm(const NewFiniteElement& element);
     
     /// Destructor
-    ~LinearForm();
+    virtual ~LinearForm();
 
-    /// Evaluation of bilinear form
-    real operator() (TestFunction v);
+    /// Compute element vector (interior contribution)
+    virtual bool interior(real* b) const;
+
+    /// Compute element vector (boundary contribution)
+    virtual bool boundary(real* b) const;
     
   };
 

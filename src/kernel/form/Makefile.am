@@ -7,19 +7,20 @@ include_HEADERS          = dolfin/dolfin_form.h \
                            dolfin/FunctionPair.h \
                            dolfin/Integral.h \
                            dolfin/LinearForm.h \
-                           dolfin/NewPDE.h \
                            dolfin/PDE.h \
+                           dolfin/NewPDE.h \
                            dolfin/Product.h \
                            dolfin/ShapeFunction.h
 INCLUDES                 = @MODULE_INCLUDES@
 lib_LIBRARIES            = libdolfin-form.a
 libdolfin_form_a_SOURCES = BilinearForm.cpp \
                            ElementFunction.cpp \
+                           Form.cpp \
                            FunctionList.cpp \
                            FunctionPair.cpp \
                            Integral.cpp \
                            LinearForm.cpp \
-                           NewPDE.cpp \
                            PDE.cpp \
+                           NewPDE.cpp \
                            Product.cpp \
                            ShapeFunction.cpp

@@ -3,6 +3,7 @@
 
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/NewFiniteElement.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
 #include <dolfin/NewPDE.h>
@@ -81,14 +82,14 @@ void VectorExpressionFunction::update(FunctionSpace::ElementFunction& v,
 }
 //-----------------------------------------------------------------------------
 void VectorExpressionFunction::update(NewArray<real>& w, const Cell& cell, 
-				      const NewPDE& pde) const
+				      const NewFiniteElement& element) const
 {
   // FIXME: time t and index ignored
   
-  w.resize(pde.size());
-  for (unsigned int i = 0; i < pde.size(); i++)
+  w.resize(element.spacedim());
+  for (unsigned int i = 0; i < element.spacedim(); i++)
   {
-    const Point& p = pde.coord(i, cell);
+    const Point& p = element.coord(i, cell);
     w[i] = f(p.x, p.y, p.z, 0.0, 0);
   }
 }

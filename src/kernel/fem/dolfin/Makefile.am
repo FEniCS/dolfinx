@@ -10,4 +10,6 @@ EXTRA_DIST = dolfin_fem.h \
              LoadVector.h \
              MassMatrix.h \
              MultigridSolver.h \
+             NewFEM.h \
+             NewFiniteElement.h \
              StiffnessMatrix.h

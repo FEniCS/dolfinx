@@ -4,13 +4,14 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/NewPDE.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/NewFEM.h>
 #include <dolfin/Boundary.h>
-#include <dolfin/BCFunctionPointer.h>
-#include <dolfin/BoundaryCondition.h>
+#include <dolfin/NewFiniteElement.h>
+#include <dolfin/NewFEM.h>
 
 using namespace dolfin;
 
@@ -18,377 +19,185 @@ using namespace dolfin;
 void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 {
   // Assemble matrix
-  assemble(pde, mesh, A);
+  assemble(pde.a, mesh, A);
 
   // Assemble vector
-  assemble(pde, mesh, b);
+  assemble(pde.L, mesh, b);
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assemble(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
+  cout << "size = " << a.element.spacedim() << endl;
+
+
   // Allocate and reset matrix
-  alloc(pde, mesh, A);
+  alloc(a.element, mesh, A);
   
-  // Assemble interior
-  assembleInterior(pde, mesh, A);
+  // Assemble interior contribution
+  assembleInterior(a, mesh, A);
   
-  // Assemble boundary
-  assembleBoundary(pde, mesh, A);
+  // Assemble boundary contribution
+  assembleBoundary(a, mesh, A);
   
   // Clear unused elements
   A.resize();
-
-  // FIXME: This should be removed
-  setBC(pde, mesh, A);
 
   // Write a message
   cout << "Assembled: " << A << endl; 
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assemble(LinearForm& L, Mesh& mesh, Vector& b)
 {
-  // Allocate and reset matrix
-  alloc(pde, mesh, b);
+  // Allocate and reset vector
+  alloc(L.element, mesh, b);
   
-  // Assemble interior
-  assembleInterior(pde, mesh, b);
+  // Assemble interior contribution
+  assembleInterior(L, mesh, b);
 
-  // Assemble boundary
-  assembleBoundary(pde, mesh, b);
-
-  // FIXME: This should be removed
-  setBC(pde, mesh, b);
+  // Assemble boundary contribution
+  assembleBoundary(L, mesh, b);
 
   // Write a message
   cout << "Assembled: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assembleInterior(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
-  // Initialize element matrix
-  real** AK;
-  alloc(pde, AK);
+  // Initialize finite element and element matrix
+  const NewFiniteElement& element = a.element;
+  real** AK = allocElementMatrix(element);
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update PDE
-    pde.update(*cell);
+    // Update form
+    a.update(*cell);
     
-    // Compute element matrix    
-    pde.interiorElementMatrix(AK);
+    // Compute element matrix
+    bool result = a.interior(AK);
+
+    // Check if we should skip the remaining cells
+    if ( !result )
+    {
+      dolfin_info("Form does not contain a contribution from interior of domain.");
+      dolfin_info("Skipping remaining cells.");
+      p = 1.0;
+      break;
+    }
 
     // Add nonzero entries to global matrix
-    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
+    for (unsigned int n = 0; n < a.nonzero.size(); n++)
     {
-      IndexPair index = pde.nonzero[n];
-      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
+      const IndexPair& index = a.nonzero[n];
+      A(element.dof(index.i, *cell), element.dof(index.j, *cell)) += AK[index.i][index.j];
     }
     
     // Update progress
     p++;
   }
-
-  for (unsigned int i = 0; i < pde.size(); i++)
-    delete [] AK[i];
-  delete [] AK;
+  
+  // Delete element matrix
+  freeElementMatrix(AK, element);
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assembleBoundary(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
-  // FIXME: Not implemented yet!
-  return;
-
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde, mesh, A);
+    assembleBoundaryTri(a, mesh, A);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde, mesh, A);
+    assembleBoundaryTet(a, mesh, A);
     break;
   default:
     dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assembleBoundaryTri(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Start a progress session
-  Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
-  
-  // Initialize element matrix
-  real** AK;
-  alloc(pde, AK);
-
-  // Iterate over all edges in the boundary 
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
-  {
-    /*
-    // Update PDE
-    pde.update(*cell);
-    
-    // Compute element matrix    
-    pde.interiorElementMatrix(AK);
-
-    // Add nonzero entries to global matrix
-    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
-    {
-      IndexPair index = pde.nonzero[n];
-      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
-    }
-    */
-
-    // Update progress
-    p++;
-  }
-
-  for (unsigned int i = 0; i < pde.size(); i++)
-    delete [] AK[i];
-  delete [] AK;
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assembleBoundaryTet(BilinearForm& a, Mesh& mesh, Matrix& A)
 {
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Start a progress session
-  Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());
-    
-  // Initialize element matrix
-  real** AK;
-  alloc(pde, AK);
-
-  // Iterate over all faces in the boundary 
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    /*
-    // Update PDE
-    pde.update(*cell);
-    
-    // Compute element matrix    
-    pde.interiorElementMatrix(AK);
-
-    // Add nonzero entries to global matrix
-    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
-    {
-      IndexPair index = pde.nonzero[n];
-      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
-    }
-    */
-
-    // Update progress
-    p++;
-  }
-
-  for (unsigned int i = 0; i < pde.size(); i++)
-    delete [] AK[i];
-  delete [] AK;
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assembleInterior(LinearForm& L, Mesh& mesh, Vector& b)
 {
   // Start a progress session
-  Progress p("Assembling vector (interior contribution)", mesh.noCells());  
+  Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
-  // Initialize element vector
-  NewArray<real> bK;
-  alloc(pde, bK);
+  // Initialize finite element and element vector
+  const NewFiniteElement& element = L.element;
+  real* bK = allocElementVector(element);
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update PDE
-    pde.update(*cell);
+    // Update form
+    L.update(*cell);
     
     // Compute element vector
-    pde.interiorElementVector(bK);
+    bool result = L.interior(bK);
+
+    // Check if we should skip the remaining cells
+    if ( !result )
+    {
+      dolfin_info("Form does not contain a contribution from interior of domain.");
+      dolfin_info("Skipping remaining cells.");
+      p = 1.0;
+      break;
+    }
 
     // Add entries to global vector
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      b(pde.dof(i,*cell)) += bK[i];
-    
-    // Update progress
-    p++;
+    for (unsigned int i = 0; i < element.spacedim(); i++)
+      b(element.dof(i, *cell)) += bK[i];
   }
+  
+  // Delete element vector
+  freeElementVector(bK, element);
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assembleBoundary(LinearForm& L, Mesh& mesh, Vector& b)
 {
-  // FIXME: Not implemented yet!
-  return;
-
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde, mesh, b);
+    assembleBoundaryTri(L, mesh, b);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde, mesh, b);
+    assembleBoundaryTet(L, mesh, b);
     break;
   default:
     dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assembleBoundaryTri(LinearForm& L, Mesh& mesh, Vector& b)
 {
-  // Create boundary
-  Boundary boundary(mesh);
-  
-  // Start a progress session
-  Progress p("Assembling matrix (boundary contribution)", boundary.noEdges());
-    
-  // Initialize element vector
-  NewArray<real> bK;
-  alloc(pde, bK);
-
-  // Iterate over all edges in the boundary 
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
-  {
-    /*
-    // Update PDE
-    pde.update(*cell);
-    
-    // Compute element matrix    
-    pde.interiorElementVector(bK);
-
-    // Insert element matrix into global matrix
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      b(pde.dof(i,*cell)) += bK[i];
-    */
-
-    // Update progress
-    p++;
-  }
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assembleBoundaryTet(LinearForm& L, Mesh& mesh, Vector& b)
 {
-  // Create boundary
-  Boundary boundary(mesh);
-  
-  // Start a progress session
-  Progress p("Assembling matrix (boundary contribution)", boundary.noFaces());  
-    
-  // Initialize element vector
-  NewArray<real> bK;
-  alloc(pde, bK);
-
-  // Iterate over all faces in the boundary 
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    /*
-    // Update PDE
-    pde.update(*cell);
-    
-    // Compute element matrix    
-    pde.interiorElementVector(bK);
-
-    // Insert element matrix into global matrix
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      b(pde.dof(i,*cell)) += bK[i];
-    */
-
-    // Update progress
-    p++;
-  }
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
-void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Matrix& A)
-{
-  cout << "Setting boundary condition: Works only for nodal basis." << endl;
-  
-  BoundaryCondition bc(pde.dim());
-  bcfunction bcf;
-  
-  // Get boundary condition function
-  bcf = dolfin_get("boundary condition");
-
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Iterate over all nodes on the boundary
-  for (NodeIterator node(boundary); !node.end(); ++node)
-  {
-    // Get boundary condition
-    bc.update(node);
-    bcf(bc);
-    
-    // Set boundary condition
-    switch ( bc.type() ) {
-    case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < pde.dim(); i++)
-      {
-	A.ident(pde.dim() * node->id() + i);
-      }
-
-      //A.ident(node->id());
-      break;
-    case BoundaryCondition::NEUMANN:
-      if ( bc.val() != 0.0 )
-	dolfin_error("Inhomogeneous Neumann boundary conditions not implemented.");
-      break;
-    default:
-      dolfin_error("Unknown boundary condition.");
-      break;
-    }    
-  }
-}
-//-----------------------------------------------------------------------------
-void NewFEM::setBC(const NewPDE& pde, Mesh& mesh, Vector& b)
-{
-  cout << "Setting boundary condition: Works only for nodal basis." << endl;
-  
-  BoundaryCondition bc(pde.dim());
-  bcfunction bcf;
-  
-  // Get boundary condition function
-  bcf = dolfin_get("boundary condition");
-
-  // Create boundary
-  Boundary boundary(mesh);
-  
-  // Iterate over all nodes on the boundary
-  for (NodeIterator node(boundary); !node.end(); ++node)
-  {
-    // Get boundary condition
-    bc.update(node);
-    bcf(bc);
-    
-    // Set boundary condition
-    switch ( bc.type() ) {
-    case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < pde.dim(); i++)
-	b(pde.dim() * node->id() + i) = bc.val(i);
-      break;
-    case BoundaryCondition::NEUMANN:
-      if ( bc.val() != 0.0 )
-	dolfin_error("Inhomogeneous Neumann boundary conditions not implemented.");
-      break;
-    default:
-      dolfin_error("Unknown boundary condition.");
-      break;
-    }    
-  }
-}
-//-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Matrix& A)
 {
   // Count the degrees of freedom (check maximum index)
   unsigned int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (unsigned int i = 0; i < pde.size(); i++)
+    for (unsigned int i = 0; i < element.spacedim(); i++)
     {
-      unsigned int dof = pde.dof(i, *cell);
+      unsigned int dof = element.dof(i, *cell);
       if ( dof > dofmax )
 	dofmax = dof;
     }
@@ -403,15 +212,15 @@ void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Matrix& A)
   A = 0.0;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
+void NewFEM::alloc(const NewFiniteElement& element, Mesh& mesh, Vector& b)
 {
   // Count the degrees of freedom (check maximum index)
   unsigned int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (unsigned int i = 0; i < pde.size(); i++)
+    for (unsigned int i = 0; i < element.spacedim(); i++)
     {
-      unsigned int dof = pde.dof(i, *cell);
+      unsigned int dof = element.dof(i, *cell);
       if ( dof > dofmax )
 	dofmax = dof;
     }
@@ -426,29 +235,47 @@ void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
   b = 0.0;
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewPDE& pde, real**& A)
+real** NewFEM::allocElementMatrix(const NewFiniteElement& element)
 {
-  // Allocate element matrix
+  cout << "Allocating local matrix of size: " << element.spacedim() << endl;
 
-  A = new real*[pde.size()];
-  for (unsigned int i = 0; i < pde.size(); i++)
-    A[i] = new real [pde.size()];
+
+  // Allocate element matrix
+  real** AK = new real*[element.spacedim()];
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    AK[i] = new real [element.spacedim()];
   
   // Set all entries to zero                                                    
-  for (unsigned int i = 0; i < pde.size(); i++)
-    for (unsigned int j = 0; j < pde.size(); j++)
-      A[i][j] = 0.0;
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    for (unsigned int j = 0; j < element.spacedim(); j++)
+      AK[i][j] = 0.0;
+
+  return AK;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::alloc(const NewPDE& pde, NewArray<real>& b)
+real* NewFEM::allocElementVector(const NewFiniteElement& element)
 {
-  // Resize element vector
-  b.resize(pde.size());
+  // Allocate element vector
+  real* bK = new real[element.spacedim()];
 
   // Set all entries to zero
-  for (unsigned int i = 0; i < pde.size(); i++)
-    b[i] = 0.0;
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    bK[i] = 0.0;
+
+  return bK;
 }
 //-----------------------------------------------------------------------------
-
+void NewFEM::freeElementMatrix(real**& AK, const NewFiniteElement& element)
+{
+  for (unsigned int i = 0; i < element.spacedim(); i++)
+    delete [] AK[i];
+  delete [] AK;
+  AK = 0;
+}
+//-----------------------------------------------------------------------------
+void NewFEM::freeElementVector(real*& bK, const NewFiniteElement& element)
+{
+  delete [] bK;
+  bK = 0;
+}
+//-----------------------------------------------------------------------------

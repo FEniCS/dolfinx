@@ -3,118 +3,69 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
-#include "NewPoisson.h"
-#include "PoissonSystem.h"
+#include "OptimizedPoisson.h"
 
 using namespace dolfin;
 
-// Source term
-real source(real x, real y, real z, real t)
-{
-  real pi = DOLFIN_PI;
-  return 14.0 * pi*pi * sin(pi*x) * sin(2.0*pi*y) * sin(3.0*pi*z);
-}
-
-// Boundary conditions
-void mybc(BoundaryCondition& bc)
-{
-  bc.set(BoundaryCondition::DIRICHLET, 0.0);
-}
+#define N 1 // Number of times to do the assembly
 
 // Test old assembly
-real testOld(Mesh& mesh, File& file)
+real testOld(Mesh& mesh)
 {
-  // Create variational formulation
-  Function f(source);
-  Poisson poisson(f);
-  
-  // Assemble system
+  cout << "Testing old assembly..." << endl;
+
+  Poisson poisson;
   Matrix A;
-  Vector b;
   tic();
-  for(int i = 0; i < 100; i++)
+  for(unsigned int i = 0; i < N; i++)
   {
     A = 0.0;
     FEM::assemble(poisson, mesh, A);
   }
-  FEM::assemble(poisson, mesh, b);
-  real t = toc();
 
-  // Solve system
-  Vector x;
-  KrylovSolver solver;
-  solver.solve(A, x, b);
-
-  // Save solution
-  Function u(mesh, x);
-  u.rename("u1", "temperature");
-  file << u;
-
-  // Save system
-  A.rename("A1", "matrix");
-  b.rename("b1", "vector");
+  File file("A1.m");
   file << A;
-  file << b;
 
-  return t;
+  return toc();
 }
 
 // Test new assembly
-real testNew(Mesh& mesh, File& file)
+real testOptimized(Mesh& mesh)
 {
-  // Create variational formulation
-  Function f(source);
-  NewPoisson poisson(f);
-  
-  // Assemble system
+  cout << "Testing new assembly, hand-optimized..." << endl;
+
+  OptimizedPoissonFiniteElement element;
+  OptimizedPoissonBilinearForm a(element);
   Matrix A;
-  Vector b;
   tic();
-  for(int i = 0; i < 100; i++)
+  for(unsigned int i = 0; i < N; i++)
   {
     A = 0.0;
-    NewFEM::assemble(poisson, mesh, A);
+    NewFEM::assemble(a, mesh, A);
   }
-  NewFEM::assemble(poisson, mesh, b);
-  real t = toc();
 
-  // Solve system
-  Vector x;
-  KrylovSolver solver;
-  solver.solve(A, x, b);
-
-  // Save solution
-  Function u(mesh, x);
-  u.rename("u2", "temperature");
-  file << u;
-
-  // Save system
-  A.rename("A2", "matrix");
-  b.rename("b2", "vector");
+  File file("A2.m");
   file << A;
-  file << b;
 
-  return t;
+  return toc();
 }
 
 int main()
 {
   dolfin_set("output", "plain text");
-  dolfin_set("boundary condition", mybc);
 
   Mesh mesh("mesh.xml.gz");
-  File file("poisson.m");
-  mesh.refineUniformly();
+  //mesh.refineUniformly();
   
-  dolfin_log(false);
+  //dolfin_log(false);
   
-  real t1 = testOld(mesh, file);
-  real t2 = testNew(mesh, file);
+  real t1 = testOld(mesh);
+  real t2 = testOptimized(mesh);
 
-  dolfin_log(true);
+  //dolfin_log(true);
 
-  cout << "Old assembly: " << t1 << endl;
-  cout << "New assembly: " << t2 << endl;
+  cout << "Old assembly:   " << t1 << endl;
+  cout << "Hand optimized: " << t2 << endl;
 
   return 0;
 }

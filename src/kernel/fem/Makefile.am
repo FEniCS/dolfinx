@@ -12,6 +12,7 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/MassMatrix.h \
                           dolfin/MultigridSolver.h \
                           dolfin/NewFEM.h \
+                          dolfin/NewFiniteElement.h \
                           dolfin/StiffnessMatrix.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
@@ -26,4 +27,5 @@ libdolfin_fem_a_SOURCES = DxMatrix.cpp \
                           MassMatrix.cpp \
                           MultigridSolver.cpp \
                           NewFEM.cpp \
+                          NewFiniteElement.cpp \
                           StiffnessMatrix.cpp

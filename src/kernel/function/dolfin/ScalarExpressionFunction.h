@@ -11,6 +11,7 @@ namespace dolfin {
 
   class Cell;
   class FiniteElement;
+  class NewFiniteElement;
 
   class ScalarExpressionFunction : public ExpressionFunction {
   public:
@@ -32,7 +33,7 @@ namespace dolfin {
 		const Cell& cell, real t) const;
 
     // FIXME: works only for nodal basis
-    void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const;
+    void update(NewArray<real>& w, const Cell& cell, const NewFiniteElement& element) const;
 
   private:
     
