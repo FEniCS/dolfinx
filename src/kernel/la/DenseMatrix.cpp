@@ -297,6 +297,21 @@ void DenseMatrix::multt(const Vector& x, Vector& Ax) const
       Ax(j) += values[i][j] * x(i);
 }
 //-----------------------------------------------------------------------------
+real DenseMatrix::multrow(const Vector& x, int i) const
+{
+  return mult(x,i);
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::multcol(const Vector& x, int j) const
+{
+  if ( m != x.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  real sum = 0.0;
+  for (int i = 0; i < m; i++)
+    sum += values[i][j] * x(j);
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::resize()
 {
   dolfin_warning("Clearing unused elements has no effect for a dense matrix.");

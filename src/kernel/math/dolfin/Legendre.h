@@ -27,10 +27,10 @@ namespace dolfin {
     real operator() (real x);
     
     /// Evaluation of derivative at given point
-    real dx (real x);
+    real dx(real x);
 
     /// Evaluation of second derivative at given point
-    real ddx (real x);
+    real ddx(real x);
 
   private:
     

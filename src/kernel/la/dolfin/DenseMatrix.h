@@ -46,9 +46,11 @@ namespace dolfin {
     
     real norm() const;
 
-    real mult  (const Vector& x, int i) const;
-    void mult  (const Vector& x, Vector& Ax) const;
-    void multt (const Vector& x, Vector& Ax) const;
+    real mult    (const Vector& x, int i) const;
+    void mult    (const Vector& x, Vector& Ax) const;
+    void multt   (const Vector& x, Vector& Ax) const;
+    real multrow (const Vector& x, int i) const;
+    real multcol (const Vector& x, int j) const;
     
     void resize();
     void ident(int i);

@@ -356,6 +356,17 @@ void SparseMatrix::multt(const Vector& x, Vector& Ax) const
       Ax(columns[i][pos]) += values[i][pos] * x(i);
 }
 //-----------------------------------------------------------------------------
+real SparseMatrix::multrow(const Vector& x, int i) const
+{
+  return mult(x,i);
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::multcol(const Vector& x, int j) const
+{
+  dolfin_error("Computing scalar product with column of sparse matrix. Not recommended.");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 void SparseMatrix::resize()
 {
   int oldsize = 0;

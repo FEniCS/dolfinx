@@ -181,6 +181,16 @@ void Matrix::multt(const Vector& x, Vector &Ax) const
   A->multt(x,Ax);
 }
 //-----------------------------------------------------------------------------
+real Matrix::multrow(const Vector& x, int i) const
+{
+  return A->multrow(x,i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::multcol(const Vector& x, int j) const
+{
+  return A->multcol(x,j);
+}
+//-----------------------------------------------------------------------------
 void Matrix::solve(Vector& x, const Vector& b)
 {
   // Note that these need to be handled here and not redirected to
@@ -403,6 +413,11 @@ void Matrix::Row::operator=(const Vector& x)
     A(i,j) = x(j);
 }
 //-----------------------------------------------------------------------------
+real Matrix::Row::operator* (const Vector& x) const
+{
+  return A.multrow(x,i);
+}
+//-----------------------------------------------------------------------------
 Matrix::Column::Column(Matrix& matrix, MatrixRange i, int j) : A(matrix)
 {
   this->i = i;
@@ -459,6 +474,11 @@ void Matrix::Column::operator=(const Vector& x)
 
   for (int i = 0; i < x.size(); i++)
     A(i,j) = x(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::operator* (const Vector& x) const
+{
+  return A.multcol(x,j);
 }
 //-----------------------------------------------------------------------------
 real** Matrix::values()

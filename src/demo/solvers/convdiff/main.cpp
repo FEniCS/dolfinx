@@ -61,6 +61,8 @@ void mybc(BoundaryCondition& bc)
 
 int main(int argc, char **argv)
 {
+  dolfin_set("output", "plain text");
+
   Grid grid("dolfin.xml.gz");
   Problem convdiff("convection-diffusion", grid);
 

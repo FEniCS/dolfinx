@@ -50,9 +50,9 @@ namespace dolfin {
 
     void operator*=(real a);
     
-    real operator*(const Vector& x);
-    real operator*(const Matrix::Row& row);
-    real operator*(const Matrix::Column& col);
+    real operator*(const Vector& x) const;
+    real operator*(const Matrix::Row& row) const;
+    real operator*(const Matrix::Column& col) const;
     
     real norm () const;
     real norm (int i) const;

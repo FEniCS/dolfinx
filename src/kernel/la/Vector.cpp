@@ -223,7 +223,7 @@ void Vector::operator*=(real a)
     values[i] *= a; 
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Vector& x)
+real Vector::operator*(const Vector& x) const
 {
   if ( n != x.n )
     dolfin_error("Matrix dimensions don't match.");
@@ -235,28 +235,14 @@ real Vector::operator*(const Vector& x)
   return sum;
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Matrix::Row& row)
+real Vector::operator*(const Matrix::Row& row) const
 {
-  if ( n != row.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  real sum = 0.0;
-  for (int i = 0; i < n; i++)
-    sum += values[i] * row(i);
-  
-  return sum;
+  return row * (*this);
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Matrix::Column& col)
+real Vector::operator*(const Matrix::Column& col) const
 {
-  if ( n != col.size() )
-    dolfin_error("Matrix dimensions don't match.");
-                                                                                                                                                            
-  real sum = 0.0;
-  for (int i = 0; i < n; i++)
-    sum += values[i] * col(i);
-
-  return sum;
+  return col * (*this);
 }
 //-----------------------------------------------------------------------------
 real Vector::norm() const

@@ -135,6 +135,12 @@ namespace dolfin {
     /// Matrix-vector multiplication with transpose
     void multt(const Vector& x, Vector &Ax) const;
 
+    /// Scalar product with row
+    real multrow(const Vector& x, int i) const;
+
+    /// Scalar product with column
+    real multcol(const Vector& x, int j) const;
+
     /// Solve Ax = b (in-place LU for dense and Krylov for sparse)
     void solve(Vector& x, const Vector& b);
 
@@ -228,6 +234,8 @@ namespace dolfin {
       void operator= (const Row& row);
       void operator= (const Column& col);
       void operator= (const Vector& x);
+
+      real operator* (const Vector& x) const;
       
       friend class Column;
 
@@ -254,6 +262,8 @@ namespace dolfin {
       void operator= (const Column& col);
       void operator= (const Row& row);
       void operator= (const Vector& x);
+
+      real operator* (const Vector& x) const;
 
       friend class Row;
 
