@@ -12,7 +12,7 @@ Check list for releasing new versions of DOLFIN
 3. Edit the version number in the following files:
 
 	configure.in
-	src/common/kw_constants.h
+	src/kernel/main/dolfin/constants.h
 
 4. Create a tarball of the archive:
 

@@ -1,3 +1,4 @@
+0.3.0
  - Make poisson work again, other modules still not working
  - Add output format for octave
  - Fix code to compile with g++-3.2 -Wall -Werror
