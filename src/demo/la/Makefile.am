@@ -1,1 +1,1 @@
-SUBDIRS = test generic_matrix
+SUBDIRS = test generic_matrix newla

@@ -79,8 +79,46 @@ unsigned int NewVector::size() const
   return n;
 }
 //-----------------------------------------------------------------------------
+Vec NewVector::vec()
+{
+  return v;
+}
+//-----------------------------------------------------------------------------
+const Vec NewVector::vec() const
+{
+  return v;
+}
+//-----------------------------------------------------------------------------
+real NewVector::operator()(unsigned int i) const
+{
+  // Assumes uniprocessor case.
+
+  PetscScalar    *array;
+  VecGetArray(v, &array);
+  VecRestoreArray(v, &array);
+
+  real val = array[i];
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+NewVector::Index NewVector::operator()(unsigned int i)
+{
+  Index ind(i, *this);
+
+  return ind;
+}
+//-----------------------------------------------------------------------------
 void NewVector::disp() const
 {
   VecView(v, PETSC_VIEWER_STDOUT_SELF);
+}
+//-----------------------------------------------------------------------------
+void NewVector::Index::operator=(const real r)
+{
+  Vec petscv;
+  petscv = v.vec();
+
+  VecSetValue(petscv, i, r, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------

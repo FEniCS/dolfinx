@@ -11,34 +11,67 @@
 namespace dolfin
 {
   
-  /// This class represents a matrix of dimension m x n. It is a
-  /// simple wrapper for a PETSc matrix (Mat). The interface is
-  /// intentionally simple. For advanced usage, access the PETSc Mat
-  /// pointer using the function mat() and use the standard PETSc
+  /// This class represents a vector of dimension n. It is a
+  /// simple wrapper for a PETSc vector (Vec). The interface is
+  /// intentionally simple. For advanced usage, access the PETSc Vec
+  /// pointer using the function vec() and use the standard PETSc
   /// interface.
 
   class NewVector
   {
   public:
 
+    class Index;
+
     NewVector();
     NewVector(int size);
     NewVector(const NewVector& x);
     ~NewVector ();
 
+    /// Initialize vector data
     void init(unsigned int size);
+
+    /// Clear vector data
     void clear();
+
+    /// Return size of vector
     unsigned int size() const;
 
+    /// Display vector
     void disp() const;
 
-  protected:
+    /// Return PETSc Vec pointer
+    Vec vec();
 
-    // PETSc Mat pointer
+    /// Return PETSc Vec pointer
+    const Vec vec() const;
+
+    /// Element access operator
+    real operator()(unsigned int i) const;
+
+    /// Element assignment operator
+    Index operator()(unsigned int i);
+
+    class Index
+    {
+    public:
+      Index(unsigned int i, NewVector &v);
+
+      void operator=(const real r);
+
+    protected:
+      unsigned int i;
+      NewVector &v;
+    };
+
+
+  protected:
+    // PETSc Vec pointer
     Vec v;
     unsigned int n;
-    
+
   };
+
 
 }
 
