@@ -307,6 +307,79 @@ public:
     }
   }
 
+  void G(const complex z[], complex y[])
+  {
+    // First equation: normalization
+    y[0] = sum(z) - 1.0;
+    
+    // Only one consumer
+    const unsigned int k = 0;
+
+    // Precompute scalar product
+    const complex tmp = dot(w[0], z) / bdot(a[0], z, 1.0 - b[0]);
+    
+    // Evaluate right-hand side
+    for (unsigned int j = 1; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i] - w[i][j];
+      y[j] = sum;
+    }
+  }
+
+  void JG(const complex z[], const complex x[], complex y[])
+  {
+    // First equation: normalization
+    y[0] = sum(x);
+
+    // First term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wx = dot(w[i], x);
+      const complex az = bdot(a[i], z, 1.0 - b[i]);
+      tmp[i] = wx / az;
+    }
+    for (unsigned int j = 1; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] = sum;
+    }
+
+    // Second term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wz = dot(w[i], z);
+      const complex az = bdot(a[i], z, 1.0 - b[i]);
+      tmp[i] = b[i] * wz / az;
+    }
+    for (unsigned int j = 1; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -1.0 - b[i]) * x[j] * tmp[i];
+      y[j] -= sum;
+    }
+
+    // Third term
+    for (unsigned int i = 0; i < m; i++)
+    {
+      const complex wz  = dot(w[i], z);
+      const complex az  = bdot(a[i], z, 1.0 - b[i]);
+      const complex axz = bdot(a[i], x, z, -b[i]);
+      tmp[i] = (1.0 - b[i]) * wz * axz / (az * az);
+    }
+    for (unsigned int j = 1; j < n; j++)
+    {
+      complex sum = 0.0;
+      for (unsigned int i = 0; i < m; i++)
+	sum += a[i][j] * std::pow(z[j], -b[i]) * tmp[i];
+      y[j] -= sum;
+    }
+  }
+
   unsigned int degree(unsigned int i) const
   {
     if ( i == 0 )
