@@ -1,6 +1,7 @@
 EXTRA_DIST = dolfin_fem.h \
              BoundaryCondition.h \
              FiniteElement.h \
+             FiniteElementMethod.h \
              FunctionSpace.h \
              Galerkin.h \
              LoadVector.h \

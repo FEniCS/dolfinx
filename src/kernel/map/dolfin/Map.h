@@ -23,6 +23,8 @@
 namespace dolfin {
   
   class Cell;
+  class Edge;
+  class Face;
   
   class Map {
   public:
@@ -39,7 +41,10 @@ namespace dolfin {
     virtual void update(const Cell& cell) = 0;
 
     /// Update map to interior and boundary of cell
-    virtual void update(const Cell& interior, const Cell& boundary) = 0;
+    virtual void update(const Cell& interior, const Edge& boundary);
+
+    /// Update map to interior and boundary of cell
+    virtual void update(const Cell& interior, const Face& boundary);
     
     /// Return derivative of constant
     real ddx(real a) const;

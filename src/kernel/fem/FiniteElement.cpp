@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Fredrik Bengzon and Johan Jansson, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FunctionSpace.h>
@@ -136,10 +138,9 @@ FiniteElement::TestFunctionIterator::operator->() const
   return v.pointer();
 }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 // Vector function space
 //-----------------------------------------------------------------------------
-FiniteElement::Vector::Vector(int size)
+FiniteElement::Vector::Vector(unsigned int size)
 {
   v = new FiniteElement*[size];
   _size = size;
@@ -166,7 +167,7 @@ FiniteElement::Vector::operator() (int i)
   return v[i];
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::Vector::size() const
+unsigned int FiniteElement::Vector::size() const
 {
   return _size;
 }
@@ -380,3 +381,4 @@ FiniteElement::Vector::TestFunctionIterator::operator->()
 
   return &shapefunction;
 }
+//-----------------------------------------------------------------------------

@@ -17,7 +17,6 @@ namespace dolfin {
     P1IntMap();
   
     void update(const Cell &cell);
-    void update(const Cell& interior, const Cell& boundary);
   
     const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;

@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Fredrik Bengzon and Johan Jansson, 2004.
 
 // Definition of a finite element. This is a modified version
 // or the standard definition given by Ciarlet (1976).
@@ -96,12 +98,12 @@ namespace dolfin {
     class Vector {
     public:
       
-      Vector(int size);
+      Vector(unsigned int size);
       //Vector(const Vector& v);
       //Vector(const FiniteElement& v0, const FiniteElement& v1, const FiniteElement& v2);
       ~Vector();
       
-      int size() const;
+      unsigned int size() const;
       
       FiniteElement*& operator() (int i);
       
@@ -128,14 +130,11 @@ namespace dolfin {
 	
 	FiniteElement::Vector& e;
 	FiniteElement::TrialFunctionIterator uiter;
-	int componentiter;
+	unsigned int componentiter;
 
 	FunctionSpace::ShapeFunction::Vector shapefunction;
 	//FunctionSpace::ShapeFunction zero;
       };
-      
-
-
 
       // Iterator over shape functions in the local test space
       class TestFunctionIterator {
@@ -160,7 +159,7 @@ namespace dolfin {
 	
 	FiniteElement::Vector& e;
 	FiniteElement::TestFunctionIterator viter;
-	int componentiter;
+	unsigned int componentiter;
 
 	FunctionSpace::ShapeFunction::Vector shapefunction;
 	//FunctionSpace::ShapeFunction zero;
@@ -168,7 +167,7 @@ namespace dolfin {
       
     private:
       FiniteElement** v;
-      int _size;
+      unsigned int _size;
     };
 
 

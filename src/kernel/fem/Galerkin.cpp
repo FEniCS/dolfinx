@@ -10,14 +10,15 @@
 #include <dolfin/P1TriMap.h>
 #include <dolfin/P1TetMap.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/FiniteElementMethod.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/BCFunctionPointer.h>
 #include <dolfin/BoundaryCondition.h>
-#include <dolfin/Galerkin.h>
 #include <dolfin/PDE.h>
+#include <dolfin/Galerkin.h>
 
 using namespace dolfin;
 
@@ -87,6 +88,8 @@ void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
   // Make sure that we have chosen trial and test spaces
   init(mesh, pde.size());
   
+  FiniteElementMethod method(mesh.type(), pde.size());
+
   // Allocate and reset matrix
   alloc(A, mesh);
   
@@ -101,7 +104,7 @@ void Galerkin::assembleLHS(PDE& pde, Mesh& mesh, Matrix& A)
     map->update(cell);
     
     // Update element
-    for(int i = 0; i < element->size(); ++i)
+    for (unsigned int i = 0; i < element->size(); ++i)
       (*element)(i)->update(map);
     
     // Update equation
@@ -192,7 +195,7 @@ void Galerkin::setBC(Mesh& mesh, Matrix& A)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for(int i = 0; i < element->size(); i++)
+      for (unsigned int i = 0; i < element->size(); i++)
       {
 	A.ident(element->size() * node->id() + i);
       }
@@ -233,7 +236,7 @@ void Galerkin::setBC(Mesh& mesh, Vector& b)
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for(int i = 0; i < element->size(); i++)
+      for (unsigned int i = 0; i < element->size(); i++)
 	b(element->size() * node->id() + i) = bc.val(i);
       break;
     case BoundaryCondition::NEUMANN:
@@ -251,8 +254,8 @@ void Galerkin::init(Mesh &mesh, int noeq)
 {
   // Check if the element has already been created
   if ( element )
-	 return;
-
+    return;
+  
   // FIXME: testing
   this->noeq = noeq;
 

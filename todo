@@ -1,7 +1,6 @@
 Assembly
 --------
 
-- Bugfix: assembly does not work for systems of more than 3 equations (Jansson, Logg)
 - Boundary conditions, fix ds (Logg)
 - Add i,j in vector PDE?
 - Optimize form evaluation: Hoffman, Logg

@@ -3,6 +3,8 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
+#include <dolfin/Face.h>
+#include <dolfin/Edge.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/P1TetMap.h>
@@ -64,14 +66,13 @@ void P1TetMap::update(const Cell& cell)
   g31 = d13 / d; g32 = d23 / d; g33 = d33 / d;
 }
 //-----------------------------------------------------------------------------
-void P1TetMap::update(const Cell& interior, const Cell& boundary)
+void P1TetMap::update(const Cell& interior, const Face& boundary)
 {
   // Update map to interior of cell
   update(interior);
 
   // Update map to boundary of cell
-
-  // Add some code here... :-)
+  update(boundary);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1TetMap::ddx
@@ -96,5 +97,40 @@ const FunctionSpace::ElementFunction P1TetMap::ddt
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.ddT();
+}
+//-----------------------------------------------------------------------------
+void P1TetMap::update(const Face& boundary)
+{
+  // The determinant is given by the norm of the cross product
+  
+  // Get the first two edges
+  Edge& e0 = boundary.edge(0);
+  Edge& e1 = boundary.edge(1);
+
+  // Get coordinates
+  Point& p00 = e0.coord(0);
+  Point& p01 = e0.coord(1);
+  Point& p10 = e1.coord(0);
+  Point& p11 = e1.coord(1);
+
+  // Compute vectors
+  real dx0 = p01.x - p00.x;
+  real dy0 = p01.y - p00.y;
+  real dz0 = p01.z - p00.z;
+  real dx1 = p11.x - p10.x;
+  real dy1 = p11.y - p10.y;
+  real dz1 = p11.z - p10.z;
+
+  // Compute cross-product
+  real dx = dy0*dz1 - dz0*dy1;
+  real dy = dz0*dx1 - dx0*dz1;
+  real dz = dx0*dy1 - dy0*dx1;
+
+  // Compute norm
+  bd = sqrt(dx*dx + dy*dy + dz*dz);
+
+  // Check determinant
+  if ( fabs(bd) < DOLFIN_EPS )
+    dolfin_error("Map to boundary of cell is singular.");
 }
 //-----------------------------------------------------------------------------

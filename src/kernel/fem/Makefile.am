@@ -2,6 +2,7 @@ SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/BoundaryCondition.h \
                           dolfin/FiniteElement.h \
+                          dolfin/FiniteElementMethod.h \
                           dolfin/FunctionSpace.h \
                           dolfin/Galerkin.h \
                           dolfin/LoadVector.h \
@@ -11,6 +12,7 @@ include_HEADERS         = dolfin/dolfin_fem.h \
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = FiniteElement.cpp \
+                          FiniteElementMethod.cpp \
                           FunctionSpace.cpp \
                           Galerkin.cpp \
                           LoadVector.cpp \

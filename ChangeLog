@@ -1,3 +1,4 @@
+ - Bug fix for PDE systems of size > 3
 0.4.11
  - Add multigrid solver (experimental)
  - Update manual

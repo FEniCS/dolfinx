@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = /home/logg/work/src/dolfin/dolfin/missing aclocal-1.4
+ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = /home/logg/work/src/dolfin/dolfin/missing automake-1.4
+AUTOMAKE = automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -82,11 +82,11 @@ XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/FiniteElement.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/StiffnessMatrix.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/StiffnessMatrix.h
 
 INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = FiniteElement.cpp                           FunctionSpace.cpp                           Galerkin.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           StiffnessMatrix.cpp
+libdolfin_fem_a_SOURCES = FiniteElement.cpp                           FiniteElementMethod.cpp                           FunctionSpace.cpp                           Galerkin.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           StiffnessMatrix.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,8 +98,9 @@ CPPFLAGS =
 LDFLAGS = 
 LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
-libdolfin_fem_a_OBJECTS =  FiniteElement.o FunctionSpace.o Galerkin.o \
-LoadVector.o MassMatrix.o MultigridSolver.o StiffnessMatrix.o
+libdolfin_fem_a_OBJECTS =  FiniteElement.o FiniteElementMethod.o \
+FunctionSpace.o Galerkin.o LoadVector.o MassMatrix.o MultigridSolver.o \
+StiffnessMatrix.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -113,9 +114,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/FiniteElement.P .deps/FunctionSpace.P \
-.deps/Galerkin.P .deps/LoadVector.P .deps/MassMatrix.P \
-.deps/MultigridSolver.P .deps/StiffnessMatrix.P
+DEP_FILES =  .deps/FiniteElement.P .deps/FiniteElementMethod.P \
+.deps/FunctionSpace.P .deps/Galerkin.P .deps/LoadVector.P \
+.deps/MassMatrix.P .deps/MultigridSolver.P .deps/StiffnessMatrix.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 

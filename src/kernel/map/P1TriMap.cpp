@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Cell.h>
+#include <dolfin/Edge.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/P1TriMap.h>
@@ -48,14 +49,13 @@ void P1TriMap::update(const Cell& cell)
   g21 = - f21 / d; g22 =   f11 / d;
 }
 //-----------------------------------------------------------------------------
-void P1TriMap::update(const Cell& interior, const Cell& boundary)
+void P1TriMap::update(const Cell& interior, const Edge& boundary)
 {
   // Update map to interior of cell
   update(interior);
 
   // Update map to boundary of cell
-
-  // Add some code here... :-)
+  update(boundary);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1TriMap::ddx
@@ -80,5 +80,15 @@ const FunctionSpace::ElementFunction P1TriMap::ddt
 (const FunctionSpace::ShapeFunction& v) const
 {
   return v.ddT();
+}
+//-----------------------------------------------------------------------------
+void P1TriMap::update(const Edge& boundary)
+{
+  // The determinant is given by the edge length
+  bd = boundary.length();
+
+  // Check determinant
+  if ( fabs(bd) < DOLFIN_EPS )
+    dolfin_error("Map to boundary of cell is singular.");
 }
 //-----------------------------------------------------------------------------
