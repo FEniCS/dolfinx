@@ -1,6 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewVector.h>
@@ -55,6 +57,11 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
   // y_j = (Ax)_j for each degree of freedom of the system. Note that this
   // implementation will probably not work with parallel vectors since we
   // use VecGetArray to access the local arrays of the vectors
+
+  std::cout << "pointer before: " << x << std::endl;
+  NewVector xxx(x);
+  x = xxx.vec();
+  std::cout << "pointer after:  " << x << std::endl;
 
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   VecCopy(x, y);

@@ -12,13 +12,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewVector::NewVector() : x(0)
+NewVector::NewVector() : x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(uint size) : x(0)
+NewVector::NewVector(uint size) : x(0), copy(false)
 {
   if(size < 0)
     dolfin_error("Size of vector must be non-negative.");
@@ -30,16 +30,13 @@ NewVector::NewVector(uint size) : x(0)
   init(size);
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(Vec x) : x(0)
+NewVector::NewVector(Vec x) : x(x), copy(true)
 {
-  // Initialize PETSc
+  // Initialize PETSc 
   PETScManager::init();
-
-  // Copy PETSC Vec pointer
-  this->x = x;
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(const Vector &x) : x(0)
+NewVector::NewVector(const Vector &x) : x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -103,7 +100,7 @@ void NewVector::apply()
 //-----------------------------------------------------------------------------
 void NewVector::clear()
 {
-  if (x)
+  if ( x && !copy )
   {
     VecDestroy(x);
   }
@@ -131,6 +128,18 @@ const Vec NewVector::vec() const
 //-----------------------------------------------------------------------------
 real* NewVector::array()
 {
+  dolfin_assert(x);
+
+  real* data = 0;
+  VecGetArray(x, &data);
+
+  return data;
+}
+//-----------------------------------------------------------------------------
+const real* NewVector::array() const
+{
+  dolfin_assert(x);
+
   real* data = 0;
   VecGetArray(x, &data);
 
@@ -140,6 +149,13 @@ real* NewVector::array()
 void NewVector::restore(real data[])
 {
   VecRestoreArray(x, &data);
+}
+//-----------------------------------------------------------------------------
+void NewVector::restore(const real data[]) const
+{
+  // Cast away the constness and trust PETSc to do the right thing
+  real* tmp = const_cast<real *>(data);
+  VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
 NewVector::Index NewVector::operator() (uint i)

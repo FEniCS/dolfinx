@@ -56,16 +56,22 @@ namespace dolfin
     /// Return PETSc Vec pointer
     Vec vec();
 
-    /// Return PETSc Vec pointer
+    /// Return PETSc Vec pointer, const version
     const Vec vec() const;
 
-    /// Return a contiguous array containing this processor's portion
-    /// of the data. After usage, the function restore() must be
-    /// called.
+    /// Return array containing this processor's portion of the data.
+    /// After usage, the function restore() must be called.
     real* array();
+
+    /// Return array containing this processor's portion of the data.
+    /// After usage, the function restore() must be called. (const version)
+    const real* array() const;
 
     /// Restore array after a call to array()
     void restore(real data[]);
+
+    /// Restore array after a call to array(), const version
+    void restore(const real data[]) const;
 
     /// Addition (AXPY)
     void axpy(const real a, const NewVector& x) const;
@@ -110,6 +116,9 @@ namespace dolfin
     // PETSc Vec pointer
     Vec x;
     
+    // True if the pointer is a copy of someone else's data
+    bool copy;
+
   };
 }
 
