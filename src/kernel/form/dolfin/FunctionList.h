@@ -32,7 +32,7 @@ namespace dolfin {
     static void update(const FunctionSpace::ShapeFunction& v, const Map& map);
 	 
     // Size of list
-    static int size();
+    static unsigned int size();
     
     // Evaluation
     static real eval(int id, real x, real y, real z, real t);

@@ -72,7 +72,7 @@ void FunctionList::update(const FunctionSpace::ShapeFunction& v,
   list(v.id()).ddt = map.ddt(v);
 }
 //-----------------------------------------------------------------------------
-int FunctionList::size()
+unsigned int FunctionList::size()
 {
   return _size;
 }

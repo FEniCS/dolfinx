@@ -124,9 +124,6 @@ void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
 			   Quadrature& interior_quadrature, 
 			   Quadrature& boundary_quadrature)
 {
-  // Remove for testing assembly on boundary
-  return;
-
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
@@ -155,8 +152,6 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  cout << "Assembling over tetrahedral boundary." << endl;
-  
   // Create boundary
   Boundary boundary(mesh);
 

@@ -181,11 +181,14 @@ const void PDE::update(FiniteElement::Vector& element,
     p->update(*(element(0)), map.cell(), t);
   }
 
+  // FIXME: This can be improved. Only one measure needs to be updated.
+  // FIXME: The other one only needs to be inactivated.
+
   // Update integral measures
   dx.update(map, interior_quadrature);
   ds.update(map, boundary_quadrature);
   h = map.cell().diameter();
-  
+
   // Save map (to compute derivatives)
   this->map_ = &map;
 
