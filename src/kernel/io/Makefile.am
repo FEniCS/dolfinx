@@ -1,9 +1,9 @@
 SUBDIRS           = dolfin
-include_HEADERS   = 
+include_HEADERS   = dolfin/dolfin_io.h \
+                    dolfin/File.h
 INCLUDES          = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES     = libdolfin-io.a
 libdolfin_io_a_SOURCES = File.cpp \
-                         File.h \
                          GenericFile.cpp \
                          GenericFile.h \
                          MatlabFile.cpp \

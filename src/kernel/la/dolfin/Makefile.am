@@ -1,1 +1,7 @@
-EXTRA_DIST = dolfin_la.h DenseMatrix.h DirectSolver.h Vector.h SparseMatrix.h KrylovSolver.h
+EXTRA_DIST = dolfin_la.h \
+             DenseMatrix.h \
+             DirectSolver.h \
+             Matrix.h \
+             KrylovSolver.h \
+             SISolver.h \
+             Vector.h

@@ -13,6 +13,8 @@ OBJECTS = main.o
 
 all: $(DEST)
 
+install:
+
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 

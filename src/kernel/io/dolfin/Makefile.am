@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_io.h
+EXTRA_DIST = dolfin_io.h File.h

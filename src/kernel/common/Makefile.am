@@ -1,10 +1,13 @@
 SUBDIRS               = dolfin
-include_HEADERS       = dolfin/List.h \
+include_HEADERS       = dolfin/dolfin_common.h \
+                        dolfin/List.h \
                         dolfin/function.h \
                         dolfin/Settings.h \
                         dolfin/System.h \
                         dolfin/Parameter.h \
                         dolfin/ParameterList.h \
+                        dolfin/ShortList.h \
+                        dolfin/Tensor.h \
                         dolfin/Variable.h \
                         dolfin/meminfo.h \
                         dolfin/sysinfo.h \

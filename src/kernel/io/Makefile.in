@@ -74,10 +74,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = 
+include_HEADERS = dolfin/dolfin_io.h                     dolfin/File.h
+
 INCLUDES = @MODULE_INCLUDES@ @XML2_INCLUDES@
 lib_LIBRARIES = libdolfin-io.a
-libdolfin_io_a_SOURCES = File.cpp                          File.h                          GenericFile.cpp                          GenericFile.h                          MatlabFile.cpp                          MatlabFile.h                          OctaveFile.cpp                          OctaveFile.h                          XMLFile.cpp                          XMLFile.h                          XMLGrid.h                          XMLGrid.cpp                          XMLMatrix.h                          XMLMatrix.cpp                          XMLObject.h                          XMLObject.cpp                          XMLVector.h                          XMLVector.cpp                          matlab.h
+libdolfin_io_a_SOURCES = File.cpp                          GenericFile.cpp                          GenericFile.h                          MatlabFile.cpp                          MatlabFile.h                          OctaveFile.cpp                          OctaveFile.h                          XMLFile.cpp                          XMLFile.h                          XMLGrid.h                          XMLGrid.cpp                          XMLMatrix.h                          XMLMatrix.cpp                          XMLObject.h                          XMLObject.cpp                          XMLVector.h                          XMLVector.cpp                          matlab.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

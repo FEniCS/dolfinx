@@ -9,7 +9,7 @@ Usage: dolfin-config [options]
        --compiler (get compiler)
 
        --cflags_dolfin (for demo programs in the source tree)
-       --lflags_dolfin (for demo programs in the source tree)
+       --libs_dolfin   (for demo programs in the source tree)
 
 EOF
    exit $1
@@ -24,10 +24,10 @@ case $1 in
 		echo $PACKAGE $VERSION
 		;;
 	--cflags)
-      echo $CFLAGS
+      		echo $CFLAGS
       ;;
 	--libs)
-		echo $LFLAGS
+		echo $LIBS
       ;;
 	--compiler)
 		echo $COMPILER

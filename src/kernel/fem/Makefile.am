@@ -1,5 +1,6 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
+                          dolfin/BoundaryCondition.h \
                           dolfin/DofFunction.h \
                           dolfin/ElementFunction.h \
                           dolfin/Equation.h \
@@ -10,6 +11,8 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/FunctionSpace.h \
                           dolfin/Galerkin.h \
                           dolfin/GenericFunction.h \
+                          dolfin/Integral.h \
+                          dolfin/Mapping.h \
                           dolfin/Product.h \
                           dolfin/ShapeFunction.h \
                           dolfin/Solver.h \

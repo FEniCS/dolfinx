@@ -2,6 +2,7 @@ SUBDIRS                  = dolfin
 include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/Grid.h \
                            dolfin/GridData.h \
+                           dolfin/InitGrid.h \
                            dolfin/Node.h \
                            dolfin/NodeIterator.h \
                            dolfin/Point.h \

@@ -73,7 +73,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_fem.h              DofFunction.h              ElementFunction.h              ExpressionFunction.h              FiniteElement.h              Function.h              Galerkin.h              GenericFunction.h
+EXTRA_DIST = dolfin_fem.h              BoundaryCondition.h              DofFunction.h              ElementFunction.h              ExpressionFunction.h              FiniteElement.h              Function.h              Galerkin.h              GenericFunction.h              Integral.h              Mapping.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
