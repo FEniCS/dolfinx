@@ -1,0 +1,162 @@
+% Copyright (C) 2003 Johan Hoffman and Anders Logg.
+% Licensed under the GNU GPL Version 2.
+
+\documentclass[12pt]{article}
+
+%--- Packages ---
+\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{12pt}
+
+%--- Header an footer ---
+\lhead{\sf DOLFIN}
+\rhead{\sf User Manual}
+\pagestyle{fancy}
+\renewcommand{\footrulewidth}{1pt}
+\renewcommand{\headrulewidth}{1pt}
+
+\begin{document}
+
+%--- Title page ---
+
+\thispagestyle{empty}
+
+\Large
+\textbf{DOLFIN User Manual} \\
+\vspace{-0.5cm}
+\hrule
+\hfill
+\small
+\today
+
+\vspace{3cm}
+
+\begin{center}
+\includegraphics[width=6cm]{eps/dolfin.eps}
+\end{center}
+
+\vfill
+
+\normalsize
+\textbf{Hoffman, Logg, et al.}
+\hrule
+
+\cleardoublepage
+
+%--- Table of contents ---
+
+\tableofcontents
+\newpage
+
+%--- New chapter ---
+\cleardoublepage
+\section{Introduction}
+
+This is a first draft for a DOLFIN manual. Contributions are most welcome.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Installation}
+
+In preparation.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Linear algebra}
+
+In preparation.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Grid management}
+
+In preparation.
+
+%--- New chapter ---
+\cleardoublepage
+\section{The log system}
+
+The purpose of the log system is to provide a simple and
+clean interface for logging messages, including warnings
+and errors.
+
+The following functions / macros are provided for logging:
+
+\begin{verbatim}
+  dolfin_info();
+  dolfin_debug();
+  dolfin_warning();
+  dolfin_error();
+  dolfin_assert();
+\end{verbatim}
+
+Examples of usage:
+
+\begin{verbatim}
+  dolfin_info("Created vector of size %d.", x.size());
+  dolfin_debug("Opened file");
+  dolfin_warning("Unknown cell type.");
+  dolfin_error("Out of memory.");
+  dolfin_assert(i < m);
+\end{verbatim}
+
+Note that in order to pass additional arguments to the last
+three functions (which are really macros, in order to
+automatically print information about file names, line numbers
+and function names), the variations \texttt{dolfin\_debug1()},
+\texttt{dolfin\_debug2()} and so on, must be used.
+
+As an alternative to \texttt{dolfin\_info()}, C++ style output to cout
+(\texttt{dolfin::cout}, and not \texttt{std::cout}) can be used. These messages
+will be delivered to the same destination as messages by use
+of the function \texttt{dolfin\_info()}.
+
+Examples of usage:
+
+\begin{verbatim}
+  cout << "Assembling matrix: " << A << endl;
+  cout << "Refining grid: " << grid << endl;
+\end{verbatim}
+
+The \texttt{dolfin\_assert()} macro should be used for simple tests that
+may occur often, such as checking indexing in vectors. The check
+is turned on only if DEBUG is defined.
+
+To notify progress by a progress session, use the class
+Progress.
+
+Examples of usage:
+
+\begin{verbatim}
+  Progress p("Assembling", grid.noCells());
+  
+  for (CellIterator c(grid); !c.end(); ++c) {
+    ...
+    p++;
+  }
+\end{verbatim}
+
+Progress also supports the following usage:
+
+\begin{verbatim}
+  p = i;    // Specify step number
+  p = 0.5;  // Specify percentage
+  p.update(t/T, "Time is t = %f", t);
+\end{verbatim}
+
+%--- New chapter ---
+\cleardoublepage
+\section{Handling parameters}
+
+In preparation.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Writing a new module / solver}
+
+In preparation.
+
+\end{document}
