@@ -54,6 +54,9 @@ namespace dolfin
     /// Element access
     real getvalue(int i) const;
 
+    /// Addition (AXPY)
+    void add(const real a, const NewVector& x) const;
+
     /// Element assignment operator
     Index operator()(int i);
 

@@ -102,6 +102,11 @@ real NewVector::getvalue(int i) const
   return val;
 }
 //-----------------------------------------------------------------------------
+void NewVector::add(const real a, const NewVector& x) const
+{
+  VecAXPY(&a, x.vec(), v);
+}
+//-----------------------------------------------------------------------------
 void NewVector::clear()
 {
   if(v)

@@ -4,6 +4,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewMatrix.h>
+#include <dolfin/NewVector.h>
 
 using namespace dolfin;
 
@@ -106,6 +107,11 @@ real NewMatrix::getvalue(int i, int j) const
   MatGetValues(A, 1, &i, 1, &j, &val);
 
   return val;
+}
+//-----------------------------------------------------------------------------
+void NewMatrix::mult(const NewVector& x, NewVector& Ax) const
+{
+  MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::apply()

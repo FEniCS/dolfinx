@@ -103,12 +103,17 @@ int main(int argc, char **argv)
 
 
   NewGMRES newsolver;
-  //NewVector R;
+  NewVector R(x.size());
 
   newsolver.solve(A, x, b);
+  A.mult(x, R);
+  R.add(-1, b);
 
   dolfin::cout << "x: " << dolfin::endl;
   x.disp();
+
+  dolfin::cout << "R: " << dolfin::endl;
+  R.disp();
 
 
   /*

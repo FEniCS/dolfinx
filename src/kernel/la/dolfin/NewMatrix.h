@@ -18,6 +18,8 @@ namespace dolfin
   /// pointer using the function mat() and use the standard PETSc
   /// interface.
 
+  class NewVector;
+
   class NewMatrix
   {
   public:
@@ -39,7 +41,8 @@ namespace dolfin
     /// Initialize matrix
     void init(int m, int n);
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
+    /// Return number of rows (dim = 0) or columns (dim = 1) along dimension
+    /// dim
     int size(int dim) const;
 
     /// Set all entries to zero
@@ -54,6 +57,8 @@ namespace dolfin
     /// Element access
     real getvalue(int i, int j) const;
 
+    /// Matrix-vector multiplication
+    void mult(const NewVector& x, NewVector& Ax) const;
 
     /// Apply changes to matrix
     void apply();
