@@ -9,9 +9,5 @@ int main()
 {
   dolfin::cout << "Test" << " test" << dolfin::endl;
 
-  Matrix A(3,3);
-
-  real a = A(0,0);
-  
   return 0;
 }

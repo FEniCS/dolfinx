@@ -1,146 +1,166 @@
-#include "lagrange.hh"
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
-//----------------------------------------------------------------------------
-Lagrange::Lagrange(int iiDegree)
+#include <cmath>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Lagrange.h>
+
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+Lagrange::Lagrange(int q)
 {
-  // Check that iiDegree >= 0
-  assert( iiDegree >= 0 );
-  
-  // Set the degree
-  iDegree = iiDegree;
-  
-  // Allocate memory
-  if ( iiDegree > 0 ){
-	 dPoints = new double[iiDegree];
-  
-	 // Check the allocated memory
-	 assert( dPoints != 0 );
- 
-	 // Set the coefficients to zero
-	 for (int i=0;i<iDegree;i++)
-		dPoints[i] = 0.0;
+  if ( q < 0 )
+    dolfin_error("Degree for Lagrange polynomial must be non-negative.");
 
-	 dConstant = 0.0;
-	 
-  }
-	 
+  this->q = q;
+  n = q + 1;
+  
+  points = new real[n];
+  for (int i = 0; i < n; i++)
+    points[i] = 0.0;
+
+  constants = 0;
+  updated = false;
 }
-//----------------------------------------------------------------------------
-Lagrange::Lagrange(const Lagrange &p)
+//-----------------------------------------------------------------------------
+Lagrange::Lagrange(const Lagrange& p)
 {
-  // This is the copy constructor
+  dolfin_assert(p.q >= 0);
 
-  if ( p.iDegree > 0 ){
-	 iDegree = p.iDegree;
-	 if ( p.dPoints && p.iDegree >= 0 ){
-		dPoints = new double[p.iDegree];
-		for (int i=0;i<=p.iDegree;i++)
-		  dPoints[i] = p.dPoints[i];
-	 }
-	 else
-		dPoints = NULL;
-  }
+  this->q = p.q;
+  n = p.n;
 
-  dConstant = p.dConstant;
-  
+  points = new real[p.n];
+  for (int i = 0; i < p.n; i++)
+    points[i] = p.points[i];
+
+  constants = 0;
+  updated = false;
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 Lagrange::~Lagrange()
 {
-  // Delete the coefficients
-  if ( iDegree > 0 )
-	 delete dPoints;
-}
-//----------------------------------------------------------------------------
-void Lagrange::SetPoint(int iIndex, double dPoint)
-{
-  // Check the index
-  assert( iIndex >= 0 );
-  assert( iIndex < iDegree );
+  if ( points )
+    delete [] points;
+  points = 0;
 
-  // Set the new value
-  dPoints[iIndex] = dPoint;
+  if ( constants )
+    delete [] constants;
+  constants = 0;
 }
-//----------------------------------------------------------------------------
-void Lagrange::SetConstant(double ddConstant)
+//-----------------------------------------------------------------------------
+void Lagrange::set(int i, real x)
 {
-  // This function sets the constant
+  dolfin_assert(i >= 0);
+  dolfin_assert(i <= q);
 
-  dConstant = ddConstant;
+  points[i] = x;
+  updated = false;
 }
-//----------------------------------------------------------------------------
-int Lagrange::GetDegree()
+//-----------------------------------------------------------------------------
+int Lagrange::size() const
 {
-  // This function returns the degree.
-
-  return ( iDegree );
+  return n;
 }
-//----------------------------------------------------------------------------
-double Lagrange::GetPoint(int iIndex)
+//-----------------------------------------------------------------------------
+int Lagrange::degree() const
 {
-  // This function returns point iIndex.
+  return q;
+}
+//-----------------------------------------------------------------------------
+real Lagrange::point(int i) const
+{
+  dolfin_assert(i >= 0);
+  dolfin_assert(i <= q);
 
-  // Check the index
-  assert( iIndex >= 0 );
-  assert( iIndex < iDegree );
+  return points[i];
+}
+//-----------------------------------------------------------------------------
+real Lagrange::operator() (int i, real x)
+{
+  dolfin_assert(i >= 0);
+  dolfin_assert(i <= q);
+
+  init();
+
+  double product = constants[i];
   
-  return ( dPoints[iIndex] );
-}
-//----------------------------------------------------------------------------
-double Lagrange::GetConstant()
-{
-  // This function returns the constant.
-
-  return ( dConstant );
-}
-//----------------------------------------------------------------------------
-double Lagrange::Value(double dPoint)
-{
-  // This function returns the value at dPoint.
-
-  if ( iDegree == 0 )
-	 return ( dConstant );
+  for (int j = 0; j < n; j++)
+    if ( j != i )
+      product *= x - points[j];
   
-  double dValue = dConstant;
-
-  for (int i=0;i<iDegree;i++)
-	 dValue *= (dPoint - dPoints[i]);
-
-  return ( dValue );
+  return product;
 }
-//----------------------------------------------------------------------------
-double Lagrange::Derivative(double dPoint)
+//-----------------------------------------------------------------------------
+real Lagrange::dx(int i, real x)
 {
-  // This function returns the value of the derivative at dPoint;
-
-  if ( iDegree == 0 )
-	 return 0.0;
+  dolfin_assert(i >= 0);
+  dolfin_assert(i <= q);
   
-  double dSum = 0.0;
-  double dValue;
+  init();
   
-  for (int i=0;i<iDegree;i++){
-	 dValue = 1.0;
-
-	 for (int j=0;j<iDegree;j++)
-		if (j!=i)
-		  dValue *= (dPoint - dPoints[j]);
-
-	 dSum += dValue;
+  real sum = 0.0;
+  for (int j = 0; j < n; j++) {
+    if ( j != i ) {
+      real product = 1.0;
+      for (int k = 0; k < n; k++)
+	if ( k != i && k != j )
+	  product *= x - points[k];
+      sum += product;
+    }
   }
 
-  return ( dConstant * dSum );
+  return sum * constants[i];
 }
-//----------------------------------------------------------------------------
-double Lagrange::NthDerivative()
+//-----------------------------------------------------------------------------
+real Lagrange::dqx(int i)
 {
-  // This function returns the iDegree:th derivative, which is a constant.
+  dolfin_assert(i >= 0);
 
-  double dValue = dConstant;
+  init();
   
-  for (int i=1;i<=iDegree;i++)
-	 dValue *= double(i);
+  real product = constants[i];
   
-  return ( dValue );
+  for (int j = 1; j <= q; j++)
+    product *= (double) j;
+  
+  return product;
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<<(LogStream& stream, const Lagrange& p)
+{
+  stream << "[ Lagrange polynomial of degree " << p.q << " with " << p.n << " points ]";
+  return stream;
+}
+//-----------------------------------------------------------------------------
+void Lagrange::show() const
+{
+  dolfin_info("Lagrange polynomial of degree %d with %d points.", q, n);
+  dolfin_info("----------------------------------------------");
+
+  for (int i = 0; i < n; i++)
+    dolfin_info("x[%d] = %f", i, points[i]);
+}
+//-----------------------------------------------------------------------------
+void Lagrange::init()
+{
+  if ( updated )
+    return;
+
+  if ( constants == 0 )
+    constants = new real[n];
+
+  for (int i = 0; i < n; i++) {
+    real product = 1.0;
+    for (int j = 0; j < n; j++)
+      if ( j != i )
+	product *= points[i] - points[j];
+    if ( fabs(product) < DOLFIN_EPS )
+      dolfin_error("Nodal points for Lagrange polynomial must be distinct.");
+    constants[i] = 1.0 / product;
+  }
+
+  updated = true;
+}
+//-----------------------------------------------------------------------------

@@ -35,6 +35,9 @@ namespace dolfin {
     
     /// Specify point
     void set(int i, real x);
+
+    /// Return number of points
+    int size() const;
     
     /// Return degree
     int degree() const;
@@ -43,19 +46,31 @@ namespace dolfin {
     real point(int i) const;
     
     /// Return value of polynomial i at given point x
-    real operator() (int i, real x) const;
+    real operator() (int i, real x);
     
     /// Return derivate of polynomial i at given point x
-    real dx(int i, real x) const;
+    real dx(int i, real x);
     
-    /// Return derivative n of polynomial i at given point x
-    real dnx(int i, real x, int n) const;
+    /// Return derivative q (a constant) of polynomial
+    real dqx(int i);
+
+    /// Output
+    friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
+    void show() const;
     
   private:
+
+    void init();
     
-    int q;;
-    real* points;
-    
+    int q;
+    int n;
+    real* points; 
+    real* constants;
+
+    bool updated;
+
   };
-  
+
 }
+
+#endif

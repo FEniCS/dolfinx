@@ -1,3 +1,5 @@
+ - Fix a bug in configure.in (AC_INIT with README)
+ - Add Lagrange polynomials
  - Add multiplication with transpose
  - Add scalar products with rows and columns
  - Add A[i][j] index operator for quick access to dense matrix
