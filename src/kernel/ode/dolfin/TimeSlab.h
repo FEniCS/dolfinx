@@ -19,6 +19,7 @@ namespace dolfin {
   class Adaptivity;
   class RHS;
   class Solution;
+  class FixedPointIteration;
 
   /// A TimeSlab represents (a subsystem of) the system of ODEs
   /// between synchronized time levels t0 and t1. 
@@ -33,7 +34,10 @@ namespace dolfin {
     virtual ~TimeSlab();
     
     /// Update time slab (iteration)
-    virtual void update(Solution& u, RHS& f) = 0;
+    virtual real update(FixedPointIteration& fixpoint) = 0;
+
+    /// Reset time slab to initial values
+    virtual void reset(Solution& u) = 0;
 
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -47,8 +51,11 @@ namespace dolfin {
     /// Return end time
     real endtime() const;
     
-    /// Return length of time slab
+   /// Return length of time slab
     real length() const;
+
+    /// Compute maximum discrete residual in time slab
+    virtual real computeMaxRd(Solution& u, RHS& f) = 0;
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);
@@ -59,10 +66,13 @@ namespace dolfin {
     void setsize(real K, const Adaptivity& adaptivity);
 
     // Update elements (iteration)
-    void updateElements(Solution& u, RHS& f);
+    real updateElements(FixedPointIteration& fixpoint);
 
-    // Update initial values
-    void updateu0(Solution& u0);
+    /// Reset elements to initial values
+    void resetElements(Solution& u);
+
+    /// Compute maximum discrete residual for elements
+    real computeMaxRdElements(Solution& u, RHS& f);
 
     //--- Time slab data ---
 

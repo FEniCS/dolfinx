@@ -16,6 +16,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementData.h \
                           dolfin/ElementTmpFile.h \
                           dolfin/EmptySparsity.h \
+                          dolfin/FixedPointIteration.h \
                           dolfin/FullSparsity.h \
                           dolfin/GenericSparsity.h \
                           dolfin/MatrixSparsity.h \
@@ -50,6 +51,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementData.cpp \
                           ElementTmpFile.cpp \
                           EmptySparsity.cpp \
+                          FixedPointIteration.cpp \
                           FullSparsity.cpp \
                           GenericSparsity.cpp \
                           MatrixSparsity.cpp \

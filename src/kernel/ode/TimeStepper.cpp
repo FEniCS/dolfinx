@@ -1,13 +1,14 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// - Updates by Johan Jansson (2003)
+// Updates by Johan Jansson 2003.
 
 #include <algorithm>
 #include <sstream>
 #include <fstream>
 #include <iomanip>
 #include <cmath>
+#include <stdlib.h>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -15,6 +16,7 @@
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
 #include <dolfin/ElementData.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/Partition.h>
 #include <dolfin/Adaptivity.h>
 #include <dolfin/Solution.h>
@@ -40,6 +42,7 @@ void TimeStepper::solve(ODE& ode, Function& function)
   Adaptivity adaptivity(N);
   Solution u(ode, function);
   RHS f(ode, u);
+  FixedPointIteration fixpoint(u, f);
 
   // Create file for storing the solution
   File file(u.label() + ".m");
@@ -52,11 +55,15 @@ void TimeStepper::solve(ODE& ode, Function& function)
     if ( t == 0.0 )
       timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
-      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, partition, 0);
+      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
     
+    // FIXME: Make an automatic, or at least scientific, choice of the discrete
+    // residual tolerance
+    fixpoint.iterate(*timeslab);
+
     // Iterate a couple of times on the time slab
-    for (int i = 0; i < 2; i++)
-      timeslab->update(u, f);
+    //for (int i = 0; i < 2; i++)
+    //  timeslab->update(u, f);
 
     // Update time
     t = timeslab->endtime();
@@ -87,6 +94,7 @@ void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
 {
   real TOL = adaptivity.tolerance();
   real kmax = adaptivity.maxstep();
+  real kfixed = adaptivity.fixed();
 
   // Update residuals and time steps
   for (unsigned int i = 0; i < u.size(); i++)
@@ -102,7 +110,7 @@ void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
     real k = element->computeTimeStep(TOL, r, kmax);
 
     // Update regulator
-    adaptivity.regulator(i).update(k, kmax);
+    adaptivity.regulator(i).update(k, kmax, kfixed);
   }
   
   // Shift solution

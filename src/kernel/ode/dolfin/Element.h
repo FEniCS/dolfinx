@@ -54,7 +54,13 @@ namespace dolfin {
     void update(unsigned int node, real value);
 
     /// Update element (iteration)
-    virtual void update(RHS& f) = 0;
+    virtual real update(RHS& f) = 0;
+
+    /// Update element (iteration), damped version
+    virtual real update(RHS& f, real alpha) = 0;
+
+    /// Reset all element values to the given initial value
+    virtual void reset(real u0) = 0;
 
     /// Check if given time is within the element
     bool within(real t) const;
@@ -73,6 +79,9 @@ namespace dolfin {
 
     // Compute residual
     real computeResidual(RHS& f);
+
+    // Compute discrete residual
+    virtual real computeDiscreteResidual(RHS& f) = 0;
 
     // Compute new time step
     virtual real computeTimeStep(real TOL, real r, real kmax) const = 0;

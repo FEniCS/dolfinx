@@ -1,1 +1,1 @@
-SUBDIRS = lorenz test
+SUBDIRS = test lorenz stiff

@@ -25,7 +25,7 @@ MatlabFile::~MatlabFile()
 void MatlabFile::operator<<(Matrix& A)
 {
   real value;
-  unsigned int j ;
+  unsigned int j;
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
@@ -34,7 +34,7 @@ void MatlabFile::operator<<(Matrix& A)
   case Matrix::dense:
 
     for (unsigned int i = 0; i < A.size(0); i++) {
-      for (unsigned int j = 0; j<A.size(1); j++) {
+      for (unsigned int j = 0; j< A.size(1); j++) {
         fprintf(fp, "%.16e ", A[i][j]);
         if ( j < (A.size(1) - 1) && i <= (A.size(0) - 1))
           fprintf(fp, ", ");

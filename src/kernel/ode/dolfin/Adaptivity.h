@@ -32,6 +32,9 @@ namespace dolfin {
     /// Return maximum time step
     real maxstep() const;
 
+    /// Return whether we use fixed time steps or not
+    bool fixed() const;
+
     /// Return threshold for reaching end of interval
     real threshold() const;
 
@@ -46,8 +49,11 @@ namespace dolfin {
     // Tolerance
     real TOL;
 
-    // Maximum allowed time step
+    // Maximum and minimum allowed time step
     real kmax;
+
+    // Flag for fixed time steps
+    bool kfixed;
     
     // Threshold for reaching end of interval
     real beta;

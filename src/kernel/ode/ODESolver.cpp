@@ -44,8 +44,10 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
 
   dolfin_end();
 
-  dolfin_start("Solving dual problem");
+  /*
 
+  dolfin_start("Solving dual problem");
+  
   // Create dual problem
   Dual dual(ode, u);
 
@@ -56,6 +58,8 @@ void ODESolver::solve(ODE& ode, Function& u, Function& phi)
   TimeStepper::solve(dual, phi);
 
   dolfin_end();
+
+  */
 
   dolfin_end();
 }

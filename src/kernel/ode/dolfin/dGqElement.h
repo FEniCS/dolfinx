@@ -24,9 +24,13 @@ namespace dolfin {
     real dx() const;
 
     void update(real u0);
-    void update(RHS& f);
+    real update(RHS& f);
+    real update(RHS& f, real alpha);
+
+    void reset(real u0);
 
     real computeTimeStep(real TOL, real r, real kmax) const;
+    real computeDiscreteResidual(RHS& f);
     
   private:
 

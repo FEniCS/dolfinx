@@ -60,14 +60,45 @@ void cGqElement::update(real u0)
   values[0] = u0;
 }
 //-----------------------------------------------------------------------------
-void cGqElement::update(RHS& f)
+real cGqElement::update(RHS& f)
 {
+  // Save old end-value
+  real u1 = values[q];
+
   // Evaluate right-hand side
   feval(f);
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
     values[i] = values[0] + integral(i);
+
+  // Return change in end-value
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+real cGqElement::update(RHS& f, real alpha)
+{
+  // Save old end-value
+  real u1 = values[q];
+
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute weight for old value
+  real w0 = 1.0 - alpha;
+
+  // Update nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    values[i] = w0*values[i] + alpha*(values[0] + integral(i));
+
+  // Return change in end-value
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+void cGqElement::reset(real u0)
+{
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 real cGqElement::computeTimeStep(real TOL, real r, real kmax) const
@@ -78,6 +109,9 @@ real cGqElement::computeTimeStep(real TOL, real r, real kmax) const
     return kmax;
 
   // FIXME: Missing stability factor, interpolation constant, power
+
+  //dolfin_debug1("k: %100.100lf", TOL / abs(r));
+  //dolfin_debug1("r: %100.100lf", abs(r));
 
   return TOL / abs(r);
 }
@@ -106,5 +140,13 @@ real cGqElement::integral(unsigned int i) const
     sum += cG(q).weight(i, j) * f(j);
 
   return k * sum;
+}
+//-----------------------------------------------------------------------------
+real cGqElement::computeDiscreteResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  return (values[q] - values[0] - integral(q)) / timestep();
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // Updates by Johan Jansson 2003
 
 #include <iostream>
-
+#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Element.h>
 #include <dolfin/Adaptivity.h>
@@ -17,12 +17,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RecursiveTimeSlab::RecursiveTimeSlab(real t0, real t1, Solution& u, RHS& f,
-				     Adaptivity& adaptivity, 
+				     Adaptivity& adaptivity,
+				     FixedPointIteration& fixpoint,
 				     Partition& partition, int offset) :
   TimeSlab(t0, t1)
 {
   // Create the time slab
-  create(u, f, adaptivity, partition, offset);
+  create(u, f, adaptivity, fixpoint, partition, offset);
 }
 //-----------------------------------------------------------------------------
 RecursiveTimeSlab::~RecursiveTimeSlab()
@@ -36,16 +37,40 @@ RecursiveTimeSlab::~RecursiveTimeSlab()
   }
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::update(Solution& u, RHS& f)
+real RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
 {
   // First update the time slabs
-  updateTimeSlabs(u, f);
+  real ds = updateTimeSlabs(fixpoint);
 
   // Then update the elements
-  updateElements(u, f);
+  real de = updateElements(fixpoint);
+
+  return std::max(ds, de);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::create(Solution& u, RHS& f, Adaptivity& adaptivity,
+void RecursiveTimeSlab::reset(Solution& u)
+{
+  // First reset the time slabs
+  resetTimeSlabs(u);
+
+  // Then reset the elements
+  resetElements(u);
+}
+//-----------------------------------------------------------------------------
+real RecursiveTimeSlab::computeMaxRd(Solution& u, RHS& f)
+{
+  // First check time slabs
+  real rs = computeMaxRdTimeSlabs(u, f);
+
+  // Then check the elements
+  real re = computeMaxRdElements(u, f);
+
+  return std::max(rs, re);
+}
+//-----------------------------------------------------------------------------
+void RecursiveTimeSlab::create(Solution& u, RHS& f,
+			       Adaptivity& adaptivity,
+			       FixedPointIteration& fixpoint,
 			       Partition& partition, int offset)
 {
   int end = 0;
@@ -59,14 +84,15 @@ void RecursiveTimeSlab::create(Solution& u, RHS& f, Adaptivity& adaptivity,
 
   // Create time slabs for the components with small time steps
   if (end < partition.size())
-    createTimeSlabs(u, f, adaptivity, partition, end);
+    createTimeSlabs(u, f, adaptivity, fixpoint, partition, end);
 
   // Create elements for the components with large time steps
-  createElements(u, f, adaptivity, partition, offset, end);
+  createElements(u, f, adaptivity, fixpoint, partition, offset, end);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f, 
 					Adaptivity& adaptivity,
+					FixedPointIteration& fixpoint,
 					Partition& partition, int offset)
 {
   // Current position
@@ -77,7 +103,7 @@ void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f,
   {
     // Create a new time slab
     TimeSlab* timeslab = 
-      new RecursiveTimeSlab(t, t1, u, f, adaptivity, partition, offset);
+      new RecursiveTimeSlab(t, t1, u, f, adaptivity, fixpoint, partition, offset);
     
     // Add the new time slab to the list
     timeslabs.push_back(timeslab);
@@ -93,6 +119,7 @@ void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f,
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
 				       Adaptivity& adaptivity,
+				       FixedPointIteration& fixpoint,
 				       Partition& partition,
 				       int offset, int end)
 
@@ -115,17 +142,38 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
   }
 
   // Update elements
-  updateElements(u, f);
+  updateElements(fixpoint);
 
   // Compute residuals and new time steps
   computeResiduals(f, adaptivity);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::updateTimeSlabs(Solution& u, RHS& f)
+real RecursiveTimeSlab::updateTimeSlabs(FixedPointIteration& fixpoint)
 {
+  real dmax = 0.0;
+
   // Update time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
-    timeslabs[i]->update(u, f);
+    dmax = std::max(dmax, timeslabs[i]->update(fixpoint));
+  
+  return dmax;
+}
+//-----------------------------------------------------------------------------
+void RecursiveTimeSlab::resetTimeSlabs(Solution& u)
+{
+  // Reset time slabs
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    timeslabs[i]->reset(u);
+}
+//-----------------------------------------------------------------------------
+real RecursiveTimeSlab::computeMaxRdTimeSlabs(Solution& u, RHS& f)
+{
+  real rdmax = 0;
+
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    rdmax = std::max(rdmax, fabs(timeslabs[i]->computeMaxRd(u, f)));
+
+  return rdmax;
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)
@@ -133,6 +181,7 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)
   // Get tolerance and maximum time step
   real TOL = adaptivity.tolerance();
   real kmax = adaptivity.maxstep();
+  bool kfixed = adaptivity.fixed();
 
   // Compute residuals and new time steps
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -147,7 +196,7 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)
     real k = element->computeTimeStep(TOL, r, kmax);
 
     // Update regulator
-    adaptivity.regulator(element->index()).update(k, kmax);
+    adaptivity.regulator(element->index()).update(k, kmax, kfixed);
    }
  }
 //-----------------------------------------------------------------------------

@@ -14,7 +14,7 @@ public:
   Minimal() : ODE(3)
   {
     // Parameters
-    lambda = 1.0;
+    lambda = 100.0;
 
     // Final time
     T = 30.0;
@@ -84,13 +84,15 @@ int main()
 {
   dolfin_set("output", "plain text");
   dolfin_set("debug time steps", 1);
-  dolfin_set("tolerance", 0.1);
+  dolfin_set("tolerance", 0.01);
   dolfin_set("initial time step", 0.1);
-  dolfin_set("maximum time step", 0.1);
+  //dolfin_set("maximum time step", 1.0);
+  dolfin_set("fixed time step", true);
   dolfin_set("partitioning threshold", 1.0);
   dolfin_set("interval threshold", 0.9);
-  dolfin_set("number of samples", 100);
+  dolfin_set("number of samples", 1000);
   dolfin_set("element cache size", 32);
+  dolfin_set("maximum iterations", 100);
 
   Minimal minimal;
   minimal.solve();

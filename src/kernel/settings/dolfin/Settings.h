@@ -19,27 +19,33 @@ namespace dolfin {
       add(Parameter::REAL, "tolerance", 0.1);
       add(Parameter::REAL, "start time", 0.0);
       add(Parameter::REAL, "end time",   10.0);
-      add(Parameter::REAL, "initial time step", 0.01);
-      add(Parameter::REAL, "maximum time step", 1.0);
-      add(Parameter::REAL, "partitioning threshold", 1.0);
-      add(Parameter::REAL, "interval threshold", 0.9);
-      add(Parameter::REAL, "sparsity check increment", 0.01);
       add(Parameter::REAL, "krylov tolerance", 1.0e-10);
 
       add(Parameter::INT, "max no krylov restarts", 100);
       add(Parameter::INT, "max no stored krylov vectors", 100);
       add(Parameter::INT, "max no cg iterations", 1000);
       add(Parameter::INT, "pc iterations", 5);
-      add(Parameter::INT, "number of samples", 100);
-      add(Parameter::INT, "element cache size", 32);
-       
-      add(Parameter::BOOL, "debug time steps", 0);
 
       add(Parameter::STRING, "output", "curses");
       add(Parameter::STRING, "temporary directory", "/tmp");
 
       add(Parameter::BCFUNCTION, "boundary condition", 0);
-      
+
+      // Parameters for multi-adaptive solver
+
+      add(Parameter::BOOL, "debug time steps", 0);
+      add(Parameter::BOOL, "fixed time step", false);
+
+      add(Parameter::INT, "number of samples", 100);
+      add(Parameter::INT, "element cache size", 32);
+      add(Parameter::INT, "maximum iterations", 100);
+       
+      add(Parameter::REAL, "initial time step", 0.01);
+      add(Parameter::REAL, "maximum time step", 1.0);
+      add(Parameter::REAL, "partitioning threshold", 1.0);
+      add(Parameter::REAL, "interval threshold", 0.9);
+      add(Parameter::REAL, "sparsity check increment", 0.01);
+
     }
     
   };

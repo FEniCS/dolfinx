@@ -15,6 +15,7 @@ namespace dolfin {
   class Partition;
   class RHS;
   class Solution;
+  class FixedPointIteration;
 
   /// The recursive version of the time slab.
 
@@ -23,31 +24,47 @@ namespace dolfin {
 
     /// Create time slab, including one iteration
     RecursiveTimeSlab(real t0, real t1, Solution& u, RHS& f, 
-		      Adaptivity& adaptivity, Partition& partition, int offset);
+		      Adaptivity& adaptivity, FixedPointIteration& fixpoint,
+		      Partition& partition, int offset);
     
     /// Destructor
     ~RecursiveTimeSlab();
     
     /// Update time slab (iteration)
-    void update(Solution& u, RHS& f);
+    real update(FixedPointIteration& fixpoint);
+
+    /// Reset time slab to initial values
+    void reset(Solution& u);
+
+    /// Compute maximum discrete residual in time slab
+    real computeMaxRd(Solution& u, RHS& f);
 
   private:
     
     // Create new time slab
     void create(Solution& u, RHS& f, Adaptivity& adaptivity,
+		FixedPointIteration& fixpoint,
 		Partition& partition, int offset);
     
     // Create list of time slabs within the time slab
     void createTimeSlabs(Solution& u, RHS& f, Adaptivity& adaptivity,
+			 FixedPointIteration& fixpoint,
 			 Partition& partition, int offset);
 
     // Create list of elements within the time slab
     void createElements(Solution& u, RHS& f, Adaptivity& adaptivity,
+			FixedPointIteration& fixpoint,
 			Partition& partition, int offset, int end);
 
     // Update time slabs (iteration)
-    void updateTimeSlabs(Solution& u, RHS& f);
+    real updateTimeSlabs(FixedPointIteration& fixpoint);
+
+    // Reset time slabs to initial values
+    void resetTimeSlabs(Solution& u);
     
+    /// Compute maximum discrete residual in time slabs
+    real computeMaxRdTimeSlabs(Solution& u, RHS& f);
+
     // Compute residuals and new time steps
     void computeResiduals(RHS& f, Adaptivity& adaptivity);
 

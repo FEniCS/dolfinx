@@ -60,14 +60,46 @@ void dGqElement::update(real u0)
   this->u0 = u0;
 }
 //-----------------------------------------------------------------------------
-void dGqElement::update(RHS& f)
+real dGqElement::update(RHS& f)
 {
+  // Save old end-value
+  real u1 = values[q];
+
   // Evaluate right-hand side
   feval(f);
   
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = u0 + integral(i);
+
+  // Return change in end-value
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::update(RHS& f, real alpha)
+{
+  // Save old end-value
+  real u1 = values[q];
+
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute weight for old value
+  real w0 = 1.0 - alpha;
+ 
+  // Update nodal values
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] = w0*values[i] + alpha*(u0 + integral(i));
+
+  // Return change in end-value
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+void dGqElement::reset(real u0)
+{
+  this->u0 = u0;
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real TOL, real r, real kmax) const
@@ -101,5 +133,13 @@ real dGqElement::integral(unsigned int i) const
     sum += dG(q).weight(i, j) * f(j);
 
   return k * sum;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeDiscreteResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  return (values[q] - u0 - integral(q)) / timestep();
 }
 //-----------------------------------------------------------------------------

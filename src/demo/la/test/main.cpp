@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   dolfin::cout << x << dolfin::endl;
 
   matlab << A;
-  
+
   dolfin::cout << "A = "; 
   A.show();
   dolfin::cout << "b = "; 

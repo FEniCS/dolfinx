@@ -50,11 +50,14 @@ void Partition::update(int offset, int& end, real& K, Adaptivity& adaptivity)
   Less less(K, adaptivity);
 
   // Partition using std::partition
+  NewArray<unsigned int>::iterator start = indices.begin();
+  std::advance(start, offset);
+
   NewArray<unsigned int>::iterator middle =
-    std::partition(indices.begin() + offset, indices.end(), less);
+    std::partition(start, indices.end(), less);
 
   // Compute pivot index
-  end = middle - indices.begin();
+  end = std::distance(indices.begin(), middle);
 }
 //-----------------------------------------------------------------------------
 void Partition::debug(unsigned int offset, unsigned int end, 

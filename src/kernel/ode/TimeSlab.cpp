@@ -6,6 +6,7 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
+#include <dolfin/FixedPointIteration.h>
 #include <dolfin/TimeSlab.h>
 
 using namespace dolfin;
@@ -71,10 +72,9 @@ void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateElements(Solution& u, RHS& f)
+real TimeSlab::updateElements(FixedPointIteration& fixpoint)
 {
-  // Update initial values
-  updateu0(u);
+  real dmax = 0.0;
 
   // Update elements
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -82,18 +82,17 @@ void TimeSlab::updateElements(Solution& u, RHS& f)
     // Get the element
     Element* element = elements[i];
     dolfin_assert(element);
-    
+
     // Update element
-    element->update(f);
-    
-    // Write debug info
-    u.debug(*element, Solution::update);
+    dmax = std::max(dmax, fixpoint.update(*element));
   }
+  
+  return dmax;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateu0(Solution& u)
+void TimeSlab::resetElements(Solution& u)
 {
-  // Update initial values
+  // Reset elements
   for (unsigned int i = 0; i < elements.size(); i++)
   {
     // Get the element
@@ -102,10 +101,33 @@ void TimeSlab::updateu0(Solution& u)
     
     // Get initial value for element
     real u0 = u(element->index(), element->starttime());
+    
+    cout << "Resetting component " << element->index() << " to initial value: " << u0 << endl;
 
-    // Update value
-    element->update(u0);
-  }  
+    // Reset element
+    element->reset(u0);
+  }
+}
+//-----------------------------------------------------------------------------
+real TimeSlab::computeMaxRdElements(Solution& u, RHS& f)
+{
+  real maxrd = 0.0;
+
+  // Compute maximum discrete residual
+  for (unsigned int i = 0; i < elements.size(); i++)
+  {
+    // Get the element
+    Element* element = elements[i];
+    dolfin_assert(element);
+
+    // Compute discrete residual
+    maxrd = std::max(maxrd, fabs(element->computeDiscreteResidual(f)));
+    
+    cout << "  r[" << element->index() << "] = " << fabs(element->computeDiscreteResidual(f)) << endl;
+
+  }
+
+  return maxrd;
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const TimeSlab& timeslab)

@@ -147,6 +147,7 @@ AC_OUTPUT( Makefile \
            src/demo/la/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/ode/Makefile \
+           src/demo/solvers/ode/stiff/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/greeting/Makefile )

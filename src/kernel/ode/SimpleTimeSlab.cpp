@@ -24,9 +24,19 @@ SimpleTimeSlab::~SimpleTimeSlab()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::update(Solution& u, RHS& f)
+real SimpleTimeSlab::update(FixedPointIteration& fixpoint)
 {
-  updateElements(u, f);
+  return updateElements(fixpoint);
+}
+//-----------------------------------------------------------------------------
+void SimpleTimeSlab::reset(Solution& u)
+{
+  resetElements(u);
+}
+//-----------------------------------------------------------------------------
+real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)
+{
+  return computeMaxRdElements(u, f);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)

@@ -13,6 +13,7 @@ Adaptivity::Adaptivity(unsigned int N) : regulators(N)
   // Get parameters
   TOL     = dolfin_get("tolerance");
   kmax    = dolfin_get("maximum time step");
+  kfixed    = dolfin_get("fixed time step");
   beta    = dolfin_get("interval threshold");
   real k0 = dolfin_get("initial time step");
 
@@ -52,6 +53,14 @@ real Adaptivity::maxstep() const
   // FIXME: In that case we should put kmax into the Regulator class.
 
   return kmax;
+}
+//-----------------------------------------------------------------------------
+bool Adaptivity::fixed() const
+{
+  // FIXME: Should we have an individual kmax for each component?
+  // FIXME: In that case we should put kmax into the Regulator class.
+
+  return kfixed;
 }
 //-----------------------------------------------------------------------------
 real Adaptivity::threshold() const

@@ -12,6 +12,7 @@ namespace dolfin {
   class Adaptivity;
   class RHS;
   class Solution;
+  class FixedPointIteration;
 
   /// The simple version of the time slab.
 
@@ -25,7 +26,13 @@ namespace dolfin {
     ~SimpleTimeSlab();
     
     /// Update time slab (iteration)
-    void update(Solution& u, RHS& f);
+    real update(FixedPointIteration& fixpoint);
+    
+    /// Reset time slab to initial values
+    void reset(Solution& u);
+
+    /// Compute maximum discrete residual in time slab
+    real computeMaxRd(Solution& u, RHS& f);
 
   private:
     
