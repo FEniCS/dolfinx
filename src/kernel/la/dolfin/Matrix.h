@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modifications by Georgios Foufas 2002, 2003
 
 #ifndef __MATRIX_HH
 #define __MATRIX_HH
@@ -54,7 +56,9 @@ namespace dolfin {
 	 friend class Reference;
 
 	 // Operators
-	 void operator= (real a);
+	 void operator=  (Matrix& A);
+	 void operator+= (Matrix& A);
+	 void operator*= (real a);
 	 
 	 /// Resize to empty matrix of given size
 	 void init(int m, int n);

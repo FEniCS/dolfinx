@@ -1,5 +1,7 @@
- // Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modifications by Georgios Foufas 2002, 2003
 
 #include <iostream>
 #include <dolfin/Vector.h>
@@ -39,11 +41,42 @@ Matrix::~Matrix()
   clear();
 }
 //-----------------------------------------------------------------------------
-void Matrix::operator= (real a)
+void Matrix::operator= (Matrix& A)
+{
+  init(A.m, A.n);
+  
+  for (int i = 0; i < m; i++) {
+    initRow(i,A.rowsizes[i]);
+    
+    for (int pos = 0; pos < rowsizes[i]; pos++) {
+      columns[i][pos] = A.columns[i][pos];
+      values[i][pos] = A.values[i][pos];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void Matrix::operator+= (Matrix& A)
+{
+  if ( A.m != m || A.n != n ) {
+	 // FIXME: Use logging system
+    cout << "Matrix::operator= (): Matrices not compatible." << endl;
+	 exit(1);
+  }
+
+  int j = 0;
+  for (int i = 0; i < m; i++)
+    for (int pos = 0; pos < A.rowsizes[i]; pos++) {
+      if ( (j = A.columns[i][pos]) == -1 )
+		  break;
+		addtoElement(i, j, A.values[i][pos]);
+    }
+}
+//-----------------------------------------------------------------------------
+void Matrix::operator*= (real a)
 {
   for (int i = 0; i < m; i++)
-	 for (int j = 0; j < rowsizes[i]; j++)
-		values[i][j] = a;
+    for (int j = 0; j < rowsizes[i]; j++)
+      values[i][j] *= a;
 }
 //-----------------------------------------------------------------------------
 void Matrix::init(int m, int n)

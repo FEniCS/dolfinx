@@ -234,9 +234,6 @@ void Galerkin::alloc(Matrix &A, Grid &grid)
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
 	 A.init(m, n);
-
-  // Set all entries to zero
-  A = 0.0;
 }
 //-----------------------------------------------------------------------------
 void Galerkin::alloc(Vector &b, Grid &grid)
