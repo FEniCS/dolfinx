@@ -13,6 +13,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Adaptivity.h \
              NewAdaptivity.h \
              Alloc.h \
+             ComplexODE.h \
              Component.h \
              Dependencies.h \
              Dual.h \

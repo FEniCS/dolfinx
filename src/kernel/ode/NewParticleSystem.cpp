@@ -1,14 +1,17 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <cmath>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/NewParticleSystem.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewParticleSystem::NewParticleSystem(unsigned int n, unsigned int dim) : 
-  ODE(2*dim*n), n(n), dim(dim)
+  ODE(2*dim*n), n(n), dim(dim), offset(0), u(0)
 {
   // Check dimension
   if ( dim == 0 )
@@ -18,9 +21,8 @@ NewParticleSystem::NewParticleSystem(unsigned int n, unsigned int dim) :
   
   // Compute offset
   offset = dim*n;
-  
-  // Clear pointer to solution
-  u = 0;
+
+  dolfin_info("Creating particle system of size %d (%d particles).", N, n);
 }
 //-----------------------------------------------------------------------------
 NewParticleSystem::~NewParticleSystem()

@@ -14,6 +14,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Adaptivity.h \
                           dolfin/NewAdaptivity.h \
                           dolfin/Alloc.h \
+                          dolfin/ComplexODE.h \
                           dolfin/Component.h \
                           dolfin/Dependencies.h \
                           dolfin/Dual.h \
@@ -80,6 +81,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Adaptivity.cpp \
                           NewAdaptivity.cpp \
                           Alloc.cpp \
+                          ComplexODE.cpp \
                           Component.cpp \
                           Dependencies.cpp \
                           Dual.cpp \

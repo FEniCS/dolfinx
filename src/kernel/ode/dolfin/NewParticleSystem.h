@@ -21,8 +21,10 @@ namespace dolfin
   /// Positions and velocities are stored in the following order in
   /// the solution vector u(t):
   ///
-  /// u = (x_0,  y_0,  z_0,  ... , x_n,  y_n,  z_n, 
-  ///      x_0', y_0', z_0', ... , x_n', y_n', z_n')
+  /// u = (x_0,  y_0,  z_0,  ... , x_n-1,  y_n-1,  z_n-1, 
+  ///      x_0', y_0', z_0', ... , x_n-1', y_n-1', z_n-1').
+  ///
+  /// FIXME: Need to implement ODE::feval()
 
   class NewParticleSystem : public ODE
   {
