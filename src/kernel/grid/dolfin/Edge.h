@@ -27,6 +27,9 @@ namespace dolfin {
 
     /// Destructor
     ~Edge();
+
+    /// Clear edge data
+    void clear();
     
     ///--- Edge data ---
     

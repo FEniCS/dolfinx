@@ -33,6 +33,12 @@ namespace dolfin{
 
     /// Create an unconnected node at (x,y,z)
     Node(real x, real y, real z);
+
+    /// Destructor
+    ~Node();
+
+    /// Clear node data
+    void clear();
     
     ///--- Node data ---
 

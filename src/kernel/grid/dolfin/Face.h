@@ -24,7 +24,7 @@ namespace dolfin {
     /// Destructor
     ~Face();
 
-    /// Clear the edges
+    /// Clear face data
     void clear();
 
     /// Return id of cell

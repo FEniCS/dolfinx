@@ -12,14 +12,14 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  int refinements = 10;
+  int refinements = 3;
 
   // Refine 2D grid
   refine2D(refinements);
 
   // Refine 3D grid
   /* refine3D(refinements); */
-
+  
   return 0;
 }
 

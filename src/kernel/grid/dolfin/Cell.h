@@ -44,7 +44,10 @@ namespace dolfin {
 
     /// Destructor
     ~Cell();
-    
+
+    /// Clear cell data
+    void clear();
+
     ///--- Cell data ---
 
     /// Return id of cell

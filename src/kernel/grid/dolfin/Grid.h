@@ -66,6 +66,9 @@ namespace dolfin {
     /// Refine grid
     void refine();
 
+    /// Refine uniformly (all cells marked)
+    void refineUniformly();
+
     /// Return parent grid
     Grid& parent();
 

@@ -76,18 +76,16 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if (grid.index() > 0) {
-      cout << "--- Close at level " << grid.index() << endl;
+    if (grid.index() > 0)
       closeGrid(*grid);
-    }
-    cout << "--- Unrefine at level " << grid.index() << endl;
     unrefineGrid(*grid, grids);
-    cout << "--- Refine at level " << grid.index() << endl;
     refineGrid(*grid);
   }
 
   // Update grid hierarchy
+  dolfin_log(false);
   grids.init(grids.coarse());
+  dolfin_log(true);
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
@@ -132,8 +130,6 @@ void GridRefinement::closeGrid(Grid& grid)
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
-
-    cout << "Remaining number of cells to close = " << cells.size() << endl;
 
     // Get first cell and remove it from the list
     Cell* cell = cells.pop();

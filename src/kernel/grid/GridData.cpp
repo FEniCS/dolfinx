@@ -138,21 +138,25 @@ Face& GridData::getFace(int id)
 //-----------------------------------------------------------------------------
 void GridData::remove(Node& node)
 {
+  node.clear();
   nodes.remove(node);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Cell& cell)
 {
+  cell.clear();
   cells.remove(cell);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Edge& edge)
 {
+  edge.clear();
   edges.remove(edge);
 }
 //-----------------------------------------------------------------------------
 void GridData::remove(Face& face)
 {
+  face.clear();
   faces.remove(face);
 }
 //-----------------------------------------------------------------------------

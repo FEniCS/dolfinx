@@ -135,11 +135,6 @@ Grid::Type Grid::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-void Grid::mark(Cell& cell)
-{
-  rd->mark(cell);
-}
-//-----------------------------------------------------------------------------
 void Grid::refine()
 {
   // Check that this is the finest grid
@@ -147,7 +142,9 @@ void Grid::refine()
     dolfin_error("Only the finest grid in a grid hierarchy can be refined.");
 
   // Create grid hierarchy
+  dolfin_log(false);
   GridHierarchy grids(*this);
+  dolfin_log(true);
 
   // Refine grid hierarchy
   GridRefinement::refine(grids);
@@ -177,6 +174,16 @@ void Grid::refine()
     new_grid->_child = this;
     
   }    
+}
+//-----------------------------------------------------------------------------
+void Grid::refineUniformly()
+{
+  // Mark all cells for refinement
+  for (CellIterator c(*this); !c.end(); ++c)
+    c->mark();
+
+  // Refine
+  refine();
 }
 //-----------------------------------------------------------------------------
 Grid& Grid::parent()
