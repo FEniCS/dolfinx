@@ -8,10 +8,10 @@
 
 namespace dolfin {
 
-  class Matrix;
-  class Vector;
-
-  /// Krylov solver, including conjugate gradient (CG) and GMRES
+ class Matrix;
+ class Vector;
+  
+ /// Krylov solver, including conjugate gradient (CG) and GMRES
   class KrylovSolver{
   public:
     
@@ -20,25 +20,24 @@ namespace dolfin {
     
     KrylovSolver(Method method = GMRES);
     
-    void solve(const Matrix& A, Vector& x, const Vector& b);
+    void solve(const Matrix &A, Vector &x, const Vector &b);
 
     void setMethod(Method method);
+    void setPreconditioner(Preconditioner pc);
     
   private:
     
-    void solveCG    (const Matrix& A, Vector& x, const Vector& b);
-    void solveGMRES (const Matrix& A, Vector& x, const Vector& b);
+    void solveCG    (const Matrix &A, Vector &x, const Vector &b);
+    void solveGMRES (const Matrix &A, Vector &x, const Vector &b);
     
-    int restartedGMRES(const Matrix& A, Vector& x, const Vector& b, int k_max);
+    int restartedGMRES(const Matrix &A, Vector &x, const Vector &b, int k_max);
     
-    void solvePxv (const Matrix& A, Vector& x, Matrix& v, int k);
-    void solvePxu (const Matrix& A, Vector& x, Vector& u);
-    void applyPxu (const Matrix& A, Vector& x, Vector& u);
-    
-    bool reorthog (const Matrix& A, Matrix& v, int k);
-    
-    real residual (const Matrix& A, Vector& x, const Vector& b, Vector& r);
-    real residual (const Matrix& A, Vector& x, const Vector& b);
+    void solvePxu(const Matrix &A, Vector &x, Vector &u);
+
+    bool reorthog(const Matrix& A, Matrix& v, Vector &x, int k);   
+
+    real residual (const Matrix &A, Vector &x, const Vector &b, Vector &r);
+    real residual (const Matrix &A, Vector &x, const Vector &b);
     
     Method method;
     Preconditioner pc;

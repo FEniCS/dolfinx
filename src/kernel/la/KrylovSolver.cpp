@@ -25,6 +25,11 @@ void KrylovSolver::setMethod(Method method)
   this->method = method;
 }
 //-----------------------------------------------------------------------------
+void KrylovSolver::setPreconditioner(Preconditioner pc)
+{
+  this->pc = pc;
+}
+//-----------------------------------------------------------------------------
 void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
 {
   if ( A.size(0) != A.size(1) )
@@ -34,15 +39,15 @@ void KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   
   cout << "Using Krylov solver for linear system of " << b.size() << " unknowns." << endl;
   
-  // Resize x
-  x.init(b.size());
+  // Check if we need to resize x
+  if (x.size() != b.size()) x.init(b.size());
 
   // Check if b=0 => x=0
   if (b.norm() < DOLFIN_EPS){
     x = 0.0;
     return;
   }
-  
+
   // Choose method
   switch( method ){ 
   case GMRES:
@@ -69,13 +74,13 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
     no_iterations = restartedGMRES(A,x,b,k_max);
     norm_residual = residual(A,x,b);
     if (norm_residual < (tol*b.norm())){
-      if ( i > 0 ) cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
-      else cout << "GMRES converged after " << no_iterations << " iterations";
-      cout << " (residual = " << norm_residual << ")." << endl;
+      dolfin_info("Restarted GMRES converged after %i iterations (residual %1.5e)",
+		  i*k_max+no_iterations,norm_residual);
       break;
     }
     if (i == max_no_restarts-1) {
-      cout << "GMRES iterations did not converge: residual = " << norm_residual << endl;
+      dolfin_info("Restarted GMRES did not converged (%i iterations, residual %1.5e)",
+		    i*k_max+no_iterations,norm_residual);
       exit(1);
     }
   }
@@ -84,100 +89,98 @@ void KrylovSolver::solveGMRES(const Matrix& A, Vector& x, const Vector& b)
 int KrylovSolver::restartedGMRES(const Matrix& A,
 				 Vector& x, const Vector& b, int k_max)
 {
-  // Solve preconditioned problem Ax = AP^(-1)Px = b, 
-  // by first solving AP^(-1)u=b through GMRES, then 
-  // solve Px = u to get x. Extrem cases is P = A (changes nothing) 
-  // and P = I (corresponds to no preconditioner). 
-  // AP^(-1)u=b is solved to a tolerance rho/|b| < tol, 
-  // where rho is the norm of the residual b-AP^(-1)u = b-Ax,
-  // at a maximal number of iterations k_max, 
-  // starting from startvector u = Px. 
+  //Flexible GMRES with right preconditioner.
 
   // number of unknowns
   int n = x.size();
   
-  // Initializing unknown u=Px
-  Vector u(x);
-  applyPxu(A,x,u);
-
   // initialization of temporary variables 
   Matrix mat_h(k_max+1,k_max+1, Matrix::DENSE);
-  Matrix mat_r(k_max+1,k_max+1, Matrix::DENSE);
-  Matrix mat_v(n,k_max+1, Matrix::DENSE);
+  Matrix mat_v(1,n, Matrix::DENSE);
+  Matrix mat_z(1,n, Matrix::DENSE);
 
-  Vector vec_s(k_max+1); 
-  Vector vec_y(k_max+1); 
-  Vector vec_w(k_max+1); 
+  Vector vec_s(k_max+1);  
   Vector vec_c(k_max+1); 
   Vector vec_g(k_max+1); 
-
-  Vector vec_tmp1(n);
-  Vector vec_tmp2(n);
+  Vector vec_z(n);
+  Vector vec_v(n);
 
   real tmp1,tmp2,nu,norm_v,htmp;
-
-  // norm of rhs b
-  real norm_b = b.norm();
   
-  // Compute start residual = b-AP^(-1)u = b-Ax.
+  // Compute start residual = b-Ax.
   Vector r(n);
   real norm_residual = residual(A,x,b,r);
 
-  // Set start values for v,rho,beta,vec_g 
-  for (int i=0;i<n;i++) mat_v(i,0) = r(i)/norm_residual;
+  // Set start values for v. 
+  for (int i=0;i<n;i++) mat_v[0][i] = vec_v(i) = r(i)/norm_residual;
 
-  // set start column of v to residual/|residual|
-  for (int i = 0; i <n; i++)
-    mat_v(i, 0) = r(i)/norm_residual;
-
-  real rho  = norm_residual;
-
+  if (pc != NONE){
+    no_pc_sweeps = dolfin_get("pc iterations"); // no pc iterations (sweeps
+    solvePxu(A,vec_z,vec_v);
+    A.mult(vec_z,vec_v);
+    mat_z(0,all) = vec_z;
+  }
+  
   vec_g = 0.0;
-  vec_g(0) = rho;
+  vec_g(0) = norm_residual;
 
   int k,k_end;
-  for (k = 0; k < k_max; k++) {
-    // Use the modified Gram-Schmidt process find orthogonal Krylov vectors
-    //
-    // The computation of the Krylov vector AP^(-1) v(k) includes  
-    // 2 steps: First solve Pw = v, then apply A to w.
-    solvePxv(A,vec_tmp1,mat_v,k);
-    A.mult(vec_tmp1,vec_tmp2);
-    for (int i=0;i<n;i++) mat_v(i,k+1) = vec_tmp2(i);
+  for (k=0;k<k_max;k++){
+    // Use the modified Gram-Schmidt process with reorthogonalization to
+    // find orthogonal Krylov vectors.
+    
+    if (k>0) mat_v.addrow(vec_v);
 
-    for (int j = 0; j < k+1; j++) {
-      mat_h[j][k] = 0.0;
-      for (int i = 0; i < n; i++) mat_h[j][k] += mat_v[i][k+1] * mat_v[i][j];
-      for (int i = 0; i < n; i++) mat_v[i][k+1] -= mat_h[j][k] * mat_v[i][j];
+    if (pc != NONE){
+      solvePxu(A,vec_z,vec_v);
+      A.mult(vec_z,vec_v);
+      if (k>0) mat_z.addrow(vec_z);
     }
-    norm_v = 0.0;
-    for (int i=0;i<n;i++) norm_v += sqr(mat_v[i][k+1]);
-    norm_v = sqrt(norm_v);
-    mat_h[k+1][k] = norm_v;
+    else{
+      vec_z = vec_v;
+      A.mult(vec_z,vec_v);
+    }
+
+    // Modified Gram-Schmit orthogonalization. 
+    for (int j=0;j<k+1;j++){
+      /* konstruktionen här är långsammare än den efterföljande
+      htmp = vec_v * mat_v(j,all); 
+      mat_h(j,k) = htmp;
+      vec_v.add(-htmp,mat_v(j,all));
+      */
+      htmp = 0.0;
+      for (int i=0;i<n;i++) htmp += vec_v(i) * mat_v[j][i];
+      mat_h[j][k] = htmp;
+      for (int i=0;i<n;i++) vec_v(i) -= htmp * mat_v[j][i];
+    }
+    mat_h[k+1][k] = vec_v.norm();
     
-    // Test for non orthogonality and reorthogonalise if necessary
-    if ( reorthog(A, mat_v, k) ) { 
+    // Test for non orthogonality and reorthogonalise if necessary.
+    if ( reorthog(A,mat_v,vec_v,k) ){ 
       for (int j=0;j<k+1;j++){
-	for (int i=0;i<n;i++) htmp = mat_v[i][k+1]*mat_v[i][j];
-	mat_h[j][k] += htmp;
-	for (int i=0;i<n;i++) mat_v[i][k+1] -= htmp*mat_v[i][j];
+	/* konstruktionen här är långsammare än den efterföljande
+	htmp = vec_v * mat_v(j,all);
+	mat_h(j,k) += htmp;
+	vec_v.add(-htmp,mat_v(j,all));
+	*/
+	for (int i=0;i<n;i++) htmp = vec_v(i)*mat_v[j][i];
+	mat_h(j,k) += htmp;
+	for (int i=0;i<n;i++) vec_v(i) -= htmp*mat_v[j][i];
       }	  
-      norm_v = 0.0;
-      for (int i=0;i<n;i++) norm_v += sqr(mat_v[i][k+1]);
-      norm_v = sqrt(norm_v);
-      mat_h[k+1][k] = norm_v;
+      mat_h[k+1][k] = vec_v.norm();
     }
     
-    for (int i = 0; i < n; i++)
-      mat_v[i][k+1] /= norm_v;
+    // Normalize
+    vec_v *= 1.0/mat_h[k+1][k]; 
 	 
-    // If k > 0, solve least squares problem using QR factorization and Givens rotations  
-    if ( k > 0 ){
+    // If k > 0, solve least squares problem using QR factorization
+    // and Givens rotations.  
+    if (k>0){
       for (int j=0;j<k;j++){
 	tmp1 = mat_h[j][k];
 	tmp2 = mat_h[j+1][k];
 	mat_h[j][k]   = vec_c(j)*tmp1 - vec_s(j)*tmp2;
-	mat_h[j+1][k] = vec_s(j)*tmp1 + vec_c(j)*tmp2;
+	mat_h[j+1][k] = vec_s(j)*tmp1 + vec_c(j)*tmp2; 
       }
     }
     
@@ -193,24 +196,21 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
     vec_g(k+1) = vec_s(k)*vec_g(k) + vec_c(k)*vec_g(k+1);
     vec_g(k) = tmp1;
     
-    rho = fabs(vec_g(k+1));
-    
-    // if residual rho = Ax-b less than tolerance (normalized with ||b||) we are done
-    if ( (rho < tol*norm_b) || (k == k_max-1) ){
+    // If residual rho = Ax-b less than tolerance 
+    // (normalized with ||b||) we are done.
+    if ( (fabs(vec_g(k+1)) < tol*b.norm()) || (k==k_max-1) ){
       k_end = k;
       break;
     }
-
   }
   k = k_end;
-  
-  // postprocess to obtain solution by solving system Ry=w
-  for (int i=0;i<k+1;i++){ 
-    vec_w(i)= vec_g(i);
-    for (int j=0;j<k+1;j++){ 
-      mat_r[i][j] = mat_h[i][j];
-    }
-  } 
+ 
+  // Postprocess to obtain solution by solving system Ry=w.
+  Matrix mat_r(k_max+1,k_max+1, Matrix::DENSE);
+  mat_r = mat_h;
+  Vector vec_w(vec_g);
+  Vector vec_y(k_end+1); 
+
   // solve triangular system ry = w
   vec_y(k) = vec_w(k)/mat_r[k][k];
   for (int i=1;i<k+1;i++){
@@ -218,40 +218,41 @@ int KrylovSolver::restartedGMRES(const Matrix& A,
     for (int j=0;j<i;j++) vec_y(k-i) -= mat_r[k-i][k-j]*vec_y(k-j);
     vec_y(k-i) /= mat_r[k-i][k-i];
   }
-  
-  vec_tmp1 = 0.0;
-  for (int i=0;i<n;i++){
-    for (int j=0;j<k+1;j++) vec_tmp1(i) += mat_v[i][j]*vec_y(j);
+
+  if ( pc != NONE){
+    vec_z = 0.0;
+    mat_z.multt(vec_y,vec_z);
+    x += vec_z;
   }
-
-  for (int i=0;i<n;i++) u(i) += vec_tmp1(i);
-
-  // Get solution from preconditioned problem (get x from Px=u)
-  solvePxu(A,x,u);
-
+  else{
+    vec_v = 0.0;
+    mat_v.multt(vec_y,vec_v);
+    x += vec_v;
+  }
+  
   return k_end;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
 {
-  // Only for symmetric, positive definite problems. 
-  // Does not work for the standard way of applying 
-  // Dirichlet boundary conditions, since then the 
-  // symmetry of the matrix is destroyed.
+  // Only for symmetric, positive definite problems.
 
   int n = x.size();
   int k_max;
   k_max = dolfin_get("max no cg iterations"); // max no iterations
   
-  real norm_b = b.norm();
+  Vector rho(k_max+1);
   
   // Compute start residual = b-Ax.
-  Vector r(n);
+  Vector r(n), z;
   real norm_residual = residual(A,x,b,r);
-  
-  Vector rho(k_max+1);
-  rho = 0.0;
-  rho(0) = sqr(norm_residual);
+
+  if (pc != NONE){ 
+    no_pc_sweeps = dolfin_get("pc iterations"); // no pc iterations (sweeps)
+    solvePxu(A,z,r);
+    rho(0) = r*z;
+  }
+  else rho(0) = sqr(norm_residual);
 
   Vector w(n);
   Vector p(n);
@@ -261,68 +262,52 @@ void KrylovSolver::solveCG(const Matrix &A, Vector &x, const Vector &b)
   int k;
   for (k=1;k<k_max;k++){
 
-    if (k == 1){
-      p = r;
-    } else{
+    if (k==1){
+      p = (pc!=NONE) ? z : r;
+    } 
+    else{
       beta = rho(k-1)/rho(k-2);
-      for (int i=0;i<n;i++) p(i) = r(i) + beta*p(i);
+      if (pc != NONE){
+	for (int i=0;i<n;i++) p(i) = z(i) + beta*p(i);
+      }
+      else{
+	for (int i=0;i<n;i++) p(i) = r(i) + beta*p(i);
+      }
     }      
     
     A.mult(p,w);
     
-    tmp = p*w;
-    alpha = rho(k-1)/tmp;
+    alpha = rho(k-1)/ (p*w);
     
     x.add(alpha,p);
     r.add(-alpha,w);
     
-    rho(k) = sqr(r.norm());
-
-    if (k == k_max-1){
-      norm_residual = residual(A, x, b);
-      cout << "CG iterations did not converge: residual = " << norm_residual << endl;
-      exit(1);
+    if (pc != NONE){
+      z = 0.0;
+      solvePxu(A,z,r);
+      rho(k) = r*z;
+    }
+    else{
+      rho(k) = sqr(r.norm());
     }
 
-    if ( sqrt(rho(k-1)) < tol*norm_b ) break;
+    if (k == k_max-1){
+      norm_residual = residual(A,x,b);
+      dolfin_info("CG iterations did not converge: residual = %1.5e",
+		  norm_residual);
+      exit(1);
+    }
+    
+    tmp = (pc!=NONE) ? r.norm(1) : sqrt(rho(k));
+    if (tmp  < tol*b.norm() ) break;
   }
 
-  norm_residual = residual(A, x, b);
-  cout << "CG converged after " << k << " iterations" 
-       << " (residual = " << norm_residual << ")." << endl;
+  norm_residual = residual(A,x,b);
+  dolfin_info("CG converged after %i iterations (residual = %1.5e)."
+	      ,k, norm_residual);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::applyPxu(const Matrix& A, Vector& x, Vector& u)
-{
-  // Solve preconditioned problem Px=u
-  SISolver sisolver;
-  
-  switch ( pc ) { 
-  case RICHARDSON:
-    sisolver.setMethod(SISolver::RICHARDSON);
-    break;
-  case JACOBI:
-    sisolver.setMethod(SISolver::JACOBI);
-    break;
-  case GAUSS_SEIDEL:
-    sisolver.setMethod(SISolver::GAUSS_SEIDEL);
-    break;
-  case SOR:
-    sisolver.setMethod(SISolver::SOR);
-    break;
-  case NONE:
-    u = x;
-    return;
-    break;
-  default:
-    dolfin_error("Unknown preconditioner.");
-  }
-
-  sisolver.setNoSweeps(no_pc_sweeps);
-  sisolver.solve(A,x,u);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::solvePxu(const Matrix& A, Vector& x, Vector& u)
+void KrylovSolver::solvePxu(const Matrix &A, Vector &x, Vector &u)
 {
   // Solve preconditioned problem Px=u
   SISolver sisolver;
@@ -351,41 +336,8 @@ void KrylovSolver::solvePxu(const Matrix& A, Vector& x, Vector& u)
   sisolver.setNoSweeps(no_pc_sweeps);
   sisolver.solve(A,x,u);
 }
-//-----------------------------------------------------------------------------
-void KrylovSolver::solvePxv(const Matrix& A, Vector& x, Matrix& v, int k)
-{
-  // Solve preconditioned problem Px=v
-  SISolver sisolver;
-  
-  switch ( pc ) { 
-  case RICHARDSON:
-    sisolver.setMethod(SISolver::RICHARDSON);
-    break;
-  case JACOBI:
-    sisolver.setMethod(SISolver::JACOBI);
-    break;
-  case GAUSS_SEIDEL:
-    sisolver.setMethod(SISolver::GAUSS_SEIDEL);
-    break;
-  case SOR:
-    sisolver.setMethod(SISolver::SOR);
-    break;
-  case NONE:
-    for (int i=0;i<v.size(0);i++) x(i) = v(i,k);
-    return;
-    break;
-  default:
-    dolfin_error("Unknown preconditioner.");
-  }
-
-  Vector tmp(v.size(0));
-  for (int i=0;i<v.size(0);i++) tmp(i) = v(i,k);
-  sisolver.setNoSweeps(no_pc_sweeps);
-  sisolver.solve(A,x,tmp);
-}
-//-----------------------------------------------------------------------------
-real KrylovSolver::residual(const Matrix& A, Vector& x,
-			    const Vector& b, Vector& r)
+//-----------------------------------------------------------------------
+real KrylovSolver::residual(const Matrix& A, Vector& x,const Vector& b, Vector& r)
 {
   r.init(x.size());
   for (int i = 0; i < A.size(0); i++) 
@@ -403,25 +355,22 @@ real KrylovSolver::residual(const Matrix& A, Vector& x, const Vector& b)
   return sqrt(norm_r);
 }
 //-----------------------------------------------------------------------------
-bool KrylovSolver::reorthog(const Matrix& A, Matrix& v, int k)
+bool KrylovSolver::reorthog(const Matrix& A, Matrix& v, Vector &x, int k)
 {
-  // Reorthogonalize if ||Av_k||+delta*||v_k+1||=||Av_k|| to working precision 
+  // reorthogonalize if ||Av_k||+delta*||v_k+1||=||Av_k|| to working precision 
   // with  delta \approx 10^-3
-  
-  // The computation of the Krylov vector AP^(-1) v(k) includes  
-  // 2 steps: First solve Pw = v, then apply A to w.
-  Vector Av(v.size(0));
-  Vector w(v.size(0));
-  solvePxv(A,w,v,k);
-  A.mult(w,Av);
+  Vector Av(v.size(1));
+  Vector w(v.size(1));
+ 
+  w = v(k,all);
 
-  real norm_v = 0.0;
-  for (int i=0;i<v.size(0);i++) norm_v += sqr(v(i,k+1));
-  norm_v = sqrt(norm_v);
+  A.mult(w,Av);
   
   real delta = 1.0e-3;
+  real norm_Av = Av.norm();
 
-  if ( ((Av.norm() + delta*norm_v) - Av.norm()) < DOLFIN_EPS ) return true; 
+  if ( ((norm_Av + delta*x.norm()) - norm_Av) < DOLFIN_EPS ) return true; 
   else return false;
 }
 //-----------------------------------------------------------------------------
+
