@@ -135,7 +135,7 @@ if test $PETSC_VERSION = "2.2.0"; then
         AC_SUBST(PETSC_VERSION)
     else
         echo "*** Unable to find PETSc on your system."
-        echo "*** Use --with-petsc=<path> to specify the correct path for PETSc,"
+        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
         echo "*** or set the environment variable PETSC_DIR to the correct path."
         echo "*** Debian users need to install the package petsc-dev."
         exit 1
