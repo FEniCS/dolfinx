@@ -4,24 +4,30 @@
 #ifndef __SPARSITY_H
 #define __SPARSITY_H
 
-#include <dolfin/GenericSparsity.h>
+#include <dolfin/NewArray.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class Matrix;
   class ODE;
+  class Vector;
+  class Matrix;
 
-  class Sparsity {
+  class Sparsity
+  {
   public:
     
     // Constructor
     Sparsity(unsigned int N);
-
+    
     // Destructor
     ~Sparsity();
-
+    
     /// Clear sparsity (no dependencies)
     void clear();
+    
+    /// Clear sparsity for given component
+    void clear(unsigned int i);
 
     /// Set sparsity (number of dependencies for component i)
     void setsize(unsigned int i, unsigned int size);
@@ -35,51 +41,34 @@ namespace dolfin {
     /// Set sparsity to transpose of given sparsity
     void transp(const Sparsity& sparsity);
     
-    /// Try to automatically detect dependencies
-    void guess(ODE& ode);
+    /// Automatically detect dependencies
+    void detect(ODE& ode);
+
+    /// Check if the dependency pattern is sparse
+    bool sparse() const;
+
+    /// Get dependencies for given component
+    NewArray<unsigned int>& row(unsigned int i);
+
+    /// Get dependencies for given component
+    const NewArray<unsigned int>& row(unsigned int i) const;
 
     /// Show sparsity (dependences)
     void show() const;
     
-    // Iterator over a given row
-    class Iterator {
-    public:
-      
-      /// Constructor
-      Iterator(unsigned int i, const Sparsity& sparsity);
-
-      /// Destructor
-      ~Iterator();
-      
-      /// Increment
-      Iterator& operator++();
-
-      /// Return index for current position
-      unsigned int operator*() const;
-
-      /// Return index for current position
-      operator unsigned int() const;
-
-      /// Check if we have reached end of the row
-      bool end() const;
-      
-    private:
-      
-      GenericSparsity::Iterator* iterator;
-      
-    };
-
-    /// Friends
-    friend class Iterator;
-    friend class ComponentIterator;
-    
   private:
-
-    GenericSparsity::Iterator* createIterator(unsigned int i) const;
     
-    GenericSparsity* sparsity;
+    // Check given dependency
+    bool checkdep(ODE& ode, Vector& u, real f0, unsigned int i, unsigned int j);
 
+    // Number of components
     unsigned int N;
+    
+    // Increment of automatic detection of sparsity
+    real increment;
+
+    // The sparsity pattern
+    NewArray< NewArray<unsigned int> > pattern;
 
   };
 

@@ -9,7 +9,6 @@ EXTRA_DIST = dolfin_tanganyika.h \
              AdaptiveIterationLevel2.h \
              AdaptiveIterationLevel3.h \
              Adaptivity.h \
-             AutomaticSparsity.h \
              Component.h \
              Dual.h \
              Element.h \
@@ -19,12 +18,8 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementGroupIterator.h \
              ElementIterator.h \
              ElementTmpFile.h \
-             EmptySparsity.h \
              FixedPointIteration.h \
-             FullSparsity.h \
-             GenericSparsity.h \
              Iteration.h \
-             MatrixSparsity.h \
              Method.h \
              NonStiffIteration.h \
              ODE.h \
@@ -38,6 +33,5 @@ EXTRA_DIST = dolfin_tanganyika.h \
              SimpleTimeSlab.h \
              Solution.h \
              Sparsity.h \
-             TableSparsity.h \
              TimeSlab.h \
              TimeStepper.h

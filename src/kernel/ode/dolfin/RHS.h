@@ -44,8 +44,14 @@ namespace dolfin {
     // Update components that influence the current component at time t
     void update(unsigned int index, unsigned int node, real t);
 
-    // Update components that influence the current component at time t
-    void update(unsigned int index, real t);
+    // Update when we use Solution
+    void updateSolution(unsigned int index, unsigned int node, real t);
+
+    // Update when we use Solution
+    void updateFunction(unsigned int index, unsigned int node, real t);
+
+    // Number of components
+    unsigned int N;
 
     // The ODE
     ODE& ode;

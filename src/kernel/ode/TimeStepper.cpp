@@ -18,8 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode, Function& function) :
   no_samples(dolfin_get("number of samples")), N(ode.size()), t(0),
-  T(ode.endtime()), partition(N), adaptivity(ode), u(ode, function),
-  f(ode, u), fixpoint(u, f), file(u.label() + ".m"), p("Time-stepping"),
+  T(ode.endtime()), partition(N), adaptivity(ode), u(ode, function), f(ode, u),
+  fixpoint(u, f, adaptivity), file(u.label() + ".m"), p("Time-stepping"),
   _finished(false)
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
@@ -30,7 +30,7 @@ TimeStepper::TimeStepper(ODE& ode, Function& function) :
 //-----------------------------------------------------------------------------
 TimeStepper::~TimeStepper()
 {
-  // Display status report
+   // Display status report
   cout << "Solution computed in " << toc() << " seconds." << endl;
   fixpoint.report();
 }

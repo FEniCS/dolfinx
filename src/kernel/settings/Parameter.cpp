@@ -133,7 +133,7 @@ void Parameter::set(const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 void Parameter::get(va_list aptr)
 {
-  double     *p_real;
+  real       *p_real;
   int        *p_int;
   int        *p_bool;
   string     *p_string;

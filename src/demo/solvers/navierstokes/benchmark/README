@@ -1,3 +1,6 @@
+This benchmark problem is out-of-date. Waiting for the Navier-Stokes
+module to come alive once again...
+
 This test program solves the benchmark problem a 8x8x8 mesh
 and is intended for examining the speed of the code, including
 

@@ -11,6 +11,7 @@ namespace dolfin
 {
   class Solution;
   class RHS;
+  class Adaptivity;
   class TimeSlab;
   class Element;
   class ElementGroup;
@@ -29,7 +30,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    FixedPointIteration(Solution& u, RHS& f);
+    FixedPointIteration(Solution& u, RHS& f, Adaptivity& adaptivity);
     
     /// Destructor
     ~FixedPointIteration();

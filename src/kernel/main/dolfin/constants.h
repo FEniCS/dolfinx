@@ -1,10 +1,10 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <float.h>
-
 #ifndef __DOLFIN_CONSTANTS_H
 #define __DOLFIN_CONSTANTS_H
+
+#include <float.h>
 
 #define DOLFIN_VERSION       PACKAGE_VERSION
 #define DOLFIN_LINELENGTH    1024
@@ -20,6 +20,12 @@
 #define DOLFIN_BLOCK_SIZE    1024
 #define DOLFIN_MEGABYTE      1048576
 
-typedef double real;
+// FIXME: Maybe we should put this somewhere else?
+namespace dolfin
+{
+  
+  typedef double real;
+  
+}
 
 #endif

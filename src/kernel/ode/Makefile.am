@@ -10,7 +10,6 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/AdaptiveIterationLevel2.h \
                           dolfin/AdaptiveIterationLevel3.h \
                           dolfin/Adaptivity.h \
-                          dolfin/AutomaticSparsity.h \
                           dolfin/Component.h \
                           dolfin/Dual.h \
                           dolfin/Element.h \
@@ -21,12 +20,8 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ElementGroupList.h \
                           dolfin/ElementIterator.h \
                           dolfin/ElementTmpFile.h \
-                          dolfin/EmptySparsity.h \
                           dolfin/FixedPointIteration.h \
-                          dolfin/FullSparsity.h \
-                          dolfin/GenericSparsity.h \
                           dolfin/Iteration.h \
-                          dolfin/MatrixSparsity.h \
                           dolfin/Method.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
@@ -40,7 +35,6 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/SimpleTimeSlab.h \
                           dolfin/Solution.h \
                           dolfin/Sparsity.h \
-                          dolfin/TableSparsity.h \
                           dolfin/TimeSlab.h \
                           dolfin/TimeStepper.h
 INCLUDES                = @MODULE_INCLUDES@
@@ -55,7 +49,6 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           AdaptiveIterationLevel2.cpp \
                           AdaptiveIterationLevel3.cpp \
                           Adaptivity.cpp \
-                          AutomaticSparsity.cpp \
                           Component.cpp \
                           Dual.cpp \
                           Element.cpp \
@@ -66,12 +59,8 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ElementGroupList.cpp \
                           ElementIterator.cpp \
                           ElementTmpFile.cpp \
-                          EmptySparsity.cpp \
                           FixedPointIteration.cpp \
-                          FullSparsity.cpp \
-                          GenericSparsity.cpp \
                           Iteration.cpp \
-                          MatrixSparsity.cpp \
                           Method.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
@@ -85,6 +74,5 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           SimpleTimeSlab.cpp \
                           Solution.cpp \
                           Sparsity.cpp \
-                          TableSparsity.cpp \
                           TimeSlab.cpp \
                           TimeStepper.cpp

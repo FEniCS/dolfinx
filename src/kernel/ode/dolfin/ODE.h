@@ -60,26 +60,24 @@ namespace dolfin
 
     /// Solve ODE
     void solve(Function& u, Function& phi);
-
-    /// Set sparsity (number of dependencies for component i)
-    void sparse(unsigned int i, unsigned int size);
     
-    /// Set sparsity (component i depends on j)
-    void depends(unsigned int i, unsigned int j);
-
-    /// Set sparsity defined by a sparse matrix
-    void sparse(const Matrix& A);
-    
-    /// Try to automatically detect dependencies
+    /// Automatically detect sparsity
     void sparse();
 
-    /// Sparsity
-    Sparsity sparsity;
-    
+    /// Friends
+    friend class Dual;
+    friend class RHS;
+
   protected:
     
+    // Number of components
     unsigned int N;
+    
+    // Final time
     real T;
+    
+    // Sparsity
+    Sparsity sparsity;
 
   private:
 

@@ -57,7 +57,7 @@ void TerminalLogger::dassert(const char* msg, const char* location)
 void TerminalLogger::progress(const char* title, const char* label, real p)
 {
   int N = DOLFIN_TERM_WIDTH - 15;
-  int n = (int) (p*((double) N));
+  int n = (int) (p*((real) N));
   
   // Print the title
   indent();

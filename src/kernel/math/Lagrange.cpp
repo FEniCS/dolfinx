@@ -89,7 +89,7 @@ real Lagrange::eval(int i, real x)
 
   init();
 
-  double product = constants[i];
+  real product = constants[i];
   
   for (int j = 0; j < n; j++)
     if ( j != i )
@@ -128,7 +128,7 @@ real Lagrange::dqx(int i)
   real product = constants[i];
   
   for (int j = 1; j <= q; j++)
-    product *= (double) j;
+    product *= (real) j;
   
   return product;
 }

@@ -10,11 +10,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(unsigned int N) : sparsity(N)
+ODE::ODE(unsigned int N) : N(N), T(1.0), sparsity(N)
 {
-  this->N = N;
-  T = 1.0;
-
   // Choose method
   string method = dolfin_get("method");
   if ( method == "cg" )
@@ -74,23 +71,8 @@ void ODE::solve(Function& u, Function& phi)
   ODESolver::solve(*this, u, phi);
 }
 //-----------------------------------------------------------------------------
-void ODE::sparse(unsigned int i, unsigned int size)
-{
-  sparsity.setsize(i, size);
-}
-//-----------------------------------------------------------------------------
-void ODE::depends(unsigned int i, unsigned int j)
-{
-  sparsity.set(i,j);
-}
-//-----------------------------------------------------------------------------
-void ODE::sparse(const Matrix& A)
-{
-  sparsity.set(A);
-}
-//-----------------------------------------------------------------------------
 void ODE::sparse()
 {
-  sparsity.guess(*this);
+  sparsity.detect(*this);
 }
 //-----------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
+#include <dolfin/Adaptivity.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
 #include <dolfin/ElementGroup.h>
@@ -21,14 +22,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
+FixedPointIteration::FixedPointIteration(Solution&u, RHS& f,
+					 Adaptivity& adaptivity) : u(u), f(f)
 {
   maxiter = dolfin_get("maximum iterations");
   maxdiv  = dolfin_get("maximum divergence");
   maxconv = dolfin_get("maximum convergence");
 
   // FIXME: Convergence should be determined by the error control
-  tol = 1e-10;
+  tol = 0.1 * adaptivity.tolerance();
+
+  cout << "Using tolerance tol = " << tol << endl;
 
   // Assume that the problem is non-stiff
   state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);

@@ -29,11 +29,10 @@ A number of options can be given to configure:
 	o To enable optimization:
 
 		./configure CXXFLAGS='-03'
-			
-	or even
 
-		./configure CXXFLAGS='-O6 -finline-functions -funroll-loops ...
-                                      -fstrict-aliasing -felide-constructors'
+	o To enable profiling:
+
+		./configure CXXFLAGS='-pg'
 
 	o To enable extra debugging code (recommended for developers):
 

@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Solution.h>
@@ -13,13 +14,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Solution& solution) :
-  ode(ode), solution(&solution), function(0), u(ode.size())
+  N(ode.size()), ode(ode), solution(&solution), function(0), u(ode.size())
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 RHS::RHS(ODE& ode, Function& function) :
-  ode(ode), solution(0), function(&function), u(ode.size())
+  N(ode.size()), ode(ode), solution(0), function(&function), u(ode.size())
 {
   // Do nothing
 }
@@ -48,11 +49,12 @@ real RHS::dfdu(unsigned int i, unsigned int j, real t)
   // Update u(j) in case f(i) does not depend on u(j)
   u(j) = 0.0;
 
-  // Update the solution vector
-  update(i, t);
+  // Update the solution vector, take node number to zero, since we have
+  // to take something.
+  update(i, 0, t);
   
   // Small change in u_j
-  double dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(u(j)));
+  real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(u(j)));
 
   // Save value of u_j
   real uj = u(j);
@@ -73,29 +75,48 @@ real RHS::dfdu(unsigned int i, unsigned int j, real t)
 //-----------------------------------------------------------------------------
 void RHS::update(unsigned int index, unsigned int node, real t)
 {
-  // FIXME: Use nodal values if possible
-  update(index, t);
+  // Update the solution vector for all components that influence the
+  // current component. Maybe Solution and Function should be closer
+  // related (or we should not use Solution), to avoid having two
+  // different versions.
+
+  if ( solution )
+    updateSolution(index, node, t);
+  else
+    updateFunction(index, node, t);
 }
 //-----------------------------------------------------------------------------
-void RHS::update(unsigned int index, real t)
+void RHS::updateSolution(unsigned int index, unsigned int node, real t)
 {
-  // Update the solution vector for all components that influence the
-  // current component.
+  dolfin_assert(solution);
 
-  // Maybe Solution and Function should be closer related (or we should
-  // not use Solution), to avoid having two different versions.
-
-  if ( solution != 0 )
+  if ( ode.sparsity.sparse() )
   {
-    dolfin_assert(solution);
-    for (Sparsity::Iterator i(index, ode.sparsity); !i.end(); ++i) 
-      u(i) = (*solution)(i, t);
+    const NewArray<unsigned int>& row = ode.sparsity.row(index);
+    for (unsigned int pos = 0; pos < row.size(); ++pos)
+      u(row[pos]) = (*solution)(row[pos], t);
   }
   else
   {
-    dolfin_assert(function);
-    for (Sparsity::Iterator i(index, ode.sparsity); !i.end(); ++i) 
-      u(i) = (*function)(i, t);
+    for (unsigned int j = 0; j < N; j++)
+      u(j) = (*solution)(j, t);
+  }
+}
+//-----------------------------------------------------------------------------
+void RHS::updateFunction(unsigned int index, unsigned int node, real t)
+{
+  dolfin_assert(function);
+
+  if ( ode.sparsity.sparse() )
+  {
+    const NewArray<unsigned int>& row = ode.sparsity.row(index);
+    for (unsigned int pos = 0; pos < row.size(); ++pos)
+      u(row[pos]) = (*function)(row[pos], t);
+  }
+  else
+  {
+    for (unsigned int j = 0; j < N; j++)
+      u(j) = (*function)(j, t);
   }
 }
 //-----------------------------------------------------------------------------

@@ -38,9 +38,19 @@ real Dual::f(const Vector& phi, real t, unsigned int i)
   // FIXME: outside the sum.
 
   real sum = 0.0;  
-  for (Sparsity::Iterator j(i, sparsity); !j.end(); ++j)
-    sum += rhs.dfdu(j, i, T - t) * phi(j);
   
+  if ( sparsity.sparse() )
+  {
+    const NewArray<unsigned int>& row(sparsity.row(i));
+    for (unsigned int pos = 0; pos < row.size(); pos++)
+      sum += rhs.dfdu(row[pos], i, T - t) * phi(row[pos]);
+  }
+  else
+  {
+    for (unsigned int j = 0; j < N; j++)
+      sum += rhs.dfdu(j, i, T - t) * phi(j);
+  }
+
   return sum;
 }
 //-----------------------------------------------------------------------------
