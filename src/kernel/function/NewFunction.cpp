@@ -45,6 +45,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   // Check if function is user-defined
   if ( !data )
   {
+    /// FIXME: Replace with "element" function, given by FFC  
     if (data->no_comp > 1)
     {
       for (uint i = 0; i < element.spacedim(); i++)
@@ -72,6 +73,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: element::dof() one time with i = 0.
 
     real *values = data->x.array();
+    /// FIXME: Replace with "element" function, given by FFC  
     if (data->no_comp > 1)
     {
     for (uint i = 0; i < element.spacedim(); i++)

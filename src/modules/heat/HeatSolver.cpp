@@ -1,75 +1,65 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "HeatSolver.h"
-#include "Heat.h"
+#include <dolfin/Heat.h>
+#include <dolfin/HeatSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HeatSolver::HeatSolver(Mesh& mesh) : Solver(mesh)
+HeatSolver::HeatSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc, 
+		       NewFunction& u0, real dt, real T0, real T) 
+  : mesh(mesh), f(f), bc(bc), u0(u0), dt(dt), T0(T0), T(T) 
 {
-  dolfin_parameter(Parameter::REAL,      "final time",  1.0);
-  dolfin_parameter(Parameter::REAL,      "time step",   0.1);
-  dolfin_parameter(Parameter::FUNCTION,  "source",      0);
-  dolfin_parameter(Parameter::FUNCTION,  "diffusivity", 1.0);
-}
-//-----------------------------------------------------------------------------
-const char* HeatSolver::description()
-{
-  return "Heat";
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void HeatSolver::solve()
 {
-  Matrix A;
-  Vector x0, x1, b;
+  Heat::FiniteElement element;
+
+  Heat::BilinearForm a;
+  Heat::LinearForm L(f);
+
+  NewMatrix A;
+  NewVector x, xprev, b;
   
-  Function u0(mesh, x0);
-  Function u1(mesh, x1);
-  Function f("source");
-  Function a("diffusivity");
+  NewGMRES solver;
+
+  real t = T0;
   
-  Heat         heat(f, u0, a);
-  KrylovSolver solver;
-  File         file("heat.dx");
-  
-  real t = 0.0;
-  real T = dolfin_get("final time");
-  real k = dolfin_get("time step");
-
-  // Save initial value
-  u1.rename("u", "temperature");
-  file << u1;
-
-  // Assemble matrix
-  heat.k = k;
-  FEM::assemble(heat, mesh, A);
-
-  // Start a progress session
-  Progress p("Time-stepping");
-
-  // Start time-stepping
-  while ( t < T )
+  while (t<T)
   {
-    // Make time step
-    t += k;
-    x0 = x1;
-    
-    // Assemble load vector
-    heat.k = k;
-    heat.t = t;
-    FEM::assemble(heat, mesh, b);
-    
-    // Solve the linear system
-    solver.solve(A, x1, b);
-    
-    // Save the solution
-    u1.update(t);
-    file << u1;
+    // Update previous solution 
+    xprev = x;
 
-    // Update progress
-    p = t / T;
+    // Discretize
+    NewFEM::assemble(a, L, A, b, mesh, element);
+
+    // Set boundary conditions
+    NewFEM::setBC(A, b, mesh, bc);
+  
+    // Solve the linear system
+    solver.solve(A, x, b);
+
   }
+
+  /*
+  // FIXME: Remove this and implement output for NewFunction
+  Vector xold(b.size());
+  for(uint i = 0; i < x.size(); i++)
+    xold(i) = x(i);
+  Function uold(mesh, xold);
+  uold.rename("u", "temperature");
+  File file("poisson.m");
+  file << uold;
+  */
+}
+//-----------------------------------------------------------------------------
+void HeatSolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc, 
+		       NewFunction& u0, real dt, real T0, real T) 
+{
+  HeatSolver solver(mesh, f, bc, u0, dt, T0, T);
+  solver.solve();
 }
 //-----------------------------------------------------------------------------

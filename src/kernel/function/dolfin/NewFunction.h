@@ -22,7 +22,6 @@ namespace dolfin
   /// is defined in terms of a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
 
-  /// FIXME: Same ordering as in FFC? 
   /// Vector functions are initialized by a vector x containing the 
   /// function values for all three vector components and no_comp, 
   /// the number of vector components.  
