@@ -17,6 +17,9 @@ for l in `cat src/modules/modules.list | grep -v "#"`; do
 done
 echo $DOLFIN_MODULES
 
+dnl Modules temporarily disabled
+DOLFIN_MODULES=""
+
 dnl Initialize automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 
