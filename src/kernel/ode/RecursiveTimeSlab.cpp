@@ -86,9 +86,7 @@ void RecursiveTimeSlab::show(unsigned int depth) const
   for (unsigned int i = 0; i < depth; i++)
     cout << "  ";
   
-  cout << "Time slab at [" << starttime() << " " << endtime() << "]: "
-       << group.size() << " element(s) and "
-       << timeslabs.size() << " time slab(s)" << endl;
+  dolfin_info("Time slab at [%f %f].",  starttime(), endtime());
   
   for (unsigned int i = 0; i < timeslabs.size(); i++)
   {
