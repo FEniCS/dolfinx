@@ -12,9 +12,9 @@
 #include <dolfin/TriGridRefinement.h>
 #include <dolfin/TetGridRefinement.h>
 #include <dolfin/GridRefinement.h>
-
+   
 using namespace dolfin;
-
+   
 //-----------------------------------------------------------------------------
 void GridRefinement::refine(GridHierarchy& grids)
 {
@@ -521,6 +521,7 @@ void GridRefinement::removeCell(Cell& cell, Grid& grid)
 {
   if ( !leaf(cell) ) {
     cout << "--- Illegal cell: " << cell << endl;
+    cout << "  parent = " << *cell.parent() << endl;
     cout << "  marker = " << cell.marker() << endl;
     cout << "  status = " << cell.status() << endl;
     cout << "  number of children = " << cell.noChildren() << endl;

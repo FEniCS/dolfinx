@@ -160,6 +160,10 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges.
 
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
+
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
   
@@ -201,6 +205,10 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   // at the midpoints on the marked edges, connect the new nodes to
   // each other, as well as to the node that is not on the marked
   // face. This gives 4 new tetrahedrons.
+
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
@@ -247,6 +255,10 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // One edge is marked. Insert one new node at the midpoint of the
   // marked edge, then connect this new node to the two nodes not on
   // the marked edge. This gives 2 new tetrahedrons.
+
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
@@ -298,6 +310,10 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   //   (2) connecting new node 2 with the endnode of marked edge 1, 
   //       that is not common with marked edge 2.
 
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
+
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_3);
 
@@ -342,6 +358,10 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   // nodes at the midpoints of the marked edges, insert a new edge
   // between the two nodes, and insert four new edges by connecting
   // the new nodes to the endpoints of the opposite edges.
+
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
 
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_4);

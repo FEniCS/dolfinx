@@ -113,6 +113,13 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   // Refine one triangle into four new ones, introducing new nodes 
   // at the midpoints of the edges. 
 
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
+
+  // Check that the cell is marked correctly 
+  dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
+
   // Create new nodes with the same coordinates as the previous nodes in cell  
   Node& n0 = createNode(cell.node(0), grid, cell);
   Node& n1 = createNode(cell.node(1), grid, cell);
@@ -142,6 +149,13 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   // One edge is marked. Insert one new node at the midpoint of the
   // marked edge, then connect this new node to the node not on
   // the marked edge. This gives 2 new triangles.
+
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
+
+  // Check that the cell is marked correctly 
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
 
   // Sort nodes by the number of marked edges
   Array<Node*> nodes;
@@ -176,6 +190,13 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // Two edges are marked. Insert two new nodes at the midpoints of the
   // marked edges, then connect these new nodes to each other and one 
   // of the nodes on the unmarked edge. This gives 3 new triangles.
+
+  // Check that cell's parent is not refined irregularly, 
+  // since then it should be further refined
+  dolfin_assert(cell.parent()->status() != irr_ref);
+
+  // Check that the cell is marked correctly 
+  dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
   // Sort nodes by the number of marked edges
   Array<Node*> nodes;
