@@ -10,6 +10,7 @@
 #include "XMLFile.h"
 #include "MatlabFile.h"
 #include "OctaveFile.h"
+//#include "OpendxFile.h"
 
 using namespace dolfin;
 
@@ -22,6 +23,8 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
     file = new MatlabFile(filename);
+  //  else if ( filename.rfind(".dx") != filename.npos )
+  //    file = new OpendxFile(filename);
   else{
     file = 0;
     dolfin_error1("Unknown file type for \"%s\".", filename.c_str());
@@ -40,6 +43,9 @@ File::File(const std::string& filename, Type type)
   case OCTAVE:
     file = new OctaveFile(filename);
     break;
+    //  case OPENDX:
+    //    file = new OpendxFile(filename);
+    //    break;
   default:
     file = 0;
     dolfin_error1("Unknown file type for \"%s\".", filename.c_str());

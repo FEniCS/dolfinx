@@ -20,7 +20,14 @@ int main()
   //grid.show();
 
   // Refine grid
-  grid.refine();
+  //  grid.refine();
+  
+  Vector x;
+  x = 0;
+  Function u(grid, x);
+
+  File filematlab("grid.m");
+  filematlab << u;
   
   dolfin::cout << grid << dolfin::endl;  
 
