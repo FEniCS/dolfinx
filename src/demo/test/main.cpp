@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 // Number of vertices in each dimension
-#define SIZE 100
+#define SIZE 150
 
 // Number of matrix-vector multiplications
 #define M 10
@@ -112,6 +112,8 @@ void testPETSc(double& t1, double& t2, double& t3)
     }
   }
 
+  cout << "Done" << endl;
+
   MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
@@ -148,6 +150,7 @@ void testPETSc(double& t1, double& t2, double& t3)
   VecSetFromOptions(y);
   double a = 1.0;
   VecSet(&a, x);
+  tic();
 
   for (int i = 0; i < M; i++)
     MatMult(A, x, y);

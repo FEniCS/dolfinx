@@ -227,7 +227,7 @@ void DirectSolver::hpsolveLU(const Matrix& LU, const Matrix& A,
     res = sqrt(res);
 
     // Check residual
-    if ( res < DOLFIN_EPS )
+    if ( res < 10.0*DOLFIN_EPS )
       break;
     
     // Gauss-Seidel iteration

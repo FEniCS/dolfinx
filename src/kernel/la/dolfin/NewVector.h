@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __NEW_VECTOR_H

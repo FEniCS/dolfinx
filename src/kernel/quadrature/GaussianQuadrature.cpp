@@ -41,7 +41,7 @@ void GaussianQuadrature::computeWeights()
  
   Matrix A(n, n, Matrix::dense);
   Vector x(n), b(n);
-   
+
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++) {
     Legendre p(i);

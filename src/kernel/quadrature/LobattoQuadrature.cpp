@@ -67,7 +67,8 @@ void LobattoQuadrature::computePoints()
     x = cos(DOLFIN_PI*real(i)/real(n-1));
     
     // Newton's method
-    do {
+    do
+    {
       dx = - p.ddx(x) / p.d2dx(x);
       x  = x + dx;
     } while ( fabs(dx) > DOLFIN_EPS );

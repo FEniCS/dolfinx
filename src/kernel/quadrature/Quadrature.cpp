@@ -10,8 +10,6 @@ using namespace dolfin;
 Quadrature::Quadrature(unsigned int n)
 {
   this->n = n;
-
-  cout << "Allocating for quadrature: n = " << n << endl;
   
   points = new Point[n];
   weights = new real[n];

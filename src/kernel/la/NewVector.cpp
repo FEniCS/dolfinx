@@ -1,6 +1,5 @@
-// Copyright (C) 2004 Johan Hoffman, Johan Jansson  and Anders Logg.
+// Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
-//
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
