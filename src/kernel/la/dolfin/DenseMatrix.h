@@ -16,6 +16,9 @@ namespace dolfin {
 	 ~DenseMatrix();
 	 
 	 void init(int m, int n);
+
+	 real& operator() (int i, int j);
+	 real  operator() (int i, int j) const;
 	 
 	 void set (int i, int j, real value);
 	 int  size

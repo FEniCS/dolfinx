@@ -74,6 +74,16 @@ DenseMatrix::~DenseMatrix()
   delete permutation;
 }
 //-----------------------------------------------------------------------------
+real& DenseMatrix::operator() (int i, int j)
+{
+  return values[i][j];
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::operator() (int i, int j) const
+{
+  return values[i][j];
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::set(int i, int j, real value)
 {
   if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) ) {
