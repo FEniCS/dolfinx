@@ -30,6 +30,9 @@ namespace dolfin{
     void  set(real x, real y, real z);
     int   id() const;
     Point coord() const;
+    void  setSon(Node* son);
+    Node* son();
+    Edge* edge(int i);
     int   boundary() const;
     bool  neighbor(Node* n);
     
@@ -78,7 +81,8 @@ namespace dolfin{
     ShortList<Node*> nn;
     ShortList<Cell*> nc;
     ShortList<Edge*> ne;
-    
+    Node* _son;
+
   };
   
 }

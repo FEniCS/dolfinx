@@ -86,7 +86,7 @@ void Edge::unmark()
   marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
-real Edge::computeLength()
+real Edge::length()
 {
   // Get the coordinates
   Point p1 = _en0->coord();
@@ -95,7 +95,7 @@ real Edge::computeLength()
   return p1.dist(p2);
 }
 //-----------------------------------------------------------------------------
-Point Edge::computeMidpoint()
+Point Edge::midpoint()
 {
   // Get the coordinates
   Point p1 = _en0->coord();

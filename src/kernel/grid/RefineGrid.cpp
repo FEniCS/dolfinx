@@ -121,15 +121,8 @@ void RefineGrid::RegularRefinementTriangle(Cell* parent)
   Cell *t4 = grid.createCell(parent,Cell::TETRAHEDRON,n01,n12,n02);
 }
 
-/*
-Refinement::LocalIrregularRefinement(Cell *parent)
+void RefineGrid::LocalIrregularRefinement(Cell *parent)
 {
-  bool reg_ref = false;
-  bool same_face = false;
-   
-  int ref_edges[2];
-  int cnt = 0;
-    
   switch(parent->noMarkedEdges()){ 
   case 6: 
     RegularRefinementTetrahedron(parent);
@@ -141,52 +134,38 @@ Refinement::LocalIrregularRefinement(Cell *parent)
     RegularRefinementTetrahedron(parent);
     break;
   case 3: 
-    reg_ref = true;
-    for (int i=0; i<4; i++){
-      if (parent->GetFace(i)->GetNoMarkedEdges() == 3){ 
-	IrrRef1(parent,i);
-	reg_ref = false;
-      }
-    }
-    if (reg_ref) RegularRefinementTetrahedron(parent);    
+    if (parent->markedEdgesOnSameFace()) IrrRef1(parent);
+    else RegularRefinementTetrahedron(parent);    
     break;
   case 2: 
-    for (int i=0; i<4; i++){
-      if (parent->GetFace(i)->GetNoMarkedEdges() == 2){
-	cnt = 0;
-	for (int i=0; i<6; i++){
-	  if (parent->GetEdge(i)->MarkedForRefinement()) ref_edges[cnt] = i;
-	  cnt++;
-	}
-	IrrRef3(parent,ref_edges[0],ref_edges[1]);
-	same_face = true;
-      }
-    }   
-    if (!same_face){
-      cnt = 0;
-      for (int i=0; i<6; i++){
-	if (parent->GetEdge(i)->MarkedForRefinement()) ref_edges[cnt] = i;
-	cnt++;
-      }
-      IrrRef4(parent,ref_edges[0],ref_edges[1]);
-    }    
+    if (parent->markedEdgesOnSameFace()) IrrRef3(parent);
+    else IrrRef4(parent);  
     break;
   case 1: 
-    for (int i=0; i<6; i++){
-      if (parent->GetEdge(i)->MarkedForRefinement()){ 
-	IrrRef2(parent,i);
-      }
-    }    
-    break;
-  case NONE:
-    display->InternalError("Refinement::LocalIrregularRefinement()","Wrong no of marked edges");
+    IrrRef2(parent);  
     break;
   default:
-    display->InternalError("Refinement::LocalIrregularRefinement()","Wrong no of marked edges");
+    dolfin_error("wrong number of marked edges");
   }
-
 }
 
+void RefineGrid::IrrRef1(Cell* parent)
+{
+}
+
+void RefineGrid::IrrRef2(Cell* parent)
+{
+}
+
+void RefineGrid::IrrRef3(Cell* parent)
+{
+}
+
+void RefineGrid::IrrRef4(Cell* parent)
+{
+}
+
+/*
 
 void RefineGrid::IrrRef1(Cell* parent, ShortList<Edge*> marked_edges)
 {      

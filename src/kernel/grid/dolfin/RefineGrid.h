@@ -22,6 +22,13 @@ namespace dolfin {
 	 void RegularRefinementTetrahedron(Cell* parent);
 	 void RegularRefinementTriangle(Cell* parent);
 	 
+	 void LocalIrregularRefinement(Cell *parent);
+
+	 void IrrRef1(Cell *parent);
+	 void IrrRef2(Cell *parent);
+	 void IrrRef3(Cell *parent);
+	 void IrrRef4(Cell *parent);
+
 	 void refine();
 	 
   private:

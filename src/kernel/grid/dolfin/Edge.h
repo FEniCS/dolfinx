@@ -39,9 +39,9 @@ namespace dolfin {
       /// --- Functions that require computation (every time!)
 	  
       /// Compute and return the lenght of the edge
-      real computeLength();
+      real length();
       /// Compute and return midpoint of the edge 
-      Point computeMidpoint();
+      Point midpoint();
     
       // Friends
       friend class Grid;
