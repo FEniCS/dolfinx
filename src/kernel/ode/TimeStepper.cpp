@@ -12,6 +12,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/timeinfo.h>
 #include <dolfin/File.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
@@ -31,6 +32,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, Function& function)
 {
+  // Start timing
+  tic();
+
   // Initializations
   unsigned int no_samples = dolfin_get("number of samples");
   unsigned int N = ode.size();
@@ -57,6 +61,8 @@ void TimeStepper::solve(ODE& ode, Function& function)
       timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
+
+    cout << *timeslab << endl;
 
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )
@@ -93,6 +99,9 @@ void TimeStepper::solve(ODE& ode, Function& function)
 
   }
 
+  // Display status report
+  cout << "Solution computed in " << toc() << endl;
+  fixpoint.report();
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)

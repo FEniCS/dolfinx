@@ -35,6 +35,9 @@ namespace dolfin
     /// Reset a given element
     void reset(Element& element);
 
+    /// Display a status report
+    void report() const;
+
   private:
 
     // Current state (type of problem)
@@ -115,6 +118,9 @@ namespace dolfin
 
     // Maximum allowed divergence
     real maxdiv;
+
+    // Maximum allowed convergence
+    real maxconv;
 
     // Tolerance for discrete residual
     real tol;
