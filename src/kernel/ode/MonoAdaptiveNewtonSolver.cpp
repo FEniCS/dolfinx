@@ -68,8 +68,6 @@ real MonoAdaptiveNewtonSolver::iteration()
   //cout << "b = ";
   b.disp();
   
-  cout << "Calling solver..." << endl;
-
   // Solve linear system F for dx
   solver.solve(A, dx, b);
 

@@ -34,7 +34,7 @@ namespace dolfin
   class ODE
   {
   public:
-    
+
     /// Constructor
     ODE(uint N);
     

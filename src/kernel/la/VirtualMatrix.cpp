@@ -25,22 +25,18 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix()
+VirtualMatrix::VirtualMatrix() : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
-
-  // Don't initialize the matrix
-  A = 0;
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(const NewVector& x, const NewVector& y)
+VirtualMatrix::VirtualMatrix(const NewVector& x, const NewVector& y) : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc matrix
-  A = 0;
   init(x, y);
 }
 //-----------------------------------------------------------------------------

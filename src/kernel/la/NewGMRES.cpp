@@ -6,8 +6,7 @@
 #include <petsc/petscksp.h>
 #include <petsc/petscpc.h>
 
-/* #include <dolfin/pcimpl.h> */
-
+#include <dolfin/pcimpl.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewVector.h>
@@ -18,15 +17,24 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewGMRES::NewGMRES()
+NewGMRES::NewGMRES() : ksp(0)
 {
   // Initialize PETSc
   PETScManager::init();
-
-  //Set up solver environment.
+  
+  // Set up solver environment
+  dolfin_info("Setting up PETSc solver environment.");
   KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetType(ksp, KSPGMRES);
+  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+  
+  // Default: no preconditioner
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCNONE);
 
-  dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
+  // Display some info about the solver
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
@@ -37,72 +45,34 @@ NewGMRES::~NewGMRES()
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 {
-  //KSP  ksp;
-  //PC   pc;
-
-  // The default ILU preconditioner creates an extra matrix.
-  // To save memory, use e.g. a Jacobi preconditioner.
-
-  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
-  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-  //KSPSetFromOptions(ksp);
-
-  /*
-  // Set tolerances
-  real rtol,abstol,dtol;
-  int maxits; 
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
-  */
-
-  // Solve system
-  dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
-
-  //PC pc;
-  //KSPGetPC(ksp, &pc);
-  //PCSetType(pc, PCNONE);
-
+  // Set linear system
+  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
 
+  // Solve linear system
   KSPSolve(ksp);
 
+  // Report number of iterations
   int its = 0;
   KSPGetIterationNumber(ksp, &its);
   dolfin_info("GMRES converged in %d iterations.", its);
-
-  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
-  // The default ILU preconditioner creates an extra matrix.
-  // To save memory, use e.g. a Jacobi preconditioner.
-  
-  KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
-  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-  //KSPSetFromOptions(ksp);
-
-  /*
-  // Set tolerances
-  real rtol,abstol,dtol;
-  int maxits; 
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
-  */
-
-  //Solve system.
-  dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
-
+  // Set linear system
+  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
-  KSPSolve(ksp);
 
+  // Solve linear system
+  KSPSolve(ksp);
+  
+  // Report number of iterations
   int its = 0;
   KSPGetIterationNumber(ksp, &its);
   dolfin_info("GMRES converged in %d iterations.", its);
-
-  //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::setRtol(real rt)
@@ -135,9 +105,6 @@ void NewGMRES::setMaxits(int mi)
 //-----------------------------------------------------------------------------
 void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 {
-  dolfin_error("FIXME: where is PC defined?");
-  /*
-
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
 
@@ -145,7 +112,5 @@ void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 
   petscpc->data = &pc;
   petscpc->ops->apply = NewPreconditioner::PCApply;
-
-  */
 }
 //-----------------------------------------------------------------------------

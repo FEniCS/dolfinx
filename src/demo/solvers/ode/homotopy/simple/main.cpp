@@ -7,6 +7,7 @@
 // Alexander P. Morgan, ACM TOMS 1983.
 
 #include <dolfin.h>
+#include <cblas.h>
 
 using namespace dolfin;
 
@@ -54,8 +55,10 @@ public:
 
   void update(const complex z[], real t)
   {
+    real r = std::abs((1 - t) * (z[0]*z[0]*z[0] - c));
+    cout << "checking: r = " << r << endl;
     // This is a temporary test to see if the solution is diverging
-    if ( std::abs(z[0]) > 10.0 )
+    if ( r > 1.0 )
     {
       cout << "Solution is diverging, inactivating." << endl;
       active = false;
@@ -93,23 +96,21 @@ int main()
   //dolfin_set("fixed time step", true);
   //dolfin_set("tolerance", 1e-1);
 
-
-  Homotopy homotopy(1);
-  homotopy.solve();
-  homotopy.solve();
-
   // Iterate over the different starting points
-  /*  char filename[16];
+  char filename[64];
   for (unsigned int i = 0; i < 3; i++)
   {
     sprintf(filename, "primal_%d.m", i);
     dolfin_set("file name", filename);
 
-    Homotopy homotopy(1);
-    cout << "Solving homotopy for starting point z = " << homotopy.z0(0) << endl;
+
+    Homotopy homotopy(i);
+
+    cout << "Solving homotopy for starting point " << i << ": z = " 
+	 << homotopy.z0(0) << endl;
+
     homotopy.solve();
   }
-  */
 
   return 0;
 }
