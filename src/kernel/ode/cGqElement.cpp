@@ -150,6 +150,77 @@ real cGqElement::update(RHS& f, real alpha, real* values)
   return values[q] - this->values[q];
 }
 //-----------------------------------------------------------------------------
+real cGqElement::updateLocalNewton(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Save old value
+  real u1 = values[q];
+  
+  // Compute increments for nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    b[q-1](i-1) = values[i] - (values[0] + integral(i));
+  
+  // Compute local Jacobian
+  real dfdu = f.dfdu(_index, _index, endtime());
+  real k = timestep();
+  for (unsigned int i = 0; i < q; i++)
+  {
+    for (unsigned int j = 0; j < q; j++)
+    {
+      if ( i == j )
+	A[q-1](i, j) = 1.0 - k*dfdu*cG(q).weight(i+1, j);
+      else
+	A[q-1](i, j) = - k*dfdu*cG(q).weight(i+1, j);
+    }
+  }
+
+  // Solve linear system
+  A[q-1].solve(x[q-1], b[q-1]);
+
+  // Compute nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    values[i] -= x[q-1](i-1);
+
+  // Return increment
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+real cGqElement::updateLocalNewton(RHS& f, real* values)
+{
+  // Evaluate right-hand side
+  feval(f);
+  
+  // Compute increments for nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    b[q-1](i-1) = this->values[i] - this->values[0] + integral(i);
+
+  // Compute local Jacobian
+  real dfdu = f.dfdu(_index, _index, endtime());
+  real k = timestep();
+  for (unsigned int i = 0; i < q; i++)
+  {
+    for (unsigned int j = 0; j < q; j++)
+    {
+      if ( i == j )
+	A[q-1](i, j) = 1.0 - k*dfdu*cG(q).weight(i+1, j);
+      else
+	A[q-1](i, j) = - k*dfdu*cG(q).weight(i+1, j);
+    }
+  }
+  
+  // Solve linear system
+  A[q-1].solve(x[q-1], b[q-1]);
+
+  // Compute nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    values[i] = this->values[i] - x[q-1](i-1);
+
+  // Return increment
+  return values[q] - this->values[q];
+}
+//-----------------------------------------------------------------------------
 void cGqElement::set(real u0)
 {
   for (unsigned int i = 0; i <= q; i++)

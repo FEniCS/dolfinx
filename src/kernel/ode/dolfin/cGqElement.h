@@ -31,6 +31,9 @@ namespace dolfin {
     real update(RHS& f, real* values);
     real update(RHS& f, real alpha);
     real update(RHS& f, real alpha, real* values);
+    
+    real updateLocalNewton(RHS& f);
+    real updateLocalNewton(RHS& f, real* values);
 
     void set(real u0);
     void set(const real* const values);

@@ -74,8 +74,8 @@ void AdaptiveIterationLevel1::update(ElementGroup& group, Increments& d)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::update(Element& element, Increments& d)
 {
-  // Damped update of element
-  d = fabs(element.update(f, alpha));
+  // Local Newton update of element
+  d = fabs(element.updateLocalNewton(f));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroupList& list,
@@ -93,14 +93,7 @@ void AdaptiveIterationLevel1::stabilize(ElementGroup& group,
 void AdaptiveIterationLevel1::stabilize(Element& element, 
 					const Increments& d, unsigned int n)
 {
-  // Compute diagonal damping
-  real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
-  real rho = - element.timestep() * dfdu;
-
-  if ( rho >= 0.0 || rho < -1.0 )
-    alpha = (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
-  else
-    alpha = 1.0;
+  // Do nothing, local Newton iteration is used instead of damping
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::converged(ElementGroupList& list,
@@ -179,7 +172,7 @@ bool AdaptiveIterationLevel1::diverged(Element& element,
 				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
-  if ( n < 2 )
+  if ( n < 10 )
     return false;
   
   // Check if the solution converges

@@ -68,9 +68,26 @@ Matrix::~Matrix ()
   A = 0;
 }
 //-----------------------------------------------------------------------------
-void Matrix::init(unsigned int m, unsigned int n)
+void Matrix::init(unsigned int m, unsigned int n, Type type)
 {
-  A->init(m,n);
+  dolfin_assert(A);
+
+  // Check if we need to change the type
+  if ( _type != type )
+  {
+    switch ( type ) {
+    case dense:
+      A = new DenseMatrix(m, n);
+      break;
+    case sparse:
+      A = new SparseMatrix(m, n);
+      break;
+    default:
+      A = new GenericMatrix(m, n);
+    }
+  }
+  else
+    A->init(m, n);
 }
 //-----------------------------------------------------------------------------
 void Matrix::clear()

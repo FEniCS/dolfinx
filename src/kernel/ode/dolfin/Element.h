@@ -6,6 +6,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
+#include <dolfin/NewArray.h>
 
 namespace dolfin {
 
@@ -71,6 +72,12 @@ namespace dolfin {
     /// Update element (iteration), damped version, non-destructive
     virtual real update(RHS& f, real alpha, real* values) = 0;
 
+    /// Update element (iteration), local Newton version
+    virtual real updateLocalNewton(RHS& f) = 0;
+
+    /// Update element (iteration), local Newton version, non-destructive
+    virtual real updateLocalNewton(RHS& f, real* values) = 0;
+
     /// Set all element values to the given value
     virtual void set(real u0) = 0;
 
@@ -118,8 +125,13 @@ namespace dolfin {
     // Compute integral for degree of freedom i using quadrature
     virtual real integral(unsigned int i) const = 0;
 
-    // Temporary storage for function evaluations (common to all elements).
+    // Temporary storage for function evaluations (common to all elements)
     static Vector f;
+
+    // Temporary storage for local newton iteration (common to all elements)
+    static NewArray<Matrix> A;
+    static NewArray<Vector> x;
+    static NewArray<Vector> b;
 
     //--- Element data ---
     

@@ -1,3 +1,5 @@
+ - Fix local Newton iteration for higher order elements
+ - Init matrix to given type
  - Add output of cG(q) and dG(q) weights in matrix format
  - Fix numbering of frames from plotslab script
  - Add png output for plotslab script

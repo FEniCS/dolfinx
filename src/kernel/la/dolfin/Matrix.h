@@ -55,7 +55,7 @@ namespace dolfin {
     ///--- Basic operations ---
 
     /// Initialize to a zero matrix with given dimensions
-    virtual void init(unsigned int m, unsigned int n);
+    virtual void init(unsigned int m, unsigned int n, Type type = sparse);
 
     /// Clear all data
     virtual void clear();

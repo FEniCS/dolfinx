@@ -3,12 +3,17 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/RHS.h>
+#include <dolfin/NewArray.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Element.h>
 
 using namespace dolfin;
 
 // Initialize static data
 Vector dolfin::Element::f;
+NewArray<Matrix> dolfin::Element::A;
+NewArray<Vector> dolfin::Element::b;
+NewArray<Vector> dolfin::Element::x;
 
 //-----------------------------------------------------------------------------
 Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
@@ -30,12 +35,35 @@ Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
   if ( (q+1) > f.size() )
     f.init(q+1);
 
-  //cout << "Creating element for component " << index << ": "
-  //     << "[" << t0 << ", " << t1 << "]" << endl;
+  // Initialize the local element matrix if needed.
+  // For cG(q) elements, we use matrix number q-1, which is of size q x q.
+  // For dG(q) elements, we use matrix number q, which is of size (q+1) x (q+1).
+  // We thus allocate matrices for of size (n+1) x (n+1) for n = 0,...,q,
+  // which is enough for both cG(q) and dG(q). One more than necessary for
+  // cG(q), but this is done only once.
+
+  if ( (q+1) > A.size() )
+  {
+    for (unsigned int n = A.size(); n <= q; n++)
+    {
+      // Create matrix
+      Matrix AA(n+1, n+1, Matrix::dense);
+      A.push_back(AA);
+
+      // Create vector x
+      Vector xx(n+1);
+      x.push_back(xx);
+
+      // Create vector b
+      Vector bb(n+1);
+      b.push_back(xx);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 Element::~Element()
 {
+  // Delete values
   if ( values )
     delete [] values;
   values = 0;

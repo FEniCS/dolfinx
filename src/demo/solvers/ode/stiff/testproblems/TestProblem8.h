@@ -33,6 +33,9 @@ public:
   
   real f(const Vector& u, real t, unsigned int i)
   {
+    //if ( i == 1 )
+    // dolfin_info("t = %.16e u = [%.16e %.16e %.16e]", t, u(0), u(1), u(2));
+
     if ( i == 0 )
       return -0.04 * u(0) + 1.0e4 * u(1) * u(2);
     

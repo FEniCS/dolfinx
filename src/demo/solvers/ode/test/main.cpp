@@ -88,7 +88,7 @@ public:
 
 int main()
 {
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("tolerance", 0.001);
   dolfin_set("debug time steps", 1);
 
   //Single single;

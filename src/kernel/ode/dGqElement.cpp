@@ -150,6 +150,77 @@ real dGqElement::update(RHS& f, real alpha, real* values)
   return values[q] - this->values[q];
 }
 //-----------------------------------------------------------------------------
+real dGqElement::updateLocalNewton(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Save old value
+  real u1 = values[q];
+  
+  // Compute increments for nodal values
+  for (unsigned int i = 0; i <= q; i++)
+    b[q](i) = values[i] - (u0 + integral(i));
+  
+  // Compute local Jacobian
+  real dfdu = f.dfdu(_index, _index, endtime());
+  real k = timestep();
+  for (unsigned int i = 0; i <= q; i++)
+  {
+    for (unsigned int j = 0; j <= q; j++)
+    {
+      if ( i == j )
+	A[q](i, j) = 1.0 - k*dfdu*dG(q).weight(i, j);
+      else
+	A[q](i, j) = - k*dfdu*dG(q).weight(i, j);
+    }
+  }
+
+  // Solve linear system
+  A[q].solve(x[q], b[q]);
+
+  // Compute nodal values
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] -= x[q](i);
+
+  // Return increment
+  return values[q] - u1;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::updateLocalNewton(RHS& f, real* values)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute new nodal values
+  for (unsigned int i = 0; i <= q; i++)
+    b[q](i) = u0 + integral(i);
+  
+  // Compute local Jacobian
+  real dfdu = f.dfdu(_index, _index, endtime());
+  real k = timestep();
+  for (unsigned int i = 0; i <= q; i++)
+  {
+    for (unsigned int j = 0; j <= q; j++)
+    {
+      if ( i == j )
+	A[q](i, j) = 1.0 - k*dfdu*dG(q).weight(i, j);
+      else
+	A[q](i, j) = - k*dfdu*dG(q).weight(i, j);
+    }
+  }
+
+  // Solve linear system
+  A[q].solve(x[q], b[q]);
+
+  // Compute nodal values
+  for (unsigned int i = 0; i <= q; i++)
+    values[i] = this->values[i] - x[q](i);
+
+  // Return increment
+  return values[q] - this->values[q];
+}
+//-----------------------------------------------------------------------------
 void dGqElement::set(real u0)
 {
   this->u0 = u0;
