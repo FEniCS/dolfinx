@@ -160,7 +160,8 @@ void PDE::update(FiniteElement::Vector* element,
   // Update integral measures
   dK.update(*map, *quadrature);
   dS.update(*map, *quadrature);
-
+  h = cell->diameter();
+  
   // Save map (to compute derivatives)
   this->map = map;
 }
