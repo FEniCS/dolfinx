@@ -33,7 +33,8 @@ namespace dolfin {
       // cG(1) in time
       
       return
-        (2 / k * u * v + k / 2 * (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dx;
+        (2 / k * u * v + k / 2 * (grad(u), grad(v))) * dx;
+        //(2 / k * u * v + k / 2 * (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dx;
       //*/
     }
     
@@ -51,7 +52,8 @@ namespace dolfin {
       return
 	(k * f * v +
 	 2 / k * up * v -
-	 k / 2 * (up.ddx() * v.ddx() + up.ddy() * v.ddy()) +
+	 //k / 2 * (up.ddx() * v.ddx() + up.ddy() * v.ddy()) +
+	 k / 2 * (grad(up), grad(v)) +
 	 2 * wp * v) * dx;
       //*/
     }

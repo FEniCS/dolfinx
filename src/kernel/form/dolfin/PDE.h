@@ -106,6 +106,7 @@ namespace dolfin {
     
     // Gradients
     const FunctionSpace::ElementFunction::Vector grad(const ShapeFunction& v);
+    const FunctionSpace::ElementFunction::Vector grad(const ElementFunction& v);
     
     // Function data
     class FunctionPair {

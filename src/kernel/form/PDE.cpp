@@ -135,6 +135,13 @@ PDE::grad(const ShapeFunction &v)
   return w;
 }
 //-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction::Vector
+PDE::grad(const ElementFunction &v)
+{
+  FunctionSpace::ElementFunction::Vector w(v.ddx(), v.ddy(), v.ddz());
+  return w;
+}
+//-----------------------------------------------------------------------------
 void PDE::add(ElementFunction& v, Function& f)
 {
   FunctionPair p(v, f);
