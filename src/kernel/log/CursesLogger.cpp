@@ -784,7 +784,7 @@ void CursesLogger::drawHelp()
   move(line + 3,  2); printw("q - press to quit / kill process");
   move(line + 4,  2); printw("p - press to toggle pause");
   move(line + 5,  2); printw("a - press to display some info about DOLFIN");
-  move(line + 6,  2); printw("p - press to display this help");
+  move(line + 6,  2); printw("h - press to display this help");
 
   move(line + 8,  2); printw("In preparation");
   move(line + 9,  2); printw("--------------");
