@@ -47,6 +47,9 @@ namespace dolfin {
     virtual real mult    (const Vector& x, unsigned int i) const;
     virtual void mult    (const Vector& x, Vector& Ax) const;
     virtual void multt   (const Vector& x, Vector& Ax) const;
+    virtual void mult    (const DenseMatrix& B, DenseMatrix& AB) const;
+    virtual void mult    (const SparseMatrix& B, SparseMatrix& AB) const;
+    virtual void mult    (const GenericMatrix& B, GenericMatrix& AB) const;
     virtual real multrow (const Vector& x, unsigned int i) const;
     virtual real multcol (const Vector& x, unsigned int j) const;
 
@@ -60,6 +63,14 @@ namespace dolfin {
     virtual void settransp(const DenseMatrix& A);
     virtual void settransp(const SparseMatrix& A);
     virtual void settransp(const GenericMatrix& A);
+    virtual real rowmax(unsigned int i) const;
+    virtual real colmax(unsigned int i) const;
+    virtual real rowmin(unsigned int i) const;
+    virtual real colmin(unsigned int i) const;
+    virtual real rowsum(unsigned int i) const;
+    virtual real colsum(unsigned int i) const;
+    virtual real rownorm(unsigned int i, unsigned int type) const;
+    virtual real colnorm(unsigned int i, unsigned int type) const;
 
     virtual void show() const;
     friend LogStream& operator<< (LogStream& stream, const GenericMatrix& A);

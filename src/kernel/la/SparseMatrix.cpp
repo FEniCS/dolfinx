@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Georgios Foufas 2002, 2003
-// Modified by Erik Svensson, 2003.
+// Modified by Erik Svensson, 2003, 2004.
 // Modified by Karin Kraft, 2004.
 
+#include <set>
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/KrylovSolver.h>
@@ -22,8 +23,7 @@ SparseMatrix::SparseMatrix():
   allocsize(1)
 {
   m = 0;
-  n = 0;
-  
+  n = 0;  
 }
 //-----------------------------------------------------------------------------
 SparseMatrix::SparseMatrix(unsigned int m, unsigned int n) :
@@ -350,6 +350,64 @@ void SparseMatrix::multt(const Vector& x, Vector& Ax) const
       Ax(columns[i][pos]) += values[i][pos] * x(i);
 }
 //-----------------------------------------------------------------------------
+void SparseMatrix::mult(const SparseMatrix& B, SparseMatrix& AB) const
+{
+  if ( n != B.m )
+    dolfin_error("Matrix dimensions don't match.");
+
+  AB.init(m,B.n);
+  unsigned int j, k, rowsize;
+  real aij;
+  Vector ABi(m);
+  std::set <unsigned int> cols;
+  for (unsigned int i = 0; i < m; i++){
+    //init cols for row i
+    rowsize = 0;
+    for (unsigned int pos1 = 0; pos1 < rowsizes[i] && columns[i][pos1] != -1; pos1++)
+    {
+      j = columns[i][pos1];
+      aij = values[i][pos1];
+      
+      for (unsigned int pos2 = 0; pos2 < B.rowsizes[j] && B.columns[j][pos2] != -1; pos2++)
+      {
+	k = B.columns[j][pos2];
+	if (cols.insert(k).second) rowsize++;
+	ABi(k) +=  aij * B.values[j][pos2];
+      }
+    }
+    
+    // Insert new columns 
+    // update maximum rowsize
+    if ( rowsize > AB.allocsize )
+      AB.allocsize = rowsize;
+    
+    // Allocate new lists
+    int* newcols = new int[rowsize];
+    real* vals = new real[rowsize];
+    
+    // new columns
+    j = 0;
+    for (std::set<unsigned int, std::less<unsigned int> >::iterator 
+	   it = cols.begin(); it != cols.end() ; ++it)
+    {
+      newcols[j] = *it;
+      vals[j] = ABi(*it);
+      ABi(*it) = 0.0;
+      j++;
+    }
+  
+    // Delete old values and use the new lists
+    delete [] AB.values[i];
+    delete [] AB.columns[i];
+  
+    AB.columns[i] = newcols;
+    AB.values[i] = vals;
+    AB.rowsizes[i] = rowsize;  
+      
+    cols.clear();
+  }
+}
+//-----------------------------------------------------------------------------
 real SparseMatrix::multrow(const Vector& x, unsigned int i) const
 {
   return mult(x,i);
@@ -633,6 +691,117 @@ void SparseMatrix::settransp(const DenseMatrix& A)
   delete [] rowpos;
 }
 //-----------------------------------------------------------------------------
+real SparseMatrix::rowmax(unsigned int i) const
+{ 
+  if (rowsizes[i] == 0){
+    dolfin_warning("Empty row!");
+    return 0.0;
+  }
+  
+  real maxsf = values[i][0];
+  real val;
+  for (unsigned int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
+  {
+    val = values[i][pos]; 
+    if (val> maxsf)
+      maxsf = val;
+  }
+  
+  return maxsf;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::colmax(unsigned int i) const
+{ 
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::rowmin(unsigned int i) const
+{ 
+  if (rowsizes[i] == 0){
+    dolfin_error("Empty row!");
+    return 0.0;
+  }
+  
+  real minsf = values[i][0];
+  real val;
+  for (unsigned int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
+  {
+    val = values[i][pos];
+    if (val < minsf)
+      minsf = val;
+  }
+  
+  return minsf;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::colmin(unsigned int i) const
+{ 
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::rowsum(unsigned int i) const
+{ 
+  real sum = 0.0;
+  for (unsigned int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
+    sum += values[i][pos];
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::colsum(unsigned int i) const
+{ 
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::rownorm(unsigned int i,unsigned int type) const
+{
+  if (rowsizes[i] == 0){
+    dolfin_warning("Empty row!");
+    return 0.0;
+  }
+ 
+  real norm = 0.0;
+  real val; 
+  switch(type){
+  case 0:
+    // max-norm
+    for (unsigned int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
+    {
+      val = fabs(values[i][pos]);
+      if (val > norm)
+	norm = val;
+    }
+    break;
+  case 1:
+    // l1-norm
+    for (unsigned int pos = 0; pos < rowsizes[i]; pos++)
+      norm += fabs(values[i][pos]);
+    break;
+  case 2:
+    // l2-norm
+    for (unsigned int pos = 0; pos < rowsizes[i]; pos++){
+      val = values[i][pos];
+      norm += val * val;
+    }
+    norm = sqrt(norm);
+    break;
+  default:
+    dolfin_error("Unknown norm");
+    return 0.0;
+  } 
+  
+  return norm; 
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::colnorm(unsigned int i,unsigned int type) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
 void SparseMatrix::show() const
 {
   for (unsigned int i = 0; i < m; i++) {
@@ -823,12 +992,15 @@ void SparseMatrix::resizeRow(unsigned int i, unsigned int rowsize)
   real* vals = new real[rowsize];
   
   // Copy values
-  for (unsigned int pos = 0; pos < rowsizes[i] || pos < rowsize; pos++) {
-    if ( pos < rowsizes[i] ) {
+  for (unsigned int pos = 0; pos < rowsizes[i] || pos < rowsize; pos++)
+  {
+    if ( pos < rowsizes[i] )
+    {
       cols[pos] = columns[i][pos];
       vals[pos] = values[i][pos];
     }
-    else {
+    else
+    {
       cols[pos] = -1;
       vals[pos] = 0.0;
     }

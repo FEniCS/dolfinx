@@ -49,6 +49,7 @@ namespace dolfin {
     real mult    (const Vector& x, unsigned int i) const;
     void mult    (const Vector& x, Vector& Ax) const;
     void multt   (const Vector& x, Vector& Ax) const;
+    void mult    (const DenseMatrix& B, DenseMatrix& AB) const;
     real multrow (const Vector& x, unsigned int i) const;
     real multcol (const Vector& x, unsigned int j) const;
     
@@ -61,6 +62,14 @@ namespace dolfin {
     bool endrow(unsigned int i, unsigned int pos) const;
     void settransp(const DenseMatrix& A);
     void settransp(const SparseMatrix& A);
+    real rowmax(unsigned int i) const;
+    real colmax(unsigned int i) const;
+    real rowmin(unsigned int i) const;
+    real colmin(unsigned int i) const;
+    real rowsum(unsigned int i) const;
+    real colsum(unsigned int i) const;
+    real rownorm(unsigned int i, unsigned int type) const;
+    real colnorm(unsigned int i, unsigned int type) const;
 
     void show() const;
     friend LogStream& operator<< (LogStream& stream, const DenseMatrix& A);

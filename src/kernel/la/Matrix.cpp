@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Contributions by: Georgios Foufas 2002, 2003
+// Modified by Georgios Foufas 2002, 2003.
+// Modified by Erik Svensson, 2003, 2004.
 
 #include <dolfin/DirectSolver.h>
 #include <dolfin/KrylovSolver.h>
@@ -234,6 +235,34 @@ void Matrix::multt(const Vector& x, Vector &Ax) const
   A->multt(x,Ax);
 }
 //-----------------------------------------------------------------------------
+void Matrix::mult(const Matrix& B, Matrix& AB) const
+{
+  switch ( _type ) {
+  case dense:
+    
+    if ( B._type != dense || AB._type != dense )
+      dolfin_error("Not implemented.");
+    
+    A->mult(*static_cast<DenseMatrix*>(B.A), 
+	    *static_cast<DenseMatrix*>(AB.A));
+    
+    break;
+    
+  case sparse:
+    
+    if ( B._type != sparse || AB._type != sparse )
+      dolfin_error("Not implemented.");
+    
+    A->mult(*static_cast<SparseMatrix*>(B.A), 
+	    *static_cast<SparseMatrix*>(AB.A));
+    
+    break;
+
+  default:
+    dolfin_error("Not implemented.");
+  }
+}
+//-----------------------------------------------------------------------------
 real Matrix::multrow(const Vector& x, unsigned int i) const
 {
   return A->multrow(x,i);
@@ -428,6 +457,46 @@ void Matrix::settransp(const Matrix& A)
   }
 }
 //-----------------------------------------------------------------------------
+real Matrix::rowmax(unsigned int i) const
+{
+  return A->rowmax(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::colmax(unsigned int i) const
+{
+  return A->colmax(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::rowmin(unsigned int i) const
+{
+  return A->rowmin(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::colmin(unsigned int i) const
+{
+  return A->colmin(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::rowsum(unsigned int i) const
+{
+  return A->rowsum(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::colsum(unsigned int i) const
+{
+  return A->colsum(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::rownorm(unsigned int i, unsigned int type) const
+{
+  return A->rownorm(i, type);
+}
+//-----------------------------------------------------------------------------
+real Matrix::colnorm(unsigned int i, unsigned int type) const
+{
+  return A->colnorm(i, type);
+}
+//-----------------------------------------------------------------------------
 void Matrix::show() const
 {
   A->show();
@@ -513,6 +582,26 @@ unsigned int Matrix::Row::size() const
   return A.size(1);
 }
 //-----------------------------------------------------------------------------
+real Matrix::Row::max() const
+{
+  return A.rowmax(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Row::min() const
+{
+  return A.rowmin(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Row::sum() const
+{
+  return A.rowsum(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Row::norm(unsigned int type) const
+{
+  return A.rownorm(i, type);
+}
+//-----------------------------------------------------------------------------
 real Matrix::Row::operator()(unsigned int j) const
 {
   return A(i,j);
@@ -574,6 +663,26 @@ Matrix::Column::Column(Matrix& matrix, Range i, Index j) : A(matrix)
 unsigned int Matrix::Column::size() const
 {
   return A.size(0);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::max() const
+{
+  return A.colmax(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::min() const
+{
+  return A.colmin(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::sum() const
+{
+  return A.colsum(i);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::norm(unsigned int type) const
+{
+  return A.colnorm(i, type);
 }
 //-----------------------------------------------------------------------------
 real Matrix::Column::operator()(unsigned int i) const

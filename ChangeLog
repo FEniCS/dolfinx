@@ -1,3 +1,4 @@
+ - New Matrix functions: max, min, norm, and sum of rows and columns (erik)
  - Derivatives/gradients of ElementFunction (coefficients f.ex.) implemented
  - Enable assignment to all elements of a NewArray
  - Add functions Boundary::noNodes(), noFaces(), noEdges()

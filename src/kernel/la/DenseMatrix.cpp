@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Erik Svensson, 2003.
+// Modified by Erik Svensson, 2003, 2004.
 // Modified by Karin Kraft, 2004.
 
 #include <cmath>
@@ -312,6 +312,27 @@ void DenseMatrix::multt(const Vector& x, Vector& Ax) const
       Ax(j) += values[i][j] * x(i);
 }
 //-----------------------------------------------------------------------------
+void DenseMatrix::mult(const DenseMatrix& B, DenseMatrix& AB) const
+{
+  if ( n != B.m )
+    dolfin_error("Matrix dimensions don't match.");
+
+  dolfin_info("Dense matrix multiplication");
+  
+  AB.init(m,B.size(1));
+  AB = 0.0;
+  
+  real sum;
+  for (unsigned int i = 0; i < m; i++){
+    for (unsigned int j = 0; j < B.n; j++){
+      sum = 0.0;
+      for (unsigned int k = 0; k < n; k++)
+	sum += values[i][k] * B.values[k][j]; 
+      AB.values[i][j] = sum;
+    }
+  }  
+}
+//-----------------------------------------------------------------------------
 real DenseMatrix::multrow(const Vector& x, unsigned int i) const
 {
   return mult(x,i);
@@ -422,6 +443,148 @@ void DenseMatrix::settransp(const SparseMatrix& A)
   for (unsigned int i = 0; i < n; i++)
     for (unsigned int pos = 0; !A.endrow(i,pos); pos++)
       values[j][i] = A(i,j,pos);
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::rowmax(unsigned int i) const
+{ 
+  real maxsf = values[i][0];
+  real val;
+  for (unsigned int j = 0; j < n; j++){
+    val = values[i][j];
+    if (val > maxsf)
+      maxsf = val;
+  }
+  
+  return maxsf;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::colmax(unsigned int i) const
+{ 
+  real maxsf = values[0][i];
+  real val;
+  for (unsigned int j = 0; j < m; j++)
+  {
+    val = values[j][i];
+    if (val > maxsf)
+      maxsf = val;
+  }
+  
+  return maxsf;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::rowmin(unsigned int i) const
+{ 
+  real minsf = values[i][0];
+  real val;
+  for (unsigned int j = 0; j < n; j++){
+    val = values[i][j];
+    if (val < minsf)
+      minsf = val;
+  }
+  
+  return minsf;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::colmin(unsigned int i) const
+{ 
+  real minsf = values[i][0];
+  real val;
+  for (unsigned int j = 0; j < m; j++)
+  {
+    val = values[j][i];
+    if (val < minsf)
+      minsf = val;
+  }
+  
+  return minsf;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::rowsum(unsigned int i) const
+{ 
+  real sum = 0.0;
+  for (unsigned int j = 0; j < n; j++){
+    sum += values[i][j];
+  }
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::colsum(unsigned int i) const
+{ 
+  real sum = 0.0;
+  for (unsigned int j = 0; j < m; j++)
+    sum += values[j][i];
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::rownorm(unsigned int i,unsigned int type) const
+{
+  real norm = 0.0;
+  
+  switch(type){
+  case 0:
+    // max-norm
+    real val;
+    for (unsigned int pos = 0; pos < n; pos++)
+    {
+      val = fabs(values[i][pos]); 
+      if (val > norm)
+	norm = val;
+    }
+    break;
+  case 1:
+    // l1-norm
+    for (unsigned int pos = 0; pos < n; pos++)
+      norm += fabs(values[i][pos]);
+    break;
+  case 2:
+    // l2-norm
+    for (unsigned int pos = 0; pos < n; pos++)
+      norm += values[i][pos] * values[i][pos];
+    norm = sqrt(norm);
+    break;
+  default:
+    dolfin_error("Unknown norm");
+  }  
+  
+  return norm;
+}
+//-----------------------------------------------------------------------------
+real DenseMatrix::colnorm(unsigned int i,unsigned int type) const
+{
+  real norm = 0.0;
+  real val;
+
+  switch(type){
+  case 0:
+    // max-norm
+    for (unsigned int pos = 0; pos < m; pos++)
+    {
+      val = fabs(values[pos][i]); 
+      if (val > norm)
+	norm = val;
+    }
+    break;
+  case 1:
+    // l1-norm
+    for (unsigned int pos = 0; pos < m; pos++)
+      norm += fabs(values[pos][i]);
+    break;
+  case 2:
+    // l2-norm
+    for (unsigned int pos = 0; pos < m; pos++)
+    {
+      val = values[pos][i];
+      norm += val * val;
+    }
+    norm = sqrt(norm);
+    break;
+  default:
+    dolfin_error("Unknown norm");
+  }  
+  
+  return norm;
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::show() const 

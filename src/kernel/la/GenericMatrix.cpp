@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Karin Kraft, 2004.
+// Modified by Erik Svensson, 2004.
 
 #include <dolfin/GenericMatrix.h>
 
@@ -156,6 +157,21 @@ void GenericMatrix::multt(const Vector& x, Vector& Ax) const
   dolfin_error("This function is not implemented");
 }
 //-----------------------------------------------------------------------------
+void GenericMatrix::mult(const DenseMatrix& B, DenseMatrix& AB) const
+{
+  dolfin_error("This function is not implemented");
+}
+//-----------------------------------------------------------------------------
+void GenericMatrix::mult(const SparseMatrix& B, SparseMatrix& AB) const
+{
+  dolfin_error("This function is not implemented");
+}
+//-----------------------------------------------------------------------------
+void GenericMatrix::mult(const GenericMatrix& B, GenericMatrix& AB) const
+{
+  dolfin_error("This function is not implemented");
+}
+//-----------------------------------------------------------------------------
 real GenericMatrix::multrow(const Vector& x, unsigned int i) const
 {
   dolfin_error("This function is not implemented");
@@ -217,6 +233,54 @@ void GenericMatrix::settransp(const SparseMatrix& A)
 void GenericMatrix::settransp(const GenericMatrix& A)
 {
   dolfin_error("This function is not implemented");
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::rowmax(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::colmax(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::rowmin(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::colmin(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::rowsum(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::colsum(unsigned int i) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::rownorm(unsigned int i, unsigned int type) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+real GenericMatrix::colnorm(unsigned int i, unsigned int type) const
+{
+  dolfin_error("This function is not implemented");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void GenericMatrix::show() const

@@ -1,7 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Erik Svensson, 2003
+// Modified by Erik Svensson, 2003, 2004.
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -132,6 +132,9 @@ namespace dolfin {
     /// Matrix-vector multiplication with transpose
     virtual void multt(const Vector& x, Vector &Ax) const;
 
+    /// Matrix-matrix multiplication
+    virtual void mult(const Matrix& B, Matrix& AB) const;
+
     /// Scalar product with row
     virtual real multrow(const Vector& x, unsigned int i) const;
 
@@ -188,6 +191,30 @@ namespace dolfin {
     /// Set this matrix to the transpose of the given matrix
     virtual void settransp(const Matrix& A);
 
+    /// Compute maximum element in given row
+    virtual real rowmax(unsigned int i) const;
+
+    /// Compute maximum element in given row
+    virtual real colmax(unsigned int i) const;    
+    
+    /// Compute minimum element in given row
+    virtual real rowmin(unsigned int i) const;
+
+    /// Compute minimum element in given column
+    virtual real colmin(unsigned int i) const;
+
+    /// Compute sum of given row
+    virtual real rowsum(unsigned int i) const;
+
+    /// Compute sum of given row
+    virtual real colsum(unsigned int i) const;
+
+    /// Compute norm of given row: 0 for inf, 1 for l1, and 2 for l2
+    virtual real rownorm(unsigned int i,unsigned int type) const;
+
+    /// Compute norm of given column: 0 for inf, 1 for l1, and 2 for l2
+    virtual real colnorm(unsigned int i,unsigned int type) const;
+
     ///--- Output ---
 
     /// Display entire matrix
@@ -231,6 +258,11 @@ namespace dolfin {
 
       unsigned int size() const;
 
+      real max() const;
+      real min() const;
+      real sum() const;
+      real norm(unsigned int type) const;
+
       real operator() (unsigned int j) const;
       Element operator()(unsigned int j);
 
@@ -258,6 +290,11 @@ namespace dolfin {
       Column(Matrix& matrix, Range i, Index j);
 
       unsigned int size() const;
+
+      real max() const;
+      real min() const;
+      real sum() const;
+      real norm(unsigned int type) const;
 
       real operator() (unsigned int i) const;
       Element operator()(unsigned int i);
