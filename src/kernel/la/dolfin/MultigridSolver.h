@@ -13,17 +13,11 @@ namespace dolfin {
   class MultigridSolver{
   public:
     
-    MultigridSolver(GridHierarchy& grids);
-    MultigridSolver();
-    ~MultigridSolver();
-    
     /// Solve Ax = b 
-    void solve(const Matrix& A, Vector& x, const Vector& b);
+    static void solve(const Matrix& A, Vector& x, const Vector& b);
 
   private:
     
-    GridHierarchy& grids;
-
   };
   
 }

@@ -13,11 +13,6 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultigridSolver::MultigridSolver(GridHierarchy& grids)
-{
-  this->grids = grids;
-}
-//-----------------------------------------------------------------------------
 void MultigridSolver::solve(Matrix& A, Vector& x, const Vector& b) 
 {
 }
