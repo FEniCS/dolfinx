@@ -1,0 +1,34 @@
+Benchmark problem for multi-adaptive ODE-solver
+-----------------------------------------------
+
+To run the bencmark problem, type
+
+	./run-bench.sh >>& bench.log
+
+---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.4 (mån feb  2 10:28:12 CET 2004)
+Compiler flags: -I/usr/local/include -DDEBUG=1 -g -O2 -Wall -Werror
+Elapsed time:   real: 166.308  user: 164.740  sys: 0.730  cpu: 99.50%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+This is the first benchmark test, no optimization yet.
+---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.4 (mån feb  2 11:20:44 CET 2004)
+Compiler flags: -I/usr/local/include -O2
+Elapsed time:   real: 157.903  user: 153.010  sys: 0.830  cpu: 97.42%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Compiled without -DDEBUG and -g. Some improvement. Increasing
+compiler optimization to -O3 doesn't seem to give any improvements,
+seems to be even slower.
+---------------------------------------------------------------------------
