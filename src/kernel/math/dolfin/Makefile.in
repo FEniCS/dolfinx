@@ -62,6 +62,7 @@ CC = @CC@
 CXX = @CXX@
 DOLFIN_LFLAGS = @DOLFIN_LFLAGS@
 LN_S = @LN_S@
+MAINT = @MAINT@
 MAIN_INCLUDES = @MAIN_INCLUDES@
 MAKEINFO = @MAKEINFO@
 MODULE_INCLUDES = @MODULE_INCLUDES@
@@ -84,7 +85,7 @@ TAR = tar
 GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
-$(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/math/dolfin/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)

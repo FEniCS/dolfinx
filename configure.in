@@ -20,6 +20,10 @@ done
 dnl Initialize automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 
+dnl Tell automake not to generate Makefile.in unless asked to.
+dnl This way the code can be installed on systems without automake installed.
+AM_MAINTAINER_MODE
+
 dnl Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
