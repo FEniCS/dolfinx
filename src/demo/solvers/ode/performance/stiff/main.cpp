@@ -21,7 +21,7 @@ public:
     Matrix S(2 * n, 2 * n);
     int deps = 0;
 
-    for(int i = 0; i < n; i++)
+    for(unsigned int i = 0; i < n; i++)
     {
       S(i, n + i) = 1;
       S(n + i, i) = 1;
