@@ -165,7 +165,7 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   // Write data
   for (NodeIterator n(u.mesh()); !n.end(); ++n)
   {
-    float value = static_cast<float>(u(n->coord()));
+    float value = static_cast<float>(u(*n));
     fwrite(&value, sizeof(float), 1, fp);
   }
   fprintf(fp,"\n");
