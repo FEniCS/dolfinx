@@ -35,8 +35,7 @@ void ConvDiffSolver::solve()
   Galerkin     fem;
   ConvDiff     convdiff(f, u0, a, beta);
   KrylovSolver solver;
-  //File         file("convdiff.m");
-  File         file("convdiff.dx");
+  File         file("convdiff.m");
   
   real t = 0.0;
   real T = dolfin_get("final time");
@@ -44,8 +43,7 @@ void ConvDiffSolver::solve()
 
   // Save initial value
   u1.rename("u", "temperature");
-  file << mesh;
-  //file << u1;
+  file << u1;
 
   // Assemble matrix
   convdiff.k = k;
@@ -71,14 +69,12 @@ void ConvDiffSolver::solve()
     
     // Save the solution
     u1.t = t;
-    //    file << u1;
+    file << u1;
 
     // Update progress
     p = t / T;
 
   }
-
-  file << u1;
 
 }
 //-----------------------------------------------------------------------------
