@@ -12,16 +12,24 @@
 #include <dolfin/TimeSlab.h>
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementGroupIterator.h>
+#include <dolfin/Element.h>
+#include <dolfin/ElementIterator.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode, Function& function) :
-  no_samples(dolfin_get("number of samples")), N(ode.size()), t(0),
-  T(ode.endtime()), partition(N), adaptivity(ode), u(ode, function), f(ode, u),
-  fixpoint(u, f, adaptivity), file(u.label() + ".m"), p("Time-stepping"),
-  _finished(false), save_solution(dolfin_get("save solution"))
+  N(ode.size()), t(0), T(ode.endtime()), partition(N), adaptivity(ode),
+  u(ode, function), f(ode, u), fixpoint(u, f, adaptivity), 
+  file(u.label() + ".m"), p("Time-stepping"), _finished(false),
+  save_solution(dolfin_get("save solution")),
+  adaptive_samples(dolfin_get("adaptive samples")),
+  no_samples(dolfin_get("number of samples")),
+  sample_density(dolfin_get("sample density"))
+				 
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
@@ -175,10 +183,19 @@ void TimeStepper::save(TimeSlab& timeslab)
   if ( !save_solution )
     return;
 
+  // Choose method for saving the solution
+  if ( adaptive_samples )
+    saveAdaptiveSamples(timeslab);
+  else
+    saveFixedSamples(timeslab);
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
+{
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
   real t = ceil(timeslab.starttime()/K) * K;
-
+  
   // Save samples
   while ( t < timeslab.endtime() )
   {
@@ -191,6 +208,54 @@ void TimeStepper::save(TimeSlab& timeslab)
   if ( timeslab.finished() ) {
     Sample sample(u, f, timeslab.endtime());
     file << sample;
+  }
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::saveAdaptiveSamples(TimeSlab& timeslab)
+{
+  // Get start time of time slab
+  real t0 = timeslab.starttime();
+  real t1 = t0;
+
+  // Save initial value
+  if ( t0 == 0.0 )
+  {
+    Sample sample(u, f, 0.0);
+    file << sample;
+  }
+
+  // Create a list of element groups from the time slab
+  ElementGroupList list(timeslab);
+
+  // Save a samples within each element
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+  {
+    // Get first element in element group
+    ElementIterator element(*group);
+    
+    // Check if we have stepped forward
+    if ( element->endtime() <= t1 )
+      continue;
+
+    // Get interval
+    t0 = element->starttime();
+    t1 = element->endtime();
+
+    dolfin_assert(sample_density >= 1);
+    real dk = (t1 - t0) / static_cast<real>(sample_density);
+
+    // Save samples
+    for (unsigned int n = 0; n < sample_density; ++n)
+    {
+      // Compute time of sample, and make sure we get the end time right
+      real t = t0 + n*dk;
+      if ( n == (sample_density - 1) )
+	t = t1;
+
+      // Create and save the sample
+      Sample sample(u, f, t0 + n*dk);
+      file << sample;
+    }
   }
 }
 //-----------------------------------------------------------------------------

@@ -36,11 +36,12 @@ namespace dolfin {
       add(Parameter::BOOL, "fixed time step", false);
       add(Parameter::BOOL, "solve dual problem", true);
       add(Parameter::BOOL, "save solution", true);
+      add(Parameter::BOOL, "adaptive samples", false);
       add(Parameter::BOOL, "debug time steps", false);
       add(Parameter::BOOL, "debug iterations", false);
 
-
       add(Parameter::INT, "number of samples", 100);
+      add(Parameter::INT, "sample density", 1);
       add(Parameter::INT, "element cache size", 32);
       add(Parameter::INT, "maximum iterations", 100);
       add(Parameter::INT, "order", 1);

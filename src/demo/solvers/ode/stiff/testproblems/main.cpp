@@ -109,6 +109,7 @@ int main(int argc, char* argv[])
   dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
+  dolfin_set("adaptive samples", true);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("solve dual problem", false);
   

@@ -69,16 +69,19 @@ namespace dolfin {
     // Prepare for next time slab
     void shift();
 
-    // Save solution (when necessary)
+    // Save interpolated solution (when necessary)
     void save(TimeSlab& timeslab);
+
+    // Save at fixed sample points
+    void saveFixedSamples(TimeSlab& timeslab);
+    
+    // Save using adaptive samples
+    void saveAdaptiveSamples(TimeSlab& timeslab);
 
     // Stabilize using a sequence of small time steps
     void stabilize(real K);
     
     //--- Time-stepping data ---
-
-    // Number of samples to save
-    unsigned int no_samples;
 
     // Size of system
     unsigned int N;
@@ -115,6 +118,15 @@ namespace dolfin {
 
     // True if we should save the solution
     bool save_solution;
+
+    // True if we should use adaptive samples
+    bool adaptive_samples;
+
+    // Number of samples to save (for non-adaptive sampling)
+    unsigned int no_samples;
+    
+    // Density of sampling (for adaptive sampling)
+    unsigned int sample_density;
 
   };
 
