@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <dolfin.h>
+#include "TestProblem3.h"
 #include "TestProblem8.h"
 #include "TestProblem9.h"
 
@@ -22,7 +23,8 @@ void solveTestProblem2()
 
 void solveTestProblem3()
 {
-  dolfin_info("Not implemented");
+  TestProblem3 testProblem;
+  testProblem.solve();
 }
 
 void solveTestProblem4()
