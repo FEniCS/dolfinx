@@ -25,6 +25,7 @@ Mesh
 
 o [jj, logg] File format including boundary
 o [jj] Schema for mesh XML format
+* Connectivity, automate computation all 16 connections
 * Fix bug in mesh refinement, non-working mesh from Pär Ingelström
 * Geometry representation, including boundaries
 * Mesh generation using triangle or tetgen?
