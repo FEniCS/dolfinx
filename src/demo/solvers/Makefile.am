@@ -1,6 +1,7 @@
 SUBDIRS = convdiff \
           elasticity \
           elasticity-stationary \
+          elasticity-updated \
           euler \
           heat \
           navierstokes \

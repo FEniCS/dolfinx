@@ -1,0 +1,6 @@
+# Module specifications
+
+NAME     = "elasticity-updated"
+KEYWORD  = "elasticity-updated"
+SOLVER   = "ElasticityUpdatedSolver"
+NEEDS    = "mesh"

@@ -176,6 +176,7 @@ AC_OUTPUT( Makefile \
            src/modules/wave-vector/Makefile \
            src/modules/elasticity/Makefile \
            src/modules/elasticity-stationary/Makefile \
+           src/modules/elasticity-updated/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
