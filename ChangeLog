@@ -1,3 +1,5 @@
+0.3.4
+ - Fix bugs in some of the ElementFunction operators
  - Make convection-diffusion solver work again
  - Fix bug in integration, move multiplication with the determinant
  - Fix memory leaks in ElementFunction
