@@ -34,8 +34,8 @@ AC_ARG_WITH(petsc-dir,
 
 # Option --with-petsc-bopt
 AC_ARG_WITH(petsc-bopt,
-            AC_HELP_STRING([--with-petsc-dir=<path>],
-                           [Specify path to PETSc (O_c++ or g_c++)]),
+            AC_HELP_STRING([--with-petsc-bopt=<path>],
+                           [Specify compiler flag BOPT for PETSc (O_c++ or g_c++)]),
             [BOPT=$with_petsc_bopt],)
 
 # Option --with-petsc-version

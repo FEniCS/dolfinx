@@ -5,6 +5,48 @@
 
 using namespace dolfin;
 
+class Economy : public Homotopy
+{
+public:
+
+  Economy(unsigned int m, unsigned int n) : Homotopy(n), m(m), n(n), a(0), w(0)
+  {
+    // Initialize matrices a and w
+    a = new real * [m];
+    w = new real * [m];
+    for (unsigned int i = 0; i < m; i++)
+    {
+      a[i] = new real[n];
+      w[i] = new real[n];
+      for (unsigned int j = 0; j < n; j++)
+      {
+	a[i][j] = 0.0;
+	w[i][j] = 0.0;
+      }
+    }
+  }
+
+  ~Economy()
+  {
+    for (unsigned i = 0; i < m; i++)
+    {
+      delete [] a[i];
+      delete [] w[i];
+    }
+    delete [] a;
+    delete [] w;
+  }
+
+protected:
+
+  unsigned int m; // Number of traders
+  unsigned int n; // Number of goods
+  
+  real** a; // Matrix of traders' preferences
+  real** w; // Matrix of traders' initial endowments
+  
+};
+
 class Leontief : public Homotopy
 {
 public:
@@ -112,9 +154,10 @@ private:
 
   unsigned int m; // Number of traders
   unsigned int n; // Number of goods
+  
+  real** a; // Matrix of traders' preferences
+  real** w; // Matrix of traders' initial endowments
 
-  real** a;     // Matrix of traders' preferences
-  real** w;     // Matrix of traders' initial endowments
   complex* tmp; // Temporary storage for scalar products
 
 };
