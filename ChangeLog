@@ -1,3 +1,4 @@
+ - Rename function.h to enable compilation under Cygwin
  - Add new benchmark problem for multi-adaptive solver
  - Bug fix for ParticleSystem
  - Initialization of first time step

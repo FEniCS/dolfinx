@@ -4,7 +4,7 @@
 #ifndef __VECTOR_EXPRESSION_FUNCTION_H
 #define __VECTOR_EXPRESSION_FUNCTION_H
 
-#include <dolfin/vfunction.h>
+#include <dolfin/VFunctionPointer.h>
 #include <dolfin/ExpressionFunction.h>
 
 namespace dolfin {

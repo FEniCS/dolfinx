@@ -14,7 +14,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
-#include <dolfin/bcfunction.h>
+#include <dolfin/BCFunctionPointer.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
 #include <dolfin/PDE.h>

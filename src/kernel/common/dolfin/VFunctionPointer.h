@@ -6,11 +6,12 @@
 
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   typedef real (*VFunctionPointer) (real, real, real, real, int);
   typedef VFunctionPointer vfunction;
-
+  
 }
   
 #endif

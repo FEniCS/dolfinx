@@ -8,9 +8,9 @@
 #include <stdarg.h>
 
 #include <dolfin/constants.h>
-#include <dolfin/function.h>
-#include <dolfin/vfunction.h>
-#include <dolfin/bcfunction.h>
+#include <dolfin/FunctionPointer.h>
+#include <dolfin/VFunctionPointer.h>
+#include <dolfin/BCFunctionPointer.h>
 #include <dolfin/utils.h>
 
 #define PARAMETER_IDENTIFIER_LENGTH 128

@@ -4,7 +4,7 @@
 #ifndef __SCALAR_EXPRESSION_FUNCTION_H
 #define __SCALAR_EXPRESSION_FUNCTION_H
 
-#include <dolfin/function.h>
+#include <dolfin/FunctionPointer.h>
 #include <dolfin/ExpressionFunction.h>
 
 namespace dolfin {

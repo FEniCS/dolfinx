@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -81,7 +81,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_common.h              Array.h              General.h              List.h              Table.h              Tensor.h              Variable.h              bcfunction.h              function.h              meminfo.h              sysinfo.h              timeinfo.h              utils.h              vfunction.h
+EXTRA_DIST = dolfin_common.h              Array.h              NewArray.h              BCFunctionPointer.h              FunctionPointer.h              General.h              List.h              NewList.h              Table.h              Tensor.h              Variable.h              VFunctionPointer.h              meminfo.h              sysinfo.h              timeinfo.h              utils.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

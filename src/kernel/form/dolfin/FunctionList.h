@@ -4,7 +4,7 @@
 #ifndef __FUNCTION_LIST_H
 #define __FUNCTION_LIST_H
 
-#include <dolfin/function.h>
+#include <dolfin/FunctionPointer.h>
 #include <dolfin/Array.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/ElementFunction.h>

@@ -6,8 +6,9 @@
 
 #include <dolfin/constants.h>
 
-namespace dolfin {
-
+namespace dolfin
+{
+  
   typedef real (*FunctionPointer) (real, real, real, real);
   typedef FunctionPointer function;
 

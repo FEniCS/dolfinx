@@ -7,11 +7,12 @@
 #include <dolfin/constants.h>
 #include <dolfin/BoundaryCondition.h>
 
-namespace dolfin {
-
+namespace dolfin
+{
+  
   typedef void (*BCFunctionPointer) (BoundaryCondition&);
   typedef BCFunctionPointer bcfunction;
-
+  
 }
   
 #endif

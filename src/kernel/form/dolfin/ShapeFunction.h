@@ -6,7 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/function.h>
+#include <dolfin/FunctionPointer.h>
 #include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/Integral.h>

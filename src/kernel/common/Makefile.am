@@ -3,6 +3,8 @@ SUBDIRS = dolfin
 include_HEADERS = dolfin/dolfin_common.h \
                   dolfin/Array.h \
                   dolfin/NewArray.h \
+                  dolfin/BCFunctionPointer.h \
+                  dolfin/FunctionPointer.h \
                   dolfin/General.h \
                   dolfin/List.h \
                   dolfin/NewList.h \
@@ -10,13 +12,11 @@ include_HEADERS = dolfin/dolfin_common.h \
                   dolfin/Table.h \
                   dolfin/Tensor.h \
                   dolfin/Variable.h \
-                  dolfin/bcfunction.h \
+                  dolfin/VFunctionPointer.h \
                   dolfin/meminfo.h \
-                  dolfin/function.h \
                   dolfin/sysinfo.h \
                   dolfin/timeinfo.h \
-                  dolfin/utils.h \
-                  dolfin/vfunction.h
+                  dolfin/utils.h
 
 INCLUDES = @MODULE_INCLUDES@
 
