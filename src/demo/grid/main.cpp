@@ -7,7 +7,7 @@ using namespace dolfin;
 
 int main()
 {
-  dolfin_set("create edges",false); 
+  dolfin_set("create edges",true); 
 
   Grid grid;
   File file("grid.xml.gz");

@@ -46,6 +46,8 @@ namespace dolfin {
 	 int   noCellNeighbors() const;
 	 int   noNodeNeighbors() const;
 
+	 void setEdge(Edge* e, int i);
+	 
 	 // id information for cell and its contents
 	 int id() const;
 	 int nodeID(int i) const;
@@ -55,8 +57,8 @@ namespace dolfin {
 	 void mark(Marker marker);
 	 Marker marker() const;
 
-	 void mark_edge(int edge);
-	 void unmark_edge(int edge);
+	 void markEdge(int edge);
+	 void unmarkEdge(int edge);
 	 int noMarkedEdges();
 	 bool markedEdgesOnSameFace();
 	 

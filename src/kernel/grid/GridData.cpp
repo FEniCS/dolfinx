@@ -108,13 +108,111 @@ void GridData::createEdges(Cell* c)
   for (int i=0;i<c->noEdges();i++){ 
     edge_exists = false;
     for (List<Edge>::Iterator e(&edges); !e.end(); ++e){
-      if ( ((e.pointer())->id() == c->edge(i)->id()) && ((e.pointer())->level() == c->level()) ) edge_exists = true;
+      switch(i){ 
+      case 0: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      case 1: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      case 2: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(0)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      case 3: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      case 4: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(1)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      case 5: 
+	if ( ( ((e.pointer())->node(0)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->node(1)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ||
+	     ( ((e.pointer())->node(1)->id() == c->node(2)->id()) && 
+	       ((e.pointer())->node(0)->id() == c->node(3)->id()) && 
+	       ((e.pointer())->level() == c->level()) ) ){
+	  c->setEdge(e.pointer(),i);
+	  edge_exists = true;
+	  break;
+	}
+	break;
+      default:
+	dolfin_error("wrong counter value on i");
+      }
     }
+    
     if (!edge_exists){
       edge = edges.create(&id);
       edge->setID(id);
-      edge->set(c->edge(i)->node(0),c->edge(i)->node(1));
+      switch(i){ 
+      case 0: 
+	edge->set(c->node(0),c->node(1));
+	break;
+      case 1: 
+	edge->set(c->node(0),c->node(2));
+	break;
+      case 2: 
+	edge->set(c->node(0),c->node(3));
+	break;
+      case 3: 
+	edge->set(c->node(1),c->node(2));
+	break;
+      case 4: 
+	edge->set(c->node(1),c->node(3));
+	break;
+      case 5: 
+	edge->set(c->node(2),c->node(3));
+	break;
+      default:
+	dolfin_error("wrong counter value on i");
+      }
       edge->setLevel(c->level());
+      c->setEdge(edge,i);
     }    
   }
 }

@@ -6,6 +6,7 @@
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/ShortList.h>
 #include <dolfin/RefineGrid.h>
 
 using namespace dolfin;
@@ -78,7 +79,8 @@ void RefineGrid::RegularRefinement(Cell* parent)
 
   switch (parent->type()) {
   case Cell::TETRAHEDRON: 
-    RegularRefinementTetrahedron(parent);
+    IrrRef1(parent);
+    //RegularRefinementTetrahedron(parent);
     break;
   case Cell::TRIANGLE: 
     RegularRefinementTriangle(parent);
@@ -183,80 +185,101 @@ void RefineGrid::LocalIrregularRefinement(Cell *parent)
 
 void RefineGrid::IrrRef1(Cell* parent)
 {
-/*
   // 3 edges are marked on the same face: 
   // insert 3 new nodes at the midpoints on the marked edges, connect the 
   // new nodes to each other, as well as to the node that is not on the 
   // marked face. This gives 4 new tetrahedrons. 
 
-  if (parent->noMarkedEdges() != 3) dolfin_error("wrong size of refinement edges");
+  //if (parent->noMarkedEdges() != 3) dolfin_error("wrong size of refinement edges");
   
-  bool marked_nodes[4];
+  int marked_nodes[3];
   int marked_edges[3];
-  int cnt = 0;
-  marked_node[0] = marked_node[1] = marked_node[2] = marked_node[3] = false;
+  int cnt_1 = 0;
+  int cnt_2 = 0;
+
+  parent->markEdge(0);
+  parent->markEdge(1);
+  parent->markEdge(2);
+  bool taken;
   for (int i=0;i<parent->noEdges();i++){
     if (parent->edge(i)->marked()){
-      marked_edges[cnt++] = i;
+      marked_edges[cnt_1++] = i;
       for (int j=0;j<parent->noNodes();j++){
-	if (parent->edge(i)->node(0)->id() == parent->node(j)->id()) marked_node[j] = true; 	
-	if (parent->edge(i)->node(1)->id() == parent->node(j)->id()) marked_node[j] = true; 	
+	cout << "n1 = " << parent->node(j)->id() << endl;
+	cout << "e = " << parent->edge(i)->id() << endl;
+	cout << "n2 = " << parent->edge(i)->node(0)->id() << endl;
+	cout << "n3 = " << parent->edge(i)->node(1)->id() << endl;
+	if ( (parent->edge(i)->node(0)->id() == parent->node(j)->id()) || 
+	     (parent->edge(i)->node(1)->id() == parent->node(j)->id()) ){
+	  taken = false;
+	  for (int k=0;k<3;k++){
+	    if ( marked_nodes[k] == j ) taken = true;
+	  }
+	  if (!taken) marked_nodes[cnt_2++] = j; 	
+	}
       }
     }
   }
 
-  Node* n01 = grid.createNode(parent->level(),parent->edge(marked_edges[0])->midpoint());
-  Node* n02 = grid.createNode(parent->level(),parent->edge(marked_edges[1])->midpoint());
-  Node* n12 = grid.createNode(parent->level(),parent->edge(marked_edges[2])->midpoint());
-
   int face_node;
-  for (int i=0;i<parent->noNodes();i++){
-    if (marked_node[i] = false){
+  for (int i=0;i<4;i++){
+    taken = false;
+    for (int j=0;j<3;j++){
+      if (marked_nodes[j] == i) taken = true;
+    }
+    if (!taken){
       face_node = i;
       break;
+    } 
+  }
+
+  cout << "1. marked edges = " << marked_edges[0] << endl;
+  cout << "2. marked edges = " << marked_edges[1] << endl;
+  cout << "3. marked edges = " << marked_edges[2] << endl;
+
+  cout << "1. marked edges = " << parent->edge(marked_edges[0])->midpoint() << endl;
+  cout << "2. marked edges = " << parent->edge(marked_edges[1])->midpoint() << endl;
+  cout << "3. marked edges = " << parent->edge(marked_edges[2])->midpoint() << endl;
+
+  cout << "1. level = " << parent->level()+1 << endl;
+
+  Node *nf = grid.createNode(parent->level()+1,parent->node(face_node)->coord());
+  Node *n0 = grid.createNode(parent->level()+1,parent->node(marked_nodes[0])->coord());
+  Node *n1 = grid.createNode(parent->level()+1,parent->node(marked_nodes[1])->coord());
+  Node *n2 = grid.createNode(parent->level()+1,parent->node(marked_nodes[2])->coord());
+
+  ShortList<Node*> edge_nodes(3);
+  edge_nodes(0) = grid.createNode(parent->level()+1,parent->edge(marked_edges[0])->midpoint());
+  edge_nodes(1) = grid.createNode(parent->level()+1,parent->edge(marked_edges[1])->midpoint());
+  edge_nodes(2) = grid.createNode(parent->level()+1,parent->edge(marked_edges[2])->midpoint());
+
+  ShortList<Cell*> new_cell(4);
+  for (int i=0;i<3;i++){
+    for (int j=0;j<3;j++){
+      if ( (parent->node(marked_nodes[i])->id() != parent->edge(marked_edges[j])->node(0)->id()) &&
+	   (parent->node(marked_nodes[i])->id() != parent->edge(marked_edges[j])->node(1)->id()) ){
+	if (j == 0){
+	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n0,edge_nodes(1),edge_nodes(2),nf);
+	}
+	if (j == 1){
+	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,edge_nodes(0),edge_nodes(2),nf);
+	}
+	if (j == 2){
+	  new_cell(i) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n2,edge_nodes(0),edge_nodes(1),nf);
+	}
+      }
     }
   }
 
-  for (int i=0;i<parent->noNodes();i++){
-    if (i != face_node) face_nodes[cnt++] = i;
+  new_cell(3) = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,edge_nodes(0),
+					edge_nodes(1),edge_nodes(2),nf);
+  
+  if (_create_edges){
+    grid.createEdges(new_cell(0));
+    grid.createEdges(new_cell(1));
+    grid.createEdges(new_cell(2));
+    grid.createEdges(new_cell(3));
   }
-
-  int face_nodes[3];
-  face_nodes[0] = face_nodes[1] = face_nodes[2] = 0;
-  parent->edge(marked_edges[0])->node(0)
-
-
-
-
-
-
-  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(0),n01,n02,parent->node(face_node));
-  Cell *t2 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(1),n01,n02,parent->node(face_node));
-
-  Node* nface; 
-  for (int i=0; i<parent->noNodes(); i++){
-    if ( (marked_edges(0)->node(0)->id() != parent->node(i)->id()) && 
-	 (marked_edges(0)->node(1)->id() != parent->node(i)->id()) &&
-	 (marked_edges(1)->node(0)->id() != parent->node(i)->id()) &&
-	 (marked_edges(1)->node(1)->id() != parent->node(i)->id()) ){
-      nface = parent->node(i);
-      break;
-    }
-  }
-
-  Cell *t1 = grid.createCell(level,Cell::TETRAHEDRON,parent->node(0),n01,n02,n03);
-
-
-  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->nodeGetFace(marked_face)->GetNode(0),n01,n02,nface);
-  Cell *t2 = grid.createCell();
-  Cell *t3 = grid.createCell();
-  Cell *t4 = grid.createCell();
-
-  t1->Set(parent,Cell::TETRAHEDRON,parent->nodeGetFace(marked_face)->GetNode(0),n01,n02,nface);
-  t2->Set(parent->GetFace(marked_face)->GetNode(1),n01,n12,nface);
-  t3->Set(parent->GetFace(marked_face)->GetNode(2),n02,n12,nface);
-  t4->Set(n01,n02,n12,parent->GetNode(marked_face));
-*/
 }
 
 
