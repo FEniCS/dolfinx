@@ -283,17 +283,17 @@ public:
 
   unsigned int degree(unsigned int i) const
   {
+    /*
     if ( i == 0 )
       return 1;
     else
       return m;
+    */
 
-    /*
     if ( i == 0 )
       return 0;
     else
       return m - 1;
-    */
   }
 
 private:
@@ -614,15 +614,15 @@ int main()
   dolfin_set("homotopy randomize", true);
   dolfin_set("linear solver", "direct");
 
-  Leontief leontief(2, 2, true);
-  leontief.solve();
+  //Leontief leontief(2, 2, true);
+  //leontief.solve();
 
   //CES ces(2, 2, 0.5);
   //ces.disp();
   //ces.solve();
 
-  //Polemarchakis polemarchakis;
-  //polemarchakis.solve();
+  Polemarchakis polemarchakis(true);
+  polemarchakis.solve();
 
   return 0;
 }

@@ -21,7 +21,45 @@ public:
     a = c*c / (h*h);
     offset = N/2;
 
-    // FIXME: Need to compute sparsity here
+    setSparsity();
+  }
+
+  void setSparsity()
+  {
+    // Dependencies for first half of system
+    for (unsigned int i = 0; i < offset; i++)
+    {
+      sparsity.clear(i);
+      sparsity.setsize(i, 1);
+      sparsity.set(i, i + offset);
+    }
+
+    // Dependencies for second half of system
+    for (unsigned int i = offset; i < N; i++)
+    {
+      const unsigned int j = i - offset;
+      const unsigned int m = n + 1;
+      const unsigned int jx = j % m;
+      const unsigned int jy = (j / m) % m;
+      const unsigned int jz = j / (m*m);
+
+      unsigned int size = 0;
+      if ( jx > 0 ) size++;
+      if ( jy > 0 ) size++;
+      if ( jz > 0 ) size++;
+      if ( jx < n ) size++;
+      if ( jy < n ) size++;
+      if ( jz < n ) size++;
+      sparsity.clear(i);
+      sparsity.setsize(i, size);
+
+      if ( jx > 0 ) sparsity.set(i, j - 1);
+      if ( jy > 0 ) sparsity.set(i, j - m);
+      if ( jz > 0 ) sparsity.set(i, j - m*m);
+      if ( jx < n ) sparsity.set(i, j + 1);
+      if ( jy < n ) sparsity.set(i, j + m);
+      if ( jz < n ) sparsity.set(i, j + m*m);
+    }
   }
 
   ~WaveEquation() {}
@@ -30,7 +68,7 @@ public:
   real u0(unsigned int i)
   {
     if ( i < offset )
-      if ( mesh.node(i).dist(0.5, 0.5 , 0.5) < h )
+      if ( mesh.node(i).dist(0.5, 0.5 , 0.5) < 5.0*h )
 	return 1.0;
     
     return 0.0;
@@ -66,7 +104,7 @@ public:
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
-      y[i] = y[i + offset];
+      y[i] = u[i + offset];
 
     // Second half of system
     for (unsigned int i = offset; i < N; i++)
@@ -93,6 +131,8 @@ public:
   void save(NewSample& sample)
   {
     // FIXME: Don't save solution when running benchmark
+
+    cout << "Saving data at t = " << sample.t() << endl;
 
     // Create vectors
     NewVector ux(N/2);
@@ -132,20 +172,24 @@ private:
 int main(int argc, const char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 2 )
+  if ( argc != 3 )
   {
-    dolfin_info("Usage: dolfin-bench-ode n");
-    // FIXME: Should be dolfin-bench-ode method n with method = cg, dg, mcg or mdg
+    dolfin_info("Usage: dolfin-bench-ode method n");
+    dolfin_info("");
+    dolfin_info("method - 'cg', 'dg', 'mcg' or 'mdg'");
+    dolfin_info("n      - number of cells in each dimension");
     return 1;
   }
-  unsigned int n = static_cast<unsigned int>(atoi(argv[1]));
-
-  // FIXME: Parse method here
+  const char* method = argv[1];
+  unsigned int n = static_cast<unsigned int>(atoi(argv[2]));
+  if ( n < 1 )
+    dolfin_error("Number of cells n must be positive.");
 
   // Set parameters
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
-  //dolfin_set("method", "mcg");
+  dolfin_set("method", method);
+  dolfin_set("fixed time step", true);
 
   // Solve the wave equation
   WaveEquation wave(n);

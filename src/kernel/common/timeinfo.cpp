@@ -9,11 +9,10 @@
 
 using namespace dolfin;
 
-namespace dolfin {
-
+namespace dolfin
+{
   clock_t __tic_time;
   char datestring[DOLFIN_WORDLENGTH];
-
 }
 
 //-----------------------------------------------------------------------------
