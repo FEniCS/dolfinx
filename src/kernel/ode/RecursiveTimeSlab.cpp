@@ -6,6 +6,7 @@
 #include <iostream>
 #include <cmath>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_math.h>
 #include <dolfin/Element.h>
 #include <dolfin/Adaptivity.h>
 #include <dolfin/Partition.h>
@@ -61,15 +62,17 @@ bool RecursiveTimeSlab::leaf() const
   return timeslabs.size() == 0;
 }
 //-----------------------------------------------------------------------------
-real RecursiveTimeSlab::computeMaxRd(FixedPointIteration& fixpoint)
+real RecursiveTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
 {
-  // First check time slabs
-  real rs = computeMaxRdTimeSlabs(fixpoint);
+  // Compute L2 norm for time slabs
+  real r = 0.0;
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
+    r += sqr(timeslabs[i]->elementResidualL2(fixpoint));
 
-  // Then check the elements
-  real re = fixpoint.residual(elements);
+  // Compute L2 norm for elements
+  r += sqr(fixpoint.residual(elements));
 
-  return std::max(rs, re);
+  return sqrt(r);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::create(Solution& u, RHS& f,
@@ -82,7 +85,7 @@ void RecursiveTimeSlab::create(Solution& u, RHS& f,
 
   // Update partitition 
   partition.update(offset, end, K, adaptivity);
-
+  
   // Adjust and set the size of this time slab 
   setsize(K, adaptivity);
 
@@ -166,16 +169,6 @@ void RecursiveTimeSlab::resetTimeSlabs(FixedPointIteration& fixpoint)
   // Reset time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
     timeslabs[i]->reset(fixpoint);
-}
-//-----------------------------------------------------------------------------
-real RecursiveTimeSlab::computeMaxRdTimeSlabs(FixedPointIteration& fixpoint)
-{
-  real rmax = 0;
-
-  for (unsigned int i = 0; i < timeslabs.size(); i++)
-    rmax = std::max(rmax, timeslabs[i]->computeMaxRd(fixpoint));
-
-  return rmax;
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)

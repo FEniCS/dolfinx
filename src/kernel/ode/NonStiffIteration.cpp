@@ -94,7 +94,7 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
 {
   // Convergence handled locally when the slab contains only one element list
   if ( timeslab.leaf() )
-    return n >= 1;
+    return n > 0;
 
   // Compute maximum discrete residual
   r.r1 = r.r2;
@@ -104,7 +104,7 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol;
+  return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::converged(NewArray<Element*>& elements, 
@@ -112,7 +112,7 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
 {
   // Convergence handled locally when the list contains only one element
   if ( elements.size() == 1 )
-    return n >= 1;
+    return n > 0;
   
   // Compute maximum discrete residual
   r.r1 = r.r2;
@@ -122,7 +122,7 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol;
+  return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::converged(Element& element, 
@@ -136,7 +136,7 @@ bool NonStiffIteration::converged(Element& element,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol;
+  return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::diverged(TimeSlab& timeslab, 

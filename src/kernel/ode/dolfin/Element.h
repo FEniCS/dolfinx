@@ -86,11 +86,14 @@ namespace dolfin {
     /// Return the size of the time step
     real timestep() const;
 
-    // Compute residual
+    // Compute continuous residual
     real computeResidual(RHS& f);
 
     // Compute discrete residual
     virtual real computeDiscreteResidual(RHS& f) = 0;
+
+    // Compute element residual
+    virtual real computeElementResidual(RHS& f) = 0;
 
     // Compute new time step
     virtual real computeTimeStep(real TOL, real r, real kmax) const = 0;

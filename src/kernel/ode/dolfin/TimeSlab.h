@@ -55,8 +55,8 @@ namespace dolfin {
     /// Return length of time slab
     real length() const;
 
-    /// Compute maximum discrete residual in time slab
-    virtual real computeMaxRd(FixedPointIteration& fixpoint) = 0;
+    /// Compute L2 norm of element residual
+    virtual real elementResidualL2(FixedPointIteration& fixpoint) = 0;
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const TimeSlab& timeslab);

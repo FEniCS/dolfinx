@@ -43,7 +43,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   Iteration::Damping d;
   Iteration::State newstate;
   bool retry = true;
-
+  
   //dolfin_start("Starting time slab iteration");
   
   while ( retry )

@@ -39,7 +39,7 @@ bool SimpleTimeSlab::leaf() const
   return true;
 }
 //-----------------------------------------------------------------------------
-real SimpleTimeSlab::computeMaxRd(FixedPointIteration& fixpoint)
+real SimpleTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
 {
   return fixpoint.residual(elements);
 }

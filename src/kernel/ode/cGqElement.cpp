@@ -159,6 +159,16 @@ real cGqElement::computeDiscreteResidual(RHS& f)
   // Evaluate right-hand side
   feval(f);
 
+  // Compute discrete residual
   return (values[q] - values[0] - integral(q)) / timestep();
+}
+//-----------------------------------------------------------------------------
+real cGqElement::computeElementResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute element residual
+  return values[q] - values[0] - integral(q);
 }
 //-----------------------------------------------------------------------------

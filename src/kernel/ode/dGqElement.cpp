@@ -152,14 +152,16 @@ real dGqElement::computeDiscreteResidual(RHS& f)
   // Evaluate right-hand side
   feval(f);
 
-  /*
-    cout << "    u0       = " << u0 << endl;
-    cout << "    u1       = " << values[q] << endl;
-    cout << "    u1 - u0  = " << values[q] - u0 << endl;
-    cout << "    integral = " << integral(q) << endl;
-    cout << "    timestep = " << timestep() << endl;
-  */
-
+  // Compute discrete residual
   return (values[q] - u0 - integral(q)) / timestep();
+}
+//-----------------------------------------------------------------------------
+real dGqElement::computeElementResidual(RHS& f)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute discrete residual
+  return values[q] - u0 - integral(q);
 }
 //-----------------------------------------------------------------------------

@@ -112,15 +112,15 @@ namespace dolfin
     // Reset element
     void reset(Element& element);
 
-    // Compute maximum discrete residual for time slab
+    // Compute L2 norm of element residual for time slab
     real residual(TimeSlab& timeslab);
 
-    // Compute maximum discrete residual for element list
+    // Compute L2 norm of element residual for element list
     real residual(NewArray<Element*>& elements);
 
-    // Compute discrete residual for element
+    // Compute absolute value of element residual for element
     real residual(Element& element);
-
+    
     // Compute damping
     void computeDamping(const Residuals& r, Damping& d);
 

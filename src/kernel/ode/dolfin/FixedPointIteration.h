@@ -44,13 +44,13 @@ namespace dolfin
     /// Fixed point iteration on element
     bool iterate(Element& element);
 
-    // Compute maximum discrete residual for time slab
+    // Compute L2 norm of element residual for time slab
     real residual(TimeSlab& timeslab);
 
-    // Compute maximum discrete residual for element list
+    // Compute L2 norm of element residual for element list
     real residual(NewArray<Element*>& elements);
 
-    // Compute discrete residual for element
+    // Compute absolute value of element residual for element
     real residual(Element& element);
     
     /// Update initial data for element list

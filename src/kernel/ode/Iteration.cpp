@@ -72,14 +72,13 @@ void Iteration::reset(Element& element)
 //-----------------------------------------------------------------------------
 real Iteration::residual(TimeSlab& timeslab)
 {
-  return timeslab.computeMaxRd(fixpoint);
+  return timeslab.elementResidualL2(fixpoint);
 }
 //-----------------------------------------------------------------------------
 real Iteration::residual(NewArray<Element*>& elements)
 {
-  real rmax = 0.0;
+  real r = 0.0;
   
-  // Compute maximum discrete residual
   for (unsigned int i = 0; i < elements.size(); i++)
   {
     // Get the element
@@ -87,14 +86,15 @@ real Iteration::residual(NewArray<Element*>& elements)
     dolfin_assert(element);
 
     // Compute discrete residual
-    rmax = std::max(rmax, residual(*element));
+    r += sqr(residual(*element));
   }
 
-  return rmax;
+  return sqrt(r);
 }
 //-----------------------------------------------------------------------------
 real Iteration::residual(Element& element)
 {
+  //return fabs(element.computeElementResidual(f));
   return fabs(element.computeDiscreteResidual(f));
 }
 //-----------------------------------------------------------------------------
