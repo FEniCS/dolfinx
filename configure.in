@@ -3,7 +3,7 @@ AC_INIT(README)
 
 dnl Settings
 PACKAGE=dolfin
-VERSION=0.3.0
+VERSION=0.3.1
 DOLFIN_MAIN="main"
 # Note: need to be in the correct order, and yes io should be included twice...
 DOLFIN_KERNEL="io grid fem elements common quadrature io la math"
