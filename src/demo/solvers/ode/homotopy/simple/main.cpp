@@ -39,6 +39,7 @@ int main(int argc, char* argv[])
 
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
+  dolfin_set("monitor homotopy", true);
 
   Simple simple;
   simple.solve();

@@ -74,6 +74,10 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
   //cout << "Mono-adaptive time slab: finished building between "
   //     << a << " and " << b << endl;
 
+  // Update at t = 0.0
+  if ( a < DOLFIN_EPS )
+    ode.update(u0, a, false);
+
   return b;
 }
 //-----------------------------------------------------------------------------

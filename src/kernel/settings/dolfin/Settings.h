@@ -50,6 +50,7 @@ namespace dolfin {
       add(Parameter::BOOL, "use new ode solver", false);
       add(Parameter::BOOL, "implicit", false);
       add(Parameter::BOOL, "matrix piecewise constant", true);
+      add(Parameter::BOOL, "monitor homotopy", false);
 
       add(Parameter::INT, "number of samples", 101);
       add(Parameter::INT, "sample density", 1);
@@ -67,6 +68,7 @@ namespace dolfin {
       add(Parameter::REAL, "maximum convergence", 0.75);
       add(Parameter::REAL, "average length", 0.1);
       add(Parameter::REAL, "average tolerance", 0.1);
+      add(Parameter::REAL, "homotopy divergence tolerance", 10.0);
       
       add(Parameter::STRING, "method", "cg");
       add(Parameter::STRING, "solver", "default");

@@ -48,6 +48,12 @@ namespace dolfin
 
   private:
 
+    // Compute G_i(z) = G_i(z_i)
+    complex Gi(complex zi, uint i) const;
+
+    // Monitor homotopy
+    void monitor(const complex z[], real t);
+
     // The homotopy
     Homotopy& homotopy;
 
@@ -56,6 +62,9 @@ namespace dolfin
 
     // Current state
     State _state;
+
+    // Array of values used for monitoring homotopy
+    complex* tmp;
 
   };
 

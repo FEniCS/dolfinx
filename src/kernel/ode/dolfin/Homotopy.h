@@ -65,12 +65,14 @@ namespace dolfin
     uint M;          // Number of paths
     uint maxiter;    // Maximum number of iterations
     real tol;        // Tolerance for Newton's method
+    real divtol;     // Tolerance for divergence of homotopy path
+    bool monitor;    // True if we should monitor the homotopy
     NewGMRES gmres;  // GMRES solver
     LU lu;           // LU solver
     FILE* fp;        // File pointer for saving solution
     uint* mi;        // Array of local path numbers
     complex* ci;     // Array of constants for system G(z) = 0
-    NewVector x;     // Real-valued vector x corresponding to solution z of F(z) = 0 
+    NewVector x;     // Real-valued vector x corresponding to solution z of F(z) = 0
 
   };
 

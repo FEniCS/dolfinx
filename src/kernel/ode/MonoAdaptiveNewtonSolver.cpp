@@ -6,6 +6,8 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
+#include <dolfin/NewGMRES.h>
+#include <dolfin/LU.h>
 #include <dolfin/NewMatrix.h>
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
@@ -18,7 +20,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(dolfin_get("matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise), Mu0(0)
+    ts(timeslab), A(timeslab, implicit, piecewise), solver(0), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -28,16 +30,20 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
        Mu0[i] = 0.0;
   }
 
+  // Choose linear solver
+  solver = new NewGMRES();
+
   // Make GMRES solver not report the number iterations
-  solver.setReport(false);
+  ((NewGMRES *) solver)->setReport(false);
 
   // Set tolerances for GMRES solver
-  solver.setAtol(0.01*tol); // FIXME: Is this a good choice?
+  ((NewGMRES *) solver)->setAtol(0.01*tol); // FIXME: Is this a good choice?
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
   if ( Mu0 ) delete [] Mu0;
+  if ( solver ) delete [] solver;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -79,7 +85,7 @@ real MonoAdaptiveNewtonSolver::iteration()
   // side to make it work with the PETSc GMRES solver
   const real r = b.norm(NewVector::linf) + DOLFIN_EPS;
   b /= r;
-  solver.solve(A, dx, b);
+  solver->solve(A, dx, b);
   dx *= r;
 
   //cout << "dx = ";
@@ -216,6 +222,9 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   // Restore arrays
   b.restore(bb);
   ts.x.restore(xx);
+  
+  //cout << "b = ";
+  //b.disp();
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()
