@@ -12,11 +12,12 @@ namespace dolfin
   
   class Cell;
   class Mesh;
+  class Point;
   class NewFiniteElement;
   class NewVector;
   
-  /// This class represents a function defined on a mesh. The is
-  /// defined in terms of the a mesh, a finite element and a vector
+  /// This class represents a function defined on a mesh. The function
+  /// is defined in terms of a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
 
   class NewFunction : public Variable
@@ -27,10 +28,13 @@ namespace dolfin
     NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x);
 
     /// Destructor
-    ~NewFunction();
+    virtual ~NewFunction();
 
     /// Compute projection onto a given local finite element space
     void project(const Cell& cell, const NewFiniteElement& element, real c[]) const;
+
+    /// Point evaluation
+    virtual real operator()(const Point& p);
 
   private:
 

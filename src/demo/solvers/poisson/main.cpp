@@ -15,11 +15,29 @@
 //     u(x,y,z) = sin(pi x) sin(2pi y) sin(3pi z).
 
 #include <dolfin/PoissonSolver.h>
+#include <dolfin/NewFunction.h>
+#include <dolfin/Mesh.h>
 #include <dolfin.h>
 
 using namespace dolfin;
 
 // Source term
+// Example using NewFunction
+
+class f : public NewFunction
+{
+public:
+  f(const Mesh& mesh, const NewFiniteElement& element, NewVector& x) :
+    NewFunction(mesh, element, x)
+  {
+  }
+  virtual real operator()(const Point& p)
+  {
+    real pi = DOLFIN_PI;
+    return 14.0 * pi*pi * sin(pi*p.x) * sin(2.0*pi*p.y) * sin(3.0*pi*p.z);
+  }
+};
+
 /*
 real f(real x, real y, real z, real t)
 {
@@ -29,10 +47,10 @@ real f(real x, real y, real z, real t)
 */
 
 // Modified source term to test the assembler
-real f(real x, real y, real z, real t)
-{
-  return 8.0;
-}
+// real f(real x, real y, real z, real t)
+// {
+//   return 8.0;
+// }
 
 // Boundary conditions
 void mybc(BoundaryCondition& bc)

@@ -47,3 +47,10 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   }
 }
 //-----------------------------------------------------------------------------
+real NewFunction::operator()(const Point& p)
+{
+  // FIXME: Empty implementation. We need to decide what the default
+  // behavior should be.
+
+  return 0.0;
+}
