@@ -14,7 +14,7 @@ using namespace dolfin;
 ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N),
 		   default_timestep(dolfin_get("initial time step")),
 		   default_order(dolfin_get("order")),
-		   not_impl_feval("Warning: consider implementing ODE::feval() to improve efficiency."),
+		   not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
 		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
 		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
 {
@@ -45,17 +45,17 @@ real ODE::f(const Vector& u, real t, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-void ODE::feval(const real u[], real t, real f[])
+void ODE::f(const real u[], real t, real y[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
 
   // Display a warning, more efficiently if implemented
-  not_impl_feval();
+  not_impl_f();
 
   // Call f for each component
   for (uint i = 0; i < N; i++)
-    f[i] = this->f(u, t, i);
+    y[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
 void ODE::M(const real x[], real y[], const real u[], real t)

@@ -52,7 +52,7 @@ namespace dolfin
     virtual real f(const Vector& u, real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void feval(const real u[], real t, real f[]);
+    virtual void f(const real u[], real t, real y[]);
 
     /// Compute product y = Mx for implicit system
     virtual void M(const real x[], real y[], const real u[], real t);
@@ -152,7 +152,7 @@ namespace dolfin
     Element::Type default_method;
     uint default_order;
     
-    Event not_impl_feval;
+    Event not_impl_f;
     Event not_impl_M;
     Event not_impl_J;
 

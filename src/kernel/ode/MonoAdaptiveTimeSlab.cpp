@@ -36,7 +36,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
 
   // Evaluate f at initial data for cG(q)
   if ( method->type() == NewMethod::cG )
-    ode.feval(u0, 0.0, f);
+    ode.f(u0, 0.0, f);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
@@ -215,14 +215,14 @@ void MonoAdaptiveTimeSlab::feval(uint m)
 
     const real t = _a + method->qpoint(m) * (_b - _a);    
     real* xx = x.array();    
-    ode.feval(xx + (m-1)*N, t, f + m*N);
+    ode.f(xx + (m-1)*N, t, f + m*N);
     x.restore(xx);
   }
   else
   {
     const real t = _a + method->qpoint(m) * (_b - _a);    
     real* xx = x.array();    
-    ode.feval(xx + m*N, t, f + m*N);    
+    ode.f(xx + m*N, t, f + m*N);    
     x.restore(xx);
   }
 }

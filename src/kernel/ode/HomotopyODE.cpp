@@ -41,12 +41,12 @@ complex HomotopyODE::z0(unsigned int i)
   return z;
 }
 //-----------------------------------------------------------------------------  
-void HomotopyODE::feval(const complex z[], real t, complex f[])
+void HomotopyODE::f(const complex z[], real t, complex y[])
 {
   // Need to compute f(z) = G(z) - F(z)
 
   // Call user-supplied function to compute F(z)
-  homotopy.F(z, f);
+  homotopy.F(z, y);
 
   // Just compute F(z) if playing end game
   if ( _state == endgame )
@@ -54,11 +54,11 @@ void HomotopyODE::feval(const complex z[], real t, complex f[])
 
   // Negate F
   for (uint i = 0; i < n; i++)
-    f[i] = -f[i];
-
+    y[i] = -y[i];
+  
   // Add G(z) = z_i^(p_i + 1) - c_i
   for (uint i = 0; i < n; i++)
-    f[i] += Gi(z[i], i);
+    y[i] += Gi(z[i], i);
 }
 //-----------------------------------------------------------------------------
 void HomotopyODE::M(const complex x[], complex y[], const complex z[], real t)

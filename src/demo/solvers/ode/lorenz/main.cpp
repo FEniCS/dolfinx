@@ -55,11 +55,11 @@ public:
     }
   }
 
-  void feval(const real u[], real t, real f[])
+  void f(const real u[], real t, real y[])
   {
-    f[0] = s*(u[1] - u[0]);
-    f[1] = r*u[0] - u[1] - u[0]*u[2];
-    f[2] = u[0]*u[1] - b*u[2];
+    y[0] = s*(u[1] - u[0]);
+    y[1] = r*u[0] - u[1] - u[0]*u[2];
+    y[2] = u[0]*u[1] - b*u[2];
   }
 
   void J(const real x[], real y[], const real u[], real t)

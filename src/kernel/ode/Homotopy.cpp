@@ -228,7 +228,7 @@ void Homotopy::feval(NewVector& F, ComplexODE& ode)
   real* FF = F.array();
   
   // Evaluate F at current x
-  ode.feval(xx, 0.0, FF);
+  ode.f(xx, 0.0, FF);
 
   // Restore arrays
   x.restore(xx);

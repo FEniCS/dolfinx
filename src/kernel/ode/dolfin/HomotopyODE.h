@@ -32,7 +32,7 @@ namespace dolfin
     complex z0(unsigned int i);
 
     /// Evaluate right-hand side
-    virtual void feval(const complex z[], real t, complex f[]);
+    virtual void f(const complex z[], real t, complex y[]);
     
     /// Compute product y = Mx for implicit system
     virtual void M(const complex x[], complex y[], const complex z[], real t);

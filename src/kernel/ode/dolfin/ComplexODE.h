@@ -47,7 +47,7 @@ namespace dolfin
     virtual complex f(const complex z[], real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
-    virtual void feval(const complex z[], real t, complex f[]);
+    virtual void f(const complex z[], real t, complex y[]);
     
     /// Compute product y = Mx for implicit system
     virtual void M(const complex x[], complex y[], const complex z[], real t);
@@ -68,7 +68,7 @@ namespace dolfin
     real f(const real u[], real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void feval(const real u[], real t, real f[]);
+    void f(const real u[], real t, real y[]);
 
     /// Compute product y = Mx for real-valued ODE
     void M(const real x[], real y[], const real u[], real t);

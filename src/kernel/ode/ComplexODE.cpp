@@ -37,13 +37,13 @@ complex ComplexODE::f(const complex z[], real t, uint i)
   return zvalue;
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::feval(const complex z[], real t, complex f[])
+void ComplexODE::f(const complex z[], real t, complex y[])
 {
   // If a user of the mono-adaptive solver does not supply this function,
   // then call f() for each component.
  
   for (uint i = 0; i < n; i++)
-    f[i] = this->f(z, t, i);
+    y[i] = this->f(z, t, i);
 }
 //-----------------------------------------------------------------------------
 void ComplexODE::M(const complex x[], complex y[], const complex z[], real t)
@@ -108,7 +108,7 @@ real ComplexODE::f(const real u[], real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::feval(const real u[], real t, real f[])
+void ComplexODE::f(const real u[], real t, real y[])
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
@@ -117,15 +117,15 @@ void ComplexODE::feval(const real u[], real t, real f[])
     zvalues[i] = zvalue;
   }
 
-  // Call user-supplied function feval(z, t, f)
-  feval(zvalues, t, fvalues);
+  // Call user-supplied function f(z, t, y)
+  f(zvalues, t, fvalues);
   
   // Translate values into f
   for (uint i = 0; i < n; i++)
   {
     const complex fvalue = fvalues[i];
-    f[2*i] = fvalue.real();
-    f[2*i + 1] = fvalue.imag();
+    y[2*i] = fvalue.real();
+    y[2*i + 1] = fvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
