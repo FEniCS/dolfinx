@@ -16,19 +16,16 @@ fi
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
 echo 'Version number is '$VERSION
 
+# Write a message
+echo Creating release $VERSION of DOLFIN
+echo Assuming that this is a clean CVS version
+sleep 1
+
 # Create the directory
 DISTDIR=dolfin-$VERSION
 echo 'Creating directory '$DISTDIR
 rm -rf $DISTDIR
 mkdir $DISTDIR
-
-# Prepare makefiles
-autoreconf
-./configure --enable-debug
- 
-# Make clean
-echo 'Making clean'
-make clean > /dev/null
 
 # Copy files
 FILES=`ls | grep -v $DISTDIR`
@@ -44,11 +41,6 @@ REMOVE5=`find $DISTDIR | grep '\.deps'`
 REMOVE=$REMOVE1' '$REMOVE2' '$REMOVE3' '$REMOVE4' '$REMOVE5
 echo 'Removing unecessary files'
 rm -rf $REMOVE
-
-# Remove files used to create the relase
-rm -f scripts/preparedist
-rm -f scripts/makedist
-rm -r doc/releasing
 
 # Create the archive
 TARBALL='dolfin-'$VERSION'.tar.gz'
@@ -79,7 +71,7 @@ cd ..
 echo 'Copying ChangeLog to web server'
 scp ChangeLog logg@fourier.math.chalmers.se:work/current/www-phi/pub/software/dolfin
 echo 'Copying tarball to web server'
-scp $TARBALL  logg@fourier.math.chalmers.se:work/current/www-phi/pub/software/dolfin/v0.3
+scp $TARBALL  logg@fourier.math.chalmers.se:work/current/www-phi/pub/software/dolfin/v0.4
 
 # Write a message
 echo ' '
