@@ -27,7 +27,7 @@ namespace dolfin {
 	 friend class Cell;
 	 
   private:
-
+	 
 	 virtual bool neighbor(ShortList<Node *> &cn, Cell &cell) const = 0;
 	 
   };

@@ -110,7 +110,7 @@ namespace dolfin {
     void init(Type type);
     bool neighbor(Cell &cell);
     
-    // Global cell number
+   // Global cell number
     int _id;
     
     int _no_children;

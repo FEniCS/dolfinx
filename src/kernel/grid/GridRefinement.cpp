@@ -7,10 +7,15 @@
 #include <dolfin/Cell.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ShortList.h>
-#include <dolfin/RefineGrid.h>
+#include <dolfin/GridRefinement.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+GridRefinement::GridRefinement(Grid &grid_) : grid(grid_)
+{
+
+}
 //-----------------------------------------------------------------------------
 void RefineGrid::refine()
 {

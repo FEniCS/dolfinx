@@ -4,6 +4,7 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/EdgeIterator.h \
                            dolfin/Grid.h \
                            dolfin/GridData.h \
+                           dolfin/GridRefinement.h \
                            dolfin/InitGrid.h \
                            dolfin/Node.h \
                            dolfin/NodeIterator.h \
@@ -11,7 +12,6 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/Cell.h \
                            dolfin/CellIterator.h \
                            dolfin/GenericCell.h \
-                           dolfin/RefineGrid.h \
                            dolfin/Triangle.h \
                            dolfin/Tetrahedron.h \
                            dolfin/Edge.h
@@ -23,10 +23,10 @@ libdolfin_grid_a_SOURCES = Cell.cpp \
                            EdgeIterator.cpp \
                            Grid.cpp \
                            GridData.cpp \
+                           GridRefinement.cpp \
                            InitGrid.cpp \
                            Node.cpp \
                            NodeIterator.cpp \
                            Point.cpp \
-                           RefineGrid.cpp \
                            Tetrahedron.cpp \
                            Triangle.cpp
