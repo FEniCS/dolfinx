@@ -83,8 +83,6 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::iterate(NewArray<Element*>& elements)
 {
-  //dolfin_debug("foo");
-
   Iteration::Residuals r;
   Iteration::Damping d;
   Iteration::State newstate;
@@ -98,7 +96,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     // Start iteration on element list
     start(elements);
     
-    dolfin_start("Starting element list iteration");
+    //dolfin_start("Starting element list iteration");
     
     // Fixed point iteration on the element list
     for (unsigned int n = 0; n < local_maxiter; n++)
@@ -122,7 +120,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       // Check convergence
       if ( converged(elements, r, n) )
       {
-	dolfin_end("Element list iteration converged");
+	//dolfin_end("Element list iteration converged");
 	return true;
       }
       
@@ -131,6 +129,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       // Check divergence
       if ( retry = diverged(elements, r, n, newstate) )
       {
+	//dolfin_end("Changing state");
 	changeState(newstate);
 	break;
       }
@@ -157,7 +156,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     }
   }
   
-  dolfin_end("Element list iteration did not converge");
+  //dolfin_end("Element list iteration did not converge");
 
   return false;
 }

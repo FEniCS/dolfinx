@@ -154,9 +154,8 @@ bool NonStiffIteration::diverged(TimeSlab& timeslab,
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying a stabilizing time step sequence.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    timeslab.reset(fixpoint);
+  // Reset time slab
+  timeslab.reset(fixpoint);
 
   // Change state
   newstate = nonnormal;
@@ -179,9 +178,8 @@ bool NonStiffIteration::diverged(NewArray<Element*>& elements,
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying adaptive damping.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    reset(elements);
+  // Reset element list
+  reset(elements);
 
   // Change state
   newstate = adaptive;
@@ -204,9 +202,8 @@ bool NonStiffIteration::diverged(Element& element,
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying diagonal damping.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    reset(element);
+  // Reset element
+  reset(element);
 
   // Change state
   newstate = diagonal;

@@ -206,6 +206,8 @@ void AdaptiveIteration::updateGaussJacobi(NewArray<Element*>& elements,
   // Reset offset
   values.offset = 0;
 
+  cout << "Number of elements in list: " << elements.size() << endl;
+
   // Compute new values
   for (unsigned int i = 0; i < elements.size(); i++)
   {
@@ -217,11 +219,11 @@ void AdaptiveIteration::updateGaussJacobi(NewArray<Element*>& elements,
     fixpoint.iterate(*element);
     
     /*
-    for(unsigned int j = 0; j < element->order() + 1; j++)
-    {
+      for(unsigned int j = 0; j < element->order() + 1; j++)
+      {
       dolfin_debug2("value(%d): %lf", j, element->value(j));
       dolfin_debug2("newvalue(%d): %lf", j, newvalues[j + offset]);
-    }
+      } 
     */
 
     // Increase offset

@@ -157,9 +157,8 @@ bool DiagonalIteration::diverged(TimeSlab& timeslab,
   // Notify change of strategy
   dolfin_info("Diagonal damping is not enough, trying a stabilizing time step sequence.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    timeslab.reset(fixpoint);
+  // Reset time slab
+  timeslab.reset(fixpoint);
 
   // Change state
   newstate = nonnormal;
@@ -182,9 +181,8 @@ bool DiagonalIteration::diverged(NewArray<Element*>& elements,
   // Notify change of strategy
   dolfin_info("Diagonal damping is not enough, trying adaptive damping.");
   
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    reset(elements);
+  // Reset element list
+  reset(elements);
 
   // Change state
   newstate = adaptive;

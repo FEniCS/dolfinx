@@ -90,6 +90,8 @@ void dGqElement::update(RHS& f, real alpha)
 //-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f, real alpha, real* values)
 {
+  cout << "Gauss-Seidel update of element" << endl;
+
   // Evaluate right-hand side
   feval(f);
 
@@ -99,6 +101,8 @@ void dGqElement::update(RHS& f, real alpha, real* values)
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = w0*this->values[i] + alpha*(u0 + integral(i));
+
+  cout << "u[" << _index << "] : " << this->values[0] << " --> " << values[0] << endl;
 }
 //-----------------------------------------------------------------------------
 void dGqElement::set(real u0)
