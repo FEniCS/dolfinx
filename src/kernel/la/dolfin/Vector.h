@@ -30,6 +30,8 @@ namespace dolfin {
 	 void operator=(Vector &vector);
 	 void operator=(real scalar);
 	 
+	 void operator-=(Vector &vector);
+
 	 void operator+=(Vector &vector);
 	 void operator+=(real scalar);	 
 	 void operator*=(real scalar);

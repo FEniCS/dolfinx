@@ -98,6 +98,12 @@ void Vector::operator+=(Vector &vector)
 	 values[i] += vector.values[i];
 }
 //-----------------------------------------------------------------------------
+void Vector::operator-=(Vector &vector)
+{
+  for (int i=0;i<n;i++)
+	 values[i] -= vector.values[i];
+}
+//-----------------------------------------------------------------------------
 void Vector::operator*=(real scalar)
 {
   for (int i=0;i<n;i++)

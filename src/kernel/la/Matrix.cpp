@@ -395,7 +395,7 @@ void Matrix::show()
 	 if ( i == 0 )
 		std::cout << "| ";
 	 else
-		std::cout << "    | ";
+		std::cout << "| ";
 	 for (int j = 0; j < n; j++){
 		std::cout << (*this)(i,j) << " ";
 	 }

@@ -62,7 +62,7 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
 {
-  int k_max           = 20;  // no iterations before restart
+  int k_max           = 100;  // no iterations before restart
   int max_no_restarts = 100; // max no restarts
   int no_iterations;
 
@@ -240,7 +240,7 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
   // symmetry of the matrix is destroyed.
 
   int n = x.size();
-  int k_max = 100;
+  int k_max = 1000;
   
   real norm_b = b.norm();
   
