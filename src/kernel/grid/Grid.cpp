@@ -14,7 +14,7 @@
 #include <dolfin/Node.hh>
 #include <dolfin/Triangle.hh>
 #include <dolfin/Tetrahedron.hh>
-#include "GridData.hh"
+#include "GridData.h"
 
 using namespace dolfin;
 
@@ -28,11 +28,13 @@ Grid::Grid()
   mem      = sizeof(Grid);
   h        = 0.0;
 
-  gd = new GridData();
+  gridData = new GridData();
 }
 //-----------------------------------------------------------------------------
 Grid::Grid(const char *filename)
 {
+  display->InternalError("Grid::Grid()","This function doesn't work");
+
   no_nodes   = 0;
   no_cells   = 0;
   nodes    = 0;
@@ -40,9 +42,7 @@ Grid::Grid(const char *filename)
   mem      = sizeof(Grid);
   h        = 0.0;
 
-  gd = new GridData();
-
-  load(filename);
+  gridData = new GridData();
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -51,8 +51,8 @@ Grid::~Grid()
 	 delete [] nodes;
   nodes = 0;
   
-  if ( gd )
-	 delete gd;
+  if ( gridData )
+	 delete gridData;
   
   if ( cells ){
 	 for (int i=0;i<no_cells;i++)
@@ -62,10 +62,10 @@ Grid::~Grid()
   cells = 0;
 }
 //-----------------------------------------------------------------------------
-void Grid::load(const char *filename)
+void Grid::clear()
 {
-  //Input input(filename);
-  //input.loadGrid(gd);
+  if ( gridData )
+	 delete gridData;
 }
 //-----------------------------------------------------------------------------
 void Grid::Init()

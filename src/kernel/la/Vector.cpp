@@ -159,7 +159,7 @@ void Vector::add(real scalar, Vector &vector)
 //-----------------------------------------------------------------------------
 void Vector::show()
 {
-  cout << "[ ";
+  cout << "x = [ ";
   for (int i = 0; i < n; i++)
 	 cout << values[i] << " ";
   cout << "]" << endl;

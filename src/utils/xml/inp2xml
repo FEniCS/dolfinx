@@ -52,7 +52,7 @@ while ($line=<INFILE>){
 	 $y = @words[2];
 	 $z = @words[3];
 	 
-	 print ( OUTFILE "      <node name=\"$number\" x=\"$x\" y=\"$y\" z=\"$z\">\n" );
+	 print ( OUTFILE "      <node name=\"$number\" x=\"$x\" y=\"$y\" z=\"$z\"/>\n" );
 
 	 if ( $number == ( $nodes - 1 ) ){
 
@@ -76,7 +76,7 @@ while ($line=<INFILE>){
 		$n2 = @words[5] - 1;
 		$n3 = @words[6] - 1;
 
-		print ( OUTFILE "      <tetrahedron name=\"$number\" n0=\"$n0\" n1=\"$n1\" n2=\"$n2\" n3=\"$n3\">\n" );
+		print ( OUTFILE "      <tetrahedron name=\"$number\" n0=\"$n0\" n1=\"$n1\" n2=\"$n2\" n3=\"$n3\"/>\n" );
 
 		if ( $number == ($cells - 1) ){
 

@@ -19,8 +19,10 @@ namespace dolfin{
 	 Grid();
 	 Grid(const char *filename);
 	 ~Grid();
+
+	 void clear();
 	 
-	 void load(const char *filename);
+	 friend class XMLGrid;
 	 
 	 // old functions below
 	 
@@ -53,6 +55,8 @@ namespace dolfin{
 	 void Read(const char *filename);
 	 /// Save grid to file (type determined from prefix)
 	 void Write(const char *filename);
+
+	 
 	 
   private:
 	 
@@ -92,7 +96,7 @@ namespace dolfin{
 	 
 	 /// --- Grid data (main part) ---
 
-	 GridData *gd;
+	 GridData *gridData;
   
 	 /// Nodes (positions)
 	 Node *nodes;

@@ -10,11 +10,9 @@ using namespace dolfin;
 
 int main(int argc, char **argv)
 {
-  dolfin::Grid grid;
+  Grid grid;
+  File file("grid.xml.gz");
 
-  File file("grid.xml");
-
-  
-
+  file >> grid;
 
 }

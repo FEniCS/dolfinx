@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __GRID_DATA_HH
-#define __GRID_DATA_HH
+#ifndef __GRID_DATA_H
+#define __GRID_DATA_H
 
 /// GridData is a container for grid data.
 ///
@@ -14,13 +14,13 @@
 
 #include <List.hh>
 
-namespace dolfin{
+namespace dolfin {
 
   class Node;
   class Triangle;
   class Tetrahedron;
   
-  class GridData{
+  class GridData {
   public:
 	 
 	 GridData();

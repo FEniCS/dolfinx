@@ -5,7 +5,7 @@ dnl Settings
 PACKAGE=dolfin
 VERSION=0.2.11-1
 DOLFIN_MAIN="main"
-DOLFIN_KERNEL="fem grid io la common"
+DOLFIN_KERNEL="common fem io grid la common"
 
 dnl Find modules
 cd src/modules

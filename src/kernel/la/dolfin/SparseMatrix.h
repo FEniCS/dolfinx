@@ -13,13 +13,42 @@ namespace dolfin {
   class DenseMatrix;
   class Vector;
   
-  class SparseMatrix{
+  class SparseMatrix {
   public:
 	 
 	 SparseMatrix  ();
 	 SparseMatrix  (int m, int n);
 	 ~SparseMatrix ();
 
+	 // Enable different indexing for copy and write (thanks Jim)
+	 class Reference {
+	 public:
+
+		Reference(SparseMatrix *sparseMatrix, int i, int j)
+		{
+		  this->sparseMatrix = sparseMatrix;
+		  this->i = i;
+		  this->j = j;
+		}
+
+		operator real() const {
+		  return sparseMatrix->readElement(i,j);
+		}
+
+		void operator= (real value) {
+		  sparseMatrix->writeElement(i,j,value);
+		}
+		
+	 protected:
+		
+		SparseMatrix *sparseMatrix;
+		int i;
+		int j;
+
+	 };
+
+	 friend class Reference;
+	 
 	 /// Resize matrix
 	 void resize(int m, int n);
 	 /// Clear matrix
@@ -38,8 +67,8 @@ namespace dolfin {
 	 /// Indexing: fast alternative
 	 real operator()(int i, int *j, int pos) const;
 	 /// Indexing: slow alternative
-	 real& operator()(int i, int j);
-	 real operator()(int i, int j) const;
+	 const real operator()(int i, int j) const;
+	 Reference operator()(int i, int j);
 		
 	 /// Returns maximum norm
 	 real norm();
@@ -53,9 +82,14 @@ namespace dolfin {
 	 /// Output
 	 void show();
 	 friend ostream& operator << (ostream& output, SparseMatrix& sparseMatrix);
+
+  protected:
+
+	 real readElement  (int i, int j) const;
+	 void writeElement (int i, int j, real value);
 	 
   private:
-	 
+
 	 int m,n;
 
 	 int  *rowsizes;
@@ -65,5 +99,5 @@ namespace dolfin {
   };
 
 }
-  
+
 #endif

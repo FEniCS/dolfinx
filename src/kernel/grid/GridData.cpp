@@ -1,7 +1,7 @@
-#include "GridData.hh"
 #include <dolfin/Node.hh>
 #include <dolfin/Triangle.hh>
 #include <dolfin/Tetrahedron.hh>
+#include "GridData.h"
 
 using namespace dolfin;
 

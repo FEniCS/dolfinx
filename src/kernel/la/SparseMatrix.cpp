@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Display.hh>
-#include <dolfin/SparseMatrix.h>
 #include "DenseMatrix.hh"
 #include <dolfin/Vector.h>
+#include <dolfin/SparseMatrix.h>
 
 using namespace dolfin;
 
@@ -179,33 +179,14 @@ real SparseMatrix::operator()(int i, int *j, int pos) const
   return values[i][pos];
 }
 //-----------------------------------------------------------------------------
-real& SparseMatrix::operator()(int i, int j)
+SparseMatrix::Reference SparseMatrix::operator()(int i, int j)
 {
-  if ( i < 0 || i >= m || j < 0 || j >= n )
-    display->InternalError("SparseMatrix::operator()","Illegal indices: (%d,%d).",i,j);
-
-  // Find first empty position
-  for (int pos = 0; pos < rowsizes[i]; pos++)
-	 if ( columns[i][pos] == j )
-		return values[i][pos];
-	 else if ( columns[i][pos] == -1 ){
-		columns[i][pos] = j;
-		return values[i][pos];
-	 }
-  
-  display->InternalError("SparseMatrix::operator()","Row %d is full.",i);
+ return Reference(this,i,j);
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::operator()(int i, int j) const
+const real SparseMatrix::operator()(int i, int j) const
 {
-  if ( i < 0 || i >= m || j < 0 || j >= n )
-    display->InternalError("SparseMatrix::operator()","Illegal indices: (%d,%d).",i,j);
-
-  for (int pos = 0; pos < rowsizes[i]; pos++)
-	 if ( columns[i][pos] == j )
-		return values[i][pos];
-
-  return 0.0;
+  return readElement(i,j);
 }
 //-----------------------------------------------------------------------------
 real SparseMatrix::norm()
@@ -266,11 +247,48 @@ void SparseMatrix::mult(Vector &x, Vector &Ax)
 void SparseMatrix::show()
 {
   for (int i = 0; i < n; i++){
-	 cout << "| ";
-	 for (int j = 0; j < n; j++)
+	 if ( i == 0 )
+		cout << "A = | ";
+	 else
+		cout << "    | ";
+	 for (int j = 0; j < n; j++){
 		cout << (*this)(i,j) << " ";
+	 }
 	 cout << "|" << endl;
   }
+}
+//-----------------------------------------------------------------------------
+real SparseMatrix::readElement(int i, int j) const
+{
+  if ( i < 0 || i >= m || j < 0 || j >= n )
+    display->InternalError("SparseMatrix::readElement()","Illegal indices: (%d,%d).",i,j);
+
+  for (int pos = 0; pos < rowsizes[i]; pos++)
+	 if ( columns[i][pos] == j )
+		return values[i][pos];
+
+  return 0.0;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::writeElement(int i, int j, real value)
+{
+  if ( i < 0 || i >= m || j < 0 || j >= n )
+    display->InternalError("SparseMatrix::operator()","Illegal indices: (%d,%d).",i,j);
+
+  // Use first empty position
+  for (int pos = 0; pos < rowsizes[i]; pos++){
+	 if ( columns[i][pos] == j ){
+		values[i][pos] = value;
+		return;
+	 }
+	 else if ( columns[i][pos] == -1 ){
+		columns[i][pos] = j;
+		values[i][pos] = value;
+		return;
+	 }
+  }
+  
+  display->InternalError("SparseMatrix::writeElement()","Row %d is full.",i);
 }
 //-----------------------------------------------------------------------------
 

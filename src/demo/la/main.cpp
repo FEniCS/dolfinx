@@ -21,6 +21,10 @@ int main(int argc, char **argv)
   cout << x << endl;
   cout << A << endl;
 
+  A(1,1) = 0.5;
+  real a = A(1,1);
+  cout << "a = " << a << endl;
+  
   x.show();
   A.show();
 }

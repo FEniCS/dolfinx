@@ -22,14 +22,17 @@ namespace dolfin {
 
 	 enum ParserState { OUTSIDE, INSIDE_GRID, INSIDE_NODES, INSIDE_CELLS, DONE };
 	 
-	 void readGrid  (const xmlChar *name, const xmlChar **attrs);
-	 void readNodes (const xmlChar *name, const xmlChar **attrs);
-	 void readCells (const xmlChar *name, const xmlChar **attrs);
-	 void readNode  (const xmlChar *name, const xmlChar **attrs);
-	 void readCell  (const xmlChar *name, const xmlChar **attrs);
+	 void readGrid        (const xmlChar *name, const xmlChar **attrs);
+	 void readNodes       (const xmlChar *name, const xmlChar **attrs);
+	 void readCells       (const xmlChar *name, const xmlChar **attrs);
+	 void readNode        (const xmlChar *name, const xmlChar **attrs);
+	 void readTriangle    (const xmlChar *name, const xmlChar **attrs);
+	 void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
 
 	 Grid *grid;
-
+	 int nodes;
+	 int cells;
+	 
 	 ParserState state;
 	 
   };
