@@ -15,9 +15,8 @@
 namespace dolfin {
 
   class Element;
-  class TimeSlabData;
-  class TimeSteppingData;
   class Partition;
+  class Adaptivity;
   class RHS;
   class Solution;
 
@@ -34,7 +33,7 @@ namespace dolfin {
     virtual ~TimeSlab();
     
     /// Update time slab (iteration)
-    virtual void update(RHS& f, TimeSteppingData& data, Solution& solution) = 0;
+    virtual void update(Solution& u, RHS& f) = 0;
 
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -57,13 +56,13 @@ namespace dolfin {
   protected:
     
     // Specify and adjust the time step
-    void setsize(real K, const TimeSteppingData& data);
+    void setsize(real K, const Adaptivity& adaptivity);
 
     // Update elements (iteration)
-    void updateElements(RHS& f, TimeSteppingData& data, Solution& solution);
+    void updateElements(Solution& u, RHS& f);
 
     // Update initial values
-    void updateu0(Solution& solution);
+    void updateu0(Solution& u0);
 
     //--- Time slab data ---
 

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
 #include <dolfin/ElementData.h>
@@ -12,14 +13,23 @@ using namespace dolfin;
 Solution::Solution(ODE& ode, ElementData& elmdata) :
   elmdata(elmdata), u0(ode.size()), t0(0)
 {
+  // Get parameters
+  _debug  = dolfin_get("debug time steps");
+
   // Set initial data
   for (unsigned int i = 0; i < u0.size(); i++)
     u0[i] = ode.u0(i);
+  
+  // Open debug file
+  if ( _debug )
+    file.open("timesteps.debug", std::ios::out);
 }
 //-----------------------------------------------------------------------------
 Solution::~Solution()
 {
-  // Do nothing
+  // Close debug file
+  if ( _debug )
+    file.close();
 }
 //-----------------------------------------------------------------------------
 Element* Solution::createElement(Element::Type type, 
@@ -112,5 +122,17 @@ void Solution::shift(real t0)
 
   // Tell element data to create a new block next time
   elmdata.shift();
+}
+//-----------------------------------------------------------------------------
+void Solution::debug(Element& element, Action action)
+{
+  if ( !_debug )
+    return;
+
+  // Write debug info to file
+  file << action << " "
+       << element.index() << " " 
+       << element.starttime() << " " 
+       << element.endtime() << "\n";
 }
 //-----------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __DOLFIN_TANGANYIKA_H
-#define __DOLFIN_TANGANYIKA_H
+#ifndef __DOLFIN_ODE_H
+#define __DOLFIN_ODE_H
 
 // Multi-adaptivity
 
@@ -12,6 +12,7 @@
 #include <dolfin/dGqElement.h>
 #include <dolfin/dGqMethod.h>
 #include <dolfin/dGqMethods.h>
+#include <dolfin/Adaptivity.h>
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/Component.h>
 #include <dolfin/Element.h>
@@ -25,9 +26,9 @@
 #include <dolfin/ODESolver.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Sample.h>
+#include <dolfin/Solution.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/TableSparsity.h>
 #include <dolfin/TimeStepper.h>
-#include <dolfin/TimeSteppingData.h>
 
 #endif

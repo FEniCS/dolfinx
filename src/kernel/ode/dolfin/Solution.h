@@ -4,6 +4,7 @@
 #ifndef __SOLUTION_H
 #define __SOLUTION_H
 
+#include <fstream>
 #include <dolfin/constants.h>
 #include <dolfin/Element.h>
 #include <dolfin/NewArray.h>
@@ -23,6 +24,7 @@ namespace dolfin {
   ///   propagate the solution.
   /// - It can do extrapolation.
   /// - It can create new elements.
+  /// - It can save debug info to a file.
 
   class Solution
   {
@@ -64,16 +66,24 @@ namespace dolfin {
     /// Prepare for next time slab (propagate values)
     void shift(real t0);
 
+    /// Save debug info
+    enum Action { create = 0, update };
+    void debug(Element& element, Action action);
+
   private:
 
     // Element data
     ElementData& elmdata;
 
-    // Initival values (propagated values)
+    // Initial values (propagated values)
     NewArray<real> u0;
 
     // Time where current initial values are specified
     real t0;
+    
+    // Save debug info to file 'timesteps.debug'
+    bool _debug;
+    std::ofstream file;
 
   };
 

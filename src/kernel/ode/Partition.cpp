@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Regulator.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Adaptivity.h>
 #include <dolfin/Partition.h>
 
 using namespace dolfin;
@@ -41,13 +41,13 @@ int Partition::index(unsigned int i) const
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-void Partition::update(int offset, int& end, real& K, TimeSteppingData& data)
+void Partition::update(int offset, int& end, real& K, Adaptivity& adaptivity)
 {
   // Compute the largest time step
-  K = threshold * maximum(offset, data);
+  K = threshold * maximum(offset, adaptivity);
 
   // Comparison operator
-  Less less(K, data);
+  Less less(K, adaptivity);
 
   // Partition using std::partition
   NewArray<unsigned int>::iterator middle =
@@ -58,7 +58,7 @@ void Partition::update(int offset, int& end, real& K, TimeSteppingData& data)
 }
 //-----------------------------------------------------------------------------
 void Partition::debug(unsigned int offset, unsigned int end, 
-		      TimeSteppingData& data) const
+		      Adaptivity& adaptivity) const
 {
   // This function can be used to debug the partitioning.
   
@@ -72,28 +72,29 @@ void Partition::debug(unsigned int offset, unsigned int end,
       cout << "--------------------------- end" << endl;
 
     cout << i << ": index = " << indices[i] 
-	 << " k = " << data.regulator(indices[i]).timestep() << endl;
+	 << " k = " << adaptivity.regulator(indices[i]).timestep() << endl;
   }
   cout << endl;
 }
 //-----------------------------------------------------------------------------
-real Partition::maximum(int offset, TimeSteppingData& data) const
+real Partition::maximum(int offset, Adaptivity& adaptivity) const
 {
   real K = 0.0;
 
   for (unsigned int i = offset; i < indices.size(); i++)
-    K = max(data.regulator(indices[i]).timestep(), K);
+    K = max(adaptivity.regulator(indices[i]).timestep(), K);
 
   return K;
 }
 //-----------------------------------------------------------------------------
-Partition::Less::Less(real& K, TimeSteppingData& data) : K(K), data(data)
+Partition::Less::Less(real& K, Adaptivity& adaptivity) : 
+  K(K), adaptivity(adaptivity)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool Partition::Less::operator()(unsigned int index) const
 {
-  return data.regulator(index).timestep() >= K;
+  return adaptivity.regulator(index).timestep() >= K;
 }
 //-----------------------------------------------------------------------------

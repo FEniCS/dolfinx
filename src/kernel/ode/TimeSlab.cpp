@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <iostream>
-
 #include <dolfin/dolfin_log.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Adaptivity.h>
+#include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
 #include <dolfin/TimeSlab.h>
 
@@ -57,11 +57,11 @@ real TimeSlab::length() const
   return t1 - t0;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::setsize(real K, const TimeSteppingData& data)
+void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
 {
   // Make sure that we don't go beyond t1
 
-  if ( K > data.threshold() * (t1 - t0) )
+  if ( K > adaptivity.threshold() * (t1 - t0) )
   {
     K = t1 - t0;
     t1 = t0 + K;
@@ -71,11 +71,10 @@ void TimeSlab::setsize(real K, const TimeSteppingData& data)
     t1 = t0 + K;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateElements(RHS& f, TimeSteppingData& data,
-			      Solution& solution)
+void TimeSlab::updateElements(Solution& u, RHS& f)
 {
   // Update initial values
-  updateu0(solution);
+  updateu0(u);
 
   // Update elements
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -88,11 +87,11 @@ void TimeSlab::updateElements(RHS& f, TimeSteppingData& data,
     element->update(f);
     
     // Write debug info
-    data.debug(*element, TimeSteppingData::update);
+    u.debug(*element, Solution::update);
   }
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::updateu0(Solution& solution)
+void TimeSlab::updateu0(Solution& u)
 {
   // Update initial values
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -102,7 +101,7 @@ void TimeSlab::updateu0(Solution& solution)
     dolfin_assert(element);
     
     // Get initial value for element
-    real u0 = solution(element->index(), element->starttime());
+    real u0 = u(element->index(), element->starttime());
 
     // Update value
     element->update(u0);

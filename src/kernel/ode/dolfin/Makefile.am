@@ -6,6 +6,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              dGqElement.h \
              dGqMethod.h \
              dGqMethods.h \
+             Adaptivity.h \
              AutomaticSparsity.h \
              Component.h \
              Element.h \
@@ -29,5 +30,4 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Sparsity.h \
              TableSparsity.h \
              TimeSlab.h \
-             TimeStepper.h \
-             TimeSteppingData.h
+             TimeStepper.h

@@ -16,12 +16,12 @@
 #include <dolfin/RHS.h>
 #include <dolfin/ElementData.h>
 #include <dolfin/Partition.h>
+#include <dolfin/Adaptivity.h>
+#include <dolfin/Solution.h>
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/TimeSteppingData.h>
 #include <dolfin/Sample.h>
-#include <dolfin/Solution.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
@@ -33,14 +33,14 @@ void TimeStepper::solve(ODE& ode)
   unsigned int N = ode.size();
   real T = ode.endtime();
   real t = 0.0;
+  TimeSlab* timeslab = 0;
 
   // Create data for time-stepping
   Partition partition(N);
-  TimeSteppingData data(N);
+  Adaptivity adaptivity(N);
   ElementData elmdata(N);
-  Solution solution(ode, elmdata);
-  RHS f(ode, solution);
-  TimeSlab* timeslab = 0;
+  Solution u(ode, elmdata);
+  RHS f(ode, u);
 
   // Create file for storing the solution
   File file("solution.m");
@@ -51,18 +51,16 @@ void TimeStepper::solve(ODE& ode)
     
     // Create a new time slab
     if ( t == 0.0 )
-      timeslab = new SimpleTimeSlab(t, T, f, data, solution);
+      timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
     else
-      timeslab = new RecursiveTimeSlab(t, T, f, data, partition, 0, solution);
-    
-    //cout << "Created a time slab: " << *timeslab << endl;
+      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, partition, 0);
     
     // Iterate a couple of times on the time slab
     for (int i = 0; i < 2; i++)
-      timeslab->update(f, data, solution);
+      timeslab->update(u, f);
 
     // Save solution
-    save(solution, f, *timeslab, file, T, no_samples);
+    save(u, f, *timeslab, file, T, no_samples);
 
     // Update time
     t = timeslab->endtime();
@@ -71,7 +69,7 @@ void TimeStepper::solve(ODE& ode)
     p = t / T;
 
     // Prepare for next time slab
-    shift(solution, f, data, t);
+    shift(u, f, adaptivity, t);
 
     // Check if we are done
     if ( timeslab->finished() )
@@ -86,17 +84,16 @@ void TimeStepper::solve(ODE& ode)
 
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::shift(Solution& solution, RHS& f, TimeSteppingData& data, 
-			real t)
+void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
 {
-  real TOL = data.tolerance();
-  real kmax = data.maxstep();
+  real TOL = adaptivity.tolerance();
+  real kmax = adaptivity.maxstep();
 
   // Update residuals and time steps
-  for (unsigned int i = 0; i < solution.size(); i++)
+  for (unsigned int i = 0; i < u.size(); i++)
   {
     // Get last element
-    Element* element = solution.last(i);
+    Element* element = u.last(i);
     dolfin_assert(element);
 
     // Compute residual
@@ -106,15 +103,15 @@ void TimeStepper::shift(Solution& solution, RHS& f, TimeSteppingData& data,
     real k = element->computeTimeStep(TOL, r, kmax);
 
     // Update regulator
-    data.regulator(i).update(k, kmax);
+    adaptivity.regulator(i).update(k, kmax);
   }
   
   // Shift solution
-  solution.shift(t);
+  u.shift(t);
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save(Solution& solution, RHS& f, TimeSlab& timeslab,
-		       File& file, real T, unsigned int no_samples)
+void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab, File& file, 
+		       real T, unsigned int no_samples)
 {
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
@@ -123,14 +120,14 @@ void TimeStepper::save(Solution& solution, RHS& f, TimeSlab& timeslab,
   // Save samples
   while ( t < timeslab.endtime() )
   {
-    Sample sample(solution, f, t);    
+    Sample sample(u, f, t);    
     file << sample;
     t += K;
   }
   
   // Save end time value
   if ( timeslab.finished() ) {
-    Sample sample(solution, f, timeslab.endtime());
+    Sample sample(u, f, timeslab.endtime());
     file << sample;
   }
 }

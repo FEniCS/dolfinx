@@ -7,7 +7,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Element.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Adaptivity.h>
 #include <dolfin/Partition.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
@@ -16,13 +16,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-RecursiveTimeSlab::RecursiveTimeSlab(real t0, real t1, RHS& f,
-				     TimeSteppingData& data,
-				     Partition& partition,
-				     int offset, Solution& solution) : TimeSlab(t0, t1)
+RecursiveTimeSlab::RecursiveTimeSlab(real t0, real t1, Solution& u, RHS& f,
+				     Adaptivity& adaptivity, 
+				     Partition& partition, int offset) :
+  TimeSlab(t0, t1)
 {
   // Create the time slab
-  create(f, data, partition, offset, solution);
+  create(u, f, adaptivity, partition, offset);
 }
 //-----------------------------------------------------------------------------
 RecursiveTimeSlab::~RecursiveTimeSlab()
@@ -30,42 +30,44 @@ RecursiveTimeSlab::~RecursiveTimeSlab()
   // Delete the time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
   {
-    delete timeslabs[i];
+    if ( timeslabs[i] )
+      delete timeslabs[i];
     timeslabs[i] = 0;
   }
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::update(RHS& f, TimeSteppingData& data, Solution& solution)
+void RecursiveTimeSlab::update(Solution& u, RHS& f)
 {
   // First update the time slabs
-  updateTimeSlabs(f, data, solution);
+  updateTimeSlabs(u, f);
 
   // Then update the elements
-  updateElements(f, data, solution);
+  updateElements(u, f);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::create(RHS& f, TimeSteppingData& data,
-			       Partition& partition, int offset, Solution& solution)
+void RecursiveTimeSlab::create(Solution& u, RHS& f, Adaptivity& adaptivity,
+			       Partition& partition, int offset)
 {
   int end = 0;
   real K = 0.0;
 
   // Update partitition 
-  partition.update(offset, end, K, data);
+  partition.update(offset, end, K, adaptivity);
 
   // Adjust and set the size of this time slab 
-  setsize(K, data);
+  setsize(K, adaptivity);
 
   // Create time slabs for the components with small time steps
   if (end < partition.size())
-    createTimeSlabs(f, data, partition, end, solution);
+    createTimeSlabs(u, f, adaptivity, partition, end);
 
   // Create elements for the components with large time steps
-  createElements(f, data, partition, offset, end, solution);
+  createElements(u, f, adaptivity, partition, offset, end);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::createTimeSlabs(RHS& f, TimeSteppingData& data,
-					Partition& partition, int offset, Solution& solution)
+void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f, 
+					Adaptivity& adaptivity,
+					Partition& partition, int offset)
 {
   // Current position
   real t = t0;
@@ -74,8 +76,8 @@ void RecursiveTimeSlab::createTimeSlabs(RHS& f, TimeSteppingData& data,
   while ( true )
   {
     // Create a new time slab
-    TimeSlab* timeslab = new RecursiveTimeSlab(t, t1, f, data, 
-					       partition, offset, solution);
+    TimeSlab* timeslab = 
+      new RecursiveTimeSlab(t, t1, u, f, adaptivity, partition, offset);
     
     // Add the new time slab to the list
     timeslabs.push_back(timeslab);
@@ -89,9 +91,11 @@ void RecursiveTimeSlab::createTimeSlabs(RHS& f, TimeSteppingData& data,
   }
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::createElements(RHS& f, TimeSteppingData& data,
-				       Partition& partition, int offset, int end,
-				       Solution& solution)
+void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
+				       Adaptivity& adaptivity,
+				       Partition& partition,
+				       int offset, int end)
+
 {
   // FIXME: choose element and order here
   Element::Type type = Element::cg;
@@ -101,34 +105,34 @@ void RecursiveTimeSlab::createElements(RHS& f, TimeSteppingData& data,
   for (int i = offset; i < end; i++) {
 
     // Create element
-    Element* element = solution.createElement(type, q, partition.index(i), t0, t1);
+    Element* element = u.createElement(type, q, partition.index(i), t0, t1);
     
     // Write debug info
-    data.debug(*element, TimeSteppingData::create);
+    u.debug(*element, Solution::create);
     
     // Add element to array
     elements.push_back(element);
   }
 
   // Update elements
-  updateElements(f, data, solution);
+  updateElements(u, f);
 
   // Compute residuals and new time steps
-  computeResiduals(f, data);
+  computeResiduals(f, adaptivity);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::updateTimeSlabs(RHS& f, TimeSteppingData& data, Solution& solution)
+void RecursiveTimeSlab::updateTimeSlabs(Solution& u, RHS& f)
 {
   // Update time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
-    timeslabs[i]->update(f, data, solution);
+    timeslabs[i]->update(u, f);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSteppingData& data)
+void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)
 {
   // Get tolerance and maximum time step
-  real TOL = data.tolerance();
-  real kmax = data.maxstep();
+  real TOL = adaptivity.tolerance();
+  real kmax = adaptivity.maxstep();
 
   // Compute residuals and new time steps
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -143,7 +147,7 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSteppingData& data)
     real k = element->computeTimeStep(TOL, r, kmax);
 
     // Update regulator
-    data.regulator(element->index()).update(k, kmax);
+    adaptivity.regulator(element->index()).update(k, kmax);
    }
  }
 //-----------------------------------------------------------------------------

@@ -5,14 +5,12 @@
 #define __PARTITION_H
 
 #include <functional>
-
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
 
 namespace dolfin {
 
-  class RHS;
-  class TimeSteppingData;
+  class Adaptivity;
   class Regulator;
 
   /// Partition is used in the recursive construction of time slabs
@@ -35,24 +33,24 @@ namespace dolfin {
     int index(unsigned int pos) const;
 
     /// Update partition (reorder components starting at offset)
-    void update(int offset, int& end, real& K, TimeSteppingData& data);
+    void update(int offset, int& end, real& K, Adaptivity& adaptivity);
     
   private:
 
     // Debug partitioning
-    void debug(unsigned int offset, unsigned int end, TimeSteppingData& data) const;
+    void debug(unsigned int offset, unsigned int end, Adaptivity& adaptivity) const;
 
     // Compute largest time step
-    real maximum(int offset, TimeSteppingData& data) const;
+    real maximum(int offset, Adaptivity& adaptivity) const;
 
     // Comparison operator for the partition
     struct Less : public std::unary_function<unsigned int, bool> 
     {
-      Less(real& K, TimeSteppingData& data);
+      Less(real& K, Adaptivity& adaptivity);
       bool operator()(unsigned int index) const;
       
       real K;
-      TimeSteppingData& data;
+      Adaptivity& adaptivity;
     };
 
     // List of component indices

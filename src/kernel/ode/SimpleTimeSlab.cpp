@@ -5,8 +5,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Element.h>
-#include <dolfin/TimeSteppingData.h>
-#include <dolfin/Partition.h>
+#include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
 #include <dolfin/SimpleTimeSlab.h>
@@ -14,10 +13,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, RHS& f, 
-			       TimeSteppingData& data, Solution& solution) : TimeSlab(t0, t1)
+SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, Solution& u, 
+			       Adaptivity& adaptivity) : TimeSlab(t0, t1)
 {
-  create(f, data, solution);
+  create(u, adaptivity);
 }
 //-----------------------------------------------------------------------------
 SimpleTimeSlab::~SimpleTimeSlab()
@@ -25,31 +24,31 @@ SimpleTimeSlab::~SimpleTimeSlab()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data, Solution& solution)
+void SimpleTimeSlab::update(Solution& u, RHS& f)
 {
-  updateElements(f, data, solution);
+  updateElements(u, f);
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data, Solution& solution)
+void SimpleTimeSlab::create(Solution& u, Adaptivity& adaptivity)
 {
   // FIXME: choose element and order here
   Element::Type type = Element::cg;
   int q = 1;
 
   // Get initial time step (same for all components)
-  real k = data.regulator(0).timestep();
+  real k = adaptivity.regulator(0).timestep();
 
   // Set size of this time slab
-  setsize(k, data);
+  setsize(k, adaptivity);
 
   // Create elements
-  for (unsigned int i = 0; i < data.size(); i++)
+  for (unsigned int i = 0; i < u.size(); i++)
   {
     // Create element
-    Element *element = solution.createElement(type, q, i, t0, t1);
+    Element *element = u.createElement(type, q, i, t0, t1);
     
     // Write debug info
-    data.debug(*element, TimeSteppingData::create);
+    u.debug(*element, Solution::create);
 
     // Add element to array
     elements.push_back(element);

@@ -6,6 +6,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/dGqElement.h \
                           dolfin/dGqMethod.h \
                           dolfin/dGqMethods.h \
+                          dolfin/Adaptivity.h \
                           dolfin/AutomaticSparsity.h \
                           dolfin/Component.h \
                           dolfin/AutomaticSparsity.h \
@@ -30,8 +31,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Sparsity.h \
                           dolfin/TableSparsity.h \
                           dolfin/TimeSlab.h \
-                          dolfin/TimeStepper.h \
-                          dolfin/TimeSteppingData.h
+                          dolfin/TimeStepper.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-ode.a
 libdolfin_ode_a_SOURCES = cGqElement.cpp \
@@ -40,6 +40,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           dGqElement.cpp \
                           dGqMethod.cpp \
                           dGqMethods.cpp \
+                          Adaptivity.cpp \
                           AutomaticSparsity.cpp \
                           Component.cpp \
                           Element.cpp \
@@ -63,5 +64,4 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Sparsity.cpp \
                           TableSparsity.cpp \
                           TimeSlab.cpp \
-                          TimeStepper.cpp \
-                          TimeSteppingData.cpp
+                          TimeStepper.cpp

@@ -3,19 +3,18 @@
 
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/Element.h>
-#include <dolfin/TimeSteppingData.h>
+#include <dolfin/Adaptivity.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSteppingData::TimeSteppingData(unsigned int N) : regulators(N)
+Adaptivity::Adaptivity(unsigned int N) : regulators(N)
 {
   // Get parameters
-  TOL                = dolfin_get("tolerance");
-  kmax               = dolfin_get("maximum time step");
-  interval_threshold = dolfin_get("interval threshold");
-  _debug             = dolfin_get("debug time steps");
-  real k0            = dolfin_get("initial time step");
+  TOL     = dolfin_get("tolerance");
+  kmax    = dolfin_get("maximum time step");
+  beta    = dolfin_get("interval threshold");
+  real k0 = dolfin_get("initial time step");
 
   // Scale tolerance with the number of components
   TOL /= static_cast<real>(N);
@@ -23,42 +22,31 @@ TimeSteppingData::TimeSteppingData(unsigned int N) : regulators(N)
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)
     regulators[i].init(k0);
-
-  // Open debug file
-  if ( _debug )
-    file.open("timesteps.debug", std::ios::out);
 }
 //-----------------------------------------------------------------------------
-TimeSteppingData::~TimeSteppingData()
+Adaptivity::~Adaptivity()
 {
-  // Close debug file
-  if ( _debug )
-    file.close();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-unsigned int TimeSteppingData::size() const
-{
-  return regulators.size();
-}
-//-----------------------------------------------------------------------------
-Regulator& TimeSteppingData::regulator(unsigned int i)
+Regulator& Adaptivity::regulator(unsigned int i)
 {
   dolfin_assert(i < regulators.size());
   return regulators[i];
 }
 //-----------------------------------------------------------------------------
-const Regulator& TimeSteppingData::regulator(unsigned int i) const
+const Regulator& Adaptivity::regulator(unsigned int i) const
 {
   dolfin_assert(i < regulators.size());
   return regulators[i];
 }
 //-----------------------------------------------------------------------------
-real TimeSteppingData::tolerance() const
+real Adaptivity::tolerance() const
 {
   return TOL;
 }
 //-----------------------------------------------------------------------------
-real TimeSteppingData::maxstep() const
+real Adaptivity::maxstep() const
 {
   // FIXME: Should we have an individual kmax for each component?
   // FIXME: In that case we should put kmax into the Regulator class.
@@ -66,20 +54,13 @@ real TimeSteppingData::maxstep() const
   return kmax;
 }
 //-----------------------------------------------------------------------------
-real TimeSteppingData::threshold() const
+real Adaptivity::threshold() const
 {
-  return interval_threshold;
+  return beta;
 }
 //-----------------------------------------------------------------------------
-void TimeSteppingData::debug(Element& element, Action action)
+unsigned int Adaptivity::size() const
 {
-  if ( !_debug )
-    return;
-
-  // Write debug info to file
-  file << action << " "
-       << element.index() << " " 
-       << element.starttime() << " " 
-       << element.endtime() << "\n";
+  return regulators.size();
 }
 //-----------------------------------------------------------------------------

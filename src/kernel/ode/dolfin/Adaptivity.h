@@ -1,31 +1,25 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __TIME_STEPPING_DATA_H
-#define __TIME_STEPPING_DATA_H
+#ifndef __ADAPTIVITY_H
+#define __ADAPTIVITY_H
 
-#include <fstream>
-#include <dolfin/Element.h>
 #include <dolfin/NewArray.h>
 #include <dolfin/Regulator.h>
 
 namespace dolfin {
 
-  /// TimeSteppingData contains data for adaptive time-stepping,
-  /// that can be shared by different time slabs.
+  /// Adaptivity controls the adaptive time-stepping.
 
-  class TimeSteppingData {
+  class Adaptivity {
   public:
 
     /// Constructor
-    TimeSteppingData(unsigned int N);
+    Adaptivity(unsigned int N);
 
     /// Destructor
-    ~TimeSteppingData();
-    
-    /// Return number of components
-    unsigned int size() const;
-    
+    ~Adaptivity();
+        
     /// Return time step regulator for given component
     Regulator& regulator(unsigned int i);
 
@@ -41,9 +35,8 @@ namespace dolfin {
     /// Return threshold for reaching end of interval
     real threshold() const;
 
-    /// Save debug info
-    enum Action { create = 0, update };
-    void debug(Element& element, Action action);
+    /// Return number of components
+    unsigned int size() const;
 
   private:
 
@@ -57,11 +50,7 @@ namespace dolfin {
     real kmax;
     
     // Threshold for reaching end of interval
-    real interval_threshold;
-
-    // Save debug info to file 'timesteps.debug'
-    bool _debug;
-    std::ofstream file;
+    real beta;
 
   };
 
