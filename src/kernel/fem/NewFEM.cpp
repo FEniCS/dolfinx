@@ -11,6 +11,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/NewMatrix.h>
+#include <dolfin/NewVector.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/NewFiniteElement.h>
@@ -285,14 +286,17 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   const NewFiniteElement& element = a.element;
   real** AK = allocElementMatrix(element);
 
-  // Initialize global matrix
-  unsigned int N = size(mesh, element);
-  A.init(N, N);
-  A = 0.0;
-
   unsigned int n = element.spacedim();
   real* block = new real[n*n];
   int* dofs = new int[n];
+
+  // Initialize global matrix 
+  // Max connectivity in NewMatrix::init() is assumed to 
+  // be 50, alternatively use connectivity information to
+  // minimize memory requirements. 
+  unsigned int N = size(mesh, element);
+  A.init(N, N, element.vectordim());
+  A = 0.0;
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -328,6 +332,59 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
 
   // Delete element matrix
   freeElementMatrix(AK, element);
+}
+//-----------------------------------------------------------------------------
+void NewFEM::testPETSc(LinearForm& L, Mesh& mesh, NewVector& b)
+{
+  // Start a progress session
+  Progress p("Assembling vector (interior contribution)", mesh.noCells());
+
+  // Initialize finite element and element matrix
+  const NewFiniteElement& element = L.element;
+  real* bK = allocElementVector(element);
+
+  unsigned int n = element.spacedim();
+  real* block = new real[n];
+  int* dofs = new int[n];
+
+  // Initialize global vector 
+  unsigned int N = size(mesh, element);
+  b.init(N);
+  b = 0.0;
+
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update form
+    L.update(*cell);
+    
+    // Compute element matrix
+    L.interior(bK);
+
+    // Copy values to one array
+    unsigned int pos = 0;
+    for (unsigned int i = 0; i < n; i++)
+      block[pos++] = bK[i];
+
+    // Compute mapping from local to global degrees of freedom
+    for (unsigned int i = 0; i < n; i++)
+      dofs[i] = element.dof(i, *cell);
+    
+    // Add element matrix to global matrix
+    b.add(block, dofs, n);
+
+    // Update progress
+    p++;
+  }
+  
+  // Complete assembly
+  b.apply();
+
+  delete [] block;
+  delete [] dofs;
+
+  // Delete element matrix
+  freeElementVector(bK, element);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)

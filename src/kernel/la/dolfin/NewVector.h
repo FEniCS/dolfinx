@@ -65,7 +65,13 @@ namespace dolfin
     void restore(real data[]);
 
     /// Addition (AXPY)
-    void add(const real a, const NewVector& x) const;
+    void axpy(const real a, const NewVector& x) const;
+
+    /// Add block of values
+    void add(const real block[],const int cols[], int n); 
+
+    /// Apply changes to vector
+    void apply();
 
     /// Element assignment operator
     Index operator() (uint i);

@@ -65,8 +65,40 @@ void NewMatrix::init(int m, int n)
     else
       MatDestroy(A);
   
-  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
-  MatSetFromOptions(A);
+  //  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
+  //  MatSetFromOptions(A);
+
+  // Creates a sparse matrix in block AIJ (block compressed row) format.
+  // Assuming blocksize bs=1, and max no connectivity = 50 
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, 1, m, m, 50, PETSC_NULL, &A);
+}
+//-----------------------------------------------------------------------------
+void NewMatrix::init(int m, int n, int bs)
+{
+  // Free previously allocated memory if necessary
+  if ( A )
+    if ( m == size(0) && n == size(1) )
+      return;
+    else
+      MatDestroy(A);
+  
+  // Creates a sparse matrix in block AIJ (block compressed row) format.
+  // Given blocksize bs, and assuming max no connectivity = 50. 
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*m, bs*m, 50, PETSC_NULL, &A);
+}
+//-----------------------------------------------------------------------------
+void NewMatrix::init(int m, int n, int bs, int mnc)
+{
+  // Free previously allocated memory if necessary
+  if ( A )
+    if ( m == size(0) && n == size(1) )
+      return;
+    else
+      MatDestroy(A);
+  
+  // Creates a sparse matrix in block AIJ (block compressed row) format.
+  // Given blocksize bs, and max no connectivity mnc.  
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*m, bs*m, mnc, PETSC_NULL, &A);
 }
 //-----------------------------------------------------------------------------
 int NewMatrix::size(int dim) const

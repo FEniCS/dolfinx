@@ -79,20 +79,20 @@ int main()
   
   dolfin_log(false);
   
-  //real t1 = testOld(mesh);
-  //real t2 = testOptimized(mesh);
-  //real t3 = testFFC(mesh);
-  //real t4 = testFFCPETSc(mesh);
+  real t1 = testOld(mesh);
+  real t2 = testOptimized(mesh);
+  real t3 = testFFC(mesh);
+  real t4 = testFFCPETSc(mesh);
 
   dolfin_log(true);
 
   //testFFC(mesh);
-  testFFCPETSc(mesh);
+  //testFFCPETSc(mesh);
 
-  //cout << "DOLFIN + DOLFIN: " << t1 << endl;
-  //cout << "DOLFIN + OPTIM:  " << t2 << endl;
-  //cout << "DOLFIN + FFC:    " << t3 << endl;
-  //cout << "PETSc  + FFC:    " << t4 << endl;
+  cout << "DOLFIN + DOLFIN: " << t1 << endl;
+  cout << "DOLFIN + OPTIM:  " << t2 << endl;
+  cout << "DOLFIN + FFC:    " << t3 << endl;
+  cout << "PETSc  + FFC:    " << t4 << endl;
 
   return 0;
 }

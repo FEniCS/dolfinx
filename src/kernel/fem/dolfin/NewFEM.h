@@ -15,6 +15,7 @@ namespace dolfin
   class Mesh;
   class Matrix;
   class NewMatrix;
+  class NewVector;
   class Vector;
 
   /// Automated assembly of a linear system from a given partial differential
@@ -39,6 +40,7 @@ namespace dolfin
 
     /// Testing PETSc
     static void testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A);
+    static void testPETSc(LinearForm& L, Mesh& mesh, NewVector& b);
 
   private:
     

@@ -38,8 +38,11 @@ namespace dolfin
     /// Destructor
     ~NewMatrix();
 
-    /// Initialize matrix
+    /// Initialize matrix: no rows m, columns n, block size bs, 
+    /// and max number of connectivity mnc. 
     void init(int m, int n);
+    void init(int m, int n, int bs);
+    void init(int m, int n, int bs, int mnc);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension
     /// dim

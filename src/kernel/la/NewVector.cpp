@@ -81,9 +81,20 @@ void NewVector::init(uint size)
   VecSetFromOptions(v);
 }
 //-----------------------------------------------------------------------------
-void NewVector::add(const real a, const NewVector& x) const
+void NewVector::axpy(const real a, const NewVector& x) const
 {
   VecAXPY(&a, x.vec(), v);
+}
+//-----------------------------------------------------------------------------
+void NewVector::add(const real block[],const int cols[], int n)
+{
+  VecSetValues(v, n, cols, block, ADD_VALUES); 
+}
+//-----------------------------------------------------------------------------
+void NewVector::apply()
+{
+  VecAssemblyBegin(v); 
+  VecAssemblyEnd(v); 
 }
 //-----------------------------------------------------------------------------
 void NewVector::clear()

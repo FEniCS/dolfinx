@@ -102,6 +102,8 @@ int main(int argc, char **argv)
   Mesh mesh("tetmesh-4.xml.gz");
   Problem elasticitystationary("elasticity-stationary", mesh);
 
+  mesh.refineUniformly();
+
   elasticitystationary.set("source", f);
   elasticitystationary.set("boundary condition", mybc);
   elasticitystationary.set("final time", 2.0);

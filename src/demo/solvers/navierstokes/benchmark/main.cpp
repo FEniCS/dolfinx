@@ -15,18 +15,44 @@ void mybc(BoundaryCondition& bc)
   bc.set(BoundaryCondition::DIRICHLET, 0.0);
 }
 
+// Test new assembly (FFC)
+real testFFC(Mesh& mesh)
+{
+  cout << "--- Testing new assembly, FFC ---" << endl;
+
+  int N = 2;
+
+  /*
+  FFCPoissonFiniteElement element;
+  FFCPoissonBilinearForm a(element);
+  Matrix A;
+  */
+  tic();
+  for (unsigned int i = 0; i < N; i++)
+    //NewFEM::assemble(a, mesh, A);
+
+  return toc();
+}
+
 int main()
 {
   //Mesh mesh("mesh.xml.gz");
   Mesh mesh("tetmesh-4.xml.gz");
   //Mesh mesh("tetmesh_backward_facing_step_32_8_8.xml.gz");
+
+  //dolfin_log(true);
+
+  testFFC(mesh);
+
+  /*
   Problem navierstokes("navierstokes", mesh);
   
   navierstokes.set("source", f);
   navierstokes.set("boundary condition", mybc);
  
   navierstokes.solve();
-  
+  */
+
   return 0;
 }
 
