@@ -7,7 +7,11 @@
 
 using namespace dolfin;
 
-#define SIZE 50
+// Number of vertices in each dimension
+#define SIZE 100
+
+// Number of matrix-vector multiplications
+#define M 10
 
 int N;
 int N2;
@@ -25,9 +29,9 @@ void setdofs(int i, int j, int k, int dofs[])
 	dofs[pos++] = N2*(k + kk) + N*(j + jj) + i + ii;
 }
 
-void testDOLFIN(double* t1, double* t2)
+void testDOLFIN(double& t1, double& t2, double& t3)
 {
-  std::cout << "Testing DOLFIN" << std::endl;
+  std::cout << "Testing DOLFIN assembly" << std::endl;
   tic();
   
   Matrix A(N3, N3, 27);
@@ -48,8 +52,8 @@ void testDOLFIN(double* t1, double* t2)
     }
   }
 
-  *t1 = toc();
-  std::cout << "Testing DOLFIN again" << std::endl;
+  t1 = toc();
+  std::cout << "Testing DOLFIN assembly again" << std::endl;
   tic();
   
   A = 0.0;
@@ -69,12 +73,24 @@ void testDOLFIN(double* t1, double* t2)
     }
   }  
 
-  *t2 = toc();
+  t2 = toc();
+
+  std::cout << "Testing DOLFIN matrix-vector multiplication" << std::endl;
+  Vector x(N3), y(N3);
+  x = 1.0;
+  tic();
+
+  for (int i = 0; i < M; i++)
+    A.mult(x, y);
+
+  //y.show();
+
+  t3 = toc();
 }
 
-void testPETSc(double* t1, double* t2)
+void testPETSc(double& t1, double& t2, double& t3)
 {
-  std::cout << "Testing PETSc" << std::endl;
+  std::cout << "Testing PETSc assembly" << std::endl;
   tic();
 
   Mat A;
@@ -100,8 +116,8 @@ void testPETSc(double* t1, double* t2)
   MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-  *t1 = toc();
-  std::cout << "Testing PETSc again" << std::endl;
+  t1 = toc();
+  std::cout << "Testing PETSc assembly again" << std::endl;
   MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR);
   tic();
 
@@ -119,12 +135,31 @@ void testPETSc(double* t1, double* t2)
     }
   }
 
-  MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  *t2 = toc();
+  t2 = toc();
+  std::cout << "Testing PETSc matrix-vector multiplication" << std::endl;
+  Vec x, y;
+  VecCreate(PETSC_COMM_SELF, &x);
+  VecSetSizes(x, PETSC_DECIDE, N3);
+  VecSetFromOptions(x);
+  VecCreate(PETSC_COMM_SELF, &y);
+  VecSetSizes(y, PETSC_DECIDE, N3);
+  VecSetFromOptions(y);
+  double a = 1.0;
+  VecSet(&a, x);
+
+  for (int i = 0; i < M; i++)
+    MatMult(A, x, y);
   
+  //VecView(y, PETSC_VIEWER_STDOUT_SELF);
+
+  t3 = toc();
+
   MatDestroy(A);
+  VecDestroy(x);
+  VecDestroy(y);
 }
 
 int main(int argc, char** argv)
@@ -147,14 +182,19 @@ int main(int argc, char** argv)
   double t2 = 0.0;
   double t3 = 0.0;
   double t4 = 0.0;
+  double t5 = 0.0;
+  double t6 = 0.0;
+  
+  // Test assembly
+  testDOLFIN(t1, t2, t3);
+  testPETSc(t4, t5, t6);
 
-  testDOLFIN(&t1, &t2);
-  testPETSc(&t3, &t4);
- 
   std::cout << "DOLFIN assembly:    " << t1 << " s" << std::endl;
   std::cout << "DOLFIN re-assembly: " << t2 << " s" << std::endl;
-  std::cout << "PETSc  assembly:    " << t3 << " s" << std::endl;
-  std::cout << "PETSc  re-assembly: " << t4 << " s" << std::endl;
+  std::cout << "DOLFIN multiply:    " << t3 << " s" << std::endl;
+  std::cout << "PETSc  assembly:    " << t4 << " s" << std::endl;
+  std::cout << "PETSc  re-assembly: " << t5 << " s" << std::endl;
+  std::cout << "PETSc  multiply:    " << t6 << " s" << std::endl;
 
   PetscFinalize();
   return 0;
