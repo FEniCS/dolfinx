@@ -30,7 +30,7 @@ void ConvDiffSolver::solve()
   Function::Vector u1(mesh, x1, 1);
   Function f("source");
   Function a("diffusivity");
-  Function::Vector beta("convection", 1);
+  Function::Vector beta("convection", 3);
   
   ConvDiff     convdiff(f, u0, a, beta);
   KrylovSolver solver;
