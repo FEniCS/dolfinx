@@ -164,6 +164,38 @@ Cell* Grid::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2,
   return gd->createCell(level,type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell* parent, Cell::Type type, int n0, int n1, int n2)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TRIANGLES;
+  
+  return gd->createCell(parent->level(),type,n0,n1,n2);
+}
+//-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell* parent, Cell::Type type, int n0, int n1, int n2, int n3)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TETRAHEDRONS;
+  
+  return gd->createCell(parent->level(),type,n0,n1,n2,n3);
+}
+//-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TRIANGLES;
+  
+  return gd->createCell(parent->level(),type,n0,n1,n2);
+}
+//-----------------------------------------------------------------------------
+Cell* Grid::createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
+{
+  // Warning: grid type will be type of last added cell
+  _type = TETRAHEDRONS;
+  
+  return gd->createCell(parent->level(),type,n0,n1,n2,n3);
+}
+//-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)
 {
   Node *node = gd->getNode(id);

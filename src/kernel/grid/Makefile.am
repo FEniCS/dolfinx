@@ -1,5 +1,6 @@
 SUBDIRS                  = dolfin
 include_HEADERS          = dolfin/dolfin_grid.h \
+                           dolfin/Edge.h \
                            dolfin/Grid.h \
                            dolfin/GridData.h \
                            dolfin/InitGrid.h \
@@ -17,6 +18,7 @@ INCLUDES                 = @MODULE_INCLUDES@
 lib_LIBRARIES            = libdolfin-grid.a
 libdolfin_grid_a_SOURCES = Cell.cpp \
                            CellIterator.cpp \
+                           Edge.cpp \
                            Grid.cpp \
                            GridData.cpp \
                            InitGrid.cpp \

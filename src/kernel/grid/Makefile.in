@@ -77,11 +77,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_grid.h                            dolfin/Grid.h                            dolfin/GridData.h                            dolfin/InitGrid.h                            dolfin/Node.h                            dolfin/NodeIterator.h                            dolfin/Point.h                            dolfin/Cell.h                            dolfin/CellIterator.h                            dolfin/GenericCell.h                            dolfin/RefineGrid.h                            dolfin/Triangle.h                            dolfin/Tetrahedron.h                            dolfin/Edge.h
+include_HEADERS = dolfin/dolfin_grid.h                            dolfin/Edge.h                            dolfin/Grid.h                            dolfin/GridData.h                            dolfin/InitGrid.h                            dolfin/Node.h                            dolfin/NodeIterator.h                            dolfin/Point.h                            dolfin/Cell.h                            dolfin/CellIterator.h                            dolfin/GenericCell.h                            dolfin/RefineGrid.h                            dolfin/Triangle.h                            dolfin/Tetrahedron.h                            dolfin/Edge.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-grid.a
-libdolfin_grid_a_SOURCES = Cell.cpp                            CellIterator.cpp                            Grid.cpp                            GridData.cpp                            InitGrid.cpp                            Node.cpp                            NodeIterator.cpp                            Point.cpp                            RefineGrid.cpp                            Tetrahedron.cpp                            Triangle.cpp
+libdolfin_grid_a_SOURCES = Cell.cpp                            CellIterator.cpp                            Edge.cpp                            Grid.cpp                            GridData.cpp                            InitGrid.cpp                            Node.cpp                            NodeIterator.cpp                            Point.cpp                            RefineGrid.cpp                            Tetrahedron.cpp                            Triangle.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -93,9 +93,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_grid_a_LIBADD = 
-libdolfin_grid_a_OBJECTS =  Cell.o CellIterator.o Grid.o GridData.o \
-InitGrid.o Node.o NodeIterator.o Point.o RefineGrid.o Tetrahedron.o \
-Triangle.o
+libdolfin_grid_a_OBJECTS =  Cell.o CellIterator.o Edge.o Grid.o \
+GridData.o InitGrid.o Node.o NodeIterator.o Point.o RefineGrid.o \
+Tetrahedron.o Triangle.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -109,7 +109,7 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Cell.P .deps/CellIterator.P .deps/Grid.P \
+DEP_FILES =  .deps/Cell.P .deps/CellIterator.P .deps/Edge.P .deps/Grid.P \
 .deps/GridData.P .deps/InitGrid.P .deps/Node.P .deps/NodeIterator.P \
 .deps/Point.P .deps/RefineGrid.P .deps/Tetrahedron.P .deps/Triangle.P
 SOURCES = $(libdolfin_grid_a_SOURCES)

@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Node.h>
+#include <dolfin/Edge.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
@@ -17,6 +18,8 @@ Cell::Cell()
   _id = -1;
   c = 0;
   _marker = UNMARKED;
+
+  _no_marked_edges = 0;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2)
@@ -31,7 +34,14 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
   cn(1) = &n1;
   cn(2) = &n2;
 
+  ce.init(3);
+  ce(0)->set(&n0,&n1);
+  ce(1)->set(&n0,&n2);
+  ce(2)->set(&n1,&n2);
+
   _marker = UNMARKED;
+
+  _no_marked_edges = 0;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
@@ -47,7 +57,17 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
   cn(2) = &n2;
   cn(3) = &n3;
 
+  ce.init(6);
+  ce(0)->set(&n0,&n1);
+  ce(1)->set(&n0,&n2);
+  ce(2)->set(&n0,&n3);
+  ce(3)->set(&n1,&n2);
+  ce(4)->set(&n1,&n3);
+  ce(5)->set(&n2,&n3);
+
   _marker = UNMARKED;
+
+  _no_marked_edges = 0;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -136,11 +156,6 @@ int Cell::nodeID(int i) const
   return cn(i)->id();
 }
 //-----------------------------------------------------------------------------
-int Cell::edgeID(int i) const
-{
-  dolfin_error("Not implemented.");
-}
-//-----------------------------------------------------------------------------
 void Cell::mark()
 {
   _marker = MARKED;
@@ -169,6 +184,11 @@ void Cell::set(Node *n0, Node *n1, Node *n2)
   cn(0) = n0;
   cn(1) = n1;
   cn(2) = n2;
+
+  ce.init(3);
+  ce(0)->set(n0,n1);
+  ce(1)->set(n0,n2);
+  ce(2)->set(n1,n2);
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
@@ -180,6 +200,14 @@ void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
   cn(1) = n1;
   cn(2) = n2;
   cn(3) = n3;
+
+  ce.init(6);
+  ce(0)->set(n0,n1);
+  ce(1)->set(n0,n2);
+  ce(2)->set(n0,n3);
+  ce(3)->set(n1,n2);
+  ce(4)->set(n1,n3);
+  ce(5)->set(n2,n3);
 }
 //-----------------------------------------------------------------------------
 void Cell::setID(int id)
@@ -191,6 +219,25 @@ void Cell::setLevel(int level)
 {
   _level = level;
 }
+//-----------------------------------------------------------------------------
+void Cell::mark_edge(int edge)
+{
+  ce(edge)->mark();
+
+  if (!ce(edge)->marked()) _no_marked_edges++;
+}	 
+//-----------------------------------------------------------------------------
+void Cell::unmark_edge(int edge)
+{
+  ce(edge)->unmark();
+
+  if (ce(edge)->marked()) _no_marked_edges--;
+}	 
+//-----------------------------------------------------------------------------
+int Cell::noMarkedEdges()
+{
+  return _no_marked_edges;
+}	 
 //-----------------------------------------------------------------------------
 void Cell::init(Type type)
 {

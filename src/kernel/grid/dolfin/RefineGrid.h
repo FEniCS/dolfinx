@@ -7,6 +7,8 @@
 namespace dolfin {
 
   class Grid;
+  class Edge;
+  class Cell;
   
   class RefineGrid {
   public:
@@ -15,15 +17,17 @@ namespace dolfin {
 	 
 	 void GlobalRegularRefinement();
 
-	 void RegularRefinement(Cell &parent);
+	 void RegularRefinement(Cell* parent);
 
-	 void RegularRefinementTetrahedron(Cell &parent);
-	 void RegularRefinementTriangle(Cell &parent);
+	 void RegularRefinementTetrahedron(Cell* parent);
+	 void RegularRefinementTriangle(Cell* parent);
 	 
 	 void refine();
 	 
   private:
 
+	 void IrrRef1(Cell* parent, ShortList<Edge*> marked_edges);
+	 
 	 Grid& grid;
 
   };

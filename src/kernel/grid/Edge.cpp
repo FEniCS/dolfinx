@@ -1,80 +1,101 @@
-#include <utils.h>
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.hh>
-#include <dolfin/Edge.hh>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/constants.h>
+
+#include <dolfin/Edge.h>
+#include <dolfin/Node.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Edge::Edge()
 {
-  end_nodes[0] = 0;
-  end_nodes[1] = 0;
+  end_nodes.init(2);
 
-  mid_node = 0;
-}
-//-----------------------------------------------------------------------------
-void Edge::Set(Node *en1, Node *en2, Node *mn)
-{
-  end_nodes[0] = en1;
-  end_nodes[1] = en2;
+  end_nodes(0) = 0;
+  end_nodes(1) = 0;
 
-  mid_node = mn;
+  marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
-void Edge::SetEndnodes(Node *en1, Node *en2)
+Edge::Edge(Node *en1, Node *en2)
 {
-  end_nodes[0] = en1;
-  end_nodes[1] = en2;
+  end_nodes.init(2);
+
+  end_nodes(0) = en1;
+  end_nodes(1) = en2;
+
+  marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
-void Edge::SetMidnode(Node *mn)
+void Edge::set(Node *en1, Node *en2)
 {
-  mid_node = mn;
+  end_nodes.init(2);
+
+  end_nodes(0) = en1;
+  end_nodes(1) = en2;
 }
 //-----------------------------------------------------------------------------
-Node* Edge::GetEndnode(int node)
+Node* Edge::node(int node)
 {
   if ( (node<0) || (node>=2) )
-	 display->InternalError("Edge::GetEndNode()","Illegal node: %d",node);
+    dolfin_error("Illegal node.");
   
-  return end_nodes[node];
+  return end_nodes(node);
 }
 //-----------------------------------------------------------------------------
-Node* Edge::GetMidnode()
+Point Edge::coord(int node)
 {
-  return mid_node;
+  if ( (node<0) || (node>=2) )
+    dolfin_error("Illegal node.");
+  
+  return end_nodes(node)->coord();
 }
 //-----------------------------------------------------------------------------
-real Edge::ComputeLength(Grid *grid)
+bool Edge::marked()
+{
+  return marked_for_refinement;
+}
+//-----------------------------------------------------------------------------
+void Edge::mark()
+{
+  marked_for_refinement = true;
+}
+//-----------------------------------------------------------------------------
+void Edge::unmark()
+{
+  marked_for_refinement = false;
+}
+//-----------------------------------------------------------------------------
+real Edge::computeLength()
 {
   // Get the coordinates
-  Point *A = end_nodes[0]->GetCoord();
-  Point *B = end_nodes[1]->GetCoord();
+  Point p1 = end_nodes(0)->coord();
+  Point p2 = end_nodes(1)->coord();
 
-  real l = A->Distance(*B);
-
-  return ( l );
+  return p1.dist(p2);
 }
 //-----------------------------------------------------------------------------
-Point* Edge::ComputeMidpoint(Grid *grid)
+Point Edge::computeMidpoint()
 {
   // Get the coordinates
-  Point *A = end_nodes[0]->GetCoord();
-  Point *B = end_nodes[1]->GetCoord();
+  Point p1 = end_nodes(0)->coord();
+  Point p2 = end_nodes(1)->coord();
 
   // Make sure we get full precision
   real x1, x2, y1, y2, z1, z2;
 
-  x1 = real(A->x); y1 = real(A->y); z1 = real(A->z);
-  x2 = real(B->x); y2 = real(B->y); z2 = real(B->z);
+  x1 = real(p1.x); y1 = real(p1.y); z1 = real(p1.z);
+  x2 = real(p2.x); y2 = real(p2.y); z2 = real(p2.z);
 
   // The midpoint of the edge 
-  Point *M;
-  M->x = 0.5*(x1+x2);
-  M->y = 0.5*(y1+y2);
-  M->z = 0.5*(z1+z2);
+  Point mp;
+  mp.x = 0.5*(x1+x2);
+  mp.y = 0.5*(y1+y2);
+  mp.z = 0.5*(z1+z2);
   
-  return ( M );
+  return ( mp );
 }
 //-----------------------------------------------------------------------------

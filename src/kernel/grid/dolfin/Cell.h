@@ -5,13 +5,14 @@
 #define __CELL_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Point.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/NodeIterator.h>
 
 namespace dolfin {  
 
+  class Point;
   class Node;
+  class Edge;
   class Triangle;
   class Tetrahedron;
   
@@ -25,7 +26,7 @@ namespace dolfin {
 	 Cell(Node &n0, Node &n1, Node &n2);
 	 Cell(Node &n0, Node &n1, Node &n2, Node &n3);
 	 ~Cell();
-
+         
 	 // Number of nodes, edges, faces, boundaries
 	 int noNodes() const;
 	 int noEdges() const;
@@ -34,6 +35,7 @@ namespace dolfin {
 
 	 // Cell data
 	 Node* node(int i) const;
+	 Edge  edge(int i) const;
 	 Point coord(int i) const;
 	 Type  type() const;
 	 int   noCellNeighbors() const;
@@ -42,7 +44,6 @@ namespace dolfin {
 	 // id information for cell and its contents
 	 int id() const;
 	 int nodeID(int i) const;
-	 int edgeID(int i) const;
 	 int level() const;
 
 	 // Mark and check if marked
@@ -52,6 +53,10 @@ namespace dolfin {
 	 // Mark and check state of the marke
 	 void mark(Marker marker);
 	 Marker marker() const;
+
+	 void mark_edge(int edge);
+	 void unmark_edge(int edge);
+	 int noMarkedEdges();
 	 
 	 // -> access passed to GenericCell
 	 GenericCell* operator->() const;
@@ -82,6 +87,8 @@ namespace dolfin {
 	 
 	 // Refinement level in grid hierarchy, coarsest grid i level = 0
 	 int _level;
+	 
+	 int _no_marked_edges;
 
 	 // The cell
 	 GenericCell *c;
@@ -92,6 +99,7 @@ namespace dolfin {
 	 // Connectivity
 	 ShortList<Cell *> cc;
 	 ShortList<Node *> cn;
+	 ShortList<Edge *> ce;
 
   };
 
