@@ -3,12 +3,12 @@
 %
 % Plot the number of laps around each fixed point for Lorenz.
 
-load lorenztmp.txt
+load lorenz1.txt
 
-t     = lorenztmp(:, 1);
-n0    = lorenztmp(:, 3);
-n1    = lorenztmp(:, 4);
-alpha = lorenztmp(:, 5);
+t     = lorenz1(:, 1);
+n0    = lorenz1(:, 3);
+n1    = lorenz1(:, 4);
+alpha = lorenz1(:, 5);
 
 figure(1)
 clf
@@ -27,7 +27,7 @@ figure(2)
 clf
 
 subplot(2, 1, 1)
-plot(t(1:1000), alpha(1:1000))
+plot(t(1:1339), alpha(1:1339))
 xlabel('t')
 ylabel('n1 / n2')
 
@@ -36,4 +36,4 @@ plot(t, alpha)
 xlabel('t')
 ylabel('n1 / n2')
 
-disp(['alpha at end of integration: ' num2str(alpha(size(alpha)))])
+disp(['alpha at end of integration: ' num2str(alpha(length(alpha)))])

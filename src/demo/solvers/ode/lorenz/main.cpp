@@ -34,7 +34,7 @@ public:
     fp = fopen("lorenz.txt", "w");
 
     // Final time
-    T = 1e6;
+    T = 1e5;
   }
   
   ~Lorenz()
