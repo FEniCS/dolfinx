@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Face.h>
 #include <dolfin/Edge.h>
@@ -83,7 +84,9 @@ void P1TetMap::update(const Face& face)
   // Update map to interior of cell
   update(cell);
 
-  
+  // Compute face number
+  unsigned int current_face = faceNumber(face, cell);
+  cout << "Face number: " << current_face << endl;
 
   // The determinant is given by the norm of the cross product
   
@@ -149,6 +152,60 @@ unsigned int P1TetMap::faceNumber(const Face& face, const Cell& cell) const
   // the given face by hand. See documentation for the Mesh class for
   // details on the ordering.
   
+  // Get the four nodes of the tetrahedron
+  Node& n0 = cell.node(0);
+  Node& n1 = cell.node(1);
+  Node& n2 = cell.node(2);
+  Node& n3 = cell.node(3);
+
+  // Mark the nodes included in the face
+  NewArray<bool> marks(4);
+  marks = false;
+
+  for (EdgeIterator edge(face); !edge.end(); ++edge)
+  {
+    if (edge->node(0) == n0 || edge->node(1) == n0)
+      marks[0] = true;
+      
+    if (edge->node(0) == n1 || edge->node(1) == n1)
+      marks[1] = true;
+
+    if (edge->node(0) == n2 || edge->node(1) == n2)
+      marks[2] = true;
+    
+    if (edge->node(0) == n3 || edge->node(1) == n3)
+      marks[3] = true;
+  }
+
+  // Count the number of marked nodes
+  unsigned int count = 0;
+  for (unsigned int i = 0; i < 4; i++)
+  {
+    if ( marks[i] )
+      count++;
+  }
+  
+  // Check that exactly three nodes are marked
+  if ( count != 3 )
+    dolfin_error("Unable to find local face number.");
+
+  // Determine number based on which node that is not marked, see
+  // documenation in Mesh.h for details on numbering.
+
+  if ( !marks[0] )
+    return 2;
+  
+  if ( !marks[1] )
+    return 3;
+
+  if ( !marks[2] )
+    return 1;
+
+  if ( !marks[3] )
+    return 0;
+  
+  // We should not reach this statement
+  dolfin_error("Unable to find local face number.");
   return 0;
 }
 //-----------------------------------------------------------------------------

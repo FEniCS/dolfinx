@@ -1,3 +1,4 @@
+ - Enable assignment to all elements of a NewArray
  - Add functions Boundary::noNodes(), noFaces(), noEdges()
  - New class GaussSeidel (preconditioner and linear solver)
  - New classes Preconditioner and LinearSolver
