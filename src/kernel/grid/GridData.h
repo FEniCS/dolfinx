@@ -38,8 +38,8 @@ namespace dolfin {
 	 Cell* getCell(int id);
 
 	 // Friends
-	 friend class NodeIterator;
-	 friend class CellIterator;
+	 friend class GridNodeIterator;
+	 friend class GridCellIterator;
 	 
   private:
 	 

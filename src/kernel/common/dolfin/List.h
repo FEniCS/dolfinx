@@ -291,7 +291,7 @@ public:
 	 }
 
 	 /// Returns current object
-	 T operator*() const
+	 T& operator*() const
 	 {
 		return block->data[pos];
 	 }

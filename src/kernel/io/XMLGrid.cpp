@@ -68,6 +68,7 @@ void XMLGrid::endElement(const xmlChar *name)
   case INSIDE_GRID:
 	 
 	 if ( xmlStrcasecmp(name,(xmlChar *) "grid") == 0 ){
+		initGrid();
 		ok = true;
 		state = DONE;
 	 }
@@ -182,5 +183,11 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
+}
+//-----------------------------------------------------------------------------
+void XMLGrid::initGrid()
+{
+  // Compute connections
+  grid->init();
 }
 //-----------------------------------------------------------------------------

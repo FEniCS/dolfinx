@@ -10,13 +10,18 @@ using namespace dolfin;
 GenericCell::GenericCell()
 {
   neighbor_cells = 0;
-  nc = 0;
+  _nc = 0;
 
   _id = -1;
+
+  cc = 0;
+  cc_size = 0;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
 {
+  clear();
+  
   Clear();
 }
 //-----------------------------------------------------------------------------
@@ -31,7 +36,7 @@ void GenericCell::Clear()
 	 delete [] neighbor_cells;
   neighbor_cells = 0;
 
-  nc = 0;
+  _nc = 0;
 }
 //-----------------------------------------------------------------------------
 int GenericCell::setID(int id)
@@ -39,14 +44,23 @@ int GenericCell::setID(int id)
   return _id = id;
 }
 //-----------------------------------------------------------------------------
+void GenericCell::clear()
+{
+  if ( cc )
+	 delete [] cc;
+  
+  cc = 0;
+  cc_size = 0;
+}
+//-----------------------------------------------------------------------------
 int GenericCell::GetNoGenericCellNeighbors()
 {
-  return ( nc );
+  return ( _nc );
 }
 //-----------------------------------------------------------------------------
 int GenericCell::GetGenericCellNeighbor(int i)
 {
-  if ( (i<0) || (i>=nc) )
+  if ( (i<0) || (i>=_nc) )
 	 display->InternalError("GenericCell::GetGenericCellNeighbor()","Illegal index: %d",i);
 
   return ( neighbor_cells[i] );

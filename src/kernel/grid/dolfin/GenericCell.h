@@ -77,14 +77,19 @@ namespace dolfin {
 	 
   private:
 
-	 int setID(int id);
+	 int  setID(int id);
+	 void clear();
 	 
 	 int _id;
 	 
 	 int *neighbor_cells;
-	 int nc;
+	 int _nc;
 	 
 	 int material;
+
+	 // Connectivity
+	 Cell *cc;
+	 int cc_size;
 	 
   };
 

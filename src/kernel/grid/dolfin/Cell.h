@@ -30,14 +30,16 @@ namespace dolfin {
 	 
 	 // Friends
 	 friend class GridData;
+	 friend class InitGrid;
 	 
   private:
 
 	 void setID(int id);
 	 void init(Type type);
+	 void clear();
 	 
 	 GenericCell *c;
-
+	 
   };
 
 }

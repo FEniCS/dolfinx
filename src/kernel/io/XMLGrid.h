@@ -29,6 +29,8 @@ namespace dolfin {
 	 void readTriangle    (const xmlChar *name, const xmlChar **attrs);
 	 void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
 
+	 void initGrid();
+	 
 	 Grid *grid;
 	 int nodes;
 	 int cells;

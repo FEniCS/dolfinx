@@ -114,9 +114,9 @@ real Triangle::ComputeCircumRadius(Grid *grid, real volume)
 //-----------------------------------------------------------------------------
 void Triangle::CountCell(Node *node_list)
 {
-  node_list[nodes[0]->GetNodeNo()].nc += 1;
-  node_list[nodes[1]->GetNodeNo()].nc += 1;
-  node_list[nodes[2]->GetNodeNo()].nc += 1;
+  node_list[nodes[0]->GetNodeNo()]._nc += 1;
+  node_list[nodes[1]->GetNodeNo()]._nc += 1;
+  node_list[nodes[2]->GetNodeNo()]._nc += 1;
 }
 //-----------------------------------------------------------------------------
 void Triangle::AddCell(Node *node_list, int *current, int thiscell)
@@ -149,16 +149,16 @@ void Triangle::ComputeCellNeighbors(Node *node_list, int thiscell)
   int c;
   
   if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[nc] = c;
-	 nc += 1;
+	 neighbor_cells[_nc] = c;
+	 _nc += 1;
   }
   if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[nc] = c;
-	 nc += 1;
+	 neighbor_cells[_nc] = c;
+	 _nc += 1;
   }
   if ( node_list[nodes[1]->GetNodeNo()].CommonCell(&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
-	 neighbor_cells[nc] = c;
-	 nc += 1;
+	 neighbor_cells[_nc] = c;
+	 _nc += 1;
   }
 
 }

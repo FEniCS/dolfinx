@@ -1,8 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __GRID_HH
-#define __GRID_HH
+#ifndef __GRID_H
+#define __GRID_H
 
 // FIXME: remove
 #include <stdio.h>
@@ -13,18 +13,17 @@
 #include <dolfin/List.h>
 #include <dolfin/Cell.h>
 
-namespace dolfin{
+namespace dolfin {
 
   class Node;
   class Triangle;
   class Tetrahedron;
   class GridData;
   
-  class Grid{
+  class Grid {
   public:
 	 
 	 Grid();
-	 Grid(const char *filename);
 	 ~Grid();
 
 	 void clear();
@@ -37,8 +36,8 @@ namespace dolfin{
 	 friend std::ostream& operator << (std::ostream& output, Grid& grid);
 	 
 	 /// Friends
-	 friend class NodeIterator;
-	 friend class CellIterator;
+	 friend class GridNodeIterator;
+	 friend class GridCellIterator;
 	 friend class XMLGrid;
 	 
 	 // old functions below
@@ -85,6 +84,8 @@ namespace dolfin{
 	 Node* getNode(int id);
 	 Cell* getCell(int id);
 
+	 void init();
+	 
 	 // old functions below
 	 
 	 
@@ -133,42 +134,6 @@ namespace dolfin{
 	 
   };
 
-  // Iterators
-
-  class NodeIterator {
-  public:
-
-	 NodeIterator(Grid& grid); 
-
-	 NodeIterator& operator++();
-	 bool end();
-	 
-	 Node  operator*() const;
-	 
-  private:
-
-	 List<Node>::Iterator node_iterator;
-	 List<Node>::Iterator at_end;
-	 
-  };
-
-  class CellIterator {
-  public:
-
-	 CellIterator(Grid& grid); 
-
- 	 CellIterator& operator++();
-	 bool end();
-	 
-	 Cell  operator*() const;
-	 
-  private:
-
-	 List<Cell>::Iterator cell_iterator;
-	 List<Cell>::Iterator at_end;
-	 
-  };
-  
 }
 
 #endif

@@ -14,7 +14,10 @@
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
+#include <dolfin/GridIterators.h>
 #include "GridData.h"
+#include "InitGrid.h"
+
 
 using namespace dolfin;
 
@@ -24,20 +27,6 @@ Grid::Grid()
   grid_data = 0;
 
   clear();
-
-  grid_data = new GridData();
-}
-//-----------------------------------------------------------------------------
-Grid::Grid(const char *filename)
-{
-  display->InternalError("Grid::Grid()","This function doesn't work");
-
-  no_nodes   = 0;
-  no_cells   = 0;
-  nodes    = 0;
-  cells    = 0;
-  mem      = sizeof(Grid);
-  h        = 0.0;
 
   grid_data = new GridData();
 }
@@ -81,12 +70,12 @@ void Grid::show()
   cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells:" << endl;
   cout << endl;
   
-  for (NodeIterator n(*this); !n.end(); ++n)
+  for (GridNodeIterator n(*this); !n.end(); ++n)
 	 cout << "  " << *n << endl;
 
   cout << endl;
 
-  for (CellIterator c(*this); !c.end(); ++c)
+  for (GridCellIterator c(*this); !c.end(); ++c)
 	 cout << "  " << *c << endl;
   
   cout << endl;
@@ -99,8 +88,11 @@ void Grid::show()
 //-----------------------------------------------------------------------------
 void Grid::Init()
 {
+  InitGrid initGrid(this);
+
   //  ComputeNeighborInfo();
   // ComputeSmallestDiameter();
+
 }
 //-----------------------------------------------------------------------------
 void Grid::Clear()
@@ -290,9 +282,10 @@ Cell* Grid::getCell(int id)
   return cell;
 }
 //-----------------------------------------------------------------------------
-
-
-
+void Grid::init()
+{
+  InitGrid initGrid(this);
+}
 //-----------------------------------------------------------------------------
 void Grid::WriteINP(FILE *fp)
 {
@@ -341,20 +334,20 @@ void Grid::AllocNodes(int newsize)
   // Delete old nodes if any
   if ( nodes )
 	 delete [] nodes;
-
+  
   // Keep track of allocated size
   mem -= no_nodes*sizeof(Node);
-
+  
   // Allocate new nodes
   nodes = new Node[newsize];
-
+  
   // Check that we got the memory
   if ( !nodes )
 	 display->Error("Out of memory. Unable to allocate new memory for Grid.");
-
+  
   // Save the number of nodes
   no_nodes = newsize;
-
+  
   // Keep track of allocated size
   mem += no_nodes*sizeof(Node);
 }
@@ -447,116 +440,7 @@ void Grid::ComputeSmallestDiameter()
 	 if ( (hh = 2.0 * cells[i]->ComputeCircumRadius(this)) < h )
 		h = hh;
 }
-//-----------------------------------------------------------------------------
-void Grid::ComputeNeighborInfo()
-{
-  // Computes the following information:
-  //
-  // 1. All neighbor cells of a node: n-c
-  // 2. All neighbor cells of a cell: c-c (including the cell itself)
-  // 3. All neighbor nodes of a node: n-n (including the node itself)
-  //
-  // To save memory, the algorithm is not optimal w.r.t. speed.
-  // The trick is to compute the connections in the correct order.
-    
-  int *tmp;
-  int tmpsize, newtmpsize;
-
-  // Reset all previous connections
-  ClearNeighborInfo();
-
-  // Prepare temporary storage
-  tmp = new int[no_nodes];
-  for (int i=0;i<no_nodes;i++)
-	 tmp[i] = 0;
-  
-  display->Message(10,"Grid: Computing n-c connections.");
-  
-  // Start by computing the n-c connections. This is straightforward, since
-  // we won't get any duplicate entries.
-  for (int i=0;i<no_cells;i++)
-	 cells[i]->CountCell(nodes);
-  for (int i=0;i<no_nodes;i++)
-	 nodes[i].AllocateForNeighborCells();
-  for (int i=0;i<no_cells;i++)
-	 cells[i]->AddCell(nodes,tmp,i);
-  
-  // Delete temporary storage
-  delete [] tmp;
-  
-  display->Message(10,"Grid: Computing c-c connections.");
-  
-  // Now use this information to compute the c-c connections
-  for (int i=0;i<no_cells;i++)
-	 cells[i]->ComputeCellNeighbors(nodes,i);
-
-  // Prepare temporary storage
-  tmpsize = nodes[0].GetMaxNodeNeighbors(cells);
-  tmp = new int[tmpsize];
-  
-  display->Message(10,"Grid: Computing n-n connections.");
-  
-  // Now again use the n-c informaton to compute the n-n connections
-  for (int i=0;i<no_nodes;i++){
-	 newtmpsize = nodes[i].GetMaxNodeNeighbors(cells);
-	 if ( newtmpsize > tmpsize ){
-		tmpsize = newtmpsize;
-		delete [] tmp;
-		tmp = new int[tmpsize];
-	 }
-	 nodes[i].ComputeNodeNeighbors(cells,i,tmp);
-  }
-  
-  // Clear temporary storage
-  delete [] tmp;
-}
 */
-//-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(Grid& grid)
-{
-  node_iterator = grid.grid_data->nodes.begin();
-  at_end = grid.grid_data->nodes.end();
-}
-//-----------------------------------------------------------------------------
-NodeIterator& NodeIterator::operator++()
-{
-  ++node_iterator;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-bool NodeIterator::end()
-{
-  return node_iterator == at_end;
-}
-//-----------------------------------------------------------------------------
-Node NodeIterator::operator*() const
-{
-  return *node_iterator;
-}
-//-----------------------------------------------------------------------------
-CellIterator::CellIterator(Grid& grid)
-{
-  cell_iterator = grid.grid_data->cells.begin();
-  at_end = grid.grid_data->cells.end();
-}
-//-----------------------------------------------------------------------------
-CellIterator& CellIterator::operator++()
-{
-  ++cell_iterator;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-bool CellIterator::end()
-{
-  return cell_iterator == at_end;
-}
-//-----------------------------------------------------------------------------
-Cell CellIterator::operator*() const
-{
-  return *cell_iterator;
-}
 //-----------------------------------------------------------------------------
 namespace dolfin {
 

@@ -11,6 +11,9 @@
 namespace dolfin{
 
   class GenericCell;
+  class Cell;
+  class InitGrid;
+
   
   class Node{
   public:
@@ -26,6 +29,8 @@ namespace dolfin{
 	 void show();
 	 friend std::ostream& operator << (std::ostream& output, const Node& node);
 
+	 // old functions below
+	 
 	 void Clear();
 	 
 	 /// --- Neigbor information
@@ -57,6 +62,7 @@ namespace dolfin{
 	 friend class Triangle;
 	 friend class Tetrahedron;
 	 friend class GridData;
+	 friend class InitGrid;
 	 
   protected:
 	
@@ -76,6 +82,7 @@ namespace dolfin{
   private:
 
 	 int setID(int id);
+	 void clear();
 	 
 	 Point p;
 	 
@@ -85,8 +92,15 @@ namespace dolfin{
 	 
 	 int *neighbor_nodes;
 	 int *neighbor_cells;
-	 int nn;
-	 int nc;
+	 int _nn;
+	 int _nc;
+
+	 // Connectivity
+	 Node *nn;
+	 Cell *nc;
+	 
+	 int nn_size;
+	 int nc_size;
 	 
   };
   

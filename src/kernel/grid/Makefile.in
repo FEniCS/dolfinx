@@ -76,7 +76,8 @@ SUBDIRS = dolfin
 include_HEADERS = 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-grid.a
-libdolfin_grid_a_SOURCES = Cell.cpp                            GenericCell.cpp                            Grid.cpp                            GridData.cpp                            GridData.hh                            Node.cpp                            Point.cpp                            Tetrahedron.cpp                            Triangle.cpp 
+libdolfin_grid_a_SOURCES = Cell.cpp                            GenericCell.cpp                            Grid.cpp                            GridData.h                            GridData.cpp                            GridIterators.cpp                            InitGrid.h                            InitGrid.cpp                            Node.cpp                            Point.cpp                            Tetrahedron.cpp                            Triangle.cpp
+
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)
@@ -88,7 +89,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_grid_a_LIBADD = 
 libdolfin_grid_a_OBJECTS =  Cell.o GenericCell.o Grid.o GridData.o \
-Node.o Point.o Tetrahedron.o Triangle.o
+GridIterators.o InitGrid.o Node.o Point.o Tetrahedron.o Triangle.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -108,8 +109,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/Cell.P .deps/GenericCell.P .deps/Grid.P \
-.deps/GridData.P .deps/Node.P .deps/Point.P .deps/Tetrahedron.P \
-.deps/Triangle.P
+.deps/GridData.P .deps/GridIterators.P .deps/InitGrid.P .deps/Node.P \
+.deps/Point.P .deps/Tetrahedron.P .deps/Triangle.P
 SOURCES = $(libdolfin_grid_a_SOURCES)
 OBJECTS = $(libdolfin_grid_a_OBJECTS)
 
