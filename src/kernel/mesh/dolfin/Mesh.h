@@ -19,8 +19,63 @@
 namespace dolfin {
 
   class MeshData;
+
+  /// A Mesh consists of Nodes, Cells, Edges, and Faces.
+  /// The data of a Mesh is accessed through iterators:
+  ///
+  /// The Nodes of a Mesh is accessed through the class NodeIterator.
+  /// The Cells of a Mesh is accessed through the class CellIterator.
+  /// The Edges of a Mesh is accessed through the class EdgeIterator.
+  /// The Faces of a Mesh is accessed through the class FaceIterator.
+  ///
+  /// A Cell can represent either a Triangle or a Tetrahedron depending
+  /// on the type of the Mesh.
+  ///
+  /// The local ordering is based on the following principles:
+  ///
+  /// IMPORTANT NOTICE: The local ordering does not yet follow these
+  /// principles!
+  ///
+  /// (i) For a triangular mesh, the nodes are numbered counter-clockwise.
+  /// In particular, the 3 coordinates of the reference triangle are given by
+  ///
+  ///   n1: (0, 0, 0)
+  ///   n2: (1, 0, 0)
+  ///   n3: (0, 1, 0)
+  ///
+  /// The 3 edges of the reference triangle are given by
+  ///
+  ///   e1: (n1, n2)
+  ///   e2: (n2, n3)
+  ///   e3: (n3, n1)
+  ///
+  /// (ii) For a tetrahedral mesh, the nodes are numbered based on a
+  /// positive orientation of the nodes. In particular, the 4 coordinates
+  /// of the reference tetrahedron are given by
+  ///
+  ///   n1: (0, 0, 0)
+  ///   n2: (1, 0, 0)
+  ///   n3: (0, 1, 0)
+  ///   n4: (0, 0, 1)
+  ///
+  /// The 6 edges of the reference tetrahedron are given by
+  ///
+  ///   e1: (n1, n2)
+  ///   e2: (n2, n3)
+  ///   e3: (n3, n1)
+  ///   e4: (n1, n4)
+  ///   e5: (n2, n4)
+  ///   e6: (n3, n4)
+  ///
+  /// The 4 faces of the reference triangle are given by
+  ///
+  ///   f1: (n1, n2, n3)
+  ///   f2: (n1, n4, n2)
+  ///   f3: (n2, n4, n3)
+  ///   f4: (n1, n3, n4)
   
-  class Mesh : public Variable {
+  class Mesh : public Variable
+  {
   public:
     
     enum Type { triangles, tetrahedrons };

@@ -70,8 +70,20 @@ void P1TetMap::update(const Cell& cell)
 //-----------------------------------------------------------------------------
 void P1TetMap::update(const Face& face)
 {
+  // Check that there is only one cell neighbor
+  if ( face.noCellNeighbors() != 1 )
+  {
+    cout << "Updating map to face on boundary: " << face << endl;
+    dolfin_error("Face on boundary does not belong to exactly one cell.");
+  }
+
+  // Get the cell neighbor of the face
+  Cell& cell = face.cell(0);
+
   // Update map to interior of cell
-  update(face.cell(0));
+  update(cell);
+
+  
 
   // The determinant is given by the norm of the cross product
   
@@ -128,5 +140,15 @@ const FunctionSpace::ElementFunction P1TetMap::ddt
 (const FunctionSpace::ShapeFunction &v) const
 {
   return v.ddT();
+}
+//-----------------------------------------------------------------------------
+unsigned int P1TetMap::faceNumber(const Face& face, const Cell& cell) const
+{
+  // The local ordering of faces within the cells should automatically take
+  // care of this, but in the meantime we need to compute the number of
+  // the given face by hand. See documentation for the Mesh class for
+  // details on the ordering.
+  
+  return 0;
 }
 //-----------------------------------------------------------------------------

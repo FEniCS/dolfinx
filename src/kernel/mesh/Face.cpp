@@ -29,10 +29,15 @@ int Face::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-//int Face::size() const
-//{
-//  return fe.size();
-//}
+unsigned int Face::noEdges() const
+{
+  return fe.size();
+}
+//-----------------------------------------------------------------------------
+unsigned int Face::noCellNeighbors() const
+{
+  return fc.size();
+}
 //-----------------------------------------------------------------------------
 Edge& Face::edge(int i) const
 {

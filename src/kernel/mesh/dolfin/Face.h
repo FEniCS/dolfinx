@@ -30,8 +30,11 @@ namespace dolfin {
     /// Return id of face
     int id() const;
 
-    /// Return the number of edges
-    //int size() const;
+    /// Return number of edges
+    unsigned int noEdges() const;
+
+    /// Return number of cell neighbors
+    unsigned int noCellNeighbors() const;
 
     /// Return edge number i
     Edge& edge(int i) const;
@@ -72,11 +75,11 @@ namespace dolfin {
     // Global face number
     int _id;
 
-    // Connectivity
-    Array<Cell*> fc;
-
     // The list of edges
     Array<Edge*> fe;
+
+    // Connectivity
+    Array<Cell*> fc;
 
   };
 

@@ -84,3 +84,4 @@ General
 * Automatically load parameters from dolfin.xml
 * A mail list for DOLFIN?
 * Move to FEniCS web server?
+* Change int --> unsigned int where appropriate
