@@ -342,7 +342,6 @@ void RefineGrid::IrrRef2(Cell* parent)
 
 void RefineGrid::IrrRef3(Cell* parent)
 {
-  /*
   // 2 edges are marked, on the same face 
   // (here there are 2 possibilities, and the chosen 
   // alternative must match the corresponding face 
@@ -356,50 +355,44 @@ void RefineGrid::IrrRef3(Cell* parent)
   // alt.2: connecting new node 2 with the endnode of marked edge 1, 
   // that is not common with marked edge 2.
 
-  int non_marked_node;
-  int double_marked_node;
-  
-  int once_marked_node[2];
-  int node_marks[4];
-
-  Node *n1 = grid.createNode();
-  Node *n2 = grid.createNode();
-  
-  n1->Set(parent->GetEdge(marked_edge1)->GetMidpoint());
-  n2->Set(parent->GetEdge(marked_edge2)->GetMidpoint());
-
-  Cell *t1 = grid.createCell();
-  Cell *t2 = grid.createCell();
-  Cell *t3 = grid.createCell();
-
-  for (int i=0; i<4; i++){
-    node_marks[i] = 0;
-    if ( (parent->GetNode(i) == parent->GetEdge(marked_edge1)->GetEndnode(0)) || 
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge1)->GetEndnode(1)) ||
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge2)->GetEndnode(0)) ||
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge2)->GetEndnode(1)) ){
-      node_marks[i]++;
-    }
-  }  
-
   int cnt = 0;
-  for (int i=0; i<4; i++){
-    if (node_marks[i]==0) non_marked_node = i;
-    else if (node_marks[i]==2) double_marked_node = i;
-    else{ 
-      once_marked_node[cnt] = i;
-      cont++;
+  int marked_edge[2];
+  for (int i=0;i<parent->noEdges();i++){
+    if (parent->edge(i)->marked()){
+      marked_edge[cnt++] = i;
     }
   }
+
+  int face_node;
+  int enoded;
+  int enode1;
+  int enode2;
+  int cnt1 = 0;
+  int cnt2 = 0;
+  for (int i=0;i<4;i++){
+    for (int j=0;j<2;j++){
+      if (parent->edge(marked_edge[0])->node(j)->id() == parent->node(i)->id()) cnt1++;
+      if (parent->edge(marked_edge[1])->node(j)->id() == parent->node(i)->id()) cnt2++;
+    }
+    if ( (cnt1 == 0) && (cnt2 == 0) ) face_node = i;
+    if ((cnt1+cnt2) == 2) enoded = i;
+    if ((cnt1 == 1) && (cnt2 == 0)) enode1 = i;	 
+    if ((cnt1 == 0) && (cnt2 == 1)) enode2 = i;	 
+  }
+
+  Node *nf = grid.createNode(parent->level()+1,parent->node(face_node)->coord());
+  Node *nd = grid.createNode(parent->level()+1,parent->node(enoded)->coord());
+  Node *n1 = grid.createNode(parent->level()+1,parent->node(enode1)->coord());
+  Node *n2 = grid.createNode(parent->level()+1,parent->node(enode2)->coord());
+
+  Node *midnode1 = grid.createNode(parent->level()+1,parent->edge(marked_edge[0])->midpoint());
+  Node *midnode2 = grid.createNode(parent->level()+1,parent->edge(marked_edge[1])->midpoint());
   
-  t1->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
+  // Find element with common face (enoded,enode1,enode2) 
+  // ...
 
-  t2->Set(parent->GetNode(once_marked_node[0]),n1,n2,parent->GetNode(non_marked_node));
-  t3->Set(parent->GetNode(once_marked_node[1]),n1,n2,parent->GetNode(non_marked_node));
+    
 
-  t2->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
-  t3->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
-  */
 }
 
 void RefineGrid::IrrRef4(Cell* parent)
@@ -507,29 +500,4 @@ Refinement::IrrRef3(Cell *parent, int marked_edge1, int marked_edge2)
   t3->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
 }
 
-
-Refinement::IrrRef4(Cell *parent, int marked_edge1, int marked_edge2)
-{      
-  // 2 edges are marked, opposite to each other: 
-  // insert 2 new nodes at the midpoints of the marked edges, 
-  // insert 4 new edges by connecting the new nodes to the 
-  // endpoints of the opposite edges of the respectively new nodes. 
-
-  Node *n1 = grid.createNode();
-  Node *n2 = grid.createNode();
-  
-  n1->Set(parent->GetEdge(marked_edge1)->GetMidpoint());
-  n2->Set(parent->GetEdge(marked_edge2)->GetMidpoint());
-
-  Cell *t1 = grid.createCell();
-  Cell *t2 = grid.createCell();
-  Cell *t3 = grid.createCell();
-  Cell *t4 = grid.createCell();
-
-  t1->Set(parent->GetEdge(marked_edge1)->GetEndnode(0),n1,parent->GetEdge(marked_edge2)->GetEndnode(0),n2);
-  t2->Set(parent->GetEdge(marked_edge1)->GetEndnode(0),n1,parent->GetEdge(marked_edge2)->GetEndnode(1),n2);
-  t3->Set(parent->GetEdge(marked_edge1)->GetEndnode(1),n1,parent->GetEdge(marked_edge2)->GetEndnode(0),n2);
-  t4->Set(parent->GetEdge(marked_edge1)->GetEndnode(1),n1,parent->GetEdge(marked_edge2)->GetEndnode(1),n2);
-
-}
 */
