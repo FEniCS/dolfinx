@@ -79,7 +79,7 @@ void RefineGrid::RegularRefinement(Cell* parent)
 
   switch (parent->type()) {
   case Cell::TETRAHEDRON: 
-    IrrRef4(parent);
+    IrrRef3(parent);
     //RegularRefinementTetrahedron(parent);
     break;
   case Cell::TRIANGLE: 
@@ -355,6 +355,21 @@ void RefineGrid::IrrRef3(Cell* parent)
   // alt.2: connecting new node 2 with the endnode of marked edge 1, 
   // that is not common with marked edge 2.
 
+  cout << "parent = " << parent->id() << endl;
+
+  /*
+  parent->markEdge(0);  
+  parent->markEdge(4);
+  */
+
+  if (parent->noMarkedEdges() != 2) dolfin_error("wrong size of refinement edges");
+  if (!parent->markedEdgesOnSameFace()) dolfin_error("marked edges not on the same face");
+
+  if (parent->refinedByFaceRule()){
+    parent->refineByFaceRule(false);
+    return;
+  }
+
   int cnt = 0;
   int marked_edge[2];
   for (int i=0;i<parent->noEdges();i++){
@@ -367,17 +382,19 @@ void RefineGrid::IrrRef3(Cell* parent)
   int enoded;
   int enode1;
   int enode2;
-  int cnt1 = 0;
-  int cnt2 = 0;
+  int cnt1,cnt2;
   for (int i=0;i<4;i++){
+    cnt1 = cnt2 = 0;
     for (int j=0;j<2;j++){
       if (parent->edge(marked_edge[0])->node(j)->id() == parent->node(i)->id()) cnt1++;
       if (parent->edge(marked_edge[1])->node(j)->id() == parent->node(i)->id()) cnt2++;
     }
+    cout << "cnt1 = " << cnt1 << ", cnt2 = " << cnt2 << endl;
     if ( (cnt1 == 0) && (cnt2 == 0) ) face_node = i;
-    if ((cnt1+cnt2) == 2) enoded = i;
-    if ((cnt1 == 1) && (cnt2 == 0)) enode1 = i;	 
-    if ((cnt1 == 0) && (cnt2 == 1)) enode2 = i;	 
+    else if ( (cnt1 == 1) && (cnt2 == 1) ) enoded = i;	 
+    else if ( (cnt1 == 1) && (cnt2 == 0) ) enode1 = i;	 
+    else if ( (cnt1 == 0) && (cnt2 == 1) ) enode2 = i;	 
+    else dolfin_error("impossible node");
   }
 
   Node *nf = grid.createNode(parent->level()+1,parent->node(face_node)->coord());
@@ -389,10 +406,45 @@ void RefineGrid::IrrRef3(Cell* parent)
   Node *midnode2 = grid.createNode(parent->level()+1,parent->edge(marked_edge[1])->midpoint());
   
   // Find element with common face (enoded,enode1,enode2) 
-  // ...
+  // (search neighbors of parent)
+  int face_neighbor;
+  for (int i=0;i<parent->noCellNeighbors();i++){
+    for (int j=0;j<parent->neighbor(i)->noNodes();j++){
+      if (parent->neighbor(i)->node(j)->id() == parent->node(enoded)->id()){
+	for (int k=0;k<parent->neighbor(i)->noNodes();k++){
+	  if (k != j){
+	    if (parent->neighbor(i)->node(k)->id() == parent->node(enode1)->id()){
+	      for (int l=0;l<parent->neighbor(i)->noNodes();l++){
+		if ( (l != j) && (l != k) && (parent->neighbor(i)->node(l)->id() == parent->node(enode2)->id()) ){
+		  face_neighbor = i;
+		}
+	      }
+	    }		  
+	  }
+	} 
+      }
+    }
+  }   
 
-    
 
+  Cell *c1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nd,midnode1,midnode2,nf);
+  Cell *c2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,midnode1,midnode2,nf);
+  Cell *c3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,n2,midnode2,nf);
+  
+  int neighbor_face_node;
+  for (int i=0;i<4;i++){
+    if ( (nd->id() != parent->neighbor(face_neighbor)->node(i)->id()) && 
+	 (n1->id() != parent->neighbor(face_neighbor)->node(i)->id()) && 
+	 (n2->id() != parent->neighbor(face_neighbor)->node(i)->id()) ) neighbor_face_node = i;
+  }
+
+  Node *nnf = grid.createNode(parent->level()+1,parent->neighbor(face_neighbor)->node(neighbor_face_node)->coord());
+  
+  Cell *nc1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,nd,midnode1,midnode2,nnf);
+  Cell *nc2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,midnode1,midnode2,nnf);
+  Cell *nc3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n1,n2,midnode2,nnf);
+
+  parent->neighbor(face_neighbor)->refineByFaceRule(true);
 }
 
 void RefineGrid::IrrRef4(Cell* parent)
@@ -401,6 +453,9 @@ void RefineGrid::IrrRef4(Cell* parent)
   // insert 2 new nodes at the midpoints of the marked edges, 
   // insert 4 new edges by connecting the new nodes to the 
   // endpoints of the opposite edges of the respectively new nodes. 
+
+  if (parent->noMarkedEdges() != 2) dolfin_error("wrong size of refinement edges");
+  if (parent->markedEdgesOnSameFace()) dolfin_error("marked edges on the same face");
 
   cout << "parent = " << parent->id() << endl;
 
@@ -436,68 +491,10 @@ void RefineGrid::IrrRef4(Cell* parent)
     grid.createEdges(c3);
     grid.createEdges(c4);
   }
-  
 }
 
-/*
-Refinement::IrrRef3(Cell *parent, int marked_edge1, int marked_edge2)
-{      
-  // 2 edges are marked, on the same face 
-  // (here there are 2 possibilities, and the chosen 
-  // alternative must match the corresponding face 
-  // of the neighbor tetrahedron): 
-  // insert 2 new nodes at the midpoints of the marked edges, 
-  // insert 3 new edges by connecting the two new nodes to each 
-  // other and the node opposite the face of the 2 marked edges, 
-  // and insert 1 new edge by 
-  // alt.1: connecting new node 1 with the endnode of marked edge 2, 
-  // that is not common with marked edge 1, or 
-  // alt.2: connecting new node 2 with the endnode of marked edge 1, 
-  // that is not common with marked edge 2.
 
-  int non_marked_node;
-  int double_marked_node;
-  
-  int once_marked_node[2];
-  int node_marks[4];
 
-  Node *n1 = grid.createNode();
-  Node *n2 = grid.createNode();
-  
-  n1->Set(parent->GetEdge(marked_edge1)->GetMidpoint());
-  n2->Set(parent->GetEdge(marked_edge2)->GetMidpoint());
 
-  Cell *t1 = grid.createCell();
-  Cell *t2 = grid.createCell();
-  Cell *t3 = grid.createCell();
 
-  for (int i=0; i<4; i++){
-    node_marks[i] = 0;
-    if ( (parent->GetNode(i) == parent->GetEdge(marked_edge1)->GetEndnode(0)) || 
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge1)->GetEndnode(1)) ||
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge2)->GetEndnode(0)) ||
-	 (parent->GetNode(i) == parent->GetEdge(marked_edge2)->GetEndnode(1)) ){
-      node_marks[i]++;
-    }
-  }  
 
-  int cnt = 0;
-  for (int i=0; i<4; i++){
-    if (node_marks[i]==0) non_marked_node = i;
-    else if (node_marks[i]==2) double_marked_node = i;
-    else{ 
-      once_marked_node[cnt] = i;
-      cont++;
-    }
-  }
-  
-  t1->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
-
-  t2->Set(parent->GetNode(once_marked_node[0]),n1,n2,parent->GetNode(non_marked_node));
-  t3->Set(parent->GetNode(once_marked_node[1]),n1,n2,parent->GetNode(non_marked_node));
-
-  t2->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
-  t3->Set(parent->GetNode(double_marked_node),n1,n2,parent->GetNode(non_marked_node));
-}
-
-*/

@@ -57,6 +57,9 @@ namespace dolfin {
 	 void mark(Marker marker);
 	 Marker marker() const;
 
+	 void refineByFaceRule(bool refined_by_face_rule);
+	 bool refinedByFaceRule();
+
 	 void markEdge(int edge);
 	 void unmarkEdge(int edge);
 	 int noMarkedEdges();
@@ -102,6 +105,7 @@ namespace dolfin {
 	 // Marker (for refinement)
 	 Marker _marker;
 	 int _no_marked_edges;
+	 bool _refined_by_face_rule;
 
 	 // The cell
 	 GenericCell *c;

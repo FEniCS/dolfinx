@@ -21,6 +21,8 @@ Cell::Cell()
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+
+  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2)
@@ -39,6 +41,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+
+  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
@@ -58,6 +62,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
   _status = UNREFINED;
 
   _no_marked_edges = 0;
+
+  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -238,6 +244,16 @@ int Cell::noMarkedEdges()
   return _no_marked_edges;
 }	 
 //-----------------------------------------------------------------------------
+void Cell::refineByFaceRule(bool refined_by_face_rule)
+{
+  _refined_by_face_rule = refined_by_face_rule;
+}	 
+//-----------------------------------------------------------------------------
+bool Cell::refinedByFaceRule()
+{
+  return _refined_by_face_rule;
+}	 
+//-----------------------------------------------------------------------------
 bool Cell::markedEdgesOnSameFace()
 {
   bool marked_node[4];
@@ -261,7 +277,7 @@ bool Cell::markedEdgesOnSameFace()
 	}
       }
       for (int i=0;i<noNodes();i++){
-	if (marked_node[i] = false) return true;
+	if (marked_node[i] == false) return true;
       }
       return false;
       break;
