@@ -65,6 +65,9 @@ namespace dolfin
     
     // List of the latest degree of freedom (closest to T)
     NewArray<unsigned int> latest;
+
+    // List of predecessors to degrees of freedoms
+    NewArray<unsigned int> predecessors;
     
     // Start time for the time slab
     real t0;

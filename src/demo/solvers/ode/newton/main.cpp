@@ -91,7 +91,7 @@ int main()
   dolfin_set("output", "plain text");
 
   dolfin_set("tolerance", 0.01);
-  dolfin_set("stiffness", "newton");
+  dolfin_set("stiffness", "stiff");
   dolfin_set("debug iterations", true);
 
   dolfin::dolfin_set("method", "dg");

@@ -71,20 +71,32 @@ void JacobianMatrix::update(real t)
 //-----------------------------------------------------------------------------
 unsigned int JacobianMatrix::update(ElementGroupList& elements)
 {
-  // Update time slab
+  // Update time slab                                                           
   this->elements = &elements;
-  
-  // Compute the number of unknowns and the latest indices.
-  n = 0;
-  for (ElementIterator element(elements); !element.end(); ++element)
-  {  
-    n += element->size();
-    latest[element->index()] = n - 1;
-  }
-  
-  // Update the start time for the time slab
+
+  // Update the start time for the time slab                                    
   ElementIterator element(elements);
   t0 = element->starttime();
+
+  // Compute the number of unknowns and the latest indices.                     
+  n = 0;
+  for (ElementIterator element(elements); !element.end(); ++element)
+  {
+    n += element->size();
+  }
+
+  predecessors.resize(n);
+
+  int i = 0;
+  for (ElementIterator element(elements); !element.end(); ++element)
+  {
+    if(element->starttime() > t0)
+    {
+      predecessors[i] = latest[element->index()];
+    }
+    latest[element->index()] = i;
+    i += element->size();
+  }
 
   // Return the number of unknowns
   return n;
@@ -168,8 +180,11 @@ unsigned int JacobianMatrix::cGmult(const Vector& x, Vector& Ax,
 
     // Derivative w.r.t. the end-time value of the previous element
     if ( predecessor )
-      y -= x(latest[i]);
-    
+    {
+      //y -= x(latest[i]);
+      y -= x(predecessors[current]);
+    }
+
     // Iterate over dependencies
     unsigned int j;
     for (unsigned int pos = 0; !dfdu.endrow(i, pos); ++pos)
@@ -226,8 +241,11 @@ unsigned int JacobianMatrix::dGmult(const Vector& x, Vector& Ax,
 
     // Derivative w.r.t. the end-time value of the previous element
     if ( predecessor )
-      y -= x(latest[i]);
-    
+    {
+      y -= x(predecessors[current]);
+      //y -= x(latest[i]);
+    }    
+
     // Iterate over dependencies
     unsigned int j;
     for (unsigned int pos = 0; !dfdu.endrow(i, pos); ++pos)

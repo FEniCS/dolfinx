@@ -171,6 +171,8 @@ int main()
   dolfin_set("solve dual problem", false);
   dolfin_set("stiffness", "stiff");
 
+  dolfin_set("partitioning threshold", 0.2);
+
   MedicalAkzoNobel ode(20);
   ode.solve();  
   

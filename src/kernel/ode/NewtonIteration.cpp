@@ -112,18 +112,12 @@ void NewtonIteration::update(ElementGroupList& list, Increments& d)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroup& group, Increments& d)
 {
-  // Iterate on each element and compute the l2 norm of the increments
-  real increment = 0.0;
-  for (ElementIterator element(group); !element.end(); ++element)
-    increment += sqr(fixpoint.iterate(*element));
-  
-  d = sqrt(increment);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(Element& element, Increments& d)
 {
-  // Local Newton update of element
-  d = fabs(element.updateLocalNewton(f));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NewtonIteration::stabilize(ElementGroupList& list,
