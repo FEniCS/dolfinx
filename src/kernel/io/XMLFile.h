@@ -4,7 +4,7 @@
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
 
-#include <parser.h>
+#include <libxml/parser.h>
 
 #include <dolfin/constants.h>
 #include "GenericFile.h"

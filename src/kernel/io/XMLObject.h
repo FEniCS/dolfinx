@@ -4,7 +4,7 @@
 #ifndef __XML_OBJECT_H
 #define __XML_OBJECT_H
 
-#include <parser.h>
+#include <libxml/parser.h>
 #include <string>
 
 #include <dolfin/constants.h>
