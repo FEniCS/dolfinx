@@ -80,7 +80,7 @@ void Matrix::operator-= (const Matrix& A)
 {
   if ( A.m != m || A.n != n ) {
 	// FIXME: Use logging system
-	cout << "Matrix::operator= (): Matrices not compatible." << endl;
+	std::cout << "Matrix::operator= (): Matrices not compatible." << std::endl;
 	exit(1);
   }
 

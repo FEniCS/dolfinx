@@ -16,7 +16,7 @@ Check list for releasing new versions of DOLFIN
 
 4. Create a tarball of the archive:
 
-	./makedist.sh
+	scripts/makedist
 
    Remember to check the output in make-*.log
 
