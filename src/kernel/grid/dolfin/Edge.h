@@ -98,6 +98,9 @@ namespace dolfin {
     // Check if cell has been marked for refinement by given cell
     bool marked(Cell& cell);
 
+    // Clear marks
+    void clearMarks();
+
     //--- Edge data ---
     
     // The grid containing this edge

@@ -19,10 +19,19 @@ void GridRefinement::refine(GridHierarchy& grids)
 {
   dolfin_start("Refining grids:");
 
+  // Mark edges
+  updateEdgeMarks(grids);
+
   // Refine grid hierarchy
   globalRefinement(grids);
 
   dolfin_end();
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::updateEdgeMarks(GridHierarchy& grids)
+{
+  for (GridIterator grid(grids); !grid.end(); ++grid)
+    updateEdgeMarks(*grid);
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::globalRefinement(GridHierarchy& grids)
@@ -32,21 +41,15 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
-    cout << "--- Level " << grid.index() << ": evaluate marks" << endl;
     evaluateMarks(*grid);
-    cout << "--- Level " << grid.index() << ": close grid" << endl;
     closeGrid(*grid);
   }
   
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if (grid.index() > 0) {
-      cout << "--- Level " << grid.index() << ": close grid" << endl;
-      closeGrid(*grid);
-    }
-    cout << "--- Level " << grid.index() << ": unrefine grid" << endl;
+    if (grid.index() > 0)
+     closeGrid(*grid);
     unrefineGrid(*grid, grids);
-    cout << "--- Level " << grid.index() << ": refine grid" << endl;
     refineGrid(*grid);
   }
 
@@ -56,6 +59,17 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   dolfin_log(true);
 }
 //-----------------------------------------------------------------------------
+void GridRefinement::updateEdgeMarks(Grid& grid)
+{
+  // Clear all edge marks
+  for (EdgeIterator e(grid); !e.end(); ++e)
+    e->clearMarks();
+
+  // Mark edges of cells
+  for (CellIterator c(grid); !c.end(); ++c)
+    updateEdgeMarks(*c);
+}
+//-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
 {
   // Evaluate and adjust marks for a grid.
@@ -63,9 +77,11 @@ void GridRefinement::evaluateMarks(Grid& grid)
 
   for (CellIterator c(grid); !c.end(); ++c) {
 
+    // Coarsening
     if ( c->status() == Cell::ref_reg && childrenMarkedForCoarsening(*c) )
       c->marker() = Cell::marked_for_no_ref;
     
+    // Adjust marks for irregularly refined cells
     if ( c->status() == Cell::ref_irr ) {
       if ( edgeOfChildMarkedForRefinement(*c) )
 	c->marker() = Cell::marked_for_reg_ref;
@@ -73,7 +89,11 @@ void GridRefinement::evaluateMarks(Grid& grid)
       	c->marker() = Cell::marked_according_to_ref;
     }
 
+    // Update edge marks
+    updateEdgeMarks(*c);
+
   }
+
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeGrid(Grid& grid)
@@ -91,7 +111,7 @@ void GridRefinement::closeGrid(Grid& grid)
     if ( c->status() == Cell::ref_reg || c->status() == Cell::unref ) {
       if ( edgeMarkedByOther(*c) ) {
 	cells.add(c);
-	closed(c->id()) = false;
+	closed(c->id()) = false;	
       }
     }
   }
@@ -135,6 +155,9 @@ void GridRefinement::refineGrid(Grid& grid)
   dolfin_log(false);
   grid.child().init();
   dolfin_log(true);
+
+  // Update edge marks
+  updateEdgeMarks(grid.child());
 
   cout << "Refined grid has " << grid.noCells() << " cells." << endl;
 }
@@ -205,6 +228,9 @@ void GridRefinement::closeCell(Cell& cell,
   // refinement and add cells containing the previously unmarked edges
   // to the list of cells that need to be closed.
 
+  // Mark cell for regular refinement
+  cell.marker() = Cell::marked_for_reg_ref;
+
   for (EdgeIterator e(cell); !e.end(); ++e) {
 
     // Skip marked edges
@@ -219,9 +245,6 @@ void GridRefinement::closeCell(Cell& cell,
       if ( c->haveEdge(*e) && c->status() == Cell::ref_reg && c != cell && closed(cell.id()) )
 	  cells.add(c);
   }
-
-  // Mark cell for regular refinement
-  cell.marker() = Cell::marked_for_reg_ref;
 
   // Remember that the cell has been closed, important since we don't want
   // to add cells which are not yet closed (and are already in the list).
@@ -256,6 +279,18 @@ void GridRefinement::refine(Cell& cell, Grid& grid)
   default:
     dolfin_error("Unknown cell type.");
   }
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::updateEdgeMarks(Cell& cell)
+{
+  // Mark all edges of the cell if the cell is marked for regular refinement
+  // or if the cell is refined regularly and marked_according_to_ref.
+
+  if ( cell.marker() == Cell::marked_for_reg_ref ||
+       (cell.marker() == Cell::marked_according_to_ref &&
+	cell.status() == Cell::ref_reg) )
+    for (EdgeIterator e(cell); !e.end(); ++e)
+      e->mark(cell);
 }
 //-----------------------------------------------------------------------------
 bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
@@ -384,7 +419,11 @@ void GridRefinement::removeNode(Node& node, Grid& grid)
 void GridRefinement::removeCell(Cell& cell, Grid& grid)
 {
   // Update parent-child info for parent
-  cell.parent()->removeChild(cell);
+  if ( cell.parent() ) {
+    cout << "Removing cell " << cell << " from cell " << *cell.parent() << endl;
+    cell.parent()->removeChild(cell);
+
+  }
 
   // Update status 
   if ( cell.parent()->noChildren() == 0 )

@@ -50,7 +50,7 @@ namespace dolfin {
     virtual real volume() const = 0;
     virtual real diameter() const = 0;
 
-    void mark(Cell& cell);
+    void mark();
 
     // Friends
     friend class Cell;

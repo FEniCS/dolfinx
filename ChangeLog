@@ -1,3 +1,4 @@
+ - Add User Manual
  - Add function dolfin_log() to turn logging on/off
  - Change from pointers to references for Node, Cell, Edge, Face
  - Update writexml.m

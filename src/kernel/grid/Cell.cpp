@@ -192,7 +192,7 @@ bool Cell::operator!=(const Cell& cell) const
 void Cell::mark()
 {
   dolfin_assert(c);
-  c->mark(*this);
+  c->mark();
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)

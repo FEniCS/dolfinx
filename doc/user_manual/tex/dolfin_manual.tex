@@ -44,6 +44,16 @@
 \textbf{Hoffman, Logg, et al.}
 \hrule
 
+\newpage
+
+%--- List of authors ---
+
+\ 
+\vfill
+This manual has been written by: \\
+Johan Hoffman, Johan Jansson, and Anders Logg.
+\thispagestyle{empty}
+
 \cleardoublepage
 
 %--- Table of contents ---
@@ -158,5 +168,153 @@ In preparation.
 \section{Writing a new module / solver}
 
 In preparation.
+
+\subsection{Contributing code to DOLFIN}
+
+If you have created a new module, fixed a bug somewhere, or have done
+a small change somewhere which you want to contribute to DOLFIN, then
+currently the best way to do so is to send a patch to the maintainer. A patch
+is a file which describes how to transform one file or directory structure
+into another. The patch is built by comparing a version which both parties
+have against the modified version which only you have.
+
+The tool used to create a patch is called \texttt{diff} and the tool
+used to apply the patch is called \texttt{patch}. These tools are free
+software and standard in most UNIX-style operating systems.
+
+\subsubsection{Creating a patch}
+
+Example:
+
+Let's say you have started from the DOLFIN release 0.3.10. You have a
+directory structure under \texttt{dolfin-0.3.10} where you have made
+some modifications to some files which you think could be useful to
+other DOLFIN users.
+
+\begin{enumerate}
+\item{
+
+Clean up your modified directory structure to remove temporary and binary
+files which will be rebuilt anyway:
+
+\texttt{\$ make clean}
+}
+\item{
+
+Rename the directory to something else:
+
+\texttt{\$ mv dolfin-0.3.10 dolfin-0.3.10mod}
+}
+\item{
+
+Unpack the version of DOLFIN which you started from:
+
+\texttt{\$ tar xzvf dolfin-0.3.10.tgz}
+}
+
+\item{
+
+You should now have two DOLFIN directory structures in your current directory:
+
+\begin{verbatim}
+$ ls
+dolfin-0.3.10
+dolfin-0.3.10mod
+\end{verbatim}
+}
+
+\item{
+
+Use the \texttt{diff} tool to create the patch:
+
+\begin{verbatim}
+$ diff -u --new-file --recursive dolfin-0.3.10 dolfin-0.3.10mod >
+mypatch.patch
+\end{verbatim}
+
+``\texttt{-u}'' means ``unified'', a format in which to describe the patch.
+
+``\texttt{--new-file}'' accepts the creation of new files in addition to modifications.
+
+``\texttt{--recursive}'' means to recursively compare files through the
+directory structure.
+
+
+}
+\item{
+
+The patch now exists as \texttt{mypatch.patch} and can be distributed
+to other people who have dolfin-0.3.10 to easily create your modified
+version.  If the patch is large, compressing it with for example
+\texttt{gzip} is advisable.
+
+}
+
+\end{enumerate}
+
+A patch can also be created relative to a CVS version of DOLFIN. Make
+sure to notify receivers of the patch exactly which CVS version it is
+however (date and time of checkout should suffice), since the patch
+should be applied to the same version used to build it. Patching is
+possible against a different source, but conflicts can arise, and even
+though there are heuristics which take care of most simple cases, the
+heuristics can fail, and there can be conflicts which are
+theoretically impossible to resolve.
+
+\subsubsection{Applying a patch}
+
+Example:
+
+Let's say the patch has been built relative to DOLFIN release 0.3.10.
+
+\begin{enumerate}
+\item{
+
+Unpack the version of DOLFIN which the patch is built relative to:
+
+\texttt{\$ tar xzvf dolfin-0.3.10.tgz}
+}
+
+\item{
+
+Check that you have the patch \texttt{mypatch.patch} and the DOLFIN
+directory structure in the current directory.
+
+\begin{verbatim}
+$ ls
+dolfin-0.3.10
+mypatch.patch
+\end{verbatim}
+}
+
+\item{
+
+Enter the DOLFIN directory structure:
+
+\begin{verbatim}
+$ cd dolfin-0.3.10
+\end{verbatim}
+}
+
+\item{
+
+Apply the patch:
+
+\begin{verbatim}
+$ patch -p1 < ../mypatch.patch
+\end{verbatim}
+}
+
+``\texttt{-p1}'' strips the leading directory from the filename
+references in the patch, to match the fact that we are applying the
+patch from inside the directory.
+
+\item{
+
+The modified version now exists as \texttt{dolfin-0.3.10}
+
+}
+
+\end{enumerate}
 
 \end{document}

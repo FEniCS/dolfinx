@@ -21,6 +21,9 @@ namespace dolfin {
     /// Check if edge has been marked by given cell
     bool marked(Cell& cell);
 
+    /// Clear marks
+    void clear();
+
   private:
 
     /// Cells that have marked the edge

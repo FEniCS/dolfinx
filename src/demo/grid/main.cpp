@@ -12,7 +12,7 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  int refinements = 1;
+  int refinements = 3;
 
   // Refine 2D grid
   refine2D(refinements);
@@ -72,7 +72,7 @@ void refine3D(int refinements)
     
     // Mark nodes for refinement
     for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.5 )
+      if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
 	cell->mark();
     
     // Refine grid

@@ -24,10 +24,16 @@ namespace dolfin {
     
     //--- Algorithms working on the whole grid hierarchy ---
 
+    /// Update marks for edges
+    static void updateEdgeMarks(GridHierarchy& grids);
+
     // The global algorithm
     static void globalRefinement(GridHierarchy& grids);
 
     //--- Algorithms working on the grid on a given level ---
+    
+    /// Update marks for edges
+    static void updateEdgeMarks(Grid& grid);
 
     // Evaluate and adjust marks for a grid
     static void evaluateMarks(Grid& grid);
@@ -54,6 +60,9 @@ namespace dolfin {
     
     ///--- A couple of special functions, placed here rather than in Cell ---
 
+    /// Update marks for edges
+    static void updateEdgeMarks(Cell& cell);
+    
     /// Check if all children are marked for coarsening
     static bool childrenMarkedForCoarsening(Cell& cell);
 
