@@ -73,7 +73,7 @@ SUBDIRS = dolfin
 include_HEADERS = dolfin/Display.hh dolfin/Terminal.hh
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-io.a
-libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.C                          DataInfo.hh                          Display.C                          DolfinFile.cpp                          DolfinFile.h                          File.cpp                          File.h                          FileType.C                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.C                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.C                          Value.C                          Value.hh                          matlab.h
+libdolfin_io_a_SOURCES = Curses.hh                          DataInfo.cpp                          DataInfo.hh                          Display.cpp                          DolfinFile.cpp                          DolfinFile.h                          File.cpp                          File.h                          FileType.cpp                          FileType.hh                          GenericFile.cpp                          GenericFile.h                          Input.cpp                          Input.hh                          MatlabOld.hh                          Output.hh                          Terminal.cpp                          Value.cpp                          Value.hh                          matlab.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -113,7 +113,7 @@ OBJECTS = $(libdolfin_io_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .cpp .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/io/Makefile
 
@@ -174,8 +174,6 @@ libdolfin-io.a: $(libdolfin_io_a_OBJECTS) $(libdolfin_io_a_DEPENDENCIES)
 	-rm -f libdolfin-io.a
 	$(AR) cru libdolfin-io.a $(libdolfin_io_a_OBJECTS) $(libdolfin_io_a_LIBADD)
 	$(RANLIB) libdolfin-io.a
-.C.o:
-	$(CXXCOMPILE) -c $<
 .cpp.o:
 	$(CXXCOMPILE) -c $<
 
@@ -339,25 +337,6 @@ maintainer-clean-depend:
 %.lo: %.c
 	@echo '$(LTCOMPILE) -c $<'; \
 	$(LTCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
-	  < .deps/$(*F).pp > .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm -f .deps/$(*F).pp
-
-%.o: %.C
-	@echo '$(CXXCOMPILE) -c $<'; \
-	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-cp .deps/$(*F).pp .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp
-
-%.lo: %.C
-	@echo '$(LTCXXCOMPILE) -c $<'; \
-	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
 	  < .deps/$(*F).pp > .deps/$(*F).P; \
 	tr ' ' '\012' < .deps/$(*F).pp \

@@ -73,7 +73,7 @@ SUBDIRS = dolfin
 include_HEADERS = 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-grid.a
-libdolfin_grid_a_SOURCES = Cell.C                            Grid.C                            GridData.C                            GridData.hh                            Node.C                            Point.C                            Tetrahedron.C                            Triangle.C 
+libdolfin_grid_a_SOURCES = Cell.cpp                            Grid.cpp                            GridData.cpp                            GridData.hh                            Node.cpp                            Point.cpp                            Tetrahedron.cpp                            Triangle.cpp 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)
@@ -111,7 +111,7 @@ OBJECTS = $(libdolfin_grid_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/grid/Makefile
 
@@ -172,7 +172,7 @@ libdolfin-grid.a: $(libdolfin_grid_a_OBJECTS) $(libdolfin_grid_a_DEPENDENCIES)
 	-rm -f libdolfin-grid.a
 	$(AR) cru libdolfin-grid.a $(libdolfin_grid_a_OBJECTS) $(libdolfin_grid_a_LIBADD)
 	$(RANLIB) libdolfin-grid.a
-.C.o:
+.cpp.o:
 	$(CXXCOMPILE) -c $<
 
 install-includeHEADERS: $(include_HEADERS)
@@ -342,7 +342,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 
-%.o: %.C
+%.o: %.cpp
 	@echo '$(CXXCOMPILE) -c $<'; \
 	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-cp .deps/$(*F).pp .deps/$(*F).P; \
@@ -351,7 +351,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).pp
 
-%.lo: %.C
+%.lo: %.cpp
 	@echo '$(LTCXXCOMPILE) -c $<'; \
 	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \

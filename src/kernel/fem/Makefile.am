@@ -4,7 +4,7 @@ INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = Equation.hh \
                           EquationSystem.hh \
-                          GlobalField.C \
+                          GlobalField.cpp \
                           GlobalField.hh \
                           FiniteElement.hh \
                           FunctionSpace.hh \

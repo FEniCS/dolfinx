@@ -5,6 +5,6 @@ libdolfin_convdiff_a_SOURCES = EquationConvDiff_cG1dG0.hh \
                                EquationConvDiff2d_cG1dG0.hh \
                                EquationConvDiff_cG1cG1.hh \
                                EquationConvDiff2d_cG1cG1.hh \
-                               SolverConvDiff.C \
+                               SolverConvDiff.cpp \
                                SolverConvDiff.hh
 

@@ -72,7 +72,7 @@ VERSION = @VERSION@
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-common.a
 include_HEADERS = 
-libdolfin_common_a_SOURCES = kw_constants.h                              utils.C                              utils.h                              Parameter.hh                              ParameterList.C                              ParameterList.hh                              Settings.C                              Settings.hh                              SysInfo.C                              SysInfo.hh
+libdolfin_common_a_SOURCES = kw_constants.h                              utils.cpp                              utils.h                              Parameter.hh                              ParameterList.cpp                              ParameterList.hh                              Settings.cpp                              Settings.cpp                              SysInfo.cpp                              SysInfo.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -85,7 +85,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_common_a_LIBADD = 
 libdolfin_common_a_OBJECTS =  utils.o ParameterList.o Settings.o \
-SysInfo.o
+Settings.o SysInfo.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -111,7 +111,7 @@ OBJECTS = $(libdolfin_common_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/common/Makefile
 
@@ -172,7 +172,7 @@ libdolfin-common.a: $(libdolfin_common_a_OBJECTS) $(libdolfin_common_a_DEPENDENC
 	-rm -f libdolfin-common.a
 	$(AR) cru libdolfin-common.a $(libdolfin_common_a_OBJECTS) $(libdolfin_common_a_LIBADD)
 	$(RANLIB) libdolfin-common.a
-.C.o:
+.cpp.o:
 	$(CXXCOMPILE) -c $<
 
 install-includeHEADERS: $(include_HEADERS)
@@ -272,7 +272,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 
-%.o: %.C
+%.o: %.cpp
 	@echo '$(CXXCOMPILE) -c $<'; \
 	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-cp .deps/$(*F).pp .deps/$(*F).P; \
@@ -281,7 +281,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).pp
 
-%.lo: %.C
+%.lo: %.cpp
 	@echo '$(LTCXXCOMPILE) -c $<'; \
 	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \

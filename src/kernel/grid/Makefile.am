@@ -10,11 +10,11 @@ include_HEADERS          = dolfin/dolfin_grid.h \
 INCLUDES                 = @MODULE_INCLUDES@
 lib_LIBRARIES            = libdolfin-grid.a
 include_HEADERS          = 
-libdolfin_grid_a_SOURCES = Cell.C \
-                           Grid.C \
-                           GridData.C \
+libdolfin_grid_a_SOURCES = Cell.cpp \
+                           Grid.cpp \
+                           GridData.cpp \
                            GridData.hh \
-                           Node.C \
-                           Point.C \
-                           Tetrahedron.C \
-                           Triangle.C \
+                           Node.cpp \
+                           Point.cpp \
+                           Tetrahedron.cpp \
+                           Triangle.cpp \

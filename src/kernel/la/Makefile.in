@@ -73,7 +73,7 @@ SUBDIRS = dolfin
 include_HEADERS = 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-la.a
-libdolfin_la_a_SOURCES = DenseMatrix.C                          DenseMatrix.hh                          DirectSolver.C                          DirectSolver.hh                          SparseMatrix.C                          SparseMatrix.hh                          Vector.C 	                 SISolver.hh 	                 SISolver.C 	                 KrylovSolver.hh 	                 KrylovSolver.C
+libdolfin_la_a_SOURCES = DenseMatrix.cpp                          DenseMatrix.hh                          DirectSolver.cpp                          DirectSolver.hh                          SparseMatrix.cpp                          SparseMatrix.hh                          Vector.cpp 	                 SISolver.hh 	                 SISolver.cpp 	                 KrylovSolver.hh 	                 KrylovSolver.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -113,7 +113,7 @@ OBJECTS = $(libdolfin_la_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
-.SUFFIXES: .C .S .c .o .s
+.SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/la/Makefile
 
@@ -174,7 +174,7 @@ libdolfin-la.a: $(libdolfin_la_a_OBJECTS) $(libdolfin_la_a_DEPENDENCIES)
 	-rm -f libdolfin-la.a
 	$(AR) cru libdolfin-la.a $(libdolfin_la_a_OBJECTS) $(libdolfin_la_a_LIBADD)
 	$(RANLIB) libdolfin-la.a
-.C.o:
+.cpp.o:
 	$(CXXCOMPILE) -c $<
 
 install-includeHEADERS: $(include_HEADERS)
@@ -344,7 +344,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm -f .deps/$(*F).pp
 
-%.o: %.C
+%.o: %.cpp
 	@echo '$(CXXCOMPILE) -c $<'; \
 	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-cp .deps/$(*F).pp .deps/$(*F).P; \
@@ -353,7 +353,7 @@ maintainer-clean-depend:
 	    >> .deps/$(*F).P; \
 	rm .deps/$(*F).pp
 
-%.lo: %.C
+%.lo: %.cpp
 	@echo '$(LTCXXCOMPILE) -c $<'; \
 	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
 	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
