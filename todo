@@ -1,25 +1,37 @@
-General
--------
+Assembly
+--------
 
 - Optimize form evaluation: Hoffman, Logg
-- Save edges in matlab format: Svensson?
-- General boundary conditions: Kraft?
-- General function representations: Hoffman, Logg, Jansson
-- Use libtool: anyone?
-- Replace stdio with iostream and fstream
-- Replace Array and List with NewArray and NewList
-- Update manual: anyone?
-- Fix setprecision() cout
 - Use NewArray<...> instead of ::Vector in assembly classes
-- Fix mesh refinement (non-working mesh from Pär Ingelström)
-- dx --> ddx in PDE
-- dK --> dx in PDE
-- Load parameters from dolfin.xml
-- Add GiD file format (Harald)
-- Fix assembly for systems of more than 3 equations
+- Assembly does not work for systems of more than 3 equations
+- General boundary conditions: Kraft?
 - Remove specification of dim from PDE
-- Use symbolic links for meshes (see example src/demo/fem)
-- Cleanup Parameter and ParameterList
+
+Mesh
+----
+
+- Fix bug in mesh refinement (non-working mesh from Pär Ingelström)
+- Geometry representation, including boundaries
+- Mesh generation (use triangle, tetgen)
+
+Linear Algebra
+--------------
+
+- Wrapper for LAPACK (Foufas)
+- Matrix-matrix multiplication (Svensson)
+- Algebraic multigrid (Svensson)
+- Expression templates
+- Decision on strategy
+
+Function
+--------
+
+- General function representations: Hoffman, Logg, Jansson
+
+Input/Output
+------------
+
+- Save edges in MATLAB format: Svensson?
 
 Multi-adaptive solver
 ---------------------
@@ -30,3 +42,22 @@ Multi-adaptive solver
 - Use two files for matlab format
 - Speedup interpolation (finding the correct element block)
 - Bug in ElementData::createBlock() when out of memory?
+
+Modules
+-------
+
+- Navier-Stokes solver: Hoffman
+- Euler solver: Harald
+- Finance module: Foufas?
+
+General
+-------
+
+- Use libtool?
+- Cleanup Parameter and ParameterList
+- Update manual: anyone?
+- Replace stdio with iostream and fstream
+- Fix setprecision() for cout
+- Replace Array and List with NewArray and NewList
+- Use symbolic links for meshes (see example src/demo/fem)
+- Automatically load parameters from dolfin.xml
