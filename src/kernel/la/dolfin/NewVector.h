@@ -85,6 +85,9 @@ namespace dolfin
     /// Element assignment operator
     Index operator() (uint i);
 
+    /// Assignment of vecto
+    const NewVector& operator= (const NewVector& x);
+
     /// Assignment of all elements to a single scalar value
     const NewVector& operator= (real a);
 

@@ -57,12 +57,12 @@ void NewJacobianMatrix::mult(const NewVector& x, NewVector& y) const
   // use VecGetArray to access the local arrays of the vectors
 
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
-  VecCopy(x.vec(), y.vec());
+  y = x;
 
   // Get data arrays from the PETSc vectors
   const real* xx = x.array();
   real* yy = y.array();
-
+  
   // Choose method
   if ( method.type() == NewMethod::cG )
     cGmult(xx, yy);

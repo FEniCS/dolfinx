@@ -165,6 +165,13 @@ NewVector::Index NewVector::operator() (uint i)
   return index;
 }
 //-----------------------------------------------------------------------------
+const NewVector& NewVector::operator= (const NewVector& x)
+{
+  VecCopy(x.vec(), this->x);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
 const NewVector& NewVector::operator= (real a)
 {
   VecSet(&a, x);
