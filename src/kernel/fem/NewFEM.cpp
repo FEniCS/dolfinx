@@ -2,16 +2,20 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/NewPDE.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/NewFEM.h>
+#include <dolfin/Boundary.h>
+#include <dolfin/BCFunctionPointer.h>
+#include <dolfin/BoundaryCondition.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b)
+void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b)
 {
   // Assemble matrix
   assemble(pde, mesh, A);
@@ -20,112 +24,88 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b)
   assemble(pde, mesh, b);
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A)
+void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Allocate and reset matrix
-  alloc(A, mesh, element);
+  //  alloc(A, mesh, pde);
   
   // Assemble interior
-  assembleInterior(pde, mesh, A, element, map,
-		   interior_quadrature, boundary_quadrature);
+  assembleInterior(pde, mesh, A);
   
   // Assemble boundary
-  assembleBoundary(pde, mesh, A, element, map,
-		   interior_quadrature, boundary_quadrature);
+  assembleBoundary(pde, mesh, A);
   
   // Clear unused elements
   A.resize();
 
   // FIXME: This should be removed
-  setBC(mesh, A, element);
+  //setBC(mesh, A, pde);
 
   // Write a message
   cout << "Assembled: " << A << endl; 
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b)
+void NewFEM::assemble(NewPDE& pde, Mesh& mesh, Vector& b)
 {
   // Allocate and reset matrix
-  alloc(b, mesh, element);
+  //alloc(b, mesh, pde);
   
   // Assemble interior
-  assembleInterior(pde, mesh, b, element, map,
-		   interior_quadrature, boundary_quadrature);
+  assembleInterior(pde, mesh, b);
 
   // Assemble boundary
-  assembleBoundary(pde, mesh, b, element, map,
-		   interior_quadrature, boundary_quadrature);
+  assembleBoundary(pde, mesh, b);
 
   // FIXME: This should be removed
-  setBC(mesh, b, element);
+  //setBC(mesh, b, pde);
 
   // Write a message
   cout << "Assembled: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
-		   FiniteElement::Vector& element, Map& map,
-		   Quadrature& interior_quadrature, 
-		   Quadrature& boundary_quadrature)
-{
-
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
-			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& interior_quadrature, 
-			   Quadrature& boundary_quadrature)
+void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
+  //NewArray< NewArray<real> > AK(pde.size(),pde.size());
+  NewArray< NewArray<real> > AK;
+
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update map
-    map.update(*cell);
+    // Update PDE
+    pde.update(*cell);
     
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-        A(v.dof(*cell), u.dof(*cell)) += pde.lhs(*u, *v);
+    // Compute element matrix    
+    pde.interiorElementMatrix(AK);
+
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      for (unsigned int j = 0; j < pde.size(); j++) 
+	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
     
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
-			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& interior_quadrature, 
-			   Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde, mesh, A, element, map,
-			interior_quadrature, boundary_quadrature);
+    assembleBoundaryTri(pde, mesh, A);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde, mesh, A, element, map,
-			interior_quadrature, boundary_quadrature);
+    assembleBoundaryTet(pde, mesh, A);
     break;
   default:
     dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
-			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& interior_quadrature, 
-			      Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -136,33 +116,25 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
   // Iterate over all edges in the boundary 
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
-    // Update map
-    map.update(*edge);
+    /*
+    // Update PDE
+    pde.update(*cell);
     
-    // Get internal cell neighbor of edge
-    const Cell& cell = map.cell();
+    // Compute element matrix    
+    pde.interiorElementMatrix(AK);
 
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
-    
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      for (unsigned int j = 0; j < pde.size(); j++) 
+	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
+    */
+
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
-			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& interior_quadrature, 
-			      Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -173,95 +145,65 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
   // Iterate over all faces in the boundary 
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
-    // Update map
-    map.update(*face);
+    /*
+    // Update PDE
+    pde.update(*cell);
     
-    // Get internal cell neighbor of face
-    const Cell& cell = map.cell();
+    // Compute element matrix    
+    pde.interiorElementMatrix(AK);
 
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
-    
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      for (unsigned int j = 0; j < pde.size(); j++) 
+	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
+    */
+
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(PDE& pde, Mesh& mesh, Vector& b,
-		   FiniteElement::Vector& element, Map& map,
-		   Quadrature& interior_quadrature, 
-		   Quadrature& boundary_quadrature)
-{
-
-
-
-
-
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
-			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& interior_quadrature, 
-			   Quadrature& boundary_quadrature)
+void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
 {
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());  
   
+  NewArray<real> bK(pde.size());
+
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update map
-    map.update(*cell);
+    // Update PDE
+    pde.update(*cell);
     
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
+    // Compute element matrix    
+    pde.interiorElementVector(bK);
 
-    // Update equation
-    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(*cell)) += pde.rhs(*v);
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      b(pde.dof(i,*cell)) += bK[i];
     
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Vector& b,
-			   FiniteElement::Vector& element, Map& map,
-			   Quadrature& interior_quadrature, 
-			   Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundary(NewPDE& pde, Mesh& mesh, Vector& b)
 {
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
-    assembleBoundaryTri(pde, mesh, b, element, map,
-			interior_quadrature, boundary_quadrature);
+    assembleBoundaryTri(pde, mesh, b);
     break;
   case Mesh::tetrahedrons:
-    assembleBoundaryTet(pde, mesh, b, element, map,
-			interior_quadrature, boundary_quadrature);
+    assembleBoundaryTet(pde, mesh, b);
     break;
   default:
     dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
-			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& interior_quadrature, 
-			      Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Vector& b)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -272,32 +214,24 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
   // Iterate over all edges in the boundary 
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
-    // Update map
-    map.update(*edge);
+    /*
+    // Update PDE
+    pde.update(*cell);
     
-    // Get internal cell neighbor of edge
-    const Cell& cell = map.cell();
+    // Compute element matrix    
+    pde.interiorElementVector(bK);
 
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(*v);
-    
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      b(pde.dof(i,*cell)) += bK[i];
+    */
+
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
-			      FiniteElement::Vector& element, Map& map,
-			      Quadrature& interior_quadrature, 
-			      Quadrature& boundary_quadrature)
+void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -308,33 +242,28 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
   // Iterate over all faces in the boundary 
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
-    // Update map
-    map.update(*face);
+    /*
+    // Update PDE
+    pde.update(*cell);
     
-    // Get internal cell neighbor of face
-    const Cell& cell = map.cell();
+    // Compute element matrix    
+    pde.interiorElementVector(bK);
 
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(*v);
-    
+    // Insert element matrix into global matrix
+    for (unsigned int i = 0; i < pde.size(); i++) 
+      b(pde.dof(i,*cell)) += bK[i];
+    */
+
     // Update progress
     p++;
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
+void NewFEM::setBC(Mesh& mesh, Matrix& A, NewPDE& pde)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc(element.size());
+  BoundaryCondition bc(pde.dim());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -347,15 +276,15 @@ void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
   for (NodeIterator node(boundary); !node.end(); ++node)
   {
     // Get boundary condition
-    bc.update(node);
+    //bc.update(node);
     bcf(bc);
     
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < element.size(); i++)
+      for (unsigned int i = 0; i < pde.dim(); i++)
       {
-	A.ident(element.size() * node->id() + i);
+	A.ident(pde.dim() * node->id() + i);
       }
 
       //A.ident(node->id());
@@ -371,11 +300,11 @@ void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::setBC(Mesh& mesh, Vector& b, FiniteElement::Vector& element)
+void NewFEM::setBC(Mesh& mesh, Vector& b, NewPDE& pde)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
-  BoundaryCondition bc(element.size());
+  BoundaryCondition bc(pde.dim());
   bcfunction bcf;
   
   // Get boundary condition function
@@ -388,14 +317,14 @@ void FEM::setBC(Mesh& mesh, Vector& b, FiniteElement::Vector& element)
   for (NodeIterator node(boundary); !node.end(); ++node)
   {
     // Get boundary condition
-    bc.update(node);
+    //bc.update(node);
     bcf(bc);
     
     // Set boundary condition
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
-      for (unsigned int i = 0; i < element.size(); i++)
-	b(element.size() * node->id() + i) = bc.val(i);
+      for (unsigned int i = 0; i < pde.dim(); i++)
+	b(pde.dim() * node->id() + i) = bc.val(i);
       break;
     case BoundaryCondition::NEUMANN:
       if ( bc.val() != 0.0 )
@@ -408,64 +337,57 @@ void FEM::setBC(Mesh& mesh, Vector& b, FiniteElement::Vector& element)
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::alloc(Matrix &A, Mesh &mesh, FiniteElement::Vector& element)
+void NewFEM::alloc(Matrix &A, Mesh &mesh, NewPDE& pde)
 {
-  // Count the degrees of freedom
-  
-  // For now we count the number of degrees of freedom of the first
-  // element. Handling of heterogenous order of the elements is
-  // deferred to future revisions.
+  // Count the degrees of freedoml
+  // Assume square matrix. 
 
   unsigned int imax = 0;
-  unsigned int jmax = 0;
+  //unsigned int jmax = 0;
   
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     
-    for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
+    for (unsigned int sf = 0; sf < pde.size(); sf++)
     {
-      unsigned int i = v.dof(*cell);
+      unsigned int i = pde.dof(sf,*cell);
       if ( i > imax )
 	imax = i;
     }
     
-    for (FiniteElement::TrialFunctionIterator u(element(0)); !u.end(); ++u)
-    {
-      unsigned int j = u.dof(*cell);
-      if ( j > jmax )
-	jmax = j;
-    }
-
   }
   
   // Size of the matrix
-  unsigned int m = (imax + 1) * element.size();
-  unsigned int n = (jmax + 1) * element.size();
+  unsigned int m = (imax + 1) * pde.dim();
+  //unsigned int n = (jmax + 1) * pde.dim();
   
   // Initialise matrix
-  if ( A.size(0) != m || A.size(1) != n )
-    A.init(m, n);
+  if ( A.size(0) != m || A.size(1) != m )
+    A.init(m, m);
+  //if ( A.size(0) != m || A.size(1) != n )
+  //  A.init(m, n);
 
   // Set all entries to zero (for repeated assembling)
   A = 0.0;
 }
 //-----------------------------------------------------------------------------
-void FEM::alloc(Vector &b, Mesh &mesh, FiniteElement::Vector& element)
+void NewFEM::alloc(Vector &b, Mesh &mesh, NewPDE& pde)
 {
   // Count the degrees of freedom
   unsigned int imax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    for (FiniteElement::TestFunctionIterator v(element(0)); !v.end(); ++v)
+    for (unsigned int sf = 0; sf < pde.size(); sf++)
     {
-      unsigned int i = v.dof(*cell);
+      unsigned int i = pde.dof(sf,*cell);
       if ( i > imax )
 	imax = i;
     }
+    
   }
   
   // Size of vector
-  unsigned int m = (imax + 1) * element.size();
+  unsigned int m = (imax + 1) * pde.dim();
   
   // Initialise vector
   if ( b.size() != m )

@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal
+ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = automake
+AUTOMAKE = automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -O3 -Wall -Werror -pedantic -ansi -std=c++98
+CXXFLAGS = -g -O2
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-elasticity -ldolfin-elasticity-stationary -ldolfin-elasticity-updated -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-poisson-multigrid -ldolfin-template -ldolfin-wave -ldolfin-wave-vector -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -82,11 +82,11 @@ XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/StiffnessMatrix.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/FiniteElementMethod.h                           dolfin/FunctionSpace.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/MultigridSolver.h                           dolfin/NewFEM.h                           dolfin/StiffnessMatrix.h
 
 INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = FiniteElement.cpp                           FEM.cpp                           FiniteElementMethod.cpp                           FunctionSpace.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           StiffnessMatrix.cpp
+libdolfin_fem_a_SOURCES = FiniteElement.cpp                           FEM.cpp                           FiniteElementMethod.cpp                           FunctionSpace.cpp                           LoadVector.cpp                           MassMatrix.cpp                           MultigridSolver.cpp                           NewFEM.cpp                           StiffnessMatrix.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -99,7 +99,7 @@ LDFLAGS =
 LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
 libdolfin_fem_a_OBJECTS =  FiniteElement.o FEM.o FiniteElementMethod.o \
-FunctionSpace.o LoadVector.o MassMatrix.o MultigridSolver.o \
+FunctionSpace.o LoadVector.o MassMatrix.o MultigridSolver.o NewFEM.o \
 StiffnessMatrix.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -116,7 +116,8 @@ TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/FEM.P .deps/FiniteElement.P \
 .deps/FiniteElementMethod.P .deps/FunctionSpace.P .deps/LoadVector.P \
-.deps/MassMatrix.P .deps/MultigridSolver.P .deps/StiffnessMatrix.P
+.deps/MassMatrix.P .deps/MultigridSolver.P .deps/NewFEM.P \
+.deps/StiffnessMatrix.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 
@@ -237,7 +238,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" = "." && dot_seen=yes; \
+	  test "$$subdir" != "." || dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -279,7 +280,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
 
 mostlyclean-tags:
 

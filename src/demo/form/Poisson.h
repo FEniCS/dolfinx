@@ -25,6 +25,11 @@ namespace dolfin
       return 4;
     }
 
+    unsigned int dim() const
+    {
+      return 1;
+    }
+
     unsigned int dof(unsigned int i, const Cell& cell) const
     {
       return cell.nodeID(i);

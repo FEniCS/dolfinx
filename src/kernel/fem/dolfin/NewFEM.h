@@ -13,9 +13,7 @@ namespace dolfin
   class Vector;
  
   /// Automated assembly of a linear system from a given variational
-  /// formulation. It is currently assumed that each degree of freedom
-  /// is associated with a node. The ID of the node is used as an index
-  /// for the degrees of freedom.
+  /// formulation. 
 
   class NewFEM
   {
@@ -29,6 +27,28 @@ namespace dolfin
     
     /// Assemble vector 
     static void assemble(NewPDE& pde, Mesh& mesh, Vector& b);
+
+  private:
+    
+    static void assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundary(NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A);
+    static void assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A);
+
+    static void assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundary(NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Vector& b);
+    static void assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Vector& b);
+
+    /// Allocate matrix
+    void alloc(Matrix &A, Mesh &mesh, NewPDE& pde);
+      
+    /// Allocate vector
+    void alloc(Vector &b, Mesh &mesh, NewPDE& pde);
+  
+    /// FIXME: Temporary strong implementation of BC
+    void setBC(Mesh& mesh, Matrix& A, NewPDE& pde);
+    void setBC(Mesh& mesh, Vector& b, NewPDE& pde);
 
   };
 

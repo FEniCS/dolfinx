@@ -28,6 +28,9 @@ namespace dolfin
     /// Return size of element matrix
     virtual unsigned int size() const = 0;
 
+    /// Return dimension of solution vector
+    virtual unsigned int dim() const = 0;
+
     /// Return map from local to global degree of freedom
     virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
    
