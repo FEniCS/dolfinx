@@ -169,7 +169,7 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
 				  const Increments& d)
 {
   // FIXME: d and r are not used
-
+  
   // Increments for iteration
   Increments dd;
   
@@ -177,18 +177,14 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
   real rho1 = 1.0;
   real rho2 = 1.0;
   
-  // Save current alpha and change alpha to 1 for divergence computation
-  real alpha0 = alpha;
-  alpha = 1.0;
-
   // Save solution values before iteration
   initData(x0, x1.size);
   copyData(list, x0);
 
   for (unsigned int n = 0; n < maxiter; n++)
   {
-    // Update group list
-    update(list, dd);
+    // Update element group
+    updateUnstabilized(list, dd);
 
     // Check for convergence
     if ( dd.d2 < tol )
@@ -208,9 +204,6 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
     if ( abs(rho2-rho1) < 0.1 * rho1 )
       break;
   }
-
-  // Restore alpha
-  alpha = alpha0;
 
   // Restore solution values
   copyData(x0, list);
@@ -264,7 +257,21 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
 //-----------------------------------------------------------------------------
 void Iteration::updateUnstabilized(ElementGroupList& list, Increments& d)
 {
-  dolfin_error("Not implemented");
+// Reset values
+  x1.offset = 0;
+  
+  // Iterate on each element and compute the l2 norm of the increments
+  real increment = 0.0;
+  for (ElementIterator element(list); !element.end(); ++element)
+  {
+    real di = fabs(element->update(f, x1.values + x1.offset));
+    increment += di*di;
+    x1.offset += element->size();
+  }
+  d = sqrt(increment);
+
+  // Copy values to elements
+  copyData(x1, list);
 }
 //-----------------------------------------------------------------------------
 void Iteration::updateUnstabilized(ElementGroup& group, Increments& d)

@@ -54,7 +54,7 @@ void AdaptiveIterationLevel2::start(ElementGroup& group)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::start(Element& element)
 {
-  // Do nothing
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroupList& list, Increments& d)
@@ -125,7 +125,7 @@ void AdaptiveIterationLevel2::stabilize(Element& element,
 					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
-  // Do nothing
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::converged(ElementGroupList& list, Residuals& r,
@@ -184,16 +184,14 @@ bool AdaptiveIterationLevel2::converged(ElementGroup& group, Residuals& r,
 bool AdaptiveIterationLevel2::converged(Element& element, Residuals& r,
 					const Increments& d, unsigned int n)
 {
-  // Iterate one time on each element
-  return n > 0;
+  dolfin_error("Unreachable statement.");
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel2::diverged(ElementGroupList& list, 
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  cout << "Time slab residual: " << r.r1 << " --> " << r.r2 << endl;
-
   // Make at least two iterations
   if ( n < 2 )
     return false;
@@ -225,7 +223,7 @@ bool AdaptiveIterationLevel2::diverged(ElementGroup& group,
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  // Don't check divergence for element group, since we want to handle
+  // Don't check divergence for element groups, since we want to handle
   // the stabilization ourselves (and not change state).
   return false;
 }
@@ -234,7 +232,7 @@ bool AdaptiveIterationLevel2::diverged(Element& element,
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  // Don't check divergence for elements
+  dolfin_error("Unreachable statement.");
   return false;
 }
 //-----------------------------------------------------------------------------

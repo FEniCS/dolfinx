@@ -53,7 +53,7 @@ void AdaptiveIterationLevel3::start(ElementGroup& group)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(Element& element)
 {
-  // Do nothing
+  dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroupList& list, Increments& d)
@@ -77,6 +77,7 @@ void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list,
   for (ElementIterator element(list); !element.end(); ++element)
   {
     real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    di /= alpha;
     increment += di*di;
     x1.offset += element->size();
   }
@@ -111,6 +112,7 @@ void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list,
 
     // Compute new values for element
     real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    di /= alpha;
     increment += di*di;
     x1.offset += element->size();
     
@@ -137,6 +139,7 @@ void AdaptiveIterationLevel3::update(ElementGroup& group, Increments& d)
   for (ElementIterator element(group); !element.end(); ++element)
   {
     real di = fabs(element->update(f, alpha, x1.values + x1.offset));
+    di /= alpha;
     increment += di*di;
     x1.offset += element->size();
   }
@@ -217,7 +220,7 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list, Residuals& r,
   */
 
   // First check increment
-  if ( (d.d2/alpha) > tol || n == 0 )
+  if ( d.d2 > tol || n == 0 )
     return false;
   
   // If increment is small, then check residual
@@ -238,7 +241,7 @@ bool AdaptiveIterationLevel3::converged(ElementGroup& group, Residuals& r,
   return r.r2 < tol && n > 0;
   */
 
-  return (d.d2 / alpha) < tol && n > 0;
+  return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::converged(Element& element, Residuals& r,
@@ -252,7 +255,8 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  // Don't check divergence for group lists
+  // Don't check divergence for group lists, since we want to handle
+  // the stabilization ourselves (and not change state).
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -260,7 +264,8 @@ bool AdaptiveIterationLevel3::diverged(ElementGroup& group,
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  // Don't check divergence for element groups
+  // Don't check divergence for element groups, since we want to handle
+  // the stabilization ourselves (and not change state).
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -268,7 +273,7 @@ bool AdaptiveIterationLevel3::diverged(Element& element,
 				       const Residuals& r, const Increments& d,
 				       unsigned int n, State& newstate)
 {
-  // Don't check divergence for elements
+  dolfin_error("Unreachable statement.");
   return false;
 }
 //-----------------------------------------------------------------------------
