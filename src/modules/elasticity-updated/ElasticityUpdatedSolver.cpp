@@ -57,20 +57,27 @@ void ElasticityUpdatedSolver::solve()
     elasticity.sigma1array.push_back(sigma1i);
   }
 
+  elasticity.computedsigma.resize(mesh.noCells());
+
+  //Matrix &sigma0 = *(elasticity.sigma0array[0]);
+  //sigma0(0, 0) = 50.0;
+
+  
+
   elasticity.k = k;
   FEM::assemble(elasticity, mesh, A);
 
   // Start a progress session
   Progress p("Time-stepping");
   
-
   int counter = 0;
 
+
   ///*
-  x21(0 * 3 + 1) = -1.0; 
-  x21(1 * 3 + 1) = 1.0; 
-  x21(2 * 3 + 1) = -1.0; 
-  x21(3 * 3 + 1) = -1.0; 
+  x21(0 * 3 + 0) = 0.0; 
+  x21(1 * 3 + 0) = 8.0; 
+  x21(2 * 3 + 0) = 0.0; 
+  x21(3 * 3 + 0) = 0.0; 
   //*/
 
   /*
@@ -128,17 +135,25 @@ void ElasticityUpdatedSolver::solve()
     cout << "x21: " << endl;
     x21.show();
 
+
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      int id = (*cell).id();
+      
+      elasticity.computedsigma[id] = false;
+    }
+
     // Assemble
     FEM::assemble(elasticity, mesh, A);
     FEM::assemble(elasticity, mesh, b);
 
-    cout << "A:" << endl;
+    //cout << "A:" << endl;
 
-    A.show();
+    //A.show();
 
-    cout << "b:" << endl;
+    //cout << "b:" << endl;
 
-    b.show();
+    //b.show();
 
     x21 = 0;
 
@@ -169,7 +184,7 @@ void ElasticityUpdatedSolver::solve()
       Matrix *sigma0i, *sigma1i;
       
       sigma0i = elasticity.sigma0array[cell->id()];
-      sigma1i = elasticity.sigma0array[cell->id()];
+      sigma1i = elasticity.sigma1array[cell->id()];
 
       *sigma0i = *sigma1i;
     }

@@ -5,11 +5,11 @@ global_settings { assumed_gamma 2.2 }
 //#include "colors.inc"           // Standard colors library
 
 camera {
-   location  <1.5, 2.0, 6.0>
+   location  <0.0, 2.0, 6.0>
    direction <0, 0,    -1>
    up        <0, 1,    0>
    right   <1, 0,    0>
-   look_at   <0.5, 0.0,    0>
+   look_at   <0.0, 0.0,    0>
 }
 
 // Light source

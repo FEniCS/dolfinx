@@ -131,14 +131,14 @@ void mybc(BoundaryCondition& bc)
 {
   //bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
 
-  /*
+  ///*
   if ( bc.coord().x == 0.0 )
   {
-    bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
-    bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
-    bc.set(BoundaryCondition::DIRICHLET, 0.0, 2);
+    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
+    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
+    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 2);
   }
-  */
+  //*/
 
   /*
   if ( bc.coord().x == 0.0 )

@@ -31,6 +31,7 @@ public:
 
       // Debug
 
+      /*
       // Derivatives
       ElementFunction wx0 = wp(0).ddx();
       ElementFunction wy0 = wp(0).ddy();
@@ -55,72 +56,91 @@ public:
       std::cout << "wp(2).ddx(): " << wx2(cell_->coord(0)) << std::endl;
       std::cout << "wp(2).ddy(): " << wy2(cell_->coord(0)) << std::endl;
       std::cout << "wp(2).ddz(): " << wz2(cell_->coord(0)) << std::endl;
-
+      */
 
       // Material parameters
       
-      //real E = 10.0;
-      //real nu = 10.0;
+      real E = 5.0;
+      real nu = 0.3;
       
-      //real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
-      //real mu = E / (2 * (1 + nu));
+      real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+      real mu = E / (2 * (1 + nu));
       
-      real lambda = 20.0;
-      real mu = 20.0;
+      //real lambda = 20.0;
+      //real mu = 5.0;
       
       // Compute sigma
       
-      Matrix sigma(3, 3), epsilon(3, 3); 
-      
-      ElementFunction
-	epsilon00, epsilon01, epsilon02,
-	epsilon10, epsilon11, epsilon12,
-	epsilon20, epsilon21, epsilon22;
+      static Matrix sigma(3, 3), epsilon(3, 3); 
 
-      epsilon(0, 0) = (wp(0).ddx() + wp(0).ddx())(mp);
-      epsilon(0, 1) = (wp(0).ddy() + wp(1).ddx())(mp);
-      epsilon(0, 2) = (wp(0).ddz() + wp(2).ddx())(mp);
+      if(!computedsigma[cell_->id()])
+      {
+	
+	static ElementFunction
+	  epsilon00, epsilon01, epsilon02,
+	  epsilon10, epsilon11, epsilon12,
+	  epsilon20, epsilon21, epsilon22;
+	
+	epsilon(0, 0) = (wp(0).ddx() + wp(0).ddx())(mp);
+	epsilon(0, 1) = (wp(0).ddy() + wp(1).ddx())(mp);
+	epsilon(0, 2) = (wp(0).ddz() + wp(2).ddx())(mp);
+	
+	epsilon(1, 0) = (wp(1).ddx() + wp(0).ddy())(mp);
+	epsilon(1, 1) = (wp(1).ddy() + wp(1).ddy())(mp);
+	epsilon(1, 2) = (wp(1).ddz() + wp(2).ddy())(mp);
+	
+	epsilon(2, 0) = (wp(2).ddx() + wp(0).ddz())(mp);
+	epsilon(2, 1) = (wp(2).ddy() + wp(1).ddz())(mp);
+	epsilon(2, 2) = (wp(2).ddz() + wp(2).ddz())(mp);
+	
+	
+	cout << "epsilon on cell " << cell_->id() << ": " << endl;
+	epsilon.show();
       
-      epsilon(1, 0) = (wp(1).ddx() + wp(0).ddy())(mp);
-      epsilon(1, 1) = (wp(1).ddy() + wp(1).ddy())(mp);
-      epsilon(1, 2) = (wp(1).ddz() + wp(2).ddy())(mp);
+	sigma(0, 0) =
+	  (lambda + 2 * mu) * epsilon(0, 0) +
+	  lambda * epsilon(1, 1) + lambda * epsilon(2, 2);
+	sigma(1, 1) =
+	  (lambda + 2 * mu) * epsilon(1, 1) +
+	  lambda * epsilon(0, 0) + lambda * epsilon(2, 2);
+	sigma(2, 2) =
+	  (lambda + 2 * mu) * epsilon(2, 2) +
+	  lambda * epsilon(0, 0) + lambda * epsilon(1, 1);
+	sigma(1, 2) = mu * epsilon(1, 2);
+	sigma(2, 1) = sigma(1, 2);
+	sigma(2, 0) = mu * epsilon(2, 0);
+	sigma(0, 2) = sigma(2, 0); 
+	sigma(0, 1) = mu * epsilon(0, 1);
+	sigma(1, 0) = sigma(0, 1);
+	
+	//cout << "sigma on cell " << cell_->id() << ": " << endl;
+	//sigma.show();
       
-      epsilon(2, 0) = (wp(2).ddx() + wp(0).ddz())(mp);
-      epsilon(2, 1) = (wp(2).ddy() + wp(1).ddz())(mp);
-      epsilon(2, 2) = (wp(2).ddz() + wp(2).ddz())(mp);
+	Matrix *sigma0, *sigma1;
+	
+	sigma0 = sigma0array[cell_->id()];
+	sigma1 = sigma1array[cell_->id()];
+      
+	sigma *= k;
+	sigma += *sigma0;
+	*sigma1 = sigma; 
+	
+	cout << "sigma0 on cell " << cell_->id() << ": " << endl;
+	sigma0->show();
+	cout << "sigma1 on cell " << cell_->id() << ": " << endl;
+	sigma1->show();
 
+	computedsigma[cell_->id()] = true;
+      }
+      else
+      {
+	Matrix *sigma1;
+	sigma1 = sigma1array[cell_->id()];
 
-      cout << "epsilon on cell " << cell_->id() << ": " << endl;
-      epsilon.show();
-      
-      sigma(0, 0) =
-	(lambda + 2 * mu) * epsilon(0, 0) +
-	lambda * epsilon(1, 1) + lambda * epsilon(2, 2);
-      sigma(1, 1) =
-	(lambda + 2 * mu) * epsilon(1, 1) +
-	lambda * epsilon(0, 0) + lambda * epsilon(2, 2);
-      sigma(2, 2) =
-	(lambda + 2 * mu) * epsilon(2, 2) +
-	lambda * epsilon(0, 0) + lambda * epsilon(1, 1);
-      sigma(1, 2) = mu * epsilon(1, 2);
-      sigma(2, 1) = sigma(1, 2);
-      sigma(2, 0) = mu * epsilon(2, 0);
-      sigma(0, 2) = sigma(2, 0); 
-      sigma(0, 1) = mu * epsilon(0, 1);
-      sigma(1, 0) = sigma(0, 1);
-      
-      cout << "sigma on cell " << cell_->id() << ": " << endl;
-      sigma.show();
-      
-      Matrix *sigma0, *sigma1;
-      
-      sigma0 = sigma0array[cell_->id()];
-      sigma1 = sigma1array[cell_->id()];
-      
-      sigma *= k;
-      sigma += *sigma0;
-      *sigma1 = sigma; 
-      
+	sigma = *sigma1;
+      }
+
+	
       return ((wp(0) * v(0) + wp(1) * v(1) + wp(2) * v(2)) +
 	      k * (f(0) * v(0) + f(1) * v(1) + f(2) * v(2)) -
 	      k * (sigma(0, 0) * v(0).ddx() +
@@ -137,6 +157,7 @@ public:
     }
     
   NewArray<Matrix *> sigma0array, sigma1array;
+  NewArray<bool>     computedsigma;
   
  private:    
   ElementFunction::Vector f; // Source term
