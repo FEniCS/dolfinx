@@ -90,7 +90,6 @@ private:
 int main()
 {
   // Settings
-  dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);

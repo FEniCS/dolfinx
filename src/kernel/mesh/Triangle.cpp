@@ -1,6 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>

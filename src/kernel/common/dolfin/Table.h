@@ -15,10 +15,13 @@ namespace dolfin {
   /// New blocks of size BLOCK_SIZE are allocated when needed.
   
   template <class T> class Table {
-  public:
 
     // Forward declaration of nested classes
     class Block;
+
+  public:
+
+    // Forward declaration of nested classes
     class Iterator;
 	 
     /// Constructor
@@ -52,7 +55,8 @@ namespace dolfin {
     bool empty() const;
 
     /// Output
-    friend LogStream& operator<< <> (LogStream& stream, const Table<T>& table);
+    template <class X>
+    friend LogStream & operator<< (LogStream & stream, const Table<X> & table);
 
     /// Return an iterator positioned at the beginning of the table
     Iterator begin() const;
