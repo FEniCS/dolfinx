@@ -9,8 +9,8 @@
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/Vector.h>
+#include <dolfin/NewMatrix.h>
+#include <dolfin/NewVector.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/NewBoundaryCondition.h>
 #include <dolfin/NewFiniteElement.h>
@@ -19,7 +19,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
+void NewFEM::assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
@@ -34,7 +34,7 @@ void NewFEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   int* dofs = new int[n];
 
   // Initialize global matrix 
-  // Max connectivity in Matrix::init() is assumed to 
+  // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
   // minimize memory requirements.   
   unsigned int N = size(mesh, element);
@@ -74,7 +74,7 @@ void NewFEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   delete [] dofs;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
+void NewFEM::assemble(LinearForm& L, NewVector& b, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());
@@ -121,7 +121,7 @@ void NewFEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, LinearForm& L,
-		      Matrix& A, Vector& b, Mesh& mesh)
+		      NewMatrix& A, NewVector& b, Mesh& mesh)
 {
   // Start a progress session
   Progress p("Assembling matrix and vector (interior contributions)",
@@ -138,7 +138,7 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L,
   int* dofs = new int[n];
 
   // Initialize global matrix 
-  // Max connectivity in Matrix::init() is assumed to 
+  // Max connectivity in NewMatrix::init() is assumed to 
   // be 50, alternatively use connectivity information to
   // minimize memory requirements.   
   unsigned int N = size(mesh, element);
@@ -187,7 +187,7 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L,
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assemble(BilinearForm& a, LinearForm& L,
-		      Matrix& A, Vector& b, Mesh& mesh,
+		      NewMatrix& A, NewVector& b, Mesh& mesh,
 		      NewBoundaryCondition& bc)
 {
   assemble(a, L, A, b, mesh);
@@ -212,7 +212,7 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
   return dofmax + 1;
 }
 //-----------------------------------------------------------------------------
-void NewFEM::setBC(Matrix& A, Vector& b, Mesh& mesh, 
+void NewFEM::setBC(NewMatrix& A, NewVector& b, Mesh& mesh, 
 		   NewBoundaryCondition& bc)
 {
   // FIXME: This is a temporary implementation for linears. We need to iterate

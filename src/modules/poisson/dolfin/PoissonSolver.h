@@ -13,7 +13,7 @@
 namespace dolfin
 {
 
-  class PoissonSolver 
+  class PoissonSolver : public NewSolver
   {
   public:
     

@@ -1,4 +1,5 @@
-SUBDIRS = dolfin 
+SUBDIRS = dolfin \
+          poisson
 #          convdiff \
 #          elasticity \
 #          elasticity-stationary \
@@ -7,7 +8,6 @@ SUBDIRS = dolfin
 #          heat \
 #          navierstokes \
 #          odesolver \
-#          poisson \
 #          poisson-multigrid \
 #          template \
 #          wave \

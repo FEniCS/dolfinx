@@ -14,8 +14,8 @@ namespace dolfin
   class BilinearForm;
   class LinearForm;
   class Mesh;
-  class Matrix;
-  class Vector;
+  class NewMatrix;
+  class NewVector;
   class NewFiniteElement;
   class NewBoundaryCondition;
 
@@ -31,22 +31,22 @@ namespace dolfin
   public:
 
     /// Assemble bilinear form
-    static void assemble(BilinearForm& a, Matrix& A, Mesh& mesh);
+    static void assemble(BilinearForm& a, NewMatrix& A, Mesh& mesh);
 
     /// Assemble linear form
-    static void assemble(LinearForm& L, Vector& b, Mesh& mesh);
+    static void assemble(LinearForm& L, NewVector& b, Mesh& mesh);
 
     /// Assemble bilinear and linear forms
     static void assemble(BilinearForm& a, LinearForm& L, 
-			 Matrix& A, Vector& b, Mesh& mesh);
+			 NewMatrix& A, NewVector& b, Mesh& mesh);
     
     /// Assemble bilinear and linear forms (including Dirichlet boundary conditions)
     static void assemble(BilinearForm& a, LinearForm& L, 
-			 Matrix& A, Vector& b, Mesh& mesh,
+			 NewMatrix& A, NewVector& b, Mesh& mesh,
 			 NewBoundaryCondition& bc);
     
     /// Set Dirichlet boundary conditions
-    static void setBC(Matrix& A, Vector& b, Mesh& mesh,
+    static void setBC(NewMatrix& A, NewVector& b, Mesh& mesh,
 		      NewBoundaryCondition& bc);
 
   private:

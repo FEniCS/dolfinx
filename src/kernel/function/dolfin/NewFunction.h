@@ -20,13 +20,13 @@ namespace dolfin
   class Cell;
   class Mesh;
   class NewFiniteElement;
-  class Vector;
+  class NewVector;
   
   /// This class represents a function defined on a mesh. The function
   /// is defined in terms of a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
 
-  /// Vector functions are initialized by a vector x containing the 
+  /// NewVector functions are initialized by a vector x containing the 
   /// function values for all three vector components and no_comp, 
   /// the number of vector components.  
   /// The function values in x should be ordered as: 
@@ -40,10 +40,10 @@ namespace dolfin
     NewFunction();
 
     /// Create a function in the function space defined by a finite element
-    NewFunction(Mesh& mesh, Vector& x, const NewFiniteElement& element);
+    NewFunction(Mesh& mesh, NewVector& x, const NewFiniteElement& element);
 
     /// Create a piecewise linear function
-    NewFunction(Mesh& mesh, Vector& x);
+    NewFunction(Mesh& mesh, NewVector& x);
 
     /// Destructor
     virtual ~NewFunction();
@@ -78,11 +78,11 @@ namespace dolfin
     class Data
     {
     public:
-      Data(Mesh& mesh, Vector& x, const NewFiniteElement& element)
+      Data(Mesh& mesh, NewVector& x, const NewFiniteElement& element)
 	: mesh(mesh), x(x), element(element) {}
 
       Mesh& mesh;
-      Vector& x;
+      NewVector& x;
       const NewFiniteElement& element;
     };
     

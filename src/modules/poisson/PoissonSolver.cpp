@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PoissonSolver::PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)
-  : mesh(mesh), f(f), bc(bc)
+  : NewSolver(), mesh(mesh), f(f), bc(bc)
 {
   // Do nothing
 }
