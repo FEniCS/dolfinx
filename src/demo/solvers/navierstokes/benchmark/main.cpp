@@ -52,11 +52,11 @@ dolfin_bc my_bc(real x, real y, real z, int node, int component)
   switch ( component ){
   case 0:
     
-    /*
     if ( x == 0.0 ){
       bc.type = dirichlet;
       bc.val  = 1.0;
     }
+    /*
     if ( x == 1.0 ){
       bc.type = dirichlet;
       bc.val  = 1.0;
@@ -144,10 +144,12 @@ dolfin_bc my_bc(real x, real y, real z, int node, int component)
 
   case 3:
 
+    /*
     if ( x == 0.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;
     }
+    */
     if ( x == 1.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;
@@ -162,5 +164,6 @@ dolfin_bc my_bc(real x, real y, real z, int node, int component)
 
 real fx(real x, real y, real z, real t)
 {
-  return (32.0/Re) * (y*(1.0-y) + z*(1.0-z)); 
+  //return (32.0/Re) * (y*(1.0-y) + z*(1.0-z)); 
+  return 0.0; 
 }
