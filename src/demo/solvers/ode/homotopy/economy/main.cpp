@@ -50,9 +50,6 @@ public:
 
   void F(const complex z[], complex y[])
   {
-    for (unsigned int j = 0; j < n; j++)
-      y[j] = 0.0;
-
     // Precompute scalar products
     for (unsigned int i = 0; i < m; i++)
       tmp[i] = dot(w[i], z) / dot(a[i], z);
@@ -118,7 +115,7 @@ int main()
   dolfin_set("method", "cg");
   dolfin_set("order", 2);
 
-  Leontief leontief(2, 1);
+  Leontief leontief(2, 2);
   leontief.solve();
 
   return 0;

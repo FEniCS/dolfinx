@@ -1,0 +1,103 @@
+// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/dolfin_log.h>
+#include <dolfin/PETScManager.h>
+#include <dolfin/LU.h>
+
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+LU::LU() : ksp(0), B(0), idxm(0), idxn(0)
+{
+  // Initialize PETSc
+  PETScManager::init();
+  
+  // Set up solver environment to use only preconditioner
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+  KSPSetType(ksp, KSPPREONLY);
+  
+  // Set preconditioner to LU factorization
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCLU);
+}
+//-----------------------------------------------------------------------------
+LU::~LU()
+{
+  if ( ksp ) KSPDestroy(ksp);
+  if ( B ) MatDestroy(B);
+  if ( idxm ) delete [] idxm;
+  if ( idxn ) delete [] idxn;
+}
+//-----------------------------------------------------------------------------
+void LU::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
+{
+  // Copy data to dense matrix
+  copyToDense(A);
+  
+  // Initialize solution vector (remains untouched if dimensions match)
+  x.init(A.size(1));
+
+  // Solve linear system
+  KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
+  KSPSolve(ksp, b.vec(), x.vec());
+}
+//-----------------------------------------------------------------------------
+void LU::disp() const
+{
+  KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+}
+//-----------------------------------------------------------------------------
+void LU::copyToDense(const VirtualMatrix& A)
+{
+  // Get size
+  uint M = A.size(0);
+  dolfin_assert(M = A.size(1));
+
+  if ( !B )
+  {
+    // Create matrix if it has not been created before
+    MatCreateSeqDense(PETSC_COMM_SELF, M, M, PETSC_NULL, &B);
+    idxm = new int[M];
+    idxn = new int[1];
+    for (uint i = 0; i < M; i++)
+      idxm[i] = i;
+    idxn[0] = 0;
+    e.init(M);
+    y.init(M);
+
+  }
+  else
+  {
+    // Check dimensions of existing matrix
+    int MM = 0;
+    int NN = 0;
+    MatGetSize(B, &MM, &NN);
+
+    if ( MM != static_cast<int>(M) || NN != static_cast<int>(M) )
+      dolfin_error("FIXME: Matrix dimensions changed, not implemented (should be).");
+  }
+
+  // Multiply matrix with unit vectors to get the values
+  e = 0.0;
+  for (uint j = 0; j < M; j++)
+  {
+    e(j) = 1.0;
+    A.mult(e, y);
+    cout << "column = "; y.disp();
+    real* values = y.array(); // assumes uniprocessor case
+    idxn[0] = j;
+    MatSetValues(B, M, idxm, 1, idxn, values, INSERT_VALUES);
+    y.restore(values);
+    e(j) = 0.0;
+  }
+
+  MatAssemblyBegin(B, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(B, MAT_FINAL_ASSEMBLY);
+
+  cout << "Copied to dense matrix:" << endl;
+  A.disp();
+  MatView(B, PETSC_VIEWER_STDOUT_SELF);
+}
+//-----------------------------------------------------------------------------

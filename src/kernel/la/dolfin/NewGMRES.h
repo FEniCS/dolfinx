@@ -30,10 +30,10 @@ namespace dolfin
     /// Destructor
     ~NewGMRES();
 
-    /// Solve linear system Ax = b for a given right-hand side b
+    /// Solve linear system Ax = b
     void solve(const NewMatrix& A, NewVector& x, const NewVector& b);
 
-    /// Solve linear system Ax = b for a given right-hand side b
+    /// Solve linear system Ax = b
     void solve(const VirtualMatrix& A, NewVector& x, const NewVector& b);
 
     /// FIXME: Options below should be moved to some parameter system,

@@ -33,11 +33,12 @@ Homotopy::Homotopy(uint n)
   tol = 1e-10;
   
   // Set tolerance for GMRES solver
-  solver.setAtol(0.1*tol);
+  gmres.setAtol(0.1*tol);
 
   // Don't want the GMRES solver to report the number of iterations
-  solver.setReport(false);
-  
+  gmres.setReport(false);
+  gmres.disp();
+
   // Open file
   fp = fopen("solution.data", "w");
 
@@ -74,7 +75,7 @@ void Homotopy::solve()
 
   for (uint m = 0; m < M; m++)
   {
-    dolfin_info("Computing path number %d out of %d.", m, M);
+    dolfin_info("Computing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
     sprintf(filename, "primal_%d.m", m);
@@ -145,6 +146,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
 
     // Check convergence
     real r = F.norm(NewVector::linf);
+    cout << "r = " << r << endl;
     if ( r < tol )
     {
       cout << "Solution converged: x = ";
@@ -162,12 +164,14 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     // side to make it work with the PETSc GMRES solver
     r += DOLFIN_EPS;
     F /= r;
-    solver.solve(J, dx, F);
+
+    //gmres.solve(J, dx, F);
+    lu.solve(J, dx, F);
+
     dx *= r;
 
     // Subtract increment
     x -= dx;
-
     x.disp();
   }
 

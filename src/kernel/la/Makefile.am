@@ -12,6 +12,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/Jacobi.h \
                          dolfin/KrylovSolver.h \
                          dolfin/LinearSolver.h \
+                         dolfin/LU.h \
                          dolfin/Matrix.h \
                          dolfin/NewMatrix.h \
                          dolfin/PETScManager.h \
@@ -38,6 +39,7 @@ libdolfin_la_a_SOURCES = BiCGSTAB.cpp \
 	                 Jacobi.cpp \
 	                 KrylovSolver.cpp \
                          LinearSolver.cpp \
+                         LU.cpp \
                          Matrix.cpp \
                          NewMatrix.cpp \
                          PETScManager.cpp \

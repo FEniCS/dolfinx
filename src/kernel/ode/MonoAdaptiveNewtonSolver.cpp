@@ -70,10 +70,10 @@ real MonoAdaptiveNewtonSolver::iteration()
   // Evaluate b = -F(x) at current x
   beval();
 
-  cout << "A = ";
-  A.disp(false);
-  cout << "b = ";
-  b.disp();
+  //cout << "A = ";
+  //A.disp(false);
+  //cout << "b = ";
+  //b.disp();
 
   // Solve linear system, seems like we need to scale the right-hand
   // side to make it work with the PETSc GMRES solver

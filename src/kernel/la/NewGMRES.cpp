@@ -3,7 +3,6 @@
 //
 // Modified by Anders Logg, 2005.
 
-#include <petscksp.h>
 #include <petscpc.h>
 
 #include <dolfin/pcimpl.h>
@@ -30,7 +29,8 @@ NewGMRES::NewGMRES() : report(true), ksp(0), B(0)
   // Default: no preconditioner
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCNONE);
+  //PCSetType(pc, PCNONE);
+  PCSetType(pc, PCILU);
   
   // Display tolerances
   real _rtol(0.0), _atol(0.0), _dtol(0.0);
@@ -38,6 +38,8 @@ NewGMRES::NewGMRES() : report(true), ksp(0), B(0)
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
   dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
 	      _rtol, _atol, _dtol, _maxiter);
+
+  KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
@@ -86,8 +88,13 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
   // Create preconditioner for virtual system the first time
-  if ( !B )
-    createVirtualPreconditioner(A);
+  //if ( !B )
+  // createVirtualPreconditioner(A);
+
+  // Skip preconditioner for now
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCNONE);
 
   // Check dimensions
   if ( A.size(0) != b.size() )

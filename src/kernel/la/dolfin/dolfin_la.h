@@ -13,6 +13,7 @@
 #include <dolfin/Jacobi.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
+#include <dolfin/LU.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/NewMatrix.h>
 #include <dolfin/PETScManager.h>
