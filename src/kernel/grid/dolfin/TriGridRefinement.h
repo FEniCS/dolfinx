@@ -41,8 +41,6 @@ namespace dolfin {
     static Cell& TriGridRefinement::createCell(Node& n0, Node& n1, Node& n2,
 					       Grid& grid, Cell& cell);
     
-    static Cell& createChildCopy(Cell& cell, Grid& grid);
-
   };
 
 }

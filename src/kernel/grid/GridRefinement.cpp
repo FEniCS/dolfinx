@@ -297,12 +297,12 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   // Remove all nodes in the child not marked for re-use
   for (NodeIterator n(*child); !n.end(); ++n)
     if ( !reuse_node(n->id()) )
-      removeNode(*n,*child);
+      removeNode(*n, *child);
   
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
     if ( !reuse_cell(c->id()) )
-      removeCell(*c,*child);
+      removeCell(*c, *child);
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell,
@@ -519,6 +519,13 @@ void GridRefinement::removeNode(Node& node, Grid& grid)
 //-----------------------------------------------------------------------------
 void GridRefinement::removeCell(Cell& cell, Grid& grid)
 {
+  if ( !leaf(cell) ) {
+    cout << "--- Illegal cell: " << cell << endl;
+    cout << "  marker = " << cell.marker() << endl;
+    cout << "  status = " << cell.status() << endl;
+    cout << "  number of children = " << cell.noChildren() << endl;
+  }
+
   // Only leaf elements should be removed
   dolfin_assert(leaf(cell));
 
@@ -526,11 +533,9 @@ void GridRefinement::removeCell(Cell& cell, Grid& grid)
   if ( cell.parent() )
     cell.parent()->removeChild(cell);
 
-  // Remove children (leaf element can have 0 or 1 childs)
-  if ( cell.noChildren() > 0 ) {
-    dolfin_assert(cell.noChildren() == 1);
-    removeCell(*cell.child(0), grid.child());
-  }
+  // Remove children
+  for (int i = 0; i < cell.noChildren(); i++)
+    removeCell(*cell.child(i), grid.child());
   
   // Update status 
   if ( cell.parent()->noChildren() == 0 )

@@ -219,9 +219,3 @@ Cell& TriGridRefinement::createCell(Node& n0, Node& n1, Node& n2,
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell& TriGridRefinement::createChildCopy(Cell& cell, Grid& grid)
-{
-  return createCell(*cell.node(0).child(), *cell.node(1).child(),
-		    *cell.node(2).child(), grid, cell);
-}
-//-----------------------------------------------------------------------------
