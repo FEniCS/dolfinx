@@ -33,7 +33,6 @@ public:
     k = 1.0;
     
     // Grid size
-    //h = 1.0 / static_cast<real>(n - 1);
     h = 0.1;
 
     // Compute sparsity
@@ -57,22 +56,23 @@ public:
   {
     if ( i == 0 )
       return - 100.0*x(i) + k*(x(i+1) - x(i) - h);
+    
     if ( i == 1 )
       return - k*(x(i) - x(i-1) - h) + k*(x(i+1) - x(i) - h) +
 	b * (vx(i+1) - vx(i));
-    else if ( i == (n-1) )
-      return - k*(x(i) - x(i-1) - h) -
-	b * (vx(i) - vx(i - 1));
-    else
-      return - k*(x(i) - x(i-1) - h) + k*(x(i+1) - x(i) - h) -
-	b * (vx(i) - vx(i - 1)) + b * (vx(i+1) - vx(i));
+    
+    if ( i == (n-1) )
+      return - k*(x(i) - x(i-1) - h) - b * (vx(i) - vx(i-1));
+    
+    return - k*(x(i) - x(i-1) - h) + k*(x(i+1)  - x(i) - h) -
+      b*(vx(i) - vx(i-1)) + b*(vx(i+1) - vx(i));
   }
 
   real timestep(unsigned int i)
   {
-    if(i == 0)
+    if ( i == 0 )
       return 0.1 / static_cast<real>(M);
-    if(i == n)
+    if ( i == n )
       return 0.1 / static_cast<real>(M);
     return 0.1;
   }
