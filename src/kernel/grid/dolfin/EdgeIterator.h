@@ -5,6 +5,7 @@
 #define __EDGE_ITERATOR_H
 
 #include <dolfin/Array.h>
+#include <dolfin/List.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
@@ -14,6 +15,7 @@ namespace dolfin {
   class Cell;
   class Edge;
   class Face;
+  class Boundary;
   class NodeIterator;
   class CellIterator;
   class FaceIterator;
@@ -26,6 +28,8 @@ namespace dolfin {
 	 
     EdgeIterator(const Grid& grid);
     EdgeIterator(const Grid* grid);
+
+    EdgeIterator(const Boundary& boundary);
 
     EdgeIterator(const Node& node);
     EdgeIterator(const NodeIterator& nodeIterator);
@@ -83,6 +87,26 @@ namespace dolfin {
       Table<Edge>::Iterator edge_iterator;
       Table<Edge>::Iterator at_end;
 		
+    };
+
+    // Iterator for the edges on a boundary
+    class BoundaryEdgeIterator : public GenericEdgeIterator {
+    public:
+
+      BoundaryEdgeIterator(const Boundary& boundary);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Edge& operator*() const;
+      Edge* operator->() const;
+      Edge* pointer() const;
+		
+    private:
+
+      List<Edge*>::Iterator edge_iterator;
+      
     };
 
     // Iterator for the edges at a node 

@@ -4,6 +4,8 @@
 #ifndef __FACE_ITERATOR_H
 #define __FACE_ITERATOR_H
 
+#include <dolfin/Array.h>
+#include <dolfin/List.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
@@ -11,6 +13,7 @@ namespace dolfin {
   class Grid;
   class Cell;
   class Face;
+  class Boundary;
 
   typedef Face* FacePointer;
   
@@ -19,6 +22,8 @@ namespace dolfin {
 	 
     FaceIterator(const Grid& grid);
     FaceIterator(const Grid* grid);
+
+    FaceIterator(const Boundary& boundary);
 
     FaceIterator(const Cell& cell);
     FaceIterator(const CellIterator& cellIterator);
@@ -70,6 +75,26 @@ namespace dolfin {
       Table<Face>::Iterator face_iterator;
       Table<Face>::Iterator at_end;
 		
+    };
+
+    // Iterator for the faces on a boundary
+    class BoundaryFaceIterator : public GenericFaceIterator {
+    public:
+
+      BoundaryFaceIterator(const Boundary& boundary);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Face& operator*() const;
+      Face* operator->() const;
+      Face* pointer() const;
+		
+    private:
+
+      List<Face*>::Iterator face_iterator;
+      
     };
 
     // Iterator for the faces in a cell

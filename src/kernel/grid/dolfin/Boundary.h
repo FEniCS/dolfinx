@@ -21,6 +21,8 @@ namespace dolfin {
 
     /// Friends
     friend class NodeIterator::BoundaryNodeIterator;
+    friend class EdgeIterator::BoundaryEdgeIterator;
+    friend class FaceIterator::BoundaryFaceIterator;
 
   private:
 

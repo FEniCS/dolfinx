@@ -11,9 +11,9 @@
 namespace dolfin {
   
   class Grid;
-  class Boundary;
   class Node;
   class Cell;
+  class Boundary;
   class CellIterator;
   class GenericCell;
   

@@ -100,8 +100,8 @@ bool CellIterator::operator!=(const CellIterator& c) const
 //-----------------------------------------------------------------------------
 CellIterator::GridCellIterator::GridCellIterator(const Grid &grid)
 {
-  cell_iterator = grid.gd.cells.begin();
-  at_end = grid.gd.cells.end();
+  cell_iterator = grid.gd->cells.begin();
+  at_end = grid.gd->cells.end();
 }
 //-----------------------------------------------------------------------------
 void CellIterator::GridCellIterator::operator++()

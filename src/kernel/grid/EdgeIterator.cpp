@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Grid.h>
+#include <dolfin/Boundary.h>
 #include <dolfin/Edge.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/GenericCell.h>
@@ -20,6 +21,11 @@ EdgeIterator::EdgeIterator(const Grid &grid)
 EdgeIterator::EdgeIterator(const Grid *grid)
 {
   e = new GridEdgeIterator(*grid);
+}
+//-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const Boundary& boundary)
+{
+  e = new BoundaryEdgeIterator(boundary);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Cell &cell)
@@ -100,8 +106,8 @@ bool EdgeIterator::operator!=(const EdgeIterator& e) const
 //-----------------------------------------------------------------------------
 EdgeIterator::GridEdgeIterator::GridEdgeIterator(const Grid& grid)
 {
-  edge_iterator = grid.gd.edges.begin();
-  at_end = grid.gd.edges.end();
+  edge_iterator = grid.gd->edges.begin();
+  at_end = grid.gd->edges.end();
 }
 //-----------------------------------------------------------------------------
 void EdgeIterator::GridEdgeIterator::operator++()
@@ -137,6 +143,49 @@ Edge* EdgeIterator::GridEdgeIterator::operator->() const
 Edge* EdgeIterator::GridEdgeIterator::pointer() const
 {
   return edge_iterator.pointer();
+}
+//-----------------------------------------------------------------------------
+// EdgeIterator::BoundaryEdgeIterator
+//-----------------------------------------------------------------------------
+EdgeIterator::BoundaryEdgeIterator::BoundaryEdgeIterator
+(const Boundary& boundary) : edge_iterator(boundary.grid->bd->edges)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void EdgeIterator::BoundaryEdgeIterator::operator++()
+{
+  ++edge_iterator;
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::BoundaryEdgeIterator::end()
+{
+  return edge_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool EdgeIterator::BoundaryEdgeIterator::last()
+{
+  return edge_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int EdgeIterator::BoundaryEdgeIterator::index()
+{
+  return edge_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Edge& EdgeIterator::BoundaryEdgeIterator::operator*() const
+{
+  return **edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::BoundaryEdgeIterator::operator->() const
+{
+  return *edge_iterator;
+}
+//-----------------------------------------------------------------------------
+Edge* EdgeIterator::BoundaryEdgeIterator::pointer() const
+{
+  return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
 // EdgeIterator::NodeEdgeIterator

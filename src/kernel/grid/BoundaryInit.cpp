@@ -28,7 +28,7 @@ void BoundaryInit::init(Grid& grid)
 //-----------------------------------------------------------------------------
 void BoundaryInit::clear(Grid& grid)
 {
-  grid.bd.clear();
+  grid.bd->clear();
 }
 //----------------------------------------------------------------------------- 
 void BoundaryInit::initFaces(Grid& grid)
@@ -69,7 +69,7 @@ void BoundaryInit::initNodes(Grid& grid)
   marker = false;
 
   // Mark all nodes which are on the boundary
-  for (List<Edge*>::Iterator e(grid.bd.edges); !e.end(); ++e) {
+  for (List<Edge*>::Iterator e(grid.bd->edges); !e.end(); ++e) {
     marker((*e)->node(0)->id()) = true;
     marker((*e)->node(1)->id()) = true;
   }
@@ -77,10 +77,10 @@ void BoundaryInit::initNodes(Grid& grid)
   // Add all nodes on the boundary
   for (NodeIterator n(grid); !n.end(); ++n)
     if ( marker(n->id()) )
-      grid.bd.add(n);
+      grid.bd->add(n);
   
   // Write a message
-  cout << "Found " << grid.bd.noNodes() << " nodes on the boundary." << endl;
+  cout << "Found " << grid.bd->noNodes() << " nodes on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initFacesTri(Grid& grid)
@@ -107,17 +107,17 @@ void BoundaryInit::initFacesTet(Grid& grid)
   // Add faces with only one cell neighbor to the boundary
   for (FaceIterator f(grid); !f.end(); ++f) {
     if ( cellcount(f->id()) == 1 )
-      grid.bd.add(f);
+      grid.bd->add(f);
     else if ( cellcount(f->id()) != 2 )
       dolfin_error1("Inconsistent grid. Found face with %d cell neighbors.", cellcount(f->id()));
   }
   
   // Check that we found a boundary
-  if ( grid.bd.noFaces() == 0 )
+  if ( grid.bd->noFaces() == 0 )
     dolfin_error("Found no faces on the boundary.");
   
   // Write a message
-  cout << "Found " << grid.bd.noFaces() << " faces on the boundary." << endl;
+  cout << "Found " << grid.bd->noFaces() << " faces on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initEdgesTri(Grid& grid)
@@ -140,17 +140,17 @@ void BoundaryInit::initEdgesTri(Grid& grid)
   // Add edges with only one cell neighbor to the boundary
   for (EdgeIterator e(grid); !e.end(); ++e) {
     if ( cellcount(e->id()) == 1 )
-      grid.bd.add(e);
+      grid.bd->add(e);
     else if ( cellcount(e->id()) != 2 )
       dolfin_error1("Inconsistent grid. Found edge with %d cell neighbors.", cellcount(e->id()));
   }
   
   // Check that we found a boundary
-  if ( grid.bd.noEdges() == 0 )
+  if ( grid.bd->noEdges() == 0 )
     dolfin_error("Found no edges on the boundary.");
   
   // Write a message
-  cout << "Found " << grid.bd.noEdges() << " edges on the boundary." << endl;
+  cout << "Found " << grid.bd->noEdges() << " edges on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initEdgesTet(Grid& grid)
@@ -163,16 +163,16 @@ void BoundaryInit::initEdgesTet(Grid& grid)
   marker = false;
 
   // Mark all edges which are on the boundary
-  for (List<Face*>::Iterator f(grid.bd.faces); !f.end(); ++f)
+  for (List<Face*>::Iterator f(grid.bd->faces); !f.end(); ++f)
     for (EdgeIterator e(**f); !e.end(); ++e)
       marker(e->id()) = true;
 
   // Add all edges on the boundary
   for (EdgeIterator e(grid); !e.end(); ++e)
     if ( marker(e->id()) )
-      grid.bd.add(e);
+      grid.bd->add(e);
 
   // Write a message
-  cout << "Found " << grid.bd.noEdges() << " edges on the boundary." << endl;
+  cout << "Found " << grid.bd->noEdges() << " edges on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------

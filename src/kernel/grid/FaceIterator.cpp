@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Grid.h>
+#include <dolfin/Boundary.h>
 #include <dolfin/Cell.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/FaceIterator.h>
@@ -19,6 +20,11 @@ FaceIterator::FaceIterator(const Grid &grid)
 FaceIterator::FaceIterator(const Grid *grid)
 {
   e = new GridFaceIterator(*grid);
+}
+//-----------------------------------------------------------------------------
+FaceIterator::FaceIterator(const Boundary& boundary)
+{
+  e = new BoundaryFaceIterator(boundary);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Cell& cell)
@@ -87,8 +93,8 @@ bool FaceIterator::operator!=(const FaceIterator& e) const
 //-----------------------------------------------------------------------------
 FaceIterator::GridFaceIterator::GridFaceIterator(const Grid& grid)
 {
-  face_iterator = grid.gd.faces.begin();
-  at_end = grid.gd.faces.end();
+  face_iterator = grid.gd->faces.begin();
+  at_end = grid.gd->faces.end();
 }
 //-----------------------------------------------------------------------------
 void FaceIterator::GridFaceIterator::operator++()
@@ -124,6 +130,49 @@ Face* FaceIterator::GridFaceIterator::operator->() const
 Face* FaceIterator::GridFaceIterator::pointer() const
 {
   return face_iterator.pointer();
+}
+//-----------------------------------------------------------------------------
+// FaceIterator::BoundaryFaceIterator
+//-----------------------------------------------------------------------------
+FaceIterator::BoundaryFaceIterator::BoundaryFaceIterator
+(const Boundary& boundary) : face_iterator(boundary.grid->bd->faces)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void FaceIterator::BoundaryFaceIterator::operator++()
+{
+  ++face_iterator;
+}
+//-----------------------------------------------------------------------------
+bool FaceIterator::BoundaryFaceIterator::end()
+{
+  return face_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool FaceIterator::BoundaryFaceIterator::last()
+{
+  return face_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int FaceIterator::BoundaryFaceIterator::index()
+{
+  return face_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Face& FaceIterator::BoundaryFaceIterator::operator*() const
+{
+  return **face_iterator;
+}
+//-----------------------------------------------------------------------------
+Face* FaceIterator::BoundaryFaceIterator::operator->() const
+{
+  return *face_iterator;
+}
+//-----------------------------------------------------------------------------
+Face* FaceIterator::BoundaryFaceIterator::pointer() const
+{
+  return *face_iterator;
 }
 //-----------------------------------------------------------------------------
 // FaceIterator::CellFaceIterator

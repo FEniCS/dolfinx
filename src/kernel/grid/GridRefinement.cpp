@@ -16,7 +16,7 @@ void GridRefinement::refine(GridHierarchy& grids)
 {
   // Write a message
   dolfin_start("Refining grid:");
-  cout << grids.fine().rd.noMarkedCells()
+  cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
 
   // Refine grid here ...

@@ -77,7 +77,9 @@ namespace dolfin {
     friend class NodeIterator::BoundaryNodeIterator;
     friend class CellIterator::GridCellIterator;
     friend class EdgeIterator::GridEdgeIterator;
+    friend class EdgeIterator::BoundaryEdgeIterator;
     friend class FaceIterator::GridFaceIterator;
+    friend class FaceIterator::BoundaryFaceIterator;
     friend class XMLGrid;
     friend class GridInit;
     friend class GridRefinement;
@@ -111,13 +113,13 @@ namespace dolfin {
     void init();
     
     // Grid data
-    GridData gd;
+    GridData *gd;
 
     // Boundary data
-    BoundaryData bd;
+    BoundaryData *bd;
 
     // Grid refinement data
-    GridRefinementData rd;
+    GridRefinementData *rd;
     
     // Parent grid
     Grid* _parent;
