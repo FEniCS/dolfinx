@@ -162,26 +162,6 @@ void MultiAdaptiveTimeSlab::sample(real t)
   //cout << endl;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::size() const
-{
-  return N;
-}
-//-----------------------------------------------------------------------------
-real MultiAdaptiveTimeSlab::starttime() const
-{
-  return _a;
-}
-//-----------------------------------------------------------------------------
-real MultiAdaptiveTimeSlab::endtime() const
-{
-  return _b;
-}
-//-----------------------------------------------------------------------------
-real MultiAdaptiveTimeSlab::length() const
-{
-  return _b - _a;
-}
-//-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::usample(uint i, real t)
 {
   // Get element
@@ -844,15 +824,5 @@ void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     // Evaluate right-hand side
     f[m] = ode.f(u, t, i0);
   }
-}
-//-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream,
-				      const MultiAdaptiveTimeSlab& timeslab)
-{
-  stream << "[ TimeSlab of length " << timeslab.length()
-	 << " between a = " << timeslab.starttime()
-	 << " and b = " << timeslab.endtime() << " ]";
-
-  return stream;
 }
 //-----------------------------------------------------------------------------

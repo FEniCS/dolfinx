@@ -46,18 +46,6 @@ namespace dolfin
     /// Prepare sample at time t
     void sample(real t);
 
-    /// Return number of components
-    uint size() const;
-
-    /// Return start time of time slab
-    real starttime() const;
-    
-    /// Return end time of time slab
-    real endtime() const;
-
-    /// Return length of time slab
-    real length() const;
-
     /// Sample solution value of given component at given time
     real usample(uint i, real t);
 
@@ -69,10 +57,6 @@ namespace dolfin
 
     /// Display time slab data
     void disp() const;
-
-    /// Output
-    friend LogStream& operator<<(LogStream& stream,
-				 const MultiAdaptiveTimeSlab& timeslab);
 
     /// Friends
     friend class MultiAdaptiveFixedPointSolver;

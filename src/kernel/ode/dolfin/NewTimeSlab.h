@@ -37,7 +37,7 @@ namespace dolfin
     virtual void sample(real t) = 0;
 
     /// Return number of components
-    virtual uint size() const = 0;
+    uint size() const;
 
     /// Return start time of time slab
     real starttime() const;

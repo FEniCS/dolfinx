@@ -27,6 +27,11 @@ NewTimeSlab::~NewTimeSlab()
   if ( method ) delete method;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint NewTimeSlab::size() const
+{
+  return N;
+}
+//-----------------------------------------------------------------------------
 real NewTimeSlab::starttime() const
 {
   return _a;
@@ -40,5 +45,15 @@ real NewTimeSlab::endtime() const
 real NewTimeSlab::length() const
 {
   return _b - _a;
+}
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream,
+				      const NewTimeSlab& timeslab)
+{
+  stream << "[ TimeSlab of length " << timeslab.length()
+	 << " between a = " << timeslab.starttime()
+	 << " and b = " << timeslab.endtime() << " ]";
+  
+  return stream;
 }
 //-----------------------------------------------------------------------------
