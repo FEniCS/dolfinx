@@ -81,10 +81,8 @@ namespace dolfin
       /// Return state
       bool active() const;
 
-      /// Compute average
-      void computeAverage(RHS& f, Function& u, unsigned int i,
-			  real tau, unsigned int samples, real tol,
-			  Vector& ubar, Vector& fbar);
+      /// Inactivate component
+      void inactivate();
 
       /// Compute model
       void computeModel(Vector& ubar, Vector& fbar, unsigned int i, 
@@ -96,6 +94,9 @@ namespace dolfin
       bool _active;
 
     };
+
+    // Compute averages
+    void computeAverages(RHS& f, Function& u, Vector& fbar, Vector& ubar);
     
     // The given model
     ODE& ode;

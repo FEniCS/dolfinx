@@ -12,7 +12,7 @@ public:
   Structure(unsigned int p) : ParticleSystem(p*p + (p-1)*(p-1), 2), p(p)
   {
     // Final time
-    T = 30.0;
+    T = 10.0;
 
     // Distance between large masses
     h = 1.0 / static_cast<real>(p-1);
@@ -302,8 +302,8 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("solve dual problem", false);
   dolfin_set("number of samples", 100);
-  //dolfin_set("automatic modeling", true);
-  dolfin_set("average length", 0.0000001);
+  dolfin_set("automatic modeling", true);
+  dolfin_set("average length", 1.0);
   dolfin_set("average samples", 1000);
 
   Structure structure(5);

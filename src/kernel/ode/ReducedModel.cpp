@@ -72,13 +72,8 @@ void ReducedModel::update(RHS& f, Function& u, real t)
   // Write a message
   dolfin_info("Creating reduced model at t = %.1e.", 2*tau);
 
-  // Average values of u and f
-  ubar.init(ode.size());
-  fbar.init(ode.size());
-
-  // Compute average values
-  for (unsigned int i = 0; i < ode.size(); i++)
-    g[i].computeAverage(f, u, i, tau, samples, tol, ubar, fbar);
+  // Compute averages of u and f
+  computeAverages(f, u, fbar, ubar);
 
   // Compute reduced model
   for (unsigned int i = 0; i < ode.size(); i++)
@@ -120,6 +115,112 @@ void ReducedModel::save(Sample& sample)
   ode.save(sample);
 }
 //-----------------------------------------------------------------------------
+void ReducedModel::computeAverages(RHS& f, Function& u,
+				   Vector& fbar, Vector& ubar)
+{
+  // Sample length
+  real k = tau / static_cast<real>(samples);
+
+  // Weight for each sample
+  real w = 1.0 / static_cast<real>(samples);
+
+  // Initialize averages
+  ubar.init(ode.size()); // Average on first half (and then both...)
+  fbar.init(ode.size()); // Average on both intervals
+  ubar = 0.0;
+  fbar = 0.0;
+
+  // Minimum and maximum values
+  Vector umin(ode.size());
+  Vector umax(ode.size());
+  umin = 0.0;
+  umax = 0.0;
+
+  // Additional average on second interval for u
+  Vector ubar2(ode.size());
+  ubar2 = 0.0;
+
+  Progress p("Computing averages", 2*samples);
+
+  // Compute average values on first half of the averaging interval
+  for (unsigned int j = 0; j < samples; j++)
+  {
+    for (unsigned int i = 0; i < ode.size(); i++)
+    {
+      // Sample time
+      real t = 0.5*k + static_cast<real>(j)*k;
+      
+      // Compute u and f
+      real uu = u(i, t);
+      real ff = f(i, t);
+
+      // Compute average values of u and f
+      ubar(i) += w * uu;
+      fbar(i) += 0.5 * w * ff;
+      
+      // Compute minimum and maximum values of u and f
+      if ( j == 0 )
+      {
+	umin(i) = uu;
+	umax(i) = uu;
+      }
+      else
+      {
+	umin(i) = std::min(umin(i), uu);
+	umax(i) = std::max(umax(i), uu);
+      }
+    }
+    
+    ++p;
+  }
+    
+  // Compute average values on second half of the averaging interval
+  for (unsigned int j = 0; j < samples; j++)
+  {
+    for (unsigned int i = 0; i < ode.size(); i++)
+    {
+      // Sample time
+      real t = tau + 0.5*k + static_cast<real>(j)*k;
+      
+      // Compute u and f
+      real uu = u(i, t);
+      real ff = f(i, t);
+      
+      // Compute average values of u and f
+      ubar2(i) += w * uu;
+      fbar(i)  += 0.5 * w * ff;
+      
+      // Compute minimum and maximum values of u and f
+      umin(i) = std::min(umin(i), uu);
+      umax(i) = std::max(umax(i), uu);
+    }
+
+    ++p;
+  }
+
+  // Compute relative changes in u
+  for (unsigned int i = 0; i < ode.size(); i++)
+  {
+    real du = fabs(ubar(i) - ubar2(i)) / (umax(i) - umin(i) + DOLFIN_EPS);
+
+    cout << "Component " << i << ":" << endl;
+    cout << "  ubar1 = " << ubar(i) << endl;
+    cout << "  ubar2 = " << ubar2(i) << endl;
+    cout << "  fbar  = " << fbar(i) << endl;
+    cout << "  du/u  = " << du << endl;
+
+    // Inactivate components whose average is constant
+    if ( du < tol )
+    {
+      cout << "Inactivating component " << i << endl;
+      g[i].inactivate();
+    }
+
+    // Save average
+    ubar(i) = 0.5*(ubar(i) + ubar2(i));
+  }
+}
+//-----------------------------------------------------------------------------
 // ReducedModel::Model
 //-----------------------------------------------------------------------------
 ReducedModel::Model::Model() : g(0), _active(true)
@@ -142,89 +243,9 @@ bool ReducedModel::Model::active() const
   return _active;
 }
 //-----------------------------------------------------------------------------
-void ReducedModel::Model::computeAverage(RHS& f, Function& u, unsigned int i,
-					 real tau, unsigned int samples,
-					 real tol, Vector& ubar, Vector& fbar)
+void ReducedModel::Model::inactivate()
 {
-  // Sample length
-  real k = tau / static_cast<real>(samples);
-
-  // Weight for each sample
-  real w = 1.0 / static_cast<real>(samples);
-  
-  // Average values of u and f
-  real ubar1 = 0.0;
-  real ubar2 = 0.0;
-  real fbar1 = 0.0;
-  real fbar2 = 0.0;
-
-  // Maximum values of u and f
-  real umax = 0.0;
-  real fmax = 0.0;
-
-  // Compute average values on first half of the averaging interval
-  for (unsigned int j = 0; j < samples; j++)
-  {
-    // Sample time
-    real t = 0.5*k + static_cast<real>(j)*k;
-    
-    // Compute u and f
-    real uu = u(i, t);
-    real ff = f(i, t);
-    
-    // Compute average values of u and f
-    ubar1 += w * uu;
-    fbar1 += w * ff;
-    
-    // Compute maximum values of u and f
-    umax = std::max(umax, fabs(uu));
-    fmax = std::max(fmax, fabs(ff));
-  }
-
-  // Compute average values on second half of the averaging interval
-  for (unsigned int j = 0; j < samples; j++)
-  {
-    // Sample time
-    real t = tau + 0.5*k + static_cast<real>(j)*k;
-
-    // Compute u and f
-    real uu = u(i, t);
-    real ff = f(i, t);
-    
-    // Compute average values of u and f
-    ubar2 += w * uu;
-    fbar2 += w * ff;
-    
-    // Compute maximum values of u and f
-    umax = std::max(umax, fabs(uu));
-    fmax = std::max(fmax, fabs(ff));
-  }
-
-  // Compute relative change in u
-  real du = fabs(ubar2 - ubar1) / umax;
-
-  // Save averages
-  ubar(i) = 0.5*(ubar1 + ubar2);
-  fbar(i) = 0.5*(fbar1 + fbar2);
-
-  // Inactivate components whose average is constant
-  if ( du < tol )
-  {
-    cout << "Inactivating component " << i << endl;
-    _active = false;
-  }
-  
-  /*
-  cout << "Updating model for component " << i << ":" << endl;
-  cout << "  ubar1 = " << ubar1 << endl;
-  cout << "  ubar2 = " << ubar2 << endl;
-  cout << "  fbar1 = " << fbar1 << endl;
-  cout << "  fbar2 = " << fbar2 << endl;
-  cout << "  umax  = " << umax << endl;
-  cout << "  fmax  = " << fmax << endl;
-  cout << "  du    = " << du << endl;
-  cout << "  df    = " << df << endl;
-  */
+  _active = false;
 }
 //-----------------------------------------------------------------------------
 void ReducedModel::Model::computeModel(Vector& ubar, Vector& fbar,
