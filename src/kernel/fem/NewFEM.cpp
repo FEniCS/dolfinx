@@ -281,7 +281,6 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
-
   // Initialize finite element and element matrix
   const NewFiniteElement& element = a.element;
   real** AK = allocElementMatrix(element);
@@ -302,18 +301,8 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
     a.update(*cell);
     
     // Compute element matrix
-    // FIXME: Doesn't look very nice, change this
-    bool result = a.interior(AK);
+    a.interior(AK);
 
-    // Check if we should skip the remaining cells
-    if ( !result )
-    {
-      dolfin_info("Form does not contain a contribution from interior of domain.");
-      dolfin_info("Skipping remaining cells.");
-      p = 1.0;
-      break;
-    }
-    
     // Copy values to one array
     unsigned int pos = 0;
     for (unsigned int i = 0; i < n; i++)

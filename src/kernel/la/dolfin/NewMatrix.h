@@ -30,7 +30,7 @@ namespace dolfin
     /// Destructor
     ~NewMatrix();
 
-    /// Initialize matrix with given number of rows and columns
+    /// Initialize matrix
     void init(int m, int n);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
