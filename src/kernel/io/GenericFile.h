@@ -7,8 +7,9 @@
 #include <string>
 #include <fstream>
 
+
 namespace dolfin {
-  
+
   class Vector;
   
   class GenericFile {

@@ -36,7 +36,9 @@ dnl Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
 if test $libxml2_found = yes; then
 	XML2_INCLUDES=`xml2-config --cflags`
+	XML2_LFLAGS=`xml2-config --libs`
  	AC_SUBST(XML2_INCLUDES)
+	AC_SUBST(XML2_LFLAGS)
 else
  	echo "Couldn't find libxml2 on your system."
 	exit

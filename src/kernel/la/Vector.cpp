@@ -1,3 +1,8 @@
+// (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
+// Licensed under the GNU GPL Version 2.
+//
+// Modifications by Georgios Foufas (2002)
+
 #include <dolfin/Display.hh>
 #include <dolfin/Vector.h>
 #include <math.h>
@@ -12,11 +17,11 @@ Vector::Vector()
   values = 0;
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(int n)
+Vector::Vector(int size)
 {
   values = 0;
 
-  Resize(n);
+  resize(size);
 }
 //-----------------------------------------------------------------------------
 Vector::~Vector()
@@ -24,12 +29,12 @@ Vector::~Vector()
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-void Vector::Resize(int n)
+void Vector::resize(int size)
 {
   if ( values )
 	 delete [] values;
 
-  this->n = n;
+  n = size;
 
   values = new real[n];
 
@@ -37,110 +42,98 @@ void Vector::Resize(int n)
 	 values[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void Vector::CopyTo(Vector* vec)
+int Vector::size()
 {
-  if (Size()!=vec->Size()) display->InternalError("Vector::operator = ()","Vectors are not the same length");
-
-  for (int i=0; i<n; i++) vec->Set(i,values[i]);    
+  return n;
 }
 //-----------------------------------------------------------------------------
-void Vector::CopyFrom(Vector* vec)
+void Vector::operator=(Vector &vector)
 {
-  if (Size()!=vec->Size()) display->InternalError("Vector::operator = ()","Vectors are not the same length");
+  if ( size() != vector.size() )
+	 display->InternalError("Vector::operator = ()",
+									"Vectors are not the same length");
 
-  for (int i=0; i<n; i++) Set(i,vec->Get(i));    
+  for (int i=0; i<n; i++)
+	 values[i] = vector.values[i];    
 }
 //-----------------------------------------------------------------------------
-void Vector::SetToConstant(real val)
+void Vector::operator=(real scalar)
 {
-  for (int i=0; i<n; i++) Set(i,val);    
+  for (int i=0; i<n; i++)
+	 values[i] = scalar;    
 }
 //-----------------------------------------------------------------------------
-real Vector::operator()(int i)
+real& Vector::operator()(int i)
 {
-  if ((i<0)||(i>=n))
-	 display->InternalError("Vector::operator()","Illegal vector index: %d",i);
-
+  if ( (i<0) || (i>=n) )
+	 display->InternalError("Vector::operator ()",
+									"Illegal vector index: %d",i);
+         
   return values[i];
 }
 //-----------------------------------------------------------------------------
-void Vector::Set(int i, real val)
+void Vector::operator+=(real scalar) 
 {
-  if ((i<0)||(i>=n))
-    display->InternalError("Vector::Set()","Illegal vector index: %d",i);
-
-  values[i] = val;
+  for (int i=0;i<n;i++)
+	 values[i] += scalar;
 }
 //-----------------------------------------------------------------------------
-real Vector::Get(int i)
+void Vector::operator+=(Vector &vector)
 {
-  if ((i<0)||(i>=n))
-    display->InternalError("Vector::Get()","Illegal vector index: %d",i);
-	 
-  return values[i];
-}
-//-----------------------------------------------------------------------------
-void Vector::Add(int i, real val)
-{
-  if ((i<0)||(i>=n))
-    display->InternalError("Vector::Add()","Illegal vector index: %d",i);
-
-  values[i] += val;
-}
-//-----------------------------------------------------------------------------
-void Vector::Add(real a, Vector *v)
-{
-  if ( n != v->Size() )
-	 display->InternalError("Vector::Add()","Dimensions don't match: %d != %d.",n,v->Size());
+  if ( n != vector.size() )
+	 display->InternalError("Vector::operator +=",
+									"Dimensions don't match: %d != %d.",n,vector.size());
 
   for (int i=0;i<n;i++)
-	 values[i] += a*v->values[i];
+	 values[i] += vector.values[i];
 }
 //-----------------------------------------------------------------------------
-void Vector::Mult(int i, real val)
+void Vector::operator*=(real scalar)
 {
-  if ((i<0)||(i>=n))
-	 display->InternalError("Vector::Add()","Illegal vector index");
-
-  values[i] *= val;
+  for (int i=0;i<n;i++)
+	 values[i] *= scalar; 
 }
 //-----------------------------------------------------------------------------
-real Vector::Dot(Vector *v)
+real Vector::operator*(Vector &vector)
 {
-  if ( n != v->Size() )
-	 display->InternalError("Vector::Dot()","Dimensions don't match: %d != %d.",n,v->Size());
+  if ( n != vector.size() )
+	 display->InternalError("Vector::operator *",
+									"Dimensions don't match: %d != %d.",n,vector.size());
   
   real sum = 0.0;
   for (int i=0;i<n;i++)
-	 sum += values[i]*v->values[i];
+	 sum += values[i] * vector.values[i];
 
   return sum;
 }
 //-----------------------------------------------------------------------------
-real Vector::Norm()
+real Vector::norm()
 {
-  // Returns the l2-norm of the vector
-  return Norm(2);
+  return norm(2);
 }
 //-----------------------------------------------------------------------------
-real Vector::Norm(int i)
+real Vector::norm(int i)
 {
   real norm = 0.0; 
 
   switch(i){
   case 0:
     // max-norm
-    for (int i=0;i<n;i++) if (fabs(values[i]) > norm) norm = fabs(values[i]);
+    for (int i=0; i<n; i++)
+		if ( fabs(values[i]) > norm )
+		  norm = fabs(values[i]);
     return norm;
     break;
   case 1:
     // l1-norm
-    for (int i=0;i<n;i++) norm += fabs(values[i]);
+    for (int i=0; i<n; i++)
+		norm += fabs(values[i]);
     return norm;
     break;
   case 2:
     // l2-norm
-    for (int i=0;i<n;i++) norm += sqr(values[i]);
+    for (int i=0; i<n; i++)
+		norm += values[i] * values[i];
     return sqrt(norm);
     break;
   default:
@@ -149,29 +142,29 @@ real Vector::Norm(int i)
 
 }
 //-----------------------------------------------------------------------------
-int Vector::Size()
+void Vector::add(real scalar, Vector &vector)
 {
-  return n;
+  if ( n != vector.size() )
+	 display->InternalError("Vector::add",
+									"Dimensions don't match: %d != %d.",n,vector.size());
+  
+  for (int i = 0; i < n; i++)
+	 values[i] += scalar * vector.values[i];  
 }
 //-----------------------------------------------------------------------------
-void Vector::Display()
-{
-  printf("Vector of size n = %d: v = [ ",n);
-  for (int i=0;i<n;i++)
-	 printf("%f ",values[i]);
-  printf("]\n");
-}
-//-----------------------------------------------------------------------------
-void Vector::Write(const char *filename)
-{
-  FILE *fp = fopen(filename,"w");
-  if ( !fp )
-    display->Error("Unable to write to file \"%s\".",filename);
+namespace dolfin {
 
-  for (int i=0;i<(n-1);i++)
-    fprintf(fp,"%1.16e ",values[i]);
-  fprintf(fp,"%1.16e\n",values[n-1]);
+  //---------------------------------------------------------------------------
+  ostream& operator << (ostream& output, Vector& vector)
+  {
+	 output << "[ ";
+	 for (int i = 0; i < vector.size(); i++)
+		output << vector(i) << " ";
+	 output << "]";
+	 
+	 return output;
+  }
+  //---------------------------------------------------------------------------
 
-  fclose(fp);
 }
 //-----------------------------------------------------------------------------

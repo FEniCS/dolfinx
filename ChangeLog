@@ -1,3 +1,4 @@
+ - Add operators to Vector class (Foufas)
  - Add dependence on libxml2
  - Change from .C to .cpp to make Jim happy. (And everyone else
    with stupid broken case-insensitive OS...)

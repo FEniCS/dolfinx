@@ -69,6 +69,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 XML2_INCLUDES = @XML2_INCLUDES@
+XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 EXTRA_DIST = dolfin_grid.h Grid.hh Node.hh Point.hh Cell.hh Triangle.hh Tetrahedron.hh Edge.hh

@@ -169,8 +169,8 @@ void SparseMatrix::Mult(SparseMatrix* B, SparseMatrix* AB)
 //-----------------------------------------------------------------------------
 void SparseMatrix::Mult(Vector* x, Vector* Ax)
 {
-  int nn = x->Size();
-  int mm = Ax->Size();
+  int nn = x->size();
+  int mm = Ax->size();
   
   if ( (m!=mm) || (n!=nn) )
     display->InternalError("SparseMatrix::Mult()","Wrong dimensions for multiplication.");
@@ -188,9 +188,9 @@ void SparseMatrix::Mult(Vector* x, Vector* Ax)
 		j = columns[pos];
 		if ( j == -1 )
 		  break;
-		sum += values[pos] * x->Get(j);
+		sum += values[pos] * x->values[j];
 	 }
-	 Ax->Set(i,sum);
+	 Ax->values[i] = sum;
 	 
   }
   
@@ -198,7 +198,7 @@ void SparseMatrix::Mult(Vector* x, Vector* Ax)
 //-----------------------------------------------------------------------------
 real SparseMatrix::Mult(int i, Vector* x)
 {
-  int nn = x->Size();
+  int nn = x->size();
   
   if ( n!=nn )
     display->InternalError("SparseMatrix::Mult()","Wrong dimensions for multiplication.");
@@ -217,7 +217,7 @@ real SparseMatrix::Mult(int i, Vector* x)
 	 j = columns[pos];
 	 if ( j == -1 )
 		break;
-	 sum += values[pos] * x->Get(j);
+	 sum += values[pos] * x->values[j];
   }
 
   return sum;

@@ -21,14 +21,14 @@ void SISolver::Solve(SparseMatrix* A, Vector* x, Vector* b)
 {
   if (A->Size(0)!=A->Size(1)) display->Error("Must be a square matrix.");
 
-  if (A->Size(0)!=b->Size())  display->Error("Not compatible matrix and vector sizes.");
+  if (A->Size(0)!=b->size())  display->Error("Not compatible matrix and vector sizes.");
   
-  if (x->Size()!=b->Size())
-    x->Resize(b->Size());
+  if (x->size()!=b->size())
+    x->resize(b->size());
 
-  real norm_b = b->Norm();
+  real norm_b = b->norm();
   if ( norm_b < DOLFIN_EPS ){
-    x->SetToConstant(0.0);
+    for (int i=0;i<x->size();i++) x->values[i] = 0.0;
     return;
   }  
   
@@ -75,22 +75,22 @@ void SISolver::IterateRichardson(SparseMatrix* A, Vector* x, Vector* b)
   
   int j;
 
-  Vector x0( x->Size() );
-  x0.CopyFrom(x);
+  Vector x0( x->size() );
+  x0 = *x;
 
   for (int i=0; i<A->Size(0); i++){
-    x->Set(i,0.0);
+    x->values[i] = 0.0;
     for (int pos=0; pos<A->GetRowLength(i); pos++){
       aij = A->Get(i,&j,pos);
 		if ( j == -1 )
 		  break;
       if (i==j){
-		  x->Add(i,(1.0-aij)*x0(j));
+		  x->values[i] += (1.0-aij)*x0(j);
       } else{
-		  x->Add(i,-aij*x0(j));
+		  x->values[i] += -aij*x0(j);
       }	  
     }
-    x->Add(i,(*b)(i));
+    x->values[i] += (*b)(i);
   }
 
 }
@@ -100,19 +100,19 @@ void SISolver::IterateJacobi(SparseMatrix* A, Vector* x, Vector* b)
   real aii,aij,norm_b,Ax;
   int j;
 
-  Vector x0( x->Size() );
-  x0.CopyFrom(x);
+  Vector x0( x->size() );
+  x0 = *x;
 
   for (int i=0; i<A->Size(0); i++){
-    x->Set(i,0.0);
+    (*x)(i) = 0.0;
     for (int pos=0; pos<A->GetRowLength(i); pos++){
       aij = A->Get(i,&j,pos);
       if ( j == -1 ) break;
       if (i==j) aii = aij;
-      else x->Add(i,-aij*x0(j));
+      else (*x)(i) += -aij*x0(j);
     }
-    x->Add(i,(*b)(i));
-    x->Mult(i,1.0/aii);
+    (*x)(i) += (*b)(i);
+    (*x)(i) *= 1.0/aii;
   }
 }
 //-----------------------------------------------------------------------------
@@ -123,7 +123,7 @@ void SISolver::IterateGaussSeidel(SparseMatrix* A, Vector* x, Vector* b)
   int j;
 
   for (int i=0; i<A->Size(0); i++){
-    x->Set(i,0.0);
+    (*x)(i) = 0.0;
     for (int pos=0; pos<A->GetRowLength(i); pos++){
       aij = A->Get(i,&j,pos);
 		if ( j == -1 )
@@ -131,11 +131,11 @@ void SISolver::IterateGaussSeidel(SparseMatrix* A, Vector* x, Vector* b)
       if (j==i){
 		  aii = aij;
       } else{
-		  x->Add(i,-aij*(*x)(j));
+		  (*x)(i) += -aij*(*x)(j);
       }	  
     }
-    x->Add(i,(*b)(i));
-    x->Mult(i,1.0/aii);
+    (*x)(i) += (*b)(i);
+    (*x)(i) *= 1.0/aii;
   }
 
 }
@@ -149,20 +149,20 @@ void SISolver::IterateSOR(SparseMatrix* A, Vector* x, Vector* b)
   real omega = 1.0;
 
   for (int i=0; i<A->Size(0); i++){
-    x->Set(i,0.0);
+    (*x)(i) = 0.0;
     for (int pos=0; pos<A->GetRowLength(i); pos++){
       aij = A->Get(i,&j,pos);
 		if ( j == -1 )
 		  break;
       if (j==i){
-	aii = aij;
-	x->Add(i,(1.0-omega)*aii*(*x)(j));
+		  aii = aij;
+		  (*x)(i) += (1.0-omega)*aii*(*x)(j);
       } else{
-	x->Add(i,-omega*aij*(*x)(j));
+		  (*x)(i) += -omega*aij*(*x)(j);
       }	  
     }
-    x->Add(i,(*b)(i));
-    x->Mult(i,1.0/aii);
+    (*x)(i) += (*b)(i);
+    (*x)(i) *= 1.0/aii;
   }
 
 }

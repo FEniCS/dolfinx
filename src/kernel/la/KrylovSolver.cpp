@@ -43,12 +43,12 @@ void KrylovSolver::Solve(SparseMatrix *A, Vector *x, Vector *b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::Solve(Vector* x, Vector* b)
 {
-  if (x->Size()!=b->Size())
-    x->Resize(b->Size());
+  if (x->size()!=b->size())
+    x->resize(b->size());
   
-  norm_b = b->Norm();
+  norm_b = b->norm();
   if ( norm_b == 0 ){
-    x->SetToConstant(0.0);
+    (*x) = 0.0;
     return;
   }
 
@@ -70,7 +70,7 @@ void KrylovSolver::SolveGMRES(Vector* x, Vector* b)
   int k_max             = 20;
   int max_no_iterations = 100;
 
-  int n = x->Size();
+  int n = x->size();
 
   // Allocate memory for arrays
   AllocateArrays(n,k_max);
@@ -113,16 +113,14 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
   // at a maximal number of iterations kmax, 
   // starting from startvector v = Px. 
 
-  int n = x->Size();
+  int n = x->size();
 
-  real norm_b = 0.0;
-  for (int i=0;i<n;i++) norm_b += sqr(b->Get(i));
-  norm_b = sqrt(norm_b);
+  real norm_b = b->norm();
   
   // Compute start residual = b-AP^(-1)u = b-Ax.
   Vector residual(n);
   ComputeResidual(x,b,&residual);
-  norm_residual = residual.Norm();
+  norm_residual = residual.norm();
 
   for (int i=0;i<n;i++) mat_v[i][0] = residual(i)/norm_residual;
       
@@ -222,9 +220,9 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
     vec_y[k-i] /= mat_r[k-i][k-i];
   }
   
-  tmpvec.SetToConstant(0.0);
+  tmpvec = 0.0;
   for (int i=0;i<n;i++){
-    for (int j=0; j < k+1; j++) tmpvec.Add(i,mat_v[i][j]*vec_y[j]);
+    for (int j=0; j < k+1; j++) tmpvec(i) += mat_v[i][j]*vec_y[j];
   }
 
   if ( pc != pc_none ){
@@ -232,7 +230,8 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
     SolvePxv(&tmpvec);
   }
 
-  for (int i=0;i<n;i++) x->Add(i,tmpvec(i));
+  for (int i=0;i<n;i++)
+	 (*x)(i) += tmpvec(i);
 
   norm_residual = GetResidual(x,b);
 
@@ -248,10 +247,10 @@ void KrylovSolver::SolveCG(Vector* x, Vector* b)
   // dirichlet boundary conditions, since then the 
   // symmetry of the matrix is destroyed.
 
-  int sz = x->Size();
+  int sz = x->size();
   int k_max = 20;
   
-  real norm_b = b->Norm();
+  real norm_b = b->norm();
   
   // Compute start residual = b-Ax.
   Vector residual(sz);
@@ -263,9 +262,9 @@ void KrylovSolver::SolveCG(Vector* x, Vector* b)
   rho[0] = sqr(norm_residual);
 
   Vector w(sz);
-  w.SetToConstant(0.0);
+  w = 0.0;
   Vector p(sz);
-  p.SetToConstant(0.0);
+  p = 0.0;
 
   real alpha,beta,tmp;
 
@@ -285,24 +284,25 @@ void KrylovSolver::SolveCG(Vector* x, Vector* b)
     display->Message(0,"rho(k-1) = %f, rho(k-2) = %f",rho[k-1],rho[k-2]);
     
     if ( k==1 ){
-      p.CopyFrom(&residual);
+      p = residual;
     } else{
       beta = rho[k-1]/rho[k-2];
-      for (int i=0; i < sz; i++) p.Set(i,residual(i) + beta*p(i));
+      for (int i=0; i < sz; i++)
+		  p(i) = residual(i) + beta*p(i);
     }      
     
     ApplyMatrix(&p,&w);
     
-    tmp = p.Dot(&w);
+    tmp = p * w;
     alpha = rho[k-1]/tmp;
     
-    display->Message(0,"tmp = %f, alpha = %f, norm_p = %f, norm_w = %f",tmp,alpha,p.Norm(),w.Norm());
+    display->Message(0,"tmp = %f, alpha = %f, norm_p = %f, norm_w = %f",tmp,alpha,p.norm(),w.norm());
     
-    x->Add(alpha,&p);
+    x->add(alpha,p);
     
-    residual.Add(-alpha,&w);
+    residual.add(-alpha,w);
     
-    rho[k] = sqr(residual.Norm());
+    rho[k] = sqr(residual.norm());
     
     display->Message(0,"CG residual rho = %.5f, rho/||b|| = %.5f, tol = %.5f",rho[k-1],rho[k-1]/norm_b,tol);
     
@@ -353,14 +353,15 @@ void KrylovSolver::ApplyMatrix( real **x, int comp )
   Vector tmp1(A->Size(0)); 
   Vector tmp2(A->Size(0)); 
 
-  for (int i=0; i<A->Size(0); i++) tmp1.Set(i,x[i][comp]);
+  for (int i=0; i<A->Size(0); i++)
+	 tmp1(i) = x[i][comp];
 
   // Precondition 
   no_pc_sweeps = 1;
   if ( pc != pc_none ){
     sisolver.SetNoIterations(no_pc_sweeps);
     sisolver.Solve(A,&tmp2,&tmp1);
-    tmp1.CopyFrom(&tmp2);
+    tmp1 = tmp2;
   }      
     
   A->Mult(&tmp1,&tmp2);
@@ -399,7 +400,8 @@ void KrylovSolver::SolvePxv( Vector *x )
 
   Vector tmp1(A->Size(0)); 
 
-  for (int i=0; i<A->Size(0); i++) tmp1.Set(i,x->Get(i));
+  for (int i=0; i<A->Size(0); i++)
+	 tmp1(i) = (*x)(i);
 
   // Solve preconditioned problem 
   sisolver.SetNoIterations(no_pc_sweeps);
@@ -411,7 +413,7 @@ void KrylovSolver::ComputeResidual( Vector *x, Vector *b, Vector *res )
   real Axrow;
   for (int i=0;i<A->Size(0);i++){
     Axrow  = A->Mult(i,x);
-    res->Set(i,b->Get(i)-Axrow);
+    (*res)(i) = (*b)(i) - Axrow;
   }
 }
 //-----------------------------------------------------------------------------
@@ -421,7 +423,7 @@ real KrylovSolver::GetResidual( Vector *x, Vector *b )
   norm_residual = 0.0;
   for (int i=0;i<A->Size(0);i++){
     Axrow  = A->Mult(i,x);
-    norm_residual += sqr(b->Get(i)-Axrow);
+    norm_residual += sqr( (*b)(i) - Axrow );
   }
   return sqrt(norm_residual);
 }

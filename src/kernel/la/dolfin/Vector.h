@@ -1,8 +1,12 @@
 // (c) 2002 Johan Hoffman & Anders Logg, Chalmers Finite Element Center.
 // Licensed under the GNU GPL Version 2.
+//
+// Modifications by Georgios Foufas (2002)
 
 #ifndef __VECTOR_HH
 #define __VECTOR_HH
+
+#include <iostream>
 
 #include <dolfin/dolfin_constants.h>
 
@@ -12,39 +16,38 @@ namespace dolfin {
   public:
 	 
 	 Vector  ();
-	 Vector  (int n);
+	 Vector  (int size);
 	 ~Vector ();
+
+	 void resize(int size);
+	 int size();
 	 
-	 void Resize(int n);
+	 void operator=(Vector &vector);
+	 void operator=(real scalar);
 	 
-	 void CopyTo(Vector* vec);
-	 void CopyFrom(Vector* vec);
-	 void SetToConstant(real val);
+	 real& operator()(int index);
 	 
-	 int Size();
+	 void operator+=(Vector &vector);
+	 void operator+=(real scalar);	 
+	 void operator*=(real scalar);
 	 
-	 void Set(int i, real val);
-	 real Get(int i);
+	 real operator*(Vector &vector);
 	 
-	 void Add  (int i, real val);
-	 void Add  (real a, Vector *v);
-	 void Mult (int i, real val);
-	 real Dot  (Vector *v);
-	 real Norm ();
-	 real Norm (int i);
-	 
-	 real operator()(int i);
-	 
-	 void Display();
-	 void Write(const char *filename);
+	 real norm ();
+	 real norm (int i);
+	 void add(real scalar, Vector &vector);
 	 
 	 friend class DirectSolver;
+	 friend class SparseMatrix;
+	 friend class SISolver;
+	 
+	 friend ostream& operator << (ostream& output, Vector& vector);
 	 
   private:
 	 
 	 int n;
-	 
 	 real *values;
+	 
   };
 
 }

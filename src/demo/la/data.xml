@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
+<vector size="10">
+<element row="0" value="0.092696"/>
+<element row="1" value="0.401888"/>
+<element row="2" value="0.810580"/>
+<element row="3" value="0.231715"/>
+<element row="4" value="0.705597"/>
+<element row="5" value="0.711341"/>
+<element row="6" value="0.615012"/>
+<element row="7" value="0.062337"/>
+<element row="8" value="0.365179"/>
+<element row="9" value="0.857104"/>
+</vector>
+</dolfin>

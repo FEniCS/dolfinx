@@ -10,11 +10,13 @@ using namespace dolfin;
 
 int main(int argc, char **argv)
 {
-  File file("example.dolfin");
+  File file("data.xml");
   Vector x;
 
   file >> x;
 
+  cout << "x = " << x << endl;
+  
   // Temporary: FIXME
   delete display;
 }

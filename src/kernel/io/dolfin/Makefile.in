@@ -69,6 +69,7 @@ PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 XML2_INCLUDES = @XML2_INCLUDES@
+XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 EXTRA_DIST = dolfin_io.h Display.hh Terminal.hh

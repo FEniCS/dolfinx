@@ -13,6 +13,8 @@ File::File(const std::string& filename)
 {
   if ( filename.rfind(".xml") != filename.npos )
 	 file = new XMLFile(filename);
+  else if ( filename.rfind(".xml.gz") != filename.npos )
+	 file = new XMLFile(filename);
   else{
 	 cout << "Unknown type for file " << filename << endl;
 	 exit(1);

@@ -108,9 +108,9 @@ void DirectSolver::Solve(DenseMatrix *LU, Vector *x, Vector *b)
   //    changed from [i][j] to [i-1][j-1]
   
   //Check dimensions
-  if ( LU->Size(0) != x->Size() )
-	 x->Resize(LU->Size(0));
-  if ( LU->Size(1) != b->Size() )
+  if ( LU->Size(0) != x->size() )
+	 x->resize(LU->Size(0));
+  if ( LU->Size(1) != b->size() )
 	 display->InternalError("DenseMatrix::LU()","Matrix is not square.");
   
   // Prepare the variables for the notation in the algorithm
