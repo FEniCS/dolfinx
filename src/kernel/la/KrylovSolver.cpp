@@ -13,14 +13,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver()
+KrylovSolver::KrylovSolver(Method method)
 {
-  method = gmres;
-  pc     = none;
-  tol    = 1.0e-10;
+  this->method = method;
+  pc  = NONE;
+  tol = 1.0e-10;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setMethod(Krylov_method method)
+void KrylovSolver::set(Method method)
 {
   this->method = method;
 }
@@ -49,10 +49,10 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
   
   // Choose method
   switch( method ){ 
-  case gmres:
+  case GMRES:
     solveGMRES(A,x,b);
     break;
-  case cg:
+  case CG:
     solveCG(A,x,b);
     break;
   default:
@@ -297,19 +297,19 @@ void KrylovSolver::applyPxu(Matrix &A, Vector &x, Vector &u)
   SISolver sisolver;
   
   switch ( pc ) { 
-  case richardson:
-    sisolver.setMethod(SISolver::richardson);
+  case RICHARDSON:
+    sisolver.setMethod(SISolver::RICHARDSON);
     break;
-  case jacobi:
-    sisolver.setMethod(SISolver::jacobi);
+  case JACOBI:
+    sisolver.setMethod(SISolver::JACOBI);
     break;
-  case gauss_seidel:
-    sisolver.setMethod(SISolver::gauss_seidel);
+  case GAUSS_SEIDEL:
+    sisolver.setMethod(SISolver::GAUSS_SEIDEL);
     break;
-  case sor:
-    sisolver.setMethod(SISolver::sor);
+  case SOR:
+    sisolver.setMethod(SISolver::SOR);
     break;
-  case none:
+  case NONE:
     u = x;
     return;
     break;
@@ -328,19 +328,19 @@ void KrylovSolver::solvePxu(Matrix &A, Vector &x, Vector &u)
   SISolver sisolver;
   
   switch ( pc ) { 
-  case richardson:
-    sisolver.setMethod(SISolver::richardson);
+  case RICHARDSON:
+    sisolver.setMethod(SISolver::RICHARDSON);
     break;
-  case jacobi:
-    sisolver.setMethod(SISolver::jacobi);
+  case JACOBI:
+    sisolver.setMethod(SISolver::JACOBI);
     break;
-  case gauss_seidel:
-    sisolver.setMethod(SISolver::gauss_seidel);
+  case GAUSS_SEIDEL:
+    sisolver.setMethod(SISolver::GAUSS_SEIDEL);
     break;
-  case sor:
-    sisolver.setMethod(SISolver::sor);
+  case SOR:
+    sisolver.setMethod(SISolver::SOR);
     break;
-  case none:
+  case NONE:
     x = u;
     return;
     break;
@@ -359,19 +359,19 @@ void KrylovSolver::solvePxv(Matrix &A, Vector &x, DenseMatrix &v, int k)
   SISolver sisolver;
   
   switch ( pc ) { 
-  case richardson:
-    sisolver.setMethod(SISolver::richardson);
+  case RICHARDSON:
+    sisolver.setMethod(SISolver::RICHARDSON);
     break;
-  case jacobi:
-    sisolver.setMethod(SISolver::jacobi);
+  case JACOBI:
+    sisolver.setMethod(SISolver::JACOBI);
     break;
-  case gauss_seidel:
-    sisolver.setMethod(SISolver::gauss_seidel);
+  case GAUSS_SEIDEL:
+    sisolver.setMethod(SISolver::GAUSS_SEIDEL);
     break;
-  case sor:
-    sisolver.setMethod(SISolver::sor);
+  case SOR:
+    sisolver.setMethod(SISolver::SOR);
     break;
-  case none:
+  case NONE:
     for (int i=0;i<v.size(0);i++) x(i) = v(i,k);
     return;
     break;

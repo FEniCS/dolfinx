@@ -6,7 +6,7 @@
 TMPFILE="var.tmp"
 COMPILER=`cat $TMPFILE | grep COMPILER | cut -d'"' -f2`
 CFLAGS=`cat $TMPFILE | grep CFLAGS | cut -d'"' -f2`
-LFLAGS=`cat $TMPFILE | grep LFLAGS | cut -d'"' -f2`
+LIBS=`cat $TMPFILE | grep LIBS | cut -d'"' -f2`
 PACKAGE=`cat $TMPFILE | grep PACKAGE | cut -d'"' -f2`
 VERSION=`cat $TMPFILE | grep VERSION | cut -d'"' -f2`
 
@@ -16,10 +16,10 @@ TOPDIR=`pwd`
 cd src/config
 
 # Set variables
-CFLAGS_INSOURCE="-I$TOPDIR/include $CFLAGS"
-LFLAGS_INSOURCE="-L$TOPDIR/lib $LFLAGS"
+CFLAGS_DOLFIN="-I$TOPDIR/include $CFLAGS"
+LIBS_DOLFIN="-L$TOPDIR/lib $LIBS"
 CFLAGS="not_configured"
-LFLAGS="not_configured"
+LIBS="not_configured"
 FILE="./dolfin-config"
 TEMPLATE="./dolfin-config.template"
 DOLFIN_MAIN_INCLUDE="../kernel/main/dolfin.h"
@@ -31,7 +31,7 @@ for f in `find .. -name '*.a'`; do
 	 lib=`echo $f | xargs basename | cut -d'b' -f2-0 | cut -d'.' -f1`
 #	 lflag="-l$lib"
 	 DOLFIN_LIBS="$DOLFIN_LIBS $f"
-#	 LFLAGS_INSOURCE="$LFLAGS_INSOURCE $lflag"
+#	 LIBS_DOLFIN="$LFLAGS_INSOURCE $lflag"
 	 echo "  Found: $lib"
 done
 
@@ -51,9 +51,9 @@ echo \# config-script for $PACKAGE version $VERSION >> $FILE
 echo >> $FILE
 echo COMPILER=\"$COMPILER\" >> $FILE
 echo CFLAGS=\"$CFLAGS\" >> $FILE
-echo LFLAGS=\"$LFLAGS\" >> $FILE
-echo CFLAGS_INSOURCE=\"$CFLAGS_INSOURCE\" >> $FILE
-echo LFLAGS_INSOURCE=\"$LFLAGS_INSOURCE\" >> $FILE
+echo LIBS=\"$LIBS\" >> $FILE
+echo CFLAGS_DOLFIN=\"$CFLAGS_DOLFIN\" >> $FILE
+echo LIBS_DOLFIN=\"$LIBS_DOLFIN\" >> $FILE
 echo PACKAGE=\"$PACKAGE\" >> $FILE
 echo VERSION=\"$VERSION\" >> $FILE
 echo >> $FILE

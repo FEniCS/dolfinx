@@ -14,7 +14,6 @@ Equation::Equation(int dim)
   k = 0.0;
   
   this->dim = dim;
-  mapping = 0;
   
   noeq = 1; // Will be set otherwise by EquationSystem
 }
@@ -78,24 +77,24 @@ real Equation::dt(real a) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dx(const ShapeFunction &v) const
+const ElementFunction& Equation::dx(const ShapeFunction &v) const
 {
-  return mapping->dx(v);
+  return v.dx();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dy(const ShapeFunction &v) const
+const ElementFunction& Equation::dy(const ShapeFunction &v) const
 {
-  return mapping->dy(v);
+  return v.dy();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dz(const ShapeFunction &v) const
+const ElementFunction& Equation::dz(const ShapeFunction &v) const
 {
-  return mapping->dz(v);
+  return v.dz();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction Equation::dt(const ShapeFunction &v) const
+const ElementFunction& Equation::dt(const ShapeFunction &v) const
 {
-  return mapping->dt(v);
+  return v.dt();
 }
 //-----------------------------------------------------------------------------
 const ElementFunction Equation::dx(const Product &v) const
@@ -141,10 +140,7 @@ const ElementFunction Equation::dt(const ElementFunction &v) const
 const FunctionSpace::Vector<ElementFunction>
 Equation::grad(const ShapeFunction &v)
 {
-  FunctionSpace::Vector<ElementFunction> w(3);
-  w(0) = mapping->dx(v);
-  w(1) = mapping->dy(v);
-  w(2) = mapping->dz(v);
+  FunctionSpace::Vector<ElementFunction> w(v.dx(), v.dy(), v.dz());
 
   return w;
 }

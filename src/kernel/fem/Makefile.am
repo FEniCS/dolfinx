@@ -1,12 +1,15 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
+                          dolfin/DofFunction.h \
                           dolfin/ElementFunction.h \
                           dolfin/Equation.h \
+                          dolfin/ExpressionFunction.h \
                           dolfin/FiniteElement.h \
                           dolfin/Function.h \
                           dolfin/FunctionList.h \
                           dolfin/FunctionSpace.h \
                           dolfin/Galerkin.h \
+                          dolfin/GenericFunction.h \
                           dolfin/Product.h \
                           dolfin/ShapeFunction.h \
                           dolfin/Solver.h \
@@ -14,9 +17,11 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/TriLinMapping.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = ElementFunction.cpp \
+libdolfin_fem_a_SOURCES = DofFunction.cpp \
+                          ElementFunction.cpp \
                           Equation.cpp \
                           EquationSystem.h \
+                          ExpressionFunction.cpp \
                           FiniteElement.cpp \
                           Function.cpp \
                           FunctionList.cpp \

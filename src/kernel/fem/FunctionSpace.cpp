@@ -7,6 +7,7 @@
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/Product.h>
 #include <dolfin/ElementFunction.h>
+#include <dolfin/Mapping.h>
 #include <dolfin/FunctionSpace.h>
 
 using namespace dolfin;
@@ -96,6 +97,12 @@ void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
 int FunctionSpace::dim() const
 {
   return _dim;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::update(const Mapping& mapping)
+{
+  for (Iterator v(*this); !v.end(); ++v)
+	 v->update(mapping);
 }
 //-----------------------------------------------------------------------------
 // FunctionSpace::Iterator

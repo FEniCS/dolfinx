@@ -36,29 +36,29 @@ int main(int argc, char **argv)
   KrylovSolver ks;
 
   x = 1.0;
-  ks.setMethod(KrylovSolver::gmres);
+  ks.set(KrylovSolver::GMRES);
   ks.solve(A,x,b);
 
   x = 1.0;
-  ks.setMethod(KrylovSolver::cg);
+  ks.set(KrylovSolver::CG);
   ks.solve(A,x,b);
 
   SISolver si;
 
   x = 1.0;
-  si.setMethod(SISolver::jacobi);
+  si.setMethod(SISolver::JACOBI);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::gauss_seidel);
+  si.setMethod(SISolver::GAUSS_SEIDEL);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::sor);
+  si.setMethod(SISolver::SOR);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::richardson);
+  si.setMethod(SISolver::RICHARDSON);
   si.solve(A,x,b);
 
   for (int i=0; i < 10; i++){
@@ -76,19 +76,19 @@ int main(int argc, char **argv)
   cout << "A = "; A.show();
 
   x = 1.0;
-  si.setMethod(SISolver::jacobi);
+  si.setMethod(SISolver::JACOBI);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::gauss_seidel);
+  si.setMethod(SISolver::GAUSS_SEIDEL);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::sor);
+  si.setMethod(SISolver::SOR);
   si.solve(A,x,b);
 
   x = 1.0;
-  si.setMethod(SISolver::richardson);
+  si.setMethod(SISolver::RICHARDSON);
   si.solve(A,x,b);
 
   Vector R;

@@ -11,7 +11,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 SISolver::SISolver()
 {
-  method = gauss_seidel;
+  method = GAUSS_SEIDEL;
   max_no_iterations = 10000;
   tol = 1.0e-10;
 }
@@ -42,17 +42,17 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   int iteration = 0;
   while (norm_r > tol*norm_b){
     iteration ++;
-    switch(method){ 
-    case richardson:
+    switch ( method ) { 
+    case RICHARDSON:
       iterateRichardson(A,x,b);
       break;
-    case jacobi:
+    case JACOBI:
       iterateJacobi(A,x,b);
       break;
-    case gauss_seidel:
+    case GAUSS_SEIDEL:
       iterateGaussSeidel(A,x,b);
       break;
-    case sor:
+    case SOR:
       iterateSOR(A,x,b);
       break;
     default:
@@ -68,17 +68,17 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
     norm_r = getResidual(A,x,b);
   }
   
-  switch(method){ 
-  case richardson:
+  switch ( method ) { 
+  case RICHARDSON:
     std::cout << "Richardson";
     break;
-  case jacobi:
+  case JACOBI:
     std::cout << "Jacobi";
     break;
-  case gauss_seidel:
+  case GAUSS_SEIDEL:
     std::cout << "Gauss-Seidel";
     break;
-  case sor:
+  case SOR:
     std::cout << "SOR";
     break;
   default:
@@ -97,7 +97,7 @@ void SISolver::setNoSweeps(int max_no_iterations)
   this->max_no_iterations = max_no_iterations;
 }
 //-----------------------------------------------------------------------------
-void SISolver::setMethod(SI_method method)
+void SISolver::setMethod(Method method)
 {
   this->method = method;
 }

@@ -19,14 +19,14 @@ namespace dolfin {
   class CellIterator {
   public:
 	 
-	 CellIterator(Grid &grid);
-	 CellIterator(Grid *grid);
+	 CellIterator(const Grid& grid);
+	 CellIterator(const Grid* grid);
 
-	 CellIterator(Cell &cell);
-	 CellIterator(CellIterator &cellIterator);
+	 CellIterator(const Cell& cell);
+	 CellIterator(const CellIterator& cellIterator);
 	 
-	 CellIterator(Node &node);
-	 CellIterator(NodeIterator &nodeIterator);
+	 CellIterator(const Node& node);
+	 CellIterator(const NodeIterator& nodeIterator);
 	 
 	 ~CellIterator();
 
@@ -35,17 +35,21 @@ namespace dolfin {
 	 
 	 CellIterator& operator++();
 	 bool end();
+	 bool last();
 	 int index();
 	 
 	 Cell& operator*() const;
 	 Cell* operator->() const;
-
+	 bool  operator==(const CellIterator& c) const;
+	 bool  operator!=(const CellIterator& c) const;
+	 
 	 // Base class for cell iterators
 	 class GenericCellIterator {
 	 public:
 		
 		virtual void operator++() = 0;
 		virtual bool end() = 0;
+		virtual bool last() = 0;
 		virtual int index() = 0;
 		
 		virtual Cell& operator*() const = 0;
@@ -58,10 +62,11 @@ namespace dolfin {
 	 class GridCellIterator : public GenericCellIterator {
 	 public:
 		
-		GridCellIterator(Grid &grid); 
+		GridCellIterator(const Grid& grid); 
 		
 		void operator++();
 		bool end();
+		bool last();
 		int index();
 		
 		Cell& operator*() const;
@@ -77,9 +82,10 @@ namespace dolfin {
 	 class CellCellIterator : public GenericCellIterator {
 	 public:
 
-		CellCellIterator(Cell &cell);
+		CellCellIterator(const Cell& cell);
 		void operator++();
 		bool end();
+		bool last();
 		int index();
 
 		Cell& operator*() const;
@@ -96,9 +102,10 @@ namespace dolfin {
 	 class NodeCellIterator : public GenericCellIterator {
 	 public:
 
-		NodeCellIterator(Node &node);
+		NodeCellIterator(const Node& node);
 		void operator++();
 		bool end();
+		bool last();
 		int index();
 
 		Cell& operator*() const;

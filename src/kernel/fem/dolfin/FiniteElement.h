@@ -31,6 +31,9 @@ namespace dolfin {
 	 // Dimension (of trial space)
 	 int dim() const;
 
+	 // Update function spaces
+	 void update(const Mapping* mapping);
+	 
 	 // Iterator over shape functions in the local trial space
 	 class TrialFunctionIterator {
 	 public:

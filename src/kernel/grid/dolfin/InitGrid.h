@@ -27,11 +27,14 @@ namespace dolfin{
   private:
 
 	 void clear();
-	 
+
+	 void initNeighbors();
+	 void initBoundary();
+		 
 	 void initNodeCell();
 	 void initCellCell();
 	 void initNodeNode();
-
+ 
 	 Grid& grid;
 	 
   };

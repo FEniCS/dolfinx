@@ -50,6 +50,10 @@ namespace dolfin {
 	 ElementFunction(const ShapeFunction   &v0, const ElementFunction &v1);
 	 ElementFunction(const Product         &v0, const ElementFunction &v1);
 
+	 // Constructor for scalar product
+	 ElementFunction(const ElementFunction& v0, const ElementFunction& v1, const ElementFunction& v2,
+						  const ElementFunction& w0, const ElementFunction& w1, const ElementFunction& w2);
+	 
 	 // Destructor
 	 ~ElementFunction();
 	 

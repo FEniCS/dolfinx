@@ -18,25 +18,25 @@ TriLinMapping::TriLinMapping() : Mapping()
 const FunctionSpace::ElementFunction TriLinMapping::dx
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g11*v.dx() + g21*v.dy();
+  return g11*v.dX() + g21*v.dY();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dy
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g12*v.dx() + g22*v.dy();
+  return g12*v.dX() + g22*v.dY();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dz
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return v.dz();
+  return v.dZ();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dt
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return v.dt();
+  return v.dT();
 }
 //-----------------------------------------------------------------------------
 void TriLinMapping::update(const Cell& cell)

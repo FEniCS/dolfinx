@@ -3,13 +3,13 @@ usage()
    cat << EOF
 Usage: dolfin-config [options]
 
-       --version  (for version number)
-       --cflags   (for compiler flags)
-       --lflags   (for linking flags)
-       --compiler (for the compiler)
+       --version  (get version number)
+       --cflags   (get compiler flags)
+       --libs     (get libraries for linking)
+       --compiler (get compiler)
 
-       --cflags_insource (for in-source test problems)
-       --lflags_insource (for in-source test problems)
+       --cflags_dolfin (for demo programs in the source tree)
+       --lflags_dolfin (for demo programs in the source tree)
 
 EOF
    exit $1
@@ -26,17 +26,17 @@ case $1 in
 	--cflags)
       echo $CFLAGS
       ;;
-	--lflags)
+	--libs)
 		echo $LFLAGS
       ;;
 	--compiler)
 		echo $COMPILER
       ;;
-	--cflags_insource)
-      echo $CFLAGS_INSOURCE
+	--cflags_dolfin)
+      echo $CFLAGS_DOLFIN
       ;;
-	--lflags_insource)
-		echo $LFLAGS_INSOURCE
+	--libs_dolfin)
+		echo $LIBS_DOLFIN
       ;;
 	*)
       usage 1 1>&2

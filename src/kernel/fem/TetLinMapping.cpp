@@ -18,25 +18,25 @@ TetLinMapping::TetLinMapping() : Mapping()
 const FunctionSpace::ElementFunction TetLinMapping::dx
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g11*v.dx() + g21*v.dy() + g31*v.dz();
+  return g11*v.dX() + g21*v.dY() + g31*v.dZ();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TetLinMapping::dy
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g12*v.dx() + g22*v.dy() + g32*v.dz();
+  return g12*v.dX() + g22*v.dY() + g32*v.dZ();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TetLinMapping::dz
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g13*v.dx() + g23*v.dy() + g33*v.dz();
+  return g13*v.dX() + g23*v.dY() + g33*v.dZ();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TetLinMapping::dt
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return v.dt();
+  return v.dT();
 }
 //-----------------------------------------------------------------------------
 void TetLinMapping::update(const Cell& cell)

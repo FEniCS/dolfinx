@@ -269,9 +269,11 @@ public:
 	 // Create iterator positioned at the end of the list
 	 Iterator(){
 		list = 0;
+
 		block = 0;
 		_index = -1;
 		pos = 0;
+
 		at_end = true;
 	 }
 
@@ -298,6 +300,18 @@ public:
 		return *this;
 	 }
 
+	 /// Check if iterator has reached end of list
+	 bool end() const
+	 {
+		return at_end;
+	 }
+
+	 /// Check if iterator is at last position
+	 bool last() const
+	 {
+		return _index == (list->size() - 1);
+	 }
+	 
 	 /// Returns current object
 	 T& operator*() const
 	 {

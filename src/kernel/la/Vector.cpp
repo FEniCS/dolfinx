@@ -13,6 +13,8 @@ Vector::Vector()
 {
   n = 0;
   values = 0;
+
+  rename("x", "A vector");
 }
 //-----------------------------------------------------------------------------
 Vector::Vector(int size)
@@ -20,6 +22,8 @@ Vector::Vector(int size)
   values = 0;
 
   init(size);
+
+  rename("x", "A vector");
 }
 //-----------------------------------------------------------------------------
 Vector::Vector(Vector &vector)
@@ -28,6 +32,8 @@ Vector::Vector(Vector &vector)
   values = new real[n];
   for (int i = 0; i < n; i++)
 	 values[i] = vector.values[i];
+
+  rename(vector.name(), vector.label());
 }
 //-----------------------------------------------------------------------------
 int Vector::bytes() const

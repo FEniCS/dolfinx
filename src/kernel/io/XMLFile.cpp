@@ -3,6 +3,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
+#include <dolfin/Function.h>
 
 #include "XMLFile.h"
 #include "XMLObject.h"
@@ -48,19 +49,34 @@ void XMLFile::operator>>(Grid& grid)
   parseFile();
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator>>(Function& u)
+{
+  // FIXME: Use logging system
+  std::cout << "Warning: Cannot read functions from XML files." << std::endl;  
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Vector& x)
 {
-
+  // FIXME: Use logging system
+  std::cout << "Warning: Cannot write vectors to XML files." << std::endl;  
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Matrix& A)
 {
-
+  // FIXME: Use logging system
+  std::cout << "Warning: Cannot write matrices to XML files." << std::endl;  
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(const Grid& Grid)
 {
-
+  // FIXME: Use logging system
+  std::cout << "Warning: Cannot write grids to XML files." << std::endl;  
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(const Function& u)
+{
+  // FIXME: Use logging system
+  std::cout << "Warning: Cannot write functions to XML files." << std::endl;  
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseFile()

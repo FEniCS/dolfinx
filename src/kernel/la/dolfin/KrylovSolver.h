@@ -15,14 +15,14 @@ namespace dolfin {
   class KrylovSolver{
   public:
     
-    enum Krylov_method { gmres, cg };
-    enum Preconditioner { richardson, jacobi, gauss_seidel, sor, none };
+    enum Method { GMRES, CG };
+    enum Preconditioner { RICHARDSON, JACOBI, GAUSS_SEIDEL, SOR, NONE };
     
-    KrylovSolver();
-    ~KrylovSolver(){}
+    KrylovSolver(Method method = GMRES);
     
     void solve(Matrix &A, Vector &x, Vector &b);
-    void setMethod(Krylov_method method);
+
+	 void set(Method method);
     
   private:
     
@@ -40,12 +40,10 @@ namespace dolfin {
     real getResidual(Matrix &A, Vector &x, Vector &b, Vector &r);
     real getResidual(Matrix &A, Vector &x, Vector &b);
     
-    Krylov_method method;
-    
+    Method method;
     Preconditioner pc;
     
     real tol;
-    
     int no_pc_sweeps;
   };
   

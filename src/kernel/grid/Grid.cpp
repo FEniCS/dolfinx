@@ -23,16 +23,20 @@ Grid::Grid() : initGrid(*this), refineGrid(*this)
 {
   gd = 0;
   clear();
+
+  rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
 Grid::Grid(const char *filename) : initGrid(*this), refineGrid(*this)
 {
   gd = 0;
   clear();
-
+  
   // Read grid from file
   File file(filename);
   file >> *this;
+
+  rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -46,6 +50,8 @@ void Grid::clear()
   if ( gd )
 	 delete gd;
   gd = new GridData();
+
+  _type = TRIANGLES;
 }
 //-----------------------------------------------------------------------------
 void Grid::refine()
@@ -63,11 +69,9 @@ int Grid::noCells() const
   return gd->noCells();
 }
 //-----------------------------------------------------------------------------
-Cell::Type Grid::type()
+Grid::Type Grid::type() const
 {
-  // Warning: returns type of first cell
-  CellIterator c(this);
-  return c->type();
+  return _type;
 }
 //-----------------------------------------------------------------------------
 void Grid::show()
@@ -96,6 +100,18 @@ Node* Grid::createNode()
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(Cell::Type type)
 {
+  // Warning: grid type will be type of last added cell
+  switch ( type ) {
+  case Cell::TRIANGLE:
+	 _type = TRIANGLES;
+	 break;
+  case Cell::TETRAHEDRON:
+	 _type = TETRAHEDRONS;
+	 break;
+  default:
+	 std::cout << "Warning: unknown cell type." << endl;
+  }
+  
   return gd->createCell(type);
 }
 //-----------------------------------------------------------------------------
@@ -106,11 +122,17 @@ Node* Grid::createNode(real x, real y, real z)
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2)
 {
+  // Warning: grid type will be type of last added cell
+  _type = TRIANGLES;
+  
   return gd->createCell(type,n0,n1,n2);
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(Cell::Type type, int n0, int n1, int n2, int n3)
 {
+  // Warning: grid type will be type of last added cell
+  _type = TETRAHEDRONS;
+  
   return gd->createCell(type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------

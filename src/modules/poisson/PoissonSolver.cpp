@@ -17,24 +17,20 @@ void PoissonSolver::solve()
   Galerkin     fem;
   Matrix       A;
   Vector       x, b;
-  //Function     u(grid, x);
+  Function     u(grid, x);
   Function     f(grid, "source");
-  Poisson      equation(f);
+  Poisson      poisson(f);
   KrylovSolver solver;
-
-  // Discretise
-  tic();
-  fem.assemble(equation, grid, A, b);
-  toc();
+  File         file("poisson.m");
   
-  File file("matrix.m");
-  file << A;
+  // Discretise
+  fem.assemble(poisson, grid, A, b);
   
   // Solve the linear system
   solver.solve(A, x, b);
 
   // Save the solution
-  //u.setLabel("u","temperature");
-  //u.save();
+  u.rename("u", "temperature");
+  file << u;
 }
 //-----------------------------------------------------------------------------

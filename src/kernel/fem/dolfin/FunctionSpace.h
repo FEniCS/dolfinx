@@ -12,6 +12,7 @@
 namespace dolfin {
 
   class FiniteElement;
+  class Mapping;
   
   class FunctionSpace {
   public:
@@ -46,6 +47,9 @@ namespace dolfin {
 	 // Evaluation of local degree of freedom
 	 virtual real dof(int i, const Cell &cell, function f, real t) const = 0;
 
+	 // Update with current mapping
+	 void update(const Mapping& mapping);
+	 
 	 // Iterator for shape functions in the function space
 	 class Iterator {
 	 public:
@@ -73,38 +77,36 @@ namespace dolfin {
 	 template <class T> class Vector {
 	 public:
 		
-		Vector(int n) {
-		  this->n = n;
-		  v = new T[n];
+		Vector() {
+		  v[0] = 0;
+		  v[1] = 0;
+		  v[2] = 0;
 		}
 
 		Vector(const Vector &v) {
-		  this->n = v.n;
-		  this->v = new T[n];
-		  for (int i = 0; i < n; i++)
-			 this->v[i] = v.v[i];
-		}
-		
-		~Vector() {
-		  if ( v )
-			 delete [] v;
-		  v = 0;
-		}
-		  
-		T& operator() (int i) {
-		  return v[i];
+		  this->v[0] = v.v[0];
+		  this->v[1] = v.v[1];
+		  this->v[2] = v.v[2];
 		}
 
-		const ElementFunction operator, (const Vector& v) const {
-		  ElementFunction w(0);
-		  for (int i = 0; i < n; i++)
-			 w += this->v[i] * v.v[i];			 
+		Vector(const T& v0, const T& v1, const T& v2) {
+		  v[0] = &v0;
+		  v[1] = &v1;
+		  v[2] = &v2;
+		}
+		
+		const T& operator() (int i) {
+		  return *v[i];
+		}
+		
+		const T operator, (const Vector& v) const {
+		  T w(*this->v[0], *this->v[1], *this->v[2],
+				*v.v[0], *v.v[1], *v.v[2]);
 		  return w;
 		}
 
 	 private:
-		int n;
-		T* v;
+		const T* v[3];
 	 };
 	 
 	 // Friends

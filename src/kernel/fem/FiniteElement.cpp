@@ -12,6 +12,16 @@ int FiniteElement::dim() const
   return P.dim();
 }
 //-----------------------------------------------------------------------------
+void FiniteElement::update(const Mapping* mapping)
+{
+  P.update(*mapping);
+
+  if ( &P != &Q )
+	 Q.update(*mapping);
+  else
+	 std::cout << "Same test and trial spaces" << std::endl;
+}
+//-----------------------------------------------------------------------------
 // FiniteElement::TrialFunctionIterator
 //-----------------------------------------------------------------------------
 FiniteElement::TrialFunctionIterator::TrialFunctionIterator

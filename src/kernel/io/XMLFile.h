@@ -13,6 +13,8 @@ namespace dolfin {
 
   class Vector;
   class Matrix;
+  class Grid;
+  class Function;
   class XMLObject;
   
   class XMLFile : public GenericFile {
@@ -23,15 +25,17 @@ namespace dolfin {
 	 
 	 // Input
 	 
-	 void operator>> (Vector &x);
-	 void operator>> (Matrix &A);
-	 void operator>> (Grid &grid);
+	 void operator>> (Vector& x);
+	 void operator>> (Matrix& A);
+	 void operator>> (Grid& grid);
+	 void operator>> (Function& u);
 	 
 	 // Output
 	 
-	 void operator<< (const Vector &x);
-	 void operator<< (const Matrix &A);
-	 void operator<< (const Grid &grid);
+	 void operator<< (const Vector& x);
+	 void operator<< (const Matrix& A);
+	 void operator<< (const Grid& grid);
+	 void operator<< (const Function& u);
 
 	 // Friends
 	 

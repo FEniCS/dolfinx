@@ -61,6 +61,11 @@ bool NodeIterator::end()
   return n->end();
 }
 //-----------------------------------------------------------------------------
+bool NodeIterator::last()
+{
+  return n->last();
+}
+//-----------------------------------------------------------------------------
 int NodeIterator::index()
 {
   return n->index();
@@ -74,6 +79,16 @@ Node& NodeIterator::operator*() const
 Node* NodeIterator::operator->() const
 {
   return n->pointer();
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::operator==(const NodeIterator& n) const
+{
+  return this->n->pointer() == n.n->pointer();
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::operator!=(const NodeIterator& n) const
+{
+  return this->n->pointer() != n.n->pointer();
 }
 //-----------------------------------------------------------------------------
 // NodeIterator::GridNodeIterator
@@ -92,6 +107,11 @@ void NodeIterator::GridNodeIterator::operator++()
 bool NodeIterator::GridNodeIterator::end()
 {
   return node_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::GridNodeIterator::last()
+{
+  return node_iterator.last();
 }
 //-----------------------------------------------------------------------------
 int NodeIterator::GridNodeIterator::index()
@@ -131,6 +151,11 @@ bool NodeIterator::CellNodeIterator::end()
   return node_iterator.end();
 }
 //-----------------------------------------------------------------------------
+bool NodeIterator::CellNodeIterator::last()
+{
+  return node_iterator.last();
+}
+//-----------------------------------------------------------------------------
 int NodeIterator::CellNodeIterator::index()
 {
   return node_iterator.index();
@@ -166,6 +191,11 @@ void NodeIterator::NodeNodeIterator::operator++()
 bool NodeIterator::NodeNodeIterator::end()
 {
   return node_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::NodeNodeIterator::last()
+{
+  return node_iterator.last();
 }
 //-----------------------------------------------------------------------------
 int NodeIterator::NodeNodeIterator::index()

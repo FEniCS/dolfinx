@@ -87,6 +87,9 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
 	 // Update mapping
 	 mapping->update(cell);
 
+	 // Update element
+	 element->update(mapping);
+	 
 	 // Update equation
 	 equation.updateLHS(element, cell, mapping, quadrature);
 
@@ -149,6 +152,10 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
   // Iterate over all cells in the grid
   for (NodeIterator node(grid); !node.end(); ++node) {
 
+	 // Only set boundary condition for nodes on the boundary
+	 if ( node->boundary() == -1 )
+		continue;
+	 
 	 // Get coordinate
 	 p = node->coord();
 	 
@@ -187,13 +194,13 @@ void Galerkin::init(Grid &grid)
 
   // Create default finite element
   switch ( grid.type() ) {
-  case Cell::TRIANGLE:
+  case Grid::TRIANGLES:
 	 std::cout << "Using standard piecewise linears on triangles." << std::endl;
 	 element    = new P1TriElement();
 	 mapping    = new TriLinMapping();
 	 quadrature = new TriangleMidpointQuadrature();
 	 break;
-  case Cell::TETRAHEDRON:
+  case Grid::TETRAHEDRONS:
 	 std::cout << "Using standard piecewise linears on tetrahedrons." << std::endl;
 	 element    = new P1TetElement();
 	 mapping    = new TetLinMapping();

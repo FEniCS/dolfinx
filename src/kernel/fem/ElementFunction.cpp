@@ -10,34 +10,30 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction()
 {
-  n = 1;
+  n = 0;
   
-  a = new real[n];
-  v = new Product[n]();
-
-  a[0] = 0.0;
+  a = 0;
+  v = 0;
 
   c = 0.0;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a)
 {
-  n = 1;
+  n = 0;
 
-  this->a = new real[n];
-  v = new Product[n];
+  this->a = 0;
+  v = 0;
 
-  this->a[0] = a;
-
-  c = 0.0;
+  c = a;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v)
 {
   n = 1;
 
-  a = new real[n];
-  this->v = new Product[n](v);
+  a = new real[1];
+  this->v = new Product[1](v);
 
   a[0] = 1.0;
 
@@ -48,22 +44,10 @@ FunctionSpace::ElementFunction::ElementFunction(const Product &v)
 {
   n = 1;
 
-  a = new real[n];
-  this->v = new Product[n](v);
+  a = new real[1];
+  this->v = new Product[1](v);
 
   a[0] = 1.0;
-
-  c = 0.0;
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction::ElementFunction(real a, const ShapeFunction &v)
-{
-  n = 1;
-
-  this->a = new real[n];
-  this->v = new Product[n](v);
-
-  this->a[0] = a;
 
   c = 0.0;
 }
@@ -72,13 +56,33 @@ FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v)
 {
   n = v.n;
 
+  // Check if constant
+  if ( n == 0 ) {
+	 a = 0;
+	 this->v = 0;
+	 c = v.c;
+	 return;
+  }
+  
   a = new real[n];
   this->v = new Product[n];
-
+	 
   for (int i = 0; i < n; i++) {
 	 a[i] = v.a[i];
 	 this->v[i] = v.v[i];
   }
+
+  c = v.c;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::ElementFunction(real a, const ShapeFunction &v)
+{
+  n = 1;
+
+  this->a = new real[1];
+  this->v = new Product[1](v);
+
+  this->a[0] = a;
 
   c = 0.0;
 }
@@ -87,15 +91,16 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const Product &v)
 {
   n = 1;
 
-  this->a = new real[n];
-  this->v = new Product[n](v);
+  this->a = new real[1];
+  this->v = new Product[1](v);
 
   this->a[0] = a;
 
   c = 0.0;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction::ElementFunction(real a, const ElementFunction &v)
+FunctionSpace::ElementFunction::ElementFunction(real a,
+																const ElementFunction &v)
 {
   n = v.n;
   
@@ -107,7 +112,7 @@ FunctionSpace::ElementFunction::ElementFunction(real a, const ElementFunction &v
 	 this->v[i] = v.v[i];
   }
 
-  c = 0.0;
+  c = a * v.c;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -115,11 +120,11 @@ FunctionSpace::ElementFunction::ElementFunction
 {
   n = 2;
 
-  a = new real[n];
+  a = new real[2];
   a[0] = a0;
   a[1] = a1;
 
-  v = new Product[n];
+  v = new Product[2];
   v[0] = v0;
   v[1] = v1;
 
@@ -131,11 +136,11 @@ FunctionSpace::ElementFunction::ElementFunction
 {
   n = 2;
 
-  a = new real[n];
+  a = new real[2];
   a[0] = a0;
   a[1] = a1;
 
-  v = new Product[n];
+  v = new Product[2];
   v[0] = v0;
   v[1] = v1;
 
@@ -151,16 +156,16 @@ FunctionSpace::ElementFunction::ElementFunction
   v = new Product[n];
 
   for (int i = 0; i < v0.n; i++) {
-	 a[i] = v0.a[i];
+	 a[i] = a0 * v0.a[i];
 	 v[i] = v0.v[i];
   }
 
   for (int i = 0; i < v1.n; i++) {
-	 a[v0.n + i] = v1.a[i];
+	 a[v0.n + i] = a1 * v1.a[i];
 	 v[v0.n + i] = v1.v[i];
   }
 
-  c = 0.0;
+  c = a0*v0.c + a1*v1.c;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -168,11 +173,11 @@ FunctionSpace::ElementFunction::ElementFunction
 {
   n = 2;
 
-  a = new real[n];
+  a = new real[2];
   a[0] = a0;
   a[1] = a1;
 
-  v = new Product[n];
+  v = new Product[2];
   v[0] = v0;
   v[1] = v1;
 
@@ -195,7 +200,7 @@ FunctionSpace::ElementFunction::ElementFunction
 	 v[1 + i] = v1.v[i];
   }
 
-  c = 0.0;
+  c = a1 * v1.c;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction
@@ -214,7 +219,7 @@ FunctionSpace::ElementFunction::ElementFunction
 	 v[1 + i] = v1.v[i];
   }
 
-  c = 0.0;
+  c = a1 * v1.c;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
@@ -222,8 +227,8 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
 {
   n = 1;
 
-  a = new real[n];
-  v = new Product[n](v0, v1);
+  a = new real[1];
+  v = new Product[1](v0, v1);
 
   a[0] = 1.0;
 
@@ -235,8 +240,8 @@ FunctionSpace::ElementFunction::ElementFunction(const Product &v0,
 {
   n = 1;
 
-  a = new real[n];
-  v = new Product[n](v0, v1);
+  a = new real[1];
+  v = new Product[1](v0, v1);
 
   a[0] = 1.0;
 
@@ -246,10 +251,16 @@ FunctionSpace::ElementFunction::ElementFunction(const Product &v0,
 FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v0,
 																const ElementFunction &v1)
 {
-  //cout << "Product of two element functions" << endl;
-  
-  n = v0.n * v1.n;
+  n = v0.n*v1.n + v0.n + v1.n;
 
+  // Check if constant
+  if ( n == 0 ) {
+	 a = 0;
+	 v = 0;
+	 c = v0.c * v1.c;
+	 return;
+  }
+  
   a = new real[n];
   v = new Product[n];
 
@@ -257,7 +268,21 @@ FunctionSpace::ElementFunction::ElementFunction(const ElementFunction &v0,
 	 for (int j = 0; j < v1.n; j++) {
 		a[i*v0.n + j] = v0.a[i] * v1.a[j];
 		v[i*v0.n + j].set(v0.v[i],v1.v[j]);
-	 }	 
+	 }
+  int offset = v0.n * v1.n;
+
+  for (int i = 0; i < v0.n; i++) {
+	 a[offset + i] = v1.c * v0.a[i];
+	 v[offset + i] = v0.v[i];
+  }
+  offset += v0.n;
+
+  for (int i = 0; i < v1.n; i++) {
+	 a[offset + i] = v0.c * v1.a[i];
+	 v[offset + i] = v1.v[i];
+  }
+
+  c = v0.c * v1.c;
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
@@ -276,15 +301,18 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction &v0,
 FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
 																const ElementFunction &v1)
 {
-  n = v1.n;
+  n = v1.n + 1;
 
   a = new real[n];
   v = new Product[n];
-
-  for (int i = 0; i < n; i++) {
+  
+  for (int i = 0; i < v1.n; i++) {
 	 a[i] = v1.a[i];
 	 v[i].set(v0, v1.v[i]); 
   }
+
+  a[v1.n] = v1.c;
+  v[v1.n] = v0;
 
   c = 0.0;
 }
@@ -292,17 +320,112 @@ FunctionSpace::ElementFunction::ElementFunction(const ShapeFunction   &v0,
 FunctionSpace::ElementFunction::ElementFunction(const Product         &v0,
 																const ElementFunction &v1)
 {
-  n = v1.n;
+  n = v1.n + 1;
 
   a = new real[n];
   v = new Product[n];
 
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < v1.n; i++) {
 	 a[i] = v1.a[i];
 	 v[i].set(v0, v1.v[i]);
   }
 
+  a[v1.n] = v1.c;
+  v[v1.n] = v0;
+  
   c = 0.0;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction::ElementFunction(const ElementFunction& v0,
+																const ElementFunction& v1,
+																const ElementFunction& v2,
+																const ElementFunction& w0,
+																const ElementFunction& w1,
+																const ElementFunction& w2)
+{
+  n = v0.n*w0.n + v1.n*w1.n + v2.n*w2.n;
+
+  // Check if all components are constant
+  if ( n == 0 ) {
+	 a = 0;
+	 v = 0;
+	 c = v0.c*w0.c + v1.c*w1.c + v2.c*w2.c;
+	 return;
+  }
+
+  // Terms from constant * sum
+  n += v0.n + v1.n + v2.n + w0.n + w1.n + w2.n;
+
+  a = new real[n];
+  v = new Product[n];
+
+  // First term
+  for (int i = 0; i < v0.n; i++)
+	 for (int j = 0; j < w0.n; j++) {
+		a[i*v0.n + j] = v0.a[i] * w0.a[j];
+		v[i*v0.n + j].set(v0.v[i],w0.v[j]);
+	 }
+  int offset = v0.n + w0.n;
+  
+  // Second term
+  for (int i = 0; i < v1.n; i++)
+	 for (int j = 0; j < w1.n; j++) {
+		a[offset + i*v1.n + j] = v1.a[i] * w1.a[j];
+		v[offset + i*v1.n + j].set(v1.v[i],w1.v[j]);
+	 }
+  offset += v1.n * w1.n;
+
+  // Third term
+  for (int i = 0; i < v2.n; i++)
+	 for (int j = 0; j < w2.n; j++) {
+		a[offset + i*v2.n + j] = v2.a[i] * w2.a[j];
+		v[offset + i*v2.n + j].set(v2.v[i],w2.v[j]);
+	 }
+  offset += v2.n * w2.n;
+
+  //----------------------------------------------
+  
+  // Part 1 of first term from constant * sum
+  for (int i = 0; i < v0.n; i++) {
+	 a[offset + i] = w0.c * v0.a[i];
+	 v[offset + i] = v0.v[i];
+  }
+  offset += v0.n;
+
+  // Part 2 of first term from constant * sum
+  for (int i = 0; i < w0.n; i++) {
+	 a[offset + i] = v0.c * w0.a[i];
+	 v[offset + i] = w0.v[i];
+  }
+  offset += w0.n;
+
+  // Part 1 of second term from constant * sum
+  for (int i = 0; i < v1.n; i++) {
+	 a[offset + i] = w1.c * v1.a[i];
+	 v[offset + i] = v1.v[i];
+  }
+  offset += v1.n;
+  
+  // Part 2 of second term from constant * sum
+  for (int i = 0; i < w1.n; i++) {
+	 a[offset + i] = v1.c * w1.a[i];
+	 v[offset + i] = w1.v[i];
+  }
+  offset += w1.n;
+  
+  // Part 1 of third term from constant * sum
+  for (int i = 0; i < v2.n; i++) {
+	 a[offset + i] = w2.c * v2.a[i];
+	 v[offset + i] = v2.v[i];
+  }
+  offset += v2.n;
+  
+  // Part 2 of third term from constant * sum
+  for (int i = 0; i < w2.n; i++) {
+	 a[offset + i] = v2.c * w2.a[i];
+	 v[offset + i] = w2.v[i];
+  }
+  
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::~ElementFunction()
@@ -341,13 +464,13 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 	 delete [] this->a;
 	 delete [] v;
   }
+  
+  n = 0;
 
-  n = 1;
+  this->a = 0;
+  v = 0;
 
-  this->a = new real[n];
-  v = new Product[n]();
-
-  this->a[0] = a;
+  c = a;
 
   return *this;
 }
@@ -367,6 +490,8 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 
   a[0] = 1.0;
 
+  c = 0;
+  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -385,6 +510,8 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 
   a[0] = 1.0;
 
+  c = 0;
+  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -406,6 +533,8 @@ FunctionSpace::ElementFunction& FunctionSpace::ElementFunction::operator=
 	 this->v[i] = v.v[i];
   }
 
+  c = v.c;
+  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -500,6 +629,8 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
   a = new_a;
   this->v = new_v;
   n += v.n;
+
+  c += v.c;
   
   return *this;
 }
@@ -556,10 +687,10 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
 real FunctionSpace::ElementFunction::operator* (Integral::Measure &dm) const
 {
   // The integral is linear
-  real sum = 0.0;
+  real sum = dm * c;;
   for (int i = 0; i < n; i++)
 	 sum += a[i] * ( dm * v[i] );
-
+  
   return sum;
 }
 //-----------------------------------------------------------------------------
@@ -598,7 +729,7 @@ FunctionSpace::ElementFunction dolfin::operator*
 std::ostream& dolfin::operator << (std::ostream& output,
 											  const FunctionSpace::ElementFunction &v)
 {
-  output << "[ ElementFunction with " << v.n << " terms ]" << std::endl;
+  output << "[ ElementFunction with " << v.n << " terms and offset = " << v.c << " ]" << std::endl;
   
   for (int  i = 0; i < v.n; i++) {
 	 output << "  " << v.a[i] << " * " << v.v[i];

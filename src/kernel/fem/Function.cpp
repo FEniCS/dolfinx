@@ -2,31 +2,34 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Settings.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Point.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Grid.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/GenericFunction.h>
+#include <dolfin/DofFunction.h>
+#include <dolfin/ExpressionFunction.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(Grid &grid, Vector &x)
+Function::Function(Grid &grid, Vector &x) : _grid(grid)
 {
-  representation = DOF;
-  
-  this->x = &x;
-  f = 0;
+  f = new DofFunction(x);
+
+  rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
-Function::Function(Grid &grid, const char *function)
+Function::Function(Grid &grid, const char *name) : _grid(grid)
 {
-  representation = FUNCTION;
+  function fp;
+  Settings::get(name, &fp);
   
-  x = 0;
-  Settings::get(function, &f);
+  f = new ExpressionFunction(fp);
+
+  rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
 void Function::update(FunctionSpace::ElementFunction& v,
@@ -38,27 +41,23 @@ void Function::update(FunctionSpace::ElementFunction& v,
 
   // Set dimension of function space for element function
   v.init(element.dim());
-
+   
   // Update coefficients
-  switch ( representation ) {
-  case DOF:
-
-	 // Set coefficients of element function from global degrees of freedom
-	 for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-		v.set(phi.index(), phi, (*x)(phi.dof(cell)));
-	 
-	 break;
-  case FUNCTION:
-
-	 // Set coefficients of element function from function values
-	 for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
-		v.set(phi.index(), phi, phi.dof(cell, f, t));
-	 
-	 break;
-  default:
-	 // FIXME: Use logging system
-	 std::cout << "Error: Unknown representation of function." << std::endl;
-	 exit(1);
-  }
+  f->update(v, element, cell, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Node& n, real t) const
+{
+  return (*f)(n, t);
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Point& p, real t) const
+{
+  return (*f)(p, t);
+}
+//-----------------------------------------------------------------------------
+const Grid& Function::grid() const
+{
+  return _grid;
 }
 //-----------------------------------------------------------------------------

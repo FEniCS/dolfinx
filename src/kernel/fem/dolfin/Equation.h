@@ -55,10 +55,10 @@ namespace dolfin {
 	 real dt(real a) const;
 
 	 // Derivative of ShapeFunction
-	 const ElementFunction dx(const ShapeFunction& v) const;
-	 const ElementFunction dy(const ShapeFunction& v) const;
-	 const ElementFunction dz(const ShapeFunction& v) const;
-	 const ElementFunction dt(const ShapeFunction& v) const;
+	 const ElementFunction& dx(const ShapeFunction& v) const;
+	 const ElementFunction& dy(const ShapeFunction& v) const;
+	 const ElementFunction& dz(const ShapeFunction& v) const;
+	 const ElementFunction& dt(const ShapeFunction& v) const;
 
 	 // Derivative of Product
 	 const ElementFunction dx(const Product& v) const;

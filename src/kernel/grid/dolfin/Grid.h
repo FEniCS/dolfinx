@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #include <iostream>
-
+#include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 #include <dolfin/List.h>
 #include <dolfin/Node.h>
@@ -20,8 +20,10 @@ namespace dolfin {
 
   class GridData;
   
-  class Grid {
+  class Grid : public Variable {
   public:
+
+	 enum Type { TRIANGLES, TETRAHEDRONS };
 	 
 	 Grid();
 	 Grid(const char *filename);
@@ -30,9 +32,9 @@ namespace dolfin {
 	 void clear();
 	 void refine();
 	 
-	 int noNodes() const;
-	 int noCells() const;
-	 Cell::Type type();
+	 int  noNodes() const;
+	 int  noCells() const;
+	 Type type() const;
 
 	 /// Output
 	 void show();
@@ -60,6 +62,9 @@ namespace dolfin {
 	 /// Grid data
 	 GridData *gd;
 
+	 /// Grid type
+	 Type _type;
+	 
 	 /// Algorithms
 	 InitGrid initGrid;
 	 RefineGrid refineGrid;

@@ -8,11 +8,13 @@ using namespace dolfin;
 Node::Node()
 {
   _id = -1;
+  _boundary = -1;
 }
 //-----------------------------------------------------------------------------
 Node::Node(real x)
 {
   _id = -1;
+  _boundary = -1;
 
   p.x = x;
 }
@@ -20,6 +22,7 @@ Node::Node(real x)
 Node::Node(real x, real y)
 {
   _id = -1;
+  _boundary = -1;
 
   p.x = x;
   p.y = y;
@@ -28,15 +31,11 @@ Node::Node(real x, real y)
 Node::Node(real x, real y, real z)
 {
   _id = -1;
+  _boundary = -1;
 
   p.x = x;
   p.y = y;
   p.z = z;
-}
-//-----------------------------------------------------------------------------
-Node::~Node()
-{
-  
 }
 //-----------------------------------------------------------------------------
 void Node::set(real x, real y, real z)
@@ -54,6 +53,20 @@ int Node::id() const
 Point Node::coord() const
 {
   return p;
+}
+//-----------------------------------------------------------------------------
+int Node::boundary() const
+{
+  return _boundary;
+}
+//-----------------------------------------------------------------------------
+bool Node::neighbor(Node* n)
+{
+  for (NodeIterator neighbor(*this); !neighbor.end(); ++neighbor)
+	 if ( n == neighbor )
+		return true;
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 int Node::noNodeNeighbors() const

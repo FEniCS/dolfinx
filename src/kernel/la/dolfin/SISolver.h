@@ -14,14 +14,14 @@ namespace dolfin {
   class SISolver{
   public:
     
-    enum SI_method { richardson, jacobi, gauss_seidel, sor };
+    enum Method { RICHARDSON, JACOBI, GAUSS_SEIDEL, SOR };
     
     SISolver();
     ~SISolver(){}
     
     void solve(Matrix& A, Vector& x, Vector& b);
     
-    void setMethod(SI_method method);
+    void setMethod(Method method);
     void setNoSweeps(int max_no_iterations);
     
   private:
@@ -33,7 +33,7 @@ namespace dolfin {
     
     real getResidual(Matrix& A, Vector& x, Vector& b);
     
-    SI_method method;
+    Method method;
     
     real tol;
     

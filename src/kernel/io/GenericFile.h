@@ -13,6 +13,7 @@ namespace dolfin {
   class Vector;
   class Matrix;
   class Grid;
+  class Function;
   
   class GenericFile {
   public:
@@ -22,15 +23,17 @@ namespace dolfin {
 	 
 	 // Input
 	 
-	 virtual void operator>> (Vector& x)  = 0;
-	 virtual void operator>> (Matrix& A)  = 0;
-	 virtual void operator>> (Grid& grid) = 0;
+	 virtual void operator>> (Vector& x)   = 0;
+	 virtual void operator>> (Matrix& A)   = 0;
+	 virtual void operator>> (Grid& grid)  = 0;
+	 virtual void operator>> (Function& u) = 0;
 	 
 	 // Output
 	 
-	 virtual void operator<< (const Vector& x)  = 0;
-	 virtual void operator<< (const Matrix& A)  = 0;
-	 virtual void operator<< (const Grid& grid) = 0;
+	 virtual void operator<< (const Vector& x)   = 0;
+	 virtual void operator<< (const Matrix& A)   = 0;
+	 virtual void operator<< (const Grid& grid)  = 0;
+	 virtual void operator<< (const Function& u) = 0;
 
 	 void read();
 	 void write();

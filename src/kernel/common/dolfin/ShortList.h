@@ -216,6 +216,11 @@ namespace dolfin {
 		{
 		  return at_end;
 		}
+
+		bool last() const
+		{
+		  return _index == (size - 1);
+		}
 		
 		int index() const
 		{

@@ -11,14 +11,11 @@ void InitGrid::init()
   // Reset all previous connections
   clear();
 
-  // Compute n-c connections
-  initNodeCell();
-  
-  // Compute c-c connections
-  initCellCell();
+  // Init neighbor data
+  initNeighbors();
 
-  // Compute n-n connections
-  initNodeNode();
+  // Init boundary data
+  initBoundary();
 }
 //-----------------------------------------------------------------------------
 void InitGrid::clear()
@@ -32,6 +29,66 @@ void InitGrid::clear()
   // Clear connectivity for cells
   for (CellIterator c(grid); !c.end(); ++c)
 	 c->cc.clear();
+}
+//-----------------------------------------------------------------------------
+void InitGrid::initNeighbors()
+{
+  // Initialise neighbor information
+  //
+  //   n-c (cell neighbors of node)
+  //   c-c (cell neighbors of cell)
+  //   n-n (node neighbors of node)
+  //
+  // It is important that these are computed in the correct order.
+  // Gives a nice and efficient algorithm that is O(n).
+  
+  // Compute n-c connections
+  initNodeCell();
+  
+  // Compute c-c connections
+  initCellCell();
+
+  // Compute n-n connections
+  initNodeNode();  
+}
+//-----------------------------------------------------------------------------
+void InitGrid::initBoundary()
+{
+  // Go through all nodes and mark the nodes on the boundary. This is
+  // done by checking if the neighbors of a node form a loop, using
+  // Euler's theorem: A loop exists iff there are no odd nodes. A node
+  // is odd if it has an odd number of arcs.
+
+  int arcs;
+  
+  for (NodeIterator n1(grid); !n1.end(); ++n1) {
+
+	 // First assume that the node is not on the boundary
+	 n1->_boundary = -1;
+
+	 // Count the number of odd nodes
+	 for (NodeIterator n2(n1); !n2.end(); ++n2) {
+
+		// Only check the neighbors
+		if ( n2 == n1 )
+		  continue;
+
+		// Count arcs for n2
+		arcs = 0;
+		for (NodeIterator n3(n1); !n3.end(); ++n3)
+		  if ( n2->neighbor(n3) && n3 != n1 && n3 != n2 )
+			 arcs++;
+
+		// Check if n2 is odd
+		if ( (arcs % 2) != 0 ) {
+		  n1->_boundary = 0;
+		  break;
+		}
+		
+	 }
+
+  }
+  
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initNodeCell()

@@ -29,21 +29,18 @@ real f(real x, real y, real z, real t)
 // Boundary conditions
 void mybc(BoundaryCondition& bc)
 {
-  Point p = bc.coord();
-  if ( p.x == 0.0 || p.x == 1.0 || p.y == 0.0 || p.y == 1.0 || p.z == 0.0 || p.z == 1.0 )
-	 bc.set(BoundaryCondition::DIRICHLET, 1.0);
+  bc.set(BoundaryCondition::DIRICHLET, 0.0);
 }
 
 int main()
 {
   Grid grid("grid.xml.gz");
-  //Grid grid("tetgrid_1_1_1.xml.gz");
   Problem poisson("poisson", grid);
 
   poisson.set("source", f);
   poisson.set("boundary condition", mybc);
  
   poisson.solve();
-
+  
   return 0;
 }

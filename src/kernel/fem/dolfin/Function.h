@@ -4,38 +4,42 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
+#include <dolfin/Variable.h>
 #include <dolfin/function.h>
+#include <dolfin/Vector.h>
 #include <dolfin/ElementFunction.h>
 
 namespace dolfin {
 
-  class Vector;
   class Cell;
   class Grid;
+  class GenericFunction;
   
-  class Function {
+  class Function : public Variable {
   public:
 
-	 enum Representation { DOF, FUNCTION };
-	 
 	 Function(Grid &grid, Vector &x);
-	 Function(Grid &grid, const char *function);
+	 Function(Grid &grid, const char *name);
 
 	 // Update values of element function
 	 void update(FunctionSpace::ElementFunction &v,
 					 const FiniteElement &element, const Cell &cell, real t) const;
+
+	 // Evaluation of function
+	 real operator() (const Node&  n, real t = 0.0) const;
+	 real operator() (const Point& p, real t = 0.0) const;
 	 
+	 // Get grid
+	 const Grid& grid() const;
+
   private:
 
-	 Grid *grid;
+	 // Grid
+	 Grid& _grid;
 
-	 // Type of representation
-	 Representation representation;
+	 // Function
+	 GenericFunction* f;
 
-	 // Function data
-	 Vector *x;  // Values given by a vector of nodal values
-	 function f; // Values given by a function pointer
-	 
   };
 
 }

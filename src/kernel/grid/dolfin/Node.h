@@ -24,11 +24,13 @@ namespace dolfin{
 	 Node(real x);
 	 Node(real x, real y);
 	 Node(real x, real y, real z);
-	 ~Node();
 	 
 	 void  set(real x, real y, real z);
 	 int   id() const;
 	 Point coord() const;
+	 int   boundary() const;
+	 bool  neighbor(Node* n);
+	 
 	 int   noNodeNeighbors() const;
 	 int   noCellNeighbors() const;
 	 
@@ -48,13 +50,15 @@ namespace dolfin{
   private:
 
 	 int setID(int id);
-	 
+
+	 // Node data
 	 Point p;	 
 	 int _id;
+	 int _boundary;
 	 
 	 // Connectivity
-	 ShortList<Node *> nn;
-	 ShortList<Cell *> nc;
+	 ShortList<Node*> nn;
+	 ShortList<Cell*> nc;
 	 
   };
   

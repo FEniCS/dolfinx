@@ -7,12 +7,12 @@
 #define __VECTOR_H
 
 #include <iostream>
-
+#include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
   
-  class Vector{
+  class Vector : public Variable {
   public:
 	 
 	 Vector  ();

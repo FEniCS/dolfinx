@@ -51,24 +51,49 @@ bool FunctionSpace::ShapeFunction::one() const
   return _id == 1;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dx() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dx() const
 {
   return FunctionList::dx(_id);
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dy() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dy() const
 {
   return FunctionList::dy(_id);
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dz() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dz() const
 {
   return FunctionList::dz(_id);
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dt() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dt() const
 {
   return FunctionList::dt(_id);
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dX() const
+{
+  return FunctionList::dX(_id);
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dY() const
+{
+  return FunctionList::dY(_id);
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dZ() const
+{
+  return FunctionList::dZ(_id);
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dT() const
+{
+  return FunctionList::dT(_id);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::ShapeFunction::update(const Mapping& mapping)
+{
+  FunctionList::update(*this, mapping);
 }
 //-----------------------------------------------------------------------------
 real

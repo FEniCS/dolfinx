@@ -9,32 +9,32 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 // CellIterator
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(Grid &grid)
+CellIterator::CellIterator(const Grid& grid)
 {
   c = new GridCellIterator(grid);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(Grid *grid)
+CellIterator::CellIterator(const Grid* grid)
 {
   c = new GridCellIterator(*grid);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(Cell &cell)
+CellIterator::CellIterator(const Cell& cell)
 {
   c = new CellCellIterator(cell);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(CellIterator &cellIterator)
+CellIterator::CellIterator(const CellIterator& cellIterator)
 {
   c = new CellCellIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(Node &node)
+CellIterator::CellIterator(const Node& node)
 {
   c = new NodeCellIterator(node);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(NodeIterator &nodeIterator)
+CellIterator::CellIterator(const NodeIterator& nodeIterator)
 {
   c = new NodeCellIterator(*nodeIterator);
 }
@@ -66,6 +66,11 @@ bool CellIterator::end()
   return c->end();
 }
 //-----------------------------------------------------------------------------
+bool CellIterator::last()
+{
+  return c->last();
+}
+//-----------------------------------------------------------------------------
 int CellIterator::index()
 {
   return c->index();
@@ -81,9 +86,19 @@ Cell* CellIterator::operator->() const
   return c->pointer();
 }
 //-----------------------------------------------------------------------------
+bool CellIterator::operator==(const CellIterator& c) const
+{
+  return this->c->pointer() == c.c->pointer();
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::operator!=(const CellIterator& c) const
+{
+  return this->c->pointer() != c.c->pointer();
+}
+//-----------------------------------------------------------------------------
 // CellIterator::GridCellIterator
 //-----------------------------------------------------------------------------
-CellIterator::GridCellIterator::GridCellIterator(Grid &grid)
+CellIterator::GridCellIterator::GridCellIterator(const Grid &grid)
 {
   cell_iterator = grid.gd->cells.begin();
   at_end = grid.gd->cells.end();
@@ -97,6 +112,11 @@ void CellIterator::GridCellIterator::operator++()
 bool CellIterator::GridCellIterator::end()
 {
   return cell_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::GridCellIterator::last()
+{
+  return cell_iterator.last();
 }
 //-----------------------------------------------------------------------------
 int CellIterator::GridCellIterator::index()
@@ -121,7 +141,7 @@ Cell* CellIterator::GridCellIterator::pointer() const
 //-----------------------------------------------------------------------------
 // CellIterator::NodeCellIterator
 //-----------------------------------------------------------------------------
-CellIterator::NodeCellIterator::NodeCellIterator(Node &node)
+CellIterator::NodeCellIterator::NodeCellIterator(const Node& node)
 {
   cell_iterator = node.nc.begin();
 }
@@ -134,6 +154,11 @@ void CellIterator::NodeCellIterator::operator++()
 bool CellIterator::NodeCellIterator::end()
 {
   return cell_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::NodeCellIterator::last()
+{
+  return cell_iterator.last();
 }
 //-----------------------------------------------------------------------------
 int CellIterator::NodeCellIterator::index()
@@ -158,7 +183,7 @@ Cell* CellIterator::NodeCellIterator::pointer() const
 //-----------------------------------------------------------------------------
 // CellIterator::CellCellIterator
 //-----------------------------------------------------------------------------
-CellIterator::CellCellIterator::CellCellIterator(Cell &cell)
+CellIterator::CellCellIterator::CellCellIterator(const Cell& cell)
 {
   cell_iterator = cell.cc.begin();
 }
@@ -171,6 +196,11 @@ void CellIterator::CellCellIterator::operator++()
 bool CellIterator::CellCellIterator::end()
 {
   return cell_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::CellCellIterator::last()
+{
+  return cell_iterator.last();
 }
 //-----------------------------------------------------------------------------
 int CellIterator::CellCellIterator::index()

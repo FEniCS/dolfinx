@@ -20,6 +20,8 @@ Matrix::Matrix()
   values   = 0;
 
   allocsize = 1;
+
+  rename("A", "A sparse matrix");
 }
 //-----------------------------------------------------------------------------
 Matrix::Matrix(int m, int n)
@@ -34,6 +36,8 @@ Matrix::Matrix(int m, int n)
   allocsize = 1;
   
   init(m,n);
+
+  rename("A", "A sparse matrix");
 }
 //-----------------------------------------------------------------------------
 Matrix::~Matrix()

@@ -7,14 +7,14 @@
 #define __MATRIX_HH
 
 #include <iostream>
-
+#include <dolfin/Variable.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
   
   class Vector;
   
-  class Matrix {
+  class Matrix : public Variable {
   public:
 	 
 	 Matrix  ();

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <dolfin/Mapping.h>
 #include <dolfin/FunctionList.h>
 
 using namespace dolfin;
@@ -35,15 +36,24 @@ int FunctionList::add(function f)
 }
 //-----------------------------------------------------------------------------
 void FunctionList::set(int id,
-							  FunctionSpace::ElementFunction dx,
-							  FunctionSpace::ElementFunction dy,
-							  FunctionSpace::ElementFunction dz,
-							  FunctionSpace::ElementFunction dt)
+							  FunctionSpace::ElementFunction dX,
+							  FunctionSpace::ElementFunction dY,
+							  FunctionSpace::ElementFunction dZ,
+							  FunctionSpace::ElementFunction dT)
 {
-  list(id).dx = dx;
-  list(id).dy = dy;
-  list(id).dz = dz;
-  list(id).dt = dt;
+  list(id).dX = dX;
+  list(id).dY = dY;
+  list(id).dZ = dZ;
+  list(id).dT = dT;
+}
+//-----------------------------------------------------------------------------
+void FunctionList::update(const FunctionSpace::ShapeFunction& v,
+								  const Mapping& mapping)
+{
+  list(v.id()).dx = mapping.dx(v);
+  list(v.id()).dy = mapping.dy(v);
+  list(v.id()).dz = mapping.dz(v);
+  list(v.id()).dt = mapping.dt(v);
 }
 //-----------------------------------------------------------------------------
 int FunctionList::size()
@@ -56,24 +66,44 @@ real FunctionList::eval(int id, real x, real y, real z, real t)
   return list(id).f(x, y, z, t);
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionList::dx(int id)
+const FunctionSpace::ElementFunction& FunctionList::dx(int id)
 {
   return list(id).dx;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionList::dy(int id)
+const FunctionSpace::ElementFunction& FunctionList::dy(int id)
 {
   return list(id).dy;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionList::dz(int id)
+const FunctionSpace::ElementFunction& FunctionList::dz(int id)
 {
   return list(id).dz;
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::ElementFunction FunctionList::dt(int id)
+const FunctionSpace::ElementFunction& FunctionList::dt(int id)
 {
   return list(id).dt;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionList::dX(int id)
+{
+  return list(id).dX;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionList::dY(int id)
+{
+  return list(id).dY;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionList::dZ(int id)
+{
+  return list(id).dZ;
+}
+//-----------------------------------------------------------------------------
+const FunctionSpace::ElementFunction& FunctionList::dT(int id)
+{
+  return list(id).dT;
 }
 //-----------------------------------------------------------------------------
 void FunctionList::init()
