@@ -1,7 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Updates by Johan Jansson 2003
+// Modified by Johan Jansson 2003.
 
 #include <iostream>
 #include <cmath>

@@ -55,8 +55,11 @@ Progress::Progress(const char* title)
 Progress::~Progress()
 {
   // Step to end
-  p1 = 1.0;
-  LogManager::log.progress(_title, _label, p1);
+  if ( p1 != 1.0 )
+  {
+    p1 = 1.0;
+    LogManager::log.progress(_title, _label, p1);
+  }
 
   // Notify that the progress bar has finished
   LogManager::log.progress_remove(this);
@@ -107,7 +110,7 @@ void Progress::operator++(int)
   
   if ( i < (n-1) )
     i++;
-
+  
   p1 = checkBounds(i);
   update();
 }
@@ -129,8 +132,8 @@ void Progress::update(unsigned int i, const char* format, ...)
 void Progress::update(real p, const char* format, ...)
 {
   if ( n != 0 )
-	 dolfin_error("Cannot specify value for progress session with given number of steps.");
-
+    dolfin_error("Cannot specify value for progress session with given number of steps.");
+  
   va_list aptr;
   va_start(aptr, format);
   vsprintf(_label, format, aptr);
@@ -176,8 +179,10 @@ real Progress::checkBounds(real p)
 void Progress::update()
 {
   // Only update when the increase is significant
-  if ( (p1 - p0) < DOLFIN_PROGRESS_STEP )
+  if ( (p1 - p0) < DOLFIN_PROGRESS_STEP && (p1 != 1.0 || p1 == p0) )
     return;
+
+  dolfin_info("updating progress to %f", p1);
 
   LogManager::log.progress(_title, _label, p1);
   p0 = p1;

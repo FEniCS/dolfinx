@@ -1,6 +1,3 @@
-This is DOLFIN. (Previously known as Kraftwerk)
-
--------------------------------------------------------------------------------
 Contents
 
 	1. Installation
@@ -12,46 +9,50 @@ Contents
 -------------------------------------------------------------------------------
 1. Installation
 
-	You should only have to do the following
+DOLFIN follows GNU standard, so the installation procedure is simple:
 
-		./configure
-		make
+	./configure
+	make
 
-	Look at the file INSTALL for details.
+followed by an optional
 
-	A few hints:
+	make install
 
-		o 	Maybe you will need to use g++ rather than c++:
+For more details, take a look at the file INSTALL.
 
-			Type
+A number of options can be given to configure:
 
-				setenv CXX g++
+	o To use g++ instead of c++:
 
-			before running ./configure.
+		./configure CXX=g++
 
-		o	You probably have to use gmake, rather than make:
+	o To enable optimization:
 
-				alias make gmake
-
-		o	Optimization:
-
-				setenv CXXFLAGS '-03'
+		./configure CXXFLAGS='-03'
 			
-			or even
+	or even
 
-				setenv CXXFLAGS '-O6 -finline-functions -funroll-loops ...
-                                        -fstrict-aliasing -felide-constructors'
+		./configure CXXFLAGS '-O6 -finline-functions -funroll-loops ...
+                                      -fstrict-aliasing -felide-constructors'
 
-		o	Warnings:
+	o To enable extra debugging code (recommended for developers):
 
-				setenv CXXFLAGS '-g -Wall -Werror'
+		./configure --enable-debug
 
-		o	If you want to install locally (not as root), try
+	o To disable curses:
 
-				./configure --prefix=<dir>
+		./configure --disable-curses
 
-			where <dir> is where you want to install, such as
-			<dir>=/home/logg/local .
+	o To install locally (not as root):
+
+		./configure --prefix=<dir>
+
+	where <dir> is where you want to install, e.g. /home/logg/local
+
+A note for Solaris users: You probably need to disable curses and use gmake:
+
+	./configure --disable-curses
+	gmake
 
 -------------------------------------------------------------------------------
 2. Testing
@@ -59,36 +60,38 @@ Contents
 -------------------------------------------------------------------------------
 3. Feed back
 
-	Send us an email at
+Feed back, patches, and comments should be sent to
 
-		dolfin@math.chalmers.se	
+	dolfin@math.chalmers.se	
 
 ------------------------------------------------------------------------------
 4. License
 
-	GNU GPL Version 2
+DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
 
 ------------------------------------------------------------------------------
 5. About
 
-	DOLFIN is maintained by:
+DOLFIN is maintained by:
 
-		Johan Hoffman
-		Courant Institute of Mathematical Sciences
-		New York
-		USA
-		email: hoffman@courant.nyu.edu
+	Johan Hoffman
+	Courant Institute of Mathematical Sciences
+	New York
+	USA
+	email: hoffman@courant.nyu.edu
 
-		Anders Logg
-		Chalmers Finite Element Center
-		Goteborg
-		Sweden
-		email: logg@math.chalmers.se
+	Anders Logg
+	Department of Computational Mathematics
+	Goteborg
+	Sweden
+	email: logg@math.chalmers.se
 
-	For more information about DOLFIN, visit
+A (hopefully) complete list of authors is given in the file AUTHORS.
 
-		www.phi.chalmers.se/dolfin/
+For more information about DOLFIN, visit
+
+	http://www.phi.chalmers.se/dolfin/
 
 -------------------------------------------------------------------------------
 Goteborg
-September 2002
+January 2004

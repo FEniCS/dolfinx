@@ -62,8 +62,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
 
-    cout << *timeslab << endl;
-
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )
     {
@@ -98,6 +96,9 @@ void TimeStepper::solve(ODE& ode, Function& function)
     p = t / T;
 
   }
+
+  // Update progress
+  p = 1.0;
 
   // Display status report
   cout << "Solution computed in " << toc() << " seconds." << endl;

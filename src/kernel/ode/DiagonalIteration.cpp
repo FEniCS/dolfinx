@@ -74,9 +74,7 @@ Iteration::State DiagonalIteration::stabilize(TimeSlab& timeslab,
   }
 
   // Compute damping
-  real rho = computeConvergenceRate(r);
-  d.alpha = computeDamping(rho);
-  d.m = computeDampingSteps(rho);
+  computeDamping(r, d);
 
   // Change state
   return nonnormal;
@@ -100,9 +98,7 @@ Iteration::State DiagonalIteration::stabilize(NewArray<Element*>& elements,
   }
 
   // Compute damping
-  real rho = computeConvergenceRate(r);
-  d.alpha = computeDamping(rho);
-  d.m = computeDampingSteps(rho);
+  computeDamping(r, d);
 
   // Change state
   return parabolic;
@@ -128,7 +124,7 @@ Iteration::State DiagonalIteration::stabilize(Element& element,
   // Compute damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
   real rho = - element.timestep() * dfdu;
-  d.alpha = computeDamping(rho);
+  d.alpha = computeAlpha(rho);
 
   // Change state
   return diagonal;

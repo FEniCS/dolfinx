@@ -41,7 +41,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
   Iteration::Residuals r;
   Iteration::Damping d;
 
-  dolfin_start("Starting time slab iteration");
+  //dolfin_start("Starting time slab iteration");
 
   // Fixed point iteration on the time slab  
   for (unsigned int n = 0; n < maxiter; n++)
@@ -49,7 +49,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     // Check convergence
     if ( converged(timeslab, r, n) )
     {
-      dolfin_end("Time slab iteration converged");
+      //dolfin_end("Time slab iteration converged");
       return true;
     }
 
@@ -61,7 +61,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
     update(timeslab);
   }
 
-  dolfin_end("Time slab iteration did not converge");
+  //dolfin_end("Time slab iteration did not converge");
 
   return false;
 }
@@ -74,7 +74,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
   // Update initial data
   init(elements);
   
-  dolfin_start("Starting element list iteration");
+  //dolfin_start("Starting element list iteration");
   
   // Fixed point iteration on the element list
   for (unsigned int n = 0; n < local_maxiter; n++)
@@ -82,12 +82,9 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     // Check convergence
     if ( converged(elements, r, n) )
     {
-      dolfin_end("Element list iteration converged");
+      //dolfin_end("Element list iteration converged");
       return true;
     }
-
-    if ( n > 0 )
-      cout << "Extra iteration for element list!" << endl;
 
     // Check stabilization
     if ( n >= 2 )
@@ -97,7 +94,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     update(elements);
   }
   
-  dolfin_end("Element list iteration did not converge");
+  //dolfin_end("Element list iteration did not converge");
 
   return false;
 }
@@ -107,7 +104,7 @@ bool FixedPointIteration::iterate(Element& element)
   Iteration::Residuals r;
   Iteration::Damping d;
 
-  dolfin_start("Starting element iteration");
+  //dolfin_start("Starting element iteration");
 
   // Fixed point iteration on the element
   for (unsigned int n = 0; n < local_maxiter; n++)
@@ -115,7 +112,7 @@ bool FixedPointIteration::iterate(Element& element)
     // Check convergence
     if ( converged(element, r, n) )
     {
-      dolfin_end("Element iteration converged");
+      //dolfin_end("Element iteration converged");
       //cout << "u(" << element.index() << "," << element.endtime() << ") = " << element.endval() << endl;
       return true;
     }
@@ -123,12 +120,12 @@ bool FixedPointIteration::iterate(Element& element)
     // Check stabilization
     if ( n >= 2 )
       stabilize(element, r, d);
-
+    
     // Update element
     update(element);
   }
 
-  dolfin_end("Element iteration did not converge");
+  //dolfin_end("Element iteration did not converge");
 
   return true;
 }
@@ -181,11 +178,6 @@ void FixedPointIteration::report() const
   state->report();
 
   /*
-  switch ( state ) {
-  case diagonal:
-    cout << "System appears to be diagonally stiff, solution computed with "
-	 << "diagonally damped fixed point iteration." << endl;
-    break;
   case parabolic:
     cout << "System appears to be parabolically stiff, solution computed with "
 	 << "adaptively damped fixed point iteration." << endl;
@@ -214,8 +206,8 @@ void FixedPointIteration::update(NewArray<Element*>& elements)
 //-----------------------------------------------------------------------------
 void FixedPointIteration::update(Element& element)
 {
-  u.debug(element, Solution::update);
   dolfin_assert(state);
+  u.debug(element, Solution::update);
   state->update(element);
 }
 //-----------------------------------------------------------------------------
@@ -271,7 +263,7 @@ void FixedPointIteration::changeState(Iteration::State newstate)
 {
   dolfin_assert(state);
 
-  // Don't change if it hasn't changed
+  // Don't change state if it hasn't changed
   if ( newstate == state->state() )
     return;
 

@@ -69,14 +69,12 @@ Iteration::State NonStiffIteration::stabilize(TimeSlab& timeslab,
   // Check if we need to reset the element
   if ( r.r2 > r.r0 )
   {
-    dolfin_info("Need to reset the element list.");
+    dolfin_info("Need to reset the time slab.");
     timeslab.reset(fixpoint);
   }
 
   // Compute damping
-  real rho = computeConvergenceRate(r);
-  d.alpha = computeDamping(rho);
-  d.m = computeDampingSteps(rho);
+  computeDamping(r, d);
 
   // Change state
   return nonnormal;
@@ -100,9 +98,7 @@ Iteration::State NonStiffIteration::stabilize(NewArray<Element*>& elements,
   }
 
   // Compute damping
-  real rho = computeConvergenceRate(r);
-  d.alpha = computeDamping(rho);
-  d.m = computeDampingSteps(rho);
+  computeDamping(r, d);
 
   // Change state
   return parabolic;
@@ -128,7 +124,7 @@ Iteration::State NonStiffIteration::stabilize(Element& element,
   // Compute damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
   real rho = - element.timestep() * dfdu;
-  d.alpha = computeDamping(rho);
+  d.alpha = computeAlpha(rho);
 
   // Change state
   return diagonal;
@@ -137,8 +133,6 @@ Iteration::State NonStiffIteration::stabilize(Element& element,
 bool NonStiffIteration::converged(TimeSlab& timeslab, 
 				   Residuals& r, unsigned int n)
 {
-  cout << "time slab residual = " << residual(timeslab) << endl;
-
   // Convergence handled locally when the slab contains only one element list
   if ( timeslab.leaf() )
     return n >= 1;
@@ -157,8 +151,6 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
 bool NonStiffIteration::converged(NewArray<Element*>& elements, 
 				   Residuals& r, unsigned int n)
 {
-  cout << "element list residual = " << residual(elements) << endl;
-  
   // Convergence handled locally when the list contains only one element
   if ( elements.size() == 1 )
     return n >= 1;
@@ -177,8 +169,6 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
 bool NonStiffIteration::converged(Element& element, 
 				  Residuals& r, unsigned int n)
 {
-  cout << "element residual = " << residual(element) << endl;
-
   // Compute discrete residual
   r.r1 = r.r2;
   r.r2 = residual(element);

@@ -98,12 +98,19 @@ real Iteration::residual(Element& element)
   return fabs(element.computeDiscreteResidual(f));
 }
 //-----------------------------------------------------------------------------
-real Iteration::computeConvergenceRate(const Iteration::Residuals& r)
+void Iteration::computeDamping(const Residuals& r, Damping& d)
+{
+  real rho = computeConvergence(r);
+  d.alpha = computeAlpha(rho);
+  d.m = computeSteps(rho);
+}
+//-----------------------------------------------------------------------------
+real Iteration::computeConvergence(const Iteration::Residuals& r)
 {
   return r.r2 / (DOLFIN_EPS + r.r1);
 }
 //-----------------------------------------------------------------------------
-real Iteration::computeDamping(real rho)
+real Iteration::computeAlpha(real rho)
 {
   if ( rho >= 0.0 || rho < -1.0 )
     return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
@@ -111,7 +118,7 @@ real Iteration::computeDamping(real rho)
   return 1.0;
 }
 //-----------------------------------------------------------------------------
-unsigned int Iteration::computeDampingSteps(real rho)
+unsigned int Iteration::computeSteps(real rho)
 {
   dolfin_assert(rho >= 0.0);
   return 1 + 2*ceil_int(log(1.0 + rho));

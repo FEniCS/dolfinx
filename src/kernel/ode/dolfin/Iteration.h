@@ -103,14 +103,17 @@ namespace dolfin
     // Compute discrete residual for element
     real residual(Element& element);
 
+    // Compute damping
+    void computeDamping(const Residuals& r, Damping& d);
+
     // Compute convergence rate
-    real computeConvergenceRate(const Iteration::Residuals& r);
+    real computeConvergence(const Residuals& r);
 
     // Compute alpha
-    real computeDamping(real rho);
+    real computeAlpha(real rho);
 
     // Compute m
-    unsigned int computeDampingSteps(real rho);
+    unsigned int computeSteps(real rho);
 
   protected:
 
