@@ -3,7 +3,7 @@
 #include <dolfin/Display.hh>
 #include <dolfin/Edge.hh>
 
-using namespace Dolfin;
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Edge::Edge()
