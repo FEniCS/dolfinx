@@ -1,3 +1,6 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
 #include <dolfin/Quadrature.h>
 
 using namespace dolfin;
@@ -5,24 +8,27 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Quadrature::Quadrature(int n)
 {
+  if ( n <= 0 )
+    dolfin_error("Number of quadrature points must be positive.");
+
   this->n = n;
   
-  p = new Point[n];
-  w = new real[n];
-
+  points = new Point[n];
+  weights = new real[n];
+  
   for (int i = 0; i < 0; i++)
-	 w[i] = 0;
+    weights[i] = 0;
 }
 //-----------------------------------------------------------------------------
 Quadrature::~Quadrature()
 {
-  if ( p )
-	 delete [] p;
-  p = 0;
-
-  if ( w )
-	 delete [] w;
-  w = 0;
+  if ( points )
+    delete [] points;
+  points = 0;
+  
+  if ( weights )
+    delete [] weights;
+  weights = 0;
 }
 //-----------------------------------------------------------------------------
 int Quadrature::size() const
@@ -32,12 +38,12 @@ int Quadrature::size() const
 //-----------------------------------------------------------------------------
 const Point& Quadrature::point(int i) const
 {
-  return p[i];
+  return points[i];
 }
 //-----------------------------------------------------------------------------
 real Quadrature::weight(int i) const
 {
-  return w[i];
+  return weights[i];
 }
 //-----------------------------------------------------------------------------
 real Quadrature::measure() const

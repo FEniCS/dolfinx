@@ -22,7 +22,10 @@ namespace dolfin {
     
     /// Return midpoint on line to given point p
     Point midpoint(Point p) const;
-    
+
+    /// Assignment from real, giving p = (x,0,0)
+    void operator= (real x);
+
     /// The three coordinates
     real x;
     real y;

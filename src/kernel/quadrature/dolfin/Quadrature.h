@@ -23,10 +23,10 @@ namespace dolfin {
     
   protected:
     
-    int n;    // Number of quadrature points
-    Point* p; // Quadrature points
-    real* w;  // Quadrature weights
-    real m;   // Sum of weights
+    int n;         // Number of quadrature points
+    Point* points; // Quadrature points
+    real* weights; // Quadrature weights
+    real m;        // Sum of weights
     
   };
   

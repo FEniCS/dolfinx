@@ -55,7 +55,14 @@ Point Point::midpoint(Point p) const
   return mp;
 }
 //-----------------------------------------------------------------------------
-// Additional operators
+void Point::operator= (real x)
+{
+  this->x = x;
+  this->y = 0.0;
+  this->z = 0.0;
+}
+//-----------------------------------------------------------------------------
+// Output
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Point& p)
 {

@@ -22,13 +22,13 @@ void InitGrid::clear()
 {  
   // Clear connectivity for nodes
   for (NodeIterator n(grid); !n.end(); ++n){
-	 n->nn.clear();
-	 n->nc.clear();
+    n->nn.clear();
+    n->nc.clear();
   }
-	 
+  
   // Clear connectivity for cells
   for (CellIterator c(grid); !c.end(); ++c)
-	 c->cc.clear();
+    c->cc.clear();
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initNeighbors()
@@ -63,30 +63,30 @@ void InitGrid::initBoundary()
   
   for (NodeIterator n1(grid); !n1.end(); ++n1) {
 
-	 // First assume that the node is not on the boundary
-	 n1->_boundary = -1;
-
-	 // Count the number of odd nodes
-	 for (NodeIterator n2(n1); !n2.end(); ++n2) {
-
-		// Only check the neighbors
-		if ( n2 == n1 )
-		  continue;
-
-		// Count arcs for n2
-		arcs = 0;
-		for (NodeIterator n3(n1); !n3.end(); ++n3)
-		  if ( n2->neighbor(n3) && n3 != n1 && n3 != n2 )
-			 arcs++;
-
-		// Check if n2 is odd
-		if ( (arcs % 2) != 0 ) {
-		  n1->_boundary = 0;
-		  break;
-		}
-		
-	 }
-
+    // First assume that the node is not on the boundary
+    n1->_boundary = -1;
+    
+    // Count the number of odd nodes
+    for (NodeIterator n2(n1); !n2.end(); ++n2) {
+      
+      // Only check the neighbors
+      if ( n2 == n1 )
+	continue;
+      
+      // Count arcs for n2
+      arcs = 0;
+      for (NodeIterator n3(n1); !n3.end(); ++n3)
+	if ( n2->neighbor(n3) && n3 != n1 && n3 != n2 )
+	  arcs++;
+      
+      // Check if n2 is odd
+      if ( (arcs % 2) != 0 ) {
+	n1->_boundary = 0;
+	break;
+      }
+      
+    }
+    
   }
   
 }
@@ -99,17 +99,17 @@ void InitGrid::initNodeCell()
   
   // Count the number of cells the node appears in
   for (CellIterator c(grid); !c.end(); ++c)
-	 for (NodeIterator n(c); !n.end(); ++n)
-		n->nc.setsize(n->nc.size()+1);
+    for (NodeIterator n(c); !n.end(); ++n)
+      n->nc.setsize(n->nc.size()+1);
   
   // Allocate memory for the cell lists
   for (NodeIterator n(grid); !n.end(); ++n)
-	 n->nc.init();
+    n->nc.init();
   
   // Add the cells to the cell lists
   for (CellIterator c(grid); !c.end(); ++c)
-	 for (NodeIterator n(c); !n.end(); ++n)
-		n->nc.add(c);  
+    for (NodeIterator n(c); !n.end(); ++n)
+      n->nc.add(c);  
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initCellCell()
@@ -118,19 +118,19 @@ void InitGrid::initCellCell()
 
   for (CellIterator c1(grid); !c1.end(); ++c1) {
 
-	 // Allocate for the maximum number of cell neighbors
-	 c1->cc.init(c1->noBound());
-
-	 // Add all unique cell neighbors
-	 for (NodeIterator n(c1); !n.end(); ++n)
-		for (CellIterator c2(n); !c2.end(); ++c2)
-		  if ( c1->neighbor(*c2) )
-			 if ( !c1->cc.contains(c2) )
-				c1->cc.add(c2);
-
-	 // Reallocate
-	 c1->cc.resize();
-
+    // Allocate for the maximum number of cell neighbors
+    c1->cc.init(c1->noBound());
+    
+    // Add all unique cell neighbors
+    for (NodeIterator n(c1); !n.end(); ++n)
+      for (CellIterator c2(n); !c2.end(); ++c2)
+	if ( c1->neighbor(*c2) )
+	  if ( !c1->cc.contains(c2) )
+	    c1->cc.add(c2);
+    
+    // Reallocate
+    c1->cc.resize();
+    
   }
 }
 //-----------------------------------------------------------------------------
@@ -143,21 +143,21 @@ void InitGrid::initNodeNode()
   // we really want only n.
 
   for (NodeIterator n1(grid); !n1.end(); ++n1) {
-
-	 // Allocate for the maximum number of node neighbors
-	 for (CellIterator c(n1); !c.end(); ++c)
-		n1->nn.setsize( n1->nn.size() + c->noNodes() );
-	 n1->nn.init();
-	 
-	 // Add all uniqe node neighbors
-	 for (CellIterator c(n1); !c.end(); ++c)
-		for (NodeIterator n2(c); !n2.end(); ++n2)
-		  if ( !n1->nn.contains(n2) )
-			 n1->nn.add(n2);
-
-	 // Reallocate
-	 n1->nn.resize();
-
+    
+    // Allocate for the maximum number of node neighbors
+    for (CellIterator c(n1); !c.end(); ++c)
+      n1->nn.setsize( n1->nn.size() + c->noNodes() );
+    n1->nn.init();
+    
+    // Add all uniqe node neighbors
+    for (CellIterator c(n1); !c.end(); ++c)
+      for (NodeIterator n2(c); !n2.end(); ++n2)
+	if ( !n1->nn.contains(n2) )
+	  n1->nn.add(n2);
+    
+    // Reallocate
+    n1->nn.resize();
+    
   }
 }
 //-----------------------------------------------------------------------------
