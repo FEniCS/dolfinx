@@ -1,3 +1,4 @@
+ - Fix bug in grid refinement
 0.4.2
  - Fix bug in computation of residual (divide by k)
  - Add automatic generation and solution of the dual problem
