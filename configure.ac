@@ -179,6 +179,7 @@ AC_OUTPUT( Makefile \
            src/demo/Makefile \
            src/demo/la/Makefile \
            src/demo/solvers/Makefile \
+           src/demo/solvers/navierstokes/Makefile \
            src/demo/solvers/ode/Makefile \
            src/demo/solvers/ode/stiff/Makefile \
            src/demo/solvers/ode/mechanical/Makefile \

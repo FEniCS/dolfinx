@@ -1,1 +1,1 @@
-SUBDIRS = template poisson convdiff heat ode elasticity elasticity-stationary wave wave-vector
+SUBDIRS = template poisson convdiff heat navierstokes ode elasticity elasticity-stationary wave wave-vector

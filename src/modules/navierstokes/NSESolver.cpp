@@ -2,8 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include "NSESolver.h"
-#include "NSE_Momentum.h"
-#include "NSE_Contiuity.h"
+#include "NSE.h"
 
 using namespace dolfin;
 

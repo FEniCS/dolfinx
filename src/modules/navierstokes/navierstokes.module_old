@@ -1,7 +1,0 @@
-# Module specifications
-
-NAME     = "navierstokes"
-KEYWORD  = "navier-stokes"
-SOLVER   = "SolverNavierStokes"
-SETTINGS = "SettingsNavierStokes"
-GRID     = "yes"
