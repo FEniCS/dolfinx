@@ -24,7 +24,7 @@ namespace dolfin {
 
     /// Clear all data
     void clear();
-    
+
     /// Add node to the boundary
     void add(Node* node);
 
@@ -36,6 +36,19 @@ namespace dolfin {
 
     /// Check if the boundary is empty
     bool empty();
+
+    /// Return number of nodes on the boundary
+    int noNodes() const;
+
+    /// Return number of edges on the boundary
+    int noEdges() const;
+
+    /// Return number of faces on the boundary
+    int noFaces() const;
+
+    /// Friends
+
+    friend class BoundaryInit;
 
   private:
 

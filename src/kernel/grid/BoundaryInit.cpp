@@ -33,40 +33,43 @@ void BoundaryInit::clear(Grid& grid)
 //----------------------------------------------------------------------------- 
 void BoundaryInit::initFaces(Grid& grid)
 {
-  // Go through all faces and for each face check if it is on the boundary.
-  // A face is on the boundary if it is contained in only one cell.
-  
-  // Skip this for a triangular grid
+   // Faces are not computed for a triangular grid.
   if ( grid.type() == Grid::triangles )
     return;
-  
-  // A list is used to countthe number of cell neighbors for all faces
+ 
+  // Go through all faces and for each face check if it is on the boundary.
+  // A face is on the boundary if it is contained in only one cell.
+  // A list is used to countthe number of cell neighbors for all faces.
   // Warning: may not work if some faces have been removed
+
   Array<int> cellcount(grid.noFaces());
   cellcount = 0;
 
   // Count the number of cell neighbors for each face
-  for (CellIterator c(grid); !c.end(); ++c) {
-    cout << "cell " << c->id() << ": ";
-    for (FaceIterator f(c); !f.end(); ++f) {
-      cout << f->id() << " ";
+  for (CellIterator c(grid); !c.end(); ++c)
+    for (FaceIterator f(c); !f.end(); ++f)
       cellcount(f->id()) += 1;
-    }
-    cout << endl;
-  }
   
   // Add faces with only one cell neighbor to the boundary
-  for (FaceIterator f(grid); !f.end(); ++f)
-    cout << "number of cells: " << cellcount(f->id()) << endl;
-    
-  
+  for (FaceIterator f(grid); !f.end(); ++f) {
+    if ( cellcount(f->id()) == 1 )
+      grid.bd.add(f);
+    else if ( cellcount(f->id()) != 2 )
+      dolfin_error1("Inconsistent grid. Found face with %d cell neighbors.", cellcount(f->id()));
+  }
 
+  // Check that we found a boundary
+  if ( grid.bd.noFaces() == 0 )
+    dolfin_error("Found no faces on the boundary.");
+
+  // Write a message
+  cout << "Found " << grid.bd.noFaces() << " faces on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initEdges(Grid& grid)
 {
 
-
+  
 
 }
 //-----------------------------------------------------------------------------

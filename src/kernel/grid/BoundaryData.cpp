@@ -43,3 +43,18 @@ bool BoundaryData::empty()
   return nodes.size() == 0 && edges.size() == 0 && faces.size() == 0;
 }
 //-----------------------------------------------------------------------------
+int BoundaryData::noNodes() const
+{
+  return nodes.size();
+}
+//-----------------------------------------------------------------------------
+int BoundaryData::noEdges() const
+{
+  return edges.size();
+}
+//-----------------------------------------------------------------------------
+int BoundaryData::noFaces() const
+{
+  return faces.size();
+}
+//-----------------------------------------------------------------------------
