@@ -13,9 +13,6 @@ GenericCell::GenericCell()
   _nc = 0;
 
   _id = -1;
-
-  cc = 0;
-  cc_size = 0;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
@@ -46,11 +43,7 @@ int GenericCell::setID(int id)
 //-----------------------------------------------------------------------------
 void GenericCell::clear()
 {
-  if ( cc )
-	 delete [] cc;
-  
-  cc = 0;
-  cc_size = 0;
+
 }
 //-----------------------------------------------------------------------------
 int GenericCell::GetNoGenericCellNeighbors()

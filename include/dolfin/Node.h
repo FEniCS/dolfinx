@@ -7,13 +7,15 @@
 #include <iostream>
 #include <dolfin/dolfin_constants.h>
 #include <dolfin/Point.h>
+#include <dolfin/NodeIterator.h>
+#include <dolfin/CellIterator.h>
+#include <dolfin/ShortList.h>
 
 namespace dolfin{
 
   class GenericCell;
   class Cell;
   class InitGrid;
-
   
   class Node{
   public:
@@ -63,6 +65,9 @@ namespace dolfin{
 	 friend class Tetrahedron;
 	 friend class GridData;
 	 friend class InitGrid;
+	 friend class NodeIterator::NodeNodeIterator;
+	 friend class CellIterator::NodeCellIterator;
+	 
 	 
   protected:
 	
@@ -96,11 +101,8 @@ namespace dolfin{
 	 int _nc;
 
 	 // Connectivity
-	 Node *nn;
-	 Cell *nc;
-	 
-	 int nn_size;
-	 int nc_size;
+	 ShortList<Node *> nn;
+	 ShortList<Cell *> nc;
 	 
   };
   

@@ -14,7 +14,7 @@
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
-#include <dolfin/GridIterators.h>
+#include <dolfin/NodeIterator.h>
 #include "GridData.h"
 #include "InitGrid.h"
 
@@ -70,12 +70,12 @@ void Grid::show()
   cout << "Grid with " << no_nodes << " nodes and " << no_cells << " cells:" << endl;
   cout << endl;
   
-  for (GridNodeIterator n(*this); !n.end(); ++n)
+  for (NodeIterator n(this); !n.end(); ++n)
 	 cout << "  " << *n << endl;
 
   cout << endl;
-
-  for (GridCellIterator c(*this); !c.end(); ++c)
+  
+  for (CellIterator c(this); !c.end(); ++c)
 	 cout << "  " << *c << endl;
   
   cout << endl;

@@ -12,6 +12,8 @@
 
 #include <dolfin/dolfin_constants.h>
 #include <dolfin/Cell.h>
+#include <dolfin/NodeIterator.h>
+#include <dolfin/ShortList.h>
 
 namespace dolfin {
 
@@ -23,6 +25,11 @@ namespace dolfin {
 	 
 	 GenericCell();
 	 ~GenericCell();
+
+	 virtual int noNodes() = 0;
+	 virtual int noEdges() = 0;
+	 virtual int noFaces() = 0;
+	 virtual int noBoundaries() = 0;
 
 	 int id() const;
 	 virtual Cell::Type type() = 0;
@@ -60,7 +67,10 @@ namespace dolfin {
 	 friend class Tetrahedron;
 	 friend class Triangle;
 	 friend class GridData;
+	 friend class InitGrid;
 	 friend class Cell;
+	 friend class NodeIterator::CellNodeIterator;
+	 friend class CellIterator::CellCellIterator;
 	 
   protected:
 	 
@@ -87,9 +97,8 @@ namespace dolfin {
 	 
 	 int material;
 
-	 // Connectivity
-	 Cell *cc;
-	 int cc_size;
+	 virtual Node* getNode(int i) = 0;
+	 virtual bool  neighbor(ShortList<Node *> &cn, Cell &cell) = 0;
 	 
   };
 

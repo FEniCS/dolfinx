@@ -12,14 +12,32 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Triangle::Triangle()
 {
-  nodes[0] = 0;
-  nodes[1] = 0;
-  nodes[2] = 0;
+
 }
 //-----------------------------------------------------------------------------
 Triangle::~Triangle()
 {
 
+}
+//-----------------------------------------------------------------------------
+int Triangle::noNodes()
+{
+  return 3;
+}
+//-----------------------------------------------------------------------------
+int Triangle::noEdges()
+{
+  return 3;
+}
+//-----------------------------------------------------------------------------
+int Triangle::noFaces()
+{
+  return 1;
+}
+//-----------------------------------------------------------------------------
+int Triangle::noBoundaries()
+{
+  return noEdges();
 }
 //-----------------------------------------------------------------------------
 Cell::Type Triangle::type()
@@ -29,18 +47,12 @@ Cell::Type Triangle::type()
 //-----------------------------------------------------------------------------
 void Triangle::set(Node *n0, Node *n1, Node *n2)
 {
-  nodes[0] = n0;
-  nodes[1] = n1;
-  nodes[2] = n2;
+
 }
 //-----------------------------------------------------------------------------
 void Triangle::Set(Node *n1, Node *n2, Node *n3, int material)
 {
-  nodes[0] = n1;
-  nodes[1] = n2;
-  nodes[2] = n3;
 
-  this->material = material;
 }
 //----------------------------------------------------------------------------
 int Triangle::GetSize()
@@ -163,12 +175,37 @@ void Triangle::ComputeCellNeighbors(Node *node_list, int thiscell)
 
 }
 //-----------------------------------------------------------------------------
+Node* Triangle::getNode(int i)
+{
+  return nodes[i];
+}
+//-----------------------------------------------------------------------------
+bool Triangle::neighbor(ShortList<Node *> &cn, Cell &cell)
+{
+  // Two triangles are neighbors if they have a common edge or if they are
+  // the same triangle, i.e. if they have 2 or 3 common nodes.
+
+  if ( cell.type() != Cell::TRIANGLE )
+	 return false;
+  
+  if ( !cell.c )
+	 return false;
+
+  int count = 0;
+  for (int i = 0; i < 3; i++)
+	 for (int j = 0; j < 3; j++)
+		if ( cn(i) == cell.cn(j) )
+		  count++;
+  
+  return count == 2 || count == 3;
+}
+//-----------------------------------------------------------------------------
 namespace dolfin {
 
   //---------------------------------------------------------------------------
   std::ostream& operator << (std::ostream& output, const Triangle& t)
   {
-	 output << "[ Triangle: id = " << t.id() << " " << "nodes = ("
+	 output << "[ Triangle: id = " << t.id() << " " << "  nodes = ("
 			  << t.nodes[0]->id() << ","
 			  << t.nodes[1]->id() << ","
 			  << t.nodes[2]->id() << ") ]";

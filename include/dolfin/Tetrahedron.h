@@ -18,6 +18,11 @@ namespace dolfin{
 	 Tetrahedron();
 	 ~Tetrahedron();
 
+	 int noNodes();
+	 int noEdges();
+	 int noFaces();
+	 int noBoundaries();
+	 
 	 Cell::Type type();
 	 
 	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
@@ -48,6 +53,9 @@ namespace dolfin{
 	 void ComputeCellNeighbors (Node *node_list, int thiscell);
 	 
   private:
+	 
+	 Node* getNode(int i);
+	 bool  neighbor(ShortList<Node *> &cn, Cell &cell);
 	 
 	 Node *nodes[4];
 	 

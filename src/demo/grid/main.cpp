@@ -17,5 +17,5 @@ int main(int argc, char **argv)
 
   cout << grid << endl;
 
-  grid.show();  
+  //grid.show();  
 }

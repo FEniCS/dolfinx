@@ -1,6 +1,7 @@
 #include <dolfin/Node.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/Display.h>
+#include <dolfin/ShortList.h>
 
 using namespace dolfin;
 
@@ -12,12 +13,6 @@ Node::Node()
   _nn = 0;
   _nc = 0;
 
-
-  nn = 0;
-  nc = 0;
-  nn_size = 0;
-  nc_size = 0;
-  
   _id = -1;
 }
 //-----------------------------------------------------------------------------
@@ -133,15 +128,8 @@ int Node::setID(int id)
 //-----------------------------------------------------------------------------
 void Node::clear()
 {
-  if ( nn )
-	 delete [] nn;
-  nn = 0;
-  nn_size = 0;
-
-  if ( nc )
-	 delete [] nc;
-  nc = 0;
-  nc_size = 0;
+  nn.clear();
+  nc.clear();
 }
 //-----------------------------------------------------------------------------
 void Node::AllocateForNeighborCells()

@@ -11,13 +11,11 @@
 
 #include <dolfin/dolfin_constants.h>
 #include <dolfin/List.h>
+#include <dolfin/Node.h>
 #include <dolfin/Cell.h>
 
 namespace dolfin {
 
-  class Node;
-  class Triangle;
-  class Tetrahedron;
   class GridData;
   
   class Grid {
@@ -36,8 +34,8 @@ namespace dolfin {
 	 friend std::ostream& operator << (std::ostream& output, Grid& grid);
 	 
 	 /// Friends
-	 friend class GridNodeIterator;
-	 friend class GridCellIterator;
+	 friend class NodeIterator::GridNodeIterator;
+	 friend class CellIterator::GridCellIterator;
 	 friend class XMLGrid;
 	 
 	 // old functions below

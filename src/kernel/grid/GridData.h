@@ -13,14 +13,11 @@
 ///    a list of all cells
 
 #include <dolfin/List.h>
+#include <dolfin/Node.h>
 #include <dolfin/Cell.h>
 
 namespace dolfin {
 
-  class Node;
-  class Triangle;
-  class Tetrahedron;
-  
   class GridData {
   public:
 	 
@@ -38,8 +35,8 @@ namespace dolfin {
 	 Cell* getCell(int id);
 
 	 // Friends
-	 friend class GridNodeIterator;
-	 friend class GridCellIterator;
+	 friend class NodeIterator::GridNodeIterator;
+	 friend class CellIterator::GridCellIterator;
 	 
   private:
 	 

@@ -10,15 +10,32 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Tetrahedron::Tetrahedron()
 {
-  nodes[0] = 0;
-  nodes[1] = 0;
-  nodes[2] = 0;
-  nodes[3] = 0;
+  
 }
 //-----------------------------------------------------------------------------
 Tetrahedron::~Tetrahedron()
 {
-
+  
+}
+//-----------------------------------------------------------------------------
+int Tetrahedron::noNodes()
+{
+  return 4;
+}
+//-----------------------------------------------------------------------------
+int Tetrahedron::noEdges()
+{
+  return 6;
+}
+//-----------------------------------------------------------------------------
+int Tetrahedron::noFaces()
+{
+  return 4;
+}
+//-----------------------------------------------------------------------------
+int Tetrahedron::noBoundaries()
+{
+  return noFaces();
 }
 //-----------------------------------------------------------------------------
 Cell::Type Tetrahedron::type()
@@ -28,10 +45,9 @@ Cell::Type Tetrahedron::type()
 //-----------------------------------------------------------------------------
 void Tetrahedron::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
-  nodes[0] = n0;
-  nodes[1] = n1;
-  nodes[2] = n2;
-  nodes[3] = n3;
+
+
+  
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::Set(Node *n1, Node *n2, Node *n3, Node *n4, int material)
@@ -172,9 +188,9 @@ void Tetrahedron::ComputeCellNeighbors(Node *node_list, int thiscell)
 	 neighbor_cells = new int[4];
   
   int c;
-
+  
   if ( node_list[nodes[0]->GetNodeNo()].CommonCell(&node_list[nodes[1]->GetNodeNo()],
-						   &node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
+																	&node_list[nodes[2]->GetNodeNo()],thiscell,&c) ){
 	 neighbor_cells[_nc] = c;
 	 _nc += 1;
   }
@@ -196,12 +212,37 @@ void Tetrahedron::ComputeCellNeighbors(Node *node_list, int thiscell)
 
 }
 //-----------------------------------------------------------------------------
+Node* Tetrahedron::getNode(int i)
+{
+  return nodes[i];
+}
+//-----------------------------------------------------------------------------
+bool Tetrahedron::neighbor(ShortList<Node *> &cn, Cell &cell)
+{
+  // Two tetrahedrons are neighbors if they have a common face or if they are
+  // the same tetrahedron, i.e. if they have 3 or 4 common nodes.
+  
+  if ( cell.type() != Cell::TETRAHEDRON )
+	 return false;
+  
+  if ( !cell.c )
+	 return false;
+
+  int count = 0;
+  for (int i = 0; i < 4; i++)
+	 for (int j = 0; j < 4; j++)
+		if ( cn(i) == cell.cn(j) )
+		  count++;
+  
+  return count == 3 || count == 4;
+}
+//-----------------------------------------------------------------------------
 namespace dolfin {
 
   //---------------------------------------------------------------------------
   std::ostream& operator << (std::ostream& output, const Tetrahedron &t)
   {
-	 output << "[ Tetrahedron: id = " << t.id() << " nodes = ("
+	 output << "[ Tetrahedron: id = " << t.id() << "  nodes = ("
 			  << t.nodes[0]->id() << ","
 			  << t.nodes[1]->id() << ","
 			  << t.nodes[2]->id() << ","

@@ -263,7 +263,7 @@ public:
   
   //---------------------------------------------------------------------------
   
-  class Iterator{
+  class Iterator {
   public:
 	 
 	 friend class List<T>;
@@ -369,7 +369,7 @@ protected:
 	 
 	 // Place iterator at the beginning of the list
 	 for (Block *b = _first_block;; b = b->next){
-
+		
 		int pos;
 		
 		if ( (pos = b->first_pos()) != -1 ){
@@ -377,7 +377,7 @@ protected:
 		  it->pos = pos;
 		  return;
 		}
-
+		
 		if ( !b->next )
 		  break;
 
@@ -400,8 +400,6 @@ protected:
 	 int start = it->pos + 1;
 	 int pos = 0;
 	 for (Block *b = it->block;; b = b->next){
-		
-
 		
 		if ( (pos = b->next_pos(start)) != -1 ){
 		  it->block = b;

@@ -9,6 +9,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Cell::Cell()
 {
+  cn.init(noNodes());
+
   c = 0;
 }
 //-----------------------------------------------------------------------------
@@ -16,6 +18,43 @@ Cell::~Cell()
 {
   if ( c )
 	 delete c;
+}
+//-----------------------------------------------------------------------------
+GenericCell* Cell::operator->() const
+{
+  return c;
+}
+//-----------------------------------------------------------------------------
+int Cell::noNodes()
+{
+  if ( c )
+	 return c->noNodes();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int Cell::noEdges()
+{
+  if ( c )
+	 return c->noEdges();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int Cell::noFaces()
+{
+  if ( c )
+	 return c->noFaces();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int Cell::noBoundaries()
+{
+  if ( c )
+	 return c->noBoundaries();
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
 int Cell::id() const
@@ -36,39 +75,29 @@ Cell::Type Cell::type() const
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2)
 {
-  if ( !c ){
+  if ( cn.size() != 3 ) {
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Cannot set cell nodes for unitialised cell." << endl;
+	 cout << "Wrong number of nodes for this cell type." << endl;
 	 exit(1);
   }
-  
-  switch ( c->type() ){
-  case TRIANGLE:
-	 ( (Triangle *) c )->set(n0,n1,n2);
-	 break;
-  default:
-	 // FIXME: Temporary until we fix the log system
-	 cout << "Cannot set four nodes for this cell type." << endl;
-	 exit(1);
-  }
+
+  cn(0) = n0;
+  cn(1) = n1;
+  cn(2) = n2;
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2, Node *n3)
 {
-  if ( !c ){
-	 cout << "Cannot set cell nodes for unitialised cell." << endl;
-	 exit(1);
-  }
-  
-  switch ( c->type() ){
-  case TETRAHEDRON:
-	 ( (Tetrahedron *) c )->set(n0,n1,n2,n3);
-	 break;
-  default:
+  if ( cn.size() != 4 ) {
 	 // FIXME: Temporary until we fix the log system
-	 cout << "Cannot set four nodes for this cell type." << endl;
+	 cout << "Wrong number of nodes for this cell type." << endl;
 	 exit(1);
   }
+
+  cn(0) = n0;
+  cn(1) = n1;
+  cn(2) = n2;
+  cn(3) = n3;
 }
 //-----------------------------------------------------------------------------
 void Cell::setID(int id)
@@ -101,6 +130,14 @@ void Cell::clear()
 {
   if ( c )
 	 c->clear();
+}
+//-----------------------------------------------------------------------------
+bool Cell::neighbor(Cell &cell)
+{
+  if ( c )
+	 return c->neighbor(cn,cell);
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 namespace dolfin {
