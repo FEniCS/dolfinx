@@ -29,15 +29,10 @@ namespace dolfin {
     static bool checkRuleRegular   (Cell& cell, int no_marked_edges);
     static bool checkRuleIrregular1(Cell& cell, int no_marked_edges);
     static bool checkRuleIrregular2(Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular3(Cell& cell, int no_marked_edges);
-    static bool checkRuleIrregular4(Cell& cell, int no_marked_edges);
 
     static void refineRegular   (Cell& cell, Grid& grid);
     static void refineIrregular1(Cell& cell, Grid& grid);
     static void refineIrregular2(Cell& cell, Grid& grid);
-    static void refineIrregular3(Cell& cell, Grid& grid);
-    static void refineIrregular4(Cell& cell, Grid& grid);
-
   };
 
 }

@@ -93,6 +93,14 @@ bool Edge::equals(Node* n0, Node* n1) const
   return false;
 }
 //-----------------------------------------------------------------------------
+bool Edge::contains(Node* n) const
+{
+  if ( this->n0 == n || this->n1 == n )
+    return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
 {
   stream << "[ Edge: id = " << edge.id()

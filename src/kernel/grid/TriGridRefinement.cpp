@@ -15,7 +15,7 @@ bool TriGridRefinement::checkRule(Cell& cell, int no_marked_edges)
   dolfin_assert(cell.type() == Cell::triangle);
 
   // Choose refinement rule
-  if ( checkRuleRegular(cell, no_marked_edge) )
+  if ( checkRuleRegular(cell, no_marked_edges) )
     return true;
 
   // Which other rules do we have for triangles?
@@ -28,7 +28,7 @@ void TriGridRefinement::refine(Cell& cell, Grid& grid)
   // Refine cell according to marker
   switch ( cell.marker() ) {
   case marked_for_reg_ref:
-    regularRefinement(cell, grid);
+    refineRegular(cell, grid);
     break;
   default:
     // We should not rearch this case, cell cannot be
@@ -44,7 +44,7 @@ bool TriGridRefinement::checkRuleRegular(Cell& cell, int no_marked_edges)
   if ( no_marked_edges != 4 )
     return false;
 
-  cell.mark() = marked_for_reg_ref;
+  cell.marker() = marked_for_reg_ref;
   return true;
 }
 //-----------------------------------------------------------------------------
@@ -56,20 +56,6 @@ bool TriGridRefinement::checkRuleIrregular1(Cell& cell, int no_marked_edges)
 }
 //-----------------------------------------------------------------------------
 bool TriGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
-{
-  // Do we have this rule for triangles?
-  
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TriGridRefinement::checkRuleIrregular3(Cell& cell, int no_marked_edges)
-{
-  // Do we have this rule for triangles?
-  
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool TriGridRefinement::checkRuleIrregular4(Cell& cell, int no_marked_edges)
 {
   // Do we have this rule for triangles?
   
@@ -118,23 +104,77 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   cell.addChild(t4);
 }
 //-----------------------------------------------------------------------------
-void TriGridRefinement::refineIrregular1(Cell& c, Grid& grid)
+void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
 {
-  // What should we do in this rule for triangles?
+  // One edge is marked. Insert one new node at the midpoint of the
+  // marked edge, then connect this new node to the node not on
+  // the marked edge. This gives 2 new triangles.
+
+  // Sort nodes by the number of marked edges
+  Array<Node*> nodes(3);
+  sortNodes(cell, nodes);
+
+  // Create new nodes with the same coordinates as the old nodes
+  Node *n_m1 = grid.createNode(nodes(0)->coord());
+  Node *n_m2 = grid.createNode(nodes(1)->coord());
+  Node *n_nm = grid.createNode(nodes(2)->coord());
+
+  // Update parent-child info
+  n_m1->setParent(nodes(0));
+  n_m2->setParent(nodes(1));
+  n_nm->setParent(nodes(2));
+
+  // Create new node on marked edge 
+  Node *n_e = grid.createNode(cell.findEdge(n_m1,n_m2)->midpoint());
+  
+  // Create new cells 
+  Cell *t1 = grid.createCell(n_e,n_nm,n_m1);
+  Cell *t2 = grid.createCell(n_e,n_nm,n_m2);
+  
+  // Update parent-child info
+  t1->setParent(&cell);
+  t2->setParent(&cell);
+  
+  cell.addChild(t1);
+  cell.addChild(t2);
 }
 //-----------------------------------------------------------------------------
-void TriGridRefinement::refineIrregular2(Cell& c, Grid& grid)
+void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
 {
-  // What should we do in this rule for triangles?
-}
-//-----------------------------------------------------------------------------
-void TriGridRefinement::refineIrregular3(Cell& c, Grid& grid)
-{
-  // What should we do in this rule for triangles?
-}
-//-----------------------------------------------------------------------------
-void TriGridRefinement::refineIrregular4(Cell& c, Grid& grid)
-{
-  // What should we do in this rule for triangles?
+  // Two edges are marked. Insert two new nodes at the midpoints of the
+  // marked edges, then connect these new nodes to each other and one 
+  // of the nodes on the unmarked edge. This gives 3 new triangles.
+
+  // Sort nodes by the number of marked edges
+  Array<Node*> nodes(3);
+  sortNodes(cell, nodes);
+
+  // Create new nodes with the same coordinates as the old nodes
+  Node *n_dm = grid.createNode(nodes(0)->coord());
+  Node *n_m1 = grid.createNode(nodes(1)->coord());
+  Node *n_m2 = grid.createNode(nodes(2)->coord());
+
+  // Update parent-child info
+  n_dm->setParent(nodes(0));
+  n_m1->setParent(nodes(1));
+  n_m2->setParent(nodes(2));
+
+  // Create new nodes on marked edges 
+  Node *n_e1 = grid.createNode(cell.findEdge(n_dm,n_m1)->midpoint());
+  Node *n_e2 = grid.createNode(cell.findEdge(n_dm,n_m2)->midpoint());
+
+  // Create new cells 
+  Cell *t1 = grid.createCell(n_dm,n_e1,n_e2);
+  Cell *t2 = grid.createCell(n_m1,n_e1,n_e2);
+  Cell *t3 = grid.createCell(n_e2,n_m1,n_m2);
+  
+  // Update parent-child info
+  t1->setParent(&cell);
+  t2->setParent(&cell);
+  t3->setParent(&cell);
+  
+  cell.addChild(t1);
+  cell.addChild(t2);
+  cell.addChild(t3);
 }
 //-----------------------------------------------------------------------------

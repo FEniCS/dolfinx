@@ -35,7 +35,6 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            CellIterator.cpp \
                            Edge.cpp \
                            EdgeIterator.cpp \
-                           EdgeRefData.cpp \
                            Face.cpp \
                            FaceIterator.cpp \
                            GenericCell.cpp \

@@ -49,6 +49,9 @@ namespace dolfin {
     /// Check if edge consists of the two nodes
     bool equals(Node* n0, Node* n1) const;
 
+    /// Check if edge contains the node
+    bool contains(Node* n) const;
+
     ///--- Output ---
    
     /// Display condensed edge data
@@ -60,6 +63,8 @@ namespace dolfin {
     friend class GridData;
     friend class GridInit;
     friend class GridRefinement;
+    friend class TriGridRefinement;
+    friend class TetGridRefinement;
     friend class NodeIterator::CellNodeIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
