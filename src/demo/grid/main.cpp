@@ -10,8 +10,6 @@ void refine3D(int refinements);
 
 int main()
 {
-  dolfin_set("output", "plain text");
-
   int refinements = 3;
 
   // Refine 2D grid
