@@ -4,7 +4,9 @@
 #include <dolfin/Display.hh>
 #include "SparseMatrix.hh"
 #include "DenseMatrix.hh"
-#include "Vector.hh"
+#include <dolfin/Vector.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SparseMatrix::SparseMatrix()

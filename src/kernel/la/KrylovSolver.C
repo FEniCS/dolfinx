@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include "utils.h"
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver()
 {

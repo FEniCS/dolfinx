@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_grid.h>
 #include <dolfin/dolfin_io.h>
+#include <dolfin/dolfin_la.h>
 
 // Main function calls
 void dolfin_init (int argc, char **argv);

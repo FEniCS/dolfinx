@@ -5,6 +5,8 @@
 #include "SISolver.hh"
 #include "utils.h"
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 SISolver::SISolver()
 {

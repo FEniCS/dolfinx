@@ -4,6 +4,8 @@
 #include "SparseMatrix.hh"
 #include <dolfin/Display.hh>
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(int m, int n)
 {

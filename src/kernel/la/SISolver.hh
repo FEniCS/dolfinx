@@ -5,40 +5,44 @@
 #define __SI_SOLVER_HH
 
 #include "SparseMatrix.hh"
-#include "Vector.hh"
+#include <dolfin/Vector.h>
 
-enum Method {richardson,jacobi,gaussseidel,sor};
-
-class SISolver{
-public:
+namespace dolfin {
   
-  SISolver();
-  ~SISolver(){}
+  enum Method {richardson,jacobi,gaussseidel,sor};
   
-  void Solve(SparseMatrix *A, Vector *x, Vector *b);
+  class SISolver{
+  public:
+	 
+	 SISolver();
+	 ~SISolver(){}
+	 
+	 void Solve(SparseMatrix *A, Vector *x, Vector *b);
+	 
+	 void SetMethod(Method mtd);
+	 void SetNoIterations(int noit);
+	 
+  private:
+	 
+	 void IterateRichardson  (SparseMatrix *A, Vector *x, Vector *b);
+	 void IterateJacobi      (SparseMatrix *A, Vector *x, Vector *b);
+	 void IterateGaussSeidel (SparseMatrix *A, Vector *x, Vector *b);
+	 void IterateSOR         (SparseMatrix *A, Vector *x, Vector *b);
+	 
+	 void ComputeResidual(SparseMatrix *A, Vector *x, Vector *b);
+	 
+	 Method iterative_method;
+	 
+	 real tol;
+	 real residual;
+	 
+	 int iteration;
+	 
+	 int max_no_iterations;
+  };
   
-  void SetMethod(Method mtd);
-  void SetNoIterations(int noit);
+  typedef SISolver SimpleSolver;
 
-private:
-
-  void IterateRichardson  (SparseMatrix *A, Vector *x, Vector *b);
-  void IterateJacobi      (SparseMatrix *A, Vector *x, Vector *b);
-  void IterateGaussSeidel (SparseMatrix *A, Vector *x, Vector *b);
-  void IterateSOR         (SparseMatrix *A, Vector *x, Vector *b);
-
-  void ComputeResidual(SparseMatrix *A, Vector *x, Vector *b);
+}
   
-  Method iterative_method;
-
-  real tol;
-  real residual;
-
-  int iteration;
-
-  int max_no_iterations;
-};
-
-typedef SISolver SimpleSolver;
-
 #endif

@@ -89,6 +89,7 @@ AC_OUTPUT( Makefile \
            src/kernel/io/Makefile \
            src/kernel/io/dolfin/Makefile \
            src/kernel/la/Makefile \
+           src/kernel/la/dolfin/Makefile \
            src/kernel/main/Makefile \
            src/kernel/main/dolfin/Makefile \
            src/modules/Makefile \

@@ -1,7 +1,9 @@
 #include <dolfin/Display.hh>
-#include "Vector.hh"
+#include <dolfin/Vector.h>
 #include <math.h>
 #include "utils.h"
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Vector::Vector()

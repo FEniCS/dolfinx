@@ -4,25 +4,26 @@
 #ifndef __DIRECT_SOLVER_HH
 #define __DIRECT_SOLVER_HH
 
-class DenseMatrix;
-class SparseMatrix;
-class Vector;
-
-class DirectSolver{
-public:
-
-  DirectSolver(){}
-  ~DirectSolver(){}
-
-  void LU    (DenseMatrix *LU);
-  void Solve (DenseMatrix *LU, Vector *x, Vector *b);
-  void Solve (SparseMatrix *A, Vector *x, Vector *b);
+namespace dolfin {
   
-private:
+  class DenseMatrix;
+  class SparseMatrix;
+  class Vector;
   
+  class DirectSolver{
+  public:
+	 
+	 DirectSolver(){}
+	 ~DirectSolver(){}
+	 
+	 void LU    (DenseMatrix *LU);
+	 void Solve (DenseMatrix *LU, Vector *x, Vector *b);
+	 void Solve (SparseMatrix *A, Vector *x, Vector *b);
+	 
+  private:
   
+  };
   
+}
   
-};
-
 #endif
