@@ -21,11 +21,11 @@ EXTRA_DIST = dolfin_tanganyika.h \
              GenericSparsity.h \
              Iteration.h \
              MatrixSparsity.h \
-             MechanicalSystem.h \
              Method.h \
              NonStiffIteration.h \
              ODE.h \
              ODESolver.h \
+             ParticleSystem.h \
              Partition.h \
              RHS.h \
              RecursiveTimeSlab.h \

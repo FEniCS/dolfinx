@@ -12,13 +12,20 @@ AM_MAINTAINER_MODE
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
                              [Turn on debugging and warnings]),
-              CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror')
+              enable_debug=yes)
 
 # Option --disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
-              CXXFLAGS=$CXXFLAGS' -DNO_CURSES=1')
+              enable_curses=no)
+
+AC_ARG_ENABLE(bmp,
+[  --enable-bmp            support loading BMP images [default=yes]],
+              , enable_bmp=yes)
+if test x$enable_bmp = xyes; then
+    CFLAGS="$CFLAGS -DLOAD_BMP"
+fi
 
 # Checks for programs
 AC_PROG_CC
@@ -33,6 +40,20 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
+# Modify compiler flags when debug is enabled
+if test x$enable_debug = xyes; then
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror'
+fi
+
+# Check for curses
+if test x$enable_curses = x; then
+    AC_SEARCH_LIBS(wbkgdset, ncurses,,
+                   echo "*** Unable to find ncurses on your system. "
+                   echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
+else
+    CXXFLAGS=$CXXFLAGS' -DNO_CURSES=1'
+fi
+
 # Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
 if test $libxml2_found = yes; then	  
@@ -45,9 +66,6 @@ else
         echo "*** Perhaps you need to install the package libxml2-dev?"
 	exit 1
 fi
-
-# Check for curses
-AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your system."; exit 1)
 
 # Note: need to be in the correct order, and some are needed twice.
 # Not very pretty... Maybe someone knows how to fix this?

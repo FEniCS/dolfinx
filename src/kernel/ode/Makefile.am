@@ -22,11 +22,11 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/GenericSparsity.h \
                           dolfin/Iteration.h \
                           dolfin/MatrixSparsity.h \
-                          dolfin/MechanicalSystem.h \
                           dolfin/Method.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
+                          dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/RecursiveTimeSlab.h \
                           dolfin/Regulator.h \
@@ -61,11 +61,11 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           GenericSparsity.cpp \
                           Iteration.cpp \
                           MatrixSparsity.cpp \
-                          MechanicalSystem.cpp \
                           Method.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
+                          ParticleSystem.cpp \
                           Partition.cpp \
                           RecursiveTimeSlab.cpp \
                           Regulator.cpp \

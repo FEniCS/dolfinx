@@ -5,18 +5,18 @@
 
 using namespace dolfin;
 
-class Spring : public MechanicalSystem
+class Spring : public ParticleSystem
 {
 public:
   
-  Spring() : MechanicalSystem(1, 1)
+  Spring() : ParticleSystem(1, 1)
   {
     // Final time
     T = 30.0;
 
     // Spring constant
     k = 5.0;
-
+    
     // Damping constant
     b = 0.0;
 

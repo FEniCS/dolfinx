@@ -25,11 +25,11 @@
 #include <dolfin/GenericSparsity.h>
 #include <dolfin/Iteration.h>
 #include <dolfin/MatrixSparsity.h>
-#include <dolfin/MechanicalSystem.h>
 #include <dolfin/Method.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ODESolver.h>
+#include <dolfin/ParticleSystem.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Sample.h>
 #include <dolfin/Solution.h>

@@ -4,6 +4,7 @@
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
 
+#include <bits/stl_alloc.h>
 #include <string>
 #include <stdarg.h>
 
