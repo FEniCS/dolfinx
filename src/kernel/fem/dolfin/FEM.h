@@ -47,7 +47,8 @@ namespace dolfin {
     /// Assemble vector for user-defined method
     static void assemble(PDE& pde, Mesh& mesh, Vector& b,
 			 FiniteElementMethod& method);
-    
+
+
   private:
 
     // Assemble matrix
@@ -55,11 +56,43 @@ namespace dolfin {
 			 FiniteElement::Vector& element, Map& map,
 			 Quadrature& quadrature);
     
+    /// Assemble matrix for interior cells
+    static void assembleInterior(PDE& pde, Mesh& mesh, Matrix& A, 
+				 FiniteElement::Vector& element, Map& map,
+				 Quadrature& quadrature);
+
+    /// Assemble matrix for boundary 
+    static void assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
+				 FiniteElement::Vector& element, Map& map,
+				 Quadrature& quadrature);
+    static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
+				    FiniteElement::Vector& element, Map& map,
+				    Quadrature& quadrature);
+    static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
+				    FiniteElement::Vector& element, Map& map,
+				    Quadrature& quadrature);
+
     // Assemble vector
     static void assemble(PDE& pde, Mesh& mesh, Vector& b,
 			 FiniteElement::Vector& element, Map& map,
 			 Quadrature& quadrature);
 
+    /// Assemble vector for interior cells 
+    static void assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
+				 FiniteElement::Vector& element, Map& map,
+				 Quadrature& quadrature);
+    
+    /// Assemble vector for boundary 
+    static void assembleBoundary(PDE& pde, Mesh& mesh, Vector& b,
+				 FiniteElement::Vector& element, Map& map,
+				 Quadrature& quadrature);
+    static void assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
+				    FiniteElement::Vector& element, Map& map,
+				    Quadrature& quadrature);
+    static void assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
+				    FiniteElement::Vector& element, Map& map,
+				    Quadrature& quadrature);
+    
     // Set boundary conditions for matrix
     static void setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element);
 
