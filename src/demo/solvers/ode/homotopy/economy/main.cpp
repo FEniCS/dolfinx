@@ -34,6 +34,15 @@ public:
 	w[i][j] = dolfin::rand();
       }
     }
+
+    // Set condition that guarantees a solution for m = 1, n = 2
+    /*
+      if ( m == 1 && n == 2 )
+      {
+      dolfin_info("Setting condition for existence of solutions.");
+      w[0][0] = a[0][0] * w[0][1] / a[0][1];
+      }
+    */
   }
 
   ~Leontief()
@@ -117,7 +126,7 @@ int main()
   dolfin_set("adaptive samples", true);
   dolfin_set("tolerance", 0.05);
 
-  Leontief leontief(3, 3);
+  Leontief leontief(1, 2);
   leontief.solve();
 
   return 0;
