@@ -24,6 +24,8 @@ void P1TriMap::update(const Cell& cell)
   if ( cell.type() != Cell::triangle )
     dolfin_error("Wrong cell type for map (must be a triangle).");
   
+  cell_ = &cell;
+
   // Reset values
   reset();
   
@@ -47,15 +49,6 @@ void P1TriMap::update(const Cell& cell)
   // Compute inverse
   g11 =   f22 / d; g12 = - f12 / d;
   g21 = - f21 / d; g22 =   f11 / d;
-}
-//-----------------------------------------------------------------------------
-void P1TriMap::update(const Cell& interior, const Edge& boundary)
-{
-  // Update map to interior of cell
-  update(interior);
-
-  // Update map to boundary of cell
-  update(boundary);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1TriMap::ddx
@@ -84,6 +77,9 @@ const FunctionSpace::ElementFunction P1TriMap::ddt
 //-----------------------------------------------------------------------------
 void P1TriMap::update(const Edge& boundary)
 {
+  // Update map to interior of cell
+  update(boundary.cell(0));
+
   // The determinant is given by the edge length
   bd = boundary.length();
 

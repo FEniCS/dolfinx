@@ -25,6 +25,8 @@ void P1IntMap::update(const Cell& cell)
   //if ( cell.type() != Cell::interval )
   //  dolfin_error("Wrong cell type for map (must be an interval).");
   
+  cell_ = &cell;
+
   // Reset values
   reset();
   

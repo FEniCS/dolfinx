@@ -12,6 +12,11 @@ Map::Map()
   reset();
 }
 //-----------------------------------------------------------------------------
+const Cell* Map::cell() const 
+{
+  return cell_;
+}
+//-----------------------------------------------------------------------------
 real Map::det() const
 {
   return d;
@@ -22,12 +27,12 @@ real Map::bdet() const
   return bd;
 }
 //-----------------------------------------------------------------------------
-void Map::update(const Cell& interior, const Edge& boundary)
+void Map::update(const Edge& boundary)
 {
   dolfin_error("Non-matching update of map to boundary of cell.");
 }
 //-----------------------------------------------------------------------------
-void Map::update(const Cell& interior, const Face& boundary)
+void Map::update(const Face& boundary)
 {
   dolfin_error("Non-matching update of map to boundary of cell.");
 }

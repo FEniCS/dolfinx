@@ -22,27 +22,27 @@ PDE::~PDE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void PDE::updateLHS(FiniteElement::Vector& element,
-		    const Cell& cell,
-		    const Map& map,
-		    const Quadrature& interior_quadrature,
-		    const Quadrature& boundary_quadrature)
+const void PDE::updateLHS(FiniteElement::Vector& element,
+			  //		    const Cell& cell,
+			  const Map& map,
+			  const Quadrature& interior_quadrature,
+			  const Quadrature& boundary_quadrature)
 {
   // Common update for LHS and RHS
-  update(element, cell, map, interior_quadrature, boundary_quadrature);
+  update(element, map, interior_quadrature, boundary_quadrature);
   
   // Local update of LHS
   updateLHS();
 }
 //-----------------------------------------------------------------------------
-void PDE::updateRHS(FiniteElement::Vector& element,
-		    const Cell& cell,
-		    const Map& map,
-		    const Quadrature& interior_quadrature,
-		    const Quadrature& boundary_quadrature)
+const void PDE::updateRHS(FiniteElement::Vector& element,
+			  //		    const Cell& cell,
+			  const Map& map,
+			  const Quadrature& interior_quadrature,
+			  const Quadrature& boundary_quadrature)
 {
   // Common update for LHS and RHS
-  update(element, cell, map, interior_quadrature, boundary_quadrature);
+  update(element, map, interior_quadrature, boundary_quadrature);
 
   // Local update of RHS
   updateRHS();
@@ -90,42 +90,42 @@ const ElementFunction& PDE::ddt(const ShapeFunction &v) const
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddx(const Product &v) const
 {
-  return map->ddx(v);
+  return map_->ddx(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddy(const Product &v) const
 {
-  return map->ddy(v);
+  return map_->ddy(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddz(const Product &v) const
 {
-  return map->ddz(v);
+  return map_->ddz(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddt(const Product &v) const
 {
-  return map->ddt(v);
+  return map_->ddt(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddx(const ElementFunction &v) const
 {
-  return map->ddx(v);
+  return map_->ddx(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddy(const ElementFunction &v) const
 {
-  return map->ddy(v);
+  return map_->ddy(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddz(const ElementFunction &v) const
 {
-  return map->ddz(v);
+  return map_->ddz(v);
 }
 //-----------------------------------------------------------------------------
 const ElementFunction PDE::ddt(const ElementFunction &v) const
 {
-  return map->ddt(v);
+  return map_->ddt(v);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction::Vector
@@ -153,29 +153,29 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
     add(v(i), f(i));
 }
 //-----------------------------------------------------------------------------
-void PDE::update(FiniteElement::Vector& element,
-                 const Cell& cell,
-                 const Map& map,
-                 const Quadrature& interior_quadrature,
-                 const Quadrature& boundary_quadrature)
+const void PDE::update(FiniteElement::Vector& element,
+		       //                 const Cell& cell,
+		       const Map& map,
+		       const Quadrature& interior_quadrature,
+		       const Quadrature& boundary_quadrature)
 {
   // Update element functions
   // We assume that the element dependency is only on the grid, therefore
   // any element, such as the 0th is sufficient
   
   for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
-    p->update(*(element(0)), cell, t);
+    p->update(*(element(0)), *(map.cell()), t);
   
   // Update integral measures
   dx.update(map, interior_quadrature);
   ds.update(map, boundary_quadrature);
-  h = cell.diameter();
+  h = map.cell()->diameter();
   
   // Save map (to compute derivatives)
-  this->map = &map;
+  this->map_ = &map;
 
   // Save cell 
-  this->cell = &cell;
+  this->cell_ = map.cell();
 }
 //-----------------------------------------------------------------------------
 int PDE::size()

@@ -25,6 +25,8 @@ void P1TetMap::update(const Cell& cell)
   if ( cell.type() != Cell::tetrahedron )
     dolfin_error("Wrong cell type for map (must be a tetrahedron).");
   
+  cell_ = &cell;
+
   // Reset values
   reset();
 
@@ -66,15 +68,6 @@ void P1TetMap::update(const Cell& cell)
   g31 = d13 / d; g32 = d23 / d; g33 = d33 / d;
 }
 //-----------------------------------------------------------------------------
-void P1TetMap::update(const Cell& interior, const Face& boundary)
-{
-  // Update map to interior of cell
-  update(interior);
-
-  // Update map to boundary of cell
-  update(boundary);
-}
-//-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction P1TetMap::ddx
 (const FunctionSpace::ShapeFunction &v) const
 {
@@ -101,6 +94,9 @@ const FunctionSpace::ElementFunction P1TetMap::ddt
 //-----------------------------------------------------------------------------
 void P1TetMap::update(const Face& boundary)
 {
+  // Update map to interior of cell
+  update(boundary.cell(0));
+
   // The determinant is given by the norm of the cross product
   
   // Get the first two edges

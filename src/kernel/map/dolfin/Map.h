@@ -41,10 +41,13 @@ namespace dolfin {
     virtual void update(const Cell& cell) = 0;
 
     /// Update map to interior and boundary of cell
-    virtual void update(const Cell& interior, const Edge& boundary);
+    virtual void update(const Edge& boundary);
 
     /// Update map to interior and boundary of cell
-    virtual void update(const Cell& interior, const Face& boundary);
+    virtual void update(const Face& boundary);
+    
+    /// Get cell 
+    const Cell* cell() const;
     
     /// Return derivative of constant
     real ddx(real a) const;
@@ -91,7 +94,8 @@ namespace dolfin {
 
     // Determinant of derivative of map to boundary of cell
     real bd;
-    
+
+    const Cell* cell_;
   };
   
 }

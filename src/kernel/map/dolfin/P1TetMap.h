@@ -17,17 +17,13 @@ namespace dolfin {
     P1TetMap();
 
     void update(const Cell &cell);
-    void update(const Cell& interior, const Face& boundary);
+    void update(const Face& boundary);
     
     const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction &v) const;
     
-  private:
-
-    void update(const Face& boundary);
-
   };
 
 }

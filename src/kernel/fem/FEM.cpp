@@ -104,7 +104,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Matrix& A,
       element(i)->update(map);
     
     // Update equation
-    pde.updateLHS(element, cell, map, interior_quadrature, boundary_quadrature);
+    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test and trial functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
@@ -150,19 +150,19 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Update map
-    map.update(edge.cell(0),edge);
+    map.update(edge);
     
     // Update element
     for (unsigned int i = 0; i < element.size(); ++i)
       element(i)->update(map);
     
     // Update equation
-    pde.updateLHS(element, edge.cell(0), map, interior_quadrature, boundary_quadrature);
+    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test and trial functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
       for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-	    A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+	    A(v.dof(edge), u.dof(edge)) += pde.lhs(*u, *v);
     
     // Update progress
     p++;
@@ -186,19 +186,19 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
   for (FaceIterator face(boundary); !face.end(); ++face)
     {
       // Update map
-      map.update(face.cell(0),face);
+      map.update(face);
       
       // Update element
       for (unsigned int i = 0; i < element.size(); ++i)
 	element(i)->update(map);
       
       // Update equation
-      pde.updateLHS(element, face.cell(0), map, interior_quadrature, boundary_quadrature);
+      pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
       
       // Iterate over test and trial functions
       for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
 	for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-	  A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
+	  A(v.dof(face), u.dof(face)) += pde.lhs(*u, *v);
       
       // Update progress
       p++;
@@ -241,7 +241,7 @@ void FEM::assembleInterior(PDE& pde, Mesh& mesh, Vector& b,
     map.update(cell);
     
     // Update equation
-    pde.updateRHS(element, cell, map, interior_quadrature, boundary_quadrature);
+    pde.updateRHS(element, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test functions
     for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)

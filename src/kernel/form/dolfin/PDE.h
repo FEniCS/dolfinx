@@ -55,15 +55,15 @@ namespace dolfin {
     }
     
     /// Update by cell before computation of left-hand side
-    void updateLHS(FiniteElement::Vector& element,
-                   const Cell& cell,
+    const void updateLHS(FiniteElement::Vector& element,
+		   //                   const Cell& cell,
                    const Map& mapping,
                    const Quadrature& interior_quadrature,
                    const Quadrature& boundary_quadrature);
     
     /// Update by cell before computation of right-hand side
-    void updateRHS(FiniteElement::Vector& element,
-                   const Cell& cell,
+    const void updateRHS(FiniteElement::Vector& element,
+		   //                   const Cell& cell,
                    const Map& mapping,
                    const Quadrature& interior_quadrature,
                    const Quadrature& boundary_quadrature);
@@ -114,8 +114,7 @@ namespace dolfin {
       FunctionPair(ElementFunction& v, Function& f);
       
       // Update element function to current element
-      void update(const FiniteElement& element,
-		  const Cell& cell, real t);
+      void update(const FiniteElement& element, const Cell& cell, real t);
       
       ElementFunction* v;
       Function* f;
@@ -126,11 +125,11 @@ namespace dolfin {
     void add(ElementFunction::Vector &v, Function::Vector &f);
     
     // Update equation
-    void update(FiniteElement::Vector& element,
-		const Cell& cell,
-		const Map& map,
-		const Quadrature& interior_quadrature,
-		const Quadrature& boundary_quadrature);
+    const void update(FiniteElement::Vector& element,
+		      //		const Cell& cell,
+		      const Map& map,
+		      const Quadrature& interior_quadrature,
+		      const Quadrature& boundary_quadrature);
     
     // Optional update before computation of left-hand side
     virtual void updateLHS() {};
@@ -141,10 +140,10 @@ namespace dolfin {
     List<FunctionPair> functions;
     
     // Map from reference element
-    const Map* map;
+    const Map* map_;
     
     // Cell 
-    const Cell* cell;
+    const Cell* cell_;
     
     // Integral measures
     Integral::InteriorMeasure dx;
