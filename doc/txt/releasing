@@ -1,0 +1,10 @@
+Check list for releasing new versions of DOLFIN
+-----------------------------------------------
+
+1. Run scripts/preparedist
+
+2. Run scripts/makedist (after checking out a new version)
+
+3. Update at freshmeat
+
+That should be all...
