@@ -1,0 +1,22 @@
+# Copyright (C) 2002 Johan Hoffman and Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# The bilinear form a(u,v) and linear form L(v) for
+# convection-diffusion using cG(1)cG(1).
+#
+# Compile this form with FFC: ffc ConvectionDiffusion.form.
+
+name = "ConvectionDiffusion"
+scalar = FiniteElement("Lagrange", "triangle", 1)
+vector = FiniteElement("Lagrange", "triangle", 1, 2)
+
+v  = BasisFunction(scalar) # test function
+u1 = BasisFunction(scalar) # value at next time step
+u0 = Function(scalar)      # value at previous time step
+w  = Function(vector)      # convection
+f  = Function(scalar)      # source term
+k  = Constant()            # time step
+c  = Constant()            # diffusion
+
+a = v*u1*dx + 0.5*k*(v*w[i]*u1.dx(i)*dx + c*v.dx(i)*u1.dx(i)*dx)
+L = v*u0*dx - 0.5*k*(v*w[i]*u0.dx(i)*dx + c*v.dx(i)*u0.dx(i)*dx) + v*f*dx

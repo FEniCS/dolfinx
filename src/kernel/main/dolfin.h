@@ -19,5 +19,6 @@
 #include <dolfin/dolfin_ode.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/dolfin_modules.h>
 
 #endif

@@ -1,6 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2005.
+//
 // A simple test program for convection-diffusion, solving
 //
 //     du/dt + b.grad u - div a grad u = f
@@ -22,59 +24,51 @@
 
 using namespace dolfin;
 
-// Source term
-real f(real x, real y, real z, real t)
-{
-  return 0.0;
-}
-
-// Diffusivity
-real a(real x, real y, real z, real t)
-{
-  return 0.1;
-}
-
 // Convection
-real b(real x, real y, real z, real t, int i)
+class Convection : public NewFunction
 {
-  if ( i == 0 )
-    return -5.0;
+  real operator() (const Point& p, unsigned int i) const
+  {
+    if ( i == 0 )
+      return -5.0;
+    else
+      return 0.0;
+  }
+};
 
-  return 0.0;
-}
-
-// Boundary conditions
-void mybc(BoundaryCondition& bc)
+// Right-hand side
+class Source : public NewFunction
 {
-  // u = 0 on the inflow boundary
-  if ( bc.coord().x == 0.0 )
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else if ( bc.coord().x == 1.0 )
-    bc.set(BoundaryCondition::DIRICHLET, 0.0);
-  else if ( bc.coord().y == 0.0)
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else if ( bc.coord().y == 1.0 )
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else
-    bc.set(BoundaryCondition::DIRICHLET, 1.0);
-}
+  real operator() (const Point& p) const
+  {
+    return 0.0;
+  }
+};
+
+// Boundary condition
+class MyBC : public NewBoundaryCondition
+{
+  const BoundaryValue operator() (const Point& p)
+  {
+    BoundaryValue value;
+
+    if ( p.x == 1.0 )
+      value.set(0.0);
+    else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
+      value.set(1.0);
+    
+    return value;
+  }
+};
 
 int main(int argc, char **argv)
 {
   Mesh mesh("dolfin.xml.gz");
-
-  /*
-  Problem convdiff("convection-diffusion", mesh);
-
-  convdiff.set("source", f);
-  convdiff.set("diffusivity", a);
-  convdiff.set("convection", b);
-  convdiff.set("boundary condition", mybc);
-  convdiff.set("final time", 0.5);
-  convdiff.set("time step", 0.1);
-
-  convdiff.solve();
-  */
-
+  Convection w;
+  Source f;
+  MyBC bc;
+  
+  ConvectionDiffusionSolver::solve(mesh, w, f, bc);
+  
   return 0;
 }

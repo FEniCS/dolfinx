@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "convdiff"
-KEYWORD  = "convection-diffusion"
-SOLVER   = "ConvDiffSolver"
-NEEDS    = "mesh"

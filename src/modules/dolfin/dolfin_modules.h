@@ -4,7 +4,8 @@
 #ifndef __DOLFIN_MODULES_H
 #define __DOLFIN_MODULES_H
 
-#include <dolfin/Solver.h>
-#include <dolfin/PoissonSolver.h>
+#include <dolfin/NewSolver.h>
+#include <dolfin/dolfin_poisson.h>
+#include <dolfin/dolfin_convdiff.h>
 
 #endif

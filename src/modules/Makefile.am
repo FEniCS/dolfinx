@@ -1,6 +1,6 @@
 SUBDIRS = dolfin \
-          poisson
-#          convdiff \
+          poisson \
+          convdiff
 #          elasticity \
 #          elasticity-stationary \
 #          elasticity-updated \

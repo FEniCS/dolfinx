@@ -1,4 +1,6 @@
+SUBDIRS                      = dolfin
+include_HEADERS              = dolfin/ConvectionDiffusion.h \
+                               dolfin/ConvectionDiffusionSolver.h
 INCLUDES                     = @KERNEL_CFLAGS@
 lib_LIBRARIES                = libdolfin-convdiff.a
-include_HEADERS              = 
-libdolfin_convdiff_a_SOURCES = ConvDiffSolver.cpp 
+libdolfin_convdiff_a_SOURCES = ConvectionDiffusionSolver.cpp

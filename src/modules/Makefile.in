@@ -85,9 +85,8 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-SUBDIRS = dolfin           poisson
+SUBDIRS = dolfin           poisson           convdiff
 
-#          convdiff \
 #          elasticity \
 #          elasticity-stationary \
 #          elasticity-updated \
