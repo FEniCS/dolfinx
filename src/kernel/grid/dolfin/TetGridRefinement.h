@@ -43,7 +43,8 @@ namespace dolfin {
     static bool  markedEdgesOnSameFace (Cell& cell);
     static Cell* findNeighbor          (Cell& cell, Face& face);
 
-    static Cell* createCell(Cell& cell, Node& n0, Node& n1, Node& n2, Node& n3);
+    static Cell& createCell(Node& n0, Node& n1, Node& n2, Node& n3,
+			    Grid& grid, Cell& cell);
 
   };
 

@@ -145,7 +145,7 @@ void TetGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   Node& n3 = createNode(cell.node(3), grid, cell);
 
   // Create a new cell
-  grid.createCell(n0, n1, n2, n3);
+  createCell(n0, n1, n2, n3, grid, cell);
 
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -177,14 +177,14 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node& n23 = createNode(cell.node(2).midpoint(cell.node(3)), grid, cell);
 
   // Create new cells 
-  grid.createCell(n0,  n01, n02, n03);
-  grid.createCell(n01, n1,  n12, n13);
-  grid.createCell(n02, n12, n2,  n23);
-  grid.createCell(n03, n13, n23, n3 );
-  grid.createCell(n01, n02, n03, n13);
-  grid.createCell(n01, n02, n12, n13);
-  grid.createCell(n02, n03, n13, n23);
-  grid.createCell(n02, n12, n13, n23);
+  createCell(n0,  n01, n02, n03, grid, cell);
+  createCell(n01, n1,  n12, n13, grid, cell);
+  createCell(n02, n12, n2,  n23, grid, cell);
+  createCell(n03, n13, n23, n3,  grid, cell);
+  createCell(n01, n02, n03, n13, grid, cell);
+  createCell(n01, n02, n12, n13, grid, cell);
+  createCell(n02, n03, n13, n23, grid, cell);
+  createCell(n02, n12, n13, n23, grid, cell);
 
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -227,10 +227,10 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   Node& n12 = createNode(e12->midpoint(), grid, cell);
   
   // Create new cells 
-  grid.createCell(nn, n01, n02, n12);
-  grid.createCell(nn, n01, n02, n0);
-  grid.createCell(nn, n01, n12, n1);
-  grid.createCell(nn, n02, n12, n2);
+  createCell(nn, n01, n02, n12, grid, cell);
+  createCell(nn, n01, n02, n0,  grid, cell);
+  createCell(nn, n01, n12, n1,  grid, cell);
+  createCell(nn, n02, n12, n2,  grid, cell);
   
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -266,8 +266,8 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   Node& ne = createNode(e->midpoint(), grid, cell);
   
   // Create new cells 
-  grid.createCell(ne, nn0, nn1, n0);
-  grid.createCell(ne, nn0, nn1, n1);
+  createCell(ne, nn0, nn1, n0, grid, cell);
+  createCell(ne, nn0, nn1, n1, grid, cell);
   
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -322,7 +322,7 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   Node& n_e1 = createNode(e1->midpoint(), grid, cell);
 
   // Create new cells 
-  Cell& c1 = grid.createCell(n_dm, n_e0, n_e1, n_nm);
+  Cell& c1 = createCell(n_dm, n_e0, n_e1, n_nm, grid, cell);
 
   // Find neighbor with common face
   Cell* neighbor = findNeighbor(cell, *common_face);
@@ -341,8 +341,8 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
     // If neighbor is marked refinement by rule 3, 
     // just chose an orientation, and it will be up to 
     // the neighbor to make sure the common face match
-    grid.createCell(n_m0, n_m1, n_e1, n_nm);
-    grid.createCell(n_e0, n_e1, n_m0, n_nm);
+    createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
+    createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
   }
   else {
     // If neighbor has been refined irregular according to 
@@ -351,11 +351,12 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
       if ( *neighbor->child(i) != c1 ){
 	if ( neighbor->child(i)->haveNode(n_e0) && neighbor->child(i)->haveNode(n_e1) ){
 	  if ( neighbor->child(i)->haveNode(n_m0) ){
-	    grid.createCell(n_e0, n_e1, n_m0, n_nm);
-	    grid.createCell(n_m0, n_m1, n_e1, n_nm);
-	  } else{
-	    grid.createCell(n_e0, n_e1, n_m1, n_nm);
-	    grid.createCell(n_m0, n_m1, n_e0, n_nm);
+	    createCell(n_e0, n_e1, n_m0, n_nm, grid, cell);
+	    createCell(n_m0, n_m1, n_e1, n_nm, grid, cell);
+	  }
+	  else{
+	    createCell(n_e0, n_e1, n_m1, n_nm, grid, cell);
+	    createCell(n_m0, n_m1, n_e0, n_nm, grid, cell);
 	  }		
 	}
       }
@@ -397,10 +398,10 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   Node& n_e1 = createNode(marked_edges(1)->midpoint(), grid, cell);
 
   // Create new cells 
-  grid.createCell(n_e0, n_e1, n00, n10);
-  grid.createCell(n_e0, n_e1, n00, n11);
-  grid.createCell(n_e0, n_e1, n01, n10);
-  grid.createCell(n_e0, n_e1, n01, n11);
+  createCell(n_e0, n_e1, n00, n10, grid, cell);
+  createCell(n_e0, n_e1, n00, n11, grid, cell);
+  createCell(n_e0, n_e1, n01, n10, grid, cell);
+  createCell(n_e0, n_e1, n01, n11, grid, cell);
 
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -482,5 +483,15 @@ Cell* TetGridRefinement::findNeighbor(Cell& cell, Face& face)
   }
 
   return neighbor;
+}
+//-----------------------------------------------------------------------------
+Cell& TetGridRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
+				    Grid& grid, Cell& cell)
+{
+  Cell& c = grid.createCell(n0, n1, n2, n3);
+  c.setParent(cell);
+  cell.addChild(c);
+
+  return c;
 }
 //-----------------------------------------------------------------------------

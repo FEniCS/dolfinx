@@ -98,7 +98,7 @@ void TriGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   Node& n2 = createNode(cell.node(2), grid, cell);
 
   // Create a new cell
-  grid.createCell(n0, n1, n2);
+  createCell(n0, n1, n2, grid, cell);
 
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -123,10 +123,10 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), grid, cell);
 
   // Create new cells 
-  grid.createCell(n0,  n01, n02);
-  grid.createCell(n01, n1,  n12);
-  grid.createCell(n02, n12, n2 );
-  grid.createCell(n01, n12, n02);
+  createCell(n0,  n01, n02, grid, cell);
+  createCell(n01, n1,  n12, grid, cell);
+  createCell(n02, n12, n2,  grid, cell);
+  createCell(n01, n12, n02, grid, cell);
   
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -158,8 +158,8 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   Node& ne = createNode(e->midpoint(), grid, cell);
   
   // Create new cells 
-  grid.createCell(ne, nn, n0);
-  grid.createCell(ne, nn, n1);
+  createCell(ne, nn, n0, grid, cell);
+  createCell(ne, nn, n1, grid, cell);
   
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
@@ -194,14 +194,24 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   Node& n_e1 = createNode(e1->midpoint(), grid, cell);
 
   // Create new cells 
-  grid.createCell(n_dm, n_e0, n_e1);
-  grid.createCell(n_m0, n_e0, n_e1);
-  grid.createCell(n_e1, n_m0, n_m1);
+  createCell(n_dm, n_e0, n_e1, grid, cell);
+  createCell(n_m0, n_e0, n_e1, grid, cell);
+  createCell(n_e1, n_m0, n_m1, grid, cell);
   
   // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
 
   // Set status of cell
   cell.status() = Cell::ref_irr;
+}
+//-----------------------------------------------------------------------------
+Cell& TriGridRefinement::createCell(Node& n0, Node& n1, Node& n2,
+				    Grid& grid, Cell& cell)
+{
+  Cell& c = grid.createCell(n0, n1, n2);
+  c.setParent(cell);
+  cell.addChild(c);
+
+  return c;
 }
 //-----------------------------------------------------------------------------
