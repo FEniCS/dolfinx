@@ -37,6 +37,7 @@ namespace dolfin {
 	 
 	 Grid& grid;
 
+	 bool _create_edges;
   };
 
 }

@@ -33,6 +33,7 @@ namespace dolfin {
 	
       /// --- Functions for mesh refinement
       int level() const;
+      int   id() const;
       void setLevel(int level);
       void mark();
       void unmark();

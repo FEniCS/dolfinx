@@ -25,6 +25,8 @@ namespace dolfin {
       
       add(Parameter::STRING, "output", "curses");
 
+      add(Parameter::BOOL, "create edges", false);
+
       add(Parameter::BCFUNCTION, "boundary condition", 0);
       
     }

@@ -49,6 +49,7 @@ namespace dolfin {
     // Type cast, enable assignment to type from Parameter
     operator real() const;
     operator int() const;
+    operator bool() const;
     operator string() const;
     operator const char*() const;
     operator function() const;
@@ -66,6 +67,7 @@ namespace dolfin {
     // Values
     real       val_real;
     int        val_int;
+    bool       val_bool;
     string     val_string;
     function   val_function;
     vfunction  val_vfunction;

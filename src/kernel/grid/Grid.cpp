@@ -76,6 +76,11 @@ int Grid::noCells() const
   return gd->noCells();
 }
 //-----------------------------------------------------------------------------
+int Grid::noEdges() const
+{
+  return gd->noEdges();
+}
+//-----------------------------------------------------------------------------
 Grid::Type Grid::type() const
 {
   return _type;
@@ -122,11 +127,6 @@ Cell* Grid::createCell(int level, Cell::Type type)
   return gd->createCell(level,type);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::createEdge(int level)
-{
-  return gd->createEdge(level);
-}
-//-----------------------------------------------------------------------------
 Node* Grid::createNode(int level, Point p)
 {
   return gd->createNode(level,p.x,p.y,p.z);
@@ -169,14 +169,9 @@ Cell* Grid::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2,
   return gd->createCell(level,type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::createEdge(int level, int n0, int n1)
+void Grid::createEdges(Cell* cell)
 {
-  return gd->createEdge(level,n0,n1);
-}
-//-----------------------------------------------------------------------------
-Edge* Grid::createEdge(int level, Node* n0, Node* n1)
-{
-  return gd->createEdge(level,n0,n1);
+  gd->createEdges(cell);
 }
 //-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)
@@ -203,19 +198,21 @@ void Grid::init()
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Grid& grid)
 {
-  stream << "[ Grid with " << grid.noNodes() << " nodes and "
+  stream << "[ Grid with " << grid.noNodes() << " nodes, "
 	 << grid.noCells() << " cells ";
 
   switch ( grid.type() ) {
   case Grid::TRIANGLES:
-    stream << "(triangles) ]";
+    stream << "(triangles)";
     break;
   case Grid::TETRAHEDRONS:
-    stream << "(tetrahedrons) ]";
+    stream << "(tetrahedrons)";
     break;
   default:
-    stream << "(unknown type) ]";
+    stream << "(unknown type)";
   }
+
+  stream << ", and " << grid.noEdges() << " edges ]";
 
   return stream;
 }

@@ -5,6 +5,7 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/RefineGrid.h>
 
 using namespace dolfin;
@@ -13,6 +14,8 @@ using namespace dolfin;
 void RefineGrid::refine()
 {
   cout << "Refining grid: " << grid << endl;
+
+  _create_edges = dolfin_get("create edges"); 
 
   GlobalRegularRefinement();
 }
@@ -58,8 +61,9 @@ void RefineGrid::GlobalRegularRefinement()
   for (CellIterator c(grid); !c.end(); ++c)
     cells.add(c);
   
-  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c)
+  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
     RegularRefinement((*c.pointer()));
+  }
   
   //  cout << "new no elms = " << grid.noCells() << endl;
   //  cout << "new no nodes = " << grid.noNodes() << endl;
@@ -111,7 +115,16 @@ void RefineGrid::RegularRefinementTetrahedron(Cell* parent)
   Cell *t7 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n03,n13,n23);
   Cell *t8 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n12,n13,n23);
 
-  //  grid.createEdge(parent->level()+1,t1);
+  if (_create_edges){
+    grid.createEdges(t1);
+    grid.createEdges(t2);
+    grid.createEdges(t3);
+    grid.createEdges(t4);
+    grid.createEdges(t5);
+    grid.createEdges(t6);
+    grid.createEdges(t7);
+    grid.createEdges(t8);
+  }
 }
 
 void RefineGrid::RegularRefinementTriangle(Cell* parent)
@@ -130,6 +143,13 @@ void RefineGrid::RegularRefinementTriangle(Cell* parent)
   Cell *t2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n1, n12);
   Cell *t3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n12,n2 );
   Cell *t4 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n12,n02);
+
+  if (_create_edges){
+    grid.createEdges(t1);
+    grid.createEdges(t2);
+    grid.createEdges(t3);
+    grid.createEdges(t4);
+  }
 }
 
 void RefineGrid::LocalIrregularRefinement(Cell *parent)

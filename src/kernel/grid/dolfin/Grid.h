@@ -37,6 +37,7 @@ namespace dolfin {
     
     int  noNodes() const;
     int  noCells() const;
+    int  noEdges() const;
     Type type() const;
     
     /// Output
@@ -64,8 +65,7 @@ namespace dolfin {
     Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
     Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
     
-    Edge* createEdge(int level, int n0, int n1);
-    Edge* createEdge(int level, Node* n0, Node* n1);
+    void createEdges(Cell* cell);
 
     Node* getNode(int id);
     Cell* getCell(int id);

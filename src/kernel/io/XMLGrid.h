@@ -37,6 +37,8 @@ namespace dolfin {
 	 Grid& grid;
 	 int nodes;
 	 int cells;
+
+	 bool _create_edges;
 	 
 	 ParserState state;
 	 

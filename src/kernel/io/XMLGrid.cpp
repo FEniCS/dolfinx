@@ -3,7 +3,9 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Grid.h>
+#include <dolfin/Cell.h>
 #include <dolfin/GridData.h>
+#include <dolfin/dolfin_settings.h>
 #include "XMLGrid.h"
 
 using namespace dolfin;
@@ -11,6 +13,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLGrid::XMLGrid(Grid& grid_) : XMLObject(), grid(grid_)
 {
+  _create_edges = dolfin_get("create edges"); 
+
   state = OUTSIDE;
   nodes = 0;
   cells = 0;
@@ -53,6 +57,8 @@ void XMLGrid::startElement(const xmlChar *name, const xmlChar **attrs)
 		readTriangle(name,attrs);
 	 if ( xmlStrcasecmp(name,(xmlChar *) "tetrahedron") == 0 )
 		readTetrahedron(name,attrs);
+	 
+	 
 	 
 	 break;
 
@@ -173,8 +179,11 @@ void XMLGrid::readTriangle(const xmlChar *name, const xmlChar **attrs)
   int level = 0;
 
   // Set values
-  grid.createCell(level, Cell::TRIANGLE, n0, n1, n2);
+  Cell* c = grid.createCell(level, Cell::TRIANGLE, n0, n1, n2);
 
+  // Create edges
+  if (_create_edges) grid.createEdges(c);
+  
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }
@@ -197,10 +206,13 @@ void XMLGrid::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 
   // Set initial level to 0
   int level = 0;
-
+                   
   // Set values
-  grid.createCell(level, Cell::TETRAHEDRON, n0, n1, n2, n3);
+  Cell* c = grid.createCell(level, Cell::TETRAHEDRON, n0, n1, n2, n3);
 
+  // Create edges
+  if (_create_edges) grid.createEdges(c);
+  
   // FIXME: id of cell is completely ignored. We assume that the
   // cells are in correct order.
 }

@@ -53,6 +53,7 @@ void Parameter::clear()
   
   val_real       = 0.0;
   val_int        = 0;
+  val_bool       = 0;
   val_string     = "";
   val_function   = 0;
   val_vfunction  = 0;
@@ -85,6 +86,11 @@ void Parameter::set(const char *identifier, va_list aptr)
   case INT:
     
     val_int = va_arg(aptr, int);
+    break;
+    
+  case BOOL:
+    
+    val_bool = va_arg(aptr, bool);
     break;
     
   case STRING:
@@ -132,6 +138,7 @@ void Parameter::get(va_list aptr)
 {
   double     *p_real;
   int        *p_int;
+  bool       *p_bool;
   string     *p_string;
   function   *p_function;
   vfunction  *p_vfunction;
@@ -149,6 +156,12 @@ void Parameter::get(va_list aptr)
     
     p_int = va_arg(aptr,int *);
     *p_int = val_int;
+    break;
+    
+  case BOOL:
+    
+    p_bool = va_arg(aptr,bool *);
+    *p_bool = val_bool;
     break;
     
   case STRING:
@@ -201,6 +214,7 @@ void Parameter::operator= (const Parameter &p)
 	 
   val_real       = p.val_real;
   val_int        = p.val_int;
+  val_bool       = p.val_bool;
   val_string     = p.val_string;
   val_function   = p.val_function;
   val_vfunction  = p.val_vfunction;
@@ -239,6 +253,15 @@ Parameter::operator int() const
 		  identifier.c_str());
 
   return val_int;
+}
+//-----------------------------------------------------------------------------
+Parameter::operator bool() const
+{
+  if ( type != BOOL )
+    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <bool>.",
+		  identifier.c_str());
+
+  return val_bool;
 }
 //-----------------------------------------------------------------------------
 Parameter::operator string() const
@@ -296,6 +319,9 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p)
     break;
   case Parameter::INT:
     stream << "[ Parameter of type <int> with value " << p.val_int << ". ]";
+    break;
+  case Parameter::BOOL:
+    stream << "[ Parameter of type <bool> with value " << p.val_bool << ". ]";
     break;
   case Parameter::STRING:
     stream << "[ Parameter of type <string> with value " << p.val_string << ". ]";
