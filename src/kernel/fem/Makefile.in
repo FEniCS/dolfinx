@@ -60,6 +60,7 @@ POST_UNINSTALL = :
 AWK = @AWK@
 CC = @CC@
 CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
 DOLFIN_LFLAGS = @DOLFIN_LFLAGS@
 LN_S = @LN_S@
 MAINT = @MAINT@
@@ -98,7 +99,6 @@ FunctionSpace.o GenericFunction.o Galerkin.o Integral.o Mapping.o \
 Product.o ScalarExpressionFunction.o ShapeFunction.o TetLinMapping.o \
 TriLinMapping.o VectorExpressionFunction.o
 AR = ar
-CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@

@@ -60,6 +60,7 @@ POST_UNINSTALL = :
 AWK = @AWK@
 CC = @CC@
 CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
 DOLFIN_LFLAGS = @DOLFIN_LFLAGS@
 LN_S = @LN_S@
 MAINT = @MAINT@
@@ -95,7 +96,6 @@ libdolfin_quadrature_a_LIBADD =
 libdolfin_quadrature_a_OBJECTS =  GaussianQuadrature.o GaussQuadrature.o \
 LobattoQuadrature.o Quadrature.o RadauQuadrature.o
 AR = ar
-CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@

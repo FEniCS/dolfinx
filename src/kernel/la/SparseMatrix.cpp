@@ -65,7 +65,7 @@ SparseMatrix::SparseMatrix(const SparseMatrix& A)
     columns[i] = new int[rs];
     values[i] = new real[rs];
     
-    for (int pos = 0; pos < rs; pos) {
+    for (int pos = 0; pos < rs; pos++) {
       columns[i][pos] = A.columns[i][pos];
       values[i][pos] = A.values[i][pos];
     }
@@ -136,9 +136,11 @@ void SparseMatrix::init(int m, int n)
   //
   // Otherwise do nothing
 
-  if ( values && ( this->m != m || this->n != n ) ) {
-    clear();      
-    alloc(m,n);
+  if ( values ) {
+    if ( this->m != m || this->n != n ) {
+      clear();      
+      alloc(m,n);
+    }
   }
   else
     alloc(m,n);
@@ -507,11 +509,10 @@ real SparseMatrix::read(int i, int j) const
 //-----------------------------------------------------------------------------
 void SparseMatrix::write(int i, int j, real value)
 {
-  if ( i < 0 || i >= m )
-    dolfin_error1("Illegal row index: i = %d.", i);
-
-  if ( j < 0 || j >= n )
-    dolfin_error1("Illegal column index: j = %d.", j);
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < m);
+  dolfin_assert(j >= 0);
+  dolfin_assert(j < n);
 
   // Find position (i,j)
   int pos = 0;

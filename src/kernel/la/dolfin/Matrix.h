@@ -13,6 +13,10 @@ namespace dolfin {
   class Vector;
   class GenericMatrix;
 
+  /// A MatrixIndex is a special index for a Matrix. This is declared outside
+  enum MatrixRange { all };
+  enum MatrixIndex { first, last };
+
   /// Matrix with given number of rows and columns that can
   /// be either sparse (default) or dense.
   ///
@@ -77,10 +81,22 @@ namespace dolfin {
     ///--- Operators
 
     /// Index operator
-    Element operator()(int i, int j);
+    real operator()(int i, int j) const;
 
     /// Index operator
-    real operator()(int i, int j) const;
+    Element operator()(int i, int j);
+
+    // Index operator
+    Row operator()(int i, MatrixRange j);
+
+    // Index operator
+    Row operator()(MatrixIndex i, MatrixRange j);
+    
+    // Index operator
+    Column operator()(MatrixRange i, int j);
+
+    // Index operator
+    Column operator()(MatrixRange i, MatrixIndex j);
 
     /// Index operator (only sparse)
     real operator()(int i, int& j, int pos) const;
@@ -187,12 +203,25 @@ namespace dolfin {
     class Row {
     public:
     
-      Row(Matrix& matrix, int i);
+      Row(Matrix& matrix, int i, MatrixRange j);
+      Row(Matrix& matrix, MatrixIndex i, MatrixRange j);
+
+      int size() const;
+
+      real operator() (int j) const;
+      Element operator()(int j);
+
+      void operator= (const Row& row);
+      void operator= (const Column& col);
+      void operator= (const Vector& x);
       
-    protected:
+      friend class Column;
+
+    private:
     
       Matrix& A;
       int i;
+      MatrixRange j;
 
     };
 
@@ -200,11 +229,24 @@ namespace dolfin {
     class Column {
     public:
     
-      Column(Matrix& matrix, int j);
-      
-    protected:
+      Column(Matrix& matrix, MatrixRange i, int j);
+      Column(Matrix& matrix, MatrixRange i, MatrixIndex j);
+
+      int size() const;
+
+      real operator() (int i) const;
+      Element operator()(int i);
+
+      void operator= (const Column& col);
+      void operator= (const Row& row);
+      void operator= (const Vector& x);
+
+      friend class Row;
+
+    private:
     
       Matrix& A;
+      MatrixRange i;
       int j;
 
     };

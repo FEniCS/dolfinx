@@ -10,6 +10,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
+#include <dolfin/Matrix.h>
 
 namespace dolfin {
   
@@ -28,13 +29,15 @@ namespace dolfin {
     void clear();
     int size() const;
     int bytes() const;
-    
+
+    real  operator()(int i) const;    
     real& operator()(int i);
-    real  operator()(int i) const;
     
     void operator=(const Vector& x);
     void operator=(real scalar);
-    
+    void operator=(const Matrix::Row& row);
+    void operator=(const Matrix::Column& col);
+
     void operator+=(const Vector& x);
     void operator+=(real a);	 
     void operator*=(real a);

@@ -62,6 +62,15 @@ do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1
 #define dolfin_error4(msg, a0, a1, a3) \
 do { dolfin::LogManager::log.error(__FILE__, __LINE__, __FUNCTION__, msg, a0, a1, a2, a3); } while( false )
 
+// Assertion, turned off if DEBUG is not defined
+
+#ifdef DEBUG
+#define dolfin_assert(check) \
+do { if ( !(check) ) dolfin::LogManager::log.dassert(__FILE__, __LINE__, __FUNCTION__, "(" #check ")"); } while ( false )
+#else
+#define dolfin_assert(check)
+#endif
+
 // Macros for task notification
 
 #define dolfin_start do { dolfin::LogManager::log.start(); } while ( false )

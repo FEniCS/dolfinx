@@ -7,8 +7,10 @@ using namespace dolfin;
 
 int main(int argc, char **argv)
 {  
+  dolfin_set("output", "plain text");
+
   dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test for i/o on file" << dolfin::endl;
+  dolfin::cout << "Test file i/o" << dolfin::endl;
   dolfin::cout << "--------------------------------------" << dolfin::endl;
   
   Vector x;
@@ -27,10 +29,6 @@ int main(int argc, char **argv)
 
   matlab << A;
   
-  real a = A(1,1);
-  dolfin::cout << "A(1,1) = " << a << dolfin::endl;
-  dolfin::cout << "A(2,1) = " << A(2,1) << dolfin::endl;
-
   dolfin::cout << "A = "; 
   A.show();
   dolfin::cout << "b = "; 
@@ -39,7 +37,29 @@ int main(int argc, char **argv)
   x.show();
 
   dolfin::cout << "--------------------------------------" << dolfin::endl;
-  dolfin::cout << "Test for Krylov solvers" << dolfin::endl;
+  dolfin::cout << "Test matrix notation" << dolfin::endl;
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+  
+  Matrix B(A);
+  B.show();
+
+  Vector c(b);
+  c.show();
+ 
+  B(3,all) = c;
+  B.show();
+
+  B(all,5) = c; 
+  B.show();
+
+  c = B(all,first);
+  c.show();
+
+  B(last,all) = B(all,2);
+  B.show();
+
+  dolfin::cout << "--------------------------------------" << dolfin::endl;
+  dolfin::cout << "Test Krylov solvers" << dolfin::endl;
   dolfin::cout << "--------------------------------------" << dolfin::endl;
 
   KrylovSolver ks;

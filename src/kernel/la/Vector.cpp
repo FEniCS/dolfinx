@@ -13,8 +13,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Vector::Vector() : Variable("x", "A vector")
 {
-  dolfin_info("vector constructor: adress = 0x%x", this);
-
   values = 0;
   n = 0;
 }
@@ -75,9 +73,6 @@ Vector::~Vector()
 //-----------------------------------------------------------------------------
 void Vector::init(int size)
 {
-  dolfin_debug1("adress = 0x%x", this);
-  dolfin_debug1("values = 0x%x", values);
-
   if ( size <= 0 )
     dolfin_error("Size must be positive.");
   
@@ -88,9 +83,11 @@ void Vector::init(int size)
   //
   // Otherwise do nothing
   
-  if ( values && n != size ) {
-    clear();      
-    alloc(size);
+  if ( values ) {
+    if ( n != size ) {
+      clear();      
+      alloc(size);
+    }
   }
   else
     alloc(size);
@@ -115,12 +112,12 @@ int Vector::bytes() const
   return sizeof(Vector) + n*sizeof(real);
 }
 //-----------------------------------------------------------------------------
-real& Vector::operator()(int i)
+real Vector::operator()(int i) const
 {
   return values[i];
 }
 //-----------------------------------------------------------------------------
-real Vector::operator()(int i) const
+real& Vector::operator()(int i)
 {
   return values[i];
 }
@@ -137,6 +134,24 @@ void Vector::operator=(real a)
 {
   for (int i = 0; i < n; i++)
     values[i] = a;    
+}
+//-----------------------------------------------------------------------------
+void Vector::operator=(const Matrix::Row& row)
+{
+  if ( n != row.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int i = 0; i < n; i++)
+    values[i] = row(i);
+}
+//-----------------------------------------------------------------------------
+void Vector::operator=(const Matrix::Column& col)
+{
+  if ( n != col.size() )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int i = 0; i < n; i++)
+    values[i] = col(i);
 }
 //-----------------------------------------------------------------------------
 void Vector::operator+=(real a) 
@@ -242,9 +257,9 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
 void Vector::alloc(int size)
 {
   // Use with caution. Only for internal use.
-  
+
   values = new real[size];
-  for (int i = 0; i < n; i++)
+  for (int i = 0; i < size; i++)
     values[i] = 0.0;
   n = size;
 }

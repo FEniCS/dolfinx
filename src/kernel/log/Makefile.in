@@ -60,6 +60,7 @@ POST_UNINSTALL = :
 AWK = @AWK@
 CC = @CC@
 CXX = @CXX@
+CXXFLAGS = @CXXFLAGS@
 DOLFIN_LFLAGS = @DOLFIN_LFLAGS@
 LN_S = @LN_S@
 MAINT = @MAINT@
@@ -96,7 +97,6 @@ libdolfin_log_a_OBJECTS =  Buffer.o GenericLogger.o CursesLogger.o \
 Logger.o LoggerMacros.o LogManager.o LogStream.o Progress.o \
 TerminalLogger.o
 AR = ar
-CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@

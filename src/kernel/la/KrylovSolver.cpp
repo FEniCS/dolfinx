@@ -400,8 +400,6 @@ real KrylovSolver::residual(const Matrix& A, Vector& x, const Vector& b)
   for (int i = 0; i < A.size(0); i++)
     norm_r += sqr(b(i) - A.mult(x,i));
 
-  cout << "r = " << norm_r  << endl;
-
   return sqrt(norm_r);
 }
 //-----------------------------------------------------------------------------

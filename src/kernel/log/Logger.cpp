@@ -100,6 +100,22 @@ void Logger::error(const char* file, unsigned long line,
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
+void Logger::dassert(const char* file, unsigned long line,
+		     const char* function, const char* format, ...)
+{
+  init();
+
+  sprintf(location, "%s:%d: %s()", file, line, function);
+  
+  va_list aptr;
+  va_start(aptr, format);
+  
+  vsprintf(buffer, format, aptr);
+  log->dassert(buffer, location);
+  
+  va_end(aptr);
+}
+//-----------------------------------------------------------------------------
 void Logger::progress(const char* title, const char* label, real p)
 {
   init();

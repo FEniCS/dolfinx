@@ -42,6 +42,12 @@ void TerminalLogger::error(const char* msg, const char* location)
   exit(1);
 }
 //-----------------------------------------------------------------------------
+void TerminalLogger::dassert(const char* msg, const char* location)
+{
+  std::cout << "[Assertion " << msg << " failed at " << location << "]: " << msg << std::endl;
+  exit(1);
+}
+//-----------------------------------------------------------------------------
 void TerminalLogger::progress(const char* title, const char* label, real p)
 {
   int N = DOLFIN_TERM_WIDTH - 15;

@@ -9,7 +9,7 @@ namespace dolfin {
   class Buffer {
   public:
 
-    enum Type { INFO, DEBUG, WARNING, ERROR };
+    enum Type { info, debug, warning, error };
 
     Buffer();
     Buffer(int lines, int cols);
@@ -18,7 +18,7 @@ namespace dolfin {
     void init(int lines, int cols);
     
     int size() const;
-    void add(const char* msg, Type type = INFO);
+    void add(const char* msg, Type type = info);
     const char* get(int line) const;
     Type type(int line) const;
 

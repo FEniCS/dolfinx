@@ -81,9 +81,11 @@ void DenseMatrix::init(int m, int n)
   //
   // Otherwise do nothing
 
-  if ( values && ( this->m != m || this->n != n ) ) {
-    clear();      
-    alloc(m,n);
+  if ( values ) {
+    if ( this->m != m || this->n != n ) {
+      clear();      
+      alloc(m,n);
+    }
   }
   else
     alloc(m,n);

@@ -19,6 +19,7 @@ namespace dolfin {
 	 virtual void debug   (const char* msg, const char* location) = 0;
 	 virtual void warning (const char* msg, const char* location) = 0;
 	 virtual void error   (const char* msg, const char* location) = 0;
+	 virtual void dassert (const char* msg, const char* location) = 0;
 	 virtual void progress(const char* title, const char* label, real p) = 0;
 
 	 virtual void update() = 0;

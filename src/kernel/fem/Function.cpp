@@ -20,9 +20,6 @@ using namespace dolfin;
 Function::Function(Grid& grid, dolfin::Vector& x, int dim, int size) :
   _grid(grid)
 {
-  dolfin_info("function: adress = 0x%x", &x);
-
-
   f = new DofFunction(grid, x, dim, size);
   t = 0.0;
   

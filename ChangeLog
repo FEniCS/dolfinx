@@ -1,3 +1,6 @@
+ - Add new Matlab-like syntax like A(i,all) = x or A(3,all) = A(4,all)
+ - Add dolfin_assert() macro enabled if debug is defined
+ - Redesign of Matrix/DenseMatrix/SparseMatrix to use Matrix as common interface
  - Include missing cmath in Legendre.cpp and GaussianQuadrature.cpp
 0.3.6
  - Add output functionality in DenseMatrix

@@ -76,6 +76,9 @@ for f in $DIRS; do
 done
 AC_SUBST(DOLFIN_LFLAGS)
 
+dnl Seems to be needed for CXXFLAGS to get to src/config
+AC_SUBST(CXXFLAGS)
+
 dnl Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)

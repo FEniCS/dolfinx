@@ -86,6 +86,10 @@ CursesLogger::CursesLogger() : GenericLogger()
   guiinfo = new char[cols];
   setInfo("DOLFIN started.");
 
+  // Allocate temporary storage
+  tmp = new char[DOLFIN_WORDLENGTH];
+  tmp[0] = '\0';
+
   // Clear the buffer window
   attron(COLOR_PAIR(1));
   clearLines();
@@ -124,6 +128,11 @@ CursesLogger::~CursesLogger()
     delete [] guiinfo;
   guiinfo = 0;
 
+  // Clear temporary storage
+  if ( tmp )
+    delete [] tmp;
+  tmp = 0;
+
   // Clear progress bars
   if ( pbars )
     delete [] pbars;
@@ -146,22 +155,31 @@ void CursesLogger::info(const char* msg)
 //-----------------------------------------------------------------------------
 void CursesLogger::debug(const char* msg, const char* location)
 {
-  buffer.add(msg, Buffer::DEBUG);
-  buffer.add(location, Buffer::DEBUG);
+  snprintf(tmp, DOLFIN_WORDLENGTH, "Debug at %s: %s", location, msg);
+  buffer.add(tmp, Buffer::debug);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::warning(const char* msg, const char* location)
 {
-  buffer.add(msg, Buffer::WARNING);
-  buffer.add(location, Buffer::WARNING);
+  snprintf(tmp, DOLFIN_WORDLENGTH, "Warning at %s: %s", location, msg);
+  buffer.add(tmp, Buffer::warning);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::error(const char* msg, const char* location)
 {
-  buffer.add(msg, Buffer::ERROR);
-  buffer.add(location, Buffer::ERROR);
+  snprintf(tmp, DOLFIN_WORDLENGTH, "Error at %s: %s", location, msg);
+  buffer.add(tmp, Buffer::error);
+  setInfo("Press any key to quit.");
+  state = ERROR;
+  updateInternal();
+}
+//-----------------------------------------------------------------------------
+void CursesLogger::dassert(const char* msg, const char* location)
+{
+  snprintf(tmp, DOLFIN_WORDLENGTH, "Assertion %s failed at %s", msg, location);
+  buffer.add(tmp, Buffer::error);
   setInfo("Press any key to quit.");
   state = ERROR;
   updateInternal();
@@ -267,14 +285,14 @@ void CursesLogger::progress_flush()
 void CursesLogger::initColors()
 {
   if ( !has_colors() ) {
-    buffer.add("Your terminal has no colors.", Buffer::WARNING);
+    buffer.add("Your terminal has no colors.", Buffer::warning);
     return;
   }
 
   start_color();
 
   if ( !can_change_color() )
-    buffer.add("Unable to change colors. Using default colors.", Buffer::WARNING);
+    buffer.add("Unable to change colors. Using default colors.", Buffer::warning);
   else {
     init_color(COLOR_BLUE,  0, 0, 1000);
     init_color(COLOR_GREEN, 0, 1000, 0);
@@ -725,13 +743,13 @@ void CursesLogger::drawBuffer()
     
     // Set color
     switch ( buffer.type(i) ) {
-    case Buffer::INFO:
+    case Buffer::info:
       attron(COLOR_PAIR(6));
       break;
-    case Buffer::DEBUG:
+    case Buffer::debug:
       attron(COLOR_PAIR(1));
       break;
-    case Buffer::WARNING:
+    case Buffer::warning:
       attron(COLOR_PAIR(2));
       break;
     default: // ERROR

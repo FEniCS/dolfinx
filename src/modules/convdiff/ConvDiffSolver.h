@@ -15,7 +15,7 @@ namespace dolfin {
     
     const char* description();
     void solve();
-    
+
   };
   
 }

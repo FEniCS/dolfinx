@@ -24,6 +24,7 @@ namespace dolfin {
     void debug   (const char* msg, const char* location);
     void warning (const char* msg, const char* location);
     void error   (const char* msg, const char* location);
+    void dassert (const char* msg, const char* location);
     void progress(const char* title, const char* label, real p);
 
     void update();
@@ -52,7 +53,8 @@ namespace dolfin {
     int* ptimes;      // Remaining time to display progress bars
     WINDOW *win;      // Pointer to the terminal
     Buffer buffer;    // Buffer
-    char*  guiinfo;   // Message from the curses interface (not program)
+    char* guiinfo;    // Message from the curses interface (not program)
+    char* tmp;        // Temporary storage
 
     void initColors();
 

@@ -50,7 +50,7 @@ void Buffer::init(int lines, int cols)
   
   types = new Type[lines];
   for (int i = 0; i < lines; i++)
-    types[i] = INFO;
+    types[i] = info;
 }
 //-----------------------------------------------------------------------------
 int Buffer::size() const

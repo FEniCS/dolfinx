@@ -24,6 +24,7 @@ namespace dolfin {
     void debug   (const char* file, unsigned long line, const char* function, const char* format, ...);
     void warning (const char* file, unsigned long line, const char* function, const char* format, ...);
     void error   (const char* file, unsigned long line, const char* function, const char* format, ...);
+    void dassert (const char* file, unsigned long line, const char* function, const char* format, ...);
     void progress(const char* title, const char* label, real p);
     
     void update();

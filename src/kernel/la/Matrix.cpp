@@ -5,6 +5,7 @@
 
 #include <dolfin/DirectSolver.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/Vector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Matrix.h>
@@ -84,14 +85,34 @@ int Matrix::bytes() const
   return A->bytes();
 }
 //-----------------------------------------------------------------------------
+real Matrix::operator()(int i, int j) const
+{
+  return (*A)(i,j);
+}
+//-----------------------------------------------------------------------------
 Matrix::Element Matrix::operator()(int i, int j)
 {
   return Element(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-real Matrix::operator()(int i, int j) const
+Matrix::Row Matrix::operator()(int i, MatrixRange j)
 {
-  return (*A)(i,j);
+  return Row(*this, i, j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Row Matrix::operator()(MatrixIndex i, MatrixRange j)
+{
+  return Row(*this, i, j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Column Matrix::operator()(MatrixRange i, int j)
+{
+  return Column(*this, i, j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Column Matrix::operator()(MatrixRange i, MatrixIndex j)
+{
+  return Column(*this, i, j);
 }
 //-----------------------------------------------------------------------------
 real Matrix::operator()(int i, int& j, int pos) const
@@ -299,15 +320,121 @@ void Matrix::Element::operator/=(real a)
 {
   A.A->div(i, j, a);
 }
-//-----------------------------------------------------------------------------   
-Matrix::Row::Row(Matrix& matrix, int i) : A(matrix)
+//-----------------------------------------------------------------------------
+Matrix::Row::Row(Matrix& matrix, int i, MatrixRange) : A(matrix)
 {
   this->i = i;
-}
-//-----------------------------------------------------------------------------   
-Matrix::Column::Column(Matrix& matrix, int j) : A(matrix)
-{
   this->j = j;
+}
+//-----------------------------------------------------------------------------
+Matrix::Row::Row(Matrix& matrix, MatrixIndex i, MatrixRange j) : A(matrix)
+{
+  if ( i == first )
+    this->i = 0;
+  else
+    this->i = A.size(0) - 1;
+
+  this->j = j;
+}
+//-----------------------------------------------------------------------------
+int Matrix::Row::size() const
+{
+  return A.size(1);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Row::operator()(int j) const
+{
+  return A(i,j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Element Matrix::Row::operator()(int j)
+{
+  return Element(A, i, j);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Row::operator=(const Row& row)
+{
+  if ( A.size(1) != row.A.size(1) )
+    dolfin_error("Matrix dimensions don't match.");
+  
+  for (int j = 0; j < A.size(1); j++)
+    A(i,j) = row.A(row.i,j);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Row::operator=(const Column& col)
+{
+  if ( A.size(1) != col.A.size(0) )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int j = 0; j < A.size(1); j++)
+    A(i,j) = col.A(j,col.j);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Row::operator=(const Vector& x)
+{
+  if ( x.size() != A.size(1) )
+    dolfin_error("Matrix imensions don't match.");
+
+  for (int j = 0; j < x.size(); j++)
+    A(i,j) = x(j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Column::Column(Matrix& matrix, MatrixRange i, int j) : A(matrix)
+{
+  this->i = i;
+  this->j = j;
+}
+//-----------------------------------------------------------------------------
+Matrix::Column::Column(Matrix& matrix, MatrixRange i, MatrixIndex j) : A(matrix)
+{
+  this->i = i;
+  
+  if ( j == first )
+    this->j = 0;
+  else
+    this->j = A.size(1) - 1;
+}
+//-----------------------------------------------------------------------------
+int Matrix::Column::size() const
+{
+  return A.size(0);
+}
+//-----------------------------------------------------------------------------
+real Matrix::Column::operator()(int i) const
+{
+  return A(i,j);
+}
+//-----------------------------------------------------------------------------
+Matrix::Element Matrix::Column::operator()(int i)
+{
+  return Element(A, i, j);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Column::operator=(const Column& col)
+{
+  if ( A.size(0) != col.A.size(0) )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int i = 0; i < A.size(0); i++)
+    A(i,j) = col.A(i,j);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Column::operator=(const Row& row)
+{
+  if ( A.size(0) != row.A.size(1) )
+    dolfin_error("Matrix dimensions don't match.");
+
+  for (int i = 0; i < A.size(0); i++)
+    A(i,j) = row.A(row.i,i);
+}
+//-----------------------------------------------------------------------------
+void Matrix::Column::operator=(const Vector& x)
+{
+  if ( x.size() != A.size(0) )
+    dolfin_error("Matrix imensions don't match.");
+
+  for (int i = 0; i < x.size(); i++)
+    A(i,j) = x(i);
 }
 //-----------------------------------------------------------------------------
 real** Matrix::values()
