@@ -26,43 +26,45 @@ namespace dolfin {
 
   class GridData {
   public:
-	 
-	 Node* createNode(int level);
-	 Node* createNode(int level, real x, real y, real z);
-	 
-	 Cell* createCell(int level, Cell::Type type);
-	 Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2);
-	 Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3);
-	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
-	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
+    
+    GridData();
 
-	 void createEdges(Cell* c);
-
-	 void setFinestGridLevel(int gl);
-	 int finestGridLevel();
-
-	 Node* getNode(int id);
-	 Cell* getCell(int id);
-	 Edge* getEdge(int id);
-
-	 int noNodes() const;
-	 int noCells() const;
-	 int noEdges() const;
-	 
-	 // Friends
-	 friend class NodeIterator::GridNodeIterator;
-	 friend class CellIterator::GridCellIterator;
-	 friend class EdgeIterator::GridEdgeIterator;
-	 
+    Node* createNode(int level);
+    Node* createNode(int level, real x, real y, real z);
+    
+    Cell* createCell(int level, Cell::Type type);
+    Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2);
+    Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2, int n3);
+    Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
+    Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
+    
+    void createEdges(Cell* c);
+    
+    void setFinestGridLevel(int gl);
+    int finestGridLevel();
+    
+    Node* getNode(int id);
+    Cell* getCell(int id);
+    Edge* getEdge(int id);
+    
+    int noNodes() const;
+    int noCells() const;
+    int noEdges() const;
+    
+    // Friends
+    friend class NodeIterator::GridNodeIterator;
+    friend class CellIterator::GridCellIterator;
+    friend class EdgeIterator::GridEdgeIterator;
+    
   private:
-	 
-	 /// Finest grid refinement level
-	 int _finest_grid_level;
-      
-	 List<Node> nodes;
-	 List<Cell> cells;
-	 List<Edge> edges;
-	 
+    
+    /// Finest grid refinement level
+    int _finest_grid_level;
+    
+    List<Node> nodes;
+    List<Cell> cells;
+    List<Edge> edges;
+    
   };
   
 }

@@ -73,7 +73,7 @@ PACKAGE_VERSION = 0.3.9
 RANLIB = ranlib
 VERSION = 
 XML2_INCLUDES = -I/usr/include/libxml2
-XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lm
+XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
 SUBDIRS = dolfin

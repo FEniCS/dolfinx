@@ -12,6 +12,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+GridData::GridData()
+{
+  _finest_grid_level = 0;
+}
+//-----------------------------------------------------------------------------
 Node* GridData::createNode(int level)
 { 
   int id;

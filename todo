@@ -1,3 +1,4 @@
 - Move data from Cell to GenericCell
 - New list types: List, ShortList, LongList
 - Move markers from Cell to GridRefinement, marker in Cell is boolean
+- Write class GridHierarchy for Multi-Grid, list of Grids

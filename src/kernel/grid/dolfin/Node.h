@@ -17,7 +17,7 @@ namespace dolfin{
   class GenericCell;
   class Cell;
   class Edge;
-  class InitGrid;
+  class GridInit;
   
   class Node{
   public:
@@ -69,7 +69,7 @@ namespace dolfin{
     friend class Triangle;
     friend class Tetrahedron;
     friend class GridData;
-    friend class InitGrid;
+    friend class GridInit;
     friend class NodeIterator::NodeNodeIterator;
     friend class CellIterator::NodeCellIterator;	 
     friend class EdgeIterator::NodeEdgeIterator;	 

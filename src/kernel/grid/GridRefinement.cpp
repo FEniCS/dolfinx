@@ -12,12 +12,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GridRefinement::GridRefinement(Grid &grid_) : grid(grid_)
+GridRefinement::GridRefinement(Grid &grid)
 {
+
+  
+
 
 }
 //-----------------------------------------------------------------------------
-void RefineGrid::refine()
+void GridRefinement::refine()
 {
   cout << "Refining grid: " << grid << endl;
 
@@ -34,7 +37,7 @@ Refinement::GlobalRefinement()
 */
 
 
-void RefineGrid::globalRegularRefinement()
+void GridRefinement::globalRegularRefinement()
 {
   // Regular refinement: 
   // (1) Triangles: 1 -> 4 
@@ -56,7 +59,7 @@ void RefineGrid::globalRegularRefinement()
 }
 
 
-void RefineGrid::globalRefinement()
+void GridRefinement::globalRefinement()
 {
   for (int i=grid.finestGridLevel();i>=0;i--){
     evaluateMarks(i);
@@ -75,7 +78,7 @@ void RefineGrid::globalRefinement()
 
 }
 
-void RefineGrid::evaluateMarks(int grid_level)
+void GridRefinement::evaluateMarks(int grid_level)
 {
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
@@ -114,7 +117,7 @@ void RefineGrid::evaluateMarks(int grid_level)
 }
 
 
-void RefineGrid::unrefineGrid(int grid_level)
+void GridRefinement::unrefineGrid(int grid_level)
 {
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
@@ -162,7 +165,7 @@ void RefineGrid::unrefineGrid(int grid_level)
 
 }
 
-void RefineGrid::refineGrid(int grid_level)
+void GridRefinement::refineGrid(int grid_level)
 {
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
@@ -211,7 +214,7 @@ void RefineGrid::refineGrid(int grid_level)
 
 
 
-void RefineGrid::closeGrid(int grid_level)
+void GridRefinement::closeGrid(int grid_level)
 {
   bool marked_for_ref_by_cell;
   List<Cell *> cells;
@@ -255,7 +258,7 @@ void RefineGrid::closeGrid(int grid_level)
 }
 
 
-List<Cell *> RefineGrid::closeCell(Cell *parent)
+List<Cell *> GridRefinement::closeCell(Cell *parent)
 {
   List<Cell *> new_ref_cells;
 
@@ -347,7 +350,7 @@ List<Cell *> RefineGrid::closeCell(Cell *parent)
 
 
 
-void RefineGrid::regularRefinement(Cell* parent)
+void GridRefinement::regularRefinement(Cell* parent)
 {
   // Regular refinement: 
   // (1) Triangles: 1 -> 4 
@@ -371,7 +374,7 @@ void RefineGrid::regularRefinement(Cell* parent)
 }
 
 
-void RefineGrid::regularRefinementTetrahedron(Cell* parent)
+void GridRefinement::regularRefinementTetrahedron(Cell* parent)
 {
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges. 
@@ -422,7 +425,7 @@ void RefineGrid::regularRefinementTetrahedron(Cell* parent)
   }
 }
 
-void RefineGrid::regularRefinementTriangle(Cell* parent)
+void GridRefinement::regularRefinementTriangle(Cell* parent)
 {
   // Refine 1 triangle into 4 new ones, introducing new nodes 
   // at the midpoints of the edges. 
@@ -456,7 +459,7 @@ void RefineGrid::regularRefinementTriangle(Cell* parent)
   }
 }
 
-void RefineGrid::localIrregularRefinement(Cell *parent)
+void GridRefinement::localIrregularRefinement(Cell *parent)
 {
   switch(parent->noMarkedEdges()){ 
   case 6: 
@@ -485,7 +488,7 @@ void RefineGrid::localIrregularRefinement(Cell *parent)
 }
 
 
-void RefineGrid::irregularRefinementBy1(Cell* parent)
+void GridRefinement::irregularRefinementBy1(Cell* parent)
 {
   // 3 edges are marked on the same face: 
   // insert 3 new nodes at the midpoints on the marked edges, connect the 
@@ -614,7 +617,7 @@ void RefineGrid::irregularRefinementBy1(Cell* parent)
 }
 
 
-void RefineGrid::irregularRefinementBy2(Cell* parent)
+void GridRefinement::irregularRefinementBy2(Cell* parent)
 {
   // 1 edge is marked:
   // Insert 1 new node at the midpoint of the marked edge, then connect 
@@ -667,7 +670,7 @@ void RefineGrid::irregularRefinementBy2(Cell* parent)
     parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
-void RefineGrid::irregularRefinementBy3(Cell* parent)
+void GridRefinement::irregularRefinementBy3(Cell* parent)
 {
   // 2 edges are marked, on the same face 
   // (here there are 2 possibilities, and the chosen 
@@ -799,7 +802,7 @@ void RefineGrid::irregularRefinementBy3(Cell* parent)
     parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
-void RefineGrid::irregularRefinementBy4(Cell* parent)
+void GridRefinement::irregularRefinementBy4(Cell* parent)
 {
   // 2 edges are marked, opposite to each other: 
   // insert 2 new nodes at the midpoints of the marked edges, 

@@ -21,8 +21,11 @@ namespace dolfin {
   class GridRefinement {
   public:
 
-    RefineGrid(Grid &grid_);
+    GridRefinement(Grid &grid);
+    GridRefinement(Grid &grid0, Grid &grid1);
     
+  private:
+
     void globalRegularRefinement();
     
     void globalRefinement();
@@ -47,10 +50,6 @@ namespace dolfin {
     void irregularRefinementBy4(Cell *parent);
     
     void refine();
-    
-  private:
-
-    Grid& grid;
     
     bool _create_edges;
 

@@ -1,14 +1,14 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __INIT_GRID_H
-#define __INIT_GRID_H
+#ifndef __GRID_INIT_H
+#define __GRID_INIT_H
 
 namespace dolfin{
 
   class Grid;
 
-  /// InitGrid implements the algorithm for computing the neighbour
+  /// GridInit implements the algorithm for computing the neighbour
   /// information (connections) in a grid.
   ///
   /// The trick is to compute the connections in the correct order:
@@ -18,10 +18,10 @@ namespace dolfin{
   /// 3. All neighbor nodes of a node: n-n (including the node itself)
   /// 4. All neighbor edges of a node: n-e 
 
-  class InitGrid {
+  class GridInit {
   public:
     
-    InitGrid(Grid& grid_) : grid(grid_) {}
+    GridInit(Grid& grid_);
     
     void init();
     

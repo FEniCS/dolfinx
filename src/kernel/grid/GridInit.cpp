@@ -2,12 +2,17 @@
 #include <dolfin/Node.h>
 #include <dolfin/Edge.h>
 #include <dolfin/GenericCell.h>
-#include <dolfin/InitGrid.h>
+#include <dolfin/GridInit.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void InitGrid::init()
+GridInit::GridInit(Grid& grid_) : grid(grid)
+{
+
+}
+//-----------------------------------------------------------------------------
+void GridInit::init()
 {
   // Reset all previous connections
   clear();
@@ -19,22 +24,22 @@ void InitGrid::init()
   initBoundary();
 }
 //-----------------------------------------------------------------------------
-void InitGrid::clear()
+void GridInit::clear()
 {  
   // Clear connectivity for nodes
-  for (NodeIterator n(grid); !n.end(); ++n){
+  for (NodeIterator n(grid); !n.end(); ++n) {
     n->nn.clear();
     n->nc.clear();
     n->ne.clear();
   }
   
   // Clear connectivity for cells
-  for (CellIterator c(grid); !c.end(); ++c){
+  for (CellIterator c(grid); !c.end(); ++c) {
     c->cc.clear();
   }
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNeighbors()
+void GridInit::initNeighbors()
 {
   // Initialise neighbor information
   //
@@ -58,7 +63,7 @@ void InitGrid::initNeighbors()
   initNodeEdge();  
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initBoundary()
+void GridInit::initBoundary()
 {
   // Go through all nodes and mark the nodes on the boundary. This is
   // done by checking if the neighbors of a node form a loop, using
@@ -97,7 +102,7 @@ void InitGrid::initBoundary()
   
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeCell()
+void GridInit::initNodeCell()
 {
   // Go through all cells and add the cell as a neighbour to all its nodes.
   // A couple of extra loops are needed to first count the number of
@@ -118,7 +123,7 @@ void InitGrid::initNodeCell()
       n->nc.add(c);  
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initCellCell()
+void GridInit::initCellCell()
 {
   // Go through all cells and count the cell neighbors.
 
@@ -140,7 +145,7 @@ void InitGrid::initCellCell()
   }
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeNode()
+void GridInit::initNodeNode()
 {
   // Go through all nodes and count the node neighbors.
   // This is done in four sweeps: count (overestimate), allocate, add, and
@@ -167,7 +172,7 @@ void InitGrid::initNodeNode()
   }
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeEdge()
+void GridInit::initNodeEdge()
 {
   // Go through all nodes and count the edge neighbors.
   // This is done in four sweeps: count (overestimate), allocate, add, and

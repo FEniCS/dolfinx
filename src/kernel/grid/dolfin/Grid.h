@@ -14,8 +14,6 @@
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>
-#include <dolfin/InitGrid.h>
-#include <dolfin/RefineGrid.h>
 
 namespace dolfin {
 
@@ -52,7 +50,7 @@ namespace dolfin {
     friend class CellIterator::GridCellIterator;
     friend class EdgeIterator::GridEdgeIterator;
     friend class XMLGrid;
-    friend class RefineGrid;
+    friend class GridRefinement;
     
   private:
     
@@ -82,10 +80,6 @@ namespace dolfin {
     /// Grid type
     Type _type;
 
-    /// Algorithms
-    InitGrid initGrid;
-    RefineGrid refineGrid;
-    
   };
   
 }

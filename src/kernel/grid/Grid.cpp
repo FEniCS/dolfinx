@@ -8,18 +8,20 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/constants.h>
-#include <dolfin/Grid.h>
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/File.h>
+#include <dolfin/GridInit.h>
+#include <dolfin/GridRefinement.h>
 #include <dolfin/GridData.h>
+#include <dolfin/Grid.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Grid::Grid() : initGrid(*this), refineGrid(*this)
+Grid::Grid()
 {
   gd = 0;
   clear();
@@ -29,7 +31,7 @@ Grid::Grid() : initGrid(*this), refineGrid(*this)
   rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
-Grid::Grid(const char *filename) : initGrid(*this), refineGrid(*this)
+Grid::Grid(const char* filename)
 {
   gd = 0;
   clear();
@@ -46,15 +48,15 @@ Grid::Grid(const char *filename) : initGrid(*this), refineGrid(*this)
 Grid::~Grid()
 {
   if ( gd )
-	 delete gd;  
+    delete gd;  
 }
 //-----------------------------------------------------------------------------
 void Grid::clear()
 {
   if ( gd )
-	 delete gd;
+    delete gd;
   gd = new GridData();
-
+  
   _type = TRIANGLES;
 }
 //-----------------------------------------------------------------------------
@@ -67,7 +69,7 @@ void Grid::operator = (const Grid& grid)
 //-----------------------------------------------------------------------------
 void Grid::refine()
 {
-  refineGrid.refine();
+  GridRefinement refine(*this);
 }
 //-----------------------------------------------------------------------------
 int Grid::noNodes() const
@@ -97,12 +99,12 @@ void Grid::show()
   cout << endl;
 
   for (NodeIterator n(this); !n.end(); ++n)
-	 cout << "  " << *n << endl;
+    cout << "  " << *n << endl;
 
   cout << endl;
   
   for (CellIterator c(this); !c.end(); ++c)
-	 cout << "  " << *c << endl;
+    cout << "  " << *c << endl;
   
   cout << endl;
   
@@ -129,13 +131,13 @@ Cell* Grid::createCell(int level, Cell::Type type)
   // Warning: grid type will be type of last added cell
   switch ( type ) {
   case Cell::TRIANGLE:
-	 _type = TRIANGLES;
-	 break;
+    _type = TRIANGLES;
+    break;
   case Cell::TETRAHEDRON:
-	 _type = TETRAHEDRONS;
-	 break;
+    _type = TETRAHEDRONS;
+    break;
   default:
-	 dolfin_error("Unknown cell type.");
+    dolfin_error("Unknown cell type.");
   }
   
   return gd->createCell(level,type);
@@ -205,7 +207,8 @@ Edge* Grid::getEdge(int id)
 //-----------------------------------------------------------------------------
 void Grid::init()
 {
-  initGrid.init();
+  GridInit gridInit(*this);
+  gridInit.init();
 }
 //-----------------------------------------------------------------------------
 // Additional operators

@@ -7,6 +7,8 @@ using namespace dolfin;
 
 int main()
 {
+  dolfin_set("output", "plain text");
+
   dolfin_set("create edges",true); 
 
   Grid grid;

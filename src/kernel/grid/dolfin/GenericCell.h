@@ -17,19 +17,19 @@ namespace dolfin {
   class GenericCell {
   public:
 	 
-	 virtual int noNodes() const = 0;
-	 virtual int noEdges() const = 0;
-	 virtual int noFaces() const = 0;
-	 virtual int noBound() const = 0;
-
-	 virtual Cell::Type type() const = 0;
-
-	 friend class Cell;
-	 
+    virtual int noNodes() const = 0;
+    virtual int noEdges() const = 0;
+    virtual int noFaces() const = 0;
+    virtual int noBound() const = 0;
+    
+    virtual Cell::Type type() const = 0;
+    
+    friend class Cell;
+    
   private:
-	 
-	 virtual bool neighbor(ShortList<Node *> &cn, Cell &cell) const = 0;
-	 
+    
+    virtual bool neighbor(ShortList<Node *> &cn, Cell &cell) const = 0;
+    
   };
 
 }

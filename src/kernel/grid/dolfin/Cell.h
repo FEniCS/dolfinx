@@ -23,6 +23,7 @@ namespace dolfin {
   class Edge;
   class Triangle;
   class Tetrahedron;
+  class GridInit;
   
   class Cell {
   public:
@@ -94,7 +95,7 @@ namespace dolfin {
     
     // Friends
     friend class GridData;
-    friend class InitGrid;
+    friend class GridInit;
     friend class NodeIterator::CellNodeIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
@@ -110,7 +111,7 @@ namespace dolfin {
     void init(Type type);
     bool neighbor(Cell &cell);
     
-   // Global cell number
+    // Global cell number
     int _id;
     
     int _no_children;
