@@ -1,118 +1,108 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Updates by Johan Jansson 2003.
-
-#include <algorithm>
-#include <sstream>
-#include <fstream>
-#include <iomanip>
-#include <cmath>
-#include <stdlib.h>
+// Modified by Johan Jansson 2003, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
-#include <dolfin/File.h>
 #include <dolfin/ODE.h>
-#include <dolfin/RHS.h>
-#include <dolfin/ElementData.h>
-#include <dolfin/FixedPointIteration.h>
-#include <dolfin/Partition.h>
-#include <dolfin/Adaptivity.h>
-#include <dolfin/Solution.h>
+#include <dolfin/Sample.h>
+#include <dolfin/TimeSlab.h>
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
-#include <dolfin/TimeSlab.h>
-#include <dolfin/Sample.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void TimeStepper::solve(ODE& ode, Function& function)
+TimeStepper::TimeStepper(ODE& ode, Function& function) :
+  no_samples(dolfin_get("number of samples")), N(ode.size()), t(0),
+  T(ode.endtime()), partition(N), adaptivity(ode), u(ode, function),
+  f(ode, u), fixpoint(u, f), file(u.label() + ".m"), p("Time-stepping"),
+  _finished(false)
 {
-  dolfin_warning("ODE solver is EXPERIMENTAL.");
-  
+  dolfin_warning("ODE solver is EXPERIMENTAL..");
+
   // Start timing
   tic();
-  
-  // Initializations
-  unsigned int no_samples = dolfin_get("number of samples");
-  unsigned int N = ode.size();
-  real T = ode.endtime();
-  real t = 0.0;
-  TimeSlab* timeslab = 0;
-
-  // Create data for time-stepping
-  Partition partition(N);
-  Adaptivity adaptivity(ode);
-  Solution u(ode, function);
-  RHS f(ode, u);
-  FixedPointIteration fixpoint(u, f);
-
-  // Create file for storing the solution
-  File file(u.label() + ".m");
-
-  // The time-stepping loop
-  Progress p("Time-stepping");
-  while ( true ) {
-    
-    cout << "Creating new time slab" << endl;
-
-    // Create a new time slab
-    if ( t == 0.0 )
-      timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
-    else
-      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
-
-    cout << "Time slab created" << endl;
-    timeslab->show();
-
-    // Solve system using damped fixed point iteration
-    if ( !fixpoint.iterate(*timeslab) )
-    {
-      // If the iterations did not converges, decrease the time step
-      decreaseTimeStep(adaptivity, u);
-
-      // Throw away the time slab and try again
-      delete timeslab;
-      continue;
-    }
-
-    // Update time
-    t = timeslab->endtime();
-    
-    // Save solution
-    save(u, f, *timeslab, file, T, no_samples);
-
-    // Prepare for next time slab
-    shift(u, f, adaptivity, t);
-
-    // Check if we are done
-    if ( timeslab->finished() )
-    {
-      delete timeslab;
-      break;
-    }
-
-    // Delete time slab
-    delete timeslab;
-
-    // Update progress
-    p = t / T;
-
-  }
-
-  // Update progress
-  p = 1.0;
-
+}
+//-----------------------------------------------------------------------------
+TimeStepper::~TimeStepper()
+{
   // Display status report
   cout << "Solution computed in " << toc() << " seconds." << endl;
   fixpoint.report();
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
+void TimeStepper::solve(ODE& ode, Function& function)
+{
+  // Create a TimeStepper object
+  TimeStepper timeStepper(ode, function);
+
+  // Do time stepping
+  while ( !timeStepper.finished() )
+    timeStepper.step();
+}
+//-----------------------------------------------------------------------------
+real TimeStepper::step()
+{
+  cout << "Creating new time slab" << endl;
+  
+  TimeSlab* timeslab = 0;
+
+  // Repeat until the time slab has converged
+  while (true)
+  {
+    // Create a new time slab
+    if ( t == 0.0 )
+      timeslab = new SimpleTimeSlab(t, T, u, adaptivity);
+    else
+      timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
+    
+    timeslab->show();
+  
+    // Solve system using damped fixed point iteration
+    if ( fixpoint.iterate(*timeslab) )
+      break;
+
+    // Time slab did not converge, so we throw away the time slab and try again
+    decreaseTimeStep();
+    delete timeslab;
+  }
+  
+  // Update time
+  t = timeslab->endtime();
+  
+  // Save solution
+  save(*timeslab);
+  
+  // Prepare for next time slab
+  shift();
+  
+  // Update progress
+  p = t / T;
+
+  // Check if we are done
+  if ( timeslab->finished() )
+  {
+    _finished = true;
+    p = 1.0;
+  }
+  
+  // Delete time slab
+  delete timeslab;
+  
+  // Return end time
+  return t;
+}
+//-----------------------------------------------------------------------------
+bool TimeStepper::finished() const
+{
+  return _finished;
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::shift()
 {
   real TOL = adaptivity.tolerance();
   real kmax = adaptivity.maxstep();
@@ -142,8 +132,7 @@ void TimeStepper::shift(Solution& u, RHS& f, Adaptivity& adaptivity, real t)
   adaptivity.shift();
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
-		       File& file, real T, unsigned int no_samples)
+void TimeStepper::save(TimeSlab& timeslab)
 {
   // Compute time of first sample within time slab
   real K = T / static_cast<real>(no_samples);
@@ -164,7 +153,7 @@ void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
   }
 }
 //-----------------------------------------------------------------------------
-void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity, Solution& u)
+void TimeStepper::decreaseTimeStep()
 {
   // FIXME: Maybe this should be a parameter
   adaptivity.decreaseTimeStep(0.5);

@@ -117,8 +117,9 @@ bool Iteration::stabilize(const Residuals& r, unsigned int n)
   //   j = 1 : last stabilizing iteration
   //   j > 1 : still stabilizing
 
+  // FIXME: changed here
   // Make at least one iteration before stabilizing
-  if ( n < 1 )
+  if ( n < 2 )
     return false;
   
   switch ( j ) {

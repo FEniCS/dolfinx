@@ -31,8 +31,8 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
   tol = 1e-10;
 
   // Assume that the problem is non-stiff
-  //state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
-  state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
+  //state = new AdaptiveIterationLevel3(u, f, *this, maxiter, maxdiv, maxconv, tol, 0);
 }
 //-----------------------------------------------------------------------------
 FixedPointIteration::~FixedPointIteration()

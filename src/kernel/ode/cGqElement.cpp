@@ -98,7 +98,7 @@ void cGqElement::update(RHS& f, real alpha, real* values)
 
   // Update nodal values
   for (unsigned int i = 1; i <= q; i++)
-    values[i-1] = w0*this->values[i] + alpha*(values[0] + integral(i));
+    values[i-1] = w0*this->values[i] + alpha*(this->values[0] + integral(i));
 }
 //-----------------------------------------------------------------------------
 void cGqElement::set(real u0)
