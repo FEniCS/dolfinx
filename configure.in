@@ -3,7 +3,7 @@ AC_INIT(README)
 
 dnl Settings
 PACKAGE=dolfin
-VERSION=0.3.3
+VERSION=0.3.4
 DOLFIN_MAIN="main"
 
 dnl Note: need to be in the correct order, and some are needed twice.
