@@ -12,7 +12,7 @@ void RefineGrid::refine()
 {
   cout << "Refining grid: " << grid << endl;
 
-  
+  GlobalRegularRefinement();
 }
 //-----------------------------------------------------------------------------
 
@@ -77,8 +77,8 @@ void RefineGrid::RegularRefinement(Cell &parent)
 
 void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
 {
-  cout << "check" << endl;
-  // cout << "check = " << parent << endl;
+  cout << "check1" << endl;
+  cout << "check = " << parent << endl;
 
 
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
@@ -89,6 +89,7 @@ void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
   Node *n12 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(2)->coord()));
   Node *n13 = grid.createNode(parent.node(1)->coord().midpoint(parent.node(3)->coord()));
   Node *n23 = grid.createNode(parent.node(2)->coord().midpoint(parent.node(3)->coord()));
+  cout << "check2" << endl;
 
   Cell *t1 = grid.createCell(Cell::TETRAHEDRON,parent.node(0),n01,n02,n03);
   Cell *t2 = grid.createCell(Cell::TETRAHEDRON,n01,parent.node(1),n12,n13);
@@ -98,6 +99,7 @@ void RefineGrid::RegularRefinementTetrahedron(Cell &parent)
   Cell *t6 = grid.createCell(Cell::TETRAHEDRON,n01,n02,n12,n13);
   Cell *t7 = grid.createCell(Cell::TETRAHEDRON,n02,n03,n13,n23);
   Cell *t8 = grid.createCell(Cell::TETRAHEDRON,n02,n12,n13,n23);
+  cout << "check3" << endl;
 }
 
 void RefineGrid::RegularRefinementTriangle(Cell &parent)
