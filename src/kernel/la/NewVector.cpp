@@ -1,5 +1,7 @@
 // Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg 2005.
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -19,7 +21,7 @@ NewVector::NewVector()
   v = 0;
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(unsigned int size)
+NewVector::NewVector(uint size)
 {
   if(size < 0)
     dolfin_error("Size of vector must be non-negative.");
@@ -41,9 +43,8 @@ NewVector::NewVector(const Vector &x)
   v = 0;
   init(x.size());
 
-  unsigned int n = size();
-
-  for(unsigned int i = 0; i < n; i++)
+  const uint n = size();
+  for (uint i = 0; i < n; i++)
     setvalue(i, x(i));
 }
 //-----------------------------------------------------------------------------
@@ -52,7 +53,7 @@ NewVector::~NewVector()
   clear();
 }
 //-----------------------------------------------------------------------------
-void NewVector::init(unsigned int size)
+void NewVector::init(uint size)
 {
   // Two cases:
   //
@@ -63,9 +64,9 @@ void NewVector::init(unsigned int size)
   
   if (v)
   {
-    unsigned int n = this->size();
+    const uint n = this->size();
 
-    if(n == size)
+    if (n == size)
     {
       return;      
     }
@@ -78,28 +79,6 @@ void NewVector::init(unsigned int size)
   VecCreate(PETSC_COMM_WORLD, &v);
   VecSetSizes(v, PETSC_DECIDE, size);
   VecSetFromOptions(v);
-}
-//-----------------------------------------------------------------------------
-void NewVector::setvalue(int i, const real r)
-{
-  VecSetValue(v, i, r, INSERT_VALUES);
-
-  VecAssemblyBegin(v);
-  VecAssemblyEnd(v);
-}
-//-----------------------------------------------------------------------------
-real NewVector::getvalue(int i) const
-{
-  // Assumes uniprocessor case.
-
-  real val;
-
-  PetscScalar    *array;
-  VecGetArray(v, &array);
-  val = array[i];
-  VecRestoreArray(v, &array);
-
-  return val;
 }
 //-----------------------------------------------------------------------------
 void NewVector::add(const real a, const NewVector& x) const
@@ -117,13 +96,12 @@ void NewVector::clear()
   v = 0;
 }
 //-----------------------------------------------------------------------------
-unsigned int NewVector::size() const
+dolfin::uint NewVector::size() const
 {
-  int n;
-
+  int n = 0;
   VecGetSize(v, &n);
 
-  return n;
+  return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
 Vec NewVector::vec()
@@ -140,6 +118,7 @@ real* NewVector::array()
 {
   real* data = 0;
   VecGetArray(v, &data);
+
   return data;
 }
 //-----------------------------------------------------------------------------
@@ -148,11 +127,18 @@ void NewVector::restore(real data[])
   VecRestoreArray(v, &data);
 }
 //-----------------------------------------------------------------------------
-NewVector::Index NewVector::operator()(int i)
+NewVector::Index NewVector::operator() (uint i)
 {
-  Index ind(i, *this);
+  Index index(i, *this);
 
-  return ind;
+  return index;
+}
+//-----------------------------------------------------------------------------
+const NewVector& NewVector::operator= (real a)
+{
+  VecSet(&a, v);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void NewVector::disp() const
@@ -160,8 +146,33 @@ void NewVector::disp() const
   VecView(v, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-NewVector::Index::Index(int i, NewVector &v) : i(i), v(v)
+void NewVector::setvalue(uint i, const real r)
 {
+  VecSetValue(v, static_cast<int>(i), r, INSERT_VALUES);
+
+  VecAssemblyBegin(v);
+  VecAssemblyEnd(v);
+}
+//-----------------------------------------------------------------------------
+real NewVector::getvalue(uint i) const
+{
+  // Assumes uniprocessor case.
+
+  real val = 0.0;
+
+  PetscScalar *array = 0;
+  VecGetArray(v, &array);
+  val = array[i];
+  VecRestoreArray(v, &array);
+
+  return val;
+}
+//-----------------------------------------------------------------------------
+// NewVector::Index
+//-----------------------------------------------------------------------------
+NewVector::Index::Index(uint i, NewVector &v) : i(i), v(v)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NewVector::Index::operator =(const real r)

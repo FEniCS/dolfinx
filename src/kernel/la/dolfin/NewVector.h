@@ -1,5 +1,7 @@
 // Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __NEW_VECTOR_H
 #define __NEW_VECTOR_H
@@ -24,23 +26,29 @@ namespace dolfin
 
     class Index;
 
+    /// Empty vector
     NewVector();
-    NewVector(unsigned int size);
+
+    /// Create vector of given size
+    NewVector(uint size);
+
+    /// Copy constructor
     NewVector(const NewVector& x);
+
+    /// Create vector from old vector (will be removed)
     NewVector(const Vector& x);
+
+    /// Destructor
     ~NewVector ();
 
     /// Initialize vector data
-    void init(unsigned int size);
+    void init(uint size);
 
     /// Clear vector data
     void clear();
 
     /// Return size of vector
-    unsigned int size() const;
-
-    /// Display vector
-    void disp() const;
+    uint size() const;
 
     /// Return PETSc Vec pointer
     Vec vec();
@@ -56,34 +64,43 @@ namespace dolfin
     /// Restore array after a call to array()
     void restore(real data[]);
 
-    /// Element assignment
-    void setvalue(int i, const real r);
-
-    /// Element access
-    real getvalue(int i) const;
-
     /// Addition (AXPY)
     void add(const real a, const NewVector& x) const;
 
     /// Element assignment operator
-    Index operator()(int i);
+    Index operator() (uint i);
 
+    /// Assignment of all elements to a single scalar value
+    const NewVector& operator= (real a);
+
+    /// Display vector
+    void disp() const;
+
+    /// Reference to a position in the vector
     class Index
     {
     public:
-      Index(int i, NewVector &v);
-
+      Index(uint i, NewVector& v);
       operator real() const;
       void operator=(const real r);
-
     protected:
-      int i;
+      uint i;
       NewVector &v;
     };
 
   protected:
+
+    // Element assignment
+    void setvalue(uint i, const real r);
+
+    // Element access
+    real getvalue(uint i) const;
+
+  private:
+
     // PETSc Vec pointer
     Vec v;
+    
   };
 }
 

@@ -1,7 +1,7 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg, 2005.
 
 #include <petsc/petscksp.h>
 
