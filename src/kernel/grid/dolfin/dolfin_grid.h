@@ -6,6 +6,7 @@
 #include <dolfin/Grid.h>
 #include <dolfin/GridData.h>
 #include <dolfin/GridInit.h>
+#include <dolfin/GridHierarchy.h>
 #include <dolfin/GridRefinement.h>
 #include <dolfin/TriGridRefinement.h>
 #include <dolfin/TetGridRefinement.h>
@@ -23,6 +24,7 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 
+#include <dolfin/GridIterator.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>

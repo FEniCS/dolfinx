@@ -126,10 +126,19 @@ namespace dolfin {
 	
     private:
 
+      // The table
       const Table<T>* table;
+
+      // Current block
       Block* block;
+
+      // Position in current block
       int pos;
+
+      // Iterator index, 0,1,2,...
       int _index;
+
+      // True if we have reached the end of the table
       bool at_end;
 
     };
@@ -163,8 +172,10 @@ namespace dolfin {
       T* data;
       bool* empty;
       
-      // Next available position and size of table
+      // Next available position
       int pos;
+
+      // Number of used elements
       int used;
 		
       // Number of this block
@@ -181,17 +192,18 @@ namespace dolfin {
     // Step iterator to the next position in the table
     void iterator_step(Iterator* it) const;
 
+    //--- Table data ---
+
     // Pointers to first and current blocks
-    Block *_first_block;
-    Block *_current_block;
+    Block* _first_block;
+    Block* _current_block;
 	 
     // Number of blocks and size of table
     int _blocks;
     int _size;
+
+    // Number of empty positions before current position
     int _empty;
-	 
-    // True if there is an empty position somewhere in the table
-    bool _empty_position;
 	 
   };
 
@@ -259,30 +271,26 @@ namespace dolfin {
     }
     
     // Check for empty position
-    if ( _empty > 0 ){
-      for (Block *b = _first_block;; b = b->next) {
-	if ( !(b->full()) ){
+    if ( _empty > 0 ) {
+      for (Block *b = _first_block; b; b = b->next) {
+	if ( !(b->full()) ) {
 	  _size += 1;
-	  _empty -= 1;			 
+	  _empty -= 1;
 	  return b->create(id);
 	}
-	if ( !b->next )
-	  break;
       }
       dolfin_error("Unable to find empty position in table.");
     }
     
-    // Use next empty position
-    if ( !_current_block->full() ){
+    // Use next available position
+    if ( !_current_block->full() ) {
       _size += 1;
-      _empty -= 1;
       return _current_block->create(id);
     }
     
     // Create new block
     _current_block = new Block(_current_block);
     _size += 1;
-    _empty -= 1;
     _blocks += 1;
     
     return _current_block->create(id);
@@ -322,13 +330,19 @@ namespace dolfin {
   template <class T> void Table<T>::remove(T& x)
   {
     // Check current block
-    if ( _current_block->remove(x) )
+    if ( _current_block->remove(x) ) {
+      _size--;
+      _empty++;
       return;
+    }
 
     // Check all blocks
     for (Block *b = _first_block;; b = b->next)
-      if ( b->remove(x) )
+      if ( b->remove(x) ) {
+	_size--;
+	_empty++;
 	return;
+      }
 
     // Couldn't find the element
     dolfin_error("Unable to remove element from table.");
@@ -380,18 +394,14 @@ namespace dolfin {
     it->at_end = false;
     
     // Place iterator at the beginning of the table
-    for (Block *b = _first_block;; b = b->next) {
+    for (Block *b = _first_block; b; b = b->next) {
       
-      int pos;
-      
+      int pos = 0;
       if ( (pos = b->first_pos()) != -1 ) {
 	it->block = b;
 	it->pos = pos;
 	return;
       }
-      
-      if ( !b->next )
-	break;
       
     }
     
@@ -412,7 +422,7 @@ namespace dolfin {
     }
          
     // Check all blocks
-    for (Block *b = _first_block;; b = b->next) {
+    for (Block *b = _first_block; b; b = b->next) {
       
       if ( id >= b->number*DOLFIN_BLOCK_SIZE && 
 	   id < (b->number+1)*DOLFIN_BLOCK_SIZE ) {
@@ -420,9 +430,6 @@ namespace dolfin {
 	it->pos = _current_block->position(id);
 	return;
       }
-      
-      if ( !b->next )
-	break;
       
     }
     
@@ -440,17 +447,14 @@ namespace dolfin {
     
     // Step to next position
     int start = it->pos + 1;
-    int pos = 0;
-    for (Block *b = it->block;; b = b->next) {
-      
+    for (Block* b = it->block; b; b = b->next) {
+
+      int pos = 0;
       if ( (pos = b->next_pos(start)) != -1 ) {
 	it->block = b;
 	it->pos = pos;
 	return;
       }
-      
-      if ( !b->next )
-	break;
       
       start = 0;
     }
@@ -588,7 +592,6 @@ namespace dolfin {
       empty[i] = true;
     pos = 0;
     used = 0;
-    
   }
   //---------------------------------------------------------------------------		
   template <class T> Table<T>::Block::~Block()

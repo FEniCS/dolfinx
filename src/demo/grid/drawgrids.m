@@ -3,24 +3,31 @@
 %
 % Draw grids from the 2D grid refinement example.
 
-disp('Loading unrefined grid')
-grid2D_unrefined
-p0 = points;
-e0 = edges;
-t0 = cells;
+% Load the grids
+disp('Loading grids')
+grids2D
 
-disp('Loading refined grid')
-grid2D_refined
-p1 = points;
-e1 = edges;
-t1 = cells;
+% Count the number of levels
+n = length(points);
+levels = 0;
+count = 0;
+for i=1:n
+  count = count + i;
+  if ( count >= n )
+     levels = i;
+     break;
+  end
+end
+disp(['Found ' num2str(n) ' grids in ' num2str(levels) ' levels'])
 
+% Draw grids
 clf
-
-subplot(1,2,1)
-pdemesh(p0, e0, t0)
-axis([0 1 0 1])
-
-subplot(1,2,2)
-pdemesh(p1, e1, t1)
-axis([0 1 0 1])
+count = 1;
+for i=1:levels
+  for j=1:i
+    subplot(levels, levels, (i-1)*levels + j)
+    pdemesh(points{count}, edges{count}, cells{count})
+    axis([0 1 0 1])
+    count = count + 1;
+  end
+end

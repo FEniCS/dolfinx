@@ -31,9 +31,9 @@ void refine2D(int refinements)
   // Load grid
   Grid grid("grid2D.xml.gz");
   
-  // Save original grid in OpenDX format
-  File unref("grid2D_unrefined.m");
-  unref << grid;
+  // Save first grid
+  File file("grids2D.m");
+  file << grid;
 
   // Refine a couple of times
   for (int i = 0; i < refinements; i++) {
@@ -45,12 +45,13 @@ void refine2D(int refinements)
     
     // Refine grid
     grid.refine();
-    
+
+    // Save all grids in the grid hierarcy
+    GridHierarchy grids(grid);
+    for (GridIterator g(grids); !g.end(); ++g)
+      file << *g;
+
   }
-  
-  // Save refined grid in Matlab format
-  File ref("grid2D_refined.m");
-  ref << grid;
 
   dolfin::cout << dolfin::endl;
 }

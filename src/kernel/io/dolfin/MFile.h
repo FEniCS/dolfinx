@@ -32,7 +32,7 @@ namespace dolfin {
     virtual void operator<< (Matrix& A) = 0;
     void operator<< (Grid& grid);
     void operator<< (Function& u);
-        
+
   };
   
 }

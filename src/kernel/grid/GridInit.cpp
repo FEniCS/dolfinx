@@ -23,7 +23,33 @@ void GridInit::init(Grid& grid)
   // Compute connectivity
   initConnectivity(grid);
 
+  // Renumber all objects
+  renumber(grid);
+
   dolfin_end();
+}
+//-----------------------------------------------------------------------------
+void GridInit::renumber(Grid& grid)
+{
+  // Renumber nodes
+  int i = 0;
+  for (NodeIterator n(grid); !n.end(); ++n)
+    n->setID(i++, grid);
+
+  // Renumber cells
+  i = 0;
+  for (CellIterator c(grid); !c.end(); ++c)
+    c->setID(i++, grid);
+
+  // Renumber edges
+  i = 0;
+  for (EdgeIterator e(grid); !e.end(); ++e)
+    e->setID(i++, grid);
+
+  // Renumber faces
+  i = 0;
+  for (FaceIterator f(grid); !f.end(); ++f)
+    f->setID(i++, grid);
 }
 //-----------------------------------------------------------------------------
 void GridInit::clear(Grid& grid)

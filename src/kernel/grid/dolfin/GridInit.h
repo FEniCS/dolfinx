@@ -17,7 +17,8 @@ namespace dolfin{
   class GridInit {
   public:
     
-    static void init(Grid& grid);
+    static void init     (Grid& grid);
+    static void renumber (Grid& grid);
     
   private:
     

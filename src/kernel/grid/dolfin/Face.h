@@ -49,6 +49,7 @@ namespace dolfin {
 
     /// Friends
     friend class GridData;
+    friend class GridInit;
     friend class EdgeIterator::FaceEdgeIterator;
 
   private:

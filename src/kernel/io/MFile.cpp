@@ -58,9 +58,32 @@ void MFile::operator<<(Grid& grid)
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+
+  // Create a list if we save the grid a second time
+  if ( no_grids == 1 ) {
+
+    fprintf(fp, "tmp = points;\n");
+    fprintf(fp, "clear points\n");
+    fprintf(fp, "points{1} = tmp;\n");
+    fprintf(fp, "clear tmp\n\n");
+
+    fprintf(fp, "tmp = cells;\n");
+    fprintf(fp, "clear cells\n");
+    fprintf(fp, "cells{1} = tmp;\n");
+    fprintf(fp, "clear tmp\n\n");
+
+    fprintf(fp, "tmp = edges;\n");
+    fprintf(fp, "clear edges\n");
+    fprintf(fp, "edges{1} = tmp;\n");
+    fprintf(fp, "clear tmp\n\n");
+
+  }
   
   // Write nodes
-  fprintf(fp,"points = [");
+  if ( no_grids == 0 )
+    fprintf(fp,"points = [");
+  else
+    fprintf(fp,"points{%d} = [", no_grids + 1);
   for (NodeIterator n(grid); !n.end(); ++n) {
     
     p = n->coord();
@@ -82,7 +105,10 @@ void MFile::operator<<(Grid& grid)
   fprintf(fp,"\n");
   
   // Write cells
-  fprintf(fp,"cells = [");
+  if ( no_grids == 0 )
+    fprintf(fp,"cells = [");
+  else
+    fprintf(fp,"cells{%d} = [", no_grids + 1);
   for (CellIterator c(grid); !c.end(); ++c) {
     
     for (NodeIterator n(c); !n.end(); ++n)
@@ -97,13 +123,21 @@ void MFile::operator<<(Grid& grid)
   fprintf(fp,"\n");
   
   // Write edges (to make the pdeplot routines happy)
-  fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
+  if ( no_grids == 0 )
+    fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
+  else
+    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", no_grids + 1);
   
   // Close file
   fclose(fp);
 
-  // Increase the number of times we have saved the vector
+  // Increase the number of times we have saved the grid
+  // FIXME: Count number of grids saved to this file, rather
+  // than the number of times this specific grid has been saved.
   ++grid;
+  
+  // Increase the number of grids save to this file
+  no_grids++;
 
   cout << "Saved grid " << grid.name() << " (" << grid.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;

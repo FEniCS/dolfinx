@@ -30,6 +30,15 @@ namespace dolfin {
     // The global algorithm
     static void globalRefinement(GridHierarchy& grids);
 
+    // Check consistency of markers before refinement
+    static void checkPreCondition(GridHierarchy& grids);
+
+    // Check consistency of markers after refinement
+    static void checkPostCondition(GridHierarchy& grids);
+
+    // Check object numbering
+    static void checkNumbering(GridHierarchy& grids);
+
     //--- Algorithms working on the grid on a given level ---
     
     /// Update marks for edges
@@ -80,6 +89,9 @@ namespace dolfin {
 
     /// Mapping from global node number to local number within cell
     static int nodeNumber(const Node& node, const Cell& cell);
+
+    /// Check if a given cell is a leaf element
+    static bool leaf(Cell& cell);
 
     /// Create a new node (if it doesn't exist) and set parent-child info
     static Node& createNode(Node& node, Grid& grid, const Cell& cell);

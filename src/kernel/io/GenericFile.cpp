@@ -17,6 +17,8 @@ GenericFile::GenericFile(const std::string filename)
   opened_write = false;
 
   check_header = false;
+
+  no_grids = 0;
 }
 //-----------------------------------------------------------------------------
 GenericFile::~GenericFile()

@@ -6,6 +6,7 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Edge.h>
+#include <dolfin/GridInit.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/GridIterator.h>
 #include <dolfin/TriGridRefinement.h>
@@ -19,11 +20,17 @@ void GridRefinement::refine(GridHierarchy& grids)
 {
   dolfin_start("Refining grids:");
 
+  // Check pre-condition for all grids
+  checkPreCondition(grids);
+
   // Mark edges
   updateEdgeMarks(grids);
 
   // Refine grid hierarchy
   globalRefinement(grids);
+
+  // Check post-condition for all grids
+  checkPostCondition(grids);
 
   dolfin_end();
 }
@@ -41,15 +48,18 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
-    evaluateMarks(*grid);
+    if ( *grid != grids.fine() )
+      evaluateMarks(*grid);
     closeGrid(*grid);
   }
-  
+
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if (grid.index() > 0)
-     closeGrid(*grid);
+    if ( *grid != grids.coarse() )
+      closeGrid(*grid);
+    cout << "--- Unrefine at level " << grid.index() << endl;
     unrefineGrid(*grid, grids);
+    cout << "--- Refine at level " << grid.index() << endl;
     refineGrid(*grid);
   }
 
@@ -57,6 +67,74 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   dolfin_log(false);
   grids.init(grids.coarse());
   dolfin_log(true);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::checkPreCondition(GridHierarchy& grids)
+{
+  // Marks should be marked_according_to_ref for all cells on coarser levels.
+  for (GridIterator grid(grids); !grid.end(); ++grid)
+    if ( *grid != grids.fine() )
+      for (CellIterator c(grid); !c.end(); ++c)
+	if ( c->marker() != Cell::marked_according_to_ref )
+	  dolfin_error1("Grid %d does not satisfy pre-condition for grid refinement.",
+			grid.index());
+  
+  // Check marks for finest grid
+  for (CellIterator c(grids.fine()); !c.end(); ++c)
+    if ( ( c->marker() != Cell::marked_for_reg_ref ) &&
+	 ( c->marker() != Cell::marked_for_no_ref )  &&
+	 ( c->marker() != Cell::marked_for_coarsening ) )
+      dolfin_error("Finest grid does not satisfy pre-condition for grid refinement.");
+  
+  dolfin_debug("Checked pre-condition for grids.");
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::checkPostCondition(GridHierarchy& grids)
+{
+  // Marks should be marked_according_to_ref for all cells on coarser levels.
+  for (GridIterator grid(grids); !grid.end(); ++grid)
+    if ( *grid != grids.fine() )
+      for (CellIterator c(grid); !c.end(); ++c)
+	if ( c->marker() != Cell::marked_according_to_ref )
+	  dolfin_error1("Grid %d does not satisfy post-condition for grid refinement.",
+			grid.index());
+  
+  // Check marks for the new finest grid
+  for (CellIterator c(grids.fine()); !c.end(); ++c)
+    if ( c->marker() != Cell::marked_for_no_ref )
+      dolfin_error("Finest grid does not satisfy post-condition for grid refinement.");
+
+  dolfin_debug("Checked post-condition for grids.");
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::checkNumbering(GridHierarchy& grids)
+{
+  // Check numbering (IDs) for all objects
+  for (GridIterator grid(grids); !grid.end(); ++grid) {
+
+    // Check nodes
+    for (NodeIterator n(grid); !n.end(); ++n)
+      if ( n->id() < 0 || n->id() >= grid->noNodes() )
+	dolfin_error1("Inconsistent node numbers at level %d.", grid.index());
+
+    // Check cells
+    for (CellIterator c(grid); !c.end(); ++c)
+      if ( c->id() < 0 || c->id() >= grid->noCells() )
+	dolfin_error1("Inconsistent cell numbers at level %d.", grid.index());
+
+    // Check edges
+    for (EdgeIterator e(grid); !e.end(); ++e)
+      if ( e->id() < 0 || e->id() >= grid->noEdges() )
+	dolfin_error1("Inconsistent edge numbers at level %d.", grid.index());
+
+    // Check faces
+    for (FaceIterator f(grid); !f.end(); ++f)
+      if ( f->id() < 0 || f->id() >= grid->noFaces() )
+	dolfin_error1("Inconsistent face numbers at level %d.", grid.index());
+
+  }
+
+  dolfin_debug("Object numbers are ok.");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::updateEdgeMarks(Grid& grid)
@@ -100,6 +178,10 @@ void GridRefinement::closeGrid(Grid& grid)
 {
   // Perform the green closure on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
+
+  // Make sure that the numbers are correct since we use an array
+  // of indices (IDs) to temporarily store data.
+  GridInit::renumber(grid);
 
   // Keep track of which cells are in the list
   Array<bool> closed(grid.noCells());
@@ -173,6 +255,10 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
     child = &grid.createChild();
   else
     child = &grid.child();
+
+  // Make sure that the numbers are correct since we use arrays
+  // of indices (IDs) to temporarily store data.
+  GridInit::renumber(*child);
 
   // Mark all nodes in the child for not re-use
   Array<bool> reuse_node(child->noNodes());
@@ -372,6 +458,11 @@ int GridRefinement::nodeNumber(const Node& node, const Cell& cell)
   return -1;
 }
 //-----------------------------------------------------------------------------
+bool GridRefinement::leaf(Cell& cell)
+{
+  return cell.status() == Cell::unref;
+}
+//-----------------------------------------------------------------------------
 Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 {
   // Create the node
@@ -418,23 +509,21 @@ void GridRefinement::removeNode(Node& node, Grid& grid)
 //-----------------------------------------------------------------------------
 void GridRefinement::removeCell(Cell& cell, Grid& grid)
 {
+  // Only leaf elements should be removed
+  dolfin_assert(leaf(cell));
+
   // Update parent-child info for parent
-  if ( cell.parent() ) {
-    cout << "Removing cell " << cell << " from cell " << *cell.parent() << endl;
+  if ( cell.parent() )
     cell.parent()->removeChild(cell);
 
-  }
-
-  if ( (cell.noChildren() > 0) && (cell.status() == Cell::unref) ){
-    // Remove children
-    for (int i = 0; i < cell.noChildren(); i++)
-    removeCell(*cell.child(i), grid.child());
-  }
+  // Remove children
+  for (int i = 0; i < cell.noChildren(); i++)
+      removeCell(*cell.child(i), grid.child());
   
   // Update status 
   if ( cell.parent()->noChildren() == 0 )
     cell.parent()->status() = Cell::unref; 
-
+  
   // Remove cell
   grid.remove(cell);
 }

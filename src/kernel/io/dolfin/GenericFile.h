@@ -46,6 +46,8 @@ namespace dolfin {
     bool opened_write;
 
     bool  check_header;     // True if we have written a header
+
+    int no_grids;
     
   };
   

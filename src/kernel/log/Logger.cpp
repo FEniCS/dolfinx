@@ -64,9 +64,6 @@ void Logger::info(const char* format, va_list aptr)
 void Logger::debug(const char* file, unsigned long line,
 		   const char* function, const char* format, ...)
 {
-  if ( !state )
-    return;
-
   init();
   
   sprintf(location, "%s:%d: %s()", file, line, function);
