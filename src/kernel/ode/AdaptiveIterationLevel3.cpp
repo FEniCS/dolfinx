@@ -155,14 +155,13 @@ void AdaptiveIterationLevel3::update(Element& element, Increments& d)
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   // Stabilize if necessary
-  if ( Iteration::stabilize(r, d, n) )
+  if ( Iteration::stabilize(d, n) )
   {
     // Compute divergence
-    real rho = computeDivergence(list, r, d);
+    real rho = computeDivergence(list);
     
     // Compute alpha
     alpha = computeAlpha(rho);
@@ -172,19 +171,18 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
     j = m;
     
     // Save increment at start of stabilizing iterations
-    r0 = d.d2;
+    d0 = d.d2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   // Stabilize if necessary
-  if ( Iteration::stabilize(r, d, n) )
+  if ( Iteration::stabilize(d, n) )
   {
     // Compute divergence
-    real rho = computeDivergence(group, r, d);
+    real rho = computeDivergence(group);
     
     // Compute alpha
     alpha = computeAlpha(rho);
@@ -194,31 +192,19 @@ void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
     j = m;
     
     // Save increment at start of stabilizing iterations
-    r0 = d.d2;
+    d0 = d.d2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(Element& element, 
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   dolfin_error("Unreachable statement.");
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::converged(ElementGroupList& list, Residuals& r,
+bool AdaptiveIterationLevel3::converged(ElementGroupList& list,
 					const Increments& d, unsigned int n)
 {
-  /*
-  // Compute residual
-  r = residual(list);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-
-  return r.r2 < tol;
-  */
-
   // First check increment
   if ( d.d2 > tol || n == 0 )
     return false;
@@ -227,32 +213,21 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list, Residuals& r,
   return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::converged(ElementGroup& group, Residuals& r,
+bool AdaptiveIterationLevel3::converged(ElementGroup& group,
 					const Increments& d, unsigned int n)
 {
-  /*
-  // Compute residual
-  r = residual(group);
-  
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-
-  return r.r2 < tol && n > 0;
-  */
-
   return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::converged(Element& element, Residuals& r,
+bool AdaptiveIterationLevel3::converged(Element& element,
 					const Increments& d, unsigned int n)
 {
   dolfin_error("Unreachable statement.");
   return false;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel3::diverged(ElementGroupList& list, 
-				       const Residuals& r, const Increments& d,
+bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   // Don't check divergence for group lists, since we want to handle
@@ -261,7 +236,7 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::diverged(ElementGroup& group, 
-				       const Residuals& r, const Increments& d,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   // Don't check divergence for element groups, since we want to handle
@@ -270,7 +245,7 @@ bool AdaptiveIterationLevel3::diverged(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::diverged(Element& element, 
-				       const Residuals& r, const Increments& d,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   dolfin_error("Unreachable statement.");

@@ -21,7 +21,7 @@ Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		     unsigned int depth, bool debug_iter) : 
   u(u), f(f), fixpoint(fixpoint), 
   maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol),
-  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), _depth(depth),
+  alpha(1), gamma(1.0/sqrt(2.0)), d0(0), m(0), j(0), _depth(depth),
   debug_iter(debug_iter)
 {
   // Do nothing
@@ -115,8 +115,7 @@ real Iteration::residual(Element& element)
   return fabs(element.computeElementResidual(f));
 }
 //-----------------------------------------------------------------------------
-bool Iteration::stabilize(const Residuals& r, const Increments& d, 
-			  unsigned int n)
+bool Iteration::stabilize(const Increments& d, unsigned int n)
 {
   // Take action depending on j, the remaining number of iterations
   // with small alpha.
@@ -137,18 +136,18 @@ bool Iteration::stabilize(const Residuals& r, const Increments& d,
     break;
   case 1:
     // Continue with another round of stabilizing steps if it seems to work
-    if ( pow(d.d2/r0, 1.0/static_cast<real>(m)) < 0.75 )
+    if ( pow(d.d2/d0, 1.0/static_cast<real>(m)) < 0.75 )
     {
       // Double the number of stabilizing iterations
       m *= 2;
       j = m;
 
       // Choose a slightly larger alpha if convergence is monotone
-      if ( d.d2 < 0.75*d.d1 && d.d1 < 0.75*r0 )
+      if ( d.d2 < 0.75*d.d1 && d.d1 < 0.75*d0 )
 	alpha *= 1.1;
       
       // Save increment at start of stabilizing iterations
-      r0 = d.d2;
+      d0 = d.d2;
     }
     else
     {
@@ -162,16 +161,13 @@ bool Iteration::stabilize(const Residuals& r, const Increments& d,
   }
   
   // Check if stabilization is needed
-  return (d.d2 > d.d1 && d.d1 > r0) || (d.d2 > d.d1 && j == 0);
+  return (d.d2 > d.d1 && d.d1 > d0) || (d.d2 > d.d1 && j == 0);
 }
 //-----------------------------------------------------------------------------
-real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
-				  const Increments& d)
+real Iteration::computeDivergence(ElementGroupList& list)
 {
-  // FIXME: d and r are not used
-  
   // Increments for iteration
-  Increments dd;
+  Increments d;
   
   // Successive convergence factors
   real rho1 = 1.0;
@@ -184,20 +180,20 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update element group
-    updateUnstabilized(list, dd);
+    updateUnstabilized(list, d);
 
     // Check for convergence
-    if ( dd.d2 < tol )
+    if ( d.d2 < tol )
       return 1.0;
     
-    // Do at least 2 iterations
+    // Make at least 2 iterations
     if ( n < 1 )
       continue;
 
     // Compute divergence (cumulative geometric mean value)
     rho1 = rho2;
     real nn = std::max(1.0, static_cast<real>(n));
-    real rhonew = dd.d2 / (DOLFIN_EPS + dd.d1);
+    real rhonew = d.d2 / (DOLFIN_EPS + d.d1);
     rho2 = pow(rho2, (nn-1.0)/nn) * pow(rhonew, 1.0/nn);
 
     // Check if the divergence factor has converged
@@ -211,11 +207,10 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r,
   return rho2;
 }
 //-----------------------------------------------------------------------------
-real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
-				  const Increments& d)
+real Iteration::computeDivergence(ElementGroup& group)
 {
   // Increments for iteration
-  Increments dd;
+  Increments d;
   
   // Successive convergence factors
   real rho1 = 1.0;
@@ -228,20 +223,20 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r,
   for (unsigned int n = 0; n < maxiter; n++)
   {
     // Update element group
-    updateUnstabilized(group, dd);
+    updateUnstabilized(group, d);
 
     // Check for convergence
-    if ( dd.d2 < tol )
+    if ( d.d2 < tol )
       return 1.0;
     
-    // Do at least 2 iterations
+    // Make at least 2 iterations
     if ( n < 1 )
       continue;
 
     // Compute divergence (cumulative geometric mean value)
     rho1 = rho2;
     real nn = std::max(1.0, static_cast<real>(n));
-    real rhonew = dd.d2 / (DOLFIN_EPS + dd.d1);
+    real rhonew = d.d2 / (DOLFIN_EPS + d.d1);
     rho2 = pow(rho2, (nn-1.0)/nn) * pow(rhonew, 1.0/nn);
 
     // Check if the divergence factor has converged

@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Component::Component()
+Component::Component() : cacheElement(0)
 {
   // Do nothing
 }
@@ -54,7 +54,11 @@ Element* Component::createElement(Element::Type type, unsigned int q,
 //-----------------------------------------------------------------------------
 Element* Component::element(real t)
 {
-  return findpos(t);
+  if ( cacheElement )
+    if ( cacheElement->within(t) )
+      return cacheElement;
+  
+  return cacheElement = findpos(t);
 }
 //-----------------------------------------------------------------------------
 Element* Component::first()

@@ -92,40 +92,40 @@ namespace dolfin
     void update(Element& element, Iteration::Increments& d);
 
     // Stabilize group list
-    void stabilize(ElementGroupList& list, const Iteration::Residuals& r,
-		   const Iteration::Increments& d, unsigned int n);
+    void stabilize(ElementGroupList& list, const Iteration::Increments& d, 
+		   unsigned int n);
     
     // Stabilize element group
-    void stabilize(ElementGroup& group, const Iteration::Residuals& r, 
-		   const Iteration::Increments& r, unsigned int n);
+    void stabilize(ElementGroup& group, const Iteration::Increments& r,
+		   unsigned int n);
 
     // Stabilize element
-    void stabilize(Element& element, const Iteration::Residuals& r,
-		   const Iteration::Increments& d, unsigned int n);
+    void stabilize(Element& element, const Iteration::Increments& d,
+		   unsigned int n);
 
     // Check convergence for group list
-    bool converged(ElementGroupList& list, Iteration::Residuals& r,
-		   const Iteration::Increments& d, unsigned int n);
+    bool converged(ElementGroupList& list, const Iteration::Increments& d,
+		   unsigned int n);
     
     // Check convergence for element group
-    bool converged(ElementGroup& group, Iteration::Residuals& r,
-		   const Iteration::Increments& d, unsigned int n);
+    bool converged(ElementGroup& group, const Iteration::Increments& d,
+		   unsigned int n);
 
     // Check convergence for element
-    bool converged(Element& element, Iteration::Residuals& r,
-		   const Iteration::Increments& d, unsigned int n);
+    bool converged(Element& element, const Iteration::Increments& d,
+		   unsigned int n);
 
     // Check divergence for group list
-    bool diverged(ElementGroupList& list, const Iteration::Residuals& r,
-		  const Iteration::Increments& d, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroupList& list, const Iteration::Increments& d,
+		  unsigned int n, Iteration::State& newstate);
     
     // Check divergence for element group
-    bool diverged(ElementGroup& group, const Iteration::Residuals& r,
-		  const Iteration::Increments& d, unsigned int n, Iteration::State& newstate);
+    bool diverged(ElementGroup& group, const Iteration::Increments& d,
+		  unsigned int n, Iteration::State& newstate);
     
     // Check divergence for element
-    bool diverged(Element& element, const Iteration::Residuals& rn,
-		  const Iteration::Increments& d, unsigned int n, Iteration::State& newstate);
+    bool diverged(Element& element, const Iteration::Increments& d,
+		  unsigned int n, Iteration::State& newstate);
     
     /// Update initial data for element group
     void init(ElementGroup& group);

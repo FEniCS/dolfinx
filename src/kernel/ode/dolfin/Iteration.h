@@ -78,34 +78,34 @@ namespace dolfin
     virtual void update(Element& element, Increments& d) = 0;
 
     /// Stabilize group list iteration
-    virtual void stabilize(ElementGroupList& list, const Residuals& r, 
-			   const Increments& d, unsigned int n) = 0;
+    virtual void stabilize(ElementGroupList& list, const Increments& d,
+			   unsigned int n) = 0;
     
     /// Stabilize element group iteration
-    virtual void stabilize(ElementGroup& group, const Residuals& r,
-			   const Increments& d, unsigned int n) = 0;
+    virtual void stabilize(ElementGroup& group, const Increments& d,
+			   unsigned int n) = 0;
     
     /// Stabilize element iteration
-    virtual void stabilize(Element& element, const Residuals& r,
-			   const Increments& d, unsigned int n) = 0;
+    virtual void stabilize(Element& element, const Increments& d,
+			   unsigned int n) = 0;
     
     /// Check convergence for group list
-    virtual bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n) = 0;
+    virtual bool converged(ElementGroupList& list, const Increments& d, unsigned int n) = 0;
 
     /// Check convergence for element group
-    virtual bool converged(ElementGroup& group, Residuals& r,  const Increments& d, unsigned int n) = 0;
+    virtual bool converged(ElementGroup& group, const Increments& d, unsigned int n) = 0;
 
     /// Check convergence for element
-    virtual bool converged(Element& element, Residuals& r, const Increments& d, unsigned int n) = 0;
+    virtual bool converged(Element& element, const Increments& d, unsigned int n) = 0;
 
     /// Check divergence for group list
-    virtual bool diverged(ElementGroupList& list, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
+    virtual bool diverged(ElementGroupList& list, const Increments& d, unsigned int n, State& newstate) = 0;
     
     /// Check divergence for element group
-    virtual bool diverged(ElementGroup& group, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
+    virtual bool diverged(ElementGroup& group, const Increments& d, unsigned int n, State& newstate) = 0;
 
     /// Check divergence for element
-    virtual bool diverged(Element& element, const Residuals& r, const Increments& d, unsigned int n, State& newstate) = 0;
+    virtual bool diverged(Element& element, const Increments& d, unsigned int n, State& newstate) = 0;
 
     /// Write a status report
     virtual void report() const = 0;
@@ -162,13 +162,13 @@ namespace dolfin
     };
 
     // Stabilization for adaptive iteration
-    bool stabilize(const Residuals& r, const Increments& d, unsigned int n);
+    bool stabilize(const Increments& d, unsigned int n);
     
     // Compute divergence
-    real computeDivergence(ElementGroupList& list, const Residuals& r, const Increments& d);
+    real computeDivergence(ElementGroupList& list);
 
     // Compute divergence
-    real computeDivergence(ElementGroup& group, const Residuals& r, const Increments& d);
+    real computeDivergence(ElementGroup& group);
 
     // Unstabilized update
     void updateUnstabilized(ElementGroupList& list, Increments& d);
@@ -224,8 +224,8 @@ namespace dolfin
     // Angle of sector, gamma = cos(theta)
     real gamma;
 
-    // Residual at start of stabilizing iterations
-    real r0;
+    // Increment at start of stabilizing iterations
+    real d0;
 
     // Number of stabilizing iterations
     unsigned int m;

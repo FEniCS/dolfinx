@@ -89,7 +89,7 @@ void RHS::update(unsigned int index, unsigned int node, real t)
 void RHS::updateSolution(unsigned int index, unsigned int node, real t)
 {
   dolfin_assert(solution);
-
+  
   if ( ode.sparsity.sparse() )
   {
     const NewArray<unsigned int>& row = ode.sparsity.row(index);

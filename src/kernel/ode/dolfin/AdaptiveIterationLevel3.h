@@ -32,17 +32,17 @@ namespace dolfin
     void update(ElementGroup& group, Increments& d);
     void update(Element& element, Increments& d);
     
-    void stabilize(ElementGroupList& list, const Residuals& r, const Increments& d, unsigned int n);
-    void stabilize(ElementGroup& group, const Residuals& r, const Increments& d, unsigned int n);
-    void stabilize(Element& element, const Residuals& r, const Increments& d, unsigned int n);
+    void stabilize(ElementGroupList& list, const Increments& d, unsigned int n);
+    void stabilize(ElementGroup& group, const Increments& d, unsigned int n);
+    void stabilize(Element& element, const Increments& d, unsigned int n);
     
-    bool converged(ElementGroupList& list, Residuals& r, const Increments& d, unsigned int n);
-    bool converged(ElementGroup& group, Residuals& r, const Increments& d, unsigned int n);
-    bool converged(Element& element, Residuals& r, const Increments& d, unsigned int n);
+    bool converged(ElementGroupList& list, const Increments& d, unsigned int n);
+    bool converged(ElementGroup& group, const Increments& d, unsigned int n);
+    bool converged(Element& element, const Increments& d, unsigned int n);
     
-    bool diverged(ElementGroupList& list, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
-    bool diverged(ElementGroup& group, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
-    bool diverged(Element& element, const Residuals& r, const Increments& d,unsigned int n, State& newstate);
+    bool diverged(ElementGroupList& list, const Increments& d,unsigned int n, State& newstate);
+    bool diverged(ElementGroup& group, const Increments& d,unsigned int n, State& newstate);
+    bool diverged(Element& element, const Increments& d,unsigned int n, State& newstate);
     
     void report() const;
 

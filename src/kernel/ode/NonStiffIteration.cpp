@@ -77,42 +77,27 @@ void NonStiffIteration::update(Element& element, Increments& d)
   d = fabs(element.update(f));
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(ElementGroupList& list, const Residuals& r,
+void NonStiffIteration::stabilize(ElementGroupList& list,
 				  const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(ElementGroup& group, const Residuals& r,
+void NonStiffIteration::stabilize(ElementGroup& group,
 				 const Increments& d,  unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::stabilize(Element& element, const Residuals& r,
+void NonStiffIteration::stabilize(Element& element,
 				  const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(ElementGroupList& list, Residuals& r,
+bool NonStiffIteration::converged(ElementGroupList& list,
 				  const Increments& d, unsigned int n)
 {
-  /*
-  // Convergence handled locally when the slab contains only one element group
-  if ( list.size() <= 1 )
-    return n > 0;
-  
-  // Compute residual
-  r = residual(list);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-  
-  return r.r2 < tol;
-  */
-
   // First check increment
   if ( d.d2 > tol || n == 0 )
     return false;
@@ -121,57 +106,24 @@ bool NonStiffIteration::converged(ElementGroupList& list, Residuals& r,
   return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(ElementGroup& group, Residuals& r, 
+bool NonStiffIteration::converged(ElementGroup& group,
 				  const Increments& d, unsigned int n)
 {
-  /*
-  // Convergence handled locally when the group contains only one element
-  if ( group.size() == 1 )
-  return n > 0;
-  
-  // Compute residual
-  r = residual(group);
-  
-  // Save initial residual
-  if ( n == 0 )
-  r.r0 = r.r2;
-
-  return r.r2 < tol && n > 0;
-  */
-  
   return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(Element& element, Residuals& r,
+bool NonStiffIteration::converged(Element& element,
 				  const Increments& d, unsigned int n)
 {
-  /*
-  // Compute residual
-  r = residual(element);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-  
-  return r.r2 < tol && n > 0;
-  */
-
   return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::diverged(ElementGroupList& list, 
-				 const Residuals& r, const Increments& d,
+bool NonStiffIteration::diverged(ElementGroupList& list, const Increments& d,
 				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
 
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )
@@ -189,19 +141,12 @@ bool NonStiffIteration::diverged(ElementGroupList& list,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::diverged(ElementGroup& group, 
-				 const Residuals& r, const Increments& d,
+bool NonStiffIteration::diverged(ElementGroup& group, const Increments& d,
 				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
 
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )
@@ -219,20 +164,13 @@ bool NonStiffIteration::diverged(ElementGroup& group,
   return true;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::diverged(Element& element, 
-				 const Residuals& r, const Increments& d,
+bool NonStiffIteration::diverged(Element& element, const Increments& d,
 				 unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
   
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
-
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )
     return false;

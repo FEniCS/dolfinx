@@ -63,6 +63,9 @@ namespace dolfin {
     // A list of elements for this component
     NewArray<Element*> elements;
 
+    // Cache last element
+    Element* cacheElement;
+
   };
 
 }

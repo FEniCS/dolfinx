@@ -37,15 +37,6 @@ public:
     return -A.mult(u, i);
   }
 
-  real timestep(unsigned int i)
-  {
-    cout << "i = " << i << endl;
-    if ( i == 0 )
-      return 0.1;
-
-    return 0.05;
-  }
-
 private:
   
   Matrix A;
@@ -59,8 +50,6 @@ int main()
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("initial time step", 0.1);
-  dolfin_set("fixed time step", true);
-  dolfin_set("partitioning threshold", 1.0);
 
   NonNormal nonnormal;
   nonnormal.solve();

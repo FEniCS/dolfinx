@@ -80,21 +80,18 @@ void AdaptiveIterationLevel1::update(Element& element, Increments& d)
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroupList& list,
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(ElementGroup& group,
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel1::stabilize(Element& element, 
-					const Residuals& r,
 					const Increments& d, unsigned int n)
 {
   // Compute diagonal damping
@@ -107,24 +104,9 @@ void AdaptiveIterationLevel1::stabilize(Element& element,
     alpha = 1.0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(ElementGroupList& list, Residuals& r,
+bool AdaptiveIterationLevel1::converged(ElementGroupList& list,
 					const Increments& d, unsigned int n)
 {
-  /*
-  // Convergence handled locally when the slab contains only one element group
-  if ( list.size() <= 1 )
-    return n > 0;
-  
-  // Compute residual
-  r = residual(list);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-  
-  return r.r2 < tol;
-  */
-
   // First check increment
   if ( d.d2 > tol || n == 0 )
     return false;
@@ -133,57 +115,25 @@ bool AdaptiveIterationLevel1::converged(ElementGroupList& list, Residuals& r,
   return residual(list) < tol;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(ElementGroup& group, Residuals& r,
+bool AdaptiveIterationLevel1::converged(ElementGroup& group,
 					const Increments& d, unsigned int n)
 {
-  /*
-  // Convergence handled locally when the group contains only one element
-  if ( group.size() == 1 )
-    return n > 0;
-
-  // Compute residual
-  r = residual(group);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-  
-  return r.r2 < tol && n > 0;
-  */
-  
   return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
-bool AdaptiveIterationLevel1::converged(Element& element, Residuals& r,
+bool AdaptiveIterationLevel1::converged(Element& element,
 					const Increments& d, unsigned int n)
 {
-  /*
-  // Compute residual
-  r = residual(element);
-
-  // Save initial residual
-  if ( n == 0 )
-    r.r0 = r.r2;
-  
-  return r.r2 < tol && n > 0;
-  */
-
   return d.d2 < tol && n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(ElementGroupList& list, 
-				       const Residuals& r, const Increments& d,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-  
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
   
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )
@@ -202,18 +152,12 @@ bool AdaptiveIterationLevel1::diverged(ElementGroupList& list,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(ElementGroup& group, 
-				       const Residuals& r, const Increments& d,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
 
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )
@@ -232,18 +176,12 @@ bool AdaptiveIterationLevel1::diverged(ElementGroup& group,
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::diverged(Element& element, 
-				       const Residuals& r, const Increments& d,
+				       const Increments& d,
 				       unsigned int n, State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
     return false;
-
-  /*
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  */
   
   // Check if the solution converges
   if ( d.d2 < maxconv * d.d1 )

@@ -6,7 +6,7 @@
 // nonnormal test problem. Typical way of running obtaining data from
 // the iteration:
 //
-//   ./dolfin-ode-stiff-test | grep debug2 | cut -d':' -f2 > iter
+//   ./dolfin-ode-stiff-test | grep debug1 | cut -d':' -f2 > iter
 //
 // which may not be very nice, but this is only for debugging... :)
 // The number printed are the residual, increment, and damping.
