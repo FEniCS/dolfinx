@@ -1,3 +1,5 @@
+ - Add new benchmark problem for multi-adaptive solver
+ - Bug fix for ParticleSystem
  - Initialization of first time step
  - Improve time step regulation (threshold)
  - Improve stabilization

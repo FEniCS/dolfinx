@@ -1,1 +1,1 @@
-SUBDIRS = test lorenz stiff mechanical
+SUBDIRS = test lorenz stiff mechanical bench

@@ -84,13 +84,13 @@ real ParticleSystem::u0(unsigned int i)
   {
     switch (i % dim) {
     case 0:
-      return x0(i/3);
+      return x0(i/dim);
       break;
     case 1:
-      return y0(i/3);
+      return y0(i/dim);
       break;
     case 2:
-      return z0(i/3);
+      return z0(i/dim);
       break;
     default:
       dolfin_error("Illegal dimension.");
@@ -100,13 +100,13 @@ real ParticleSystem::u0(unsigned int i)
   {
     switch (i % dim) {
     case 0:
-      return vx0((i-offset)/3);
+      return vx0((i-offset)/dim);
       break;
     case 1:
-      return vy0((i-offset)/3);
+      return vy0((i-offset)/dim);
       break;
     case 2:
-      return vz0((i-offset)/3);
+      return vz0((i-offset)/dim);
       break;
     default:
       dolfin_error("Illegal dimension.");
@@ -122,19 +122,22 @@ real ParticleSystem::f(const Vector& u, real t, unsigned int i)
   if ( i < offset )
     return u(offset + i);
 
+  // Subtract offset
+  i -= offset;
+
   // Save pointer to solution vector
   this->u = &u;
 
   // Compute force
   switch (i % dim) {
   case 0:
-    return Fx(i/3, t);
+    return Fx(i /dim, t);
     break;
   case 1:
-    return Fy(i/3, t);
+    return Fy(i/dim, t);
     break;
   case 2:
-    return Fz(i/3, t);
+    return Fz(i/dim, t);
     break;
   default:
     dolfin_error("Illegal dimension.");
@@ -146,36 +149,36 @@ real ParticleSystem::f(const Vector& u, real t, unsigned int i)
 real ParticleSystem::x(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(3*i);
+  return (*u)(dim*i);
 }
 //-----------------------------------------------------------------------------
 real ParticleSystem::y(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(3*i + 1);
+  return (*u)(dim*i + 1);
 }
 //-----------------------------------------------------------------------------
 real ParticleSystem::z(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(3*i + 2);
+  return (*u)(dim*i + 2);
 }
 //-----------------------------------------------------------------------------
 real ParticleSystem::vx(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(offset + 3*i);
+  return (*u)(offset + dim*i);
 }
 //-----------------------------------------------------------------------------
 real ParticleSystem::vy(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(offset + 3*i + 1);
+  return (*u)(offset + dim*i + 1);
 }
 //-----------------------------------------------------------------------------
 real ParticleSystem::vz(unsigned int i)
 {
   dolfin_assert(u);
-  return (*u)(offset + 3*i + 2);
+  return (*u)(offset + dim*i + 2);
 }
 //-----------------------------------------------------------------------------
