@@ -13,6 +13,8 @@
 
 using namespace dolfin;
 
+// FIXME: make magic numbers (0.75, 0.1) parameters
+
 //-----------------------------------------------------------------------------
 Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		     unsigned int maxiter, real maxdiv, real maxconv, real tol,
@@ -122,16 +124,15 @@ bool Iteration::stabilize(const Residuals& r, unsigned int n)
   switch ( j ) {
   case 0:
     // Increase alpha with a factor 2 towards alpha = 1
-    if ( r.r2 > 0.5*r.r1 )
+    if ( r.r2 > maxconv*r.r1 )
       alpha = 2.0 * alpha / (1.0 + 2.0*alpha);
     break;
   case 1:
     // Continue with another round of stabilizing steps if it seems to work
     if ( pow(r.r2/r0, 1.0/static_cast<real>(m)) < 0.75 )
     {
-      cout << "Trying again" << endl;
-      
-      // Choose same value for m as last time
+      // Double the number of stabilizing iterations
+      m *= 2;
       j = m;
       
       // Choose a slightly larger alpha if convergence is monotone
@@ -205,6 +206,10 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
 
   // Restore solution values
   copyData(x0, list);
+
+  // Restore initial data for all elements
+  for (ElementIterator element(list); !element.end(); ++element)
+    init(*element);
 
   return rho2;
 }

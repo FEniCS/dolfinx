@@ -46,6 +46,14 @@ namespace dolfin
     
     void report() const;
 
+  private:
+
+    // Simple Gauss-Jacobi update of element group
+    void updateGaussJacobi(ElementGroupList& list);
+
+    // Update group with propagation of initial values (Gauss-Seidel in time)
+    void updateGaussSeidel(ElementGroupList& list);
+
   };
 
 }

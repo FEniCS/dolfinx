@@ -42,12 +42,6 @@ void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
   // Initialize data for Gauss-Jacobi iteration
   initData(x1, dataSize(list));
-
-  // FIXME: remove
-  m = 0;
-  j = 0;
-  alpha = 1.0;
-  reset(list);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
@@ -64,10 +58,35 @@ void AdaptiveIterationLevel3::start(Element& element)
 void AdaptiveIterationLevel3::update(ElementGroupList& list)
 {
   dolfin_assert(depth() == 1);
-
+  
+  //updateGaussJacobi(list);
+  updateGaussSeidel(list);  
+}
+//-----------------------------------------------------------------------------
+void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list)
+{
   // Reset values
   x1.offset = 0;
 
+  // Compute new values. Note that we skip the recursive iteration,
+  // we directly update all elements without calling iterate on
+  // all element groups contained in the group list.
+  for (ElementIterator element(list); !element.end(); ++element)
+    update(*element);
+  
+  // Copy values to elements
+  copyData(x1, list);
+
+  // Update initial data for all elements
+  for (ElementIterator element(list); !element.end(); ++element)
+    init(*element);
+}
+//-----------------------------------------------------------------------------
+void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list)
+{
+  // Reset values
+  x1.offset = 0;
+  
   // Initialize data for propagation of initial values
   ElementIterator element(list);
   initInitialData(element->starttime());
@@ -86,9 +105,6 @@ void AdaptiveIterationLevel3::update(ElementGroupList& list)
     // Save end value as new initial value for this component
     u0.values[element->index()] = element->endval();
   }
-
-  //for (ElementIterator element(list); !element.end(); ++element)
-  //  init(*element);
   
   // Copy values to elements
   copyData(x1, list);
@@ -216,32 +232,8 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
-  // Don't check divergence for element group, since we want to handle
-  // the stabilization ourselves (and not change state).
+  // Don't check divergence for group lists
   return false;
-  
-  /*
-
-  // Make at least two iterations
-  if ( n < 2 )
-    return false;
-  
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return false;
-  
-  // Notify change of strategy
-  dolfin_info("Adaptive damping is not enough, trying a stabilizing time step sequence.");
-  
-  // Check if we need to reset the group list
-  if ( r.r2 > r.r0 )
-    reset(list);
-
-  // Change state
-  newstate = stiff;
-  
-  return true;
-  */
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::diverged(ElementGroup& group, 
