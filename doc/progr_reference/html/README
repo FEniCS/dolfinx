@@ -1,0 +1,2 @@
+Run the command scripts/makedoc from the top level directory
+to automatically generate html documentation using doxygen.
