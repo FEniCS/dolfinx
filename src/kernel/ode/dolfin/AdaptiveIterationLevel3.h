@@ -8,9 +8,9 @@
 
 namespace dolfin
 {
-
+  
   /// State-specific behavior of fixed point iteration for stiff (level 3) problems.
-  /// Adaptive damping used on the element group list level (time slab level).
+  /// Adaptive damping used on the group list level (time slab level).
 
   class AdaptiveIterationLevel3 : public Iteration
   {
@@ -38,15 +38,15 @@ namespace dolfin
     bool converged(ElementGroupList& list, Residuals& r, unsigned int n);
     bool converged(ElementGroup& group, Residuals& r, unsigned int n);
     bool converged(Element& element, Residuals& r, unsigned int n);
-
+    
     bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate);
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
-
+    
     void report() const;
-
+    
   private:
-
+    
     // Gauss-Jacobi iteration on group list
     void updateGaussJacobi(ElementGroupList& list);
 
@@ -60,13 +60,13 @@ namespace dolfin
     void initData(Values& values);
 
     // Copy data from group list
-    void copyData(const ElementGroupList& list, Values& values);
+    void copyData(ElementGroupList& list, Values& values);
 
     // Copy data to group list
-    void copyData(const Values& values, ElementGroupList& list) const;
+    void copyData(Values& values, ElementGroupList& list);
 
     // Compute size of data
-    unsigned int dataSize(const ElementGroupList& list) const;
+    unsigned int dataSize(ElementGroupList& list);
 
     //--- Iteration data ---
    

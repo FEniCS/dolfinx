@@ -7,10 +7,10 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ElementGroupIterator::ElementGroupIterator(ElementGroupList& groups)
+ElementGroupIterator::ElementGroupIterator(ElementGroupList& list)
 {
-  it = groups.groups->begin();
-  at_end = groups.groups->end();
+  it = list.groups->begin();
+  at_end = list.groups->end();
 }
 //-----------------------------------------------------------------------------
 ElementGroupIterator::~ElementGroupIterator()

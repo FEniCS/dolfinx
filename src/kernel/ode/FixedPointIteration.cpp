@@ -23,14 +23,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
 {
-  maxiter       = dolfin_get("maximum iterations");
-  maxdiv        = dolfin_get("maximum divergence");
-  maxconv       = dolfin_get("maximum convergence");
+  maxiter = dolfin_get("maximum iterations");
+  maxdiv  = dolfin_get("maximum divergence");
+  maxconv = dolfin_get("maximum convergence");
 
   // FIXME: Convergence should be determined by the error control
   tol = 1e-10;
 
-  // Assume that problem is non-stiff
+  // Assume that the problem is non-stiff
   state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
 }
 //-----------------------------------------------------------------------------
@@ -60,16 +60,16 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
   
   while ( retry )
   {
-    // Start iteration on element group list
+    // Start iteration
     start(list);
     
-    // Fixed point iteration on the element group list
+    // Fixed point iteration on the group list
     for (unsigned int n = 0; n < maxiter; n++)
     {
       // Check convergence
       if ( converged(list, r, n) )
       {
-	dolfin_end("Element group list iteration converged in %d iterations", n + 1);
+	dolfin_end("Time slab iteration converged in %d iterations", n + 1);
 	return true;
       }
       
@@ -83,7 +83,7 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
       // Stabilize iteration
       stabilize(list, r, n);
       
-      // Update element group list
+      // Update group list
       update(list);
     }
   }
@@ -104,7 +104,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     // Update initial data
     init(group);
     
-    // Start iteration on element group
+    // Start iteration
     start(group);
     
     dolfin_start("Starting element group iteration");
@@ -182,7 +182,7 @@ bool FixedPointIteration::iterate(Element& element)
 
   while ( retry )
   {
-    // Start iteration on element
+    // Start iteration
     start(element);
     
     // Fixed point iteration on the element
@@ -221,36 +221,6 @@ bool FixedPointIteration::iterate(Element& element)
   //dolfin_end("Element iteration did not converge");
 
   return true;
-}
-//-----------------------------------------------------------------------------
-real FixedPointIteration::residual(ElementGroupList& list)
-{
-  dolfin_assert(state);
-  return state->residual(list);
-}
-//-----------------------------------------------------------------------------
-real FixedPointIteration::residual(ElementGroup& group)
-{
-  dolfin_assert(state);
-  return state->residual(group);
-}
-//-----------------------------------------------------------------------------
-real FixedPointIteration::residual(Element& element)
-{
-  dolfin_assert(state);
-  return state->residual(element);
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::init(ElementGroup& group)
-{
-  dolfin_assert(state);
-  state->init(group);
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::init(Element& element)
-{
-  dolfin_assert(state);
-  state->init(element);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::reset(ElementGroupList& list)
@@ -381,6 +351,18 @@ bool FixedPointIteration::diverged(Element& element, Iteration::Residuals& r,
 { 
   dolfin_assert(state);
   return state->diverged(element, r, n, newstate);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::init(ElementGroup& group)
+{
+  dolfin_assert(state);
+  state->init(group);
+}
+//-----------------------------------------------------------------------------
+void FixedPointIteration::init(Element& element)
+{
+  dolfin_assert(state);
+  state->init(element);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::changeState(Iteration::State newstate)

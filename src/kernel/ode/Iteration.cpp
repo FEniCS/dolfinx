@@ -6,8 +6,9 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
 #include <dolfin/Iteration.h>
 
 using namespace dolfin;
@@ -43,10 +44,10 @@ void Iteration::init(Element& element)
   element.update(u0);
 }
 //-----------------------------------------------------------------------------
-void Iteration::reset(ElementGroupList& groups)
+void Iteration::reset(ElementGroupList& list)
 {
   // Reset all elements
-  for (ElementIterator element(groups); !element.end(); ++element)
+  for (ElementIterator element(list); !element.end(); ++element)
     reset(*element);
 }
 //-----------------------------------------------------------------------------

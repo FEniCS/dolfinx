@@ -7,8 +7,11 @@
 #include <dolfin/Solution.h>
 #include <dolfin/RHS.h>
 #include <dolfin/TimeSlab.h>
-#include <dolfin/ElementGroup.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementGroup.h>
+#include <dolfin/ElementGroupList.h>
+#include <dolfin/ElementIterator.h>
+#include <dolfin/ElementGroupIterator.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/AdaptiveIterationLevel3.h>
 
@@ -39,6 +42,8 @@ void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
   // Compute total number of values in group list
   datasize = dataSize(list);
+
+  cout << "Total size is " << datasize << endl;
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
@@ -72,6 +77,7 @@ void AdaptiveIterationLevel3::update(Element& element)
   // Choose update method
   if ( method == gauss_jacobi )
   {
+    cout << "offset = " << x1.offset << endl;
     element.update(f, alpha, x1.values + x1.offset);
     x1.offset += element.size();
   }
@@ -124,7 +130,7 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list,
 bool AdaptiveIterationLevel3::converged(ElementGroup& group, 
 					Residuals& r, unsigned int n)
 {
-  // Iterate one time on each element list
+  // Iterate one time on each element group
   return n > 0;
 }
 //-----------------------------------------------------------------------------
@@ -152,7 +158,7 @@ bool AdaptiveIterationLevel3::diverged(ElementGroupList& list,
   // Notify change of strategy
   dolfin_info("Adaptive damping is not enough, trying a stabilizing time step sequence.");
   
-  // Check if we need to reset the element
+  // Check if we need to reset the group list
   if ( r.r2 > r.r0 )
     reset(list);
 
@@ -166,7 +172,7 @@ bool AdaptiveIterationLevel3::diverged(ElementGroup& group,
 				       Residuals& r, unsigned int n,
 				       Iteration::State& newstate)
 {
-  // Don't check divergence for element lists
+  // Don't check divergence for element groups
   return false;
 }
 //-----------------------------------------------------------------------------
@@ -186,46 +192,22 @@ void AdaptiveIterationLevel3::report() const
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::updateGaussJacobi(ElementGroupList& list)
 {  
-
-
-  /*
   // Initialize values
   initData(x1);
 
   // Compute new values
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Iterate element
-    fixpoint.iterate(*element);
-    
-    // Increase offset
-    x1.offset += element->size();
-    }
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+    fixpoint.iterate(*group);
 
-    // Copy values to elements
-    copyData(x1, elements);
-  */
-
+  // Copy values to elements
+  copyData(x1, list);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::updateGaussSeidel(ElementGroupList& list)
 {
-  // Simple update of element list
-  /*
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-    
-    // Iterate element
-    fixpoint.iterate(*element);
-  }
-  */
+  // Simple update of element group
+  for (ElementGroupIterator group(list); !group.end(); ++group)
+    fixpoint.iterate(*group);
 }
 //-----------------------------------------------------------------------------
 real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,
@@ -286,69 +268,46 @@ void AdaptiveIterationLevel3::initData(Values& values)
   if ( datasize > values.size )
     values.init(datasize);
 
+  cout << "data size is " << values.size << endl;
+
   // Reset offset
   values.offset = 0;
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::copyData(const ElementGroupList& list,
-				       Values& values)
+void AdaptiveIterationLevel3::copyData(ElementGroupList& list, Values& values)
 {
-
-  /*
-  // Copy data from element list
+  // Copy data from group list
   unsigned int offset = 0;
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(list); !element.end(); ++element)
   {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Get values from element
+    // Copy values from element
     element->get(values.values + offset);
 
     // Increase offset
     offset += element->size();
   }
-  */
 }
 //-----------------------------------------------------------------------------
-void AdaptiveIterationLevel3::copyData(const Values& values,
-				       ElementGroupList& list) const
+void AdaptiveIterationLevel3::copyData(Values& values, ElementGroupList& list)
 {
-  /*
-  // Copy data to elements list
+  // Copy data to group list
   unsigned int offset = 0;
-  for (unsigned int i = 0; i < elements.size(); i++)
+  for (ElementIterator element(list); !element.end(); ++element)
   {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Set values for element
+    // Copy values to element
     element->set(values.values + offset);
 
     // Increase offset
     offset += element->size();
   }
-  */
 }
 //-----------------------------------------------------------------------------
-unsigned int AdaptiveIterationLevel3::dataSize(const ElementGroupList& list) const
+unsigned int AdaptiveIterationLevel3::dataSize(ElementGroupList& list)
 {
-  // Compute number of values
+  // Compute total number of values
   int size = 0;
-  
-  /*
-  for (unsigned int i = 0; i < elements.size(); i++)
-  {
-    // Get the element
-    Element* element = elements[i];
-    dolfin_assert(element);
-
-    // Add size of element
+  for (ElementIterator element(list); !element.end(); ++element)
     size += element->size();
-  }
-  */
   
   return size;
 }

@@ -9,9 +9,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ElementIterator::ElementIterator(ElementGroupList& groups)
+ElementIterator::ElementIterator(ElementGroupList& list)
 {
-  it = new ElementGroupListElementIterator(groups);
+  it = new ElementGroupListElementIterator(list);
 }
 //-----------------------------------------------------------------------------
 ElementIterator::ElementIterator(ElementGroup& group)
@@ -60,11 +60,11 @@ bool ElementIterator::end()
 // ElementIterator::ElementGroupListElementIterator
 //-----------------------------------------------------------------------------
 ElementIterator::ElementGroupListElementIterator::
-ElementGroupListElementIterator(ElementGroupList& groups)
+ElementGroupListElementIterator(ElementGroupList& list)
 {
   // Initialize iterators for element groups
-  group_it = groups.groups->begin();
-  group_at_end = groups.groups->end();
+  group_it = list.groups->begin();
+  group_at_end = list.groups->end();
 
   // Initialize iterators for elements
   element_it = (*group_it)->elements.begin();

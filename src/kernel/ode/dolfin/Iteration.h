@@ -39,10 +39,10 @@ namespace dolfin
     /// Destructor
     virtual ~Iteration();
 
-    /// Return current current state (type of iteration)
+    /// Return current state (type of iteration)
     virtual State state() const = 0;
 
-    // Start iteration on element group list
+    // Start iteration on group list
     virtual void start(ElementGroupList& list) = 0;
 
     // Start iteration on element group
@@ -51,16 +51,16 @@ namespace dolfin
     // Start iteration on element
     virtual void start(Element& element) = 0;
 
-    /// Update element group list
+    /// Update group list
     virtual void update(ElementGroupList& list) = 0;
-
-    /// Update element
-    virtual void update(Element& element) = 0;
 
     /// Update element group
     virtual void update(ElementGroup& group) = 0;
 
-    /// Stabilize element group list iteration
+    /// Update element
+    virtual void update(Element& element) = 0;
+
+    /// Stabilize group list iteration
     virtual void stabilize(ElementGroupList& list, 
 			   const Residuals& r, unsigned int n) = 0;
     
@@ -72,7 +72,7 @@ namespace dolfin
     virtual void stabilize(Element& element,
 			   const Residuals& r, unsigned int n) = 0;
     
-    /// Check convergence for element group list
+    /// Check convergence for group list
     virtual bool converged(ElementGroupList& list, Residuals& r, unsigned int n) = 0;
 
     /// Check convergence for element group
@@ -81,9 +81,9 @@ namespace dolfin
     /// Check convergence for element
     virtual bool converged(Element& element, Residuals& r, unsigned int n) = 0;
 
-    /// Check divergence for element group list
+    /// Check divergence for group list
     virtual bool diverged(ElementGroupList& list, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
-
+    
     /// Check divergence for element group
     virtual bool diverged(ElementGroup& group, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
 
@@ -99,8 +99,8 @@ namespace dolfin
     // Update initial data for element
     void init(Element& element);
 
-    /// Reset element group list
-    void reset(ElementGroupList& groups);
+    /// Reset group list
+    void reset(ElementGroupList& list);
 
     /// Reset element group
     void reset(ElementGroup& group);
@@ -108,7 +108,7 @@ namespace dolfin
     // Reset element
     void reset(Element& element);
 
-    // Compute L2 norm of element residual for element group list
+    // Compute L2 norm of element residual for group list
     real residual(ElementGroupList& list);
 
     // Compute L2 norm of element residual for element group

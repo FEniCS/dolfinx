@@ -111,7 +111,7 @@ bool AdaptiveIterationLevel1::converged(ElementGroupList& list,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel1::converged(ElementGroup& group, 
@@ -159,10 +159,10 @@ bool AdaptiveIterationLevel1::diverged(ElementGroupList& list,
     return false;
 
   // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, trying a stabilizing time step sequence.");
+  dolfin_info("Not enough to stabilize element iterations, need to stabilize time slab iterations.");
   
   // Reset group list
-  fixpoint.reset(list);
+  reset(list);
 
   // Change state
   newstate = stiff3;
@@ -183,9 +183,9 @@ bool AdaptiveIterationLevel1::diverged(ElementGroup& group,
     return false;
   
   // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, trying adaptive damping.");
+  dolfin_info("Not enough to stabilize element iterations, need to stabilize element group iterations.");
   
-  // Reset element list
+  // Reset element group
   reset(group);
 
   // Change state

@@ -93,7 +93,7 @@ bool NonStiffIteration::converged(ElementGroupList& list,
   // Convergence handled locally when the slab contains only one element group
   if ( list.size() <= 1 )
     return n > 0;
-
+  
   // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(list);
@@ -102,7 +102,7 @@ bool NonStiffIteration::converged(ElementGroupList& list,
   if ( n == 0 )
     r.r0 = r.r2;
   
-  return r.r2 < tol & n > 0;
+  return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
 bool NonStiffIteration::converged(ElementGroup& group, 
@@ -112,7 +112,7 @@ bool NonStiffIteration::converged(ElementGroup& group,
   if ( group.size() == 1 )
     return n > 0;
   
-  // Compute maximum residual
+  // Compute residual
   r.r1 = r.r2;
   r.r2 = residual(group);
   
@@ -150,10 +150,10 @@ bool NonStiffIteration::diverged(ElementGroupList& list,
     return false;
 
   // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying a stabilizing time step sequence.");
+  dolfin_info("Problem appears to be stiff, need to stabilize time slab iterations.");
   
   // Reset group list
-  fixpoint.reset(list);
+  reset(list);
 
   // Change state
   newstate = stiff3;
@@ -174,9 +174,9 @@ bool NonStiffIteration::diverged(ElementGroup& group,
     return false;
   
   // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying adaptive damping.");
+  dolfin_info("Problem appears to be stiff, need to stabilize element group iterations.");
   
-  // Reset element list
+  // Reset element group
   reset(group);
 
   // Change state
@@ -198,7 +198,7 @@ bool NonStiffIteration::diverged(Element& element,
     return false;
 
   // Notify change of strategy
-  dolfin_info("Problem appears to be stiff, trying diagonal damping.");
+  dolfin_info("Problem appears to be stiff, need to stabilize element iterations.");
   
   // Reset element
   reset(element);

@@ -17,16 +17,16 @@ namespace dolfin
   public:
 
     AdaptiveIterationLevel1(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
+			    unsigned int maxiter, real maxdiv, real maxconv, real tol);
     
     ~AdaptiveIterationLevel1();
-
+    
     State state() const;
-
+    
     void start(ElementGroupList& groups);
     void start(ElementGroup& group);
     void start(Element& element);
-
+    
     void update(ElementGroupList& groups);
     void update(ElementGroup& group);
     void update(Element& element);    

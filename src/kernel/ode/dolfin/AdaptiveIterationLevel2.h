@@ -51,19 +51,19 @@ namespace dolfin
 
     // Gauss-Jacobi iteration on element group
     void updateGaussJacobi(ElementGroup& group);
-
+    
     // Gauss-Seidel iteration on element group
     void updateGaussSeidel(ElementGroup& group);
     
     // Compute divergence
     real computeDivergence(ElementGroup& group, const Residuals& r);
-
+    
     // Initialize additional data
     void initData(Values& values);
-
+    
     // Copy data from element group
     void copyData(ElementGroup& group, Values& values);
-
+    
     // Copy data to element group
     void copyData(Values& values, ElementGroup& group);
 
