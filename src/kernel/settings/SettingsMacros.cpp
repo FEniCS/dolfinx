@@ -1,0 +1,39 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+
+#include <dolfin/SettingsManager.h>
+#include <dolfin/SettingsMacros.h>
+
+using namespace dolfin;
+
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_parameter(Parameter::Type type,const char *identifier,...)
+{
+  va_list aptr;
+  va_start(aptr, identifier);
+  
+  SettingsManager::settings.add_aptr(type, identifier, aptr);
+  
+  va_end(aptr);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_set(const char *identifier, ...)
+{
+  va_list aptr;
+  va_start(aptr, identifier);
+
+  SettingsManager::settings.set_aptr(identifier, aptr);
+  
+  va_end(aptr);
+}
+//-----------------------------------------------------------------------------
+void dolfin::dolfin_set_aptr(const char *identifier, va_list aptr)
+{
+  SettingsManager::settings.set_aptr(identifier, aptr);
+}
+//-----------------------------------------------------------------------------
+Parameter dolfin::dolfin_get(const char *identifier)
+{
+  return SettingsManager::settings.get(identifier);
+}
+//-----------------------------------------------------------------------------
