@@ -275,10 +275,10 @@ bool Cell::markedEdgesOnSameFace()
     case 2:
       marked_node[0] = marked_node[1] = marked_node[2] = marked_node[3] = false;
       for (int i=0;i<noEdges();i++){
-	if (ce(i)->marked()){
+	if (edge(i)->marked()){
 	  for (int j=0;j<noNodes();j++){
-	    if (ce(i)->node(0)->id() == cn(j)->id()) marked_node[j] = true; 	
-	    if (ce(i)->node(1)->id() == cn(j)->id()) marked_node[j] = true; 	
+	    if (edge(i)->node(0)->id() == node(j)->id()) marked_node[j] = true; 	
+	    if (edge(i)->node(1)->id() == node(j)->id()) marked_node[j] = true; 	
 	  }
 	}
       }
@@ -290,10 +290,10 @@ bool Cell::markedEdgesOnSameFace()
     case 3:
       marked_node[0] = marked_node[1] = marked_node[2] = marked_node[3] = false;
       for (int i=0;i<noEdges();i++){
-	if (ce(i)->marked()){
+	if (edge(i)->marked()){
 	  for (int j=0;j<noNodes();j++){
-	    if (ce(i)->node(0)->id() == cn(j)->id()) marked_node[j] = true; 	
-	    if (ce(i)->node(1)->id() == cn(j)->id()) marked_node[j] = true; 	
+	    if (edge(i)->node(0)->id() == node(j)->id()) marked_node[j] = true; 	
+	    if (edge(i)->node(1)->id() == node(j)->id()) marked_node[j] = true; 	
 	  }
 	}
       }

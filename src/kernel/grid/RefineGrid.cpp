@@ -149,9 +149,85 @@ void RefineGrid::LocalIrregularRefinement(Cell *parent)
   }
 }
 
+
 void RefineGrid::IrrRef1(Cell* parent)
 {
+/*
+  // 3 edges are marked on the same face: 
+  // insert 3 new nodes at the midpoints on the marked edges, connect the 
+  // new nodes to each other, as well as to the node that is not on the 
+  // marked face. This gives 4 new tetrahedrons. 
+
+  if (parent->noMarkedEdges() != 3) dolfin_error("wrong size of refinement edges");
+  
+  bool marked_nodes[4];
+  int marked_edges[3];
+  int cnt = 0;
+  marked_node[0] = marked_node[1] = marked_node[2] = marked_node[3] = false;
+  for (int i=0;i<parent->noEdges();i++){
+    if (parent->edge(i)->marked()){
+      marked_edges[cnt++] = i;
+      for (int j=0;j<parent->noNodes();j++){
+	if (parent->edge(i)->node(0)->id() == parent->node(j)->id()) marked_node[j] = true; 	
+	if (parent->edge(i)->node(1)->id() == parent->node(j)->id()) marked_node[j] = true; 	
+      }
+    }
+  }
+
+  Node* n01 = grid.createNode(parent->edge(marked_edges[0])->midpoint());
+  Node* n02 = grid.createNode(parent->edge(marked_edges[1])->midpoint());
+  Node* n12 = grid.createNode(parent->edge(marked_edges[2])->midpoint());
+
+  int face_node;
+  for (int i=0;i<parent->noNodes();i++){
+    if (marked_node[i] = false){
+      face_node = i;
+      break;
+    }
+  }
+
+  for (int i=0;i<parent->noNodes();i++){
+    if (i != face_node) face_nodes[cnt++] = i;
+  }
+
+  int face_nodes[3];
+  face_nodes[0] = face_nodes[1] = face_nodes[2] = 0;
+  parent->edge(marked_edges[0])->node(0)
+
+
+
+
+
+
+  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(0),n01,n02,parent->node(face_node));
+  Cell *t2 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(1),n01,n02,parent->node(face_node));
+
+  Node* nface; 
+  for (int i=0; i<parent->noNodes(); i++){
+    if ( (marked_edges(0)->node(0)->id() != parent->node(i)->id()) && 
+	 (marked_edges(0)->node(1)->id() != parent->node(i)->id()) &&
+	 (marked_edges(1)->node(0)->id() != parent->node(i)->id()) &&
+	 (marked_edges(1)->node(1)->id() != parent->node(i)->id()) ){
+      nface = parent->node(i);
+      break;
+    }
+  }
+
+  Cell *t1 = grid.createCell(level,Cell::TETRAHEDRON,parent->node(0),n01,n02,n03);
+
+
+  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->nodeGetFace(marked_face)->GetNode(0),n01,n02,nface);
+  Cell *t2 = grid.createCell();
+  Cell *t3 = grid.createCell();
+  Cell *t4 = grid.createCell();
+
+  t1->Set(parent,Cell::TETRAHEDRON,parent->nodeGetFace(marked_face)->GetNode(0),n01,n02,nface);
+  t2->Set(parent->GetFace(marked_face)->GetNode(1),n01,n12,nface);
+  t3->Set(parent->GetFace(marked_face)->GetNode(2),n02,n12,nface);
+  t4->Set(n01,n02,n12,parent->GetNode(marked_face));
+*/
 }
+
 
 void RefineGrid::IrrRef2(Cell* parent)
 {
