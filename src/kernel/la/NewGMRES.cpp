@@ -12,6 +12,9 @@
 #include <dolfin/VirtualMatrix.h>
 #include <dolfin/NewGMRES.h>
 
+#include <petsc/petscpc.h>
+#include <dolfin/pcimpl.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -86,6 +89,10 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   //Solve system.
   //dolfin::cout << "Solving system using KSPSolve()." << dolfin::endl;
 
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCNONE);
+
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
   KSPSolve(ksp);
@@ -123,5 +130,13 @@ void NewGMRES::setMaxits(int mi)
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
   maxits = mi;
   KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::setPreconditioner(NewPreconditioner &pc)
+{
+  PC petscpc;
+  KSPGetPC(ksp, &petscpc);
+  petscpc->data = &pc;
+  petscpc->ops->apply = NewPreconditioner::PCApply;
 }
 //-----------------------------------------------------------------------------

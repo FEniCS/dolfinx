@@ -4,6 +4,9 @@
 #ifndef __NEW_PRECONDITIONER_H
 #define __NEW_PRECONDITIONER_H
 
+#include <petsc/petscpc.h>
+#include <dolfin/pcimpl.h>
+
 namespace dolfin
 {
 
@@ -26,6 +29,12 @@ namespace dolfin
 
     /// Solve linear system approximately for given right-hand side b
     virtual void solve(NewVector& x, const NewVector& b) = 0;
+
+    static int PCApply(PC pc, Vec x, Vec y);
+
+  protected:
+
+    PC petscpc;
 
   };
 

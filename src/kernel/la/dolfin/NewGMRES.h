@@ -10,6 +10,7 @@
 
 #include <dolfin/constants.h>
 #include <petsc/petscksp.h>
+#include <dolfin/NewPreconditioner.h>
 
 namespace dolfin
 {
@@ -47,6 +48,8 @@ namespace dolfin
       
     /// Change maxits
     void setMaxits(int mi);
+
+    void setPreconditioner(NewPreconditioner &pc);
 
     /// Return PETSc solver pointer
     KSP solver();
