@@ -7,12 +7,12 @@
 #include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
 #include <dolfin/FixedPointIteration.h>
-#include <dolfin/NonStiffIteration.h>
+#include <dolfin/DiagonalIteration.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NonStiffIteration::NonStiffIteration(Solution& u, RHS& f,
+DiagonalIteration::DiagonalIteration(Solution& u, RHS& f,
 				     FixedPointIteration & fixpoint, 
 				     real maxdiv, real maxconv, real tol) :
   Iteration(u, f, fixpoint, maxdiv, maxconv, tol)
@@ -20,23 +20,23 @@ NonStiffIteration::NonStiffIteration(Solution& u, RHS& f,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NonStiffIteration::~NonStiffIteration()
+DiagonalIteration::~DiagonalIteration()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Iteration::State NonStiffIteration::state() const
+Iteration::State DiagonalIteration::state() const
 {
-  return nonstiff;
+  return diagonal;
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(TimeSlab& timeslab)
+void DiagonalIteration::update(TimeSlab& timeslab)
 {
   // Simple update of time slab
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(NewArray<Element*>& elements)
+void DiagonalIteration::update(NewArray<Element*>& elements)
 {
   // Simple update of element list
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -50,18 +50,18 @@ void NonStiffIteration::update(NewArray<Element*>& elements)
   }
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::update(Element& element)
+void DiagonalIteration::update(Element& element)
 {
   // Simple update of element
   element.update(f);
 }
 //-----------------------------------------------------------------------------
-Iteration::State NonStiffIteration::stabilize(TimeSlab& timeslab,
+Iteration::State DiagonalIteration::stabilize(TimeSlab& timeslab,
 					      const Residuals& r, Damping& d)
 {
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
-    return nonstiff;
+    return diagonal;
 
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying a stabilizing time step sequence.");
@@ -82,12 +82,12 @@ Iteration::State NonStiffIteration::stabilize(TimeSlab& timeslab,
   return nonnormal;
 }
 //-----------------------------------------------------------------------------
-Iteration::State NonStiffIteration::stabilize(NewArray<Element*>& elements,
+Iteration::State DiagonalIteration::stabilize(NewArray<Element*>& elements,
 					      const Residuals& r, Damping& d)
 {
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
-    return nonstiff;
+    return diagonal;
 
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying parabolic damping.");
@@ -108,12 +108,12 @@ Iteration::State NonStiffIteration::stabilize(NewArray<Element*>& elements,
   return parabolic;
 }
 //-----------------------------------------------------------------------------
-Iteration::State NonStiffIteration::stabilize(Element& element, 
+Iteration::State DiagonalIteration::stabilize(Element& element, 
 					      const Residuals& r, Damping& d)
 {
   // Check if the solution converges
   if ( r.r2 < maxconv * r.r1 )
-    return nonstiff;
+    return diagonal;
 
   // Notify change of strategy
   dolfin_info("Problem appears to be stiff, trying diagonal damping.");
@@ -134,7 +134,7 @@ Iteration::State NonStiffIteration::stabilize(Element& element,
   return diagonal;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(TimeSlab& timeslab, 
+bool DiagonalIteration::converged(TimeSlab& timeslab, 
 				   Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the slab contains only one element list
@@ -152,7 +152,7 @@ bool NonStiffIteration::converged(TimeSlab& timeslab,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(NewArray<Element*>& elements, 
+bool DiagonalIteration::converged(NewArray<Element*>& elements, 
 				   Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the list contains only one element
@@ -170,7 +170,7 @@ bool NonStiffIteration::converged(NewArray<Element*>& elements,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-bool NonStiffIteration::converged(Element& element, 
+bool DiagonalIteration::converged(Element& element, 
 				  Residuals& r, unsigned int n)
 {
   // Compute discrete residual
@@ -184,9 +184,9 @@ bool NonStiffIteration::converged(Element& element,
   return r.r2 < tol;
 }
 //-----------------------------------------------------------------------------
-void NonStiffIteration::report() const
+void DiagonalIteration::report() const
 {
-  cout << "System is non-stiff, solution computed with "
-       << "simple fixed point iteration." << endl;
+  cout << "System appears to be diagonally stiff, solution computed with "
+       << "diagonally damped fixed point iteration." << endl;
 }
 //-----------------------------------------------------------------------------

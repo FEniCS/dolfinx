@@ -15,6 +15,7 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/Component.h>
+#include <dolfin/DiagonalIteration.h>
 #include <dolfin/Dual.h>
 #include <dolfin/Element.h>
 #include <dolfin/ElementData.h>
@@ -22,8 +23,10 @@
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/FullSparsity.h>
 #include <dolfin/GenericSparsity.h>
+#include <dolfin/Iteration.h>
 #include <dolfin/MatrixSparsity.h>
 #include <dolfin/Method.h>
+#include <dolfin/NonStiffIteration.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ODESolver.h>
 #include <dolfin/RHS.h>

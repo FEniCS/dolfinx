@@ -9,6 +9,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Adaptivity.h \
              AutomaticSparsity.h \
              Component.h \
+             DiagonalIteration.h \
              Dual.h \
              Element.h \
              ElementBlock.h \

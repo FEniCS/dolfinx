@@ -21,6 +21,9 @@ namespace dolfin
   {
   public:
 
+    // Type of iteration
+    enum State {nonstiff, diagonal, parabolic, nonnormal};
+
     // Discrete residuals
     struct Residuals
     {
@@ -43,6 +46,9 @@ namespace dolfin
     /// Destructor
     virtual ~Iteration();
 
+    /// Return current current state (type of iteration)
+    virtual State state() const = 0;
+
     /// Update time slab
     virtual void update(TimeSlab& timeslab) = 0;
 
@@ -53,16 +59,16 @@ namespace dolfin
     virtual void update(NewArray<Element*>& elements) = 0;
 
     /// Stabilize time slab iteration
-    virtual void stabilize(TimeSlab& timeslab, 
-			   const Residuals& r) = 0;
+    virtual State stabilize(TimeSlab& timeslab, 
+			    const Residuals& r, Damping& d) = 0;
     
     /// Stabilize element list iteration
-    virtual void stabilize(NewArray<Element*>& elements,
-			  const Residuals& r) = 0;
+    virtual State stabilize(NewArray<Element*>& elements,
+			    const Residuals& r, Damping& d) = 0;
     
     /// Stabilize element iteration
-    virtual void stabilize(Element& element,
-			   const Residuals& r) = 0;
+    virtual State stabilize(Element& element,
+			    const Residuals& r, Damping& d) = 0;
     
     /// Check convergence for time slab
     virtual bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n) = 0;
@@ -75,6 +81,18 @@ namespace dolfin
 
     /// Write a status report
     virtual void report() const = 0;
+
+    /// Update initial data for element list
+    void init(NewArray<Element*>& elements);
+
+    // Update initial data for element
+    void init(Element& element);
+
+    /// Reset element list
+    void reset(NewArray<Element*>& elements);
+
+    // Reset element
+    void reset(Element& element);
 
     // Compute maximum discrete residual for time slab
     real residual(TimeSlab& timeslab);

@@ -1,16 +1,17 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Karin Kraft, 2004.
 
 #include <dolfin/GenericMatrix.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GenericMatrix::GenericMatrix()
-{
-  m = 0;
-  n = 0;
-}
+GenericMatrix::GenericMatrix():
+  m(0),
+  n(0)
+{}
 //-----------------------------------------------------------------------------
 GenericMatrix::GenericMatrix(unsigned int m, unsigned int n)
 {
@@ -19,9 +20,7 @@ GenericMatrix::GenericMatrix(unsigned int m, unsigned int n)
 }
 //-----------------------------------------------------------------------------
 GenericMatrix::~GenericMatrix()
-{
-
-}
+{}
 //-----------------------------------------------------------------------------
 void GenericMatrix::init(unsigned int m, unsigned int n)
 {

@@ -1,8 +1,9 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by: Georgios Foufas 2002, 2003
-//              Erik Svensson, 2003
+// Modified by Georgios Foufas 2002, 2003
+// Modified by Erik Svensson, 2003.
+// Modified by Karin Kraft, 2004.
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -14,43 +15,38 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix()
+SparseMatrix::SparseMatrix():
+  rowsizes(0),
+  columns(0),
+  values(0),
+  allocsize(1)
 {
   m = 0;
   n = 0;
   
-  rowsizes = 0;
-  columns  = 0;
-  values   = 0;
-  
-  allocsize = 1;
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(unsigned int m, unsigned int n)
+SparseMatrix::SparseMatrix(unsigned int m, unsigned int n) :
+  rowsizes(0),
+  columns(0),
+  values(0),
+  allocsize(1)
 {
   this->m = 0;
   this->n = 0;
   
-  rowsizes = 0;
-  columns  = 0;
-  values   = 0;
-
-  allocsize = 1;
-  
   init(m,n);
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(const SparseMatrix& A)
+SparseMatrix::SparseMatrix(const SparseMatrix& A) :
+  rowsizes(0),
+  columns(0),
+  values(0),
+  allocsize(1)
 {
   this->m = A.m;
   this->n = A.n;
   
-  rowsizes = 0;
-  columns  = 0;
-  values   = 0;
-
-  allocsize = 1;
-
   if ( m == 0 )
     return;
   
@@ -73,17 +69,15 @@ SparseMatrix::SparseMatrix(const SparseMatrix& A)
   }
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(const DenseMatrix& A)
+SparseMatrix::SparseMatrix(const DenseMatrix& A):
+  rowsizes(0),
+  columns(0),
+  values(0),
+  allocsize(1)
 {
   this->m = A.m;
   this->n = A.n;
   
-  rowsizes = 0;
-  columns  = 0;
-  values   = 0;
-
-  allocsize = 1;
-
   if ( m == 0 )
     return;
   

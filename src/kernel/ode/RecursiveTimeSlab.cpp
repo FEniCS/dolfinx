@@ -112,7 +112,7 @@ void RecursiveTimeSlab::createTimeSlabs(Solution& u, RHS& f,
     
     // Add the new time slab to the list
     timeslabs.push_back(timeslab);
-
+    
     // Check if we are done
     if(timeslab->finished())
       break;

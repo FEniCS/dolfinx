@@ -68,9 +68,6 @@ namespace dolfin
     /// Display a status report
     void report() const;
 
-    /// Friends
-    friend class NonStiffIteration;
-
   private:
 
     // Update time slab
@@ -83,22 +80,25 @@ namespace dolfin
     void update(Element& element);
 
     // Stabilize time slab
-    void stabilize(TimeSlab& timeslab, const Iteration::Residuals& r);
+    void stabilize(TimeSlab& timeslab, const Iteration::Residuals& r, Iteration::Damping& d);
 
     // Stabilize element list
-    void stabilize(NewArray<Element*>& elements, const Iteration::Residuals& r);
+    void stabilize(NewArray<Element*>& elements, const Iteration::Residuals& r, Iteration::Damping& d);
 
     // Stabilize element
-    void stabilize(Element& element, const Iteration::Residuals& r);
+    void stabilize(Element& element, const Iteration::Residuals& r, Iteration::Damping& d);
 
-    // Check if time slab has converged
+    // Check convergence for time slab
     bool converged(TimeSlab& timeslab, Iteration::Residuals& r, unsigned int n);
 
-    // Check if element list has converged
+    // Check convergence for element list
     bool converged(NewArray<Element*>& elements, Iteration::Residuals& r, unsigned int n);
 
-    // Check if element has converged
+    // Check convergence for element
     bool converged(Element& element, Iteration::Residuals& r, unsigned int n);
+
+    // Change state
+    void changeState(Iteration::State newstate);
 
     //--- Data for fixed point iteration
 

@@ -1,8 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __NON_STIFF_ITERATION_H
-#define __NON_STIFF_ITERATION_H
+#ifndef __DIAGONAL_ITERATION_H
+#define __DIAGONAL_ITERATION_H
 
 #include <dolfin/NewArray.h>
 #include <dolfin/Iteration.h>
@@ -10,16 +10,16 @@
 namespace dolfin
 {
 
-  /// State-specific behavior of fixed point iteration for non-stiff problems.
+  /// State-specific behavior of fixed point iteration for diagonally stiff problems.
 
-  class NonStiffIteration : public Iteration
+  class DiagonalIteration : public Iteration
   {
   public:
 
-    NonStiffIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
+    DiagonalIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		      real maxdiv, real maxconv, real tol);
-
-    ~NonStiffIteration();
+    
+    ~DiagonalIteration();
 
     State state() const;
 

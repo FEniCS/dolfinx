@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Erik Svensson, 2003
+// Modified by Erik Svensson, 2003.
+// Modified by Karin Kraft, 2004.
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -13,28 +14,28 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix()
+DenseMatrix::DenseMatrix():
+  values(0),
+  permutation(0)
 {
-  values = 0;
-  permutation = 0;
   m = 0;
   n = 0;
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(unsigned int m, unsigned int n)
+DenseMatrix::DenseMatrix(unsigned int m, unsigned int n):
+  values(0),
+  permutation(0)
 {
-  values = 0;
   this->m = 0;
   this->n = 0;
-  permutation = 0;
-  
+    
   init(m,n);
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(const DenseMatrix& A)
+DenseMatrix::DenseMatrix(const DenseMatrix& A):
+  values(0),
+  permutation(0)
 {
-  values = 0;
-  permutation = 0;
   this->m = 0;
   this->n = 0;
 
@@ -45,10 +46,11 @@ DenseMatrix::DenseMatrix(const DenseMatrix& A)
       values[i][j] = A.values[i][j];
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(const SparseMatrix& A)
+DenseMatrix::DenseMatrix(const SparseMatrix& A) :
+  values(0),
+  permutation(0)
 {
-  values = 0;
-  permutation = 0;
+
   this->m = 0;
   this->n = 0;
 
