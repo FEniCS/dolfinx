@@ -14,10 +14,14 @@ TimeSlabData::TimeSlabData(ODE& ode) :
   components(ode.size()), regulators(ode.size())
 {
   // Get parameters
-  _debug = dolfin_get("debug time slab");
-  real k = dolfin_get("initial time step");
-  kmax = dolfin_get("maximum time step");
+  TOL                = dolfin_get("tolerance");
+  kmax               = dolfin_get("maximum time step");
   interval_threshold = dolfin_get("interval threshold");
+  _debug             = dolfin_get("debug time slab");
+  real k0            = dolfin_get("initial time step");
+
+  // Scale tolerance with the number of components
+  TOL /= static_cast<real>(ode.size());
 
   // Get initial data
   for (unsigned int i = 0; i < components.size(); i++)
@@ -25,7 +29,7 @@ TimeSlabData::TimeSlabData(ODE& ode) :
   
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)
-    regulators[i].init(k);
+    regulators[i].init(k0);
 
   // Open debug file
   if ( _debug )
@@ -82,6 +86,11 @@ const Regulator& TimeSlabData::regulator(unsigned int i) const
   return regulators[i];
 }
 //-----------------------------------------------------------------------------
+real TimeSlabData::tolerance() const
+{
+  return TOL;
+}
+//-----------------------------------------------------------------------------
 real TimeSlabData::maxstep() const
 {
   // FIXME: Should we have an individual kmax for each component?
@@ -112,7 +121,7 @@ void TimeSlabData::shift(TimeSlab& timeslab, RHS& f)
     real r = element.computeResidual(f);
 
     // Compute new time step
-    real k = element.computeTimeStep(r);
+    real k = element.computeTimeStep(TOL, r, kmax);
 
     // Update regulator
     regulators[i].update(k, kmax);

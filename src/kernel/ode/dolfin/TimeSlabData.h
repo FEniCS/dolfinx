@@ -50,6 +50,9 @@ namespace dolfin {
     /// Return given regulator
     const Regulator& regulator(unsigned int i) const;
 
+    /// Return tolerance
+    real tolerance() const;
+
     /// Return maximum time step
     real maxstep() const;
 
@@ -74,15 +77,18 @@ namespace dolfin {
     // List of regulators
     NewArray<Regulator> regulators;
 
-    // Save debug info to file 'timeslab.debug'
-    bool _debug;
-    std::ofstream file;
+    // Tolerance
+    real TOL;
 
     // Maximum allowed time step
     real kmax;
     
     // Threshold for reaching end of interval
     real interval_threshold;
+
+    // Save debug info to file 'timeslab.debug'
+    bool _debug;
+    std::ofstream file;
 
   };
 }

@@ -88,14 +88,15 @@ void TimeStepper::save(TimeSlab& timeslab, TimeSlabData& data, RHS& f,
   // Save samples
   while ( t < timeslab.endtime() )
   {
-    // Create a sample of the solution
-    TimeSlabSample sample(timeslab, data, f, t);
-    
-    // Save solution to file
+    TimeSlabSample sample(timeslab, data, f, t);    
     file << sample;
-
-    // Step to next sample
     t += K;
+  }
+  
+  // Save end time value
+  if ( timeslab.finished() ) {
+    TimeSlabSample sample(timeslab, data, f, timeslab.endtime());
+    file << sample;
   }
 }
 //-----------------------------------------------------------------------------

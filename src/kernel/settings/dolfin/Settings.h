@@ -9,12 +9,14 @@
 
 namespace dolfin {
   
-  ///
+  /// Pre-defined global parameters within DOLFIN.
+
   class Settings : public ParameterList {
   public:
     
     Settings() : ParameterList() {
       
+      add(Parameter::REAL, "tolerance", 0.1);
       add(Parameter::REAL, "start time", 0.0);
       add(Parameter::REAL, "end time",   10.0);
       add(Parameter::REAL, "initial time step", 0.01);

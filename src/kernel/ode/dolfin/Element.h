@@ -68,7 +68,7 @@ namespace dolfin {
     real computeResidual(RHS& f);
 
     // Compute new time step
-    virtual real computeTimeStep(real r) const = 0;
+    virtual real computeTimeStep(real TOL, real r, real kmax) const = 0;
 
   protected:
 

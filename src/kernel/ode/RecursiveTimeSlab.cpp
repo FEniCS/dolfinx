@@ -171,6 +171,10 @@ void RecursiveTimeSlab::updateu0(TimeSlabData& data)
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSlabData& data)
 {
+  // Get tolerance and maximum time step
+  real TOL = data.tolerance();
+  real kmax = data.maxstep();
+
   // Compute residuals and new time steps
   for (unsigned int i = 0; i < elements.size(); i++)
   {
@@ -181,7 +185,7 @@ void RecursiveTimeSlab::computeResiduals(RHS& f, TimeSlabData& data)
     real r = element->computeResidual(f);
 
     // Compute new time step
-    real k = element->computeTimeStep(r);
+    real k = element->computeTimeStep(TOL, r, kmax);
 
     // Update regulator
     data.regulator(element->index()).update(k, data.maxstep());

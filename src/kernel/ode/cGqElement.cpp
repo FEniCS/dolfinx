@@ -69,15 +69,16 @@ void cGqElement::update(RHS& f)
     values[i] = values[0] + integral(i);
 }
 //-----------------------------------------------------------------------------
-real cGqElement::computeTimeStep(real r) const
+real cGqElement::computeTimeStep(real TOL, real r, real kmax) const
 {
   // Compute new time step based on residual
 
-  // FIXME: Return maximum time step
   if ( abs(r) < DOLFIN_EPS )
-    return 0.25;
+    return kmax;
 
-  return 0.1 / abs(r);
+  // FIXME: Missing stability factor, interpolation constant, power
+
+  return TOL / abs(r);
 }
 //-----------------------------------------------------------------------------
 void cGqElement::feval(RHS& f)

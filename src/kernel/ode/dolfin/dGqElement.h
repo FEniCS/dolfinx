@@ -23,7 +23,7 @@ namespace dolfin {
     void update(real u0);
     void update(RHS& f);
 
-    real computeTimeStep(real r) const;
+    real computeTimeStep(real TOL, real r, real kmax) const;
     
   private:
 
