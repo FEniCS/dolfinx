@@ -538,6 +538,8 @@ Cell& TetGridRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
   Cell& c = grid.createCell(n0, n1, n2, n3);
   c.setParent(cell);
   cell.addChild(c);
+  
+  c.marker() == Cell::marked_for_no_ref;
 
   return c;
 }
