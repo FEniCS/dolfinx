@@ -41,7 +41,7 @@ int main()
   TriangleMidpointQuadrature q;
 
   // Define a mapping
-  TriLinMapping m;
+  P1TriMap m;
   m.update(triangle);
   
   // Define integral measures

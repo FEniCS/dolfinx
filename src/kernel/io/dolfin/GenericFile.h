@@ -12,7 +12,7 @@ namespace dolfin {
   
   class Vector;
   class Matrix;
-  class Grid;
+  class Mesh;
   class Function;
   
   class GenericFile {
@@ -25,14 +25,14 @@ namespace dolfin {
     
     virtual void operator>> (Vector& x)   = 0;
     virtual void operator>> (Matrix& A)   = 0;
-    virtual void operator>> (Grid& grid)  = 0;
+    virtual void operator>> (Mesh& mesh)  = 0;
     virtual void operator>> (Function& u) = 0;
     
     // Output
     
     virtual void operator<< (Vector& x)   = 0;
     virtual void operator<< (Matrix& A)   = 0;
-    virtual void operator<< (Grid& grid)  = 0;
+    virtual void operator<< (Mesh& mesh)  = 0;
     virtual void operator<< (Function& u) = 0;
     
     void read();
@@ -47,7 +47,7 @@ namespace dolfin {
 
     bool  check_header;     // True if we have written a header
 
-    int no_grids;
+    int no_meshes;
     
   };
   

@@ -75,7 +75,7 @@ void TerminalLogger::progress(const char* title, const char* label, real p)
   }
   for (int i = n; i < N; i++)
 	 printf("-");
-  printf("| %.1f\%\n", 100.0*p);
+  printf("| %.1f%%\n", 100.0*p);
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::update()

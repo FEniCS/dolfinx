@@ -6,17 +6,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Solver::Solver() : grid(dummy_grid), ode(dummy_ode)
+Solver::Solver() : mesh(dummy_mesh), ode(dummy_ode)
 {
 
 }
 //-----------------------------------------------------------------------------
-Solver::Solver(Grid& grid_) : grid(grid_), ode(dummy_ode)
+Solver::Solver(Mesh& mesh_) : mesh(mesh_), ode(dummy_ode)
 {
 
 }
 //-----------------------------------------------------------------------------
-Solver::Solver(ODE& ode_) : grid(dummy_grid), ode(ode_)
+Solver::Solver(ODE& ode_) : mesh(dummy_mesh), ode(ode_)
 {
 
 }

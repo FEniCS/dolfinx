@@ -1,1 +1,1 @@
-SUBDIRS = test grid la fem quadrature tanganyika bench solvers
+SUBDIRS = test la mesh fem quadrature ode bench solvers

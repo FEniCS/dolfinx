@@ -1,3 +1,8 @@
+ - Initiation of the FEniCS project
+ - Tanganyika -> ODE 
+ - Add Heat module
+ - Grid -> Mesh
+ - Move forms and mappings to separate libraries 
  - Fix missing include of DirectSolver.h
 0.3.12
  - Adaptive grid refinement (!)

@@ -61,9 +61,9 @@ int main()
 
   foo = minimal.f(u, 0, 0);
 
-  cout << foo << endl;
+  dolfin::cout << foo << dolfin::endl;
 
-  cout << (int)sizeof(Element) << endl;
+  dolfin::cout << (int)sizeof(Element) << dolfin::endl;
 
 
   Partition p(minimal.size(), 0.1);

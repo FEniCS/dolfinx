@@ -123,8 +123,8 @@ echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
 echo "" >> $HEADER
 
-# Generate function dolfin_module_solver(const char* problem, Grid& grid)
-echo "dolfin::Solver* dolfin_module_solver(const char* problem, dolfin::Grid& grid)" >> $HEADER
+# Generate function dolfin_module_solver(const char* problem, Mesh& mesh)
+echo "dolfin::Solver* dolfin_module_solver(const char* problem, dolfin::Mesh& mesh)" >> $HEADER
 echo "{" >> $HEADER
 for d in `cat $MODULES | grep -v '#'`; do
     
@@ -150,10 +150,10 @@ for d in `cat $MODULES | grep -v '#'`; do
 	exit 1
     fi
 
-    # Include only modules that want to use a grid
-    if [ $NEEDS = 'grid' ]; then
+    # Include only modules that want to use a mesh
+    if [ $NEEDS = 'mesh' ]; then
 	echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
-	echo "        return new dolfin::$SOLVER(grid);" >> $HEADER
+	echo "        return new dolfin::$SOLVER(mesh);" >> $HEADER
     else
 	echo "    if ( strcasecmp(problem,\"$KEYWORD\") == 0 )" >> $HEADER
 	echo "        dolfin_error1(\"Illegal parameter for problem \\\"%s\\\".\", problem);" >> $HEADER

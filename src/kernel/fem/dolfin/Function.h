@@ -5,21 +5,20 @@
 #define __FUNCTION_H
 
 #include <dolfin/Variable.h>
-#include <dolfin/function.h>
-#include <dolfin/Vector.h>
 #include <dolfin/ElementFunction.h>
 
 namespace dolfin {
   
   class Cell;
-  class Grid;
+  class Mesh;
   class GenericFunction;
+  class Vector;
   
   class Function : public Variable {
   public:
     
-    Function(Grid& grid, dolfin::Vector& x, int dim = 0, int size = 1);
-    Function(Grid& grid, const char* name,  int dim = 0, int size = 1);
+    Function(Mesh& mesh, dolfin::Vector& x, int dim = 0, int size = 1);
+    Function(Mesh& mesh, const char* name,  int dim = 0, int size = 1);
     ~Function();
     
     // Update values of element function
@@ -30,8 +29,8 @@ namespace dolfin {
     real operator() (const Node&  n, real t = 0.0) const;
     real operator() (const Point& p, real t = 0.0) const;
     
-    // Get grid
-    Grid& grid() const;
+    // Get mesh
+    Mesh& mesh() const;
 
     // Time value
     real t;
@@ -40,8 +39,8 @@ namespace dolfin {
     class Vector {
     public:
       
-      Vector(Grid& grid, dolfin::Vector& x, int size = 3);
-      Vector(Grid& grid, const char* name,  int size = 3);
+      Vector(Mesh& mesh, dolfin::Vector& x, int size = 3);
+      Vector(Mesh& mesh, const char* name,  int size = 3);
       ~Vector();
       
       int size() const;
@@ -55,8 +54,8 @@ namespace dolfin {
 
   private:
     
-    // Grid
-    Grid& _grid;
+    // Mesh
+    Mesh& _mesh;
     
     // Function
     GenericFunction* f;

@@ -8,14 +8,14 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 
 #include <dolfin/XMLFile.h>
 #include <dolfin/XMLObject.h>
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
-#include <dolfin/XMLGrid.h>
+#include <dolfin/XMLMesh.h>
 
 using namespace dolfin;
 
@@ -47,11 +47,11 @@ void XMLFile::operator>>(Matrix& A)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(Grid& grid)
+void XMLFile::operator>>(Mesh& mesh)
 {
   if ( xmlObject )
     delete xmlObject;
-  xmlObject = new XMLGrid(grid);
+  xmlObject = new XMLMesh(mesh);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -137,9 +137,9 @@ void XMLFile::operator<<(Matrix& A)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Grid& Grid)
+void XMLFile::operator<<(Mesh& Mesh)
 {
-  dolfin_warning("Cannot write grids to XML files.");
+  dolfin_warning("Cannot write meshes to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& u)

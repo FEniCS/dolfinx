@@ -6,7 +6,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/GridHierarchy.h>
+#include <dolfin/MeshHierarchy.h>
 #include <dolfin/MultigridSolver.h>
 
 using namespace dolfin;

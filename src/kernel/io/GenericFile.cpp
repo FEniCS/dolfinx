@@ -18,7 +18,7 @@ GenericFile::GenericFile(const std::string filename)
 
   check_header = false;
 
-  no_grids = 0;
+  no_meshes = 0;
 }
 //-----------------------------------------------------------------------------
 GenericFile::~GenericFile()

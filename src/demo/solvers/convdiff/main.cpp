@@ -61,8 +61,8 @@ void mybc(BoundaryCondition& bc)
 
 int main(int argc, char **argv)
 {
-  Grid grid("dolfin.xml.gz");
-  Problem convdiff("convection-diffusion", grid);
+  Mesh mesh("dolfin.xml.gz");
+  Problem convdiff("convection-diffusion", mesh);
 
   convdiff.set("source", f);
   convdiff.set("diffusivity", a);

@@ -66,7 +66,7 @@ void Logger::debug(const char* file, unsigned long line,
 {
   init();
   
-  sprintf(location, "%s:%d: %s()", file, line, function);
+  sprintf(location, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
@@ -82,7 +82,7 @@ void Logger::warning(const char* file, unsigned long line,
 {
   init();
 
-  sprintf(location, "%s:%d: %s()", file, line, function);
+  sprintf(location, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
@@ -101,7 +101,7 @@ void Logger::error(const char* file, unsigned long line,
 
   init();
 
-  sprintf(location, "%s:%d: %s()", file, line, function);
+  sprintf(location, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);
@@ -117,7 +117,7 @@ void Logger::dassert(const char* file, unsigned long line,
 {
   init();
 
-  sprintf(location, "%s:%d: %s()", file, line, function);
+  sprintf(location, "%s:%d: %s()", file, (int) line, function);
   
   va_list aptr;
   va_start(aptr, format);

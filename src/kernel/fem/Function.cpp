@@ -4,7 +4,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/Point.h>
 #include <dolfin/Cell.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/GenericFunction.h>
@@ -17,17 +17,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Function::Function(Grid& grid, dolfin::Vector& x, int dim, int size) :
-  _grid(grid)
+Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size) :
+  _mesh(mesh)
 {
-  f = new DofFunction(grid, x, dim, size);
+  f = new DofFunction(mesh, x, dim, size);
   t = 0.0;
   
   rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
-Function::Function(Grid &grid, const char *name, int dim, int size) : 
-  _grid(grid)
+Function::Function(Mesh &mesh, const char *name, int dim, int size) : 
+  _mesh(mesh)
 {
   function fp;
   vfunction vfp;
@@ -77,29 +77,29 @@ real Function::operator() (const Point& p, real t) const
   return (*f)(p, t);
 }
 //-----------------------------------------------------------------------------
-Grid& Function::grid() const
+Mesh& Function::mesh() const
 {
-  return _grid;
+  return _mesh;
 }
 //-----------------------------------------------------------------------------
 // Vector function
 //-----------------------------------------------------------------------------
-Function::Vector::Vector(Grid& grid, dolfin::Vector& x, int size)
+Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
 {
   f = new (Function *)[size];
   
   for (int i = 0; i < size; i++)
-    f[i] = new Function(grid, x, i, size);
+    f[i] = new Function(mesh, x, i, size);
   
   _size = size;
 }
 //-----------------------------------------------------------------------------
-Function::Vector::Vector(Grid& grid, const char* name, int size)
+Function::Vector::Vector(Mesh& mesh, const char* name, int size)
 {
   f = new (Function *)[size];
 
   for (int i = 0; i < size; i++)
-    f[i] = new Function(grid, name, i, size);
+    f[i] = new Function(mesh, name, i, size);
   
   _size = size;
 }

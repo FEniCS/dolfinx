@@ -7,10 +7,10 @@
 //   1.   A reference cell K0
 //
 //   2.a) A function space P on the reference cell (the local trial space)
-//     b) A mapping I from local to global degrees of freedom
+//     b) A map I from local to global degrees of freedom
 //
 //   3.a) A function space Q on the reference cell (the local test space)
-//     b) A mapping J from local to global degrees of freedom
+//     b) A map J from local to global degrees of freedom
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -33,7 +33,7 @@ namespace dolfin {
     int dim() const;
     
     // Update function spaces
-    void update(const Mapping* mapping);
+    void update(const Map* map);
     
     // Iterator over shape functions in the local trial space
     class TrialFunctionIterator {
@@ -42,7 +42,7 @@ namespace dolfin {
       TrialFunctionIterator(const FiniteElement& element);
       TrialFunctionIterator(const FiniteElement* element);
       
-      // Global dof (mapping I)
+      // Global dof (map I)
       int dof(const Cell& cell) const;
       
       // Evaluation of dof
@@ -69,7 +69,7 @@ namespace dolfin {
       TestFunctionIterator(const FiniteElement& element);
       TestFunctionIterator(const FiniteElement* element);
       
-      // Global dof (mapping J)
+      // Global dof (map J)
       int dof(const Cell& cell) const;
       
       // Evaluation of dof

@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TemplateSolver::TemplateSolver(Grid& grid) : Solver(grid)
+TemplateSolver::TemplateSolver(Mesh& mesh) : Solver(mesh)
 {
   dolfin_parameter(Parameter::REAL, "my parameter", 42.0);
 }

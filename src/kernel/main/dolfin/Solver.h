@@ -14,8 +14,8 @@ namespace dolfin {
     /// Constructor for general solver
     Solver();
 
-    /// Constructor for solver to problem on a given grid
-    Solver(Grid& grid_);
+    /// Constructor for solver to problem on a given mesh
+    Solver(Mesh& mesh_);
 
     /// Constructor for ODE solver
     Solver(ODE& ode_);
@@ -31,12 +31,12 @@ namespace dolfin {
     
   protected:
     
-    Grid& grid;
+    Mesh& mesh;
     ODE& ode;
 
   private:
     
-    // Every solver needs to have both a grid and an ODE (since the same solver
+    // Every solver needs to have both a mesh and an ODE (since the same solver
     // interface is used for different equations). We create dummy objects to
     // be able to initialize the references if they are not used.
 
@@ -46,7 +46,7 @@ namespace dolfin {
       real f(const Vector& u, real t, int i) { return 0.0; }
     };
 
-    Grid     dummy_grid;
+    Mesh     dummy_mesh;
     DummyODE dummy_ode; 
     
   };

@@ -11,7 +11,7 @@ namespace dolfin {
 
   class Vector;
   class Matrix;
-  class Grid;
+  class Mesh;
   class Function;
   
   class OctaveFile : public MFile {

@@ -12,7 +12,7 @@ namespace dolfin {
 
   class ExpressionFunction;
   class FiniteElement;
-  class Mapping;
+  class Map;
   
   class FunctionSpace {
   public:
@@ -41,14 +41,14 @@ namespace dolfin {
     // Dimension (number of shape functions)
     int dim() const;
     
-    // Mapping from local to global degrees of freedom
+    // Map from local to global degrees of freedom
     virtual int dof(int i, const Cell& cell) const = 0;
     
     // Evaluation of local degree of freedom
     virtual real dof(int i, const Cell& cell, const ExpressionFunction& f, real t) const = 0;
     
-    // Update with current mapping
-    void update(const Mapping& mapping);
+    // Update with current map
+    void update(const Map& map);
     
     // Iterator for shape functions in the function space
     class Iterator {

@@ -8,10 +8,10 @@ namespace dolfin {
 
   class Vector;
   class Matrix;
-  class Grid;
+  class Mesh;
   class PDE;
   class FiniteElement;
-  class Mapping;
+  class Map;
   class Quadrature;
   
   /// Assembling from variational formulation. It is assumed that
@@ -25,36 +25,36 @@ namespace dolfin {
     Galerkin();
     
     // Constructor allowing specification of method
-    Galerkin(FiniteElement& element, Mapping& mapping, Quadrature& quadrature);
+    Galerkin(FiniteElement& element, Map& map, Quadrature& quadrature);
     
     // Destructor
     ~Galerkin();
     
     // Assemble and set boundary conditions
-    void assemble(PDE& pde, Grid& grid, Matrix& A, Vector& b);
+    void assemble(PDE& pde, Mesh& mesh, Matrix& A, Vector& b);
     
     // Assemble A and b individually and set boundary conditions
-    void assemble(PDE& pde, Grid& grid, Matrix& A);
-    void assemble(PDE& pde, Grid& grid, Vector& b);
+    void assemble(PDE& pde, Mesh& mesh, Matrix& A);
+    void assemble(PDE& pde, Mesh& mesh, Vector& b);
 
     // Assemble A and b individually, without setting boundary conditions
-    void assembleLHS(PDE& pde, Grid& grid, Matrix& A);
-    void assembleRHS(PDE& pde, Grid& grid, Vector& b);
+    void assembleLHS(PDE& pde, Mesh& mesh, Matrix& A);
+    void assembleRHS(PDE& pde, Mesh& mesh, Vector& b);
     
     // Set boundary conditions
-    void setBC(Grid& grid, Matrix& A);
-    void setBC(Grid& grid, Vector& b);
+    void setBC(Mesh& mesh, Matrix& A);
+    void setBC(Mesh& mesh, Vector& b);
     
   private:
     
-    void init(Grid& grid);
+    void init(Mesh& mesh);
     
-    void alloc(Matrix& A, Grid& grid);
-    void alloc(Vector& b, Grid& grid);
+    void alloc(Matrix& A, Mesh& mesh);
+    void alloc(Vector& b, Mesh& mesh);
     
     // Method data
     FiniteElement* element;    // The finite element
-    Mapping*       mapping;    // Mapping from reference cell
+    Map*       map;    // Map from reference cell
     Quadrature*    quadrature; // Quadrature on reference cell
     
     // True if user specifies method

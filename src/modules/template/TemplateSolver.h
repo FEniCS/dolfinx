@@ -11,7 +11,7 @@ namespace dolfin {
   class TemplateSolver : public Solver {
   public:
     
-    TemplateSolver(Grid& grid);
+    TemplateSolver(Mesh& mesh);
     
     const char* description();
     void solve();

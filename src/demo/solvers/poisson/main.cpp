@@ -33,8 +33,8 @@ void mybc(BoundaryCondition& bc)
 
 int main()
 {
-  Grid grid("grid.xml.gz");
-  Problem poisson("poisson", grid);
+  Mesh mesh("mesh.xml.gz");
+  Problem poisson("poisson", mesh);
 
   poisson.set("source", f);
   poisson.set("boundary condition", mybc);

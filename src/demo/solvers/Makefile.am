@@ -1,1 +1,1 @@
-SUBDIRS = template poisson convdiff ode
+SUBDIRS = template poisson convdiff  heat ode

@@ -11,7 +11,7 @@ namespace dolfin {
   class ConvDiffSolver : public Solver {
   public:
     
-    ConvDiffSolver(Grid& grid);
+    ConvDiffSolver(Mesh& mesh);
     
     const char* description();
     void solve();

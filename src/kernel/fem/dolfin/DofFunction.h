@@ -12,12 +12,12 @@ namespace dolfin {
   class Cell;
   class FiniteElement;
   class Vector;
-  class Grid;
+  class Mesh;
   
   class DofFunction : public GenericFunction {
   public:
     
-    DofFunction(Grid& grid, Vector& dofs, int dim, int size);
+    DofFunction(Mesh& mesh, Vector& dofs, int dim, int size);
 	 
     // Update values of element function
     void update(FunctionSpace::ElementFunction &v,

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/Vector.h>
 #include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
@@ -13,11 +13,11 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DofFunction::DofFunction(Grid& grid, Vector& dofs, int dim, int size) :
+DofFunction::DofFunction(Mesh& mesh, Vector& dofs, int dim, int size) :
   GenericFunction(dim, size), x(dofs)
 {
   // FIXME: assumes nodal basis
-  x.init(grid.noNodes());
+  x.init(mesh.noNodes());
 }
 //-----------------------------------------------------------------------------
 void DofFunction::update(FunctionSpace::ElementFunction &v,

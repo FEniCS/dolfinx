@@ -4,7 +4,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/MFile.h>
 
@@ -21,9 +21,9 @@ void MFile::operator>>(Matrix& A)
   dolfin_warning("Cannot read matrices from Octave/Matlab files.");
 }
 //-----------------------------------------------------------------------------
-void MFile::operator>>(Grid& grid)
+void MFile::operator>>(Mesh& mesh)
 {
-  dolfin_warning("Cannot read grids from Octave/Matlab files.");
+  dolfin_warning("Cannot read meshes from Octave/Matlab files.");
 }
 //-----------------------------------------------------------------------------
 void MFile::operator>>(Function& u)
@@ -52,15 +52,15 @@ void MFile::operator<<(Vector& x)
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Grid& grid)
+void MFile::operator<<(Mesh& mesh)
 {
   Point p;
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
-  // Create a list if we save the grid a second time
-  if ( no_grids == 1 ) {
+  // Create a list if we save the mesh a second time
+  if ( no_meshes == 1 ) {
 
     fprintf(fp, "tmp = points;\n");
     fprintf(fp, "clear points\n");
@@ -80,15 +80,15 @@ void MFile::operator<<(Grid& grid)
   }
   
   // Write nodes
-  if ( no_grids == 0 )
+  if ( no_meshes == 0 )
     fprintf(fp,"points = [");
   else
-    fprintf(fp,"points{%d} = [", no_grids + 1);
-  for (NodeIterator n(grid); !n.end(); ++n) {
+    fprintf(fp,"points{%d} = [", no_meshes + 1);
+  for (NodeIterator n(mesh); !n.end(); ++n) {
     
     p = n->coord();
     
-    if ( grid.type() == Grid::triangles ) {
+    if ( mesh.type() == Mesh::triangles ) {
       if ( n.last() )
 	fprintf(fp,"%.16f %.16f]';\n", p.x, p.y);
       else
@@ -105,11 +105,11 @@ void MFile::operator<<(Grid& grid)
   fprintf(fp,"\n");
   
   // Write cells
-  if ( no_grids == 0 )
+  if ( no_meshes == 0 )
     fprintf(fp,"cells = [");
   else
-    fprintf(fp,"cells{%d} = [", no_grids + 1);
-  for (CellIterator c(grid); !c.end(); ++c) {
+    fprintf(fp,"cells{%d} = [", no_meshes + 1);
+  for (CellIterator c(mesh); !c.end(); ++c) {
     
     for (NodeIterator n(c); !n.end(); ++n)
       fprintf(fp, "%d ", n->id() + 1);
@@ -123,31 +123,31 @@ void MFile::operator<<(Grid& grid)
   fprintf(fp,"\n");
   
   // Write edges (to make the pdeplot routines happy)
-  if ( no_grids == 0 )
+  if ( no_meshes == 0 )
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
   else
-    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", no_grids + 1);
+    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", no_meshes + 1);
   
   // Close file
   fclose(fp);
 
-  // Increase the number of times we have saved the grid
-  // FIXME: Count number of grids saved to this file, rather
-  // than the number of times this specific grid has been saved.
-  ++grid;
+  // Increase the number of times we have saved the mesh
+  // FIXME: Count number of meshes saved to this file, rather
+  // than the number of times this specific mesh has been saved.
+  ++mesh;
   
-  // Increase the number of grids save to this file
-  no_grids++;
+  // Increase the number of meshes save to this file
+  no_meshes++;
 
-  cout << "Saved grid " << grid.name() << " (" << grid.label()
+  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Function& u)
 {
-  // Write grid the first time
+  // Write mesh the first time
   if ( u.number() == 0 )
-    *this << u.grid();
+    *this << u.mesh();
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
@@ -163,13 +163,13 @@ void MFile::operator<<(Function& u)
   // Write vector
   if ( u.number() == 0 ) {
     fprintf(fp, "%s = [", u.name().c_str());
-    for (NodeIterator n(u.grid()); !n.end(); ++n)
+    for (NodeIterator n(u.mesh()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
   else {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
-    for (NodeIterator n(u.grid()); !n.end(); ++n)
+    for (NodeIterator n(u.mesh()); !n.end(); ++n)
       fprintf(fp, " %.16f", u(*n));
     fprintf(fp, " ]';\n\n");
   }

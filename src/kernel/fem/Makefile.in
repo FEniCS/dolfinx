@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/DofFunction.h                           dolfin/ElementFunction.h                           dolfin/ExpressionFunction.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionList.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/GenericFunction.h                           dolfin/Integral.h                           dolfin/Mapping.h                           dolfin/PDE.h                           dolfin/PDESystem.h                           dolfin/Product.h                           dolfin/ScalarExpressionFunction.h                           dolfin/ShapeFunction.h                           dolfin/TetLinMapping.h                           dolfin/TriLinMapping.h                           dolfin/VectorExpressionFunction.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/DofFunction.h                           dolfin/ExpressionFunction.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/GenericFunction.h                           dolfin/ScalarExpressionFunction.h                           dolfin/VectorExpressionFunction.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = DofFunction.cpp                           ElementFunction.cpp                           ExpressionFunction.cpp                           FiniteElement.cpp                           Function.cpp                           FunctionList.cpp                           FunctionSpace.cpp                           GenericFunction.cpp                           Galerkin.cpp                           Integral.cpp                           Mapping.cpp                           PDE.cpp                           PDESystem.cpp                           Product.cpp                           ScalarExpressionFunction.cpp                           ShapeFunction.cpp                           TetLinMapping.cpp                           TriLinMapping.cpp                           VectorExpressionFunction.cpp
+libdolfin_fem_a_SOURCES = DofFunction.cpp                           ExpressionFunction.cpp                           FiniteElement.cpp                           Function.cpp                           FunctionSpace.cpp                           GenericFunction.cpp                           Galerkin.cpp                           ScalarExpressionFunction.cpp                           VectorExpressionFunction.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,11 +98,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_fem_a_LIBADD = 
-libdolfin_fem_a_OBJECTS =  DofFunction.o ElementFunction.o \
-ExpressionFunction.o FiniteElement.o Function.o FunctionList.o \
-FunctionSpace.o GenericFunction.o Galerkin.o Integral.o Mapping.o PDE.o \
-PDESystem.o Product.o ScalarExpressionFunction.o ShapeFunction.o \
-TetLinMapping.o TriLinMapping.o VectorExpressionFunction.o
+libdolfin_fem_a_OBJECTS =  DofFunction.o ExpressionFunction.o \
+FiniteElement.o Function.o FunctionSpace.o GenericFunction.o Galerkin.o \
+ScalarExpressionFunction.o VectorExpressionFunction.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -116,13 +114,10 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/DofFunction.P .deps/ElementFunction.P \
-.deps/ExpressionFunction.P .deps/FiniteElement.P .deps/Function.P \
-.deps/FunctionList.P .deps/FunctionSpace.P .deps/Galerkin.P \
-.deps/GenericFunction.P .deps/Integral.P .deps/Mapping.P .deps/PDE.P \
-.deps/PDESystem.P .deps/Product.P .deps/ScalarExpressionFunction.P \
-.deps/ShapeFunction.P .deps/TetLinMapping.P .deps/TriLinMapping.P \
-.deps/VectorExpressionFunction.P
+DEP_FILES =  .deps/DofFunction.P .deps/ExpressionFunction.P \
+.deps/FiniteElement.P .deps/Function.P .deps/FunctionSpace.P \
+.deps/Galerkin.P .deps/GenericFunction.P \
+.deps/ScalarExpressionFunction.P .deps/VectorExpressionFunction.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 

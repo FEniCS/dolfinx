@@ -51,7 +51,9 @@ AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your syste
 
 # Note: need to be in the correct order, and some are needed twice.
 # Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="tanganyika io grid fem elements quadrature grid io fem la math common settings log settings common main tanganyika"
+#DOLFIN_KERNEL="ode io mesh fem element mesh io fem form quadrature map la math common settings log settings common main ode"
+DOLFIN_KERNEL="common element fem form io la log main map math mesh ode quadrature settings"
+DOLFIN_KERNEL="$DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 
 # Find modules
 cd src/modules
@@ -104,34 +106,39 @@ AC_OUTPUT( Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
-           src/kernel/elements/Makefile \
-           src/kernel/elements/dolfin/Makefile \
+           src/kernel/element/Makefile \
+           src/kernel/element/dolfin/Makefile \
            src/kernel/fem/Makefile \
            src/kernel/fem/dolfin/Makefile \
-           src/kernel/grid/Makefile \
-           src/kernel/grid/dolfin/Makefile \
+           src/kernel/form/Makefile \
+           src/kernel/form/dolfin/Makefile \
            src/kernel/io/Makefile \
            src/kernel/io/dolfin/Makefile \
            src/kernel/la/Makefile \
            src/kernel/la/dolfin/Makefile \
            src/kernel/main/Makefile \
            src/kernel/main/dolfin/Makefile \
+           src/kernel/map/Makefile \
+           src/kernel/map/dolfin/Makefile \
            src/kernel/math/Makefile \
            src/kernel/math/dolfin/Makefile \
+           src/kernel/mesh/Makefile \
+           src/kernel/mesh/dolfin/Makefile \
+           src/kernel/ode/Makefile \
+           src/kernel/ode/dolfin/Makefile \
            src/kernel/quadrature/Makefile \
            src/kernel/quadrature/dolfin/Makefile \
            src/kernel/log/Makefile \
            src/kernel/log/dolfin/Makefile \
            src/kernel/settings/Makefile \
            src/kernel/settings/dolfin/Makefile \
-           src/kernel/tanganyika/Makefile \
-           src/kernel/tanganyika/dolfin/Makefile \
            src/modules/Makefile \
            src/modules/template/Makefile \
            src/modules/poisson/Makefile \
            src/modules/convdiff/Makefile \
+           src/modules/heat/Makefile \
            src/modules/navierstokes/Makefile \
-           src/modules/ode/Makefile \
+           src/modules/odesolver/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \

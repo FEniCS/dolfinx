@@ -8,7 +8,6 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Grid.h>
 #include <dolfin/Function.h>
 #include <dolfin/MatlabFile.h>
 

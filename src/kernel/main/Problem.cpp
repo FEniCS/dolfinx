@@ -15,10 +15,10 @@ Problem::Problem(const char* problem)
   solver = dolfin_module_solver(problem);
 }
 //-----------------------------------------------------------------------------
-Problem::Problem(const char* problem, Grid& grid)
+Problem::Problem(const char* problem, Mesh& mesh)
 {
   // Initialise the solver
-  solver = dolfin_module_solver(problem, grid);
+  solver = dolfin_module_solver(problem, mesh);
 }
 //-----------------------------------------------------------------------------
 Problem::Problem(const char* problem, ODE& ode)

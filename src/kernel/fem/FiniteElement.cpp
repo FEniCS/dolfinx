@@ -13,11 +13,11 @@ int FiniteElement::dim() const
   return P.dim();
 }
 //-----------------------------------------------------------------------------
-void FiniteElement::update(const Mapping* mapping)
+void FiniteElement::update(const Map* map)
 {
   // Maybe this can be optimized if we use the same trial and test spaces?
-  P.update(*mapping);
-  Q.update(*mapping);
+  P.update(*map);
+  Q.update(*map);
 }
 //-----------------------------------------------------------------------------
 // FiniteElement::TrialFunctionIterator

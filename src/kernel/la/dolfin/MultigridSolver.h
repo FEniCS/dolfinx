@@ -6,7 +6,7 @@
 
 namespace dolfin {
   
-  class GridHierarchy;
+  class MeshHierarchy;
   class Matrix;
   class Vector;
   

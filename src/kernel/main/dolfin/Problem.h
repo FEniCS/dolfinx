@@ -6,14 +6,14 @@
 
 namespace dolfin {
   
-  class Grid;
+  class Mesh;
   class Solver;
   
   class Problem {
   public:
     
     Problem(const char* problem);
-    Problem(const char* problem, Grid& grid);
+    Problem(const char* problem, Mesh& mesh);
     Problem(const char* problem, ODE& ode);
     
     ~Problem();

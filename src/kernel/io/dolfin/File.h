@@ -10,7 +10,7 @@ namespace dolfin {
 
   class Vector;
   class Matrix;
-  class Grid;
+  class Mesh;
   class Function;
   class GenericFile;
   
@@ -27,14 +27,14 @@ namespace dolfin {
     
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
-    void operator>> (Grid& grid);
+    void operator>> (Mesh& mesh);
     void operator>> (Function& u);
     
     // Output
     
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
-    void operator<< (Grid& grid);
+    void operator<< (Mesh& mesh);
     void operator<< (Function& u);
     
   private:

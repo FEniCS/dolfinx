@@ -7,7 +7,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PoissonSolver::PoissonSolver(Grid& grid) : Solver(grid)
+PoissonSolver::PoissonSolver(Mesh& mesh) : Solver(mesh)
 {
   dolfin_parameter(Parameter::FUNCTION, "source", 0);
 }
@@ -22,14 +22,14 @@ void PoissonSolver::solve()
   Galerkin     fem;
   Matrix       A;
   Vector       x, b;
-  Function     u(grid, x);
-  Function     f(grid, "source");
+  Function     u(mesh, x);
+  Function     f(mesh, "source");
   Poisson      poisson(f);
   KrylovSolver solver;
   File         file("poisson.m");
 
   // Discretise
-  fem.assemble(poisson, grid, A, b);
+  fem.assemble(poisson, mesh, A, b);
 
   // Solve the linear system
   solver.solve(A, x, b);

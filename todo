@@ -14,8 +14,12 @@ Multi-adaptive solver
 General
 -------
 
+- Use libtool 
+- Optimize form evaluation 
 - Save edges in matlab format
 - General boundary conditions
 - Multigrid
-- Grid generation (octree) from given CAD model
+- Mesh generation (octree) from given CAD model
 - Vector valued PDE
+- General function representations
+- i/o for functions 

@@ -3,4 +3,4 @@
 NAME     = "poisson"
 KEYWORD  = "poisson"
 SOLVER   = "PoissonSolver"
-NEEDS    = "grid"
+NEEDS    = "mesh"

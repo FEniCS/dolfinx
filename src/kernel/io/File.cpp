@@ -5,7 +5,7 @@
 
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Grid.h>
+#include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 
 #include <dolfin/File.h>
@@ -76,11 +76,11 @@ void File::operator>>(Matrix& A)
   *file >> A;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Grid& grid)
+void File::operator>>(Mesh& mesh)
 {
   file->read();
   
-  *file >> grid;
+  *file >> mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator>>(Function& u)
@@ -104,11 +104,11 @@ void File::operator<<(Matrix& A)
   *file << A;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Grid& grid)
+void File::operator<<(Mesh& mesh)
 {
   file->write();
   
-  *file << grid;
+  *file << mesh;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Function& u)
