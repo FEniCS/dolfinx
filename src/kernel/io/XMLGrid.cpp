@@ -149,7 +149,7 @@ void XMLGrid::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", &z);
 
   // Set values
-  grid.createNode(x, y, z);
+  grid.createNode(0,x,y,z);
 
   // FIXME: id of node is completely ignored. We assume that the
   // nodes are in correct order.

@@ -23,8 +23,8 @@ namespace dolfin {
   class GridData {
   public:
 	 
-	 Node* createNode();
-	 Node* createNode(real x, real y, real z);
+	 Node* createNode(int level);
+	 Node* createNode(int level, real x, real y, real z);
 	 
 	 Cell* createCell(int level, Cell::Type type);
 	 Cell* createCell(int level, Cell::Type type, int n0, int n1, int n2);
@@ -32,9 +32,9 @@ namespace dolfin {
 	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2);
 	 Cell* createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3);
 
-	 Edge* createEdge();
-	 Edge* createEdge(int n0, int n1);
-	 Edge* createEdge(Node* n0, Node* n1);
+	 Edge* createEdge(int level);
+	 Edge* createEdge(int level, int n0, int n1);
+	 Edge* createEdge(int level, Node* n0, Node* n1);
 
 	 Node* getNode(int id);
 	 Cell* getCell(int id);

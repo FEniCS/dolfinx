@@ -32,6 +32,8 @@ namespace dolfin {
       Point coord(int i);
 	
       /// --- Functions for mesh refinement
+      int level() const;
+      void setLevel(int level);
       void mark();
       void unmark();
       bool marked();
@@ -61,6 +63,9 @@ namespace dolfin {
       // Global edge number
       int _id;
       void setID(int id);
+
+      // Refinement level in grid hierarchy, coarsest grid is level = 0
+      int _level;
 
       // End nodes
       Node* _en0;

@@ -90,35 +90,46 @@ void RefineGrid::RegularRefinementTetrahedron(Cell* parent)
 {
   // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
   // at the midpoints of the edges. 
-  Node *n01 = grid.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = grid.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n03 = grid.createNode(parent->node(0)->coord().midpoint(parent->node(3)->coord()));
-  Node *n12 = grid.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
-  Node *n13 = grid.createNode(parent->node(1)->coord().midpoint(parent->node(3)->coord()));
-  Node *n23 = grid.createNode(parent->node(2)->coord().midpoint(parent->node(3)->coord()));
+  Node *n0 = grid.createNode(parent->level()+1,parent->node(0)->coord());
+  Node *n1 = grid.createNode(parent->level()+1,parent->node(1)->coord());
+  Node *n2 = grid.createNode(parent->level()+1,parent->node(2)->coord());
+  Node *n3 = grid.createNode(parent->level()+1,parent->node(3)->coord());
 
-  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(0),n01,n02,n03);
-  Cell *t2 = grid.createCell(parent,Cell::TETRAHEDRON,n01,parent->node(1),n12,n13);
-  Cell *t3 = grid.createCell(parent,Cell::TETRAHEDRON,n02,n12,parent->node(2),n23);
-  Cell *t4 = grid.createCell(parent,Cell::TETRAHEDRON,n03,n13,n23,parent->node(3));
-  Cell *t5 = grid.createCell(parent,Cell::TETRAHEDRON,n01,n02,n03,n13);
-  Cell *t6 = grid.createCell(parent,Cell::TETRAHEDRON,n01,n02,n12,n13);
-  Cell *t7 = grid.createCell(parent,Cell::TETRAHEDRON,n02,n03,n13,n23);
-  Cell *t8 = grid.createCell(parent,Cell::TETRAHEDRON,n02,n12,n13,n23);
+  Node *n01 = grid.createNode(parent->level()+1,parent->node(0)->coord().midpoint(parent->node(1)->coord()));
+  Node *n02 = grid.createNode(parent->level()+1,parent->node(0)->coord().midpoint(parent->node(2)->coord()));
+  Node *n03 = grid.createNode(parent->level()+1,parent->node(0)->coord().midpoint(parent->node(3)->coord()));
+  Node *n12 = grid.createNode(parent->level()+1,parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+  Node *n13 = grid.createNode(parent->level()+1,parent->node(1)->coord().midpoint(parent->node(3)->coord()));
+  Node *n23 = grid.createNode(parent->level()+1,parent->node(2)->coord().midpoint(parent->node(3)->coord()));
+
+  Cell *t1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n0, n01,n02,n03);
+  Cell *t2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n1, n12,n13);
+  Cell *t3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n12,n2, n23);
+  Cell *t4 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n03,n13,n23,n3 );
+  Cell *t5 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n02,n03,n13);
+  Cell *t6 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n02,n12,n13);
+  Cell *t7 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n03,n13,n23);
+  Cell *t8 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n12,n13,n23);
+
+  //  grid.createEdge(parent->level()+1,t1);
 }
 
 void RefineGrid::RegularRefinementTriangle(Cell* parent)
 {
   // Refine 1 triangle into 4 new ones, introducing new nodes 
   // at the midpoints of the edges. 
-  Node *n01 = grid.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = grid.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n12 = grid.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+  Node *n0 = grid.createNode(parent->level()+1,parent->node(0)->coord());
+  Node *n1 = grid.createNode(parent->level()+1,parent->node(1)->coord());
+  Node *n2 = grid.createNode(parent->level()+1,parent->node(2)->coord());
 
-  Cell *t1 = grid.createCell(parent,Cell::TETRAHEDRON,parent->node(0),n01,n02);
-  Cell *t2 = grid.createCell(parent,Cell::TETRAHEDRON,n01,parent->node(1),n12);
-  Cell *t3 = grid.createCell(parent,Cell::TETRAHEDRON,n02,n12,parent->node(2));
-  Cell *t4 = grid.createCell(parent,Cell::TETRAHEDRON,n01,n12,n02);
+  Node *n01 = grid.createNode(parent->level()+1,parent->node(0)->coord().midpoint(parent->node(1)->coord()));
+  Node *n02 = grid.createNode(parent->level()+1,parent->node(0)->coord().midpoint(parent->node(2)->coord()));
+  Node *n12 = grid.createNode(parent->level()+1,parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+
+  Cell *t1 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n0, n01,n02);
+  Cell *t2 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n1, n12);
+  Cell *t3 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n02,n12,n2 );
+  Cell *t4 = grid.createCell(parent->level()+1,Cell::TETRAHEDRON,n01,n12,n02);
 }
 
 void RefineGrid::LocalIrregularRefinement(Cell *parent)
@@ -174,9 +185,9 @@ void RefineGrid::IrrRef1(Cell* parent)
     }
   }
 
-  Node* n01 = grid.createNode(parent->edge(marked_edges[0])->midpoint());
-  Node* n02 = grid.createNode(parent->edge(marked_edges[1])->midpoint());
-  Node* n12 = grid.createNode(parent->edge(marked_edges[2])->midpoint());
+  Node* n01 = grid.createNode(parent->level(),parent->edge(marked_edges[0])->midpoint());
+  Node* n02 = grid.createNode(parent->level(),parent->edge(marked_edges[1])->midpoint());
+  Node* n12 = grid.createNode(parent->level(),parent->edge(marked_edges[2])->midpoint());
 
   int face_node;
   for (int i=0;i<parent->noNodes();i++){

@@ -30,6 +30,7 @@ namespace dolfin{
     void  set(real x, real y, real z);
     int   id() const;
     Point coord() const;
+    int level() const;
     void  setSon(Node* son);
     Node* son();
     Edge* edge(int i);
@@ -77,6 +78,10 @@ namespace dolfin{
     int _id;
     int _boundary;
     
+    // Refinement level in grid hierarchy, coarsest grid is level = 0
+    int _level;
+    void setLevel(int level);
+
     // Connectivity
     ShortList<Node*> nn;
     ShortList<Cell*> nc;

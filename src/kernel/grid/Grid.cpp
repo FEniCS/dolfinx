@@ -100,9 +100,9 @@ void Grid::show()
   cout << "-------------------------------------------------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode()
+Node* Grid::createNode(int level)
 {
-  return gd->createNode();
+  return gd->createNode(level);
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(int level, Cell::Type type)
@@ -122,19 +122,19 @@ Cell* Grid::createCell(int level, Cell::Type type)
   return gd->createCell(level,type);
 }
 //-----------------------------------------------------------------------------
-Edge* Grid::createEdge()
+Edge* Grid::createEdge(int level)
 {
-  return gd->createEdge();
+  return gd->createEdge(level);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(Point p)
+Node* Grid::createNode(int level, Point p)
 {
-  return gd->createNode(p.x,p.y,p.z);
+  return gd->createNode(level,p.x,p.y,p.z);
 }
 //-----------------------------------------------------------------------------
-Node* Grid::createNode(real x, real y, real z)
+Node* Grid::createNode(int level, real x, real y, real z)
 {
-  return gd->createNode(x,y,z);
+  return gd->createNode(level,x,y,z);
 }
 //-----------------------------------------------------------------------------
 Cell* Grid::createCell(int level, Cell::Type type, int n0, int n1, int n2)
@@ -169,46 +169,14 @@ Cell* Grid::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node* n2,
   return gd->createCell(level,type,n0,n1,n2,n3);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(Cell* parent, Cell::Type type, int n0, int n1, int n2)
+Edge* Grid::createEdge(int level, int n0, int n1)
 {
-  // Warning: grid type will be type of last added cell
-  _type = TRIANGLES;
-  
-  return gd->createCell(parent->level(),type,n0,n1,n2);
+  return gd->createEdge(level,n0,n1);
 }
 //-----------------------------------------------------------------------------
-Cell* Grid::createCell(Cell* parent, Cell::Type type, int n0, int n1, int n2, int n3)
+Edge* Grid::createEdge(int level, Node* n0, Node* n1)
 {
-  // Warning: grid type will be type of last added cell
-  _type = TETRAHEDRONS;
-  
-  return gd->createCell(parent->level(),type,n0,n1,n2,n3);
-}
-//-----------------------------------------------------------------------------
-Cell* Grid::createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2)
-{
-  // Warning: grid type will be type of last added cell
-  _type = TRIANGLES;
-  
-  return gd->createCell(parent->level(),type,n0,n1,n2);
-}
-//-----------------------------------------------------------------------------
-Cell* Grid::createCell(Cell* parent, Cell::Type type, Node* n0, Node* n1, Node* n2, Node* n3)
-{
-  // Warning: grid type will be type of last added cell
-  _type = TETRAHEDRONS;
-  
-  return gd->createCell(parent->level(),type,n0,n1,n2,n3);
-}
-//-----------------------------------------------------------------------------
-Edge* Grid::createEdge(int n0, int n1)
-{
-  return gd->createEdge(n0,n1);
-}
-//-----------------------------------------------------------------------------
-Edge* Grid::createEdge(Node* n0, Node* n1)
-{
-  return gd->createEdge(n0,n1);
+  return gd->createEdge(level,n0,n1);
 }
 //-----------------------------------------------------------------------------
 Node* Grid::getNode(int id)

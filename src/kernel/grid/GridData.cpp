@@ -12,15 +12,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Node* GridData::createNode()
+Node* GridData::createNode(int level)
 { 
   int id;
   Node *n = nodes.create(&id);
   n->setID(id);
+  n->setLevel(level);
   return n;
 }
 //-----------------------------------------------------------------------------
-Node* GridData::createNode(real x, real y, real z)
+Node* GridData::createNode(int level, real x, real y, real z)
 {
   // If a node exists with coordinates (x,y,z) then return a pointer to that 
   // node, else create a new node and return a pointer to that node.   
@@ -30,15 +31,16 @@ Node* GridData::createNode(real x, real y, real z)
     if ( fabs(pnt.x-x)<DOLFIN_EPS ){
       if ( fabs(pnt.y-y)<DOLFIN_EPS ){
 	if ( fabs(pnt.z-z)<DOLFIN_EPS ){
-	  return (n.pointer());
+	  if ((n.pointer())->level() == level) return (n.pointer());
 	}
-      }
+      } 
     }
   }
   int id;
   Node *n = nodes.create(&id);
   n->setID(id);
   n->set(x,y,z);  
+  n->setLevel(level);
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -46,9 +48,9 @@ Cell* GridData::createCell(int level, Cell::Type type)
 {
   int id;
   Cell *c = cells.create(&id);
-  c->setLevel(level);
   c->setID(id);
   c->init(type);
+  c->setLevel(level);
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -56,10 +58,10 @@ Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2)
 {
   int id;
   Cell *c = cells.create(&id);
-  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2));
+  c->setLevel(level);
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -67,10 +69,10 @@ Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2, i
 {
   int id;
   Cell *c = cells.create(&id);
-  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
+  c->setLevel(level);
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -78,10 +80,10 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
 {
   int id;
   Cell *c = cells.create(&id);
-  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(n0,n1,n2);
+  c->setLevel(level);
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -89,22 +91,23 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
 {
   int id;
   Cell *c = cells.create(&id);
-  c->setLevel(level);
   c->init(type);
   c->setID(id);
   c->set(n0,n1,n2,n3);
+  c->setLevel(level);
   return c;
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::createEdge()
+Edge* GridData::createEdge(int level)
 { 
   int id;
   Edge *e = edges.create(&id);
   e->setID(id);
+  e->setLevel(level);
   return e;
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::createEdge(int n0, int n1)
+Edge* GridData::createEdge(int level, int n0, int n1)
 {
   // If an edge exists with nodes n0 and n1 then return a pointer to that 
   // edge, else create a new edge and return a pointer to that edge.   
@@ -113,20 +116,21 @@ Edge* GridData::createEdge(int n0, int n1)
     en0 = (e.pointer())->node(0)->id();
     en1 = (e.pointer())->node(1)->id();
     if ( n0 == en0 ){
-      if ( n1 == en1 ) return (e.pointer());
+      if ( (n1 == en1) && ((e.pointer())->level() == level) ) return (e.pointer());
     }
     if ( n0 == en1 ){
-      if ( n1 == en0 ) return (e.pointer());
+      if ( (n1 == en0) && ((e.pointer())->level() == level) ) return (e.pointer());
     }
   }
   int id;
   Edge *e = edges.create(&id);
   e->setID(id);
   e->set(getNode(n0),getNode(n1));
+  e->setLevel(level);
   return e;
 }
 //-----------------------------------------------------------------------------
-Edge* GridData::createEdge(Node* n0, Node* n1)
+Edge* GridData::createEdge(int level, Node* n0, Node* n1)
 {
   // If an edge exists with nodes n0 and n1 then return a pointer to that 
   // edge, else create a new edge and return a pointer to that edge.   
@@ -135,16 +139,17 @@ Edge* GridData::createEdge(Node* n0, Node* n1)
     en0 = (e.pointer())->node(0)->id();
     en1 = (e.pointer())->node(1)->id();
     if ( n0->id() == en0 ){
-      if ( n1->id() == en1 ) return (e.pointer());
+      if ( (n1->id() == en1) && ((e.pointer())->level() == level) ) return (e.pointer());
     }
     if ( n0->id() == en1 ){
-      if ( n1->id() == en0 ) return (e.pointer());
+      if ( (n1->id() == en0) && ((e.pointer())->level() == level) ) return (e.pointer());
     }
   }
   int id;
   Edge *e = edges.create(&id);
   e->setID(id);
   e->set(n0,n1);
+  e->setLevel(level);
   return e;
 }
 //-----------------------------------------------------------------------------
