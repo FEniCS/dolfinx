@@ -1,8 +1,8 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __PARTICLE_SYSTEM
-#define __PARTICLE_SYSTEM
+#ifndef __NEW_PARTICLE_SYSTEM
+#define __NEW_PARTICLE_SYSTEM
 
 #include <dolfin/constants.h>
 #include <dolfin/ODE.h>
@@ -24,15 +24,15 @@ namespace dolfin
   /// u = (x_0,  y_0,  z_0,  ... , x_n,  y_n,  z_n, 
   ///      x_0', y_0', z_0', ... , x_n', y_n', z_n')
 
-  class ParticleSystem : public ODE
+  class NewParticleSystem : public ODE
   {
   public:
 
     /// Constructor
-    ParticleSystem(unsigned int n, unsigned int dim = 3);
+    NewParticleSystem(unsigned int n, unsigned int dim = 3);
 
     /// Destructor
-    ~ParticleSystem();
+    ~NewParticleSystem();
 
     /// Return x-component of initial position for particle i
     virtual real x0(unsigned int i);
@@ -71,7 +71,7 @@ namespace dolfin
     real u0(unsigned int i);
 
     /// Return right-hand side for ODE
-    real f(const Vector& u, real t, unsigned int i);
+    real f(real u[], real t, unsigned int i);
 
     /// Return time step for ODE
     real timestep(unsigned int i);
@@ -79,17 +79,17 @@ namespace dolfin
   protected:
 
     // Return x-component of current position (inline optimized)
-    real x(unsigned int i) const { return (*u)(dim*i); }
+    real x(unsigned int i) const { return u[dim*i]; }
     // Return y-component of current position (inline optimized)
-    real y(unsigned int i) const { return (*u)(dim*i + 1); }
+    real y(unsigned int i) const { return u[dim*i + 1]; }
     // Return z-component of current position (inline optimized)
-    real z(unsigned int i) const { return (*u)(dim*i + 2); }
+    real z(unsigned int i) const { return u[dim*i + 2]; }
     // Return x-component of current velocity (inline optimized)
-    real vx(unsigned int i) const { return (*u)(offset + dim*i); }
+    real vx(unsigned int i) const { return u[offset + dim*i]; }
     // Return y-component of current velocity (inline optimized)
-    real vy(unsigned int i) const { return (*u)(offset + dim*i + 1); }
+    real vy(unsigned int i) const { return u[offset + dim*i + 1]; }
     // Return z-component of current velocity (inline optimized)
-    real vz(unsigned int i) const { return (*u)(offset + dim*i + 2); }
+    real vz(unsigned int i) const { return u[offset + dim*i + 2]; }
 
     // Return distance between to particles
     real dist(unsigned int i, unsigned int j) const;
@@ -103,8 +103,8 @@ namespace dolfin
     // Half the number of components in the ODE system
     unsigned int offset;
 
-    // Pointer to solution vector
-    const Vector* u;
+    // Solution vector
+    real* u;
 
   };
 

@@ -1,6 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Quadrature.h>
 
 using namespace dolfin;
@@ -9,6 +10,8 @@ using namespace dolfin;
 Quadrature::Quadrature(unsigned int n)
 {
   this->n = n;
+
+  cout << "Allocating for quadrature: n = " << n << endl;
   
   points = new Point[n];
   weights = new real[n];
@@ -37,11 +40,13 @@ int Quadrature::size() const
 //-----------------------------------------------------------------------------
 const Point& Quadrature::point(unsigned int i) const
 {
+  dolfin_assert(i < n);
   return points[i];
 }
 //-----------------------------------------------------------------------------
 real Quadrature::weight(unsigned int i) const
 {
+  dolfin_assert(i < n);
   return weights[i];
 }
 //-----------------------------------------------------------------------------

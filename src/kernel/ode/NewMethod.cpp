@@ -64,6 +64,8 @@ NewMethod::~NewMethod()
     delete [] nweights;
   }
 
+  if ( derivatives ) delete [] derivatives;
+
   if ( trial ) delete trial;
   if ( test ) delete test;
 }

@@ -116,11 +116,13 @@ namespace dolfin
     // Transpose of dependencies
     Dependencies transpose;
 
+    // Default time step
+    real default_timestep;
+
   private:
 
     Element::Type default_method;
     uint default_order;
-    real default_timestep;
 
   };
 

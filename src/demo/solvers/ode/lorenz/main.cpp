@@ -34,6 +34,18 @@ public:
     }
   }
 
+  real f(real u[], real t, unsigned int i)
+  {
+    switch (i) {
+    case 0:
+      return s*(u[1] - u[0]);
+    case 1:
+      return r*u[0] - u[1] - u[0]*u[2];
+    default:
+      return u[0]*u[1] - b*u[2];
+    }
+  }
+
   real f(const Vector& u, real t, unsigned int i)
   {
     switch (i) {
@@ -59,6 +71,9 @@ int main()
   dolfin_set("number of samples", 500);
   dolfin_set("debug time steps", 1);
   dolfin_set("solve dual problem", false);
+  dolfin_set("use new ode solver", true);
+  dolfin_set("output", "plain text");
+  dolfin_set("save solution", false);
 
   Lorenz lorenz;
   lorenz.solve();

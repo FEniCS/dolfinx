@@ -13,6 +13,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N)
 {
+  // Choose time step
+  default_timestep = dolfin_get("initial time step");
+
   // Choose method
   string method = dolfin_get("method");
   if ( method == "cg" )
@@ -22,9 +25,6 @@ ODE::ODE(uint N) : N(N), T(1.0), sparsity(N), dependencies(N), transpose(N)
   
   // Choose order
   default_order = dolfin_get("order");
-
-  // Choose time step
-  default_timestep = dolfin_get("initial time step");
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()

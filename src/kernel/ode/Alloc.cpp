@@ -21,7 +21,7 @@ void Alloc::realloc(int** data, uint oldsize, uint newsize)
 
   // Copy old data
   for (uint i = 0; i < oldsize; i++)
-    newdata[i] = *data[i];
+    newdata[i] = (*data)[i];
 
   // Set default values
   for (uint i = oldsize; i < newsize; i++)
@@ -41,7 +41,7 @@ void Alloc::realloc(uint** data, uint oldsize, uint newsize)
 
   // Copy old data
   for (uint i = 0; i < oldsize; i++)
-    newdata[i] = *data[i];
+    newdata[i] = (*data)[i];
 
   // Set default values
   for (uint i = oldsize; i < newsize; i++)
@@ -61,7 +61,7 @@ void Alloc::realloc(real** data, uint oldsize, uint newsize)
 
   // Copy old data
   for (uint i = 0; i < oldsize; i++)
-    newdata[i] = *data[i];
+    newdata[i] = (*data)[i];
 
   // Set default values
   for (uint i = oldsize; i < newsize; i++)

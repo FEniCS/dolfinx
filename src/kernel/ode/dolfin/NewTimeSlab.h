@@ -89,7 +89,7 @@ namespace dolfin
     void create_s(real t0, real t1, uint offset, uint end);
     void create_e(uint index, uint subslab, real a, real b);
     void create_j(uint index);
-    void create_d(uint index, uint element, real a0, real b0);
+    void create_d(uint index, uint element, uint subslab, real a0, real b0);
    
     // Reallocation of data
     void alloc_s(uint newsize);
@@ -126,12 +126,9 @@ namespace dolfin
 
     //--- Time slab data ---
 
-    // FIXME: Remove ej (not needed)
-
     real* sa; // Mapping s --> start time t of sub slab s
     real* sb; // Mapping s --> end time t of sub slab s
         
-    uint* ej; // Mapping e --> first dof j of element e
     uint* ei; // Mapping e --> component index i of element e
     uint* es; // Mapping e --> time slab s containing element e
     uint* ee; // Mapping e --> previous element e of element e

@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NewTimeSlab::NewTimeSlab(ODE& ode) : 
-  sa(0), sb(0), ej(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
+  sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), N(ode.size()), _a(0), _b(0),
   ode(ode), method(0), solver(0), adaptivity(ode), partition(N),
   elast(N), u0(N), u(0), emax(0)
@@ -51,7 +51,6 @@ NewTimeSlab::~NewTimeSlab()
 {
   if ( sa ) delete [] sa;
   if ( sb ) delete [] sb;
-  if ( ej ) delete [] ej;
   if ( ei ) delete [] ei;
   if ( es ) delete [] es;
   if ( ee ) delete [] ee;
@@ -78,6 +77,8 @@ real NewTimeSlab::build(real a, real b)
   // Create time slab recursively
   b = createTimeSlab(a, b, 0);
 
+  //cout << "de = "; Alloc::disp(de, nd);
+  
   // Save start and end time
   _a = a;
   _b = b;
@@ -110,7 +111,8 @@ void NewTimeSlab::shift()
     dolfin_assert(sb[es[e]] == _b);
     
     // Get end-time value of component
-    u[i] = jx[ej[e] + method->nsize() - 1];
+    const int j = e * method->nsize();
+    u[i] = jx[j + method->nsize() - 1];
   }
 
   // Compute residual and new time step for each component
@@ -122,14 +124,15 @@ void NewTimeSlab::shift()
     
     // Get element data
     const uint s = es[e];
-    const uint j = ej[e];
+    const uint j = e * method->nsize();
     const real a = sa[s];
     const real b = sb[s];
     const real k = b - a;
     
     // Get initial value for element (only necessary for cG)
     const int ep = ee[e];
-    const real x0 = ( ep != -1 ? jx[ej[ep] + method->nsize() - 1] : u0[i] );
+    const uint jp = ep * method->nsize();
+    const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
     // Evaluate right-hand side at end-point (u is already updated)
     const real f = ode.f(u, b, i);
@@ -185,14 +188,15 @@ real NewTimeSlab::usample(uint i, real t)
 
   // Get element data
   const uint s = es[e];
-  const uint j = ej[e];
+  const uint j = e * method->nsize();
   const real a = sa[s];
   const real b = sb[s];
   const real k = b - a;
 
   // Get initial value for element (only necessary for cG)
   const int ep = ee[e];
-  const real x0 = ( ep != -1 ? jx[ej[ep] + method->nsize() - 1] : u0[i] );
+  const uint jp = ep * method->nsize();
+  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
   
   // Evaluate solution
   const real tau = (t - a) / k;
@@ -242,8 +246,8 @@ void NewTimeSlab::disp() const
  
   cout << endl;
 
-  cout << "ej = "; Alloc::disp(ej, ne);
   cout << "ei = "; Alloc::disp(ei, ne);
+  cout << "es = "; Alloc::disp(es, ne);  
   cout << "ee = "; Alloc::disp(ee, ne);
   cout << "ed = "; Alloc::disp(ed, ne);
 
@@ -282,6 +286,8 @@ real NewTimeSlab::createTimeSlab(real a, real b, uint offset)
   // Compute end time of this sub slab
   uint end = 0;
   b = computeEndTime(a, b, offset, end);
+
+  //cout << "Creating sub slab between a = " << a << " and b = " << b << endl;
 
   // Create sub slab
   create_s(a, b, offset, end);
@@ -333,9 +339,10 @@ void NewTimeSlab::create_e(uint index, uint subslab, real a, real b)
   
   // Get next available position
   uint pos = size_e.next++;
+
+  //dolfin_info("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
   
   // Create new element
-  ej[pos] = size_j.next;
   ei[pos] = index;
   es[pos] = subslab;
   ee[pos] = elast[index];
@@ -344,7 +351,7 @@ void NewTimeSlab::create_e(uint index, uint subslab, real a, real b)
   create_j(index);
 
   // Create dependencies to element
-  create_d(index, pos, a, b);
+  create_d(index, pos, subslab, a, b);
 
   // Update elast for component
   elast[index] = pos;
@@ -363,7 +370,7 @@ void NewTimeSlab::create_j(uint index)
     jx[pos + stage] = u0[index];
 }
 //-----------------------------------------------------------------------------
-void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
+void NewTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0)
 {
   // Add dependencies to elements that depend on the given element if the
   // depending elements use larger time steps
@@ -371,7 +378,7 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
   //dolfin_info("Checking dependencies to element %d (component %d)", element, index);
 
   // Get list of components depending on current component
-  const NewArray<uint>& deps = ode.transpose[index];
+  const NewArray<uint>& deps = ode.transpose[i0];
   
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -381,6 +388,8 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
         
     // Get other element
     const int e1  = elast[i1];
+    
+    //cout << "  Other element: " << e1 << endl;
     
     // Skip elements which have not been created (use smaller time steps)
     if ( e1 == -1 )
@@ -393,7 +402,7 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
     const real k1 = b1 - a1;
     
     // Only add dependencies from components with larger time steps
-    if ( !within(a0, b0, a1, b1) )
+    if ( !within(a0, b0, a1, b1) || s0 == s1 )
       continue;
     
     //dolfin_info("  Checking element %d (component %d)", e1, i1);
@@ -421,7 +430,7 @@ void NewTimeSlab::create_d(uint index, uint element, real a0, real b0)
 	{
 	  if ( de[d] == -1 )
 	  {
-	    de[d] = element;
+	    de[d] = e0;
 	    found = true;
 	    break;
 	  }
@@ -454,7 +463,6 @@ void NewTimeSlab::alloc_e(uint newsize)
 
   dolfin_info("Reallocating: ne = %d", newsize);
 
-  Alloc::realloc(&ej, size_e.size, newsize);
   Alloc::realloc(&ei, size_e.size, newsize);
   Alloc::realloc(&es, size_e.size, newsize);
   Alloc::realloc(&ee, size_e.size, newsize);
@@ -500,8 +508,6 @@ real NewTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
   if ( K < adaptivity.threshold() * (b - a) )
     b = a + K;
   
-  //cout << "a = " << a << " b = " << b << endl;
-
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -593,7 +599,9 @@ dolfin::uint NewTimeSlab::countDependencies(uint i0, real b0)
     
     // Check if the component has reached b0
     if ( b1 < (b0 - DOLFIN_EPS) )
+    {
       n += method->nsize();
+    }
   }
 
   return n;
@@ -609,11 +617,9 @@ bool NewTimeSlab::within(real t, real a, real b) const
 //-----------------------------------------------------------------------------
 bool NewTimeSlab::within(real a0, real b0, real a1, real b1) const
 {
-  // Check if [a0, b0] is contained in [a1, b1], and make sure that
-  // b0 - a0 < a1 - b1
+  // Check if [a0, b0] is contained in [a1, b1]
 
-  return ( ( a1 <= (a0 + DOLFIN_EPS) && (b0 + DOLFIN_EPS) <= b1 ) ||
-	   ( a1 <= (a0 - DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1 ) );
+  return a1 <= (a0 + DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewTimeSlab::cover(int subslab, uint element)
@@ -783,17 +789,19 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
       
       // Get initial value for element (only necessary for cG)
       const int ep = ee[e1];
-      const real x0 = ( ep != -1 ? jx[ej[ep] + method->nsize() - 1] : u0[i1] );
+      const uint jp = ep * method->nsize();
+      const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
 
       // Use fast evaluation for elements in the same sub slab
+      const uint j1 = e1 * method->nsize();
       if ( s0 == s1 )
-	u[i1] = method->ueval(x0, jx + ej[e1], n);
+	u[i1] = method->ueval(x0, jx + j1, n);
       else
       {
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
-	u[i1] = method->ueval(x0, jx + ej[e1], tau);
+	u[i1] = method->ueval(x0, jx + j1, tau);
       }
     }
 
@@ -806,8 +814,11 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     {
       for (uint dep = 0; dep < ndep; dep++)
       {
+	// Get element
+	const int e1 = de[d++];
+	dolfin_assert(e1 != -1);
+
 	// Get element data
-	const uint e1 = de[d++];
 	const uint i1 = ei[e1];
 	const uint s1 = es[e1];
 	const real a1 = sa[s1];
@@ -818,11 +829,13 @@ void NewTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
 
 	// Get initial value for element (only necessary for cG)
 	const int ep = ee[e1];
-	const real x0 = ( ep != -1 ? jx[ej[ep] + method->nsize() - 1] : u0[i1] );
+	const uint jp = ep * method->nsize();
+	const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
 
 	// Evaluate component
 	const real tau = (t - a1) / k1;
-	u[i1] = method->ueval(x0, jx + ej[e1], tau);
+	const uint j1 = e1 * method->nsize();
+	u[i1] = method->ueval(x0, jx + j1, tau);
       }
     }
     

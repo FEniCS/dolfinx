@@ -33,6 +33,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ODE.h \
              ODESolver.h \
              ParticleSystem.h \
+             NewParticleSystem.h \
              Partition.h \
              NewPartition.h \
              RHS.h \

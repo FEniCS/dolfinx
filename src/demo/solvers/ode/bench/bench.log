@@ -238,3 +238,9 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------------------------------------------------------------
+Changes: Use constant time steps to be able to compare old version with
+the new improved implementation. This changes the benchmark problem so
+results cannot be compared with previous results listed above.
+
+Preliminary tests show a speed increase of a factor 2.5 for the
+new implementation.

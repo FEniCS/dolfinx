@@ -105,7 +105,7 @@ void NewcGqMethod::computeQuadrature()
 
   // Get quadrature weights and rescale from [-1,1] to [0,1]
   for (unsigned int i = 0; i < nq; i++)
-    qweights[i] = 0.5 * quadrature.weight(i + 1);
+    qweights[i] = 0.5 * quadrature.weight(i);
 }
 //-----------------------------------------------------------------------------
 void NewcGqMethod::computeBasis()
