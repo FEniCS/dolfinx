@@ -13,6 +13,8 @@
 #include <dolfin/List.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>
+#include <dolfin/InitGrid.h>
+#include <dolfin/RefineGrid.h>
 
 namespace dolfin {
 
@@ -26,10 +28,10 @@ namespace dolfin {
 	 ~Grid();
 
 	 void clear();
+	 void refine();
 	 
-	 int noNodes();
-	 int noCells();
-	 
+	 int noNodes() const;
+	 int noCells() const;
 	 Cell::Type type();
 
 	 /// Output
@@ -55,12 +57,13 @@ namespace dolfin {
 
 	 void init();
 	 
-	 /// --- Grid data (main part) ---
+	 /// Grid data
+	 GridData *gd;
 
-	 GridData *grid_data;
-	 int no_nodes;
-	 int no_cells;
-
+	 /// Algorithms
+	 InitGrid initGrid;
+	 RefineGrid refineGrid;
+	 
   };
 
 }

@@ -22,15 +22,18 @@ namespace dolfin {
   public:
 	 
 	 Node* createNode();
-	 Cell* createCell(Cell::Type type);
-
 	 Node* createNode(real x, real y, real z);
+	 
+	 Cell* createCell(Cell::Type type);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2);
 	 Cell* createCell(Cell::Type type, int n0, int n1, int n2, int n3);
 
 	 Node* getNode(int id);
 	 Cell* getCell(int id);
 
+	 int noNodes() const;
+	 int noCells() const;
+	 
 	 // Friends
 	 friend class NodeIterator::GridNodeIterator;
 	 friend class CellIterator::GridCellIterator;

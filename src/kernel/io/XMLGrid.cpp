@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Grid.h>
-#include "GridData.h"
+#include <dolfin/GridData.h>
 #include "XMLGrid.h"
 
 // Fixme: temporary
@@ -99,12 +99,12 @@ void XMLGrid::endElement(const xmlChar *name)
 //-----------------------------------------------------------------------------
 void XMLGrid::reading(std::string filename)
 {
-  std::cout << "Reading grid from file \"" << filename << "\"." << std::endl;
+  std::cout << "Reading grid: \"" << filename << "\"." << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::done()
 {
-  std::cout << grid << std::endl;
+  std::cout << "Reading grid: " << grid << std::endl;
 }
 //-----------------------------------------------------------------------------
 void XMLGrid::readGrid(const xmlChar *name, const xmlChar **attrs)

@@ -11,11 +11,15 @@ int main()
   Grid grid;
   File file("grid.xml.gz");
 
+  // Read grid from file
   file >> grid;
+  cout << grid << endl;  
 
-  cout << grid << endl;
+  // Show the entire grid
+  //grid.show();
+
+  // Refine grid
+  grid.refine();
   
-  grid.show();
-
   return 0;
 }

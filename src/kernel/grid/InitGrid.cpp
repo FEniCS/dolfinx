@@ -1,33 +1,27 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Node.h>
 #include <dolfin/GenericCell.h>
-#include "InitGrid.h"
+#include <dolfin/InitGrid.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-InitGrid::InitGrid()
-{
-
-
-}
-//-----------------------------------------------------------------------------
-void InitGrid::init(Grid &grid)
+void InitGrid::init()
 {
   // Reset all previous connections
-  clear(grid);
+  clear();
 
   // Compute n-c connections
-  initNodeCell(grid);
+  initNodeCell();
   
   // Compute c-c connections
-  initCellCell(grid);
+  initCellCell();
 
   // Compute n-n connections
-  initNodeNode(grid);
+  initNodeNode();
 }
 //-----------------------------------------------------------------------------
-void InitGrid::clear(Grid& grid)
+void InitGrid::clear()
 {  
   // Clear connectivity for nodes
   for (NodeIterator n(grid); !n.end(); ++n){
@@ -40,7 +34,7 @@ void InitGrid::clear(Grid& grid)
 	 c->cc.clear();
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeCell(Grid& grid)
+void InitGrid::initNodeCell()
 {
   // Go through all cells and add the cell as a neighbour to all its nodes.
   // A couple of extra loops are needed to first count the number of
@@ -61,7 +55,7 @@ void InitGrid::initNodeCell(Grid& grid)
 		n->nc.add(c);  
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initCellCell(Grid& grid)
+void InitGrid::initCellCell()
 {
   // Go through all cells and count the cell neighbors.
 
@@ -83,7 +77,7 @@ void InitGrid::initCellCell(Grid& grid)
   }
 }
 //-----------------------------------------------------------------------------
-void InitGrid::initNodeNode(Grid& grid)
+void InitGrid::initNodeNode()
 {
   // Go through all nodes and count the node neighbors.
   // This is done in four sweeps: count (overestimate), allocate, add, and

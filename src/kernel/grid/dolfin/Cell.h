@@ -18,7 +18,8 @@ namespace dolfin {
   class Cell {
   public:
 
-	 enum Type { TRIANGLE, TETRAHEDRON, NONE };
+	 enum Type   { TRIANGLE, TETRAHEDRON, NONE };
+	 enum Marker { MARKED, UNMARKED };
 	 
 	 Cell();
 	 Cell(Node &n0, Node &n1, Node &n2);
@@ -43,6 +44,14 @@ namespace dolfin {
 	 int nodeID(int i) const;
 	 int edgeID(int i) const;
 
+	 // Mark and check if marked
+	 void mark();
+	 bool marked() const;
+
+	 // Mark and check state of the marke
+	 void mark(Marker marker);
+	 Marker marker() const;
+	 
 	 // -> access passed to GenericCell
 	 GenericCell* operator->() const;
 	 
@@ -71,6 +80,9 @@ namespace dolfin {
 	 
 	 // The cell
 	 GenericCell *c;
+
+	 // Marker (for refinement)
+	 Marker _marker;
 	 
 	 // Connectivity
 	 ShortList<Cell *> cc;

@@ -1,10 +1,21 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Refinement.hh"
+#include <iostream>
 
+#include <dolfin/Grid.h>
+#include <dolfin/RefineGrid.h>
 
+using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+void RefineGrid::refine()
+{
+  std::cout << "Refining grid: " << grid << std::endl;
+}
+//-----------------------------------------------------------------------------
+
+/*
 Refinement::GlobalRefinement()
 {
 }
@@ -280,4 +291,4 @@ Refinement::IrrRef4(Tetrahedron *parent, int marked_edge1, int marked_edge2)
   t4->Set(parent->GetEdge(marked_edge1)->GetEndnode(1),n1,parent->GetEdge(marked_edge2)->GetEndnode(1),n2);
 
 }
-
+*/

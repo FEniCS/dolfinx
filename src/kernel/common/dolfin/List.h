@@ -90,15 +90,14 @@ public:
   }
 
   // Creates a new object in the list
-  T* create(){
-	 
+  T* create() {
 	 int dummy;
 	 T* t = create(&dummy);
 	 return t;
   }
   
   /// Adds an object to the list
-  T* add(T x){
+  T* add(T x) {
 	 T *new_x = create();
 	 *new_x = x;
   }
@@ -127,12 +126,12 @@ public:
   }
   
   /// True if the list is empty
-  bool empty(){
+  bool empty() const {
 	 return _size == 0;
   }
 
   /// Returns the size of the list
-  bool size(){
+  int size() const {
 	 return _size;
   }
 

@@ -2,7 +2,7 @@
 #include <dolfin/Node.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/GenericCell.h>
-#include "GridData.h"
+#include <dolfin/GridData.h>
 
 using namespace dolfin;
 
@@ -80,8 +80,8 @@ Node* NodeIterator::operator->() const
 //-----------------------------------------------------------------------------
 NodeIterator::GridNodeIterator::GridNodeIterator(const Grid& grid)
 {
-  node_iterator = grid.grid_data->nodes.begin();
-  at_end = grid.grid_data->nodes.end();
+  node_iterator = grid.gd->nodes.begin();
+  at_end = grid.gd->nodes.end();
 }
 //-----------------------------------------------------------------------------
 void NodeIterator::GridNodeIterator::operator++()

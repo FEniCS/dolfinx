@@ -11,6 +11,7 @@ Cell::Cell()
 {
   _id = -1;
   c = 0;
+  _marker = UNMARKED;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2)
@@ -23,6 +24,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
   cn(0) = &n0;
   cn(1) = &n1;
   cn(2) = &n2;
+
+  _marker = UNMARKED;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
@@ -36,6 +39,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
   cn(1) = &n1;
   cn(2) = &n2;
   cn(3) = &n3;
+
+  _marker = UNMARKED;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -124,6 +129,26 @@ int Cell::edgeID(int i) const
   // FIXME: Use logging system
   std::cout << "Cell::edgeID() is not implemented." << std::endl;
   exit(1);
+}
+//-----------------------------------------------------------------------------
+void Cell::mark()
+{
+  _marker = MARKED;
+}
+//-----------------------------------------------------------------------------
+bool Cell::marked() const
+{
+  return _marker == MARKED;
+}
+//-----------------------------------------------------------------------------
+void Cell::mark(Marker marker)
+{
+  _marker = marker;
+}
+//-----------------------------------------------------------------------------
+Cell::Marker Cell::marker() const
+{
+  return _marker;
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2)

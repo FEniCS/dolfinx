@@ -2,16 +2,25 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/Cell.h>
-#include "GridData.h"
+#include <dolfin/GridData.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Node* GridData::createNode()
+{ 
+  int id;
+  Node *n = nodes.create(&id);
+  n->setID(id);
+  return n;
+}
+//-----------------------------------------------------------------------------
+Node* GridData::createNode(real x, real y, real z)
 {
   int id;
   Node *n = nodes.create(&id);
   n->setID(id);
+  n->set(x,y,z);  
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -22,15 +31,6 @@ Cell* GridData::createCell(Cell::Type type)
   c->setID(id);
   c->init(type);
   return c;
-}
-//-----------------------------------------------------------------------------
-Node* GridData::createNode(real x, real y, real z)
-{
-  int id;
-  Node *n = nodes.create(&id);
-  n->setID(id);
-  n->set(x,y,z);
-  return n;
 }
 //-----------------------------------------------------------------------------
 Cell* GridData::createCell(Cell::Type type, int n0, int n1, int n2)
@@ -61,5 +61,15 @@ Node* GridData::getNode(int id)
 Cell* GridData::getCell(int id)
 {
   return cells.pointer(id);
+}
+//-----------------------------------------------------------------------------
+int GridData::noNodes() const
+{
+  return nodes.size();
+}
+//-----------------------------------------------------------------------------
+int GridData::noCells() const
+{
+  return cells.size();
 }
 //-----------------------------------------------------------------------------

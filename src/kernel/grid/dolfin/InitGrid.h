@@ -20,18 +20,20 @@ namespace dolfin{
   class InitGrid {
   public:
 
-	 InitGrid();
+	 InitGrid(Grid& grid_) : grid(grid_) {}
 
-	 void init(Grid& grid);
+	 void init();
 	 
   private:
 
-	 void clear(Grid& grid);
+	 void clear();
 	 
-	 void initNodeCell(Grid& grid);
-	 void initCellCell(Grid& grid);
-	 void initNodeNode(Grid& Grid);
+	 void initNodeCell();
+	 void initCellCell();
+	 void initNodeNode();
 
+	 Grid& grid;
+	 
   };
 
 }
