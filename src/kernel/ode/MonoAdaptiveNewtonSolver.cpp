@@ -16,14 +16,22 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab), implicit(implicit)
+  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab),
+    implicit(implicit), Mu0(0)
 {
-  // Do nothing
+  // Initialize product M*u0 for implicit system
+
+  if ( implicit )
+  {
+    Mu0 = new real[ts.N];
+    for (uint i = 0; i < ts.N; i++)
+       Mu0[i] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-  // Do nothing
+  if ( Mu0 ) delete [] Mu0;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -42,6 +50,10 @@ void MonoAdaptiveNewtonSolver::start()
 
   // Recompute Jacobian
   A.update(ts);
+
+  // Precompute product M*u0
+  if ( implicit )
+    ode.M(ts.u0, Mu0);
 
   debug();
   A.disp();
@@ -134,6 +146,10 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
   real* bb = b.array();
   real* xx = ts.x.array();
 
+  // Temporary data array used to store multiplications
+  //real* z = ts.tmp();
+  real* z = new real[ts.N];
+
   // Compute size of time step
   const real k = ts.length();
 
@@ -147,9 +163,8 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
     const uint noffset = n * ts.N;
 
     // Reset values to initial data
-    
     for (uint i = 0; i < ts.N; i++)
-      bb[noffset + i] = ts.u0[i];
+      bb[noffset + i] = Mu0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -161,10 +176,16 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
     }
   }
   
-  // Subtract current values
-  for (uint j = 0; j < ts.nj; j++)
-    bb[j] -= xx[j];
-  
+  // Subtract current values (do this after f is used, otherwise
+  // we can't use z...)
+  for (uint n = 0; n < method.nsize(); n++)
+  {
+    const uint noffset = n * ts.N;
+    ode.M(xx + noffset, z);
+    for (uint i = 0; i < ts.N; i++)
+      bb[noffset + i] -= z[i];
+  }
+
   // Restore arrays
   b.restore(bb);
   ts.x.restore(xx);

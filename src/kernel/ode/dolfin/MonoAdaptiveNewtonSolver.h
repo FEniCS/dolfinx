@@ -63,6 +63,7 @@ namespace dolfin
     NewVector b;              // Right-hand side -F(x)
     NewGMRES solver;          // GMRES solver
     bool implicit;            // True if ODE is implicit
+    real* Mu0;                // Precomputed product M*u0 for implicit system
     
   };
 
