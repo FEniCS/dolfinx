@@ -69,6 +69,9 @@ namespace dolfin {
     // Global face number
     int _id;
 
+    // Connectivity
+    Array<Cell*> fc;
+
     // The list of edges
     Array<Edge*> fe;
 

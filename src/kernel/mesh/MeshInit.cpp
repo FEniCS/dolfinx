@@ -76,6 +76,11 @@ void MeshInit::clear(Mesh& mesh)
     c->c->ce.clear();
     c->c->cf.clear();
   }
+
+  // Clear connectivity for faces 
+  for (FaceIterator f(mesh); !f.end(); ++f) {
+    f->fc.clear();
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initConnectivity(Mesh& mesh)
@@ -99,6 +104,9 @@ void MeshInit::initConnectivity(Mesh& mesh)
 
   // Compute faces [6]
   initFaces(mesh);
+
+  // Compute f-c connections [7]
+  initFaceCell(mesh);
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initEdges(Mesh& mesh)
@@ -127,7 +135,7 @@ void MeshInit::initFaces(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshInit::initNodeCell(Mesh& mesh)
 {
-  // Go through all cells and add eachcell as a neighbour to all its nodes.
+  // Go through all cells and add each cell as a neighbour to all its nodes.
   // This is done in three steps:
   //
   //   1. Count the number of cell neighbors for each node
@@ -237,5 +245,30 @@ void MeshInit::initNodeNode(Mesh& mesh)
 	n->nn(i+1) = &e->node(1);
     }
   }
+}
+//-----------------------------------------------------------------------------
+void MeshInit::initFaceCell(Mesh& mesh)
+{
+  // Go through all cells and add each cell as a neighbour to all its faces.
+  // This is done in three steps:
+  //
+  //   1. Count the number of cell neighbors for each face 
+  //      (should be 2 for interior faces and 1 for boundary faces) 
+  //   2. Allocate memory for each face
+  //   3. Add the cell neighbors
+  
+  // Count the number of cells the face appears in
+  for (CellIterator c(mesh); !c.end(); ++c)
+    for (FaceIterator f(c); !f.end(); ++f)
+      f->fc.setsize(f->fc.size()+1);
+  
+  // Allocate memory for the cell lists
+  for (FaceIterator f(mesh); !f.end(); ++f)
+    f->fc.init();
+
+  // Add the cells to the cell lists
+  for (CellIterator c(mesh); !c.end(); ++c)
+    for (FaceIterator f(c); !f.end(); ++f)
+      f->fc.add(c);
 }
 //-----------------------------------------------------------------------------
