@@ -13,7 +13,7 @@ real by  (real x, real y, real z, real t);
 int main(int argc, char **argv)
 {
   // Set problem
-  dolfin_set_problem("conv-diff");
+  dolfin_set_problem("convection-diffusion");
   
    // Set parameters
   dolfin_set_parameter("problem description", "Convection-Diffusion around a DOLFIN");
