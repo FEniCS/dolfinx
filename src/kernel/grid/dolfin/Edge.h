@@ -1,6 +1,11 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+// A couple of comments:
+//
+//   - More methods should be private?
+//   - Why _en0, _en1 instead of just n0, n1?
+
 #ifndef __EDGE_HH
 #define __EDGE_HH
 

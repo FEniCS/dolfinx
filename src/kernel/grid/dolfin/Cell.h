@@ -1,6 +1,13 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+// A couple of comments:
+//
+//   - Maybe we should not use capital letters for enums after all?
+//   - Enums don't need to be called "refined_regular", just "regular" is enough?
+//   - Move data to GenericCell? Cell should only contain the GenericCell pointer?
+//   - Maybe more methods should be private?
+
 #ifndef __CELL_H
 #define __CELL_H
 

@@ -1,6 +1,14 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+// A couple of comments:
+//
+//   - Maybe not so many methods should be public?
+//   - Why _create_edges and not create_edges?
+//   - Return List<Cell *> from closeCell() won't work?
+//   - Rename refineGrid(int level) and unrefineGrid(int level) to refine(int level) and unrefine(int level)?
+//   - Should there be an unrefine()?
+
 #ifndef __REFINE_GRID_H
 #define __REFINE_GRID_H
 

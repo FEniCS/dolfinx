@@ -1,6 +1,10 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+// A couple of comments:
+//
+//   - Is the check in createNode() really necessary?
+
 #ifndef __GRID_DATA_H
 #define __GRID_DATA_H
 
