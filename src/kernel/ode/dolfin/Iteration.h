@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     // Type of iteration
-    enum State {nonstiff, diagonal, adaptive, nonnormal};
+    enum State {nonstiff, stiff1, stiff2, stiff3};
 
     // Discrete residuals
     struct Residuals

@@ -7,52 +7,53 @@
 #include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
 #include <dolfin/FixedPointIteration.h>
-#include <dolfin/DiagonalIteration.h>
+#include <dolfin/AdaptiveIterationLevel1.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DiagonalIteration::DiagonalIteration(Solution& u, RHS& f,
-				     FixedPointIteration & fixpoint, 
-				     unsigned int maxiter,
-				     real maxdiv, real maxconv, real tol) :
+AdaptiveIterationLevel1::AdaptiveIterationLevel1(Solution& u, RHS& f,
+						 FixedPointIteration & fixpoint, 
+						 unsigned int maxiter,
+						 real maxdiv, real maxconv, 
+						 real tol) :
   Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), alpha(1)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DiagonalIteration::~DiagonalIteration()
+AdaptiveIterationLevel1::~AdaptiveIterationLevel1()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Iteration::State DiagonalIteration::state() const
+Iteration::State AdaptiveIterationLevel1::state() const
 {
-  return diagonal;
+  return stiff1;
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::start(TimeSlab& timeslab)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void DiagonalIteration::start(NewArray<Element*>& elements)
+void AdaptiveIterationLevel1::start(TimeSlab& timeslab)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::start(Element& element)
+void AdaptiveIterationLevel1::start(NewArray<Element*>& elements)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(TimeSlab& timeslab)
+void AdaptiveIterationLevel1::start(Element& element)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void AdaptiveIterationLevel1::update(TimeSlab& timeslab)
 {
   // Simple update of time slab
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(NewArray<Element*>& elements)
+void AdaptiveIterationLevel1::update(NewArray<Element*>& elements)
 {
   // Simple update of element list
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -66,26 +67,26 @@ void DiagonalIteration::update(NewArray<Element*>& elements)
   }
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(Element& element)
+void AdaptiveIterationLevel1::update(Element& element)
 {
   // Damped update of element
   element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::stabilize(TimeSlab& timeslab,
-				  const Residuals& r, unsigned int n)
+void AdaptiveIterationLevel1::stabilize(TimeSlab& timeslab,
+					const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::stabilize(NewArray<Element*>& elements,
-				  const Residuals& r, unsigned int n)
+void AdaptiveIterationLevel1::stabilize(NewArray<Element*>& elements,
+					const Residuals& r, unsigned int n)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::stabilize(Element& element, 
-				  const Residuals& r, unsigned int n)
+void AdaptiveIterationLevel1::stabilize(Element& element, 
+					const Residuals& r, unsigned int n)
 {
   // Compute diagonal damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
@@ -93,8 +94,8 @@ void DiagonalIteration::stabilize(Element& element,
   alpha = computeAlpha(rho);
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::converged(TimeSlab& timeslab, 
-				   Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(TimeSlab& timeslab, 
+					Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the slab contains only one element list
   if ( timeslab.leaf() )
@@ -111,8 +112,8 @@ bool DiagonalIteration::converged(TimeSlab& timeslab,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::converged(NewArray<Element*>& elements, 
-				   Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(NewArray<Element*>& elements, 
+					Residuals& r, unsigned int n)
 {
   // Convergence handled locally when the list contains only one element
   if ( elements.size() == 1 )
@@ -129,8 +130,8 @@ bool DiagonalIteration::converged(NewArray<Element*>& elements,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::converged(Element& element, 
-				  Residuals& r, unsigned int n)
+bool AdaptiveIterationLevel1::converged(Element& element, 
+					Residuals& r, unsigned int n)
 {
   // Compute residual
   r.r1 = r.r2;
@@ -143,9 +144,9 @@ bool DiagonalIteration::converged(Element& element,
   return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::diverged(TimeSlab& timeslab, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+bool AdaptiveIterationLevel1::diverged(TimeSlab& timeslab, 
+				       Residuals& r, unsigned int n,
+				       Iteration::State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
@@ -162,14 +163,14 @@ bool DiagonalIteration::diverged(TimeSlab& timeslab,
   timeslab.reset(fixpoint);
 
   // Change state
-  newstate = nonnormal;
+  newstate = stiff3;
 
   return true;
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::diverged(NewArray<Element*>& elements, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+bool AdaptiveIterationLevel1::diverged(NewArray<Element*>& elements, 
+				       Residuals& r, unsigned int n,
+				       Iteration::State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
@@ -186,14 +187,14 @@ bool DiagonalIteration::diverged(NewArray<Element*>& elements,
   reset(elements);
 
   // Change state
-  newstate = adaptive;
+  newstate = stiff2;
 
   return true;
 }
 //-----------------------------------------------------------------------------
-bool DiagonalIteration::diverged(Element& element, 
-				 Residuals& r, unsigned int n,
-				 Iteration::State& newstate)
+bool AdaptiveIterationLevel1::diverged(Element& element, 
+				       Residuals& r, unsigned int n,
+				       Iteration::State& newstate)
 {
   // Make at least two iterations
   if ( n < 2 )
@@ -209,13 +210,13 @@ bool DiagonalIteration::diverged(Element& element,
   return true;
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::report() const
+void AdaptiveIterationLevel1::report() const
 {
   cout << "System appears to be diagonally stiff, solution computed with "
        << "diagonally damped fixed point iteration." << endl;
 }
 //-----------------------------------------------------------------------------
-real DiagonalIteration::computeAlpha(real rho) const
+real AdaptiveIterationLevel1::computeAlpha(real rho) const
 {
   if ( rho >= 0.0 || rho < -1.0 )
     return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);

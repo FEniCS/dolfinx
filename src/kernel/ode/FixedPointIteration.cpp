@@ -9,8 +9,8 @@
 #include <dolfin/TimeSlab.h>
 #include <dolfin/Element.h>
 #include <dolfin/NonStiffIteration.h>
-#include <dolfin/DiagonalIteration.h>
-#include <dolfin/AdaptiveIteration.h>
+#include <dolfin/AdaptiveIterationLevel1.h>
+#include <dolfin/AdaptiveIterationLevel2.h>
 #include <dolfin/FixedPointIteration.h>
 
 using namespace dolfin;
@@ -380,13 +380,13 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   case Iteration::nonstiff:
     state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
-  case Iteration::diagonal:
-    state = new DiagonalIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
+  case Iteration::stiff1:
+    state = new AdaptiveIterationLevel1(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
-  case Iteration::adaptive:
-    state = new AdaptiveIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
+  case Iteration::stiff2:
+    state = new AdaptiveIterationLevel2(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
-  case Iteration::nonnormal:
+  case Iteration::stiff3:
     dolfin_error("Not implemented");
     break;
   default:

@@ -1,8 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __DIAGONAL_ITERATION_H
-#define __DIAGONAL_ITERATION_H
+#ifndef __ADAPTIVE_ITERATION_LEVEL_1_H
+#define __ADAPTIVE_ITERATION_LEVEL_1_H
 
 #include <dolfin/NewArray.h>
 #include <dolfin/Iteration.h>
@@ -10,16 +10,17 @@
 namespace dolfin
 {
 
-  /// State-specific behavior of fixed point iteration for diagonally stiff problems.
+  /// State-specific behavior of fixed point iteration for stiff (level 1) problems.
+  /// Adaptive damping used on the element level.
 
-  class DiagonalIteration : public Iteration
+  class AdaptiveIterationLevel1 : public Iteration
   {
   public:
 
-    DiagonalIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
+    AdaptiveIterationLevel1(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
     
-    ~DiagonalIteration();
+    ~AdaptiveIterationLevel1();
 
     State state() const;
 

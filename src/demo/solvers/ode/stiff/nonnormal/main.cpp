@@ -1,6 +1,9 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+// A non-normal test problem: critically damped oscillation
+// with eigenvalues l1 = l2 = 100.
+
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -47,7 +50,7 @@ int main()
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
   dolfin_set("initial time step", 0.1);
-  dolfin_set("fixed time step", true);
+  //dolfin_set("fixed time step", true);
 
   NonNormal nonnormal;
   nonnormal.solve();

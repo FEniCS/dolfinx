@@ -6,11 +6,12 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/dGqElement.h \
                           dolfin/dGqMethod.h \
                           dolfin/dGqMethods.h \
-                          dolfin/AdaptiveIteration.h \
+                          dolfin/AdaptiveIterationLevel1.h \
+                          dolfin/AdaptiveIterationLevel2.h \
+                          dolfin/AdaptiveIterationLevel3.h \
                           dolfin/Adaptivity.h \
                           dolfin/AutomaticSparsity.h \
                           dolfin/Component.h \
-                          dolfin/DiagonalIteration.h \
                           dolfin/Dual.h \
                           dolfin/Element.h \
                           dolfin/ElementBlock.h \
@@ -46,11 +47,12 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           dGqElement.cpp \
                           dGqMethod.cpp \
                           dGqMethods.cpp \
-                          AdaptiveIteration.cpp \
+                          AdaptiveIterationLevel1.cpp \
+                          AdaptiveIterationLevel2.cpp \
+                          AdaptiveIterationLevel3.cpp \
                           Adaptivity.cpp \
                           AutomaticSparsity.cpp \
                           Component.cpp \
-                          DiagonalIteration.cpp \
                           Dual.cpp \
                           Element.cpp \
                           ElementBlock.cpp \

@@ -159,7 +159,7 @@ bool NonStiffIteration::diverged(TimeSlab& timeslab,
   timeslab.reset(fixpoint);
 
   // Change state
-  newstate = nonnormal;
+  newstate = stiff3;
 
   return true;
 }
@@ -183,7 +183,7 @@ bool NonStiffIteration::diverged(NewArray<Element*>& elements,
   reset(elements);
 
   // Change state
-  newstate = adaptive;
+  newstate = stiff2;
 
   return true;
 }
@@ -207,7 +207,7 @@ bool NonStiffIteration::diverged(Element& element,
   reset(element);
 
   // Change state
-  newstate = diagonal;
+  newstate = stiff1;
 
   return true;
 }

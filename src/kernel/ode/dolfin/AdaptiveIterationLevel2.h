@@ -3,8 +3,8 @@
 //
 // Modified by Anders Logg, 2004.
 
-#ifndef __ADAPTIVE_ITERATION_H
-#define __ADAPTIVE_ITERATION_H
+#ifndef __ADAPTIVE_ITERATION_LEVEL_2_H
+#define __ADAPTIVE_ITERATION_LEVEL_2_H
 
 #include <dolfin/NewArray.h>
 #include <dolfin/Iteration.h>
@@ -12,16 +12,17 @@
 namespace dolfin
 {
 
-  /// State-specific behavior of fixed point iteration for general stiff problems.
+  /// State-specific behavior of fixed point iteration for stiff (level 2) problems.
+  /// Adaptive damping used on the element list level.
 
-  class AdaptiveIteration : public Iteration
+  class AdaptiveIterationLevel2 : public Iteration
   {
   public:
-
-    AdaptiveIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
     
-    ~AdaptiveIteration();
+    AdaptiveIterationLevel2(Solution& u, RHS& f, FixedPointIteration& fixpoint,
+			    unsigned int maxiter, real maxdiv, real maxconv, real tol);
+    
+    ~AdaptiveIterationLevel2();
     
     State state() const;
 
