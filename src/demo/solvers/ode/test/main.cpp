@@ -37,17 +37,17 @@ public:
     //dolfin::cout << "u: " << dolfin::endl;
     //u.show();
 
-    if(i == 0)
+    if (i == 0)
     {
       //return -lambda1 * u(0);
       return u(1);
     }
-    else if(i == 1)
+    else if (i == 1)
     {
       //return -lambda2 * u(1);
       return -u(0);
     }
-    else if(i == 2)
+    else if (i == 2)
     {
       return -lambda2 * u(2);
       //return -u(0);
@@ -56,12 +56,15 @@ public:
   }
 
 private:
+
   real lambda1, lambda2;
+
 };
 
 int main()
 {
   dolfin_set("output", "plain text");
+  dolfin_set("debug time slab", 1);
 
   //cout.precision(100);
 
@@ -70,20 +73,14 @@ int main()
   real foo;
   Vector u(1);
   u(0) = 1;
-
-
   foo = minimal.f(u, 0, 0);
-
   dolfin::cout << foo << dolfin::endl;
-
   dolfin::cout << (int)sizeof(Element) << dolfin::endl;
-
 
   //Partition p(minimal.size(), 0.1);
   //TimeSlabData data(minimal);
   //RHS f(minimal, data);
   //TimeSlab(0, 0.1, f, data, p, 0);
-
 
   minimal.solve();
   

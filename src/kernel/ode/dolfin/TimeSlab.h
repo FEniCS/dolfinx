@@ -7,7 +7,7 @@
 #define __TIME_SLAB_H
 
 #include <vector>
-
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/Table.h>
 #include <dolfin/constants.h>
@@ -52,9 +52,13 @@ namespace dolfin {
 
     /// Return length of time slab
     real length() const;
-    
+
+    // FIXME: Maybe this shouldn't be public?
     // List of time slabs within this time slab
     std::vector<TimeSlab *> timeslabs;
+
+    /// Output
+    friend LogStream& operator<<(LogStream& stream, const TimeSlab &timeslab);
 
   private:
     

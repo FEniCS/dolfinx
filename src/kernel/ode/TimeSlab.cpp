@@ -39,8 +39,9 @@ TimeSlab::~TimeSlab()
   dolfin_debug("Clearing time slab");
 
   // Delete the time slabs
-  for (int i = 0; i < timeslabs.size(); i++) {
+  for (unsigned int i = 0; i < timeslabs.size(); i++) {
     delete timeslabs[i];
+    timeslabs[i] = 0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -91,6 +92,7 @@ real TimeSlab::length() const
 void TimeSlab::create(RHS& f, TimeSlabData& data,
 		      Partition& partition, int offset)
 {
+  dolfin_start("Creating time slab");
   dolfin_debug1("offset: %d", offset);
 
   int end = 0;
@@ -114,19 +116,21 @@ void TimeSlab::create(RHS& f, TimeSlabData& data,
 
   dolfin_debug1("New end time = %f", t1);
 
-  if(end < f.size())
+  if (end < f.size())
   {
     dolfin_debug("Create subslabs");
-
+    
     // Create time slabs for the components with small time steps
     createTimeSlabs(f, data, partition, end);
   }
-
+  
   dolfin_debug1("offset: %d", offset);
   dolfin_debug1("end: %d", end);
 
   // Create elements for the components with large time steps
   createElements(f, data, partition, offset, end);
+
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::createTimeSlabs(RHS& f, TimeSlabData& data, 
@@ -138,9 +142,8 @@ void TimeSlab::createTimeSlabs(RHS& f, TimeSlabData& data,
   real t = t0;
 
   // Create the list of time slabs
-  while ( true ) {
-
-
+  while ( true )
+  {
     // Create a new time slab
     TimeSlab* timeslab = new TimeSlab(t, t1, f, data, partition, offset);
     
@@ -194,7 +197,7 @@ void TimeSlab::createElements(RHS& f, TimeSlabData& data,
 //-----------------------------------------------------------------------------
 void TimeSlab::updateTimeSlabs(RHS& f, TimeSlabData& data)
 {
-  for (int i = 0; i < timeslabs.size(); i++)
+  for (unsigned int i = 0; i < timeslabs.size(); i++)
   {
     //if(i > 0)
     //{
@@ -312,7 +315,7 @@ void TimeSlab::add(TimeSlab* timeslab)
 //-----------------------------------------------------------------------------
 void TimeSlab::updateu0(TimeSlabData &data)
 {
-  for(int i = 0; i < elements.size(); i++)
+  for (unsigned int i = 0; i < elements.size(); i++)
   {
     Element *e = elements[i];
     //Element *preve = prevslab.elements[i];
@@ -326,4 +329,12 @@ void TimeSlab::updateu0(TimeSlabData &data)
   }
 }
 //-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const TimeSlab& timeslab)
+{
+  stream << "[ TimeSlab of length " << timeslab.length()
+	 << " between t0 = " << timeslab.starttime()
+	 << " and t1 = " << timeslab.endtime() << " ]";
 
+  return stream;
+}
+//-----------------------------------------------------------------------------

@@ -78,13 +78,9 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   Progress p("Time-stepping");
   while ( true ) {
 
-    dolfin_debug("stepping2");
-
     // Create time slab
     TimeSlab timeslab(t, t1, f, data, partition, 0);
-
-    dolfin_debug2("Built Slab: %lf-%lf",
-		  timeslab.starttime(), timeslab.endtime());
+    cout << "Created a time slab: " << timeslab << endl;
 
     // Iterate a couple of times on the time slab
     for (int i = 0; i < 3; i++)
@@ -99,6 +95,10 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 
     // Update time
     t = timeslab.endtime();
+
+    // Update progress
+    p = (t - t0) / (t1 - t0);
+
 
     // Update partition with new time steps
     //partition.update(data, 0);

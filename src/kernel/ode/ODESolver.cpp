@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/ODESolver.h>
@@ -15,6 +16,10 @@ void ODESolver::solve(ODE& ode)
   // including repeated solution of the primal and dual problems,
   // computation stability factors and error estimates.
 
+  dolfin_start("Solving ODE");
+
   TimeStepper::solve(ode, 0.0, ode.endtime());
+
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------

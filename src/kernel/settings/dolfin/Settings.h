@@ -24,6 +24,8 @@ namespace dolfin {
       add(Parameter::INT, "max no cg iterations", 1000);
       add(Parameter::INT, "pc iterations", 5);
       
+      add(Parameter::BOOL, "debug time slab", 0);
+
       add(Parameter::STRING, "output", "curses");
 
       add(Parameter::BCFUNCTION, "boundary condition", 0);

@@ -4,6 +4,8 @@
 #ifndef __TIME_SLAB_DATA_H
 #define __TIME_SLAB_DATA_H
 
+#include <fstream>
+
 #include <dolfin/Vector.h>
 #include <dolfin/Array.h>
 #include <dolfin/Table.h>
@@ -59,6 +61,10 @@ namespace dolfin {
     // Top level time slab
     TimeSlab* topslab;
 
+    // Save debug info to file 'timeslab.debug'
+    bool debug;
+    std::ofstream file;
+    
   };
 }
 

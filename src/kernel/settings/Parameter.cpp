@@ -53,7 +53,7 @@ void Parameter::clear()
   
   val_real       = 0.0;
   val_int        = 0;
-  val_bool       = 0;
+  val_bool       = false;
   val_string     = "";
   val_function   = 0;
   val_vfunction  = 0;
@@ -87,7 +87,7 @@ void Parameter::set(const char *identifier, va_list aptr)
     
   case BOOL:
     
-    val_bool = va_arg(aptr, bool);
+    val_bool = static_cast<bool>(va_arg(aptr, int));
     break;
     
   case STRING:
@@ -135,7 +135,7 @@ void Parameter::get(va_list aptr)
 {
   double     *p_real;
   int        *p_int;
-  bool       *p_bool;
+  int        *p_bool;
   string     *p_string;
   function   *p_function;
   vfunction  *p_vfunction;
@@ -157,8 +157,8 @@ void Parameter::get(va_list aptr)
     
   case BOOL:
     
-    p_bool = va_arg(aptr,bool *);
-    *p_bool = val_bool;
+    p_bool = va_arg(aptr,int *);
+    *p_bool = static_cast<int>(val_bool);
     break;
     
   case STRING:
