@@ -1,24 +1,25 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __GAUSSIAN_RULES_H
-#define __GAUSSIAN_RULES_H
+#ifndef __GAUSSIAN_QUADRATURE_H
+#define __GAUSSIAN_QUADRATURE_H
 
 #include <dolfin/Quadrature.h>
 
 namespace dolfin {
   
-  /// Collection of gaussian-type quadrature rules on the real line,
-  /// including Gauss, Radau, and Lobatto Quadrature
+  /// Gaussian-type quadrature rule on the real line,
+  /// including Gauss, Radau, and Lobatto quadrature
 
-  class GaussianRules : public Quadrature {
+  class GaussianQuadrature : public Quadrature {
   public:
     
-    GaussianRules(int n);
+    GaussianQuadrature(int n) : Quadrature(n) {};
     
   protected:
-
+    
     void computeWeights();
+    bool check(int q);
     
   };
   

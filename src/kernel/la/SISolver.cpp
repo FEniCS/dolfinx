@@ -26,7 +26,7 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   if ( A.size(0) != b.size() )
     dolfin_error("Incompatible matrix and vector dimensions.");
   if ( x.size() != b.size() )
-	 x.init(b.size());
+    x.init(b.size());
   
   cout << "Using Stationary Iterative Solver solver for linear system of " << b.size() << " unknowns" << endl;
   
@@ -39,7 +39,7 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   real norm_r = 2.0*tol*norm_b;
   
   int iteration = 0;
-  while (norm_r > tol*norm_b){
+  while (norm_r > tol*norm_b) {
     iteration ++;
     switch ( method ) { 
     case RICHARDSON:
@@ -84,7 +84,7 @@ void SISolver::solve(Matrix& A, Vector& x, Vector& b)
   }
   
   if (norm_r < tol*norm_b)
-	 cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << endl;
+    cout << " iterations converged after " << iteration << " iterations (residual = " << norm_r << ")" << endl;
   else
     cout << " iterations did not converge: residual = " << norm_r << endl;
 }

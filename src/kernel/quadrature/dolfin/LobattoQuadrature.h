@@ -4,7 +4,7 @@
 #ifndef __LOBATTO_QUADRATURE_H
 #define __LOBATTO_QUADRATURE_H
 
-#include <dolfin/GaussianRules.h>
+#include <dolfin/GaussianQuadrature.h>
 
 namespace dolfin {
 
@@ -18,7 +18,7 @@ namespace dolfin {
   /// determined by the condition that Lobatto quadrature with n points
   /// should be exact for polynomials of degree 2n-3.
 
-  class LobattoQuadrature : public GaussianRules {
+  class LobattoQuadrature : public GaussianQuadrature {
   public:
     
     LobattoQuadrature(int n);
@@ -26,7 +26,6 @@ namespace dolfin {
   private:
 
     void computePoints();
-    void check();
     
   };
   

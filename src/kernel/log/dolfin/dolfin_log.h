@@ -9,7 +9,7 @@
 //
 // The following functions / macros are provided for logging:
 //
-//     dolfin_info()
+//     dolfin_info();
 //     dolfin_debug();
 //     dolfin_warning();
 //     dolfin_error();

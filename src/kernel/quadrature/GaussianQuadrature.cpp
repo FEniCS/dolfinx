@@ -4,15 +4,12 @@
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Legendre.h>
-#include <dolfin/GaussianRules.h>
+#include <dolfin/GaussianQuadrature.h>
 
-using namespace dolfin
-
-//-----------------------------------------------------------------------------
-GaussianRules:GaussianRule
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void GaussQuadrature::computeWeights()
+void GaussianQuadrature::computeWeights()
 {
   // Compute the quadrature weights by solving a linear system of equations
   // for exact integration of polynomials. We compute the integrals over
@@ -46,5 +43,21 @@ void GaussQuadrature::computeWeights()
   // Save the weights
   for (int i = 0; i < n; i++)
     weights[i] = x(i);
+}
+//-----------------------------------------------------------------------------
+bool GaussianQuadrature::check(int q)
+{
+  // Checks that the points and weights are correct. We compute the
+  // value of the integral of the Legendre polynomial of degree q.
+  // This value should be zero.
+  
+  Legendre p(q);
+  int n;
+  
+  real sum = 0.0;
+  for (int i = 0; i < n; i++)
+    sum += weights[i] * p(points[i]);
+    
+  return fabs(sum) < DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------

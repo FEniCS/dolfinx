@@ -1,108 +1,79 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Legendre.h>
 #include <dolfin/RadauQuadrature.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void Radau::ComputePoints()
+RadauQuadrature::RadauQuadrature(int n) : GaussianQuadrature(n)
 {
-  // This function computes the Radau quadrature points in [-1,1]
-  // as -1 and the zeros of
-  //
-  //      ( Pn-1(x) + Pn(x) ) / (1+x)
-  //
-  // where Pn is the n:th Legendre polynomial
+  computePoints();
+  computeWeights();
+
+  if ( !check(2*n-2) )
+    dolfin_error("Radau quadrature not ok, check failed.");
   
-  Legendre p;
-  int n;
-  double x, dx;
-  double dStep;
-  double dSign;
-  
-  // Fix the first nodal point
-  dPoints[0][0]  = -1.0;
-  
-  // Compute the nodal points for every order
-  for (int i=1;i<iMaximumNumberOfPoints;i++){
-    
-    // The number of nodal points
-    n = i + 1;
-    
-    // Set size of stepping for seeking starting points
-    dStep = 2.0 / ( double(n-1) * 10.0 );
-    
-    // Set the first nodal point which is -1
-    dPoints[i][0]   = -1.0;
-    
-    // Start at -1 + epsilon
-    x = -1.0 + dStep;
-    
-    // Set the sign at -1 + epsilon
-    dSign = ( (p.Value(n-1,x) + p.Value(n,x)) > 0 ? 1.0 : -1.0 );
-    
-    // Compute the rest of the Nodes by Newton's method
-    for (int j=1;j<n;j++){
-      
-      // Step to a sign change
-      while ( (p.Value(n-1,x) + p.Value(n,x))*dSign > 0.0 )
-	x += dStep;
-      
-      // Newton's method
-      do {
-	dx = - ( ( p.Value(n-1,x) + p.Value(n,x) ) /
-		 ( p.D(n-1,x)     + p.D(n,x) ) );
-	x  = x + dx;
-      } while ( fabs(dx) > DEFAULT_NODE_TOL );
-      
-      // Set the node value
-      dPoints[i][j] = x;
-      
-      // Fix the step so that it is not too large
-      if ( dStep > (dPoints[i][j]-dPoints[i][j-1]) )
-	dStep = dPoints[i][j] - dPoints[i][j-1];
-      
-      // Step forward
-      dSign  = - dSign;
-      x     += dStep;
-      
-    }
-    
-  }
-  
+  dolfin_info("Radau quadrature points (n = %d) computed, check passed.", n);
 }
 //-----------------------------------------------------------------------------
-bool Radau::CheckNumbers()
+void RadauQuadrature::computePoints()
 {
-  // This functions checks that the numbers are ok.
-  //
-  // Radau quadrature with n points should be exact for polynomials of
-  // order 2(n-1) = 2n - 2
-  //
-  //   n = 2    exact for p <= 2
-  //   n = 3    exact for p <= 4 ...
+  // Compute the Radau quadrature points in [-1,1] as -1 and the zeros
+  // of ( Pn-1(x) + Pn(x) ) / (1+x) where Pn is the n:th Legendre
+  // polynomial. Computation is a little different than for Gauss and
+  // Lobatto quadrature, since we don't know of any good initial
+  // approximation for the Newton iterations.
   
-  double dIntegral;
-  Legendre p;
-  int n;
+  // Special case n = 1
+  if ( n == 1 ) {
+    points[0] = -1.0;
+    return;
+  }
+
+  Legendre p1(n-1), p2(n);
+  real x, dx, step, sign;
   
-  for (int i=1;i<iMaximumNumberOfPoints;i++){
+  // Set size of stepping for seeking starting points
+  step = 2.0 / ( real(n-1) * 10.0 );
+  
+  // Set the first nodal point which is -1
+  points[0] = -1.0;
+  
+  // Start at -1 + step
+  x = -1.0 + step;
+  
+  // Set the sign at -1 + epsilon
+  sign = ( (p1(x) + p2(x)) > 0 ? 1.0 : -1.0 );
+  
+  // Compute the rest of the nodes by Newton's method
+  for (int i = 1; i < n; i++) {
     
-    n = i + 1;
+    // Step to a sign change
+    while ( (p1(x) + p2(x))*sign > 0.0 )
+      x += step;
     
-    // Check the quadrature for the Legendre polynomial of order 2n-3
+    // Newton's method
+    do {
+      dx = - (p1(x) + p2(x)) / (p1.dx(x) + p2.dx(x));
+      x  = x + dx;
+    } while ( fabs(dx) > DOLFIN_EPS );
     
-    dIntegral = 0.0;
+    // Set the node value
+    points[i] = x;
     
-    for (int j=0;j<n;j++)
-      dIntegral += dWeights[i][j] * p.Value(2*n-2,dPoints[i][j]);
+    // Fix step so that it's not too large
+    if ( step > (points[i] - points[i-1])/10.0 )
+      step = (points[i] - points[i-1]) / 10.0;
     
-    if ( fabs(dIntegral) > DEFAULT_PRECALC_CHECK_TOL )
-      return false;
+    // Step forward
+    sign = - sign;
+    x += step;
     
   }
   
-  return true;
 }
 //-----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 EXTRA_DIST = dolfin_quadrature.h \
-             GaussianRules.h \
+             GaussianQuadrature.h \
              GaussQuadrature.h \
              LobattoQuadrature.h \
              Quadrature.h \
