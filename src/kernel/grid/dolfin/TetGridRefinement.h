@@ -25,6 +25,9 @@ namespace dolfin {
     /// Refine according to rule
     static void refine(Cell& cell, Grid& grid);
 
+    // Friends
+    friend class GridRefinement;
+
   private:
 
     static bool checkRuleRegular   (Cell& cell, int no_marked_edges);
@@ -51,6 +54,8 @@ namespace dolfin {
 
     static Cell& createCell(Node& n0, Node& n1, Node& n2, Node& n3,
 			    Grid& grid, Cell& cell);
+
+    static Cell& createChildCopy(Cell& cell, Grid& grid);
 
   };
 

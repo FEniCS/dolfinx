@@ -93,6 +93,9 @@ namespace dolfin {
     /// Remove cell 
     static void removeCell(Cell& cell, Grid& grid);
 
+    /// Create a new child to cell, that is a copy of cell 
+    static Cell& createChildCopy(Cell& cell, Grid& grid);
+
   };
 
 }

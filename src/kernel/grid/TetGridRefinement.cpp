@@ -542,3 +542,9 @@ Cell& TetGridRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
   return c;
 }
 //-----------------------------------------------------------------------------
+Cell& TetGridRefinement::createChildCopy(Cell& cell, Grid& grid)
+{
+  return createCell(*cell.node(0).child(), *cell.node(1).child(),
+		    *cell.node(2).child(), *cell.node(3).child(), grid, cell);
+}
+//-----------------------------------------------------------------------------
