@@ -14,7 +14,7 @@ namespace dolfin {
 
     /// Create cell refinement data
     CellRefData() {
-      marker = Cell::marked_according_to_ref;
+      marker = Cell::marked_for_no_ref;
       status = Cell::unref;
     }
     

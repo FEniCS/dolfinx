@@ -17,50 +17,12 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void GridRefinement::refine(GridHierarchy& grids)
 {
-  // Write a message
   dolfin_start("Refining grids:");
-  cout << grids.fine().rd->noMarkedCells()
-       << " cells marked for refinement in finest grid." << endl;
-  
-  // Set initial markers for all grids
-  initMarks(grids);
 
   // Refine grid hierarchy
   globalRefinement(grids);
 
-  // Clear refinement data
-  clearMarks(grids);
-
   dolfin_end();
-}
-//-----------------------------------------------------------------------------
-void GridRefinement::initMarks(GridHierarchy& grids)
-{
-  // Set markers for finest grid to marked_for_no_ref;
-  for (CellIterator c(grids.fine()); !c.end(); ++c)
-    c->marker() = Cell::marked_for_no_ref;
-
-  // Set markers for the finest grid
-  for (List<Cell*>::Iterator c(grids.fine().rd->marked_cells); !c.end(); ++c) {
-    
-    // Mark cell for regular refinement
-    (*c)->marker() = Cell::marked_for_reg_ref;
-    
-    // Mark edges of the cell
-    for (EdgeIterator e(**c); !e.end(); ++e)
-      e->mark(**c);
-
-  }
-  
-  // Clear list of marked cells
-  grids.fine().rd->marked_cells.clear();
-}
-//-----------------------------------------------------------------------------
-void GridRefinement::clearMarks(GridHierarchy& grids)
-{
-  // Clear grid refinement data
-  for (GridIterator grid(grids); !grid.end(); ++grid)
-    grid->rd->clear();
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::globalRefinement(GridHierarchy& grids)
@@ -70,15 +32,21 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
+    cout << "--- Level " << grid.index() << ": evaluate marks" << endl;
     evaluateMarks(*grid);
+    cout << "--- Level " << grid.index() << ": close grid" << endl;
     closeGrid(*grid);
   }
   
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if (grid.index() > 0)
+    if (grid.index() > 0) {
+      cout << "--- Level " << grid.index() << ": close grid" << endl;
       closeGrid(*grid);
+    }
+    cout << "--- Level " << grid.index() << ": unrefine grid" << endl;
     unrefineGrid(*grid, grids);
+    cout << "--- Level " << grid.index() << ": refine grid" << endl;
     refineGrid(*grid);
   }
 
@@ -95,6 +63,9 @@ void GridRefinement::evaluateMarks(Grid& grid)
 
   for (CellIterator c(grid); !c.end(); ++c) {
 
+    if ( c->midpoint().dist(0.4, 0.4) < 0.1 )
+      dolfin_debug1("marker = %d", c->marker());
+
     if ( c->status() == Cell::ref_reg && childrenMarkedForCoarsening(*c) )
       c->marker() = Cell::marked_for_no_ref;
     
@@ -102,8 +73,12 @@ void GridRefinement::evaluateMarks(Grid& grid)
       if ( edgeOfChildMarkedForRefinement(*c) )
 	c->marker() = Cell::marked_for_reg_ref;
       else
-	c->marker() = Cell::marked_for_no_ref;
+      	c->marker() = Cell::marked_according_to_ref;
     }
+
+    if ( c->midpoint().dist(0.4, 0.4) < 0.1 )
+      dolfin_debug1("marker = %d", c->marker());
+
    
   }
 }
@@ -384,7 +359,7 @@ Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 Node& GridRefinement::createNode(const Point& p, Grid& grid, const Cell& cell)
 {
   // First check with the children of the neighbors of the cell if the
-  // node already exists. Note that it is not enouch to only check
+  // node already exists. Note that it is not enough to only check
   // neighbors of the cell, since neighbors are defined as having a
   // common edge. We need to check all nodes within the cell and for
   // each node check the cell neighbors of that node.

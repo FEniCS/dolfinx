@@ -25,7 +25,6 @@ Grid::Grid()
 {
   gd = new GridData(*this);
   bd = new BoundaryData(*this);
-  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -36,7 +35,6 @@ Grid::Grid(const char* filename)
 {
   gd = new GridData(*this);
   bd = new BoundaryData(*this);
-  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -51,7 +49,6 @@ Grid::Grid(const Grid& grid)
 {
   gd = new GridData(*this);
   bd = new BoundaryData(*this);
-  rd = new GridRefinementData(*this);
   _parent = 0;
 
   rename("grid", "no description");
@@ -89,17 +86,12 @@ Grid::~Grid()
   if ( bd )
     delete bd;
   bd = 0;
-
-  if ( rd )
-    delete rd;
-  rd = 0;
 }
 //-----------------------------------------------------------------------------
 void Grid::clear()
 {
   gd->clear();
   bd->clear();
-  rd->clear();
 
   _type = triangles;
   _child = 0;
@@ -365,21 +357,18 @@ void Grid::swap(Grid& grid)
   // Swap data
   GridData*           tmp_gd     = this->gd;
   BoundaryData*       tmp_bd     = this->bd;
-  GridRefinementData* tmp_rd     = this->rd;
   Grid*               tmp_parent = this->_parent;
   Grid*               tmp_child  = this->_child;
   Type                tmp_type   = this->_type;
 
   this->gd      = grid.gd;
   this->bd      = grid.bd;
-  this->rd      = grid.rd;
   this->_parent = grid._parent;
   this->_child  = grid._child;
   this->_type   = grid._type;
 
   grid.gd      = tmp_gd;
   grid.bd      = tmp_bd;
-  grid.rd      = tmp_rd;
   grid._parent = tmp_parent;
   grid._child  = tmp_child;
   grid._type   = tmp_type;
@@ -387,11 +376,9 @@ void Grid::swap(Grid& grid)
   // Change grid reference in all data structures
   grid.gd->setGrid(grid);
   grid.bd->setGrid(grid);
-  grid.rd->setGrid(grid);
 
   this->gd->setGrid(*this);
   this->bd->setGrid(*this);
-  this->rd->setGrid(*this);
 }
 //-----------------------------------------------------------------------------
 // Additional operators

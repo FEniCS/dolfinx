@@ -18,7 +18,6 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/GridInit.h \
                            dolfin/GridIterator.h \
                            dolfin/GridRefinement.h \
-                           dolfin/GridRefinementData.h \
                            dolfin/Node.h \
                            dolfin/NodeIterator.h \
                            dolfin/Point.h \
@@ -35,6 +34,7 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            CellIterator.cpp \
                            Edge.cpp \
                            EdgeIterator.cpp \
+                           EdgeRefData.cpp \
                            Face.cpp \
                            FaceIterator.cpp \
                            GenericCell.cpp \
@@ -44,7 +44,6 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            GridInit.cpp \
                            GridIterator.cpp \
                            GridRefinement.cpp \
-                           GridRefinementData.cpp \
                            Node.cpp \
                            NodeIterator.cpp \
                            Point.cpp \

@@ -7,7 +7,6 @@
 #include <dolfin/GridData.h>
 #include <dolfin/GridInit.h>
 #include <dolfin/GridRefinement.h>
-#include <dolfin/GridRefinementData.h>
 #include <dolfin/TriGridRefinement.h>
 #include <dolfin/TetGridRefinement.h>
 

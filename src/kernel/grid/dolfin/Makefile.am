@@ -17,7 +17,6 @@ EXTRA_DIST = dolfin_grid.h \
              GridInit.h \
              GridIterator.h \
              GridRefinement.h \
-             GridRefinementData.h \
              Node.h \
              NodeIterator.h \
              Point. h\

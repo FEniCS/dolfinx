@@ -15,7 +15,6 @@
 #include <dolfin/Face.h>
 #include <dolfin/BoundaryData.h>
 #include <dolfin/GridData.h>
-#include <dolfin/GridRefinementData.h>
 
 namespace dolfin {
 
@@ -157,9 +156,6 @@ namespace dolfin {
     // Boundary data
     BoundaryData* bd;
 
-    // Grid refinement data
-    GridRefinementData* rd;
-    
     // Parent grid
     Grid* _parent;
 

@@ -539,8 +539,6 @@ Cell& TetGridRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
   c.setParent(cell);
   cell.addChild(c);
   
-  c.marker() == Cell::marked_for_no_ref;
-
   return c;
 }
 //-----------------------------------------------------------------------------

@@ -100,10 +100,12 @@ int GenericCell::nodeID(int i) const
 //-----------------------------------------------------------------------------
 void GenericCell::mark(Cell& cell)
 {
-  if ( !grid )
-    dolfin_error("You cannot mark a cell that does not belong to grid.");
- 
-  grid->mark(cell);
+  // Mark this cell
+  marker() = Cell::marked_for_reg_ref;
+
+  // Mark all edges of this cell
+  for (EdgeIterator e(cell); !e.end(); ++e)
+    e->mark(cell);
 }
 //-----------------------------------------------------------------------------
 int GenericCell::setID(int id, Grid& grid)

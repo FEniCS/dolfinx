@@ -12,7 +12,7 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  int refinements = 3;
+  int refinements = 1;
 
   // Refine 2D grid
   refine2D(refinements);
@@ -36,17 +36,25 @@ void refine2D(int refinements)
   unref << grid;
 
   // Refine a couple of times
-  for (int i = 0; i < refinements; i++) {
+  //for (int i = 0; i < refinements; i++) {
     
-    // Mark nodes for refinement
-    for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(0.0, 0.0) < 0.5 )
-	cell->mark();
-    
-    // Refine grid
-    grid.refine();
+  // Mark nodes for refinement
+  for (CellIterator cell(grid); !cell.end(); ++cell)
+    if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
+      cell->mark();
+  
+  // Refine grid
+  grid.refine();
 
-  }
+  // Mark nodes for refinement
+  for (CellIterator cell(grid); !cell.end(); ++cell)
+    if ( cell->midpoint().dist(1.0, 1.0) < 0.3 )
+      cell->mark();
+  
+  // Refine grid
+  grid.refine();
+  
+  // }
 
   // Save refined grid in Matlab format
   File ref("grid2D_refined.m");
@@ -72,7 +80,7 @@ void refine3D(int refinements)
     
     // Mark nodes for refinement
     for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.3 )
+      if ( cell->midpoint().dist(0.0, 0.0, 0.0) < 0.5 )
 	cell->mark();
     
     // Refine grid

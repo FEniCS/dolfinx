@@ -62,6 +62,7 @@ namespace dolfin {
     // Friends
     friend class Grid;
     friend class Node;
+    friend class GenericCell;
     friend class GridData;
     friend class GridInit;
     friend class GridRefinement;

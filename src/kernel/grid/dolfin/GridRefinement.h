@@ -27,12 +27,6 @@ namespace dolfin {
     // The global algorithm
     static void globalRefinement(GridHierarchy& grids);
 
-    // Set initial markers for all grids
-    static void initMarks(GridHierarchy& grids);
-
-    // Clear grid refinement data
-    static void clearMarks(GridHierarchy& grids);
-
     //--- Algorithms working on the grid on a given level ---
 
     // Evaluate and adjust marks for a grid
