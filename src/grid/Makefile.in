@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p5 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -72,7 +72,7 @@ VERSION = @VERSION@
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-grid.a
 include_HEADERS = 
-libdolfin_grid_a_SOURCES = Cell.C                            Cell.hh                            Grid.C                            Grid.hh                            Node.C                            Node.hh                            Point.C                            Point.hh                            Tetrahedron.C                            Tetrahedron.hh                            Triangle.C                            Triangle.hh
+libdolfin_grid_a_SOURCES = Cell.C                            Cell.hh                            Edge.C                            Edge.hh                            Grid.C                            Grid.hh                            Node.C                            Node.hh                            Point.C                            Point.hh                            Tetrahedron.C                            Tetrahedron.hh                            Triangle.C                            Triangle.hh
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -84,8 +84,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_grid_a_LIBADD = 
-libdolfin_grid_a_OBJECTS =  Cell.o Grid.o Node.o Point.o Tetrahedron.o \
-Triangle.o
+libdolfin_grid_a_OBJECTS =  Cell.o Edge.o Grid.o Node.o Point.o \
+Tetrahedron.o Triangle.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -104,8 +104,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Cell.P .deps/Grid.P .deps/Node.P .deps/Point.P \
-.deps/Tetrahedron.P .deps/Triangle.P
+DEP_FILES =  .deps/Cell.P .deps/Edge.P .deps/Grid.P .deps/Node.P \
+.deps/Point.P .deps/Tetrahedron.P .deps/Triangle.P
 SOURCES = $(libdolfin_grid_a_SOURCES)
 OBJECTS = $(libdolfin_grid_a_OBJECTS)
 
@@ -208,7 +208,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

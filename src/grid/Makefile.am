@@ -3,6 +3,8 @@ lib_LIBRARIES       = libdolfin-grid.a
 include_HEADERS     = 
 libdolfin_grid_a_SOURCES = Cell.C \
                            Cell.hh \
+                           Edge.C \
+                           Edge.hh \
                            Grid.C \
                            Grid.hh \
                            Node.C \

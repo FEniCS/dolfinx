@@ -1,5 +1,5 @@
 #include "Point.hh"
-#include <math.h>
+#include <cmath>
 
 //-----------------------------------------------------------------------------
 real Point::Distance(Point p)
