@@ -54,6 +54,7 @@ Input/Output
 Multi-adaptive solver
 ---------------------
 
+o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver
 o [jj, logg] Implement preconditioner for multi-adaptive Newton
 o [jj, logg] Save dual solution backwards

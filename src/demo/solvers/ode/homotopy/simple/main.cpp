@@ -93,17 +93,23 @@ int main()
   //dolfin_set("fixed time step", true);
   //dolfin_set("tolerance", 1e-1);
 
+
+  Homotopy homotopy(1);
+  homotopy.solve();
+  homotopy.solve();
+
   // Iterate over the different starting points
-  char filename[16];
+  /*  char filename[16];
   for (unsigned int i = 0; i < 3; i++)
   {
     sprintf(filename, "primal_%d.m", i);
     dolfin_set("file name", filename);
 
-    Homotopy homotopy(i);
+    Homotopy homotopy(1);
     cout << "Solving homotopy for starting point z = " << homotopy.z0(0) << endl;
     homotopy.solve();
   }
+  */
 
   return 0;
 }

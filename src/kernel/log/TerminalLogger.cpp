@@ -43,7 +43,7 @@ void TerminalLogger::warning(const char* msg, const char* location)
 void TerminalLogger::error(const char* msg, const char* location)
 {
   indent();
-  std::cout << "[Error at " << location << "]: " << msg << std::endl;
+  std::cout << "*** [Error at " << location << "]: " << msg << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------

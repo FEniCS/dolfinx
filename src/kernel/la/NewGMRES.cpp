@@ -81,7 +81,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   
   KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-  KSPSetFromOptions(ksp);
+  //KSPSetFromOptions(ksp);
 
   /*
   // Set tolerances

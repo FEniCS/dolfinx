@@ -64,9 +64,17 @@ real MonoAdaptiveNewtonSolver::iteration()
 {
   // Evaluate b = -F(x) at current x
   beval();
+
+  //cout << "b = ";
+  b.disp();
   
+  cout << "Calling solver..." << endl;
+
   // Solve linear system F for dx
   solver.solve(A, dx, b);
+
+  //cout << "dx = ";
+  dx.disp();
    
   // Get arrays of values for x and dx
   real* xx = ts.x.array();

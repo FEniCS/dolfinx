@@ -78,7 +78,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::solve()
 {
-  cout << "Multi-adaptive time slab: solving" << endl;
+  dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
   solver->solve();
 
@@ -87,8 +87,6 @@ void MultiAdaptiveTimeSlab::solve()
   //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
   //  dolfin_info("i = %d: u = %.16e", i, endval);
   // }
-
-  cout << "Multi-adaptive time slab: system solved" << endl;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::shift()

@@ -171,7 +171,7 @@ void CursesLogger::warning(const char* msg, const char* location)
 //-----------------------------------------------------------------------------
 void CursesLogger::error(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "Error at %s: %s", location, msg);
+  snprintf(tmp, DOLFIN_WORDLENGTH, "*** Error at %s: %s", location, msg);
   buffer.add(tmp, Buffer::error, level);
   setInfo("Press any key to quit.");
   state = ERROR;

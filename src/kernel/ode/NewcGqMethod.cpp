@@ -14,6 +14,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewcGqMethod::NewcGqMethod(unsigned int q) : NewMethod(q, q + 1, q)
 {
+  dolfin_info("Initializing continous Galerkin method cG(%d).", q);
+
   init();
 
   _type = NewMethod::cG;
