@@ -425,24 +425,12 @@ void GridRefinement::removeCell(Cell& cell, Grid& grid)
 
   }
 
-  // If cell has any children, introduce new child that is a copy of cell
-  if ( cell.noChildren() > 0 ){
-    switch ( cell.type() ) {
-    case Cell::triangle:
-      TriGridRefinement::createChildCopy(cell, grid.child());
-      break;
-    case Cell::tetrahedron:
-      TetGridRefinement::createChildCopy(cell, grid.child());
-      break;
-    default:
-      dolfin_error("Unknown cell type.");
-    }
+  if ( (cell.noChildren() > 0) && (cell.status() == Cell::unref) ){
+    // Remove children
+    for (int i = 0; i < cell.noChildren(); i++)
+    removeCell(*cell.child(i), grid.child());
   }
   
-  // Remove children
-  for (int i = 0; i < cell.noChildren(); i++)
-    removeCell(*cell.child(i), grid.child());
-
   // Update status 
   if ( cell.parent()->noChildren() == 0 )
     cell.parent()->status() = Cell::unref; 

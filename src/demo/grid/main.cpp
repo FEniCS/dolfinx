@@ -12,7 +12,7 @@ int main()
 {
   dolfin_set("output", "plain text");
 
-  int refinements = 5;
+  int refinements = 4;
 
   // Refine 2D grid
   refine2D(refinements);
