@@ -47,8 +47,7 @@ namespace dolfin {
     {
       return lhs(u(0), v(0));
     }
-    
-    
+        
     /// Variational formulation for systems, right-hand side
     virtual real rhs(ShapeFunction::Vector &v)
     {
@@ -79,28 +78,28 @@ namespace dolfin {
     // --- Derivatives (computed using map)
     
     // Derivative of constant
-    real dx(real a) const;
-    real dy(real a) const;
-    real dz(real a) const;
-    real dt(real a) const;
+    real ddx(real a) const;
+    real ddy(real a) const;
+    real ddz(real a) const;
+    real ddt(real a) const;
     
     // Derivative of ShapeFunction
-    const ElementFunction& dx(const ShapeFunction& v) const;
-    const ElementFunction& dy(const ShapeFunction& v) const;
-    const ElementFunction& dz(const ShapeFunction& v) const;
-    const ElementFunction& dt(const ShapeFunction& v) const;
+    const ElementFunction& ddx(const ShapeFunction& v) const;
+    const ElementFunction& ddy(const ShapeFunction& v) const;
+    const ElementFunction& ddz(const ShapeFunction& v) const;
+    const ElementFunction& ddt(const ShapeFunction& v) const;
     
     // Derivative of Product
-    const ElementFunction dx(const Product& v) const;
-    const ElementFunction dy(const Product& v) const;
-    const ElementFunction dz(const Product& v) const;
-    const ElementFunction dt(const Product& v) const;
+    const ElementFunction ddx(const Product& v) const;
+    const ElementFunction ddy(const Product& v) const;
+    const ElementFunction ddz(const Product& v) const;
+    const ElementFunction ddt(const Product& v) const;
     
     // Derivative of ElementFunction
-    const ElementFunction dx(const ElementFunction& v) const;
-    const ElementFunction dy(const ElementFunction& v) const;
-    const ElementFunction dz(const ElementFunction& v) const;
-    const ElementFunction dt(const ElementFunction& v) const;
+    const ElementFunction ddx(const ElementFunction& v) const;
+    const ElementFunction ddy(const ElementFunction& v) const;
+    const ElementFunction ddz(const ElementFunction& v) const;
+    const ElementFunction ddt(const ElementFunction& v) const;
     
     // Gradients
     const FunctionSpace::ElementFunction::Vector grad(const ShapeFunction& v);
@@ -125,9 +124,9 @@ namespace dolfin {
     
     // Update equation
     void update(FiniteElement::Vector* element,
-		const Cell*          cell,
-		const Map*       map,
-		const Quadrature*    quadrature);
+		const Cell* cell,
+		const Map* map,
+		const Quadrature* quadrature);
     
     // Optional update before computation of left-hand side
     virtual void updateLHS() {};

@@ -111,6 +111,6 @@ real Element::endtime() const
 real Element::computeResidual(RHS& f)
 {
   // FIXME: Include jumps for dG(q)
-  return dx() - f(_index, q, t1);
+  return ddx() - f(_index, q, t1);
 }
 //-----------------------------------------------------------------------------

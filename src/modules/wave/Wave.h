@@ -1,4 +1,4 @@
-// Copyright (C) 2003 Johan Jansson
+// Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __WAVE_H
@@ -23,7 +23,7 @@ namespace dolfin {
     real lhs(const ShapeFunction& u, const ShapeFunction& v)
     {
       return (1 / k * u*v + k *
-	      (u.dx() * v.dx() + u.dy() * v.dy())) * dK;
+	      (u.ddx() * v.ddx() + u.ddy() * v.ddy())) * dK;
     }
     
     real rhs(const ShapeFunction& v)
@@ -32,9 +32,11 @@ namespace dolfin {
     }
     
   private:    
-    ElementFunction f;          // Source term
+
+    ElementFunction f;  // Source term
     ElementFunction up; // Position value at left end-point
     ElementFunction wp; // Velocity value at left end-point
+
   };
 
 }

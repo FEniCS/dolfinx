@@ -34,28 +34,28 @@ namespace dolfin {
     real det() const;
     
     // Derivative of constant
-    real dx(real a) const;
-    real dy(real a) const;
-    real dz(real a) const;
-    real dt(real a) const;
+    real ddx(real a) const;
+    real ddy(real a) const;
+    real ddz(real a) const;
+    real ddt(real a) const;
     
     // Derivative of ShapeFunction
-    virtual const FunctionSpace::ElementFunction dx(const FunctionSpace::ShapeFunction &v) const = 0;
-    virtual const FunctionSpace::ElementFunction dy(const FunctionSpace::ShapeFunction &v) const = 0;
-    virtual const FunctionSpace::ElementFunction dz(const FunctionSpace::ShapeFunction &v) const = 0;
-    virtual const FunctionSpace::ElementFunction dt(const FunctionSpace::ShapeFunction &v) const = 0;
+    virtual const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const = 0;
+    virtual const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const = 0;
+    virtual const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction &v) const = 0;
+    virtual const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction &v) const = 0;
     
     // Derivative of Product
-    const FunctionSpace::ElementFunction dx(const FunctionSpace::Product &v) const;
-    const FunctionSpace::ElementFunction dy(const FunctionSpace::Product &v) const;
-    const FunctionSpace::ElementFunction dz(const FunctionSpace::Product &v) const;
-    const FunctionSpace::ElementFunction dt(const FunctionSpace::Product &v) const;
+    const FunctionSpace::ElementFunction ddx(const FunctionSpace::Product &v) const;
+    const FunctionSpace::ElementFunction ddy(const FunctionSpace::Product &v) const;
+    const FunctionSpace::ElementFunction ddz(const FunctionSpace::Product &v) const;
+    const FunctionSpace::ElementFunction ddt(const FunctionSpace::Product &v) const;
     
     // Derivative of ElementFunction
-    const FunctionSpace::ElementFunction dx(const FunctionSpace::ElementFunction &v) const;
-    const FunctionSpace::ElementFunction dy(const FunctionSpace::ElementFunction &v) const;
-    const FunctionSpace::ElementFunction dz(const FunctionSpace::ElementFunction &v) const;
-    const FunctionSpace::ElementFunction dt(const FunctionSpace::ElementFunction &v) const;
+    const FunctionSpace::ElementFunction ddx(const FunctionSpace::ElementFunction &v) const;
+    const FunctionSpace::ElementFunction ddy(const FunctionSpace::ElementFunction &v) const;
+    const FunctionSpace::ElementFunction ddz(const FunctionSpace::ElementFunction &v) const;
+    const FunctionSpace::ElementFunction ddt(const FunctionSpace::ElementFunction &v) const;
     
     // Update map
     virtual void update(const Cell &cell) = 0;

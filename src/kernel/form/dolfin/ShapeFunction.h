@@ -30,7 +30,7 @@ namespace dolfin {
     ShapeFunction(const ShapeFunction &v);
     
     // Specification of derivatives
-    void set(ElementFunction dX, ElementFunction dY, ElementFunction dZ, ElementFunction dT);
+    void set(ElementFunction ddX, ElementFunction ddY, ElementFunction ddZ, ElementFunction ddT);
     
     // Get id
     int id() const;
@@ -45,15 +45,15 @@ namespace dolfin {
     bool one() const;
     
     // Derivatives
-    const ElementFunction& dx() const;
-    const ElementFunction& dy() const;
-    const ElementFunction& dz() const;
-    const ElementFunction& dt() const;
+    const ElementFunction& ddx() const;
+    const ElementFunction& ddy() const;
+    const ElementFunction& ddz() const;
+    const ElementFunction& ddt() const;
     
-    const ElementFunction& dX() const;
-    const ElementFunction& dY() const;
-    const ElementFunction& dZ() const;
-    const ElementFunction& dT() const;
+    const ElementFunction& ddX() const;
+    const ElementFunction& ddY() const;
+    const ElementFunction& ddZ() const;
+    const ElementFunction& ddT() const;
     
     // Update
     void update(const Map& map);

@@ -17,28 +17,28 @@ P1TetMap::P1TetMap() : Map()
   dim = 3;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::dx
+const FunctionSpace::ElementFunction P1TetMap::ddx
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g11*v.dX() + g21*v.dY() + g31*v.dZ();
+  return g11*v.ddX() + g21*v.ddY() + g31*v.ddZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::dy
+const FunctionSpace::ElementFunction P1TetMap::ddy
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g12*v.dX() + g22*v.dY() + g32*v.dZ();
+  return g12*v.ddX() + g22*v.ddY() + g32*v.ddZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::dz
+const FunctionSpace::ElementFunction P1TetMap::ddz
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return g13*v.dX() + g23*v.dY() + g33*v.dZ();
+  return g13*v.ddX() + g23*v.ddY() + g33*v.ddZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TetMap::dt
+const FunctionSpace::ElementFunction P1TetMap::ddt
 (const FunctionSpace::ShapeFunction &v) const
 {
-  return v.dT();
+  return v.ddT();
 }
 //-----------------------------------------------------------------------------
 void P1TetMap::update(const Cell& cell)

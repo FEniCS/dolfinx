@@ -46,90 +46,90 @@ void PDE::updateRHS(FiniteElement::Vector* element,
   updateRHS();
 }
 //-----------------------------------------------------------------------------
-real PDE::dx(real a) const
+real PDE::ddx(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real PDE::dy(real a) const
+real PDE::ddy(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real PDE::dz(real a) const
+real PDE::ddz(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real PDE::dt(real a) const
+real PDE::ddt(real a) const
 {
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& PDE::dx(const ShapeFunction &v) const
+const ElementFunction& PDE::ddx(const ShapeFunction &v) const
 {
-  return v.dx();
+  return v.ddx();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& PDE::dy(const ShapeFunction &v) const
+const ElementFunction& PDE::ddy(const ShapeFunction &v) const
 {
-  return v.dy();
+  return v.ddy();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& PDE::dz(const ShapeFunction &v) const
+const ElementFunction& PDE::ddz(const ShapeFunction &v) const
 {
-  return v.dz();
+  return v.ddz();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction& PDE::dt(const ShapeFunction &v) const
+const ElementFunction& PDE::ddt(const ShapeFunction &v) const
 {
-  return v.dt();
+  return v.ddt();
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dx(const Product &v) const
+const ElementFunction PDE::ddx(const Product &v) const
 {
-  return map->dx(v);
+  return map->ddx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dy(const Product &v) const
+const ElementFunction PDE::ddy(const Product &v) const
 {
-  return map->dy(v);
+  return map->ddy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dz(const Product &v) const
+const ElementFunction PDE::ddz(const Product &v) const
 {
-  return map->dz(v);
+  return map->ddz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dt(const Product &v) const
+const ElementFunction PDE::ddt(const Product &v) const
 {
-  return map->dt(v);
+  return map->ddt(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dx(const ElementFunction &v) const
+const ElementFunction PDE::ddx(const ElementFunction &v) const
 {
-  return map->dx(v);
+  return map->ddx(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dy(const ElementFunction &v) const
+const ElementFunction PDE::ddy(const ElementFunction &v) const
 {
-  return map->dy(v);
+  return map->ddy(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dz(const ElementFunction &v) const
+const ElementFunction PDE::ddz(const ElementFunction &v) const
 {
-  return map->dz(v);
+  return map->ddz(v);
 }
 //-----------------------------------------------------------------------------
-const ElementFunction PDE::dt(const ElementFunction &v) const
+const ElementFunction PDE::ddt(const ElementFunction &v) const
 {
-  return map->dt(v);
+  return map->ddt(v);
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction::Vector
 PDE::grad(const ShapeFunction &v)
 {
-  FunctionSpace::ElementFunction::Vector w(v.dx(), v.dy(), v.dz());
+  FunctionSpace::ElementFunction::Vector w(v.ddx(), v.ddy(), v.ddz());
   return w;
 }
 //-----------------------------------------------------------------------------

@@ -34,58 +34,58 @@ void FunctionSpace::add(ShapeFunction v)
   add(v, 0.0, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, ElementFunction dx)
+void FunctionSpace::add(ShapeFunction v, ElementFunction ddx)
 {
-  add(v, dx, 0.0, 0.0, 0.0);
+  add(v, ddx, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, ElementFunction dx, ElementFunction dy)
+void FunctionSpace::add(ShapeFunction v, ElementFunction ddx, ElementFunction ddy)
 {
-  add(v, dx, dy, 0.0, 0.0);
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v,
-			ElementFunction dx, ElementFunction dy, ElementFunction dz)
-{
-  add(v, dx, dy, dz, 0.0);
+  add(v, ddx, ddy, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::add(ShapeFunction v,
-			ElementFunction dx,
-			ElementFunction dy,
-			ElementFunction dz,
-			ElementFunction dt)
+			ElementFunction ddx, ElementFunction ddy, ElementFunction ddz)
+{
+  add(v, ddx, ddy, ddz, 0.0);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::add(ShapeFunction v,
+			ElementFunction ddx,
+			ElementFunction ddy,
+			ElementFunction ddz,
+			ElementFunction ddt)
 {
   // Set derivatives of shape function
-  v.set(dx, dy, dz, dt);
+  v.set(ddx, ddy, ddz, ddt);
   
   // Add shape function
   if ( this->v.add(v) == -1 )
     dolfin_error("Function space is full.");
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, real dx)
+void FunctionSpace::add(ShapeFunction v, real ddx)
 {
-  add(v, ElementFunction(dx));
+  add(v, ElementFunction(ddx));
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, real dx, real dy)
+void FunctionSpace::add(ShapeFunction v, real ddx, real ddy)
 {
-  add(v, ElementFunction(dx), ElementFunction(dy));
+  add(v, ElementFunction(ddx), ElementFunction(ddy));
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz)
+void FunctionSpace::add(ShapeFunction v, real ddx, real ddy, real ddz)
 {
-  add(v, ElementFunction(dx), ElementFunction(dy), ElementFunction(dz));
+  add(v, ElementFunction(ddx), ElementFunction(ddy), ElementFunction(ddz));
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
+void FunctionSpace::add(ShapeFunction v, real ddx, real ddy, real ddz, real ddt)
 {
   add(v,
-      ElementFunction(dx),
-      ElementFunction(dy),
-      ElementFunction(dz),
-      ElementFunction(dt));
+      ElementFunction(ddx),
+      ElementFunction(ddy),
+      ElementFunction(ddz),
+      ElementFunction(ddt));
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::dim() const

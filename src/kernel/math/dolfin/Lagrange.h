@@ -53,10 +53,10 @@ namespace dolfin {
     real eval(unsigned int i, real x);
 
     /// Return derivate of polynomial i at given point x
-    real dx(unsigned int i, real x);
+    real ddx(unsigned int i, real x);
 
     /// Return derivative q (a constant) of polynomial
-    real dqx(unsigned int i);
+    real dqdx(unsigned int i);
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Lagrange& p);

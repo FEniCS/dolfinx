@@ -68,7 +68,7 @@ void LobattoQuadrature::computePoints()
     
     // Newton's method
     do {
-      dx = - p.dx(x) / p.ddx(x);
+      dx = - p.ddx(x) / p.d2dx(x);
       x  = x + dx;
     } while ( fabs(dx) > DOLFIN_EPS );
     

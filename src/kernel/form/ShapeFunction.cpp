@@ -32,12 +32,12 @@ FunctionSpace::ShapeFunction::ShapeFunction(const ShapeFunction &v)
   this->_id = v._id;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::ShapeFunction::set(ElementFunction dx,
-				       ElementFunction dy,
-				       ElementFunction dz,
-				       ElementFunction dt)
+void FunctionSpace::ShapeFunction::set(ElementFunction ddx,
+				       ElementFunction ddy,
+				       ElementFunction ddz,
+				       ElementFunction ddt)
 {
-  FunctionList::set(_id, dx, dy, dz, dt);
+  FunctionList::set(_id, ddx, ddy, ddz, ddt);
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::ShapeFunction::id() const
@@ -60,44 +60,44 @@ bool FunctionSpace::ShapeFunction::one() const
   return _id == 1;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dx() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddx() const
 {
-  return FunctionList::dx(_id);
+  return FunctionList::ddx(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dy() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddy() const
 {
-  return FunctionList::dy(_id);
+  return FunctionList::ddy(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dz() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddz() const
 {
-  return FunctionList::dz(_id);
+  return FunctionList::ddz(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dt() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddt() const
 {
-  return FunctionList::dt(_id);
+  return FunctionList::ddt(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dX() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddX() const
 {
-  return FunctionList::dX(_id);
+  return FunctionList::ddX(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dY() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddY() const
 {
-  return FunctionList::dY(_id);
+  return FunctionList::ddY(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dZ() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddZ() const
 {
-  return FunctionList::dZ(_id);
+  return FunctionList::ddZ(_id);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::dT() const
+const FunctionSpace::ElementFunction& FunctionSpace::ShapeFunction::ddT() const
 {
-  return FunctionList::dT(_id);
+  return FunctionList::ddT(_id);
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::ShapeFunction::update(const Map& map)

@@ -21,14 +21,14 @@ real Legendre::operator() (real x)
   return eval(n, x);
 }
 //-----------------------------------------------------------------------------
-real Legendre::dx(real x)
-{
-  return dx(n, x);
-}
-//-----------------------------------------------------------------------------
 real Legendre::ddx(real x)
 {
   return ddx(n, x);
+}
+//-----------------------------------------------------------------------------
+real Legendre::d2dx(real x)
+{
+  return d2dx(n, x);
 }
 //-----------------------------------------------------------------------------
 real Legendre::eval(int n, real x)
@@ -46,7 +46,7 @@ real Legendre::eval(int n, real x)
   return ( (2.0*nn-1.0)*x*eval(n-1, x) - (nn-1.0)*eval(n-2, x) ) / nn;
 }
 //-----------------------------------------------------------------------------
-real Legendre::dx(int n, real x)
+real Legendre::ddx(int n, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -67,7 +67,7 @@ real Legendre::dx(int n, real x)
   return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);
 }
 //-----------------------------------------------------------------------------
-real Legendre::ddx(int, real x)
+real Legendre::d2dx(int, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -85,6 +85,6 @@ real Legendre::ddx(int, real x)
 
   // Formula, BETA page 254
   real nn = real(n);
-  return ( 2.0*x*dx(n, x) - nn*(nn+1)*eval(n, x) ) / (1.0-x*x);
+  return ( 2.0*x*ddx(n, x) - nn*(nn+1)*eval(n, x) ) / (1.0-x*x);
 }
 //-----------------------------------------------------------------------------

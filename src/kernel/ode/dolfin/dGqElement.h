@@ -24,7 +24,7 @@ namespace dolfin {
     real value(real t) const;
     real value(unsigned int node, real t) const;
     real initval() const;
-    real dx() const;
+    real ddx() const;
 
     void update(real u0);
     real update(RHS& f);

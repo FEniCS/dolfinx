@@ -41,28 +41,28 @@ int FunctionList::add(function f)
 }
 //-----------------------------------------------------------------------------
 void FunctionList::set(int id,
-		       FunctionSpace::ElementFunction dX,
-		       FunctionSpace::ElementFunction dY,
-		       FunctionSpace::ElementFunction dZ,
-		       FunctionSpace::ElementFunction dT)
+		       FunctionSpace::ElementFunction ddX,
+		       FunctionSpace::ElementFunction ddY,
+		       FunctionSpace::ElementFunction ddZ,
+		       FunctionSpace::ElementFunction ddT)
 {
-  list(id).dX = dX;
-  list(id).dY = dY;
-  list(id).dZ = dZ;
-  list(id).dT = dT;
+  list(id).ddX = ddX;
+  list(id).ddY = ddY;
+  list(id).ddZ = ddZ;
+  list(id).ddT = ddT;
 }
 //-----------------------------------------------------------------------------
 void FunctionList::update(const FunctionSpace::ShapeFunction& v,
 			  const Map& map)
 {
   // FIXME: Possible optimisation is to use something like
-  // map.dx(v, list(v.id()).dx) so that we avoid creating an
+  // map.ddx(v, list(v.id()).ddx) so that we avoid creating an
   // element function that needs to be copied
 
-  list(v.id()).dx = map.dx(v);
-  list(v.id()).dy = map.dy(v);
-  list(v.id()).dz = map.dz(v);
-  list(v.id()).dt = map.dt(v);
+  list(v.id()).ddx = map.ddx(v);
+  list(v.id()).ddy = map.ddy(v);
+  list(v.id()).ddz = map.ddz(v);
+  list(v.id()).ddt = map.ddt(v);
 }
 //-----------------------------------------------------------------------------
 int FunctionList::size()
@@ -75,44 +75,44 @@ real FunctionList::eval(int id, real x, real y, real z, real t)
   return list(id).f(x, y, z, t);
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dx(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddx(int id)
 {
-  return list(id).dx;
+  return list(id).ddx;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dy(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddy(int id)
 {
-  return list(id).dy;
+  return list(id).ddy;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dz(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddz(int id)
 {
-  return list(id).dz;
+  return list(id).ddz;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dt(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddt(int id)
 {
-  return list(id).dt;
+  return list(id).ddt;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dX(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddX(int id)
 {
-  return list(id).dX;
+  return list(id).ddX;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dY(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddY(int id)
 {
-  return list(id).dY;
+  return list(id).ddY;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dZ(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddZ(int id)
 {
-  return list(id).dZ;
+  return list(id).ddZ;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction& FunctionList::dT(int id)
+const FunctionSpace::ElementFunction& FunctionList::ddT(int id)
 {
-  return list(id).dT;
+  return list(id).ddT;
 }
 //-----------------------------------------------------------------------------
 void FunctionList::init()

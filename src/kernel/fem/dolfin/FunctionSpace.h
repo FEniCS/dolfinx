@@ -28,15 +28,15 @@ namespace dolfin {
     // Addition of new shape functions
     void add(ShapeFunction v);
     
-    void add(ShapeFunction v, ElementFunction dx);
-    void add(ShapeFunction v, ElementFunction dx, ElementFunction dy);
-    void add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz);
-    void add(ShapeFunction v, ElementFunction dx, ElementFunction dy, ElementFunction dz, ElementFunction dt);
+    void add(ShapeFunction v, ElementFunction ddx);
+    void add(ShapeFunction v, ElementFunction ddx, ElementFunction ddy);
+    void add(ShapeFunction v, ElementFunction ddx, ElementFunction ddy, ElementFunction ddz);
+    void add(ShapeFunction v, ElementFunction ddx, ElementFunction ddy, ElementFunction ddz, ElementFunction ddt);
     
-    void add(ShapeFunction v, real dx);
-    void add(ShapeFunction v, real dx, real dy);
-    void add(ShapeFunction v, real dx, real dy, real dz);
-    void add(ShapeFunction v, real dx, real dy, real dz, real dt);
+    void add(ShapeFunction v, real ddx);
+    void add(ShapeFunction v, real ddx, real ddy);
+    void add(ShapeFunction v, real ddx, real ddy, real ddz);
+    void add(ShapeFunction v, real ddx, real ddy, real ddz, real ddt);
     
     // Dimension (number of shape functions)
     int dim() const;

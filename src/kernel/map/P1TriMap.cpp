@@ -17,28 +17,28 @@ P1TriMap::P1TriMap() : Map()
   dim = 2;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::dx
+const FunctionSpace::ElementFunction P1TriMap::ddx
 (const FunctionSpace::ShapeFunction& v) const
 {
-  return g11*v.dX() + g21*v.dY();
+  return g11*v.ddX() + g21*v.ddY();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::dy
+const FunctionSpace::ElementFunction P1TriMap::ddy
 (const FunctionSpace::ShapeFunction& v) const
 {
-  return g12*v.dX() + g22*v.dY();
+  return g12*v.ddX() + g22*v.ddY();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::dz
+const FunctionSpace::ElementFunction P1TriMap::ddz
 (const FunctionSpace::ShapeFunction& v) const
 {
-  return v.dZ();
+  return v.ddZ();
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace::ElementFunction P1TriMap::dt
+const FunctionSpace::ElementFunction P1TriMap::ddt
 (const FunctionSpace::ShapeFunction& v) const
 {
-  return v.dT();
+  return v.ddT();
 }
 //-----------------------------------------------------------------------------
 void P1TriMap::update(const Cell& cell)

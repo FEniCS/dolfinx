@@ -104,7 +104,7 @@ void cGqMethod::computeWeights()
       real integral = 0.0;
       for (unsigned int k = 0; k < n; k++) {
 	real x = points[k];
-	integral += qweights[k] * trial->dx(j,x) * test->eval(i-1,x);
+	integral += qweights[k] * trial->ddx(j,x) * test->eval(i-1,x);
       }
       
       A(i-1,j-1) = integral;

@@ -47,37 +47,37 @@ namespace dolfin {
 	sigma10, sigma11, sigma12,
 	sigma20, sigma21, sigma22;
 
-      epsilon00 = u(0).dx();
-      epsilon01 = 0.5 * (u(0).dy() + u(1).dx());
-      epsilon02 = 0.5 * (u(0).dz() + u(2).dx());
-      epsilon10 = 0.5 * (u(1).dx() + u(0).dy());
-      epsilon11 = u(1).dy();
-      epsilon12 = 0.5 * (u(1).dz() + u(2).dy());
-      epsilon20 = 0.5 * (u(2).dx() + u(0).dz());
-      epsilon21 = 0.5 * (u(2).dy() + u(1).dz());
-      epsilon22 = u(2).dz();
+      epsilon00 = u(0).ddx();
+      epsilon01 = 0.5 * (u(0).ddy() + u(1).ddx());
+      epsilon02 = 0.5 * (u(0).ddz() + u(2).ddx());
+      epsilon10 = 0.5 * (u(1).ddx() + u(0).ddy());
+      epsilon11 = u(1).ddy();
+      epsilon12 = 0.5 * (u(1).ddz() + u(2).ddy());
+      epsilon20 = 0.5 * (u(2).ddx() + u(0).ddz());
+      epsilon21 = 0.5 * (u(2).ddy() + u(1).ddz());
+      epsilon22 = u(2).ddz();
 
-      epsilonv00 = v(0).dx();
-      epsilonv01 = 0.5 * (v(0).dy() + v(1).dx());
-      epsilonv02 = 0.5 * (v(0).dz() + v(2).dx());
-      epsilonv10 = 0.5 * (v(1).dx() + v(0).dy());
-      epsilonv11 = v(1).dy();
-      epsilonv12 = 0.5 * (v(1).dz() + v(2).dy());
-      epsilonv20 = 0.5 * (v(2).dx() + v(0).dz());
-      epsilonv21 = 0.5 * (v(2).dy() + v(1).dz());
-      epsilonv22 = v(2).dz();
+      epsilonv00 = v(0).ddx();
+      epsilonv01 = 0.5 * (v(0).ddy() + v(1).ddx());
+      epsilonv02 = 0.5 * (v(0).ddz() + v(2).ddx());
+      epsilonv10 = 0.5 * (v(1).ddx() + v(0).ddy());
+      epsilonv11 = v(1).ddy();
+      epsilonv12 = 0.5 * (v(1).ddz() + v(2).ddy());
+      epsilonv20 = 0.5 * (v(2).ddx() + v(0).ddz());
+      epsilonv21 = 0.5 * (v(2).ddy() + v(1).ddz());
+      epsilonv22 = v(2).ddz();
 
-      sigma00 = lambda * (u(0).dx() + u(1).dy() + u(2).dz()) +
+      sigma00 = lambda * (u(0).ddx() + u(1).ddy() + u(2).ddz()) +
 	2 * mu * epsilon00;
       sigma01 = 2 * mu * epsilon01;
       sigma02 = 2 * mu * epsilon02;
       sigma10 = 2 * mu * epsilon10;
-      sigma11 = lambda * (u(0).dx() + u(1).dy() + u(2).dz()) +
+      sigma11 = lambda * (u(0).ddx() + u(1).ddy() + u(2).ddz()) +
 	2 * mu * epsilon11;
       sigma12 = 2 * mu * epsilon12;
       sigma20 = 2 * mu * epsilon20;
       sigma21 = 2 * mu * epsilon21;
-      sigma22 = lambda * (u(0).dx() + u(1).dy() + u(2).dz()) +
+      sigma22 = lambda * (u(0).ddx() + u(1).ddy() + u(2).ddz()) +
 	2 * mu * epsilon22;
 
       return 

@@ -52,7 +52,7 @@ namespace dolfin {
     real endval() const;
 
     /// Return derivative at the end point
-    virtual real dx() const = 0;
+    virtual real ddx() const = 0;
 
     /// Update initial value
     virtual void update(real u0) = 0;

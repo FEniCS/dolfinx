@@ -41,7 +41,7 @@ namespace dolfin {
     inline real basis(unsigned int i, real t) const { return trial->eval(i, t); }
 
     /// Evaluation of derivative of basis function i at given point t within [0,1] (inline optimized)
-    inline real derivative(unsigned int i, real t) const { return trial->dx(i, t); }
+    inline real derivative(unsigned int i, real t) const { return trial->ddx(i, t); }
     
     /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
     inline real derivative(unsigned int i) const { return derivatives[i]; }

@@ -95,7 +95,7 @@ real Lagrange::eval(unsigned int i, real x)
   return product;
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dx(unsigned int i, real x)
+real Lagrange::ddx(unsigned int i, real x)
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
@@ -114,7 +114,7 @@ real Lagrange::dx(unsigned int i, real x)
   return sum * constants[i];
 }
 //-----------------------------------------------------------------------------
-real Lagrange::dqx(unsigned int i)
+real Lagrange::dqdx(unsigned int i)
 {
   dolfin_assert(i >= 0);
 

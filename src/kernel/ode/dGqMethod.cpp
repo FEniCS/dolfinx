@@ -96,7 +96,7 @@ void dGqMethod::computeWeights()
       real integral = 0.0;
       for (unsigned int k = 0; k < n; k++) {
 	real x = points[k];
-	integral += qweights[k] * trial->dx(j,x) * test->eval(i,x);
+	integral += qweights[k] * trial->ddx(j,x) * test->eval(i,x);
       }
       
       A[i][j] = integral + trial->eval(j,0.0) * test->eval(i,0.0);

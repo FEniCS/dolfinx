@@ -16,10 +16,10 @@ namespace dolfin {
     
     P1TetMap();
     
-    const FunctionSpace::ElementFunction dx(const FunctionSpace::ShapeFunction &v) const;
-    const FunctionSpace::ElementFunction dy(const FunctionSpace::ShapeFunction &v) const;
-    const FunctionSpace::ElementFunction dz(const FunctionSpace::ShapeFunction &v) const;
-    const FunctionSpace::ElementFunction dt(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction ddx(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction &v) const;
 
     void update(const Cell &cell);
     

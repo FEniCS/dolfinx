@@ -69,7 +69,7 @@ void RadauQuadrature::computePoints()
     
     // Newton's method
     do {
-      dx = - (p1(x) + p2(x)) / (p1.dx(x) + p2.dx(x));
+      dx = - (p1(x) + p2(x)) / (p1.ddx(x) + p2.ddx(x));
       x  = x + dx;
     } while ( fabs(dx) > DOLFIN_EPS );
     

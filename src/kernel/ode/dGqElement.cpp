@@ -73,7 +73,7 @@ real dGqElement::initval() const
   return u0;
 }
 //-----------------------------------------------------------------------------
-real dGqElement::dx() const
+real dGqElement::ddx() const
 {
   real dudx = 0.0;
 

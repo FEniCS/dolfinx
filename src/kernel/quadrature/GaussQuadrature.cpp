@@ -54,7 +54,7 @@ void GaussQuadrature::computePoints()
     
     // Newton's method
     do {
-      dx = - p(x) / p.dx(x);
+      dx = - p(x) / p.ddx(x);
       x  = x + dx;
     } while ( fabs(dx) > DOLFIN_EPS );
     
