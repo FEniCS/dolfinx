@@ -42,7 +42,7 @@ void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
   y = x;
 
-  // Get data arrays from the PETSc vectors
+  // Get data arrays (assumes uniprocessor case)
   const real* xx = x.array();
   real* yy = y.array();
   
@@ -52,7 +52,7 @@ void MultiAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
   else
     dGmult(xx, yy);
 
-  // Restore PETSc data arrays
+  // Restore data arrays
   x.restore(xx);
   y.restore(yy);
 }

@@ -24,7 +24,7 @@ namespace dolfin
   {
   public:
 
-    class Index;
+    class Element;
 
     /// Empty vector
     NewVector();
@@ -77,15 +77,15 @@ namespace dolfin
     void axpy(const real a, const NewVector& x) const;
 
     /// Add block of values
-    void add(const real block[],const int cols[], int n); 
+    void add(const real block[], const int cols[], int n); 
 
     /// Apply changes to vector
     void apply();
 
     /// Element assignment operator
-    Index operator() (uint i);
+    Element operator() (uint i);
 
-    /// Assignment of vecto
+    /// Assignment of vector
     const NewVector& operator= (const NewVector& x);
 
     /// Assignment of all elements to a single scalar value
@@ -94,13 +94,16 @@ namespace dolfin
     /// Display vector
     void disp() const;
 
-    /// Reference to a position in the vector
-    class Index
+    /// Reference to an element of the vector
+    class Element
     {
     public:
-      Index(uint i, NewVector& v);
+      Element(uint i, NewVector& x);
       operator real() const;
-      void operator=(const real r);
+      const Element& operator=(const real a);
+      const Element& operator+=(const real a);
+      const Element& operator-=(const real a);
+      const Element& operator*=(const real a);
     protected:
       uint i;
       NewVector& x;
@@ -108,11 +111,14 @@ namespace dolfin
 
   protected:
 
-    // Element assignment
-    void setvalue(uint i, const real r);
-
     // Element access
-    real getvalue(uint i) const;
+    real getval(uint i) const;
+
+    // Set value of element
+    void setval(uint i, const real a);
+
+    // Add value to element
+    void addval(uint i, const real a);
 
   private:
 

@@ -14,8 +14,8 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : NewTimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
 {
   // Choose solver
-  solver = new MonoAdaptiveFixedPointSolver(*this);
-  //solver = new MonoAdaptiveNewtonSolver(*this);
+  //solver = new MonoAdaptiveFixedPointSolver(*this);
+  solver = new MonoAdaptiveNewtonSolver(*this);
 
   // Initialize dofs
   dofs = new real[method->nsize()];

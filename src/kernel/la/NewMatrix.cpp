@@ -45,7 +45,7 @@ NewMatrix::NewMatrix(const Matrix &B)
   {
     for(unsigned int j = 0; j < n; j++)
     {
-      setvalue(i, j, B(i, j));
+      setval(i, j, B(i, j));
     }
   }
 }
@@ -124,23 +124,6 @@ void NewMatrix::add(const real block[],
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::setvalue(int i, int j, const real r)
-{
-  MatSetValue(A, i, j, r, INSERT_VALUES);
-
-  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
-}
-//-----------------------------------------------------------------------------
-real NewMatrix::getvalue(int i, int j) const
-{
-  PetscScalar val;
-
-  MatGetValues(A, 1, &i, 1, &j, &val);
-
-  return val;
-}
-//-----------------------------------------------------------------------------
 void NewMatrix::mult(const NewVector& x, NewVector& Ax) const
 {
   MatMult(A, x.vec(), Ax.vec());
@@ -179,24 +162,78 @@ LogStream& dolfin::operator<< (LogStream& stream, const NewMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-NewMatrix::Index NewMatrix::operator()(int i, int j)
+NewMatrix::Element NewMatrix::operator()(uint i, uint j)
 {
-  Index ind(i, j, *this);
+  Element element(i, j, *this);
 
-  return ind;
+  return element;
 }
 //-----------------------------------------------------------------------------
-NewMatrix::Index::Index(int i, int j, NewMatrix &m) : i(i), j(j), m(m)
+real NewMatrix::getval(uint i, uint j) const
 {
+  const int ii = static_cast<int>(i);
+  const int jj = static_cast<int>(j);
+
+  PetscScalar val;
+  MatGetValues(A, 1, &ii, 1, &jj, &val);
+
+  return val;
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::Index::operator =(const real r)
+void NewMatrix::setval(uint i, uint j, const real a)
 {
-  m.setvalue(i, j, r);
+  MatSetValue(A, i, j, a, INSERT_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-NewMatrix::Index::operator real() const
+void NewMatrix::addval(uint i, uint j, const real a)
 {
-  return m.getvalue(i, j);
+  MatSetValue(A, i, j, a, ADD_VALUES);
+
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
+// NewMatrix::Element
+//-----------------------------------------------------------------------------
+NewMatrix::Element::Element(uint i, uint j, NewMatrix& A) : i(i), j(j), A(A)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewMatrix::Element::operator real() const
+{
+  return A.getval(i, j);
+}
+//-----------------------------------------------------------------------------
+const NewMatrix::Element& NewMatrix::Element::operator=(const real a)
+{
+  A.setval(i, j, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewMatrix::Element& NewMatrix::Element::operator+=(const real a)
+{
+  A.addval(i, j, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewMatrix::Element& NewMatrix::Element::operator-=(const real a)
+{
+  A.addval(i, j, -a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewMatrix::Element& NewMatrix::Element::operator*=(const real a)
+{
+  const real val = A.getval(i, j) * a;
+  A.setval(i, j, val);
+  
+  return *this;
 }
 //-----------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/NewMatrix.h>
+#
 #include <dolfin/NewMethod.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
@@ -54,37 +55,33 @@ real MonoAdaptiveNewtonSolver::iteration()
   // Solve linear system F for dx
   solver.solve(A, dx, b);
    
-  // Get array containing the increments (assumes uniprocessor case)
-  real* dxvals = dx.array();
-
-  /*  
+  // Get arrays of values for x and dx
+  real* xx = ts.x.array();
+  real* dxx = dx.array();
 
   // Update solution x -> x - dx
   for (uint j = 0; j < ts.nj; j++)
-    ts.jx[j] += dxvals[j];
-
+    xx[j] += dxx[j];
+  
   // Compute maximum increment
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dxvals[j]);
+    const real increment = fabs(dxx[j]);
     if ( increment > max_increment )
       max_increment = increment;
   }
 
-  */
+  // Restore arrays
+  ts.x.restore(xx);
+  dx.restore(dxx);
 
-  // Restore array
-  dx.restore(dxvals);
-
-  return 0.0;
-
-  //return max_increment;
+  return max_increment;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::beval()
 {
-  // Get array of values for x and b (assumes uniprocessor case)
+  // Get arrays of values for x and b (assumes uniprocessor case)
   real* bb = b.array();
   real* xx = ts.x.array();
 
@@ -125,7 +122,6 @@ void MonoAdaptiveNewtonSolver::beval()
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()
 {
-  /*
   const uint n = ts.nj;
   NewMatrix B(n, n);
   NewVector F1(n), F2(n);
@@ -133,20 +129,18 @@ void MonoAdaptiveNewtonSolver::debug()
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
   {
-    const real xj = ts.jx[j];
+    const real xj = ts.x(j);
     real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
 		  
-    ts.jx[j] -= 0.5*dx;
+    ts.x(j) -= 0.5*dx;
     beval();
-    for (uint i = 0; i < n; i++)
-      F1(i) = -b(i);
+    F1 = b;
 
-    ts.jx[j] = xj + 0.5*dx;
+    ts.x(j) = xj + 0.5*dx;
     beval();
-    for (uint i = 0; i < n; i++)
-      F2(i) = -b(i);
-
-    ts.jx[j] = xj;
+    F2 = b;
+    
+    ts.x(j) = xj;
 
     for (uint i = 0; i < n; i++)
     {
@@ -157,6 +151,5 @@ void MonoAdaptiveNewtonSolver::debug()
   }
 
   B.disp();
-  */
 }
 //-----------------------------------------------------------------------------

@@ -57,30 +57,23 @@ real MultiAdaptiveNewtonSolver::iteration()
   solver.solve(A, dx, b);
    
   // Get array containing the increments (assumes uniprocessor case)
-  real* dxvals = dx.array();
+  real* dxx = dx.array();
 
-  /*
-  real* bvals = b.array();
+  // Update solution x -> x + dx
   for (uint j = 0; j < ts.nj; j++)
-    dxvals[j] = bvals[j];
-  b.restore(bvals);
-  */
-
-  // Update solution x -> x - dx
-  for (uint j = 0; j < ts.nj; j++)
-    ts.jx[j] += dxvals[j];
+    ts.jx[j] += dxx[j];
 
   // Compute maximum increment
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dxvals[j]);
+    const real increment = fabs(dxx[j]);
     if ( increment > max_increment )
       max_increment = increment;
   }
 
   // Restore array
-  dx.restore(dxvals);
+  dx.restore(dxx);
 
   return max_increment;
 }
@@ -88,7 +81,7 @@ real MultiAdaptiveNewtonSolver::iteration()
 void MultiAdaptiveNewtonSolver::beval()
 {
   // Get array of values for b (assumes uniprocessor case)
-  real* bvals = b.array();
+  real* bb = b.array();
 
   // Reset dof
   uint j = 0;
@@ -120,18 +113,18 @@ void MultiAdaptiveNewtonSolver::beval()
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed point iteration
-    method.update(x0, f, k, bvals + j);
+    method.update(x0, f, k, bb + j);
     
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
-      bvals[j + n] -= ts.jx[j + n];
+      bb[j + n] -= ts.jx[j + n];
 
     // Update dof
     j += method.nsize();
   }
 
   // Restore array
-  b.restore(bvals);
+  b.restore(bb);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::debug()

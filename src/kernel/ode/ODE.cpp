@@ -55,7 +55,7 @@ void ODE::feval(real u[], real t, real f[])
     f[i] = this->f(u, t, i);
 }
 //-----------------------------------------------------------------------------
-void M(const real x[], real y[])
+void ODE::M(const real x[], real y[])
 {
   dolfin_error("Not implemented");
 }

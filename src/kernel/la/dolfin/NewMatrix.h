@@ -1,5 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __NEW_MATRIX_H
 #define __NEW_MATRIX_H
@@ -24,7 +26,7 @@ namespace dolfin
   {
   public:
 
-    class Index;
+    class Element;
 
     /// Constructor
     NewMatrix();
@@ -54,12 +56,6 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
-    /// Element assignment
-    void setvalue(int i, int j, const real r);
-
-    /// Element access
-    real getvalue(int i, int j) const;
-
     /// Matrix-vector multiplication
     void mult(const NewVector& x, NewVector& Ax) const;
 
@@ -79,22 +75,33 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
     
     /// Element assignment operator
-    Index operator()(int i, int j);
+    Element operator()(uint i, uint j);
 
-    class Index
+    class Element
     {
     public:
-      Index(int i, int j, NewMatrix &m);
-
+      Element(uint i, uint j, NewMatrix& A);
       operator real() const;
-      void operator=(const real r);
-
+      const Element& operator=(const real a);
+      const Element& operator+=(const real a);
+      const Element& operator-=(const real a);
+      const Element& operator*=(const real a);
     protected:
-      int i, j;
-      NewMatrix &m;
+      uint i, j;
+      NewMatrix& A;
     };
 
+  protected:
 
+    // Element access
+    real getval(uint i, uint j) const;
+
+    // Set value of element
+    void setval(uint i, uint j, const real a);
+    
+    // Add value to element
+    void addval(uint i, uint j, const real a);
+    
   private:
 
     // PETSc Mat pointer

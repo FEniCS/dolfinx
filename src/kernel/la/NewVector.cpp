@@ -46,7 +46,7 @@ NewVector::NewVector(const Vector &x) : x(0), copy(false)
 
   const uint n = size();
   for (uint i = 0; i < n; i++)
-    setvalue(i, x(i));
+    setval(i, x(i));
 }
 //-----------------------------------------------------------------------------
 NewVector::~NewVector()
@@ -159,9 +159,9 @@ void NewVector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-NewVector::Index NewVector::operator() (uint i)
+NewVector::Element NewVector::operator() (uint i)
 {
-  Index index(i, *this);
+  Element index(i, *this);
 
   return index;
 }
@@ -185,17 +185,9 @@ void NewVector::disp() const
   VecView(x, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
-void NewVector::setvalue(uint i, const real r)
+real NewVector::getval(uint i) const
 {
-  VecSetValue(x, static_cast<int>(i), r, INSERT_VALUES);
-
-  VecAssemblyBegin(x);
-  VecAssemblyEnd(x);
-}
-//-----------------------------------------------------------------------------
-real NewVector::getvalue(uint i) const
-{
-  // Assumes uniprocessor case.
+  // Assumes uniprocessor case
 
   real val = 0.0;
 
@@ -207,20 +199,60 @@ real NewVector::getvalue(uint i) const
   return val;
 }
 //-----------------------------------------------------------------------------
-// NewVector::Index
+void NewVector::setval(uint i, const real a)
+{
+  VecSetValue(x, static_cast<int>(i), a, INSERT_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
 //-----------------------------------------------------------------------------
-NewVector::Index::Index(uint i, NewVector& x) : i(i), x(x)
+void NewVector::addval(uint i, const real a)
+{
+  VecSetValue(x, static_cast<int>(i), a, ADD_VALUES);
+
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
+}
+//-----------------------------------------------------------------------------
+// NewVector::Element
+//-----------------------------------------------------------------------------
+NewVector::Element::Element(uint i, NewVector& x) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewVector::Index::operator =(const real r)
+NewVector::Element::operator real() const
 {
-  x.setvalue(i, r);
+  return x.getval(i);
 }
 //-----------------------------------------------------------------------------
-NewVector::Index::operator real() const
+const NewVector::Element& NewVector::Element::operator=(const real a)
 {
-  return x.getvalue(i);
+  x.setval(i, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector::Element& NewVector::Element::operator+=(const real a)
+{
+  x.addval(i, a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector::Element& NewVector::Element::operator-=(const real a)
+{
+  x.addval(i, -a);
+
+  return *this;
+}
+//-----------------------------------------------------------------------------
+const NewVector::Element& NewVector::Element::operator*=(const real a)
+{
+  const real val = x.getval(i) * a;
+  x.setval(i, val);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
