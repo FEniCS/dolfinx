@@ -11,4 +11,4 @@ if [ "$CHECK" != "scripts" ]; then
 fi
 
 # Run doxygen
-/usr/bin/doxygen doc/html/Doxyfile
+/usr/bin/doxygen doc/progr_reference/html/Doxyfile
