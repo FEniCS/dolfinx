@@ -86,7 +86,7 @@ include_HEADERS = dolfin/dolfin_la.h                          dolfin/DenseMatrix
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-la.a
-libdolfin_la_a_SOURCES = DenseMatrix.cpp                          DirectSolver.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp
+libdolfin_la_a_SOURCES = DenseMatrix.cpp                          DirectSolver.cpp                          GaussSeidel.cpp                          GenericMatrix.cpp 	                 KrylovSolver.cpp                          LinearSolver.cpp                          Matrix.cpp                          Preconditioner.cpp 	                 SISolver.cpp                          SparseMatrix.cpp                          Vector.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -99,8 +99,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_la_a_LIBADD = 
 libdolfin_la_a_OBJECTS =  DenseMatrix.o DirectSolver.o GaussSeidel.o \
-GenericMatrix.o KrylovSolver.o LinearSolver.o Matrix.o SISolver.o \
-SparseMatrix.o Vector.o
+GenericMatrix.o KrylovSolver.o LinearSolver.o Matrix.o Preconditioner.o \
+SISolver.o SparseMatrix.o Vector.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -116,8 +116,8 @@ TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/DenseMatrix.P .deps/DirectSolver.P \
 .deps/GaussSeidel.P .deps/GenericMatrix.P .deps/KrylovSolver.P \
-.deps/LinearSolver.P .deps/Matrix.P .deps/SISolver.P \
-.deps/SparseMatrix.P .deps/Vector.P
+.deps/LinearSolver.P .deps/Matrix.P .deps/Preconditioner.P \
+.deps/SISolver.P .deps/SparseMatrix.P .deps/Vector.P
 SOURCES = $(libdolfin_la_a_SOURCES)
 OBJECTS = $(libdolfin_la_a_OBJECTS)
 

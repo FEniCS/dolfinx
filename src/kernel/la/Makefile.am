@@ -20,6 +20,7 @@ libdolfin_la_a_SOURCES = DenseMatrix.cpp \
 	                 KrylovSolver.cpp \
                          LinearSolver.cpp \
                          Matrix.cpp \
+                         Preconditioner.cpp \
 	                 SISolver.cpp \
                          SparseMatrix.cpp \
                          Vector.cpp
