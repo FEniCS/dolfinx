@@ -32,9 +32,12 @@ namespace dolfin
     /// Create vector of given size
     NewVector(uint size);
 
+    /// Create vector from given PETSc Vec pointer
+    NewVector(Vec x);
+
     /// Copy constructor
     NewVector(const NewVector& x);
-
+    
     /// Create vector from old vector (will be removed)
     NewVector(const Vector& x);
 
@@ -91,7 +94,7 @@ namespace dolfin
       void operator=(const real r);
     protected:
       uint i;
-      NewVector &v;
+      NewVector& x;
     };
 
   protected:
@@ -105,7 +108,7 @@ namespace dolfin
   private:
 
     // PETSc Vec pointer
-    Vec v;
+    Vec x;
     
   };
 }

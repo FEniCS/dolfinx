@@ -15,7 +15,7 @@ namespace dolfin
   
   int usermult(Mat A, Vec x, Vec y)
   {
-    void* ctx;
+    void* ctx = 0;
     MatShellGetContext(A, &ctx);
     ((VirtualMatrix*) ctx)->mult(x, y);
     return 0;

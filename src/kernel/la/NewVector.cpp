@@ -12,16 +12,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewVector::NewVector()
+NewVector::NewVector() : x(0)
 {
   // Initialize PETSc
   PETScManager::init();
-
-  // Don't initialize the vector
-  v = 0;
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(uint size)
+NewVector::NewVector(uint size) : x(0)
 {
   if(size < 0)
     dolfin_error("Size of vector must be non-negative.");
@@ -30,17 +27,24 @@ NewVector::NewVector(uint size)
   PETScManager::init();
 
   // Create PETSc vector
-  v = 0;
   init(size);
 }
 //-----------------------------------------------------------------------------
-NewVector::NewVector(const Vector &x)
+NewVector::NewVector(Vec x) : x(0)
+{
+  // Initialize PETSc
+  PETScManager::init();
+
+  // Copy PETSC Vec pointer
+  this->x = x;
+}
+//-----------------------------------------------------------------------------
+NewVector::NewVector(const Vector &x) : x(0)
 {
   // Initialize PETSc
   PETScManager::init();
 
   // Create PETSc vector
-  v = 0;
   init(x.size());
 
   const uint n = size();
@@ -62,7 +66,7 @@ void NewVector::init(uint size)
   //
   // Otherwise do nothing
   
-  if (v)
+  if (x)
   {
     const uint n = this->size();
 
@@ -76,66 +80,66 @@ void NewVector::init(uint size)
     clear();
   }
 
-  VecCreate(PETSC_COMM_WORLD, &v);
-  VecSetSizes(v, PETSC_DECIDE, size);
-  VecSetFromOptions(v);
+  VecCreate(PETSC_COMM_WORLD, &x);
+  VecSetSizes(x, PETSC_DECIDE, size);
+  VecSetFromOptions(x);
 }
 //-----------------------------------------------------------------------------
 void NewVector::axpy(const real a, const NewVector& x) const
 {
-  VecAXPY(&a, x.vec(), v);
+  VecAXPY(&a, x.vec(), this->x);
 }
 //-----------------------------------------------------------------------------
-void NewVector::add(const real block[],const int cols[], int n)
+void NewVector::add(const real block[], const int cols[], int n)
 {
-  VecSetValues(v, n, cols, block, ADD_VALUES); 
+  VecSetValues(x, n, cols, block, ADD_VALUES); 
 }
 //-----------------------------------------------------------------------------
 void NewVector::apply()
 {
-  VecAssemblyBegin(v); 
-  VecAssemblyEnd(v); 
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 void NewVector::clear()
 {
-  if(v)
+  if (x)
   {
-    VecDestroy(v);
+    VecDestroy(x);
   }
 
-  v = 0;
+  x = 0;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewVector::size() const
 {
   int n = 0;
-  VecGetSize(v, &n);
+  VecGetSize(x, &n);
 
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
 Vec NewVector::vec()
 {
-  return v;
+  return x;
 }
 //-----------------------------------------------------------------------------
 const Vec NewVector::vec() const
 {
-  return v;
+  return x;
 }
 //-----------------------------------------------------------------------------
 real* NewVector::array()
 {
   real* data = 0;
-  VecGetArray(v, &data);
+  VecGetArray(x, &data);
 
   return data;
 }
 //-----------------------------------------------------------------------------
 void NewVector::restore(real data[])
 {
-  VecRestoreArray(v, &data);
+  VecRestoreArray(x, &data);
 }
 //-----------------------------------------------------------------------------
 NewVector::Index NewVector::operator() (uint i)
@@ -147,22 +151,22 @@ NewVector::Index NewVector::operator() (uint i)
 //-----------------------------------------------------------------------------
 const NewVector& NewVector::operator= (real a)
 {
-  VecSet(&a, v);
+  VecSet(&a, x);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 void NewVector::disp() const
 {
-  VecView(v, PETSC_VIEWER_STDOUT_SELF);
+  VecView(x, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
 void NewVector::setvalue(uint i, const real r)
 {
-  VecSetValue(v, static_cast<int>(i), r, INSERT_VALUES);
+  VecSetValue(x, static_cast<int>(i), r, INSERT_VALUES);
 
-  VecAssemblyBegin(v);
-  VecAssemblyEnd(v);
+  VecAssemblyBegin(x);
+  VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
 real NewVector::getvalue(uint i) const
@@ -172,27 +176,27 @@ real NewVector::getvalue(uint i) const
   real val = 0.0;
 
   PetscScalar *array = 0;
-  VecGetArray(v, &array);
+  VecGetArray(x, &array);
   val = array[i];
-  VecRestoreArray(v, &array);
+  VecRestoreArray(x, &array);
 
   return val;
 }
 //-----------------------------------------------------------------------------
 // NewVector::Index
 //-----------------------------------------------------------------------------
-NewVector::Index::Index(uint i, NewVector &v) : i(i), v(v)
+NewVector::Index::Index(uint i, NewVector& x) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void NewVector::Index::operator =(const real r)
 {
-  v.setvalue(i, r);
+  x.setvalue(i, r);
 }
 //-----------------------------------------------------------------------------
 NewVector::Index::operator real() const
 {
-  return v.getvalue(i);
+  return x.getvalue(i);
 }
 //-----------------------------------------------------------------------------
