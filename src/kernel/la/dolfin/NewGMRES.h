@@ -7,6 +7,7 @@
 #define __NEW_GMRES_H
 
 #include <dolfin/constants.h>
+#include <petsc/petscksp.h>
 
 namespace dolfin
 {
@@ -44,6 +45,9 @@ namespace dolfin
       
     /// Change maxits
     void changeMaxits(int mi);
+
+    /// Return PETSc solver pointer
+    KSP solver();
       
   private:
 
@@ -61,6 +65,9 @@ namespace dolfin
 
     // Maximum number of iterations
     unsigned int maxiter;
+
+    // PETSc solver pointer
+    KSP ksp;
 
   };
 

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
   newsolver.solve(A, x, b);
   A.mult(x, R);
-  R.add(-1, b);
+  R.axpy(-1, b);
 
   dolfin::cout << "x: " << dolfin::endl;
   x.disp();

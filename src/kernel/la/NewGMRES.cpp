@@ -20,25 +20,25 @@ NewGMRES::NewGMRES()
   // Initialize PETSc
   PETScManager::init();
 
+  //Set up solver environment.
+  KSPCreate(PETSC_COMM_WORLD, &ksp);
+
+  dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
 }
 //-----------------------------------------------------------------------------
 NewGMRES::~NewGMRES()
 {
-  // Do nothing
+  //Destroy solver environment.
+  KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 {
-  //Set up solver environment.
-  KSP  ksp;
+  //KSP  ksp;
   //PC   pc;
 
   // The default ILU preconditioner creates an extra matrix.
   // To save memory, use e.g. a Jacobi preconditioner.
-
-  KSPCreate(PETSC_COMM_WORLD, &ksp);
-
-  dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
 
   KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
@@ -64,23 +64,13 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   dolfin_info("Solution converged in %d iterations.", its);
 
   //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
-
-  //Destroy solver environment.
-  KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 {
-  //Set up solver environment.
-  KSP  ksp;
-  //PC   pc;
-
   // The default ILU preconditioner creates an extra matrix.
   // To save memory, use e.g. a Jacobi preconditioner.
   
-  //dolfin::cout << "Setting up PETSc solver environment." << dolfin::endl;
-  KSPCreate(PETSC_COMM_WORLD, &ksp);
-
   KSPSetOperators(ksp,A.mat(),A.mat(),DIFFERENT_NONZERO_PATTERN);
   KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   KSPSetFromOptions(ksp);
@@ -105,12 +95,8 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   dolfin_info("Solution converged in %d iterations.", its);
 
   //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
-
-  //Destroy solver environment.
-  KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-/*
 void NewGMRES::changeRtol(real rt)
 {
   KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
@@ -139,4 +125,3 @@ void NewGMRES::changeMaxits(int mi)
   KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
 }
 //-----------------------------------------------------------------------------
-*/
