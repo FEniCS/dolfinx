@@ -15,6 +15,9 @@ public:
 
     // Final time
     T = 321.8122;
+
+    // Compute sparsity
+    sparse();
   }
 
   real u0(unsigned int i)

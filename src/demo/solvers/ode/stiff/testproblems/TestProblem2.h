@@ -19,6 +19,9 @@ public:
     // The matrix A
     A(0,0) = 100;
     A(1,1) = 1000;
+
+    // Compute sparsity
+    sparse();
   }
 
   real u0(unsigned int i)

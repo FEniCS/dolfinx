@@ -9,13 +9,17 @@ class TestProblem7 : public ODE
 {
 public:
   
-  TestProblem7() : ODE(11)
+  TestProblem7() : ODE(101)
   {
-    T = 2.0;
-    h = 1.0 / (static_cast<real>(N) - 1);
-
     dolfin_info("The heat equation on [0,1] with h = %f", h);
     
+    // Final time
+    T = 1.0;
+
+    // Mesh size
+    h = 1.0 / (static_cast<real>(N) - 1);
+    
+    // Compute sparsity
     sparse();
   }
   
@@ -32,8 +36,8 @@ public:
     
     // Heat source
     real source = 0.0;
-    if ( i == N/3 )
-      source = 10.0;
+    if ( i == N/2 )
+      source = 100.0;
 
     return (u(i-1) - 2.0*u(i) + u(i+1)) / (h*h) + source;
   }

@@ -19,6 +19,9 @@ public:
 
     // Parameters
     mu = 10.0;
+
+    // Compute sparsity
+    sparse();
   }
 
   real u0(unsigned int i)

@@ -19,28 +19,24 @@ using namespace dolfin;
 
 void solveTestProblem1()
 {
-  dolfin_set("tolerance", 0.1);
   TestProblem1 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem2()
 {
-  dolfin_set("tolerance", 0.1);
   TestProblem2 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem3()
 {
-  dolfin_set("tolerance", 0.1);
   TestProblem3 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem4()
 {
-  dolfin_set("tolerance", 0.1);
   TestProblem4 testProblem;
   testProblem.solve();
 }
@@ -55,8 +51,6 @@ void solveTestProblem5()
 
 void solveTestProblem6()
 {
-  // Need to decrease the tolerance
-  dolfin_set("tolerance", 0.1);
   TestProblem6 testProblem;
   testProblem.solve();
 }
@@ -70,14 +64,14 @@ void solveTestProblem7()
 
 void solveTestProblem8()
 {
-  dolfin_set("tolerance", 0.01);
+  // Need to decrease the tolerance
+  dolfin_set("tolerance", 0.001);
   TestProblem8 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem9()
 {
-  dolfin_set("tolerance", 0.01);
   TestProblem9 testProblem;
   testProblem.solve();
 }
@@ -111,8 +105,9 @@ int main(int argc, char* argv[])
   dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
   dolfin_set("order", 0);
-  dolfin_set("adaptive samples", true);
   dolfin_set("maximum time step", 1.0);
+  dolfin_set("tolerance", 0.1);
+  //dolfin_set("adaptive samples", true);
   dolfin_set("solve dual problem", false);
   
   // Choose test problem

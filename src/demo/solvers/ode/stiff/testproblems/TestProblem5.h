@@ -26,6 +26,9 @@ public:
     klA = 3.3;
     p   = 0.9;
     H   = 737.0;
+
+    // Compute sparsity
+    sparse();
   }
 
   real u0(unsigned int i)

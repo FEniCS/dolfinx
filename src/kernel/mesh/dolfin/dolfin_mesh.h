@@ -1,5 +1,5 @@
-#ifndef __DOLFIN_GRID_H
-#define __DOLFIN_GRID_H
+#ifndef __DOLFIN_MESH_H
+#define __DOLFIN_MESH_H
 
 // DOLFIN grid classes
 
