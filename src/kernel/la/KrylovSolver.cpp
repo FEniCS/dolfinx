@@ -8,6 +8,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/SISolver.h>
+#include <dolfin/Settings.h>
 #include <dolfin/KrylovSolver.h>
 
 using namespace dolfin;
@@ -62,8 +63,10 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
 //-----------------------------------------------------------------------------
 void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
 {
-  int k_max           = 100;  // no iterations before restart
-  int max_no_restarts = 100; // max no restarts
+  int k_max,max_no_restarts;
+  Settings::get("max no krylov restarts", &max_no_restarts); // max no restarts
+  Settings::get("max no stored krylov vectors", &k_max); // no iterations before restart
+
   int no_iterations;
 
   real norm_residual = getResidual(A,x,b);
@@ -240,7 +243,8 @@ void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
   // symmetry of the matrix is destroyed.
 
   int n = x.size();
-  int k_max = 1000;
+  int k_max;
+  Settings::get("max no cg iterations", &k_max); // max no iterations
   
   real norm_b = b.norm();
   

@@ -21,6 +21,10 @@ namespace dolfin {
 		add(Parameter::REAL, "start time", 0.0);
 		add(Parameter::REAL, "end time",   10.0);
 
+		add(Parameter::INT, "max no krylov restarts", 100);
+		add(Parameter::INT, "max no stored krylov vectors", 100);
+		add(Parameter::INT, "max no cg iterations", 1000); 
+
 		add(Parameter::BCFUNCTION, "boundary condition", 0);
 		
 	 }
