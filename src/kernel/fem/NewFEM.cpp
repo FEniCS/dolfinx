@@ -195,3 +195,30 @@ dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
   return dofmax + 1;
 }
 //-----------------------------------------------------------------------------
+void NewFEM::setBC( NewMatrix& A, NewVector& b, Mesh& mesh, 
+		    NewArray<int>& bcIdx, NewArray<real>& bcVal )
+{
+  // Temporary implementation of Dirchlet boundary conditions: 
+  // bcIdx - indices of Dirichlet boundary 
+  // bcVal - values for Dirichlet boundary 
+
+  int noBndNodes = bcIdx.size();
+  int *bndIdx;
+  PetscMalloc(noBndNodes*sizeof(int),&bndIdx);
+  for (uint i=0;i<bcVal.size();i++){
+    bndIdx[i] = bcIdx[i]; 
+  }
+  
+  IS bndRows;
+  ISCreateGeneral(PETSC_COMM_SELF, noBndNodes, bndIdx, &bndRows);
+  real one = 1.0;
+  MatZeroRows( A.mat(), bndRows, &one); 
+  ISDestroy( bndRows );
+
+  real tst;
+  for( int i=0; i<noBndNodes;i++){
+    tst = bcVal[i];
+    b(bcIdx[i]) = tst;
+  }
+}
+//-----------------------------------------------------------------------------

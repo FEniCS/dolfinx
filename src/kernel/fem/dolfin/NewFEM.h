@@ -37,6 +37,9 @@ namespace dolfin
     static void assemble(LinearForm& L, NewVector& b, Mesh& mesh,
 			 const NewFiniteElement& element);
 
+    static void setBC( NewMatrix& A, NewVector& b, Mesh& mesh, 
+		       NewArray<int>& bcIdx, NewArray<real>& bcVal );
+
   private:
 
     // Count the degrees of freedom

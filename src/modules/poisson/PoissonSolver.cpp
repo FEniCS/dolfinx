@@ -52,7 +52,6 @@ void PoissonSolver::solve()
   NewMatrix A;
   NewVector x, b;
 
-
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
 
@@ -133,46 +132,34 @@ void PoissonSolver::dirichletBC( NewMatrix& A, NewVector& b, Mesh& mesh)
 {
   // Temporary very simple implementation of Dirchlet boundary conditions 
 
-  NewArray<int> bndNodes(mesh.noNodes());
-  bndNodes = 0;
+  NewArray<int> bcNodes(mesh.noNodes());
+  bcNodes = 0;
   int noBndNodes = 0;
   
   real tol = 1.0e-6;
   for (NodeIterator n(mesh); !n.end(); ++n){
-    cout << "x = " << n->coord().x << ", y = " << n->coord().y << ", z = " << n->coord().z << endl;
     /*
     if ( (fabs(n->coord().x - 0.0)<tol) || (fabs(n->coord().x - 1.0)<tol) || 
 	 (fabs(n->coord().y - 0.0)<tol) || (fabs(n->coord().y - 1.0)<tol) ){
     */
     if ( (fabs(n->coord().x - 0.0)<tol) || (fabs(n->coord().x - 1.0)<tol) ){
-      bndNodes[n->id()] = 1;
+      bcNodes[n->id()] = 1;
       noBndNodes++;
-      cout << "node id = " << n->id() << endl;
+    }
+  }
+  
+  NewArray<int> bcIdx(noBndNodes);
+  int cnt = 0;
+  for (int i=0;i<mesh.noNodes();i++){
+    if (bcNodes[i] == 1){
+      bcIdx[cnt] = i; 
+      cnt++;
     }
   }
 
-  int *bndIdx;
-  PetscMalloc(noBndNodes*sizeof(int),&bndIdx);
-  //NewArray<int> bndIdx(noBndNodes);
-  int cnt = 0;
-  cout << "node id = " ;
-  for (int i=0;i<mesh.noNodes();i++){
-    if (bndNodes[i] == 1){
-      //bndIdx[cnt] = i+1; // Different numbering for Petsc: starting at 1 (instead of 0)
-      bndIdx[cnt] = i; // why does this work then?
-      cnt++;
-      cout << i << ", ";
-    }
-  }
-  cout << endl;
+  NewArray<real> bcVal(noBndNodes);
+  bcVal = 0.0;
   
-  IS bndRows;
-  ISCreateGeneral(PETSC_COMM_SELF, noBndNodes, bndIdx, &bndRows);
-  real one = 1.0;
-  MatZeroRows( A.mat(), bndRows, &one); 
-  ISDestroy( bndRows );
-  
-  for( int i=0; i<noBndNodes;i++)
-    b(bndIdx[i]) = 0.0;
+  NewFEM::setBC(A,b,mesh,bcIdx,bcVal);
 }
 //-----------------------------------------------------------------------------
