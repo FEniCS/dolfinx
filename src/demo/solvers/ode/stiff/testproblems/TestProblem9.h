@@ -42,7 +42,7 @@ public:
     if ( i == 1 )
       return -(1.0-u(2))*u(0);
 
-    return -lambda * (u(1)*u(1) + u(2)*u(2)) * u(2);
+    return -lambda * (u(0)*u(0) + u(1)*u(1)) * u(2);
   }
 
   Element::Type method(unsigned int i)

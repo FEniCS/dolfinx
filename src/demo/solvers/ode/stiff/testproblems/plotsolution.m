@@ -320,3 +320,9 @@ xlabel('t')
 ylabel('k')
 
 print -depsc solution_9.eps
+
+disp('Plotting time slab for test problem 9')
+
+figure(2); clf
+plotslab('primal_9.debug', [10,30], 0, 0, 0, 0)
+print -depsc timeslab_9.eps
