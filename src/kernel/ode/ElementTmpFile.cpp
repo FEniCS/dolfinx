@@ -64,7 +64,7 @@ using namespace dolfin;
 // at the end of each block, to allow search forwards and backwards.
 
 //-----------------------------------------------------------------------------
-ElementTmpFile::ElementTmpFile()
+ElementTmpFile::ElementTmpFile() : _empty(true)
 {
   // Open file
   fp = tmpfile();
@@ -123,6 +123,13 @@ void ElementTmpFile::write(const ElementBlock& block)
       real t1 = (*e)->endtime();
       fwrite(&t0, sizeof(real), 1, fp);
       fwrite(&t1, sizeof(real), 1, fp);
+
+      // Write initial value for dG element
+      if ( (*e)->type() == Element::dg )
+      {
+	real initval = (*e)->initval();
+	fwrite(&initval, sizeof(real), 1, fp);
+      }
       
       // Write element values
       for (unsigned int i = 0; i <= order; i++)
@@ -134,6 +141,251 @@ void ElementTmpFile::write(const ElementBlock& block)
   }
 
   // Write size of block (number of bytes)
+  fwrite(&size, sizeof(unsigned int), 1, fp);
+
+  // Remember that the file is not empty
+  _empty = false;
+}
+//-----------------------------------------------------------------------------
+void ElementTmpFile::read(ElementBlock& block, real t)
+{
+  // Check if the file is empty
+  if ( _empty )
+    dolfin_error("Unable to read element data. File is empty.");
+
+  // Search forward
+  if ( searchForward(t) )
+  {
+    readBlock(block);
+    return;
+  }
+
+  // Search backward
+  if ( searchBackward(t) )
+  {
+    readBlock(block);
+    return;
+  }
+
+  dolfin_error("Unable to find element data in file.");
+}
+//-----------------------------------------------------------------------------
+void ElementTmpFile::readFirst(ElementBlock& block)
+{
+  // Step to the beginning of the file
+  rewind(fp);
+
+  // Read block data from current position
+  readBlock(block);
+}
+//-----------------------------------------------------------------------------
+void ElementTmpFile::readLast(ElementBlock& block)
+{
+  // Step to the end of the file
+  if ( fseek(fp, 0L, SEEK_END) != 0 )
+    dolfin_error("Unable to read element data.");
+
+  // Read tail of block
+  unsigned int size = 0;
+  if ( !readTail(size) )
+    return;
+  
+  // Skip backward
+  if ( fseek(fp, -size, SEEK_CUR) != 0 )
+    return;
+
+  // Step to the beginning of the block
+  if ( fseek(fp, -size, SEEK_CUR) != 0 )
+    dolfin_error("Unable to read element data.");
+  
+  // Read block data from current position
+  readBlock(block);
+}
+//-----------------------------------------------------------------------------
+bool ElementTmpFile::empty() const
+{
+  return _empty;
+}
+//-----------------------------------------------------------------------------
+bool ElementTmpFile::searchForward(real t)
+{
+  unsigned int size = 0;
+  real t0 = 0.0;
+  real t1 = 0.0;
+
+  // Search forward and try to find t0 < t <= t1
+  while (true)
+  {
+    // Read head of block
+    if ( !readHead(size, t0, t1) )
+      return false;
+
+    // Check if we found the block
+    if ( t0 < t && t <= t1 )
+      return true;
+    
+    // Check that we have not missed the block
+    if ( t <= t0 )
+      return false;
+
+    // Skip forward
+    if ( fseek(fp, size, SEEK_CUR) != 0 )
+      return false;
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool ElementTmpFile::searchBackward(real t)
+{
+  unsigned int size = 0;
+  real t0 = 0.0;
+  real t1 = 0.0;
+
+  // Search backward and try to find t0 < t <= t1
+  while (true)
+  {
+    // Read tail of block
+    if ( !readTail(size) )
+      return false;
+
+    // Skip backward
+    if ( fseek(fp, -size, SEEK_CUR) != 0 )
+      return false;
+
+    // Read head of block
+    if ( !readHead(size, t0, t1) )
+      return false;
+
+    // Check if we found the block
+    if ( t0 < t && t <= t1 )
+      return true;
+    
+    // Check that we have not missed the block
+    if ( t > t1 )
+      return false;
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool ElementTmpFile::readHead(unsigned int& size, real& t0, real &t1)
+{
+  // Read size
+  if ( fread(&size, sizeof(unsigned int), 1, fp) == 0 )
+    return false;
+  
+  // Read t0
+  if ( fread(&t0, sizeof(real), 1, fp) == 0 )
+    return false;
+
+  // Read t1
+  if ( fread(&t1, sizeof(real), 1, fp) == 0 )
+    return false;
+
+  // Step back to beginning of block
+  long offset = sizeof(unsigned int) + 2*sizeof(real);
+  if ( fseek(fp, -offset, SEEK_CUR) != 0 )
+    return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool ElementTmpFile::readTail(unsigned int& size)
+{
+  // Step back within the previous block
+  if ( fseek(fp, -sizeof(unsigned int), SEEK_CUR)  )
+    return false;
+
+  // Read size
+  if ( fread(&size, sizeof(unsigned int), 1, fp) == 0 )
+    return false;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+void ElementTmpFile::readBlock(ElementBlock& block)
+{
+  // Read size of block (number of bytes)
+  unsigned int size = 0;
+  fread(&size, sizeof(unsigned int), 1, fp);
+  
+  // Check that the file is not empty
+  if ( feof(fp) )
+    dolfin_error("Unable to read element data.");
+
+  // Read time span of block
+  real t0 = 0.0;
+  real t1 = 0.0;
+  fread(&t0, sizeof(real), 1, fp);
+  fread(&t1, sizeof(real), 1, fp);
+
+  // Read number of components
+  unsigned int N = 0;
+  fread(&N, sizeof(unsigned int), 1, fp);
+
+  // Check that we got the correct number of components
+  if ( N != block.size() )
+    dolfin_error("Incorrect block size.");
+
+  // Read data for each component
+  for (unsigned int index = 0; index < N; index++)
+  {
+    // Read number of elements for component
+    unsigned int size = 0;
+    fread(&size, sizeof(unsigned int), 1, fp);
+    
+    // Read data for each element
+    typedef NewArray<Element*>::const_iterator ElementIterator;
+    for (unsigned int i = 0; i < size; i++)
+    {
+      // Read type of element
+      unsigned int type = 0;
+      fread(&type, sizeof(unsigned int), 1, fp);
+
+      // Read order of element
+      unsigned int order = 0;
+      fread(&order, sizeof(unsigned int), 1, fp);
+
+      // Read time span of element
+      real t0 = 0.0;
+      real t1 = 0.0;
+      fread(&t0, sizeof(real), 1, fp);
+      fread(&t1, sizeof(real), 1, fp);
+
+      // Create the element (assume block is empty at start)
+      Element* element = 0;
+      switch (type) {
+      case 0:
+	element = block.createElement(Element::cg, order, index, t0, t1);
+	break;
+      case 1:
+	element = block.createElement(Element::dg, order, index, t0, t1);
+	break;
+      default:
+	dolfin_error("Unknown element type.");
+      }
+      dolfin_assert(element);
+
+      // Read initial value for dG element
+      if ( type == 1 )
+      {
+	real initval = 0.0;
+	fread(&initval, sizeof(real), 1, fp);
+	element->update(initval);
+      }
+
+      // Read element values
+      for (unsigned int node = 0; node <= order; node++)
+      {
+	real value = 0.0;
+	fread(&value, sizeof(real), 1, fp);
+	element->update(node, value);
+      }
+    }
+  }
+
+  // Read size of block (number of bytes)
   fwrite(&size, sizeof(unsigned int), 1, fp);
 }
 //-----------------------------------------------------------------------------

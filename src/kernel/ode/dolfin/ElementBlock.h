@@ -29,6 +29,9 @@ namespace dolfin {
     /// Return element for given component at given time
     Element* element(unsigned int, real t);
     
+    /// Return first element for given component
+    Element* first(unsigned int i);
+
     /// Return last element for given component
     Element* last(unsigned int i);
 
@@ -37,6 +40,12 @@ namespace dolfin {
 
     /// Return number of bytes (approximately) used by this block
     unsigned int bytes() const;
+
+    /// Return start time of block
+    real starttime() const;
+
+    /// Return end time of block
+    real endtime() const;
 
     /// Return distance to given interval
     real dist(real t0, real t1) const;

@@ -58,6 +58,14 @@ Element* Component::element(real t)
   return findpos(t);
 }
 //-----------------------------------------------------------------------------
+Element* Component::first()
+{
+  if ( elements.empty() )
+    return 0;
+
+  return elements.front();
+}
+//-----------------------------------------------------------------------------
 Element* Component::last()
 {
   if ( elements.empty() )

@@ -32,7 +32,7 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   int no_samples = dolfin_get("number of samples");
 
   // Get size of system
-  int N = ode.size();
+  unsigned int N = ode.size();
 
   // Create data for time-stepping
   ElementData elmdata(N);

@@ -31,6 +31,9 @@ namespace dolfin {
     /// Return element at given time
     Element* element(real t);
 
+    /// Return first element
+    Element* first();
+
     /// Return last element
     Element* last();
 

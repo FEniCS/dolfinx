@@ -36,6 +36,11 @@ real dGqElement::value(real t) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+real dGqElement::initval() const
+{
+  return u0;
+}
+//-----------------------------------------------------------------------------
 real dGqElement::dx() const
 {
   real dudx = 0.0;

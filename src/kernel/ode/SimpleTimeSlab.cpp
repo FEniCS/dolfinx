@@ -31,8 +31,6 @@ void SimpleTimeSlab::update(RHS& f, TimeSteppingData& data)
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::create(RHS& f, TimeSteppingData& data)
 {
-  dolfin_debug("Creating simple time slab");
-
   // FIXME: choose element and order here
   Element::Type type = Element::cg;
   int q = 1;

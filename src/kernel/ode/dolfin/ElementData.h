@@ -38,7 +38,10 @@ namespace dolfin {
     /// Return element for given component at given time (null if not found)
     Element* element(unsigned int i, real t);
 
-    /// Return last element for given component (null if not in memory)
+    /// Return first element element for given component (null if no elements)
+    Element* first(unsigned int i);
+
+    /// Return last element for given component (null if no elements)
     Element* last(unsigned int i);
 
     /// Notify that this might be a good time to move to next block
@@ -52,17 +55,26 @@ namespace dolfin {
 
   private:
 
+    // Create a new block
+    void createBlock();
+
     // Find block for given time
-    ElementBlock* findpos(real t);
+    ElementBlock* findBlock(real t);
+
+    // Find first block
+    ElementBlock* findFirst();
+
+    // Find last block
+    ElementBlock* findLast();
 
     // Update interval
     void update(real t0, real t1);
 
     // Check if a new block does not fit into memory
-    bool memfull();
+    bool memoryFull();
 
     // Drop the last block (the one furthest from given interval)
-    void droplast(real t0, real t1);
+    void dropBlock(real t0, real t1);
 
     // Size of system;
     int N;

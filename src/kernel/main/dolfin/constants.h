@@ -15,6 +15,7 @@
 #define DOLFIN_PROGRESS_BARS 4
 #define DOLFIN_PROGRESS_WAIT 2
 #define DOLFIN_BLOCK_SIZE    1024
+#define DOLFIN_MEGABYTE      1048576
 
 typedef double real;
 

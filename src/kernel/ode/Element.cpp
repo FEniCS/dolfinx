@@ -43,15 +43,19 @@ unsigned int Element::order() const
 //-----------------------------------------------------------------------------
 real Element::value(unsigned int node) const
 {
-  dolfin_assert(node >= 0);
-  dolfin_assert(node <= q);
-  
+  dolfin_assert(node <= q);  
   return values[node];
 }
 //-----------------------------------------------------------------------------
 real Element::endval() const
 {
   return values[q];
+}
+//-----------------------------------------------------------------------------
+void Element::update(unsigned int node, real value)
+{
+  dolfin_assert(node <= q);
+  values[node] = value;
 }
 //-----------------------------------------------------------------------------
 bool Element::within(real t) const

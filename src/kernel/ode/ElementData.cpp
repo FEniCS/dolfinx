@@ -31,25 +31,23 @@ Element* ElementData::createElement(Element::Type type,
 {
   // Create a new block if current block is null
   if ( !current )
-  {
-    // Remove old block if necessary
-    if ( memfull() )
-      droplast(t0,t1);
-    
-    // Create new block
-    current = new ElementBlock(N);
-    blocks.push_back(current);
-    cout << "Number of blocks: " << blocks.size() << endl;
-  }
-
+    createBlock();
+  
+  // Update time interval
   update(t0, t1);
+
+  // Create a new element in the current block
   return current->createElement(type, q, index, t0, t1);
 }
 //-----------------------------------------------------------------------------
 Element* ElementData::element(unsigned int i, real t)
 {
+  // Special case: t = t0
+  if ( t == t0 )
+    return first(i);
+
   // Find a block which *could* contain the element
-  ElementBlock* block = findpos(t);
+  ElementBlock* block = findBlock(t);
   if ( block )
     return block->element(i,t);
   
@@ -57,9 +55,30 @@ Element* ElementData::element(unsigned int i, real t)
   return 0;
 }
 //-----------------------------------------------------------------------------
+Element* ElementData::first(unsigned int i)
+{
+  // Find first block
+  ElementBlock* block = findFirst();
+  
+  // No blocks
+  if ( !block )
+    return 0;
+  
+  // Found the first block
+  return block->first(i);
+}
+//-----------------------------------------------------------------------------
 Element* ElementData::last(unsigned int i)
 {
-  return current->last(i);
+  // Find last block
+  ElementBlock* block = findLast();
+
+  // No blocks
+  if ( !block )
+    return 0;
+  
+  // Found the last block
+  return block->last(i);
 }
 //-----------------------------------------------------------------------------
 void ElementData::shift()
@@ -83,7 +102,18 @@ bool ElementData::within(real t) const
   return (t0 < t) && (t <= t1);
 }
 //-----------------------------------------------------------------------------
-ElementBlock* ElementData::findpos(real t)
+void ElementData::createBlock()
+{
+  // Remove old block if necessary
+  if ( memoryFull() )
+    dropBlock(t0,t1);
+  
+  // Create new block
+  current = new ElementBlock(N);
+  blocks.push_back(current);
+}
+//-----------------------------------------------------------------------------
+ElementBlock* ElementData::findBlock(real t)
 {
   // First check current block
   if ( current )
@@ -93,16 +123,69 @@ ElementBlock* ElementData::findpos(real t)
   // Return null if time is not within range of data
   if ( !within(t) )
     return 0;
-  
-  cout << "Not in current block" << endl;
 
   // Next, check all blocks
   for (BlockIterator block = blocks.begin(); block != blocks.end(); ++block)
     if ( (*block)->within(t) )
       return *block;
 
-  // Didn't find a block
-  return 0;
+  // Create a new block
+  createBlock();
+
+  // Read the block from the file
+  tmpfile.read(*current, t);
+
+  return current;
+}
+//-----------------------------------------------------------------------------
+ElementBlock* ElementData::findFirst()
+{
+  // First check current block
+  if ( current )
+    if ( current->starttime() == t0 )
+      return current;
+
+  // Next, check all blocks
+  for (BlockIterator block = blocks.begin(); block != blocks.end(); ++block)
+    if ( (*block)->starttime() == t0 )
+      return *block;
+
+  // Check if there are any blocks stored on file
+  if ( tmpfile.empty() )
+    return 0;
+
+  // Create a new block
+  createBlock();
+
+  // Read the first block from the file
+  tmpfile.readFirst(*current);
+
+  return current;
+}
+//-----------------------------------------------------------------------------
+ElementBlock* ElementData::findLast()
+{
+  // First check current block
+  if ( current )
+    if ( current->endtime() == t1 )
+      return current;
+
+  // Next, check all blocks
+  for (BlockIterator block = blocks.begin(); block != blocks.end(); ++block)
+    if ( (*block)->endtime() == t1 )
+      return *block;
+
+  // Check if there are any blocks stored on file
+  if ( tmpfile.empty() )
+    return 0;
+
+  // Create a new block
+  createBlock();
+
+  // Read the last block from the file
+  tmpfile.readLast(*current);
+
+  return current;
 }
 //-----------------------------------------------------------------------------
 void ElementData::update(real t0, real t1)
@@ -123,7 +206,7 @@ void ElementData::update(real t0, real t1)
     this->t1 = t1;
 }
 //-----------------------------------------------------------------------------
-bool ElementData::memfull()
+bool ElementData::memoryFull()
 {
   // Memory not full if there are no blocks
   if ( blocks.empty() )
@@ -137,10 +220,13 @@ bool ElementData::memfull()
   // Estimate data size including a new block (using last block as estimate)
   bytecount += blocks.back()->bytes();
 
+  // Get size in MB
+  bytecount /= DOLFIN_MEGABYTE;
+
   return bytecount > cache_size;
 }
 //-----------------------------------------------------------------------------
-void ElementData::droplast(real t0, real t1)
+void ElementData::dropBlock(real t0, real t1)
 {
   // Find which block is the one furthest from [t0,t1]
   BlockIterator last = blocks.end();

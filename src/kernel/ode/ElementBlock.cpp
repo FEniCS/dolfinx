@@ -32,6 +32,12 @@ Element* ElementBlock::element(unsigned int index, real t)
   return components[index].element(t);
 }
 //-----------------------------------------------------------------------------
+Element* ElementBlock::first(unsigned int i)
+{
+  dolfin_assert(i < components.size());
+  return components[i].first();
+}
+//-----------------------------------------------------------------------------
 Element* ElementBlock::last(unsigned int i)
 {
   dolfin_assert(i < components.size());
@@ -46,6 +52,16 @@ unsigned int ElementBlock::size() const
 unsigned int ElementBlock::bytes() const
 {
   return _bytes;
+}
+//-----------------------------------------------------------------------------
+real ElementBlock::starttime() const
+{
+  return t0;
+}
+//-----------------------------------------------------------------------------
+real ElementBlock::endtime() const
+{
+  return t1;
 }
 //-----------------------------------------------------------------------------
 real ElementBlock::dist(real t0, real t1) const

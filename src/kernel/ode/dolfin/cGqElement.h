@@ -20,6 +20,7 @@ namespace dolfin {
     Type type() const;
 
     real value(real t) const;
+    real initval() const;
     real dx() const;
 
     void update(real u0);
