@@ -98,7 +98,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     // Start iteration on element list
     start(elements);
     
-    //dolfin_start("Starting element list iteration");
+    dolfin_start("Starting element list iteration");
     
     // Fixed point iteration on the element list
     for (unsigned int n = 0; n < local_maxiter; n++)
@@ -122,7 +122,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       // Check convergence
       if ( converged(elements, r, n) )
       {
-	//dolfin_end("Element list iteration converged");
+	dolfin_end("Element list iteration converged");
 	return true;
       }
       
@@ -157,7 +157,7 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
     }
   }
   
-  //dolfin_end("Element list iteration did not converge");
+  dolfin_end("Element list iteration did not converge");
 
   return false;
 }
