@@ -69,12 +69,16 @@ namespace dolfin {
     // Refine a tetrahedron regularly
     static void regularRefinementTet(Cell& cell, Grid& grid);
 
+    ///--- A couple of special functions, placed here rather than in Cell ---
+
     /// Check if all children are marked for coarsening
     static bool childrenMarkedForCoarsening(Cell& cell);
 
     /// Check if at least one edge of a child is marked for refinement
     static bool oneEdgeOfChildMarkedForRefinement(Cell& cell);
 
+    /// Check if the cell has at least on edge that is marked
+    static bool oneEdgeMarkedForRefinement(Cell& cell);
     
 
 

@@ -126,3 +126,15 @@ EdgeMarker& Edge::marker() const
   return *_marker;
 }
 //-----------------------------------------------------------------------------
+bool Edge::marked() const
+{
+  dolfin_assert(_marker);
+  return _marker->marked();
+}
+//-----------------------------------------------------------------------------
+void Edge::mark(Cell& cell)
+{
+  dolfin_assert(_marker);
+  _marker->mark(cell);
+}
+//-----------------------------------------------------------------------------

@@ -9,14 +9,20 @@ namespace dolfin {
   /// Edge marker
   class EdgeMarker {
   public:
+    
+    /// Mark edge by given cell
+    void mark(Cell& cell);
 
-    /// Create an empty marker
-    EdgeMarker() {
-      cellcount = 0;
-    }
+    /// Check if edge has been marked
+    bool marked() const;
 
-    /// Number of cells this edge has been marked by
-    int cellcount;
+    /// Check if edge has been marked by given cell
+    bool marked(Cell& cell);
+
+  private:
+
+    /// Cells that have marked the edge
+    List<Cell*> cells;
     
   };
 

@@ -79,6 +79,12 @@ namespace dolfin {
 
     /// Return marker for edge
     EdgeMarker& marker() const;
+
+    /// Check if cell has been marked for refinement
+    bool marked() const;
+
+    /// Mark by given cell
+    void mark(Cell& cell);
     
     // The grid containing this edge
     Grid* grid;

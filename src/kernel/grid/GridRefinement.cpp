@@ -62,6 +62,8 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
     refineGrid(*grid);
   }
 
+  // FIXME: k = k + 1 ?
+
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::initMarks(Grid& grid)
@@ -82,7 +84,7 @@ void GridRefinement::initMarks(Grid& grid)
 
     // Mark edges of the cell
     for (EdgeIterator e(**c); !e.end(); ++e)
-      e->marker().cellcount++;
+      e->marker().cells.add(*c);
 
   }
 }
@@ -115,17 +117,22 @@ void GridRefinement::closeGrid(Grid& grid)
   // Perform the green closer on a grid.
   // This is algorithm CloseGrid() in Bey's paper.
 
-  
+  // Create a list of all elements that need to be closed
+  List<Cell*> cells;
+  for (CellIterator c(grid); !c.end(); ++c) {
 
+    // Check condition ...
 
+  }
 
-  
+  // Repeat until the list of elements is empty
+  while ( !cells.empty() ) {
 
+    Cell* cell = cells.pop();
 
+    closeElement(*cell);
 
-
-  
-
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -287,14 +294,21 @@ bool GridRefinement::oneEdgeOfChildMarkedForRefinement(Cell& cell)
 {
   for (int i = 0; i < cell.noChildren(); i++)
     for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
-      if ( e->marker().cellcount > 0 )
+      if ( e->marked() )
 	return true;
 
   return false;
 }
 //-----------------------------------------------------------------------------
+static bool GridRefinement::oneEdgeMarkedForRefinement(Cell& cell)
+{
+  for (EdgeIterator e(cell); !e.end(); ++e)
+    if ( e->marked() )
+      return true;
 
-
+  return false;
+}
+//-----------------------------------------------------------------------------
 
 
 
