@@ -42,7 +42,7 @@ namespace dolfin {
 	  (nu*((grad(u(0)),grad(v(0))) + (grad(u(1)),grad(v(1))) + (grad(u(2)),grad(v(2)))) + 
 	   (b,grad(u(0)))*v(0) + (b,grad(u(1)))*v(1) + (b,grad(u(2)))*v(2) + 
 	   d1*((b,grad(u(0)))*(b,grad(v(0))) + (b,grad(u(1)))*(b,grad(v(1))) + (b,grad(u(2)))*(b,grad(v(2)))) + 
-	   d2*(u(0).dx()+u(1).dy()+u(2).dz())*(v(0).dx()+v(1).dy()+v(2).dz())) ) * dK;
+	   d2*(dx(u(0))+dy(u(1))+dz(u(2)))*(dx(v(0))+dy(v(1))+dz(v(2)))) ) * dK;
 
     }
     
@@ -58,18 +58,18 @@ namespace dolfin {
       
       return
 	( (up(0),v(0) + up(1),v(1) + up(2),v(2))*(1.0/k) - 0.5 * 
-	  (nu*( dx(up(0))*v(0).dx() + dy(up(0))*v(0).dy() + dz(up(0))*v(0).dz() + 
-	        dx(up(1))*v(1).dx() + dy(up(1))*v(1).dy() + dz(up(1))*v(1).dz() + 
-	        dx(up(2))*v(2).dx() + dy(up(2))*v(2).dy() + dz(up(2))*v(2).dz() ) + 
+	  (nu*( dx(up(0))*dx(v(0)) + dy(up(0))*dy(v(0)) + dz(up(0))*dz(v(0)) + 
+	        dx(up(1))*dx(v(1)) + dy(up(1))*dy(v(1)) + dz(up(1))*dz(v(1)) + 
+	        dx(up(2))*dx(v(2)) + dy(up(2))*dy(v(2)) + dz(up(2))*dz(v(2)) ) + 
 	   (b(0)*dx(up(0)) + b(1)*dy(up(0)) + b(2)*dz(up(0)))*v(0) + 
 	   (b(0)*dx(up(1)) + b(1)*dy(up(1)) + b(2)*dz(up(1)))*v(1) + 
 	   (b(0)*dx(up(2)) + b(1)*dy(up(2)) + b(2)*dz(up(2)))*v(2) + 
 	   d1*((b(0)*dx(up(0)) + b(1)*dy(up(0)) + b(2)*dz(up(0)))*(b,grad(v(0))) + 
 	       (b(0)*dx(up(1)) + b(1)*dy(up(1)) + b(2)*dz(up(1)))*(b,grad(v(0))) + 
 	       (b(0)*dx(up(2)) + b(1)*dy(up(2)) + b(2)*dz(up(2)))*(b,grad(v(0)))) + 
-	   d2*(dx(up(0))+dy(up(1))+dz(up(2)))*(v(0).dx()+v(1).dy()+v(2).dz())) -
+	   d2*(dx(up(0))+dy(up(1))+dz(up(2)))*(dx(v(0))+dy(v(1))+dz(v(2)))) -
 	  d1*(dx(p(0))*(b,grad(v(0))) + dy(p(0))*(b,grad(v(1))) + dz(p(0))*(b,grad(v(2)))) + 
-	  p(0)*(v(0).dx()+v(1).dy()+v(2).dz()) ) * dK;
+	  p(0)*(dx(v(0))+dy(v(1))+dz(v(2))) ) * dK;
 
     }
     

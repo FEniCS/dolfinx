@@ -17,8 +17,10 @@ void mybc(BoundaryCondition& bc)
 
 int main()
 {
-  Mesh mesh("mesh.xml.gz");
-  Problem navierstokes("poisson", mesh);
+  //Mesh mesh("mesh.xml.gz");
+  Mesh mesh("tetmesh-4.xml.gz");
+  //Mesh mesh("tetmesh_backward_facing_step_32_8_8.xml.gz");
+  Problem navierstokes("navierstokes", mesh);
   
   navierstokes.set("source", f);
   navierstokes.set("boundary condition", mybc);
@@ -28,9 +30,8 @@ int main()
   return 0;
 }
 
-
 /*
-dolfin_bc mybc(real x, real y, real z, int node, int component)
+void mybc(real x, real y, real z, int node, int component)
 {
   dolfin_bc bc;
 
@@ -39,19 +40,19 @@ dolfin_bc mybc(real x, real y, real z, int node, int component)
     
     if ( x == 0.0 ){
       bc.type = dirichlet;
-      bc.val  = 1.0;
+      bc.val  = 0.0;
     }
-//    if ( x == 1.0 ){
-//      bc.type = dirichlet;
-//      bc.val  = 1.0;
-//    }
+    if ( x == 1.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
     if ( y == 0.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;
     }
     if ( y == 1.0 ){
       bc.type = dirichlet;
-      bc.val  = 0.0;
+      bc.val  = 1.0;
     }
     if ( z == 0.0 ){
       bc.type = dirichlet;
@@ -65,14 +66,14 @@ dolfin_bc mybc(real x, real y, real z, int node, int component)
     break;
   case 1:
 
-  //    if ( x == 0.0 ){
-  //      bc.type = dirichlet;
-  //      bc.val  = 0.0;
-  //    }
-  //    if ( x == 1.0 ){
-  //      bc.type = dirichlet;
-  //      bc.val  = 0.0;
-  //    }
+    if ( x == 0.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
+    if ( x == 1.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
     if ( y == 0.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;
@@ -94,14 +95,14 @@ dolfin_bc mybc(real x, real y, real z, int node, int component)
 
   case 2:
 
-  //    if ( x == 0.0 ){
-  //      bc.type = dirichlet;
-  //      bc.val  = 0.0;
-  //    }
-  //    if ( x == 1.0 ){
-  //      bc.type = dirichlet;
-  //      bc.val  = 0.0;
-  //    }
+    if ( x == 0.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
+    if ( x == 1.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
     if ( y == 0.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;
@@ -123,10 +124,10 @@ dolfin_bc mybc(real x, real y, real z, int node, int component)
 
   case 3:
 
-  //    if ( x == 0.0 ){
-  //      bc.type = dirichlet;
-  //      bc.val  = 0.0;
-  //    }
+    if ( x == 0.0 ){
+      bc.type = dirichlet;
+      bc.val  = 0.0;
+    }
     if ( x == 1.0 ){
       bc.type = dirichlet;
       bc.val  = 0.0;

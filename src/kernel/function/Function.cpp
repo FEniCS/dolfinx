@@ -128,6 +128,26 @@ real Function::operator() (unsigned int i, real t)
   return (*f)(i, t);
 }
 //-----------------------------------------------------------------------------
+real Function::abs(const Node& n, real t)
+{
+  return fabs((*f)(n, t));
+}
+//-----------------------------------------------------------------------------
+real Function::abs(const Point& p, real t)
+{
+  return fabs((*f)(p, t));
+}
+//-----------------------------------------------------------------------------
+real Function::abs(real x, real y, real z, real t)
+{
+  return fabs((*f)(x, y, z, t));
+}
+//-----------------------------------------------------------------------------
+real Function::abs(unsigned int i, real t)
+{
+  return fabs((*f)(i, t));
+}
+//-----------------------------------------------------------------------------
 void Function::update(real t)
 {
   f->update(t);

@@ -65,6 +65,12 @@ namespace dolfin {
     real operator() (unsigned int i, real t) const;
     real operator() (unsigned int i, real t);
     
+    /// Absolute values 
+    real abs(const Node&  n, real t = 0.0);
+    real abs(const Point& p, real t = 0.0);
+    real abs(real x, real y, real z, real t);
+    real abs(unsigned int i, real t);
+    
     // Update function to given time
     void update(real t);
     
