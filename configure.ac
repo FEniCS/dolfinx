@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(dolfin, 0.4.7, dolfin@math.chalmers.se)
+AC_INIT(dolfin, 0.4.8, dolfin@math.chalmers.se)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)

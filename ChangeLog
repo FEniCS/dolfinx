@@ -1,5 +1,5 @@
- - Compile with -Wall -Werror -pedantic -ansi -std=c++98 (thsv)
- - Add support for systems (patch from jj and bengzon)
+0.4.8
+ - Add support for systems (jansson and bengzon)
  - Add new module wave
  - Add new module wave-vector
  - Add new module elasticity
@@ -14,6 +14,7 @@
  - Add script for running stiff test problems, plot solutions
  - Fix bug in MeshInit (node neighbors of node)
  - Modify output of sysinfo()
+ - Compile with -Wall -Werror -pedantic -ansi -std=c++98 (thsv)
 0.4.7
  - Make all stiff test problems work
  - Display status report also when using step()
