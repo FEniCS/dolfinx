@@ -15,6 +15,7 @@
 #include <dolfin/dolfin_map.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_mesh.h>
+//#include <dolfin/dolfin_modules.h>
 #include <dolfin/dolfin_ode.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/dolfin_settings.h>

@@ -79,7 +79,7 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::solve()
 {
-  dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
+  //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
   solver->solve();
 }
@@ -116,8 +116,6 @@ void MonoAdaptiveTimeSlab::shift()
 
   // Compute new time step
   adaptivity.update(rmax, *method);
-  
-  cout << "r = " << rmax << endl;
   
   // Let user update ODE
   ode.update(xx + xoffset, _b);

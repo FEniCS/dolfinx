@@ -1,15 +1,15 @@
 % Load solution
 poisson
 
+format long
+
 % Reference value for the error
-Eref = 0.320322382100906;
+Eref = 0.0498860445657127;
 
 % Compute exact solution
-x = points(1,:)';
-y = points(2,:)';
-z = points(3,:)';
-
-uu = sin(pi*x) .* sin(2.0*pi*y) .* sin(3.0*pi*z);
+x  = points(1,:)';
+y  = points(2,:)';
+uu = sin(pi*x);
 
 % Compute error
 e = u - uu;

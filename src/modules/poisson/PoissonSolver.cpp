@@ -4,24 +4,8 @@
 // Modified by Johan Hoffman, 2005.
 // Modified by Anders Logg, 2005.
 
-// FIXME: Should not be needed
-#include <dolfin/NewFunction.h>
-#include <dolfin/BoundaryCondition.h>
-
-// FIXME: Should not be needed
-#include <dolfin/NewGMRES.h>
-
-#include <dolfin/Mesh.h>
-#include <dolfin/NewVector.h>
-#include <dolfin/NewMatrix.h>
-#include <dolfin/NewFEM.h>
-#include <dolfin/NewBoundaryCondition.h>
-#include <dolfin/File.h>
-#include <dolfin/Parameter.h>
-#include <dolfin.h>
-
-#include "dolfin/Poisson.h"
-#include "dolfin/PoissonSolver.h"
+#include <dolfin/Poisson.h>
+#include <dolfin/PoissonSolver.h>
 
 using namespace dolfin;
 

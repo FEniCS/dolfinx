@@ -1,20 +1,18 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Hoffman, 2005.
+// Modified by Johan Jansson, 2005.
+// Modified by Anders Logg, 2005.
 
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H
 
-//#include <dolfin/Solver.h>
+#include <dolfin/NewSolver.h>
 
 namespace dolfin
 {
 
-  class Mesh;
-  class NewVector;
-  class NewMatrix;
-  class NewFunction;
-  class NewBoundaryCondition;
-  
   class PoissonSolver 
   {
   public:

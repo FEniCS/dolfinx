@@ -21,13 +21,15 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
     ts(timeslab), A(timeslab, implicit, piecewise), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
-
   if ( implicit )
   {
     Mu0 = new real[ts.N];
     for (uint i = 0; i < ts.N; i++)
        Mu0[i] = 0.0;
   }
+
+  // Make GMRES solver not report the number iterations
+  solver.setReport(false);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
@@ -66,13 +68,13 @@ real MonoAdaptiveNewtonSolver::iteration()
   beval();
 
   //cout << "b = ";
-  b.disp();
+  //b.disp();
   
   // Solve linear system F for dx
   solver.solve(A, dx, b);
 
   //cout << "dx = ";
-  dx.disp();
+  //dx.disp();
    
   // Get arrays of values for x and dx
   real* xx = ts.x.array();

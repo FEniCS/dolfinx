@@ -124,9 +124,11 @@ done
 KERNEL_CFLAGS=""
 DOLFIN_MAIN="main"
 DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
+KERNEL_CFLAGS="-I\$(top_builddir)/src/modules "
 for f in $DIRS; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS-I\$(top_builddir)/src/kernel/$f "
 done
+echo $KERNEL_CFLAGS
 KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
@@ -192,6 +194,7 @@ AC_OUTPUT( Makefile \
            src/kernel/settings/Makefile \
            src/kernel/settings/dolfin/Makefile \
            src/modules/Makefile \
+           src/modules/dolfin/Makefile \
            src/modules/template/Makefile \
            src/modules/poisson/Makefile \
            src/modules/poisson/dolfin/Makefile \

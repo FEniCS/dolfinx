@@ -1,4 +1,5 @@
-SUBDIRS = convdiff \
+SUBDIRS = dolfin \
+          convdiff \
           elasticity \
           elasticity-stationary \
           elasticity-updated \
@@ -11,3 +12,5 @@ SUBDIRS = convdiff \
           template \
           wave \
           wave-vector
+
+INCLUDES = @KERNEL_CFLAGS@

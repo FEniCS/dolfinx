@@ -1,23 +1,24 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2005.
+//
 // A simple test program for the Poisson solver, solving
 //
-//     - div grad u(x,y,z) = f(x,y,z)
+//     - div grad u(x, y) = f(x, y)
 //
-// on the unit cube with the source f given by
+// on the unit square with source f given by
 //
-//     f(x,y,z) = 14 pi^2 sin(pi x) sin(2pi y) sin(3pi z).
+//     f(x, y) = pi^2 * sin(pi*x)
 //
-// and homogeneous Dirichlet boundary conditions.
-// This problem has the exact solution
+// and boundary conditions given by
 //
-//     u(x,y,z) = sin(pi x) sin(2pi y) sin(3pi z).
+//     u(x, y)     = 0  for x = 0 or x = 1,
+//     du/dn(x, y) = 0  for y = 0 or y = 1.
+//
+// The exact solution is given by u(x, y) = sin(pi*x).
 
 #include <dolfin/PoissonSolver.h>
-#include <dolfin/NewFunction.h>
-#include <dolfin/Mesh.h>
-#include <dolfin.h>
 
 using namespace dolfin;
 
@@ -26,7 +27,7 @@ class MyFunction : public NewFunction
 {
   real operator() (const Point& p) const
   {
-    return 8.0;
+    return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
   }
 };
 

@@ -17,7 +17,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewGMRES::NewGMRES() : ksp(0)
+NewGMRES::NewGMRES() : report(true), ksp(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -64,9 +64,12 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
     dolfin_error("GMRES solver did not converge.");
 
   // Report number of iterations
-  int its = 0;
-  KSPGetIterationNumber(ksp, &its);
-  dolfin_info("GMRES converged in %d iterations.", its);
+  if ( report )
+  {
+    int its = 0;
+    KSPGetIterationNumber(ksp, &its);
+    dolfin_info("GMRES converged in %d iterations.", its);
+  }
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
@@ -93,37 +96,57 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
     dolfin_error("GMRES solver did not converge.");
   
   // Report number of iterations
-  int its = 0;
-  KSPGetIterationNumber(ksp, &its);
-  dolfin_info("GMRES converged in %d iterations.", its);
+  if ( report )
+  {
+    int its = 0;
+    KSPGetIterationNumber(ksp, &its);
+    dolfin_info("GMRES converged in %d iterations.", its);
+  }
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::setRtol(real rt)
+void NewGMRES::setReport(bool report)
 {
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  rtol = rt;
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  this->report = report;
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::setAbstol(real at)
+void NewGMRES::setRtol(real rtol)
 {
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  abstol = at;
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  real _rtol(0.0), _atol(0.0), _dtol(0.0);
+  int _maxiter(0);
+  
+  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+  _rtol = rtol;
+  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::setDtol(real dt)
+void NewGMRES::setAtol(real atol)
 {
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  dtol = dt;
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  real _rtol(0.0), _atol(0.0), _dtol(0.0);
+  int _maxiter(0);
+
+  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+  _atol = atol;
+  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
 //-----------------------------------------------------------------------------
-void NewGMRES::setMaxits(int mi)
+void NewGMRES::setDtol(real dtol)
 {
-  KSPGetTolerances(ksp,&rtol,&abstol,&dtol,&maxits);
-  maxits = mi;
-  KSPSetTolerances(ksp,rtol,abstol,dtol,maxits);
+  real _rtol(0.0), _atol(0.0), _dtol(0.0);
+  int _maxiter(0);
+
+  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+  _dtol = dtol;
+  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
+}
+//-----------------------------------------------------------------------------
+void NewGMRES::setMaxiter(int maxiter)
+{
+  real _rtol(0.0), _atol(0.0), _dtol(0.0);
+  int _maxiter(0);
+
+  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+  _maxiter = maxiter;
+  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
 //-----------------------------------------------------------------------------
 void NewGMRES::setPreconditioner(NewPreconditioner &pc)
