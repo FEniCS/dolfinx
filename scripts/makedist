@@ -71,5 +71,6 @@ make >& $MAKELOG
 less $MAKELOG
 
 # Copy files to web server
+cd ..
 scp ChangeLog logg@mathtest4.math.chalmers.se:work/current/www-phi/pub/software/dolfin
 scp $TARBALL  logg@mathtest4.math.chalmers.se:work/current/www-phi/pub/software/dolfin/v0.3
