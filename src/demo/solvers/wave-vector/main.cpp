@@ -33,6 +33,8 @@ void mybc(BoundaryCondition& bc)
 
 int main(int argc, char **argv)
 {
+  dolfin_set("output", "plain text");
+
   Mesh mesh("trimesh-32.xml.gz");
   Problem wavevector("wave-vector", mesh);
 

@@ -148,7 +148,10 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
   }
 
   for(int i = 0; i < f.size(); i++)
+  {
+    cout << "Adding function, i = " << i << endl;
     add(v(i), f(i));
+  }
 }
 //-----------------------------------------------------------------------------
 void PDE::update(FiniteElement::Vector* element,
@@ -160,8 +163,14 @@ void PDE::update(FiniteElement::Vector* element,
   // We assume that the element dependency is only on the grid, therefore
   // any element, such as the 0th is sufficient
   
+  cout << "Updating functions: size = " << functions.size() << endl;
+
+  int i = 0;
   for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
+  {
+    cout << "Updating function, i = " << i++ << endl;
     p->update(*((*element)(0)), *cell, t);
+  }
   
   // Update integral measures
   dx.update(*map, *quadrature);

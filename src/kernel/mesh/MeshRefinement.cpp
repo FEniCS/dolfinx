@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Pär Ingelström, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -212,7 +214,6 @@ void MeshRefinement::evaluateMarks(Mesh& mesh)
     updateEdgeMarks(*c);
 
   }
-
 }
 //-----------------------------------------------------------------------------
 void MeshRefinement::closeMesh(Mesh& mesh)
@@ -348,7 +349,10 @@ void MeshRefinement::closeCell(Cell& cell,
 
   // Check which rule should be applied
   if ( checkRule(cell, no_marked_edges) )
+  {
+    closed(cell.id()) = true;
     return;
+  }
 
   // If we didn't find a matching refinement rule, mark cell for regular
   // refinement and add cells containing the previously unmarked edges
@@ -368,7 +372,7 @@ void MeshRefinement::closeCell(Cell& cell,
 
     // Add neighbors to the list of cells that need to be closed
     for (CellIterator c(cell); !c.end(); ++c)
-      if ( c->haveEdge(*e) && c->status() == Cell::ref_reg && c != cell && closed(cell.id()) )
+      if ( c->haveEdge(*e) && c->status() != Cell::ref_irr && c != cell && closed(c->id()) )
 	  cells.add(c);
   }
 
