@@ -15,14 +15,25 @@ namespace dolfin
   {
   public:
     
-    /// Constructor
+    /// Constructors
+    NewBoundaryCondition(int no_comp);
     NewBoundaryCondition();
-
+    
     /// Destructor
     virtual ~NewBoundaryCondition();
 
-    /// User-defined boundary value for given part of boundary
+    /// User-defined boundary value for given part of boundary: scalar
     virtual const BoundaryValue operator() (const Point& p);
+    
+    /// User-defined boundary value for given part of boundary: vector component c 
+    virtual const BoundaryValue operator() (const Point& p, const int c);
+
+    /// Return number of components (scalar = 1, vector > 1)
+    int noComp();
+
+  private:
+
+    int no_comp;
 
   };
   

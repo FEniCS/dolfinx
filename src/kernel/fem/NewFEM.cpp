@@ -219,15 +219,20 @@ void NewFEM::setBC(NewMatrix& A, NewVector& b, Mesh& mesh,
   uint m = 0;
   for (NodeIterator node(boundary); !node.end(); ++node)
   {
-    // Get boundary condition
-    bv = bc(node->coord());
+    // Iterate over number of vector components
+    for (int c=0; c<bc.noComp(); c++){
+
+      // Get boundary condition
+      if (bc.noComp()>1) bv = bc(node->coord(),c);
+      else               bv = bc(node->coord());
     
-    // Set boundary condition if Dirichlet
-    if ( bv.fixed )
-    {
-      uint dof = node->id();
-      rows[m++] = dof;
-      b(dof) = bv.value;
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+	{
+	  uint dof = node->id();
+	  rows[m++] = dof;
+	  b(dof) = bv.value;
+	}
     }
   }
 

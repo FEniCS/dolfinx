@@ -6,9 +6,14 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewBoundaryCondition::NewBoundaryCondition()
+NewBoundaryCondition::NewBoundaryCondition(int no_comp) : no_comp(no_comp)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewBoundaryCondition::NewBoundaryCondition() 
+{
+  no_comp = 1;
 }
 //-----------------------------------------------------------------------------
 NewBoundaryCondition::~NewBoundaryCondition()
@@ -20,5 +25,17 @@ const dolfin::BoundaryValue NewBoundaryCondition::operator() (const Point& p)
 {
   BoundaryValue value;
   return value;
+}
+//-----------------------------------------------------------------------------
+const dolfin::BoundaryValue NewBoundaryCondition::operator() (const Point& p, 
+							      const int c)
+{
+  BoundaryValue value;
+  return value;
+}
+//-----------------------------------------------------------------------------
+int NewBoundaryCondition::noComp() 
+{
+  return no_comp;
 }
 //-----------------------------------------------------------------------------
