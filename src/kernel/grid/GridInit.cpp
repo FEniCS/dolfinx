@@ -28,6 +28,15 @@ void GridInit::init(Grid& grid)
 //-----------------------------------------------------------------------------
 void GridInit::clear(Grid& grid)
 {  
+  // Clear edges
+  grid.gd->edges.clear();
+
+  // Clear faces
+  grid.gd->faces.clear();
+
+  // Clear boundary data for grid
+  grid.bd->clear();
+
   // Clear connectivity for nodes
   for (NodeIterator n(grid); !n.end(); ++n) {
     n->nn.clear();
@@ -47,32 +56,20 @@ void GridInit::initConnectivity(Grid& grid)
 {
   // The data needs to be computed in the correct order, see GridData.h.
 
-  dolfin_debug("check");
-
   // Compute n-c connections [1]
   initNodeCell(grid);
   
-  dolfin_debug("check");
-
   // Compute c-c connections [2]
   initCellCell(grid);
-
-  dolfin_debug("check");
 
   // Compute edges [3]
   initEdges(grid);
   
-  dolfin_debug("check");
-
   // Compute n-e connections [4]
   initNodeEdge(grid);
   
-  dolfin_debug("check");
-
   // Compute n-n connections [5]
   initNodeNode(grid);
-
-  dolfin_debug("check");
 
   // Compute faces [6]
   initFaces(grid);
@@ -113,8 +110,6 @@ void GridInit::initNodeCell(Grid& grid)
   //   2. Allocate memory for each node
   //   3. Add the cell neighbors
   
-  dolfin_debug("check");
-
   // Count the number of cells the node appears in
   for (CellIterator c(grid); !c.end(); ++c)
     for (NodeIterator n(c); !n.end(); ++n)
@@ -123,7 +118,7 @@ void GridInit::initNodeCell(Grid& grid)
   // Allocate memory for the cell lists
   for (NodeIterator n(grid); !n.end(); ++n)
     n->nc.init();
-  
+
   dolfin_debug("check");
 
   // Add the cells to the cell lists

@@ -104,6 +104,7 @@ namespace dolfin {
 
     // Friends
     friend class Grid;
+    friend class GridInit;
     friend class NodeIterator::GridNodeIterator;
     friend class CellIterator::GridCellIterator;
     friend class EdgeIterator::GridEdgeIterator;

@@ -18,7 +18,7 @@ int main()
   refine2D(refinements);
 
   // Refine 3D grid
-  refine3D(refinements);
+  /* refine3D(refinements); */
 
   return 0;
 }
@@ -40,7 +40,7 @@ void refine2D(int refinements)
     
     // Mark nodes for refinement
     for (CellIterator cell(grid); !cell.end(); ++cell)
-      if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
+      if ( cell->midpoint().dist(0.0, 0.0) < 0.5 )
 	cell->mark();
     
     // Refine grid

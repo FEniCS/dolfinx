@@ -39,6 +39,10 @@ void GridRefinement::initMarks(GridHierarchy& grids)
   // Create markers for all grids
   for (GridIterator grid(grids); !grid.end(); ++grid)
     grid->rd->initMarkers();
+    
+  // Set markers for finest grid to marked_for_no_ref;
+  for (CellIterator c(grids.fine()); !c.end(); ++c)
+    c->marker() = Cell::marked_for_no_ref;
 
   // Set markers for the finest grid
   for (List<Cell*>::Iterator c(grids.fine().rd->marked_cells); !c.end(); ++c) {
@@ -51,6 +55,9 @@ void GridRefinement::initMarks(GridHierarchy& grids)
       e->mark(**c);
 
   }
+  
+  // Clear list of marked cells
+  grids.fine().rd->marked_cells.clear();
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::clearMarks(GridHierarchy& grids)
@@ -73,9 +80,13 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
-    if (grid.index() > 0)
+    if (grid.index() > 0) {
+      cout << "--- Close at level " << grid.index() << endl;
       closeGrid(*grid);
+    }
+    cout << "--- Unrefine at level " << grid.index() << endl;
     unrefineGrid(*grid, grids);
+    cout << "--- Refine at level " << grid.index() << endl;
     refineGrid(*grid);
   }
 
@@ -125,6 +136,8 @@ void GridRefinement::closeGrid(Grid& grid)
 
   // Repeat until the list of elements is empty
   while ( !cells.empty() ) {
+
+    cout << "Remaining number of cells to close = " << cells.size() << endl;
 
     // Get first cell and remove it from the list
     Cell* cell = cells.pop();
@@ -187,13 +200,11 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   // Mark nodes and cells for reuse
   for (CellIterator c(grid); !c.end(); ++c) {
 
-    // Skip cells which are not refined
-    if ( c->status() == Cell::unref )
-      continue;
-
     // Skip cells which are not marked according to refinement
-    if ( c->marker() != Cell::marked_according_to_ref )
+    if ( c->marker() != Cell::marked_according_to_ref ) {
+      cout << "Cell is not marked according to refinement" << endl;
       continue;
+    }
 
     // Mark children of the cell for re-use
     for (int i = 0; i < c->noChildren(); i++) {
@@ -206,13 +217,18 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 
   // Remove all nodes in the child not marked for re-use
   for (NodeIterator n(*child); !n.end(); ++n)
-    if ( !reuse_node(n->id()) )
+    if ( !reuse_node(n->id()) ) {
+      cout << "Removing node" << endl;
       child->remove(*n);
-
+    }
+  
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
-    if ( !reuse_cell(c->id()) )
+    if ( !reuse_cell(c->id()) ) {
+      cout << "Removing cell" << endl;
       child->remove(*c);
+    }
+
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell,
