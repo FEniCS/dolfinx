@@ -215,8 +215,6 @@ Node* GenericCell::findNode(const Point& p) const
 //-----------------------------------------------------------------------------
 Edge* GenericCell::findEdge(Node& n0, Node& n1)
 {
-  cout << "Number of edges: " << ce.size() << endl;
-
   for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e )
       if ( (*e)->equals(n0, n1) )

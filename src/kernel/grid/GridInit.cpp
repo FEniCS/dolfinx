@@ -43,39 +43,53 @@ void GridInit::clear(Grid& grid)
   }
 }
 //-----------------------------------------------------------------------------
+void GridInit::initConnectivity(Grid& grid)
+{
+  // The data needs to be computed in the correct order, see GridData.h.
+
+  dolfin_debug("check");
+
+  // Compute n-c connections [1]
+  initNodeCell(grid);
+  
+  dolfin_debug("check");
+
+  // Compute c-c connections [2]
+  initCellCell(grid);
+
+  dolfin_debug("check");
+
+  // Compute edges [3]
+  initEdges(grid);
+  
+  dolfin_debug("check");
+
+  // Compute n-e connections [4]
+  initNodeEdge(grid);
+  
+  dolfin_debug("check");
+
+  // Compute n-n connections [5]
+  initNodeNode(grid);
+
+  dolfin_debug("check");
+
+  // Compute faces [6]
+  initFaces(grid);
+}
+//-----------------------------------------------------------------------------
 void GridInit::initEdges(Grid& grid)
 {
   // Go through all cells and create edges. Each edge checks with its
   // cell neighbors to see if an edge has already been added.
+
+  cout << "Creating edges" << endl;
   
   for (CellIterator c(grid); !c.end(); ++c)
     c->createEdges();
   
   // Write a message
   cout << "Created " << grid.noEdges() << " edges." << endl;
-}
-//-----------------------------------------------------------------------------
-void GridInit::initConnectivity(Grid& grid)
-{
-  // The data needs to be computed in the correct order, see GridData.h.
-
-  // Compute n-c connections [1]
-  initNodeCell(grid);
-  
-  // Compute c-c connections [2]
-  initCellCell(grid);
-
-  // Compute edges [3]
-  initEdges(grid);
-  
-  // Compute n-e connections [4]
-  initNodeEdge(grid);
-  
-  // Compute n-n connections [5]
-  initNodeNode(grid);
-
-  // Compute faces [6]
-  initFaces(grid);
 }
 //-----------------------------------------------------------------------------
 void GridInit::initFaces(Grid& grid)

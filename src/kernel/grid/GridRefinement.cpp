@@ -158,6 +158,9 @@ void GridRefinement::refineGrid(Grid& grid)
     
   }
 
+  // Compute connectivity for child
+  grid.child().init();
+
   cout << "Refined grid has " << grid.noCells() << " cells." << endl;
 }
 //-----------------------------------------------------------------------------
@@ -378,12 +381,18 @@ Node& GridRefinement::createNode(Node& node, Grid& grid, const Cell& cell)
 Node& GridRefinement::createNode(const Point& p, Grid& grid, const Cell& cell)
 {
   // First check with the children of the neighbors of the cell if the
-  // node already exists
-  for (CellIterator c(cell); !c.end(); ++c) {
-    for (int i = 0; i < c->noChildren(); i++) {
-      Node* n = c->child(i)->findNode(p);
-      if ( n )
-	return *n;
+  // node already exists. Note that it is not enouch to only check
+  // neighbors of the cell, since neighbors are defined as having a
+  // common edge. We need to check all nodes within the cell and for
+  // each node check the cell neighbors of that node.
+
+  for (NodeIterator n(cell); !n.end(); ++n) {
+    for (CellIterator c(n); !c.end(); ++c) {
+      for (int i = 0; i < c->noChildren(); i++) {
+	Node* new_node = c->child(i)->findNode(p);
+	if ( new_node )
+	  return *new_node;
+      }
     }
   }
 

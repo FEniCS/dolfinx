@@ -23,8 +23,8 @@ namespace dolfin{
     
     static void clear            (Grid& grid);
     
-    static void initEdges        (Grid& grid);
     static void initConnectivity (Grid& grid);
+    static void initEdges        (Grid& grid);
     static void initFaces        (Grid& grid);
     
     static void initNodeCell     (Grid& grid);
