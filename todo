@@ -1,11 +1,8 @@
 Multi-adaptive solver
 ---------------------
 
-- Computation of residuals
-- Adaptive time-stepping: implement regulator
 - Solution of the dual problem
 - Error estimates
-- Saving the solution: new version of the Function class?
 - Optimization and benchmarks, including control of the error estimates
 - Automatic computation of stability factors as function of time T
 - Stiff problems, adaptive damping

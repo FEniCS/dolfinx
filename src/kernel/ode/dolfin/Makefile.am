@@ -25,6 +25,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Regulator.h \
              Sample.h \
              SimpleTimeSlab.h \
+             Solution.h \
              Sparsity.h \
              TableSparsity.h \
              TimeSlab.h \

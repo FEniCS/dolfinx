@@ -23,7 +23,7 @@ TimeSteppingData::TimeSteppingData(ODE& ode, ElementData& elmdata, real t0) :
   real k0            = dolfin_get("initial time step");
 
   // Scale tolerance with the number of components
-  TOL /= static_cast<real>(elmdata.size());
+  TOL /= static_cast<real>(ode.size());
 
   // Specify initial time steps
   for (unsigned int i = 0; i < regulators.size(); i++)

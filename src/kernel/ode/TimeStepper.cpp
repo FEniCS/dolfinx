@@ -29,7 +29,7 @@ using namespace dolfin;
 void TimeStepper::solve(ODE& ode, real t0, real t1)
 {
   // Get parameters
-  int no_samples = dolfin_get("number of samples");
+  unsigned int no_samples = dolfin_get("number of samples");
 
   // Get size of system
   unsigned int N = ode.size();
@@ -87,7 +87,7 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 }
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f,
-		       File& file, real t0, real t1, int no_samples)
+		       File& file, real t0, real t1, unsigned int no_samples)
 {
   // Compute time of first sample within time slab
   real K = (t1 - t0) / static_cast<real>(no_samples);

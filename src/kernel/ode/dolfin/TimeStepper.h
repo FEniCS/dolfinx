@@ -33,7 +33,7 @@ namespace dolfin {
 
     // Save solution (when necessary)
     static void save(TimeSlab& timeslab, TimeSteppingData& data, RHS& f, 
-		     File& file, real t0, real t1, int no_samples);
+		     File& file, real t0, real t1, unsigned int no_samples);
 
   };
 
