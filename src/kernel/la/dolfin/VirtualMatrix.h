@@ -52,11 +52,17 @@ namespace dolfin
     const Mat mat() const;
 
     /// Compute product y = Ax
+    void mult(const NewVector& x, NewVector& y) const;
+
+    /// Compute product y = Ax
     virtual void mult(Vec x, Vec y) const = 0;
+
+    /// Display matrix
+    void disp() const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const VirtualMatrix& A);
-    
+
   private:
 
     // PETSc Mat pointer

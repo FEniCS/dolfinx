@@ -41,6 +41,8 @@ void NewtonSolver::start()
 
   // Compute Jacobian
   A.update(ts.starttime());
+
+  A.disp();
 }
 //-----------------------------------------------------------------------------
 real NewtonSolver::iteration()

@@ -32,9 +32,6 @@ namespace dolfin
     /// Recompute Jacobian at given time
     void update(real t);
 
-    /// Show Jacobian of the system of equations on the time slab
-    void disp() const;
-
   private:
 
     // The ODE

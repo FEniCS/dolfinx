@@ -220,7 +220,7 @@ void NewJacobianMatrix::mult(Vec x, Vec y) const
     }
   }
 
-  // Restor PETSc data arrays
+  // Restore PETSc data arrays
   VecRestoreArray(x, &xx);
   VecRestoreArray(y, &yy);
 }
@@ -229,36 +229,5 @@ void NewJacobianMatrix::update(real t)
 {
   dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
   
-}
-//-----------------------------------------------------------------------------
-void NewJacobianMatrix::disp() const
-{
-  // Since we don't really have the matrix, we create the matrix by
-  // performing multiplication with unit vectors. Used only for debugging.
-
-  /*
-  uint n = ts.nj;
-  NewVector x(n), y(n);
-
-  real* values = new real[n*n];
-  for (uint j = 0; j < n*n; j++)
-    values[j] = 0.0;
-
-  Matrix A(n, n, Matrix::dense);
-  Vector x(n), y(n);
-  x = 0.0;
-  
-  for (unsigned int j = 0; j < n; j++)
-  {
-    x(j) = 1.0;
-    x.show();
-    mult(x, y);
-    for (unsigned int i = 0; i < n; i++)
-      A(i, j) = y(i);
-    x(j) = 0.0;
-  }
-
-  A.show();
-  */
 }
 //-----------------------------------------------------------------------------

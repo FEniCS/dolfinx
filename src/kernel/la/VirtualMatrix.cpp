@@ -4,6 +4,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewVector.h>
+#include <dolfin/NewMatrix.h>
 #include <dolfin/VirtualMatrix.h>
 
 using namespace dolfin;
@@ -77,10 +78,13 @@ void VirtualMatrix::init(const NewVector& x, const NewVector& y)
 //-----------------------------------------------------------------------------
 dolfin::uint VirtualMatrix::size(uint dim) const
 {
-  int m = 0;
-  int n = 0;
-  MatGetSize(A, &m, &n);
-  return (dim == 0 ? static_cast<uint>(m) : static_cast<uint>(n));
+  int M = 0;
+  int N = 0;
+  MatGetSize(A, &M, &N);
+  dolfin_assert(M >= 0);
+  dolfin_assert(N >= 0);
+
+  return (dim == 0 ? static_cast<uint>(M) : static_cast<uint>(N));
 }
 //-----------------------------------------------------------------------------
 Mat VirtualMatrix::mat()
@@ -91,6 +95,34 @@ Mat VirtualMatrix::mat()
 const Mat VirtualMatrix::mat() const
 {
   return A;
+}
+//-----------------------------------------------------------------------------
+void VirtualMatrix::mult(const NewVector& x, NewVector& y) const
+{
+  mult(x.vec(), y.vec());
+}
+//-----------------------------------------------------------------------------
+void VirtualMatrix::disp() const
+{
+  // Since we don't really have the matrix, we create the matrix by
+  // performing multiplication with unit vectors. Used only for debugging.
+  
+  uint M = size(0);
+  uint N = size(1);
+  NewVector x(N), y(M);
+  NewMatrix A(M, N);
+  
+  x = 0.0;
+  for (unsigned int j = 0; j < N; j++)
+  {
+    x(j) = 1.0;
+    mult(x, y);
+    for (unsigned int i = 0; i < M; i++)
+      A(i, j) = y(i);
+    x(j) = 0.0;
+  }
+
+  A.disp();
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const VirtualMatrix& A)
