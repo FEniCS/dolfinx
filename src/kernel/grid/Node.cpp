@@ -49,6 +49,16 @@ void Node::set(real x, real y, real z)
   p.z = z;
 }
 //-----------------------------------------------------------------------------
+void Node::setMarkedForReUse(bool re_use)
+{
+  _marked_for_re_use = re_use;
+}
+//-----------------------------------------------------------------------------
+bool Node::markedForReUse()
+{
+  return _marked_for_re_use;
+}
+//-----------------------------------------------------------------------------
 int Node::level() const
 {
   return _level;

@@ -34,6 +34,9 @@ namespace dolfin {
 
 	 void createEdges(Cell* c);
 
+	 void setFinestGridLevel(int gl);
+	 int finestGridLevel();
+
 	 Node* getNode(int id);
 	 Cell* getCell(int id);
 	 Edge* getEdge(int id);
@@ -49,6 +52,9 @@ namespace dolfin {
 	 
   private:
 	 
+	 /// Finest grid refinement level
+	 int _finest_grid_level;
+      
 	 List<Node> nodes;
 	 List<Cell> cells;
 	 List<Edge> edges;

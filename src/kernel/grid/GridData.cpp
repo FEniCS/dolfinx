@@ -18,6 +18,7 @@ Node* GridData::createNode(int level)
   Node *n = nodes.create(&id);
   n->setID(id);
   n->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -41,6 +42,7 @@ Node* GridData::createNode(int level, real x, real y, real z)
   n->setID(id);
   n->set(x,y,z);  
   n->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return n;
 }
 //-----------------------------------------------------------------------------
@@ -51,6 +53,7 @@ Cell* GridData::createCell(int level, Cell::Type type)
   c->setID(id);
   c->init(type);
   c->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -62,6 +65,7 @@ Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2)
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2));
   c->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -73,6 +77,7 @@ Cell* GridData::createCell(int level, Cell::Type type, int n0, int n1, int n2, i
   c->setID(id);
   c->set(getNode(n0),getNode(n1),getNode(n2),getNode(n3));
   c->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -84,6 +89,7 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
   c->setID(id);
   c->set(n0,n1,n2);
   c->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -95,6 +101,7 @@ Cell* GridData::createCell(int level, Cell::Type type, Node* n0, Node* n1, Node*
   c->setID(id);
   c->set(n0,n1,n2,n3);
   c->setLevel(level);
+  if (level > _finest_grid_level) _finest_grid_level = level; 
   return c;
 }
 //-----------------------------------------------------------------------------
@@ -212,9 +219,20 @@ void GridData::createEdges(Cell* c)
 	dolfin_error("wrong counter value on i");
       }
       edge->setLevel(c->level());
+      if (c->level() > _finest_grid_level) _finest_grid_level = c->level(); 
       c->setEdge(edge,i);
     }    
   }
+}
+//-----------------------------------------------------------------------------
+void GridData::setFinestGridLevel(int gl)
+{
+  _finest_grid_level = gl;
+}
+//-----------------------------------------------------------------------------
+int GridData::finestGridLevel()
+{
+  return _finest_grid_level;
 }
 //-----------------------------------------------------------------------------
 Node* GridData::getNode(int id)

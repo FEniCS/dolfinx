@@ -24,6 +24,8 @@ Grid::Grid() : initGrid(*this), refineGrid(*this)
   gd = 0;
   clear();
 
+  gd->setFinestGridLevel(0);
+  
   rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
@@ -35,6 +37,8 @@ Grid::Grid(const char *filename) : initGrid(*this), refineGrid(*this)
   // Read grid from file
   File file(filename);
   file >> *this;
+
+  gd->setFinestGridLevel(0);
 
   rename("grid", "no description");
 }
@@ -103,6 +107,16 @@ void Grid::show()
   cout << endl;
   
   cout << "-------------------------------------------------------------------------------" << endl;
+}
+//-----------------------------------------------------------------------------
+void Grid::setFinestGridLevel(int gl)
+{
+  gd->setFinestGridLevel(gl);
+}
+//-----------------------------------------------------------------------------
+int Grid::finestGridLevel()
+{
+  return gd->finestGridLevel();
 }
 //-----------------------------------------------------------------------------
 Node* Grid::createNode(int level)

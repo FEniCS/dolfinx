@@ -43,6 +43,9 @@ namespace dolfin {
       Cell* refinedByCell(int i);
       void  setRefinedByCell(Cell* c);
 
+      void setMarkedForReUse(bool re_use);
+      bool markedForReUse();
+
       /// --- Functions that require computation (every time!)
 	  
       /// Compute and return the lenght of the edge
@@ -75,6 +78,8 @@ namespace dolfin {
       // End nodes
       Node* _en0;
       Node* _en1;
+
+      bool _marked_for_re_use;
 
       bool marked_for_refinement;
 

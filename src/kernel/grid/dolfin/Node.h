@@ -37,6 +37,9 @@ namespace dolfin{
     int   boundary() const;
     bool  neighbor(Node* n);
     
+    void setMarkedForReUse(bool re_use);
+    bool markedForReUse();
+
     void setChild(Node* child);
 
     int   noNodeNeighbors() const;
@@ -83,6 +86,8 @@ namespace dolfin{
     // Refinement level in grid hierarchy, coarsest grid is level = 0
     int _level;
     void setLevel(int level);
+
+    bool _marked_for_re_use;
 
     // Connectivity
     ShortList<Node*> nn;

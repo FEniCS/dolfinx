@@ -23,6 +23,8 @@ Cell::Cell()
   _no_marked_edges = 0;
   _no_children = 0;
 
+  _marked_for_re_use = true;
+
   _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
@@ -43,6 +45,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2)
 
   _no_marked_edges = 0;
   _no_children = 0;
+
+  _marked_for_re_use = true;
 
   _refined_by_face_rule = false;
 }
@@ -65,6 +69,8 @@ Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
 
   _no_marked_edges = 0;
   _no_children = 0;
+
+  _marked_for_re_use = true;
 
   _refined_by_face_rule = false;
 }
@@ -194,6 +200,16 @@ void Cell::mark(Marker marker)
 Cell::Marker Cell::marker() const
 {
   return _marker;
+}
+//-----------------------------------------------------------------------------
+void Cell::setMarkedForReUse(bool re_use)
+{
+  _marked_for_re_use = re_use;
+}
+//-----------------------------------------------------------------------------
+bool Cell::markedForReUse()
+{
+  return _marked_for_re_use;
 }
 //-----------------------------------------------------------------------------
 void Cell::setStatus(Status status)

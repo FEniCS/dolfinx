@@ -40,6 +40,16 @@ void Edge::set(Node *en0, Node *en1)
   _en1 = en1;
 }
 //-----------------------------------------------------------------------------
+void Edge::setMarkedForReUse(bool re_use)
+{
+  _marked_for_re_use = re_use;
+}
+//-----------------------------------------------------------------------------
+bool Edge::markedForReUse()
+{
+  return _marked_for_re_use;
+}
+//-----------------------------------------------------------------------------
 int Edge::id() const
 {
   return _id;

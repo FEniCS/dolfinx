@@ -51,16 +51,35 @@ void RefineGrid::globalRegularRefinement()
 }
 
 
+void RefineGrid::globalRefinement()
+{
+  for (int i=grid.finestGridLevel();i>=0;i--){
+    evaluateMarks(i);
+    closeGrid(i);
+  }
+
+  for (int i=0;i<=grid.finestGridLevel();i++){
+    if (i>0) closeGrid(i);
+    unrefineGrid(i);
+    refineGrid(i);
+  }
+
+  //if ...()
+  
+
+
+}
+
 void RefineGrid::evaluateMarks(int grid_level)
 {
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
     if (c->level() == grid_level) cells.add(c);
   }
-  
+      
   bool sons_marked_for_coarsening,edge_of_son_marked;
   for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
-    if ((*c.pointer())->status() == Cell::REFINED_REGULARLY){
+    if ((*c.pointer())->status() == Cell::REFINED_REGULAR){
       sons_marked_for_coarsening = true;
       for (int i=0;i<(*c.pointer())->noChildren();i++){
 	if ((*c.pointer())->child(i)->marker() != Cell::MARKED_FOR_COARSENING){ 
@@ -71,7 +90,7 @@ void RefineGrid::evaluateMarks(int grid_level)
       if (sons_marked_for_coarsening) (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
     }
 
-    if ((*c.pointer())->status() == Cell::REFINED_IRREGULARLY){
+    if ((*c.pointer())->status() == Cell::REFINED_IRREGULAR){
       edge_of_son_marked = false;
       for (int i=0;i<(*c.pointer())->noChildren();i++){
 	for (int j=0;j<(*c.pointer())->child(i)->noEdges();j++){
@@ -92,12 +111,97 @@ void RefineGrid::evaluateMarks(int grid_level)
 
 void RefineGrid::unrefineGrid(int grid_level)
 {
+  List<Cell *> cells;
+  for (CellIterator c(grid); !c.end(); ++c){
+    if (c->level() == grid_level) cells.add(c);
+  }
+      
+  List<Cell *> ccells;
+  for (CellIterator c(grid); !c.end(); ++c){
+    if (c->level() == grid_level+1) ccells.add(c);
+  }
+      
+  for (List<Cell *>::Iterator c(&ccells); !c.end(); ++c){
+    (*c.pointer())->setMarkedForReUse(false);
+    for (int i=0;i<(*c.pointer())->noNodes();i++) (*c.pointer())->node(i)->setMarkedForReUse(false);
+    for (int i=0;i<(*c.pointer())->noEdges();i++) (*c.pointer())->edge(i)->setMarkedForReUse(false);
+  }
+
+  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+    if ((*c.pointer())->marker() == Cell::MARKED_ACCORDING_TO_REFINEMENT){
+      for (int i=0;i<(*c.pointer())->noChildren();i++){
+	(*c.pointer())->child(i)->setMarkedForReUse(true);
+      }
+    }
+  }
+
+  for (List<Cell *>::Iterator c(&ccells); !c.end(); ++c){
+    //if (!(*c.pointer())->markedForReUse()) grid.removeCell((*c.pointer()));
+  }
   
+  List<Node *> cnodes;
+  for (NodeIterator n(grid); !n.end(); ++n){
+    if (n->level() == grid_level+1) cnodes.add(n);
+  }
+  for (List<Node*>::Iterator n(&cnodes); !n.end(); ++n){
+    //if (!(*n.pointer())->markedForReUse()) grid.removeNode((*n.pointer()));
+  }
+
+  List<Edge *> cedges;
+  for (EdgeIterator e(grid); !e.end(); ++e){
+    if (e->level() == grid_level+1) cedges.add(e);
+  }
+  for (List<Edge*>::Iterator e(&cedges); !e.end(); ++e){
+    //if (!(*e.pointer())->markedForReUse()) grid.removeEdge((*e.pointer()));
+  }
+
 }
 
 void RefineGrid::refineGrid(int grid_level)
 {
-  
+  List<Cell *> cells;
+  for (CellIterator c(grid); !c.end(); ++c){
+    if (c->level() == grid_level) cells.add(c);
+  }
+      
+  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+    if ((*c.pointer())->marker() == Cell::MARKED_FOR_COARSENING){
+      (*c.pointer())->mark(Cell::MARKED_FOR_NO_REFINEMENT);
+    }
+  }
+
+  for (List<Cell *>::Iterator c(&cells); !c.end(); ++c){
+    if ((*c.pointer())->marker() != Cell::MARKED_ACCORDING_TO_REFINEMENT){
+      switch((*c.pointer())->marker()){ 
+      case Cell::MARKED_FOR_REGULAR_REFINEMENT: 
+	regularRefinement((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1: 
+	irregularRefinementBy1((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2: 
+	irregularRefinementBy2((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3: 
+	irregularRefinementBy3((*c.pointer()));
+	break;
+      case Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4: 
+	irregularRefinementBy4((*c.pointer()));
+	break;
+      default:
+	dolfin_error("wrong refinement rule");
+      }
+
+      for (int i=0;i<(*c.pointer())->noChildren();i++){
+	(*c.pointer())->child(i)->mark(Cell::MARKED_FOR_NO_REFINEMENT);
+	(*c.pointer())->child(i)->setLevel((*c.pointer())->level()+1);
+	if (((*c.pointer())->level()+1) > grid.finestGridLevel()) 
+	  grid.setFinestGridLevel((*c.pointer())->level()+1);
+      }
+
+    }
+  }
+ 
 }
 
 
@@ -107,7 +211,7 @@ void RefineGrid::closeGrid(int grid_level)
   bool marked_for_ref_by_cell;
   List<Cell *> cells;
   for (CellIterator c(grid); !c.end(); ++c){
-    if ( (c->level() == grid_level) && (c->status() == Cell::REFINED_REGULARLY) ){ 
+    if ( (c->level() == grid_level) && (c->status() == Cell::REFINED_REGULAR) ){ 
       marked_for_ref_by_cell = false;
       for (int i=0;i<c->noEdges();i++){
 	if (marked_for_ref_by_cell) break;
@@ -255,6 +359,10 @@ void RefineGrid::regularRefinement(Cell* parent)
     dolfin_error("Cell type not implemented.");
     exit(1);
   }
+
+  parent->setStatus(Cell::REFINED_REGULAR);
+  if (parent->marker() == Cell::MARKED_FOR_REGULAR_REFINEMENT) 
+    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
 
@@ -356,15 +464,15 @@ void RefineGrid::localIrregularRefinement(Cell *parent)
     regularRefinementTetrahedron(parent);
     break;
   case 3: 
-    if (parent->markedEdgesOnSameFace()) irrRef1(parent);
+    if (parent->markedEdgesOnSameFace()) irregularRefinementBy1(parent);
     else regularRefinementTetrahedron(parent);    
     break;
   case 2: 
-    if (parent->markedEdgesOnSameFace()) irrRef3(parent);
-    else irrRef4(parent);  
+    if (parent->markedEdgesOnSameFace()) irregularRefinementBy3(parent);
+    else irregularRefinementBy4(parent);  
     break;
   case 1: 
-    irrRef2(parent);  
+    irregularRefinementBy2(parent);  
     break;
   default:
     dolfin_error("wrong number of marked edges");
@@ -372,7 +480,7 @@ void RefineGrid::localIrregularRefinement(Cell *parent)
 }
 
 
-void RefineGrid::irrRef1(Cell* parent)
+void RefineGrid::irregularRefinementBy1(Cell* parent)
 {
   // 3 edges are marked on the same face: 
   // insert 3 new nodes at the midpoints on the marked edges, connect the 
@@ -494,10 +602,14 @@ void RefineGrid::irrRef1(Cell* parent)
     grid.createEdges(new_cell(2));
     grid.createEdges(new_cell(3));
   }
+
+  parent->setStatus(Cell::REFINED_IRREGULAR_BY_1);
+  if (parent->marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_1) 
+    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
 
-void RefineGrid::irrRef2(Cell* parent)
+void RefineGrid::irregularRefinementBy2(Cell* parent)
 {
   // 1 edge is marked:
   // Insert 1 new node at the midpoint of the marked edge, then connect 
@@ -544,9 +656,13 @@ void RefineGrid::irrRef2(Cell* parent)
     grid.createEdges(cnew1);
     grid.createEdges(cnew2);
   }
+
+  parent->setStatus(Cell::REFINED_IRREGULAR_BY_2);
+  if (parent->marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_2) 
+    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
-void RefineGrid::irrRef3(Cell* parent)
+void RefineGrid::irregularRefinementBy3(Cell* parent)
 {
   // 2 edges are marked, on the same face 
   // (here there are 2 possibilities, and the chosen 
@@ -672,9 +788,13 @@ void RefineGrid::irrRef3(Cell* parent)
   }
 
   parent->neighbor(face_neighbor)->refineByFaceRule(true);
+
+  parent->setStatus(Cell::REFINED_IRREGULAR_BY_3);
+  if (parent->marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_3) 
+    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
-void RefineGrid::irrRef4(Cell* parent)
+void RefineGrid::irregularRefinementBy4(Cell* parent)
 {
   // 2 edges are marked, opposite to each other: 
   // insert 2 new nodes at the midpoints of the marked edges, 
@@ -728,6 +848,10 @@ void RefineGrid::irrRef4(Cell* parent)
     grid.createEdges(c3);
     grid.createEdges(c4);
   }
+
+  parent->setStatus(Cell::REFINED_IRREGULAR_BY_4);
+  if (parent->marker() == Cell::MARKED_FOR_IRREGULAR_REFINEMENT_BY_4) 
+    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
 }
 
 

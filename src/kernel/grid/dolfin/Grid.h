@@ -40,6 +40,9 @@ namespace dolfin {
     int  noEdges() const;
     Type type() const;
     
+    void setFinestGridLevel(int gl);
+    int finestGridLevel();
+
     /// Output
     void show();
     friend LogStream& operator<< (LogStream& stream, const Grid& grid);
@@ -78,7 +81,7 @@ namespace dolfin {
     
     /// Grid type
     Type _type;
-    
+
     /// Algorithms
     InitGrid initGrid;
     RefineGrid refineGrid;

@@ -25,7 +25,9 @@ namespace dolfin {
 		       MARKED_FOR_IRREGULAR_REFINEMENT_BY_1, MARKED_FOR_IRREGULAR_REFINEMENT_BY_2, 
 		       MARKED_FOR_IRREGULAR_REFINEMENT_BY_3, MARKED_FOR_IRREGULAR_REFINEMENT_BY_4, 
 		       MARKED_FOR_NO_REFINEMENT, MARKED_FOR_COARSENING, MARKED_ACCORDING_TO_REFINEMENT };
-	 enum Status { REFINED_REGULARLY, REFINED_IRREGULARLY, UNREFINED };
+	 enum Status { REFINED_REGULAR, REFINED_IRREGULAR, 
+		       REFINED_IRREGULAR_BY_1, REFINED_IRREGULAR_BY_2, 
+		       REFINED_IRREGULAR_BY_3, REFINED_IRREGULAR_BY_4, UNREFINED };
 	 
 	 Cell();
 	 Cell(Node &n0, Node &n1, Node &n2);
@@ -57,10 +59,14 @@ namespace dolfin {
 	 int id() const;
 	 int nodeID(int i) const;
 	 int level() const;
+	 void setLevel(int level);
 
 	 // Mark and check state of the marke
 	 void mark(Marker marker);
 	 Marker marker() const;
+
+	 void setMarkedForReUse(bool re_use);
+	 bool markedForReUse();
 
 	 void refineByFaceRule(bool refined_by_face_rule);
 	 bool refinedByFaceRule();
@@ -93,7 +99,6 @@ namespace dolfin {
 	 void set(Node *n0, Node *n1, Node *n2);
 	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
 	 
-	 void setLevel(int level);
 	 void setID(int id);
 	 void init(Type type);
 	 bool neighbor(Cell &cell);
@@ -112,6 +117,7 @@ namespace dolfin {
 	 // Marker (for refinement)
 	 Marker _marker;
 	 int _no_marked_edges;
+	 bool _marked_for_re_use;
 	 bool _refined_by_face_rule;
 
 	 // The cell

@@ -17,6 +17,8 @@ namespace dolfin {
 	 
 	 void globalRegularRefinement();
 
+	 void globalRefinement();
+
 	 void evaluateMarks(int grid_level);
 	 void closeGrid(int grid_level);
 	 List<Cell *> closeCell(Cell *parent);
@@ -31,10 +33,10 @@ namespace dolfin {
 	 
 	 void localIrregularRefinement(Cell *parent);
 
-	 void irrRef1(Cell *parent);
-	 void irrRef2(Cell *parent);
-	 void irrRef3(Cell *parent);
-	 void irrRef4(Cell *parent);
+	 void irregularRefinementBy1(Cell *parent);
+	 void irregularRefinementBy2(Cell *parent);
+	 void irregularRefinementBy3(Cell *parent);
+	 void irregularRefinementBy4(Cell *parent);
 
 	 void refine();
 	 
