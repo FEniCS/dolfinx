@@ -34,6 +34,9 @@ namespace dolfin {
     /// Add face to the boundary
     void add(Face* face);
 
+    /// Check if the boundary is empty
+    bool empty();
+
   private:
 
     // The grid

@@ -13,6 +13,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Grid.h>
+#include <dolfin/Boundary.h>
 #include <dolfin/bcfunction.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Galerkin.h>
@@ -204,6 +205,10 @@ void Galerkin::setBC(Grid& grid, Vector& b)
   
   // Get boundary condition function
   bcf = dolfin_get("boundary condition");
+
+  // Create boundary
+  Boundary boundary(grid);
+  
 
   // Iterate over all nodes on the boundary
   for (NodeIterator node(grid); !node.end(); ++node) {

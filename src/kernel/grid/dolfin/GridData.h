@@ -31,16 +31,16 @@ namespace dolfin {
   /// stored:
   ///
   ///   (x) n-n (the node neighbors of a node)  [5, from 4]
-  ///   (x) n-c (the cell neighbors of a node)  [2, from 0]
-  ///   (x) n-e (the edge neighbors of a node)  [4, from 1]
+  ///   (x) n-c (the cell neighbors of a node)  [1, from 0]
+  ///   (x) n-e (the edge neighbors of a node)  [4, from 3]
   ///       n-f (the face neighbors of a node)
   ///
   ///   (x) c-n (the nodes within a cell)       [0]
-  ///   (x) c-c (the cell neighbors of a cell)  [3, from 0 and 2]
-  ///   (x) c-e (the edges within a cell)       [1, from 0]
-  ///   (x) c-f (the faces within a cell)       [6, from 0 and 3]
+  ///   (x) c-c (the cell neighbors of a cell)  [2, from 0 and 1]
+  ///   (x) c-e (the edges within a cell)       [3, from 0 and 2]
+  ///   (x) c-f (the faces within a cell)       [6, from 0 and 2]
   ///
-  ///   (x) e-n (the nodes within an edge)      [1, from 0]
+  ///   (x) e-n (the nodes within an edge)      [3, from 0 and 2]
   ///       e-c (the cell neighbors of an edge)
   ///       e-e (the edge neighbors of an edge)
   ///       e-f (the face neighbors of an edge)

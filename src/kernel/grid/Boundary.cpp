@@ -21,7 +21,8 @@ Boundary::~Boundary()
 //-----------------------------------------------------------------------------
 void Boundary::init()
 {
-  BoundaryInit::init(*grid);
+  if ( grid->bd.empty() )
+    BoundaryInit::init(*grid);
 }
 //-----------------------------------------------------------------------------
 void Boundary::clear()

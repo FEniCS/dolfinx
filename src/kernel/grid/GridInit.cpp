@@ -20,16 +20,9 @@ void GridInit::init(Grid& grid)
   // Reset all previous connections
   clear(grid);
 
-  // Init edges (needs to be done before connectivity)
-  initEdges(grid);
-
-  // Init connectivity data
+  // Compute connectivity
   initConnectivity(grid);
 
-  // Init faces (needs to be done after connectivity)
-  initFaces(grid);
-
-  // Task is done
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
@@ -64,27 +57,25 @@ void GridInit::initEdges(Grid& grid)
 //-----------------------------------------------------------------------------
 void GridInit::initConnectivity(Grid& grid)
 {
-  // Compute neighbor information
-  //
-  //   n-c (cell neighbors of node)
-  //   c-c (cell neighbors of cell)
-  //   n-e (edge neighbors of node)
-  //   n-n (node neighbors of node)
-  //
-  // It is important that these are computed in the correct order.
-  // Gives a simple and efficient algorithm that is O(n).
-  
-  // Compute n-c connections
+  // The data needs to be computed in the correct order, see GridData.h.
+
+  // Compute n-c connections [1]
   initNodeCell(grid);
   
-  // Compute c-c connections
+  // Compute c-c connections [2]
   initCellCell(grid);
+
+  // Compute edges [3]
+  initEdges(grid);
   
-  // Compute n-e connections
+  // Compute n-e connections [4]
   initNodeEdge(grid);
   
-  // Compute n-n connections
+  // Compute n-n connections [5]
   initNodeNode(grid);
+
+  // Compute faces [6]
+  initFaces(grid);
 }
 //-----------------------------------------------------------------------------
 void GridInit::initFaces(Grid& grid)

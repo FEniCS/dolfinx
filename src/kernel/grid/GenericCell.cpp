@@ -131,7 +131,7 @@ Edge* GenericCell::findEdge(Node* n0, Node* n1)
     if ( *e )
       if ( (*e)->equals(n0, n1) )
 	return *e;
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
     if ( *f )
       if ( (*f)->equals(e0, e1, e2) )
 	return *f;
-  
+
   return 0;
 }
 //-----------------------------------------------------------------------------

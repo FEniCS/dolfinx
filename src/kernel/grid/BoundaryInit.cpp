@@ -14,18 +14,23 @@ void BoundaryInit::init(Grid& grid)
   // the correct order: First compute faces, then use this information
   // to compute edges, and finally compute the nodes from the edges.
 
+  // Write a message
+  dolfin_start("Computing boundary:");
+
   clear(grid);
 
   initFaces(grid);
   initEdges(grid);
   initNodes(grid);
+  
+  dolfin_end();
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::clear(Grid& grid)
 {
   grid.bd.clear();
 }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------- 
 void BoundaryInit::initFaces(Grid& grid)
 {
   // Go through all faces and for each face check if it is on the boundary.
@@ -41,9 +46,14 @@ void BoundaryInit::initFaces(Grid& grid)
   cellcount = 0;
 
   // Count the number of cell neighbors for each face
-  for (CellIterator c(grid); !c.end(); ++c)
-    for (FaceIterator f(c); !f.end(); ++f)
+  for (CellIterator c(grid); !c.end(); ++c) {
+    cout << "cell " << c->id() << ": ";
+    for (FaceIterator f(c); !f.end(); ++f) {
+      cout << f->id() << " ";
       cellcount(f->id()) += 1;
+    }
+    cout << endl;
+  }
   
   // Add faces with only one cell neighbor to the boundary
   for (FaceIterator f(grid); !f.end(); ++f)
