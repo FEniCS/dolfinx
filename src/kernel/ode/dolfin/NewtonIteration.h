@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2004.
 
 #ifndef __NEWTON_ITERATION_H
 #define __NEWTON_ITERATION_H
@@ -47,6 +49,12 @@ namespace dolfin
 		  State& newstate);
 
     void report() const;
+
+  private:
+
+    // FIXME: modify arguments to constructor of JacobianMatrix (or Iteration)
+    // FIXME: so that the initialization is possible (need ODE or at least sparsity)
+    // JacobianMatrix J;
 
   };
 

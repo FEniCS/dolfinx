@@ -57,7 +57,7 @@ A note for Solaris users: You probably need to disable curses and use gmake:
 
 Feed back, patches, and comments should be sent to
 
-	dolfin@math.chalmers.se	
+	dolfin@fenics.org
 
 ------------------------------------------------------------------------------
 3. License
@@ -71,8 +71,8 @@ A hopefully complete list of authors is given in the file AUTHORS.
 
 For more information about DOLFIN, visit
 
-	http://www.phi.chalmers.se/dolfin/
+	http://www.fenics.org/dolfin/
 
 -------------------------------------------------------------------------------
-Goteborg
-February 2004
+Chicago
+October 2004

@@ -15,8 +15,8 @@
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/NewtonIteration.h>
 
+// FIXME: Use GMRES::solve() instead
 #include <dolfin/KrylovSolver.h>
-
 
 using namespace dolfin;
 
@@ -58,6 +58,12 @@ void NewtonIteration::start(Element& element)
 //-----------------------------------------------------------------------------
 void NewtonIteration::update(ElementGroupList& list, Increments& d)
 {
+
+  // Decide when to do J.update(). Only compute a new Jacobian when
+  // necessary. Perhaps we can keep the Jacobian for some time. At
+  // least for one time slab? Use GMRES::solve(J, dx, F) to solve.
+
+
   // Assume only dG0 for now
 
   cout << "Newton slab" << endl;

@@ -20,6 +20,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ElementTmpFile.h \
              FixedPointIteration.h \
              Iteration.h \
+             JacobianMatrix.h \
              Method.h \
              NonStiffIteration.h \
              ODE.h \

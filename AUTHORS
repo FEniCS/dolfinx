@@ -10,7 +10,7 @@ DOLFIN is currently maintained by:
 
 	Johan Hoffman		<hoffman@cims.nyu.edu>		hoffman
 	Johan Jansson		<johanjan@math.chalmers.se>	jj
-	Anders Logg		<logg@math.chalmers.se>		logg
+	Anders Logg		<logg@tti-c.org>		logg
 
 Contributors in alphabetical order:
 
@@ -32,4 +32,4 @@ Contributors in alphabetical order:
 	Walter Villanueva	<PDE project course 2001/2002>
 
 Missing credits? Please tell us and we will fix it.
-Send an email to dolfin@math.chalmers.se.
+Send an email to dolfin@fenics.org.

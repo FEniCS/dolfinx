@@ -48,9 +48,6 @@ namespace dolfin {
     real f(const Vector& phi, real t, unsigned int i);
 
   private:
-    
-    // Compute derivative dfi/duj
-    real dFdU(unsigned int i, unsigned int j, real t);
 
     // Right-hand side for primal problem
     RHS rhs;

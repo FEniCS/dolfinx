@@ -23,6 +23,7 @@
 #include <dolfin/ElementIterator.h>
 #include <dolfin/FixedPointIteration.h>
 #include <dolfin/Iteration.h>
+#include <dolfin/JacobianMatrix.h>
 #include <dolfin/Method.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/ODE.h>
