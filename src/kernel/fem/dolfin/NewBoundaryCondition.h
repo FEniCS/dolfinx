@@ -25,8 +25,8 @@ namespace dolfin
     /// User-defined boundary value for given part of boundary: scalar
     virtual const BoundaryValue operator() (const Point& p);
     
-    /// User-defined boundary value for given part of boundary: vector component c 
-    virtual const BoundaryValue operator() (const Point& p, const int c);
+    /// User-defined boundary value for given part of boundary: vector component i 
+    virtual const BoundaryValue operator() (const Point& p, const int i);
 
     /// Return number of components (scalar = 1, vector > 1)
     int noComp();

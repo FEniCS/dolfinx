@@ -28,7 +28,7 @@ const dolfin::BoundaryValue NewBoundaryCondition::operator() (const Point& p)
 }
 //-----------------------------------------------------------------------------
 const dolfin::BoundaryValue NewBoundaryCondition::operator() (const Point& p, 
-							      const int c)
+							      const int i)
 {
   BoundaryValue value;
   return value;
