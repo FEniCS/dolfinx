@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab),
+  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab, implicit),
     implicit(implicit), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
@@ -54,8 +54,8 @@ void MonoAdaptiveNewtonSolver::start()
   if ( implicit )
     ode.M(ts.u0, Mu0);
 
-  debug();
-  A.disp();
+  //debug();
+  //A.disp();
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveNewtonSolver::iteration()

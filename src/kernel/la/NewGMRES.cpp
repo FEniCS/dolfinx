@@ -61,7 +61,7 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
 
   int its = 0;
   KSPGetIterationNumber(ksp, &its);
-  dolfin_info("Solution converged in %d iterations.", its);
+  dolfin_info("GMRES converged in %d iterations.", its);
 
   //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
@@ -92,7 +92,7 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
 
   int its = 0;
   KSPGetIterationNumber(ksp, &its);
-  dolfin_info("Solution converged in %d iterations.", its);
+  dolfin_info("GMRES converged in %d iterations.", its);
 
   //KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }

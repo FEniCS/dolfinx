@@ -44,8 +44,8 @@ void MultiAdaptiveNewtonSolver::start()
   // Recompute Jacobian
   A.update(ts);
 
-  debug();
-  A.disp();
+  //debug();
+  //A.disp();
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration()

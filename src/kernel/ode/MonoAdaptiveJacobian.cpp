@@ -11,8 +11,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab)
-  : TimeSlabJacobian(timeslab), ts(timeslab)
+MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
+					   bool implicit)
+  : TimeSlabJacobian(timeslab), ts(timeslab), implicit(implicit)
 {
   // Do nothing
 }
@@ -24,10 +25,9 @@ MonoAdaptiveJacobian::~MonoAdaptiveJacobian()
 //-----------------------------------------------------------------------------
 void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
 {
-  cout << "Computing product with mono-adaptive Jacobian" << endl;
-
   // Start with y = x, accounting for the derivative dF_j/dx_j = 1
-  y = x;
+  if ( !implicit )
+    y = x;
 
   // Get data arrays (assumes uniprocessor case)
   const real* xx = x.array();
@@ -35,6 +35,18 @@ void MonoAdaptiveJacobian::mult(const NewVector& x, NewVector& y) const
 
   // Temporary data array used to store multiplications
   real* z = ts.tmp();
+
+  // Compute product y = Mx for each stage for implicit system
+  if ( implicit )
+  {
+    for (uint n = 0; n < method.nsize(); n++)
+    {
+      const uint noffset = n * ts.N;
+      ode.M(xx + noffset, z);
+      for (uint i = 0; i < ts.N; i++)
+	yy[noffset + i] = z[i];
+    }
+  }
 
   // Compute size of time step
   const real k = ts.length();
