@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_common.h List.h
+EXTRA_DIST = dolfin_common.h List.h function.h

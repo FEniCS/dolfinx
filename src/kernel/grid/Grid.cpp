@@ -15,9 +15,9 @@
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/NodeIterator.h>
+#include <dolfin/File.h>
 #include "GridData.h"
 #include "InitGrid.h"
-
 
 using namespace dolfin;
 
@@ -26,6 +26,16 @@ Grid::Grid()
 {
   grid_data = 0;
   clear();
+}
+//-----------------------------------------------------------------------------
+Grid::Grid(const char *filename)
+{
+  grid_data = 0;
+  clear();
+
+  // Read grid from file
+  File file(filename);
+  file >> *this;
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()

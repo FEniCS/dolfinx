@@ -6,48 +6,48 @@
 using namespace dolfin;
 
 //----------------------------------------------------------------------------
-void Settings::Initialize()
+void Settings::init()
 {
   char *string = new char[DOLFIN_LINELENGTH];
   char *prefix = new char[DOLFIN_LINELENGTH];
 
   // Get the file path prefix
-  Get("output file prefix",prefix);
+  get("output file prefix",prefix);
   
   // File name for the primal solution
-  if ( !Changed("output file primal") ){
+  if ( !changed("output file primal") ){
 	 sprintf(string,"%s-primal.dx",prefix);
-	 Set("output file primal",string);
+	 set("output file primal",string);
   }
 	 
   // File name for the dual solution
-  if ( !Changed("output file dual") ){
+  if ( !changed("output file dual") ){
 	 sprintf(string,"%s-dual.dx",prefix);
-	 Set("output file dual",string);
+	 set("output file dual",string);
   }
 
   // File name for settings
-  if ( !Changed("output file settings") ){
+  if ( !changed("output file settings") ){
 	 sprintf(string,"%s-settings.rc",prefix);
-	 Set("output file settings",string);
+	 set("output file settings",string);
   }
   
   // File name for the primal solution
-  if ( !Changed("output file residual") ){
+  if ( !changed("output file residual") ){
 	 sprintf(string,"%s-residual.dx",prefix);
-	 Set("output file residual",string);
+	 set("output file residual",string);
   }
 
   // File name for Matlab file
-  if ( !Changed("output file matlab") ){
+  if ( !changed("output file matlab") ){
 	 sprintf(string,"%s_scalars.m",prefix);
-	 Set("output file matlab",string);
+	 set("output file matlab",string);
   }
   
   // File name for Matlab file
-  if ( !Changed("output file matlab data") ){
+  if ( !changed("output file matlab data") ){
 	 sprintf(string,"%s_scalars.txt",prefix);
-	 Set("output file matlab data",string);
+	 set("output file matlab data",string);
   }
   
   // Delete temporary variables

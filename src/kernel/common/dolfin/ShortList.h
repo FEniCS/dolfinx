@@ -4,9 +4,15 @@
 #ifndef __SHORT_LIST_H
 #define __SHORT_LIST_H
 
+// ShortList implements a list of given constant size.
+//
+// Memory usage:      Only the elements and the size of the list are stored
+// Adding elements:   The add() function uses a linear search to find the next position
+// Changing the size: Use the resize() function to change the size of the list.
+
 template <class T> class ShortList {
 public:
-
+  
   class Iterator;
   friend class Iterator;
   
@@ -30,7 +36,7 @@ public:
   {
 	 clear();
   }
-
+  
   /// Indexing
   T& operator() (int i)
   {
@@ -50,13 +56,14 @@ public:
   }
 
   /// Adds the element to the next available position
-  void add(T element)
+  int add(T element)
   {
 	 for (int i = 0; i < _size; i++)
 		if ( !list[i] ){
 		  list[i] = element;
-		  return;
+		  return i;
 		}
+	 return -1;
   }
   
   /// Initialises the list to a zero list of given size
@@ -84,7 +91,6 @@ public:
   /// Removes unused (zero) elements
   void resize()
   {
-	 
 	 if ( !list )
 		return;
 	 
@@ -108,7 +114,26 @@ public:
 	 delete [] list;
 	 list = new_list;
 	 _size = new_size;
-	 
+  }
+
+
+  /// Changes the size of the list to the given size
+  void resize(int new_size)
+  {
+	 if ( !list ) {
+		init(new_size);
+		return;
+	 }
+
+	 // Create new list and copy the elements
+	 T *new_list = new T[new_size];
+	 for (int i = 0; i < _size; i++)
+		new_list[i] = list[i];
+
+	 // Update the old list with the new list
+	 delete [] list;
+	 list = new_list;
+	 _size = new_size;
   }
 
   /// Searches the list for the element

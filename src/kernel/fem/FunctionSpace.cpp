@@ -1,68 +1,74 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "FunctionSpace.hh"
-#include "FiniteElement.hh"
-#include <dolfin/Display.hh>
+#include <iostream.h>
+
+#include <dolfin/ShapeFunction.h>
+#include <dolfin/Product.h>
+#include <dolfin/ElementFunction.h>
+#include <dolfin/FunctionSpace.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(FiniteElement *element, int nvc)
+FunctionSpace::FunctionSpace(int dim)
 {
-  nsd = element->nsd;
-  dim = 0;
-  this->nvc = nvc;
-  this->element = element;
-  gradient = 0;
-  shapefunction = 0;
+  // FIXME: Use logging system
+  if ( dim <= 0 ) {
+	 cout << "Error: dimension for function space must be positive" << endl;
+	 exit(1);
+  }
+
+  this->dim = dim;
+  current = 0;
+  
+  // Initialise the list of shape functions
+  v  = new ShapeFunction[dim];
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-  
+  if ( v )
+	 delete [] v;
+  v = 0;
 }
 //-----------------------------------------------------------------------------
-real FunctionSpace::GetCoord(int node, int dim)
+int FunctionSpace::add(ShapeFunction v)
 {
-  return element->coord[node][dim];
+  add(v, 0.0, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::GetDim()
+int FunctionSpace::add(ShapeFunction v, ElementFunction dx)
 {
-  return dim;
+  add(v, dx, 0.0, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::GetSpaceDim()
+int FunctionSpace::add(ShapeFunction v, ElementFunction dx, ElementFunction dy)
 {
-  return element->GetSpaceDim();
+  add(v, dx, dy, 0.0, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::GetNoComponents()
+int FunctionSpace::add(ShapeFunction v,
+							  ElementFunction dx, ElementFunction dy, ElementFunction dz)
 {
-  return nvc;
+  add(v, dx, dy, dz, 0.0);
 }
 //-----------------------------------------------------------------------------
-int FunctionSpace::GetCellNumber()
+int FunctionSpace::add(ShapeFunction v,
+							  ElementFunction dx,
+							  ElementFunction dy,
+							  ElementFunction dz,
+							  ElementFunction dt)
 {
-  return element->GetCellNumber();
-}
-//-----------------------------------------------------------------------------
-int FunctionSpace::GetNoCells()
-{
-  return element->GetNoCells();
-}
-//-----------------------------------------------------------------------------
-real FunctionSpace::GetCircumRadius()
-{
-  return element->GetCircumRadius();
-}
-//-----------------------------------------------------------------------------
-FiniteElement* FunctionSpace::GetFiniteElement()
-{
-  return element;
-}
-//-----------------------------------------------------------------------------
-ShapeFunction* FunctionSpace::GetShapeFunction(int dof)
-{
-  return shapefunction[dof];
+  // FIXME: Use loggin system
+  if ( current >= dim ) {
+	 cout << "Error: function space is full." << endl;
+	 exit(1);
+  }
+
+  v.set(dx, dy, dz, dt);
+  this->v[current] = v;
+
+  current++;
 }
 //-----------------------------------------------------------------------------

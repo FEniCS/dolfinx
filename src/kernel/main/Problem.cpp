@@ -10,10 +10,10 @@ Problem::Problem(const char *problem)
   grid = 0;
 }
 //-----------------------------------------------------------------------------
-Problem::Problem(const char *problem, Grid *grid)
+Problem::Problem(const char *problem, Grid &grid)
 {
-  solver = dolfin_module_solver(problem,grid);
-  this->grid = grid;
+  solver = dolfin_module_solver(problem, grid);
+  this->grid = &grid;
 }
 //-----------------------------------------------------------------------------
 void Problem::set(const char *property, ...)

@@ -16,7 +16,7 @@ namespace dolfin {
   // Boundary conditions
   class dolfin_bc{
   public:
-	 dolfin_bc(){ type=neumann; val=0.0; }  
+	 dolfin_bc(){ type = neumann; val = 0.0; }  
 	 bc_type type;
 	 real val;
   };
@@ -30,28 +30,28 @@ namespace dolfin {
 		
 		// Create the parameters and specify default values
 		
-		Add("start time",              type_double, 0.0);
-		Add("final time",              type_double, 0.0);
-		Add("space dimension",         type_int,    3);
-		Add("output samples",          type_int,    10);
-		Add("debug level",             type_int,    0);
-		Add("grid file",               type_string, "grid.inp");
-		Add("output file prefix",      type_string, "dolfin");
-		Add("output file type",        type_string, "");
-		Add("output file primal",      type_string, "");
-		Add("output file dual",        type_string, "");
-		Add("output file settings",    type_string, "");
-		Add("output file residual",    type_string, "");
-		Add("output file matlab",      type_string, "");
-		Add("output file matlab data", type_string, "");
-		Add("problem",                 type_string, "unknown");
-		Add("problem description",     type_string, "Problem description is not specified.");
-		Add("display",                 type_string, "terminal");
-		Add("solve primal",            type_int,    1);
-		Add("solve dual",              type_int,    0);
-		Add("write data",              type_int,    0);
-		Add("write residuals",         type_int,    0);
-		
+		add( Parameter::REAL,   "start time",              0.0 );
+		add( Parameter::REAL,   "final time",              0.0 );
+		add( Parameter::INT,    "space dimension",         3 );
+		add( Parameter::INT,    "output samples",          10 );
+		add( Parameter::INT,    "debug level",             0 );
+		add( Parameter::STRING, "grid file",               "grid.inp" );
+		add( Parameter::STRING, "output file prefix",      "dolfin" );
+		add( Parameter::STRING, "output file type",        "" );
+		add( Parameter::STRING, "output file primal",      "" );
+		add( Parameter::STRING, "output file dual",        "" );
+		add( Parameter::STRING, "output file settings",    "" );
+		add( Parameter::STRING, "output file residual",    "" );
+		add( Parameter::STRING, "output file matlab",      "" );
+		add( Parameter::STRING, "output file matlab data", "" );
+		add( Parameter::STRING, "problem",                 "unknown");
+		add( Parameter::STRING, "problem description",     "Problem description is not specified." );
+		add( Parameter::STRING, "display",                 "terminal" );
+		add( Parameter::INT,    "solve primal",            1 );
+		add( Parameter::INT,    "solve dual",              0 );
+		add( Parameter::INT,    "write data",              0 );
+		add( Parameter::INT,    "write residuals",         0 );
+	 	
 		bc_function = 0;
 		
 	 };
@@ -60,7 +60,7 @@ namespace dolfin {
 	 ~Settings() {};
 	 
 	 // Initialization of parameters
-	 void Initialize();
+	 void init();
 	 
 	 // Boundary condition function
 	 dolfin_bc (*bc_function) (real x, real y, real z, int node, int component);

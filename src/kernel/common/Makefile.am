@@ -1,9 +1,8 @@
 SUBDIRS               = dolfin
-include_HEADERS       = dolfin/List.h
+include_HEADERS       = dolfin/List.h dolfin/function.h
 INCLUDES              = @MODULE_INCLUDES@
 lib_LIBRARIES         = libdolfin-common.a
-libdolfin_common_a_SOURCES = kw_constants.h \
-                             utils.cpp \
+libdolfin_common_a_SOURCES = utils.cpp \
                              utils.h \
                              Parameter.hh \
                              ParameterList.cpp \

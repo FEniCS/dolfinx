@@ -10,7 +10,7 @@ namespace dolfin {
   public:
 
 	 Problem(const char *problem);
-	 Problem(const char *problem, Grid *grid);
+	 Problem(const char *problem, Grid &grid);
 	 
 	 void set(const char *property, ...);
 	 void solve();

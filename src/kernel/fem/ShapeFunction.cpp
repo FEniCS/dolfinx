@@ -1,87 +1,142 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
+#include <iostream>
 
-#include "ShapeFunction.hh"
-#include "FunctionSpace.hh"
-#include <Settings.hh>
-#include <dolfin/Display.hh>
+#include <dolfin/FunctionList.h>
+#include <dolfin/Product.h>
+#include <dolfin/ElementFunction.h>
+#include <dolfin/ShapeFunction.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ShapeFunction::ShapeFunction(FunctionSpace *functionspace, int dof)
+FunctionSpace::ShapeFunction::ShapeFunction()
 {
-  this->functionspace = functionspace;
-  this->dof = dof;
-  active = true;
+  id = 0; // Initialise to the zero function
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::ShapeFunction(int i)
+{
+  id = 1; // Initialise to one
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::ShapeFunction(function f)
+{
+  id = FunctionList::add(f);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction::ShapeFunction(const ShapeFunction &v)
+{
+  this->id = v.id;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::ShapeFunction::set(ElementFunction dx,
+													ElementFunction dy,
+													ElementFunction dz,
+													ElementFunction dt)
+{
+  FunctionList::set(id, dx, dy, dz, dt);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dx() const
+{
+  return FunctionList::dx(id);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dy() const
+{
+  return FunctionList::dy(id);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dz() const
+{
+  return FunctionList::dz(id);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ShapeFunction::dt() const
+{
+  return FunctionList::dt(id);
+}
+//-----------------------------------------------------------------------------
+real
+FunctionSpace::ShapeFunction::operator() (real x, real y, real z, real t) const
+{
+  return FunctionList::eval(id,x,y,z,t);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction&
+FunctionSpace::ShapeFunction::operator= (const ShapeFunction &v)
+{
+  this->id = v.id;
 
-  dx = 0.0;
-  dy = 0.0;
-  dz = 0.0;
+  return *this;
 }
 //-----------------------------------------------------------------------------
-ShapeFunction::~ShapeFunction()
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator+ (const ShapeFunction &v) const
 {
-
+  ElementFunction w(1.0, *this, 1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-void ShapeFunction::SetDof(int dof)
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator+ (const FunctionSpace::Product &v) const
 {
-  this->dof = dof;
+  ElementFunction w(1.0, *this, 1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-void ShapeFunction::Active(bool active)
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator+ (const ElementFunction &v) const
 {
-  this->active = active;
+  ElementFunction w(1.0, *this, 1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-bool ShapeFunction::Active() const
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator- (const ShapeFunction &v) const
 {
-  return active;
+  ElementFunction w(1.0, *this, -1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-void ShapeFunction::Display()
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator- (const Product &v) const
 {
-  display->Message(0,"ShapeFunction: dof = %d active = %d",dof,active);
+  ElementFunction w(1.0, *this, -1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-int ShapeFunction::GetDof() const
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator- (const ElementFunction &v) const
 {
-  return dof;
+  ElementFunction w(1.0, *this, -1.0, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-int ShapeFunction::GetDim()
+FunctionSpace::Product
+FunctionSpace::ShapeFunction::operator* (const ShapeFunction &v) const
 {
-  return functionspace->GetDim();
+  Product w(*this, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-int ShapeFunction::GetCellNumber()
+FunctionSpace::Product
+FunctionSpace::ShapeFunction::operator* (const Product &v) const
 {
-  return functionspace->GetCellNumber();
+  Product w(*this, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-int ShapeFunction::GetNoCells()
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator* (const ElementFunction &v) const
 {
-  return functionspace->GetNoCells();
+  ElementFunction w(*this, v);
+  return w;
 }
 //-----------------------------------------------------------------------------
-real ShapeFunction::GetCircumRadius()
+FunctionSpace::ElementFunction
+FunctionSpace::ShapeFunction::operator* (real a) const
 {
-  return functionspace->GetCircumRadius();
-}
-//-----------------------------------------------------------------------------
-real ShapeFunction::GetCoord(int node, int dim)
-{
-  return functionspace->GetCoord(node,dim);
-}
-//-----------------------------------------------------------------------------
-FiniteElement* ShapeFunction::GetFiniteElement()
-{
-  return functionspace->GetFiniteElement();
-}
-//-----------------------------------------------------------------------------
-real operator* (real a, ShapeFunction &v)
-{
-  // This makes sure that a * ShapeFunction is commutative
-
-  return ( v*a );
+  ElementFunction w(a, *this);
+  return w;
 }
 //-----------------------------------------------------------------------------

@@ -1,16 +1,18 @@
 // Copyright (C) 2002 [fill in name]
 // Licensed under the GNU GPL Version 2.
 
-#include "ProblemTemplate.h"
-#include "EquationTemplate.h"
+#include "TemplateSolver.h"
+#include "Template.h"
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-const char *ProblemTemplate::Description()
+const char *TemplateSolver::description()
 {
-	return "My new equation";
+  return "My new equation";
 }
 //-----------------------------------------------------------------------------
-void ProblemTemplate::solve()
+void TemplateSolver::solve()
 {
 	display->Message(0,"Solving...");	
 }

@@ -1,1 +1,1 @@
-SUBDIRS = grid la
+SUBDIRS = grid la fem

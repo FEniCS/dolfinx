@@ -22,6 +22,7 @@ namespace dolfin {
   public:
 	 
 	 Grid();
+	 Grid(const char *filename);
 	 ~Grid();
 
 	 void clear();

@@ -1,7 +1,7 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Discretiser.hh"
+#include "Galerkin.hh"
 #include "FiniteElement.hh"
 #include "ShapeFunction.hh"
 #include "Equation.hh"
@@ -9,61 +9,58 @@
 #include <Settings.hh>
 
 //-----------------------------------------------------------------------------
-Discretiser::Discretiser(Grid *grid, Equation *equation)
+Galerkin::Galerkin()
 {
-  this->grid = grid;
-  this->equation = equation;
-
-  no_eq    = equation->GetNoEq();
-  no_nodes = grid->GetNoNodes();
-  size     = no_eq * no_nodes;
-
+  size = grid->noNodes();
+  noeq = equation->size();
+  dim  = equation->dim();
+  
   bc_function = settings->bc_function;
   if ( !bc_function )
 	 display->Error("Boundary conditions are not specified.");
-
+  
   // Get space dimension
-  settings->Get("space dimension",&space_dimension);
+  settings->Get("space dimension",&nosd);
 }
 //-----------------------------------------------------------------------------
-Discretiser::~Discretiser()
+Galerkin::~Galerkin()
 {
   
 }
 //-----------------------------------------------------------------------------
-void Discretiser::Assemble(SparseMatrix *A, Vector *b)
+void Galerkin::assemble(Grid &grid, Equation &equation, Matrix &A, Vector &b)
 {
-  AssembleLHS(A);
-  AssembleRHS(b);
-  SetBoundaryConditions(A,b);
+  assembleLHS(grid, equation, A);
+  assembleRHS(grid, equation, b);
+  setBC(grid, A,b);
 }
 //-----------------------------------------------------------------------------
-void Discretiser::AssembleLHS(SparseMatrix *A)
+void Galerkin::assembleLHS(Grid &grid, Equation &equation, Matrix &A)
 {
   int i,j;
   real volume;
   real integral;
 
   // Reallocate the matrix if necessary
-  Allocate(A);
+  alloc(A);
   
   // Reset the matrix
-  A->Reset();
+  A = 0.0;
   
   // Choose the type of element, so far we only have two choices
-  FiniteElement *element_trial;
-  FiniteElement *element_test;
-  FiniteElement *element_field;
+  FiniteElement *trial;
+  FiniteElement *test;
+  FiniteElement *coeff;
 
-  if ( space_dimension == 3 ){
-    element_trial = new FiniteElement(grid,no_eq,tetlin);
-    element_test  = new FiniteElement(grid,no_eq,tetlin);
-    element_field = new FiniteElement(grid,no_eq,tetlin);
+  if ( nosd == 3 ){
+    trial = new FiniteElement(grid,no_eq,tetlin);
+    test  = new FiniteElement(grid,no_eq,tetlin);
+    coeff = new FiniteElement(grid,no_eq,tetlin);
   }
   else{
-    element_trial = new FiniteElement(grid,no_eq,trilin);
-    element_test  = new FiniteElement(grid,no_eq,trilin);
-    element_field = new FiniteElement(grid,no_eq,trilin);
+    tria  = new FiniteElement(grid,no_eq,trilin);
+    test  = new FiniteElement(grid,no_eq,trilin);
+    coeff = new FiniteElement(grid,no_eq,trilin);
   }
   
   ShapeFunction *u;
@@ -72,15 +69,15 @@ void Discretiser::AssembleLHS(SparseMatrix *A)
   int no_dof;
   
   // Go through all elements and assemble
-  for (int cell=0;cell<grid->GetNoCells();cell++){
+  for (CellIterator c(grid); !c.end(); ++c) {
 	 
     // Update elements
-    element_trial->Update(cell);
-    element_test->Update(cell);
-    element_field->Update(cell);
+    trial->update(c);
+    test->update(c);
+    field->update(c);
 	 
     // Update equation
-    equation->UpdateLHS(element_field);
+    equation->updateLHS(element_field);
 	 
     // Get the number of dof
     no_dof = element_trial->GetDim();
@@ -88,10 +85,10 @@ void Discretiser::AssembleLHS(SparseMatrix *A)
     volume = element_trial->GetVolume();
 	 
     // Compute element matrix and put the entries directly into A
-    for (int test=0;test<no_dof;test++){
-      for (int trial=0;trial<no_dof;trial++){
-		  for (int k=0;k<no_eq;k++){
-			 for (int l=0;l<no_eq;l++){
+    for (int test = 0; test < no_dof; test++) {
+      for (int trial = 0; trial < no_dof; trial++) {
+		  for (int k = 0; k < noeq; k++) {
+			 for (int l = 0; l < noeq; l++) {
 				
 				u = element_trial->GetShapeFunction(trial,l);
 				v = element_test->GetShapeFunction(test,k);
@@ -103,7 +100,7 @@ void Discretiser::AssembleLHS(SparseMatrix *A)
 				
 				i = element_test->GetGlobalDof(test)*no_eq + k;
 				j = element_trial->GetGlobalDof(trial)*no_eq + l;
-
+				
 				A->Add(i,j,integral*volume);
 						
 			 }
@@ -113,20 +110,21 @@ void Discretiser::AssembleLHS(SparseMatrix *A)
   }
 
   // Clean up
-  delete element_trial;
-  delete element_test;
+  delete trial;
+  delete test;
+  delete coeff;
   
   // Drop zero elements from matrix
   //A->DropZero(1e-12);
 }
 //-----------------------------------------------------------------------------
-void Discretiser::AssembleRHS(Vector *b)
+void Galerkin::assembleRHS(Grid &grid, Equation &equation, Vector &b)
 {
   Cell *c;
   int i,j;
 
   // Allocate the vector if we have to
-  Allocate(b);
+  alloc(b);
   
   // Reset the matrix
   b->SetToConstant(0.0);
@@ -189,7 +187,7 @@ void Discretiser::AssembleRHS(Vector *b)
   //A->DropZero(1e-12);
 }
 //-----------------------------------------------------------------------------
-void Discretiser::SetBoundaryConditions(SparseMatrix *A, Vector *b)
+void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 {
   if ( (A->Size(0) != no_eq*no_nodes ) || ( b->Size() != no_eq*no_nodes ) )
   	 display->Error("You must assemble the matrix before settings boundary conditions.");
@@ -215,7 +213,7 @@ void Discretiser::SetBoundaryConditions(SparseMatrix *A, Vector *b)
 			 display->Error("Inhomogeneous Neumann boundary conditions not implemented.");
 		  break;
       default:
-		  display->InternalError("Discretiser::SetBoundaryConditions()",
+		  display->InternalError("Galerkin::SetBoundaryConditions()",
 										 "Unknown boundary condition type.");
       }
     }
@@ -224,7 +222,7 @@ void Discretiser::SetBoundaryConditions(SparseMatrix *A, Vector *b)
 
 }
 //-----------------------------------------------------------------------------
-void Discretiser::Allocate(SparseMatrix *A)
+void Galerkin::alloc(Matrix &A)
 {
   int ncols[size];
   int ii;
@@ -243,12 +241,12 @@ void Discretiser::Allocate(SparseMatrix *A)
   
   // Reallocate the matrix with the new size
   if ( !ok )
-	 A->Resize(size,size,ncols);
+	 A->resize(size,size,ncols);
 }
 //-----------------------------------------------------------------------------
-void Discretiser::Allocate(Vector *b)
+void Galerkin::alloc(Vector &b)
 {
-  if ( b->Size() != size )
-	 b->Resize(size);
+  if ( b.size() != size )
+	 b.resize(size);
 }
 //-----------------------------------------------------------------------------

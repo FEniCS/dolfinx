@@ -1,0 +1,7 @@
+# Module specifications
+
+NAME     = "convdiff"
+KEYWORD  = "convection-diffusion"
+SOLVER   = "SolverConvDiff"
+SETTINGS = "SettingsConvDiff"
+GRID     = "yes"

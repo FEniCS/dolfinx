@@ -1,61 +1,57 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __EQUATION_HH
-#define __EQUATION_HH
+#ifndef __EQUATION_H
+#define __EQUATION_H
 
-#include <kw_constants.h>
-#include "LocalField.hh"
-#include "GlobalField.hh"
-#include "ShapeFunction.hh"
+#include <dolfin/Function.h>
+#include <dolfin/ElementFunction.h>
+#include <dolfin/constants.h>
+#include <dolfin/ShapeFunction.h>
 
-class GlobalField;
+namespace dolfin {
 
-///
-namespace Dolfin{ class Equation {
-
-public:
+  class FiniteElement;
   
-  Equation(int nsd);
-  ~Equation();
+  class Equation {
+  public:
 
-  virtual real IntegrateLHS(ShapeFunction &u, ShapeFunction &v) = 0;
-  virtual real IntegrateRHS(ShapeFunction &v) = 0;
+	 Equation();
+	 Equation(int nsd);
+	 ~Equation();
 
-  void UpdateLHS(FiniteElement *element);
-  void UpdateRHS(FiniteElement *element);
-  void AttachField(int i, GlobalField *globalfield, int component = 0);
-
-  void SetTime     (real t);
-  void SetTimeStep (real dt);
+	 // Allow simpler notation for classes defined in FunctionSpace
+	 typedef FunctionSpace::ShapeFunction ShapeFunction;
+	 typedef FunctionSpace::Product Product;
+	 typedef FunctionSpace::ElementFunction ElementFunction;
   
-  int GetNoEq();    
-  int GetStartVectorComponent();
+	 virtual real lhs(ShapeFunction &u, ShapeFunction &v) = 0;
+	 virtual real lhs(ShapeFunction &v) = 0;
+	 
+	 void updateLHS(FiniteElement *element);
+	 void updateRHS(FiniteElement *element);
+	 
+	 void setTime     (real t);
+	 void setTimeStep (real dt);
 
-  friend class Discretiser;
-  
-protected:
-  
-  void AllocateFields(int no_fields);
-  void UpdateCommon(FiniteElement *element);
+  protected:
+	 
+	 void updateCommon(FiniteElement *element);
+	 
+	 virtual void updateLHS() {};
+	 virtual void updateRHS() {};
+	 
+	 int start_vector_component;
+	 
+	 int nsd;   // number of space dimensions
+	 int no_eq; // number of equations
+	 
+	 real dt;
+	 real t;  
+	 real h;
+	 
+  };
 
-  virtual void UpdateLHS() { };
-  virtual void UpdateRHS() { };
-  
-  LocalField **field;
-  int no_fields;
-
-  int start_vector_component;
-
-  int nsd;   // number of space dimensions
-  int no_eq; // number of equations
-
-  real dt;
-  real t;  
-  real h;
-
-  void (*update)();
-  
-}; }
+}
 
 #endif

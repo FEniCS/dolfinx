@@ -3,12 +3,9 @@
 
 #include <dolfin.h>
 
-// Temporary: FIXME
-Display *display = new Terminal(0);
-
 using namespace dolfin;
 
-int main(int argc, char **argv)
+void main()
 {
   Grid grid;
   File file("grid.xml.gz");

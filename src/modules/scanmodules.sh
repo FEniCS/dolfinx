@@ -126,8 +126,8 @@ echo "    return 0;" >> $HEADER
 echo "}" >> $HEADER
 echo "" >> $HEADER
 
-# Generate function dolfin_module_solver(const char *problem, Grid *grid)
-echo "dolfin::Solver * dolfin_module_solver(const char *problem, dolfin::Grid *grid)" >> $HEADER
+# Generate function dolfin_module_solver(const char *problem, Grid &grid)
+echo "dolfin::Solver * dolfin_module_solver(const char *problem, dolfin::Grid &grid)" >> $HEADER
 echo "{" >> $HEADER
 for d in `cat $MODULES | grep -v '#'`; do
 
