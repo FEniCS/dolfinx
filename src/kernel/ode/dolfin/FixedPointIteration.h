@@ -71,13 +71,13 @@ namespace dolfin
   private:
 
     // Update time slab
-    void update(TimeSlab& timeslab);
+    void update(TimeSlab& timeslab, const Iteration::Damping& d);
     
     // Update element list
-    void update(NewArray<Element*>& elements);
+    void update(NewArray<Element*>& elements, const Iteration::Damping& d);
 
     // Update element
-    void update(Element& element);
+    void update(Element& element, const Iteration::Damping& db);
 
     // Stabilize time slab
     void stabilize(TimeSlab& timeslab, const Iteration::Residuals& r, Iteration::Damping& d);
@@ -96,6 +96,18 @@ namespace dolfin
 
     // Check convergence for element
     bool converged(Element& element, Iteration::Residuals& r, unsigned int n);
+
+    // Check divergence for time slab
+    bool diverged(TimeSlab& timeslab, Iteration::Residuals& r,
+		  unsigned int n, Iteration::State& newstate);
+    
+    // Check divergence for element list
+    bool diverged(NewArray<Element*>& elements, Iteration::Residuals& r,
+		  unsigned int n, Iteration::State& newstate);
+
+    // Check divergence for element
+    bool diverged(Element& element, Iteration::Residuals& r,
+		  unsigned int n, Iteration::State& newstate);
 
     // Change state
     void changeState(Iteration::State newstate);

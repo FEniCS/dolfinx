@@ -10,6 +10,7 @@
 #include <dolfin/Element.h>
 #include <dolfin/NonStiffIteration.h>
 #include <dolfin/DiagonalIteration.h>
+#include <dolfin/AdaptiveIteration.h>
 #include <dolfin/FixedPointIteration.h>
 
 using namespace dolfin;
@@ -40,6 +41,7 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 {
   Iteration::Residuals r;
   Iteration::Damping d;
+  Iteration::State newstate;
 
   //dolfin_start("Starting time slab iteration");
 
@@ -52,13 +54,16 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
       //dolfin_end("Time slab iteration converged");
       return true;
     }
-
-    // Check stabilization
-    if ( n >= 2 )
-      stabilize(timeslab, r, d);
     
+    // Check divergence
+    if ( diverged(timeslab, r, n, newstate) )
+      changeState(newstate);
+    
+    // Stabilize iteration
+    stabilize(timeslab, r, d);
+
     // Update time slab
-    update(timeslab);
+    update(timeslab, d);
   }
 
   //dolfin_end("Time slab iteration did not converge");
@@ -68,8 +73,11 @@ bool FixedPointIteration::iterate(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 bool FixedPointIteration::iterate(NewArray<Element*>& elements)
 {
+  //dolfin_debug("foo");
+
   Iteration::Residuals r;
   Iteration::Damping d;
+  Iteration::State newstate;
   
   // Update initial data
   init(elements);
@@ -79,6 +87,22 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
   // Fixed point iteration on the element list
   for (unsigned int n = 0; n < local_maxiter; n++)
   {
+    /*
+    for (unsigned int i = 0; i < elements.size(); i++)
+    {
+      // Get the element
+      Element* element = elements[i];
+      dolfin_assert(element);
+      
+      for(unsigned int j = 0; j < element->order() + 1; j++)
+      {
+	dolfin_debug3("value(%d, %d): %lf", i, j, element->value(j));
+      }
+    }
+    */
+
+    //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
+
     // Check convergence
     if ( converged(elements, r, n) )
     {
@@ -86,12 +110,31 @@ bool FixedPointIteration::iterate(NewArray<Element*>& elements)
       return true;
     }
 
-    // Check stabilization
-    if ( n >= 2 )
-      stabilize(elements, r, d);
+    //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
+
+    // Check divergence
+    if ( diverged(elements, r, n, newstate) )
+      changeState(newstate);
+    
+    // Stabilize iteration
+    stabilize(elements, r, d);
+
+    /*
+    for (unsigned int i = 0; i < elements.size(); i++)
+    {
+      // Get the element
+      Element* element = elements[i];
+      dolfin_assert(element);
+      
+      for(unsigned int j = 0; j < element->order() + 1; j++)
+      {
+	dolfin_debug3("value(%d, %d): %lf", i, j, element->value(j));
+      }
+    }
+    */
 
     // Update element list
-    update(elements);
+    update(elements, d);
   }
   
   //dolfin_end("Element list iteration did not converge");
@@ -103,6 +146,7 @@ bool FixedPointIteration::iterate(Element& element)
 {
   Iteration::Residuals r;
   Iteration::Damping d;
+  Iteration::State newstate;
 
   //dolfin_start("Starting element iteration");
 
@@ -117,12 +161,21 @@ bool FixedPointIteration::iterate(Element& element)
       return true;
     }
 
-    // Check stabilization
-    if ( n >= 2 )
-      stabilize(element, r, d);
+    //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
+
+    // Check divergence
+    if ( diverged(element, r, n, newstate) )
+      changeState(newstate);
+    
+    // Stabilize iteration
+    stabilize(element, r, d);
+
+    //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
     
     // Update element
-    update(element);
+    update(element, d);
+    //dolfin_debug2("value(%d): %lf", element.index(), element.value((unsigned int)0));
+
   }
 
   //dolfin_end("Element iteration did not converge");
@@ -192,23 +245,26 @@ void FixedPointIteration::report() const
   */
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(TimeSlab& timeslab)
+void FixedPointIteration::update(TimeSlab& timeslab,
+				 const Iteration::Damping& d)
 {
   dolfin_assert(state);
-  state->update(timeslab);
+  state->update(timeslab, d);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(NewArray<Element*>& elements)
+void FixedPointIteration::update(NewArray<Element*>& elements, 
+				 const Iteration::Damping& d)
 {
   dolfin_assert(state);
-  state->update(elements);
+  state->update(elements, d);
 }
 //-----------------------------------------------------------------------------
-void FixedPointIteration::update(Element& element)
+void FixedPointIteration::update(Element& element,
+				 const Iteration::Damping& d)
 {
   dolfin_assert(state);
   u.debug(element, Solution::update);
-  state->update(element);
+  state->update(element, d);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(TimeSlab& timeslab, 
@@ -216,8 +272,7 @@ void FixedPointIteration::stabilize(TimeSlab& timeslab,
 				    Iteration::Damping& d)
 {
   dolfin_assert(state);
-  Iteration::State newstate = state->stabilize(timeslab, r, d);
-  changeState(newstate);
+  state->stabilize(timeslab, r, d);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(NewArray<Element*>& elements, 
@@ -225,8 +280,7 @@ void FixedPointIteration::stabilize(NewArray<Element*>& elements,
 				    Iteration::Damping& d)
 {
   dolfin_assert(state);
-  Iteration::State newstate = state->stabilize(elements, r, d);
-  changeState(newstate);
+  state->stabilize(elements, r, d);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::stabilize(Element& element, 
@@ -234,12 +288,11 @@ void FixedPointIteration::stabilize(Element& element,
 				    Iteration::Damping& d)
 {
   dolfin_assert(state);
-  Iteration::State newstate = state->stabilize(element, r, d);
-  changeState(newstate);
+  state->stabilize(element, r, d);
 }
 //-----------------------------------------------------------------------------
-bool FixedPointIteration::converged(TimeSlab& timeslab, Iteration::Residuals& r,
-				    unsigned int n)
+bool FixedPointIteration::converged(TimeSlab& timeslab,
+				    Iteration::Residuals& r, unsigned int n)
 {
   dolfin_assert(state);
   return state->converged(timeslab, r, n);
@@ -257,6 +310,30 @@ bool FixedPointIteration::converged(Element& element, Iteration::Residuals& r,
 { 
   dolfin_assert(state);
   return state->converged(element, r, n);
+}
+//-----------------------------------------------------------------------------
+bool FixedPointIteration::diverged(TimeSlab& timeslab,
+				   Iteration::Residuals& r, unsigned int n,
+				   Iteration::State& newstate)
+{
+  dolfin_assert(state);
+  return state->diverged(timeslab, r, n, newstate);
+}
+//-----------------------------------------------------------------------------
+bool FixedPointIteration::diverged(NewArray<Element*>& elements,
+				   Iteration::Residuals& r, unsigned int n,
+				   Iteration::State& newstate)
+{
+  dolfin_assert(state);
+  return state->diverged(elements, r, n, newstate);
+}
+//-----------------------------------------------------------------------------
+bool FixedPointIteration::diverged(Element& element, Iteration::Residuals& r, 
+				   unsigned int n,
+				   Iteration::State& newstate)
+{ 
+  dolfin_assert(state);
+  return state->diverged(element, r, n, newstate);
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::changeState(Iteration::State newstate)
@@ -279,8 +356,8 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   case Iteration::diagonal:
     state = new DiagonalIteration(u, f, *this, maxdiv, maxconv, tol);
     break;
-  case Iteration::parabolic:
-    dolfin_error("Not implemented");
+  case Iteration::adaptive:
+    state = new AdaptiveIteration(u, f, *this, maxdiv, maxconv, tol);
     break;
   case Iteration::nonnormal:
     dolfin_error("Not implemented");
@@ -290,107 +367,3 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   }
 }
 //-----------------------------------------------------------------------------
-
-/*
-
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeParabolicUndamped(TimeSlab& timeslab,
-						     const Iteration::Residuals& r)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return;
-  
-  // Compute stabilization
-  real rho = computeConvergenceRate(r);
-  alpha = computeDamping(rho);
-  m = computeDampingSteps(rho);
-  
-  // Check if we need to reset the time slab
-  if ( r.r2 > maxdiv * r.r0 )
-  {
-    event_reset_timeslab();
-    timeslab.reset(*this);  
-  }
-
-  cout << "Computing alpha = " << alpha << endl;
-  cout << "Computing m = " << m << endl;
-
-  // Use globally damped iterations
-  substate = damped;
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeParabolicDamped(TimeSlab& timeslab,
-						   const Iteration::Residuals& r)
-{
-  // Decrease the remaining number of iterations with small alpha
-  m--;
-
-  cout << "Remaining number of small steps = " << m << endl;
-
-  // Check if the solution converges
-  if ( r.r2 < r.r1 && m > 0 )
-    return;
-  
-  // Check if we're done
-  if ( m == 0 )
-  {
-    alpha *= 2.0;
-    substate = increasing;
-  }
-  
-  // Check if the solution diverges
-  if ( r.r2 > r.r1 )
-  {
-    // Decrease alpha
-    alpha /= 2.0;
-    
-    // Check if we need to reset the time slab
-    if ( r.r2 > maxdiv * r.r0 )
-    {
-      event_reset_timeslab();
-      timeslab.reset(*this);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void FixedPointIteration::stabilizeParabolicIncreasing(TimeSlab& timeslab,
-						       const Iteration::Residuals& r)
-{
-  // Increase alpha
-  alpha *= 2.0;
-
-  cout << "Increasing alpha to " << alpha << endl;
-
-  // Check if the solution diverges
-  if ( r.r2 > r.r1 )
-  {    
-    // Compute stabilization
-    real rho = computeConvergenceRate(r);
-    alpha = computeDamping(rho/alpha);
-    m = computeDampingSteps(rho/alpha);
-    
-    // Check if we need to reset the time slab
-    if ( r.r2 > maxdiv * r.r0 )
-    {
-      event_reset_timeslab();
-      timeslab.reset(*this);
-    }
-    
-    // Change state
-    event_scalar_damping();
-    substate = damped;
-  }
-
-  cout << "Adjusting alpha to " << alpha << endl;
-
-  // Check if we're done
-  if ( alpha >= 1.0 )
-  {
-    alpha = 1.0;
-    substate = undamped;
-  }
-}
-//-----------------------------------------------------------------------------
-
-*/

@@ -6,6 +6,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              dGqElement.h \
              dGqMethod.h \
              dGqMethods.h \
+             AdaptiveIteration.h \
              Adaptivity.h \
              AutomaticSparsity.h \
              Component.h \

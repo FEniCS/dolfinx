@@ -65,7 +65,7 @@ void Iteration::reset(Element& element)
 {
   // Get initial value
   real u0 = u(element.index(), element.starttime());
-  
+
   // Reset element
   element.reset(u0);
 }

@@ -12,6 +12,7 @@
 #include <dolfin/dGqElement.h>
 #include <dolfin/dGqMethod.h>
 #include <dolfin/dGqMethods.h>
+#include <dolfin/AdaptiveIteration.h>
 #include <dolfin/Adaptivity.h>
 #include <dolfin/AutomaticSparsity.h>
 #include <dolfin/Component.h>

@@ -22,7 +22,7 @@ namespace dolfin
   public:
 
     // Type of iteration
-    enum State {nonstiff, diagonal, parabolic, nonnormal};
+    enum State {nonstiff, diagonal, adaptive, nonnormal};
 
     // Discrete residuals
     struct Residuals
@@ -50,25 +50,25 @@ namespace dolfin
     virtual State state() const = 0;
 
     /// Update time slab
-    virtual void update(TimeSlab& timeslab) = 0;
+    virtual void update(TimeSlab& timeslab, const Damping& d) = 0;
 
     /// Update element
-    virtual void update(Element& element) = 0;
+    virtual void update(Element& element, const Damping& d) = 0;
 
     /// Update element list
-    virtual void update(NewArray<Element*>& elements) = 0;
+    virtual void update(NewArray<Element*>& elements, const Damping& d) = 0;
 
     /// Stabilize time slab iteration
-    virtual State stabilize(TimeSlab& timeslab, 
-			    const Residuals& r, Damping& d) = 0;
+    virtual void stabilize(TimeSlab& timeslab, 
+			   const Residuals& r, Damping& d) = 0;
     
     /// Stabilize element list iteration
-    virtual State stabilize(NewArray<Element*>& elements,
-			    const Residuals& r, Damping& d) = 0;
+    virtual void stabilize(NewArray<Element*>& elements,
+			   const Residuals& r, Damping& d) = 0;
     
     /// Stabilize element iteration
-    virtual State stabilize(Element& element,
-			    const Residuals& r, Damping& d) = 0;
+    virtual void stabilize(Element& element,
+			   const Residuals& r, Damping& d) = 0;
     
     /// Check convergence for time slab
     virtual bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n) = 0;
@@ -78,6 +78,15 @@ namespace dolfin
 
     /// Check convergence for element
     virtual bool converged(Element& element, Residuals& r, unsigned int n) = 0;
+
+    /// Check divergence for time slab
+    virtual bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+
+    /// Check divergence for element list
+    virtual bool diverged(NewArray<Element*>& elements, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
+
+    /// Check divergence for element
+    virtual bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate) = 0;
 
     /// Write a status report
     virtual void report() const = 0;

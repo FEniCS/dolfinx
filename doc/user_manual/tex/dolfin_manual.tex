@@ -169,20 +169,39 @@ In preparation.
 
 In preparation.
 
-\subsection{Contributing code to DOLFIN}
+%--- New chapter ---
+\cleardoublepage
+\section{Installing DOLFIN}
+
+In preparation.
+
+%--- New chapter ---
+\cleardoublepage
+\section{Contributing to DOLFIN}
 
 If you have created a new module, fixed a bug somewhere, or have done
-a small change somewhere which you want to contribute to DOLFIN, then
-currently the best way to do so is to send a patch to the maintainer. A patch
-is a file which describes how to transform one file or directory structure
+a small change which you want to contribute to DOLFIN, then
+the best way to do so is to send a patch to the maintainer. A patch
+is a file which describes how to transform a file or directory structure
 into another. The patch is built by comparing a version which both parties
 have against the modified version which only you have.
 
 The tool used to create a patch is called \texttt{diff} and the tool
 used to apply the patch is called \texttt{patch}. These tools are free
-software and standard in most UNIX-style operating systems.
+software and are standard in most UNIX-style operating systems.
 
-\subsubsection{Creating a patch}
+\subsection{Creating a patch using CVS}
+
+The simplest way to create a patch is through CVS. Assuming that you
+have previously checked out a CVS version of DOLFIN and that you are positioned at
+the top of the DOLFIN source tree, a patch can be created using the command
+
+\texttt{\$ cvs diff > dolfin-logg-2004-01-16.patch}
+
+Choose a suitable name for the patch to simplify identification, for example your name and
+today's date.
+
+\subsection{Creating a patch without using CVS}
 
 Example:
 
@@ -252,14 +271,14 @@ version.  If the patch is large, compressing it with for example
 
 \end{enumerate}
 
-A patch can also be created relative to a CVS version of DOLFIN. Make
-sure to notify receivers of the patch exactly which CVS version it is
-however (date and time of checkout should suffice), since the patch
-should be applied to the same version used to build it. Patching is
-possible against a different source, but conflicts can arise, and even
-though there are heuristics which take care of most simple cases, the
-heuristics can fail, and there can be conflicts which are
-theoretically impossible to resolve.
+%A patch can also be created relative to a CVS version of DOLFIN. Make
+%sure to notify receivers of the patch exactly which CVS version it is
+%however (date and time of checkout should suffice), since the patch
+%should be applied to the same version used to build it. Patching is
+%possible against a different source, but conflicts can arise, and even
+%though there are heuristics which take care of most simple cases, the
+%heuristics can fail, and there can be conflicts which are
+%theoretically impossible to resolve.
 
 \subsubsection{Applying a patch}
 

@@ -83,6 +83,19 @@ void cGqElement::update(RHS& f, real alpha)
     values[i] = w0*values[i] + alpha*(values[0] + integral(i));
 }
 //-----------------------------------------------------------------------------
+void cGqElement::update(RHS& f, real alpha, real *newvalues)
+{
+  // Evaluate right-hand side
+  feval(f);
+
+  // Compute weight for old value
+  real w0 = 1.0 - alpha;
+
+  // Update nodal values
+  for (unsigned int i = 1; i <= q; i++)
+    newvalues[i] = w0*values[i] + alpha*(values[0] + integral(i));
+}
+//-----------------------------------------------------------------------------
 void cGqElement::reset(real u0)
 {
   for (unsigned int i = 0; i <= q; i++)

@@ -23,17 +23,21 @@ namespace dolfin
 
     State state() const;
 
-    void update(TimeSlab& timeslab);
-    void update(Element& element);
-    void update(NewArray<Element*>& elements);
+    void update(TimeSlab& timeslab, const Damping& d);
+    void update(Element& element, const Damping& d);
+    void update(NewArray<Element*>& elements, const Damping& d);
     
-    State stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
-    State stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);
-    State stabilize(Element& element, const Residuals& r, Damping& d);
+    void stabilize(TimeSlab& timeslab, const Residuals& r, Damping& d);
+    void stabilize(NewArray<Element*>& elements, const Residuals& r, Damping& d);
+    void stabilize(Element& element, const Residuals& r, Damping& d);
     
     bool converged(TimeSlab& timeslab, Residuals& r, unsigned int n);
     bool converged(NewArray<Element*>& elements, Residuals& r, unsigned int n);
     bool converged(Element& element, Residuals& r, unsigned int n);
+
+    bool diverged(TimeSlab& timeslab, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(NewArray<Element*>& elements, Residuals& r, unsigned int n, Iteration::State& newstate);
+    bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
 
     void report() const;
 

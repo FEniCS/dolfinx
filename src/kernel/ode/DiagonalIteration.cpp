@@ -30,13 +30,13 @@ Iteration::State DiagonalIteration::state() const
   return diagonal;
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(TimeSlab& timeslab)
+void DiagonalIteration::update(TimeSlab& timeslab, const Damping& d)
 {
   // Simple update of time slab
   timeslab.update(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(NewArray<Element*>& elements)
+void DiagonalIteration::update(NewArray<Element*>& elements, const Damping& d)
 {
   // Simple update of element list
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -50,72 +50,31 @@ void DiagonalIteration::update(NewArray<Element*>& elements)
   }
 }
 //-----------------------------------------------------------------------------
-void DiagonalIteration::update(Element& element)
+void DiagonalIteration::update(Element& element, const Damping& d)
 {
-  // Compute diagonal derivative
+  // Damped update of element
+  element.update(f, d.alpha);
+}
+//-----------------------------------------------------------------------------
+void DiagonalIteration::stabilize(TimeSlab& timeslab,
+				  const Residuals& r, Damping& d)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void DiagonalIteration::stabilize(NewArray<Element*>& elements,
+				  const Residuals& r, Damping& d)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void DiagonalIteration::stabilize(Element& element, 
+				  const Residuals& r, Damping& d)
+{
+  // Compute diagonal damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
   real rho = - element.timestep() * dfdu;
-  real alpha = computeAlpha(rho);
-
-  // Simple update of element
-  element.update(f, alpha);
-}
-//-----------------------------------------------------------------------------
-Iteration::State DiagonalIteration::stabilize(TimeSlab& timeslab,
-					      const Residuals& r, Damping& d)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return diagonal;
-
-  // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, need to use a stabilizing time step sequence.");
-  
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    timeslab.reset(fixpoint);
-
-  // Compute damping
-  computeDamping(r, d);
-
-  // Change state
-  return nonnormal;
-}
-//-----------------------------------------------------------------------------
-Iteration::State DiagonalIteration::stabilize(NewArray<Element*>& elements,
-					      const Residuals& r, Damping& d)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return diagonal;
-
-  // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, trying parabolic damping.");
-  
-  // Check if we need to reset the element
-  if ( r.r2 > r.r0 )
-    reset(elements);
-
-  // Compute damping
-  computeDamping(r, d);
-
-  // Change state
-  return parabolic;
-}
-//-----------------------------------------------------------------------------
-Iteration::State DiagonalIteration::stabilize(Element& element, 
-					      const Residuals& r, Damping& d)
-{
-  // Check if the solution converges
-  if ( r.r2 < maxconv * r.r1 )
-    return diagonal;
-  
-  // Notify change of strategy
-  dolfin_info("Diagonal damping is not enough, don't know what to do.");
-  dolfin_error("Local iterations did not converge.");
-
-  // Change state (statement out of reach)
-  return diagonal;
+  d.alpha = computeAlpha(rho);
 }
 //-----------------------------------------------------------------------------
 bool DiagonalIteration::converged(TimeSlab& timeslab, 
@@ -124,7 +83,7 @@ bool DiagonalIteration::converged(TimeSlab& timeslab,
   // Convergence handled locally when the slab contains only one element list
   if ( timeslab.leaf() )
     return n >= 1;
-
+  
   // Compute maximum discrete residual
   r.r1 = r.r2;
   r.r2 = residual(timeslab);
@@ -166,6 +125,74 @@ bool DiagonalIteration::converged(Element& element,
     r.r0 = r.r2;
   
   return r.r2 < tol;
+}
+//-----------------------------------------------------------------------------
+bool DiagonalIteration::diverged(TimeSlab& timeslab, 
+				 Residuals& r, unsigned int n,
+				 Iteration::State& newstate)
+{
+  // Make at least two iterations
+  if ( n < 2 )
+    return false;
+
+  // Check if the solution converges
+  if ( r.r2 < maxconv * r.r1 )
+    return false;
+
+  // Notify change of strategy
+  dolfin_info("Diagonal damping is not enough, trying a stabilizing time step sequence.");
+  
+  // Check if we need to reset the element
+  if ( r.r2 > r.r0 )
+    timeslab.reset(fixpoint);
+
+  // Change state
+  newstate = nonnormal;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool DiagonalIteration::diverged(NewArray<Element*>& elements, 
+				 Residuals& r, unsigned int n,
+				 Iteration::State& newstate)
+{
+  // Make at least two iterations
+  if ( n < 2 )
+    return false;
+
+  // Check if the solution converges
+  if ( r.r2 < maxconv * r.r1 )
+    return false;
+  
+  // Notify change of strategy
+  dolfin_info("Diagonal damping is not enough, trying adaptive damping.");
+  
+  // Check if we need to reset the element
+  if ( r.r2 > r.r0 )
+    reset(elements);
+
+  // Change state
+  newstate = adaptive;
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool DiagonalIteration::diverged(Element& element, 
+				 Residuals& r, unsigned int n,
+				 Iteration::State& newstate)
+{
+  // Make at least two iterations
+  if ( n < 2 )
+    return false;
+
+  // Check if the solution converges
+  if ( r.r2 < maxconv * r.r1 )
+    return false;
+  
+  // Don't know what to do
+  dolfin_error("Local iterations did not converge.");
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 void DiagonalIteration::report() const

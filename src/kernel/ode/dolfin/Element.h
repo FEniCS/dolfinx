@@ -38,6 +38,9 @@ namespace dolfin {
     /// Return value of element at given node within element
     real value(unsigned int node) const;
 
+    /// Set all values
+    real setvalues(real *newvalues);
+
     /// Return initial value of element
     virtual real initval() const = 0;
 
@@ -58,6 +61,9 @@ namespace dolfin {
 
     /// Update element (iteration), damped version
     virtual void update(RHS& f, real alpha) = 0;
+
+    /// Update element (iteration), damped version, non-destructive
+    virtual void update(RHS& f, real alpha, real *newvalues) = 0;
 
     /// Reset all element values to the given initial value
     virtual void reset(real u0) = 0;
