@@ -100,6 +100,16 @@ bool NodeIterator::operator!=(const NodeIterator& n) const
   return this->n->pointer() != n.n->pointer();
 }
 //-----------------------------------------------------------------------------
+bool NodeIterator::operator==(const Node& n) const
+{
+  return this->n->pointer() == &n;
+}
+//-----------------------------------------------------------------------------
+bool NodeIterator::operator!=(const Node& n) const
+{
+  return this->n->pointer() != &n;
+}
+//-----------------------------------------------------------------------------
 // NodeIterator::GridNodeIterator
 //-----------------------------------------------------------------------------
 NodeIterator::GridNodeIterator::GridNodeIterator(const Grid& grid)

@@ -20,7 +20,7 @@ namespace dolfin {
     /// Refine a given grid hierarchy according to marks
     static void refine(GridHierarchy& grids);
     
-  private:
+  protected:
     
     //--- Algorithms working on the whole grid hierarchy ---
 
@@ -68,6 +68,12 @@ namespace dolfin {
 
     /// Check if the cell has at least one edge marked by another cell (but not the cell itself)
     static bool edgeMarkedByOther(Cell& cell);
+
+    /// Sort nodes, placing the node belonging to the most number of marked edges first
+    static void sortNodes(const Cell& cell, Array<Node*>& nodes);
+
+    /// Mapping from global node number to local number within cell
+    static int nodeNumber(const Node& node, const Cell& cell);
 
   };
 

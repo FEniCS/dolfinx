@@ -107,8 +107,10 @@ namespace dolfin {
     // Check if cell is closed
     bool& closed();
 
-    // Check if cell should be reused
-    bool& reuse();
+    //--- Cell data ---
+
+    // The grid containing this cell
+    Grid* grid;
 
     // Global cell number
     int _id;

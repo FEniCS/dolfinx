@@ -87,6 +87,9 @@ namespace dolfin {
     /// Check if the array contains a given element
     bool contains(const T& element);
     
+    /// Return the maximum element
+    T& max() const;
+
     /// Remove given element (first one matching)
     void remove(const T& element);
 
@@ -270,6 +273,16 @@ namespace dolfin {
 	return;
       }
     dolfin_error("Element is not in the array.");
+  }
+  //---------------------------------------------------------------------------	 
+  template <class T> T& Array<T>::max() const
+  {
+    T max_element = array[0];
+    for (int i = 1; i < _size; i++)
+      if ( max_element < array[i] )
+	max_element = array[i];
+    
+    return max_element;
   }
   //---------------------------------------------------------------------------
   template <class T> void Array<T>::swap(int i, int j)

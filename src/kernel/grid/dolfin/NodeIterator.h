@@ -46,7 +46,9 @@ namespace dolfin {
     Node* operator->() const;
     bool  operator==(const NodeIterator& n) const;
     bool  operator!=(const NodeIterator& n) const;
-	 
+    bool  operator==(const Node& n) const;
+    bool  operator!=(const Node& n) const;
+
     // Base class for node iterators
     class GenericNodeIterator {
     public:

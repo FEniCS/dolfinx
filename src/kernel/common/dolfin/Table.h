@@ -41,7 +41,10 @@ namespace dolfin {
 	 
     /// Return a pointer to the element with the given id
     T* pointer(int id);
-		 
+		
+    /// Remove element at given address
+    void remove(T* x);
+ 
     /// Return the size of the table
     int size() const;
 	 
@@ -148,7 +151,8 @@ namespace dolfin {
       int first_pos();
       int next_pos(int start);
       T* create(int* id);
-		
+      bool remove(T* x);
+      
     private:
 		
       // Pointer to previous and next blocks
@@ -311,6 +315,21 @@ namespace dolfin {
     
     // No element with given id
     return 0;
+  }
+  //---------------------------------------------------------------------------	 
+  template <class T> void Table<T>::remove(T* x)
+  {
+    // Check current block
+    if ( _current_block->remove(x) )
+      return;
+
+    // Check all blocks
+    for (Block *b = _first_block;; b = b->next)
+      if ( b->remove(x) )
+	return;
+
+    // Couldn't find the element
+    dolfin_error("Unable to remove element from table.");
   }
   //---------------------------------------------------------------------------	 
   template <class T> int Table<T>::size() const
@@ -638,6 +657,23 @@ namespace dolfin {
     pos += 1;
     used += 1;
     return data + pos - 1;
+  }
+  //---------------------------------------------------------------------------
+  template <class T> bool Table<T>::Block::remove(T* x)
+  {
+    int pos = x - data;
+    
+    if ( pos < 0 )
+      return false;
+
+    if ( pos >= DOLFIN_BLOCK_SIZE )
+      return false;
+
+    // Mark the position as empty
+    empty[pos] = true;
+    used--;
+
+    return true;
   }
   //---------------------------------------------------------------------------
   

@@ -66,6 +66,9 @@ namespace dolfin{
     /// Return node coordinate
     Point coord() const;
     
+    /// Return coordinate for midpoint on line to given node
+    Point midpoint(const Node& n) const;
+
     /// Return distance to given node
     real dist(const Node& n) const;    
     
@@ -117,6 +120,8 @@ namespace dolfin{
 
     // Specify coordinate
     void set(real x, real y, real z);
+
+    //--- Node data ---
     
     // The grid containing this node
     Grid* grid;
@@ -135,21 +140,6 @@ namespace dolfin{
     // Parent-child info
     Node* _parent;
     Node* _child;
-
-
-
-
-
-
-    int level() const;
-    void setMarkedForReUse(bool re_use);
-    bool markedForReUse();
-
-    // FIXME: Remove?
-    // Refinement level in grid hierarchy, coarsest grid is level = 0
-    int _level;
-    void setLevel(int level);
-    bool _marked_for_re_use;
 
   };
   

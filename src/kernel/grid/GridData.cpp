@@ -146,6 +146,26 @@ Face* GridData::getFace(int id)
   return faces.pointer(id);
 }
 //-----------------------------------------------------------------------------
+void GridData::remove(Node& node)
+{
+  nodes.remove(&node);
+}
+//-----------------------------------------------------------------------------
+void GridData::remove(Cell& cell)
+{
+  cells.remove(&cell);
+}
+//-----------------------------------------------------------------------------
+void GridData::remove(Edge& edge)
+{
+  edges.remove(&edge);
+}
+//-----------------------------------------------------------------------------
+void GridData::remove(Face& face)
+{
+  faces.remove(&face);
+}
+//-----------------------------------------------------------------------------
 int GridData::noNodes() const
 {
   return nodes.size();
@@ -164,14 +184,5 @@ int GridData::noEdges() const
 int GridData::noFaces() const
 {
   return faces.size();
-}
-//-----------------------------------------------------------------------------
-bool GridData::hasEdge(Node* n0, Node* n1) const
-{
-  for (Table<Edge>::Iterator e(edges); !e.end(); ++e)
-    if ( (e->n0 == n0 && e->n1 == n1) || (e->n0 == n1 && e->n1 == n0) )
-      return true;
-
-  return false;
 }
 //-----------------------------------------------------------------------------

@@ -71,6 +71,12 @@ namespace dolfin {
 
     /// Return child grid
     Grid& child();
+
+    /// Comparison of two grids
+    bool operator==(const Grid& grid) const;
+
+    /// Comparison of two grids
+    bool operator!=(const Grid& grid) const;
     
     ///--- Output ---
 
@@ -100,28 +106,38 @@ namespace dolfin {
     
   private:
 
+    // Create a new grid as a child to this grid
     Grid* createChild();
     
+    // Create a new node at given position
     Node* createNode(Point p);
     Node* createNode(real x, real y, real z);
 
+    // Create a new cell from the given nodes
     Cell* createCell(int n0, int n1, int n2);
     Cell* createCell(int n0, int n1, int n2, int n3);
     Cell* createCell(Node* n0, Node* n1, Node* n2);
     Cell* createCell(Node* n0, Node* n1, Node* n2, Node* n3);
 
+    // Create a new edge from the given nodes
     Edge* createEdge(int n0, int n1);
     Edge* createEdge(Node* n0, Node* n1);
 
+    // Create a new face from the given edges
     Face* createFace(int e0, int e1, int e2);
     Face* createFace(Edge* e0, Edge* e1, Edge* e2);
     
+    // Mapping s from id to node, cell, edge, face
     Node* getNode(int id);
     Cell* getCell(int id);
     Edge* getEdge(int id);
     Face* getFace(int id);
 
-    bool hasEdge(Node* n0, Node* n1) const;
+    // Remove node, cell, edge, face (use with care)
+    void remove(Node& node);
+    void remove(Cell& cell);
+    void remove(Edge& edge);
+    void remove(Face& face);
 
     /// Compute connectivity
     void init();

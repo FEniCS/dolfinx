@@ -170,12 +170,12 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
     child = &grid.child();
 
   // Mark all nodes in the child for not re-use
-  for (NodeIterator n(*child); !n.end(); ++n)
-    n->reuse() = false;
-  
+  Array<bool> reuse_node(child->noNodes());
+  reuse_node = false;
+
   // Mark all cells in the child for not re-use
-  for (CellIterator c(*child); !c.end(); ++c)
-    c->reuse() = false;
+  Array<bool> reuse_cell(child->noCells());
+  reuse_cell = false;
 
   // Mark nodes and cells for reuse
   for (CellIterator c(grid); !c.end(); ++c) {
@@ -186,21 +186,21 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 
     // Mark children of the cell for re-use
     for (int i = 0; i < c->noChildren(); i++) {
-      c->child(i)->reuse() = true;
+      reuse_cell(c->child(i)->id()) = true;
       for (NodeIterator n(*c->child(i)); !n.end(); ++n)
-	n->reuse() = true;
+	reuse_node(n->id()) = true;
     }
 
   }
 
   // Remove all nodes in the child not marked for re-use
   for (NodeIterator n(*child); !n.end(); ++n)
-    if ( !n->reuse() )
+    if ( !reuse_node(n->id()) )
       child->remove(*n);
 
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
-    if ( !c->reuse() )
+    if ( !reuse_cell(c->id()) )
       child->remove(*c);
 }
 //-----------------------------------------------------------------------------
@@ -303,5 +303,45 @@ bool GridRefinement::edgeMarkedByOther(Cell& cell)
       return true;
 
   return false;
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
+{
+  // Set the size of the list
+  nodes.init(nodes.size());
+
+  // Count the number of marked edges for each node
+  Array<int> no_marked_edges(nodes.size());
+  no_marked_edges = 0;
+  for (EdgeIterator e(cell); !e.end(); ++e)
+    if ( e->marked() ) {
+      no_marked_edges(nodeNumber(*e->node(0), cell))++;
+      no_marked_edges(nodeNumber(*e->node(1), cell))++;
+    }
+
+  // Sort the nodes according to the number of marked edges, the node
+  // with the most number of edges is placed first.
+  int max_edges = no_marked_edges.max();
+  int pos = 0;
+  for (int i = max_edges; i >= 0; i--)
+    for (int j = 0; j < nodes.size(); j++) {
+      if ( no_marked_edges(j) == -1 )
+	continue;
+      if ( no_marked_edges(j) <= max_edges ) {
+	nodes(pos++) = cell.node(j);
+	no_marked_edges(j) = -1;
+      }
+    }
+}
+//-----------------------------------------------------------------------------
+int nodeNumber(const Node& node, const Cell& cell)
+{
+  // Find the local node number for a given node within a cell
+  for (NodeIterator n(cell); !n.end(); ++n)
+    if ( n == node )
+      return n.index();
+  
+  // Didn't find the node
+  dolfin_error("Unable to find node within cell.");
 }
 //-----------------------------------------------------------------------------

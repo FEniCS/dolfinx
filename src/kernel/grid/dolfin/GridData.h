@@ -91,13 +91,16 @@ namespace dolfin {
     Cell* getCell(int id);
     Edge* getEdge(int id);
     Face* getFace(int id);
+
+    void remove(Node& node);
+    void remove(Cell& cell);
+    void remove(Edge& edge);
+    void remove(Face& face);
     
     int noNodes() const;
     int noCells() const;
     int noEdges() const;
     int noFaces() const;
-    
-    bool hasEdge(Node* n0, Node* n1) const;
 
     // Friends
     friend class NodeIterator::GridNodeIterator;
