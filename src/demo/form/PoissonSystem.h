@@ -15,14 +15,13 @@ namespace dolfin
   {
   public:
 
-    PoissonSystem(Function& f) : NewPDE(), w0(8)
+    PoissonSystem(Function& f) : NewPDE(8, true, false), w0(8)
     {
+      // Add functions
       add(w0, f);
-    }
 
-    unsigned int size() const
-    {
-      return 8;
+      // Set nonzero pattern (add the rest of the entries)
+      nonzero.push_back(IndexPair(0,0));
     }
 
     unsigned int dim() const
@@ -35,11 +34,6 @@ namespace dolfin
       // Something needs to be done here for systems
 
       return cell.nodeID(i);
-    }
-
-    bool boundary() const
-    {
-      return false;
     }
     
     void interiorElementMatrix(NewArray< NewArray<real> >& A) const

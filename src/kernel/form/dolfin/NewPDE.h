@@ -22,13 +22,19 @@ namespace dolfin
   public:
 
     /// Constructor
-    NewPDE();
+    NewPDE(unsigned int size, bool interior, bool boundary);
 
     /// Destructor
     virtual ~NewPDE();
 
     /// Return size of element matrix
-    virtual unsigned int size() const = 0;
+    unsigned int size() const;
+
+    /// Return true if form contains integrals over interior of domain
+    bool interior() const;
+
+    /// Return true if form contains integrals over boundary of domain
+    bool boundary() const;
 
     /// Return dimension of solution vector
     virtual unsigned int dim() const = 0;
@@ -36,12 +42,6 @@ namespace dolfin
     /// Return map from local to global degree of freedom
     virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
    
-    /// Return true if form contains integrals over interior of domain (default)
-    virtual bool interior() const;
-
-    /// Return true if form contains integrals over boundary of domain (default)
-    virtual bool boundary() const;
- 
     /// Update map
     virtual void update(const Cell& cell);
 
@@ -57,6 +57,9 @@ namespace dolfin
     /// Compute boundary element vector
     virtual void boundaryElementVector(NewArray<real>& b) const;
 
+    /// Friends
+    friend class NewFEM;
+
   protected:
 
     /// Add function pair (local and global)
@@ -71,6 +74,9 @@ namespace dolfin
     /// Update affine map from reference tetrahedron
     void updateTetLinMap(const Cell& cell);
 
+    // List of nonzero indices
+    NewArray<IndexPair> nonzero;
+
     // Determinant of Jacobian of map
     real det;
 
@@ -83,10 +89,16 @@ namespace dolfin
     // Current time
     real t;
 
-    // List of nonzero indices
-    NewArray<IndexPair> nonzero;
-
   private:
+    
+    // Size of element matrix
+    unsigned int _size;
+
+    // True if form contains integrals over interior of domain
+    bool _interior;
+
+    // True if form contains integrals over boundary of domain
+    bool _boundary;
 
     // List of function pairs
     NewArray<FunctionPair> functions;

@@ -15,14 +15,12 @@ namespace dolfin
   {
   public:
 
-    Poisson(Function& f) : NewPDE(), w0(4)
+    Poisson(Function& f) : NewPDE(4, true, false), w0(4)
     {
+      // Add functions
       add(w0, f);
-    }
 
-    unsigned int size() const
-    {
-      return 4;
+      // Using default (full) nonzero pattern
     }
 
     unsigned int dim() const
@@ -35,11 +33,6 @@ namespace dolfin
       return cell.nodeID(i);
     }
 
-    bool boundary() const
-    {
-      return false;
-    }
-    
     void interiorElementMatrix(NewArray< NewArray<real> >& A) const
     {
       real tmp0 = det / 6.0;
@@ -48,7 +41,7 @@ namespace dolfin
       real G01 = tmp0*(g00*g10 + g01*g11 + g02*g12);
       real G02 = tmp0*(g00*g20 + g01*g21 + g02*g22);
       real G11 = tmp0*(g10*g10 + g11*g11 + g12*g12);
-      real G12 = tmp0*(g10*g20 + g11*g21 + g12*g22);
+      real G12 = tmp0*(g10*g20 + g11*g21 + g12*g22); 
       real G22 = tmp0*(g20*g20 + g21*g21 + g22*g22);
       
       A[1][1] = G00;
@@ -61,10 +54,12 @@ namespace dolfin
       A[0][2] = - G01 - G11 - G12;
       A[0][3] = - G02 - G12 - G22;
       A[0][0] = - A[0][1] - A[0][2] - A[0][3];
-      
       A[1][0] = A[0][1];
       A[2][0] = A[0][2];
       A[2][1] = G01;
+      A[3][0] = A[0][3];
+      A[3][1] = A[1][3];
+      A[3][2] = A[2][3];
     }
     
     void interiorElementVector(NewArray<real>& b) const

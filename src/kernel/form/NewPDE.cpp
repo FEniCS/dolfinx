@@ -10,8 +10,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewPDE::NewPDE()
+NewPDE::NewPDE(unsigned int size, bool interior, bool boundary) : _size(size)
 {
+  // Reset data
   det = 0.0;
   
   f00 = 0.0; f01 = 0.0; f02 = 0.0;
@@ -23,6 +24,11 @@ NewPDE::NewPDE()
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
 
   t = 0.0;
+
+  // Set default (full) nonzero pattern
+  for (unsigned int i = 0; i < _size; i++)
+    for (unsigned int j = 0; j < _size; j++)
+      nonzero.push_back(IndexPair(i,j));
 }
 //-----------------------------------------------------------------------------
 NewPDE::~NewPDE()
@@ -30,14 +36,19 @@ NewPDE::~NewPDE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+unsigned int NewPDE::size() const
+{
+  return _size;
+}
+//-----------------------------------------------------------------------------
 bool NewPDE::interior() const
 {
-  return true;
+  return _interior;
 }
 //-----------------------------------------------------------------------------
 bool NewPDE::boundary() const
 {
-  return true;
+  return _boundary;
 }
 //-----------------------------------------------------------------------------
 void NewPDE::update(const Cell& cell)

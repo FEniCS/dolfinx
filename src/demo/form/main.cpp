@@ -3,6 +3,7 @@
 
 #include <dolfin.h>
 #include "Poisson.h"
+#include "PoissonSystem.h"
 
 using namespace dolfin;
 

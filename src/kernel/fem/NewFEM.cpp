@@ -68,8 +68,9 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
   
-  //NewArray< NewArray<real> > AK(pde.size(),pde.size());
-  NewArray< NewArray<real> > AK;
+  // Initialize element matrix
+  //NewArray<NewArray<real> > AK(pde.size(),pde.size());
+  NewArray<NewArray<real> > AK;
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -80,10 +81,12 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Compute element matrix    
     pde.interiorElementMatrix(AK);
 
-    // Insert element matrix into global matrix
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      for (unsigned int j = 0; j < pde.size(); j++) 
-	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
+    // Add nonzero entries to global matrix
+    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
+    {
+      IndexPair index = pde.nonzero[n];
+      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
+    }
     
     // Update progress
     p++;
@@ -123,10 +126,12 @@ void NewFEM::assembleBoundaryTri(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Compute element matrix    
     pde.interiorElementMatrix(AK);
 
-    // Insert element matrix into global matrix
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      for (unsigned int j = 0; j < pde.size(); j++) 
-	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
+    // Add nonzero entries to global matrix
+    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
+    {
+      IndexPair index = pde.nonzero[n];
+      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
+    }
     */
 
     // Update progress
@@ -152,10 +157,12 @@ void NewFEM::assembleBoundaryTet(NewPDE& pde, Mesh& mesh, Matrix& A)
     // Compute element matrix    
     pde.interiorElementMatrix(AK);
 
-    // Insert element matrix into global matrix
-    for (unsigned int i = 0; i < pde.size(); i++) 
-      for (unsigned int j = 0; j < pde.size(); j++) 
-	A(pde.dof(i,*cell),pde.dof(j,*cell)) += AK[i][j];
+    // Add nonzero entries to global matrix
+    for (unsigned int n = 0; n < pde.nonzero.size(); n++)
+    {
+      IndexPair index = pde.nonzero[n];
+      A(pde.dof(index.i, *cell), pde.dof(index.j, *cell)) += AK[index.i][index.j];
+    }
     */
 
     // Update progress
@@ -179,7 +186,7 @@ void NewFEM::assembleInterior(NewPDE& pde, Mesh& mesh, Vector& b)
     // Compute element matrix    
     pde.interiorElementVector(bK);
 
-    // Insert element matrix into global matrix
+    // Add entries to global vector
     for (unsigned int i = 0; i < pde.size(); i++) 
       b(pde.dof(i,*cell)) += bK[i];
     
