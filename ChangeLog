@@ -1,3 +1,6 @@
+ - KrylovSolver updates
+ - Preparation for grid refinement
+ - Matrix and Vector updates
 0.3.0
  - Make poisson work again, other modules still not working
  - Add output format for octave
