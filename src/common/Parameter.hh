@@ -4,7 +4,7 @@
 #ifndef __PARAMETER_HH
 #define __PARAMETER_HH
 
-#include <iostream.h>
+#include <iostream>
 #include <string.h>
 
 #include <kw_constants.h>
