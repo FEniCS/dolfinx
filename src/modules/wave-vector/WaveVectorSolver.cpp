@@ -24,11 +24,11 @@ void WaveVectorSolver::solve()
   Matrix A;
   Vector x10, x11, x20, x21, b;
   
-  Function::Vector u0(mesh, x10, 4);
-  Function::Vector u1(mesh, x11, 4);
-  Function::Vector w0(mesh, x20, 4);
-  Function::Vector w1(mesh, x21, 4);
-  Function::Vector f("source", 4);
+  Function::Vector u0(mesh, x10, 2);
+  Function::Vector u1(mesh, x11, 2);
+  Function::Vector w0(mesh, x20, 2);
+  Function::Vector w1(mesh, x21, 2);
+  Function::Vector f("source", 2);
   
   WaveVector   wavevector(f, u0, w0);
   KrylovSolver solver;
