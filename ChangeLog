@@ -1,4 +1,5 @@
 0.4.10
+ - Automatic model reduction (experimental)
  - Fix bug in ParticleSystem (divide by mass)
  - Improve control of integration (add function ODE::update())
  - Load/save parameters in XML-format
