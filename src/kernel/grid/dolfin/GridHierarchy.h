@@ -43,6 +43,9 @@ namespace dolfin {
     /// Check if grid hierarchy is empty
     bool empty() const;
 
+    /// Friends
+    friend class GridIterator;
+
   private:
 
     // An array of grid pointers

@@ -19,61 +19,197 @@ void GridRefinement::refine(GridHierarchy& grids)
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
 
-  // Refine grid here ...
-  globalRegularRefinement(grids);
+  // Refine grid hierarchy
+  globalRefinement(grids);
+
+  // Write a message
+  cout << "Grid hierarchy consists of " << grids.size() << " grids." << endl;
 
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
+void globalRefinement(GridHierarchy& grids)
+{
+  // The global grid refinement algorithm working on the whole grid hierarchy.
+  // This is algorithm GlobalRefinement() in Beys paper.
+
+  for (GridIterator grid(grids,last); !grid.end(); --grid) {
+    evaluateMarks(*grid);
+    closeGrid(*grid);
+  }
+
+  for (GridIterator grid(grids); !grid.end(); ++grid) {
+    if (grid.index() > 0)
+      closeGrid(*grid);
+    unrefineGrid(*grid);
+    refineGrid(*grid);
+  }
+
+}
+//-----------------------------------------------------------------------------
+void evaluateMarks(Grid& grid)
+{
+  // Evaluate and adjust marks for a grid.
+  // This is algorithm EvaluateMarks() in Beys paper.
+
+  
+
+
+}
+//-----------------------------------------------------------------------------
+void closeGrid(Grid& grid)
+{
+  // Perform the green closer on a grid.
+  // This is algorithm CloseGrid() in Bey's paper.
+
+  
+
+
+}
+//-----------------------------------------------------------------------------
+void refineGrid(Grid& grid)
+{
+  // Refine a grid according to marks.
+  // This is algorithm RefineGrid() in Bey's paper.
+
+}
+//-----------------------------------------------------------------------------
+void unrefineGrid(Grid& grid)
+{
+  // Unrefine a grid according to marks.
+  // This is algorithm UnrefineGrid() in Bey's paper.
+
+  
+}
+//-----------------------------------------------------------------------------
+void closeCell(Cell& cell)
+{
+  // Close a cell, either by regular or irregular refinement.
+  // This is algorithm CloseElement() in Bey's paper.
+
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::regularRefinement(Cell& cell)
+{
+  // Regular refinement:
+  //
+  //     Triangles:    1 -> 4 
+  //     Tetrahedrons: 1 -> 8 
+
+  switch (cell.type()) {
+  case Cell::triangle: 
+    regularRefinementTri(cell);
+    break;
+  case Cell::tetrahedron: 
+    regularRefinementTet(cell);
+    break;
+  default: 
+    dolfin_error("Unknown cell type, unable to refine cell.");
+  }
+
+  //  parent->setStatus(Cell::REFINED_REGULAR);
+  //  if (parent->marker() == Cell::MARKED_FOR_REGULAR_REFINEMENT) 
+  //    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::regularRefinementTri(Cell& cell)
+{
+  // Refine 1 triangle into 4 new ones, introducing new nodes 
+  // at the midpoints of the edges. 
+
+  Node *n0 = g.createNode(parent->node(0)->coord());
+  Node *n1 = g.createNode(parent->node(1)->coord());
+  Node *n2 = g.createNode(parent->node(2)->coord());
+
+  parent->node(0)->setChild(n0);
+  parent->node(1)->setChild(n1);
+  parent->node(2)->setChild(n2);
+
+  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
+  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
+  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+
+  Cell *t1 = g.createCell(n0, n01,n02);
+  Cell *t2 = g.createCell(n01,n1, n12);
+  Cell *t3 = g.createCell(n02,n12,n2 );
+  Cell *t4 = g.createCell(n01,n12,n02);
+
+  /*
+  parent->addChild(t1);
+  parent->addChild(t2);
+  parent->addChild(t3);
+  parent->addChild(t4);
+
+  if (_create_edges){
+    grid.createEdges(t1);
+    grid.createEdges(t2);
+    grid.createEdges(t3);
+    grid.createEdges(t4);
+  }
+  */
+}
+//-----------------------------------------------------------------------------
+void GridRefinement::regularRefinementTet(Cell& cell)
+{
+  // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
+  // at the midpoints of the edges.
+  
+  Node *n0 = g.createNode(parent->node(0)->coord());
+  Node *n1 = g.createNode(parent->node(1)->coord());
+  Node *n2 = g.createNode(parent->node(2)->coord());
+  Node *n3 = g.createNode(parent->node(3)->coord());
+
+  parent->node(0)->setChild(n0);
+  parent->node(1)->setChild(n1);
+  parent->node(2)->setChild(n2);
+  parent->node(3)->setChild(n3);
+  
+  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
+  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
+  Node *n03 = g.createNode(parent->node(0)->coord().midpoint(parent->node(3)->coord()));
+  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
+  Node *n13 = g.createNode(parent->node(1)->coord().midpoint(parent->node(3)->coord()));
+  Node *n23 = g.createNode(parent->node(2)->coord().midpoint(parent->node(3)->coord()));
+
+  Cell *t1 = g.createCell(n0, n01,n02,n03);
+  Cell *t2 = g.createCell(n01,n1, n12,n13);
+  Cell *t3 = g.createCell(n02,n12,n2, n23);
+  Cell *t4 = g.createCell(n03,n13,n23,n3 );
+  Cell *t5 = g.createCell(n01,n02,n03,n13);
+  Cell *t6 = g.createCell(n01,n02,n12,n13);
+  Cell *t7 = g.createCell(n02,n03,n13,n23);
+  Cell *t8 = g.createCell(n02,n12,n13,n23);
+
+  /*
+  parent->addChild(t1);
+  parent->addChild(t2);
+  parent->addChild(t3);
+  parent->addChild(t4);
+  parent->addChild(t5);
+  parent->addChild(t6);
+  parent->addChild(t7);
+  parent->addChild(t8);
+  */
+
+  /*
+  if (_create_edges){
+    g.createEdges(t1);
+    g.createEdges(t2);
+    g.createEdges(t3);
+    g.createEdges(t4);
+    g.createEdges(t5);
+    g.createEdges(t6);
+    g.createEdges(t7);
+    g.createEdges(t8);
+  }
+  */
+}
+//-----------------------------------------------------------------------------
+
+
+
 
 /*
-Refinement::GlobalRefinement()
-{
-}
-*/
-
-
-void GridRefinement::globalRegularRefinement(GridHierarchy& grids)
-{
-  // Regular refinement: 
-  // (1) Triangles: 1 -> 4 
-  // (2) Tetrahedrons: 1 -> 8 
-
-  //  cout << "no elms = " << grid.noCells() << endl;
-  //  cout << "no nodes = " << grid.noNodes() << endl;
-  
-  List<Cell *> cells;
-  for (CellIterator c(grids.fine()); !c.end(); ++c)
-    cells.add(c);
-  
-  for (List<Cell *>::Iterator c(cells); !c.end(); ++c){
-    regularRefinement((*c.pointer()),grids.fine());
-  }
-
-  //  cout << "new no elms = " << grid.noCells() << endl;
-  //  cout << "new no nodes = " << grid.noNodes() << endl;
-}
-
-
-/*
-void GridRefinement::globalRefinement()
-{
-  for (int i=grid.finestGridLevel();i>=0;i--){
-    evaluateMarks(i);
-    closeGrid(i);
-  }
-
-  for (int i=0;i<=grid.finestGridLevel();i++){
-    if (i>0) closeGrid(i);
-    unrefineGrid(i);
-    refineGrid(i);
-  }
-
-  //if ...()
-  
-
-
-}
 
 void GridRefinement::evaluateMarks(int grid_level)
 {
@@ -347,119 +483,6 @@ List<Cell *> GridRefinement::closeCell(Cell *parent)
 */
 
 
-void GridRefinement::regularRefinement(Cell* parent, Grid& g)
-{
-  // Regular refinement: 
-  // (1) Triangles: 1 -> 4 
-  // (2) Tetrahedrons: 1 -> 8 
-
-  switch (parent->type()) {
-  case Cell::tetrahedron: 
-    regularRefinementTetrahedron(parent,g);
-    break;
-  case Cell::triangle: 
-    regularRefinementTriangle(parent,g);
-    break;
-  default: 
-    dolfin_error("Cell type not implemented.");
-    exit(1);
-  }
-
-  //  parent->setStatus(Cell::REFINED_REGULAR);
-  //  if (parent->marker() == Cell::MARKED_FOR_REGULAR_REFINEMENT) 
-  //    parent->mark(Cell::MARKED_ACCORDING_TO_REFINEMENT);
-}
-
-void GridRefinement::regularRefinementTetrahedron(Cell* parent, Grid& g)
-{
-  // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
-  // at the midpoints of the edges. 
-  Node *n0 = g.createNode(parent->node(0)->coord());
-  Node *n1 = g.createNode(parent->node(1)->coord());
-  Node *n2 = g.createNode(parent->node(2)->coord());
-  Node *n3 = g.createNode(parent->node(3)->coord());
-
-  parent->node(0)->setChild(n0);
-  parent->node(1)->setChild(n1);
-  parent->node(2)->setChild(n2);
-  parent->node(3)->setChild(n3);
-  
-  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n03 = g.createNode(parent->node(0)->coord().midpoint(parent->node(3)->coord()));
-  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
-  Node *n13 = g.createNode(parent->node(1)->coord().midpoint(parent->node(3)->coord()));
-  Node *n23 = g.createNode(parent->node(2)->coord().midpoint(parent->node(3)->coord()));
-
-  Cell *t1 = g.createCell(n0, n01,n02,n03);
-  Cell *t2 = g.createCell(n01,n1, n12,n13);
-  Cell *t3 = g.createCell(n02,n12,n2, n23);
-  Cell *t4 = g.createCell(n03,n13,n23,n3 );
-  Cell *t5 = g.createCell(n01,n02,n03,n13);
-  Cell *t6 = g.createCell(n01,n02,n12,n13);
-  Cell *t7 = g.createCell(n02,n03,n13,n23);
-  Cell *t8 = g.createCell(n02,n12,n13,n23);
-
-  /*
-  parent->addChild(t1);
-  parent->addChild(t2);
-  parent->addChild(t3);
-  parent->addChild(t4);
-  parent->addChild(t5);
-  parent->addChild(t6);
-  parent->addChild(t7);
-  parent->addChild(t8);
-  */
-
-  /*
-  if (_create_edges){
-    g.createEdges(t1);
-    g.createEdges(t2);
-    g.createEdges(t3);
-    g.createEdges(t4);
-    g.createEdges(t5);
-    g.createEdges(t6);
-    g.createEdges(t7);
-    g.createEdges(t8);
-  }
-  */
-}
-
-void GridRefinement::regularRefinementTriangle(Cell* parent, Grid& g)
-{
-  // Refine 1 triangle into 4 new ones, introducing new nodes 
-  // at the midpoints of the edges. 
-  Node *n0 = g.createNode(parent->node(0)->coord());
-  Node *n1 = g.createNode(parent->node(1)->coord());
-  Node *n2 = g.createNode(parent->node(2)->coord());
-
-  parent->node(0)->setChild(n0);
-  parent->node(1)->setChild(n1);
-  parent->node(2)->setChild(n2);
-
-  Node *n01 = g.createNode(parent->node(0)->coord().midpoint(parent->node(1)->coord()));
-  Node *n02 = g.createNode(parent->node(0)->coord().midpoint(parent->node(2)->coord()));
-  Node *n12 = g.createNode(parent->node(1)->coord().midpoint(parent->node(2)->coord()));
-
-  Cell *t1 = g.createCell(n0, n01,n02);
-  Cell *t2 = g.createCell(n01,n1, n12);
-  Cell *t3 = g.createCell(n02,n12,n2 );
-  Cell *t4 = g.createCell(n01,n12,n02);
-
-  /*
-  parent->addChild(t1);
-  parent->addChild(t2);
-  parent->addChild(t3);
-  parent->addChild(t4);
-
-  if (_create_edges){
-    grid.createEdges(t1);
-    grid.createEdges(t2);
-    grid.createEdges(t3);
-    grid.createEdges(t4);
-  }
-  */
-}
 
 /*
 void GridRefinement::localIrregularRefinement(Cell *parent)

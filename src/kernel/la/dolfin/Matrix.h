@@ -9,14 +9,12 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Variable.h>
+#include <dolfin/General.h>
 
 namespace dolfin {
 
   class Vector;
   class GenericMatrix;
-
-  enum MatrixRange { all };
-  enum MatrixIndex { first, last };
 
   /// Matrix with given number of rows and columns that can
   /// be either sparse (default) or dense.
@@ -88,16 +86,16 @@ namespace dolfin {
     virtual Element operator()(int i, int j);
 
     /// Index operator
-    virtual Row operator()(int i, MatrixRange j);
+    virtual Row operator()(int i, Range j);
 
     /// Index operator
-    virtual Row operator()(MatrixIndex i, MatrixRange j);
+    virtual Row operator()(Index i, Range j);
     
     /// Index operator
-    virtual Column operator()(MatrixRange i, int j);
+    virtual Column operator()(Range i, int j);
 
     /// Index operator
-    virtual Column operator()(MatrixRange i, MatrixIndex j);
+    virtual Column operator()(Range i, Index j);
 
     /// Index operator (only dense, quick access)
     virtual real* operator[](int i) const;
@@ -225,8 +223,8 @@ namespace dolfin {
     class Row {
     public:
     
-      Row(Matrix& matrix, int i, MatrixRange j);
-      Row(Matrix& matrix, MatrixIndex i, MatrixRange j);
+      Row(Matrix& matrix, int i, Range j);
+      Row(Matrix& matrix, Index i, Range j);
 
       int size() const;
 
@@ -245,7 +243,7 @@ namespace dolfin {
     
       Matrix& A;
       int i;
-      MatrixRange j;
+      Range j;
 
     };
 
@@ -253,8 +251,8 @@ namespace dolfin {
     class Column {
     public:
     
-      Column(Matrix& matrix, MatrixRange i, int j);
-      Column(Matrix& matrix, MatrixRange i, MatrixIndex j);
+      Column(Matrix& matrix, Range i, int j);
+      Column(Matrix& matrix, Range i, Index j);
 
       int size() const;
 
@@ -272,7 +270,7 @@ namespace dolfin {
     private:
     
       Matrix& A;
-      MatrixRange i;
+      Range i;
       int j;
 
     };

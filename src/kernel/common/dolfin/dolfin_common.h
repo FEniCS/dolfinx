@@ -3,6 +3,8 @@
 
 // DOLFIN common classes
 
+#include <dolfin/General.h>
+
 #include <dolfin/Array.h>
 #include <dolfin/List.h>
 #include <dolfin/Table.h>

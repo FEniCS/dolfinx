@@ -14,6 +14,7 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/GridData.h \
                            dolfin/GridHierarchy.h \
                            dolfin/GridInit.h \
+                           dolfin/GridIterator.h \
                            dolfin/GridRefinement.h \
                            dolfin/GridRefinementData.h \
                            dolfin/Node.h \
@@ -37,6 +38,7 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            GridData.cpp \
                            GridHierarchy.cpp \
                            GridInit.cpp \
+                           GridIterator.cpp \
                            GridRefinement.cpp \
                            GridRefinementData.cpp \
                            Node.cpp \

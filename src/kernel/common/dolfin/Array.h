@@ -5,6 +5,7 @@
 #define __ARRAY_H
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/General.h>
 
 namespace dolfin {
 
@@ -127,7 +128,12 @@ namespace dolfin {
       /// Create an iterator positioned at the beginning of the array
       Iterator(const Array<T>& array);
 
+      /// Create an iterator positioned at the given position
+      Iterator(const Array<T>& array, Index pos);
+
       Iterator& operator++();
+
+      Iterator& operator--();
 
       bool end() const;
       
@@ -359,13 +365,76 @@ namespace dolfin {
     this->array = array.array;
   }
   //---------------------------------------------------------------------------      
+  template <class T> Array<T>::Iterator::Iterator
+  (const Array<T> &array, Index pos)
+  {
+    switch (pos) {
+    case first:
+      
+      if ( array._size > 0 ){
+	element = array.array;
+	at_end = false;
+      }
+      else{
+	element = 0;
+	at_end = true;
+      }
+      
+      _index = 0;
+      size = array._size;
+      this->array = array.array;
+      
+      break;
+
+    case last:
+      
+      if ( array._size > 0 ){
+	element = array.array + array._size - 1;
+	at_end = false;
+      }
+      else{
+	element = 0;
+	at_end = true;
+      }
+      
+      _index = array._size - 1;
+      size = array._size;
+      this->array = array.array;
+
+      break;
+      
+    default:
+      
+      dolfin_error("Unknown iterator position.");
+
+    }      
+
+  }
+  //---------------------------------------------------------------------------      
   template <class T> typename Array<T>::Iterator::Iterator& 
   Array<T>::Iterator::operator++()
-    {
+  {
     if ( _index == (size - 1) )
       at_end = true;
-    else
+    else {
+      at_end = false;
       _index++;
+    }
+    
+    element = array + _index;
+    
+    return *this;
+  }
+  //---------------------------------------------------------------------------      
+  template <class T> typename Array<T>::Iterator::Iterator& 
+  Array<T>::Iterator::operator--()
+  {
+    if ( _index == 0 )
+      at_end = true;
+    else {
+      at_end = false;
+      _index--;
+    }
     
     element = array + _index;
     

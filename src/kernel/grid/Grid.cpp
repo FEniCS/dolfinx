@@ -135,11 +135,16 @@ void Grid::refine()
   // Swap data
   swap(*new_grid);
 
+  
+
+
   // Set parent and child
   if ( new_grid->_parent )
     new_grid->_parent->_child = new_grid;
   this->_parent = new_grid;
   new_grid->_child = this;
+
+
 
   // Compute connectivity
   init();

@@ -25,28 +25,50 @@ namespace dolfin {
   class GridRefinement {
   public:
 
+    /// Refine a given grid hierarchy according to marks
     static void refine(GridHierarchy& grids);
     
   private:
-
-    static void globalRegularRefinement(GridHierarchy& grids);
-
-    /*
-    void globalRefinement();
     
-    void evaluateMarks(int grid_level);
-    staticvoid closeGrid(int grid_level);
+    //--- Algorithms working on the whole grid hierarchy ---
 
-    List<Cell *> closeCell(Cell *parent);
-    
-    void refineGrid(int grid_level);
-    void unrefineGrid(int grid_level);
-    */    
+    // The global algorithm working on the whole grid hierarchy
+    static void globalRefinement(GridHierarchy& grids);
 
-    static void regularRefinement(Cell* parent, Grid& g);
+    //--- Algorithms working on the grid on a given level ---
+
+    // Evaluate and adjust marks for a grid
+    static void evaluateMarks(Grid& grid);
+
+    // Perform the green closer on a grid
+    static void closeGrid(Grid& grid);
+
+    // Refine a grid according to marks
+    void refineGrid(Grid& grid);
+
+    // Unrefine a grid according to marks
+    void unrefineGrid(Grid& grid);
+
+    ///--- Algorithms working on a given cell ---
     
-    static void regularRefinementTetrahedron(Cell* parent, Grid& g);
-    static void regularRefinementTriangle(Cell* parent, Grid& g);
+    // Close a cell
+    static void closeCell(Cell& cell);
+
+    // Refine a cell regularly
+    static void regularRefinement(Cell& cell);
+    
+    // Refine a triangle regularly
+    static void regularRefinementTri(Cell& cell);
+
+    // Refine a tetrahedron regularly
+    static void regularRefinementTet(Cell& cell);
+
+
+    
+
+
+
+ 
 
     /*
     void localIrregularRefinement(Cell *parent);
@@ -56,9 +78,6 @@ namespace dolfin {
     void irregularRefinementBy3(Cell *parent);
     void irregularRefinementBy4(Cell *parent);
     
-    void refine();
-    
-    bool _create_edges;
     */
 
   };

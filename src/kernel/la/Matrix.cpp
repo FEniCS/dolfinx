@@ -115,22 +115,22 @@ Matrix::Element Matrix::operator()(int i, int j)
   return Element(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Row Matrix::operator()(int i, MatrixRange j)
+Matrix::Row Matrix::operator()(int i, Range j)
 {
   return Row(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Row Matrix::operator()(MatrixIndex i, MatrixRange j)
+Matrix::Row Matrix::operator()(Index i, Range j)
 {
   return Row(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Column Matrix::operator()(MatrixRange i, int j)
+Matrix::Column Matrix::operator()(Range i, int j)
 {
   return Column(*this, i, j);
 }
 //-----------------------------------------------------------------------------
-Matrix::Column Matrix::operator()(MatrixRange i, MatrixIndex j)
+Matrix::Column Matrix::operator()(Range i, Index j)
 {
   return Column(*this, i, j);
 }
@@ -470,13 +470,13 @@ void Matrix::Element::operator/=(real a)
   A.A->div(i, j, a);
 }
 //-----------------------------------------------------------------------------
-Matrix::Row::Row(Matrix& matrix, int i, MatrixRange) : A(matrix)
+Matrix::Row::Row(Matrix& matrix, int i, Range) : A(matrix)
 {
   this->i = i;
   this->j = j;
 }
 //-----------------------------------------------------------------------------
-Matrix::Row::Row(Matrix& matrix, MatrixIndex i, MatrixRange j) : A(matrix)
+Matrix::Row::Row(Matrix& matrix, Index i, Range j) : A(matrix)
 {
   if ( i == first )
     this->i = 0;
@@ -533,13 +533,13 @@ real Matrix::Row::operator* (const Vector& x) const
   return A.multrow(x,i);
 }
 //-----------------------------------------------------------------------------
-Matrix::Column::Column(Matrix& matrix, MatrixRange i, int j) : A(matrix)
+Matrix::Column::Column(Matrix& matrix, Range i, int j) : A(matrix)
 {
   this->i = i;
   this->j = j;
 }
 //-----------------------------------------------------------------------------
-Matrix::Column::Column(Matrix& matrix, MatrixRange i, MatrixIndex j) : A(matrix)
+Matrix::Column::Column(Matrix& matrix, Range i, Index j) : A(matrix)
 {
   this->i = i;
   
