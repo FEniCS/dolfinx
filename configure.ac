@@ -290,6 +290,7 @@ AC_OUTPUT( Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
+           src/demo/bench/Makefile \
            src/demo/la/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
