@@ -25,8 +25,8 @@ int main()
 
 void refine2D(int refinements)
 {
-  cout << "Refining 2D grid" << endl;
-  cout << "----------------" << endl;  
+  dolfin::cout << "Refining 2D grid" << dolfin::endl;
+  dolfin::cout << "----------------" << dolfin::endl;  
 
   // Load grid
   Grid grid("grid2D.xml.gz");
@@ -52,13 +52,13 @@ void refine2D(int refinements)
   File ref("grid2D_refined.m");
   ref << grid;
 
-  cout << endl;
+  dolfin::cout << dolfin::endl;
 }
 
 void refine3D(int refinements)
 {
-  cout << "Refining 3D grid" << endl;
-  cout << "----------------" << endl;  
+  dolfin::cout << "Refining 3D grid" << dolfin::endl;
+  dolfin::cout << "----------------" << dolfin::endl;  
 
   // Load grid
   Grid grid("grid3D.xml.gz");
