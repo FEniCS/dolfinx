@@ -101,9 +101,14 @@ void AdaptiveIterationLevel2::stabilize(ElementGroupList& list,
 void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 					const Increments& d, unsigned int n)
 {
+  // Compute residual (needed for j = 0)
+  real r = (j == 0 ? residual(group) : 0.0);
+
   // Stabilize if necessary
-  if ( Iteration::stabilize(d, n) )
+  if ( Iteration::stabilize(d, n, r) )
   {
+    cout << "Stabilizing" << endl;
+
     // Compute divergence
     real rho = computeDivergence(group);
 

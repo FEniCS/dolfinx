@@ -157,8 +157,11 @@ void AdaptiveIterationLevel3::update(Element& element, Increments& d)
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 					const Increments& d, unsigned int n)
 {
+  // Compute residual (needed for j = 0)
+  real r = (j == 0 ? residual(list) : 0.0);
+
   // Stabilize if necessary
-  if ( Iteration::stabilize(d, n) )
+  if ( Iteration::stabilize(d, n, r) )
   {
     // Compute divergence
     real rho = computeDivergence(list);
@@ -178,8 +181,11 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
 					const Increments& d, unsigned int n)
 {
+  // Compute residual (needed for j = 0)
+  real r = (j == 0 ? residual(group) : 0.0);
+
   // Stabilize if necessary
-  if ( Iteration::stabilize(d, n) )
+  if ( Iteration::stabilize(d, n, r) )
   {
     // Compute divergence
     real rho = computeDivergence(group);

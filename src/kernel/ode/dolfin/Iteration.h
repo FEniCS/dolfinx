@@ -162,7 +162,7 @@ namespace dolfin
     };
 
     // Stabilization for adaptive iteration
-    bool stabilize(const Increments& d, unsigned int n);
+    bool stabilize(const Increments& d, unsigned int n, real r);
     
     // Compute divergence
     real computeDivergence(ElementGroupList& list);

@@ -76,12 +76,12 @@ bool FixedPointIteration::iterate(ElementGroupList& list)
 {
   Iteration::Increments d;
   bool retry = true;
- 
+
   while ( retry )
   {
     // Start iteration
     start(list);
-    
+
     // Fixed point iteration on the group list
     for (unsigned int n = 0; n < maxiter; n++)
     {
@@ -131,13 +131,14 @@ real FixedPointIteration::iterate(ElementGroup& group)
     
     // Start iteration
     start(group);
-    
+
     // Fixed point iteration on the element group
     for (unsigned int n = 0; n < maxiter; n++)
     {
       // Check convergence
       if ( converged(group, d, n) )
       {
+	cout << "Converged after " << n << " iterations" << endl;
 	end(group);
 	return d.dtot;
       }
@@ -165,7 +166,7 @@ real FixedPointIteration::iterate(ElementGroup& group)
     // End iteration
     end(group);
   }
-  
+
   return d.dtot;
 }
 //-----------------------------------------------------------------------------
@@ -472,7 +473,7 @@ void FixedPointIteration::debug(ElementGroup& group,
   dolfin_assert(state);
   r = state->residual(group);
 
-  cout << "debug2: " << r << " " << d.d2 << " " << alpha << endl;
+  cout << "  debug2: " << r << " " << d.d2 << " " << alpha << endl;
 }
 //-----------------------------------------------------------------------------
 void FixedPointIteration::debug(Element& element,
@@ -490,6 +491,6 @@ void FixedPointIteration::debug(Element& element,
   dolfin_assert(state);
   r = state->residual(element);
 
-  cout << "debug3: " << r << " " << d.d2 << " " << alpha << endl;
+  cout << "    debug3: " << r << " " << d.d2 << " " << alpha << endl;
 }
 //-----------------------------------------------------------------------------

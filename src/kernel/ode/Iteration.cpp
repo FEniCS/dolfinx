@@ -115,7 +115,7 @@ real Iteration::residual(Element& element)
   return fabs(element.computeElementResidual(f));
 }
 //-----------------------------------------------------------------------------
-bool Iteration::stabilize(const Increments& d, unsigned int n)
+bool Iteration::stabilize(const Increments& d, unsigned int n, real r)
 {
   // Take action depending on j, the remaining number of iterations
   // with small alpha.
@@ -159,9 +159,24 @@ bool Iteration::stabilize(const Increments& d, unsigned int n)
     // Decrease number of remaining iterations with small alpha
     j -= 1;
   }
+
+  if ( r > d.d2 )
+    cout << "Seems to be diverging (residual condition): " << d << endl;
+
+  if ( d.d2 > d.d1 )
+    cout << "Seems to be diverging (increment condition): " << d << endl;
   
   // Check if stabilization is needed
-  return (d.d2 > d.d1 && d.d1 > d0) || (d.d2 > d.d1 && j == 0);
+  if ( d.d2 > d.d1 && d.d1 > d0 )
+    return true;
+
+  if ( d.d2 > d.d1 && j == 0 )
+    return true;
+
+  if ( r > d.d2 && j == 0 )
+    return true;
+  
+  return false;
 }
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroupList& list)
