@@ -1,3 +1,4 @@
+ - Modify output of sysinfo()
 0.4.7
  - Make all stiff test problems work
  - Display status report also when using step()

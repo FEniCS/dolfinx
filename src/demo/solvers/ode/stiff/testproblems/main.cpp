@@ -76,7 +76,7 @@ void solveTestProblem8()
 void solveTestProblem9()
 {
   TestProblem9 testProblem;
-  testProblem.solve();
+  testProblem.solve(u);
 }
 
 int main(int argc, char* argv[])
@@ -112,6 +112,10 @@ int main(int argc, char* argv[])
   dolfin_set("tolerance", 0.1);
   dolfin_set("adaptive samples", true);
   dolfin_set("solve dual problem", false);
+  dolfin_set("debug time steps", true);
+
+  sysinfo();
+  cout << endl;
 
   // Choose test problem
   switch (n) {
