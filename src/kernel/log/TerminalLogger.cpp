@@ -37,20 +37,20 @@ void TerminalLogger::debug(const char* msg, const char* location)
 void TerminalLogger::warning(const char* msg, const char* location)
 {
   indent();
-  std::cout << "[Warning at " << location << "]: " << msg << std::endl;
+  std::cout << "*** Warning at " << location << ": " << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::error(const char* msg, const char* location)
 {
   indent();
-  std::cout << "*** [Error at " << location << "]: " << msg << std::endl;
+  std::cout << "*** Error at " << location << ": " << msg << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::dassert(const char* msg, const char* location)
 {
   indent();
-  std::cout << "[Assertion " << msg << " failed at " << location << "]: " << msg << std::endl;
+  std::cout << "*** Assertion " << msg << " failed at " << location << ": " << msg << std::endl;
   dolfin_segfault();
 }
 //-----------------------------------------------------------------------------

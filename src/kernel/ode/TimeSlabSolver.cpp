@@ -46,7 +46,7 @@ bool TimeSlabSolver::solve()
   }
 
   end();
-  dolfin_error("Time slab system did not converge.");
+  dolfin_warning("Time slab system did not converge. Solution stopped.");
   return false;
 }
 //-----------------------------------------------------------------------------

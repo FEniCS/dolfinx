@@ -83,18 +83,16 @@ void NewTimeStepper::solve(ODE& ode)
 //-----------------------------------------------------------------------------
 real NewTimeStepper::step()
 {
-  bool solved = false;
+  // FIXME: Change type of time slab if solution does not converge
 
-  while(!solved)
-  {
-    // Build time slab
-    t = timeslab->build(t, T);
-    
-    //timeslab->disp();
-    
-    // Solve time slab system
-    solved = timeslab->solve();
-  }
+  // Build time slab
+  t = timeslab->build(t, T);
+  
+  //timeslab->disp();
+  
+  // Solve time slab system
+  if ( !timeslab->solve() )
+    stopped = true;
 
   // Save solution
   save();

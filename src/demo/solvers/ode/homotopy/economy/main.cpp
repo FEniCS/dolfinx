@@ -98,9 +98,9 @@ int main()
   dolfin_set("adaptive samples", true);
   dolfin_set("homotopy monitoring", false);
   dolfin_set("homotopy divergence tolerance", 10.0);
-  dolfin_set("homotopy randomize", false);
+  dolfin_set("homotopy randomize", true);
 
-  test2();
+  test1();
 
   return 0;
 }
