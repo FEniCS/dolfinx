@@ -19,7 +19,7 @@ DOLFIN_INCLUDES=""
 echo "Scanning for DOLFIN include files..."
 for f in `find .. -name '*.h*' | grep dolfin | grep -v 'dolfin.h' | grep -v '~'`; do
 	 DOLFIN_INCLUDES="$DOLFIN_INCLUDES $f"
-#	 echo "  Found: $f"
+	 echo "  Found: $f"
 done
 
 # Copy include files and libraries
