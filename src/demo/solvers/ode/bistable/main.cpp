@@ -109,7 +109,7 @@ int main()
   dolfin_set("progress step", 0.01);
 
   // Number of refinements
-  unsigned int refinements = 2;
+  unsigned int refinements = 3;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");

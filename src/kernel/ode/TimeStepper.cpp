@@ -198,7 +198,7 @@ void TimeStepper::saveFixedSamples(TimeSlab& timeslab)
   real t = ceil(timeslab.starttime()/K) * K;
   
   // Save samples
-  while ( t < timeslab.endtime() )
+  while ( (t + DOLFIN_EPS) < timeslab.endtime() )
   {
     Sample sample(u, f, t);
     file << sample;
