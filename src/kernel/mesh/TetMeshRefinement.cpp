@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Par Ingelstrom, 2004.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -443,6 +445,7 @@ void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh,
 					  Array<Node*>& sorted_nodes,
 					  Cell& face_neighbor)
 {
+
   // Create new nodes with the same coordinates as the old nodes
   Node& n_dm  = createNode(*sorted_nodes(0), mesh, cell);
   Node& n_m0  = createNode(*sorted_nodes(1), mesh, cell);
@@ -455,20 +458,24 @@ void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh,
 
   // Create new cells
   cell.initChildren(3);
-  Cell& c1 = createCell(n_dm, n_e0, n_e1, n_nm, mesh, cell);
-
+  createCell(n_dm, n_e0, n_e1, n_nm, mesh, cell);
+  
   // If neighbor has been refined irregular according to 
   // refinement rule 3, make sure the common face matches
+  Cell* c;
   for (int i = 0; i < face_neighbor.noChildren(); i++) {
-    if ( *face_neighbor.child(i) != c1 ){
-      if ( face_neighbor.child(i)->haveNode(n_e0) && face_neighbor.child(i)->haveNode(n_e1) ){
-	if ( face_neighbor.child(i)->haveNode(n_m0) ){
+    c = face_neighbor.child(i);
+    if ( !(c->haveNode(n_dm)) ){
+      if ( c->haveNode(n_e0) && c->haveNode(n_e1) ){
+	if ( c->haveNode(n_m0) ){
 	  createCell(n_e0, n_e1, n_m0, n_nm, mesh, cell);
 	  createCell(n_m0, n_m1, n_e1, n_nm, mesh, cell);
+	  break;
 	}
 	else{
 	  createCell(n_e0, n_e1, n_m1, n_nm, mesh, cell);
 	  createCell(n_m0, n_m1, n_e0, n_nm, mesh, cell);
+	  break;
 	}		
       }
     }
@@ -521,7 +528,7 @@ bool TetMeshRefinement::markedEdgesOnSameFace(Cell& cell)
       return true;
     return false;
   }
-
+  
   // Case 3
   if (cnt == 3){
     for (FaceIterator f(cell); !f.end(); ++f){
@@ -540,20 +547,20 @@ Cell* TetMeshRefinement::findNeighbor(Cell& cell, Face& face)
 {
   // Find a cell neighbor sharing a common face
 
-  Cell* neighbor = 0;
-
   for (CellIterator c(cell); !c.end(); ++c) {
-    for (FaceIterator f(cell); !f.end(); ++f) {
-      if ( f == face ) {
-	neighbor = c;
-	break;
+
+    // Don't check the cell itself
+    if ( c->id() == cell.id() )
+      continue;
+    for (FaceIterator f(*c); !f.end(); ++f) {
+      if ( f->id() == face.id() ) {
+	return c;
       }
     }
-    if ( neighbor )
-      break;
   }
 
-  return neighbor;
+  // If no neighbor is found, return the cell itself
+  return &cell;
 }
 //-----------------------------------------------------------------------------
 Cell& TetMeshRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
