@@ -3,6 +3,8 @@
 
 #include <dolfin.h>
 
+using namespace dolfin;
+
 dolfin_bc my_bc(real x, real y, real z, int node, int component);
 
 real fx(real x, real y, real z, real t);
