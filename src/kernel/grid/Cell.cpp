@@ -219,17 +219,19 @@ void Cell::setLevel(int level)
 //-----------------------------------------------------------------------------
 void Cell::markEdge(int edge)
 {
-  ce(edge)->mark();
-
-  if (!ce(edge)->marked()) _no_marked_edges++;
+  if (!ce(edge)->marked()){
+    ce(edge)->mark();
+    _no_marked_edges++;
+  }
 }	 
 //-----------------------------------------------------------------------------
 void Cell::unmarkEdge(int edge)
 {
-  ce(edge)->unmark();
-
-  if (ce(edge)->marked()) _no_marked_edges--;
-}	 
+  if (ce(edge)->marked()){
+    ce(edge)->unmark();
+    _no_marked_edges--;
+  }	 
+}
 //-----------------------------------------------------------------------------
 int Cell::noMarkedEdges()
 {
