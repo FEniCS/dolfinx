@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <string.h>
+#include <stdarg.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/function.h>
@@ -18,7 +19,6 @@ namespace dolfin {
 
   // A small class for internal use in Settings
   class Parameter{
-	 
   public:
 
 	 enum Type { REAL, INT, BOOL, STRING, FUNCTION, BCFUNCTION, NONE };
