@@ -104,7 +104,11 @@ else
     exit 1
 fi
 
-# List of DOLFIN kernel modules
+# List of DOLFIN module libraries
+# FIXME: Rename when old modules are removed
+DOLFIN_MODULES_NEW="poisson"
+
+# List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings common"
 
 # Find modules
@@ -128,7 +132,7 @@ AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for main (including also module code)
 MAIN_CFLAGS=""
-DIRS="$DOLFIN_MODULES"
+DIRS="$DOLFIN_MODULES $DOLFIN_MODULES_NEW"
 for f in $DIRS; do
     MAIN_CFLAGS="$MAIN_CFLAGS-I\$(top_builddir)/src/modules/$f "
 done
@@ -138,7 +142,7 @@ AC_SUBST(MAIN_CFLAGS)
 # Generate library list for linking in the correct order.
 # FIXME: Not very pretty to list the libraries multiple times
 DOLFIN_LIBS=""
-DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
+DIRS="$DOLFIN_MAIN $DOLFIN_MODULES $DOLFIN_MODULES_NEW $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 for f in $DIRS; do
     DOLFIN_LIBS="$DOLFIN_LIBS-ldolfin-$f "
 done

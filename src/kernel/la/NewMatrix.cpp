@@ -177,7 +177,7 @@ void NewMatrix::disp(bool sparse, int precision) const
   for (uint i = 0; i < M; i++)
   {
     std::stringstream line;
-
+    
     line << std::setprecision(precision);
 
     for (uint j = 0; j < N; j++)
@@ -189,7 +189,7 @@ void NewMatrix::disp(bool sparse, int precision) const
       line << std::setw(precision + 1) << value << " ";
     }
     cout << line.str().c_str() << endl;
-  }  
+  }
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const NewMatrix& A)
