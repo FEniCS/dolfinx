@@ -41,10 +41,11 @@ public:
     if ( i == 0 )
       return h/2;
 
-    return h * static_cast<real>(i);
+    // Displace all masses slightly
+    return h*static_cast<real>(i) + 0.1*h*(2.0*static_cast<real>(i%2)-1.0);
   }
 
-  real v0(unsigned int i)
+  real vx0(unsigned int i)
   {
     return 0.0;
   }
@@ -160,7 +161,6 @@ int main(int argC, char* argV[])
   dolfin_set("tolerance", 0.1);
   dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);
-  dolfin_set("partitioning threshold", 0.99);
   dolfin_set("fixed time step", true);  
   dolfin_set("maximum iterations", 20000);
   //dolfin_set("initial time step", 0.01);
