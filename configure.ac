@@ -53,7 +53,7 @@ AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your syste
 # Not very pretty... Maybe someone knows how to fix this?
 #DOLFIN_KERNEL="ode io mesh fem element mesh io fem form quadrature map la math common settings log settings common main ode"
 DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings"
-DOLFIN_KERNEL="$DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
+DOLFIN_KERNEL="$DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 
 # Find modules
 cd src/modules
