@@ -14,12 +14,15 @@ GenericCell::GenericCell()
 {
   grid = 0;
   _id = -1;
-  _no_children = 0;
+  _parent = 0;
+  _marker = 0;
 }
 //-----------------------------------------------------------------------------
 GenericCell::~GenericCell()
 {
-
+  if ( _marker )
+    delete _marker;
+  _marker = 0;
 }
 //-----------------------------------------------------------------------------
 int GenericCell::id() const
@@ -37,6 +40,11 @@ int GenericCell::noNodeNeighbors() const
   return cn.size();
 }
 //-----------------------------------------------------------------------------
+int GenericCell::noChildren() const
+{
+  return children.size();
+}
+//-----------------------------------------------------------------------------
 Node* GenericCell::node(int i) const
 {
   return cn(i);
@@ -50,6 +58,16 @@ Edge* GenericCell::edge(int i) const
 Cell* GenericCell::neighbor(int i) const
 {
   return cc(i);
+}
+//-----------------------------------------------------------------------------
+Cell* GenericCell::parent() const
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+Cell* GenericCell::child(int i) const
+{
+  return children(i);
 }
 //-----------------------------------------------------------------------------
 Point GenericCell::coord(int i) const
@@ -99,10 +117,8 @@ void GenericCell::setChild(Cell* child)
 {
   // Set the child cell if Cell not already contains the child cell: a cell 
   // is child if it is created through refinement of the current cell.  
-  if (!(this->_children.contains(child))){
-    this->_children.add(child);
-    this->_no_children++; 
-  }
+  if ( !children.contains(child) )
+    children.add(child);
 }
 //-----------------------------------------------------------------------------
 bool GenericCell::neighbor(GenericCell* cell) const
@@ -181,18 +197,10 @@ Face* GenericCell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return 0;
 }
 //-----------------------------------------------------------------------------
-Cell* GenericCell::parent()
+CellMarker& GenericCell::marker() const
 {
-  return _parent;
-}
-//-----------------------------------------------------------------------------
-Cell* GenericCell::child(int i)
-{
-  return _children(i);
-}
-//-----------------------------------------------------------------------------
-int GenericCell::noChildren()
-{
-  return _no_children;
+  dolfin_assert(_marker);
+
+  return *_marker;
 }
 //-----------------------------------------------------------------------------

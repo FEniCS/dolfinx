@@ -5,8 +5,10 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/BoundaryInit.h \
                            dolfin/Cell.h \
                            dolfin/CellIterator.h \
+                           dolfin/CellMarker.h \
                            dolfin/Edge.h \
                            dolfin/EdgeIterator.h \
+                           dolfin/EdgeMarker.h \
                            dolfin/Face.h \
                            dolfin/FaceIterator.h \
                            dolfin/GenericCell.h \

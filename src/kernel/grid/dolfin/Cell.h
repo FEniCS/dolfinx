@@ -3,7 +3,6 @@
 
 // A couple of comments:
 //
-//   - Maybe we should not use capital letters for enums after all?
 //   - Enums don't need to be called "refined_regular", just "regular" is enough?
 //   - Move data to GenericCell? Cell should only contain the GenericCell pointer?
 //   - Maybe more methods should be private?
@@ -17,6 +16,7 @@
 #include <dolfin/NodeIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
+#include <dolfin/CellMarker.h>
 
 namespace dolfin {  
 
@@ -33,14 +33,6 @@ namespace dolfin {
     
     enum Type   { triangle, tetrahedron, none };
 
-    enum Marker { MARKED_FOR_REGULAR_REFINEMENT, MARKED_FOR_IRREGULAR_REFINEMENT, 
-		     MARKED_FOR_IRREGULAR_REFINEMENT_BY_1, MARKED_FOR_IRREGULAR_REFINEMENT_BY_2, 
-		     MARKED_FOR_IRREGULAR_REFINEMENT_BY_3, MARKED_FOR_IRREGULAR_REFINEMENT_BY_4, 
-		     MARKED_FOR_NO_REFINEMENT, MARKED_FOR_COARSENING, MARKED_ACCORDING_TO_REFINEMENT };
-    enum Status { REFINED_REGULAR, REFINED_IRREGULAR, 
-		  REFINED_IRREGULAR_BY_1, REFINED_IRREGULAR_BY_2, 
-		  REFINED_IRREGULAR_BY_3, REFINED_IRREGULAR_BY_4, UNREFINED };
-    
     /// Create an empty cell
     Cell();
 
@@ -79,6 +71,9 @@ namespace dolfin {
     /// Return number of node neighbors
     int noNodeNeighbors() const;
 
+    /// Return number of cell children
+    int noChildren() const;
+
     /// Return node number i
     Node* node(int i) const;
 
@@ -87,6 +82,12 @@ namespace dolfin {
 
     /// Return cell neighbor number i
     Cell* neighbor(int i) const;
+
+    /// Return parent cell
+    Cell* parent() const;
+
+    /// Return child cell
+    Cell* child(int i) const;
 
     /// Return coordinate for node i
     Point coord(int i) const;
@@ -101,8 +102,6 @@ namespace dolfin {
 
     /// Mark cell for refinement
     void mark();
-
-
     
     // FIXME: Remove?
     
@@ -143,8 +142,10 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
-    // Set parent-child info
+    // Set parent cell
     void setParent(Cell* parent);
+
+    // Set child cell
     void setChild(Cell* child);
 
     // Clear data and create a new triangle
@@ -174,21 +175,11 @@ namespace dolfin {
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
 
+    /// Return marker for cell
+    CellMarker& marker() const;
+
     // The cell
     GenericCell* c;
-
-    // FIXME: Remove?
-
-    // Refinement level in grid hierarchy, coarsest grid is level = 0
-    int _level;
-    // Refinement status
-    Status _status;
-    // Marker (for refinement)
-    Marker _marker;
-    int _no_marked_edges;
-    bool _marked_for_re_use;
-    bool _refined_by_face_rule;
-
     
   };
 

@@ -10,6 +10,7 @@
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
+#include <dolfin/CellMarker.h>
 #include <dolfin/Array.h>
 
 namespace dolfin {
@@ -35,20 +36,18 @@ namespace dolfin {
     
     int noCellNeighbors() const;
     int noNodeNeighbors() const;
+    int noChildren() const;
 
     Node* node(int i) const;
     Edge* edge(int i) const;
     Cell* neighbor(int i) const;
+    Cell* parent() const;
+    Cell* child(int i) const;
     Point coord(int i) const;
     Point midpoint() const;
     int   nodeID(int i) const;
 
     void mark(Cell* cell);
-    
-    /// Parent-child functions
-    Cell* parent();
-    Cell* child(int i);
-    int   noChildren();
 
     // Friends
     friend class Cell;
@@ -66,8 +65,10 @@ namespace dolfin {
     // Specify global cell number
     int setID(int id, Grid* grid);
     
-    // Set parent-child info
+    // Set parent cell
     void setParent(Cell* parent);
+
+    // Set child cell
     void setChild(Cell* child);
 
     // Check if given cell is a neighbor
@@ -91,6 +92,9 @@ namespace dolfin {
     // Find face within cell
     Face* findFace(Edge* e0, Edge* e1, Edge* e2);
 
+    /// Return marker for cell
+    CellMarker& marker() const;
+
     // The grid containing this cell
     Grid* grid;
 
@@ -105,9 +109,11 @@ namespace dolfin {
 
     /// Parent-child info
     Cell* _parent;
-    Array<Cell*> _children;
-    int _no_children;
+    Array<Cell*> children;
 
+    /// Cell marker (only used during refinement)
+    CellMarker* _marker;
+    
   };
 
 }

@@ -11,49 +11,41 @@ Node::Node()
 {
   grid = 0;
   _id = -1;
-
-  // FIXME: Remove?
-  _boundary = -1;
-  _child = NULL;
+  _parent = 0;
+  _child = 0;
 }
 //-----------------------------------------------------------------------------
 Node::Node(real x)
 {
   grid = 0;
   _id = -1;
+  _parent = 0;
+  _child = 0;
 
   p.x = x;
-
-  // FIXME: Remove?
-  _boundary = -1;
-  _child = NULL;
 }
 //-----------------------------------------------------------------------------
 Node::Node(real x, real y)
 {
   grid = 0;
   _id = -1;
+  _parent = 0;
+  _child = 0;
 
   p.x = x;
   p.y = y;
-  
-  // FIXME: Remove?
-  _boundary = -1;
-  _child = NULL;
 }
 //-----------------------------------------------------------------------------
 Node::Node(real x, real y, real z)
 {
   grid = 0;
   _id = -1;
+  _parent = 0;
+  _child = 0;
 
   p.x = x;
   p.y = y;
   p.z = z;
-
-  // FIXME: Remove?
-  _boundary = -1;
-  _child = NULL;
 }
 //-----------------------------------------------------------------------------
 int Node::id() const
@@ -91,6 +83,16 @@ Edge* Node::edge(int i) const
   return ne(i);
 }
 //-----------------------------------------------------------------------------
+Node* Node::parent() const 
+{
+  return _parent;
+}
+//-----------------------------------------------------------------------------
+Node* Node::child() const
+{
+  return _child;
+}
+//-----------------------------------------------------------------------------
 Point Node::coord() const
 {
   return p;
@@ -108,21 +110,6 @@ bool Node::neighbor(Node* n)
       return true;
   
   return false;
-}
-//-----------------------------------------------------------------------------
-int Node::boundary() const
-{
-  return _boundary;
-}
-//-----------------------------------------------------------------------------
-Node* Node::parent() 
-{
-  return _parent;
-}
-//-----------------------------------------------------------------------------
-Node* Node::child() 
-{
-  return _child;
 }
 //-----------------------------------------------------------------------------
 bool Node::operator== (int id) const

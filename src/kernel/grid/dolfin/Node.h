@@ -57,6 +57,12 @@ namespace dolfin{
     /// Return edge neighbor number i
     Edge* edge(int i) const;
 
+    /// Return parent node
+    Node* parent() const;
+
+    /// Return child node
+    Node* child() const;
+
     /// Return node coordinate
     Point coord() const;
     
@@ -65,13 +71,6 @@ namespace dolfin{
     
     /// Check if given node is a neighbor
     bool neighbor(Node* n);
-
-    /// Return boundary number for node
-    int boundary() const;
-
-    /// Parent-child functions
-    Node* parent();
-    Node* child();
 
     /// Comparison based on the node id
 
@@ -108,8 +107,10 @@ namespace dolfin{
     // Specify global node number
     int setID(int id, Grid* grid);
     
-    // Set parent-child info
+    // Set parent node
     void setParent(Node* parent);
+
+    // Set child node
     void setChild(Node* child);
 
     // Specify coordinate
@@ -137,8 +138,6 @@ namespace dolfin{
 
 
 
-    // FIXME: Remove?
-    int _boundary;
 
     int level() const;
     void setMarkedForReUse(bool re_use);

@@ -14,29 +14,27 @@ Edge::Edge()
 {
   grid = 0;
   _id = -1;
+  _marker = 0;
 
   n0 = 0;
   n1 = 0;
-
-  // FIXME: Remove?
-  marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
 Edge::Edge(Node* n0, Node* n1)
 {
   grid = 0;
   _id = -1;
+  _marker = 0;
 
   this->n0 = n0;
   this->n1 = n1;
-
-  // FIXME: Remove?
-  marked_for_refinement = false;
 }
 //-----------------------------------------------------------------------------
 Edge::~Edge()
 {
-
+  if ( _marker )
+    delete _marker;
+  _marker = 0;
 }
 //-----------------------------------------------------------------------------
 int Edge::id() const
@@ -116,59 +114,9 @@ void Edge::set(Node* n0, Node* n1)
   this->n1 = n1;
 }
 //-----------------------------------------------------------------------------
-
-
-
-// FIXME: Remove?
-
-void Edge::setMarkedForReUse(bool re_use)
+EdgeMarker& Edge::marker() const
 {
-  _marked_for_re_use = re_use;
-}
-//-----------------------------------------------------------------------------
-bool Edge::markedForReUse()
-{
-  return _marked_for_re_use;
-}
-//-----------------------------------------------------------------------------
-int Edge::level() const
-{
-  return _level;
-}
-//-----------------------------------------------------------------------------
-void Edge::setLevel(int level)
-{
-  _level = level;
-}
-//-----------------------------------------------------------------------------
-int Edge::refinedByCells() 
-{
-  return _no_cells_refined;
-}
-//-----------------------------------------------------------------------------
-Cell* Edge::refinedByCell(int i) 
-{
-  return refined_by_cell(i);
-}
-//-----------------------------------------------------------------------------
-void Edge::setRefinedByCell(Cell* c) 
-{
-  refined_by_cell.add(c);
-  _no_cells_refined++;
-}
-//-----------------------------------------------------------------------------
-bool Edge::marked()
-{
-  return marked_for_refinement;
-}
-//-----------------------------------------------------------------------------
-void Edge::mark()
-{
-  marked_for_refinement = true;
-}
-//-----------------------------------------------------------------------------
-void Edge::unmark()
-{
-  marked_for_refinement = false;
+  dolfin_assert(_marker);
+  return *_marker;
 }
 //-----------------------------------------------------------------------------

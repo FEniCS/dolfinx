@@ -1,19 +1,15 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-// A couple of comments:
-//
-//   - More methods should be private?
-//   - Why _en0, _en1 instead of just n0, n1?
-
-#ifndef __EDGE_HH
-#define __EDGE_HH
+#ifndef __EDGE_H
+#define __EDGE_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
+#include <dolfin/EdgeMarker.h>
 
 namespace dolfin {
 
@@ -76,6 +72,9 @@ namespace dolfin {
     
     /// Specify nodes
     void set(Node* n0, Node* n1);
+
+    /// Return marker for edge
+    EdgeMarker& marker() const;
     
     // The grid containing this edge
     Grid* grid;
@@ -86,27 +85,10 @@ namespace dolfin {
     // Nodes
     Node* n0;
     Node* n1;
-    
-    /// --- Functions for mesh refinement
-    int  level() const;
-    void setLevel(int level);
-    void mark();
-    void unmark();
-    bool marked();
-    int  refinedByCells();
-    Cell* refinedByCell(int i);
-    void  setRefinedByCell(Cell* c);
-    void setMarkedForReUse(bool re_use);
-    bool markedForReUse();
-    
-    // FIXME: Remove?
-    bool _marked_for_re_use;
-    bool marked_for_refinement;
-    Array<Cell*> refined_by_cell; 
-    int _no_cells_refined;
-    // Refinement level in grid hierarchy, coarsest grid is level = 0
-    int _level;
-    
+
+    /// Edge marker (only used during refinement)
+    EdgeMarker* _marker;
+
   };
   
 }

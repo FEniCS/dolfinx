@@ -14,41 +14,17 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Cell::Cell()
 {
-  _level = -1;
   c = 0;
-
-  // Remove?
-  _marker = MARKED_FOR_NO_REFINEMENT;
-  _status = UNREFINED;
-  _no_marked_edges = 0;
-  _marked_for_re_use = true;
-  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node* n0, Node* n1, Node* n2)
 {
   c = new Triangle(n0, n1, n2);
-
-  // FIXME: Remove?
-  _level = -1;
-  _marker = MARKED_FOR_NO_REFINEMENT;
-  _status = UNREFINED;
-  _no_marked_edges = 0;
-  _marked_for_re_use = true;
-  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::Cell(Node* n0, Node* n1, Node* n2, Node* n3)
 {
   c = new Tetrahedron(n0, n1, n2, n3);
-
-  // FIXME: Remove?
-  _level = -1;
-  _marker = MARKED_FOR_NO_REFINEMENT;
-  _status = UNREFINED;
-  _no_marked_edges = 0;
-  _marked_for_re_use = true;
-  _refined_by_face_rule = false;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -121,6 +97,14 @@ int Cell::noNodeNeighbors() const
   return 0;
 }
 //-----------------------------------------------------------------------------
+int Cell::noChildren() const
+{
+  if ( c )
+    return c->noChildren();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 Node* Cell::node(int i) const
 {
   if ( c )
@@ -143,6 +127,18 @@ Cell* Cell::neighbor(int i) const
     return c->neighbor(i);
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+Cell* Cell::parent() const
+{
+  dolfin_assert(c);
+  return c->parent();
+}
+//-----------------------------------------------------------------------------
+Cell* Cell::child(int i) const
+{
+  dolfin_assert(c);
+  return c->child(i);
 }
 //-----------------------------------------------------------------------------
 Point Cell::coord(int i) const
@@ -195,7 +191,7 @@ void Cell::setParent(Cell* parent)
 //-----------------------------------------------------------------------------
 void Cell::setChild(Cell* child)
 {
-  // Set the child cell if Cell not already contains the child cell: a cell 
+  // Set the child if cell not already contains the child cell: a cell 
   // is child if it is created through refinement of the current cell.  
   dolfin_assert(c);
   return c->setChild(child);
@@ -261,6 +257,12 @@ Face* Cell::findFace(Edge* e0, Edge* e1, Edge* e2)
   return c->findFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
+CellMarker& Cell::marker() const
+{
+  dolfin_assert(c);
+  return c->marker();
+}
+//-----------------------------------------------------------------------------
 // Additional operators
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
@@ -292,16 +294,6 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
 
 
 /*
-//-----------------------------------------------------------------------------
-int Cell::level() const
-{
-  return _level;
-}
-//-----------------------------------------------------------------------------
-int Cell::nodeID(int i) const
-{
-  return cn(i)->id();
-}
 //-----------------------------------------------------------------------------
 void Cell::setEdge(Edge* e, int i)
 {

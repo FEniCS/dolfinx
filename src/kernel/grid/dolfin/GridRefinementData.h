@@ -4,6 +4,8 @@
 #ifndef __GRID_REFINEMENT_DATA_H
 #define __GRID_REFINEMENT_DATA_H
 
+#include <dolfin/CellMarker.h>
+#include <dolfin/Array.h>
 #include <dolfin/List.h>
 
 namespace dolfin {
@@ -38,7 +40,7 @@ namespace dolfin {
     // The grid
     Grid* grid;
 
-    // Cells that are marked for refinement
+    // Cells marked for refinement
     List<Cell*> marked_cells;
 
   };

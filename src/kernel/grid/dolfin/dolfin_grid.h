@@ -9,6 +9,9 @@
 #include <dolfin/GridRefinement.h>
 #include <dolfin/GridRefinementData.h>
 
+#include <dolfin/CellMarker.h>
+#include <dolfin/EdgeMarker.h>
+
 #include <dolfin/Point.h>
 #include <dolfin/Node.h> 
 #include <dolfin/Cell.h>

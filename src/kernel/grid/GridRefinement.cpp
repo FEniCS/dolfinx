@@ -6,6 +6,7 @@
 #include <dolfin/Grid.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
+#include <dolfin/CellMarker.h>
 #include <dolfin/GridHierarchy.h>
 #include <dolfin/GridIterator.h>
 #include <dolfin/GridRefinement.h>
@@ -20,9 +21,6 @@ void GridRefinement::refine(GridHierarchy& grids)
   cout << grids.fine().rd->noMarkedCells()
        << " cells marked for refinement." << endl;
   
-  // Create the new finest grid
-  createFineGrid(grids);
-
   // Refine grid hierarchy
   globalRefinement(grids);
 
@@ -35,10 +33,10 @@ void GridRefinement::refine(GridHierarchy& grids)
 void GridRefinement::createFineGrid(GridHierarchy& grids)
 {
   // Create the new grid
-  Grid* grid = new Grid(grids.fine());
+  //Grid* grid = new Grid(grids.fine());
 
   // Add the grid to the grid hierarchy
-  grids.add(*grid);
+  //grids.add(*grid);
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::globalRefinement(GridHierarchy& grids)
@@ -67,8 +65,21 @@ void GridRefinement::evaluateMarks(Grid& grid)
   // Evaluate and adjust marks for a grid.
   // This is algorithm EvaluateMarks() in Beys paper.
 
-  
+  for (CellIterator c(grid); !c.end(); ++c) {
 
+    if ( c->marker().status == ref_reg && childrenMarkedForCoarsening(*c) )
+      c->marker().mark = marked_for_no_ref;
+    
+    if ( c->marker().status == ref_irr ) {
+      
+      if ( oneEdgeOfChildMarkedForRefinement(*c) )
+	c->marker().mark = marked_for_reg_ref;
+      else
+	c->marker().mark = marked_for_no_ref;
+
+    }
+   
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -223,6 +234,32 @@ void GridRefinement::regularRefinementTet(Cell& cell, Grid& grid)
   cell.setChild(t7);
   cell.setChild(t8);
 }
+//-----------------------------------------------------------------------------
+bool GridRefinement::childrenMarkedForCoarsening(Cell& cell)
+{
+  for (int i = 0; i < cell.noChildren(); i++)
+    if ( cell.child(i)->marker().mark != marked_for_coarsening )
+      return false;
+    
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool GridRefinement::oneEdgeOfChildMarkedForRefinement(Cell& cell)
+{
+  for (int i = 0; i < cell.noChildren(); i++)
+    for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
+      if ( e.marker().mark == marked )
+	return true;
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+
+
+
+
+
+
 //-----------------------------------------------------------------------------
 /*
 void GridRefinement::irregularRefinementBy1(Cell& cell, Grid& grid)
