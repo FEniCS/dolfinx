@@ -38,7 +38,7 @@ public:
       real b = 0.1;
       real E = 500.0;
       real nu = 0.3;
-      real b_p = 300.0;
+      //real b_p = 300.0;
 
       //real b = 10.0;
       //real b_p = 300.0;
@@ -95,8 +95,8 @@ public:
 	
 	gradwp.transp(gradwptransp);
 	
-	Matrix &F0 = *(F0array[cell_->id()]);
-	Matrix &F1 = *(F1array[cell_->id()]);
+	//Matrix &F0 = *(F0array[cell_->id()]);
+	//Matrix &F1 = *(F1array[cell_->id()]);
 	
 	// Compute F
 

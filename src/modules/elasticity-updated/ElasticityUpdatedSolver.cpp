@@ -198,7 +198,7 @@ void ElasticityUpdatedSolver::solve()
       ///*
       //A.lump(m);
       
-      for(int i = 0; i < m.size(); i++)
+      for(unsigned int i = 0; i < m.size(); i++)
       {
 	//x21(i) = b(i) / m(i);
 	stepresidual(i) = -x21(i) + x20(i) + b(i) / m(i);
