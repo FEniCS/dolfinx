@@ -36,7 +36,6 @@ int main()
   dolfin_set("output", "plain text");
 
   Mesh mesh("mesh.xml.gz");
-  mesh.refineUniformly();
 
   Problem poisson("poisson", mesh);
   

@@ -33,6 +33,8 @@ void PoissonSolver::solve()
   // FIXME: Should be able to take f as an argument from main.cpp
   // FIXME: fvalues should be initialized by NewFunction
   NewVector fvalues(mesh.noNodes());
+
+  fvalues = 8.0; // Should together with bc give solution 4*x(1-x)
   NewFunction f(mesh, element, fvalues);
 
   Poisson::BilinearForm a;
@@ -47,11 +49,6 @@ void PoissonSolver::solve()
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
 
-  b = 2.0; 
-  //for (NodeIterator n(mesh); !n.end(); ++n){
-  //  b(n->id()) = 32.0*((1.0-(n->coord().x))*(n->coord().x)+(1.0-(n->coord().y))*(n->coord().y));
-  //}
-
   // Set boundary conditions
   dirichletBC(A,b,mesh);
   
@@ -63,12 +60,16 @@ void PoissonSolver::solve()
   NewGMRES solver;
   solver.solve(A, x, b);
 
-  // Save the solution
-  // FIXME: Implement output for NewFunction
-  Vector xold(x.size());
+  A.disp();
+  b.disp();
+  x.disp();
+    
+  Vector xold(b.size());
   for(uint i = 0; i < x.size(); i++)
     xold(i) = x(i);
-  xold.show();
+
+  // Save the solution
+  // FIXME: Implement output for NewFunction
   Function uold(mesh, xold, 1);
   uold.rename("u", "temperature");
   File file("poisson.m");
