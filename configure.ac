@@ -52,7 +52,7 @@ if test x$enable_debug = xyes; then
 fi
 
 # Modify compiler flags when optimization is enabled
-if test x$enable_debug = xyes; then
+if test x$enable_optimization = xyes; then
     CXXFLAGS='-O3 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
