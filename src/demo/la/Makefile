@@ -42,7 +42,7 @@ AMTAR = tar
 AUTOCONF = autoconf
 AUTOHEADER = autoheader
 AUTOMAKE = automake-1.7
-AWK = gawk
+AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS =  -DLOAD_BMP
@@ -50,7 +50,7 @@ CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -O3 -Wall -Werror -pedantic -ansi -std=c++98
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.4.8\" -DPACKAGE_STRING=\"dolfin\ 0.4.8\" -DPACKAGE_BUGREPORT=\"dolfin@math.chalmers.se\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 
 DEPDIR = .deps
@@ -89,7 +89,7 @@ SHELL = /bin/sh
 STRIP = 
 VERSION = 
 XML2_INCLUDES = -I/usr/include/libxml2
-XML2_LFLAGS = -lxml2 -lz -lpthread -lm
+XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_RANLIB = ranlib
@@ -108,7 +108,7 @@ exec_prefix = ${prefix}
 host_alias = 
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /home/logg/work/src/dolfin/dolfin/install-sh
+install_sh = /home/logg/work/src/dolfin/current/dolfin/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 libxml2_found = yes

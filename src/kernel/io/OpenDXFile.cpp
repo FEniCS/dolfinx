@@ -74,7 +74,7 @@ void OpenDXFile::writeHeader(FILE* fp)
   fprintf(fp,"#\n");
   fprintf(fp,"# Saved by %s at %s\n", system.user(), date());
   fprintf(fp,"# on %s (%s) running %s version %s.\n",
-	  system.host(), system.mach(), system.vers());
+	  system.host(), system.mach(), system.name(), system.vers());
   fprintf(fp,"#\n");
 }
 //-­---------------------------------------------------------------------------
@@ -87,7 +87,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write nodes
   fprintf(fp, "# A list of all node positions\n");
   fprintf(fp, "object \"nodes %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
-	  mesh.noNodes(), frames.size());
+	  frames.size(), mesh.noNodes());
 
   for (NodeIterator n(mesh); !n.end(); ++n)
   {
