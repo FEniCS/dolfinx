@@ -14,18 +14,6 @@
 
 using namespace dolfin;
 
-/*
-
-Comments:
-
- - In closeGrid(), shouldn't Q be the set of all regular *or unrefined*
-   cells which have an edge marked by another cell? (Not only regular?)
-
- - Should ref_reg and unref be the same status?
-
-*/
-
-
 //-----------------------------------------------------------------------------
 void GridRefinement::refine(GridHierarchy& grids)
 {
@@ -211,6 +199,10 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 
   // Mark nodes and cells for reuse
   for (CellIterator c(grid); !c.end(); ++c) {
+
+    // Skip cells which are not refined
+    if ( c->status() == Cell::unref )
+      continue;
 
     // Skip cells which are not marked according to refinement
     if ( c->marker() != Cell::marked_according_to_ref )

@@ -33,6 +33,9 @@ void TriGridRefinement::refine(Cell& cell, Grid& grid)
 {
   // Refine cell according to marker
   switch ( cell.marker() ) {
+  case Cell::marked_for_no_ref:
+    refineNoRefine(cell, grid);
+    break;
   case Cell::marked_for_reg_ref:
     refineRegular(cell, grid);
     break;
@@ -82,6 +85,36 @@ bool TriGridRefinement::checkRuleIrregular2(Cell& cell, int no_marked_edges)
   return true;
 }
 //-----------------------------------------------------------------------------
+void TriGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
+{
+  // Don't refine the triangle and create a copy in the new grid.
+
+  // Check that the cell is marked correctly 
+  dolfin_assert(cell.marker() == Cell::marked_for_no_ref);
+  
+  // Create new nodes with the same coordinates as existing nodes
+  Node* n0 = grid.createNode(cell.coord(0));
+  Node* n1 = grid.createNode(cell.coord(1));
+  Node* n2 = grid.createNode(cell.coord(2));
+
+  // Update parent-child info 
+  n0->setParent(cell.node(0)); cell.node(0)->setChild(n0);
+  n1->setParent(cell.node(1)); cell.node(1)->setChild(n1);
+  n2->setParent(cell.node(2)); cell.node(2)->setChild(n2);
+
+  // Create a new cell
+  Cell* c = grid.createCell(n0, n1, n2);
+
+  // Update parent-child info
+  c->setParent(&cell); cell.addChild(c);
+
+  // Set marker of cell
+  cell.marker() = Cell::marked_according_to_ref;
+
+  // Set status of cell
+  cell.status() = Cell::unref;
+}
+//-----------------------------------------------------------------------------
 void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
 {
   // Refine one triangle into four new ones, introducing new nodes 
@@ -119,8 +152,11 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   cell.addChild(t3);
   cell.addChild(t4);
 
-  // Set marker of cell to "marked_according_to_ref" 
+  // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
+
+  // Set status of cell
+  cell.status() = Cell::ref_reg;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
@@ -161,8 +197,11 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   cell.addChild(t1);
   cell.addChild(t2);
 
-  // Set marker of cell to "marked_according_to_ref" 
+  // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
+
+  // Set status of cell
+  cell.status() = Cell::ref_irr;
 }
 //-----------------------------------------------------------------------------
 void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
@@ -209,7 +248,10 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   cell.addChild(t2);
   cell.addChild(t3);
 
-  // Set marker of cell to "marked_according_to_ref" 
+  // Set marker of cell
   cell.marker() = Cell::marked_according_to_ref;
+
+  // Set status of cell
+  cell.status() = Cell::ref_irr;
 }
 //-----------------------------------------------------------------------------

@@ -30,6 +30,7 @@ namespace dolfin {
     static bool checkRuleIrregular1(Cell& cell, int no_marked_edges);
     static bool checkRuleIrregular2(Cell& cell, int no_marked_edges);
 
+    static void refineNoRefine  (Cell& cell, Grid& grid);
     static void refineRegular   (Cell& cell, Grid& grid);
     static void refineIrregular1(Cell& cell, Grid& grid);
     static void refineIrregular2(Cell& cell, Grid& grid);

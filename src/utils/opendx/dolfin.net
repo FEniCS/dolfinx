@@ -1,5 +1,5 @@
 //
-// time: Wed Sep 17 14:34:42 2003
+// time: Thu Sep 18 13:50:08 2003
 //
 // version: 3.2.0 (format), 4.3.0 (DX)
 //
@@ -14,14 +14,14 @@
 // page assignment: Arrows	order=9, windowed=0, showing=0
 // page assignment: Colorslice	order=6, windowed=0, showing=0
 // page assignment: Frame	order=4, windowed=0, showing=0
-// page assignment: Geometry	order=10, windowed=0, showing=0
+// page assignment: Geometry	order=10, windowed=0, showing=1
 // page assignment: Image	order=11, windowed=0, showing=0
 // page assignment: Import	order=2, windowed=0, showing=0
-// page assignment: Iso surface	order=5, windowed=0, showing=1
+// page assignment: Iso surface	order=5, windowed=0, showing=0
 // page assignment: Streamlines	order=7, windowed=0, showing=0
 // page assignment: Variable	order=3, windowed=0, showing=0
 // page assignment: Vorticity	order=8, windowed=0, showing=0
-// workspace: width = 472, height = 620
+// workspace: width = 433, height = 465
 // layout: snap = 1, width = 20, height = 31, align = UL
 //
 macro main(
@@ -793,12 +793,12 @@ main_ColorBar_1_out_1 =
     // node Image[1]: x = 120, y = 496, inputs = 49, label = Image
     // input[1]: defaulting = 0, visible = 0, type = 67108863, value = "Image_1"
     // input[4]: defaulting = 0, visible = 0, type = 1, value = 1
-    // input[5]: defaulting = 0, visible = 0, type = 8, value = [0.125 0.125 0.125]
-    // input[6]: defaulting = 0, visible = 0, type = 8, value = [-0.257099 1.09645 -0.18199]
-    // input[7]: defaulting = 1, visible = 0, type = 5, value = 0.58311
+    // input[5]: defaulting = 0, visible = 0, type = 8, value = [0.25 0.25 0.25]
+    // input[6]: defaulting = 0, visible = 0, type = 8, value = [1.20859 0.838721 2.11295]
+    // input[7]: defaulting = 1, visible = 0, type = 5, value = 1.16625
     // input[8]: defaulting = 0, visible = 0, type = 1, value = 640
     // input[9]: defaulting = 0, visible = 0, type = 5, value = 0.75
-    // input[10]: defaulting = 0, visible = 0, type = 8, value = [0.0527791 -0.28197 -0.95797]
+    // input[10]: defaulting = 0, visible = 0, type = 8, value = [-0.089117 0.961987 -0.258147]
     // input[11]: defaulting = 0, visible = 0, type = 5, value = 30.0
     // input[12]: defaulting = 0, visible = 0, type = 1, value = 1
     // input[14]: defaulting = 0, visible = 0, type = 1, value = 1
@@ -823,7 +823,7 @@ main_ColorBar_1_out_1 =
     // page group: Image
     // title: value = Basic3D
     // depth: value = 24
-    // window: position = (0.3711,0.3208), size = 0.5109x0.5437
+    // window: position = (0.4648,0.1906), size = 0.5109x0.5437
     // internal caching: 1
     //
 main_Image_1_out_1,
@@ -1671,12 +1671,12 @@ macro Image(
 main_Image_1_in_1 = "Image_1";
 main_Image_1_in_3 = "X24,,Basic3D";
 main_Image_1_in_4 = 1;
-main_Image_1_in_5 = [0.125 0.125 0.125];
-main_Image_1_in_6 = [-0.257099 1.09645 -0.18199];
+main_Image_1_in_5 = [0.25 0.25 0.25];
+main_Image_1_in_6 = [1.20859 0.838721 2.11295];
 main_Image_1_in_7 = NULL;
 main_Image_1_in_8 = 640;
 main_Image_1_in_9 = 0.75;
-main_Image_1_in_10 = [0.0527791 -0.28197 -0.95797];
+main_Image_1_in_10 = [-0.089117 0.961987 -0.258147];
 main_Image_1_in_11 = 30.0;
 main_Image_1_in_12 = 1;
 main_Image_1_in_13 = NULL;

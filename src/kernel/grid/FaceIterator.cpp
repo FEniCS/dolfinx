@@ -14,79 +14,89 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Grid &grid)
 {
-  e = new GridFaceIterator(grid);
+  f = new GridFaceIterator(grid);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Grid *grid)
 {
-  e = new GridFaceIterator(*grid);
+  f = new GridFaceIterator(*grid);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Boundary& boundary)
 {
-  e = new BoundaryFaceIterator(boundary);
+  f = new BoundaryFaceIterator(boundary);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const Cell& cell)
 {
-  e = new CellFaceIterator(cell);
+  f = new CellFaceIterator(cell);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::FaceIterator(const CellIterator& cellIterator)
 {
-  e = new CellFaceIterator(*cellIterator);
+  f = new CellFaceIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
 FaceIterator::operator FacePointer() const
 {
-  return e->pointer();
+  return f->pointer();
 }
 //-----------------------------------------------------------------------------
 FaceIterator::~FaceIterator()
 {
-  delete e;
+  delete f;
 }
 //-----------------------------------------------------------------------------
 FaceIterator& FaceIterator::operator++()
 {
-  ++(*e);
+  ++(*f);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 bool FaceIterator::end()
 {
-  return e->end();
+  return f->end();
 }
 //-----------------------------------------------------------------------------
 bool FaceIterator::last()
 {
-  return e->last();
+  return f->last();
 }
 //-----------------------------------------------------------------------------
 int FaceIterator::index()
 {
-  return e->index();
+  return f->index();
 }
 //-----------------------------------------------------------------------------
 Face& FaceIterator::operator*() const
 {
-  return *(*e);
+  return *(*f);
 }
 //-----------------------------------------------------------------------------
 Face* FaceIterator::operator->() const
 {
-  return e->pointer();
+  return f->pointer();
 }
 //-----------------------------------------------------------------------------
-bool FaceIterator::operator==(const FaceIterator& e) const
+bool FaceIterator::operator==(const FaceIterator& f) const
 {
-  return this->e->pointer() == e.e->pointer();
+  return this->f->pointer() == f.f->pointer();
 }
 //-----------------------------------------------------------------------------
-bool FaceIterator::operator!=(const FaceIterator& e) const
+bool FaceIterator::operator!=(const FaceIterator& f) const
 {
-  return this->e->pointer() != e.e->pointer();
+  return this->f->pointer() != f.f->pointer();
+}
+//-----------------------------------------------------------------------------
+bool FaceIterator::operator==(const Face& f) const
+{
+  return this->f->pointer() == &f;
+}
+//-----------------------------------------------------------------------------
+bool FaceIterator::operator!=(const Face& f) const
+{
+  return this->f->pointer() == &f;
 }
 //-----------------------------------------------------------------------------
 // FaceIterator::GridFaceIterator

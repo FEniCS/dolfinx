@@ -39,8 +39,10 @@ namespace dolfin {
 	 
     Face& operator*() const;
     Face* operator->() const;
-    bool  operator==(const FaceIterator& n) const;
-    bool  operator!=(const FaceIterator& n) const;
+    bool  operator==(const FaceIterator& f) const;
+    bool  operator!=(const FaceIterator& f) const;
+    bool  operator==(const Face& f) const;
+    bool  operator!=(const Face& f) const;
 	 
     // Base class for face iterators
     class GenericFaceIterator {
@@ -119,7 +121,7 @@ namespace dolfin {
 
   private:
 
-    GenericFaceIterator* e;
+    GenericFaceIterator* f;
 	 
   };
 

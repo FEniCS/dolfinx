@@ -10,6 +10,7 @@ namespace dolfin {
 
   class Grid;
   class Cell;
+  class Face;
 
   /// Algorithm for the refinement of a tetrahedral grid, based on
   /// the algorithm described in the paper "Tetrahedral Grid Refinement"
@@ -32,13 +33,15 @@ namespace dolfin {
     static bool checkRuleIrregular3(Cell& cell, int no_marked_edges);
     static bool checkRuleIrregular4(Cell& cell, int no_marked_edges);
 
+    static void refineNoRefine  (Cell& cell, Grid& grid);
     static void refineRegular   (Cell& cell, Grid& grid);
     static void refineIrregular1(Cell& cell, Grid& grid);
     static void refineIrregular2(Cell& cell, Grid& grid);
     static void refineIrregular3(Cell& cell, Grid& grid);
     static void refineIrregular4(Cell& cell, Grid& grid);
 
-    static bool markedEdgesOnSameFace(Cell& cell);
+    static bool  markedEdgesOnSameFace (Cell& cell);
+    static Cell* findNeighbor          (Cell& cell, Face& face);
 
   };
 
