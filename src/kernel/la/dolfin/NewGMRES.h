@@ -2,7 +2,6 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005.
-//
 // Modified by Johan Hoffman, 2005.
 
 #ifndef __NEW_GMRES_H

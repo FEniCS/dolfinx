@@ -4,6 +4,9 @@
 // Modified by Anders Logg, 2005.
 
 #include <petsc/petscksp.h>
+#include <petsc/petscpc.h>
+
+/* #include <dolfin/pcimpl.h> */
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -11,9 +14,6 @@
 #include <dolfin/NewMatrix.h>
 #include <dolfin/VirtualMatrix.h>
 #include <dolfin/NewGMRES.h>
-
-#include <petsc/petscpc.h>
-#include <dolfin/pcimpl.h>
 
 using namespace dolfin;
 
@@ -135,6 +135,9 @@ void NewGMRES::setMaxits(int mi)
 //-----------------------------------------------------------------------------
 void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 {
+  dolfin_error("FIXME: where is PC defined?");
+  /*
+
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
 
@@ -142,5 +145,7 @@ void NewGMRES::setPreconditioner(NewPreconditioner &pc)
 
   petscpc->data = &pc;
   petscpc->ops->apply = NewPreconditioner::PCApply;
+
+  */
 }
 //-----------------------------------------------------------------------------

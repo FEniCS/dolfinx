@@ -19,17 +19,26 @@ NewPreconditioner::~NewPreconditioner()
 //-----------------------------------------------------------------------------
 int NewPreconditioner::PCApply(PC pc, Vec x, Vec y)
 {
+  dolfin_error("FIXME: Uncomment when pcimpl.h is fixed.");
+
+  /*
+  
   NewPreconditioner* newpc = (NewPreconditioner*)pc->data;
 
   NewVector dolfinx(x), dolfiny(y);
 
   newpc->solve(dolfinx, dolfiny);
 
+  */
+
   return 0;
 }
 //-----------------------------------------------------------------------------
 int NewPreconditioner::PCCreate(PC pc)
 {
+  dolfin_error("FIXME: Uncomment when pcimpl.h is fixed.");
+
+  /*
   pc->ops->setup               = (int (*)(PC)) 0;
   pc->ops->apply               = (int (*)(PC,Vec,Vec)) 0;
   pc->ops->applyrichardson     = (int (*)(PC,Vec,Vec,Vec,double,double,double,int)) 0;
@@ -53,6 +62,8 @@ int NewPreconditioner::PCCreate(PC pc)
   std::string pcname("DOLFIN");
 
   pc->type_name = strdup(pcname.c_str());
+
+  */
 
   return 0;
 }

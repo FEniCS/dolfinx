@@ -5,7 +5,7 @@
 #define __NEW_PRECONDITIONER_H
 
 #include <petsc/petscpc.h>
-#include <dolfin/pcimpl.h>
+/* #include <dolfin/pcimpl.h> */
 
 namespace dolfin
 {
