@@ -90,6 +90,7 @@ void GenericFile::read()
 void GenericFile::write()
 {
   if ( !opened_write ) {
+    // Clear file
     FILE* fp = fopen(filename.c_str(), "w");
     fclose(fp);
   }

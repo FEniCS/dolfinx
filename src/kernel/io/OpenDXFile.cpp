@@ -31,7 +31,8 @@ void OpenDXFile::operator<<(Mesh& mesh)
   event_saving_mesh();
   
   // Open file
-  FILE* fp = fopen(filename.c_str(), "a");
+  FILE* fp = fopen(filename.c_str(), "r+");
+  fseek(fp, 0L, SEEK_END);
   
   // Write header first time
   if ( ftell(fp) == 0 )
@@ -52,10 +53,11 @@ void OpenDXFile::operator<<(Function& u)
   event_saving_function();
 
   // Open file
-  FILE* fp = fopen(filename.c_str(), "a");
+  FILE* fp = fopen(filename.c_str(), "r+");
+  fseek(fp, 0L, SEEK_END);
 
   // Remove previous time series 
-  if ( frames.size() > 1 )
+  if ( frames.size() > 0 )
     removeSeries(fp);
 
   // Write mesh
@@ -213,8 +215,8 @@ void OpenDXFile::removeSeries(FILE* fp)
   // This makes sure that we have a valid dx-file even if we kill the
   // program after a few frames. Note that if someone puts a "#"
   // inside a comment we are in trouble.
-  
-  fseek(fp, series_pos,SEEK_SET);
+
+  fseek(fp, series_pos, SEEK_SET);
   fflush(fp);
 }
 //-­---------------------------------------------------------------------------
