@@ -20,6 +20,7 @@ source directory:
     export PETSC_DIR=`pwd`
     ./config/configure.py
     make BOPT=g_c++
+    make BOPT=O_c++
 
 Replace "export PETSC_DIR=" with "setenv PETSC_DIR " if you're using tcsh.
 

@@ -1,3 +1,4 @@
+ - Speedup setting of boundary conditions (add MAT_KEEP_ZEROED_ROWS)
  - Fix bug for option --disable-curses
 0.5.4 [2005-03-29]
  - Remove option to compile with PETSc 2.2.0 (2.2.1 required)

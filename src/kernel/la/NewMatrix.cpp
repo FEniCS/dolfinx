@@ -67,6 +67,7 @@ void NewMatrix::init(uint M, uint N)
   
   // Create a sparse matrix in compressed row format
   MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
   MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
@@ -84,6 +85,8 @@ void NewMatrix::init(uint M, uint N, uint bs)
   // Creates a sparse matrix in block AIJ (block compressed row) format.
   // Given blocksize bs, and assuming max no connectivity = 50. 
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, 50, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::init(uint M, uint N, uint bs, uint mnc)
@@ -100,6 +103,8 @@ void NewMatrix::init(uint M, uint N, uint bs, uint mnc)
   // Creates a sparse matrix in block AIJ (block compressed row) format.
   // Given blocksize bs, and max no connectivity mnc.  
   MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, mnc, PETSC_NULL, &A);
+  MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
+  MatSetFromOptions(A);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewMatrix::size(uint dim) const
