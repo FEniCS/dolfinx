@@ -45,7 +45,9 @@ Element::~Element()
 {
   dolfin_debug("foo");
 
-  delete [] values;
+  if ( values )
+    delete [] values;
+  values = 0;
 }
 //-----------------------------------------------------------------------------
 real Element::eval(int node) const

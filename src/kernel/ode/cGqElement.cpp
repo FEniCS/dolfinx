@@ -9,7 +9,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqElement::cGqElement(int q, int index, TimeSlab* timeslab) : 
+cGqElement::cGqElement(int q, int index, TimeSlab* timeslab) :
   Element(q, index, timeslab)
 {  
   cG.init(q);
@@ -20,18 +20,15 @@ cGqElement::cGqElement(int q, int index, TimeSlab* timeslab) :
 real cGqElement::eval(real t) const
 {
   dolfin_debug1("t: %lf", t);
-
+  
   for(int i = 0; i < q + 1; i++)
-  {
     dolfin::cout << "values[" << i << "]: " << values[i] << dolfin::endl;
-  }
 
-  //real tau = 0.0;
   real tau = (t - starttime()) / timestep();
 
   real sum = 0.0;
   for (int i = 0; i <= q; i++)
-    sum += values[i] * cG(q).basis(i,tau);
+    sum += values[i] * cG(q).basis(i, tau);
   
   return sum;
 }
@@ -48,7 +45,10 @@ real cGqElement::dx() const
 //-----------------------------------------------------------------------------
 void cGqElement::update(real u0)
 {
-  //values[0] = u0;
+  // FIXME: Maybe only the initial value should be updated, but the all
+  // values updated the first time? Maybe the initial value must be
+  // supplied to the constructor? Maybe the difference between the new
+  // initial value and the previous should be added to all values?
 
   // Update nodal values
   for (int i = 0; i <= q; i++)
@@ -71,7 +71,7 @@ void cGqElement::feval(RHS& f)
 {
   // The right-hand side is evaluated once, before the nodal values
   // are updated, to avoid repeating the evaluation for each degree of
-  // freedom.  The local iterations are thus more of Jacobi type than
+  // freedom. The local iterations are thus more of Jacobi type than
   // Gauss-Seidel.  This is probably more efficient, at least for
   // higher order methods (where we have more degrees of freedom) and
   // when function evaluations are expensive.
@@ -87,19 +87,9 @@ real cGqElement::integral(int i) const
 {
   real k = timestep();
 
-  //dolfin_debug1("i: %d", i);
-
-  //for(int j = 0; j < q + 1; j++)
-  //{
-  //  dolfin::cout << "f(" << j << "): " << f(j) << dolfin::endl;
-  //  dolfin::cout << "weight(" << j << "): " << cG(q).weight(i,j) << dolfin::endl;
-  //}
-
   real sum = 0.0;
   for (int j = 0; j <= q; j++)
-    sum += cG(q).weight(i,j) * f(j);
-
-  //dolfin_debug1("result: %lf", k * sum);
+    sum += cG(q).weight(i, j) * f(j);
 
   return k * sum;
 }

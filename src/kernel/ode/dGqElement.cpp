@@ -15,20 +15,37 @@ dGqElement::dGqElement(int q, int index, TimeSlab* timeslab) :
   dG.init(q);
 }
 //-----------------------------------------------------------------------------
-void dGqElement::update(real u0)
-{
-  this->u0 = u0;
-}
-//-----------------------------------------------------------------------------
 real dGqElement::eval(real t) const
 {
-  real tau = 0.0;
+  real tau = (t - starttime()) / timestep();
 
   real sum = 0.0;
   for (int i = 0; i <= q; i++)
-    sum += values[i] * dG(q).basis(i,tau);
+    sum += values[i] * dG(q).basis(i, tau);
   
   return sum;
+}
+//-----------------------------------------------------------------------------
+real dGqElement::dx() const
+{
+  real dudx = 0.0;
+
+  for (int i = 0; i <= q; i++)
+    dudx += values[i] * dG(q).derivative(i);
+
+  return dudx;
+}
+//-----------------------------------------------------------------------------
+void dGqElement::update(real u0)
+{
+  // FIXME: See comment on dGqElement::update()
+
+  // Update initial value
+  this->u0 = u0;
+
+  // Update nodal values
+  for (int i = 0; i <= q; i++)
+    values[i] = u0;
 }
 //-----------------------------------------------------------------------------
 void dGqElement::update(RHS& f)
@@ -45,20 +62,20 @@ void dGqElement::feval(RHS& f)
 {
   // See comment on cGqElement::feval()
 
-  real t0 = 0.0;
-  real k = 0.1;
+  real t0 = starttime();
+  real k = timestep();
   
- for (int i = 0; i <= q; i++)
+  for (int i = 0; i <= q; i++)
     this->f(i) = f(index, i, t0 + dG(q).point(i)*k, timeslab);
 }
 //-----------------------------------------------------------------------------
 real dGqElement::integral(int i) const
 {
-  real k = 0.1;
+  real k = timestep();
 
   real sum = 0.0;
   for (int j = 0; j <= q; j++)
-    sum += dG(q).weight(i,j) * f(j);
+    sum += dG(q).weight(i, j) * f(j);
 
   return k * sum;
 }
