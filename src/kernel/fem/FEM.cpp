@@ -473,6 +473,9 @@ void FEM::alloc(Matrix &A, Mesh &mesh, FiniteElement::Vector& element)
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
     A.init(m, n);
+
+  // Set all entries to zero (for repeated assembling)
+  A = 0.0;
 }
 //-----------------------------------------------------------------------------
 void FEM::alloc(Vector &b, Mesh &mesh, FiniteElement::Vector& element)
