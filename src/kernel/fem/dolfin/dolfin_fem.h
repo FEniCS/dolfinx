@@ -10,12 +10,12 @@
 #include <dolfin/FunctionSpace.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/FEM.h>
+#include <dolfin/NewFEM.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementMethod.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
 #include <dolfin/MultigridSolver.h>
-#include <dolfin/PDE.h>
 #include <dolfin/StiffnessMatrix.h>
 
 #endif

@@ -12,8 +12,8 @@ Send suggestions, comments, and corrections to dolfin@math.chalmers.se.
 Assembly
 --------
 
-o [hoffman, logg] Boundary conditions, fix ds (May 04)
 o [hoffman, logg] Optimize form evaluation
+o [hoffman, logg] Boundary conditions, fix ds (May 04, partly fixed)
 * Replace FiniteElement::Vector with FiniteElement
 * Implementation of arbitrary finite elements
 * Add i,j in vector PDE?

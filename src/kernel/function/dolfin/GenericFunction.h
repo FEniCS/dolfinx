@@ -4,6 +4,7 @@
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
 
+#include <dolfin/NewArray.h>
 #include <dolfin/ElementFunction.h>
 
 namespace dolfin {
@@ -14,6 +15,7 @@ namespace dolfin {
   class Mesh;
   class ElementData;
   class FiniteElement;
+  class NewPDE;
   
   class GenericFunction {
   public:
@@ -50,6 +52,9 @@ namespace dolfin {
     virtual void update(FunctionSpace::ElementFunction &v,
 			const FiniteElement &element, 
 			const Cell &cell, real t) const;
+
+    // Update local function (restriction to given cell)
+    virtual void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const;
     
   };
   

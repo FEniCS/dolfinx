@@ -39,6 +39,13 @@ Function::Function(const char *name, int dim, int size)
   init(name, dim, size);
 }
 //-----------------------------------------------------------------------------
+Function::Function(function fp)
+{
+  f = 0;
+  rename("u", "Unnamed function");
+  init(fp);
+}
+//-----------------------------------------------------------------------------
 Function::Function(unsigned int N)
 {
   f = 0;
@@ -79,6 +86,14 @@ void Function::init(const char* name,  int dim, int size)
     vfp = dolfin_get(name);
     f = new VectorExpressionFunction(vfp, dim, size);
   }
+}
+//-----------------------------------------------------------------------------
+void Function::init(function fp)
+{
+  if ( f )
+    delete f;
+  
+  f = new ScalarExpressionFunction(fp);
 }
 //-----------------------------------------------------------------------------
 void Function::init(unsigned int N)
@@ -181,6 +196,12 @@ void Function::update(FunctionSpace::ElementFunction& v,
    
   // Update coefficients
   f->update(v, element, cell, t);
+}
+//-----------------------------------------------------------------------------
+void Function::update(NewArray<real>& w, const Cell& cell,
+		      const NewPDE& pde) const
+{
+  f->update(w, cell, pde);
 }
 //-----------------------------------------------------------------------------
 // Vector function

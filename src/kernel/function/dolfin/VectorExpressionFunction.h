@@ -31,6 +31,9 @@ namespace dolfin {
 		const FiniteElement& element,
 		const Cell& cell, real t) const;
 
+    // FIXME: works only for nodal basis
+    void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const;
+
   private:
     
     vfunction f;

@@ -13,6 +13,7 @@ namespace dolfin {
   class FiniteElement;
   class Vector;
   class Mesh;
+  class NewPDE;
   
   class DofFunction : public GenericFunction {
   public:
@@ -37,6 +38,9 @@ namespace dolfin {
     void update(FunctionSpace::ElementFunction &v,
 		const FiniteElement &element,
 		const Cell &cell, real t) const;
+
+    // Update local function (restriction to given cell)
+    void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const;
     
   private:
     

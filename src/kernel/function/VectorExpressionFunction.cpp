@@ -5,6 +5,7 @@
 #include <dolfin/FiniteElement.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
+#include <dolfin/NewPDE.h>
 #include <dolfin/VectorExpressionFunction.h>
 
 using namespace dolfin;
@@ -77,5 +78,18 @@ void VectorExpressionFunction::update(FunctionSpace::ElementFunction& v,
 {
   for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
     v.set(phi.index(), phi, phi.dof(cell, *this, t));
+}
+//-----------------------------------------------------------------------------
+void VectorExpressionFunction::update(NewArray<real>& w, const Cell& cell, 
+				      const NewPDE& pde) const
+{
+  // FIXME: time t and index ignored
+  
+  w.resize(pde.size());
+  for (unsigned int i = 0; i < pde.size(); i++)
+  {
+    const Point& p = pde.coord(i, cell);
+    w[i] = f(p.x, p.y, p.z, 0.0, 0);
+  }
 }
 //-----------------------------------------------------------------------------

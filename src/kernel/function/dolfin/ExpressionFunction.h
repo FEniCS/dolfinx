@@ -27,6 +27,9 @@ namespace dolfin {
     virtual void update(FunctionSpace::ElementFunction& v,
 			const FiniteElement& element,
 			const Cell& cell, real t) const = 0;
+
+    // Update local function (restriction to given cell)
+    virtual void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const = 0;
     
   };
 

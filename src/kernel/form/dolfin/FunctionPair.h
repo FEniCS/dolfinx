@@ -11,6 +11,7 @@ namespace dolfin
 {
   
   class Function;
+  class NewPDE;
 
   /// FunctionPair represents a pair of functions (w,f),
   /// with the local function w being the restriction of
@@ -34,7 +35,7 @@ namespace dolfin
     ~FunctionPair();
 
     /// Update local values on given cell at given time t
-    void update(const Cell& cell, real t);
+    void update(const Cell& cell, const NewPDE& pde);
     
   private:
     

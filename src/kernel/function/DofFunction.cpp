@@ -8,6 +8,7 @@
 #include <dolfin/FiniteElement.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
+#include <dolfin/NewPDE.h>
 #include <dolfin/DofFunction.h>
 
 using namespace dolfin;
@@ -57,5 +58,17 @@ void DofFunction::update(FunctionSpace::ElementFunction &v,
 {
   for (FiniteElement::TrialFunctionIterator phi(element); !phi.end(); ++phi)
     v.set(phi.index(), phi, x(phi.dof(cell) * size + dim));
+}
+//-----------------------------------------------------------------------------
+void DofFunction::update(NewArray<real>& w, const Cell& cell, 
+			 const NewPDE& pde) const
+{
+  // FIXME: A FiniteElement containing the mapping from local to global
+  // FIXME: degrees of freedom should be part of a Function. Temporarily,
+  // FIXME: we get the mapping from the PDE.
+
+  w.resize(pde.size());
+  for (unsigned int i = 0; i < pde.size(); i++)
+    w[i] = x(pde.dof(i, cell));
 }
 //-----------------------------------------------------------------------------

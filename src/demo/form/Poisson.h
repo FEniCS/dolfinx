@@ -33,6 +33,11 @@ namespace dolfin
       return cell.nodeID(i);
     }
 
+    const Point& coord(unsigned int i, const Cell& cell) const
+    {
+      return cell.node(i).coord();
+    }
+
     void interiorElementMatrix(NewArray<NewArray<real> >& A) const
     {
       real tmp0 = det / 6.0;

@@ -99,3 +99,9 @@ void GenericFunction::update(FunctionSpace::ElementFunction &v,
   dolfin_error("Function is not defined on a mesh.");
 }
 //-----------------------------------------------------------------------------
+void GenericFunction::update(NewArray<real>& w, const Cell& cell,
+			     const NewPDE& pde) const
+{
+  dolfin_error("Function is not defined on a mesh.");
+}
+//-----------------------------------------------------------------------------

@@ -41,6 +41,9 @@ namespace dolfin
 
     /// Return map from local to global degree of freedom
     virtual unsigned int dof(unsigned int i, const Cell& cell) const = 0;
+
+    /// Return map from local degree of freedom to global coordinate
+    virtual const Point& coord(unsigned int i, const Cell& cell) const = 0;
    
     /// Update map
     virtual void update(const Cell& cell);

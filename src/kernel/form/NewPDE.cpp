@@ -99,7 +99,7 @@ void NewPDE::add(NewArray<real>& w, Function& f)
 void NewPDE::updateFunctions(const Cell& cell)
 {
   for (unsigned int i = 0; i < functions.size(); i++)
-    functions[i].update(cell, t);
+    functions[i].update(cell, *this);
 }
 //-----------------------------------------------------------------------------
 void NewPDE::updateTriLinMap(const Cell& cell)

@@ -23,9 +23,9 @@ FunctionPair::~FunctionPair()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void FunctionPair::update(const Cell& cell, real t)
+void FunctionPair::update(const Cell& cell, const NewPDE& pde)
 {
   // Update local values from global values
-  //f->update(w, cell, t);
+  f->update(*w, cell, pde);
 }
 //-----------------------------------------------------------------------------

@@ -6,6 +6,8 @@
 
 #include <dolfin/Variable.h>
 #include <dolfin/ElementFunction.h>
+#include <dolfin/FunctionPointer.h>
+#include <dolfin/NewArray.h>
 
 namespace dolfin {
   
@@ -13,6 +15,7 @@ namespace dolfin {
   class Mesh;
   class Vector;
   class ElementData;
+  class NewPDE;
   class GenericFunction;
 
   /// A Function represents a function that can be evaluated for given
@@ -34,6 +37,9 @@ namespace dolfin {
     /// Create function specified by the given expression
     Function(const char* name,  int dim = 0, int size = 1);
 
+    /// Create function from function pointer
+    Function(function fp);
+
     /// Create an ODE function of given dimension
     Function(unsigned int N);
 
@@ -46,6 +52,9 @@ namespace dolfin {
     /// Create function specified by the given expression
     void init(const char* name,  int dim = 0, int size = 1);
     
+    /// Create function from function pointer
+    void init(function fp);
+
     /// Create an ODE function of given dimension
     void init(unsigned int N);
     
@@ -90,6 +99,9 @@ namespace dolfin {
     void update(FunctionSpace::ElementFunction& v,
 		const FiniteElement& element, const Cell& cell, real t) const;
     
+    // Update local function (restriction to given cell)
+    void update(NewArray<real>& w, const Cell& cell, const NewPDE& pde) const;
+
     // Vector function
     class Vector {
     public:

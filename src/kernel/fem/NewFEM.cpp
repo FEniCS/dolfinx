@@ -408,7 +408,7 @@ void NewFEM::alloc(const NewPDE& pde, Mesh& mesh, Vector &b)
   b = 0.0;
 }
 //-----------------------------------------------------------------------------
-void alloc(const NewPDE& pde, NewArray<NewArray<real> >& A)
+void NewFEM::alloc(const NewPDE& pde, NewArray<NewArray<real> >& A)
 {
   // Resize element matrix
   A.resize(pde.size());
@@ -421,7 +421,7 @@ void alloc(const NewPDE& pde, NewArray<NewArray<real> >& A)
       A[i][j] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void alloc(const NewPDE& pde, NewArray<real>& b)
+void NewFEM::alloc(const NewPDE& pde, NewArray<real>& b)
 {
   // Resize element vector
   b.resize(pde.size());
