@@ -6,6 +6,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/TerminalLogger.h>
+#include <dolfin/CursesLogger.h>
 #include <dolfin/Logger.h>
 
 using namespace dolfin;
@@ -13,7 +14,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Logger::Logger()
 {
-  log = new TerminalLogger();
+  //log = new TerminalLogger();
+  log = new CursesLogger();
+
   buffer = new char[DOLFIN_LINELENGTH];
   location  = new char[DOLFIN_LINELENGTH];
 }
@@ -89,6 +92,11 @@ void Logger::error(const char* file, unsigned long line,
 void Logger::progress(const char* title, const char* label, real p)
 {
   log->progress(title, label, p);
+}
+//-----------------------------------------------------------------------------
+void Logger::update()
+{
+  log->update();
 }
 //-----------------------------------------------------------------------------
 void Logger::start()

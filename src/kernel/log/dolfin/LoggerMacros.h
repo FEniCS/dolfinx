@@ -12,6 +12,10 @@
 
 namespace dolfin { void dolfin_info(const char *msg, ...); }
 
+// Update (force refresh of curses interface)
+
+namespace dolfin { void dolfin_update(); }
+
 // Debug macros (with varying number of arguments)
 
 #define dolfin_debug(msg) \

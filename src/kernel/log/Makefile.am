@@ -1,5 +1,7 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_log.h \
+                          dolfin/Buffer.h \
+                          dolfin/CursesLogger.h \
                           dolfin/GenericLogger.h \
                           dolfin/Logger.h \
                           dolfin/LoggerMacros.h \
@@ -9,7 +11,9 @@ include_HEADERS         = dolfin/dolfin_log.h \
                           dolfin/TerminalLogger.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-log.a
-libdolfin_log_a_SOURCES = GenericLogger.cpp \
+libdolfin_log_a_SOURCES = Buffer.cpp \
+                          GenericLogger.cpp \
+                          CursesLogger.cpp \
                           Logger.cpp \
                           LoggerMacros.cpp \
                           LogManager.cpp \

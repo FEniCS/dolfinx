@@ -20,6 +20,8 @@ namespace dolfin {
 	 void warning (const char* msg, const char* location);
 	 void error   (const char* msg, const char* location);
 	 void progress(const char* title, const char* label, real p);
+
+	 void update();
 	 
   };
 

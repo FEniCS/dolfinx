@@ -74,11 +74,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_log.h                           dolfin/GenericLogger.h                           dolfin/Logger.h                           dolfin/LoggerMacros.h                           dolfin/LogManager.h                           dolfin/LogStream.h                           dolfin/Progress.h                           dolfin/TerminalLogger.h
+include_HEADERS = dolfin/dolfin_log.h                           dolfin/Buffer.h                           dolfin/CursesLogger.h                           dolfin/GenericLogger.h                           dolfin/Logger.h                           dolfin/LoggerMacros.h                           dolfin/LogManager.h                           dolfin/LogStream.h                           dolfin/Progress.h                           dolfin/TerminalLogger.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-log.a
-libdolfin_log_a_SOURCES = GenericLogger.cpp                           Logger.cpp                           LoggerMacros.cpp                           LogManager.cpp                           LogStream.cpp                           Progress.cpp                           TerminalLogger.cpp
+libdolfin_log_a_SOURCES = Buffer.cpp                           GenericLogger.cpp                           CursesLogger.cpp                           Logger.cpp                           LoggerMacros.cpp                           LogManager.cpp                           LogStream.cpp                           Progress.cpp                           TerminalLogger.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -90,8 +90,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_log_a_LIBADD = 
-libdolfin_log_a_OBJECTS =  GenericLogger.o Logger.o LoggerMacros.o \
-LogManager.o LogStream.o Progress.o TerminalLogger.o
+libdolfin_log_a_OBJECTS =  Buffer.o GenericLogger.o CursesLogger.o \
+Logger.o LoggerMacros.o LogManager.o LogStream.o Progress.o \
+TerminalLogger.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -106,9 +107,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/GenericLogger.P .deps/LogManager.P .deps/LogStream.P \
-.deps/Logger.P .deps/LoggerMacros.P .deps/Progress.P \
-.deps/TerminalLogger.P
+DEP_FILES =  .deps/Buffer.P .deps/CursesLogger.P .deps/GenericLogger.P \
+.deps/LogManager.P .deps/LogStream.P .deps/Logger.P \
+.deps/LoggerMacros.P .deps/Progress.P .deps/TerminalLogger.P
 SOURCES = $(libdolfin_log_a_SOURCES)
 OBJECTS = $(libdolfin_log_a_OBJECTS)
 

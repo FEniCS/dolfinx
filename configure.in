@@ -47,22 +47,13 @@ if test $libxml2_found = yes; then
  	AC_SUBST(XML2_INCLUDES)
 	AC_SUBST(XML2_LFLAGS)
 else
- 	echo "- Couldn't find libxml2 development files on your system."
-        echo "- Perhaps you need to install the package libxml2-dev?"
-	exit
+ 	echo "*** Unable to find libxml2 development files on your system."
+        echo "*** Perhaps you need to install the package libxml2-dev?"
+	exit 1
 fi
 
-dnl Check for PETSc
-dnl echo "checking for PETSc..."
-dnl echo "  PETSc directory:    PETSC_DIR  = " $PETSC_DIR
-dnl echo "  PETSc architecture: PETSC_ARCH = " $PETSC_ARCH
-dnl if [ test -f $PETSC_DIR/include/petsc.h ]; then
-dnl   echo "  Found PETSc header petsc.h"
-dnl else
-dnl  echo "  Unable to find PETSc header petsc.h."
-dnl  echo "  You need PETSc to install DOLFIN. See http://www-fp.mcs.anl.gov/petsc/"
-dnl  exit
-dnl fi
+dnl Check for curses
+AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your system."; exit 1)
 
 dnl Generate include path for modules (including kernel code)
 MODULE_INCLUDES=""

@@ -8,6 +8,8 @@
 
 namespace dolfin {
 
+  const char* date();
+
   void tic();
   real toc();
 

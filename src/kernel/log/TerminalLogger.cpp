@@ -66,3 +66,8 @@ void TerminalLogger::progress(const char* title, const char* label, real p)
   printf("| %.1f\%\n", 100.0*p);
 }
 //-----------------------------------------------------------------------------
+void TerminalLogger::update()
+{
+  // FIXME: Maybe we should flush the output?
+}
+//-----------------------------------------------------------------------------

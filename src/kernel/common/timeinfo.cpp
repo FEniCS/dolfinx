@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/utils.h>
 #include <dolfin/timeinfo.h>
 
 using namespace dolfin;
@@ -11,9 +12,18 @@ using namespace dolfin;
 namespace dolfin {
 
   clock_t __tic_time;
+  char datestring[DOLFIN_WORDLENGTH];
 
 }
 
+//-----------------------------------------------------------------------------
+const char* dolfin::date()
+{
+  time_t t = time(0);
+  sprintf(datestring, "%s", ctime(&t));
+  remove_newline(datestring);
+  return datestring;
+}
 //-----------------------------------------------------------------------------
 void dolfin::tic()
 {

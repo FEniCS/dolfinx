@@ -55,6 +55,8 @@
 //     (2) p = 0.5; // Specify percentage
 //     (3) p.update(t/T, "Time is t = %f", t);
 
+#include <dolfin/Buffer.h>
+#include <dolfin/CursesLogger.h>
 #include <dolfin/GenericLogger.h>
 #include <dolfin/Logger.h>
 #include <dolfin/LoggerMacros.h>
