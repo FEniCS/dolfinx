@@ -1,6 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <cmath>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ReducedModel.h>
 
