@@ -8,7 +8,7 @@
 using namespace dolfin;
 
 // Number of vertices in each dimension
-#define SIZE 50
+#define SIZE 100
 
 // Number of matrix-vector multiplications
 #define M 10
