@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin.h                   dolfin/constants.h                   dolfin/Problem.h                   dolfin/Solver.h
+include_HEADERS = dolfin/dolfin_function.h                                dolfin/DofFunction.h                                dolfin/ExpressionFunction.h                                dolfin/Function.h                                dolfin/GenericFunction.h                                dolfin/ScalarExpressionFunction.h                                dolfin/VectorExpressionFunction.h
 
-INCLUDES = @MAIN_INCLUDES@
-lib_LIBRARIES = libdolfin-main.a
-libdolfin_main_a_SOURCES = dolfin.h                            Problem.cpp                            Solver.cpp
+INCLUDES = @MODULE_INCLUDES@
+lib_LIBRARIES = libdolfin-function.a
+libdolfin_function_a_SOURCES = DofFunction.cpp                                ExpressionFunction.cpp                                Function.cpp                                GenericFunction.cpp                                ScalarExpressionFunction.cpp                                VectorExpressionFunction.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -97,16 +97,14 @@ DEFS = @DEFS@ -I. -I$(srcdir)
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-libdolfin_main_a_LIBADD = 
-libdolfin_main_a_OBJECTS =  Problem.o Solver.o
+libdolfin_function_a_LIBADD = 
+libdolfin_function_a_OBJECTS =  DofFunction.o ExpressionFunction.o \
+Function.o GenericFunction.o ScalarExpressionFunction.o \
+VectorExpressionFunction.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@
 HEADERS =  $(include_HEADERS)
 
 DIST_COMMON =  Makefile.am Makefile.in
@@ -116,15 +114,17 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Problem.P .deps/Solver.P
-SOURCES = $(libdolfin_main_a_SOURCES)
-OBJECTS = $(libdolfin_main_a_OBJECTS)
+DEP_FILES =  .deps/DofFunction.P .deps/ExpressionFunction.P \
+.deps/Function.P .deps/GenericFunction.P \
+.deps/ScalarExpressionFunction.P .deps/VectorExpressionFunction.P
+SOURCES = $(libdolfin_function_a_SOURCES)
+OBJECTS = $(libdolfin_function_a_OBJECTS)
 
 all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/main/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/kernel/function/Makefile
 
 Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
@@ -179,10 +179,10 @@ distclean-compile:
 
 maintainer-clean-compile:
 
-libdolfin-main.a: $(libdolfin_main_a_OBJECTS) $(libdolfin_main_a_DEPENDENCIES)
-	-rm -f libdolfin-main.a
-	$(AR) cru libdolfin-main.a $(libdolfin_main_a_OBJECTS) $(libdolfin_main_a_LIBADD)
-	$(RANLIB) libdolfin-main.a
+libdolfin-function.a: $(libdolfin_function_a_OBJECTS) $(libdolfin_function_a_DEPENDENCIES)
+	-rm -f libdolfin-function.a
+	$(AR) cru libdolfin-function.a $(libdolfin_function_a_OBJECTS) $(libdolfin_function_a_LIBADD)
+	$(RANLIB) libdolfin-function.a
 .cpp.o:
 	$(CXXCOMPILE) -c $<
 
@@ -292,14 +292,14 @@ maintainer-clean-tags:
 
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
-subdir = src/kernel/main
+subdir = src/kernel/function
 
 distdir: $(DISTFILES)
 	here=`cd $(top_builddir) && pwd`; \
 	top_distdir=`cd $(top_distdir) && pwd`; \
 	distdir=`cd $(distdir) && pwd`; \
 	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/kernel/main/Makefile
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/kernel/function/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \

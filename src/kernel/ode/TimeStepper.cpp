@@ -59,14 +59,11 @@ void TimeStepper::solve(ODE& ode)
     for (int i = 0; i < 2; i++)
       timeslab->update(u, f);
 
-    // Save solution
-    save(u, f, *timeslab, file, T, no_samples);
-
     // Update time
     t = timeslab->endtime();
 
-    // Update progress
-    p = t / T;
+    // Save solution
+    save(u, f, *timeslab, file, T, no_samples);
 
     // Prepare for next time slab
     shift(u, f, adaptivity, t);
@@ -80,6 +77,9 @@ void TimeStepper::solve(ODE& ode)
 
     // Delete time slab
     delete timeslab;
+
+    // Update progress
+    p = t / T;
   }
 
 }

@@ -261,25 +261,31 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
 {
   // Count the degrees of freedom
   
-  int imax = 0;
-  int jmax = 0;
-  int i,j;
+  unsigned int imax = 0;
+  unsigned int jmax = 0;
 
-  for (CellIterator cell(mesh); !cell.end(); ++cell) {
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     
     for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-      if ( (i = v.dof(cell)) > imax )
+    {
+      unsigned int i = v.dof(cell);
+      if ( i > imax )
 	imax = i;
-    
+    }
+
     for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
-      if ( (j = u.dof(cell)) > jmax )
+    {
+      unsigned int j = u.dof(cell);
+      if ( j > jmax )
 	jmax = j;
-    
+    }
+
   }
   
   // Size of the matrix
-  int m = imax + 1;
-  int n = jmax + 1;
+  unsigned int m = imax + 1;
+  unsigned int n = jmax + 1;
   
   // Initialise matrix
   if ( A.size(0) != m || A.size(1) != n )
@@ -288,17 +294,22 @@ void Galerkin::alloc(Matrix &A, Mesh &mesh)
 //-----------------------------------------------------------------------------
 void Galerkin::alloc(Vector &b, Mesh &mesh)
 {
-  // Find number of degrees of freedom
-  int imax = 0;
-  int i;
+  // Count the degrees of freedom
+
+  unsigned int imax = 0;
   
   for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
-      if ( (i = v.dof(cell)) > imax )
+    {
+      unsigned int i = v.dof(cell);
+      if ( i > imax )
 	imax = i;
+    }
+  }
   
   // Size of vector
-  int m = imax + 1;
+  unsigned int m = imax + 1;
   
   // Initialise vector
   if ( b.size() != m )

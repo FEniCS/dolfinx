@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = aclocal
+ACLOCAL = aclocal-1.4
 AUTOCONF = autoconf
-AUTOMAKE = automake
+AUTOMAKE = automake-1.4
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -63,15 +63,15 @@ AWK = mawk
 CC = gcc
 CXX = g++
 CXXFLAGS = -DDEBUG=1 -g -O2 -Wall
-DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-template -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
+DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-heat -ldolfin-odesolver -ldolfin-poisson -ldolfin-template -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-element -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-map -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
 LN_S = ln -s
 LTLIB = @LTLIB@
 MAINT = #
-MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/heat -I$(top_builddir)/src/modules/odesolver -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
+MAIN_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings  -I$(top_builddir)/src/modules/convdiff -I$(top_builddir)/src/modules/heat -I$(top_builddir)/src/modules/odesolver -I$(top_builddir)/src/modules/poisson -I$(top_builddir)/src/modules/template 
 MAKEINFO = makeinfo
-MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
+MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 PACKAGE = 
 PACKAGE_NAME = dolfin
 PACKAGE_VERSION = 0.4.1
@@ -82,11 +82,11 @@ XML2_LFLAGS = -L/usr/lib -lxml2 -lz -lpthread -lm
 libxml2_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/DofFunction.h                           dolfin/ExpressionFunction.h                           dolfin/FiniteElement.h                           dolfin/Function.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h                           dolfin/GenericFunction.h                           dolfin/ScalarExpressionFunction.h                           dolfin/VectorExpressionFunction.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/FiniteElement.h                           dolfin/FunctionSpace.h                           dolfin/Galerkin.h
 
-INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
+INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/element -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/map -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings 
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = DofFunction.cpp                           ExpressionFunction.cpp                           FiniteElement.cpp                           Function.cpp                           FunctionSpace.cpp                           GenericFunction.cpp                           Galerkin.cpp                           ScalarExpressionFunction.cpp                           VectorExpressionFunction.cpp
+libdolfin_fem_a_SOURCES = FiniteElement.cpp                           FunctionSpace.cpp                           Galerkin.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,9 +98,7 @@ CPPFLAGS =
 LDFLAGS = 
 LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
-libdolfin_fem_a_OBJECTS =  DofFunction.o ExpressionFunction.o \
-FiniteElement.o Function.o FunctionSpace.o GenericFunction.o Galerkin.o \
-ScalarExpressionFunction.o VectorExpressionFunction.o
+libdolfin_fem_a_OBJECTS =  FiniteElement.o FunctionSpace.o Galerkin.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -114,10 +112,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/DofFunction.P .deps/ExpressionFunction.P \
-.deps/FiniteElement.P .deps/Function.P .deps/FunctionSpace.P \
-.deps/Galerkin.P .deps/GenericFunction.P \
-.deps/ScalarExpressionFunction.P .deps/VectorExpressionFunction.P
+DEP_FILES =  .deps/FiniteElement.P .deps/FunctionSpace.P \
+.deps/Galerkin.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 
@@ -238,7 +234,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" = "." && dot_seen=yes; \
+	  test "$$subdir" != "." || dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -280,7 +276,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
+	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
 
 mostlyclean-tags:
 

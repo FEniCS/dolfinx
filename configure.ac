@@ -52,7 +52,7 @@ AC_SEARCH_LIBS(wbkgdset, ncurses,,echo "*** Unable to find ncurses on your syste
 # Note: need to be in the correct order, and some are needed twice.
 # Not very pretty... Maybe someone knows how to fix this?
 #DOLFIN_KERNEL="ode io mesh fem element mesh io fem form quadrature map la math common settings log settings common main ode"
-DOLFIN_KERNEL="common element fem form io la log main map math mesh ode quadrature settings"
+DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings"
 DOLFIN_KERNEL="$DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 
 # Find modules
@@ -110,6 +110,8 @@ AC_OUTPUT( Makefile \
            src/kernel/element/dolfin/Makefile \
            src/kernel/fem/Makefile \
            src/kernel/fem/dolfin/Makefile \
+           src/kernel/function/Makefile \
+           src/kernel/function/dolfin/Makefile \
            src/kernel/form/Makefile \
            src/kernel/form/dolfin/Makefile \
            src/kernel/io/Makefile \

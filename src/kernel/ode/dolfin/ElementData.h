@@ -76,6 +76,8 @@ namespace dolfin {
     // Drop the last block (the one furthest from given interval)
     void dropBlock(real t0, real t1);
 
+    //--- Element data ---
+
     // Size of system;
     int N;
     
