@@ -36,7 +36,7 @@ void mybc(BoundaryCondition& bc)
 
 int main(int argc, char **argv)
 {
-  Mesh mesh("2particles.xml");
+  Mesh mesh("two_particles.xml.gz");
   Problem convdiff("convection-diffusion", mesh);
 
   convdiff.set("source", f);
