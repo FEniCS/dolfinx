@@ -45,6 +45,11 @@ int Edge::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
+unsigned int Edge::noCellNeighbors() const
+{
+  return ec.size();
+}
+//-----------------------------------------------------------------------------
 Node& Edge::node(int i) const
 {
   if ( i == 0 )

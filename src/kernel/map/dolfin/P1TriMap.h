@@ -23,6 +23,12 @@ namespace dolfin {
     const FunctionSpace::ElementFunction ddy(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddz(const FunctionSpace::ShapeFunction &v) const;
     const FunctionSpace::ElementFunction ddt(const FunctionSpace::ShapeFunction &v) const;
+
+  private:
+
+    // FIXME: Temporary hack until we sort things out with the
+    // FIXME: local numbering of nodes, cells, edges, and faces.
+    unsigned int edgeNumber(const Edge& edge, const Cell& cell) const;
   
   };
 

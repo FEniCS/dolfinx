@@ -25,11 +25,13 @@ void P1TetMap::update(const Cell& cell)
   // Check that cell type is correct
   if ( cell.type() != Cell::tetrahedron )
     dolfin_error("Wrong cell type for map (must be a tetrahedron).");
-  
-  cell_ = &cell;
-
-  // Reset values
+ 
+  // Reset values: note that this includes setting _boundary to -1,
+  // denoting a mapping to the interior of the cell
   reset();
+
+  // Update current cell
+  _cell = &cell;
 
   // Get coordinates
   NodeIterator n(cell);
@@ -85,11 +87,11 @@ void P1TetMap::update(const Face& face)
   update(cell);
 
   // Compute face number
-  unsigned int current_face = faceNumber(face, cell);
-  cout << "Face number: " << current_face << endl;
+  _boundary = faceNumber(face, cell);
 
   // The determinant is given by the norm of the cross product
-  
+  // of two vectors representing edges of the face
+
   // Get the first two edges
   Edge& e0 = face.edge(0);
   Edge& e1 = face.edge(1);

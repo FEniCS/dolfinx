@@ -77,7 +77,7 @@ void FEM::assemble(PDE& pde, Mesh& mesh, Matrix& A,
   // Assemble boundary
   assembleBoundary(pde, mesh, A, element, map,
 		   interior_quadrature, boundary_quadrature);
-
+  
   // Clear unused elements
   A.resize();
 
@@ -124,6 +124,9 @@ void FEM::assembleBoundary(PDE& pde, Mesh& mesh, Matrix& A,
 			   Quadrature& interior_quadrature, 
 			   Quadrature& boundary_quadrature)
 {
+  // Remove for testing assembly on boundary
+  return;
+
   // Check mesh type
   switch (mesh.type()) {
   case Mesh::triangles:
@@ -144,43 +147,7 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Matrix& A,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  // Create boundary object 
-  Boundary boundary(mesh);
-
-  // Start a progress session
-  //  Progress p("Adding boundary conditions weakly", boundary.noEdges());  
-  
-  // Iterate over all edges in the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
-  {
-    // Update map
-    // map.update(edge);
-    
-    // Update element
-    for (unsigned int i = 0; i < element.size(); ++i)
-      element(i)->update(map);
-    
-    // Update equation
-    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test and trial functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-    {    
-    /*
-      if (v.partof(edge))
-	{
-	  for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-	    {
-	      if (u.partof(edge))
-		A(v.dof(map.cell()), u.dof(map.cell())) += pde.lhs(*u, *v);
-	    }
-	}
-    */
-    }
-
-    // Update progress
-    //p++;
-  }
+  // Copy code from assembleBoundaryTet when finished
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
@@ -202,27 +169,20 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Matrix& A,
     // Update map
     map.update(*face);
     
+    // Get internal cell neighbor of face
+    const Cell& cell = map.cell();
+
     // Update element
-    //for (unsigned int i = 0; i < element.size(); ++i)
-    //   element(i)->update(map);
+    for (unsigned int i = 0; i < element.size(); ++i)
+      element(i)->update(map);
     
     // Update equation
-    // pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
+    pde.updateLHS(element, map, interior_quadrature, boundary_quadrature);
     
     // Iterate over test and trial functions
-    //for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-    //{    
-      /*
-	if (v.partof(face))
-	{
-	for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
-	{
-	if (u.partof(face))
-	A(v.dof(map.cell()), u.dof(map.cell())) += pde.lhs(*u, *v);
-	}
-	}
-      */
-    //}
+    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
+      for (FiniteElement::Vector::TrialFunctionIterator u(element); !u.end(); ++u)
+        A(v.dof(cell), u.dof(cell)) += pde.lhs(*u, *v);
     
     // Update progress
     p++;
@@ -303,30 +263,7 @@ void FEM::assembleBoundaryTri(PDE& pde, Mesh& mesh, Vector& b,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  /*
-  // Create boundary object 
-  Boundary boundary(mesh);
-
-  // Start a progress session
-  Progress p("Adding boundary conditions weakly", boundary.noEdges());  
-    
-  // Iterate over all edges in the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
-  {
-    // Update map
-    map.update(edge.cell(0),edge);
-    
-    // Update equation
-    pde.updateRHS(element, edge.cell(0), map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(*v);
-    
-    // Update progress
-    p++;
-  }
-  */
+  // Not implemented
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
@@ -334,30 +271,7 @@ void FEM::assembleBoundaryTet(PDE& pde, Mesh& mesh, Vector& b,
 			      Quadrature& interior_quadrature, 
 			      Quadrature& boundary_quadrature)
 {
-  /*
-  // Create boundary object 
-  Boundary boundary(mesh);
-
-  // Start a progress session
-  Progress p("Adding boundary conditions weakly", boundary.noFaces());  
-    
-  // Iterate over all edges in the boundary
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    // Update map
-    map.update(face.cell(0),face);
-    
-    // Update equation
-    pde.updateRHS(element, face.cell(0), map, interior_quadrature, boundary_quadrature);
-    
-    // Iterate over test functions
-    for (FiniteElement::Vector::TestFunctionIterator v(element); !v.end(); ++v)
-      b(v.dof(cell)) += pde.rhs(*v);
-    
-    // Update progress
-    p++;
-  }
-  */
+  // Not implemented
 }
 //-----------------------------------------------------------------------------
 void FEM::setBC(Mesh& mesh, Matrix& A, FiniteElement::Vector& element)

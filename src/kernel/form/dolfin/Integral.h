@@ -21,28 +21,29 @@ namespace dolfin {
     class InterioriMeasure;
     class BoundaryMeasure;
     
-    // Integral measure (base class)
-    class Measure {
+    /// Integral measure (base class)
+    class Measure
+    {
     public:
       
       Measure();
-      Measure(const Map &map, const Quadrature &quadrature);
+      Measure(const Map& map, const Quadrature& quadrature);
       virtual ~Measure();
       
       // Update map and quadrature
-      void update(const Map &map, const Quadrature &quadrature);
+      virtual void update(const Map& map, const Quadrature& quadrature);
       
       // Integration operators dm * v
       real operator* (real a) const;
-      real operator* (const FunctionSpace::ShapeFunction &v);
-      real operator* (const FunctionSpace::Product &v);
-      real operator* (const FunctionSpace::ElementFunction &v);
+      real operator* (const FunctionSpace::ShapeFunction& v);
+      real operator* (const FunctionSpace::Product& v);
+      real operator* (const FunctionSpace::ElementFunction& v);
       
     protected:
       
       // Evaluation of integrals
-      virtual real integral(const FunctionSpace::ShapeFunction &v) = 0;
-      virtual real integral(const FunctionSpace::Product &v) = 0;
+      virtual real integral(const FunctionSpace::ShapeFunction& v) = 0;
+      virtual real integral(const FunctionSpace::Product& v) = 0;
       virtual real det() const = 0;
       
       // Init table
@@ -95,46 +96,70 @@ namespace dolfin {
       int order;            // Maximum number of factors
       int n;                // Number of different shape functions
       Tensor<Value>* table; // A lookup table for integrals
+      bool active;          // True if the measure is active
       
     };
     
     // Integral measure for the interior of an element
-    class InteriorMeasure : public Measure {
+    class InteriorMeasure : public Measure
+    {
     public:
       
-      InteriorMeasure() : Measure() {};
-      InteriorMeasure(Map &m, Quadrature &q) : Measure(m, q) {};
+      /// Constructor
+      InteriorMeasure();
+
+      /// Constructor
+      InteriorMeasure(Map& m, Quadrature& q);
       
+      // Update map and quadrature
+      void update(const Map& map, const Quadrature& quadrature);
+
     private:
       
-      // Evaluation of integrals
-      real integral(const FunctionSpace::ShapeFunction &v);
-      real integral(const FunctionSpace::Product &v);
+      // Evaluate integral of given shape function
+      real integral(const FunctionSpace::ShapeFunction& v);
 
+      // Evaluate integral of given product
+      real integral(const FunctionSpace::Product& v);
+      
+      // Return determinant of map
       real det() const;
       
     };
     
     // Integral measure for the boundary of an element
-    class BoundaryMeasure : public Measure {
+    class BoundaryMeasure : public Measure
+    {
     public:
       
-      BoundaryMeasure() : Measure() {};
-      BoundaryMeasure(Map &m, Quadrature &q) : Measure(m, q) {};
+      // Constructor
+      BoundaryMeasure();
+
+      // Constructor
+      BoundaryMeasure(Map& m, Quadrature& q);
       
+      // Update map and quadrature
+      void update(const Map& map, const Quadrature& quadrature);
+
     private:
       
-      // Evaluation of integrals
-      real integral(const FunctionSpace::ShapeFunction &v);
-      real integral(const FunctionSpace::Product &v);
+      // Evaluate integral of given shape function
+      real integral(const FunctionSpace::ShapeFunction& v);
 
+      // Evaluate integral of given product
+      real integral(const FunctionSpace::Product& v);
+      
+      // Return determinant of map
       real det() const;
+
+      // Current boundary
+      int boundary;
 
     };
     
   };
   
-  real operator* (real a, const Integral::Measure &dm);
+  real operator* (real a, const Integral::Measure& dm);
   
 }
 

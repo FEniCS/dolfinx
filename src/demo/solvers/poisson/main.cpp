@@ -33,8 +33,6 @@ void mybc(BoundaryCondition& bc)
 
 int main()
 {
-  dolfin_set("output", "plain text");
-  
   Mesh mesh("mesh.xml.gz");
   Problem poisson("poisson", mesh);
   

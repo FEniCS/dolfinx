@@ -36,6 +36,9 @@ namespace dolfin {
     /// Return id of edge
     int  id() const;
 
+    /// Return number of cell neighbors
+    unsigned int noCellNeighbors() const;
+
     /// Get end node number i
     Node& node(int i) const;
 

@@ -24,11 +24,13 @@ void P1IntMap::update(const Cell& cell)
   // Check that cell type is correct
   //if ( cell.type() != Cell::interval )
   //  dolfin_error("Wrong cell type for map (must be an interval).");
-  
-  cell_ = &cell;
 
-  // Reset values
+  // Reset values: note that this includes setting _boundary to -1,
+  // denoting a mapping to the interior of the cell
   reset();
+
+  // Update current cell
+  _cell = &cell;
   
   // Get coordinates
   NodeIterator n(cell);

@@ -23,7 +23,6 @@ PDE::~PDE()
 }
 //-----------------------------------------------------------------------------
 const void PDE::updateLHS(FiniteElement::Vector& element,
-			  //		    const Cell& cell,
 			  const Map& map,
 			  const Quadrature& interior_quadrature,
 			  const Quadrature& boundary_quadrature)
@@ -36,14 +35,13 @@ const void PDE::updateLHS(FiniteElement::Vector& element,
 }
 //-----------------------------------------------------------------------------
 const void PDE::updateRHS(FiniteElement::Vector& element,
-			  //		    const Cell& cell,
 			  const Map& map,
 			  const Quadrature& interior_quadrature,
 			  const Quadrature& boundary_quadrature)
 {
   // Common update for LHS and RHS
   update(element, map, interior_quadrature, boundary_quadrature);
-
+  
   // Local update of RHS
   updateRHS();
 }
@@ -169,7 +167,6 @@ void PDE::add(ElementFunction::Vector& v, Function::Vector& f)
 }
 //-----------------------------------------------------------------------------
 const void PDE::update(FiniteElement::Vector& element,
-		       //                 const Cell& cell,
 		       const Map& map,
 		       const Quadrature& interior_quadrature,
 		       const Quadrature& boundary_quadrature)
@@ -181,22 +178,19 @@ const void PDE::update(FiniteElement::Vector& element,
   for(NewList<FunctionPair>::iterator p = functions.begin();
       p != functions.end(); p++)
   { 
-    p->update(*(element(0)), *(map.cell()), t);
+    p->update(*(element(0)), map.cell(), t);
   }
 
-  //for (List<FunctionPair>::Iterator p(functions); !p.end(); ++p)
-  //p->update(*(element(0)), *(map.cell()), t);
-  
   // Update integral measures
   dx.update(map, interior_quadrature);
   ds.update(map, boundary_quadrature);
-  h = map.cell()->diameter();
+  h = map.cell().diameter();
   
   // Save map (to compute derivatives)
   this->map_ = &map;
 
   // Save cell 
-  this->cell_ = map.cell();
+  this->cell_ = &(map.cell());
 }
 //-----------------------------------------------------------------------------
 int PDE::size()

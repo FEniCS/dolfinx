@@ -37,6 +37,12 @@ namespace dolfin {
     /// Return determinant of derivative of map to boundary of cell
     real bdet() const;
 
+    /// Return current boundary (triangle or tetrahedron) of cell
+    int boundary() const;
+
+    /// Return current cell
+    const Cell& cell() const;
+
     /// Update map to given cell
     virtual void update(const Cell& cell) = 0;
 
@@ -45,9 +51,6 @@ namespace dolfin {
 
     /// Update map to cell of given face
     virtual void update(const Face& face);
-    
-    /// Get cell 
-    const Cell* cell() const;
     
     /// Return derivative of constant
     real ddx(real a) const;
@@ -83,7 +86,11 @@ namespace dolfin {
     // Determinant of derivative of map to boundary of cell
     real bd;
 
-    const Cell* cell_;
+    // Current boundary (triangle or tetrahedron) of cell
+    int _boundary;
+
+    // Current cell
+    const Cell* _cell;
   };
   
 }
