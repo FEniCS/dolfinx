@@ -35,6 +35,7 @@ namespace dolfin {
 	
  	 NodeIterator& operator++();
 	 bool end();
+	 int index();
 	 
 	 Node& operator*() const;
 	 Node* operator->() const;
@@ -47,6 +48,7 @@ namespace dolfin {
 		
 		virtual void operator++() = 0;
 		virtual bool end() = 0;
+		virtual int index() = 0;
 		
 		virtual Node& operator*() const = 0;
 		virtual Node* operator->() const = 0;
@@ -62,6 +64,7 @@ namespace dolfin {
 		
 		void operator++();
 		bool end();
+		int index();
 		
 		Node& operator*() const;
 		Node* operator->() const;
@@ -79,6 +82,7 @@ namespace dolfin {
 		NodeNodeIterator(const Node &node);
 		void operator++();
 		bool end();
+		int index();
 
 		Node& operator*() const;
 		Node* operator->() const;
@@ -97,6 +101,7 @@ namespace dolfin {
 		CellNodeIterator(const Cell &cell);
 		void operator++();
 		bool end();
+		int index();
 
 		Node& operator*() const;
 		Node* operator->() const;

@@ -5,7 +5,8 @@ dnl Settings
 PACKAGE=dolfin
 VERSION=0.2.11-1
 DOLFIN_MAIN="main"
-DOLFIN_KERNEL="fem io grid la common"
+# Note: need to be in the correct order, and yes io should be included twice...
+DOLFIN_KERNEL="io grid fem common quadrature io la math"
 
 dnl Find modules
 cd src/modules
@@ -100,6 +101,10 @@ AC_OUTPUT( Makefile \
            src/kernel/io/dolfin/Makefile \
            src/kernel/la/Makefile \
            src/kernel/la/dolfin/Makefile \
+           src/kernel/quadrature/Makefile \
+           src/kernel/quadrature/dolfin/Makefile \
+           src/kernel/math/Makefile \
+           src/kernel/math/dolfin/Makefile \
            src/kernel/main/Makefile \
            src/kernel/main/dolfin/Makefile \
            src/modules/Makefile \
@@ -109,6 +114,6 @@ AC_OUTPUT( Makefile \
            src/modules/template/Makefile \
            src/config/Makefile \
            src/demo/Makefile \
-           src/demo/solvers/navierstokes/Makefile \
+           src/demo/solvers/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile )

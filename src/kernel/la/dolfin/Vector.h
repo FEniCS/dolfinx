@@ -17,9 +17,10 @@ namespace dolfin {
 	 
 	 Vector  ();
 	 Vector  (int size);
+	 Vector  (Vector &vector);
 	 ~Vector ();
 
-	 void resize(int size);
+	 void init(int size);
 	 int size();
 	 int bytes();
 

@@ -17,6 +17,9 @@ namespace dolfin {
 	 
 	 void startElement (const xmlChar *name, const xmlChar **attrs);
 	 void endElement   (const xmlChar *name);
+
+	 void reading(string filename);
+	 void done();
 	 
   private:
 

@@ -4,9 +4,13 @@
 #ifndef __SHAPE_FUNCTION_H
 #define __SHAPE_FUNCTION_H
 
+#include <iostream>
+
 #include <dolfin/constants.h>
 #include <dolfin/function.h>
+#include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
+#include <dolfin/Integral.h>
 
 namespace dolfin {
 
@@ -20,7 +24,7 @@ namespace dolfin {
 	 ShapeFunction();
 	 
 	 // Constructor for v = 1
-	 ShapeFunction(int i);
+	 ShapeFunction(int id);
 
 	 // Initialisation
 	 ShapeFunction(function f);
@@ -28,7 +32,10 @@ namespace dolfin {
 
 	 // Specification of derivatives
 	 void set(ElementFunction dx, ElementFunction dy, ElementFunction dz, ElementFunction dt);
-	 
+
+	 // Get id
+	 int id() const;
+
 	 // Derivatives
 	 ElementFunction dx() const;
 	 ElementFunction dy() const;
@@ -39,6 +46,7 @@ namespace dolfin {
 
 	 // Evaluation
 	 real operator() (real x, real y, real z, real t) const;
+	 real operator() (Point p) const;
 
 	 // Assignment
 	 ShapeFunction& operator= (const ShapeFunction &v);
@@ -47,27 +55,36 @@ namespace dolfin {
 	 ElementFunction operator+ (const ShapeFunction   &v) const;
 	 ElementFunction operator+ (const Product         &v) const;
 	 ElementFunction operator+ (const ElementFunction &v) const;
-
+	 
 	 // Subtraction
 	 ElementFunction operator- (const ShapeFunction   &v) const;
 	 ElementFunction operator- (const Product         &v) const;
 	 ElementFunction operator- (const ElementFunction &v) const;
 
 	 // Multiplication
+	 ElementFunction operator* (const real a)             const;
 	 Product         operator* (const ShapeFunction   &v) const;
 	 Product         operator* (const Product         &v) const;
 	 ElementFunction operator* (const ElementFunction &v) const;
-	 ElementFunction operator* (const real a) const;
 
-	 // Friends
-	 friend FunctionSpace;
+	 // Integration
+	 real operator* (Integral::Measure &dm) const;
+
+	 // Needed for ShortList
+	 void operator= (int zero);
+	 bool operator! () const;
+	 
+	 // Output
+	 friend ostream& operator << (ostream& output, const ShapeFunction &v);
 	 
   private:
 
-	 int id;
+	 int _id;
 
   };
-
+  
+  FunctionSpace::ElementFunction operator* (real a, const FunctionSpace::ShapeFunction &v);
+  
 }
 
 #endif

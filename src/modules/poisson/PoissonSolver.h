@@ -4,7 +4,7 @@
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H
 
-#include <Solver.h>
+#include <dolfin/Solver.h>
 
 namespace dolfin {
   

@@ -4,7 +4,7 @@
 #ifndef __TEMPLATE_H
 #define __TEMPLATE_H
 
-#include <Equation.h>
+#include <dolfin/Equation.h>
 
 namespace dolfin {
 

@@ -14,12 +14,12 @@ const char* PoissonSolver::description()
 //-----------------------------------------------------------------------------
 void PoissonSolver::solve()
 {
-  Poisson      eq;
   Galerkin     fem;
   Matrix       A;
   Vector       x, b;
   Function     u(grid, x);
   Function     f(grid, "source");
+  Poisson      equation(f);
   KrylovSolver solver;
 
   // Discretise
@@ -29,7 +29,7 @@ void PoissonSolver::solve()
   solver.solve(A, x, b);
     
   // Save the solution
-  u.setLabel("u","temperature");
-  u.save();
+  //u.setLabel("u","temperature");
+  //u.save();
 }
 //-----------------------------------------------------------------------------

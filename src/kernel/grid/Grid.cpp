@@ -6,10 +6,8 @@
 #include <math.h>
 #include <strings.h>
 
-#include <dolfin/Display.h>
-#include <utils.h>
+#include <dolfin/utils.h>
 #include <dolfin/constants.h>
-
 #include <dolfin/Grid.h>
 #include <dolfin/Node.h>
 #include <dolfin/Triangle.h>
@@ -62,6 +60,13 @@ int Grid::noNodes()
 int Grid::noCells()
 {
   return no_cells;
+}
+//-----------------------------------------------------------------------------
+Cell::Type Grid::type()
+{
+  // Warning: returns type of first cell
+  CellIterator c(this);
+  return c->type();
 }
 //-----------------------------------------------------------------------------
 void Grid::show()
@@ -132,21 +137,16 @@ void Grid::init()
   InitGrid initGrid(this);
 }
 //-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  std::ostream& operator << (std::ostream& output, Grid& grid)
-  {
-	 int no_nodes = grid.noNodes();
-	 int no_cells = grid.noCells();
-
-	 output << "[ Grid with " << no_nodes << " nodes and "
-			  << no_cells << " cells. ]";
-
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
+// Additional operators
+//-----------------------------------------------------------------------------
+std::ostream& dolfin::operator << (std::ostream& output, Grid& grid)
+{
+  int no_nodes = grid.noNodes();
+  int no_cells = grid.noCells();
+  
+  output << "[ Grid with " << no_nodes << " nodes and "
+			<< no_cells << " cells. ]";
+  
+  return output;
 }
 //-----------------------------------------------------------------------------
-

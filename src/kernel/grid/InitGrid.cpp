@@ -26,8 +26,6 @@ InitGrid::InitGrid(Grid *grid)
 //-----------------------------------------------------------------------------
 void InitGrid::clear(Grid *grid)
 {  
-  cout << "Clearing connections" << endl;
-
   // Clear connectivity for nodes
   for (NodeIterator n(grid); !n.end(); ++n){
 	 n->nn.clear();
@@ -48,7 +46,7 @@ void InitGrid::initNodeCell(Grid *grid)
   // Count the number of cells the node appears in
   for (CellIterator c(grid); !c.end(); ++c)
 	 for (NodeIterator n(c); !n.end(); ++n)
-		n->nc.size()++;
+		n->nc.setsize(n->nc.size()+1);
   
   // Allocate memory for the cell lists
   for (NodeIterator n(grid); !n.end(); ++n)
@@ -67,7 +65,7 @@ void InitGrid::initCellCell(Grid *grid)
   for (CellIterator c1(grid); !c1.end(); ++c1) {
 
 	 // Allocate for the maximum number of cell neighbors
-	 c1->cc.init(c1->noBoundaries());
+	 c1->cc.init(c1->noBound());
 
 	 // Add all unique cell neighbors
 	 for (NodeIterator n(c1); !n.end(); ++n)
@@ -80,7 +78,6 @@ void InitGrid::initCellCell(Grid *grid)
 	 c1->cc.resize();
 
   }
-  
 }
 //-----------------------------------------------------------------------------
 void InitGrid::initNodeNode(Grid *grid)
@@ -95,7 +92,7 @@ void InitGrid::initNodeNode(Grid *grid)
 
 	 // Allocate for the maximum number of node neighbors
 	 for (CellIterator c(n1); !c.end(); ++c)
-		n1->nn.size() += c->noNodes();
+		n1->nn.setsize( n1->nn.size() + c->noNodes() );
 	 n1->nn.init();
 	 
 	 // Add all uniqe node neighbors
@@ -108,7 +105,5 @@ void InitGrid::initNodeNode(Grid *grid)
 	 n1->nn.resize();
 
   }
-  
 }
 //-----------------------------------------------------------------------------
-

@@ -4,13 +4,18 @@
 #ifndef __ELEMENT_FUNCTION_H
 #define __ELEMENT_FUNCTION_H
 
+#include <iostream>
+
 #include <dolfin/constants.h>
+#include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
+#include <dolfin/Integral.h>
 
 namespace dolfin {
 
   class FunctionSpace::ShapeFunction;
   class FunctionSpace::Product;
+  class Function;
   
   class FunctionSpace::ElementFunction {
   public:
@@ -44,14 +49,15 @@ namespace dolfin {
 	 ElementFunction(const ShapeFunction   &v0, const Product         &v1);
 	 ElementFunction(const ShapeFunction   &v0, const ElementFunction &v1);
 	 ElementFunction(const Product         &v0, const ElementFunction &v1);
-	 
+
 	 // Destructor
 	 ~ElementFunction();
-	 
+
 	 //--- Operators ---
 
 	 // Evaluation
-	 real operator() (real x, real y, real z, real t);
+	 real operator() (real x, real y, real z, real t) const;
+	 real operator() (Point p) const;
 	 
 	 // Assignment
 	 ElementFunction& operator= (real a);
@@ -63,6 +69,9 @@ namespace dolfin {
 	 ElementFunction  operator+ (const ShapeFunction   &v) const;
 	 ElementFunction  operator+ (const Product         &v) const;
 	 ElementFunction  operator+ (const ElementFunction &v) const;
+	 ElementFunction  operator+=(const ShapeFunction   &v);
+	 ElementFunction  operator+=(const Product         &v);
+	 ElementFunction  operator+=(const ElementFunction &v);
 
 	 // Subtraction
 	 ElementFunction  operator- (const ShapeFunction   &v) const;
@@ -70,9 +79,25 @@ namespace dolfin {
 	 ElementFunction  operator- (const ElementFunction &v) const;
 
 	 // Multiplication
+	 ElementFunction  operator* (real a)                   const;
 	 ElementFunction  operator* (const ShapeFunction   &v) const;
 	 ElementFunction  operator* (const Product         &v) const;
 	 ElementFunction  operator* (const ElementFunction &v) const;
+
+	 // Set the number of terms
+	 void init(int size);
+	 
+	 // Set values
+	 void set(int i, const ShapeFunction &v, real value);
+	 
+	 // Integration
+	 real operator* (Integral::Measure &dm) const;
+
+	 // Output
+	 friend ostream& operator << (ostream& output, const ElementFunction &v);
+
+	 // Friends
+	 friend class Function;
 	 
   private:
 
@@ -82,6 +107,8 @@ namespace dolfin {
 	 
   };
 
+  FunctionSpace::ElementFunction operator* (real a, const FunctionSpace::ElementFunction &v);
+  
 }
 
 #endif

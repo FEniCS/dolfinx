@@ -14,8 +14,6 @@ namespace dolfin {
   class Vector;
   class XMLObject;
   
-  enum ParserState { OUTSIDE, VECTOR_OUTSIDE, VECTOR_INSIDE, DONE };
-  
   class XMLFile : public GenericFile {
   public:
 
@@ -42,10 +40,7 @@ namespace dolfin {
   private:
 
 	 void parseFile();
-
-	 // Parser and state
-	 xmlSAXHandler sax;
-	 ParserState state;
+	 void parseSAX();
 
 	 // Data
 	 XMLObject *xmlObject;
@@ -59,9 +54,9 @@ namespace dolfin {
   void sax_start_element  (void *ctx, const xmlChar *name, const xmlChar **attrs);
   void sax_end_element    (void *ctx, const xmlChar *name);
 
-  static void sax_warning     (void *ctx, const char *msg, ...);
-  static void sax_error       (void *ctx, const char *msg, ...);
-  static void sax_fatal_error (void *ctx, const char *msg, ...);
+  void sax_warning     (void *ctx, const char *msg, ...);
+  void sax_error       (void *ctx, const char *msg, ...);
+  void sax_fatal_error (void *ctx, const char *msg, ...);
   
 }
 

@@ -29,6 +29,8 @@ namespace dolfin {
 	 
 	 int noNodes();
 	 int noCells();
+	 
+	 Cell::Type type();
 
 	 /// Output
 	 void show();

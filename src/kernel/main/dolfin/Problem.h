@@ -1,8 +1,8 @@
-#ifndef __PROBLEM_HH
-#define __PROBLEM_HH
+#ifndef __PROBLEM_H
+#define __PROBLEM_H
 
 namespace dolfin {
-
+  
   class Grid;
   class Solver;
   
@@ -11,13 +11,14 @@ namespace dolfin {
 
 	 Problem(const char *problem);
 	 Problem(const char *problem, Grid &grid);
+
+	 ~Problem();
 	 
 	 void set(const char *property, ...);
 	 void solve();
 
   private:
 				
-	 Grid *grid;
 	 Solver *solver;
 
   };

@@ -5,6 +5,7 @@
 #define __XML_OBJECT_H
 
 #include <parser.h>
+#include <string>
 
 #include <dolfin/constants.h>
 
@@ -18,6 +19,10 @@ namespace dolfin {
 	 virtual void startElement (const xmlChar *name, const xmlChar **attrs) = 0;
 	 virtual void endElement   (const xmlChar *name) = 0;
 
+	 // Write message before and after reading file
+	 virtual void reading(string filename) {};
+	 virtual void done() {};
+	 
 	 bool dataOK();
 	 
   protected:

@@ -1,7 +1,7 @@
 #ifndef __TEMPLATE_SETTINGS_H
 #define __TEMPLATE_SETTINGS_H
 
-#include "Settings.h"
+#include <dolfin/Settings.h>
 
 namespace dolfin {
   

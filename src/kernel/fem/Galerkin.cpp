@@ -1,194 +1,108 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Galerkin.hh"
-#include "FiniteElement.hh"
-#include "ShapeFunction.hh"
-#include "Equation.hh"
-#include "EquationSystem.hh"
-#include <Settings.hh>
+#include <dolfin/Mapping.h>
+#include <dolfin/TriLinMapping.h>
+#include <dolfin/TetLinMapping.h>
+#include <dolfin/Quadrature.h>
+#include <dolfin/TriangleVertexQuadrature.h>
+//#include <dolfin/TetrahedronVertexQuadrature.h>
+#include <dolfin/FiniteElement.h>
+#include <dolfin/Galerkin.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Galerkin::Galerkin()
 {
-  size = grid->noNodes();
-  noeq = equation->size();
-  dim  = equation->dim();
-  
-  bc_function = settings->bc_function;
-  if ( !bc_function )
-	 display->Error("Boundary conditions are not specified.");
-  
-  // Get space dimension
-  settings->Get("space dimension",&nosd);
+  // Will be created later (need to know the space dimension)
+  element = 0;
+  mapping = 0;
+  quadrature = 0;
 }
 //-----------------------------------------------------------------------------
-Galerkin::~Galerkin()
+Galerkin::Galerkin(FiniteElement& element,
+						 Mapping&       mapping,
+						 Quadrature&    quadrature)
 {
-  
+  this->element    = &element;
+  this->mapping    = &mapping;
+  this->quadrature = &quadrature;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assemble(Grid &grid, Equation &equation, Matrix &A, Vector &b)
+void Galerkin::assemble(Equation &equation, Grid &grid, Matrix &A, Vector &b)
 {
-  assembleLHS(grid, equation, A);
-  assembleRHS(grid, equation, b);
-  setBC(grid, A,b);
+  assembleLHS(equation, grid, A);
+  assembleRHS(equation, grid, b);
+  //setBC(grid, A, b);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleLHS(Grid &grid, Equation &equation, Matrix &A)
+void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
+{  
+  // Make sure that we have chosen trial and test spaces
+  init(grid);
+    
+  // Allocate and reset matrix
+  alloc(A, grid);
+
+  // Write a message
+  cout << "Assembling: system size is ";
+  cout << A.size(0) << " x " << A.size(1) << "." << endl;
+  
+  // Iterate over all cells in the grid
+  for (CellIterator cell(grid); !cell.end(); ++cell) {
+
+	 // Update mapping
+	 mapping->update(cell);
+
+	 // Update equation
+	 equation.updateLHS(element, cell, mapping, quadrature);
+	 
+	 // Iterate over test and trial functions
+	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+		for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
+		  A(v.dof(cell), u.dof(cell)) += equation.lhs(u, v);
+	 
+  }
+  
+  // Clear unused elements
+  A.resize();
+
+  // Write a message
+  cout << "Assembling: " << A << endl;
+}
+//-----------------------------------------------------------------------------
+void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
 {
-  int i,j;
-  real volume;
-  real integral;
-
-  // Reallocate the matrix if necessary
-  alloc(A);
-  
-  // Reset the matrix
-  A = 0.0;
-  
-  // Choose the type of element, so far we only have two choices
-  FiniteElement *trial;
-  FiniteElement *test;
-  FiniteElement *coeff;
-
-  if ( nosd == 3 ){
-    trial = new FiniteElement(grid,no_eq,tetlin);
-    test  = new FiniteElement(grid,no_eq,tetlin);
-    coeff = new FiniteElement(grid,no_eq,tetlin);
-  }
-  else{
-    tria  = new FiniteElement(grid,no_eq,trilin);
-    test  = new FiniteElement(grid,no_eq,trilin);
-    coeff = new FiniteElement(grid,no_eq,trilin);
-  }
-  
-  ShapeFunction *u;
-  ShapeFunction *v;
-  
-  int no_dof;
-  
-  // Go through all elements and assemble
-  for (CellIterator c(grid); !c.end(); ++c) {
-	 
-    // Update elements
-    trial->update(c);
-    test->update(c);
-    field->update(c);
-	 
-    // Update equation
-    equation->updateLHS(element_field);
-	 
-    // Get the number of dof
-    no_dof = element_trial->GetDim();
+  // Make sure that we have chosen trial and test spaces
+  init(grid);
     
-    volume = element_trial->GetVolume();
-	 
-    // Compute element matrix and put the entries directly into A
-    for (int test = 0; test < no_dof; test++) {
-      for (int trial = 0; trial < no_dof; trial++) {
-		  for (int k = 0; k < noeq; k++) {
-			 for (int l = 0; l < noeq; l++) {
-				
-				u = element_trial->GetShapeFunction(trial,l);
-				v = element_test->GetShapeFunction(test,k);
-				
-				if ( no_eq == 1 )
-				  integral = equation->IntegrateLHS(u[0],v[0]);
-				else
-				  integral = ((EquationSystem *) equation)->IntegrateLHS(u,v);
-				
-				i = element_test->GetGlobalDof(test)*no_eq + k;
-				j = element_trial->GetGlobalDof(trial)*no_eq + l;
-				
-				A->Add(i,j,integral*volume);
-						
-			 }
-		  }
-      }
-    }
-  }
+  // Allocate and reset matrix
+  alloc(b, grid);
 
-  // Clean up
-  delete trial;
-  delete test;
-  delete coeff;
+  // Iterate over all cells in the grid
+  for (CellIterator cell(grid); !cell.end(); ++cell) {
+
+	 	 // Update mapping
+	 mapping->update(cell);
+
+	 // Update equation
+	 equation.updateRHS(element, cell, mapping, quadrature);
+	 
+	 // Iterate over test and trial functions
+	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+		b(v.dof(cell)) += equation.rhs(v);
+	 
+  }
   
-  // Drop zero elements from matrix
-  //A->DropZero(1e-12);
+  // Write a message
+  cout << "Assembling: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleRHS(Grid &grid, Equation &equation, Vector &b)
-{
-  Cell *c;
-  int i,j;
-
-  // Allocate the vector if we have to
-  alloc(b);
-  
-  // Reset the matrix
-  b->SetToConstant(0.0);
-  
-  real volume;
-  real integral;
-
-  // Choose type of finite elements
-  FiniteElement *element_test;
-  FiniteElement *element_field;
-  if ( space_dimension == 3 ){
-	 element_test  = new FiniteElement(grid,no_eq,tetlin);
-	 element_field = new FiniteElement(grid,no_eq,tetlin);
-  }
-  else{
-	 element_test  = new FiniteElement(grid,no_eq,trilin);
-	 element_field = new FiniteElement(grid,no_eq,trilin);
-  }
-
-  ShapeFunction *v;
-
-  int no_dof;
-
-  // Go through all elements and assemble
-  for (int cell=0;cell<grid->GetNoCells();cell++){
-
-    // Update elements
-    element_test->Update(cell);
-	 element_field->Update(cell);
-    
-    // Update equation
-    equation->UpdateRHS(element_field);
-    
-    // Get the number of dof
-    no_dof = element_test->GetDim();
-    
-    volume = element_test->GetVolume();
-    
-    for (int test=0;test<no_dof;test++){
-      for (int k=0;k<no_eq;k++){
-	
-		  v = element_test->GetShapeFunction(test,k);
-		  
-		  if ( no_eq == 1 )
-			 integral = equation->IntegrateRHS(v[0]);
-		  else
-			 integral = ((EquationSystem *) equation)->IntegrateRHS(v);
-
-		  i = element_test->GetGlobalDof(test)*no_eq + k;
-		  b->Add(i,integral*volume);
-	
-      }
-    }
-  }
-  
-  // Clean up
-  delete element_test;
-  
-  // Drop zero elements from matrix
-  //A->DropZero(1e-12);
-}
-//-----------------------------------------------------------------------------
+/*
 void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 {
+
   if ( (A->Size(0) != no_eq*no_nodes ) || ( b->Size() != no_eq*no_nodes ) )
   	 display->Error("You must assemble the matrix before settings boundary conditions.");
 
@@ -220,33 +134,89 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
 
   }
 
-}
-//-----------------------------------------------------------------------------
-void Galerkin::alloc(Matrix &A)
-{
-  int ncols[size];
-  int ii;
-  bool ok = true;
-  
-  // Compute the number of columns for every row in the matrix
-  for(int i=0;i<no_nodes;i++)
-	 for (int j=0;j<no_eq;j++){
-		ii = i*no_eq+j;
-		ncols[ii] = no_eq * grid->GetNode(i)->GetNoNodeNeighbors();
 
-		if ( ncols[ii] != A->GetRowLength(ii) )
-		  ok = false;
-		
-	 }
-  
-  // Reallocate the matrix with the new size
-  if ( !ok )
-	 A->resize(size,size,ncols);
+}
+*/
+//-----------------------------------------------------------------------------
+void Galerkin::init(Grid &grid)
+{
+  // Check if the element has already been created
+  if ( element )
+	 return;
+
+  // Create default finite element
+  switch ( grid.type() ) {
+  case Cell::TRIANGLE:
+	 cout << "Using standard piecewise linears on triangles." << endl;
+	 element    = new FiniteElement(triLinSpace, triLinSpace);
+	 mapping    = new TriLinMapping();
+	 quadrature = new TriangleVertexQuadrature();
+	 break;
+  case Cell::TETRAHEDRON:
+	 cout << "Using standard piecewise linears on tetrahedrons." << endl;
+	 element    = new FiniteElement(tetLinSpace, tetLinSpace);
+	 mapping    = new TetLinMapping();
+	 //quadrature = TetrahedronVertexQuadrature();
+  break;
+  default:
+	 // FIXME: Use logging system
+	 cout << "Error: No default spaces for this type of cells." << endl;
+	 exit(1);
+  }
+
 }
 //-----------------------------------------------------------------------------
-void Galerkin::alloc(Vector &b)
+void Galerkin::alloc(Matrix &A, Grid &grid)
 {
-  if ( b.size() != size )
-	 b.resize(size);
+  // Count the degrees of freedom
+  
+  int imax = 0;
+  int jmax = 0;
+  int i,j;
+
+  for (CellIterator cell(grid); !cell.end(); ++cell) {
+
+	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+		if ( (i = v.dof(cell)) > imax )
+		  imax = i;
+
+	 for (FiniteElement::TrialFunctionIterator u(element); !u.end(); ++u)
+		if ( (j = u.dof(cell)) > jmax )
+		  jmax = j;
+		  
+  }
+
+  // Size of the matrix
+  int m = imax + 1;
+  int n = jmax + 1;
+  
+  // Initialise matrix
+  if ( A.size(0) != m || A.size(1) != n )
+	 A.init(m, n);
+
+  // Set all entries to zero
+  A = 0.0;
+}
+//-----------------------------------------------------------------------------
+void Galerkin::alloc(Vector &b, Grid &grid)
+{
+  // Find number of degrees of freedom
+  int imax = 0;
+  int i;
+  
+  for (CellIterator cell(grid); !cell.end(); ++cell)
+	 for (FiniteElement::TestFunctionIterator v(element); !v.end(); ++v)
+		if ( (i = v.dof(cell)) > imax )
+		  imax = i;
+
+  // Size of vector
+  int m = imax + 1;
+  
+  // Initialise vector
+  if ( b.size() != m )
+	 b.init(m);
+
+  // Set all entries to zero
+  b = 0.0;
 }
 //-----------------------------------------------------------------------------

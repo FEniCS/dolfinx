@@ -30,13 +30,17 @@ namespace dolfin {
 		  this->i = i;
 		  this->j = j;
 		}
-
+		
 		operator real() const {
 		  return sparseMatrix->readElement(i,j);
 		}
 
 		void operator= (real value) {
 		  sparseMatrix->writeElement(i,j,value);
+		}
+
+		void operator+= (real value) {
+		  sparseMatrix->addtoElement(i,j,value);
 		}
 		
 	 protected:
@@ -48,9 +52,14 @@ namespace dolfin {
 	 };
 
 	 friend class Reference;
+
+	 // Operators
+	 void operator= (real a);
 	 
-	 /// Resize matrix
-	 void resize(int m, int n);
+	 /// Resize to empty matrix of given size
+	 void init(int m, int n);
+	 /// Resize matrix (clear unused elements)
+	 void resize();
 	 /// Clear matrix
 	 void clear();
 	 /// Returns size (0 for rows, 1 for columns)
@@ -59,8 +68,10 @@ namespace dolfin {
 	 int size();
 	 /// Returns size of matrix in bytes (approximately)
 	 int bytes();
-	 /// Set number of nonzero entries in row
-	 void setRowSize(int i, int rowsize);
+	 /// Set number of nonzero entries in a row (clearing old values)
+	 void initRow(int i, int rowsize);
+	 /// Set number of nonzero entries in a row (keeping old values)
+	 void resizeRow(int i, int rowsize);
 	 /// Returns size of row i
 	 int rowSize(int i);
 	 
@@ -86,17 +97,25 @@ namespace dolfin {
 
 	 real readElement  (int i, int j) const;
 	 void writeElement (int i, int j, real value);
+	 void addtoElement (int i, int j, real value);
 	 
   private:
 
-	 int m,n;
+	 // Dimension
+	 int m, n;
 
+	 // Data
 	 int  *rowsizes;
 	 int  **columns;
 	 real **values;
+
+	 // Additional size to allocate when needed
+	 int allocsize;
 	 
   };
 
+  typedef SparseMatrix Matrix;
+  
 }
 
 #endif

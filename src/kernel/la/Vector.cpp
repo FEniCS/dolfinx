@@ -3,10 +3,8 @@
 //
 // Modifications by Georgios Foufas (2002)
 
-#include <dolfin/Display.h>
-#include <dolfin/Vector.h>
 #include <math.h>
-#include "utils.h"
+#include <dolfin/Vector.h>
 
 using namespace dolfin;
 
@@ -21,7 +19,15 @@ Vector::Vector(int size)
 {
   values = 0;
 
-  resize(size);
+  init(size);
+}
+//-----------------------------------------------------------------------------
+Vector::Vector(Vector &vector)
+{
+  n = vector.n;
+  values = new real[n];
+  for (int i = 0; i < n; i++)
+	 values[i] = vector.values[i];
 }
 //-----------------------------------------------------------------------------
 int Vector::bytes()
@@ -34,7 +40,7 @@ Vector::~Vector()
   delete [] values;
 }
 //-----------------------------------------------------------------------------
-void Vector::resize(int size)
+void Vector::init(int size)
 {
   if ( values )
 	 delete [] values;
@@ -54,19 +60,11 @@ int Vector::size()
 //-----------------------------------------------------------------------------
 real& Vector::operator()(int i)
 {
-  if ( (i<0) || (i>=n) )
-	 display->InternalError("Vector::operator ()",
-									"Illegal vector index: %d",i);
-         
   return values[i];
 }
 //-----------------------------------------------------------------------------
 void Vector::operator=(Vector &vector)
 {
-  if ( size() != vector.size() )
-	 display->InternalError("Vector::operator = ()",
-									"Vectors are not the same length");
-
   for (int i=0; i<n; i++)
 	 values[i] = vector.values[i];    
 }
@@ -85,10 +83,6 @@ void Vector::operator+=(real scalar)
 //-----------------------------------------------------------------------------
 void Vector::operator+=(Vector &vector)
 {
-  if ( n != vector.size() )
-	 display->InternalError("Vector::operator +=",
-									"Dimensions don't match: %d != %d.",n,vector.size());
-
   for (int i=0;i<n;i++)
 	 values[i] += vector.values[i];
 }
@@ -101,10 +95,6 @@ void Vector::operator*=(real scalar)
 //-----------------------------------------------------------------------------
 real Vector::operator*(Vector &vector)
 {
-  if ( n != vector.size() )
-	 display->InternalError("Vector::operator *",
-									"Dimensions don't match: %d != %d.",n,vector.size());
-  
   real sum = 0.0;
   for (int i=0;i<n;i++)
 	 sum += values[i] * vector.values[i];
@@ -142,17 +132,14 @@ real Vector::norm(int i)
     return sqrt(norm);
     break;
   default:
-    display->InternalError("Vector::Norm()","This norm is not implemented");
+	 cout << "Unknown vector norm" << endl;
+	 exit(1);
   }  
 
 }
 //-----------------------------------------------------------------------------
 void Vector::add(real scalar, Vector &vector)
 {
-  if ( n != vector.size() )
-	 display->InternalError("Vector::add",
-									"Dimensions don't match: %d != %d.",n,vector.size());
-  
   for (int i = 0; i < n; i++)
 	 values[i] += scalar * vector.values[i];  
 }
@@ -165,26 +152,22 @@ void Vector::show()
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  ostream& operator << (ostream& output, Vector& vector)
-  {
-	 output << "[ Vector of size " << vector.size()
-			  << ", approximatetly ";
-
-	 int bytes = vector.bytes();
-	 
-	 if ( bytes > 1024*1024 )
-		output << bytes/1024 << " Mb.]";
-	 else if ( bytes > 1024 )
-		output << bytes/1024 << " kb.]";
-	 else
-		output << bytes << " bytes.]";
-
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
+// Additional operators
+//-----------------------------------------------------------------------------
+ostream& dolfin::operator << (ostream& output, Vector& vector)
+{
+  output << "[ Vector of size " << vector.size()
+			<< ", approximatetly ";
+  
+  int bytes = vector.bytes();
+  
+  if ( bytes > 1024*1024 )
+	 output << bytes/1024 << " Mb. ]";
+  else if ( bytes > 1024 )
+	 output << bytes/1024 << " kb. ]";
+  else
+	 output << bytes << " bytes. ]";
+  
+  return output;
 }
 //-----------------------------------------------------------------------------

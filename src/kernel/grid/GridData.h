@@ -21,9 +21,6 @@ namespace dolfin {
   class GridData {
   public:
 	 
-	 GridData();
-	 ~GridData();
-	 
 	 Node* createNode();
 	 Cell* createCell(Cell::Type type);
 

@@ -73,7 +73,7 @@ void XMLSparseMatrix::readSparseMatrix(const xmlChar *name, const xmlChar **attr
   parseIntegerRequired(name, attrs, "columns", &columns);
 
   // Set values
-  sparseMatrix->resize(rows,columns);
+  sparseMatrix->init(rows, columns);
 }
 //-----------------------------------------------------------------------------
 void XMLSparseMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
@@ -87,7 +87,7 @@ void XMLSparseMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "size", &size);
 
   // Set values
-  sparseMatrix->setRowSize(row,size);
+  sparseMatrix->initRow(row, size);
 }
 //-----------------------------------------------------------------------------
 void XMLSparseMatrix::readElement(const xmlChar *name, const xmlChar **attrs)

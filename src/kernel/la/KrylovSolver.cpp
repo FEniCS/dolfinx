@@ -1,22 +1,19 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.h>
-#include "KrylovSolver.h"
-#include "SISolver.h"
 #include <unistd.h>
-#include "utils.h"
+#include <dolfin/basic.h>
+#include <dolfin/SISolver.h>
+#include <dolfin/KrylovSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver()
 {
-  A = 0;
-
-  krylov_method = gmres;
-  pc            = pc_none;
-  tol           = 1.0e-10;
+  method = GMRES;
+  pc     = NONE;
+  tol    = 1.0e-10;
 
   mat_H = 0;
   mat_r = 0;
@@ -27,82 +24,82 @@ KrylovSolver::KrylovSolver()
   vec_w = 0;
   vec_c = 0;
   vec_g = 0;
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::set(Method method)
+{
+  this->method = method;
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
+{
+  // Write a message
+  cout << "Solving linear system for " << b.size() << " unknowns." << endl;
   
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::SetMethod(KrylovMethod krylov_method)
-{
-  this->krylov_method = krylov_method;
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::Solve(SparseMatrix *A, Vector *x, Vector *b)
-{
-  SetMatrix(A);
-  Solve(x,b);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::Solve(Vector* x, Vector* b)
-{
-  if (x->size()!=b->size())
-    x->resize(b->size());
-  
-  norm_b = b->norm();
+  // Check if we need to resize x
+  if ( x.size() != b.size() )
+    x.init(b.size());
+
+  // Check if b = 0
+  norm_b = b.norm();
   if ( norm_b == 0 ){
-    (*x) = 0.0;
+    x = 0.0;
     return;
   }
 
-  switch( krylov_method ){ 
-  case gmres:
-    SolveGMRES(x,b);
+  // Choose method
+  switch( method ){ 
+  case GMRES:
+    solveGMRES(A, x, b);
     break;
-  case cg:
-    SolveCG(x,b);
+  case CG:
+    solveCG(A, x, b);
     break;
   default:
-    display->InternalError("KrylovSolver::Solve()","Krylov method not implemented");
+    cout << "KrylovSolver::Solve(): Krylov method not implemented" << endl;
   }
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::SolveGMRES(Vector* x, Vector* b)
+void KrylovSolver::solveGMRES(Matrix &A, Vector &x, Vector &b)
 {
   // FIXME: Should be parameters
   int k_max             = 20;
   int max_no_iterations = 100;
 
-  int n = x->size();
+  int n = x.size();
 
   // Allocate memory for arrays
-  AllocateArrays(n,k_max);
+  allocArrays(n, k_max);
   
-  norm_residual = GetResidual(x,b);
+  real norm_residual = residual(A, x, b);
   
-  for (int i=0;i<max_no_iterations;i++){
+  for (int i = 0;i < max_no_iterations; i++){
 
-    SolveGMRES_restart_k(x,b,k_max);
-	 norm_residual = GetResidual(x,b);
+    restartGMRES(A, x, b, k_max);
+	 norm_residual = residual(A, x, b);
 
 	 if ( norm_residual < (tol*norm_b) ){
       if ( i > 0 )
-		  display->Status(2,"Restarted GMRES converged after %i iterations (restarted after %i)",
-								i*k_max+no_iterations,k_max);
+		  cout << "Restarted GMRES converged after " << i*k_max+no_iterations << " iterations";
 		else
-		  display->Status(2,"GMRES converged after %i iterations",no_iterations);
+		  cout << "GMRES converged after " << no_iterations << " iterations";
 
-      display->Status(2,"Residual = %1.4e, Residual/||b|| = %1.4e",norm_residual,norm_residual/norm_b);
+      cout << " (residual = " << norm_residual << ")." << endl;
       break;
     }
 	 
-    if (i == max_no_iterations-1) 
-      display->Error("GMRES iterations did not converge, ||res|| = %1.4e",norm_residual);
+    if (i == max_no_iterations-1) {
+      cout << "GMRES iterations did not converge: residual = " << norm_residual << endl;
+		exit(1);
+	 }
   }
 
   // Delete temporary memory
-  DeleteArrays(n,k_max);
+  deleteArrays(n,k_max);
   
 }
 //-----------------------------------------------------------------------------
-real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
+real KrylovSolver::restartGMRES(Matrix &A, Vector &x, Vector &b, int k_max)
 {
   // Solve preconditioned problem Ax = AP^(-1)Px = b, 
   // by first solving AP^(-1)v=b through GMRES, then 
@@ -113,19 +110,20 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
   // at a maximal number of iterations kmax, 
   // starting from startvector v = Px. 
 
-  int n = x->size();
+  int n = x.size();
 
-  real norm_b = b->norm();
+  real norm_b = b.norm();
   
   // Compute start residual = b-AP^(-1)u = b-Ax.
-  Vector residual(n);
-  ComputeResidual(x,b,&residual);
-  norm_residual = residual.norm();
+  Vector r(n);
+  residual(A, x, b, r);
+  real norm_residual = r.norm();
 
-  for (int i=0;i<n;i++) mat_v[i][0] = residual(i)/norm_residual;
-      
+  for (int i=0;i<n;i++)
+	 mat_v[i][0] = r(i) / norm_residual;
+  
   Vector tmpvec(n);
-
+  
   real rho  = norm_residual;
   real beta = rho;
 
@@ -137,13 +135,13 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
   real tmp,nu,norm_v,htmp;
   
   int k,k_end;
-  for (k=0; k < k_max; k++){
+  for (k = 0; k < k_max; k++){
     
-    display->Message(5,"Start GMRES iteration number %i",k+1);
+    //cout << "Starting GMRES iteration number " << k+1 << endl;
     
     // Compute Krylov vector AP^(-1) v(k) 
     // 2 steps: First solve Px = v, then apply A to x.
-    ApplyMatrix(mat_v,k);
+    applyMatrix(A, mat_v, k);
     
     for (int j=0; j < k+1; j++){
       mat_H[j][k] = 0.0;
@@ -191,7 +189,7 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
     
     rho = fabs(vec_g[k+1]);
     
-    display->Message(5,"GMRES residual rho = %1.4e, rho/||b|| = %1.4e, tol = %1.4e",rho,rho/norm_b,tol);
+    //cout << "GMRES residual rho = " << rho << " rho/||b|| = " << rho/norm_b << endl;
 	 
     if ( (rho < tol * norm_b) || (k == k_max-1) ){
       //display->Status(2,"GMRES iteration converged after %i iterations",k);
@@ -203,7 +201,7 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
   
   k = k_end;
   
-  display->Message(5,"Postprocess to obtain solution");
+  //cout << "Postprocessing to obtain solution" << endl;
   
   for (int i=0; i < k+1; i++){ 
     vec_w[i] = vec_g[i];
@@ -225,37 +223,37 @@ real KrylovSolver::SolveGMRES_restart_k(Vector* x, Vector* b, int k_max)
     for (int j=0; j < k+1; j++) tmpvec(i) += mat_v[i][j]*vec_y[j];
   }
 
-  if ( pc != pc_none ){
+  if ( pc != NONE ){
     // Get solution from preconditioned problem (get u from Pu=x)
-    SolvePxv(&tmpvec);
+    solvePxv(A, tmpvec);
   }
 
   for (int i=0;i<n;i++)
-	 (*x)(i) += tmpvec(i);
+	 x(i) += tmpvec(i);
 
-  norm_residual = GetResidual(x,b);
+  norm_residual = residual(A, x, b);
 
   //display->Status(2,"Residual = %1.4e, Residual/||b|| = %1.4e",norm_residual,norm_residual/norm_b);
   
   return norm_residual;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::SolveCG(Vector* x, Vector* b)
+void KrylovSolver::solveCG(Matrix &A, Vector &x, Vector &b)
 {
   // Only for symmetric, positive definit problems. 
   // Does not work for the standard way of applying 
   // dirichlet boundary conditions, since then the 
   // symmetry of the matrix is destroyed.
 
-  int sz = x->size();
+  int sz = x.size();
   int k_max = 20;
   
-  real norm_b = b->norm();
+  real norm_b = b.norm();
   
   // Compute start residual = b-Ax.
-  Vector residual(sz);
-  norm_residual = GetResidual(x,b);
-
+  Vector r(sz);
+  real norm_residual = residual(A, x, b);
+  
   real *rho;
   rho = new real[k_max+1]; 
   for (int i = 0; i < k_max+1; i++) rho[i] = 0.0;
@@ -279,165 +277,147 @@ void KrylovSolver::SolveCG(Vector* x, Vector* b)
 
   for (int k=1; k < k_max; k++){
     
-    display->Message(0,"Start CG iteration number %i",k);
-    
-    display->Message(0,"rho(k-1) = %f, rho(k-2) = %f",rho[k-1],rho[k-2]);
+	 cout << "Starting CG iteration number " << k << endl;
     
     if ( k==1 ){
-      p = residual;
+      p = r;
     } else{
       beta = rho[k-1]/rho[k-2];
       for (int i=0; i < sz; i++)
-		  p(i) = residual(i) + beta*p(i);
+		  p(i) = r(i) + beta*p(i);
     }      
     
-    ApplyMatrix(&p,&w);
+    A.mult(p, w);
     
     tmp = p * w;
     alpha = rho[k-1]/tmp;
     
-    display->Message(0,"tmp = %f, alpha = %f, norm_p = %f, norm_w = %f",tmp,alpha,p.norm(),w.norm());
+    x.add(alpha,p);
     
-    x->add(alpha,p);
+    r.add(-alpha,w);
     
-    residual.add(-alpha,w);
+    rho[k] = sqr(r.norm());
     
-    rho[k] = sqr(residual.norm());
-    
-    display->Message(0,"CG residual rho = %.5f, rho/||b|| = %.5f, tol = %.5f",rho[k-1],rho[k-1]/norm_b,tol);
+    cout << "CG residual rho = " << rho[k-1] << endl;
     
     if ( sqrt(rho[k-1]) < tol*norm_b ){
-      display->Message(0,"GMRES iteration converged, ||res|| = %f",rho[k-1]);
+      cout << "CG iteration converged" << endl;
       break;
     }
     
   }
 
-  norm_residual = GetResidual(x,b);
+  norm_residual = residual(A, x, b);
 
-  display->Message(0,"Residual/||b|| = %f",norm_residual/norm_b);
-  display->Message(0,"Residual = %f",norm_residual);
+  cout << "Residual/||b|| = " << norm_residual/norm_b << endl;
+  cout << "Residual = " << norm_residual << endl;
 
   delete rho;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::ApplyMatrix( Vector *x, Vector *Ax )
-{
-  A->mult(*x,*Ax);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::ApplyMatrix( real **x, int comp )
+void KrylovSolver::applyMatrix(Matrix &A, real **x, int comp )
 {
   // Preconditioner
   SISolver sisolver;
 
   switch( pc ){ 
-  case pc_richardson:
-    sisolver.SetMethod(richardson);
+  case RICHARDSON:
+    sisolver.set(SISolver::RICHARDSON);
     break;
-  case pc_jacobi:
-    sisolver.SetMethod(jacobi);
+  case JACOBI:
+    sisolver.set(SISolver::JACOBI);
     break;
-  case pc_gaussseidel:
-    sisolver.SetMethod(gaussseidel);
+  case GAUSS_SEIDEL:
+    sisolver.set(SISolver::GAUSS_SEIDEL);
     break;
-  case pc_sor:
-    sisolver.SetMethod(sor);
+  case SOR:
+    sisolver.set(SISolver::SOR);
     break;
-  case pc_none:
+  case NONE:
     break;
   default:
-    display->InternalError("SISolver::Solve()","Preconditioner not implemented");
+    cout << "SISolver::Solve(): Unknown preconditioner" << endl;
+	 exit(1);
   }
 
-  Vector tmp1(A->size(0)); 
-  Vector tmp2(A->size(0)); 
+  Vector tmp1(A.size(0)); 
+  Vector tmp2(A.size(0)); 
 
-  for (int i=0; i<A->size(0); i++)
+  for (int i=0; i<A.size(0); i++)
 	 tmp1(i) = x[i][comp];
 
   // Precondition 
   no_pc_sweeps = 1;
-  if ( pc != pc_none ){
-    sisolver.SetNoIterations(no_pc_sweeps);
-    sisolver.Solve(A,&tmp2,&tmp1);
+  if ( pc != NONE ){
+    sisolver.set(no_pc_sweeps);
+    sisolver.solve(A, tmp2, tmp1);
     tmp1 = tmp2;
   }      
     
-  A->mult(tmp1,tmp2);
+  A.mult(tmp1,tmp2);
 
-  for (int i=0; i<A->size(0); i++) x[i][comp+1] = tmp2(i);
+  for (int i = 0; i < A.size(0); i++)
+	 x[i][comp+1] = tmp2(i);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::SetMatrix(SparseMatrix* A)
-{
-  this->A = A;
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::SolvePxv( Vector *x )
+void KrylovSolver::solvePxv(Matrix &A, Vector &x)
 {
   // Preconditioner
   SISolver sisolver;
   
-  switch( pc ){ 
-  case pc_richardson:
-    sisolver.SetMethod(richardson);
+  switch ( pc ) { 
+  case RICHARDSON:
+    sisolver.set(SISolver::RICHARDSON);
     break;
-  case pc_jacobi:
-    sisolver.SetMethod(jacobi);
+  case JACOBI:
+    sisolver.set(SISolver::JACOBI);
     break;
-  case pc_gaussseidel:
-    sisolver.SetMethod(gaussseidel);
+  case GAUSS_SEIDEL:
+    sisolver.set(SISolver::GAUSS_SEIDEL);
     break;
-  case pc_sor:
-    sisolver.SetMethod(sor);
+  case SOR:
+    sisolver.set(SOR);
     break;
-  case pc_none:
+  case NONE:
     break;
   default:
-    display->InternalError("SISolver::Solve()","Preconditioner not implemented");
+	 cout << "SISolver::Solve(): Unknown preconditioner" << endl;
+	 exit(1);
   }
 
-  Vector tmp1(A->size(0)); 
-
-  for (int i=0; i<A->size(0); i++)
-	 tmp1(i) = (*x)(i);
+  Vector tmp1(x);
 
   // Solve preconditioned problem 
-  sisolver.SetNoIterations(no_pc_sweeps);
-  sisolver.Solve(A,x,&tmp1);
+  sisolver.set(no_pc_sweeps);
+  sisolver.solve(A, x, tmp1);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::ComputeResidual( Vector *x, Vector *b, Vector *res )
+void KrylovSolver::residual(Matrix &A, Vector &x, Vector &b, Vector &r)
 {
-  real Axrow;
-  for (int i=0;i<A->size(0);i++){
-    Axrow = A->mult(*x,i);
-    (*res)(i) = (*b)(i) - Axrow;
-  }
+  for (int i = 0; i < A.size(0); i++)
+    r(i) = b(i) - A.mult(x, i);
 }
 //-----------------------------------------------------------------------------
-real KrylovSolver::GetResidual( Vector *x, Vector *b )
+real KrylovSolver::residual(Matrix &A, Vector &x, Vector &b)
 {
-  real Axrow;
-  norm_residual = 0.0;
-  for (int i=0;i<A->size(0);i++){
-    Axrow = A->mult(*x,i);
-    norm_residual += sqr( (*b)(i) - Axrow );
-  }
-  return sqrt(norm_residual);
+  real r = 0.0;
+  
+  for (int i = 0; i < A.size(0); i++)
+    r += sqr( b(i) - A.mult(x, i) );
+
+  return sqrt(r);
 }
 //-----------------------------------------------------------------------------
 bool KrylovSolver::TestForOrthogonality( real **v )
 {
   // if (||Av_k||+delta*||v_k+1||=||Av_k||)  delta \approx 10^-3
-
-  display->Message(5,"Reorthogonalization needed");
-
+  
+  // FIXME: cout << "Reorthogonalization needed" << endl;
+  
   return false;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::AllocateArrays(int n, int k_max)
+void KrylovSolver::allocArrays(int n, int k_max)
 {
   mat_H = new(real *)[k_max+1];
   for (int i=0;i<k_max+1; i++)
@@ -477,7 +457,7 @@ void KrylovSolver::AllocateArrays(int n, int k_max)
 
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::DeleteArrays(int n, int k_max)
+void KrylovSolver::deleteArrays(int n, int k_max)
 {
   for (int i=0;i<k_max+1;i++)
     delete [] mat_H[i];

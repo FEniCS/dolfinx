@@ -10,13 +10,12 @@
 // New blocks of size BLOCK_SIZE are allocated when needed.
 
 #include <iostream>
-#include <dolfin/Display.h>
 
 #define BLOCK_SIZE 1024
 
 template <class T> class List{
 public:
-
+  
   /// Constructor
   List(){
 	 
@@ -71,7 +70,7 @@ public:
 		  if ( !b->next )
 			 break;
 		}
-		display->InternalError("List::create()","Cannot find an empty position");
+		cout << "List::create(): Cannot find an empty position" << endl;
 	 }
 	 
 	 // Use next empty position
@@ -172,9 +171,9 @@ public:
 		
 		// Allocate memory for this block
 		if ( !(data = new T[BLOCK_SIZE]) )
-		  display->Error("Out of memory");
+		  cout << "Out of memory" << endl;
 		if ( !(empty = new bool[BLOCK_SIZE]) )
-		  display->Error("Out of memory");
+		  cout << "Out of memory" << endl;
 		for (int i=0;i<BLOCK_SIZE;i++)
 		  empty[i] = true;
 		pos = 0;
@@ -220,7 +219,7 @@ public:
 
 		// Check if the list is full
 		if ( used == BLOCK_SIZE )
-		  display->InternalError("Block::create()","Block is full");
+		  cout << "Block::create(): Block is full" << endl;
 		
 		// Check if there is an empty position
 		if ( used != pos ){
@@ -231,7 +230,7 @@ public:
 				*id = number*BLOCK_SIZE + i;
 				return data + i;
 			 }
-		  display->InternalError("Block::create()","Unable to find an empty position");
+		  cout << "Block::create(): Unable to find an empty position" << endl;
 		}
 		
 		// Use next available position
@@ -272,6 +271,7 @@ public:
 	 Iterator(){
 		list = 0;
 		block = 0;
+		_index = -1;
 		pos = 0;
 		at_end = true;
 	 }
@@ -280,13 +280,22 @@ public:
 	 Iterator(List<T> *list){
 		this->list = list;
 		list->iterator_start(this);
+		_index = 0;
 	 }
 
+	 /// Current position in the list
+	 int index() const
+	 {
+		return _index;
+	 }
+	 
 	 /// Prefix increment
 	 List<T>::Iterator& operator++()
 	 {
-		if ( list )
+		if ( list ) {
 		  list->iterator_step(this);
+		  _index++;
+		}
 		return *this;
 	 }
 
@@ -333,6 +342,7 @@ public:
 	 List<T> *list;
 	 Block *block;
 	 int pos;
+	 int _index;
 	 bool at_end;
   };
   
@@ -384,7 +394,7 @@ protected:
 	 }
 
 	 // Something strange happened
-	 display->InternalError("List::iterator_start()","Unable to find first object in list");
+	 cout << "List::iterator_start(): Unable to find first object in list" << endl;
   }
   
   // Step iterator to the next position in the list

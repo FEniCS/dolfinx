@@ -72,7 +72,7 @@ XML2_INCLUDES = @XML2_INCLUDES@
 XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
-EXTRA_DIST = dolfin_common.h List.h function.h
+EXTRA_DIST = dolfin_common.h List.h function.h Settings.h Parameter.h ParameterList.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

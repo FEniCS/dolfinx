@@ -1,1 +1,1 @@
-SUBDIRS = fem common grid io la main
+SUBDIRS = math fem common grid io la quadrature main

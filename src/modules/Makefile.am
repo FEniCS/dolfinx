@@ -1,1 +1,1 @@
-SUBDIRS = template
+SUBDIRS = template poisson

@@ -4,8 +4,12 @@
 #ifndef __PRODUCT_H
 #define __PRODUCT_H
 
+#include <iostream>
+
 #include <dolfin/constants.h>
+#include <dolfin/Point.h>
 #include <dolfin/FunctionSpace.h>
+#include <dolfin/Integral.h>
 
 namespace dolfin {
 
@@ -34,11 +38,18 @@ namespace dolfin {
 	 void set(const ShapeFunction &v0, const ShapeFunction &v1);
 	 void set(const Product       &v0, const Product       &v1);
 	 void set(const ShapeFunction &v0, const Product       &v1);
-	 
+
+	 // Get id
+	 int* id() const;
+
+	 // Get number of factors
+	 int size() const;
+
 	 //--- Operators ---
 	 
 	 // Evaluation
-	 real operator() (real x, real y, real z, real t);
+	 real operator() (real x, real y, real z, real t) const;
+	 real operator() (Point p) const;
 	 
 	 // Assignment
 	 Product& operator= (const ShapeFunction &v);
@@ -55,16 +66,25 @@ namespace dolfin {
 	 ElementFunction operator- (const ElementFunction &v) const;
 	 
 	 // Multiplication
+	 ElementFunction operator* (real a)                   const;
 	 Product         operator* (const ShapeFunction   &v) const;
 	 Product         operator* (const Product         &v) const;
 	 ElementFunction operator* (const ElementFunction &v) const;
 	 
+	 // Integration
+	 real operator* (Integral::Measure &dm) const;
+
+	 // Output
+	 friend ostream& operator << (ostream& output, const Product &v);
+	 
   private:
 	 
-	 int n;            // Number of factors
-	 ShapeFunction *v; // Shape functions
+	 int n;    // Number of factors
+	 int *_id; // Shape function id:s
 	 
   };
+
+  FunctionSpace::ElementFunction operator* (real a, const FunctionSpace::Product &v);
   
 }
 

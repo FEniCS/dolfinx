@@ -1,5 +1,6 @@
+#include <iostream>
+
 #include "DataInfo.h"
-#include <dolfin/Display.h>
 #include <dolfin/constants.h>
 #include <stdio.h>
 
@@ -50,9 +51,10 @@ DataInfo::~DataInfo()
 //-----------------------------------------------------------------------------
 void DataInfo::SetLabel(int i, const char *name, const char *label)
 {
-  if ( (i < 0) || (i >= no_data) )
-	 display->InternalError("DataInfo::SetLabel()",
-									"Data index %d out of range.",i);
+  if ( (i < 0) || (i >= no_data) ) {
+	 cout << "DataInfo::SetLabel(): Data index out of range." << endl;
+	 exit(1);
+  }
 
   sprintf(names[i],name);
   sprintf(labels[i],label);
@@ -65,9 +67,11 @@ int DataInfo::Size()
 //-----------------------------------------------------------------------------
 int DataInfo::Dim(int i)
 {
-  if ( (i < 0) || (i >= no_data) )
-	 display->InternalError("DataInfo::Dim()","Data index %d out of range.",i);
-
+  if ( (i < 0) || (i >= no_data) ) {
+	 cout << "DataInfo::SetLabel(): Data index out of range." << endl;
+	 exit(1);
+  }
+  
   return dimensions[i];
 }
 //-----------------------------------------------------------------------------
@@ -78,16 +82,20 @@ const char *DataInfo::Description()
 //-----------------------------------------------------------------------------
 const char *DataInfo::Label(int i)
 {
-  if ( (i < 0) || (i >= no_data) )
-	 display->InternalError("DataInfo::Label()","Data index %d out of range.",i);
+  if ( (i < 0) || (i >= no_data) ) {
+	 cout << "DataInfo::SetLabel(): Data index out of range." << endl;
+	 exit(1);
+  }
 
   return labels[i];
 }
 //-----------------------------------------------------------------------------
 const char *DataInfo::Name(int i)
 {
-  if ( (i < 0) || (i >= no_data) )
-	 display->InternalError("DataInfo::Name()","Data index %d out of range.",i);
+  if ( (i < 0) || (i >= no_data) ) {
+	 	 cout << "DataInfo::SetLabel(): Data index out of range." << endl;
+	 exit(1);
+  }
 
   return names[i];
 }

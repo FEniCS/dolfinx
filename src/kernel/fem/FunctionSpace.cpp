@@ -3,6 +3,7 @@
 
 #include <iostream.h>
 
+#include <dolfin/FiniteElement.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/Product.h>
 #include <dolfin/ElementFunction.h>
@@ -19,18 +20,15 @@ FunctionSpace::FunctionSpace(int dim)
 	 exit(1);
   }
 
-  this->dim = dim;
-  current = 0;
+  _dim = dim;
   
   // Initialise the list of shape functions
-  v  = new ShapeFunction[dim];
+  v.resize(_dim);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::~FunctionSpace()
 {
-  if ( v )
-	 delete [] v;
-  v = 0;
+
 }
 //-----------------------------------------------------------------------------
 int FunctionSpace::add(ShapeFunction v)
@@ -60,15 +58,91 @@ int FunctionSpace::add(ShapeFunction v,
 							  ElementFunction dz,
 							  ElementFunction dt)
 {
-  // FIXME: Use loggin system
-  if ( current >= dim ) {
+  // Set derivatives of shape function
+  v.set(dx, dy, dz, dt);
+  
+  // Add shape function
+  if ( this->v.add(v) == -1 ) {
+	 // FIXME: Use logging system
 	 cout << "Error: function space is full." << endl;
 	 exit(1);
   }
-
-  v.set(dx, dy, dz, dt);
-  this->v[current] = v;
-
-  current++;
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::add(ShapeFunction v, real dx)
+{
+  add(v, ElementFunction(dx));
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::add(ShapeFunction v, real dx, real dy)
+{
+  add(v, ElementFunction(dx), ElementFunction(dy));
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz)
+{
+  add(v, ElementFunction(dx), ElementFunction(dy), ElementFunction(dz));
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::add(ShapeFunction v, real dx, real dy, real dz, real dt)
+{
+  add(v,
+		ElementFunction(dx),
+		ElementFunction(dy),
+		ElementFunction(dz),
+		ElementFunction(dt));
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::dim() const
+{
+  return _dim;
+}
+//-----------------------------------------------------------------------------
+// FunctionSpace::Iterator
+//-----------------------------------------------------------------------------
+FunctionSpace::Iterator::Iterator
+(const FunctionSpace &functionSpace) : V(functionSpace)
+{
+  v = V.v.begin();
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::Iterator::dof(const Cell &cell) const
+{
+  return V.dof(v.index(), cell);
+}
+//-----------------------------------------------------------------------------
+real FunctionSpace::Iterator::dof(const Cell &cell, function f, real t) const
+{
+  return V.dof(v.index(), cell, f, t);
+}
+//-----------------------------------------------------------------------------
+int FunctionSpace::Iterator::index() const
+{
+  return v.index();
+}
+//-----------------------------------------------------------------------------
+bool FunctionSpace::Iterator::end() const
+{
+  return v.end();
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::Iterator::operator++()
+{
+  ++v;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction* FunctionSpace::Iterator::pointer() const
+{
+  return &(*v);
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction& FunctionSpace::Iterator::operator*() const
+{
+  return *v;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ShapeFunction* FunctionSpace::Iterator::operator->() const
+{
+  return &(*v);
 }
 //-----------------------------------------------------------------------------

@@ -1,10 +1,15 @@
+ - Remove old unused code
+ - Add subdirectory math containing mathematical functions
+ - Better access for A(i,j) += to improve speed in assembling
+ - Add benchmark for linear algebra
+ - New definition of finite element
+ - Add algebra for function spaces
  - Convert grids in data/grids to xml.gz
  - Add iterators for Nodes and Cells
  - Change from .hh to .h
  - Add operators to Vector class (Foufas)
  - Add dependence on libxml2
- - Change from .C to .cpp to make Jim happy. (And everyone else
-   with stupid broken case-insensitive OS...)
+ - Change from .C to .cpp to make Jim happy.
  - Change input/output functionality to streams
  - Change to new data structure for Grid
  - Change to object-oriented API at top level

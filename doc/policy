@@ -4,18 +4,19 @@ Guidelines for writing DOLFIN code.
 In order to streamline the code a bit perhaps we should
 keep sort of the same style when writing the code.
 
-- Class files are named exactly the same as the class name:
+- Naming of classes:
 
 		GridGeometry.h
 
-- All header files end with .h
-  Implementation files with .cpp
+  Class files are named exactly the same as the class.
 
-  Large letter only for class files: utils.h
+- Naming of variables: undecided
 
-- Mixing of small and large letters in internal code:
+- Naming of functions: undecided
 
-		Settings::SetBoundaryConditions()
+- Header files end with.h, implementation files with .cpp
+
+- Large letter only for class files: utils.h
 
 - DOLFIN constants start with DOLFIN and large letters:
 
@@ -56,15 +57,3 @@ keep sort of the same style when writing the code.
 
   Private headers are those only used internally. Public headers are those
   that should be installed on the system.
-
-- Names of variables:
-
-	int no_nodes;
-	int size;
-	int my_long_name;
-
-- Names of functions:
-
-	int noNodes();
-	int size();
-	int myLongName();

@@ -73,10 +73,10 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/Vector.h dolfin/SparseMatrix.h
+include_HEADERS = dolfin/Vector.h dolfin/SparseMatrix.h dolfin/DenseMatrix.h dolfin/KrylovSolver.h dolfin/DirectSolver.h
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-la.a
-libdolfin_la_a_SOURCES = DenseMatrix.cpp                          DenseMatrix.hh                          DirectSolver.cpp                          DirectSolver.hh                          SparseMatrix.cpp                          Vector.cpp 	                 SISolver.hh 	                 SISolver.cpp 	                 KrylovSolver.hh 	                 KrylovSolver.cpp
+libdolfin_la_a_SOURCES = DenseMatrix.cpp                          DirectSolver.cpp                          SparseMatrix.cpp                          Vector.cpp 	                 SISolver.h 	                 SISolver.cpp 	                 KrylovSolver.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

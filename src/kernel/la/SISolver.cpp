@@ -1,34 +1,39 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.h>
-#include "SISolver.h"
-#include "utils.h"
+#include <dolfin/basic.h>
+#include <dolfin/SISolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 SISolver::SISolver()
 {
-  iterative_method = gaussseidel;
+  iterative_method = GAUSS_SEIDEL;
   
   max_no_iterations = 100;
 
   tol = 1.0e-6;
 }
 //-----------------------------------------------------------------------------
-void SISolver::Solve(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::solve(Matrix& A, Vector& x, Vector& b)
 {
-  if (A->size(0)!=A->size(1)) display->Error("Must be a square matrix.");
+  if ( A.size(0) != A.size(1) ) {
+	 cout << "Must be a square matrix." << endl;
+	 exit(1);
+  }
 
-  if (A->size(0)!=b->size())  display->Error("Not compatible matrix and vector sizes.");
+  if ( A.size(0) != b.size() ) {
+	 cout << "Not compatible matrix and vector sizes." << endl;
+	 exit(1);
+  }
   
-  if (x->size()!=b->size())
-    x->resize(b->size());
+  if ( x.size() != b.size() )
+    x.init(b.size());
 
-  real norm_b = b->norm();
-  if ( norm_b < DOLFIN_EPS ){
-    for (int i=0;i<x->size();i++) x->values[i] = 0.0;
+  real norm_b = b.norm();
+  if ( norm_b < DOLFIN_EPS ) {
+	 x = 0.0;
     return;
   }  
   
@@ -38,109 +43,108 @@ void SISolver::Solve(SparseMatrix* A, Vector* x, Vector* b)
    while ( residual/norm_b > tol ){
     iteration ++;
     switch( iterative_method ){ 
-    case richardson:
-      IterateRichardson(A,x,b);
+    case RICHARDSON:
+      iterateRichardson(A, x, b);
       break;
-    case jacobi:
-      IterateJacobi(A,x,b);
+    case JACOBI:
+      iterateJacobi(A, x, b);
       break;
-    case gaussseidel:
-      IterateGaussSeidel(A,x,b);
+    case GAUSS_SEIDEL:
+      iterateGaussSeidel(A, x, b);
       break;
-    case sor:
-      IterateSOR(A,x,b);
+    case SOR:
+      iterateSOR(A, x, b);
       break;
     default:
-      display->InternalError("SISolver::Solve()","Iterative method not implemented");
+      cout << "Unknown method" << endl;
+		exit(1);
     }
-    ComputeResidual(A,x,b);
-    display->Status(2,"Iteration no %i: res/||b|| = %f",iteration,residual/norm_b);
+    computeResidual(A,x,b);
   }
   
 }
 //-----------------------------------------------------------------------------
-void SISolver::SetNoIterations( int noit )
+void SISolver::set(int noit)
 {
   max_no_iterations = noit;
 }
 //-----------------------------------------------------------------------------
-void SISolver::SetMethod( Method mtd )
+void SISolver::set(Method method)
 {
-  iterative_method = mtd;
+  iterative_method = method;
 }
 //-----------------------------------------------------------------------------
-void SISolver::IterateRichardson(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::iterateRichardson(SparseMatrix& A, Vector& x, Vector& b)
 {
   real aii,aij,norm_b,Ax;
   
   int j;
 
-  Vector x0( x->size() );
-  x0 = *x;
+  Vector x0(x);
 
-  for (int i=0; i<A->size(0); i++){
-    x->values[i] = 0.0;
-    for (int pos=0; pos<A->rowSize(i); pos++){
-      aij = (*A)(i,&j,pos);
+  for (int i = 0; i < A.size(0); i++){
+    x(i) = 0.0;
+    for (int pos = 0; pos < A.rowSize(i); pos++) {
+      aij = A(i, &j, pos);
 		if ( j == -1 )
 		  break;
-      if (i==j){
-		  x->values[i] += (1.0-aij)*x0(j);
-      } else{
-		  x->values[i] += -aij*x0(j);
-      }	  
+      if (i==j)
+		  x(i) += (1.0-aij)*x0(j);
+      else
+		  x(i) += -aij*x0(j);
     }
-    x->values[i] += (*b)(i);
+    x(i) += b(i);
   }
 
 }
 //-----------------------------------------------------------------------------
-void SISolver::IterateJacobi(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::iterateJacobi(SparseMatrix& A, Vector& x, Vector& b)
 {
   real aii,aij,norm_b,Ax;
   int j;
 
-  Vector x0( x->size() );
-  x0 = *x;
+  Vector x0(x);
 
-  for (int i=0; i<A->size(0); i++){
-    (*x)(i) = 0.0;
-    for (int pos=0; pos<A->rowSize(i); pos++){
-      aij = (*A)(i,&j,pos);
-      if ( j == -1 ) break;
-      if (i==j) aii = aij;
-      else (*x)(i) += -aij*x0(j);
+  for (int i = 0; i < A.size(0); i++) {
+    x(i) = 0.0;
+    for (int pos = 0; pos < A.rowSize(i); pos++){
+      aij = A(i, &j, pos);
+      if ( j == -1 )
+		  break;
+      if (i==j)
+		  aii = aij;
+      else
+		  x(i) += -aij*x0(j);
     }
-    (*x)(i) += (*b)(i);
-    (*x)(i) *= 1.0/aii;
+    x(i) += b(i);
+    x(i) *= 1.0 / aii;
   }
 }
 //-----------------------------------------------------------------------------
-void SISolver::IterateGaussSeidel(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::iterateGaussSeidel(SparseMatrix& A, Vector& x, Vector& b)
 {
   real aii,aij,Ax;
   
   int j;
 
-  for (int i=0; i<A->size(0); i++){
-    (*x)(i) = 0.0;
-    for (int pos=0; pos<A->rowSize(i); pos++){
-      aij = (*A)(i,&j,pos);
+  for (int i = 0; i < A.size(0); i++) {
+    x(i) = 0.0;
+    for (int pos = 0; pos < A.rowSize(i); pos++) {
+      aij = A(i, &j, pos);
 		if ( j == -1 )
 		  break;
-      if (j==i){
+      if (j==i)
 		  aii = aij;
-      } else{
-		  (*x)(i) += -aij*(*x)(j);
-      }	  
+		else
+		  x(i) += -aij*x(j);
     }
-    (*x)(i) += (*b)(i);
-    (*x)(i) *= 1.0/aii;
+    x(i) += b(i);
+    x(i) *= 1.0 / aii;
   }
 
 }
 //-----------------------------------------------------------------------------
-void SISolver::IterateSOR(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::iterateSOR(SparseMatrix& A, Vector& x, Vector& b)
 {
   real aii,aij,norm_b,Ax;
   
@@ -148,33 +152,32 @@ void SISolver::IterateSOR(SparseMatrix* A, Vector* x, Vector* b)
 
   real omega = 1.0;
 
-  for (int i=0; i<A->size(0); i++){
-    (*x)(i) = 0.0;
-    for (int pos=0; pos<A->rowSize(i); pos++){
-      aij = (*A)(i,&j,pos);
+  for (int i = 0; i < A.size(0); i++) {
+    x(i) = 0.0;
+    for (int pos = 0; pos < A.rowSize(i); pos++) {
+      aij = A(i, &j, pos);
 		if ( j == -1 )
 		  break;
-      if (j==i){
+      if ( j==i ){
 		  aii = aij;
-		  (*x)(i) += (1.0-omega)*aii*(*x)(j);
+		  x(i) += (1.0-omega)*aii*x(j);
       } else{
-		  (*x)(i) += -omega*aij*(*x)(j);
+		  x(i) += -omega*aij*x(j);
       }	  
     }
-    (*x)(i) += (*b)(i);
-    (*x)(i) *= 1.0/aii;
+    x(i) += b(i);
+    x(i) *= 1.0 / aii;
   }
-
 }
 //-----------------------------------------------------------------------------
-void SISolver::ComputeResidual(SparseMatrix* A, Vector* x, Vector* b)
+void SISolver::computeResidual(SparseMatrix& A, Vector& x, Vector& b)
 {
   residual = 0.0;
   real Axi;
   
-  for (int i=0;i<A->size(0);i++){
-	 Axi = A->mult(*x,i);
-	 residual += sqr((*b)(i)-Axi);
+  for (int i = 0; i < A.size(0); i++) {
+	 Axi = A.mult(x, i);
+	 residual += sqr( b(i) - Axi );
   }
 
   residual = sqrt(residual);

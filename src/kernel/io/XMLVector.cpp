@@ -62,7 +62,7 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   }
 
   // Initialise
-  vector->resize(size);	 
+  vector->init(size);	 
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)

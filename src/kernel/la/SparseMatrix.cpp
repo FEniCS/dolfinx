@@ -1,8 +1,8 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+ // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Display.h>
-#include "DenseMatrix.h"
+#include <iostream>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/SparseMatrix.h>
 
@@ -17,18 +17,22 @@ SparseMatrix::SparseMatrix()
   rowsizes = 0;
   columns  = 0;
   values   = 0;
+
+  allocsize = 1;
 }
 //-----------------------------------------------------------------------------
 SparseMatrix::SparseMatrix(int m, int n)
 {
-  m = 0;
-  n = 0;
+  this->m = m;
+  this->n = n;
   
   rowsizes = 0;
   columns  = 0;
   values   = 0;
+
+  allocsize = 1;
   
-  resize(m,n);
+  init(m,n);
 }
 //-----------------------------------------------------------------------------
 SparseMatrix::~SparseMatrix()
@@ -36,13 +40,26 @@ SparseMatrix::~SparseMatrix()
   clear();
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::resize(int m, int n)
+void SparseMatrix::operator= (real a)
+{
+  for (int i = 0; i < m; i++)
+	 for (int j = 0; j < rowsizes[i]; j++)
+		values[i][j] = a;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::init(int m, int n)
 {
   // Check arguments
-  if ( m < 0 )
-    display->InternalError("SparseMatrix::resize()","Illegal number of rows: %d.",m);
-  if ( n < 0 )
-    display->InternalError("SparseMatrix::resize()","Illegal number of columns: %d.",n);
+
+  // FIXME: Use logging system
+  if ( m < 0 ) {
+    cout << "SparseMatrix::init(): Number of rows must be positive." << endl;
+	 exit(1);
+  }
+  if ( n < 0 ) {
+    cout << "SparseMatrix::init(): Number of columns must be positive." << endl;
+	 exit(1);
+  }
   
   // Delete old data
   clear();
@@ -55,9 +72,11 @@ void SparseMatrix::resize(int m, int n)
   columns  = new (int *)[m];
   values   = new (real *)[m];
   
-  if ( !columns || !values )
-	 display->Error("Unable to allocate memory for sparse matrix.");
-  
+  if ( !columns || !values ) {
+	 cout << "Unable to allocate memory for sparse matrix." << endl;
+	 exit(1);
+  }
+	 
   // Create an empty matrix
   for (int i = 0; i < m; i++){
 	 columns[i] = new int[1];
@@ -67,7 +86,49 @@ void SparseMatrix::resize(int m, int n)
 	 columns[i][0] = -1;
 	 values[i][0] = 0.0;
   }
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::resize()
+{
+  int oldsize = 0;
+  int newsize = 0;
   
+  for (int i = 0; i < m; i++) {
+
+	 // Count number of used elements
+	 int rowsize = 0;
+	 for (int pos = 0; pos < rowsizes[i]; pos++)
+		if ( columns[i][pos] != -1 )
+		  rowsize++;
+
+	 // Keep track of number of cleared elements
+	 oldsize += rowsizes[i];
+	 newsize += rowsize;
+	 
+	 // Allocate new row
+	 int*  cols = new int[rowsize];
+	 real* vals = new real[rowsize];
+
+	 // Copy old elements
+	 int newpos = 0;
+	 for (int pos = 0; pos < rowsizes[i]; pos++)
+		if ( columns[i][pos] != -1 ) {
+		  cols[newpos] = columns[i][pos];
+		  vals[newpos] = values[i][pos];
+		  newpos++;
+		}
+
+	 // Change to new elements
+	 delete [] columns[i];
+	 delete [] values[i];
+	 columns[i]  = cols;
+	 values[i]   = vals;
+	 rowsizes[i] = rowsize;
+	 
+  }
+
+  // Write a message
+  cout << "Clearing " << (oldsize - newsize) << " unused elements." << endl;
 }
 //-----------------------------------------------------------------------------
 void SparseMatrix::clear()
@@ -88,7 +149,7 @@ void SparseMatrix::clear()
 	 for (int i = 0; i < m; i++)
 		if ( values[i] )
 		  delete [] values[i];
-	 delete values;
+	 delete [] values;
   }
   values = 0;
 
@@ -103,7 +164,7 @@ int SparseMatrix::size(int dim)
   else if ( dim == 1 )
 	 return n;
 
-  display->InternalError("SparseMatrix::size()","Illegal dimension: %d.",dim);
+  cout << "SparseMatrix::size(): Illegal dimension" << endl;
 }
 //-----------------------------------------------------------------------------
 int SparseMatrix::size()
@@ -131,18 +192,18 @@ int SparseMatrix::bytes()
   return bytes;
 } 
 //-----------------------------------------------------------------------------
-void SparseMatrix::setRowSize(int i, int rowsize)
+void SparseMatrix::initRow(int i, int rowsize)
 {
   if ( i < 0 || i >= m )
-    display->InternalError("SparseMatrix::setRowSize()","Illegal row index: %d.",i);
+    cout << "SparseMatrix::initRow(): Illegal row index" << endl;
   if ( rowsize < 0 )
-    display->InternalError("SparseMatrix::setRowSize()","Illegal row size: %d.",rowsize);
-
+    cout << "SparseMatrix::initRow(): Illegal row size" << endl;
+  
   if ( columns[i] ){
 	 delete [] columns[i];
 	 columns[i] = new int[rowsize];
   }
-	 
+  
   if ( values[i] ){
 	 delete [] values[i];
 	 values[i] = new real[rowsize];
@@ -152,14 +213,47 @@ void SparseMatrix::setRowSize(int i, int rowsize)
 	 columns[i][pos] = -1;
 	 values[i][pos] = 0.0;
   }
+  
+  rowsizes[i] = rowsize;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::resizeRow(int i, int rowsize)
+{
+  // Allocate at least allocsize
+  if ( allocsize > rowsize )
+	 rowsize = allocsize;
+  else if ( rowsize > allocsize )
+	 allocsize = rowsize;
 
+  // Allocate new lists
+  int* cols = new int[rowsize];
+  real* vals = new real[rowsize];
+
+  // Copy values
+  for (int pos = 0; pos < rowsizes[i] || pos < rowsize; pos++) {
+	 if ( pos < rowsizes[i] ) {
+		cols[pos] = columns[i][pos];
+		vals[pos] = values[i][pos];
+	 }
+	 else {
+		cols[pos] = -1;
+		vals[pos] = 0.0;
+	 }
+  }
+  
+  // Delete old values and use the new lists
+  delete [] values[i];
+  delete [] columns[i];
+  
+  columns[i] = cols;
+  values[i] = vals;
   rowsizes[i] = rowsize;
 }
 //-----------------------------------------------------------------------------
 int SparseMatrix::rowSize(int i)
 {
   if ( i < 0 || i >= m )
-    display->InternalError("SparseMatrix::rowSize()","Illegal row index: %d.",i);
+    cout << "SparseMatrix::rowSize(): Illegal row index" << endl;
 
   return rowsizes[i];
 }
@@ -167,12 +261,10 @@ int SparseMatrix::rowSize(int i)
 real SparseMatrix::operator()(int i, int *j, int pos) const
 {
   if ( i < 0 || i >= m )
-	 display->InternalError("SparseMatrix::operator ()",
-									"Illegal row index: %d",i);
+	 cout << "SparseMatrix::operator (): Illegal row index" << endl;
 
   if ( pos >= rowsizes[i] )
-	 display->InternalError("SparseMatrix::operator ()",
-									"Illegal position: %d",pos);
+	 cout << "SparseMatrix::operator (): Illegal position" << endl;
 
   *j = columns[i][pos];
   
@@ -200,7 +292,7 @@ real SparseMatrix::norm()
 void SparseMatrix::setRowIdentity(int i)
 {
   if ( i < 0 || i >= m )
-    display->InternalError("SparseMatrix::setRowIdentity()","Illegal row index: %d.",i);
+    cout << "SparseMatrix::setRowIdentity(): Illegal row index" << endl;
 
   if ( columns[i] )
 	 delete columns[i];
@@ -219,11 +311,11 @@ void SparseMatrix::setRowIdentity(int i)
 real SparseMatrix::mult(Vector &x, int i)
 {
   if ( i < 0 || i >= m )
-    display->InternalError("SparseMatrix::mult()","Illegal row index: %d.",i);
+    cout << "SparseMatrix::mult(): Illegal row index" << endl;
 
   real sum = 0.0;
 
-  for (int pos = 0; pos < rowsizes[i]; pos++)
+  for (int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
 	 sum += values[i][pos] * x(columns[i][pos]);
 
   return sum;
@@ -232,9 +324,8 @@ real SparseMatrix::mult(Vector &x, int i)
 void SparseMatrix::mult(Vector &x, Vector &Ax)
 {
   if ( x.size() != n || Ax.size() != n )
-	 display->InternalError("SparseMatrix::mult()","Matrix dimensions don't match.");
+	 cout << "SparseMatrix::mult(): Matrix dimensions don't match." << endl;
   
-  real sum;
   for (int i = 0; i < m; i++)
 	 Ax(i) = mult(x,i);
 }
@@ -256,7 +347,7 @@ void SparseMatrix::show()
 real SparseMatrix::readElement(int i, int j) const
 {
   if ( i < 0 || i >= m || j < 0 || j >= n )
-    display->InternalError("SparseMatrix::readElement()","Illegal indices: (%d,%d).",i,j);
+    cout << "SparseMatrix::readElement(): Illegal indices" << endl;
 
   for (int pos = 0; pos < rowsizes[i]; pos++)
 	 if ( columns[i][pos] == j )
@@ -268,12 +359,42 @@ real SparseMatrix::readElement(int i, int j) const
 void SparseMatrix::writeElement(int i, int j, real value)
 {
   if ( i < 0 || i >= m || j < 0 || j >= n )
-    display->InternalError("SparseMatrix::operator()","Illegal indices: (%d,%d).",i,j);
+    cout << "SparseMatrix::operator(): Illegal indices" << endl;
 
-  // Use first empty position
-  for (int pos = 0; pos < rowsizes[i]; pos++){
+  // Find position (i,j)
+  int pos = 0;
+  for (; pos < rowsizes[i]; pos++){
+	 // Put element in already existing position
 	 if ( columns[i][pos] == j ){
 		values[i][pos] = value;
+		return;
+	 }
+	 // Put element in an unused position
+	 else if ( columns[i][pos] == -1 ){
+		columns[i][pos] = j;
+		values[i][pos] = value;
+		return;
+	 }
+  }
+
+  // Couldn't find an empty position, so resize and try again
+  resizeRow(i, rowsizes[i] + 1);
+
+  // Insert new element (requires same ordering as before resizeRow())
+  columns[i][pos] = j;
+  values[i][pos] = value;
+}
+//-----------------------------------------------------------------------------
+void SparseMatrix::addtoElement(int i, int j, real value)
+{
+  if ( i < 0 || i >= m || j < 0 || j >= n )
+    cout << "SparseMatrix::operator(): Illegal indices" << endl;
+
+  // Use first empty position
+  int pos = 0;
+  for (; pos < rowsizes[i]; pos++){
+	 if ( columns[i][pos] == j ){
+		values[i][pos] += value;
 		return;
 	 }
 	 else if ( columns[i][pos] == -1 ){
@@ -282,31 +403,35 @@ void SparseMatrix::writeElement(int i, int j, real value)
 		return;
 	 }
   }
-  
-  display->InternalError("SparseMatrix::writeElement()","Row %d is full.",i);
+
+  // Couldn't find an empty position, so resize and try again
+  resizeRow(i, rowsizes[i] + 1);
+
+  // Insert new element (requires same ordering as before resizeRow())
+  columns[i][pos] = j;
+  values[i][pos] = value;
 }
 //-----------------------------------------------------------------------------
-namespace dolfin {
+// Additional operators
+//-----------------------------------------------------------------------------
+ostream& dolfin::operator << (ostream& output, SparseMatrix& sparseMatrix)
+{
+  int size = sparseMatrix.size();
+  int bytes = sparseMatrix.bytes();
 
-  //---------------------------------------------------------------------------
-  ostream& operator << (ostream& output, SparseMatrix& sparseMatrix)
-  {
-	 int size = sparseMatrix.size();
-	 int bytes = sparseMatrix.bytes();
-	 	 
-	 output << "[ Sparse matrix with " << size;
-	 output << " nonzero entries, approx ";
-
-	 if ( bytes > 1024*1024 )
-		output << bytes/1024 << " Mb.]";
-	 else if ( bytes > 1024 )
-		output << bytes/1024 << " kb.]";
-	 else
-		output << bytes << " bytes.]";
-	 
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
+  int m = sparseMatrix.size(0);
+  int n = sparseMatrix.size(1);
+  
+  output << "[ Sparse matrix of size " << m << " x " << n << " with " << size;
+  output << " nonzero entries, approx ";
+  
+  if ( bytes > 1024*1024 )
+	 output << bytes/1024 << " Mb. ]";
+  else if ( bytes > 1024 )
+	 output << bytes/1024 << " kb. ]";
+  else
+	 output << bytes << " bytes. ]";
+  
+  return output;
 }
 //-----------------------------------------------------------------------------

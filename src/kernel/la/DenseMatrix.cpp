@@ -1,27 +1,27 @@
 #include <stdio.h>
 
-#include "DenseMatrix.h"
 #include <dolfin/SparseMatrix.h>
-#include <dolfin/Display.h>
+#include <dolfin/DenseMatrix.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(int m, int n)
 {
- if ( (m<=0) || (n<=0) )
-	display->InternalError("DenseMatrix::DenseMatrix()",
-								  "Illegal dimensions %d x %d.",m,n);
-
- values = 0;
- permutation = 0;
- 
- resize(m,n);
+  if ( (m<=0) || (n<=0) ) {
+	 cout << "DenseMatrix::DenseMatrix(): Illegal dimensions" << endl;
+	 exit(1);
+  }
+  
+  values = 0;
+  permutation = 0;
+  
+  init(m,n);
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(SparseMatrix &A)
 {
-  resize(A.size(0),A.size(1));
+  init(A.size(0), A.size(1));
 
   int j;
   real value;
@@ -34,11 +34,12 @@ DenseMatrix::DenseMatrix(SparseMatrix &A)
 
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::resize(int m, int n)
+void DenseMatrix::init(int m, int n)
 {
- if ( m <= 0 || n <= 0 )
-	display->InternalError("DenseMatrix::Resize()",
-								  "Illegal dimensions %d x %d.",m,n);
+  if ( m <= 0 || n <= 0 ) {
+	 cout << "DenseMatrix::init(): Illegal dimensions" << endl;
+	 exit(1);
+  }
  
  if ( values ){
 	for (int i=0;i<m;i++)
@@ -73,16 +74,17 @@ DenseMatrix::~DenseMatrix()
   delete permutation;
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::Set(int i, int j, real value)
+void DenseMatrix::set(int i, int j, real value)
 {
-  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) )
-	 display->InternalError("DenseMatrix::Set()",
-									"Indices (%d,%d) out of range.",i,j);
-
+  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) ) {
+	 cout << "DenseMatrix::Set(): Indices out of range." << endl;
+	 exit(1);
+  }
+	 
   values[i][j] = value;
 }
 //-----------------------------------------------------------------------------
-int DenseMatrix::Size(int dim)
+int DenseMatrix::size(int dim)
 {
   if ( dim == 0 )
 	 return m;
@@ -90,32 +92,24 @@ int DenseMatrix::Size(int dim)
 	 return n;
 }
 //-----------------------------------------------------------------------------
-real DenseMatrix::Get(int i, int j)
+real DenseMatrix::get(int i, int j)
 {
-  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) )
-	 display->InternalError("DenseMatrix::Get()",
-									"Indices (%d,%d) out of range.",i,j);
+  if ( (i < 0) || (j < 0) || (i >= m) || (j >= n) ) {
+	 cout << "DenseMatrix::Get(): Indices out of range." << endl;
+	 exit(1);
+  }
 
   return ( values[i][j] );
 }
 
 //-----------------------------------------------------------------------------
-void DenseMatrix::Display()
-{
-  display->Message(0,"Dense matrix of size %d x %d with %d elements.",
-						 m,n,m*n);
-}
-//-----------------------------------------------------------------------------
 void DenseMatrix::DisplayAll()
 {
-  Display();
-  
   for (int i=0;i<m;i++){
 	 for (int j=0;j<n;j++)
 		printf("%f ",values[i][j]);
 	 printf("\n");
   }
-  
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::DisplayRow(int i)
@@ -124,25 +118,5 @@ void DenseMatrix::DisplayRow(int i)
   for (int j=0;j<n;j++)
 	 printf("%f ",values[i][j]);
   printf("\n");
-}
-//-----------------------------------------------------------------------------
-void DenseMatrix::Write(const char *filename)
-{
-  FILE *fp = fopen(filename,"w");
-
-  if ( !fp )
-	 display->Error("Unable to save matrix to file \"%s\".",filename);
-
-
-  for (int i=0;i<m;i++){
-	 for (int j=0;j<n;j++){
-		fprintf(fp,"%1.16e",values[i][j]);
-		if ( j < (n-1) )
-		  fprintf(fp," ");
-	 }
-	 fprintf(fp,"\n");
-  }
-
-  fclose(fp);
 }
 //-----------------------------------------------------------------------------

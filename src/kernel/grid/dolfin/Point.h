@@ -16,17 +16,17 @@
 class Point{
 public:
 
-  Point(){
-	 x = 0.0;
-	 y = 0.0;
-	 z = 0.0;
-  }
+  Point();
+  Point(real x);
+  Point(real x, real y);
+  Point(real x, real y, real z);
   
-  real Distance(Point p);
+  real dist(Point p);
   
   real x;
   real y;
   real z;
+  
 };
 
 #endif

@@ -44,7 +44,7 @@ Contents
 
 		o	Warnings:
 
-				setenv CXXFLAGS '-Wall -ansi -pedantic'
+				setenv CXXFLAGS '-Wall'
 
 		o	If you want to install locally (not as root), try
 

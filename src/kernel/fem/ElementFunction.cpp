@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <dolfin/Function.h>
 #include <dolfin/ShapeFunction.h>
 #include <dolfin/Product.h>
 #include <dolfin/ElementFunction.h>
@@ -16,7 +17,6 @@ FunctionSpace::ElementFunction::ElementFunction()
 
   a[0] = 0.0;
 }
-
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction::ElementFunction(real a)
 {
@@ -273,13 +273,23 @@ FunctionSpace::ElementFunction::~ElementFunction()
   }
 }
 //-----------------------------------------------------------------------------
-real FunctionSpace::ElementFunction::operator()
-(real x, real y, real z, real t)
+real FunctionSpace::ElementFunction::operator() 
+(real x, real y, real z, real t) const
 {
   real value = 0.0;
   
   for (int i = 0; i < n; i++)
 	 value += a[i] * v[i](x,y,z,t);
+
+  return value;
+}
+//-----------------------------------------------------------------------------
+real FunctionSpace::ElementFunction::operator() (Point p) const
+{
+  real value = 0.0;
+
+  for (int i = 0; i < n; i++)
+	 value += a[i] * v[i](p);
 
   return value;
 }
@@ -380,6 +390,80 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+
   return w;
 }
 //-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
+(const ShapeFunction &v)
+{
+  real *new_a = new real[n + 1];
+  Product *new_v = new Product[n + 1];
+
+  for (int i = 0; i < n; i++) {
+	 new_a[i] = a[i];
+	 new_v[i] = this->v[i];
+  }
+
+  new_a[n] = 1.0;
+  new_v[n] = v;
+
+  delete [] a;
+  delete [] this->v;
+  
+  a = new_a;
+  this->v = new_v;
+  n += 1;
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
+(const Product &v)
+{
+  real *new_a = new real[n + 1];
+  Product *new_v = new Product[n + 1];
+
+  for (int i = 0; i < n; i++) {
+	 new_a[i] = a[i];
+	 new_v[i] = this->v[i];
+  }
+
+  new_a[n] = 1.0;
+  new_v[n] = v;
+
+  delete [] a;
+  delete [] this->v;
+  
+  a = new_a;
+  this->v = new_v;
+  n += 1;
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator+=
+(const ElementFunction &v)
+{
+    real *new_a = new real[n + v.n];
+  Product *new_v = new Product[n + v.n];
+
+  for (int i = 0; i < n; i++) {
+	 new_a[i] = a[i];
+	 new_v[i] = this->v[i];
+  }
+
+  for (int i = 0; i < v.n; i++) {
+	 new_a[n + i] = v.a[i];
+	 new_v[n + i] = v.v[i];
+  }
+
+  delete [] a;
+  delete [] this->v;
+  
+  a = new_a;
+  this->v = new_v;
+  n += v.n;
+  
+  return *this;
+}
+//-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator-
 (const ShapeFunction &v) const
 {
@@ -399,5 +483,87 @@ FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator-
 {
   ElementFunction w(1.0, *this, -1.0, v);
   return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
+(real a) const
+{
+  ElementFunction w(a, *this);
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
+(const ShapeFunction &v) const
+{
+  ElementFunction w(v, *this);
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
+(const Product &v) const
+{
+  ElementFunction w(v, *this);
+  return w;
+}
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction FunctionSpace::ElementFunction::operator*
+(const ElementFunction &v) const
+{
+  ElementFunction w(v, *this);
+  return w;
+}
+//-----------------------------------------------------------------------------
+real FunctionSpace::ElementFunction::operator* (Integral::Measure &dm) const
+{
+  // The integral is linear
+  real sum = 0.0;
+  for (int i = 0; i < n; i++)
+	 sum += a[i] * ( dm * v[i] );
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::ElementFunction::init(int size)
+{
+  if ( n == size )
+	 return;
+  
+  delete [] a;
+  delete [] v;
+
+  a = new real[n];
+  v = new Product[n]();
+
+  for (int i = 0; i < n; i++)
+	 a[i] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::ElementFunction::set(int i, const ShapeFunction &v,
+													  real value)
+{
+  a[i] = value;
+  this->v[i] = v;
+}
+//-----------------------------------------------------------------------------
+// Additional operators
+//-----------------------------------------------------------------------------
+FunctionSpace::ElementFunction dolfin::operator*
+(real a, const FunctionSpace::ElementFunction &v)
+{
+  return v * a;
+}
+//-----------------------------------------------------------------------------
+ostream& dolfin::operator << (ostream& output,
+										const FunctionSpace::ElementFunction &v)
+{
+  output << "[ ElementFunction with " << v.n << " terms ]" << endl;
+  
+  for (int  i = 0; i < v.n; i++) {
+	 output << "  " << v.a[i] << " * " << v.v[i];
+	 if ( i < (v.n - 1) )
+		output << endl;
+  }
+  
+  return output;
 }
 //-----------------------------------------------------------------------------

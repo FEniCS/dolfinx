@@ -4,7 +4,7 @@
 #ifndef __TEMPLATE_SOLVER_H
 #define __TEMPLATE_SOLVER_H
 
-#include <Solver.h>
+#include <dolfin/Solver.h>
 
 namespace dolfin {
   

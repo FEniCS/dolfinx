@@ -1,4 +1,1 @@
-SUBDIRS = poisson \
-	  navierstokes \
-	  convdiff \
-          template
+SUBDIRS = template poisson

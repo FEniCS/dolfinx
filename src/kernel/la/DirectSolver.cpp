@@ -1,16 +1,21 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "DenseMatrix.h"
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/Display.h>
-#include "DirectSolver.h"
+#include <dolfin/DirectSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void DirectSolver::LU(DenseMatrix *LU)
+void DirectSolver::solve(DenseMatrix &A, Vector &x, Vector &b)
+{
+  LU(A);
+  solveLU(A, x, b);
+}
+//-----------------------------------------------------------------------------
+void DirectSolver::LU(DenseMatrix &A)
 {
   // This function replaces the matrix with its LU factorization.
   //
@@ -23,15 +28,17 @@ void DirectSolver::LU(DenseMatrix *LU)
   //    changed from [i][j] to [i-1][j-1]
   
   // Check that the matrix is square
-  if ( LU->Size(0) != LU->Size(1) )
-	 display->InternalError("DenseMatrix::LU()","Matrix is not square.");
-  
+  if ( A.size(0) != A.size(1) ) {
+	 cout << "DenseMatrix::LU(): Matrix is not square." << endl;
+	 exit(1);
+  }
+	 
   // Prepare the variables for the notation in the algorithm
-  real **a = LU->values;       // The matrix
+  real **a = A.values;       // The matrix
   real TINY = 1e-20;           // A small number
-  int n = LU->Size(0);         // Dimension
+  int n = A.size(0);         // Dimension
   real d;                      // Even or odd number of row interchanges
-  int *indx = LU->permutation; // Permutation of rows
+  int *indx = A.permutation; // Permutation of rows
 
   //  void ludcmp(float **a, int n, int *indx, float *d)
 
@@ -52,8 +59,10 @@ void DirectSolver::LU(DenseMatrix *LU)
 	 big=0.0;
 	 for (j=1;j<=n;j++)
 		if ((temp=fabs(a[i-1][j-1])) > big) big=temp;
-	 if (big == 0.0)
-		display->InternalError("DirectSolver::LU()","Matrix is singular.");
+	 if (big == 0.0) {
+		cout << "DirectSolver::LU(): Matrix is singular." << endl;
+		exit(1);
+	 }
 	 vv[i-1]=1.0/big;
   }
   
@@ -94,7 +103,7 @@ void DirectSolver::LU(DenseMatrix *LU)
   delete vv;
 }
 //-----------------------------------------------------------------------------
-void DirectSolver::Solve(DenseMatrix *LU, Vector *x, Vector *b)
+void DirectSolver::solveLU(DenseMatrix &LU, Vector &x, Vector &b)
 {
   // This function solves for the right-hand side b
   //
@@ -108,19 +117,21 @@ void DirectSolver::Solve(DenseMatrix *LU, Vector *x, Vector *b)
   //    changed from [i][j] to [i-1][j-1]
   
   //Check dimensions
-  if ( LU->Size(0) != x->size() )
-	 x->resize(LU->Size(0));
-  if ( LU->Size(1) != b->size() )
-	 display->InternalError("DenseMatrix::LU()","Matrix is not square.");
+  if ( LU.size(0) != x.size() )
+	 x.init(LU.size(0));
+  if ( LU.size(1) != b.size() ) {
+	 cout << "DenseMatrix::LU(): Matrix is not square." << endl;
+	 exit(1);
+  }
   
   // Prepare the variables for the notation in the algorithm
-  real **a = LU->values;       // The matrix
-  int n = LU->Size(0);         // Dimension
-  int *indx = LU->permutation; // Permutation
+  real **a = LU.values;       // The matrix
+  int n = LU.size(0);         // Dimension
+  int *indx = LU.permutation; // Permutation
 
   // Copy b to x
   for (int i=0;i<n;i++)
-	 x->values[i] = b->values[i];
+	 x.values[i] = b.values[i];
     
   //  void lubksb(float **a, int n, int *indx, float b[])
   
@@ -138,32 +149,18 @@ void DirectSolver::Solve(DenseMatrix *LU, Vector *x, Vector *b)
   
   for (i=1;i<=n;i++){
 	 ip=indx[i-1];
-	 sum=x->values[ip-1];
-	 x->values[ip-1]=x->values[i-1];
-	 if (ii)	for (j=ii;j<=i-1;j++) sum -= a[i-1][j-1]*x->values[j-1];
+	 sum=x.values[ip-1];
+	 x.values[ip-1]=x.values[i-1];
+	 if (ii)	for (j=ii;j<=i-1;j++) sum -= a[i-1][j-1]*x.values[j-1];
 	 else if (sum) ii=i;
-	 x->values[i-1]=sum;
+	 x.values[i-1]=sum;
   }
   
   for (i=n;i>=1;i--){
-	 sum=x->values[i-1];
-	 for (j=i+1;j<=n;j++) sum -= a[i-1][j-1]*x->values[j-1];
-	 x->values[i-1]=sum/a[i-1][i-1]; 
+	 sum=x.values[i-1];
+	 for (j=i+1;j<=n;j++) sum -= a[i-1][j-1]*x.values[j-1];
+	 x.values[i-1]=sum/a[i-1][i-1]; 
   }
   
-}
-//-----------------------------------------------------------------------------
-void DirectSolver::Solve(SparseMatrix *A, Vector *x, Vector *b)
-{
-  display->Message(0,"Using direct solver for sparse matrix (not recommended).");
-
-  // Make a copy of the sparse matrix
-  DenseMatrix B(*A);
-
-  // LU factorize B
-  LU(&B);
-
-  // Solve
-  Solve(&B,x,b);
 }
 //-----------------------------------------------------------------------------

@@ -5,12 +5,12 @@
 #define __CELL_H
 
 #include <iostream>
+#include <dolfin/Point.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/NodeIterator.h>
 
 namespace dolfin {  
 
-  class Grid;
   class Node;
   class Triangle;
   class Tetrahedron;
@@ -18,24 +18,34 @@ namespace dolfin {
   class Cell {
   public:
 
+	 enum Type { TRIANGLE, TETRAHEDRON, NONE };
+	 
 	 Cell();
+	 Cell(Node &n0, Node &n1, Node &n2);
+	 Cell(Node &n0, Node &n1, Node &n2, Node &n3);
 	 ~Cell();
 
-	 enum Type { TRIANGLE, TETRAHEDRON, NONE };
+	 // Number of nodes, edges, faces, boundaries
+	 int noNodes() const;
+	 int noEdges() const;
+	 int noFaces() const;
+	 int noBound() const; 
 
+	 // Cell data
+	 Node* node(int i) const;
+	 Point coord(int i) const;
+	 Type  type() const;
+	 int   noCellNeighbors() const;
+	 int   noNodeNeighbors() const;
+
+	 // id information for cell and its contents
+	 int id() const;
+	 int nodeID(int i) const;
+	 int edgeID(int i) const;
+
+	 // -> access passed to GenericCell
 	 GenericCell* operator->() const;
 	 
-	 int noNodes();
-	 int noEdges();
-	 int noFaces();
-	 int noBoundaries();
-	 
-	 int id() const;
-	 Cell::Type type() const;
-
-	 void set(Node *n0, Node *n1, Node *n2);
-	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
- 
 	 /// Output
 	 friend std::ostream& operator << (std::ostream& output, const Cell& cell);
 	 
@@ -49,6 +59,9 @@ namespace dolfin {
 	 
   private:
 
+	 void set(Node *n0, Node *n1, Node *n2);
+	 void set(Node *n0, Node *n1, Node *n2, Node *n3);
+	 
 	 void setID(int id);
 	 void init(Type type);
 	 bool neighbor(Cell &cell);

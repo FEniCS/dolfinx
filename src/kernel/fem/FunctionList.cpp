@@ -6,24 +6,31 @@ using namespace dolfin;
 real zero (real x, real y, real z, real t) { return 0.0; }
 real one  (real x, real y, real z, real t) { return 0.0; }
 
+// Initialise static data
 ShortList<FunctionList::FunctionData> FunctionList::list(DOLFIN_PARAMSIZE);
+int FunctionList::_size = 0;
 bool FunctionList::initialised = false;
+FunctionList functionList;
 
+//-----------------------------------------------------------------------------
+FunctionList::FunctionList()
+{
+  if ( !initialised )
+	 init();
+}
 //-----------------------------------------------------------------------------
 int FunctionList::add(function f)
 {
-  // Make sure that we add the functions zero and one first
-  if ( !initialised )
-	 init();
-  
   int id = list.add(FunctionData(f));
   
   if ( id == -1 ) {
-	 cout << "ojoj" << endl;
 	 list.resize(2*list.size());
 	 id = list.add(FunctionData(f));
   }
 
+  // Increase size of list. Note that size <= list.size()
+  _size += 1;
+  
   return id;
 }
 //-----------------------------------------------------------------------------
@@ -39,13 +46,19 @@ void FunctionList::set(int id,
   list(id).dt = dt;
 }
 //-----------------------------------------------------------------------------
+int FunctionList::size()
+{
+  return _size;
+}
+//-----------------------------------------------------------------------------
 real FunctionList::eval(int id, real x, real y, real z, real t)
 {
-  return list(id).f(x,y,z,t);
+  return list(id).f(x, y, z, t);
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::ElementFunction FunctionList::dx(int id)
 {
+  cout << "Returning dx for id = " << id << endl;
   return list(id).dx;
 }
 //-----------------------------------------------------------------------------
@@ -69,10 +82,11 @@ void FunctionList::init()
   list.add(FunctionData(zero));
   list.add(FunctionData(one));
 
+  _size = 2;
+  
   initialised = true;
 }
 //-----------------------------------------------------------------------------
-
 // FunctionList::FunctionData
 //-----------------------------------------------------------------------------
 FunctionList::FunctionData::FunctionData()
@@ -85,19 +99,19 @@ FunctionList::FunctionData::FunctionData(function f)
   this->f = f;
 }
 //-----------------------------------------------------------------------------
-bool FunctionList::FunctionData::operator! ()
-{
-  return f == 0;
-}
-//-----------------------------------------------------------------------------
-void FunctionList::FunctionData::operator= (int i)
+void FunctionList::FunctionData::operator= (int zero)
 {
   // FIXME: Use logging system
-  if ( i != 0 ) {
-	 cout << "Assignment to function pointer can only be 0." << endl;
+  if ( zero != 0 ) {
+	 cout << "Assignment to int must be zero." << endl;
 	 exit(1);
   }
   
   f = 0;
+}
+//-----------------------------------------------------------------------------
+bool FunctionList::FunctionData::operator! () const
+{
+  return f == 0;
 }
 //-----------------------------------------------------------------------------

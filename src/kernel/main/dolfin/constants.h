@@ -12,6 +12,7 @@
 #define DOLFIN_1_3                 0.33333333333333
 #define DOLFIN_1_6                 0.16666666666667
 #define DOLFIN_1_12                0.08333333333333
+#define DOLFIN_SPARSE_ALLOCSIZE    5
 
 typedef double real;
 

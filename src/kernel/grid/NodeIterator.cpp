@@ -61,6 +61,11 @@ bool NodeIterator::end()
   return n->end();
 }
 //-----------------------------------------------------------------------------
+int NodeIterator::index()
+{
+  return n->index();
+}
+//-----------------------------------------------------------------------------
 Node& NodeIterator::operator*() const
 {
   return *(*n);
@@ -87,6 +92,11 @@ void NodeIterator::GridNodeIterator::operator++()
 bool NodeIterator::GridNodeIterator::end()
 {
   return node_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+int NodeIterator::GridNodeIterator::index()
+{
+  return node_iterator.index();
 }
 //-----------------------------------------------------------------------------
 Node& NodeIterator::GridNodeIterator::operator*() const
@@ -121,6 +131,11 @@ bool NodeIterator::CellNodeIterator::end()
   return node_iterator.end();
 }
 //-----------------------------------------------------------------------------
+int NodeIterator::CellNodeIterator::index()
+{
+  return node_iterator.index();
+}
+//-----------------------------------------------------------------------------
 Node& NodeIterator::CellNodeIterator::operator*() const
 {
   return **node_iterator;
@@ -151,6 +166,11 @@ void NodeIterator::NodeNodeIterator::operator++()
 bool NodeIterator::NodeNodeIterator::end()
 {
   return node_iterator.end();
+}
+//-----------------------------------------------------------------------------
+int NodeIterator::NodeNodeIterator::index()
+{
+  return node_iterator.index();
 }
 //-----------------------------------------------------------------------------
 Node& NodeIterator::NodeNodeIterator::operator*() const

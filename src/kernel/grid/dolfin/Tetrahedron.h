@@ -13,16 +13,16 @@ namespace dolfin {
   class Tetrahedron : public GenericCell {
   public:
 	 
-	 int noNodes();
-	 int noEdges();
-	 int noFaces();
-	 int noBoundaries();
+	 int noNodes() const;
+	 int noEdges() const;
+	 int noFaces() const;
+	 int noBound() const;
 	 
-	 Cell::Type type();
-	 
+	 Cell::Type type() const;
+
   private:
 	 
-	 bool neighbor(ShortList<Node *> &cn, Cell &cell);
+	 bool neighbor(ShortList<Node *> &cn, Cell &cell) const;
 	 
   };
 

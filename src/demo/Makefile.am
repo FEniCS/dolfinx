@@ -1,1 +1,1 @@
-SUBDIRS = grid la fem
+SUBDIRS = grid la fem solvers

@@ -1,6 +1,5 @@
 #include <dolfin/Node.h>
 #include <dolfin/GenericCell.h>
-#include <dolfin/Display.h>
 #include <dolfin/ShortList.h>
 
 using namespace dolfin;
@@ -9,6 +8,30 @@ using namespace dolfin;
 Node::Node()
 {
   _id = -1;
+}
+//-----------------------------------------------------------------------------
+Node::Node(real x)
+{
+  _id = -1;
+
+  p.x = x;
+}
+//-----------------------------------------------------------------------------
+Node::Node(real x, real y)
+{
+  _id = -1;
+
+  p.x = x;
+  p.y = y;
+}
+//-----------------------------------------------------------------------------
+Node::Node(real x, real y, real z)
+{
+  _id = -1;
+
+  p.x = x;
+  p.y = y;
+  p.z = z;
 }
 //-----------------------------------------------------------------------------
 Node::~Node()
@@ -33,25 +56,31 @@ Point Node::coord() const
   return p;
 }
 //-----------------------------------------------------------------------------
+int Node::noNodeNeighbors() const
+{
+  return nn.size();
+}
+//-----------------------------------------------------------------------------
+int Node::noCellNeighbors() const
+{
+  return nc.size();
+}
+//-----------------------------------------------------------------------------
 int Node::setID(int id)
 {
   return _id = id;
 }
 //-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  std::ostream& operator << (std::ostream& output, const Node& node)
-  {
-	 int id = node.id();
-	 Point p = node.coord();
-	 
-	 output << "[ Node: id = " << id
-			  << " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
-
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
+// Additional operators
+//-----------------------------------------------------------------------------
+std::ostream& dolfin::operator << (std::ostream& output, const Node& node)
+{
+  int id = node.id();
+  Point p = node.coord();
+  
+  output << "[ Node: id = " << id
+			<< " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
+  
+  return output;
 }
 //-----------------------------------------------------------------------------

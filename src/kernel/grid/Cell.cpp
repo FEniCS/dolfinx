@@ -10,6 +10,32 @@ using namespace dolfin;
 Cell::Cell()
 {
   _id = -1;
+  c = 0;
+}
+//-----------------------------------------------------------------------------
+Cell::Cell(Node &n0, Node &n1, Node &n2)
+{
+  _id = -1;
+
+  c = 0;
+  init(TRIANGLE);
+
+  cn(0) = &n0;
+  cn(1) = &n1;
+  cn(2) = &n2;
+}
+//-----------------------------------------------------------------------------
+Cell::Cell(Node &n0, Node &n1, Node &n2, Node &n3)
+{
+  _id = -1;
+
+  c = 0;
+  init(TETRAHEDRON);
+
+  cn(0) = &n0;
+  cn(1) = &n1;
+  cn(2) = &n2;
+  cn(3) = &n3;
 }
 //-----------------------------------------------------------------------------
 Cell::~Cell()
@@ -23,7 +49,7 @@ GenericCell* Cell::operator->() const
   return c;
 }
 //-----------------------------------------------------------------------------
-int Cell::noNodes()
+int Cell::noNodes() const
 {
   if ( c )
 	 return c->noNodes();
@@ -31,7 +57,7 @@ int Cell::noNodes()
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noEdges()
+int Cell::noEdges() const
 {
   if ( c )
 	 return c->noEdges();
@@ -39,7 +65,7 @@ int Cell::noEdges()
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noFaces()
+int Cell::noFaces() const
 {
   if ( c )
 	 return c->noFaces();
@@ -47,17 +73,22 @@ int Cell::noFaces()
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noBoundaries()
+int Cell::noBound() const
 {
   if ( c )
-	 return c->noBoundaries();
+	 return c->noBound();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::id() const
+Node* Cell::node(int i) const
 {
-  return _id;
+  return cn(i);
+}
+//-----------------------------------------------------------------------------
+Point Cell::coord(int i) const
+{
+  return cn(i)->coord();
 }
 //-----------------------------------------------------------------------------
 Cell::Type Cell::type() const
@@ -66,7 +97,34 @@ Cell::Type Cell::type() const
 	 return c->type();
 
   return NONE;
-}  
+}
+//-----------------------------------------------------------------------------
+int Cell::noCellNeighbors() const
+{
+  return cc.size();
+}
+//-----------------------------------------------------------------------------
+int Cell::noNodeNeighbors() const
+{
+  return cn.size();
+}
+//-----------------------------------------------------------------------------
+int Cell::id() const
+{
+  return _id;
+}
+//-----------------------------------------------------------------------------
+int Cell::nodeID(int i) const
+{
+  return cn(i)->id();
+}
+//-----------------------------------------------------------------------------
+int Cell::edgeID(int i) const
+{
+  // FIXME: Use logging system
+  cout << "Cell::edgeID() is not implemented." << endl;
+  exit(1);
+}
 //-----------------------------------------------------------------------------
 void Cell::set(Node *n0, Node *n1, Node *n2)
 {
@@ -105,7 +163,7 @@ void Cell::init(Type type)
   if ( c )
 	 delete c;
   
-  switch (type){
+  switch (type) {
   case TRIANGLE:
 	 c = new Triangle();
 	 break;
@@ -129,33 +187,29 @@ bool Cell::neighbor(Cell &cell)
   return false;
 }
 //-----------------------------------------------------------------------------
-namespace dolfin {
-
-  //---------------------------------------------------------------------------
-  std::ostream& operator << (std::ostream& output, const Cell& cell)
-  {
-	 switch ( cell.type() ){
-	 case Cell::TRIANGLE:
-		output << "[Cell (triangle) with nodes ( ";
-		for (NodeIterator n(cell); !n.end(); ++n)
-		  output << n->id() << " ";
-		output << "]";
-		break;
-	 case Cell::TETRAHEDRON:
-		output << "[Cell (tetrahedron) with nodes ( ";
-		for (NodeIterator n(cell); !n.end(); ++n)
-		  output << n->id() << " ";
-		output << "]";
-		break;
-	 default:
-		// FIXME: Temporary until we fix the log system
-		cout << "Unknown cell type" << endl;
-		exit(1);
-	 }	 
-
-	 return output;
-  }
-  //---------------------------------------------------------------------------
-
+// Additional operators
+//-----------------------------------------------------------------------------
+std::ostream& dolfin::operator << (std::ostream& output, const Cell& cell)
+{
+  switch ( cell.type() ){
+  case Cell::TRIANGLE:
+	 output << "[Cell (triangle) with nodes ( ";
+	 for (NodeIterator n(cell); !n.end(); ++n)
+		output << n->id() << " ";
+	 output << "]";
+	 break;
+  case Cell::TETRAHEDRON:
+	 output << "[Cell (tetrahedron) with nodes ( ";
+	 for (NodeIterator n(cell); !n.end(); ++n)
+		output << n->id() << " ";
+	 output << "]";
+	 break;
+  default:
+	 // FIXME: Temporary until we fix the log system
+	 cout << "Unknown cell type" << endl;
+	 exit(1);
+  }	 
+  
+  return output;
 }
 //-----------------------------------------------------------------------------

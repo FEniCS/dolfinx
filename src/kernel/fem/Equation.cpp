@@ -1,55 +1,41 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include "Equation.hh"
-#include "GlobalField.hh"
-#include "LocalField.hh"
-#include "FiniteElement.hh"
-#include <dolfin/Display.hh>
-#include <Settings.hh>
+#include <dolfin/Equation.h>
+#include <dolfin/FiniteElement.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Equation::Equation()
+Equation::Equation(int dim)
 {
-  dt = 0.0;
-  t  = 0.0;
   h  = 0.0;
-}
-//-----------------------------------------------------------------------------
-Equation::Equation(int nsd)
-{
-  dt = 0.0;
   t  = 0.0;
-  h  = 0.0;
-    
-  // Check that the dimension matches
-  int space_dimension;
-  settings->Get("space dimension",&space_dimension);
-  if ( space_dimension != nsd )
-	 display->Error("Specified dimension (%d) does not equation dimension (%d)",
-						 space_dimension,nsd);
+  dt = 0.0;
+  
+  this->dim = dim;
+  noeq = 1; // Will be set otherwise by EquationSystem
 }
 //-----------------------------------------------------------------------------
-Equation::~Equation()
-{
-
-}
-//-----------------------------------------------------------------------------
-void Equation::updateLHS(FiniteElement *element)
+void Equation::updateLHS(const FiniteElement* element,
+								 const Cell*          cell,
+								 const Mapping*       mapping,
+								 const Quadrature*    quadrature)
 {
   // Common update for LHS and RHS
-  updateCommon(element);
+  update(element, cell, mapping, quadrature);
 
   // Local update of LHS
   updateLHS();
 }
 //-----------------------------------------------------------------------------
-void Equation::updateRHS(FiniteElement *element)
+void Equation::updateRHS(const FiniteElement* element,
+								 const Cell*          cell,
+								 const Mapping*       mapping,
+								 const Quadrature*    quadrature)
 {
   // Common update for LHS and RHS
-  updateCommon(element);
+  update(element, cell, mapping, quadrature);
 
   // Local update of RHS
   updateRHS();
@@ -65,9 +51,60 @@ void Equation::setTimeStep(real dt)
   this->dt = dt;
 }
 //-----------------------------------------------------------------------------
-void Equation::updateCommon(FiniteElement *element)
+void Equation::add(ElementFunction &v, Function &f)
 {
-  // Update cell size
-  h = 2.0 * element->GetCircumRadius();
+  FunctionPair p(v, f);
+  functions.add(p);
 }
-//----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Equation::update(const FiniteElement* element,
+							 const Cell*          cell,
+							 const Mapping*       mapping,
+							 const Quadrature*    quadrature)
+{
+  // Update element functions
+  for (ShortList<FunctionPair>::Iterator p(functions); !p.end(); ++p)
+	 p->update(*element, *cell, t);
+
+  // Update integral measures
+  dK.update(*mapping, *quadrature);
+  dS.update(*mapping, *quadrature);
+}
+//-----------------------------------------------------------------------------
+// Equation::FunctionPair
+//-----------------------------------------------------------------------------
+Equation::FunctionPair::FunctionPair()
+{
+  v = 0;
+  f = 0;
+}
+//-----------------------------------------------------------------------------
+Equation::FunctionPair::FunctionPair(ElementFunction &v, Function &f)
+{
+  this->v = &v;
+  this->f = &f;
+}
+//-----------------------------------------------------------------------------
+void Equation::FunctionPair::update
+(const FiniteElement &element, const Cell &cell, real t)
+{
+  f->update(*v, element, cell, t);
+}
+//-----------------------------------------------------------------------------
+void Equation::FunctionPair::operator= (int zero)
+{
+  // FIXME: Use logging system
+  if ( zero != 0 ) {
+	 cout << "Assignment to int must be zero." << endl;
+	 exit(1);
+  }
+  
+  v = 0;
+  f = 0;
+}
+//-----------------------------------------------------------------------------
+bool Equation::FunctionPair::operator! () const
+{
+  return v == 0;
+}
+//-----------------------------------------------------------------------------

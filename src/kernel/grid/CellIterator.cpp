@@ -49,6 +49,11 @@ CellIterator::operator CellPointer() const
   return c->pointer();
 }
 //-----------------------------------------------------------------------------
+CellIterator::operator Cell&() const
+{
+  return *(*c);
+}
+//-----------------------------------------------------------------------------
 CellIterator& CellIterator::operator++()
 {
   ++(*c);
@@ -59,6 +64,11 @@ CellIterator& CellIterator::operator++()
 bool CellIterator::end()
 {
   return c->end();
+}
+//-----------------------------------------------------------------------------
+int CellIterator::index()
+{
+  return c->index();
 }
 //-----------------------------------------------------------------------------
 Cell& CellIterator::operator*() const
@@ -87,6 +97,11 @@ void CellIterator::GridCellIterator::operator++()
 bool CellIterator::GridCellIterator::end()
 {
   return cell_iterator == at_end;
+}
+//-----------------------------------------------------------------------------
+int CellIterator::GridCellIterator::index()
+{
+  return cell_iterator.index();
 }
 //-----------------------------------------------------------------------------
 Cell& CellIterator::GridCellIterator::operator*() const
@@ -121,6 +136,11 @@ bool CellIterator::NodeCellIterator::end()
   return cell_iterator.end();
 }
 //-----------------------------------------------------------------------------
+int CellIterator::NodeCellIterator::index()
+{
+  return cell_iterator.index();
+}
+//-----------------------------------------------------------------------------
 Cell& CellIterator::NodeCellIterator::operator*() const
 {
   return **cell_iterator;
@@ -151,6 +171,11 @@ void CellIterator::CellCellIterator::operator++()
 bool CellIterator::CellCellIterator::end()
 {
   return cell_iterator.end();
+}
+//-----------------------------------------------------------------------------
+int CellIterator::CellCellIterator::index()
+{
+  return cell_iterator.index();
 }
 //-----------------------------------------------------------------------------
 Cell& CellIterator::CellCellIterator::operator*() const

@@ -1,7 +1,7 @@
 #ifndef __POISSON_SETTINGS_H
 #define __POISSON_SETTINGS_H
 
-#include "Settings.h"
+#include <dolfin/Settings.h>
 
 namespace dolfin {
   

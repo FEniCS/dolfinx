@@ -19,13 +19,18 @@ namespace dolfin{
   
   class Node{
   public:
-	 
+
 	 Node();
+	 Node(real x);
+	 Node(real x, real y);
+	 Node(real x, real y, real z);
 	 ~Node();
 	 
 	 void  set(real x, real y, real z);
 	 int   id() const;
 	 Point coord() const;
+	 int   noNodeNeighbors() const;
+	 int   noCellNeighbors() const;
 	 
 	 /// Output
 	 friend std::ostream& operator << (std::ostream& output, const Node& node);
