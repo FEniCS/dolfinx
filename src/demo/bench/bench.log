@@ -350,3 +350,28 @@ Krylov solve:                 2.53
 Total time:                   12.46
 
 --------------------------------------------------------
+User:    logg
+Date:    Thu Mar 11 09:33:03 2004
+Host:    elrond
+Machine: i686
+System:  Linux
+Version: 2.4.24
+DOLFIN:  0.4.9
+
+- Assembling 100 times
+- Matrix/vector multiplication 100 times
+- LU factorization
+- LU solve 100 times
+- Krylov solve
+Using Krylov solver for linear system of 100000 unknowns.
+Restarted GMRES converged after 20 iterations (residual 1.66784e-08)
+
+Assembling:                   2.98
+Matrix/vector multiplication: 1.00
+LU factorization:             4.46
+LU solve:                     1.75
+Krylov solve:                 2.53
+
+Total time:                   12.72
+
+--------------------------------------------------------
