@@ -17,7 +17,7 @@ namespace dolfin {
   
   class CursesLogger : public GenericLogger {
   public:
-    
+
     CursesLogger();
     ~CursesLogger();
     
@@ -97,9 +97,6 @@ namespace dolfin {
   
 }
 
-#else
-#include <dolfin/TerminalLogger.h>
-namespace dolfin { typedef TerminalLogger CursesLogger; }
 #endif
 
 #endif

@@ -62,7 +62,7 @@ host_triplet = @host@
 AWK = mawk
 CC = gcc
 CXX = g++
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -DNO_CURSES=1
+CXXFLAGS = -O2
 DOLFIN_LFLAGS = -ldolfin-main -ldolfin-convdiff -ldolfin-ode -ldolfin-poisson -ldolfin-template -ldolfin-tanganyika -ldolfin-io -ldolfin-grid -ldolfin-fem -ldolfin-elements -ldolfin-quadrature -ldolfin-grid -ldolfin-io -ldolfin-fem -ldolfin-la -ldolfin-math -ldolfin-common -ldolfin-settings -ldolfin-log -ldolfin-settings -ldolfin-common -ldolfin-main -ldolfin-tanganyika 
 HAVE_LIB = @HAVE_LIB@
 LIB = @LIB@
@@ -74,7 +74,7 @@ MAKEINFO = makeinfo
 MODULE_INCLUDES = -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/elements -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/grid -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/tanganyika 
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.3.10
+PACKAGE_VERSION = 0.3.11
 RANLIB = ranlib
 VERSION = 
 XML2_INCLUDES = -I/usr/include/libxml2

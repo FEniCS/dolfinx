@@ -167,6 +167,8 @@ void GridRefinement::refineGrid(Grid& grid)
     if ( c->marker() == Cell::marked_according_to_ref )
       continue;
 
+    cout << "Marker = " << c->marker() << endl;
+
     // Refine according to refinement rule
     refine(*c, grid.child());
     

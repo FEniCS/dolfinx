@@ -173,16 +173,29 @@ void Logger::init()
   // Get output type
   string type = dolfin_get("output");
 
-  if ( type == "plain text" )
+  // Choose output type
+  if ( type == "plain text" ) {
     log = new TerminalLogger();
-  else if ( type == "curses" )
-    log = new CursesLogger();
-  else if ( type == "silent" )
+    return;
+  }
+  else if ( type == "silent" ) {
     log = new SilentLogger();
-  else {
-    log = new CursesLogger();
+    return;
+  }
+  else if ( type != "curses" ) {
+    log = new TerminalLogger();
     dolfin_warning1("Unknown output type \"%s\".", type.c_str());
+    return;
   }
 
+  // Assume that curses is chosen
+#ifdef NO_CURSES
+  log = new TerminalLogger();
+  cout << " (Warning: Curses-based interface is not available.)" << endl;
+  return;
+#else
+  log = new CursesLogger();
+  return;
+#endif
 }
 //-----------------------------------------------------------------------------
