@@ -146,3 +146,15 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 Changes: Inlining of important functions.
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.4.5 (tis feb 10 11:23:59 CET 2004)
+Compiler flags: -I/usr/local/include -Wall -O3
+Elapsed time:   real: 4.489  user: 4.380  sys: 0.110  cpu: 100.00%
+ 
+Linux elrond 2.4.24 #1 ons jan 21 17:07:36 CET 2004 i686 GNU/Linux
+g++ (GCC) 3.3.3 20031206 (prerelease) (Debian)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Changes: Further inlining.
+---------------------------------------------------------------------------

@@ -76,65 +76,6 @@ Method::~Method()
   test = 0;
 }
 //-----------------------------------------------------------------------------
-unsigned int Method::size() const
-{
-  return n;
-}
-//-----------------------------------------------------------------------------
-unsigned int Method::degree() const
-{
-  return q;
-}
-//-----------------------------------------------------------------------------
-real Method::point(unsigned int i) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(points);
-
-  return points[i];
-}
-//-----------------------------------------------------------------------------
-real Method::weight(unsigned int i, unsigned int j) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(j < n);
-  dolfin_assert(weights);
-
-  return weights[i][j];
-}
-//-----------------------------------------------------------------------------
-real Method::weight(unsigned int i) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(qweights);
-
-  return qweights[i];
-}
-//-----------------------------------------------------------------------------
-real Method::basis(unsigned int i, real t) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(trial);
-
-  return trial->eval(i, t);
-}
-//-----------------------------------------------------------------------------
-real Method::derivative(unsigned int i, real t) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(trial);
-
-  return trial->dx(i, t);
-}
-//-----------------------------------------------------------------------------
-real Method::derivative(unsigned int i) const
-{
-  dolfin_assert(i < n);
-  dolfin_assert(trial);
-
-  return derivatives[i];
-}
-//-----------------------------------------------------------------------------
 void Method::init()
 {
   computeQuadrature();

@@ -22,29 +22,29 @@ namespace dolfin {
     /// Destructor
     virtual ~Method();
     
-    /// Return number of points
-    unsigned int size() const;
+    /// Return number of points (inline optimized)
+    inline unsigned int size() const { return n; }
     
-    /// Return degree
-    unsigned int degree() const;
+    /// Return degree (inline optimized)
+    inline unsigned int degree() const { return q; }
 
-    /// Return nodal point
-    real point(unsigned int i) const;
+    /// Return nodal point (inline optimized)
+    inline real point(unsigned int i) const { return points[i]; }
     
-    /// Return nodal weight j for degree of freedom i (including quadrature)
-    real weight(unsigned int i, unsigned int j) const;
+    /// Return nodal weight j for degree of freedom i, including quadrature (inline optimized)
+    inline real weight(unsigned int i, unsigned int j) const { return weights[i][j]; }
 
-    /// Return quadrature weight (including only quadrature)
-    real weight(unsigned int i) const;
+    /// Return quadrature weight, including only quadrature (inline optimized)
+    inline real weight(unsigned int i) const { return qweights[i]; }
 
-    /// Evaluation of basis function i at given point t within [0,1]
-    real basis(unsigned int i, real t) const;
+    /// Evaluation of basis function i at given point t within [0,1] (inline optimized)
+    inline real basis(unsigned int i, real t) const { return trial->eval(i, t); }
 
-    /// Evaluation of derivative of basis function i at given point t within [0,1]
-    real derivative(unsigned int i, real t) const;
+    /// Evaluation of derivative of basis function i at given point t within [0,1] (inline optimized)
+    inline real derivative(unsigned int i, real t) const { return trial->dx(i, t); }
     
-    /// Evaluation of derivative of basis function i at t = 1
-    real derivative(unsigned int i) const;
+    /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
+    inline real derivative(unsigned int i) const { return derivatives[i]; }
     
     /// Display method data
     virtual void show() const = 0;

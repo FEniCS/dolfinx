@@ -78,11 +78,6 @@ real Element::endtime() const
   return t1;
 }
 //-----------------------------------------------------------------------------
-real Element::timestep() const
-{
-  return t1 - t0;
-}
-//-----------------------------------------------------------------------------
 real Element::computeResidual(RHS& f)
 {
   // FIXME: Include jumps for dG(q)

@@ -61,7 +61,7 @@ namespace dolfin {
 
     // Function
     Function* function;
-
+    
     // Solution vector
     Vector u;
 

@@ -1,3 +1,6 @@
+ - Save vectors and matrices from Matlab/Octave
+ - Rename writexml.m to xmlmesh.m
+ - Inlining of important functions
  - Optimize evaluation of elements
  - Optimize Lagrange polynomials
  - Optimize sparsity: use stl containers

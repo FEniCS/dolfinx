@@ -92,8 +92,8 @@ namespace dolfin {
     /// Return the right end-point
     real endtime() const;
 
-    /// Return the size of the time step
-    real timestep() const;
+    /// Return the size of the time step (inline optimized)
+    inline real timestep() const { return t1 - t0; }
 
     // Compute continuous residual
     real computeResidual(RHS& f);

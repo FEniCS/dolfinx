@@ -1,8 +1,8 @@
-function writexml(filename,p,t)
-                                                                                                                                          
-% WRITEXML - SAVE MATLAB 2D (AND FEMLAB 3D) GRID TO DOLFIN XML FORMAT
+function xmlmesh(filename,p,t)
+
+% XMLMESH - SAVE MATLAB 2D (AND FEMLAB 3D) MESH TO DOLFIN XML FORMAT
 %
-% Usage: writexml(filename,p,t)
+% Usage: xmlmesh(filename,p,t)
 %
 %   p - points    (exported from PDE Toolbox)
 %   t - triangles (exported from PDE Toolbox)
@@ -10,7 +10,7 @@ function writexml(filename,p,t)
 % Copyright (C) 2003 Erik Svensson.
 % Licensed under the GNU GPL Version 2.
 %
-% Updated by Anders Logg 2003.
+% Modified by Anders Logg 2003, 2004.
 
 % Open file
 fp = fopen(filename,'w');
@@ -22,12 +22,12 @@ nt = size(t,2);
 fprintf(fp,'<?xml version="1.0" encoding="UTF-8"?>\n\n');
 fprintf(fp,'<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">\n');
 
-% 2D grid
+% 2D mesh
 if (size(p,1) == 2)
 
   % Write nodes
   disp('Writing nodes...')
-  fprintf(fp,'  <grid>\n');
+  fprintf(fp,'  <mesh>\n');
   fprintf(fp,'    <nodes size="%d">\n',np);  
   for n=1:np
     fprintf(fp,'      <node name="%d" x="%f" y="%f" z="0.0"/>\n', ...
@@ -43,15 +43,15 @@ if (size(p,1) == 2)
 	    n-1,t(1,n)-1,t(2,n)-1,t(3,n)-1);
   end
   fprintf(fp,'    </cells>\n');
-  fprintf(fp,'  </grid>\n');
-  fprintf(fp,'</dolfin>');  
+  fprintf(fp,'  </mesh>\n');
+  fprintf(fp,'</dolfin>\n');  
   
-% 3D grid
+% 3D mesh
 elseif (size(p,1) == 3)
 
   % Write nodes
   disp('Writing nodes...')
-  fprintf(fp,'  <grid>\n');
+  fprintf(fp,'  <mesh>\n');
   fprintf(fp,'    <nodes size="%d">\n',np);  
   for n=1:np
     fprintf(fp,'      <node name="%d" x="%f" y="%f" z="%f"/>\n', ...
@@ -67,8 +67,8 @@ elseif (size(p,1) == 3)
             n-1,t(1,n)-1,t(2,n)-1,t(3,n)-1,t(4,n)-1);
   end
   fprintf(fp,'    </cells>\n');
-  fprintf(fp,'  </grid>\n');
-  fprintf(fp,'</dolfin>');
+  fprintf(fp,'  </mesh>\n');
+  fprintf(fp,'</dolfin>\n');
   
 end
 
