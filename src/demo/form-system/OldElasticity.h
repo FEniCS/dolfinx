@@ -12,7 +12,7 @@ namespace dolfin {
   public:
     
     OldElasticity() :
-      PDE(3, 3)
+      PDE(2, 3)
       {
       }
     
@@ -25,10 +25,10 @@ namespace dolfin {
       //real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
       //real mu = E / (2 * (1 + nu));
 
+      ///*
+
       real lambda = 1.0;
       real mu = 1.0;
-
-      /*
 
       ElementFunction
 	epsilon00, epsilon01, epsilon02,
@@ -83,9 +83,10 @@ namespace dolfin {
 	 sigma10 * epsilonv10 + sigma11 * epsilonv11 + sigma12 * epsilonv12 +
 	 sigma20 * epsilonv20 + sigma21 * epsilonv21 + sigma22 * epsilonv22) *
 	dx;
-      */
 
-      ///*
+      //*/
+
+      /*
       const Point &mp = cell_->midpoint();
 
       static Matrix
@@ -169,7 +170,16 @@ namespace dolfin {
 	 u(2).ddy() * v(2).ddy() +
 	 u(2).ddz() * v(2).ddz()) * dx;
 
-      //*/
+      */
+      /*
+      return
+	(u(0).ddx() * v(0).ddx() +
+	 u(0).ddy() * v(0).ddy() +
+	 u(1).ddx() * v(1).ddx() +
+	 u(1).ddy() * v(1).ddy() +
+	 u(2).ddx() * v(2).ddx() +
+	 u(2).ddy() * v(2).ddy()) * dx;
+      */
     }
     
     /*

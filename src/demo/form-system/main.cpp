@@ -5,19 +5,16 @@
 #include <iostream>
 //#include "OptimizedPoisson.h"
 //#include "FFCPoisson.h"
-//#include "Poisson.h" 
-//#include "OldPoisson.h" 
-//#include "PoissonSystem.h" 
-//#include "Elasticity.h" 
-//#include "OldElasticity.h" 
+#include "Poisson.h" 
+#include "OldPoisson.h" 
+#include "PoissonSystem.h" 
+#include "Elasticity.h" 
+#include "OldElasticity.h" 
 
 using namespace dolfin;
 
-/*
-
 #define N 1 // Number of times to do the assembly
 #define M 1 // Number of times to refine the mesh 
-
 
 // Test old assembly
 real testOldPoisson(Mesh& mesh)
@@ -30,8 +27,10 @@ real testOldPoisson(Mesh& mesh)
   for (unsigned int i = 0; i < N; i++)
     FEM::assemble(poisson, mesh, A);
 
-  cout << "A (OldPoisson): " << endl;
-  A.show();
+  cout << "A (Old Poisson): " << endl;
+
+  NewMatrix Anew(A);
+  Anew.disp(false);
 
   return toc();
 }
@@ -43,16 +42,16 @@ real testFFC(Mesh& mesh)
 
   cout << "--- Testing new assembly, FFC ---" << endl;
 
-  PoissonFiniteElement element;
-  PoissonBilinearForm a(element);
+  Poisson::FiniteElement element;
+  Poisson::BilinearForm a;
   NewMatrix A;
   tic();
 
   for (unsigned int i = 0; i < N; i++)
-    NewFEM::assemble(a, mesh, A);
+    NewFEM::assemble(a, A, mesh, element);
 
-  cout << "A scalar: " << endl;
-  A.disp();
+  cout << "A (FFC Poisson): " << endl;
+  A.disp(false);
 
   return toc();
 }
@@ -64,37 +63,16 @@ real testFFCSystem(Mesh& mesh)
 
   cout << "--- Testing new assembly, FFC ---" << endl;
 
-  PoissonSystemFiniteElement element;
-  PoissonSystemBilinearForm a(element);
+  PoissonSystem::FiniteElement element;
+  PoissonSystem::BilinearForm a;
   NewMatrix A;
   tic();
 
   for (unsigned int i = 0; i < N; i++)
-    NewFEM::assemble(a, mesh, A);
+    NewFEM::assemble(a, A, mesh, element);
 
-  cout << "A system: " << endl;
-  A.disp();
-
-  return toc();
-}
-
-// Test new assembly (FFC)
-real testElasticity(Mesh& mesh)
-{
-  NewMatrix B;
-
-  cout << "--- Testing new assembly, FFC ---" << endl;
-
-  ElasticityFiniteElement element;
-  ElasticityBilinearForm a(element);
-  NewMatrix A;
-  tic();
-
-  for (unsigned int i = 0; i < N; i++)
-    NewFEM::assemble(a, mesh, A);
-
-  cout << "A elasticity: " << endl;
-  A.disp();
+  cout << "A (FFC Poisson System): " << endl;
+  A.disp(false);
 
   return toc();
 }
@@ -110,59 +88,66 @@ real testOldElasticity(Mesh& mesh)
   for (unsigned int i = 0; i < N; i++)
     FEM::assemble(elasticity, mesh, A);
 
-  cout << "A (OldElasticity): " << endl;
-  A.show();
+  cout << "A (Old Elasticity): " << endl;
+  NewMatrix Anew(A);
+  Anew.disp(false);
 
   return toc();
 }
 
+// Test new assembly (FFC)
+real testElasticity(Mesh& mesh)
+{
+  NewMatrix B;
 
-int testAssembly(Mesh& mesh)
+  cout << "--- Testing new assembly, FFC ---" << endl;
+
+  Elasticity::FiniteElement element;
+  Elasticity::BilinearForm a;
+  NewMatrix A;
+  tic();
+
+  for (unsigned int i = 0; i < N; i++)
+    NewFEM::assemble(a, A, mesh, element);
+
+  cout << "A (FFC elasticity): " << endl;
+  A.disp(false);
+
+  return toc();
+}
+
+int testAssembly(Mesh& mesh2D, Mesh& mesh3D)
 {
   //dolfin_log(false);
   
-  real t1 = testFFC(mesh);
-  real t2 = testOldPoisson(mesh);
-  real t3 = testFFCSystem(mesh);
-  //real t4 = testElasticity(mesh);
-  real t5 = testOldElasticity(mesh);
+  real t1 = testFFC(mesh2D);
+  real t2 = testOldPoisson(mesh2D);
+  real t3 = testFFCSystem(mesh2D);
+  real t4 = testElasticity(mesh3D);
+  real t5 = testOldElasticity(mesh3D);
 
   //dolfin_log(true);
 
-  cout << "Mesh size: " << mesh.noNodes() << " nodes, and " << mesh.noCells() << " cells" << endl;
+  cout << "Mesh2D size: " << mesh2D.noNodes() << " nodes, and " << mesh2D.noCells() << " cells" << endl;
+  cout << "Mesh3D size: " << mesh3D.noNodes() << " nodes, and " << mesh3D.noCells() << " cells" << endl;
   cout << "---------------------------------------------" << endl;
   cout << "DOLFIN + FFC:    " << t1 << endl;
   cout << "DOLFIN + FFC (OldPoisson):    " << t2 << endl;
   cout << "DOLFIN + FFC (System):    " << t3 << endl;
-  //cout << "DOLFIN + FFC (Elasticity):    " << t4 << endl;
+  cout << "DOLFIN + FFC (Elasticity):    " << t4 << endl;
   cout << "DOLFIN + FFC (OldElasticity):    " << t5 << endl;
   cout << "---------------------------------------------" << endl;
 
   return 0;
 }
 
-*/
 
 int main()
 {
-
-  dolfin_set("output", "plain text");
-
-  //cout << "Doing assembly 10 times..." << endl;
-
-  //std::cout << "Doing assembly 10 times..." << std::endl;
-  //std::cerr << "Doing assembly 10 times..." << std::endl;
-  
   //Mesh mesh("mesh.xml.gz");
-  //Mesh mesh("minimal.xml.gz");
-  //testAssembly(mesh);
-  /*
-  for (unsigned int i = 0; i < M; i++)
-  {
-    mesh.refineUniformly();
-    testAssembly(mesh);
-  }
-  */  
+  Mesh mesh2D("minimal2.xml.gz");
+  Mesh mesh3D("minimal.xml.gz");
+  testAssembly(mesh2D, mesh3D);
 
   return 0;
 }

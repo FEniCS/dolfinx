@@ -186,7 +186,7 @@ void NewMatrix::disp(bool sparse, int precision) const
       if ( fabs(value) < DOLFIN_EPS )
 	value = 0.0;
 
-      line << std::setw(precision + 1) << value << " ";
+      line << std::setw(precision + 3) << value << " ";
     }
     cout << line.str().c_str() << endl;
   }
