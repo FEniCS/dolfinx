@@ -14,6 +14,10 @@ General
 - Update manual: anyone?
 - Fix setprecision() cout
 - Use NewArray<...> instead of ::Vector in assembly classes
+- Fix mesh refinement (non-working mesh from Pär Ingelström)
+- dx --> ddx in PDE
+- dK --> dx in PDE
+- Load parameters from dolfin.xml
 
 Multi-adaptive solver
 ---------------------
