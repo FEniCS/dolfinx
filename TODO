@@ -19,6 +19,7 @@ o [hoffman, logg] Optimize form evaluation
 * Add i,j in vector PDE?
 * Use NewArray<...> instead of ::Vector in assembly classes?
 * Remove specification of dim from PDE
+* Connect ElementFunction to Function through initialization (not PDE::add())
 
 Mesh
 ----
