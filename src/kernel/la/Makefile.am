@@ -5,6 +5,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/GenericMatrix.h \
                          dolfin/KrylovSolver.h \
                          dolfin/Matrix.h \
+                         dolfin/MultigridSolver.h \
                          dolfin/SISolver.h \
                          dolfin/SparseMatrix.h \
                          dolfin/Vector.h
