@@ -1,1 +1,5 @@
-Save edges in matlab format
+- Save edges in matlab format
+- General boundary conditions
+- Multigrid
+- Multi-adaptive ODE-solver
+- Fix the Navier-Stokes module
