@@ -41,6 +41,9 @@ namespace dolfin {
     /// Create matrix with given dimensions
     Matrix(unsigned int m, unsigned int n, Type type = sparse);
 
+    /// Create sparse matrix with given dimensions and number of nonzeros per row
+    Matrix(unsigned int m, unsigned int n, unsigned int nz);
+
     /// Create a copy of a given matrix
     Matrix(const Matrix& A);
 

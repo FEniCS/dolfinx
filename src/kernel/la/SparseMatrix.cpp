@@ -38,6 +38,18 @@ SparseMatrix::SparseMatrix(unsigned int m, unsigned int n) :
   init(m,n);
 }
 //-----------------------------------------------------------------------------
+SparseMatrix::SparseMatrix(unsigned int m, unsigned int n, unsigned int nz) :
+  rowsizes(0),
+  columns(0),
+  values(0),
+  allocsize(nz)
+{
+  this->m = 0;
+  this->n = 0;
+  
+  init(m,n);
+}
+//-----------------------------------------------------------------------------
 SparseMatrix::SparseMatrix(const SparseMatrix& A) :
   rowsizes(0),
   columns(0),
@@ -853,18 +865,20 @@ void SparseMatrix::alloc(unsigned int m, unsigned int n)
   columns = new int * [m];
   values = new real * [m];
 
-  for (unsigned int i = 0; i < m; i++) {
-    columns[i] = new int [1];
-    values[i] = new real [1];
-    rowsizes[i] = 1;
-    columns[i][0] = -1;
-    values[i][0] = 0.0;
+  for (unsigned int i = 0; i < m; i++)
+  {
+    columns[i] = new int [allocsize];
+    values[i] = new real [allocsize];
+    rowsizes[i] = allocsize;
+    for (unsigned pos = 0; pos < allocsize; pos++)
+    {
+      columns[i][pos] = -1;
+      values[i][pos] = 0.0;
+    }
   }
   
   this->m = m;
   this->n = n;
-
-  allocsize = 1;
 }
 //-----------------------------------------------------------------------------
 real SparseMatrix::read(unsigned int i, unsigned int j) const
@@ -902,7 +916,7 @@ void SparseMatrix::write(unsigned int i, unsigned int j, real value)
       return;
     }
   }
-  
+
   // Couldn't find an empty position, so resize and try again
   resizeRow(i, rowsizes[i] + 1);
   
@@ -926,7 +940,7 @@ void SparseMatrix::add(unsigned int i, unsigned int j, real value)
       return;
     }
   }
-  
+
   // Couldn't find an empty position, so resize and try again
   resizeRow(i, rowsizes[i] + 1);
 

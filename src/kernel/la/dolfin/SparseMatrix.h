@@ -20,6 +20,7 @@ namespace dolfin {
   
     SparseMatrix ();
     SparseMatrix (unsigned int m, unsigned int n);
+    SparseMatrix (unsigned int m, unsigned int n, unsigned int nz);
     SparseMatrix (const SparseMatrix& A);
     SparseMatrix (const DenseMatrix& A);
     ~SparseMatrix ();

@@ -46,6 +46,12 @@ Matrix::Matrix(unsigned int m, unsigned int n, Type type)
   _type = type;
 }
 //-----------------------------------------------------------------------------
+Matrix::Matrix(unsigned int m, unsigned int n, unsigned int nz)
+{
+  A = new SparseMatrix(m, n, nz);
+  _type = sparse;
+}
+//-----------------------------------------------------------------------------
 Matrix::Matrix(const Matrix& A)
 {
   switch ( A._type ) {

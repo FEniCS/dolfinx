@@ -7,116 +7,124 @@
 
 using namespace dolfin;
 
-real testDOLFIN1(Mesh& mesh)
-{
-  // Simplest version of assembly in DOLFIN
-  std::cout << "Testing DOLFIN 1" << std::endl;
-  tic();
-  
-  Matrix A(mesh.noNodes(), mesh.noNodes());
-  
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-    for (NodeIterator n0(cell); !n0.end(); ++n0)
-      for (NodeIterator n1(cell); !n1.end(); ++n1)
-	A(n0->id(), n1->id()) += 1.0;
+#define SIZE 50
 
-  return toc();
+int N;
+int N2;
+int N3;
+double values[64];
+int dofs[8];
+
+void setdofs(int i, int j, int k, int dofs[])
+{
+  // Compute node numbers for all 8 vertices of the cube
+  int pos = 0;
+  for (int ii = 0; ii < 2; ii++)
+    for (int jj = 0; jj < 2; jj++)
+      for (int kk = 0; kk < 2; kk++)
+	dofs[pos++] = N2*(k + kk) + N*(j + jj) + i + ii;
 }
 
-real testDOLFIN2(Mesh& mesh)
+void testDOLFIN(double* t1, double* t2)
 {
-  // This version does things the same way as we do for PETSc
-  // so the comparison is fair
-  std::cout << "Testing DOLFIN 2" << std::endl;
+  std::cout << "Testing DOLFIN" << std::endl;
   tic();
   
-  Matrix A(mesh.noNodes(), mesh.noNodes());
-  int dofs[4];
-  double values[16];
+  Matrix A(N3, N3, 27);
 
-  for (int i = 0; i < 16; i++)
-    values[i] = 1.0;
-
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (int i = 0; i < (N-1); i++)
   {
-    int pos = 0;
-    for (NodeIterator n0(cell); !n0.end(); ++n0)
-      dofs[pos++] = n0->id();
-
-    pos = 0;
-    for (int i = 0; i < 4; i++)
-      for (int j = 0; j < 4; j++)
-	A(dofs[i], dofs[j]) += values[pos++];
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	int pos = 0;
+	for (int ii = 0; ii < 8; ii++)
+	  for (int jj = 0; jj < 8; jj++)
+	    A(dofs[ii], dofs[jj]) += values[pos++];
+      }
+    }
   }
 
-  return toc();
+  *t1 = toc();
+  std::cout << "Testing DOLFIN again" << std::endl;
+  tic();
+  
+  A = 0.0;
+  for (int i = 0; i < (N-1); i++)
+  {
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	int pos = 0;
+	for (int ii = 0; ii < 8; ii++)
+	  for (int jj = 0; jj < 8; jj++)
+	    A(dofs[ii], dofs[jj]) += values[pos++];
+      }
+    }
+  }  
+
+  *t2 = toc();
 }
 
-real testPETSc1(Mesh& mesh)
+void testPETSc(double* t1, double* t2)
 {
-  // Simplest version of assembly in PETSc
-  std::cout << "Testing PETSc 1" << std::endl;
+  std::cout << "Testing PETSc" << std::endl;
   tic();
 
   Mat A;
-  int dofs[4];
-  double values[16];
-
-  MatCreate(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE,
-	    mesh.noNodes(), mesh.noNodes(), &A);
-  
+  MatCreateSeqAIJ(PETSC_COMM_SELF, N3, N3, 27, PETSC_NULL, &A);
   MatSetFromOptions(A);
-
-  for (int i = 0; i < 16; i++)
-    values[i] = 1.0;
-
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  //MatSetOption(A, MAT_ROWS_SORTED);
+  //MatSetOption(A, MAT_COLUMNS_SORTED);
+  MatSetOption(A, MAT_USE_HASH_TABLE);
+  
+  for (int i = 0; i < (N-1); i++)
   {
-    int pos = 0;
-    for (NodeIterator n0(cell); !n0.end(); ++n0)
-      dofs[pos++] = n0->id();
-    
-    MatSetValues(A, 4, dofs, 4, dofs, values, ADD_VALUES);
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	MatSetValues(A, 8, dofs, 8, dofs, values, ADD_VALUES);
+      }
+    }
   }
 
   MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-  MatDestroy(A);
 
-  return toc();
-}
-
-real testPETSc2(Mesh& mesh)
-{
-  // Tell PETSc how many nonzeros we have
-  std::cout << "Testing PETSc 2" << std::endl;
+  *t1 = toc();
+  std::cout << "Testing PETSc again" << std::endl;
+  MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR);
   tic();
 
-  Mat A;
-  int dofs[4];
-  double values[16];
-
-  MatCreateSeqAIJ(PETSC_COMM_SELF, mesh.noNodes(), mesh.noNodes(),
-		  17, PETSC_NULL, &A);
-  MatSetFromOptions(A);
-
-  for (int i = 0; i < 16; i++)
-    values[i] = 1.0;
-
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  MatZeroEntries(A);
+  for (int i = 0; i < (N-1); i++)
   {
-    int pos = 0;
-    for (NodeIterator n0(cell); !n0.end(); ++n0)
-      dofs[pos++] = n0->id();
-    
-    MatSetValues(A, 4, dofs, 4, dofs, values, ADD_VALUES);
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	MatSetValues(A, 8, dofs, 8, dofs, values, ADD_VALUES);
+      }
+    }
   }
 
   MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
-  MatDestroy(A);
 
-  return toc();
+  *t2 = toc();
+  
+  MatDestroy(A);
 }
 
 int main(int argc, char** argv)
@@ -124,20 +132,29 @@ int main(int argc, char** argv)
   dolfin_set("output", "plain text");
   PetscInitialize(&argc, &argv, 0, 0);
 
-  Mesh mesh("mesh.xml.gz");
-  mesh.refineUniformly();
-  mesh.refineUniformly();
-  mesh.refineUniformly();
+  // Set all values
+  for (int i = 0; i < 64; i++)
+    values[i] = 1.0;
 
-  real t1 = testDOLFIN1(mesh);
-  real t2 = testDOLFIN2(mesh);
-  real t3 = testPETSc1(mesh);
-  real t4 = testPETSc2(mesh);
+  // Set problem size
+  N = SIZE;
+  N2 = N*N;
+  N3 = N*N*N;
+  
+  std::cout << "System size: " << N3 << " x " << N3 << std::endl;
+
+  double t1 = 0.0;
+  double t2 = 0.0;
+  double t3 = 0.0;
+  double t4 = 0.0;
+
+  testDOLFIN(&t1, &t2);
+  testPETSc(&t3, &t4);
  
-  std::cout << "DOLFIN 1: " << t1 << " s" << std::endl;
-  std::cout << "DOLFIN 2: " << t2 << " s" << std::endl;
-  std::cout << "PETSc  1: " << t3 << " s" << std::endl;
-  std::cout << "PETSc  2: " << t4 << " s" << std::endl;
+  std::cout << "DOLFIN assembly:    " << t1 << " s" << std::endl;
+  std::cout << "DOLFIN re-assembly: " << t2 << " s" << std::endl;
+  std::cout << "PETSc  assembly:    " << t3 << " s" << std::endl;
+  std::cout << "PETSc  re-assembly: " << t4 << " s" << std::endl;
 
   PetscFinalize();
   return 0;
