@@ -142,3 +142,11 @@ bool Adaptivity::accept(TimeSlab& timeslab, RHS& f)
   return timeslab.accept(f, 2*TOL);
 }
 //-----------------------------------------------------------------------------
+void Adaptivity::adjustMaximumTimeStep(real kmax)
+{
+  this->kmax = kmax;
+  kmax_current = kmax;
+  
+  cout << "Adjusting maximum time step to " << kmax << endl;
+}
+//-----------------------------------------------------------------------------

@@ -95,6 +95,9 @@ namespace dolfin {
     // Adaptivity, including regulation of the time step
     Adaptivity adaptivity;
 
+    // A function representing the solution being computed
+    Function& function;
+
     // The solution being computed
     Solution u;
 

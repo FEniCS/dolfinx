@@ -34,7 +34,10 @@ namespace dolfin {
 
     /// Number of components
     unsigned int size() const;
-    
+
+    /// Evaluation of the right-hand side
+    real operator() (unsigned int index, real t);
+
     /// Evaluation of the right-hand side
     real operator() (unsigned int index, unsigned int node, real t);
 

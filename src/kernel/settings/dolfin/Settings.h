@@ -44,12 +44,14 @@ namespace dolfin {
       add(Parameter::BOOL, "adaptive samples", false);
       add(Parameter::BOOL, "debug time steps", false);
       add(Parameter::BOOL, "debug iterations", false);
+      add(Parameter::BOOL, "automatic modeling", false);
 
       add(Parameter::INT, "number of samples", 100);
       add(Parameter::INT, "sample density", 1);
       add(Parameter::INT, "element cache size", 32);
       add(Parameter::INT, "maximum iterations", 100);
       add(Parameter::INT, "order", 1);
+      add(Parameter::INT, "average samples", 1000);
       
       add(Parameter::REAL, "initial time step", 0.01);
       add(Parameter::REAL, "maximum time step", 0.1);
@@ -58,6 +60,7 @@ namespace dolfin {
       add(Parameter::REAL, "sparsity check increment", 0.01);
       add(Parameter::REAL, "maximum divergence", 10.0);
       add(Parameter::REAL, "maximum convergence", 0.75);
+      add(Parameter::REAL, "average length", 0.1);
       
       add(Parameter::STRING, "method", "cg");
       add(Parameter::STRING, "stiffness", "non-stiff");

@@ -46,6 +46,11 @@ real ODE::timestep(unsigned int i)
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
+void ODE::update(RHS& f, Function& u, real t, Adaptivity& adaptivity)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void ODE::save(Sample& sample)
 {
   // Do nothing

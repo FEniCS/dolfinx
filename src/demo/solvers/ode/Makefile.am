@@ -1,1 +1,1 @@
-SUBDIRS = test lorenz stiff mechanical bench bistable performance newton
+SUBDIRS = test lorenz stiff mechanical bench bistable performance newton modeling

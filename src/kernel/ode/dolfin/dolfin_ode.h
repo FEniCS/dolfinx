@@ -29,6 +29,9 @@
 #include <dolfin/ODESolver.h>
 #include <dolfin/ParticleSystem.h>
 #include <dolfin/RHS.h>
+#include <dolfin/RecursiveTimeSlab.h>
+#include <dolfin/ReducedModel.h>
+#include <dolfin/Regulator.h>
 #include <dolfin/Sample.h>
 #include <dolfin/Solution.h>
 #include <dolfin/Sparsity.h>

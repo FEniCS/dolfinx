@@ -58,6 +58,9 @@ namespace dolfin {
     /// Check if the time slab can be accepted
     bool accept(TimeSlab& timeslab, RHS& f);
 
+    /// Adjust maximum time step
+    void adjustMaximumTimeStep(real kmax);
+
   private:
 
     // Regulators, one for each component

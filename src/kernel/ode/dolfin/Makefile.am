@@ -28,6 +28,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Partition.h \
              RHS.h \
              RecursiveTimeSlab.h \
+             ReducedModel.h \
              Regulator.h \
              Sample.h \
              SimpleTimeSlab.h \

@@ -37,6 +37,11 @@ unsigned int RHS::size() const
   return ode.size();
 }
 //-----------------------------------------------------------------------------
+real RHS::operator() (unsigned int index, real t)
+{
+  return (*this)(index, 0, t);
+}
+//-----------------------------------------------------------------------------
 real RHS::operator() (unsigned int index, unsigned int node, real t)
 {
   // Update the solution vector

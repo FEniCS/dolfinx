@@ -8,6 +8,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
 #include <dolfin/ODE.h>
+#include <dolfin/ReducedModel.h>
 #include <dolfin/Sample.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/SimpleTimeSlab.h>
@@ -23,9 +24,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode, Function& function) :
   N(ode.size()), t(0), T(ode.endtime()), partition(N), adaptivity(ode),
-  u(ode, function), ode(ode), f(ode, u), fixpoint(u, f, adaptivity), 
-  file(u.label() + ".m"), p("Time-stepping"), _finished(false),
-  save_solution(dolfin_get("save solution")),
+  function(function), u(ode, function), ode(ode), f(ode, u),
+  fixpoint(u, f, adaptivity), file(u.label() + ".m"), p("Time-stepping"), 
+  _finished(false), save_solution(dolfin_get("save solution")),
   solve_dual(dolfin_get("solve dual problem")),
   adaptive_samples(dolfin_get("adaptive samples")),
   no_samples(dolfin_get("number of samples")),
@@ -42,12 +43,30 @@ TimeStepper::~TimeStepper()
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, Function& function)
 {
-  // Create a TimeStepper object
-  TimeStepper timeStepper(ode, function);
+  // Check if we should create a reduced model (automatic modeling)
+  if ( dolfin_get("automatic modeling") )
+  {
+    dolfin_info("Creating reduced model (automatic modeling).");
 
-  // Do time stepping
-  while ( !timeStepper.finished() )
-    timeStepper.step();
+    // Create the reduced model
+    ReducedModel reducedModel(ode);
+
+    // Create a time stepper object
+    TimeStepper timeStepper(reducedModel, function);
+    
+    // Do time stepping
+    while ( !timeStepper.finished() )
+      timeStepper.step();
+  }
+  else
+  {
+    // Create a time stepper object
+    TimeStepper timeStepper(ode, function);
+    
+    // Do time stepping
+    while ( !timeStepper.finished() )
+      timeStepper.step();
+  }
 }
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
@@ -110,6 +129,9 @@ bool TimeStepper::createFirstTimeSlab()
   // Save solution
   save(timeslab);
   
+  // Update ODE
+  ode.update(f, function, t, adaptivity);
+  
   // Update progress
   p = t / T;
 
@@ -155,6 +177,9 @@ bool TimeStepper::createGeneralTimeSlab()
   // Save solution
   save(timeslab);
   
+  // Update ODE
+  ode.update(f, function, t, adaptivity);
+
   // Update progress
   p = t / T;
 
@@ -181,14 +206,15 @@ void TimeStepper::shift()
 //-----------------------------------------------------------------------------
 void TimeStepper::save(TimeSlab& timeslab)
 {
-  if(solve_dual)
+  // FIXME: Why is this necessary?
+  if (solve_dual)
   {
     // Save solution for dual problem
     u.save(t);
   }
 
   // Check if we should save the solution
-  if(save_solution)
+  if (save_solution)
   {
     // Choose method for saving the solution
     if ( adaptive_samples )

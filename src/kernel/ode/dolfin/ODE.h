@@ -8,6 +8,9 @@
 #include <dolfin/Element.h>
 #include <dolfin/Sparsity.h>
 #include <dolfin/Sample.h>
+#include <dolfin/RHS.h>
+#include <dolfin/Function.h>
+#include <dolfin/Adaptivity.h>
 
 namespace dolfin
 {
@@ -46,6 +49,9 @@ namespace dolfin
 
     /// Time step to use for given component (optional)
     virtual real timestep(unsigned int i);
+
+    /// Update ODE (optional)
+    virtual void update(RHS& f, Function& u, real t, Adaptivity& adaptivity);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
