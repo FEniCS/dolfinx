@@ -47,6 +47,7 @@ EXTRA_DIST = dolfin_tanganyika.h \
              Sparsity.h \
              TimeSlab.h \
              NewTimeSlab.h \
+             NewtonSolver.h \
              TimeSlabSolver.h \
              TimeStepper.h \
              NewTimeStepper.h

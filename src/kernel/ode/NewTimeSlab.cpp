@@ -387,7 +387,7 @@ void NewTimeSlab::create_d(uint i0, uint e0, uint s0, real a0, real b0)
     const uint i1 = deps[pos];
         
     // Get other element
-    const int e1  = elast[i1];
+    const int e1 = elast[i1];
     
     //cout << "  Other element: " << e1 << endl;
     

@@ -72,8 +72,8 @@ real NewTimeStepper::step()
   // Build time slab
   t = timeslab.build(t, T);
   
-  //timeslab.disp();
-
+  timeslab.disp();
+  
   // Solve time slab system
   timeslab.solve();
 

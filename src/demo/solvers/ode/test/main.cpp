@@ -93,7 +93,7 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 6.4;
+    T = 0.64;
 
     // Compute sparsity
     //dependencies.detect(*this);
@@ -157,7 +157,7 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("method", "cg");
-  dolfin_set("order", 5);
+  dolfin_set("order", 2);
 
   //Single single;
   //single.solve();

@@ -32,6 +32,7 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/Method.h \
                           dolfin/NewMethod.h \
                           dolfin/NewtonIteration.h \
+                          dolfin/NewtonSolver.h \
                           dolfin/NonStiffIteration.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
@@ -87,6 +88,7 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           Method.cpp \
                           NewMethod.cpp \
                           NewtonIteration.cpp \
+                          NewtonSolver.cpp \
                           NonStiffIteration.cpp \
                           ODE.cpp \
                           ODESolver.cpp \

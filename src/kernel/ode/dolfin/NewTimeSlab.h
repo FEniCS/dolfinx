@@ -76,6 +76,7 @@ namespace dolfin
 
     /// Friends
     friend class FixedPointSolver;
+    friend class NewtonSolver;
 
   private:
 
