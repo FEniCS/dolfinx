@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <stdio.h>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -20,13 +21,25 @@ public:
     p1.x = -p0.x; p1.y = -p0.y; p1.z = p0.z;
 
     // Distance between fixed points
-    d = p0.dist(p1);
+    v = p1 - p0;
     
     // Current fixed point
     pos = -1;
 
+    // Number of laps around the two fixed points
+    n0 = 0;
+    n1 = 0;
+
+    // Open file
+    fp = fopen("lorenz.txt", "w");
+
     // Final time
-    T = 50.0;
+    T = 1e6;
+  }
+  
+  ~Lorenz()
+  {
+    fclose(fp);
   }
 
   real u0(unsigned int i)
@@ -55,23 +68,32 @@ public:
 
   void update(real u[], real t)
   {
-    // Compute distance two the two fixed points
+    // Check in which region the point is
     Point p(u[0], u[1], u[2]);
-    real d0 = p.dist(p0);
-    real d1 = p.dist(p1);
-    
-    dolfin_info("debug %.16e %.16e %.16e", t, d0, d1);
 
-    // Check where we are
-    if ( d0 < d && d1 > d && pos != 0 )
+    if ( (p - p0) * v < 0 )
     {
-      cout << "Changing to fixed point 0 at t = " << t << endl;
-      pos = 0;
+      if ( pos != 0 )
+      {
+	n0++;
+	pos = 0;
+	real alpha = 0.0;
+	if ( n0 > 0 & n1 > 0 )
+	  alpha = static_cast<real>(n0) / (static_cast<real>(n1));
+	fprintf(fp, "%.12e 0 %d %d %.16e\n", t, n0, n1, alpha);
+      }
     }
-    else if ( d1 < d && d0 > d && pos != 1 )
+    else if ( (p - p1) * v > 0 )
     {
-      cout << "Changing to fixed point 1 at t = " << t << endl;
-      pos = 1;
+      if ( pos != 1 )
+      {
+	n1++;
+	pos = 1;
+	real alpha = 0.0;
+	if ( n0 > 0 & n1 > 0 )
+	  alpha = static_cast<real>(n0) / (static_cast<real>(n1) + DOLFIN_EPS);
+	fprintf(fp, "%.12e 1 %d %d %.16e\n", t, n0, n1, alpha);
+      }
     }
     else
       pos = -1;
@@ -88,11 +110,18 @@ private:
   Point p0;
   Point p1;
 
-  // Distance between the two fixed points
-  real d;
+  // Vector p1 - p0
+  Point v;
   
   // Current fixed point
   int pos;
+
+  // Number of laps around the two fixed points
+  int n0;
+  int n1;
+
+  // File pointer
+  FILE* fp;
 
 };
 
@@ -101,13 +130,13 @@ int main()
   dolfin_set("output", "plain text");
   dolfin_set("number of samples", 500);
   dolfin_set("solve dual problem", false);
-  dolfin_set("initial time step", 0.01);
+  dolfin_set("initial time step", 0.05);
   dolfin_set("fixed time step", true);
   dolfin_set("use new ode solver", true);
   dolfin_set("method", "cg");
   dolfin_set("order", 10);
   dolfin_set("tolerance", 1e-12);
-  //dolfin_set("save solution", false);
+  dolfin_set("save solution", false);
   
   Lorenz lorenz;
   lorenz.solve();
