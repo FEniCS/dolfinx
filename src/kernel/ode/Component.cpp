@@ -1,6 +1,9 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <functional>
+#include <algorithm>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/cGqElement.h>
@@ -10,41 +13,25 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Component::Component()
+Component::Component() : u0(0.0)
 {
+  //dolfin_debug("Component constructor 1");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Component::Component(int size) : elements(size), u0(0)
+Component::Component(int size) : elements(size), u0(0.0)
 {
-  //dolfin_segfault();
-  //dolfin_assert(size > 0);
+  //dolfin_debug("Component constructor 2");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Component::~Component()
 {
+  //dolfin_debug("Component destructor");
+
   // Delete elements
   for (unsigned int i = 0; i < elements.size(); i++)
     delete elements[i];
-}
-//-----------------------------------------------------------------------------
-real Component::operator() (int node, real t, TimeSlab* timeslab)
-{
-  //dolfin_debug("foo");
-
-  //dolfin::cout << "node: " << node << dolfin::endl;
-  //dolfin::cout << "t: " << t << dolfin::endl;
-
-  // Step to correct position
-  //Element& element = findpos(t);
-
-  // Evaluation for element within the given time slab
-  //if ( element.within(timeslab) )
-  //return element.eval(node);
-
-  // Evaluation for other elements
-  //return element.eval(t);
-  return operator()(t);
 }
 //-----------------------------------------------------------------------------
 real Component::operator()(real t)
@@ -61,7 +48,7 @@ real Component::operator()(real t)
 
     //dolfin::cout << "Component range: " << t0 << "-" << t1 << dolfin::endl;
 
-    if( t == t0)
+    if (t == t0)
     {
       //dolfin_debug("u0");
       return u0;
@@ -83,7 +70,8 @@ real Component::operator()(real t)
     }
     else
     {
-      Element *element = findpos(t);
+      const Element* element = findpos(t);
+      dolfin_assert(element);
       return element->eval(t);
     }
   }
@@ -95,6 +83,38 @@ real Component::operator()(real t)
 
     return u0;
   }
+}
+//-----------------------------------------------------------------------------
+real Component::operator() (int node, real t, TimeSlab* timeslab)
+{
+  // FIXME: Make this one work
+
+  //dolfin::cout << "node: " << node << dolfin::endl;
+  //dolfin::cout << "t: " << t << dolfin::endl;
+
+  // Step to correct position
+  //Element& element = findpos(t);
+
+  // Evaluation for element within the given time slab
+  //if ( element.within(timeslab) )
+  //return element.eval(node);
+
+  // Evaluation for other elements
+  //return element.eval(t);
+  return operator()(t);
+}
+//-----------------------------------------------------------------------------
+Element& Component::element(real t)
+{
+  Element* element = findpos(t);
+  dolfin_assert(element);
+
+  return *element;
+}
+//-----------------------------------------------------------------------------
+int Component::size() const
+{
+  return elements.size();
 }
 //-----------------------------------------------------------------------------
 Element* Component::createElement(const Element::Type type, int q, int index, 
@@ -129,12 +149,6 @@ Element* Component::createElement(const Element::Type type, int q, int index,
   // Add element to list
   elements.push_back(element);
 
-  //dolfin_debug1("this: %p", this);
-  //dolfin_debug1("element->starttime: %lf", element->starttime());
-  //dolfin_debug1("element->endtime: %lf", element->endtime());
-  //dolfin_debug1("element->timestep: %lf", element->timestep());
-  //dolfin_debug1("elements.size: %d", elements.size());
-
   return element;
 }
 //-----------------------------------------------------------------------------
@@ -145,118 +159,51 @@ Element& Component::last()
   return *(elements.back());
 }
 //-----------------------------------------------------------------------------
-Element *Component::findpos(real t)
+Element* Component::findpos(real t) 
 {
   /// Find element through binary search
-
-  //dolfin_debug("findpos");
-
-  //dolfin_assert(elements.size() > 0);
-  //dolfin_assert(elements.front()->starttime() <= t);
-  //dolfin_assert(elements.back()->endtime() >= t);
 
   typedef std::vector<Element *>::iterator ElementIterator;
 
   ElementIterator target;
 
-  static Element *dummy = 0;
-  LessElement comp(dummy, t);
+  static Element* dummy = 0;
+  Less comp(dummy, t);
 
-  /// upper_bound produces an iterator target such that for all
-  /// iterators i in [elements.begin(), target), t <= i->endtime() is
-  /// false. In other words, t <= target->endtime() is true, while t <=
-  /// (target - 1)->endtime() is false
+  /// The function upper_bound() produces an iterator target such that
+  /// i->endtime() is false for all iterators in the interval
+  /// [elements.begin(), target). In other words, t <= target->endtime()
+  /// is true, while t <= (target - 1)->endtime() is false.
 
   target = upper_bound(elements.begin(), elements.end(), dummy, comp);
-  //target = lower_bound(elements.begin(), elements.end(), dummy, comp);
 
-  //if(target != elements.begin())
-  //{
-  //  dolfin_debug("check");
-
-  //  dolfin_debug1("t <= target->endtime(): %d", comp(dummy, *target));
-  //  dolfin_debug1("t <= (target - 1)->endtime(): %d", comp(dummy,
-  //							   *(target - 1)));
-  //}
-
-  if(target == elements.end())
-  {
-    //dolfin_debug("found end");
-    //target--;
+  if (target == elements.end())
     return 0;
-  }
-  else
-  {
-    //dolfin_debug("found");
-    //dolfin::cout << "Found element at: " << (*target)->starttime() << "-" <<
-    //(*target)->endtime() << dolfin::endl;
-    return *target;
-  }
 
-
-  /*
-  Element element = elements(current);
-
-  // Check if we are already at the correct position
-  if ( element.within(t) )
-    return element;
-
-  // Try to compute the position (correct if the time steps for this
-  // component are constant within the time slab)
-  
-  //int resolution = 1000;
-  int n = elements.size(); // What if we don't use all elements?
-  //current = max((t*n) / resolution, n);
-
-  current = 0;
-
-  int res = 0;
-
-  element = elements(current);
-
-  if ( (res = (element.within(t))) == 0 )
-    return element;
-
-  // If we couldn't find the position, do a linear search
-  
-  if ( res < 0 ) {
-
-    // Step backwards
-    for (; current > 0; current--)
-      if ( (elements(current).within(t)) == 0 )
-	return elements(current);
-
-  }
-  else {
-
-    // Step forwards
-    for (; current < (n-1); current--)
-      if ( (elements(current).within(t)) == 0 )
-	return elements(current);
-
-  }
-
-  return element;
-  */
+  return *target;
 }
 //-----------------------------------------------------------------------------
-int Component::size()
+Component::Less::Less(Element *dummy, real t) : 
+  dummy(dummy), t(t)
 {
-  return elements.size();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Component::LessElement::LessElement(Element *dummy, real t) : dummy(dummy),
-							      t(t)
+bool Component::Less::operator()(const Element* x, const Element* y)
 {
-}
-//-----------------------------------------------------------------------------
-bool Component::LessElement::operator()(const Element *x, const Element *y)
-{
-  if(x == dummy)
+  if (x == dummy)
     return t <= y->endtime();
   else if(y == dummy)
     return x->endtime() <= t;
   else
     return x->endtime() <= y->endtime();
+}
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, 
+				      const Component& component)
+{
+  stream << "[ Component of size " << component.size() << " ]";
+
+  return stream;
 }
 //-----------------------------------------------------------------------------

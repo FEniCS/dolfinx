@@ -1,6 +1,6 @@
-function M = plotslab(interval, drawtext, saveps)
+function M = plotslab(interval, drawupdates, drawtext, saveps)
 
-% Usage: M = plotslab(interval, drawtext, saveps)
+% Usage: M = plotslab(interval, drawupdates, drawtext, saveps)
 %
 % Draws and creates a movie M of a time slab. Data
 % is taken from the file 'timeslab.debug' which is
@@ -9,9 +9,10 @@ function M = plotslab(interval, drawtext, saveps)
 %
 % Arguments:
 %
-%   interval - plot elements within interval
-%   drawtext - draw extra text
-%   saveps   - save a postscript file for every frame
+%   interval    - plot elements within interval
+%   drawupdates - blink element updates
+%   drawtext    - draw extra text
+%   saveps      - save a postscript file for every frame
 %
 % Copyright (C) 2003 Johan Hoffman and Anders Logg.
 % Licensed under the GNU GPL Version 2.
@@ -66,9 +67,12 @@ for j = i:size(timeslab, 1)
   n  = timeslab(j,2);
   t1 = timeslab(j,3);
   t2 = timeslab(j,4);
-  
-  [a n t1 t2]
 
+  % Go to next element if we don't want to draw updates
+  if ~drawupdates & a == 1
+    continue
+  end
+  
   % Check if we have finished
   if t1 > T2
     break
@@ -96,7 +100,6 @@ for j = i:size(timeslab, 1)
       %c = [0 98 178]/256;
       c = 'r';
       cc = [250 130 180]/256;
-      disp('Blinking box')
       drawbox([t1 n], [t2 (n+1)], c);
 
       % Draw text
@@ -120,7 +123,6 @@ for j = i:size(timeslab, 1)
       % Restore box
       %c = [128 156 178]/256;
       c = 'b';
-      disp('Restoring box')
       drawbox([t1 n], [t2 (n+1)], c);
 
   end  

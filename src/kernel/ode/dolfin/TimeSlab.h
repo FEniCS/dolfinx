@@ -42,10 +42,10 @@ namespace dolfin {
     
     /// Return start time
     real starttime() const;
-
+    
     /// Return end time
     real endtime() const;
-
+    
     /// Return length of time slab
     real length() const;
 
@@ -55,7 +55,7 @@ namespace dolfin {
   protected:
     
     // Specify and adjust the time step
-    void setsize(real K);
+    void setsize(real K, const TimeSlabData& data);
 
     //--- Time slab data ---
 

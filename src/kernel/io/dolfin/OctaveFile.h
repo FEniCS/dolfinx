@@ -9,16 +9,14 @@
 
 namespace dolfin {
 
-  class Vector;
   class Matrix;
-  class Mesh;
-  class Function;
   
   class OctaveFile : public MFile {
   public:
     
-    OctaveFile(const std::string filename) : MFile(filename) {};
-    
+    OctaveFile(const std::string filename);
+    ~OctaveFile();
+
     // Input
     
     // Output

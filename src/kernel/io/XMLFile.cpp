@@ -22,6 +22,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
 {
+  type = "XML";
   xmlObject = 0;
 }
 //-----------------------------------------------------------------------------
@@ -53,11 +54,6 @@ void XMLFile::operator>>(Mesh& mesh)
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
   parseFile();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator>>(Function& u)
-{
-  dolfin_warning("Cannot read functions from XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
@@ -137,16 +133,6 @@ void XMLFile::operator<<(Matrix& A)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(Mesh& Mesh)
-{
-  dolfin_warning("Cannot write meshes to XML files.");
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<<(Function& u)
-{
-  dolfin_warning("Cannot write functions to XML files.");
-}
-//-----------------------------------------------------------------------------
 void XMLFile::parseFile()
 {
   // Write a message
@@ -186,12 +172,12 @@ void XMLFile::parseSAX()
 //-----------------------------------------------------------------------------
 void dolfin::sax_start_document(void *ctx)
 {
-  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_end_document(void *ctx)
 {
-  
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void dolfin::sax_start_element(void *ctx,

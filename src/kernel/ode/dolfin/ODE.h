@@ -53,6 +53,7 @@ namespace dolfin {
     /// Sparsity
     Sparsity sparsity;
     
+    // FIXME: Make u0 a function
     /// Initial value
     Vector u0;
 

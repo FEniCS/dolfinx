@@ -5,8 +5,6 @@
 #define __COMPONENT_H
 
 #include <vector>
-#include <functional>
-#include <algorithm>
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
 #include <dolfin/Element.h>
@@ -29,49 +27,51 @@ namespace dolfin {
     ~Component();
 
     /// Evaluation at given time
-    real operator() (int node, real t, TimeSlab* timeslab);
-
-    /// Evaluation at given time
     real operator() (real t);
 
-    /// Create a new element
-    Element* createElement(const Element::Type type,
-			   int q, int index, TimeSlab* timeslab);
+    /// Evaluation at given time
+    real operator() (int node, real t, TimeSlab* timeslab);
 
+    /// Return element at given time
+    Element& element(real t);
+
+    /// Return number of elements in component
+    int size() const;
+
+    /// Create a new element
+    Element* createElement(Element::Type type,
+			   int q, int index, TimeSlab* timeslab);
+    
     /// Return last element
     Element& last();
-
-    // Return number of elements in component
-    int size();
     
     friend class TimeSlabData;
 
+    /// Output
+    friend LogStream& operator<<(LogStream& stream, const Component& data);
+
   private:
 
-    // Find element for given discrete time
-    Element *findpos(real t);
+    // Find element for given time
+    Element* findpos(real t);
+
+    // Comparison operator for location of element
+    struct Less : public std::binary_function<Element*, Element* , bool>
+    {      
+      Less(Element *dummy, real t);
+      bool operator()(const Element *x, const Element *y);
+
+      Element *dummy;
+      real t;
+    };
+
+    //--- Component data ---
 
     // A list of elements for this component
     std::vector<Element*> elements;
 
-    // Current position (latest position)
-    int current;
-
-    // Next available position
-    int next;
-
     // Initial value
     real u0;
-
-    struct LessElement :
-      public std::binary_function<Element *, Element *, bool>
-    {
-      Element *dummy;
-      real t;
-      
-      LessElement(Element *dummy, real t);
-      bool operator()(const Element *x, const Element *y);
-    };
 
   };
 

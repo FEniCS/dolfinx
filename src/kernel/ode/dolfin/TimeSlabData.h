@@ -6,11 +6,10 @@
 
 #include <fstream>
 
-#include <dolfin/Vector.h>
-#include <dolfin/Array.h>
-#include <dolfin/Table.h>
-#include <dolfin/Element.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Component.h>
+#include <dolfin/Regulator.h>
+#include <dolfin/Element.h>
 
 namespace dolfin {
 
@@ -41,28 +40,43 @@ namespace dolfin {
     /// Return given component
     Component& component(unsigned int i);
 
+    /// Return given component
+    const Component& component(unsigned int i) const;
+
+    /// Return given regulator
+    Regulator& regulator(unsigned int i);
+
+    /// Return given regulator
+    const Regulator& regulator(unsigned int i) const;
+
+    /// Return threshold for reaching end of interval
+    real threshold() const;
+    
     /// Shift solution at endtime to new u0
     void shift(TimeSlab& timeslab);
 
     /// Save debug info
-    enum Action { slab = 0, create, update };
+    enum Action { create = 0, update };
     void debug(Element& element, Action action);
+
+    /// Output
+    friend LogStream& operator<<(LogStream& stream, const TimeSlabData& data);
 
   private:
     
     // List of components
-    std::vector<Component> components;
+    NewArray<Component> components;
 
-    // Initial residuals
-    std::vector<real> residuals_initial;
-
-    // Latest residuals
-    std::vector<real> residuals_latest;
+    // List of regulators
+    NewArray<Regulator> regulators;
 
     // Save debug info to file 'timeslab.debug'
     bool _debug;
     std::ofstream file;
     
+    // Threshold for reaching end of interval
+    real interval_threshold;
+
   };
 }
 

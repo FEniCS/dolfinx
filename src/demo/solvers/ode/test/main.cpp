@@ -18,7 +18,7 @@ public:
     lambda2 = 1.0;
 
     // Final time
-    T = 4.0;
+    T = 20.0;
 
     // Initial value
     //u0(0) = 1.0;
@@ -90,12 +90,16 @@ int main()
 {
   dolfin_set("output", "plain text");
   dolfin_set("debug time slab", 1);
+  dolfin_set("initial time step", 0.1);
+  dolfin_set("partitioning threshold", 1.0);
+  dolfin_set("interval threshold", 0.9);
+  dolfin_set("number of samples", 100);
 
   Minimal minimal;
   minimal.solve();
   
-  SpringSystem springSystem(10);
-  springSystem.solve();
+  //SpringSystem springSystem(10);
+  //springSystem.solve();
 
   return 0;
 }

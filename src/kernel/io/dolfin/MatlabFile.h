@@ -9,21 +9,21 @@
 
 namespace dolfin {
   
-  class Vector;
   class Matrix;
-  class Mesh;
-  class Function;
+  class TimeSlabSample;
   
   class MatlabFile : public MFile {
   public:
     
-    MatlabFile(const std::string filename) : MFile(filename) {};
-    
+    MatlabFile(const std::string filename);
+    ~MatlabFile();
+
     // Input
     
     // Output
 
     void operator<< (Matrix& A);
+    void operator<< (TimeSlabSample& sample);
         
   };
   

@@ -51,7 +51,7 @@ void dGqElement::update(real u0)
 void dGqElement::update(RHS& f)
 {
   dolfin_debug4("Updating dG(%d) element: %d, %lf-%lf",
-		q, index, starttime(), endtime());
+		q, _index, starttime(), endtime());
 
   dolfin::cout << "values[0]: " << values[0] << dolfin::endl;
 
@@ -66,19 +66,13 @@ void dGqElement::update(RHS& f)
 //-----------------------------------------------------------------------------
 real dGqElement::computeTimeStep(real r) const
 {
-  // Compute new time step based on residual and current time step
-  
-  // Compute new time step based on residual and current time step
+  // Compute new time step based on residual
 
   // FIXME: Return maximum time step
   if ( abs(r) < DOLFIN_EPS )
     return 0.25;
 
-  // FIXME: Use tolerance and stability factor
-  real k0 = timestep();
-  real k1 = 0.1 / r;
-
-  return 2.0*k0*k1 / (k0 + k1);
+  return 0.1 / abs(r);
 }
 //-----------------------------------------------------------------------------
 void dGqElement::feval(RHS& f)
@@ -89,7 +83,7 @@ void dGqElement::feval(RHS& f)
   real k = timestep();
   
   for (unsigned int i = 0; i <= q; i++)
-    this->f(i) = f(index, i, t0 + dG(q).point(i)*k, timeslab);
+    this->f(i) = f(_index, i, t0 + dG(q).point(i)*k, timeslab);
 }
 //-----------------------------------------------------------------------------
 real dGqElement::integral(unsigned int i) const

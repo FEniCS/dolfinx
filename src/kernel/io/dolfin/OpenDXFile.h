@@ -10,8 +10,6 @@
 
 namespace dolfin {
   
-  class Vector;
-  class Matrix;
   class Mesh;
   class Function;
   
@@ -19,21 +17,15 @@ namespace dolfin {
   public:
     
     OpenDXFile(const std::string filename);
+    ~OpenDXFile();
     
     // Input
     
-    void operator>> (Vector& x);
-    void operator>> (Matrix& A);
-    void operator>> (Mesh& mesh);
-    void operator>> (Function& u);
-    
     // Output
     
-    void operator<< (Vector& x);
-    void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
-        
+    
   };
   
 }

@@ -29,7 +29,7 @@ Element::Element(unsigned int q, unsigned int index, TimeSlab* timeslab)
 
   //values[0] = 1;
 
-  this->index = index;
+  _index = index;
   this->timeslab = timeslab;
 
   // Increase size of the common vector to the maximum required size
@@ -74,6 +74,11 @@ bool Element::within(TimeSlab* timeslab) const
   return this->timeslab == timeslab;
 }
 //-----------------------------------------------------------------------------
+unsigned int Element::index() const
+{
+  return _index;
+}
+//-----------------------------------------------------------------------------
 real Element::starttime() const
 {
   dolfin_assert(timeslab);
@@ -94,6 +99,6 @@ real Element::timestep() const
 //-----------------------------------------------------------------------------
 real Element::computeResidual(RHS& f)
 {
-  return dx() - f(index, q, endtime(), timeslab);
+  return dx() - f(_index, q, endtime(), timeslab);
 }
 //-----------------------------------------------------------------------------

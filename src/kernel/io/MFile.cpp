@@ -11,24 +11,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void MFile::operator>>(Vector& x)
+MFile::MFile(const std::string filename) : 
+  GenericFile(filename)
 {
-  dolfin_warning("Cannot read vectors from Octave/Matlab files.");
+  type = "Octave/MATLAB";
 }
 //-----------------------------------------------------------------------------
-void MFile::operator>>(Matrix& A)
+MFile::~MFile()
 {
-  dolfin_warning("Cannot read matrices from Octave/Matlab files.");
-}
-//-----------------------------------------------------------------------------
-void MFile::operator>>(Mesh& mesh)
-{
-  dolfin_warning("Cannot read meshes from Octave/Matlab files.");
-}
-//-----------------------------------------------------------------------------
-void MFile::operator>>(Function& u)
-{
-  dolfin_warning("Cannot read functions from Octave/Matlab files.");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)

@@ -54,6 +54,10 @@ Progress::Progress(const char* title)
 //-----------------------------------------------------------------------------
 Progress::~Progress()
 {
+  // Step to end
+  p1 = 1.0;
+  LogManager::log.progress(_title, _label, p1);
+
   // Notify that the progress bar has finished
   LogManager::log.progress_remove(this);
   
@@ -62,14 +66,14 @@ Progress::~Progress()
   _title = 0;
 
   if ( _label )
-	 delete [] _label;
+    delete [] _label;
   _label = 0;
 }
 //-----------------------------------------------------------------------------
 void Progress::operator=(unsigned int i)
 {
   if ( n == 0 )
-	 dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
+    dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
 
   p1 = checkBounds(i);
   update();  
@@ -78,7 +82,7 @@ void Progress::operator=(unsigned int i)
 void Progress::operator=(real p)
 {
   if ( n != 0 )
-	 dolfin_error("Cannot specify value for progress session with given number of steps.");
+    dolfin_error("Cannot specify value for progress session with given number of steps.");
 
   p1 = checkBounds(p);
   update();
@@ -87,10 +91,10 @@ void Progress::operator=(real p)
 void Progress::operator++()
 {
   if ( n == 0 )
-	 dolfin_error("Cannot step progress for session with unknown number of steps.");
-
+    dolfin_error("Cannot step progress for session with unknown number of steps.");
+  
   if ( i < (n-1) )
-	 i++;
+    i++;
 
   p1 = checkBounds(i);  
   update();
@@ -111,7 +115,7 @@ void Progress::operator++(int)
 void Progress::update(unsigned int i, const char* format, ...)
 {
   if ( n == 0 )
-	 dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
+    dolfin_error("Cannot specify step number for progress session with unknown number of steps.");
 
   va_list aptr;
   va_start(aptr, format);

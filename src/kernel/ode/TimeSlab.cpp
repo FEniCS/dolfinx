@@ -60,12 +60,11 @@ real TimeSlab::length() const
   return t1 - t0;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::setsize(real K)
+void TimeSlab::setsize(real K, const TimeSlabData& data)
 {
   // Make sure that we don't go beyond t1
 
-  // FIXME: Need to check if we are close to the end time t1
-  if( (t0 + K) >= t1 )
+  if ( K > data.threshold() * (t1 - t0) )
   {
     K = t1 - t0;
     t1 = t0 + K;

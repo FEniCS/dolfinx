@@ -19,8 +19,12 @@ EXTRA_DIST = dolfin_tanganyika.h \
              ODESolver.h \
              Partition.h \
              RHS.h \
+             RecursiveTimeSlab.h \
+             Regulator.h \
+             SimpleTimeSlab.h \
              Sparsity.h \
              TableSparsity.h \
              TimeSlab.h \
              TimeSlabData.h \
+             TimeSlabSample.h \
              TimeStepper.h

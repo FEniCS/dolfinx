@@ -16,6 +16,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+OctaveFile::OctaveFile(const std::string filename) : MFile(filename)
+{
+  type = "Octave";
+}
+//-----------------------------------------------------------------------------
+OctaveFile::~OctaveFile()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 void OctaveFile::operator<<(Matrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,

@@ -20,12 +20,14 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/ODESolver.h \
                           dolfin/Partition.h \
                           dolfin/RecursiveTimeSlab.h \
+                          dolfin/Regulator.h \
                           dolfin/RHS.h \
                           dolfin/SimpleTimeSlab.h \
                           dolfin/Sparsity.h \
                           dolfin/TableSparsity.h \
                           dolfin/TimeSlab.h \
                           dolfin/TimeSlabData.h \
+                          dolfin/TimeSlabSample.h \
                           dolfin/TimeStepper.h
 INCLUDES                = @MODULE_INCLUDES@
 lib_LIBRARIES           = libdolfin-ode.a
@@ -48,10 +50,12 @@ libdolfin_ode_a_SOURCES = cGqElement.cpp \
                           ODESolver.cpp \
                           Partition.cpp \
                           RecursiveTimeSlab.cpp \
+                          Regulator.cpp \
                           RHS.cpp \
                           SimpleTimeSlab.cpp \
                           Sparsity.cpp \
                           TableSparsity.cpp \
                           TimeSlab.cpp \
                           TimeSlabData.cpp \
+                          TimeSlabSample.cpp \
                           TimeStepper.cpp

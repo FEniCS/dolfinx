@@ -121,8 +121,8 @@ void DirectSolver::solveLU(const Matrix& LU, Vector& x, const Vector& b) const
   }
  
   // Then solve Ux = x by backsubstitution
-  for (unsigned int i = n-1; i >= 0; i--) {
-    real sum = x(i);
+  for (int i = n-1; i >= 0; i--) {
+    real sum = x(static_cast<unsigned int>(i));
     for (unsigned int j = i+1; j < n; j++)
       sum -= a[i][j] * x(j);
     x(i) = sum / a[i][i];

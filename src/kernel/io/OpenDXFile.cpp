@@ -12,37 +12,12 @@ using namespace dolfin;
 //-­---------------------------------------------------------------------------
 OpenDXFile::OpenDXFile(const std::string filename) : GenericFile(filename)
 {
-
+  type = "OpenDX";
 }
 //-­---------------------------------------------------------------------------
-void OpenDXFile::operator>>(Vector& x)
+OpenDXFile::~OpenDXFile()
 {
-  dolfin_error("Cannot read vectors from OpenDX files.");
-}
-//-­---------------------------------------------------------------------------
-void OpenDXFile::operator>>(Matrix& A)
-{
-  dolfin_error("Cannot read matrices from OpenDX files.");
-}
-//-­---------------------------------------------------------------------------
-void OpenDXFile::operator>>(Mesh& mesh)
-{
-  dolfin_error("Cannot read meshes from OpenDX files.");
-}
-//-­---------------------------------------------------------------------------
-void OpenDXFile::operator>>(Function& u)
-{
-  dolfin_error("Cannot read functions from OpenDX files.");
-}
-//-­---------------------------------------------------------------------------
-void OpenDXFile::operator<<(Vector& x)
-{
-  dolfin_error("Cannot save vectors to OpenDX files.");  
-}
-//-­---------------------------------------------------------------------------
-void OpenDXFile::operator<<(Matrix& A)
-{
-  dolfin_error("Cannot save matrices to OpenDX files.");
+  // Do nothing
 }
 //-­---------------------------------------------------------------------------
 void OpenDXFile::operator<<(Mesh& mesh)

@@ -9,6 +9,10 @@
 namespace dolfin {
 
   class ODE;
+  class TimeSlab;
+  class TimeSlabData;
+  class RHS;
+  class File;
 
   /// Used by the ODE solver to integrate an ODE over an interval of
   /// given length.
@@ -22,9 +26,14 @@ namespace dolfin {
   class TimeStepper {
   public:
 
+    /// Solve given ODE on the interval (t0, t1]
     static void solve(ODE& ode, real t0, real t1);
 
   private:
+
+    // Save solution (when necessary)
+    static void save(TimeSlab& timeslab, TimeSlabData& data, RHS& f, 
+		     File& file, real t0, real t1, int no_samples);
 
   };
 

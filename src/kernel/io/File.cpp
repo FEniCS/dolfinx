@@ -7,6 +7,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/TimeSlabSample.h>
 
 #include <dolfin/File.h>
 #include <dolfin/GenericFile.h>
@@ -20,6 +21,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 File::File(const std::string& filename)
 {
+  // Choose file type base on suffix. Note that MATLAB is chosen as
+  // default instead of Octave. Should be changed.
+
   if ( filename.rfind(".xml") != filename.npos )
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
@@ -90,6 +94,13 @@ void File::operator>>(Function& u)
   *file >> u;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(TimeSlabSample& sample)
+{
+  file->read();
+  
+  *file >> sample;
+}
+//-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)
 {
   file->write();
@@ -116,5 +127,12 @@ void File::operator<<(Function& u)
   file->write();
   
   *file << u;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(TimeSlabSample& sample)
+{
+  file->write();
+  
+  *file << sample;
 }
 //-----------------------------------------------------------------------------

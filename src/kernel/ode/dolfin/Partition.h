@@ -4,16 +4,16 @@
 #ifndef __PARTITION_H
 #define __PARTITION_H
 
-#include <vector>
 #include <functional>
 
 #include <dolfin/constants.h>
-#include <dolfin/Array.h>
+#include <dolfin/NewArray.h>
 
 namespace dolfin {
 
   class RHS;
   class TimeSlabData;
+  class Regulator;
 
   /// Partition is used in the recursive construction of time slabs
   /// and contains a list of component indices. The order of these
@@ -23,7 +23,7 @@ namespace dolfin {
   public:
 
     /// Constructor
-    Partition(int N, real timestep);
+    Partition(unsigned int N);
 
     /// Destructor
     ~Partition();
@@ -34,50 +34,27 @@ namespace dolfin {
     /// Return component index at given position
     int index(unsigned int pos) const;
 
-    /// Update data for partition (time steps)
-    void update(int offset, RHS& f, TimeSlabData& data);
-
-    /// Partition (reorder) components
-    void partition(int offset, int& end, real& K);
-    
-    /// Invalidate partition (update needed)
-    void invalidate();
+    /// Update partition (reorder components starting at offset)
+    void update(int offset, int& end, real& K, TimeSlabData& data);
     
   private:
 
-    // Component index and time step
-    class ComponentIndex {
-    public:
-
-      ComponentIndex() : index(0), timestep(0.0) {}
-
-      int index;
-      real timestep;
-
-    };
+    // Compute largest time step
+    real maximum(int offset, TimeSlabData& data) const;
 
     // Comparison operator for the partition
-    struct Less : public std::unary_function<ComponentIndex, bool> 
+    struct Less : public std::unary_function<unsigned int, bool> 
     {
-      Less(real& K) : K(K) {}
-
-      bool operator()(ComponentIndex& component) const
-      {
-	return component.timestep >= K;
-      }
-
+      Less(real& K, TimeSlabData& data);
+      bool operator()(unsigned int index) const;
+      
       real K;
+      TimeSlabData& data;
     };
 
     // List of component indices
-    std::vector<ComponentIndex> components;
+    NewArray<unsigned int> indices;
     
-    // Compute largest time step
-    real maximum(int offset) const;
-
-    // State
-    bool valid;
-
     // Threshold for partition
     real threshold;
     

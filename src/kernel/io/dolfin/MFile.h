@@ -17,14 +17,10 @@ namespace dolfin {
   class MFile : public GenericFile {
   public:
     
-    MFile(const std::string filename) : GenericFile(filename) {};
-    
+    MFile(const std::string filename);
+    virtual ~MFile();
+
     // Input
-    
-    void operator>> (Vector& x);
-    void operator>> (Matrix& A);
-    void operator>> (Mesh& mesh);
-    void operator>> (Function& u);
     
     // Output
     

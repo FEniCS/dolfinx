@@ -4,23 +4,24 @@
 #include <algorithm>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/RHS.h>
+#include <dolfin/Regulator.h>
 #include <dolfin/TimeSlabData.h>
 #include <dolfin/Partition.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Partition::Partition(int N, real timestep) : components(N)
+Partition::Partition(unsigned int N) : indices(N)
 {
-  for (int i = 0; i < N; i++) {
-    components[i].index = i;
-    components[i].timestep = timestep;
-  }
+  // Get parameter for threshold
+  threshold = dolfin_get("partitioning threshold");
   
-  valid = false;
-  threshold = 1.0;
+  // Reset all indices
+  for (unsigned int i = 0; i < N; i++)
+    indices[i] = i;
 }
 //-----------------------------------------------------------------------------
 Partition::~Partition()
@@ -30,73 +31,49 @@ Partition::~Partition()
 //-----------------------------------------------------------------------------
 int Partition::size() const
 {
-  return components.size();
+  return indices.size();
 }
 //-----------------------------------------------------------------------------
 int Partition::index(unsigned int i) const
 {
-  dolfin_assert(i < components.size());
+  dolfin_assert(i < indices.size());
   
-  return components[i].index;
+  return indices[i];
 }
 //-----------------------------------------------------------------------------
-void Partition::update(int offset, RHS& f, TimeSlabData& data)
-{
-  // Compute new preliminary time steps for all elements, starting at
-  // position offset, and compute the maximum time step.
-
-  // Don't compute new time steps if we don't need to
-  if (valid)
-    return;
-  
-  // Compute new time steps for all components starting at offset
-  for (unsigned int i = offset; i < components.size(); i++)
-  {
-    // Get last element for the component
-    Element& element = data.component(index(i)).last();
-
-    // Compute residual
-    real r = element.computeResidual(f);
-
-    // Compute new time step
-    real k = element.computeTimeStep(r);
-    
-    // Save time step
-    components[i].timestep = k;
-  } 
-}
-//-----------------------------------------------------------------------------
-void Partition::partition(int offset, int& end, real& K)
+void Partition::update(int offset, int& end, real& K, TimeSlabData& data)
 {
   // Compute the largest time step
-  K = maximum(offset) / threshold;
+  K = maximum(offset, data) / threshold;
 
   // Comparison operator
-  Less less(K);
+  Less less(K, data);
 
   // Partition using std::partition
-  std::vector<ComponentIndex>::iterator middle =
-    std::partition(components.begin() + offset, components.end(), less);
+  NewArray<unsigned int>::iterator middle =
+    std::partition(indices.begin() + offset, indices.end(), less);
 
   // Compute pivot index
-  end = middle - components.begin();
-
-  // Change the state
-  valid = true;
+  end = middle - indices.begin();
 }
 //-----------------------------------------------------------------------------
-void Partition::invalidate()
-{
-  valid = false;
-}
-//-----------------------------------------------------------------------------
-real Partition::maximum(int offset) const
+real Partition::maximum(int offset, TimeSlabData& data) const
 {
   real K = 0.0;
 
-  for (unsigned int i = offset; i < components.size(); i++)
-    K = max(components[i].timestep, K);
+  for (unsigned int i = offset; i < indices.size(); i++)
+    K = max(data.regulator(indices[i]).timestep(), K);
 
   return K;
+}
+//-----------------------------------------------------------------------------
+Partition::Less::Less(real& K, TimeSlabData& data) : K(K), data(data)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+bool Partition::Less::operator()(unsigned int index) const
+{
+  return data.regulator(index).timestep() >= K;
 }
 //-----------------------------------------------------------------------------

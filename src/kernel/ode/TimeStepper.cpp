@@ -7,8 +7,11 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <cmath>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
+#include <dolfin/File.h>
 #include <dolfin/ODE.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Partition.h>
@@ -16,6 +19,7 @@
 #include <dolfin/SimpleTimeSlab.h>
 #include <dolfin/RecursiveTimeSlab.h>
 #include <dolfin/TimeSlab.h>
+#include <dolfin/TimeSlabSample.h>
 #include <dolfin/TimeStepper.h>
 
 using namespace dolfin;
@@ -59,17 +63,20 @@ void storeSolution(TimeSlab &slab, TimeSlabData &data,
 //-----------------------------------------------------------------------------
 void TimeStepper::solve(ODE& ode, real t0, real t1)
 {
-  // Get size of the system
-  int N = ode.size();
-
   // Create time slab data
   TimeSlabData data(ode);
 
   // Create partition
-  Partition partition(N, 0.1);
+  Partition partition(ode.size());
 
   // Create right-hand side
   RHS f(ode, data);
+
+  // Create file for storing the solution
+  File file("solution.m");
+
+  // Get the number of output samples
+  int no_samples = dolfin_get("number of samples");
 
   // Temporary way of storing solution
   std::vector<std::pair<real, Vector> > solution;
@@ -95,12 +102,12 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
     cout << "Created a time slab: " << *timeslab << endl;
 
     // Iterate a couple of times on the time slab
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
       timeslab->update(f, data);
-    
-    // Store solution
-    //storeSolution(timeslab, data, solution);
 
+    // Save solution
+    save(*timeslab, data, f, file, t0, t1, no_samples);
+    
     // Check if we are done
     if ( timeslab->finished() )
       break;
@@ -110,27 +117,6 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 
     // Update progress
     p = (t - t0) / (t1 - t0);
-
-
-    // Update partition with new time steps
-    //partition.update(data, 0);
-
-
-    /*
-    dolfin_debug("solution");
-    for (int i = 0; i < data.size(); i++)
-    {
-      Component &c = data.component(i);
-
-      real value = c(t);
-      dolfin::cout << "U(" << t << ", " << i << "): " << value << dolfin::endl;
-
-      Ui(i) = value;
-    }
-
-    solution.push_back(std::pair<real, Vector>(t, Ui));
-    */
-
 
     // Shift solution at endtime to new u0
     data.shift(*timeslab);
@@ -172,5 +158,26 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
   }
   os << "]" << std::endl;
 
+}
+//-----------------------------------------------------------------------------
+void TimeStepper::save(TimeSlab& timeslab, TimeSlabData& data, RHS& f,
+		       File& file, real t0, real t1, int no_samples)
+{
+  // Compute time of first sample within time slab
+  real K = (t1 - t0) / static_cast<real>(no_samples);
+  real t =  t0 + ceil((timeslab.starttime()-t0)/K) * K;
+
+  // Save samples
+  while ( t < timeslab.endtime() )
+  {
+    // Create a sample of the solution
+    TimeSlabSample sample(timeslab, data, f, t);
+    
+    // Save solution to file
+    file << sample;
+
+    // Step to next sample
+    t += K;
+  }
 }
 //-----------------------------------------------------------------------------

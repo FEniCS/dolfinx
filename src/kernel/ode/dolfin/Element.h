@@ -45,11 +45,15 @@ namespace dolfin {
     /// Update element (iteration)
     virtual void update(RHS& f) = 0;
 
+
     /// Check if given time is within the element
     bool within(real t) const;
 
     /// Check if the element is within the given time slab
     bool within(TimeSlab* timeslab) const;
+
+    /// Return component index
+    unsigned int index() const;
 
     /// Return the left end-point
     real starttime() const;
@@ -66,9 +70,6 @@ namespace dolfin {
     // Compute new time step
     virtual real computeTimeStep(real r) const = 0;
 
-    /// Component index
-    unsigned int index;
-
   protected:
 
     // Evaluate the right-hand side
@@ -80,13 +81,16 @@ namespace dolfin {
     // Temporary storage for function evaluations (common to all elements).
     static Vector f;
 
-    // --- Element data ---
-    
-    // Nodal values
-    real* values;
+    //--- Element data ---
+
+    /// Component index
+    unsigned int _index;
 
     // Order
     unsigned int q;
+    
+    // Nodal values
+    real* values;
     
     // The time slab this element belongs to
     TimeSlab* timeslab;

@@ -14,6 +14,7 @@ namespace dolfin {
   class Matrix;
   class Mesh;
   class Function;
+  class TimeSlabSample;
   
   class GenericFile {
   public:
@@ -23,31 +24,38 @@ namespace dolfin {
     
     // Input
     
-    virtual void operator>> (Vector& x)   = 0;
-    virtual void operator>> (Matrix& A)   = 0;
-    virtual void operator>> (Mesh& mesh)  = 0;
-    virtual void operator>> (Function& u) = 0;
+    virtual void operator>> (Vector& x);
+    virtual void operator>> (Matrix& A);
+    virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (Function& u);
+    virtual void operator>> (TimeSlabSample& sample);
     
     // Output
     
-    virtual void operator<< (Vector& x)   = 0;
-    virtual void operator<< (Matrix& A)   = 0;
-    virtual void operator<< (Mesh& mesh)  = 0;
-    virtual void operator<< (Function& u) = 0;
+    virtual void operator<< (Vector& x);
+    virtual void operator<< (Matrix& A);
+    virtual void operator<< (Mesh& mesh);
+    virtual void operator<< (Function& u);
+    virtual void operator<< (TimeSlabSample& sample);
     
     void read();
     void write();
     
   protected:
     
+    void read_not_impl(const std::string object);
+    void write_not_impl(const std::string object);
+
     std::string filename;
+    std::string type;
     
     bool opened_read;
     bool opened_write;
 
-    bool  check_header;     // True if we have written a header
+    bool check_header; // True if we have written a header
 
     int no_meshes;
+    int no_frames;
     
   };
   

@@ -6,13 +6,22 @@
 #include <stdio.h>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Function.h>
+#include <dolfin/TimeSlabSample.h>
 #include <dolfin/MatlabFile.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+MatlabFile::MatlabFile(const std::string filename) : MFile(filename)
+{
+  type = "MATLAB";
+}
+//-----------------------------------------------------------------------------
+MatlabFile::~MatlabFile()
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(Matrix& A)
 {
@@ -70,5 +79,54 @@ void MatlabFile::operator<<(Matrix& A)
   
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in Matlab format." << endl;
+}
+//-----------------------------------------------------------------------------
+void MatlabFile::operator<<(TimeSlabSample& sample)
+{
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+
+  // Initialize data structures first time
+  if ( no_frames == 0 )
+  {
+    fprintf(fp, "t = [];\n");
+    fprintf(fp, "u = [];\n");
+    fprintf(fp, "k = [];\n");
+    fprintf(fp, "r = [];\n");
+    fprintf(fp, "\n");
+  }
+
+  // Save time
+  fprintf(fp, "t = [t %.16e];\n", sample.time());
+
+  // Save solution
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.value(i));  
+  fprintf(fp, "];\n");
+  fprintf(fp, "u = [u tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Save time steps
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.timestep(i));
+  fprintf(fp, "];\n");
+  fprintf(fp, "k = [k tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Save residuals
+  fprintf(fp, "tmp = [ ");
+  for (unsigned int i = 0; i < sample.size(); i++)
+    fprintf(fp, "%.16e ", sample.residual(i));
+  fprintf(fp, "];\n");
+  fprintf(fp, "r = [r tmp'];\n");
+  fprintf(fp, "clear tmp;\n");
+
+  // Increase frame counter
+  no_frames++;
+  
+  // Close file
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------

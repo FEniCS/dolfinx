@@ -9,18 +9,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabData::TimeSlabData(ODE& ode) : components(ode.size())
+TimeSlabData::TimeSlabData(ODE& ode) : 
+  components(ode.size()), regulators(ode.size())
 {
-  // FIXME: u0 is stored at many places: first in ODE, then in components,
-  // and then also in the elements
+  // Get parameters
+  _debug = dolfin_get("debug time slab");
+  real k = dolfin_get("initial time step");
+  interval_threshold = dolfin_get("interval threshold");
+
+  // Get initial data
   for (unsigned int i = 0; i < components.size(); i++)
     components[i].u0 = ode.u0(i);
-
-  //dolfin_debug1("components(index): %p", &(components(0)));
-  //dolfin_debug1("components(index): %p", &(components(1)));
   
-  // Check if we want to save debug info
-  _debug = dolfin_get("debug time slab");
+  // Specify initial time steps
+  for (unsigned int i = 0; i < regulators.size(); i++)
+    regulators[i].init(k);
 
   // Open debug file
   if ( _debug )
@@ -55,10 +58,31 @@ unsigned int TimeSlabData::size() const
 //-----------------------------------------------------------------------------
 Component& TimeSlabData::component(unsigned int i)
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i < components.size());
-
   return components[i];
+}
+//-----------------------------------------------------------------------------
+const Component& TimeSlabData::component(unsigned int i) const
+{
+  dolfin_assert(i < components.size());
+  return components[i];
+}
+//-----------------------------------------------------------------------------
+Regulator& TimeSlabData::regulator(unsigned int i)
+{
+  dolfin_assert(i < regulators.size());
+  return regulators[i];
+}
+//-----------------------------------------------------------------------------
+const Regulator& TimeSlabData::regulator(unsigned int i) const
+{
+  dolfin_assert(i < regulators.size());
+  return regulators[i];
+}
+//-----------------------------------------------------------------------------
+real TimeSlabData::threshold() const
+{
+  return interval_threshold;
 }
 //-----------------------------------------------------------------------------
 void TimeSlabData::shift(TimeSlab& timeslab)
@@ -68,7 +92,7 @@ void TimeSlabData::shift(TimeSlab& timeslab)
   //dolfin_debug("foo");
 
   typedef std::vector<Component>::iterator dataiterator;
-  for(dataiterator it = components.begin(); it != components.end(); it++)
+  for (dataiterator it = components.begin(); it != components.end(); it++)
   {
     Component &c = *it;
     
@@ -76,7 +100,11 @@ void TimeSlabData::shift(TimeSlab& timeslab)
 
     real u0i = c.last().eval(timeslab.endtime());
     //real u0i = c(topslab->endtime());
+    
+    //dolfin_debug("--- Calling c = Component()");
     c = Component();
+    //dolfin_debug("--- Done");
+
     c.u0 = u0i;
 
     //dolfin::cout << "Last element at: " << c.last().starttime() << "-" <<
@@ -90,11 +118,23 @@ void TimeSlabData::debug(Element& element, Action action)
 {
   if ( !_debug )
     return;
-  
+
   //Write debug info to file
   file << action << " "
-       << element.index << " " 
+       << element.index() << " " 
        << element.starttime() << " " 
        << element.endtime() << "\n";
+}
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, 
+				      const TimeSlabData& data)
+{
+  stream << "[ TimeSlabData of size " << data.size() << " with components: "; 
+
+  for (unsigned int i = 0; i < data.size(); i++)
+    stream << endl << "  " << data.component(i);
+  stream << " ]";
+
+  return stream;
 }
 //-----------------------------------------------------------------------------
