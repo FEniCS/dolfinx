@@ -64,6 +64,7 @@ namespace dolfin {
     friend class MeshData;
     friend class MeshInit;
     friend class EdgeIterator::FaceEdgeIterator;
+    friend class CellIterator::FaceCellIterator;
 
     // Boundary information
     std::set<int> fbids;

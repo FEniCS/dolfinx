@@ -86,6 +86,7 @@ namespace dolfin {
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
     friend class FaceIterator::CellFaceIterator;
+    friend class CellIterator::EdgeCellIterator;
     friend class Triangle;
     friend class Tetrahedron;
 

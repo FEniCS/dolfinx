@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __CELL_ITERATOR_H
 #define __CELL_ITERATOR_H
@@ -13,6 +15,10 @@ namespace dolfin {
   class Cell;
   class Node;
   class NodeIterator;
+  class Edge;
+  class EdgeIterator;
+  class Face;
+  class FaceIterator;
 
   typedef Cell* CellPointer;
   
@@ -27,6 +33,12 @@ namespace dolfin {
 
     CellIterator(const Cell& cell);
     CellIterator(const CellIterator& cellIterator);
+
+    CellIterator(const Edge& edge);
+    CellIterator(const EdgeIterator& edgeIterator);
+
+    CellIterator(const Face& face);
+    CellIterator(const FaceIterator& faceIterator);
 	 
     ~CellIterator();
 
@@ -104,6 +116,46 @@ namespace dolfin {
     public:
 
       CellCellIterator(const Cell& cell);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Cell& operator*() const;
+      Cell* operator->() const;
+      Cell* pointer() const;
+
+    private:
+
+      Array<Cell*>::Iterator cell_iterator;
+		
+    };
+
+    // Iterator for the cell neigbors of an edge
+    class EdgeCellIterator : public GenericCellIterator {
+    public:
+
+      EdgeCellIterator(const Edge& edge);
+      void operator++();
+      bool end();
+      bool last();
+      int index();
+
+      Cell& operator*() const;
+      Cell* operator->() const;
+      Cell* pointer() const;
+
+    private:
+
+      Array<Cell*>::Iterator cell_iterator;
+		
+    };
+
+    // Iterator for the cell neigbors of a face
+    class FaceCellIterator : public GenericCellIterator {
+    public:
+
+      FaceCellIterator(const Face& face);
       void operator++();
       bool end();
       bool last();

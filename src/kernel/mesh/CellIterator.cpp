@@ -1,3 +1,8 @@
+// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
+
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/GenericCell.h>
@@ -37,6 +42,26 @@ CellIterator::CellIterator(const Node& node)
 CellIterator::CellIterator(const NodeIterator& nodeIterator)
 {
   c = new NodeCellIterator(*nodeIterator);
+}
+//-----------------------------------------------------------------------------
+CellIterator::CellIterator(const Edge& edge)
+{
+  c = new EdgeCellIterator(edge);
+}
+//-----------------------------------------------------------------------------
+CellIterator::CellIterator(const EdgeIterator& edgeIterator)
+{
+  c = new EdgeCellIterator(*edgeIterator);
+}
+//-----------------------------------------------------------------------------
+CellIterator::CellIterator(const Face& face)
+{
+  c = new FaceCellIterator(face);
+}
+//-----------------------------------------------------------------------------
+CellIterator::CellIterator(const FaceIterator& faceIterator)
+{
+  c = new FaceCellIterator(*faceIterator);
 }
 //-----------------------------------------------------------------------------
 CellIterator::~CellIterator()
@@ -182,6 +207,90 @@ Cell* CellIterator::NodeCellIterator::operator->() const
 }
 //-----------------------------------------------------------------------------
 Cell* CellIterator::NodeCellIterator::pointer() const
+{
+  return *cell_iterator;
+}
+//-----------------------------------------------------------------------------
+// CellIterator::EdgeCellIterator
+//-----------------------------------------------------------------------------
+CellIterator::EdgeCellIterator::EdgeCellIterator(const Edge& edge)
+{
+  cell_iterator = edge.ec.begin();
+}
+//-----------------------------------------------------------------------------
+void CellIterator::EdgeCellIterator::operator++()
+{
+  ++cell_iterator;
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::EdgeCellIterator::end()
+{
+  return cell_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::EdgeCellIterator::last()
+{
+  return cell_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int CellIterator::EdgeCellIterator::index()
+{
+  return cell_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Cell& CellIterator::EdgeCellIterator::operator*() const
+{
+  return **cell_iterator;
+}
+//-----------------------------------------------------------------------------
+Cell* CellIterator::EdgeCellIterator::operator->() const
+{
+  return *cell_iterator;
+}
+//-----------------------------------------------------------------------------
+Cell* CellIterator::EdgeCellIterator::pointer() const
+{
+  return *cell_iterator;
+}
+//-----------------------------------------------------------------------------
+// CellIterator::FaceCellIterator
+//-----------------------------------------------------------------------------
+CellIterator::FaceCellIterator::FaceCellIterator(const Face& face)
+{
+  cell_iterator = face.fc.begin();
+}
+//-----------------------------------------------------------------------------
+void CellIterator::FaceCellIterator::operator++()
+{
+  ++cell_iterator;
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::FaceCellIterator::end()
+{
+  return cell_iterator.end();
+}
+//-----------------------------------------------------------------------------
+bool CellIterator::FaceCellIterator::last()
+{
+  return cell_iterator.last();
+}
+//-----------------------------------------------------------------------------
+int CellIterator::FaceCellIterator::index()
+{
+  return cell_iterator.index();
+}
+//-----------------------------------------------------------------------------
+Cell& CellIterator::FaceCellIterator::operator*() const
+{
+  return **cell_iterator;
+}
+//-----------------------------------------------------------------------------
+Cell* CellIterator::FaceCellIterator::operator->() const
+{
+  return *cell_iterator;
+}
+//-----------------------------------------------------------------------------
+Cell* CellIterator::FaceCellIterator::pointer() const
 {
   return *cell_iterator;
 }

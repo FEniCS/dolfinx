@@ -23,6 +23,7 @@ source directory:
     make BOPT=O_c++
 
 Replace "export PETSC_DIR=" with "setenv PETSC_DIR " if you're using tcsh.
+Add --download-hypre=yes to configure.py if you want to install Hypre.
 
 -------------------------------------------------------------------------------
 2. Installation

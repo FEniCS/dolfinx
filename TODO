@@ -32,6 +32,7 @@ o [jj] Schema for mesh XML format
 * Mesh generation using triangle or tetgen?
 * Clean up iterators?
 * Seems to be something wrong with trimesh-32.xml.gz
+* Compute normals of edges
 
 Linear Algebra
 --------------

@@ -1,3 +1,4 @@
+ - Add iterators for cell neighbors of edges and faces
  - Implement polynomial for of CES economy
  - Rename all new linear algebra classes: NewFoo --> Foo
  - Clean out old linear algebra
