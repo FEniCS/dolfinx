@@ -3,11 +3,15 @@
 
 // DOLFIN linear algebra
 
-#include <dolfin/Vector.h>
 #include <dolfin/DenseMatrix.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/DirectSolver.h>
-#include <dolfin/SISolver.h>
+#include <dolfin/GaussSeidel.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/LinearSolver.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Preconditioner.h>
+#include <dolfin/SISolver.h>
+#include <dolfin/SparseMatrix.h>
+#include <dolfin/Vector.h>
 
 #endif
