@@ -8,7 +8,6 @@
 
 #include <dolfin/FiniteElement.h>
 
-
 namespace dolfin {
 
   class PDE;

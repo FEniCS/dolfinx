@@ -17,8 +17,9 @@
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
 
-namespace dolfin {  
-
+namespace dolfin
+{
+  
   class Point;
   class Node;
   class Edge;
@@ -28,10 +29,11 @@ namespace dolfin {
   class MeshInit;
   class CellRefData;
   
-  class Cell {
+  class Cell
+  {
   public:
 
-    enum Type   { triangle, tetrahedron, none };
+    enum Type { triangle, tetrahedron, none };
 
     /// Create an empty cell
     Cell();
