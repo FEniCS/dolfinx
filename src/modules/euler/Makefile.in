@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -57,14 +57,19 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+host_alias = @host_alias@
+host_triplet = @host@
 AWK = @AWK@
 BOPT = @BOPT@
 CC = @CC@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
+HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS = @KERNEL_CFLAGS@
+LIB = @LIB@
 LN_S = @LN_S@
+LTLIB = @LTLIB@
 MAINT = @MAINT@
 MAIN_CFLAGS = @MAIN_CFLAGS@
 MAKEINFO = @MAKEINFO@
@@ -75,6 +80,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PETSC_ARCH = @PETSC_ARCH@
 PETSC_CFLAGS = @PETSC_CFLAGS@
 PETSC_DIR = @PETSC_DIR@
+PETSC_VERSION = @PETSC_VERSION@
 RANLIB = @RANLIB@
 VERSION = @VERSION@
 libxml2_found = @libxml2_found@
@@ -217,7 +223,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

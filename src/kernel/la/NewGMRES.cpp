@@ -49,13 +49,15 @@ void NewGMRES::solve(const NewMatrix& A, NewVector& x, const NewVector& b)
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
 
-  // Set linear system
+  // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
+#ifdef PETSC_2_2_1
+  KSPSolve(ksp, b.vec(), x.vec());
+#else
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
-
-  // Solve linear system
   KSPSolve(ksp);
+#endif
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -81,13 +83,15 @@ void NewGMRES::solve(const VirtualMatrix& A, NewVector& x, const NewVector& b)
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
 
-  // Set linear system
+  // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
+#ifdef PETSC_2_2_1
+  KSPSolve(ksp, b.vec(), x.vec());
+#else
   KSPSetRhs(ksp, b.vec());
   KSPSetSolution(ksp, x.vec());
-
-  // Solve linear system
   KSPSolve(ksp);
+#endif
 
   // Check if the solution converged
   KSPConvergedReason reason;

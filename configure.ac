@@ -26,6 +26,18 @@ AC_ARG_ENABLE(curses,
                              [Compile without curses]),
               enable_curses=no)
 
+# Option --with-petsc
+AC_ARG_WITH(petsc,
+            AC_HELP_STRING([--with-petsc=<path>],
+                           [Specify path to PETSc]),
+            [PETSC_DIR=$with_petsc],)
+
+# Option --with-petsc-version
+AC_ARG_WITH(petsc-version,
+            AC_HELP_STRING([--with-petsc-version=<version>],
+                           [Specify PETSc version]),
+            [PETSC_VERSION=$with_petsc_version],)
+
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
@@ -38,47 +50,97 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Make debug option default so developers don't forget it
-echo "Turning on debugging and warnings (use --enable-optimization to avoid this)."
+echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
 enable_debug="yes"
 
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
+    echo "enabling debugging compiler flags"
     CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
+    echo "enabling optimizing compiler flags"
     CXXFLAGS='-O3 -Wall -Werror -pedantic -ansi -std=c++98'
 fi
 
 # Handle option --disable-curses
 if test x$disable_curses = x; then
+    echo "enabling curses, use --disable-curses to disable"
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
                    echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
     CURSES_CFLAGS=''
     CURSES_LIBS='-lncurses'
 else
+    echo "disabling curses, use --enable-curses to enable"
     CURSES_CFLAGS='-DNO_CURSES=1'
     CURSES_LIBS=''
 fi
 
-# Check for PETSc
-AC_CHECK_PROG(petsc_found, petscarch, yes, no)
-if test $petsc_found = yes; then
-    # FIXME: Do correct test
-    PETSC_ARCH=`petscarch`
-    PETSC_DIR='/usr/lib/petsc'
-    BOPT='O_c++'
-    PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX"
-    AC_SUBST(PETSC_ARCH)
-    AC_SUBST(PETSC_DIR)
-    AC_SUBST(BOPT)
-    AC_SUBST(PETSC_CFLAGS)
+# Handle option --with-petsc=<path>. If user supplies this flag,
+# then use this directory for PETSc. If flag is not supported, then
+# the environment variable PETSC_DIR will be used. Otherwise, we
+# just assume that PETSC_DIR is /usr/lib/petsc
+if test x$PETSC_DIR = x; then
+    echo "assuming path to PETSc is /usr/lib/petsc"
+    PETSC_DIR="/usr/lib/petsc/"
 else
-    echo "*** Unable to find PETSc on your system."
-    echo "*** Perhaps you need to install the package petsc-dev?"
+    echo "using PETSC_DIR=$PETSC_DIR"
+fi
+
+# Handle option --with-petsc-version=<version>. If not supplied,
+# we assume the version is 2.2.0. We can only handle 2.2.0 or 2.2.1.
+if test x$PETSC_VERSION = x; then
+    echo "assuming PETSc version is 2.2.0"
+    PETSC_VERSION="2.2.0"
+elif test $PETSC_VERSION = "2.2.0"; then
+    echo "using PETSc version $PETSC_VERSION"
+elif test $PETSC_VERSION = "2.2.1"; then
+    echo "using PETSc version $PETSC_VERSION"
+else
+    echo "*** Can only handle PETSc version 2.2.0 or 2.2.1."
     exit 1
+fi
+
+# Check for PETSc
+if test $PETSC_VERSION = "2.2.0"; then
+    AC_CHECK_PROG(petsc_found, petscarch, yes, no)
+    if test $petsc_found = yes; then
+        PETSC_ARCH=`petscarch`
+        BOPT='O_c++'
+        PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_USE_EXTERN_CXX -DPETSC_2_2_0"
+        AC_SUBST(PETSC_ARCH)
+        AC_SUBST(PETSC_DIR)
+        AC_SUBST(BOPT)
+        AC_SUBST(PETSC_CFLAGS)
+        AC_SUBST(PETSC_VERSION)
+    else
+        echo "*** Unable to find PETSc on your system."
+        echo "*** Use --with-petsc=<path> to specify the correct path for PETSc,"
+        echo "*** or set the environment variable PETSC_DIR to the correct path."
+        echo "*** Debian users need to install the package petsc-dev."
+        exit 1
+    fi
+else
+    AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
+    if test $petsc_found = yes; then
+        PETSC_ARCH=`$PETSC_DIR/bin/configarch`
+        BOPT='O_c++'
+        PETSC_CFLAGS="-DPETSC_DIR=$PETSC_DIR -DPETSC_ARCH=$PETSC_ARCH -DPETSC_USE_BOPT_O -DPETSC_VERSION=$PETSC_VERSION -DPETSC_2_2_1"
+        AC_SUBST(PETSC_ARCH)
+        AC_SUBST(PETSC_DIR)
+        AC_SUBST(BOPT)
+        AC_SUBST(PETSC_CFLAGS)
+        AC_SUBST(PETSC_VERSION)
+    else
+        echo "*** Unable to find PETSc on your system."
+        echo "*** Use --with-petsc=<path> to specify the correct path for PETSc,"
+        echo "*** or set the environment variable PETSC_DIR to the correct path."
+        echo "*** Debian users need to install the package petsc-dev."
+        exit 1
+    fi
 fi
 
 # Check for MPI (needed by PETSc)
@@ -128,7 +190,6 @@ KERNEL_CFLAGS="-I\$(top_builddir)/src/modules "
 for f in $DIRS; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS-I\$(top_builddir)/src/kernel/$f "
 done
-echo $KERNEL_CFLAGS
 KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
