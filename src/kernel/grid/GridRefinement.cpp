@@ -63,9 +63,6 @@ void GridRefinement::evaluateMarks(Grid& grid)
 
   for (CellIterator c(grid); !c.end(); ++c) {
 
-    if ( c->midpoint().dist(0.4, 0.4) < 0.1 )
-      dolfin_debug1("marker = %d", c->marker());
-
     if ( c->status() == Cell::ref_reg && childrenMarkedForCoarsening(*c) )
       c->marker() = Cell::marked_for_no_ref;
     
@@ -76,10 +73,6 @@ void GridRefinement::evaluateMarks(Grid& grid)
       	c->marker() = Cell::marked_according_to_ref;
     }
 
-    if ( c->midpoint().dist(0.4, 0.4) < 0.1 )
-      dolfin_debug1("marker = %d", c->marker());
-
-   
   }
 }
 //-----------------------------------------------------------------------------

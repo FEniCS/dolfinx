@@ -36,26 +36,18 @@ void refine2D(int refinements)
   unref << grid;
 
   // Refine a couple of times
-  //for (int i = 0; i < refinements; i++) {
+  for (int i = 0; i < refinements; i++) {
     
-  // Mark nodes for refinement
-  for (CellIterator cell(grid); !cell.end(); ++cell)
-    if ( cell->midpoint().dist(0.0, 0.0) < 0.3 )
-      cell->mark();
+    // Mark nodes for refinement
+    for (CellIterator cell(grid); !cell.end(); ++cell)
+      if ( cell->midpoint().dist(0.0, 0.0) < 0.5 )
+	cell->mark();
+    
+    // Refine grid
+    grid.refine();
+    
+  }
   
-  // Refine grid
-  grid.refine();
-
-  // Mark nodes for refinement
-  for (CellIterator cell(grid); !cell.end(); ++cell)
-    if ( cell->midpoint().dist(1.0, 1.0) < 0.3 )
-      cell->mark();
-  
-  // Refine grid
-  grid.refine();
-  
-  // }
-
   // Save refined grid in Matlab format
   File ref("grid2D_refined.m");
   ref << grid;
