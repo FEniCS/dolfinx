@@ -1,3 +1,6 @@
+ - New operators for Matrix
+ - New and faster GMRES solver (speedup factor 4)
+ - Changed name from SparseMatrix to Matrix
  - Remove old unused code
  - Add subdirectory math containing mathematical functions
  - Better access for A(i,j) += to improve speed in assembling
