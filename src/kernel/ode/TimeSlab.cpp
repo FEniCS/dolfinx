@@ -76,8 +76,6 @@ real TimeSlab::updateElements(FixedPointIteration& fixpoint)
 {
   real dmax = 0.0;
 
-  cout << "Iteration over elements" << endl;
-
   // Update elements
   for (unsigned int i = 0; i < elements.size(); i++)
   {
@@ -89,12 +87,10 @@ real TimeSlab::updateElements(FixedPointIteration& fixpoint)
     dmax = std::max(dmax, fixpoint.update(*element));
   }
 
-  cout << "Done with all elements" << endl;
-  
   return dmax;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::resetElements(Solution& u)
+void TimeSlab::resetElements(FixedPointIteration& fixpoint)
 {
   // Reset elements
   for (unsigned int i = 0; i < elements.size(); i++)
@@ -103,11 +99,8 @@ void TimeSlab::resetElements(Solution& u)
     Element* element = elements[i];
     dolfin_assert(element);
     
-    // Get initial value for element
-    real u0 = u(element->index(), element->starttime());
-    
     // Reset element
-    element->reset(u0);
+    fixpoint.reset(*element);
   }
 }
 //-----------------------------------------------------------------------------

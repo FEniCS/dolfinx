@@ -4,6 +4,7 @@
 #ifndef __FIXED_POINT_ITERATION_H
 #define __FIXED_POINT_ITERATION_H
 
+#include <dolfin/Message.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -31,9 +32,12 @@ namespace dolfin
     /// Update a given element
     real update(Element& element);
 
+    /// Reset a given element
+    void reset(Element& element);
+
   private:
 
-    // States
+    // Current state
     enum State { undamped, damped, increasing };
 
     // Check if the time slab has converged
@@ -74,32 +78,45 @@ namespace dolfin
     // Right-hand side f
     RHS& f;
 
-    // Iteration number
-    unsigned int n;
-    
+    // Messages
+    Message message_diagonal_damping;
+    Message message_accelerating;
+    Message message_scalar_damping;
+    Message message_resetting_element;
+    Message message_resetting_timeslab;
+    Message message_nonconverging;
+
     // Maximum number of iterations
     unsigned int maxiter;
 
     // Maximum number of local iterations
     unsigned int local_maxiter;
 
+    // Maximum allowed divergence
+    real maxdiv;
+
+    // Tolerance for discrete residual
+    real tol;
+
+    //--- Temporary data (cleared between iterations)
+
     // Current state
     State state;
+
+    // Iteration number
+    unsigned int n;    
+
+    // Remaining number of iterations with small alpha
+    unsigned int m;
 
     // Current damping
     real alpha;
 
-    // Remaining number of iterations with small alpha
-    unsigned int m;
-    
     // Increments
     real d1, d2;
 
     // Discrete residuals
     real r0, r1, r2;
-
-    // Tolerance for discrete residual
-    real tol;
 
   };
 

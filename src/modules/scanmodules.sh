@@ -73,7 +73,7 @@ for d in `cat $MODULES | grep -v '#'`; do
 done
 
 echo "" >> $HEADER
-echo "#include <string.h>" >> $HEADER
+echo "#include <string>" >> $HEADER
 echo "" >> $HEADER
 echo "#define DOLFIN_MODULE_COUNT $COUNT" >> $HEADER
 echo "" >> $HEADER

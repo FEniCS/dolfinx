@@ -37,7 +37,7 @@ namespace dolfin {
     virtual real update(FixedPointIteration& fixpoint) = 0;
 
     /// Reset time slab to initial values
-    virtual void reset(Solution& u) = 0;
+    virtual void reset(FixedPointIteration& fixpoint) = 0;
 
     /// Check if the given time is within the time slab
     bool within(real t) const;
@@ -69,7 +69,7 @@ namespace dolfin {
     real updateElements(FixedPointIteration& fixpoint);
 
     /// Reset elements to initial values
-    void resetElements(Solution& u);
+    void resetElements(FixedPointIteration& fixpoint);
 
     /// Compute maximum discrete residual for elements
     real computeMaxRdElements(Solution& u, RHS& f);

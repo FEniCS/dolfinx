@@ -4,10 +4,12 @@
 #ifndef __DUAL_H
 #define __DUAL_H
 
-#include <dolfin/Vector.h>
+#include <dolfin/RHS.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin {
+
+  class RHS;
 
   /// A Dual represents an initial value problem of the form
   ///
@@ -50,9 +52,8 @@ namespace dolfin {
     // Compute derivative dfi/duj
     real dFdU(unsigned int i, unsigned int j, real t);
 
-    ODE& primal;
-    Function& u;
-    Vector buffer;
+    // Right-hand side for primal problem
+    RHS rhs;
 
   };
 

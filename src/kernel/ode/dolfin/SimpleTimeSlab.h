@@ -29,7 +29,7 @@ namespace dolfin {
     real update(FixedPointIteration& fixpoint);
     
     /// Reset time slab to initial values
-    void reset(Solution& u);
+    void reset(FixedPointIteration& fixpoint);
 
     /// Compute maximum discrete residual in time slab
     real computeMaxRd(Solution& u, RHS& f);

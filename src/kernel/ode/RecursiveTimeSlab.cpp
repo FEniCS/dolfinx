@@ -48,13 +48,13 @@ real RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
   return std::max(ds, de);
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::reset(Solution& u)
+void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
 {
   // First reset the time slabs
-  resetTimeSlabs(u);
+  resetTimeSlabs(fixpoint);
 
   // Then reset the elements
-  resetElements(u);
+  resetElements(fixpoint);
 }
 //-----------------------------------------------------------------------------
 real RecursiveTimeSlab::computeMaxRd(Solution& u, RHS& f)
@@ -141,7 +141,7 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
   }
 
   // Reset elements
-  resetElements(u);
+  resetElements(fixpoint);
 
   // Update elements
   updateElements(fixpoint);
@@ -161,11 +161,11 @@ real RecursiveTimeSlab::updateTimeSlabs(FixedPointIteration& fixpoint)
   return dmax;
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::resetTimeSlabs(Solution& u)
+void RecursiveTimeSlab::resetTimeSlabs(FixedPointIteration& fixpoint)
 {
   // Reset time slabs
   for (unsigned int i = 0; i < timeslabs.size(); i++)
-    timeslabs[i]->reset(u);
+    timeslabs[i]->reset(fixpoint);
 }
 //-----------------------------------------------------------------------------
 real RecursiveTimeSlab::computeMaxRdTimeSlabs(Solution& u, RHS& f)

@@ -28,9 +28,9 @@ real SimpleTimeSlab::update(FixedPointIteration& fixpoint)
   return updateElements(fixpoint);
 }
 //-----------------------------------------------------------------------------
-void SimpleTimeSlab::reset(Solution& u)
+void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
 {
-  resetElements(u);
+  resetElements(fixpoint);
 }
 //-----------------------------------------------------------------------------
 real SimpleTimeSlab::computeMaxRd(Solution& u, RHS& f)

@@ -58,8 +58,6 @@ void TimeStepper::solve(ODE& ode, Function& function)
     else
       timeslab = new RecursiveTimeSlab(t, T, u, f, adaptivity, fixpoint, partition, 0);
 
-    cout << *timeslab << endl;
-    
     // Solve system using damped fixed point iteration
     if ( !fixpoint.iterate(*timeslab) )
     {
@@ -151,8 +149,6 @@ void TimeStepper::save(Solution& u, RHS& f, TimeSlab& timeslab,
 //-----------------------------------------------------------------------------
 void TimeStepper::decreaseTimeStep(Adaptivity& adaptivity, Solution& u)
 {
-  dolfin_warning("Fixed point iteration did not converge, decreasing time steps.");
-
   // FIXME: Maybe this should be a parameter
   adaptivity.decreaseTimeStep(0.5);
 

@@ -42,48 +42,48 @@ namespace dolfin {
 
     /// Initialize function on given mesh with given nodal values
     void init(Mesh& mesh, dolfin::Vector& x, int dim = 0, int size = 1);
-
+    
     /// Create function specified by the given expression
     void init(const char* name,  int dim = 0, int size = 1);
-
+    
     /// Create an ODE function of given dimension
     void init(unsigned int N);
     
     /// Evaluation for given node and time
     real operator() (const Node&  n, real t = 0.0) const;
     real operator() (const Node&  n, real t = 0.0);
-
+    
     /// Evaluation for given point and time
     real operator() (const Point& p, real t = 0.0) const;
     real operator() (const Point& p, real t = 0.0);
-
+    
     /// Evaluation for given coordinates and time
     real operator() (real x, real y, real z, real t) const;
     real operator() (real x, real y, real z, real t);
-
+    
     /// Evaluation for given component and time
     real operator() (unsigned int i, real t) const;
     real operator() (unsigned int i, real t);
     
     // Update function to given time
     void update(real t);
-
+    
     // Return current time
     real time() const;
-
+    
     // FIXME: Special member functions below: Should they be removed?
     //---------------------------------------------------------------
-
+    
     // Get mesh
     Mesh& mesh() const;
-
+    
     // Get element data
     ElementData& elmdata();
-
+    
     // Update values of element function
     void update(FunctionSpace::ElementFunction& v,
 		const FiniteElement& element, const Cell& cell, real t) const;
-
+    
     // Vector function
     class Vector {
     public:
