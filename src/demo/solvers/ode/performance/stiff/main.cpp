@@ -48,8 +48,8 @@ public:
     cout << "deps: " << deps << endl;
   }
 
-  Benchmarkcg(unsigned int n, unsigned int m,
-	      real b) : ParticleSystem(n, 1), m(m), b(b)
+  Benchmarkcg(unsigned int n, unsigned int m, real b) :
+    ParticleSystem(n, 1), b(b), m(m)
   {
     if ( n < 2 )
       dolfin_error("System must have at least 2 particles.");

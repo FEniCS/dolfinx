@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __DOLFIN_FUNCTION_H
-#define __DOLFIN_FEM_H
+#define __DOLFIN_FUNCTION_H
 
 // Function
 
