@@ -164,6 +164,9 @@ void PDE::update(FiniteElement::Vector* element,
   
   // Save map (to compute derivatives)
   this->map = map;
+
+  // Save cell 
+  this->cell = cell;
 }
 //-----------------------------------------------------------------------------
 int PDE::size()

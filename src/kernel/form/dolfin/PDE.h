@@ -140,6 +140,9 @@ namespace dolfin {
     // Map from reference element
     const Map* map;
     
+    // Cell 
+    const Cell* cell;
+    
     // Integral measures
     Integral::InteriorMeasure dK;
     Integral::BoundaryMeasure dS;

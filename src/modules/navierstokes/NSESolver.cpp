@@ -32,13 +32,12 @@ void NSESolver::solve()
   Function::Vector res_mom(mesh, x4, 1);
   Function::Vector res_con(mesh, x5, 1);
   Function f("source");
-  Function nu("viscosity");
   
-  Galerkin      fem;
-  NSE_Momentum  momentum(f, u0, a, beta);
-  NSE_Contiuity continuity(f, u0, a, beta);
-  KrylovSolver  solver;
-  File          file("nse.m");
+  Galerkin       fem;
+  NSE_Momentum   momentum(f, u0, beta, p1);
+  NSE_Continuity continuity(f, beta);
+  KrylovSolver   solver;
+  File           file("nse.m");
   
   real t = 0.0;
   real T = dolfin_get("final time");

@@ -107,7 +107,7 @@ namespace dolfin {
     // Compute and return volume / area
     real volume() const;
 
-    // Compute and return volume / area
+    // Compute and return diameter 
     real diameter() const;
 
     /// Comparison with another cell
