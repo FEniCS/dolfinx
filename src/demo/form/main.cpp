@@ -8,21 +8,18 @@
 
 using namespace dolfin;
 
-#define N 10 // Number of times to do the assembly
+#define N 1 // Number of times to do the assembly
 
 // Test old assembly
 real testOld(Mesh& mesh)
 {
-  cout << "Testing old assembly..." << endl;
+  cout << "--- Testing old assembly ---" << endl;
 
   Poisson poisson;
   Matrix A;
   tic();
   for (unsigned int i = 0; i < N; i++)
-  {
-    A = 0.0;
     FEM::assemble(poisson, mesh, A);
-  }
 
   return toc();
 }
@@ -30,17 +27,14 @@ real testOld(Mesh& mesh)
 // Test new assembly (hand-optimized)
 real testOptimized(Mesh& mesh)
 {
-  cout << "Testing new assembly, hand-optimized..." << endl;
+  cout << "--- Testing new assembly, hand-optimized ---" << endl;
 
   OptimizedPoissonFiniteElement element;
   OptimizedPoissonBilinearForm a(element);
   Matrix A;
   tic();
   for (unsigned int i = 0; i < N; i++)
-  {
-    A = 0.0;
     NewFEM::assemble(a, mesh, A);
-  }
 
   return toc();
 }
@@ -48,17 +42,14 @@ real testOptimized(Mesh& mesh)
 // Test new assembly (FFC)
 real testFFC(Mesh& mesh)
 {
-  cout << "Testing new assembly, FFC..." << endl;
+  cout << "--- Testing new assembly, FFC ---" << endl;
 
   FFCPoissonFiniteElement element;
   FFCPoissonBilinearForm a(element);
   Matrix A;
   tic();
   for (unsigned int i = 0; i < N; i++)
-  {
-    A = 0.0;
     NewFEM::assemble(a, mesh, A);
-  }
 
   return toc();
 }
@@ -66,20 +57,14 @@ real testFFC(Mesh& mesh)
 // Test new assembly (FFC) with PETSc
 real testFFCPETSc(Mesh& mesh)
 {
-  cout << "Testing new assembly, FFC with PETSc, not doing anything..." << endl;
-
-  tic();
+  cout << "--- Testing new assembly, FFC + PETSc ---" << endl;
   
   FFCPoissonFiniteElement element;
   FFCPoissonBilinearForm a(element);
   NewMatrix A;
-
   tic();
   for (unsigned int i = 0; i < N; i++)
-  {
-    A = 0.0;
     NewFEM::testPETSc(a, mesh, A);
-  }
 
   return toc();
 }

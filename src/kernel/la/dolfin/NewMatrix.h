@@ -6,6 +6,7 @@
 
 #include <petsc/petscmat.h>
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
 
 namespace dolfin
 {
@@ -24,28 +25,37 @@ namespace dolfin
     NewMatrix();
 
     /// Constructor
-    NewMatrix(uint m, uint n);
+    NewMatrix(int m, int n);
 
     /// Destructor
     ~NewMatrix();
 
     /// Initialize matrix with given number of rows and columns
-    void init(uint m, uint n);
+    void init(int m, int n);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    uint size(uint dim) const;
+    int size(int dim) const;
 
     /// Set all entries to zero
     NewMatrix& operator= (real zero);
 
     /// Add block of values
-    void add(real block[], uint rows[], uint m, uint cols[], uint n);
+    void add(const real block[], const int rows[], int m, const int cols[], int n);
 
     /// Apply changes to matrix
     void apply();
 
     /// Return PETSc Mat pointer
     Mat mat();
+
+    /// Return PETSc Mat pointer
+    const Mat mat() const;
+
+    /// Display matrix
+    void show() const;
+
+    /// Condensed output
+    friend LogStream& operator<< (LogStream& stream, const NewMatrix& A);
     
   private:
 

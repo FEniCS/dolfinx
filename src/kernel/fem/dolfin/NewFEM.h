@@ -4,6 +4,8 @@
 #ifndef __NEW_FEM_H
 #define __NEW_FEM_H
 
+#include <dolfin/constants.h>
+
 namespace dolfin
 {
 
@@ -69,6 +71,9 @@ namespace dolfin
 
     // Delete element vector
     static void freeElementVector(real*& bK, const NewFiniteElement& element);
+    
+    // Count the degrees of freedom
+    static uint size(Mesh& mesh, const NewFiniteElement& element);
 
   };
 

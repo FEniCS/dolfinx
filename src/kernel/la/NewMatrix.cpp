@@ -1,6 +1,8 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <iostream>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/NewMatrix.h>
@@ -17,7 +19,7 @@ NewMatrix::NewMatrix()
   A = 0;
 }
 //-----------------------------------------------------------------------------
-NewMatrix::NewMatrix(uint m, uint n)
+NewMatrix::NewMatrix(int m, int n)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -29,22 +31,29 @@ NewMatrix::NewMatrix(uint m, uint n)
 //-----------------------------------------------------------------------------
 NewMatrix::~NewMatrix()
 {
-  // Free memory for PETSc matrix
-  CHKERRQ(MatDestroy(A));
-}
-//-----------------------------------------------------------------------------
-void NewMatrix::init(uint m, uint n)
-{
+  // Free memory of matrix
   if ( A )
-    CHKERRQ(MatDestroy(A));
-  CHKERRQ(MatCreate(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, m, n, &A));
+    MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewMatrix::size(uint dim) const
+void NewMatrix::init(int m, int n)
+{
+  // Free previously allocated memory if necessary
+  if ( A )
+    if ( m == size(0) && n == size(1) )
+      return;
+    else
+      MatDestroy(A);
+
+  MatCreate(PETSC_COMM_SELF, PETSC_DECIDE, PETSC_DECIDE, m, n, &A);
+  MatSetFromOptions(A); 
+}
+//-----------------------------------------------------------------------------
+int NewMatrix::size(int dim) const
 {
   int m = 0;
   int n = 0;
-  CHKERRQ(MatGetSize(A, &m, &n));
+  MatGetSize(A, &m, &n);
   return (dim == 0 ? m : n);
 }
 //-----------------------------------------------------------------------------
@@ -52,23 +61,47 @@ NewMatrix& NewMatrix::operator= (real zero)
 {
   if ( zero != 0.0 )
     dolfin_error("Argument must be zero.");
-  CHKERRQ(MatZeroEntries(A));
+  MatZeroEntries(A);
   return *this;
 }
 //-----------------------------------------------------------------------------
-void NewMatrix::add(real block[], uint rows[], uint m, uint cols[], uint n)
+void NewMatrix::add(const real block[],
+		    const int rows[], int m,
+		    const int cols[], int n)
 {
-  CHKERRQ(MatSetValues(A, m, rows, n, cols, block, ADD_VALUES));
+  MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
 void NewMatrix::apply()
 {
-  CHKERRQ(MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY));
-  CHKERRQ(MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY));
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
 Mat NewMatrix::mat()
 {
   return A;
+}
+//-----------------------------------------------------------------------------
+const Mat NewMatrix::mat() const
+{
+  return A;
+}
+//-----------------------------------------------------------------------------
+void NewMatrix::show() const
+{
+  MatView(A, PETSC_VIEWER_STDOUT_SELF);
+}
+//-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const NewMatrix& A)
+{
+  MatType type = 0;
+  MatGetType(A.mat(), &type);
+  int m = A.size(0);
+  int n = A.size(1);
+  stream << "[ PETSc matrix (type " << type << ") of size "
+	 << m << " x " << n << " ]";
+
+  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -37,7 +37,7 @@ void NewFEM::assemble(BilinearForm& a, Mesh& mesh, Matrix& A)
   assembleInterior(a, mesh, A);
   
   // Assemble boundary contribution
-  assembleBoundary(a, mesh, A);
+  //assembleBoundary(a, mesh, A);
   
   // Clear unused elements
   A.resize();
@@ -55,7 +55,7 @@ void NewFEM::assemble(LinearForm& L, Mesh& mesh, Vector& b)
   assembleInterior(L, mesh, b);
 
   // Assemble boundary contribution
-  assembleBoundary(L, mesh, b);
+  //assembleBoundary(L, mesh, b);
 
   // Write a message
   cout << "Assembled: " << b << endl;
@@ -281,13 +281,19 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
+
   // Initialize finite element and element matrix
   const NewFiniteElement& element = a.element;
   real** AK = allocElementMatrix(element);
 
+  // Initialize global matrix
+  unsigned int N = size(mesh, element);
+  A.init(N, N);
+  A = 0.0;
+
   unsigned int n = element.spacedim();
   real* block = new real[n*n];
-  uint* dofs = new uint[n];
+  int* dofs = new int[n];
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -333,5 +339,21 @@ void NewFEM::testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A)
 
   // Delete element matrix
   freeElementMatrix(AK, element);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewFEM::size(Mesh& mesh, const NewFiniteElement& element)
+{
+  // Count the degrees of freedom (check maximum index)
+  uint dofmax = 0;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    for (uint i = 0; i < element.spacedim(); i++)
+    {
+      uint dof = element.dof(i, *cell);
+      if ( dof > dofmax )
+	dofmax = dof;
+    }
+  }
+  return dofmax + 1;
 }
 //-----------------------------------------------------------------------------

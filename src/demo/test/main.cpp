@@ -7,7 +7,13 @@ using namespace dolfin;
 
 int main()
 {
-  dolfin::cout << "Test" << " test" << dolfin::endl;
+  dolfin_set("output", "plain text");
+  cout << "Test" << " test" << endl;
+
+  PETScManager::init();
+
+  NewMatrix A(100, 100);
+  cout << A << endl;
 
   return 0;
 }
