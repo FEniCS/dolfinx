@@ -6,7 +6,6 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
-#include <dolfin/FixedPointIteration.h>
 #include <dolfin/TimeSlab.h>
 
 using namespace dolfin;

@@ -39,42 +39,6 @@ RecursiveTimeSlab::~RecursiveTimeSlab()
   }
 }
 //-----------------------------------------------------------------------------
-void RecursiveTimeSlab::update(FixedPointIteration& fixpoint)
-{
-  // First update the time slabs
-  updateTimeSlabs(fixpoint);
-
-  // Then iterate on the elements
-  fixpoint.iterate(group);
-}
-//-----------------------------------------------------------------------------
-void RecursiveTimeSlab::reset(FixedPointIteration& fixpoint)
-{
-  // First reset the time slabs
-  resetTimeSlabs(fixpoint);
-
-  // Then reset the elements
-  fixpoint.reset(group);
-}
-//-----------------------------------------------------------------------------
-bool RecursiveTimeSlab::leaf() const
-{
-  return timeslabs.size() == 0;
-}
-//-----------------------------------------------------------------------------
-real RecursiveTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
-{
-  // Compute L2 norm for time slabs
-  real r = 0.0;
-  for (unsigned int i = 0; i < timeslabs.size(); i++)
-    r += sqr(timeslabs[i]->elementResidualL2(fixpoint));
-
-  // Compute L2 norm for elements
-  r += sqr(fixpoint.residual(group));
-
-  return sqrt(r);
-}
-//-----------------------------------------------------------------------------
 void RecursiveTimeSlab::countElementGroups(unsigned int& size)
 {
   // Count number of element groups for time slabs
@@ -193,20 +157,6 @@ void RecursiveTimeSlab::createElements(Solution& u, RHS& f,
 
   // Compute residuals and new time steps
   computeResiduals(f, adaptivity);
-}
-//-----------------------------------------------------------------------------
-void RecursiveTimeSlab::updateTimeSlabs(FixedPointIteration& fixpoint)
-{
-  // Update time slabs
-  for (unsigned int i = 0; i < timeslabs.size(); i++)
-    timeslabs[i]->update(fixpoint);
-}
-//-----------------------------------------------------------------------------
-void RecursiveTimeSlab::resetTimeSlabs(FixedPointIteration& fixpoint)
-{
-  // Reset time slabs
-  for (unsigned int i = 0; i < timeslabs.size(); i++)
-    timeslabs[i]->reset(fixpoint);
 }
 //-----------------------------------------------------------------------------
 void RecursiveTimeSlab::computeResiduals(RHS& f, Adaptivity& adaptivity)

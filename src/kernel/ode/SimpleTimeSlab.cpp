@@ -9,7 +9,6 @@
 #include <dolfin/Adaptivity.h>
 #include <dolfin/RHS.h>
 #include <dolfin/Solution.h>
-#include <dolfin/FixedPointIteration.h>
 #include <dolfin/SimpleTimeSlab.h>
 
 using namespace dolfin;
@@ -24,26 +23,6 @@ SimpleTimeSlab::SimpleTimeSlab(real t0, real t1, Solution& u,
 SimpleTimeSlab::~SimpleTimeSlab()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-void SimpleTimeSlab::update(FixedPointIteration& fixpoint)
-{
-  fixpoint.iterate(group);
-}
-//-----------------------------------------------------------------------------
-void SimpleTimeSlab::reset(FixedPointIteration& fixpoint)
-{
-  fixpoint.reset(group);
-}
-//-----------------------------------------------------------------------------
-bool SimpleTimeSlab::leaf() const
-{
-  return true;
-}
-//-----------------------------------------------------------------------------
-real SimpleTimeSlab::elementResidualL2(FixedPointIteration& fixpoint)
-{
-  return fixpoint.residual(group);
 }
 //-----------------------------------------------------------------------------
 void SimpleTimeSlab::countElementGroups(unsigned int& size)

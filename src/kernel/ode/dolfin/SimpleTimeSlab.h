@@ -12,7 +12,6 @@ namespace dolfin {
   class Adaptivity;
   class RHS;
   class Solution;
-  class FixedPointIteration;
 
   /// The simple version of the time slab.
 
@@ -25,18 +24,6 @@ namespace dolfin {
     /// Destructor
     ~SimpleTimeSlab();
     
-    /// Update time slab (iteration)
-    void update(FixedPointIteration& fixpoint);
-    
-    /// Reset time slab to initial values
-    void reset(FixedPointIteration& fixpoint);
-
-    /// Check if the time slab is a leaf
-    bool leaf() const;
-
-    /// Compute L2 norm of element residual
-    real elementResidualL2(FixedPointIteration& fixpoint);
-
     /// Count the number of element groups contained in the time slab
     void countElementGroups(unsigned int& size);
     

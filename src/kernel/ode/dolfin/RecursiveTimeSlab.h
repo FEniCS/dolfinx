@@ -31,18 +31,6 @@ namespace dolfin {
     /// Destructor
     ~RecursiveTimeSlab();
     
-    /// Update time slab (iteration)
-    void update(FixedPointIteration& fixpoint);
-
-    /// Reset time slab to initial values
-    void reset(FixedPointIteration& fixpoint);
-
-    /// Check if the time slab is a leaf
-    bool leaf() const;
-
-    /// Compute L2 norm of element residual
-    real elementResidualL2(FixedPointIteration& fixpoint);
-
     /// Count the number of element groups contained in the time slab
     void countElementGroups(unsigned int& size);
     
@@ -69,12 +57,6 @@ namespace dolfin {
 			FixedPointIteration& fixpoint,
 			Partition& partition, int offset, int end);
 
-    // Update time slabs (iteration)
-    void updateTimeSlabs(FixedPointIteration& fixpoint);
-
-    // Reset time slabs to initial values
-    void resetTimeSlabs(FixedPointIteration& fixpoint);
-    
     // Compute residuals and new time steps
     void computeResiduals(RHS& f, Adaptivity& adaptivity);
 

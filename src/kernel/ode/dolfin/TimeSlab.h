@@ -17,7 +17,6 @@ namespace dolfin {
   class Adaptivity;
   class RHS;
   class Solution;
-  class FixedPointIteration;
 
   /// A TimeSlab represents (a subsystem of) the system of ODEs
   /// between synchronized time levels t0 and t1. 
@@ -30,21 +29,12 @@ namespace dolfin {
 
     /// Destructor
     virtual ~TimeSlab();
-    
-    /// Update time slab (iteration)
-    virtual void update(FixedPointIteration& fixpoint) = 0;
-
-    /// Reset time slab to initial values
-    virtual void reset(FixedPointIteration& fixpoint) = 0;
 
     /// Check if the given time is within the time slab
     bool within(real t) const;
     
     /// Check if the time slab reached the given end time
     bool finished() const;
-
-    /// Check if the time slab is a leaf
-    virtual bool leaf() const = 0;
 
     /// Return start time
     real starttime() const;
@@ -54,9 +44,6 @@ namespace dolfin {
     
     /// Return length of time slab
     real length() const;
-
-    /// Compute L2 norm of element residual
-    virtual real elementResidualL2(FixedPointIteration& fixpoint) = 0;
 
     /// Count the number of element groups contained in the time slab
     virtual void countElementGroups(unsigned int& size) = 0;
