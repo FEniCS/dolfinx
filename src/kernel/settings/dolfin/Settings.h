@@ -35,6 +35,7 @@ namespace dolfin {
       add(Parameter::BOOL, "debug time steps", 0);
 
       add(Parameter::STRING, "output", "curses");
+      add(Parameter::STRING, "temporary directory", "/tmp");
 
       add(Parameter::BCFUNCTION, "boundary condition", 0);
       

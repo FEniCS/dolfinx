@@ -6,7 +6,7 @@
 
 #include <vector>
 #include <dolfin/constants.h>
-#include <dolfin/Array.h>
+#include <dolfin/NewArray.h>
 #include <dolfin/Element.h>
 
 namespace dolfin {
@@ -25,7 +25,8 @@ namespace dolfin {
     ~Component();
 
     /// Create a new element
-    Element* createElement(Element::Type type, real t0, real t1, int q, int index);
+    Element* createElement(Element::Type type, unsigned int q, unsigned int index, 
+			   real t0, real t1);
 
     /// Return element at given time
     Element* element(real t);
@@ -35,6 +36,8 @@ namespace dolfin {
 
     /// Return number of elements in component
     unsigned int size() const;
+
+    friend class ElementTmpFile;
 
   private:
 
@@ -54,7 +57,7 @@ namespace dolfin {
     //--- Component data ---
 
     // A list of elements for this component
-    std::vector<Element*> elements;
+    NewArray<Element*> elements;
 
   };
 

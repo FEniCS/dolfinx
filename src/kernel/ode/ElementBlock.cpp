@@ -18,12 +18,13 @@ ElementBlock::~ElementBlock()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Element* ElementBlock::createElement(Element::Type type, real t0, real t1,
-				     int q, int index)
+Element* ElementBlock::createElement(Element::Type type, 
+				     unsigned int q, unsigned int index,
+				     real t0, real t1)
 {
   update(t0, t1);
   _bytes += sizeof(Element) + q*sizeof(real);
-  return components[index].createElement(type, t0, t1, q, index);
+  return components[index].createElement(type, q, index, t0, t1);
 }
 //-----------------------------------------------------------------------------
 Element* ElementBlock::element(unsigned int index, real t)
@@ -35,12 +36,6 @@ Element* ElementBlock::last(unsigned int i)
 {
   dolfin_assert(i < components.size());
   return components[i].last();
-}
-//-----------------------------------------------------------------------------
-void ElementBlock::save()
-{
-  cout << "Saving block" << endl;
-
 }
 //-----------------------------------------------------------------------------
 unsigned int ElementBlock::size() const

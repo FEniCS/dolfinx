@@ -14,8 +14,10 @@ namespace dolfin {
   class cGqElement : public Element {
   public:
     
-    cGqElement(real t0, real t1, unsigned int q, unsigned int index);
+    cGqElement(unsigned int q, unsigned int index, real t0, real t1);
     ~cGqElement();
+
+    Type type() const;
 
     real value(real t) const;
     real dx() const;

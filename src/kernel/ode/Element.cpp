@@ -11,8 +11,8 @@ using namespace dolfin;
 Vector dolfin::Element::f;
 
 //-----------------------------------------------------------------------------
-Element::Element(real t0, real t1, unsigned int q, unsigned int index) :
-  t0(t0), t1(t1), q(q), _index(index)
+Element::Element(unsigned int q, unsigned int index, real t0, real t1) :
+  q(q), _index(index), t0(t0), t1(t1)
 {
   // Allocate the list of nodal values
   values = new real[q+1];
@@ -34,6 +34,11 @@ Element::~Element()
   if ( values )
     delete [] values;
   values = 0;
+}
+//-----------------------------------------------------------------------------
+unsigned int Element::order() const
+{
+  return q;
 }
 //-----------------------------------------------------------------------------
 real Element::value(unsigned int node) const

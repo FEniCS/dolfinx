@@ -99,7 +99,7 @@ void RecursiveTimeSlab::createElements(RHS& f, TimeSteppingData& data,
   for (int i = offset; i < end; i++) {
 
     // Create element
-    Element *element = data.createElement(type, t0, t1, q, partition.index(i));
+    Element *element = data.createElement(type, q, partition.index(i), t0, t1);
 
     // Write debug info
     data.debug(*element, TimeSteppingData::create);

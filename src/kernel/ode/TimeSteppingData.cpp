@@ -45,10 +45,11 @@ TimeSteppingData::~TimeSteppingData()
     file.close();
 }
 //-----------------------------------------------------------------------------
-Element* TimeSteppingData::createElement(Element::Type type, real t0, real t1,
-					 int q, int index)
+Element* TimeSteppingData::createElement(Element::Type type,
+					 unsigned int q, unsigned int index,
+					 real t0, real t1)
 {
-  return elmdata.createElement(type, t0, t1, q, index);
+  return elmdata.createElement(type, q, index, t0, t1);
 }
 //-----------------------------------------------------------------------------
 Element* TimeSteppingData::element(unsigned int i, real t)

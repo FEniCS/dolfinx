@@ -6,6 +6,7 @@
 
 #include <dolfin/NewList.h>
 #include <dolfin/Element.h>
+#include <dolfin/ElementTmpFile.h>
 
 namespace dolfin {
 
@@ -31,7 +32,8 @@ namespace dolfin {
     ~ElementData();
 
     /// Create a new element
-    Element* createElement(Element::Type type, real t0, real t1, int q, int index);
+    Element* createElement(Element::Type type, unsigned int q, unsigned int index,
+			   real t0, real t1);
     
     /// Return element for given component at given time (null if not found)
     Element* element(unsigned int i, real t);
@@ -79,7 +81,10 @@ namespace dolfin {
     bool empty;
 
     // Cache size
-    unsigned int cachesize;
+    unsigned int cache_size;
+
+    // File for temporary storage of element data
+    ElementTmpFile tmpfile;
 
   };
 

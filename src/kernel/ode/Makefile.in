@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -82,11 +82,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElement.h                           dolfin/cGqMethod.h                           dolfin/cGqMethods.h                           dolfin/dGqElement.h                           dolfin/dGqMethod.h                           dolfin/dGqMethods.h                           dolfin/AutomaticSparsity.h                           dolfin/Component.h                           dolfin/AutomaticSparsity.h                           dolfin/Element.h                           dolfin/ElementBlock.h                           dolfin/ElementData.h                           dolfin/EmptySparsity.h                           dolfin/FullSparsity.h                           dolfin/GenericSparsity.h                           dolfin/MatrixSparsity.h                           dolfin/Method.h                           dolfin/ODE.h                           dolfin/ODESolver.h                           dolfin/Partition.h                           dolfin/RecursiveTimeSlab.h                           dolfin/Regulator.h                           dolfin/RHS.h                           dolfin/Sample.h                           dolfin/SimpleTimeSlab.h                           dolfin/Sparsity.h                           dolfin/TableSparsity.h                           dolfin/TimeSlab.h                           dolfin/TimeStepper.h                           dolfin/TimeSteppingData.h
+include_HEADERS = dolfin/dolfin_ode.h                           dolfin/cGqElement.h                           dolfin/cGqMethod.h                           dolfin/cGqMethods.h                           dolfin/dGqElement.h                           dolfin/dGqMethod.h                           dolfin/dGqMethods.h                           dolfin/AutomaticSparsity.h                           dolfin/Component.h                           dolfin/AutomaticSparsity.h                           dolfin/Element.h                           dolfin/ElementBlock.h                           dolfin/ElementData.h                           dolfin/ElementTmpFile.h                           dolfin/EmptySparsity.h                           dolfin/FullSparsity.h                           dolfin/GenericSparsity.h                           dolfin/MatrixSparsity.h                           dolfin/Method.h                           dolfin/ODE.h                           dolfin/ODESolver.h                           dolfin/Partition.h                           dolfin/RecursiveTimeSlab.h                           dolfin/Regulator.h                           dolfin/RHS.h                           dolfin/Sample.h                           dolfin/SimpleTimeSlab.h                           dolfin/Sparsity.h                           dolfin/TableSparsity.h                           dolfin/TimeSlab.h                           dolfin/TimeStepper.h                           dolfin/TimeSteppingData.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           EmptySparsity.cpp                           FullSparsity.cpp                           GenericSparsity.cpp                           MatrixSparsity.cpp                           Method.cpp                           ODE.cpp                           ODESolver.cpp                           Partition.cpp                           RecursiveTimeSlab.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           SimpleTimeSlab.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeStepper.cpp                           TimeSteppingData.cpp
+libdolfin_ode_a_SOURCES = cGqElement.cpp                           cGqMethod.cpp                           cGqMethods.cpp                           dGqElement.cpp                           dGqMethod.cpp                           dGqMethods.cpp                           AutomaticSparsity.cpp                           Component.cpp                           Element.cpp                           ElementBlock.cpp                           ElementData.cpp                           ElementTmpFile.cpp                           EmptySparsity.cpp                           FullSparsity.cpp                           GenericSparsity.cpp                           MatrixSparsity.cpp                           Method.cpp                           ODE.cpp                           ODESolver.cpp                           Partition.cpp                           RecursiveTimeSlab.cpp                           Regulator.cpp                           RHS.cpp                           Sample.cpp                           SimpleTimeSlab.cpp                           Sparsity.cpp                           TableSparsity.cpp                           TimeSlab.cpp                           TimeStepper.cpp                           TimeSteppingData.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -100,9 +100,9 @@ LIBS = @LIBS@
 libdolfin_ode_a_LIBADD = 
 libdolfin_ode_a_OBJECTS =  cGqElement.o cGqMethod.o cGqMethods.o \
 dGqElement.o dGqMethod.o dGqMethods.o AutomaticSparsity.o Component.o \
-Element.o ElementBlock.o ElementData.o EmptySparsity.o FullSparsity.o \
-GenericSparsity.o MatrixSparsity.o Method.o ODE.o ODESolver.o \
-Partition.o RecursiveTimeSlab.o Regulator.o RHS.o Sample.o \
+Element.o ElementBlock.o ElementData.o ElementTmpFile.o EmptySparsity.o \
+FullSparsity.o GenericSparsity.o MatrixSparsity.o Method.o ODE.o \
+ODESolver.o Partition.o RecursiveTimeSlab.o Regulator.o RHS.o Sample.o \
 SimpleTimeSlab.o Sparsity.o TableSparsity.o TimeSlab.o TimeStepper.o \
 TimeSteppingData.o
 AR = ar
@@ -119,14 +119,15 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 TAR = tar
 GZIP_ENV = --best
 DEP_FILES =  .deps/AutomaticSparsity.P .deps/Component.P .deps/Element.P \
-.deps/ElementBlock.P .deps/ElementData.P .deps/EmptySparsity.P \
-.deps/FullSparsity.P .deps/GenericSparsity.P .deps/MatrixSparsity.P \
-.deps/Method.P .deps/ODE.P .deps/ODESolver.P .deps/Partition.P \
-.deps/RHS.P .deps/RecursiveTimeSlab.P .deps/Regulator.P .deps/Sample.P \
-.deps/SimpleTimeSlab.P .deps/Sparsity.P .deps/TableSparsity.P \
-.deps/TimeSlab.P .deps/TimeStepper.P .deps/TimeSteppingData.P \
-.deps/cGqElement.P .deps/cGqMethod.P .deps/cGqMethods.P \
-.deps/dGqElement.P .deps/dGqMethod.P .deps/dGqMethods.P
+.deps/ElementBlock.P .deps/ElementData.P .deps/ElementTmpFile.P \
+.deps/EmptySparsity.P .deps/FullSparsity.P .deps/GenericSparsity.P \
+.deps/MatrixSparsity.P .deps/Method.P .deps/ODE.P .deps/ODESolver.P \
+.deps/Partition.P .deps/RHS.P .deps/RecursiveTimeSlab.P \
+.deps/Regulator.P .deps/Sample.P .deps/SimpleTimeSlab.P \
+.deps/Sparsity.P .deps/TableSparsity.P .deps/TimeSlab.P \
+.deps/TimeStepper.P .deps/TimeSteppingData.P .deps/cGqElement.P \
+.deps/cGqMethod.P .deps/cGqMethods.P .deps/dGqElement.P \
+.deps/dGqMethod.P .deps/dGqMethods.P
 SOURCES = $(libdolfin_ode_a_SOURCES)
 OBJECTS = $(libdolfin_ode_a_OBJECTS)
 
@@ -247,7 +248,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" != "." || dot_seen=yes; \
+	  test "$$subdir" = "." && dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -289,7 +290,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

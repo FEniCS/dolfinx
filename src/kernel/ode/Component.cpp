@@ -29,18 +29,19 @@ Component::~Component()
   }
 }
 //-----------------------------------------------------------------------------
-Element* Component::createElement(const Element::Type type, real t0, real t1,
-				  int q, int index)
+Element* Component::createElement(const Element::Type type, 
+				  unsigned int q, unsigned int index,
+				  real t0, real t1)
 {
   Element* element = 0;
 
   // Create element
   switch (type) {
   case Element::cg:
-    element = new cGqElement(t0, t1, q, index);
+    element = new cGqElement(q, index, t0, t1);
     break;
   case Element::dg:
-    element = new dGqElement(t0, t1, q, index);
+    element = new dGqElement(q, index, t0, t1);
     break;
   default:
     dolfin_error1("Unknown element type: %d.", type);

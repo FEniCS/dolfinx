@@ -21,11 +21,17 @@ namespace dolfin {
     enum Type {cg, dg};
 
     /// Constructor
-    Element(real t0, real t1, unsigned int q, unsigned int index);
+    Element(unsigned int q, unsigned int index, real t0, real t1);
 
     /// Destructor
     virtual ~Element();
-    
+
+    /// Return type of element
+    virtual Type type() const = 0;
+
+    /// Return order of element
+    unsigned int order() const;
+
     /// Return value of element at given time
     virtual real value(real t) const = 0;
 
@@ -78,15 +84,15 @@ namespace dolfin {
 
     //--- Element data ---
     
-    // Interval
-    real t0, t1;
-
     // Order
     unsigned int q;
 
     /// Component index
     unsigned int _index;
     
+    // Interval
+    real t0, t1;
+
     // Nodal values
     real* values;
     

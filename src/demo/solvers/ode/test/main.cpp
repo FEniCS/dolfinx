@@ -18,7 +18,7 @@ public:
     lambda2 = 1.0;
 
     // Final time
-    T = 10.0;
+    T = 30.0;
 
     // Initial values
     u0(0) = 0.0;

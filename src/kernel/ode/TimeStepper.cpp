@@ -63,13 +63,6 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 
     // Save solution
     save(*timeslab, data, f, file, t0, t1, no_samples);
-    
-    // Check if we are done
-    if ( timeslab->finished() )
-    {
-      delete timeslab;
-      break;
-    }
 
     // Update time
     t = timeslab->endtime();
@@ -79,6 +72,13 @@ void TimeStepper::solve(ODE& ode, real t0, real t1)
 
     // Prepare for next time slab
     data.shift(*timeslab, f);
+
+    // Check if we are done
+    if ( timeslab->finished() )
+    {
+      delete timeslab;
+      break;
+    }
 
     // Delete time slab
     delete timeslab;

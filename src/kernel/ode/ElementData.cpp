@@ -11,7 +11,7 @@ using namespace dolfin;
 ElementData::ElementData(int N) : N(N), current(0), t0(0), t1(0), empty(true)
 {
   // Get size of cache
-  cachesize = dolfin_get("element cache size");
+  cache_size = dolfin_get("element cache size");
 }
 //-----------------------------------------------------------------------------
 ElementData::~ElementData()
@@ -25,8 +25,9 @@ ElementData::~ElementData()
   }
 }
 //-----------------------------------------------------------------------------
-Element* ElementData::createElement(const Element::Type type, real t0, real t1,
-				    int q, int index)
+Element* ElementData::createElement(Element::Type type, 
+				    unsigned int q, unsigned int index,
+				    real t0, real t1)
 {
   // Create a new block if current block is null
   if ( !current )
@@ -42,7 +43,7 @@ Element* ElementData::createElement(const Element::Type type, real t0, real t1,
   }
 
   update(t0, t1);
-  return current->createElement(type, t0, t1, q, index);
+  return current->createElement(type, q, index, t0, t1);
 }
 //-----------------------------------------------------------------------------
 Element* ElementData::element(unsigned int i, real t)
@@ -66,7 +67,7 @@ void ElementData::shift()
   dolfin_assert(current);
   
   // Save current block
-  current->save();
+  tmpfile.write(*current);
 
   // Set current to null so that a new block will be created next time
   current = 0;
@@ -133,19 +134,17 @@ bool ElementData::memfull()
   for (BlockIterator block = blocks.begin(); block != blocks.end(); ++block)
     bytecount += (*block)->bytes();
 
-  cout << "Number of bytes: " << bytecount << endl;
-
   // Estimate data size including a new block (using last block as estimate)
   bytecount += blocks.back()->bytes();
 
-  return bytecount > cachesize;
+  return bytecount > cache_size;
 }
 //-----------------------------------------------------------------------------
 void ElementData::droplast(real t0, real t1)
 {
   // Find which block is the one furthest from [t0,t1]
   BlockIterator last = blocks.end();
-  real dist = 0;
+  real dist = 0.0;
   
   for (BlockIterator block = blocks.begin(); block != blocks.end(); ++block)
   {

@@ -9,8 +9,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dGqElement::dGqElement(real t0, real t1, unsigned int q, unsigned int index) : 
-  Element(t0, t1, q, index)
+dGqElement::dGqElement(unsigned int q, unsigned int index, real t0, real t1) : 
+  Element(q, index, t0, t1)
 {  
   dG.init(q);
 }
@@ -18,6 +18,11 @@ dGqElement::dGqElement(real t0, real t1, unsigned int q, unsigned int index) :
 dGqElement::~dGqElement()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+Element::Type dGqElement::type() const
+{
+  return Element::dg;
 }
 //-----------------------------------------------------------------------------
 real dGqElement::value(real t) const

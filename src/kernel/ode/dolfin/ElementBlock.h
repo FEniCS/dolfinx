@@ -23,16 +23,14 @@ namespace dolfin {
     ~ElementBlock();
 
     /// Create a new element
-    Element* createElement(Element::Type type, real t0, real t1, int q, int index);
+    Element* createElement(Element::Type type, unsigned int q, unsigned int index,
+			   real t0, real t1);
 
     /// Return element for given component at given time
     Element* element(unsigned int, real t);
     
     /// Return last element for given component
     Element* last(unsigned int i);
-
-    /// Save block to given file
-    void save();
 
     /// Return number of components
     unsigned int size() const;
@@ -45,6 +43,8 @@ namespace dolfin {
 
     /// Check if given time is within this block
     bool within(real t) const;
+
+    friend class ElementTmpFile;
 
   private:
 
