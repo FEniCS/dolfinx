@@ -12,4 +12,3 @@ all:
 
 clean:
 	rm -f dolfin-config
-	rm -f Makefile
