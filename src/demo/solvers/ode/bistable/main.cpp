@@ -101,8 +101,8 @@ public:
 private:
 
   Mesh& mesh; // The mesh
-  File ufile;  // OpenDX file for the solution
-  File kfile;  // OpenDX file for the time steps
+  File ufile; // OpenDX file for the solution
+  File kfile; // OpenDX file for the time steps
   Matrix A;   // Stiffness matrix
   Vector m;   // Lumped mass matrix
   Vector b;   // Weights for right-hand side
