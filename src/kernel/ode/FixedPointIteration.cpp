@@ -115,37 +115,21 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     // Start iteration
     start(group);
     
-    //dolfin_start("Starting element group iteration");
+    dolfin_start("Starting element group iteration");
     
     // Fixed point iteration on the element group
     for (unsigned int n = 0; n < maxiter; n++)
     {
-      /*
-	for (unsigned int i = 0; i < elements.size(); i++)
-	{
-	// Get the element
-	Element* element = elements[i];
-	dolfin_assert(element);
-	
-	for(unsigned int j = 0; j < element->order() + 1; j++)
-	{
-	dolfin_debug3("value(%d, %d): %lf", i, j, element->value(j));
-	}
-	}
-      */
-      
-      //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
-      
       // Check convergence
       if ( converged(group, r, n) )
       {
-	//dolfin_end("Element group iteration converged in %d iterations", n);
+	dolfin_end("Element group iteration converged in %d iterations", n);
 	end(group);
 	return true;
       }
       
-      //dolfin_debug3("r0: %lf r1: %lf r2: %lf", r.r0, r.r1, r.r2);
-      
+      cout << "Element group residual: " << r.r1 << " --> " << r.r2 << endl;
+
       // Check divergence
       if ( retry = diverged(group, r, n, newstate) )
       {
@@ -156,20 +140,6 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     
       // Stabilize iteration
       stabilize(group, r, n);
-      
-      /*
-	for (unsigned int i = 0; i < elements.size(); i++)
-	{
-	// Get the element
-	Element* element = elements[i];
-	dolfin_assert(element);
-	
-	for(unsigned int j = 0; j < element->order() + 1; j++)
-	{
-	dolfin_debug3("value(%d, %d): %lf", i, j, element->value(j));
-	}
-	}
-      */
 
       // Update element group
       update(group);
@@ -179,7 +149,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     end(group);
   }
   
-  //dolfin_end("Element group iteration did not converge");
+  dolfin_end("Element group iteration did not converge");
 
   return false;
 }

@@ -48,19 +48,6 @@ namespace dolfin
 
     void report() const;
 
-  private:
-
-    // Compute divergence
-    real computeDivergence(ElementGroup& group, const Residuals& r);
-    
-    //--- Iteration data ---
-   
-    // Solution values for divergence computation
-    Values x0;
- 
-    // Solution values for Gauss-Jacobi iteration
-    Values x1;
-   
   };
 
 }

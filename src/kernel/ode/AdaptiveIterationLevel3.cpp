@@ -46,13 +46,8 @@ void AdaptiveIterationLevel3::start(ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
 {
-  // Compute total number of values in group if this iteration is
-  // not nested inside the group list iteration. This happens when
-  // the time slab is created (group by group), before the actual
-  // iteration starts.
-
-  if ( depth() == 1 )
-    datasize = dataSize(group);
+  // Compute total number of values in element group
+  datasize = dataSize(group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(Element& element)
@@ -62,12 +57,16 @@ void AdaptiveIterationLevel3::start(Element& element)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroupList& list)
 {
+  dolfin_assert(depth() == 1);
+
   // Initialize values
   initData(x1);
   
-  // Compute new values
-  for (ElementGroupIterator group(list); !group.end(); ++group)
-    fixpoint.iterate(*group);
+  // Compute new values. Note that we skip the recursive iteration,
+  // we directly update all elements without calling iterate on
+  // all element groups contained in the group list.
+  for (ElementIterator element(list); !element.end(); ++element)
+    update(*element);
 
   // Copy values to elements
   copyData(x1, list);
@@ -75,27 +74,19 @@ void AdaptiveIterationLevel3::update(ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(ElementGroup& group)
 {
-  // Needs to be handled differently depending on the depth, see comment
-  // above in start(ElementGroup& group).
+  dolfin_assert(depth() == 1);
 
-  if ( depth() == 1 )
-  {
-    // Initialize values
-    initData(x1);
+  // Initialize values
+  initData(x1);
     
-    // Compute new values
-    for (ElementIterator element(group); !element.end(); ++element)
-      fixpoint.iterate(*element);
-
-    // Copy values to elements
-    copyData(x1, group);
-  }
-  else
-  {
-    // Update elements
-    for (ElementIterator element(group); !element.end(); ++element)
-      fixpoint.iterate(*element);
-  }
+  // Compute new values. Note that we skip the recursive iteration,
+  // we directly update all elements without calling iterate on
+  // all element groups contained in the group list.
+  for (ElementIterator element(group); !element.end(); ++element)
+    update(*element);
+  
+  // Copy values to elements
+  copyData(x1, group);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::update(Element& element)
@@ -111,11 +102,15 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
   // Make at least one iteration before stabilizing
   if ( n < 1 )
     return;
+  
+  cout << "Checking stabilization of time slab" << endl;
+  cout << "j = " << j << endl;
 
   // Stabilize if necessary
   real rho = 0.0;
   if ( r.r2 > r.r1 && j == 0 )
   {
+    cout << "Need to stabilize" << endl;
     rho = computeDivergence(list, r);
     Iteration::stabilize(r, rho);
   }
@@ -124,7 +119,17 @@ void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
 					const Residuals& r, unsigned int n)
 {
-  // Do nothing
+  // Make at least one iteration before stabilizing
+  if ( n < 1 )
+    return;
+
+  // Stabilize if necessary
+  real rho = 0.0;
+  if ( r.r2 > r.r1 && j == 0 )
+  {
+    rho = computeDivergence(group, r);
+    Iteration::stabilize(r, rho);
+  }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(Element& element, 
@@ -150,13 +155,23 @@ bool AdaptiveIterationLevel3::converged(ElementGroupList& list,
 bool AdaptiveIterationLevel3::converged(ElementGroup& group, 
 					Residuals& r, unsigned int n)
 {
-  // Iterate one time on each element group
-  return n > 0;
+  // Compute residual
+  r.r1 = r.r2;
+  r.r2 = residual(group);
+  
+  // Save initial residual
+  if ( n == 0 )
+    r.r0 = r.r2;
+
+  return r.r2 < tol & n > 0;
 }
 //-----------------------------------------------------------------------------
 bool AdaptiveIterationLevel3::converged(Element& element, 
 					Residuals& r, unsigned int n)
 {
+  // We should not reach this statement
+  dolfin_assert(false);
+
   // Iterate one time on each element
   return n > 0;
 }
@@ -213,59 +228,5 @@ void AdaptiveIterationLevel3::report() const
 {
   cout << "System is stiff, solution computed with adaptively stabilized "
        << "fixed point iteration (on time slab level)." << endl;
-}
-//-----------------------------------------------------------------------------
-real AdaptiveIterationLevel3::computeDivergence(ElementGroupList& list,
-						const Residuals& r)
-{
-  cout << "Computing divergence for time slab" << endl;
-
-  // Successive residuals
-  real r1 = r.r1;
-  real r2 = r.r2;
-
-  // Successive convergence factors
-  real rho2 = r2 / r1;
-  real rho1 = rho2;
-
-  // Save current alpha and change alpha to 1 for divergence computation
-  real alpha0 = alpha;
-  alpha = 1.0;
-
-  // Save solution values before iteration
-  initData(x0);
-  copyData(list, x0);
-
-  for (unsigned int n = 0; n < maxiter; n++)
-  {
-    // Update time slab
-    update(list);
-    
-    // Compute residual
-    r1 = r2;
-    r2 = residual(list);
-  
-    // Compute divergence
-    rho1 = rho2;
-    rho2 = r2 / (DOLFIN_EPS + r1);
-
-    cout << "rho = " << rho2 << endl;
-
-    // Check if the divergence factor has converged
-    if ( abs(rho2-rho1) < 0.1 * rho1 )
-    {
-      dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
-      break;
-    }
-    
-  }
-
-  // Restore alpha
-  alpha = alpha0;
-
-  // Restore solution values
-  copyData(x0, list);
-
-  return rho2;
 }
 //-----------------------------------------------------------------------------

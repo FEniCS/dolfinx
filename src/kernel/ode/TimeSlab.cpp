@@ -59,8 +59,6 @@ real TimeSlab::length() const
 //-----------------------------------------------------------------------------
 void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
 {
-  cout << "Suggested time step for slab: " << K << endl;
-
   // Make sure that we don't go beyond t1
 
   if ( K > adaptivity.threshold() * (t1 - t0) )
@@ -71,8 +69,6 @@ void TimeSlab::setsize(real K, const Adaptivity& adaptivity)
   }
   else
     t1 = t0 + K;
-
-  cout << "Modified time step for slab: " << K << endl;
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const TimeSlab& timeslab)

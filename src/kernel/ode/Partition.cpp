@@ -47,8 +47,6 @@ void Partition::update(int offset, int& end, real& K, Adaptivity& adaptivity)
   // groups, one group with k < K and one with k >= K.
   K = threshold * maximum(offset, adaptivity);
 
-  cout << "Partitioning with respect to K = " << K << endl;
-
   // Comparison operator
   Less less(K, adaptivity);
 

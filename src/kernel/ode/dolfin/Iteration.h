@@ -144,6 +144,12 @@ namespace dolfin
 
     // Stabilization for adaptive iteration
     void stabilize(const Residuals& r, real rho);
+    
+    // Compute divergence
+    real computeDivergence(ElementGroupList& list, const Residuals& r);
+
+    // Compute divergence
+    real computeDivergence(ElementGroup& group, const Residuals& r);
 
     // Compute alpha
     real computeAlpha(real rho) const;
@@ -204,6 +210,12 @@ namespace dolfin
 
     // Previously computed data size
     unsigned int datasize;
+
+    // Temporary data used to restore element values after iteration
+    Values x0;
+
+    // Temporary data used for Gauss-Jacobi iteration
+    Values x1;
 
   };
 

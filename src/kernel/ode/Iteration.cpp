@@ -167,6 +167,110 @@ void Iteration::stabilize(const Residuals& r, real rho)
   }
 }
 //-----------------------------------------------------------------------------
+real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
+{
+  cout << "Computing divergence for time slab" << endl;
+  
+  // Successive residuals
+  real r1 = r.r1;
+  real r2 = r.r2;
+
+  // Successive convergence factors
+  real rho2 = r2 / r1;
+  real rho1 = rho2;
+
+  // Save current alpha and change alpha to 1 for divergence computation
+  real alpha0 = alpha;
+  alpha = 1.0;
+
+  // Save solution values before iteration
+  initData(x0);
+  copyData(list, x0);
+
+  for (unsigned int n = 0; n < maxiter; n++)
+  {
+    // Update time slab
+    update(list);
+    
+    // Compute residual
+    r1 = r2;
+    r2 = residual(list);
+  
+    // Compute divergence
+    rho1 = rho2;
+    rho2 = r2 / (DOLFIN_EPS + r1);
+
+    cout << "  rho = " << rho2 << endl;
+    
+    // Check if the divergence factor has converged
+    if ( abs(rho2-rho1) < 0.1 * rho1 )
+    {
+      dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
+      break;
+    }
+    
+  }
+
+  // Restore alpha
+  alpha = alpha0;
+
+  // Restore solution values
+  copyData(x0, list);
+
+  return rho2;
+}
+//-----------------------------------------------------------------------------
+real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
+{
+  // Successive residuals
+  real r1 = r.r1;
+  real r2 = r.r2;
+  
+  // Successive convergence factors
+  real rho2 = r2 / r1;
+  real rho1 = rho2;
+  
+  // Save current alpha and change alpha to 1 for divergence computation
+  real alpha0 = alpha;
+  alpha = 1.0;
+
+  // Save solution values before iteration
+  initData(x0);
+  copyData(group, x0);
+
+  for (unsigned int n = 0; n < maxiter; n++)
+  {
+    // Update element group
+    update(group);
+    
+    // Compute residual
+    r1 = r2;
+    r2 = residual(group);
+  
+    // Compute divergence
+    rho1 = rho2;
+    rho2 = r2 / (DOLFIN_EPS + r1);
+
+    cout << "  rho = " << rho2 << endl;
+
+    // Check if the divergence factor has converged
+    if ( abs(rho2-rho1) < 0.1 * rho1 )
+    {
+      dolfin_debug1("Computed divergence rate in %d iterations", n + 1);
+      break;
+    }
+    
+  }
+
+  // Restore alpha
+  alpha = alpha0;
+
+  // Restore solution values
+  copyData(x0, group);
+
+  return rho2;
+}
+//-----------------------------------------------------------------------------
 real Iteration::computeAlpha(real rho) const
 {
   return gamma / (1.0 + rho);
@@ -174,9 +278,6 @@ real Iteration::computeAlpha(real rho) const
 //-----------------------------------------------------------------------------
 unsigned int Iteration::computeSteps(real rho) const
 {
-  cout << "rho = " << rho << endl;
-  cout << (1.0 + log(rho)) << endl;
-  cout << (log(1.0/(1.0-gamma*gamma))) << endl;
   return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
