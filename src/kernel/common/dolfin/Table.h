@@ -41,13 +41,13 @@ namespace dolfin {
 	 
     /// Return a pointer to the element with the given id
     T* pointer(int id);
-	 
-    /// Check if the table is empty
-    bool empty() const;
-	 
+		 
     /// Return the size of the table
     int size() const;
 	 
+    /// Check if the table is empty
+    bool empty() const;
+
     /// Output
     friend LogStream& operator<< <> (LogStream& stream, const Table<T>& table);
 
@@ -313,14 +313,14 @@ namespace dolfin {
     return 0;
   }
   //---------------------------------------------------------------------------	 
-  template <class T> bool Table<T>::empty() const
-  {
-    return _size == 0;
-  }
-  //---------------------------------------------------------------------------	 
   template <class T> int Table<T>::size() const
   {
     return _size;
+  }
+  //---------------------------------------------------------------------------	 
+  template <class T> bool Table<T>::empty() const
+  {
+    return _size == 0;
   }
   //---------------------------------------------------------------------------
   template <class T> LogStream& operator<<(LogStream& stream, const Table<T> &table)

@@ -79,6 +79,9 @@ namespace dolfin {
    
     /// Return size of array
     int size() const;
+
+    /// Check if array is empty
+    bool empty() const;
         
     /// Search array for given element
     bool contains(T element);
@@ -238,6 +241,11 @@ namespace dolfin {
   template <class T> int Array<T>::size() const
   {
     return _size;
+  }
+  //---------------------------------------------------------------------------    
+  template <class T> bool Array<T>::empty() const
+  {
+    return _size == 0;
   }
   //---------------------------------------------------------------------------    
   template <class T> bool Array<T>::contains(T element)

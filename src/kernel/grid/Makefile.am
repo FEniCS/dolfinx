@@ -12,6 +12,7 @@ include_HEADERS          = dolfin/dolfin_grid.h \
                            dolfin/GenericCell.h \
                            dolfin/Grid.h \
                            dolfin/GridData.h \
+                           dolfin/GridHierarchy.h \
                            dolfin/GridInit.h \
                            dolfin/GridRefinement.h \
                            dolfin/GridRefinementData.h \
@@ -34,6 +35,7 @@ libdolfin_grid_a_SOURCES = Boundary.cpp \
                            GenericCell.cpp \
                            Grid.cpp \
                            GridData.cpp \
+                           GridHierarchy.cpp \
                            GridInit.cpp \
                            GridRefinement.cpp \
                            GridRefinementData.cpp \

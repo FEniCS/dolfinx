@@ -81,6 +81,7 @@ namespace dolfin {
     friend class XMLGrid;
     friend class GridInit;
     friend class GridRefinement;
+    friend class GridHierarchy;
     friend class Boundary;
     friend class BoundaryInit;
     
@@ -109,16 +110,22 @@ namespace dolfin {
     
     void init();
     
-    /// Grid data
+    // Grid data
     GridData gd;
 
-    /// Boundary data
+    // Boundary data
     BoundaryData bd;
 
-    /// Grid refinement data
+    // Grid refinement data
     GridRefinementData rd;
     
-    /// Grid type
+    // Parent grid
+    Grid* _parent;
+
+    // Child grid
+    Grid* _child;
+    
+    // Grid type
     Type _type;
 
   };

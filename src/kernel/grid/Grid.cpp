@@ -12,6 +12,7 @@
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/File.h>
+#include <dolfin/GridHierarchy.h>
 #include <dolfin/GridInit.h>
 #include <dolfin/GridRefinement.h>
 #include <dolfin/Grid.h>
@@ -22,15 +23,17 @@ using namespace dolfin;
 Grid::Grid() : gd(this), bd(this), rd(this)
 {
   rename("grid", "no description");
+  clear();
 }
 //-----------------------------------------------------------------------------
 Grid::Grid(const char* filename) : gd(this), bd(this), rd(this)
 {
+  rename("grid", "no description");
+  clear();
+
   // Read grid from file
   File file(filename);
   file >> *this;
-
-  rename("grid", "no description");
 }
 //-----------------------------------------------------------------------------
 Grid::~Grid()
@@ -44,6 +47,8 @@ void Grid::clear()
   bd.clear();
   rd.clear();
   _type = triangles;
+  _parent = 0;
+  _child = 0;
 }
 //-----------------------------------------------------------------------------
 int Grid::noNodes() const
@@ -78,6 +83,9 @@ void Grid::mark(Cell* cell)
 //-----------------------------------------------------------------------------
 void Grid::refine()
 {
+  // Create grid hierarchy
+  GridHierarchy gh(*this);
+
   GridRefinement::refine(*this);
 }
 //-----------------------------------------------------------------------------

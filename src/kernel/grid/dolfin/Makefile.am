@@ -11,6 +11,7 @@ EXTRA_DIST = dolfin_grid.h \
              GenericCell.h \
              Grid.h \
              GridData.h \
+             GridHierarchy.h \
              GridInit.h \
              GridRefinement.h \
              GridRefinementData.h \
