@@ -1,13 +1,14 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
-
+//
+// Modified by Anders Logg, 2004.
+// 
 // Benchmark problem for the multi-adaptive ODE-solver, a system of n
-// particles connected with springs. All springs, except the first spring,
-// are of equal stiffness k = 1.
+// particles connected with springs. All springs, except the first
+// spring, are of equal stiffness k = 1.
 
 #include <iostream>
 #include <sstream>
-
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -92,8 +93,6 @@ public:
 
   real Fx(unsigned int i, real t)
   {
-    //std::cerr << "eIndex: " << i << std::endl;
-
     if ( i == 0 )
       return - 100.0*x(i) + k*(x(i+1) - x(i) - h);
     if ( i == 1 )
@@ -124,7 +123,6 @@ protected:
   real m;
   
 };
-
 
 class Benchmarkdg : public Benchmarkcg
 {
@@ -202,18 +200,15 @@ int main(int argC, char* argV[])
   //dolfin_set("fixed time step", true);
   dolfin_set("maximum iterations", 20000);
 
-
-
   cout << "Creating problem with " << n << " masses" << endl;
 
-
-  if(method == "mcg")
+  if (method == "mcg")
   {
     Benchmarkcg bench(n, m, b);
     bench.solve();
   }
 
-  if(method == "mdg")
+  if (method == "mdg")
   {
     dolfin_set("method", "dg");
     dolfin_set("order", 0);
@@ -222,7 +217,7 @@ int main(int argC, char* argV[])
     bench.solve();
   }
 
-  if(method == "cg")
+  if (method == "cg")
   {
     dolfin::dolfin_set("partitioning threshold", 1e-7);
 
@@ -230,7 +225,7 @@ int main(int argC, char* argV[])
     bench.solve();
   }
 
-  if(method == "dg")
+  if (method == "dg")
   {
     dolfin::dolfin_set("partitioning threshold", 1e-7);
 
