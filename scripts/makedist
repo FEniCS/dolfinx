@@ -61,11 +61,11 @@ less $MAKELOG
 # Copy files to web server
 cd ..
 echo 'Copying ChangeLog to web server'
-scp ChangeLog logg@remote.math.chalmers.se:work/www-phi/pub/software/dolfin
+scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
 echo 'Copying TODO list to web server'
-scp TODO logg@remote.math.chalmers.se:work/www-phi/pub/software/dolfin
+scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 echo 'Copying tarball to web server'
-scp $TARBALL logg@remote.math.chalmers.se:work/www-phi/pub/software/dolfin/v0.4
+scp $TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 
 # Write a message
 echo ' '
