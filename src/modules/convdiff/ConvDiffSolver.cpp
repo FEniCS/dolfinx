@@ -44,7 +44,11 @@ void ConvDiffSolver::solve()
   // Save initial value
   u1.rename("u", "temperature");
   file << u1;
-  
+
+  // Assemble matrix
+  convdiff.k = k;
+  fem.assemble(convdiff, grid, A);
+
   // Start a progress session
   Progress p("Time-stepping");
 
@@ -53,16 +57,12 @@ void ConvDiffSolver::solve()
     
     // Make time step
     t += k;
-    
-    // Set solution to previous solution
     x0 = x1;
     
-    // Set time step and time for equation
+    // Assemble load vector
     convdiff.k = k;
     convdiff.t = t;
-    
-    // Discretise equation
-    fem.assemble(convdiff, grid, A, b);
+    fem.assemble(convdiff, grid, b);
     
     // Solve the linear system
     solver.solve(A, x1, b);
@@ -73,7 +73,7 @@ void ConvDiffSolver::solve()
 
     // Update progress
     p = t / T;
-    
+
   }
 
 }

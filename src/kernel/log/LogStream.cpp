@@ -44,13 +44,13 @@ LogStream& LogStream::operator<<(const std::string& s)
 LogStream& LogStream::operator<<(const LogStream& stream)
 {
   if ( stream.type == ENDL ) {
-	 LogManager::log.info(buffer);
-	 current = 0;
-	 buffer[0] = '\0';
+    LogManager::log.info(buffer);
+    current = 0;
+    buffer[0] = '\0';
   }
   else
-	 add(stream.buffer);
-
+    add(stream.buffer);
+  
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -73,9 +73,13 @@ LogStream& LogStream::operator<<(real a)
 void LogStream::add(const char* msg)
 {
   for (int i = 0; msg[i]; i++) {
-	 if ( current >= (DOLFIN_LINELENGTH-1) )
-		dolfin_error("Capacity of buffer for cout exceeded.");
-	 buffer[current++] = msg[i];
+    if ( current >= (DOLFIN_LINELENGTH-1) ) {
+      LogManager::log.info(buffer);
+      current = 0;
+      buffer[0] = '\0';
+      return;
+    }
+    buffer[current++] = msg[i];
   }
   buffer[current] = '\0';
 }

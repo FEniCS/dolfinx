@@ -31,9 +31,9 @@ FunctionSpace::ShapeFunction::ShapeFunction(const ShapeFunction &v)
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::ShapeFunction::set(ElementFunction dx,
-													ElementFunction dy,
-													ElementFunction dz,
-													ElementFunction dt)
+				       ElementFunction dy,
+				       ElementFunction dz,
+				       ElementFunction dt)
 {
   FunctionList::set(_id, dx, dy, dz, dt);
 }
@@ -215,7 +215,7 @@ FunctionSpace::ElementFunction dolfin::operator*
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream,
-													const FunctionSpace::ShapeFunction &v)
+				       const FunctionSpace::ShapeFunction &v)
 {
   stream << "[ ShapeFunction with id = " << v._id << " ]";
   

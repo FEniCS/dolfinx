@@ -4,6 +4,7 @@
 #ifndef __PARAMETER_HH
 #define __PARAMETER_HH
 
+#include <string>
 #include <stdarg.h>
 
 #include <dolfin/constants.h>
@@ -14,8 +15,10 @@
 
 #define PARAMETER_IDENTIFIER_LENGTH 128
 
+using std::string;
+
 namespace dolfin {
-  
+
   // A small class for internal use in Settings
   class Parameter{
   public:
@@ -33,7 +36,8 @@ namespace dolfin {
     void set(const char *identifier, va_list aptr);
     void get(va_list aptr);
     
-    bool matches(const char *string);
+    bool matches(const char* identifier);
+    bool matches(string identifier);
     bool changed();
     
     void operator= (const Parameter &p);
@@ -45,7 +49,8 @@ namespace dolfin {
     // Type cast, enable assignment to type from Parameter
     operator real() const;
     operator int() const;
-    operator char*() const;
+    operator string() const;
+    operator const char*() const;
     operator function() const;
     operator vfunction() const;
     operator bcfunction() const;
@@ -56,12 +61,12 @@ namespace dolfin {
   private:
     
     // A description of the parameter
-    char identifier[PARAMETER_IDENTIFIER_LENGTH];
+    string identifier;
     
     // Values
     real       val_real;
     int        val_int;
-    char      *val_string;
+    string     val_string;
     function   val_function;
     vfunction  val_vfunction;
     bcfunction val_bcfunction;

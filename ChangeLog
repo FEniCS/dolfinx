@@ -1,3 +1,7 @@
+ - Make convection-diffusion solver work again
+ - Fix bug in integration, move multiplication with the determinant
+ - Fix memory leaks in ElementFunction
+ - Add parameter to choose output format
  - Make OctaveFile and MatlabFile subclasses of MFile
  - Add classes ScalarExpressionFunction and VectorExpressionFunction
  - Make progress bars work cleaner

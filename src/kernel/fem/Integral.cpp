@@ -23,7 +23,7 @@ Integral::Measure::Measure()
 }
 //-----------------------------------------------------------------------------
 Integral::Measure::Measure(const Mapping& mapping,
-									const Quadrature& quadrature)
+			   const Quadrature& quadrature)
 {  
   // Save mapping and quadrature
   m = &mapping;
@@ -36,15 +36,15 @@ Integral::Measure::Measure(const Mapping& mapping,
 Integral::Measure::~Measure()
 {
   if ( table ) {
-	 for (int i = 0; i < order; i++)
-		delete table[i];
-	 delete [] table;
+    for (int i = 0; i < order; i++)
+      delete table[i];
+    delete [] table;
   }
   table = 0;
 }
 //-----------------------------------------------------------------------------
 void Integral::Measure::update(const Mapping &mapping,
-										 const Quadrature &quadrature)
+			       const Quadrature &quadrature)
 {
   m = &mapping;
   q = &quadrature;
@@ -62,17 +62,17 @@ real Integral::Measure::operator* (const FunctionSpace::ShapeFunction &v)
   
   // Check if the size of the function list has increased
   if ( FunctionList::size() > n )
-	 resize(order, FunctionList::size());
+    resize(order, FunctionList::size());
 
   // Get value
   Value value = (*(table[0]))(id);
   
   // Check if integral has already been computed
   if ( value.ok() )
-	 return value();
+    return value() * fabs(m->det());
   
   // If the value has not been computed before, we need to compute it
-  return integral(v);
+  return integral(v) * fabs(m->det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::Product &v)
@@ -83,21 +83,21 @@ real Integral::Measure::operator* (const FunctionSpace::Product &v)
 
   // Check if the size of the function list has increased
   if ( FunctionList::size() > n )
-	 resize(order, FunctionList::size());
+    resize(order, FunctionList::size());
 
   // Check if we need to increase the maximum number of factors
   if ( size > order )
-	 resize(size, n);
-
+    resize(size, n);
+  
   // Get value
   Value value = (*(table[size - 1]))(id);
   
   // Check if integral has already been computed
   if ( value.ok() )
-	 return value();
-
+    return value() * fabs(m->det());
+  
   // If the value has not been computed before, we need to compute it
-  return integral(v);
+  return integral(v) * fabs(m->det());
 }
 //-----------------------------------------------------------------------------
 real Integral::Measure::operator* (const FunctionSpace::ElementFunction &v)
@@ -152,10 +152,7 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::ShapeFunction &v)
   // Compute integral using the quadrature rule
   real I = 0.0;
   for (int i = 0; i < q->size(); i++)
-	 I += q->weight(i) * v(q->point(i));
-  
-  // Multiply with determinant of mapping (constant if the mapping is linear)
-  I *= fabs(m->det());
+    I += q->weight(i) * v(q->point(i));
   
   // Set value
   (*table[0])(v.id()).set(I);
@@ -168,10 +165,7 @@ real Integral::InteriorMeasure::integral(const FunctionSpace::Product &v)
   // Compute integral using the quadrature rule
   real I = 0.0;
   for (int i = 0; i < q->size(); i++)
-	 I += q->weight(i) * v(q->point(i));
-  
-  // Multiply with determinant of mapping (constant if the mapping is linear)
-  I *= fabs(m->det());
+    I += q->weight(i) * v(q->point(i));
   
   // Set value
   (*table[v.size() - 1])(v.id()).set(I);

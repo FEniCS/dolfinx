@@ -55,6 +55,10 @@ void FunctionList::set(int id,
 void FunctionList::update(const FunctionSpace::ShapeFunction& v,
 			  const Mapping& mapping)
 {
+  // FIXME: Possible optimisation is to use something like
+  // mapping.dx(v, list(v.id()).dx) so that we avoid creating an
+  // element function that needs to be copied
+
   list(v.id()).dx = mapping.dx(v);
   list(v.id()).dy = mapping.dy(v);
   list(v.id()).dz = mapping.dz(v);

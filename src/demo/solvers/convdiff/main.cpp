@@ -22,15 +22,15 @@ real f(real x, real y, real z, real t)
 // Diffusivity
 real a(real x, real y, real z, real t)
 {
-  return 0.01;
+  return 0.1;
 }
 
 // Convection
 real b(real x, real y, real z, real t, int i)
 {
   if ( i == 0 )
-    return -10.0;
-  
+    return 1.0;
+
   return 0.0;
 }
 
@@ -62,11 +62,3 @@ int main(int argc, char **argv)
   
   return 0;
 }
-
-//dolfin_bc my_bc(real x, real y, real z, int node, int component)
-//{
-// dolfin_bc bc;
-//
-
-//  return bc;
-//}

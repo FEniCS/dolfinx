@@ -32,7 +32,6 @@ namespace dolfin {
       return (up*v + k*f*v) * dK;
     }
     
-    
   private:    
     ElementFunction f;         // Source term
     ElementFunction up;        // Function value at left end-point

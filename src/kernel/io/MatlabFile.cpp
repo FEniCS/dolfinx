@@ -37,7 +37,7 @@ void MatlabFile::operator<<(Matrix& A)
       }
     }
   }
-  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.label().c_str());
+  fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
   
   // Close file
   fclose(fp);

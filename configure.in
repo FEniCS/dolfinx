@@ -8,7 +8,7 @@ DOLFIN_MAIN="main"
 
 dnl Note: need to be in the correct order, and some are needed twice.
 dnl Not very pretty... Maybe someone knows how to fix this?
-DOLFIN_KERNEL="io grid fem elements quadrature io la math common settings log common"
+DOLFIN_KERNEL="io grid fem elements quadrature io la math common settings log settings common"
 
 dnl Find modules
 cd src/modules

@@ -18,25 +18,25 @@ TriLinMapping::TriLinMapping() : Mapping()
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dx
-(const FunctionSpace::ShapeFunction &v) const
+(const FunctionSpace::ShapeFunction& v) const
 {
   return g11*v.dX() + g21*v.dY();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dy
-(const FunctionSpace::ShapeFunction &v) const
+(const FunctionSpace::ShapeFunction& v) const
 {
   return g12*v.dX() + g22*v.dY();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dz
-(const FunctionSpace::ShapeFunction &v) const
+(const FunctionSpace::ShapeFunction& v) const
 {
   return v.dZ();
 }
 //-----------------------------------------------------------------------------
 const FunctionSpace::ElementFunction TriLinMapping::dt
-(const FunctionSpace::ShapeFunction &v) const
+(const FunctionSpace::ShapeFunction& v) const
 {
   return v.dT();
 }
@@ -45,11 +45,11 @@ void TriLinMapping::update(const Cell& cell)
 {
   // Check that cell type is correct
   if ( cell.type() != Cell::TRIANGLE )
-	 dolfin_error("Wrong cell type for mapping (must be a triangle).");
+    dolfin_error("Wrong cell type for mapping (must be a triangle).");
   
   // Reset values
   reset();
-
+  
   // Get coordinates
   NodeIterator n(cell);
   Point p0 = n->coord(); ++n;
@@ -62,10 +62,10 @@ void TriLinMapping::update(const Cell& cell)
   
   // Compute determinant
   d = f11 * f22 - f12 * f21;
-
+  
   // Check determinant
   if ( fabs(d) < DOLFIN_EPS )
-	 dolfin_error("Mapping from reference element is singular.");
+    dolfin_error("Mapping from reference element is singular.");
   
   // Compute inverse
   g11 =   f22 / d; g12 = - f12 / d;

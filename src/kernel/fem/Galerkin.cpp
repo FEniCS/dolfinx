@@ -40,7 +40,7 @@ Galerkin::Galerkin(FiniteElement& element,
   this->element    = &element;
   this->mapping    = &mapping;
   this->quadrature = &quadrature;
-
+  
   // User specified method
   user = true;
 }
@@ -60,22 +60,33 @@ Galerkin::~Galerkin()
     if ( quadrature )
       delete quadrature;
     quadrature = 0;
-	 
+    
   }
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assemble(Equation &equation, Grid &grid, Matrix &A, Vector &b)
+void Galerkin::assemble(Equation& equation, Grid& grid, Matrix& A, Vector& b)
 {
-  assembleLHS(equation, grid, A);
-  assembleRHS(equation, grid, b);
-  setBC(grid, A, b);
+  assemble(equation, grid, A);
+  assemble(equation, grid, b);
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
+void Galerkin::assemble(Equation& equation, Grid& grid, Matrix& A)
+{
+  assembleLHS(equation, grid, A);
+  setBC(grid, A);
+}
+//-----------------------------------------------------------------------------
+void Galerkin::assemble(Equation& equation, Grid& grid, Vector& b)
+{
+  assembleRHS(equation, grid, b);
+  setBC(grid, b);
+}
+//-----------------------------------------------------------------------------
+void Galerkin::assembleLHS(Equation& equation, Grid& grid, Matrix& A)
 {  
   // Make sure that we have chosen trial and test spaces
   init(grid);
-    
+  
   // Allocate and reset matrix
   alloc(A, grid);
   
@@ -112,17 +123,17 @@ void Galerkin::assembleLHS(Equation &equation, Grid &grid, Matrix &A)
   cout << "Assembled: " << A << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
+void Galerkin::assembleRHS(Equation& equation, Grid& grid, Vector& b)
 {
   // Make sure that we have chosen trial and test spaces
   init(grid);
-    
+  
   // Allocate and reset matrix
   alloc(b, grid);
-
+  
   // Start a progress session
   Progress p("Assembling right-hand side", grid.noCells());  
-
+  
   // Iterate over all cells in the grid
   for (CellIterator cell(grid); !cell.end(); ++cell) {
     
@@ -145,7 +156,7 @@ void Galerkin::assembleRHS(Equation &equation, Grid &grid, Vector &b)
   cout << "Assembled: " << b << endl;
 }
 //-----------------------------------------------------------------------------
-void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
+void Galerkin::setBC(Grid& grid, Matrix& A)
 {
   cout << "Setting boundary condition: Works only for nodal basis." << endl;
   
@@ -170,6 +181,44 @@ void Galerkin::setBC(Grid &grid, Matrix &A, Vector &b)
     switch ( bc.type() ) {
     case BoundaryCondition::DIRICHLET:
       A.ident(node->id());
+      break;
+    case BoundaryCondition::NEUMANN:
+      if ( bc.val() != 0.0 )
+	dolfin_error("Inhomogeneous Neumann boundary conditions not implemented.");
+      break;
+    default:
+      dolfin_error("Unknown boundary condition.");
+      break;
+    }
+    
+  }
+  
+}
+//-----------------------------------------------------------------------------
+void Galerkin::setBC(Grid& grid, Vector& b)
+{
+  cout << "Setting boundary condition: Works only for nodal basis." << endl;
+  
+  BoundaryCondition bc;
+  bcfunction bcf;
+  
+  // Get boundary condition function
+  bcf = dolfin_get("boundary condition");
+
+  // Iterate over all nodes on the boundary
+  for (NodeIterator node(grid); !node.end(); ++node) {
+    
+    // Only set boundary condition for nodes on the boundary
+    if ( node->boundary() == -1 )
+      continue;
+    
+    // Get boundary condition
+    bc.update(node);
+    bcf(bc);
+    
+    // Set boundary condition
+    switch ( bc.type() ) {
+    case BoundaryCondition::DIRICHLET:
       b(node->id()) = bc.val();
       break;
     case BoundaryCondition::NEUMANN:

@@ -31,7 +31,7 @@ namespace dolfin {
     ElementFunction f;
     
   };
-
+  
 }
 
 #endif

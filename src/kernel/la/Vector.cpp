@@ -57,8 +57,6 @@ Vector::Vector(real x0, real x1, real x2) : Variable("x", "A vector")
   values[0] = x0;
   values[1] = x1;
   values[2] = x2;
-  
-  std::cout << "Initialising vector of length 3" << std::endl;
 }
 //-----------------------------------------------------------------------------
 Vector::~Vector()

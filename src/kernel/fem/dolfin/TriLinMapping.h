@@ -10,19 +10,19 @@
 #include <dolfin/Mapping.h>
 
 namespace dolfin {
-
+  
   class TriLinMapping : public Mapping {
   public:
-
-	 TriLinMapping();
-
-	 const FunctionSpace::ElementFunction dx(const FunctionSpace::ShapeFunction &v) const;
-	 const FunctionSpace::ElementFunction dy(const FunctionSpace::ShapeFunction &v) const;
-	 const FunctionSpace::ElementFunction dz(const FunctionSpace::ShapeFunction &v) const;
-	 const FunctionSpace::ElementFunction dt(const FunctionSpace::ShapeFunction &v) const;
-	 
-	 void update(const Cell &cell);
-
+    
+    TriLinMapping();
+    
+    const FunctionSpace::ElementFunction dx(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction dy(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction dz(const FunctionSpace::ShapeFunction &v) const;
+    const FunctionSpace::ElementFunction dt(const FunctionSpace::ShapeFunction &v) const;
+    
+    void update(const Cell &cell);
+    
   };
 
 }

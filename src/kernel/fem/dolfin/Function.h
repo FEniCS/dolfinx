@@ -20,6 +20,7 @@ namespace dolfin {
     
     Function(Grid& grid, dolfin::Vector& x, int dim = 0, int size = 1);
     Function(Grid& grid, const char* name,  int dim = 0, int size = 1);
+    ~Function();
     
     // Update values of element function
     void update(FunctionSpace::ElementFunction& v,

@@ -149,7 +149,7 @@ namespace dolfin {
     int add(T element)
     {
       for (int i = 0; i < _size; i++)
-	if ( !list[i] ){
+	if ( !list[i] ) {
 	  list[i] = element;
 	  return i;
 	}

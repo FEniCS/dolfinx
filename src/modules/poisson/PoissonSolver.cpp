@@ -27,9 +27,11 @@ void PoissonSolver::solve()
   Poisson      poisson(f);
   KrylovSolver solver;
   File         file("poisson.m");
-  
+
   // Discretise
   fem.assemble(poisson, grid, A, b);
+
+  file << A;
   
   // Solve the linear system
   solver.solve(A, x, b);
@@ -37,5 +39,7 @@ void PoissonSolver::solve()
   // Save the solution
   u.rename("u", "temperature");
   file << u;
+
+
 }
 //-----------------------------------------------------------------------------

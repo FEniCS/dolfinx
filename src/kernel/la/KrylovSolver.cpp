@@ -33,7 +33,7 @@ void KrylovSolver::solve(Matrix &A, Vector &x, Vector &b)
   if ( A.size(0) != b.size() )
     dolfin_error("Incompatible matrix and vector dimensions.");
   
-  cout << "Using Krylov solver for linear system of " << b.size() << " unknowns" << endl;
+  cout << "Using Krylov solver for linear system of " << b.size() << " unknowns." << endl;
   
   // Check if we need to resize x
   if (x.size() != b.size()) x.init(b.size());

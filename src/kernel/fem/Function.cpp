@@ -22,7 +22,7 @@ Function::Function(Grid &grid, dolfin::Vector &x, int dim, int size) :
 {
   f = new DofFunction(grid, x, dim, size);
   t = 0.0;
-
+  
   rename("u", "A function");
 }
 //-----------------------------------------------------------------------------
@@ -44,6 +44,13 @@ Function::Function(Grid &grid, const char *name, int dim, int size) :
   t = 0.0;
 
   rename("u", "A function");
+}
+//-----------------------------------------------------------------------------
+Function::~Function()
+{
+  if ( f != 0 )
+    delete f;
+  f = 0;
 }
 //-----------------------------------------------------------------------------
 void Function::update(FunctionSpace::ElementFunction& v,

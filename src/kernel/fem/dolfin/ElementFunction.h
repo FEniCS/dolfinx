@@ -94,10 +94,10 @@ namespace dolfin {
     void set(int i, const ShapeFunction &v, real value);
    
     // Integration
-    real operator* (Integral::Measure &dm) const;
+    real operator* (Integral::Measure& dm) const;
     
     // Output
-    friend LogStream& operator<<(LogStream& stream, const ElementFunction &v);
+    friend LogStream& operator<<(LogStream& stream, const ElementFunction& v);
     
     // Friends
     friend class Function;
@@ -130,7 +130,7 @@ namespace dolfin {
     
   };
   
-  FunctionSpace::ElementFunction operator* (real a, const FunctionSpace::ElementFunction &v);
+  FunctionSpace::ElementFunction operator* (real a, const FunctionSpace::ElementFunction& v);
   
 }
 

@@ -23,22 +23,22 @@ TerminalLogger::~TerminalLogger()
 //-----------------------------------------------------------------------------
 void TerminalLogger::info(const char* msg)
 {
-  std::cout << "DOLFIN: " << msg << std::endl;
+  std::cout << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::debug(const char* msg, const char* location)
 {
-  std::cout << "DOLFIN debug [" << location << "]: " << msg << std::endl;
+  std::cout << "[Debug at " << location << "]: " << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::warning(const char* msg, const char* location)
 {
-  std::cout << "DOLFIN warning [" << location << "]: " << msg << std::endl;
+  std::cout << "[Warning at " << location << "]: " << msg << std::endl;
 }
 //-----------------------------------------------------------------------------
 void TerminalLogger::error(const char* msg, const char* location)
 {
-  std::cout << "DOLFIN error [" << location << "]: " << msg << std::endl;
+  std::cout << "[Error at " << location << "]: " << msg << std::endl;
   exit(1);
 }
 //-----------------------------------------------------------------------------

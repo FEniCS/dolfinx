@@ -22,6 +22,8 @@ namespace dolfin {
       add(Parameter::INT, "max no stored krylov vectors", 100);
       add(Parameter::INT, "max no cg iterations", 1000); 
       
+      add(Parameter::STRING, "output", "curses");
+
       add(Parameter::BCFUNCTION, "boundary condition", 0);
       
     }

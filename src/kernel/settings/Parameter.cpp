@@ -44,18 +44,16 @@ Parameter::Parameter(Type type, const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 Parameter::~Parameter()
 {
-  if ( val_string )
-	 delete [] val_string;
-  val_string = 0;
+
 }
 //-----------------------------------------------------------------------------
 void Parameter::clear()
 {
-  sprintf(identifier,"%s","");
+  identifier = "";
   
   val_real       = 0.0;
   val_int        = 0;
-  val_string     = 0;
+  val_string     = "";
   val_function   = 0;
   val_vfunction  = 0;
   val_bcfunction = 0;
@@ -68,7 +66,7 @@ void Parameter::clear()
 void Parameter::set(Type type, const char *identifier, va_list aptr)
 {
   this->type = type;
-  set(identifier,aptr);
+  set(identifier, aptr);
   _changed = false;
 }
 //-----------------------------------------------------------------------------
@@ -92,25 +90,7 @@ void Parameter::set(const char *identifier, va_list aptr)
   case STRING:
     
     // Get the string
-    string = va_arg(aptr, char *);
-    if ( !string ){
-      n = 1;
-      if ( val_string )
-	delete val_string;
-      val_string = new char[n];
-      // Save the string value
-      sprintf(val_string, "%s", "");
-    }
-    else{
-      // Check the length of the string and allocate just enough space
-      n = length(string);
-      if ( val_string )
-	delete [] val_string;
-      val_string = new char[n+1];
-      // Save the string value
-      sprintf(val_string, "%s", string);
-    }
-    
+    val_string = va_arg(aptr, char *);
     break;
     
   case FUNCTION:
@@ -142,7 +122,7 @@ void Parameter::set(const char *identifier, va_list aptr)
   }
   
   // Save the identifier
-  sprintf(this->identifier,"%s",identifier);
+  this->identifier = identifier;
   
   // Variable was changed
   _changed = true;
@@ -152,7 +132,7 @@ void Parameter::get(va_list aptr)
 {
   double     *p_real;
   int        *p_int;
-  char       *p_string;
+  string     *p_string;
   function   *p_function;
   vfunction  *p_vfunction;
   bcfunction *p_bcfunction;
@@ -173,12 +153,8 @@ void Parameter::get(va_list aptr)
     
   case STRING:
     
-    p_string = va_arg(aptr,char *);
-    if ( !p_string ){
-      dolfin_error("Cannot write parameter value to supplied null pointer.");
-      return;
-    }
-    sprintf(p_string,"%s",val_string);
+    p_string = va_arg(aptr,string *);
+    *p_string = val_string;
     break;
 
   case FUNCTION:
@@ -200,13 +176,18 @@ void Parameter::get(va_list aptr)
     break;
     
   default:
-    dolfin_error1("Unknown type for parameter \"%s\".", identifier);
+    dolfin_error1("Unknown type for parameter \"%s\".", identifier.c_str());
   }
 }
 //-----------------------------------------------------------------------------
-bool Parameter::matches(const char *string)
+bool Parameter::matches(const char* identifier)
 {
-  return strcasecmp(string,identifier) == 0;
+  return this->identifier == identifier;
+}
+//-----------------------------------------------------------------------------
+bool Parameter::matches(string identifier)
+{
+  return this->identifier == identifier;
 }
 //-----------------------------------------------------------------------------
 bool Parameter::changed()
@@ -216,22 +197,14 @@ bool Parameter::changed()
 //-----------------------------------------------------------------------------
 void Parameter::operator= (const Parameter &p)
 {
-  sprintf(identifier, "%s", p.identifier);
+  identifier = p.identifier;
 	 
   val_real       = p.val_real;
   val_int        = p.val_int;
+  val_string     = p.val_string;
   val_function   = p.val_function;
   val_vfunction  = p.val_vfunction;
   val_bcfunction = p.val_bcfunction;
-  
-  if ( val_string )
-    delete [] val_string;
-  val_string = 0;
-  
-  if ( p.val_string ) {
-    val_string = new char[length(p.val_string)];
-    sprintf(val_string, "%s", p.val_string);
-  }
   
   _changed = p._changed;
   type     = p.type;
@@ -254,7 +227,7 @@ Parameter::operator real() const
 {
   if ( type != REAL )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <real>.", 
-		 identifier);
+		  identifier.c_str());
 
   return val_real;
 }
@@ -263,25 +236,34 @@ Parameter::operator int() const
 {
   if ( type != INT )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <int>.",
-		  identifier);
+		  identifier.c_str());
 
   return val_int;
 }
 //-----------------------------------------------------------------------------
-Parameter::operator char*() const
+Parameter::operator string() const
 {
-  if ( type != REAL )
+  if ( type != STRING )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <string>.",
-		  identifier);
+		  identifier.c_str());
   
   return val_string;
+}
+//-----------------------------------------------------------------------------
+Parameter::operator const char*() const
+{
+  if ( type != STRING )
+    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <string>.",
+		  identifier.c_str());
+  
+  return val_string.c_str();
 }
 //-----------------------------------------------------------------------------
 Parameter::operator function() const
 {
   if ( type != FUNCTION )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <function>.",
-		  identifier);
+		  identifier.c_str());
   
   return val_function;
 }
@@ -290,7 +272,7 @@ Parameter::operator vfunction() const
 {
   if ( type != VFUNCTION )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <vfunction>.",
-		  identifier);
+		  identifier.c_str());
   
   return val_vfunction;
 }
@@ -299,7 +281,7 @@ Parameter::operator bcfunction() const
 {
   if ( type != BCFUNCTION )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <bcfunction>.",
-		  identifier);
+		  identifier.c_str());
   
   return val_bcfunction;
 }

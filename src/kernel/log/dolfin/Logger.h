@@ -37,6 +37,8 @@ namespace dolfin {
     void end();
     
   private:
+
+    void init();
     
     GenericLogger* log;
     char* buffer;
