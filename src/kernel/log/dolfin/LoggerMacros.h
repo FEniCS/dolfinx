@@ -8,19 +8,19 @@
 
 #include <dolfin/LogManager.h>
 
-/// Info (does not need to be a macro)
+// Info (does not need to be a macro)
 namespace dolfin { void dolfin_info(const char *msg, ...); }
 
-/// Update (force refresh of curses interface)
+// Update (force refresh of curses interface)
 namespace dolfin { void dolfin_update(); }
 
-/// Stop program
+// Stop program
 namespace dolfin { void dolfin_quit(); }
 
-/// Check if the computation is still running
+// Check if the computation is still running
 namespace dolfin { bool dolfin_finished(); }
 
-/// Raise a segmentation fault, useful for debugging
+// Raise a segmentation fault, useful for debugging
 namespace dolfin { void dolfin_segfault(); }
 
 // Debug macros (with varying number of arguments)

@@ -178,6 +178,9 @@ distclean-generic clean-generic maintainer-clean-generic clean \
 mostlyclean distclean maintainer-clean
 
 
+all:
+	rm -f ../config/dolfin-config
+
 install:
 	mkdir -p $(prefix)/include/dolfin	
 

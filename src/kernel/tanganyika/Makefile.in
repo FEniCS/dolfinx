@@ -77,11 +77,11 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_tanganyika.h                                  dolfin/cGqMethod.h                                  dolfin/dGqMethod.h                                  dolfin/Method.h
+include_HEADERS = dolfin/dolfin_tanganyika.h                                  dolfin/cGqElement.h                                  dolfin/cGqMethod.h                                  dolfin/dGqElement.h                                  dolfin/dGqMethod.h                                  dolfin/Element.h                                  dolfin/GenericElement.h                                  dolfin/Method.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-tanganyika.a
-libdolfin_tanganyika_a_SOURCES = cGqMethod.cpp                                  dGqMethod.cpp                                  Method.cpp
+libdolfin_tanganyika_a_SOURCES = cGqElement.cpp                                  cGqMethod.cpp                                  dGqElement.cpp                                  dGqMethod.cpp                                  Element.cpp                                  GenericElement.cpp                                  Method.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -93,7 +93,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_tanganyika_a_LIBADD = 
-libdolfin_tanganyika_a_OBJECTS =  cGqMethod.o dGqMethod.o Method.o
+libdolfin_tanganyika_a_OBJECTS =  cGqElement.o cGqMethod.o dGqElement.o \
+dGqMethod.o Element.o GenericElement.o Method.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -107,7 +108,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Method.P .deps/cGqMethod.P .deps/dGqMethod.P
+DEP_FILES =  .deps/Element.P .deps/GenericElement.P .deps/Method.P \
+.deps/cGqElement.P .deps/cGqMethod.P .deps/dGqElement.P \
+.deps/dGqMethod.P
 SOURCES = $(libdolfin_tanganyika_a_SOURCES)
 OBJECTS = $(libdolfin_tanganyika_a_OBJECTS)
 
