@@ -1,182 +1,203 @@
+// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 
-/* Program usage:  mpirun ex1 [-help] [all PETSc options] */
+#include <iostream>
+#include <petsc.h>
+#include <dolfin.h>
 
-static char help[] = "Basic vector routines.\n\n";
+using namespace dolfin;
 
-/*T
-   Concepts: vectors^basic routines;
-   Processors: n
-T*/
+// Number of vertices in each dimension
+#define SIZE 150
 
-/* 
-  Include "petscvec.h" so that we can use vectors.  Note that this file
-  automatically includes:
-     petsc.h       - base PETSc routines   petscis.h     - index sets
-     petscsys.h    - system routines       petscviewer.h - viewers
-*/
+// Number of matrix-vector multiplications
+#define M 10
 
-#include "petscvec.h"
+int N;
+int N2;
+int N3;
+double values[64];
+int dofs[8];
 
-#undef __FUNCT__
-#define __FUNCT__ "main"
-int main(int argc,char **argv)
+void setdofs(int i, int j, int k, int dofs[])
 {
-  Vec            x,y,w;               /* vectors */
-  Vec            *z;                    /* array of vectors */
-  PetscReal      norm,v,v1,v2;
-  PetscInt       n = 20;
-  PetscErrorCode ierr;
-  PetscTruth     flg;
-  PetscScalar    one = 1.0,two = 2.0,three = 3.0,dots[3],dot;
+  // Compute node numbers for all 8 vertices of the cube
+  int pos = 0;
+  for (int ii = 0; ii < 2; ii++)
+    for (int jj = 0; jj < 2; jj++)
+      for (int kk = 0; kk < 2; kk++)
+	dofs[pos++] = N2*(i + ii) + N*(j + jj) + k + kk;
+}
 
-  ierr = PetscInitialize(&argc,&argv,(char*)0,help);CHKERRQ(ierr); 
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-n",&n,PETSC_NULL);CHKERRQ(ierr);
+void testDOLFIN(double& t1, double& t2, double& t3)
+{
+  std::cout << "Testing DOLFIN assembly" << std::endl;
+  tic();
+  
+  Matrix A(N3, N3, 27);
+  for (int i = 0; i < (N-1); i++)
+  {
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	int pos = 0;
+	for (int ii = 0; ii < 8; ii++)
+	  for (int jj = 0; jj < 8; jj++)
+	    A(dofs[ii], dofs[jj]) += values[pos++];
+      }
+    }
+  }
 
-  /* 
-     Create a vector, specifying only its global dimension.
-     When using VecCreate(), VecSetSizes() and VecSetFromOptions(), the vector format 
-     (currently parallel, shared, or sequential) is determined at runtime.  Also, the 
-     parallel partitioning of the vector is determined by PETSc at runtime.
+  t1 = toc();
+  std::cout << "Testing DOLFIN assembly again" << std::endl;
+  tic();
+  
+  A = 0.0;
+  for (int i = 0; i < (N-1); i++)
+  {
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	int pos = 0;
+	for (int ii = 0; ii < 8; ii++)
+	  for (int jj = 0; jj < 8; jj++)
+	    A(dofs[ii], dofs[jj]) += values[pos++];
+      }
+    }
+  }  
 
-     Routines for creating particular vector types directly are:
-        VecCreateSeq() - uniprocessor vector
-        VecCreateMPI() - distributed vector, where the user can
-                         determine the parallel partitioning
-        VecCreateShared() - parallel vector that uses shared memory
-                            (available only on the SGI); otherwise,
-                            is the same as VecCreateMPI()
+  t2 = toc();
 
-     With VecCreate(), VecSetSizes() and VecSetFromOptions() the option -vec_type mpi or 
-     -vec_type shared causes the particular type of vector to be formed.
+  std::cout << "Testing DOLFIN matrix-vector multiplication" << std::endl;
+  Vector x(N3), y(N3);
+  x = 1.0;
+  tic();
 
-  */
+  for (int i = 0; i < M; i++)
+    A.mult(x, y);
 
-  ierr = VecCreate(PETSC_COMM_WORLD,&x);CHKERRQ(ierr);
-  ierr = VecSetSizes(x,PETSC_DECIDE,n);CHKERRQ(ierr);
-  ierr = VecSetFromOptions(x);CHKERRQ(ierr);
+  //y.show();
 
-  /*
-     Duplicate some work vectors (of the same format and
-     partitioning as the initial vector).
-  */
-  ierr = VecDuplicate(x,&y);CHKERRQ(ierr);
-  ierr = VecDuplicate(x,&w);CHKERRQ(ierr);
-  ierr = VecNorm(w,NORM_2,&norm);CHKERRQ(ierr);
+  t3 = toc();
+}
 
+void testPETSc(double& t1, double& t2, double& t3)
+{
+  std::cout << "Testing PETSc assembly" << std::endl;
+  tic();
 
-  /*
-     Duplicate more work vectors (of the same format and
-     partitioning as the initial vector).  Here we duplicate
-     an array of vectors, which is often more convenient than
-     duplicating individual ones.
-  */
-  ierr = VecDuplicateVecs(x,3,&z);CHKERRQ(ierr); 
+  Mat A;
+  MatCreateSeqAIJ(PETSC_COMM_SELF, N3, N3, 27, PETSC_NULL, &A);
+  MatSetFromOptions(A);
+  MatSetOption(A, MAT_ROWS_SORTED);
+  MatSetOption(A, MAT_COLUMNS_SORTED);
+  MatSetOption(A, MAT_USE_HASH_TABLE);
+  
+  for (int i = 0; i < (N-1); i++)
+  {
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
 
-  /*
-     Set the vectors to entries to a constant value.
-  */
-  ierr = VecSet(&one,x);CHKERRQ(ierr);
-  ierr = VecSet(&two,y);CHKERRQ(ierr);
-  ierr = VecSet(&one,z[0]);CHKERRQ(ierr);
-  ierr = VecSet(&two,z[1]);CHKERRQ(ierr);
-  ierr = VecSet(&three,z[2]);CHKERRQ(ierr);
+	MatSetValues(A, 8, dofs, 8, dofs, values, ADD_VALUES);
+      }
+    }
+  }
 
-  /*
-     Demonstrate various basic vector routines.
-  */
-  ierr = VecDot(x,x,&dot);CHKERRQ(ierr);
-  ierr = VecMDot(3,x,z,dots);CHKERRQ(ierr);
+  cout << "Done" << endl;
 
-  /* 
-     Note: If using a complex numbers version of PETSc, then
-     PETSC_USE_COMPLEX is defined in the makefiles; otherwise,
-     (when using real numbers) it is undefined.
-  */
-#if defined(PETSC_USE_COMPLEX)
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Vector length %D\n",(PetscInt) (PetscRealPart(dot)));CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Vector length %D %D %D\n",(PetscInt)PetscRealPart(dots[0]),
-                             (PetscInt)PetscRealPart(dots[1]),(PetscInt)PetscRealPart(dots[2]));CHKERRQ(ierr);
-#else
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Vector length %D\n",(PetscInt)dot);CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Vector length %D %D %D\n",(PetscInt)dots[0],
-                             (PetscInt)dots[1],(PetscInt)dots[2]);CHKERRQ(ierr);
-#endif
+  MatAssemblyBegin(A,MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A,MAT_FINAL_ASSEMBLY);
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"All other values should be near zero\n");CHKERRQ(ierr);
+  t1 = toc();
+  std::cout << "Testing PETSc assembly again" << std::endl;
+  MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR);
+  tic();
 
-  ierr = VecScale(&two,x);CHKERRQ(ierr);
-  ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-2.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecScale %g\n",v);CHKERRQ(ierr);
+  MatZeroEntries(A);
+  for (int i = 0; i < (N-1); i++)
+  {
+    for (int j = 0; j < (N-1); j++)
+    {
+      for (int k = 0; k < (N-1); k++)
+      {
+	setdofs(i, j, k, dofs);
+	
+	MatSetValues(A, 8, dofs, 8, dofs, values, ADD_VALUES);
+      }
+    }
+  }
 
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 
-  ierr = VecCopy(x,w);CHKERRQ(ierr);
-  ierr = VecNorm(w,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-2.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecCopy  %g\n",v);CHKERRQ(ierr);
+  t2 = toc();
+  std::cout << "Testing PETSc matrix-vector multiplication" << std::endl;
+  Vec x, y;
+  VecCreate(PETSC_COMM_SELF, &x);
+  VecSetSizes(x, PETSC_DECIDE, N3);
+  VecSetFromOptions(x);
+  VecCreate(PETSC_COMM_SELF, &y);
+  VecSetSizes(y, PETSC_DECIDE, N3);
+  VecSetFromOptions(y);
+  double a = 1.0;
+  VecSet(&a, x);
+  tic();
 
-  ierr = VecAXPY(&three,x,y);CHKERRQ(ierr);
-  ierr = VecNorm(y,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-8.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecAXPY %g\n",v);CHKERRQ(ierr);
+  for (int i = 0; i < M; i++)
+    MatMult(A, x, y);
+  
+  //VecView(y, PETSC_VIEWER_STDOUT_SELF);
 
-  ierr = VecAYPX(&two,x,y);CHKERRQ(ierr);
-  ierr = VecNorm(y,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-18.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecAYPX %g\n",v);CHKERRQ(ierr);
+  t3 = toc();
 
-  ierr = VecSwap(x,y);CHKERRQ(ierr);
-  ierr = VecNorm(y,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-2.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecSwap  %g\n",v);CHKERRQ(ierr);
-  ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-18.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecSwap  %g\n",v);CHKERRQ(ierr);
+  MatDestroy(A);
+  VecDestroy(x);
+  VecDestroy(y);
+}
 
-  ierr = VecWAXPY(&two,x,y,w);CHKERRQ(ierr);
-  ierr = VecNorm(w,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-38.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecWAXPY %g\n",v);CHKERRQ(ierr);
+int main(int argc, char** argv)
+{
+  //dolfin_set("output", "plain text");
+  PetscInitialize(&argc, &argv, 0, 0);
 
-  ierr = VecPointwiseMult(y,x,w);CHKERRQ(ierr);
-  ierr = VecNorm(w,NORM_2,&norm);CHKERRQ(ierr); 
-  v = norm-36.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecPointwiseMult %g\n",v);CHKERRQ(ierr);
+  // Set all values
+  for (int i = 0; i < 64; i++)
+    values[i] = 1.0;
 
-  ierr = VecPointwiseDivide(x,y,w);CHKERRQ(ierr);
-  ierr = VecNorm(w,NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-9.0*sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecPointwiseDivide %g\n",v);CHKERRQ(ierr);
+  // Set problem size
+  N = SIZE;
+  N2 = N*N;
+  N3 = N*N*N;
+  
+  std::cout << "System size: " << N3 << " x " << N3 << std::endl;
 
-  dots[0] = one;
-  dots[1] = three;
-  dots[2] = two;
-  ierr = VecSet(&one,x);CHKERRQ(ierr);
-  ierr = VecMAXPY(3,dots,x,z);CHKERRQ(ierr);
-  ierr = VecNorm(z[0],NORM_2,&norm);CHKERRQ(ierr);
-  v = norm-sqrt((double)n); if (v > -PETSC_SMALL && v < PETSC_SMALL) v = 0.0; 
-  ierr = VecNorm(z[1],NORM_2,&norm);CHKERRQ(ierr);
-  v1 = norm-2.0*sqrt((double)n); if (v1 > -PETSC_SMALL && v1 < PETSC_SMALL) v1 = 0.0; 
-  ierr = VecNorm(z[2],NORM_2,&norm);CHKERRQ(ierr);
-  v2 = norm-3.0*sqrt((double)n); if (v2 > -PETSC_SMALL && v2 < PETSC_SMALL) v2 = 0.0; 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"VecMAXPY %g %g %g \n",v,v1,v2);CHKERRQ(ierr);
+  double t1 = 0.0;
+  double t2 = 0.0;
+  double t3 = 0.0;
+  double t4 = 0.0;
+  double t5 = 0.0;
+  double t6 = 0.0;
+  
+  // Test assembly
+  testDOLFIN(t1, t2, t3);
+  testPETSc(t4, t5, t6);
 
-  /* 
-     Test whether vector has been corrupted (just to demonstrate this
-     routine) not needed in most application codes.
-  */
-  ierr = VecValid(x,&flg);CHKERRQ(ierr);
-  if (!flg) SETERRQ(1,"Corrupted vector.");
+  std::cout << "DOLFIN assembly:    " << t1 << " s" << std::endl;
+  std::cout << "DOLFIN re-assembly: " << t2 << " s" << std::endl;
+  std::cout << "DOLFIN multiply:    " << t3 << " s" << std::endl;
+  std::cout << "PETSc  assembly:    " << t4 << " s" << std::endl;
+  std::cout << "PETSc  re-assembly: " << t5 << " s" << std::endl;
+  std::cout << "PETSc  multiply:    " << t6 << " s" << std::endl;
 
-  /* 
-     Free work space.  All PETSc objects should be destroyed when they
-     are no longer needed.
-  */
-  ierr = VecDestroy(x);CHKERRQ(ierr);
-  ierr = VecDestroy(y);CHKERRQ(ierr);
-  ierr = VecDestroy(w);CHKERRQ(ierr);
-  ierr = VecDestroyVecs(z,3);CHKERRQ(ierr);
-  ierr = PetscFinalize();CHKERRQ(ierr);
+  PetscFinalize();
   return 0;
 }
- 
