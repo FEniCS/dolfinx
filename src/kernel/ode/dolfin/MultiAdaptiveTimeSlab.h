@@ -83,6 +83,7 @@ namespace dolfin
     void alloc_e(uint newsize);
     void alloc_j(uint newsize);
     void alloc_d(uint newsize);
+    void alloc_r(uint newsize);
 
     // Compute length of time slab
     real computeEndTime(real a, real b, uint offset, uint& end);
@@ -128,12 +129,15 @@ namespace dolfin
     
     int* de;  // Mapping d --> element e of dependency d
 
+    real* er; // Mapping e --> discrete residual/increment of element e
+
     //--- Auxiliary data ---
 
     Alloc size_s; // Allocation data for sub slabs s
     Alloc size_e; // Allocation data for elements e
     Alloc size_j; // Allocation data for dofs j
     Alloc size_d; // Allocation data for dependencies d
+    uint size_r;  // Allocation data for increments r
 
     uint ns; // Number of sub slabs
     uint ne; // Number of elements

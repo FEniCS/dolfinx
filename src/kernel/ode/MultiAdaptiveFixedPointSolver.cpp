@@ -6,6 +6,7 @@
 #include <dolfin/NewMethod.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
+#include <dolfin/NewVector.h>
 
 using namespace dolfin;
 
@@ -23,6 +24,8 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveFixedPointSolver::iteration()
 {
+  NewVector Rd(ts.ne), Rdprev(ts.ne);
+
   // Reset dof
   uint j = 0;
 
@@ -63,9 +66,53 @@ real MultiAdaptiveFixedPointSolver::iteration()
     if ( increment > max_increment )
       max_increment = increment;
     
+    Rd(e) = increment;
+    Rdprev(e) = ts.er[e];
+
+    ts.er[e] = increment;
+
     // Update dof
     j += method.nsize();
   }
+
+  // Debug
+
+//   NewVector Rho(ts.ne), krecommend(ts.ne), comp(ts.ne);
+//   real rho;
+
+//   rho = Rd.norm() / Rdprev.norm();
+
+//   cout << "rho: " << rho << endl;
+
+//   // Compute Rho
+//   for (uint e = 0; e < ts.ne; e++)
+//   {
+//     Rho(e) = fabs(Rd(e)) / Rdprev.norm(NewVector::linf);
+//     //krecommend(e) = 1.0 / (2.0 * Rho(e));
+//     if(Rho(e) < 0.01)
+//     {
+//       krecommend(e) = 1;
+//     }
+//     else if(Rho(e) >= 0.01 && Rho(e) < 0.5)
+//     {
+//       krecommend(e) = 0;
+//     }
+//     else
+//     {
+//       krecommend(e) = -1;
+//     }
+//     comp(e) = ts.ei[e];
+//   }
+
+//   cout << "comp: " << endl;
+//   comp.disp();
+
+//   cout << "Rho: " << endl;
+//   Rho.disp();
+
+//   cout << "krecommend: " << endl;
+//   krecommend.disp();
+
 
   return max_increment;
 }

@@ -16,7 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) : 
   NewTimeSlab(ode),
-  sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
+  sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0), er(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
   elast(N), u(0), emax(0)
 {
@@ -44,6 +44,7 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( ed ) delete [] ed;
   if ( jx ) delete [] jx;
   if ( de ) delete [] de;
+  if ( er ) delete [] er;
 
   if ( solver ) delete solver;
 
@@ -235,6 +236,7 @@ void MultiAdaptiveTimeSlab::disp() const
   cout << "es = "; Alloc::disp(es, ne);  
   cout << "ee = "; Alloc::disp(ee, ne);
   cout << "ed = "; Alloc::disp(ed, ne);
+  cout << "er = "; Alloc::disp(er, ne);
 
   cout << endl;
 
@@ -260,6 +262,7 @@ void MultiAdaptiveTimeSlab::allocData(real a, real b)
   alloc_e(ne);
   alloc_j(nj);
   alloc_d(nd);
+  alloc_r(ne);
 
   // Reset mapping de
   for (uint d = 0; d < nd; d++)
@@ -480,6 +483,17 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
   Alloc::realloc(&de, size_d.size, newsize);
 
   size_d.size = newsize;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptiveTimeSlab::alloc_r(uint newsize)
+{
+  if ( newsize <= size_r ) return;
+
+  //dolfin_info("Reallocating: nd = %d", newsize);
+
+  Alloc::realloc(&er, size_r, newsize);
+
+  size_r = newsize;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
