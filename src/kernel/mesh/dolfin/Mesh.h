@@ -86,12 +86,6 @@ namespace dolfin {
     /// Create mesh from given file
     Mesh(const char *filename);
 
-    /// Create uniform 2D mesh of the unit square
-    Mesh(uint nx, uint ny);
-    
-    /// Create uniform 3D mesh of the unit cube
-    Mesh(uint nx, uint ny, uint nz);
-
     /// Copy constructor
     Mesh(const Mesh& mesh);
 
