@@ -25,7 +25,7 @@ int main()
   grid.refine();
 
   // Save refined grid in OpenDX format
-  File dx_ref("grid_unrefined.dx");
+  File dx_ref("grid_refined.dx");
   dx_ref << grid;
 
   return 0;
