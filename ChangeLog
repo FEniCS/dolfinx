@@ -1,3 +1,4 @@
+ - Change input/output functionality to streams
  - Change to new data structure for Grid
  - Change to object-oriented API at top level
  - Add use of C++ namespaces
