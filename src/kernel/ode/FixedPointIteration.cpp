@@ -115,7 +115,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     // Start iteration
     start(group);
     
-    dolfin_start("Starting element group iteration");
+    //dolfin_start("Starting element group iteration");
     
     // Fixed point iteration on the element group
     for (unsigned int n = 0; n < maxiter; n++)
@@ -123,12 +123,12 @@ bool FixedPointIteration::iterate(ElementGroup& group)
       // Check convergence
       if ( converged(group, r, n) )
       {
-	dolfin_end("Element group iteration converged in %d iterations", n);
+	//dolfin_end("Element group iteration converged in %d iterations", n);
 	end(group);
 	return true;
       }
       
-      cout << "Element group residual: " << r.r1 << " --> " << r.r2 << endl;
+      //cout << "Element group residual: " << r.r1 << " --> " << r.r2 << endl;
 
       // Check divergence
       if ( retry = diverged(group, r, n, newstate) )
@@ -149,7 +149,7 @@ bool FixedPointIteration::iterate(ElementGroup& group)
     end(group);
   }
   
-  dolfin_end("Element group iteration did not converge");
+  //dolfin_end("Element group iteration did not converge");
 
   return false;
 }

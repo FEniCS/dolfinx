@@ -19,7 +19,7 @@ Iteration::Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
 		     unsigned int depth) : 
   u(u), f(f), fixpoint(fixpoint), 
   maxiter(maxiter), maxdiv(maxdiv), maxconv(maxconv), tol(tol),
-  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), _depth(depth), datasize(0)
+  alpha(1), gamma(1.0/sqrt(2.0)), r0(0), m(0), j(0), _depth(depth)
 {
   // Do nothing
 }
@@ -106,7 +106,7 @@ real Iteration::residual(Element& element)
   return fabs(element.computeElementResidual(f));
 }
 //-----------------------------------------------------------------------------
-void Iteration::stabilize(const Residuals& r, real rho)
+bool Iteration::stabilize(const Residuals& r, unsigned int n)
 {
   // Take action depending on j, the remaining number of iterations
   // with small alpha.
@@ -115,8 +115,10 @@ void Iteration::stabilize(const Residuals& r, real rho)
   //   j = 1 : last stabilizing iteration
   //   j > 1 : still stabilizing
 
-  cout << "Computing stabilization for rho = " << rho << endl;
-
+  // Make at least one iteration before stabilizing
+  if ( n < 1 )
+    return false;
+  
   switch ( j ) {
   case 0:
     // Increase alpha with a factor 2 towards alpha = 1
@@ -151,20 +153,7 @@ void Iteration::stabilize(const Residuals& r, real rho)
   }
 
   // Check if stabilization is needed
-  if ( r.r2 > r.r1 && j == 0 )
-  {
-    // Compute alpha
-    alpha = computeAlpha(rho);
-    cout << "  alpha = " << alpha << endl;
-
-    // Compute number of damping steps
-    m = computeSteps(rho);
-    j = m;
-    cout << "  m     = " << m << endl;
-    
-    // Save residual at start of stabilizing iterations
-    r0 = r.r2;
-  }
+  return r.r2 > r.r1 && j == 0;
 }
 //-----------------------------------------------------------------------------
 real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
@@ -184,7 +173,7 @@ real Iteration::computeDivergence(ElementGroupList& list, const Residuals& r)
   alpha = 1.0;
 
   // Save solution values before iteration
-  initData(x0);
+  initData(x0, x1.size);
   copyData(list, x0);
 
   for (unsigned int n = 0; n < maxiter; n++)
@@ -235,7 +224,7 @@ real Iteration::computeDivergence(ElementGroup& group, const Residuals& r)
   alpha = 1.0;
 
   // Save solution values before iteration
-  initData(x0);
+  initData(x0, x1.size);
   copyData(group, x0);
 
   for (unsigned int n = 0; n < maxiter; n++)
@@ -281,11 +270,22 @@ unsigned int Iteration::computeSteps(real rho) const
   return ceil_int(1.0 + log(rho) / log(1.0/(1.0-gamma*gamma)));
 }
 //-----------------------------------------------------------------------------
-void Iteration::initData(Values& values)
+void Iteration::initInitialData(real t0)
+{
+  // Allocate values
+  unsigned int N = u.size();
+  initData(u0, N);
+
+  // Set initial values for all components
+  for (unsigned int i = 0; i < N; i++)
+    u0.values[i] = u(i, t0);
+}
+//-----------------------------------------------------------------------------
+void Iteration::initData(Values& values, unsigned int size)
 {
   // Reallocate data if necessary
-  if ( datasize > values.size )
-    values.init(datasize);
+  if ( size > values.size )
+    values.init(size);
 
   // Reset offset
   values.offset = 0;

@@ -47,8 +47,8 @@ void AdaptiveIterationLevel2::start(ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::start(ElementGroup& group)
 {
-  // Compute total number of values in element group
-  datasize = dataSize(group);
+  // Initialize data for Gauss-Jacobi iteration
+  initData(x1, dataSize(group));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::start(Element& element)
@@ -65,9 +65,9 @@ void AdaptiveIterationLevel2::update(ElementGroupList& list)
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel2::update(ElementGroup& group)
 {
-  // Initialize values
-  initData(x1);
-  
+  // Reset values
+  x1.offset = 0;
+
   // Compute new values
   for (ElementIterator element(group); !element.end(); ++element)
     fixpoint.iterate(*element);
@@ -92,16 +92,25 @@ void AdaptiveIterationLevel2::stabilize(ElementGroupList& list,
 void AdaptiveIterationLevel2::stabilize(ElementGroup& group,
 					const Residuals& r, unsigned int n)
 {
-  // Make at least one iteration before stabilizing
-  if ( n < 1 )
-    return;
-
   // Stabilize if necessary
-  real rho = 0.0;
-  if ( r.r2 > r.r1 && j == 0 )
+  if ( Iteration::stabilize(r, n) )
   {
-    rho = computeDivergence(group, r);
-    Iteration::stabilize(r, rho);
+    cout << "Need to stabilize time slab" << endl;
+    
+    // Compute divergence
+    real rho = computeDivergence(group, r);
+    
+    // Compute alpha
+    alpha = computeAlpha(rho);
+    cout << "  alpha = " << alpha << endl;
+
+    // Compute number of damping steps
+    m = computeSteps(rho);
+    j = m;
+    cout << "  m     = " << m << endl;
+    
+    // Save residual at start of stabilizing iterations
+    r0 = r.r2;
   }
 }
 //-----------------------------------------------------------------------------

@@ -143,7 +143,7 @@ namespace dolfin
     };
 
     // Stabilization for adaptive iteration
-    void stabilize(const Residuals& r, real rho);
+    bool stabilize(const Residuals& r, unsigned int n);
     
     // Compute divergence
     real computeDivergence(ElementGroupList& list, const Residuals& r);
@@ -156,9 +156,12 @@ namespace dolfin
 
     // Compute number of damping steps
     unsigned int computeSteps(real rho) const;
+    
+    // Initialize data for propagation of initial values
+    void initInitialData(real t0);
 
-    // Initialize data to previously computed size
-    void initData(Values& values);
+    // Initialize data to new size
+    void initData(Values& values, unsigned int size);
 
     // Compute size of data
     unsigned int dataSize(ElementGroupList& list);
@@ -208,14 +211,14 @@ namespace dolfin
     // Depth of iteration (0,1,2,3)
     unsigned int _depth;
 
-    // Previously computed data size
-    unsigned int datasize;
-
     // Temporary data used to restore element values after iteration
     Values x0;
 
     // Temporary data used for Gauss-Jacobi iteration
     Values x1;
+
+    // Temporary data used for propagation of initial values
+    Values u0;
 
   };
 

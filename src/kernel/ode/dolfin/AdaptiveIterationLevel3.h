@@ -45,7 +45,7 @@ namespace dolfin
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
     
     void report() const;
-    
+
   };
 
 }

@@ -99,6 +99,13 @@ void dGqElement::update(RHS& f, real alpha, real* values)
   // Update nodal values
   for (unsigned int i = 0; i <= q; i++)
     values[i] = w0*this->values[i] + alpha*(u0 + integral(i));
+
+  cout << "index = " << _index << endl;
+  cout << "alpha = " << alpha << endl;
+  cout << "u0    = " << u0 << endl;
+  cout << "value = " << values[0] << endl;
+  cout << endl;
+  
 }
 //-----------------------------------------------------------------------------
 void dGqElement::set(real u0)

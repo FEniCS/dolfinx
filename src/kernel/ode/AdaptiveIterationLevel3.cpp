@@ -40,14 +40,20 @@ Iteration::State AdaptiveIterationLevel3::state() const
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroupList& list)
 {
-  // Compute total number of values in group list
-  datasize = dataSize(list);
+  // Initialize data for Gauss-Jacobi iteration
+  initData(x1, dataSize(list));
+
+  // FIXME: remove
+  m = 0;
+  j = 0;
+  alpha = 1.0;
+  reset(list);
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(ElementGroup& group)
 {
-  // Compute total number of values in element group
-  datasize = dataSize(group);
+  // Initialize data for Gauss-Jacobi iteration
+  initData(x1, dataSize(group));
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::start(Element& element)
@@ -59,15 +65,31 @@ void AdaptiveIterationLevel3::update(ElementGroupList& list)
 {
   dolfin_assert(depth() == 1);
 
-  // Initialize values
-  initData(x1);
-  
+  // Reset values
+  x1.offset = 0;
+
+  // Initialize data for propagation of initial values
+  ElementIterator element(list);
+  initInitialData(element->starttime());
+
   // Compute new values. Note that we skip the recursive iteration,
   // we directly update all elements without calling iterate on
   // all element groups contained in the group list.
   for (ElementIterator element(list); !element.end(); ++element)
+  {
+    // Update initial value for element
+    element->update(u0.values[element->index()]);
+    
+    // Compute new values for element
     update(*element);
+    
+    // Save end value as new initial value for this component
+    u0.values[element->index()] = element->endval();
+  }
 
+  //for (ElementIterator element(list); !element.end(); ++element)
+  //  init(*element);
+  
   // Copy values to elements
   copyData(x1, list);
 }
@@ -76,8 +98,8 @@ void AdaptiveIterationLevel3::update(ElementGroup& group)
 {
   dolfin_assert(depth() == 1);
 
-  // Initialize values
-  initData(x1);
+  // Reset values
+  x1.offset = 0;
     
   // Compute new values. Note that we skip the recursive iteration,
   // we directly update all elements without calling iterate on
@@ -99,36 +121,50 @@ void AdaptiveIterationLevel3::update(Element& element)
 void AdaptiveIterationLevel3::stabilize(ElementGroupList& list,
 					const Residuals& r, unsigned int n)
 {
-  // Make at least one iteration before stabilizing
-  if ( n < 1 )
-    return;
-  
-  cout << "Checking stabilization of time slab" << endl;
-  cout << "j = " << j << endl;
-
   // Stabilize if necessary
-  real rho = 0.0;
-  if ( r.r2 > r.r1 && j == 0 )
+  if ( Iteration::stabilize(r, n) )
   {
-    cout << "Need to stabilize" << endl;
-    rho = computeDivergence(list, r);
-    Iteration::stabilize(r, rho);
+    cout << "Need to stabilize time slab" << endl;
+    
+    // Compute divergence
+    real rho = computeDivergence(list, r);
+    
+    // Compute alpha
+    alpha = computeAlpha(rho);
+    cout << "  alpha = " << alpha << endl;
+
+    // Compute number of damping steps
+    m = computeSteps(rho);
+    j = m;
+    cout << "  m     = " << m << endl;
+    
+    // Save residual at start of stabilizing iterations
+    r0 = r.r2;
   }
 }
 //-----------------------------------------------------------------------------
 void AdaptiveIterationLevel3::stabilize(ElementGroup& group,
 					const Residuals& r, unsigned int n)
 {
-  // Make at least one iteration before stabilizing
-  if ( n < 1 )
-    return;
-
   // Stabilize if necessary
-  real rho = 0.0;
-  if ( r.r2 > r.r1 && j == 0 )
+  if ( Iteration::stabilize(r, n) )
   {
-    rho = computeDivergence(group, r);
-    Iteration::stabilize(r, rho);
+    cout << "Need to stabilize element group" << endl;
+    
+    // Compute divergence
+    real rho = computeDivergence(group, r);
+    
+    // Compute alpha
+    alpha = computeAlpha(rho);
+    cout << "  alpha = " << alpha << endl;
+
+    // Compute number of damping steps
+    m = computeSteps(rho);
+    j = m;
+    cout << "  m     = " << m << endl;
+    
+    // Save residual at start of stabilizing iterations
+    r0 = r.r2;
   }
 }
 //-----------------------------------------------------------------------------
