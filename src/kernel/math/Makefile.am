@@ -1,0 +1,5 @@
+SUBDIRS                  = dolfin
+include_HEADERS          = dolfin/dolfin_math.h dolfin/basic.h
+INCLUDES                 = @MODULE_INCLUDES@ @XML2_INCLUDES@
+lib_LIBRARIES            = libdolfin-math.a
+libdolfin_math_a_SOURCES = basic.cpp
