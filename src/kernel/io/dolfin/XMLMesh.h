@@ -1,19 +1,19 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#ifndef __XML_GRID_H
-#define __XML_GRID_H
+#ifndef __XML_MESH_H
+#define __XML_MESH_H
 
 #include <dolfin/XMLObject.h>
 
 namespace dolfin {
 
-  class Grid;
+  class Mesh;
   
-  class XMLGrid : public XMLObject {
+  class XMLMesh : public XMLObject {
   public:
 
-	 XMLGrid(Grid& grid_);
+	 XMLMesh(Mesh& mesh_);
 	 
 	 void startElement (const xmlChar *name, const xmlChar **attrs);
 	 void endElement   (const xmlChar *name);
@@ -23,18 +23,18 @@ namespace dolfin {
 	 
   private:
 
-	 enum ParserState { OUTSIDE, INSIDE_GRID, INSIDE_NODES, INSIDE_CELLS, DONE };
+	 enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_NODES, INSIDE_CELLS, DONE };
 	 
-	 void readGrid        (const xmlChar *name, const xmlChar **attrs);
+	 void readMesh        (const xmlChar *name, const xmlChar **attrs);
 	 void readNodes       (const xmlChar *name, const xmlChar **attrs);
 	 void readCells       (const xmlChar *name, const xmlChar **attrs);
 	 void readNode        (const xmlChar *name, const xmlChar **attrs);
 	 void readTriangle    (const xmlChar *name, const xmlChar **attrs);
 	 void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
 
-	 void initGrid();
+	 void initMesh();
 	 
-	 Grid& grid;
+	 Mesh& mesh;
 	 int nodes;
 	 int cells;
 
