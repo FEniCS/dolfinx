@@ -28,7 +28,13 @@ namespace dolfin
   class NewFEM
   {
   public:
-    
+
+    static void assemble(BilinearForm& a, LinearForm& L, Mesh& mesh, 
+			 NewMatrix& A, NewVector& b); 
+    static void assemble(BilinearForm& a, Mesh& mesh, NewMatrix& A);
+    static void assemble(LinearForm& L, Mesh& mesh, NewVector& b);
+
+    /*    
     /// Assemble linear system
     static void assemble(NewPDE& pde, Mesh& mesh, Matrix& A, Vector& b);
     
@@ -37,13 +43,26 @@ namespace dolfin
     
     /// Assemble vector for linear form
     static void assemble(LinearForm& L, Mesh& mesh, Vector& b);
-
-    /// Testing PETSc
-    static void testPETSc(BilinearForm& a, Mesh& mesh, NewMatrix& A);
-    static void testPETSc(LinearForm& L, Mesh& mesh, NewVector& b);
+    */
 
   private:
+
+    // Allocate element matrix (use arrays to improve speed)
+    static real** allocElementMatrix(const NewFiniteElement& element);
     
+    // Allocate element vector (use arrays to improve speed)
+    static real* allocElementVector(const NewFiniteElement& element);
+
+    // Delete element matrix
+    static void freeElementMatrix(real**& AK, const NewFiniteElement& element);
+
+    // Delete element vector
+    static void freeElementVector(real*& bK, const NewFiniteElement& element);
+    
+    // Count the degrees of freedom
+    static uint size(Mesh& mesh, const NewFiniteElement& element);
+
+    /*    
     // Assemble matrix
     static void assembleInterior    (BilinearForm& a, Mesh& mesh, Matrix& A);
     static void assembleBoundary    (BilinearForm& a, Mesh& mesh, Matrix& A);
@@ -61,21 +80,7 @@ namespace dolfin
 
     // Allocate global vector
     static void alloc(Vector& b, const NewFiniteElement& element, Mesh& mesh);
-  
-    // Allocate element matrix (use arrays to improve speed)
-    static real** allocElementMatrix(const NewFiniteElement& element);
-    
-    // Allocate element vector (use arrays to improve speed)
-    static real* allocElementVector(const NewFiniteElement& element);
-
-    // Delete element matrix
-    static void freeElementMatrix(real**& AK, const NewFiniteElement& element);
-
-    // Delete element vector
-    static void freeElementVector(real*& bK, const NewFiniteElement& element);
-    
-    // Count the degrees of freedom
-    static uint size(Mesh& mesh, const NewFiniteElement& element);
+    */
 
   };
 

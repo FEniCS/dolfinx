@@ -60,14 +60,16 @@ real testFFC(Mesh& mesh)
 real testFFCPETSc(Mesh& mesh)
 {
   cout << "--- Testing new assembly, FFC + PETSc ---" << endl;
+
   /*
   FFCPoissonFiniteElement element;
   FFCPoissonBilinearForm a(element);
   NewMatrix A;
   tic();
   for (unsigned int i = 0; i < N; i++)
-    NewFEM::testPETSc(a, mesh, A);
+    NewFEM::assemble(a, mesh, A);
   */
+
   return toc();
 }
 
