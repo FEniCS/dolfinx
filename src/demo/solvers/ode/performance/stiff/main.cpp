@@ -189,8 +189,7 @@ int main(int argC, char* argV[])
   }
 
   dolfin_set("output", "plain text");
-  //dolfin_set("tolerance", 0.000001);
-  //dolfin_set("tolerance", 1e-3);
+  dolfin_set("tolerance", 0.1);
   dolfin_set("number of samples", 111);
   dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);
