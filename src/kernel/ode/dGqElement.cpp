@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Jansson, 2004.
 
 #include <cmath>
 #include <dolfin/dolfin_math.h>

@@ -1,3 +1,4 @@
+ - Fix compilation error in LogStream
  - Fix local Newton iteration for higher order elements
  - Init matrix to given type
  - Add output of cG(q) and dG(q) weights in matrix format
