@@ -24,16 +24,6 @@ NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
   rename("u", "An unspecified function");
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(const Mesh& mesh, const NewFiniteElement& element,
-			 NewVector& x, int no_comp) : data(0)
-{
-  // Create function data
-  data = new Data(mesh, element, x, no_comp);
-  
-  // Set name and label
-  rename("u", "An unspecified function");
-}
-//-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
   if ( data ) delete data;
@@ -46,6 +36,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
   if ( !data )
   {
     /// FIXME: Replace with "element" function, given by FFC  
+    /*
     if (data->no_comp > 1)
     {
       for (uint i = 0; i < element.spacedim(); i++)
@@ -57,6 +48,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
       c[i] = (*this)(element.coord(i, cell, cell.mesh()));
     }
     return;
+    */
   }
 
   // Check if we're computing the projection onto a cell of the same
@@ -72,6 +64,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     // FIXME: in x, then we can optimize by just calling
     // FIXME: element::dof() one time with i = 0.
 
+    /*
     real *values = data->x.array();
     /// FIXME: Replace with "element" function, given by FFC  
     if (data->no_comp > 1)
@@ -87,6 +80,7 @@ void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
     data->x.restore(values);
 
     return;
+    */
   }
 
   // Need to compute projection between different spaces

@@ -203,6 +203,7 @@ AC_OUTPUT( Makefile \
            src/modules/convdiff/dolfin/Makefile \
            src/modules/euler/Makefile \
            src/modules/heat/Makefile \
+           src/modules/heat/dolfin/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/navierstokes/dolfin/Makefile \
            src/modules/odesolver/Makefile \

@@ -37,7 +37,6 @@ namespace dolfin
 
     /// Create function with given degrees of freedom
     NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x);
-    NewFunction(const Mesh& mesh, const NewFiniteElement& element, NewVector& x, int no_comp);
 
     /// Destructor
     virtual ~NewFunction();
@@ -58,13 +57,10 @@ namespace dolfin
     {
     public:
       Data(const Mesh& mesh, const NewFiniteElement& element, NewVector& x)
-	: mesh(mesh), element(element), x(x), no_comp(1) {}
-      Data(const Mesh& mesh, const NewFiniteElement& element, NewVector& x, int no_comp)
-	: mesh(mesh), element(element), x(x), no_comp(no_comp) {}
+	: mesh(mesh), element(element), x(x) {}
       const Mesh& mesh;
       const NewFiniteElement& element;
       NewVector& x;
-      int no_comp;
     };
     
     // Pointer to function data (null if not used)
