@@ -17,7 +17,7 @@ namespace dolfin
   public:
 
     NonStiffIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		      real maxdiv, real maxconv, real tol);
+		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
 
     ~NonStiffIteration();
 

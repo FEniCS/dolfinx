@@ -19,7 +19,7 @@ namespace dolfin
   public:
 
     AdaptiveIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		      real maxdiv, real maxconv, real tol);
+		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
     
     ~AdaptiveIteration();
     
@@ -71,6 +71,15 @@ namespace dolfin
     // Gauss-Seidel iteration on element list
     void updateGaussSeidel(NewArray<Element*>& elements, const Damping& d);
     
+    // Compute divergence
+    real computeDivergence(const Residuals& r) const;
+
+    // Compute alpha
+    real computeAlpha(real rho) const;
+
+    // Compute number of damping steps
+    unsigned int computeSteps(real rho) const;
+
     // Initialize additional data
     void initData(const NewArray<Element*>& elements);
 
@@ -80,12 +89,24 @@ namespace dolfin
     // Compute size of data
     unsigned int dataSize(const NewArray<Element*>& elements) const;
 
-    // Current method
+    // Current method (Gauss-Jacobi or Gauss-Seidel)
     Method method;
     
     // Additional data for Gauss-Jacobi iteration
     Values values;
+
+    // Number of stabilizing iterations
+    unsigned int m;
+
+    // Number of remaining stabilizing iterations
+    unsigned int j;
     
+    // Stabilization parameter
+    real alpha;
+
+    // Angle of sector, gamma = cos(theta)
+    real gamma;
+
   };
 
 }

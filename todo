@@ -17,7 +17,7 @@ General
 - Multigrid: Svensson, Målqvist?
 - Vector valued PDE: Hoffman, Logg (Bengzon, Jansson ?)
 - General function representations: Hoffman, Logg, Jansson
-- i/o for functions, in particular in OpenDX format: Logg
+- i/o for functions, in particular in OpenDX format: Hoffman, Logg
 - Use libtool: anyone?
 - Replace stdio with iostream and fstream
 - Replace Array and List with NewArray and NewList

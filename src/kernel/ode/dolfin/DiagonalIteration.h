@@ -17,7 +17,7 @@ namespace dolfin
   public:
 
     DiagonalIteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-		      real maxdiv, real maxconv, real tol);
+		      unsigned int maxiter, real maxdiv, real maxconv, real tol);
     
     ~DiagonalIteration();
 
@@ -44,6 +44,14 @@ namespace dolfin
     bool diverged(Element& element, Residuals& r, unsigned int n, Iteration::State& newstate);
 
     void report() const;
+
+  private:
+
+    // Compute alpha
+    real computeAlpha(real rho) const;
+
+    // Stabilization parameter
+    real alpha;
 
   };
 

@@ -14,8 +14,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DiagonalIteration::DiagonalIteration(Solution& u, RHS& f,
 				     FixedPointIteration & fixpoint, 
+				     unsigned int maxiter,
 				     real maxdiv, real maxconv, real tol) :
-  Iteration(u, f, fixpoint, maxdiv, maxconv, tol)
+  Iteration(u, f, fixpoint, maxiter, maxdiv, maxconv, tol), alpha(1)
 {
   // Do nothing
 }
@@ -68,7 +69,7 @@ void DiagonalIteration::update(NewArray<Element*>& elements, const Damping& d)
 void DiagonalIteration::update(Element& element, const Damping& d)
 {
   // Damped update of element
-  element.update(f, d.alpha);
+  element.update(f, alpha);
 }
 //-----------------------------------------------------------------------------
 void DiagonalIteration::stabilize(TimeSlab& timeslab,
@@ -89,7 +90,7 @@ void DiagonalIteration::stabilize(Element& element,
   // Compute diagonal damping
   real dfdu = f.dfdu(element.index(), element.index(), element.endtime());
   real rho = - element.timestep() * dfdu;
-  d.alpha = computeAlpha(rho);
+  alpha = computeAlpha(rho);
 }
 //-----------------------------------------------------------------------------
 bool DiagonalIteration::converged(TimeSlab& timeslab, 
@@ -212,5 +213,13 @@ void DiagonalIteration::report() const
 {
   cout << "System appears to be diagonally stiff, solution computed with "
        << "diagonally damped fixed point iteration." << endl;
+}
+//-----------------------------------------------------------------------------
+real DiagonalIteration::computeAlpha(real rho) const
+{
+  if ( rho >= 0.0 || rho < -1.0 )
+    return (1.0 + DOLFIN_SQRT_EPS) / (1.0 + rho);
+
+  return 1.0;
 }
 //-----------------------------------------------------------------------------

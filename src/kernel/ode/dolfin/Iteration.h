@@ -41,7 +41,7 @@ namespace dolfin
 
     /// Constructor
     Iteration(Solution& u, RHS& f, FixedPointIteration& fixpoint,
-	      real tol, real maxdiv, real maxconv);
+	      unsigned int maxiter, real tol, real maxdiv, real maxconv);
     
     /// Destructor
     virtual ~Iteration();
@@ -120,24 +120,14 @@ namespace dolfin
 
     // Compute absolute value of element residual for element
     real residual(Element& element);
-    
-    // Compute damping
-    void computeDamping(const Residuals& r, Damping& d);
-
-    // Compute convergence rate
-    real computeConvergence(const Residuals& r);
-
-    // Compute alpha
-    real computeAlpha(real rho);
-
-    // Compute m
-    unsigned int computeSteps(real rho);
 
   protected:
 
     Solution& u;
     RHS& f;
     FixedPointIteration& fixpoint;
+
+    unsigned int maxiter;
 
     real maxdiv;
     real maxconv;

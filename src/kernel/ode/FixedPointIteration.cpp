@@ -27,7 +27,7 @@ FixedPointIteration::FixedPointIteration(Solution&u, RHS& f) : u(u), f(f)
   tol = 1e-10;
 
   // Assume that problem is non-stiff
-  state = new NonStiffIteration(u, f, *this, maxdiv, maxconv, tol);
+  state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
 }
 //-----------------------------------------------------------------------------
 FixedPointIteration::~FixedPointIteration()
@@ -385,13 +385,13 @@ void FixedPointIteration::changeState(Iteration::State newstate)
   // Initialize new state
   switch ( newstate ) {
   case Iteration::nonstiff:
-    state = new NonStiffIteration(u, f, *this, maxdiv, maxconv, tol);
+    state = new NonStiffIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
   case Iteration::diagonal:
-    state = new DiagonalIteration(u, f, *this, maxdiv, maxconv, tol);
+    state = new DiagonalIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
   case Iteration::adaptive:
-    state = new AdaptiveIteration(u, f, *this, maxdiv, maxconv, tol);
+    state = new AdaptiveIteration(u, f, *this, maxiter, maxdiv, maxconv, tol);
     break;
   case Iteration::nonnormal:
     dolfin_error("Not implemented");
