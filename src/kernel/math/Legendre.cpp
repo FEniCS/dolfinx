@@ -1,7 +1,10 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Legendre.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Legendre::Legendre(int n)
@@ -12,7 +15,22 @@ Legendre::Legendre(int n)
   this->n = n;
 }
 //-----------------------------------------------------------------------------
-real Legendre::eval(real x)
+real Legendre::operator() (real x)
+{
+  return eval(n, x);
+}
+//-----------------------------------------------------------------------------
+real Legendre::dx(real x)
+{
+  return dx(n, x);
+}
+//-----------------------------------------------------------------------------
+real Legendre::ddx(real x)
+{
+  return ddx(n, x);
+}
+//-----------------------------------------------------------------------------
+real Legendre::eval(int n, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -24,15 +42,10 @@ real Legendre::eval(real x)
   
   // Recurrence, BETA page 254
   real nn = real(n);
-  return ( (2.0*nn-1.0)*x*eval(n-1,x) - (nn-1.0)*eval(n-2,x) ) / nn;
+  return ( (2.0*nn-1.0)*x*eval(n-1, x) - (nn-1.0)*eval(n-2, x) ) / nn;
 }
 //-----------------------------------------------------------------------------
-real Legendre::operator(real x)
-{
-  return eval(x, n);
-}
-//-----------------------------------------------------------------------------
-real Legendre::dx(real x)
+real Legendre::dx(int n, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -41,7 +54,7 @@ real Legendre::dx(real x)
   // Special case n = 1
   if ( n == 1 )
     return 1.0;
-
+  
   // Avoid division by zero
   if ( fabs(x - 1.0) < DOLFIN_EPS )
     x -= 2.0*DOLFIN_EPS;
@@ -50,10 +63,10 @@ real Legendre::dx(real x)
   
   // Formula, BETA page 254
   real nn = real(n);
-  return nn * (x*eval(n,x) - eval(n-1,x)) / (x*x - 1.0);
+  return nn * (x*eval(n, x) - eval(n-1, x)) / (x*x - 1.0);
 }
 //-----------------------------------------------------------------------------
-real Legendre::dx2(real x)
+real Legendre::ddx(int, real x)
 {
   // Special case n = 0
   if ( n == 0 )
@@ -71,6 +84,6 @@ real Legendre::dx2(real x)
 
   // Formula, BETA page 254
   real nn = real(n);
-  return ( 2.0*x*dx(n,x) - nn*(nn+1)*eval(n,x) ) / (1.0-x*x);
+  return ( 2.0*x*dx(n, x) - nn*(nn+1)*eval(n, x) ) / (1.0-x*x);
 }
 //-----------------------------------------------------------------------------

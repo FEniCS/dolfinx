@@ -1,3 +1,7 @@
+ - Clean up error messages in Matrix
+ - Make solvers directly accessible through Matrix and DenseMatrix
+ - Add quadrature (Gauss, Radau, and Lobatto) from Tanganyika
+ - Start merge with Tanganyika
  - Add support for automatic documentation using doxygen
  - Update configure scripts
  - Add greeting at end of compilation

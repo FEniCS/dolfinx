@@ -3,6 +3,8 @@
 
 #include <dolfin/RadauQuadrature.h>
 
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 void Radau::ComputePoints()
 {

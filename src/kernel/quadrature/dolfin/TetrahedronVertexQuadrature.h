@@ -18,16 +18,16 @@ namespace dolfin {
       m = 1.0 / 6.0;
       
       // Quadrature points
-      p[0] = Point(0.0, 0.0, 0.0);
-      p[1] = Point(1.0, 0.0, 0.0);
-      p[2] = Point(0.0, 1.0, 0.0);
-      p[3] = Point(0.0, 0.0, 1.0);
+      points[0] = Point(0.0, 0.0, 0.0);
+      points[1] = Point(1.0, 0.0, 0.0);
+      points[2] = Point(0.0, 1.0, 0.0);
+      points[3] = Point(0.0, 0.0, 1.0);
       
       // Quadrature weights
-      w[0] = m / 4.0;
-      w[1] = m / 4.0;
-      w[2] = m / 4.0;
-      w[3] = m / 4.0;
+      weights[0] = m / 4.0;
+      weights[1] = m / 4.0;
+      weights[2] = m / 4.0;
+      weights[3] = m / 4.0;
       
     }
     

@@ -4,6 +4,8 @@
 #ifndef __LEGENDRE_H
 #define __LEGENDRE_H
 
+#include <dolfin/constants.h>
+
 namespace dolfin {
 
   /// Legendre polynomial of given degree n on the interval [-1,1].
@@ -22,17 +24,20 @@ namespace dolfin {
     Legendre(int n);
 
     /// Evaluation at given point
-    real eval(real x);
-    real operator(real x);
+    real operator() (real x);
     
     /// Evaluation of derivative at given point
     real dx (real x);
 
     /// Evaluation of second derivative at given point
-    real d2x (real x);
+    real ddx (real x);
 
   private:
     
+    real eval(int n, real x);
+    real dx  (int n, real x);
+    real ddx (int n, real x);
+
     int n;
 
   };

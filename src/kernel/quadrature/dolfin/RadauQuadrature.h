@@ -4,7 +4,7 @@
 #ifndef __RADAU_QUADRATURE_H
 #define __RADAU_QUADRATURE_H
 
-#include <dolfin/Quadrature.h>
+#include <dolfin/GaussianRules.h>
 
 namespace dolfin {
 
@@ -20,7 +20,7 @@ namespace dolfin {
   /// determined by the condition that Radau quadrature with n points
   /// should be exact for polynomials of degree 2n-2.
 
-  class RadauQuadrature : public Quadrature {
+  class RadauQuadrature : public GaussianRules {
   public:
     
     RadauQuadrature(int n);

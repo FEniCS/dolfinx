@@ -4,6 +4,7 @@
 // Contributions by: Georgios Foufas 2002, 2003
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <cmath>
@@ -58,35 +59,29 @@ void Matrix::operator= (const Matrix& A)
 //-----------------------------------------------------------------------------
 void Matrix::operator+= (const Matrix& A)
 {
-  if ( A.m != m || A.n != n ) {
-	// FIXME: Use logging system
-	cout << "Matrix::operator= (): Matrices not compatible." << endl;
-	exit(1);
-  }
-
+  if ( A.m != m || A.n != n )
+    dolfin_error("Adding matrix of non-matching size.");
+  
   int j = 0;
   for (int i = 0; i < m; i++)
     for (int pos = 0; pos < A.rowsizes[i]; pos++) {
       if ( (j = A.columns[i][pos]) == -1 )
-		  break;
-		addtoElement(i, j, A.values[i][pos]);
+	break;
+      addtoElement(i, j, A.values[i][pos]);
     }
 }
 //-----------------------------------------------------------------------------
 void Matrix::operator-= (const Matrix& A)
 {
-  if ( A.m != m || A.n != n ) {
-	// FIXME: Use logging system
-	cout << "Matrix::operator= (): Matrices not compatible." << endl;
-	exit(1);
-  }
+  if ( A.m != m || A.n != n )
+    dolfin_error("Subtracting matrix of non-matching size.");
 
   int j = 0;
   for (int i = 0; i < m; i++)
     for (int pos = 0; pos < A.rowsizes[i]; pos++) {
       if ( (j = A.columns[i][pos]) == -1 )
-                  break;
-                addtoElement(i, j, -A.values[i][pos] );
+	break;
+      addtoElement(i, j, -A.values[i][pos] );
     }
 }
 //-----------------------------------------------------------------------------
@@ -100,16 +95,13 @@ void Matrix::operator*= (real a)
 void Matrix::init(int m, int n)
 {
   // Check arguments
-
+  
   // FIXME: Use logging system
-  if ( m < 0 ) {
-    cout << "Matrix::init(): Number of rows must be positive." << endl;
-	 exit(1);
-  }
-  if ( n < 0 ) {
-    cout << "Matrix::init(): Number of columns must be positive." << endl;
-	 exit(1);
-  }
+  if ( m < 0 )
+    dolfin_error("Number of rows must be positive.");
+  
+  if ( n < 0 )
+    dolfin_error("Number of columns must be positive.");
   
   // Delete old data
   clear();
@@ -122,21 +114,19 @@ void Matrix::init(int m, int n)
   columns  = new (int *)[m];
   values   = new (real *)[m];
   
-  if ( !columns || !values ) {
-	 cout << "Unable to allocate memory for sparse matrix." << endl;
-	 exit(1);
-  }
-	 
+  if ( !columns || !values )
+    dolfin_error("Out of memory.");
+  
   // Create an empty matrix
-  for (int i = 0; i < m; i++){
-	 columns[i] = new int[1];
-	 values[i] = new real[1];
-	 
-	 rowsizes[i] = 1;
-	 columns[i][0] = -1;
-	 values[i][0] = 0.0;
+  for (int i = 0; i < m; i++) {
+    columns[i] = new int[1];
+    values[i] = new real[1];
+    
+    rowsizes[i] = 1;
+    columns[i][0] = -1;
+    values[i][0] = 0.0;
   }
-
+  
   allocsize = 1;
 }
 //-----------------------------------------------------------------------------
@@ -147,43 +137,43 @@ void Matrix::resize()
   allocsize = 0;
   
   for (int i = 0; i < m; i++) {
-
-	 // Count number of used elements
-	 int rowsize = 0;
-	 for (int pos = 0; pos < rowsizes[i]; pos++)
-		if ( columns[i][pos] != -1 )
-		  rowsize++;
-
-	 // Keep track of number of cleared elements
-	 oldsize += rowsizes[i];
-	 newsize += rowsize;
-
-	 // Keep track of maximum row length
-	 if ( rowsize > allocsize )
-		allocsize = rowsize;
-	 
-	 // Allocate new row
-	 int*  cols = new int[rowsize];
-	 real* vals = new real[rowsize];
-
-	 // Copy old elements
-	 int newpos = 0;
-	 for (int pos = 0; pos < rowsizes[i]; pos++)
-		if ( columns[i][pos] != -1 ) {
-		  cols[newpos] = columns[i][pos];
-		  vals[newpos] = values[i][pos];
-		  newpos++;
-		}
-
-	 // Change to new elements
-	 delete [] columns[i];
-	 delete [] values[i];
-	 columns[i]  = cols;
-	 values[i]   = vals;
-	 rowsizes[i] = rowsize;
-	 
+    
+    // Count number of used elements
+    int rowsize = 0;
+    for (int pos = 0; pos < rowsizes[i]; pos++)
+      if ( columns[i][pos] != -1 )
+	rowsize++;
+    
+    // Keep track of number of cleared elements
+    oldsize += rowsizes[i];
+    newsize += rowsize;
+    
+    // Keep track of maximum row length
+    if ( rowsize > allocsize )
+      allocsize = rowsize;
+    
+    // Allocate new row
+    int*  cols = new int[rowsize];
+    real* vals = new real[rowsize];
+    
+    // Copy old elements
+    int newpos = 0;
+    for (int pos = 0; pos < rowsizes[i]; pos++)
+      if ( columns[i][pos] != -1 ) {
+	cols[newpos] = columns[i][pos];
+	vals[newpos] = values[i][pos];
+	newpos++;
+      }
+    
+    // Change to new elements
+    delete [] columns[i];
+    delete [] values[i];
+    columns[i]  = cols;
+    values[i]   = vals;
+    rowsizes[i] = rowsize;
+    
   }
-
+  
   // Write a message
   cout << "Clearing " << (oldsize - newsize) << " unused elements." << endl;
 }
@@ -191,25 +181,25 @@ void Matrix::resize()
 void Matrix::clear()
 {
   if ( rowsizes )
-	 delete [] rowsizes;
+    delete [] rowsizes;
   rowsizes = 0;
-	 
-	 if ( columns ){
-	 for (int i = 0; i < m; i++)
-	 if ( columns[i] )
-	 delete [] columns[i];
-	 delete [] columns;
+  
+  if ( columns ){
+    for (int i = 0; i < m; i++)
+      if ( columns[i] )
+	delete [] columns[i];
+    delete [] columns;
   }
   columns = 0;
   
   if ( values ){
-	 for (int i = 0; i < m; i++)
-		if ( values[i] )
-		  delete [] values[i];
-	 delete [] values;
+    for (int i = 0; i < m; i++)
+      if ( values[i] )
+	delete [] values[i];
+    delete [] values;
   }
   values = 0;
-
+  
   allocsize = 1;
   
   m = 0;
@@ -219,11 +209,11 @@ void Matrix::clear()
 int Matrix::size(int dim) const
 {
   if ( dim == 0 )
-	 return m;
+    return m;
   else if ( dim == 1 )
-	 return n;
+    return n;
 
-  cout << "Matrix::size(): Illegal dimension" << endl;
+  dolfin_warning1("Illegal matrix dimension: dim = %d.", dim);
   return 0;
 }
 //-----------------------------------------------------------------------------
@@ -231,10 +221,10 @@ int Matrix::size() const
 {  
   int size = 0;
   for (int i = 0; i < m; i++)
-	 for (int pos = 0; pos < rowsizes[i]; pos++)
-		if ( columns[i][pos] != -1 )
-		  size += 1;
-
+    for (int pos = 0; pos < rowsizes[i]; pos++)
+      if ( columns[i][pos] != -1 )
+	size += 1;
+  
   return size;
 }
 //-----------------------------------------------------------------------------
@@ -255,23 +245,23 @@ int Matrix::bytes() const
 void Matrix::initRow(int i, int rowsize)
 {
   if ( i < 0 || i >= m )
-    cout << "Matrix::initRow(): Illegal row index" << endl;
+    dolfin_error1("Illegal row index: i = %d.", i);
   if ( rowsize < 0 )
-    cout << "Matrix::initRow(): Illegal row size" << endl;
+    dolfin_error1("Illegal rowsize: %d.", rowsize);
   
   if ( columns[i] ){
-	 delete [] columns[i];
-	 columns[i] = new int[rowsize];
+    delete [] columns[i];
+    columns[i] = new int[rowsize];
   }
   
   if ( values[i] ){
-	 delete [] values[i];
-	 values[i] = new real[rowsize];
+    delete [] values[i];
+    values[i] = new real[rowsize];
   }
-
+  
   for (int pos = 0; pos < rowsize; pos++){
-	 columns[i][pos] = -1;
-	 values[i][pos] = 0.0;
+    columns[i][pos] = -1;
+    values[i][pos] = 0.0;
   }
   
   rowsizes[i] = rowsize;
@@ -281,24 +271,24 @@ void Matrix::resizeRow(int i, int rowsize)
 {
   // Allocate at least allocsize
   if ( allocsize > rowsize )
-	 rowsize = allocsize;
+    rowsize = allocsize;
   else if ( rowsize > allocsize )
-	 allocsize = rowsize;
-
+    allocsize = rowsize;
+  
   // Allocate new lists
   int* cols = new int[rowsize];
   real* vals = new real[rowsize];
-
+  
   // Copy values
   for (int pos = 0; pos < rowsizes[i] || pos < rowsize; pos++) {
-	 if ( pos < rowsizes[i] ) {
-		cols[pos] = columns[i][pos];
-		vals[pos] = values[i][pos];
-	 }
-	 else {
-		cols[pos] = -1;
-		vals[pos] = 0.0;
-	 }
+    if ( pos < rowsizes[i] ) {
+      cols[pos] = columns[i][pos];
+      vals[pos] = values[i][pos];
+    }
+    else {
+      cols[pos] = -1;
+      vals[pos] = 0.0;
+    }
   }
   
   // Delete old values and use the new lists
@@ -313,7 +303,7 @@ void Matrix::resizeRow(int i, int rowsize)
 int Matrix::rowSize(int i) const
 {
   if ( i < 0 || i >= m )
-    cout << "Matrix::rowSize(): Illegal row index" << endl;
+    dolfin_error1("Illegal row index: i = %d.", i);
 
   return rowsizes[i];
 }
@@ -321,18 +311,18 @@ int Matrix::rowSize(int i) const
 bool Matrix::endrow(int i, int pos) const
 {
   if ( pos >= rowsizes[i] )
-	 return true;
-
+    return true;
+  
   return columns[i][pos] == -1;
 }
 //-----------------------------------------------------------------------------
 real Matrix::operator()(int i, int *j, int pos) const
 {
   if ( i < 0 || i >= m )
-	 cout << "Matrix::operator (): Illegal row index" << endl;
+    dolfin_error1("Illegal row index: i = %d.", i);
 
   if ( pos >= rowsizes[i] )
-	 cout << "Matrix::operator (): Illegal position" << endl;
+    dolfin_error1("Illegal row position: pos = %d.", pos);
 
   *j = columns[i][pos];
   
@@ -355,26 +345,26 @@ real Matrix::norm()
   real val;
   
   for (int i = 0; i < m; i++)
-	 for (int pos = 0; pos < rowsizes[i]; pos++)
-		if ( (val = fabs(values[i][pos])) > max )
-		  max = val;
+    for (int pos = 0; pos < rowsizes[i]; pos++)
+      if ( (val = fabs(values[i][pos])) > max )
+	max = val;
   
-  return ( max );
+  return max;
 }
 //-----------------------------------------------------------------------------
 void Matrix::ident(int i)
 {
   if ( i < 0 || i >= m )
-    cout << "Matrix::setRowIdentity(): Illegal row index" << endl;
-
+    dolfin_error1("Illegal row index: i = %d.", i);
+  
   if ( columns[i] )
-	 delete [] columns[i];
+    delete [] columns[i];
   if ( values[i] )
-	 delete [] values[i];
-
+    delete [] values[i];
+  
   columns[i] = new int[1];
   values[i] = new real[1];
-
+  
   columns[i][0] = i;
   values[i][0] = 1.0;
 
@@ -384,75 +374,88 @@ void Matrix::ident(int i)
 real Matrix::mult(Vector &x, int i)
 {
   if ( i < 0 || i >= m )
-    cout << "Matrix::mult(): Illegal row index" << endl;
-
+    dolfin_error1("Illegal row index: i = %d.", i);
+  
   real sum = 0.0;
-
+  
   for (int pos = 0; pos < rowsizes[i] && columns[i][pos] != -1; pos++)
-	 sum += values[i][pos] * x(columns[i][pos]);
-
+    sum += values[i][pos] * x(columns[i][pos]);
+  
   return sum;
 }
 //-----------------------------------------------------------------------------
 void Matrix::mult(Vector &x, Vector &Ax)
 {
   if ( x.size() != n || Ax.size() != n )
-	 cout << "Matrix::mult(): Matrix dimensions don't match." << endl;
+    dolfin_error("Matrix dimensions don't match.");
   
   for (int i = 0; i < m; i++)
-	 Ax(i) = mult(x,i);
+    Ax(i) = mult(x,i);
+}
+//-----------------------------------------------------------------------------
+void Matrix::solve(Vector& x, Vector& b)
+{
+  KrylovSolver solver;
+
+  solver.solve(*this, x, b);
 }
 //-----------------------------------------------------------------------------
 void Matrix::show()
 {
   for (int i = 0; i < m; i++) {
-	 if ( i == 0 )
-		cout << "| ";
-	 else
-		cout << "| ";
-	 for (int j = 0; j < n; j++){
-		cout << (*this)(i,j) << " ";
-	 }
-	 cout << "|" << endl;
+    if ( i == 0 )
+      cout << "| ";
+    else
+      cout << "| ";
+    for (int j = 0; j < n; j++){
+      cout << (*this)(i,j) << " ";
+    }
+    cout << "|" << endl;
   }
 }
 //-----------------------------------------------------------------------------
 real Matrix::readElement(int i, int j) const
 {
-  if ( i < 0 || i >= m || j < 0 || j >= n )
-    cout << "Matrix::readElement(): Illegal indices" << endl;
+  if ( i < 0 || i >= m )
+    dolfin_error1("Illegal row index: i = %d.", i);
 
+  if ( j < 0 || j >= n )
+    dolfin_error1("Illegal column index: j = %d.", j);
+  
   for (int pos = 0; pos < rowsizes[i]; pos++)
-	 if ( columns[i][pos] == j )
-		return values[i][pos];
-
+    if ( columns[i][pos] == j )
+      return values[i][pos];
+  
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Matrix::writeElement(int i, int j, real value)
 {
-  if ( i < 0 || i >= m || j < 0 || j >= n )
-    cout << "Matrix::operator(): Illegal indices" << endl;
+  if ( i < 0 || i >= m )
+    dolfin_error1("Illegal row index: i = %d.", i);
+
+  if ( j < 0 || j >= n )
+    dolfin_error1("Illegal column index: j = %d.", j);
 
   // Find position (i,j)
   int pos = 0;
   for (; pos < rowsizes[i]; pos++){
-	 // Put element in already existing position
-	 if ( columns[i][pos] == j ){
-		values[i][pos] = value;
-		return;
-	 }
-	 // Put element in an unused position
-	 else if ( columns[i][pos] == -1 ){
-		columns[i][pos] = j;
-		values[i][pos] = value;
-		return;
-	 }
+    // Put element in already existing position
+    if ( columns[i][pos] == j ){
+      values[i][pos] = value;
+      return;
+    }
+    // Put element in an unused position
+    else if ( columns[i][pos] == -1 ){
+      columns[i][pos] = j;
+      values[i][pos] = value;
+      return;
+    }
   }
-
+  
   // Couldn't find an empty position, so resize and try again
   resizeRow(i, rowsizes[i] + 1);
-
+  
   // Insert new element (requires same ordering as before resizeRow())
   columns[i][pos] = j;
   values[i][pos] = value;
@@ -460,23 +463,26 @@ void Matrix::writeElement(int i, int j, real value)
 //-----------------------------------------------------------------------------
 void Matrix::addtoElement(int i, int j, real value)
 {
-  if ( i < 0 || i >= m || j < 0 || j >= n )
-    cout << "Matrix::operator(): Illegal indices" << endl;
+  if ( i < 0 || i >= m )
+    dolfin_error1("Illegal row index: i = %d.", i);
+
+  if ( j < 0 || j >= n )
+    dolfin_error1("Illegal column index: j = %d.", j);
 
   // Use first empty position
   int pos = 0;
   for (; pos < rowsizes[i]; pos++){
-	 if ( columns[i][pos] == j ){
-		values[i][pos] += value;
-		return;
-	 }
-	 else if ( columns[i][pos] == -1 ){
-		columns[i][pos] = j;
-		values[i][pos] = value;
-		return;
-	 }
+    if ( columns[i][pos] == j ){
+      values[i][pos] += value;
+      return;
+    }
+    else if ( columns[i][pos] == -1 ){
+      columns[i][pos] = j;
+      values[i][pos] = value;
+      return;
+    }
   }
-
+  
   // Couldn't find an empty position, so resize and try again
   resizeRow(i, rowsizes[i] + 1);
 

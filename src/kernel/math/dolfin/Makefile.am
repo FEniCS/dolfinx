@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_io.h basic.h
+EXTRA_DIST = dolfin_io.h basic.h Legendre.h

@@ -4,7 +4,7 @@
 #ifndef __GAUSS_QUADRATURE_H
 #define __GAUSS_QUADRATURE_H
 
-#include <dolfin/Quadrature.h>
+#include <dolfin/GaussianRules.h>
 
 namespace dolfin {
 
@@ -17,7 +17,7 @@ namespace dolfin {
   /// determined by the condition that Gauss quadrature with n points
   /// should be exact for polynomials of degree 2n-1.
 
-  class GaussQuadrature : public Quadrature {
+  class GaussQuadrature : public GaussianRules {
   public:
     
     GaussQuadrature(int n);

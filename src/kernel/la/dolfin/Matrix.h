@@ -13,7 +13,8 @@
 namespace dolfin {
   
   class Vector;
-  
+
+  /// Sparse matrix with given number of rows m and columns n
   class Matrix : public Variable {
   public:
     
@@ -55,7 +56,7 @@ namespace dolfin {
     
     friend class Reference;
     
-    // Operators
+    /// Operators
     void operator=  (const Matrix& A);
     void operator+= (const Matrix& A);
     void operator-= (const Matrix& A);
@@ -67,35 +68,37 @@ namespace dolfin {
     void resize();
     /// Clear matrix
     void clear();
-    /// Returns size (0 for rows, 1 for columns)
+    /// Return size (0 for rows, 1 for columns)
     int size(int dim) const;
-    /// Returns number of nonzero elements
+    /// Return number of nonzero elements
     int size() const;
-    /// Returns size of matrix in bytes (approximately)
+    /// Return size of matrix in bytes (approximately)
     int bytes() const;
     /// Set number of nonzero entries in a row (clearing old values)
     void initRow(int i, int rowsize);
     /// Set number of nonzero entries in a row (keeping old values)
     void resizeRow(int i, int rowsize);
-    /// Returns size of row i (number of allocated elements)
+    /// Return size of row i (number of allocated elements)
     int rowSize(int i) const;
-    /// Returns true if we have not reached end of row
+    /// Return true if we have not reached end of row
     bool endrow(int i, int pos) const;
     
-    /// Indexing: fast alternative
-    real operator()(int i, int *j, int pos) const;
-    /// Indexing: slow alternative
+    /// Indexing, fast alternative
+    real operator()(int i, int* j, int pos) const;
+    /// Indexing, slow alternative
     Reference operator()(int i, int j);
     real      operator()(int i, int j) const;
     
-    /// Returns maximum norm
+    /// Return maximum norm
     real norm();
     /// Set all elements 0 on this row except (i,i) = 1
     void ident(int i);
-    /// Returns element i of Ax
-    real mult(Vector &x, int i);
-    /// Multiplies x with A and puts the result in Ax
-    void mult(Vector &x, Vector &Ax);
+    /// Return element i of Ax
+    real mult(Vector& x, int i);
+    /// Multiplie x with A and put the result in Ax
+    void mult(Vector& x, Vector& Ax);
+    /// Solve the linear system Ax = b
+    void solve(Vector& x, Vector& b);
     
     /// Output
     void show();
@@ -113,9 +116,9 @@ namespace dolfin {
     int m, n;
     
     // Data
-    int  *rowsizes;
-    int  **columns;
-    real **values;
+    int*   rowsizes;
+    int**  columns;
+    real** values;
     
     // Additional size to allocate when needed
     int allocsize;

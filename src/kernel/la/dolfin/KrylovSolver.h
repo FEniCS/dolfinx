@@ -11,7 +11,8 @@ namespace dolfin {
   class Matrix;
   class DenseMatrix;
   class Vector;
-  
+
+  /// Krylov solver, including conjugate gradient (CG) and GMRES
   class KrylovSolver{
   public:
     
@@ -20,7 +21,7 @@ namespace dolfin {
     
     KrylovSolver(Method method = GMRES);
     
-    void solve(Matrix &A, Vector &x, Vector &b);
+    void solve(Matrix& A, Vector& x, Vector& b);
 
     void setMethod(Method method);
     

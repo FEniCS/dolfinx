@@ -76,11 +76,12 @@ XML2_LFLAGS = @XML2_LFLAGS@
 libxml2_found = @libxml2_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_quadrature.h                                  dolfin/Quadrature.h                                  dolfin/TetrahedronMidpointQuadrature.h                                  dolfin/TetrahedronVertexQuadrature.h                                  dolfin/TriangleMidpointQuadrature.h                                  dolfin/TriangleVertexQuadrature.h
+include_HEADERS = dolfin/dolfin_quadrature.h                                  dolfin/GaussQuadrature.h                                  dolfin/LobattoQuadrature.h                                  dolfin/Quadrature.h                                  dolfin/RadauQuadrature.h                                  dolfin/TetrahedronMidpointQuadrature.h                                  dolfin/TetrahedronVertexQuadrature.h                                  dolfin/TriangleMidpointQuadrature.h                                  dolfin/TriangleVertexQuadrature.h
 
 INCLUDES = @MODULE_INCLUDES@
 lib_LIBRARIES = libdolfin-quadrature.a
-libdolfin_quadrature_a_SOURCES = Quadrature.cpp
+libdolfin_quadrature_a_SOURCES = GaussQuadrature.cpp                                  LobattoQuadrature.cpp                                  RadauQuadrature.cpp
+
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 LIBRARIES =  $(lib_LIBRARIES)
@@ -91,7 +92,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_quadrature_a_LIBADD = 
-libdolfin_quadrature_a_OBJECTS =  Quadrature.o
+libdolfin_quadrature_a_OBJECTS =  GaussQuadrature.o LobattoQuadrature.o \
+RadauQuadrature.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -106,7 +108,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Quadrature.P
+DEP_FILES =  .deps/GaussQuadrature.P .deps/LobattoQuadrature.P \
+.deps/RadauQuadrature.P
 SOURCES = $(libdolfin_quadrature_a_SOURCES)
 OBJECTS = $(libdolfin_quadrature_a_OBJECTS)
 

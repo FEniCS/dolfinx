@@ -11,19 +11,19 @@ namespace dolfin {
   
   class DirectSolver{
   public:
-	 
-	 DirectSolver(){}
-	 ~DirectSolver(){}
-
-	 // Solve Ax = b (A will be the LU factorisation)
-	 void solve(DenseMatrix &A, Vector &x, Vector &b);
-
-	 // Compute LU factorisation of A
-	 void LU(DenseMatrix &A);
-	 
-	 // Solve Ax = b with given LU factorisation
-	 void solveLU(DenseMatrix &LU, Vector &x, Vector &b);
-	 
+    
+    DirectSolver(){}
+    ~DirectSolver(){}
+    
+    // Solve Ax = b (and replace A by its LU factorization)
+    void solve(DenseMatrix& A, Vector& x, Vector& b);
+    
+    /// Compute LU factorization (in-place)
+    void lu(DenseMatrix& A);
+    
+    /// Solve the linear system A x = b using a computed lu factorization
+    void lusolve(DenseMatrix& LU, Vector& x, Vector& b);
+    
   };
   
 }

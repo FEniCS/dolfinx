@@ -26,6 +26,9 @@ namespace dolfin {
     /// Assignment from real, giving p = (x,0,0)
     void operator= (real x);
 
+    /// Convesion to real, returning x
+    operator real() const;
+
     /// The three coordinates
     real x;
     real y;

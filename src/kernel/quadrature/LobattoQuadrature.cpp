@@ -1,55 +1,54 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/Quadrature.h>
+#include <cmath>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Legendre.h>
+#include <dolfin/LobattoQuadrature.h>
+
+using namespace dolfin;
 
 //----------------------------------------------------------------------------
-void Lobatto::ComputePoints()
+void LobattoQuadrature::computePoints()
 {
-  // This function computes the Lobatto quadrature points in [-1,1]
-  // as the enpoints and the zeroes of the derivatives of the Legendre
-  // polynomials using Newton's method.
-
-  Legendre p;
-  int n;
-  double x, dx;
-
-  // Fix the first nodal point
-  dPoints[0][0]  = 1.0;
+  // Compute the Lobatto quadrature points in [-1,1] as the enpoints
+  // and the zeroes of the derivatives of the Legendre polynomials
+  // using Newton's method.
   
-  // Compute the nodal points for every order
-  for (int i=1;i<iMaximumNumberOfPoints;i++){
-
-	 // The number of nodal points
-	 n = i + 1;
-	 
-	 // Set the first and last nodal points which are 0 and 1
-	 dPoints[i][0]   = -1.0;
-	 dPoints[i][n-1] = 1.0;
-	 
-	 // Compute the rest of the Nodes by Newton's method
-	 for (int j=1;j<=((n-1)/2);j++){
-
-		// Initial guess
-		x = cos(PI*double(j)/double(n-1));
-
-		// Newton's method
-		do {
-		  dx = - p.D(n-1,x) / p.D2(n-1,x);
-		  x  = x + dx;
-		} while ( fabs(dx) > DEFAULT_NODE_TOL );
-		  
-		// Save the value using the symmetry of the points
-		dPoints[i][j]     = - x;
-		dPoints[i][n-1-j] = x;
-
-	 }
-
-	 // Fix the middle node
-	 if ( (n % 2) != 0 )
-		dPoints[i][n/2] = 0.0;
-	 
+  // Special case n = 1
+  if ( n == 1 ) {
+    points[0] = 0.0;
+    return;
   }
+
+  Legendre p(n-1);
+  real x, dx;
+
+  // Set the first and last nodal points which are 0 and 1
+  points[0] = -1.0;
+  points[n-1] = 1.0;
+  
+  // Compute the rest of the nodes by Newton's method
+  for (int i = 1; j <= ((n-1)/2); i++) {
+    
+    // Initial guess
+    x = cos(DOLFIN_PI*real(i)/real(n-1));
+    
+    // Newton's method
+    do {
+      dx = - p.dx(x) / p.ddx(x);
+      x  = x + dx;
+    } while ( fabs(dx) > DOLFIN_EPS );
+    
+    // Save the value using the symmetry of the points
+    points[i] = - x;
+    points[n-1-i] = x;
+    
+  }
+  
+  // Fix the middle node
+  if ( (n % 2) != 0 )
+    points[i][n/2] = 0.0;
 }
 //----------------------------------------------------------------------------
 bool Lobatto::CheckNumbers()
@@ -62,7 +61,7 @@ bool Lobatto::CheckNumbers()
   //   n = 2    exact for p <= 1
   //   n = 3    exact for p <= 3 ...
 
-  double dIntegral;
+  real dIntegral;
   Legendre p;
   int n;
   
