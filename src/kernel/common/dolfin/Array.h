@@ -321,6 +321,8 @@ namespace dolfin {
 	array[i] = element;
 	return i;
       }
+
+    dolfin_error("Array is full.");
     return -1;
   }
   //--------------------------------------------------------------------------- 

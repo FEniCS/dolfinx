@@ -65,16 +65,12 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
   // The global grid refinement algorithm working on the whole grid hierarchy.
   // This is algorithm GlobalRefinement() in Beys paper.
 
-  dolfin_debug("check");
-
   // Phase I: Visit all grids top-down
   for (GridIterator grid(grids,last); !grid.end(); --grid) {
     evaluateMarks(*grid);
     closeGrid(*grid);
   }
   
-  dolfin_debug("check");
-
   // Phase II: Visit all grids bottom-up
   for (GridIterator grid(grids); !grid.end(); ++grid) {
     if (grid.index() > 0)
@@ -85,8 +81,6 @@ void GridRefinement::globalRefinement(GridHierarchy& grids)
 
   // Update grid hierarchy
   grids.init(grids.coarse());
-
-  dolfin_debug("check");
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::evaluateMarks(Grid& grid)
@@ -147,20 +141,13 @@ void GridRefinement::refineGrid(Grid& grid)
   // Refine a grid according to marks.
   // This is algorithm RefineGrid() in Bey's paper.
 
-  dolfin_debug("check");
-
   // Change markers from marked_for_coarsening to marked_for_no_ref
   for (CellIterator c(grid); !c.end(); ++c)
     if ( c->marker() == Cell::marked_for_coarsening )
       c->marker() = Cell::marked_for_no_ref;
 
-  dolfin_debug("check");
-
   // Refine cells which are not marked_according_to_ref
   for (CellIterator c(grid); !c.end(); ++c) {
-
-    cout << "Checking cell " << c->id() << endl;
-    
 
     // Skip cells which are marked_according_to_ref
     if ( c->marker() == Cell::marked_according_to_ref )
@@ -171,16 +158,13 @@ void GridRefinement::refineGrid(Grid& grid)
     
   }
 
-  dolfin_debug("check");
-
+  cout << "Refined grid has " << grid.noCells() << " cells." << endl;
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
 {
   // Unrefine a grid according to marks.
   // This is algorithm UnrefineGrid() in Bey's paper.
-
-  dolfin_debug("check");
 
   // Get child grid or create a new child grid
   Grid* child = 0;
@@ -226,9 +210,6 @@ void GridRefinement::unrefineGrid(Grid& grid, const GridHierarchy& grids)
   for (CellIterator c(*child); !c.end(); ++c)
     if ( !reuse_cell(c->id()) )
       child->remove(*c);
-
-  dolfin_debug("check");
-
 }
 //-----------------------------------------------------------------------------
 void GridRefinement::closeCell(Cell& cell,

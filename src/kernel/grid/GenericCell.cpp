@@ -117,17 +117,22 @@ void GenericCell::setGrid(Grid& grid)
 //-----------------------------------------------------------------------------
 void GenericCell::setParent(Cell& parent)
 {
-  // Set parent cell: a cell is parent if the current cell is created through 
-  // refinement of the parent cell. 
+  // Set parent cell: a cell is parent if the current cell is created
+  // through refinement of the parent cell.
   this->_parent = &parent;
+}
+//-----------------------------------------------------------------------------
+void GenericCell::initChildren(int n)
+{
+  children.init(n);
+  children.reset();
 }
 //-----------------------------------------------------------------------------
 void GenericCell::addChild(Cell& child)
 {
-  // Set the child cell if Cell not already contains the child cell: a cell 
-  // is child if it is created through refinement of the current cell.  
-  if ( !children.contains(&child) )
-    children.add(&child);
+  // Set the child cell: a cell is child if it is created through
+  // refinement of the current cell.
+  children.add(&child);
 }
 //-----------------------------------------------------------------------------
 bool GenericCell::neighbor(GenericCell& cell) const
@@ -210,6 +215,8 @@ Node* GenericCell::findNode(const Point& p) const
 //-----------------------------------------------------------------------------
 Edge* GenericCell::findEdge(Node& n0, Node& n1)
 {
+  cout << "Number of edges: " << ce.size() << endl;
+
   for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e )
       if ( (*e)->equals(n0, n1) )

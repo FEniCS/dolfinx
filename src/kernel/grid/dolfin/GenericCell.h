@@ -74,6 +74,9 @@ namespace dolfin {
     // Set parent cell
     void setParent(Cell& parent);
 
+    // Set number of children
+    void initChildren(int n);
+
     // Set child cell
     void addChild(Cell& child);
 

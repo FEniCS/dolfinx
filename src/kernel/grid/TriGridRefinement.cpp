@@ -98,6 +98,7 @@ void TriGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   Node& n2 = createNode(cell.node(2), grid, cell);
 
   // Create a new cell
+  cell.initChildren(1);
   createCell(n0, n1, n2, grid, cell);
 
   // Set marker of cell
@@ -123,6 +124,7 @@ void TriGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), grid, cell);
 
   // Create new cells 
+  cell.initChildren(4);
   createCell(n0,  n01, n02, grid, cell);
   createCell(n01, n1,  n12, grid, cell);
   createCell(n02, n12, n2,  grid, cell);
@@ -157,7 +159,8 @@ void TriGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   // Create new node on marked edge 
   Node& ne = createNode(e->midpoint(), grid, cell);
   
-  // Create new cells 
+  // Create new cells
+  cell.initChildren(2); 
   createCell(ne, nn, n0, grid, cell);
   createCell(ne, nn, n1, grid, cell);
   
@@ -193,7 +196,8 @@ void TriGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   Node& n_e0 = createNode(e0->midpoint(), grid, cell);
   Node& n_e1 = createNode(e1->midpoint(), grid, cell);
 
-  // Create new cells 
+  // Create new cells
+  cell.initChildren(3); 
   createCell(n_dm, n_e0, n_e1, grid, cell);
   createCell(n_m0, n_e0, n_e1, grid, cell);
   createCell(n_e1, n_m0, n_m1, grid, cell);

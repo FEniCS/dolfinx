@@ -145,6 +145,7 @@ void TetGridRefinement::refineNoRefine(Cell& cell, Grid& grid)
   Node& n3 = createNode(cell.node(3), grid, cell);
 
   // Create a new cell
+  cell.initChildren(1);
   createCell(n0, n1, n2, n3, grid, cell);
 
   // Set marker of cell
@@ -177,6 +178,7 @@ void TetGridRefinement::refineRegular(Cell& cell, Grid& grid)
   Node& n23 = createNode(cell.node(2).midpoint(cell.node(3)), grid, cell);
 
   // Create new cells 
+  cell.initChildren(8);
   createCell(n0,  n01, n02, n03, grid, cell);
   createCell(n01, n1,  n12, n13, grid, cell);
   createCell(n02, n12, n2,  n23, grid, cell);
@@ -227,6 +229,7 @@ void TetGridRefinement::refineIrregular1(Cell& cell, Grid& grid)
   Node& n12 = createNode(e12->midpoint(), grid, cell);
   
   // Create new cells 
+  cell.initChildren(4);
   createCell(nn, n01, n02, n12, grid, cell);
   createCell(nn, n01, n02, n0,  grid, cell);
   createCell(nn, n01, n12, n1,  grid, cell);
@@ -265,7 +268,8 @@ void TetGridRefinement::refineIrregular2(Cell& cell, Grid& grid)
   // Create new node on marked edge 
   Node& ne = createNode(e->midpoint(), grid, cell);
   
-  // Create new cells 
+  // Create new cells
+  cell.initChildren(2);
   createCell(ne, nn0, nn1, n0, grid, cell);
   createCell(ne, nn0, nn1, n1, grid, cell);
   
@@ -320,6 +324,9 @@ void TetGridRefinement::refineIrregular3(Cell& cell, Grid& grid)
   // Create new node on marked edge 
   Node& n_e0 = createNode(e0->midpoint(), grid, cell);
   Node& n_e1 = createNode(e1->midpoint(), grid, cell);
+
+
+  dolfin_error("Irregular 3 does not work yet.");
 
   // Create new cells 
   Cell& c1 = createCell(n_dm, n_e0, n_e1, n_nm, grid, cell);
@@ -398,6 +405,7 @@ void TetGridRefinement::refineIrregular4(Cell& cell, Grid& grid)
   Node& n_e1 = createNode(marked_edges(1)->midpoint(), grid, cell);
 
   // Create new cells 
+  cell.initChildren(4);
   createCell(n_e0, n_e1, n00, n10, grid, cell);
   createCell(n_e0, n_e1, n00, n11, grid, cell);
   createCell(n_e0, n_e1, n01, n10, grid, cell);

@@ -225,18 +225,20 @@ void Cell::setGrid(Grid& grid)
 //-----------------------------------------------------------------------------
 void Cell::setParent(Cell& parent)
 {
-  // Set parent cell: a cell is parent if the current cell is created through 
-  // refinement of the parent cell. 
   dolfin_assert(c);
-  return c->setParent(parent);
+  c->setParent(parent);
+}
+//-----------------------------------------------------------------------------
+void Cell::initChildren(int n)
+{
+  dolfin_assert(c);
+  c->initChildren(n);
 }
 //-----------------------------------------------------------------------------
 void Cell::addChild(Cell& child)
 {
-  // Set the child if cell not already contains the child cell: a cell 
-  // is child if it is created through refinement of the current cell.  
   dolfin_assert(c);
-  return c->addChild(child);
+  c->addChild(child);
 }
 //-----------------------------------------------------------------------------
 void Cell::set(Node& n0, Node& n1, Node& n2)

@@ -177,9 +177,6 @@ void Grid::refine()
     new_grid->_child = this;
     
   }    
-
-  // Compute connectivity
-  init();
 }
 //-----------------------------------------------------------------------------
 Grid& Grid::parent()
