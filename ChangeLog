@@ -1,3 +1,4 @@
+ - Fix compilation error in src/config
  - Fix name of keyword for convection-diffusion
 0.2.11-1
  - Fix compilation error (`source`) on Solaris
