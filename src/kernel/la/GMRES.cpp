@@ -21,16 +21,15 @@ GMRES::GMRES() : LinearSolver(), report(true), ksp(0), B(0)
   // Set up solver environment
   KSPCreate(PETSC_COMM_SELF, &ksp);
   KSPSetFromOptions(ksp);  
-
+  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
   //KSPSetType(ksp, KSPGMRES);
-  //KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
 
   // Choose preconditioner
   PC pc;
   KSPGetPC(ksp, &pc);
+  PCSetFromOptions(pc);  
   //PCSetType(pc, PCNONE);
   //PCSetType(pc, PCILU);
-  PCSetFromOptions(pc);
 
   // Display tolerances
   real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
