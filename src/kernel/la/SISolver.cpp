@@ -154,17 +154,21 @@ void SISolver::iterateSOR(const Matrix& A, Vector& x, const Vector& b)
 {
   real aij = 0.0;
   real aii = 0.0;
-  real omega = 1.0;
+  real omega = 1.5;
+  Vector x0(x);
 
   unsigned int j;
   for (unsigned int i = 0; i < A.size(0); i++) {
-    x(i) = b(i);
+    x(i) = omega * b(i);
     for (unsigned int pos = 0; !A.endrow(i,pos); pos++) {
       aij = A(i,j,pos);
-      if (j==i){
+      if (j==i)
+      {
 	aii = aij;
-	x(i) += (1.0-omega)*aii*x(i);
-      } else{
+	x(i) += (1.0-omega)*aii*x0(i);
+      } 
+      else
+      {
 	x(i) -= omega*aij*x(j);
       }	  
     }
