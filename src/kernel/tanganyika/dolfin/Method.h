@@ -8,6 +8,8 @@
 
 namespace dolfin {
 
+  class Lagrange;
+  
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
   
@@ -29,11 +31,14 @@ namespace dolfin {
     /// Return nodal point
     real point(int i) const;
     
-    /// Return nodal weight (including quadrature and weight function)
-    real weight(int i) const;
+    /// Return nodal weight j for degree of freedom i (including quadrature)
+    real weight(int i, int j) const;
 
     /// Return quadrature weight (including only quadrature)
-    real qweight(int i) const;
+    real weight(int i) const;
+
+    /// Display method data
+    virtual void show() const = 0;
 
   protected:
     
@@ -46,9 +51,9 @@ namespace dolfin {
     int q;
     int n;
 
-    real* points;
-    real* weights;
-    real* qweights;
+    real*  points;
+    real** weights;
+    real*  qweights;
 
     Lagrange* trial;
     Lagrange* test;

@@ -18,6 +18,8 @@ namespace dolfin {
     
     cGqMethod(int q);
     ~cGqMethod();
+
+    void show() const;
     
   protected:
 
@@ -27,7 +29,7 @@ namespace dolfin {
 
   };
 
-  typedef cGq cGqMethod;
+  typedef cGqMethod cGq;
 
 }
 

@@ -20,6 +20,18 @@ GaussQuadrature::GaussQuadrature(int n) : GaussianQuadrature(n)
   dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
+void GaussQuadrature::show() const
+{
+  cout << "Gauss quadrature points and weights on [-1,1] for n = " 
+       << n << ":" << endl;
+
+  cout << " i    points                   weights" << endl;
+  cout << "-----------------------------------------------------" << endl;
+  
+  for (int i = 0; i < n; i++)
+    dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
+}
+//-----------------------------------------------------------------------------
 void GaussQuadrature::computePoints()
 {
   // Compute Gauss quadrature points on [-1,1] as the
@@ -55,34 +67,5 @@ void GaussQuadrature::computePoints()
   // Set middle node
   if ( (n % 2) != 0 )
     points[n/2] = 0.0;
-}
-//-----------------------------------------------------------------------------
-// Output
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<<(LogStream& stream, const GaussQuadrature& gauss)
-{
-  stream << "Gauss quadrature points and weights on [-1,1] for n = " << gauss.size() << ":" << dolfin::endl;
-  stream << dolfin::endl;
-
-  char number[32];
-  char point[32];
-  char weight[32];
-
-  stream << " i    points                   weights" << dolfin::endl;
-  stream << "-----------------------------------------------------" << dolfin::endl;
-  for (int i = 0; i < gauss.size(); i++) {
-
-    sprintf(number, "%2d", i);
-    sprintf(point,  "% .16e", gauss.point(i).x);
-    sprintf(weight, "% .16e", gauss.weight(i));
-    
-    stream << number << "   " << point << "  " << weight;
-
-    if ( i < (gauss.size()-1) )
-      stream << dolfin::endl;
-
-  }
-
-  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -1,7 +1,11 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/dolfin_log.h>
+#include <dolfin/Lagrange.h>
 #include <dolfin/Method.h>
+
+using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Method::Method(int q)
@@ -12,14 +16,20 @@ Method::Method(int q)
   this->q = q;
   n = q + 1;
 
+  // Allocate points
   points  = new real[n];
   for (int i = 0; i < n; i++)
     points[i] = 0.0;
 
-  weights = new real[n];
-  for (int i = 0; i < n; i++)
-    weights[i] = 0.0;
-
+  // Allocate weights
+  weights = new (real *)[n];
+  for (int i = 0; i < n; i++) {
+    weights[i] = new real[n];
+    for (int j = 0; j < n; j++)
+      weights[i][j] = 0.0;
+  }
+  
+  // Allocate quadrature weights
   qweights = new real[n];
   for (int i = 0; i < n; i++)
     qweights[i] = 0.0;
@@ -30,22 +40,30 @@ Method::Method(int q)
 //-----------------------------------------------------------------------------
 Method::~Method()
 {
+  // Clear points
   if ( points )
     delete [] points;
   points = 0;
-
-  if ( weights )
+  
+  // Clear weights
+  if ( weights ) {
+    for (int i = 0; i < n; i++)
+      delete [] weights[i];
     delete [] weights;
+  }
   weights = 0;
 
+  // Clear quadrature weights
   if ( qweights )
     delete [] qweights;
   qweights = 0;
   
+  // Clear trial basis
   if ( trial )
     delete trial;
   trial = 0;
-
+  
+  // Clear test basis
   if ( test )
     delete test;
   test = 0;
@@ -70,16 +88,19 @@ real Method::point(int i) const
   return points[i];
 }
 //-----------------------------------------------------------------------------
-real Method::weight(int i) const
+real Method::weight(int i, int j) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < n);
+  dolfin_assert(j >= 0);
+  dolfin_assert(j < n);
+
   dolfin_assert(weights);
 
-  return weights[i];
+  return weights[i][j];
 }
 //-----------------------------------------------------------------------------
-real Method::qweight(int i) const
+real Method::weight(int i) const
 {
   dolfin_assert(i >= 0);
   dolfin_assert(i < n);
@@ -91,7 +112,6 @@ real Method::qweight(int i) const
 void Method::init()
 {
   computeQuadrature();
-  computePoints();
   computeBasis();
   computeWeights();
 }

@@ -19,6 +19,18 @@ RadauQuadrature::RadauQuadrature(int n) : GaussianQuadrature(n)
   dolfin_info("Radau quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
+void RadauQuadrature::show() const
+{
+  cout << "Radau quadrature points and weights on [-1,1] for n = " 
+       << n << ":" << endl;
+
+  cout << " i    points                   weights" << endl;
+  cout << "-----------------------------------------------------" << endl;
+
+  for (int i = 0; i < n; i++)
+    dolfin_info("%2d   % .16e   %.16e", i, points[i].x, weights[i]);
+}
+//-----------------------------------------------------------------------------
 void RadauQuadrature::computePoints()
 {
   // Compute the Radau quadrature points in [-1,1] as -1 and the zeros
@@ -74,34 +86,5 @@ void RadauQuadrature::computePoints()
     
   }
   
-}
-//-----------------------------------------------------------------------------
-// Output
-//-----------------------------------------------------------------------------
-LogStream& dolfin::operator<<(LogStream& stream, const RadauQuadrature& radau)
-{
-  stream << "Radau quadrature points and weights on [-1,1] for n = " << radau.size() << ":" << dolfin::endl;
-  stream << dolfin::endl;
-
-  char number[32];
-  char point[32];
-  char weight[32];
-
-  stream << " i    points                   weights" << dolfin::endl;
-  stream << "-----------------------------------------------------" << dolfin::endl;
-  for (int i = 0; i < radau.size(); i++) {
-
-    sprintf(number, "%2d", i);
-    sprintf(point,  "% .16e", radau.point(i).x);
-    sprintf(weight, "% .16e", radau.weight(i));
-    
-    stream << number << "   " << point << "  " << weight;
-
-    if ( i < (radau.size()-1) )
-      stream << dolfin::endl;
-
-  }
-
-  return stream;
 }
 //-----------------------------------------------------------------------------

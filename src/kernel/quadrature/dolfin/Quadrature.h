@@ -15,11 +15,20 @@ namespace dolfin {
     Quadrature(int n);
     ~Quadrature();
     
+    /// Return number of quadrature points
     int size() const;
 
-    const Point& point(int i) const; // Get quadrature point
-    real  weight(int i) const;       // Get quadrature weight
-    real  measure() const;           // Sum of weights (area, volume)
+    /// Return quadrature point
+    const Point& point(int i) const;
+
+    /// Return quadrature weight
+    real weight(int i) const;
+
+    /// Return sum of weights (length, area, volume)
+    real measure() const;
+    
+    /// Display quadrature data
+    virtual void show() const = 0;
 
   protected:
     

@@ -4,6 +4,7 @@
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
 namespace dolfin {
@@ -48,6 +49,9 @@ namespace dolfin {
     /// Return value of polynomial i at given point x
     real operator() (int i, real x);
     
+    /// Return value of polynomial i at given point x
+    real eval(int i, real x);
+
     /// Return derivate of polynomial i at given point x
     real dx(int i, real x);
     

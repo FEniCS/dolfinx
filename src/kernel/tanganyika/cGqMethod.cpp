@@ -1,12 +1,16 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/Lagrange.h>
+#include <dolfin/LobattoQuadrature.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/cGqMethod.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-cGqMethod::cGqMethod(int q) : Method(int q)
+cGqMethod::cGqMethod(int q) : Method(q)
 {
   if ( q < 1 )
     dolfin_error("Polynomial order q must be at least 1 for the cG(q) method.");
@@ -14,10 +18,34 @@ cGqMethod::cGqMethod(int q) : Method(int q)
   init();
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::computeQuadrature()
+void cGqMethod::show() const
 {
+  dolfin_info("Data for the cG(%d) method", q);
+  dolfin_info("==========================");
+  dolfin_info("");
+
+  dolfin_info("Lobatto quadrature points and weights on [0,1]:");
+  dolfin_info("");
+  dolfin_info(" i    points                   weights");
+  dolfin_info("-----------------------------------------------------");
+  
+  for (int i = 0; i < n; i++)
+    dolfin_info("%2d   %.16e   %.16e", i, points[i], qweights[i]);
+
+  for (int i = 1; i < n; i++) {
+    dolfin_info("cG(%d) weights for degree of freedom %d:", q, i);
+    dolfin_info("");
+    dolfin_info(" i    weights");
+    dolfin_info("--------------------------");
+    for (int j = 1; j < n; j++)
+      dolfin_info("%2d   %.16e", j, weights[i][j]);
+  }
+}
+//-----------------------------------------------------------------------------
+void cGqMethod::computeQuadrature()
+{ 
   // Use Lobatto quadrature
-  Lobatto quadrature(q);
+  LobattoQuadrature quadrature(q);
 
   // Get points and rescale from [-1,1] to [0,1]
   for (int i = 0; i < n; i++)
@@ -40,25 +68,24 @@ void cGqMethod::computeBasis()
 
   // Compute Lagrange basis for test space using the Lobatto points for q-1
   test = new Lagrange(q-1);
-  Lobatto lobatto(q-1);
+  LobattoQuadrature lobatto(q-1);
   for (int i = 0; i < (n-1); i++)
-    test->set(i, (lobatto->point(i) + 1.0) / 2.0);
+    test->set(i, (lobatto.point(i) + 1.0) / 2.0);
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::computeWeights()
 {
-  Matrix A(n, n, Matrix::DENSE);
-  Matrix B(n, n, Matrix::DENSE);
+  Matrix A(q, q, Matrix::DENSE);
   
   // Compute matrix coefficients
   for (int i = 1; i <= q; i++) {
     for (int j = 1; j <= q; j++) {
-      
+  
       // Use Lobatto quadrature which is exact for the order we need, 2q-1
       real integral = 0.0;
       for (int k = 0; k < n; k++) {
-	x = points[k];
-	integral += qweight[k] * trial->dx(j,x) * test->(i-1,x);
+	real x = points[k];
+	integral += qweights[k] * trial->eval(j,x) * test->eval(i-1,x);
       }
       
       A(i-1,j-1) = integral;
@@ -66,182 +93,30 @@ void cGqMethod::computeWeights()
     }
   }
   
-  // Compute inverse
-  A.hpinverse(B);
-  
-  // Compute nodal weights
-  for (int j=1;j<(i+1);j++) {
+  Vector b(q);
+  Vector w(q);
+
+  // Compute nodal weights for each degree of freedom
+  for (int i = 1; i <= q; i++) {
     
-    for (int k=0;k<(i+1);k++) {
-      
-      // Order:            i
-      // Integral:         j (=1,...,i)
-      // Quadrature point: k (=0,...,i)
-      
-      // Compute the sum
-      dWeight = 0.0;
-      for (int l=0;l<i;l++)
-	dWeight += (B->Get(j-1,l)) * (lBasisFunctions[i-1][l]->Value(dNodalPoints[i][k]));
-      
-      // Check that the weight is correct. All weights for the last integral, j = i,
-      // should be 1.
-      if ( j == i )
-	CheckWeight(dWeight);
-      
-      // Use the quadrature weight
-      dWeight *= (qQuadrature->GetWeight(i+1,k));
-      
-      // Compensate for integrating over [0,1] and not [-1,1]
-      dWeight *= 0.5;
-      
-      // Set the weight
-      dNodalWeights[i][j][k] = dWeight;
-      
-    }
+    // Get nodal point
+    real x = points[i];
+
+    // Evaluate test functions at current nodal point
+    for (int j = 1; j <= q; j++)
+      b(i) = test->eval(j-1,x);
+    
+    // Solve for the weight functions at the nodal point
+    A.hpsolve(b,w);
+
+    // Save weight including quadrature
+    for (int j = 1; j <= q; j++)
+      weights[j][i] = qweights[i] * w(j);
     
   }
-  
-  // Save the weight function
-  for (int i = 1; i < (i+1); j++)
-    for (int k = 0; k < i; k++)
-      dWeightFunctionNodalValues[i][j][k] = B->Get(j-1,k);
-  
-  // Set the weight for j=0 which is not used for cG(q)
-  for (int k=0;k<=i;k++)
-    dNodalWeights[i][0][k] = 0.0;
-  
 
+  // Set weights for i = 0 (not used)
+  for (int j = 0; j < n; j++)
+    weights[0][j] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void cGqMethod::Display()
-{
-  // This function displays the details of the method
-
-  cout << "Data for the cG(q) method, q = 1,...," << iHighestOrder << ":" << endl;
-  cout << "========================================" << endl << endl;
-  
-  // Display quadrature
-  cout << "Quadrature for nodal basis: " << endl << endl;
-  qQuadrature->Display();
-
-  cout << endl;
-  cout << "Quadrature for interpolation: " << endl << endl;
-  qGauss->Display();
-
-  // Display quadrature
-  qQuadrature->Display();
-  
-  // Display basis functions
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Lagrange basis functions for order q = " << i << ":" << endl << endl;
-	 for (int j=0;j<(i+1);j++)
-		cout << "  " << *lBasisFunctions[i][j] << endl; 
-	 cout << endl;
-  }
-  
-  // Display the weights
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Nodal weights for order q = " << i << ":" << endl << endl;
-	 for (int j=1;j<(i+1);j++){
-		cout << "  k = " << j+1 << ": [ ";
-		for (int k=0;k<(i+1);k++)
-		  cout << dNodalWeights[i][j][k] << " "; 
-		cout << "]" << endl;
-		
-	 }
-	 cout << endl;
-  }
-
-  // Display the weight functions
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Weight functions for order q = " << i << ":" << endl << endl;
-	 for (int j=1;j<(i+1);j++){
-		cout << "  k = " << j+1 << ": [ ";
-		for (int k=0;k<i;k++)
-		  cout << dWeightFunctionNodalValues[i][j][k] << " "; 
-		cout << "]" << endl;
-		
-	 }
-	 cout << endl;
-  }
-
-  // Display the derivative weights
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Derivative weights at right endpoint for order q = " << i << ":";
-	 cout << endl << endl;
-	 cout << "  [ ";
-	 for (int j=0;j<(i+1);j++)
-		cout << dDerivativeWeights[i][j] << " "; 
-	 cout << "]" << endl;
-	 cout << endl;
-  }
-  cout << endl;
-
-  // Display the stability weights
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "q:th derivative weights for order q = " << i << ":";
-	 cout << endl << endl;
-	 cout << "  [ ";
-	 for (int j=0;j<(i+1);j++)
-		cout << dStabilityWeights[i][j] << " "; 
-	 cout << "]" << endl;
-	 cout << endl;
-  }
-  cout << endl;
-
-  // Display the interpolation constants
-  cout << "Interpolation constants:" << endl << endl;
-  for (int i=1;i<=(iHighestOrder+1);i++)
-	 cout << "  C_" << i << " = " << dInterpolationConstants[i] << endl;
-  cout << endl;
-
-
-  // Display the residual factors
-  cout << "Residual factors:" << endl << endl;
-  for (int i=1;i<(iHighestOrder+1);i++)
-	 cout << "  C_" << i << " = " << dResidualFactors[i] << endl;
-  cout << endl;
-
-  // Display the product factors
-  cout << "Product factors:" << endl << endl;
-  for (int i=1;i<(iHighestOrder+1);i++)
-	 cout << "  C_" << i << " = " << dProductFactors[i] << endl;
-  cout << endl;
-
-  // Display the quadrature factors
-  cout << "Quadrature factors:" << endl << endl;
-  for (int i=1;i<(iHighestOrder+1);i++)
-	 cout << "  C_" << i << " = " << dQuadratureFactors[i] << endl;
-  cout << endl;
-
-  // Display the interpolation weights
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Interpolation weights for order q = " << i << ":";
-	 cout << endl << endl;
-	 cout << "  [ ";
-	 for (int j=0;j<i;j++)
-		cout << dInterpolationWeights[i][j] << " "; 
-	 cout << "]" << endl;
-	 cout << endl;
-  }
-  cout << endl;
-
-  // Display the interpolation points
-  cout << endl;
-  for (int i=1;i<(iHighestOrder+1);i++){
-	 cout << "Interpolation points for order q = " << i << ":";
-	 cout << endl << endl;
-	 cout << "  [ ";
-	 for (int j=0;j<i;j++)
-		cout << dInterpolationPoints[i][j] << " "; 
-	 cout << "]" << endl;
-	 cout << endl;
-  }
-  cout << endl;
-}

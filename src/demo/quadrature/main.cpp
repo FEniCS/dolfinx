@@ -21,19 +21,19 @@ int main(int argc, char** argv)
   if ( strcasecmp(argv[1], "gauss") == 0 ) {
     
     GaussQuadrature q(n);
-    dolfin::cout << q << dolfin:: endl;
+    q.show();
 
   }
   else if ( strcasecmp(argv[1], "radau") == 0 ) {
     
     RadauQuadrature q(n);
-    dolfin::cout << q << dolfin:: endl;
+    q.show();
     
   } 
   else if ( strcasecmp(argv[1], "lobatto") == 0 ) {
 
      LobattoQuadrature q(n);
-     dolfin::cout << q << dolfin:: endl;
+     q.show();
      
   }
   else {

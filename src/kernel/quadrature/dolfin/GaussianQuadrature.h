@@ -33,6 +33,9 @@ namespace dolfin {
 
     // Check that quadrature is exact for given degree q
     bool check(int q) const;
+
+    /// Display quadrature data
+    virtual void show() const = 0;
     
   };
   

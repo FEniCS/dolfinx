@@ -23,13 +23,13 @@ namespace dolfin {
     
     GaussQuadrature(int n);
 
+    void show() const;
+
   private:
 
     void computePoints();
 
   };
-
-  LogStream& operator<<(LogStream& stream, const GaussQuadrature& gauss);
   
 }
 

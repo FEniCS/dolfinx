@@ -79,6 +79,11 @@ real Lagrange::point(int i) const
 //-----------------------------------------------------------------------------
 real Lagrange::operator() (int i, real x)
 {
+  return eval(i,x);
+}
+//-----------------------------------------------------------------------------
+real Lagrange::eval(int i, real x)
+{
   dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 

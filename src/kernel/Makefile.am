@@ -1,1 +1,1 @@
-SUBDIRS = math fem common settings grid io la quadrature elements log main
+SUBDIRS = io la log grid math fem common settings quadrature tanganyika elements main

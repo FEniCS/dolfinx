@@ -35,6 +35,8 @@ namespace dolfin {
       weights[5] = m / 6.0;
       
     }
+
+    void show() const {};
     
   };
   
