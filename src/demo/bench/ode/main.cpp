@@ -4,24 +4,38 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
+#define DEBUG_BENCHMARK 1
+
 using namespace dolfin;
 
 class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)*(n+1)), 
-				 n(n), offset(N/2), mesh(n, n, n),
-				 ufile("solution.dx"), kfile("timesteps.dx")
+  WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)), 
+				 n(n), offset(N/2),
+				 ufile("solutionu.m"), vfile("solutionv.m"),
+				 kfile("timesteps.m")
   {
     T = 1.0;
-    c = 1.0;
+    c = sqrt(0.1);
 
-    h = 1.0 / static_cast<real>(n + 1);
+    h = 1.0 / static_cast<real>(n);
     a = c*c / (h*h);
-    offset = N/2;
+    w = 20 * h;
 
     setSparsity();
+
+#ifdef DEBUG_BENCHMARK
+    mesh = new UnitSquare(n, n);
+#endif
+  }
+
+  ~WaveEquation()
+  {
+#ifdef DEBUG_BENCHMARK
+    delete mesh;
+#endif
   }
 
   void setSparsity()
@@ -29,9 +43,9 @@ public:
     // Dependencies for first half of system
     for (unsigned int i = 0; i < offset; i++)
     {
-      sparsity.clear(i);
-      sparsity.setsize(i, 1);
-      sparsity.set(i, i + offset);
+      //dependencies.clear(i);
+      dependencies.setsize(i, 1);
+      dependencies.set(i, i + offset);
     }
 
     // Dependencies for second half of system
@@ -40,38 +54,48 @@ public:
       const unsigned int j = i - offset;
       const unsigned int m = n + 1;
       const unsigned int jx = j % m;
-      const unsigned int jy = (j / m) % m;
-      const unsigned int jz = j / (m*m);
+      const unsigned int jy = j / m;
 
-      unsigned int size = 0;
+      unsigned int size = 1;
       if ( jx > 0 ) size++;
       if ( jy > 0 ) size++;
-      if ( jz > 0 ) size++;
       if ( jx < n ) size++;
       if ( jy < n ) size++;
-      if ( jz < n ) size++;
-      sparsity.clear(i);
-      sparsity.setsize(i, size);
+      dependencies.setsize(i, size);
 
-      if ( jx > 0 ) sparsity.set(i, j - 1);
-      if ( jy > 0 ) sparsity.set(i, j - m);
-      if ( jz > 0 ) sparsity.set(i, j - m*m);
-      if ( jx < n ) sparsity.set(i, j + 1);
-      if ( jy < n ) sparsity.set(i, j + m);
-      if ( jz < n ) sparsity.set(i, j + m*m);
+      dependencies.set(i, j);
+      if ( jx > 0 ) dependencies.set(i, j - 1);
+      if ( jy > 0 ) dependencies.set(i, j - m);
+      if ( jx < n ) dependencies.set(i, j + 1);
+      if ( jy < n ) dependencies.set(i, j + m);
     }
   }
-
-  ~WaveEquation() {}
 
   // Initial data
   real u0(unsigned int i)
   {
-    if ( i < offset )
-      if ( mesh.node(i).dist(0.5, 0.5 , 0.5) < 5.0*h )
-	return 1.0;
-    
-    return 0.0;
+    unsigned int j = i;
+    if ( i >= offset )
+      j -= offset;
+    const unsigned int m = n + 1;
+    const unsigned int jx = j % m;
+    const unsigned int jy = j / m;
+    const Point p(h * static_cast<real>(jx), h * static_cast<real>(jy));
+    const Point center(0.5, 0.5);
+
+    const real dist = p.dist(center);
+
+    if(dist >= w / 2)
+      return 0.0;
+
+    if(i < offset)
+    {
+      return 0.5 * (cos(2.0 * M_PI * dist / w) + 1);
+    }
+    else
+    {
+      return c * M_PI / w * (sin(2.0 * M_PI * dist / w));
+    }
   }
 
   // Right-hand side, multi-adaptive version
@@ -85,16 +109,13 @@ public:
     const unsigned int j = i - offset;
     const unsigned int m = n + 1;
     const unsigned int jx = j % m;
-    const unsigned int jy = (j / m) % m;
-    const unsigned int jz = j / (m*m);
+    const unsigned int jy = j / m;
 
-    real sum = -6.0*u[j];
+    real sum = -4.0*u[j];
     if ( jx > 0 ) sum += u[j - 1];
     if ( jy > 0 ) sum += u[j - m];
-    if ( jz > 0 ) sum += u[j - m*m];
     if ( jx < n ) sum += u[j + 1];
     if ( jy < n ) sum += u[j + m];
-    if ( jz < n ) sum += u[j + m*m];
 
     return a*sum;
   }
@@ -112,21 +133,19 @@ public:
       const unsigned int j = i - offset;
       const unsigned int m = n + 1;
       const unsigned int jx = j % m;
-      const unsigned int jy = (j / m) % m;
-      const unsigned int jz = j / (m*m);
+      const unsigned int jy = j / m;
 
-      real sum = -6.0*u[j];
+      real sum = -4.0*u[j];
       if ( jx > 0 ) sum += u[j - 1];
       if ( jy > 0 ) sum += u[j - m];
-      if ( jz > 0 ) sum += u[j - m*m];
       if ( jx < n ) sum += u[j + 1];
       if ( jy < n ) sum += u[j + m];
-      if ( jz < n ) sum += u[j + m*m];
       
       y[i] = a*sum;
     }
   }
 
+#ifdef DEBUG_BENCHMARK
   // Save solution  
   void save(NewSample& sample)
   {
@@ -135,37 +154,48 @@ public:
     cout << "Saving data at t = " << sample.t() << endl;
 
     // Create vectors
-    NewVector ux(N/2);
-    NewVector kx(N/2);
-    NewFunction u(mesh, ux);
-    NewFunction k(mesh, kx);
+    static Vector ux(N/2);
+    static Vector vx(N/2);
+    static Vector kx(N/2);
+    static NewFunction u(*mesh, ux);
+    static NewFunction v(*mesh, vx);
+    static NewFunction k(*mesh, kx);
     u.rename("u", "Solution of the wave equation");
+    v.rename("v", "Speed of the wave equation");
     k.rename("k", "Time steps for the wave equation");
 
     // Get the degrees of freedom and set current time
     u.set(sample.t());
+    v.set(sample.t());
     k.set(sample.t());
     for (unsigned int i = 0; i < N/2; i++)
     {
       ux(i) = sample.u(i);
+      vx(i) = sample.u(i + offset);
       kx(i) = sample.k(i);
     }
 
     // Save solution to file
     ufile << u;
+    vfile << v;
     kfile << k;
   }
+#endif
 
 private:
 
   real c; // Speed of light
   real h; // Mesh size
   real a; // Product (c/h)^2
+  real w; // Width of initial data
 
   unsigned int n;      // Number of cells in each direction
   unsigned int offset; // Offset for second half of system
-  UnitCube mesh;       // The mesh
-  File ufile, kfile;   // Files for saving solution
+
+#ifdef DEBUG_BENCHMARK
+  UnitSquare* mesh;          // The mesh
+  File ufile, vfile, kfile; // Files for saving solution
+#endif
 
 };
 
@@ -190,6 +220,11 @@ int main(int argc, const char* argv[])
   dolfin_set("use new ode solver", true);
   dolfin_set("method", method);
   dolfin_set("fixed time step", true);
+  dolfin_set("save solution", false);
+
+#ifdef DEBUG_BENCHMARK
+  dolfin_set("save solution", true);
+#endif
 
   // Solve the wave equation
   WaveEquation wave(n);
