@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-#define DEBUG_BENCHMARK 1
+//#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -13,12 +13,11 @@ class WaveEquation : public ODE
 public:
 
   WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)), 
-				 n(n), offset(N/2),
-				 ufile("solutionu.m"), vfile("solutionv.m"),
-				 kfile("timesteps.m")
+				 n(n), offset(N/2)
   {
     T = 1.0;
-    c = sqrt(0.1);
+    //c = sqrt(0.1);
+    c = 0.5;
 
     h = 1.0 / static_cast<real>(n);
     a = c*c / (h*h);
@@ -28,6 +27,9 @@ public:
 
 #ifdef DEBUG_BENCHMARK
     mesh = new UnitSquare(n, n);
+    ufile = new File("solutionu.m");
+    vfile = new File("solutionv.m");
+    kfile = new File("timesteps.m");
 #endif
   }
 
@@ -35,6 +37,9 @@ public:
   {
 #ifdef DEBUG_BENCHMARK
     delete mesh;
+    delete ufile;
+    delete vfile;
+    delete kfile;
 #endif
   }
 
@@ -176,9 +181,9 @@ public:
     }
 
     // Save solution to file
-    ufile << u;
-    vfile << v;
-    kfile << k;
+    *ufile << u;
+    *vfile << v;
+    *kfile << k;
   }
 #endif
 
@@ -194,7 +199,7 @@ private:
 
 #ifdef DEBUG_BENCHMARK
   UnitSquare* mesh;          // The mesh
-  File ufile, vfile, kfile; // Files for saving solution
+  File *ufile, *vfile, *kfile; // Files for saving solution
 #endif
 
 };
@@ -218,9 +223,14 @@ int main(int argc, const char* argv[])
   // Set parameters
   dolfin_set("solve dual problem", false);
   dolfin_set("use new ode solver", true);
+  //dolfin_set("solver", "newton");
   dolfin_set("method", method);
   dolfin_set("fixed time step", true);
   dolfin_set("save solution", false);
+  dolfin_set("initial time step", 1e-2);
+  dolfin_set("number of samples", 20);
+  dolfin_set("discrete tolerance", 1e-7);
+  dolfin_set("tolerance", 1e-5);
 
 #ifdef DEBUG_BENCHMARK
   dolfin_set("save solution", true);

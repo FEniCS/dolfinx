@@ -17,10 +17,12 @@ NewTimeSlab::NewTimeSlab(ODE& ode) :
   // Choose method
   std::string m = dolfin_get("method");
   int q = dolfin_get("order");
-  if ( m == "cg" )
+  if ( m == "cg" || m == "mcg" )
     method = new NewcGqMethod(q);
-  else
+  else if ( m == "dg" || m == "mdg" )
     method = new NewdGqMethod(q);
+  else
+    dolfin_error1("Unknown ODE method: %s", m.c_str());
 
   // Initialize initial data
   u0 = new real[N];

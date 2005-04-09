@@ -48,8 +48,8 @@ MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab:: build(real a, real b)
 {
-  //cout << "Mono-adaptive time slab: building between "
-  //     << a << " and " << b << endl;
+  cout << "Mono-adaptive time slab: building between "
+       << a << " and " << b << endl;
 
   // Copy initial values to solution
   real* xx = x.array();
@@ -83,7 +83,7 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MonoAdaptiveTimeSlab::solve()
 {
-  //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
+  dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
   return solver->solve();
 }
