@@ -35,13 +35,13 @@ bool TimeSlabSolver::solve()
     // Do one iteration
     real increment = iteration();
     
-    cout << "--- increment = " << increment << " ---" << endl;
+    //cout << "--- increment = " << increment << " ---" << endl;
 
     // Check convergenge
     if ( increment < tol )
     {
       end();
-      dolfin_info("Time slab system converged in %d iterations.", iter + 1);
+      //dolfin_info("Time slab system converged in %d iterations.", iter + 1);
       return true;
     }
   }

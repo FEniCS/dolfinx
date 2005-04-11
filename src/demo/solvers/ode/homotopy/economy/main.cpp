@@ -156,7 +156,7 @@ int main()
   dolfin_set("homotopy divergence tolerance", 100.0);
   dolfin_set("homotopy randomize", false);
 
-  test2();
+  test4();
 
   return 0;
 }

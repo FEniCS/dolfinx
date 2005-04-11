@@ -1,10 +1,13 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Jansson, 2005.
+// Modified by Anders Logg, 2005.
 
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -16,7 +19,6 @@ public:
 				 n(n), offset(N/2)
   {
     T = 1.0;
-    //c = sqrt(0.1);
     c = 0.5;
 
     h = 1.0 / static_cast<real>(n);
@@ -90,10 +92,10 @@ public:
 
     const real dist = p.dist(center);
 
-    if(dist >= w / 2)
+    if ( dist >= w / 2 )
       return 0.0;
 
-    if(i < offset)
+    if ( i < offset )
     {
       return 0.5 * (cos(2.0 * M_PI * dist / w) + 1);
     }
@@ -154,8 +156,6 @@ public:
   // Save solution  
   void save(NewSample& sample)
   {
-    // FIXME: Don't save solution when running benchmark
-
     cout << "Saving data at t = " << sample.t() << endl;
 
     // Create vectors
@@ -198,7 +198,7 @@ private:
   unsigned int offset; // Offset for second half of system
 
 #ifdef DEBUG_BENCHMARK
-  UnitSquare* mesh;          // The mesh
+  UnitSquare* mesh;            // The mesh
   File *ufile, *vfile, *kfile; // Files for saving solution
 #endif
 
