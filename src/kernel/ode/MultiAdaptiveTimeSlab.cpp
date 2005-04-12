@@ -734,7 +734,7 @@ void MultiAdaptiveTimeSlab::cover(real t)
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 
-			real a0, real b0, real k0)
+				  real a0, real b0, real k0)
 {
   //cout << "  Evaluating f for element " << e0
   //     << ": i = " << i0 << " a0 = " << a0 << " b0 = " << b0 << endl;

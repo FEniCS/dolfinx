@@ -1,1 +1,1 @@
-SUBDIRS = la
+SUBDIRS = la ode

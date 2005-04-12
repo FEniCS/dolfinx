@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-#define DEBUG_BENCHMARK 1
+//#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
