@@ -141,11 +141,15 @@ const real* Vector::array() const
 //-----------------------------------------------------------------------------
 void Vector::restore(real data[])
 {
+  dolfin_assert(x);
+
   VecRestoreArray(x, &data);
 }
 //-----------------------------------------------------------------------------
 void Vector::restore(const real data[]) const
 {
+  dolfin_assert(x);
+
   // Cast away the constness and trust PETSc to do the right thing
   real* tmp = const_cast<real *>(data);
   VecRestoreArray(x, &tmp);
@@ -159,19 +163,26 @@ real Vector::operator() (uint i) const
 Vector::Element Vector::operator() (uint i)
 {
   Element index(i, *this);
-
   return index;
 }
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator= (const Vector& x)
 {
-  VecCopy(x.vec(), this->x);
+  if ( !x.x )
+  {
+    clear();
+    return *this;
+  }
+
+  init(x.size());
+  VecCopy(x.x, this->x);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator= (real a)
 {
+  dolfin_assert(x);
   VecSet(&a, x);
 
   return *this;
@@ -179,6 +190,9 @@ const Vector& Vector::operator= (real a)
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator+= (const Vector& x)
 {
+  dolfin_assert(x.x);
+  dolfin_assert(this->x);
+
   const real a = 1.0;
   VecAXPY(&a, x.x, this->x);
 
@@ -187,6 +201,9 @@ const Vector& Vector::operator+= (const Vector& x)
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator-= (const Vector& x)
 {
+  dolfin_assert(x.x);
+  dolfin_assert(this->x);
+
   const real a = -1.0;
   VecAXPY(&a, x.x, this->x);
 
@@ -195,6 +212,7 @@ const Vector& Vector::operator-= (const Vector& x)
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator*= (real a)
 {
+  dolfin_assert(x);
   VecScale(&a, x);
   
   return *this;
@@ -202,7 +220,9 @@ const Vector& Vector::operator*= (real a)
 //-----------------------------------------------------------------------------
 const Vector& Vector::operator/= (real a)
 {
+  dolfin_assert(x);
   dolfin_assert(a != 0.0);
+
   const real b = 1.0 / a;
   VecScale(&b, x);
   
@@ -211,6 +231,8 @@ const Vector& Vector::operator/= (real a)
 //-----------------------------------------------------------------------------
 real Vector::norm(NormType type) const
 {
+  dolfin_assert(x);
+
   real value = 0.0;
 
   switch (type) {
@@ -241,6 +263,8 @@ void Vector::disp() const
 //-----------------------------------------------------------------------------
 real Vector::getval(uint i) const
 {
+  dolfin_assert(x);
+
   // Assumes uniprocessor case
 
   real val = 0.0;
@@ -255,6 +279,8 @@ real Vector::getval(uint i) const
 //-----------------------------------------------------------------------------
 void Vector::setval(uint i, const real a)
 {
+  dolfin_assert(x);
+
   VecSetValue(x, static_cast<int>(i), a, INSERT_VALUES);
 
   VecAssemblyBegin(x);
@@ -263,6 +289,8 @@ void Vector::setval(uint i, const real a)
 //-----------------------------------------------------------------------------
 void Vector::addval(uint i, const real a)
 {
+  dolfin_assert(x);
+
   VecSetValue(x, static_cast<int>(i), a, ADD_VALUES);
 
   VecAssemblyBegin(x);
