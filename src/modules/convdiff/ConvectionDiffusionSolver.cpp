@@ -39,6 +39,9 @@ void ConvectionDiffusionSolver::solve()
   // Assemble stiffness matrix
   NewFEM::assemble(a, A, mesh);
 
+  // FIXME: Temporary fix
+  x1.init(mesh.noNodes());
+
   // Start time-stepping
   Progress p("Time-stepping");
   while ( t < T )
