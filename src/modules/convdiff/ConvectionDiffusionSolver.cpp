@@ -26,11 +26,12 @@ void ConvectionDiffusionSolver::solve()
   real k = 0.01; // time step
   real c = 0.1;  // diffusion
 
-  Matrix A;           // matrix defining linear system
-  Vector x0, x1, b;   // vectors 
-  GMRES solver;       // linear system solver
-  NewFunction u0(x0); // function at left end-point
-  NewFunction u1(x1); // function at right end-point
+  Matrix A;                 // matrix defining linear system
+  Vector x0, x1, b;         // vectors 
+  GMRES solver;             // linear system solver
+  NewFunction u0(x0, mesh); // function at left end-point
+  NewFunction u1(x1, mesh); // function at right end-point
+  File file("convdiff.m");  // file for saving solution
 
   // Create variational forms
   ConvectionDiffusion::BilinearForm a(w, k, c);
@@ -58,9 +59,8 @@ void ConvectionDiffusionSolver::solve()
     solver.solve(A, x1, b);
     
     // Save the solution
-    //u1.update(t);
-    //u1(0).update(t);
-    //file << u1;
+    u1.set(t);
+    file << u1;
 
     // Update progress
     p = t / T;

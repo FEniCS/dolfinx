@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   Convection w;
   Source f;
   MyBC bc;
-  
+
   ConvectionDiffusionSolver::solve(mesh, w, f, bc);
   
   return 0;
