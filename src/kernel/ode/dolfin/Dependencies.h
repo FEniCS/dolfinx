@@ -47,8 +47,8 @@ namespace dolfin
     /// Check if the dependency pattern is sparse (inline optimized)
     bool sparse() const;
 
-    /// Get dependencies for given component
-    NewArray<uint>& operator[] (uint i);
+    /// Get dependencies for given component (inline optimized)
+    inline NewArray<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Get dependencies for given component
     const NewArray<uint>& operator[] (uint i) const;

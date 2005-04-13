@@ -53,8 +53,8 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
 {
-  cout << "Multi-adaptive time slab: building between "
-       << a << " and " << b << endl;
+  //cout << "Multi-adaptive time slab: building between "
+  //     << a << " and " << b << endl;
 
   // Allocate data
   allocData(a, b);
@@ -71,8 +71,8 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   _a = a;
   _b = b;
 
-  cout << "Multi-adaptive time slab: finished building between "
-       << a << " and " << b << endl;
+  //cout << "Multi-adaptive time slab: finished building between "
+  //     << a << " and " << b << endl;
 
   // Update at t = 0.0
   if ( a < DOLFIN_EPS )
@@ -83,7 +83,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::solve()
 {
-  dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
+  //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
   return solver->solve();
 
@@ -733,6 +733,64 @@ void MultiAdaptiveTimeSlab::cover(real t)
   //cout << "Time covered" << endl << endl;
 }
 //-----------------------------------------------------------------------------
+// void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 
+// 				  real a0, real b0, real k0)
+// {
+//   // Get list of dependencies for given component index
+//   const NewArray<uint>& deps = ode.dependencies[i0];
+
+//   // Get first dependency to components with smaller time steps for element
+//   uint d = ed[e0];
+//   const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
+//   const uint ndep = (end - d) / method->nsize();
+//   dolfin_assert(ndep * method->nsize() == (end - d));
+
+//   // Evaluate the right-hand side at all quadrature points
+//   for (uint m = 0; m < method->qsize(); m++)
+//   {
+//     // Compute quadrature point
+//     const real t = a0 + k0*method->qpoint(m);
+
+//     // Update values for components with larger or equal time steps,
+//     // also including the initial value from components with small
+//     // time steps (needed for cG)
+//     for (uint pos = 0; pos < deps.size(); pos++)
+//     {
+//       // Get element
+//       const uint i1 = deps[pos];
+//       const int e1 = elast[i1];
+
+//       // Special case, component has no latest element
+//       if ( e1 == -1 )
+//       {
+// 	if ( t < (a0 + DOLFIN_EPS) )
+// 	  u[i1] = u0[i1];
+// 	continue;
+//       }
+
+//       // Get element data
+//       const uint s1 = es[e1];
+//       const real b1 = sb[s1];
+
+//       // Skip components with smaller time steps
+//       if ( b1 < (t - DOLFIN_EPS) )
+//        	continue;
+      
+//       // Get initial value for element (only necessary for cG)
+//       const int ep = ee[e1];
+//       const uint jp = ep * method->nsize();
+//       const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
+
+//       // Use fast evaluation for elements in the same sub slab
+//       const uint j1 = e1 * method->nsize();
+//       u[i1] = method->ueval(x0, jx + j1, m);
+//     }
+
+//     // Evaluate right-hand side
+//     f[m] = ode.f(u, t, i0);
+//   }
+// }
+//-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 
 				  real a0, real b0, real k0)
 {
@@ -794,9 +852,12 @@ void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
       // Use fast evaluation for elements in the same sub slab
       const uint j1 = e1 * method->nsize();
       if ( s0 == s1 )
+      {
 	u[i1] = method->ueval(x0, jx + j1, m);
+      }
       else
       {
+	dolfin_warning("Calling with tau!");
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
@@ -813,6 +874,8 @@ void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
     {
       for (uint dep = 0; dep < ndep; dep++)
       {
+	dolfin_warning("Evaluating for smaller time steps");
+
 	// Get element
 	const int e1 = de[d++];
 	dolfin_assert(e1 != -1);
@@ -820,10 +883,12 @@ void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0,
 	// Get element data
 	const uint i1 = ei[e1];
 	const uint s1 = es[e1];
-	const real a1 = sa[s1];
 	const real b1 = sb[s1];
-	const real k1 = b1 - a1;
 	
+	// Compute time step for other element
+	const real a1 = sa[s1];
+	const real k1 = b1 - a1;
+
 	//cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
 
 	// Get initial value for element (only necessary for cG)

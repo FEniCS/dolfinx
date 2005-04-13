@@ -20,9 +20,17 @@ namespace dolfin
     
     NewcGqMethod(unsigned int q);
 
+    /// Evaluate solution at given point
     real ueval(real x0, real values[], real tau) const;
-    real ueval(real x0, real values[], uint i) const;
+
+    /// Evaluate solution at given node (inline optimized)
+    inline real ueval(real x0, real values[], uint i) const
+    { return ( i == 0 ? x0 : values[i - 1] ); }
+
+    /// Compute residual at right end-point    
     real residual(real x0, real values[], real f, real k) const;
+
+    /// Compute new time step based on the given residual
     real timestep(real r, real tol, real kmax) const;
 
     void disp() const;

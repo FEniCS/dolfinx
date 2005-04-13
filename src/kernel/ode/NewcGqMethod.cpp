@@ -31,11 +31,6 @@ real NewcGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real NewcGqMethod::ueval(real x0, real values[], uint i) const
-{
-  return ( i == 0 ? x0 : values[i - 1] );
-}
-//-----------------------------------------------------------------------------
 real NewcGqMethod::residual(real x0, real values[], real f, real k) const
 {
   real sum = x0 * derivatives[0];

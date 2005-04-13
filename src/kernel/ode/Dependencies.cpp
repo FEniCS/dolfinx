@@ -173,11 +173,6 @@ bool Dependencies::sparse() const
   return _sparse;
 }
 //-----------------------------------------------------------------------------
-NewArray<dolfin::uint>& Dependencies::operator[] (uint i)
-{
-  return ( _sparse ? sdep[i] : ddep );
-}
-//-----------------------------------------------------------------------------
 const NewArray<dolfin::uint>& Dependencies::operator[] (uint i) const
 {
   return ( _sparse ? sdep[i] : ddep );

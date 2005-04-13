@@ -33,11 +33,6 @@ real NewdGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real NewdGqMethod::ueval(real x0, real values[], uint i) const
-{
-  return values[i];
-}
-//-----------------------------------------------------------------------------
 real NewdGqMethod::residual(real x0, real values[], real f, real k) const
 {
   // FIXME: Include jump term in residual

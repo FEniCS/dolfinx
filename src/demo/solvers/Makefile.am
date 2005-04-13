@@ -1,5 +1,4 @@
-SUBDIRS = ode poisson
-# convdiff \
+SUBDIRS = ode poisson convdiff
 # elasticity \
 # elasticity-stationary \
 # elasticity-updated \
