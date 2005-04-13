@@ -39,17 +39,20 @@ namespace dolfin
     /// Create user-defined function
     NewFunction();
 
-    /// Create a function in the function space defined by a finite element
-    NewFunction(Mesh& mesh, Vector& x, const NewFiniteElement& element);
+    /// Create a function (choose mesh and element automatically)
+    NewFunction(Vector& x);
 
-    /// Create a piecewise linear function
-    NewFunction(Mesh& mesh, Vector& x);
+    /// Create a function (choose element automatically)
+    NewFunction(Vector& x, Mesh& mesh);
+
+    /// Create a function
+    NewFunction(Vector& x, Mesh& mesh, const NewFiniteElement& element);
 
     /// Destructor
     virtual ~NewFunction();
 
     /// Compute projection of function onto a given local finite element space
-    void project(const Cell& cell, const NewFiniteElement& element, real c[]) const;
+    void project(const Cell& cell, real c[]) const;
 
     /// Evaluate function at given node
     real operator() (const Node& node) const;
@@ -69,28 +72,22 @@ namespace dolfin
     /// Return current time
     real time() const;
 
-    /// Set current time
+    /// Specify current time
     void set(real time);
+
+    /// Specify finite element
+    void set(const NewFiniteElement& element);
 
   private:
 
-    // Collect function data in one place
-    class Data
-    {
-    public:
-      Data(Mesh& mesh, Vector& x, const NewFiniteElement& element)
-	: mesh(mesh), x(x), element(element) {}
+    // Pointer to degrees of freedom
+    Vector* _x;
 
-      Mesh& mesh;
-      Vector& x;
-      const NewFiniteElement& element;
-    };
-    
-    // Pointer to function data (null if not used)
-    Data* data;
+    // Pointer to mesh
+    Mesh* _mesh;
 
-    // Pointer to default finite element (null if not used)
-    NewFiniteElement* default_element;
+    // Pointer to finite element
+    const NewFiniteElement* _element;
 
     // Current time
     real t;

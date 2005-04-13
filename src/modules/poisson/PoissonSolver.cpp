@@ -32,7 +32,7 @@ void PoissonSolver::solve()
   solver.solve(A, x, b);
 
   // Save function to file
-  NewFunction u(mesh, x, a.trial());
+  NewFunction u(x, mesh, a.trial());
   File file("poisson.m");
   file << u;
 }

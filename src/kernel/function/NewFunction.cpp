@@ -3,123 +3,103 @@
 
 #include <dolfin/Mesh.h>
 #include <dolfin/NewFiniteElement.h>
-#include <dolfin/LinearTriElement.h>
-#include <dolfin/LinearTetElement.h>
 #include <dolfin/Vector.h>
 #include <dolfin/NewFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction() : data(0), default_element(0), t(0)
+NewFunction::NewFunction()
+  : Variable("u", "A function"), _x(0), _mesh(0), _element(0), t(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(Mesh& mesh, Vector& x,
-			 const NewFiniteElement& element) 
-  : data(0), default_element(0), t(0)
+NewFunction::NewFunction(Vector& x)
+  : Variable("u", "A function"), _x(&x), _mesh(0), _element(0), t(0)
 {
-  // Create function data
-  data = new Data(mesh, x, element);
-  
-  // Set name and label
-  rename("u", "An unspecified function");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewFunction::NewFunction(Mesh& mesh, Vector& x)
+NewFunction::NewFunction(Vector& x, Mesh& mesh)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(0), t(0)
 {
-  // Chose default element
-  if ( mesh.type() == Mesh::triangles )
-    default_element = new LinearTriElement();
-  else if ( mesh.type() == Mesh::tetrahedrons )
-    default_element = new LinearTetElement();
-  else
-    dolfin_error("Unknown element type.");
-
-  // Create function data
-  data = new Data(mesh, x, *default_element);
-  
-  // Set name and label
-  rename("u", "An unspecified function");
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NewFunction::NewFunction(Vector& x, Mesh& mesh, const NewFiniteElement& element)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(&element), t(0)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewFunction::~NewFunction()
 {
-  if ( data ) delete data;
-  if ( default_element ) delete default_element;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewFunction::project(const Cell& cell, const NewFiniteElement& element,
-			  real c[]) const
+void NewFunction::project(const Cell& cell, real c[]) const
 {
-  // Check if function is user-defined
-  if ( !data )
+  // Need to have an element to compute projection
+  if ( !_element )
+    dolfin_error("Function must be defined in terms of a finite element to compute projection.");
+
+  // Two cases: either function is defined in terms of an element and
+  // a list of dofs or the function is user-defined (_x is null)
+  if ( _x )
   {
-    /// FIXME: Replace with "element" function, given by FFC  
-    if ( element.rank() > 0 )
+    // First case: function defined in terms of an element an a list
+    // of dofs so we just need to pick the values
+
+    if ( _mesh && _mesh != &cell.mesh() )
+      dolfin_error("Function is defined on a different mesh.");
+
+    real* values = _x->array();
+    for (uint i = 0; i < _element->spacedim(); i++)
+      c[i] = values[_element->dof(i, cell, cell.mesh())];
+    _x->restore(values);
+  }
+  else
+  {
+    // Second case: function is user-defined so we need to compute the
+    // projection to the given finite element space
+
+    // FIXME: This is just a temporary fix for P1 elements
+
+    if ( _element->rank() == 0 )
     {
-      // Only works for vector-valued elements at this point
-      if ( element.rank() > 0 )
-	dolfin_error("Cannot handle tensor valued functions.");
-      
-      // FIXME: This is just a temporary fix for Lagrange elements until
-      // FIXME: FFC can generate general projections
-
-      for (uint i = 0; i < element.spacedim(); i++)
+      for (uint i = 0; i < _element->spacedim(); i++)
+	c[i] = (*this)(_element->coord(i, cell, cell.mesh()));
+    }
+    else if ( _element->rank() == 1 )
+    {
+      const uint scalar_dim = _element->spacedim() / _element->tensordim(0);
+      for (uint i = 0; i < _element->spacedim(); i++)
       {
-	const uint component = i / element.spacedim();
-	c[i] = (*this)(element.coord(i, cell, cell.mesh()), component);
+	const uint component = i / scalar_dim;
+	c[i] = (*this)(_element->coord(i, cell, cell.mesh()), component);
       }
-
-      return;
     }
     else
-    {
-      // FIXME: This is just a temporary fix for Lagrange elements until
-      // FIXME: FFC can generate general projections
+      dolfin_error("Cannot handle tensor valued functions.");
+  } 
 
-      for (uint i = 0; i < element.spacedim(); i++)
-	c[i] = (*this)(element.coord(i, cell, cell.mesh()));
-
-      return;
-    }
-  }
-
-  // Check if we're computing the projection onto a cell of the same
-  // mesh for the same element (the easy case...)
-  if ( &(cell.mesh()) == &(data->mesh) && &element == &(data->element) )
-  {
-    // FIXME: Assumes uniprocessor case. Why isn't there a function
-    // FIXME: VecGetValues() in PETSc? Possible answer: since if we're
-    // FIXME: doing this in parallel we only want to access this
-    // FIXME: processor's data anyway.
-
-    // FIXME: If we know that the values are stored element-by-element
-    // FIXME: in x, then we can optimize by just calling
-    // FIXME: element::dof() one time with i = 0.
-
-    real* values = data->x.array();
-    for (uint i = 0; i < element.spacedim(); i++)
-      c[i] = values[element.dof(i, cell, data->mesh)];
-    data->x.restore(values);
-
-    return;
-  }
-
-  // Need to compute projection between different spaces
-  dolfin_error("Projection between different finite element spaces not implemented.");
+  // FIXME: If we know that the values are stored element-by-element
+  // FIXME: in x, then we can optimize by just calling
+  // FIXME: element::dof() one time with i = 0.
 }
 //-----------------------------------------------------------------------------
 real NewFunction::operator() (const Node& node) const
 {
-  // Check if function is user-defined
-  if ( !data )
+  if ( _x )
+  {
+    // FIXME: This is just a temporary fix for P1 elements
+    return (*_x)(node.id());
+  }
+  else
+  {
     return (*this)(node.coord());
-
-  // Otherwise, evaluate function at the node
-  // FIXME: This is just a temporary fix for linear elements
-  return data->x(node.id());
+  }
 }
 //-----------------------------------------------------------------------------
 real NewFunction::operator()(const Point& point) const
@@ -136,18 +116,18 @@ real NewFunction::operator()(const Point& point, uint i) const
 //-----------------------------------------------------------------------------
 Mesh& NewFunction::mesh()
 {
-  if ( !data )
-    dolfin_error("Function is not a finite element function.");
+  if ( !_mesh )
+    dolfin_error("Mesh has not been specified.");
 
-  return data->mesh;
+  return *_mesh;
 }
 //-----------------------------------------------------------------------------
 const NewFiniteElement& NewFunction::element() const
 {
-  if ( !data )
-    dolfin_error("Function is not a finite element function.");
+  if ( !_element )
+    dolfin_error("Finite element has not been specified.");
 
-  return data->element;
+  return *_element;
 }
 //-----------------------------------------------------------------------------
 real NewFunction::time() const
@@ -158,5 +138,12 @@ real NewFunction::time() const
 void NewFunction::set(real time)
 {
   t = time;
+}
+//-----------------------------------------------------------------------------
+void NewFunction::set(const NewFiniteElement& element)
+{
+  if ( _element )
+    dolfin_warning("Overriding previous choice of finite element.");
+  _element = &element;
 }
 //-----------------------------------------------------------------------------

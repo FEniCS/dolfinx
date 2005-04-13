@@ -14,6 +14,8 @@ namespace dolfin
   /// normally generated automatically by FFC, but this class might be
   /// useful for simple computations with standard linear elements.
 
+  // FIXME: This class should be moved to src/kernel/element and renamed to P1Tri
+
   class LinearTetElement : public NewFiniteElement
   {
   public:

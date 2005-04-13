@@ -42,7 +42,7 @@ namespace dolfin
     void updateCoefficients(const Cell& cell);
 
     // Add function
-    void add(const NewFunction& function, const NewFiniteElement* element);
+    void add(NewFunction& function, const NewFiniteElement* element);
 
     // Determinant of Jacobian of map
     real det;

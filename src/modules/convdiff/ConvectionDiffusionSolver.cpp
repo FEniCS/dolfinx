@@ -21,23 +21,19 @@ ConvectionDiffusionSolver::ConvectionDiffusionSolver(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void ConvectionDiffusionSolver::solve()
 {
-  real t = 0.0;    // current time
-  real T = 1.0;    // final time
-  real k = 0.01;   // time step
-  real c = 0.1;    // diffusion
+  real t = 0.0;  // current time
+  real T = 1.0;  // final time
+  real k = 0.01; // time step
+  real c = 0.1;  // diffusion
 
-  Matrix A;
-  Vector x0, x1, b;
-  GMRES solver;
+  Matrix A;           // matrix defining linear system
+  Vector x0, x1, b;   // vectors 
+  GMRES solver;       // linear system solver
+  NewFunction u0(x0); // function at left end-point
+  NewFunction u1(x1); // function at right end-point
 
-  // Create bilinear form
+  // Create variational forms
   ConvectionDiffusion::BilinearForm a(w, k, c);
-  
-  // Create functions
-  NewFunction u0(mesh, x0, a.trial());
-  NewFunction u1(mesh, x1, a.trial());
-
-  // Create linear form
   ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
 
   // Assemble stiffness matrix

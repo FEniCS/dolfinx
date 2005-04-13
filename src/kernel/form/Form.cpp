@@ -35,7 +35,7 @@ Form::Form(uint nfunctions) : w(0), nfunctions(nfunctions)
     functions.clear();
     functions.reserve(nfunctions);
 
-    // Reserver list of elements
+    // Reserve list of elements
     elements.clear();
     elements.reserve(nfunctions);
 
@@ -168,17 +168,20 @@ void Form::updateCoefficients(const Cell& cell)
   for (uint i = 0; i < nfunctions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->project(cell, *elements[i], w[i]);
+    functions[i]->project(cell, w[i]);
   }
 }
 //-----------------------------------------------------------------------------
-void Form::add(const NewFunction& function, const NewFiniteElement* element)
+void Form::add(NewFunction& function, const NewFiniteElement* element)
 {
   if ( functions.size() == nfunctions )
     dolfin_error("All functions already added.");
   
   // Get number of new function
   uint i = functions.size();
+
+  // Set finite element for function
+  function.set(*element);
 
   // Add function and element
   functions.push_back(&function);
