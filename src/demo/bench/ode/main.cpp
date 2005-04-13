@@ -16,7 +16,8 @@ class WaveEquation : public ODE
 public:
 
   WaveEquation(unsigned int n) : ODE(2*(n+1)*(n+1)), 
-				 n(n), offset(N/2)
+				 n(n), offset(N/2),
+				 num_f(0), num_fi(0)
   {
     T = 1.0;
     c = 0.5;
@@ -37,6 +38,9 @@ public:
 
   ~WaveEquation()
   {
+    cout << "Number of mono-adaptive evaluations of f:  " << num_f << endl;
+    cout << "Number of multi-adaptive evaluations of f: " << num_fi/N << endl;
+
 #ifdef DEBUG_BENCHMARK
     delete mesh;
     delete ufile;
@@ -105,31 +109,11 @@ public:
     }
   }
 
-  // Right-hand side, multi-adaptive version
-  real f(const real u[], real t, unsigned int i)
-  {
-    // First half of system
-    if ( i < offset )
-      return u[i + offset];
-    
-    // Second half of system
-    const unsigned int j = i - offset;
-    const unsigned int m = n + 1;
-    const unsigned int jx = j % m;
-    const unsigned int jy = j / m;
-
-    real sum = -4.0*u[j];
-    if ( jx > 0 ) sum += u[j - 1];
-    if ( jy > 0 ) sum += u[j - m];
-    if ( jx < n ) sum += u[j + 1];
-    if ( jy < n ) sum += u[j + m];
-
-    return a*sum;
-  }
-
   // Right-hand side, mono-adaptive version
   void f(const real u[], real t, real y[])
   {
+    num_f++;
+
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
       y[i] = u[i + offset];
@@ -150,6 +134,30 @@ public:
       
       y[i] = a*sum;
     }
+  }
+
+  // Right-hand side, multi-adaptive version
+  real f(const real u[], real t, unsigned int i)
+  {
+    num_fi++;
+
+    // First half of system
+    if ( i < offset )
+      return u[i + offset];
+    
+    // Second half of system
+    const unsigned int j = i - offset;
+    const unsigned int m = n + 1;
+    const unsigned int jx = j % m;
+    const unsigned int jy = j / m;
+
+    real sum = -4.0*u[j];
+    if ( jx > 0 ) sum += u[j - 1];
+    if ( jy > 0 ) sum += u[j - m];
+    if ( jx < n ) sum += u[j + 1];
+    if ( jy < n ) sum += u[j + m];
+
+    return a*sum;
   }
 
 #ifdef DEBUG_BENCHMARK
@@ -196,6 +204,9 @@ private:
 
   unsigned int n;      // Number of cells in each direction
   unsigned int offset; // Offset for second half of system
+
+  unsigned int num_f;  // Number of evaluations of mono-adaptive f
+  unsigned int num_fi; // Number of evaluations of multi-adaptive f
 
 #ifdef DEBUG_BENCHMARK
   UnitSquare* mesh;            // The mesh

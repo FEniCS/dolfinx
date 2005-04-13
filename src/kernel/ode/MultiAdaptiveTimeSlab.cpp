@@ -18,7 +18,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   NewTimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0), er(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
-  elast(N), u(0), emax(0)
+  elast(N), u(0), f0(0), emax(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -27,6 +27,14 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   u = new real[N];
   for (uint i = 0; i < N; i++)
     u[i] = 0.0;
+
+  // Initialize f at left end-point for cG
+  if ( method->type() == NewMethod::cG )
+  {
+    f0 = new real[N];
+    for (uint i = 0; i < N; i++)
+      f0[i] = 0.0;
+  }
 
   // Initialize transpose of dependencies if necessary
   dolfin_info("Computing transpose (inverse) of dependency pattern.");
@@ -49,6 +57,7 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( solver ) delete solver;
 
   if ( u ) delete [] u;
+  if ( f0 ) delete [] f0;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)

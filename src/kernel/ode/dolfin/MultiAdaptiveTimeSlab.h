@@ -124,15 +124,15 @@ namespace dolfin
     uint* es; // Mapping e --> time slab s containing element e
     uint* ee; // Mapping e --> previous element e of element e
     uint* ed; // Mapping e --> first dependency d of element e
-
+    
     real* jx; // Mapping j --> value of dof j
     
     int* de;  // Mapping d --> element e of dependency d
-
+    
     real* er; // Mapping e --> discrete residual/increment of element e
-
+    
     //--- Auxiliary data ---
-
+    
     Alloc size_s; // Allocation data for sub slabs s
     Alloc size_e; // Allocation data for elements e
     Alloc size_j; // Allocation data for dofs j
@@ -149,6 +149,7 @@ namespace dolfin
     NewPartition partition;     // Time step partitioning 
     NewArray<int> elast;        // Last element for each component
     real* u;                    // Interpolated solution vector
+    real* f0;                   // Right-hand side at left end-point for cG
     uint emax;                  // Last covered element for sample
 
   };
