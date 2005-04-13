@@ -109,8 +109,11 @@ namespace dolfin
     // Cover given time for all components
     void cover(real t);
 
-    // Evaluate right-hand side at quadrature points of given element
-    void feval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+    // Evaluate right-hand side at quadrature points of given element (cG)
+    void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
+
+    // Evaluate right-hand side at quadrature points of given element (dG)
+    void dGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
     // Choose solver
     TimeSlabSolver* chooseSolver();

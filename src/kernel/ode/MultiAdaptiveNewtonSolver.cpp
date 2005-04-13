@@ -115,7 +115,10 @@ void MultiAdaptiveNewtonSolver::beval()
     const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
     // Evaluate right-hand side at quadrature points of element
-    ts.feval(f, s, e, i, a, b, k);
+    if ( method.type() == NewMethod::cG )
+      ts.cGfeval(f, s, e, i, a, b, k);
+    else
+      ts.dGfeval(f, s, e, i, a, b, k);  
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed point iteration

@@ -742,65 +742,128 @@ void MultiAdaptiveTimeSlab::cover(real t)
   //cout << "Time covered" << endl << endl;
 }
 //-----------------------------------------------------------------------------
-// void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 
-// 				  real a0, real b0, real k0)
-// {
-//   // Get list of dependencies for given component index
-//   const NewArray<uint>& deps = ode.dependencies[i0];
+void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0, 
+				    real a0, real b0, real k0)
+{
+  //cout << "  Evaluating f for element " << e0
+  //     << ": i = " << i0 << " a0 = " << a0 << " b0 = " << b0 << endl;
 
-//   // Get first dependency to components with smaller time steps for element
-//   uint d = ed[e0];
-//   const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
-//   const uint ndep = (end - d) / method->nsize();
-//   dolfin_assert(ndep * method->nsize() == (end - d));
+  // Get list of dependencies for given component index
+  const NewArray<uint>& deps = ode.dependencies[i0];
 
-//   // Evaluate the right-hand side at all quadrature points
-//   for (uint m = 0; m < method->qsize(); m++)
-//   {
-//     // Compute quadrature point
-//     const real t = a0 + k0*method->qpoint(m);
+  // Get first dependency to components with smaller time steps for element
+  uint d = ed[e0];
 
-//     // Update values for components with larger or equal time steps,
-//     // also including the initial value from components with small
-//     // time steps (needed for cG)
-//     for (uint pos = 0; pos < deps.size(); pos++)
-//     {
-//       // Get element
-//       const uint i1 = deps[pos];
-//       const int e1 = elast[i1];
+  // Compute number of such dependencies for each nodal point
+  const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
+  const uint ndep = (end - d) / method->nsize();
+  dolfin_assert(ndep * method->nsize() == (end - d));
 
-//       // Special case, component has no latest element
-//       if ( e1 == -1 )
-//       {
-// 	if ( t < (a0 + DOLFIN_EPS) )
-// 	  u[i1] = u0[i1];
-// 	continue;
-//       }
+  // Evaluate the right-hand side at all quadrature points
+  for (uint m = 0; m < method->qsize(); m++)
+  {
+    // Use previously computed value at left end-point if applicable
+    if ( m == 0 && a0 < (_a + DOLFIN_EPS) )
+    {
+      f[0] = f0[i0];
+      continue;
+    }
 
-//       // Get element data
-//       const uint s1 = es[e1];
-//       const real b1 = sb[s1];
+    // Compute quadrature point
+    const real t = a0 + k0*method->qpoint(m);
 
-//       // Skip components with smaller time steps
-//       if ( b1 < (t - DOLFIN_EPS) )
-//        	continue;
+    // Update values for components with larger or equal time steps,
+    // also including the initial value from components with small
+    // time steps (needed for cG)
+    for (uint pos = 0; pos < deps.size(); pos++)
+    {
+      // Get element
+      const uint i1 = deps[pos];
+      const int e1 = elast[i1];
+
+      // Special case, component has no latest element
+      if ( e1 == -1 )
+      {
+	if ( t < (a0 + DOLFIN_EPS) )
+	  u[i1] = u0[i1];
+	continue;
+      }
+
+      // Get element data
+      const uint s1 = es[e1];
+      const real b1 = sb[s1];
+
+      // Skip components with smaller time steps
+      if ( b1 < (t - DOLFIN_EPS) )
+       	continue;
       
-//       // Get initial value for element (only necessary for cG)
-//       const int ep = ee[e1];
-//       const uint jp = ep * method->nsize();
-//       const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
+      //cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
+      
+      // Get initial value for element (only necessary for cG)
+      const int ep = ee[e1];
+      const uint jp = ep * method->nsize();
+      const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
 
-//       // Use fast evaluation for elements in the same sub slab
-//       const uint j1 = e1 * method->nsize();
-//       u[i1] = method->ueval(x0, jx + j1, m);
-//     }
+      // Use fast evaluation for elements in the same sub slab
+      const uint j1 = e1 * method->nsize();
+      if ( s0 == s1 )
+      {
+	u[i1] = method->ueval(x0, jx + j1, m);
+      }
+      else
+      {
+	dolfin_warning("Calling with tau!");
+	const real a1 = sa[s1];
+	const real k1 = b1 - a1;
+	const real tau = (t - a1) / k1;
+	u[i1] = method->ueval(x0, jx + j1, tau);
+      }
+    }
 
-//     // Evaluate right-hand side
-//     f[m] = ode.f(u, t, i0);
-//   }
-// }
+    //cout << "  Updating for small time steps" << endl;
+
+    // Update values for components with smaller time steps, not including
+    // the initial value (left end-point value). This is handled above
+    // in the update for components with large time steps
+    if ( t > (a0 + DOLFIN_EPS) )
+    {
+      for (uint dep = 0; dep < ndep; dep++)
+      {
+	dolfin_warning("Evaluating for smaller time steps");
+
+	// Get element
+	const int e1 = de[d++];
+	dolfin_assert(e1 != -1);
+
+	// Get element data
+	const uint i1 = ei[e1];
+	const uint s1 = es[e1];
+	const real b1 = sb[s1];
+	
+	// Compute time step for other element
+	const real a1 = sa[s1];
+	const real k1 = b1 - a1;
+
+	//cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
+
+	// Get initial value for element (only necessary for cG)
+	const int ep = ee[e1];
+	const uint jp = ep * method->nsize();
+	const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
+
+	// Evaluate component
+	const real tau = (t - a1) / k1;
+	const uint j1 = e1 * method->nsize();
+	u[i1] = method->ueval(x0, jx + j1, tau);
+      }
+    }
+    
+    // Evaluate right-hand side
+    f[m] = ode.f(u, t, i0);
+  }
+}
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::feval(real* f, uint s0, uint e0, uint i0, 
+void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0, 
 				  real a0, real b0, real k0)
 {
   //cout << "  Evaluating f for element " << e0
