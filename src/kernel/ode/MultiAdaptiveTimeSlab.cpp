@@ -33,7 +33,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   {
     f0 = new real[N];
     for (uint i = 0; i < N; i++)
-      f0[i] = 0.0;
+      f0[i] = ode.f(u0, 0.0, i);
   }
 
   // Initialize transpose of dependencies if necessary
@@ -141,10 +141,10 @@ bool MultiAdaptiveTimeSlab::shift()
     const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
     // Evaluate right-hand side at end-point (u is already updated)
-    const real f = ode.f(u, b, i);
+    f0[i] = ode.f(u, b, i);
 
     // Compute residual
-    const real r = method->residual(x0, jx + j, f, k);
+    const real r = method->residual(x0, jx + j, f0[i], k);
 
     // Update adaptivity
     adaptivity.update(i, r, *method);

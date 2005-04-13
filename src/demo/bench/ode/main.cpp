@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -170,9 +170,9 @@ public:
     static Vector ux(N/2);
     static Vector vx(N/2);
     static Vector kx(N/2);
-    static NewFunction u(*mesh, ux);
-    static NewFunction v(*mesh, vx);
-    static NewFunction k(*mesh, kx);
+    static NewFunction u(ux, *mesh);
+    static NewFunction v(vx, *mesh);
+    static NewFunction k(kx, *mesh);
     u.rename("u", "Solution of the wave equation");
     v.rename("v", "Speed of the wave equation");
     k.rename("k", "Time steps for the wave equation");
