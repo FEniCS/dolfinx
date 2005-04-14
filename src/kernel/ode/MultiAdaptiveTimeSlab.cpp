@@ -803,7 +803,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
   for (uint m = 0; m < method->qsize(); m++)
   {
     // Use previously computed value at left end-point if applicable
-    if ( a0 < (_a + DOLFIN_EPS) )
+    if ( m == 0 && a0 < (_a + DOLFIN_EPS) )
     {
       f[0] = f0[i0];
       continue;

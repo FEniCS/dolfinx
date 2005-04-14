@@ -15,6 +15,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0)
 {
   f = new real[method.qsize()];
+  for (unsigned int i = 0; i < method.qsize(); i++)
+    f[i] = 0.0;
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
@@ -60,7 +62,6 @@ real MultiAdaptiveFixedPointSolver::iteration()
       ts.cGfeval(f, s, e, i, a, b, k);
     else
       ts.dGfeval(f, s, e, i, a, b, k);
-
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed point iteration

@@ -21,7 +21,7 @@ public:
 
   real f(const real u[], real t, unsigned int i)
   {
-    return 0.0;
+    return 1.0;
   }
 
 };
@@ -154,7 +154,7 @@ int main()
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
   dolfin_set("method", "mcg");
-  dolfin_set("order", 1);
+  dolfin_set("order", 2);
 
   Simple ode;
   ode.solve();
