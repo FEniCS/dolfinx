@@ -47,7 +47,6 @@ namespace dolfin {
       add(Parameter::BOOL, "debug time steps", false);
       add(Parameter::BOOL, "debug iterations", false);
       add(Parameter::BOOL, "automatic modeling", false);
-      add(Parameter::BOOL, "use new ode solver", false);
       add(Parameter::BOOL, "implicit", false);
       add(Parameter::BOOL, "matrix piecewise constant", true);
 

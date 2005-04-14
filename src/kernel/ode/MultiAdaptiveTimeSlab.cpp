@@ -803,7 +803,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
   for (uint m = 0; m < method->qsize(); m++)
   {
     // Use previously computed value at left end-point if applicable
-    if ( m == 0 && a0 < (_a + DOLFIN_EPS) )
+    if ( a0 < (_a + DOLFIN_EPS) )
     {
       f[0] = f0[i0];
       continue;
@@ -824,8 +824,8 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       // Special case, component has no latest element
       if ( e1 == -1 )
       {
-	if ( t < (a0 + DOLFIN_EPS) )
-	  u[i1] = u0[i1];
+	//	if ( t < (a0 + DOLFIN_EPS) )
+	//  u[i1] = u0[i1];
 	continue;
       }
 
@@ -852,7 +852,6 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
       }
       else
       {
-	dolfin_warning("Calling with tau!");
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
@@ -869,8 +868,6 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
     {
       for (uint dep = 0; dep < ndep; dep++)
       {
-	dolfin_warning("Evaluating for smaller time steps");
-
 	// Get element
 	const int e1 = de[d++];
 	dolfin_assert(e1 != -1);
@@ -969,7 +966,6 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
       }
       else
       {
-	//dolfin_warning("Calling with tau!");
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
@@ -986,8 +982,6 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
     {
       for (uint dep = 0; dep < ndep; dep++)
       {
-	//dolfin_warning("Evaluating for smaller time steps");
-
 	// Get element
 	const int e1 = de[d++];
 	dolfin_assert(e1 != -1);

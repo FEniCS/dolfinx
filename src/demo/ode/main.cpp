@@ -8,7 +8,7 @@ using namespace dolfin;
 
 int main(int argc, char** argv)
 {
-  dolfin_set("output", "plain text");
+  dolfin_output("plain text");
 
   if ( argc != 3 ) {
     dolfin::cout << "Usage: dolfin-ode method q' where method is one of" << dolfin::endl;

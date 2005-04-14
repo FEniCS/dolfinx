@@ -33,7 +33,7 @@ public:
   Harmonic() : ODE(2)
   {
     // Final time
-    T = 30.0;
+    T = 3.0;
 
     // Compute sparsity
     sparse();
@@ -47,12 +47,12 @@ public:
     return 1.0;
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     if ( i == 0 )
-      return u(1);
+      return u[1];
 
-    return -u(0);
+    return -u[0];
   }
   
 };
@@ -93,7 +93,7 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 6.4;
+    T = 0.64;
 
     // Compute sparsity
     //dependencies.detect(*this);
@@ -115,23 +115,11 @@ public:
   {
     switch ( i ) {
     case 0:
-      return u[1]; // + 0.1*u[0] + 0.3*u[2];
+      return u[1] + 0.1*u[0] + 0.3*u[2];
     case 1:
-      return -u[0]; // - 0.2*u[1] + 0.4*u[2];
+      return -u[0] - 0.2*u[1] + 0.4*u[2];
     default:
-      return cos(t); // + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
-    }
-  }
-
-  real f(const Vector& u, real t, unsigned int i)
-  {
-    switch ( i ) {
-    case 0:
-      return u(1);
-    case 1:
-      return -u(0);
-    default:
-      return cos(t);
+      return cos(t) + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
     }
   }
 
@@ -157,28 +145,28 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
-  dolfin_set("use new ode solver", true);
   dolfin_set("fixed time step", true);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("method", "mcg");
-  //dolfin_set("solver", "fixed point");
-  dolfin_set("solver", "newton");
+  dolfin_set("solver", "fixed point");
+  dolfin_set("discrete tolerance", 0.001);
+  dolfin_set("number of samples", 200);
+  //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
   dolfin_set("order", 2);
 
   //Single single;
   //single.solve();
 
-  //Harmonic harmonic;
-  //harmonic.solve();
+  Harmonic harmonic;
+  harmonic.solve();
   
   //SpringSystem springSystem(10);
   //springSystem.solve();
 
-  TestSystem testSystem;
-  testSystem.solve();
+  //TestSystem testSystem;
+  //testSystem.solve();
 
   return 0;
 }
