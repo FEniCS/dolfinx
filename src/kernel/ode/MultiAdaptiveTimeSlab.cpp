@@ -217,13 +217,15 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 {
+  // Note that the residual is always sampled at the end-time
+
   // Cover end time
   cover(_b);
   
   // Update the solution vector at the end time for each dependent component
 
-  // Get list of components depending on current component
-  const NewArray<uint>& deps = ode.transpose[i];
+  // Get list of dependencies for component
+  const NewArray<uint>& deps = ode.dependencies[i];
 
   // Iterate over dependencies
   for (uint pos = 0; pos < deps.size(); pos++)
@@ -261,15 +263,6 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 
   // Compute residual
   const real r = method->residual(x0, jx + j, f0[i], k);
-
-//   // FIXME: not implemented
-
-//   // Step to the correct element
-//   //uint e = cover(i, t);
-  
-//   //dolfin_error("Not implemented");
-
-//  return 0.0;
 
   return r;
 }
@@ -824,7 +817,7 @@ void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0,
     // time steps (needed for cG)
     for (uint pos = 0; pos < deps.size(); pos++)
     {
-      // Get element
+      // Get other element
       const uint i1 = deps[pos];
       const int e1 = elast[i1];
 
@@ -941,7 +934,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
     // time steps (needed for cG)
     for (uint pos = 0; pos < deps.size(); pos++)
     {
-      // Get element
+      // Get other element
       const uint i1 = deps[pos];
       const int e1 = elast[i1];
 
