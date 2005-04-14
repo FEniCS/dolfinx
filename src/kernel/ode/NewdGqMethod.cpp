@@ -66,7 +66,7 @@ void NewdGqMethod::disp() const
   dolfin_info("----------------------------------------------------");
   
   for (unsigned int i = 0; i < nq; i++)
-    dolfin_info("%2d   %.16e   %.16e", i, qpoints[i], qweights[i]);
+    dolfin_info("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
   dolfin_info("");
 
   for (unsigned int i = 0; i < nn; i++)
@@ -77,7 +77,7 @@ void NewdGqMethod::disp() const
     dolfin_info(" i   weights");
     dolfin_info("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      dolfin_info("%2d   %.16e", j, nweights[i][j]);
+      dolfin_info("%2d   %.15e", j, nweights[i][j]);
   }
   dolfin_info("");
 
