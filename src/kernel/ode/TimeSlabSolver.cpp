@@ -15,6 +15,14 @@ TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
   const real TOL = dolfin_get("tolerance");
   const real alpha = dolfin_get("discrete tolerance");
   tol = alpha * TOL;
+
+//   std::string method = dolfin_get("method");
+//   if ( method == "cg" || method == "dg" )
+//   {
+//     tol = sqrt(tol);
+//   }
+  
+
   cout << "Using tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations
@@ -35,13 +43,13 @@ bool TimeSlabSolver::solve()
     // Do one iteration
     real increment = iteration();
     
-    //cout << "--- increment = " << increment << " ---" << endl;
+    cout << "--- increment = " << increment << " ---" << endl;
 
     // Check convergenge
     if ( increment < tol )
     {
       end();
-      //dolfin_info("Time slab system converged in %d iterations.", iter + 1);
+      dolfin_info("Time slab system converged in %d iterations.", iter + 1);
       return true;
     }
   }

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -24,7 +24,7 @@ public:
 
     h = 1.0 / static_cast<real>(n);
     a = c*c / (h*h);
-    w = 20 * h;
+    w = 10 * h;
 
     setSparsity();
 
@@ -33,6 +33,7 @@ public:
     ufile = new File("solutionu.m");
     vfile = new File("solutionv.m");
     kfile = new File("timesteps.m");
+    rfile = new File("residual.m");
 #endif
   }
 
@@ -46,6 +47,7 @@ public:
     delete ufile;
     delete vfile;
     delete kfile;
+    delete rfile;
 #endif
   }
 
@@ -94,18 +96,25 @@ public:
     const Point p(h * static_cast<real>(jx), h * static_cast<real>(jy));
     const Point center(0.5, 0.5);
 
+    //const real px = h * static_cast<real>(jx);
+    //const real py = h * static_cast<real>(jy);
+
     const real dist = p.dist(center);
 
-    if ( dist >= w / 2 )
-      return 0.0;
+     if ( dist >= w / 2 )
+       return 0.0;
+//     if ( fabs(0.5 - px) >= w / 2 )
+//       return 0.0;
 
     if ( i < offset )
     {
-      return 0.5 * (cos(2.0 * M_PI * dist / w) + 1);
+      return 1.0 * 0.5 * (cos(2.0 * M_PI * dist / w) + 1);
+      //return 10.0 * 0.5 * (cos(2.0 * M_PI * px / w) + 1);
     }
     else
     {
-      return c * M_PI / w * (sin(2.0 * M_PI * dist / w));
+      return 1.0 * c * M_PI / w * (sin(2.0 * M_PI * dist / w));
+      //return 10.0 * c * M_PI / w * (sin(2.0 * M_PI * px / w));
     }
   }
 
@@ -170,28 +179,34 @@ public:
     static Vector ux(N/2);
     static Vector vx(N/2);
     static Vector kx(N/2);
+    static Vector rx(N/2);
     static NewFunction u(ux, *mesh);
     static NewFunction v(vx, *mesh);
     static NewFunction k(kx, *mesh);
+    static NewFunction r(rx, *mesh);
     u.rename("u", "Solution of the wave equation");
     v.rename("v", "Speed of the wave equation");
     k.rename("k", "Time steps for the wave equation");
+    r.rename("r", "Time residual for the wave equation");
 
     // Get the degrees of freedom and set current time
     u.set(sample.t());
     v.set(sample.t());
     k.set(sample.t());
+    r.set(sample.t());
     for (unsigned int i = 0; i < N/2; i++)
     {
       ux(i) = sample.u(i);
       vx(i) = sample.u(i + offset);
-      kx(i) = sample.k(i);
+      kx(i) = sample.k(i + offset);
+      rx(i) = sample.r(i + offset);
     }
 
     // Save solution to file
     *ufile << u;
     *vfile << v;
     *kfile << k;
+    *rfile << r;
   }
 #endif
 
@@ -210,7 +225,7 @@ private:
 
 #ifdef DEBUG_BENCHMARK
   UnitSquare* mesh;            // The mesh
-  File *ufile, *vfile, *kfile; // Files for saving solution
+  File *ufile, *vfile, *kfile, *rfile; // Files for saving solution
 #endif
 
 };
@@ -237,8 +252,10 @@ int main(int argc, const char* argv[])
   //dolfin_set("solver", "newton");
   dolfin_set("method", method);
   dolfin_set("fixed time step", true);
+  dolfin_set("partitioning threshold", 0.01);
   dolfin_set("save solution", false);
-  dolfin_set("initial time step", 1e-2);
+  dolfin_set("maximum time step", 1e-2);
+  dolfin_set("initial time step", 1e-3);
   dolfin_set("number of samples", 20);
   dolfin_set("discrete tolerance", 1e-7);
   dolfin_set("tolerance", 1e-5);

@@ -217,14 +217,61 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 {
-  // FIXME: not implemented
-
-  // Step to the correct element
-  //uint e = cover(i, t);
+  // Cover end time
+  cover(_b);
   
-  //dolfin_error("Not implemented");
+  // Update the solution vector at the end time for each dependent component
 
-  return 0.0;
+  // Get list of components depending on current component
+  const NewArray<uint>& deps = ode.transpose[i];
+
+  // Iterate over dependencies
+  for (uint pos = 0; pos < deps.size(); pos++)
+  {
+    // Get last element of component
+    const int e = elast[pos];
+    dolfin_assert(e != -1);
+    dolfin_assert(sb[es[e]] == _b);
+    
+    // Get end-time value of component
+    const int j = e * method->nsize();
+    u[pos] = jx[j + method->nsize() - 1];
+  }
+
+  // Compute residual
+
+  // Get last element of component
+  const int e = elast[i];
+  dolfin_assert(e != -1);
+    
+  // Get element data
+  const uint s = es[e];
+  const uint j = e * method->nsize();
+  const real a = sa[s];
+  const real b = sb[s];
+  const real k = b - a;
+    
+  // Get initial value for element (only necessary for cG)
+  const int ep = ee[e];
+  const uint jp = ep * method->nsize();
+  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
+    
+  // Evaluate right-hand side at end-point (u is already updated)
+  f0[i] = ode.f(u, b, i);
+
+  // Compute residual
+  const real r = method->residual(x0, jx + j, f0[i], k);
+
+//   // FIXME: not implemented
+
+//   // Step to the correct element
+//   //uint e = cover(i, t);
+  
+//   //dolfin_error("Not implemented");
+
+//  return 0.0;
+
+  return r;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::disp() const
@@ -929,7 +976,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
       }
       else
       {
-	dolfin_warning("Calling with tau!");
+	//dolfin_warning("Calling with tau!");
 	const real a1 = sa[s1];
 	const real k1 = b1 - a1;
 	const real tau = (t - a1) / k1;
@@ -946,7 +993,7 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
     {
       for (uint dep = 0; dep < ndep; dep++)
       {
-	dolfin_warning("Evaluating for smaller time steps");
+	//dolfin_warning("Evaluating for smaller time steps");
 
 	// Get element
 	const int e1 = de[d++];
