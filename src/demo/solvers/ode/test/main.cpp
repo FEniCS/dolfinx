@@ -5,13 +5,13 @@
 
 using namespace dolfin;
 
-class Single : public ODE
+class Simple : public ODE
 {
 public:
   
-  Single() : ODE(1)
+  Simple() : ODE(1)
   {
-    T = 30.0;
+    T = 0.05;
   }
   
   real u0(unsigned int i)
@@ -19,9 +19,9 @@ public:
     return 0.0;
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
-    return cos(t);
+    return 0.0;
   }
 
 };
@@ -146,27 +146,27 @@ public:
 int main()
 {
   dolfin_set("solve dual problem", false);
+  dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
-  dolfin_set("maximum time step", 1.0);
-  dolfin_set("method", "mcg");
   dolfin_set("solver", "fixed point");
-  dolfin_set("discrete tolerance", 0.001);
+  dolfin_set("discrete tolerance", 1e-10);
   dolfin_set("number of samples", 200);
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
-  dolfin_set("order", 2);
+  dolfin_set("method", "mcg");
+  dolfin_set("order", 1);
 
-  //Single single;
-  //single.solve();
+  Simple ode;
+  ode.solve();
 
-  Harmonic harmonic;
-  harmonic.solve();
+  //Harmonic ode;
+  //ode.solve();
   
-  //SpringSystem springSystem(10);
-  //springSystem.solve();
+  //SpringSystem ode(10);
+  //ode.solve();
 
-  //TestSystem testSystem;
-  //testSystem.solve();
+  //TestSystem ode;
+  //ode.solve();
 
   return 0;
 }

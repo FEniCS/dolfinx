@@ -1,3 +1,4 @@
+ - Move convection-diffusion module to new system base on FFC
  - Add iterators for cell neighbors of edges and faces
  - Implement polynomial for of CES economy
  - Rename all new linear algebra classes: NewFoo --> Foo
