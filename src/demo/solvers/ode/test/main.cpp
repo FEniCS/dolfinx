@@ -33,7 +33,7 @@ public:
   Harmonic() : ODE(2)
   {
     // Final time
-    T = 3.0;
+    T = 30.0;
 
     // Compute sparsity
     sparse();
@@ -93,7 +93,7 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 0.64;
+    T = 64;
 
     // Compute sparsity
     //dependencies.detect(*this);
@@ -153,11 +153,11 @@ int main()
   dolfin_set("number of samples", 200);
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
-  dolfin_set("method", "mcg");
+  dolfin_set("method", "mdg");
   dolfin_set("order", 2);
 
-  Simple ode;
-  ode.solve();
+  //Simple ode;
+  //ode.solve();
 
   //Harmonic ode;
   //ode.solve();
@@ -165,8 +165,8 @@ int main()
   //SpringSystem ode(10);
   //ode.solve();
 
-  //TestSystem ode;
-  //ode.solve();
+  TestSystem ode;
+  ode.solve();
 
   return 0;
 }

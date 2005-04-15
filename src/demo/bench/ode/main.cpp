@@ -248,11 +248,16 @@ int main(int argc, const char* argv[])
 
   // Set parameters
   dolfin_set("solve dual problem", false);
-  dolfin_set("use new ode solver", true);
   //dolfin_set("solver", "newton");
   dolfin_set("method", method);
   dolfin_set("discrete tolerance", 1e-7);
   dolfin_set("tolerance", 1e-5);
+  dolfin_set("save solution", false);
+
+#ifdef DEBUG_BENCHMARK
+  dolfin_set("number of samples", 20);
+  dolfin_set("save solution", true);
+#endif
 
   // Parameters for adaptivity (Johan)
   //dolfin_set("maximum time step", 1e-2);
@@ -263,12 +268,6 @@ int main(int argc, const char* argv[])
   dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
   
-  dolfin_set("save solution", false);
-#ifdef DEBUG_BENCHMARK
-  dolfin_set("number of samples", 20);
-  dolfin_set("save solution", true);
-#endif
-
   // Solve the wave equation
   WaveEquation wave(n);
   wave.solve();

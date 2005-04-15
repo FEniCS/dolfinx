@@ -16,7 +16,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) : 
   NewTimeSlab(ode),
-  sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0), er(0),
+  sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
   elast(N), u(0), f0(0), emax(0)
 {
@@ -52,7 +52,6 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( ed ) delete [] ed;
   if ( jx ) delete [] jx;
   if ( de ) delete [] de;
-  if ( er ) delete [] er;
 
   if ( solver ) delete solver;
 
@@ -141,13 +140,17 @@ bool MultiAdaptiveTimeSlab::shift()
     const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
     // Evaluate right-hand side at end-point (u is already updated)
-    f0[i] = ode.f(u, b, i);
+    const real f = ode.f(u, b, i);
 
     // Compute residual
-    const real r = method->residual(x0, jx + j, f0[i], k);
+    const real r = method->residual(x0, jx + j, f, k);
 
     // Update adaptivity
     adaptivity.update(i, r, *method);
+
+    // Save right-hand side at end-point for cG
+    if ( method->type() == NewMethod::cG )
+      f0[i] = f;
   }
 
   // Let user update ODE
@@ -259,10 +262,10 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
   // Evaluate right-hand side at end-point (u is already updated)
-  f0[i] = ode.f(u, b, i);
+  const real f = ode.f(u, b, i);
 
   // Compute residual
-  const real r = method->residual(x0, jx + j, f0[i], k);
+  const real r = method->residual(x0, jx + j, f, k);
 
   return r;
 }
@@ -285,7 +288,6 @@ void MultiAdaptiveTimeSlab::disp() const
   cout << "es = "; Alloc::disp(es, ne);  
   cout << "ee = "; Alloc::disp(ee, ne);
   cout << "ed = "; Alloc::disp(ed, ne);
-  cout << "er = "; Alloc::disp(er, ne);
 
   cout << endl;
 
@@ -311,7 +313,6 @@ void MultiAdaptiveTimeSlab::allocData(real a, real b)
   alloc_e(ne);
   alloc_j(nj);
   alloc_d(nd);
-  alloc_r(ne);
 
   // Reset mapping de
   for (uint d = 0; d < nd; d++)
@@ -532,17 +533,6 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
   Alloc::realloc(&de, size_d.size, newsize);
 
   size_d.size = newsize;
-}
-//-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::alloc_r(uint newsize)
-{
-  if ( newsize <= size_r ) return;
-
-  //dolfin_info("Reallocating: nd = %d", newsize);
-
-  Alloc::realloc(&er, size_r, newsize);
-
-  size_r = newsize;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
@@ -785,114 +775,140 @@ void MultiAdaptiveTimeSlab::cover(real t)
 void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0, 
 				    real a0, real b0, real k0)
 {
-  //cout << "  Evaluating f for element " << e0
-  //     << ": i = " << i0 << " a0 = " << a0 << " b0 = " << b0 << endl;
+  const uint& nn = method->nsize();
+  const uint last = nn - 1;
 
   // Get list of dependencies for given component index
   const NewArray<uint>& deps = ode.dependencies[i0];
+
+  // First evaluate at left end-point
+  if ( a0 < (_a + DOLFIN_EPS) )
+  {
+    // Use previously computed value
+    f[0] = f0[i0];
+  }
+  else
+  {
+    // Iterate over dependencies
+    for (uint pos = 0; pos < deps.size(); pos++)
+    {
+      // Get other element
+      const uint i1 = deps[pos];
+      const int e1 = elast[i1];
+      
+      // Special case, component has no latest element
+      if ( e1 == -1 )
+      {
+	u[i1] = u0[i1];
+	continue;
+      }
+      
+      // Three cases: k1 = k0, k1 < k0, k1 > k0
+      const uint s1 = es[e1];
+      if ( s1 == s0 )
+      {
+	// k1 = k0 (same sub slab)
+	const int ep = ee[e1];
+	const uint jp = ep * nn;
+	u[i1] = ( ep != -1 ? jx[jp + last] : u0[i1] );
+      }
+      else
+      {
+	const real b1 = sb[s1];
+	if ( b1 < (a0 + DOLFIN_EPS) )
+	{
+	  // k1 < k0 (smaller time step)
+	  u[i1] = jx[e1 * nn + last];
+	}
+	else
+	{
+	  // k1 > k0 (larger time step)
+	  const real a1 = sa[s1];
+	  const real k1 = b1 - a1;
+	  const real tau = (a0 - a1) / k1;
+	  const int ep = ee[e1];
+	  const uint jp = ep * nn;
+	  const uint j1 = e1 * nn;
+	  const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
+	  u[i1] = method->ueval(x0, jx + j1, tau);
+	}
+      }
+    }
+    
+    // Evaluate right-hand side
+    f[0] = ode.f(u, a0, i0);
+  }
 
   // Get first dependency to components with smaller time steps for element
   uint d = ed[e0];
 
   // Compute number of such dependencies for each nodal point
   const uint end = ( e0 < (ne - 1) ? ed[e0 + 1] : nd );
-  const uint ndep = (end - d) / method->nsize();
-  dolfin_assert(ndep * method->nsize() == (end - d));
+  const uint ndep = (end - d) / nn;
+  dolfin_assert(ndep * nn == (end - d));
 
-  // Evaluate the right-hand side at all quadrature points
-  for (uint m = 0; m < method->qsize(); m++)
+  // Evaluate the right-hand side at all quadrature points but the first
+  for (uint m = 1; m < method->qsize(); m++)
   {
-    // Use previously computed value at left end-point if applicable
-    if ( m == 0 && a0 < (_a + DOLFIN_EPS) )
-    {
-      f[0] = f0[i0];
-      continue;
-    }
-
     // Compute quadrature point
     const real t = a0 + k0*method->qpoint(m);
 
-    // Update values for components with larger or equal time steps,
-    // also including the initial value from components with small
-    // time steps (needed for cG)
+    // Update values for components with larger or equal time steps
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get other element
       const uint i1 = deps[pos];
       const int e1 = elast[i1];
-
+      
       // Special case, component has no latest element
       if ( e1 == -1 )
+	continue;
+      
+      // Use fast evaluation for elements in the same sub slab
+      const uint s1 = es[e1];
+      const uint j1 = e1 * nn;
+      if ( s0 == s1 )
       {
-	//	if ( t < (a0 + DOLFIN_EPS) )
-	//  u[i1] = u0[i1];
+	u[i1] = jx[j1 + m - 1];
 	continue;
       }
 
-      // Get element data
-      const uint s1 = es[e1];
-      const real b1 = sb[s1];
-
       // Skip components with smaller time steps
-      if ( b1 < (t - DOLFIN_EPS) )
+      const real b1 = sb[s1];
+      if ( b1 < (a0 + DOLFIN_EPS) )
        	continue;
       
-      //cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
-      
-      // Get initial value for element (only necessary for cG)
+      // Interpolate value from larger element
+      const real a1 = sa[s1];
+      const real k1 = b1 - a1;
+      const real tau = (t - a1) / k1;
       const int ep = ee[e1];
-      const uint jp = ep * method->nsize();
-      const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
-
-      // Use fast evaluation for elements in the same sub slab
-      const uint j1 = e1 * method->nsize();
-      if ( s0 == s1 )
-      {
-	u[i1] = method->ueval(x0, jx + j1, m);
-      }
-      else
-      {
-	const real a1 = sa[s1];
-	const real k1 = b1 - a1;
-	const real tau = (t - a1) / k1;
-	u[i1] = method->ueval(x0, jx + j1, tau);
-      }
+      const uint jp = ep * nn;
+      const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
+      u[i1] = method->ueval(x0, jx + j1, tau);
     }
 
-    //cout << "  Updating for small time steps" << endl;
-
-    // Update values for components with smaller time steps, not including
-    // the initial value (left end-point value). This is handled above
-    // in the update for components with large time steps
-    if ( t > (a0 + DOLFIN_EPS) )
+    // Update values for components with smaller time steps
+    for (uint dep = 0; dep < ndep; dep++)
     {
-      for (uint dep = 0; dep < ndep; dep++)
-      {
-	// Get element
-	const int e1 = de[d++];
-	dolfin_assert(e1 != -1);
+      // Get element
+      const int e1 = de[d++];
+      dolfin_assert(e1 != -1);
 
-	// Get element data
-	const uint i1 = ei[e1];
-	const uint s1 = es[e1];
-	const real b1 = sb[s1];
-	
-	// Compute time step for other element
-	const real a1 = sa[s1];
-	const real k1 = b1 - a1;
-
-	//cout << "    i1 = " << i1 << " e1 = " << e1 << endl;
-
-	// Get initial value for element (only necessary for cG)
-	const int ep = ee[e1];
-	const uint jp = ep * method->nsize();
-	const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i1] );
-
-	// Evaluate component
-	const real tau = (t - a1) / k1;
-	const uint j1 = e1 * method->nsize();
-	u[i1] = method->ueval(x0, jx + j1, tau);
-      }
+      // Get initial value for element
+      const int ep = ee[e1];
+      const uint i1 = ei[e1];
+      const uint jp = ep * nn;
+      const real x0 = ( ep != -1 ? jx[jp + last] : u0[i1] );
+      
+      // Interpolate value from smaller element
+      const uint s1 = es[e1];
+      const real a1 = sa[s1];
+      const real b1 = sb[s1];
+      const real k1 = b1 - a1;
+      const real tau = (t - a1) / k1;
+      const uint j1 = e1 * nn;
+      u[i1] = method->ueval(x0, jx + j1, tau);
     }
     
     // Evaluate right-hand side
