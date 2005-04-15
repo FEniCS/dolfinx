@@ -250,11 +250,11 @@ int main(int argc, const char* argv[])
   dolfin_set("solve dual problem", false);
   //dolfin_set("solver", "newton");
   dolfin_set("method", method);
-  dolfin_set("discrete tolerance", 1e-7);
   dolfin_set("tolerance", 1e-5);
   dolfin_set("save solution", false);
 
 #ifdef DEBUG_BENCHMARK
+  dolfin_set("discrete tolerance", 1e-7);
   dolfin_set("number of samples", 20);
   dolfin_set("save solution", true);
 #endif
@@ -265,6 +265,7 @@ int main(int argc, const char* argv[])
   //dolfin_set("partitioning threshold", 0.01);
   
   // Parameters for optimization (Anders)
+  dolfin_set("discrete tolerance", 1e-3);
   dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
   

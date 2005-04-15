@@ -153,7 +153,7 @@ int main()
   dolfin_set("number of samples", 200);
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
-  dolfin_set("method", "mdg");
+  dolfin_set("method", "mcg");
   dolfin_set("order", 2);
 
   //Simple ode;

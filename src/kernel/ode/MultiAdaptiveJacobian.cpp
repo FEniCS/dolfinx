@@ -99,7 +99,8 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
   int s0 = -1;
 
   // Reset elast
-  ts.elast = -1;
+  for (uint i = 0; i < ts.N; i++)
+    ts.elast[i] = -1;
 
   // Iterate over all elements
   for (uint e0 = 0; e0 < ts.ne; e0++)
@@ -296,7 +297,8 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
   int s0 = -1;
 
   // Reset elast
-  ts.elast = -1;
+  for (uint i = 0; i < ts.N; i++)
+    ts.elast[i] = -1;
 
   // Iterate over all elements
   for (uint e0 = 0; e0 < ts.ne; e0++)

@@ -96,7 +96,8 @@ void MultiAdaptiveNewtonSolver::beval()
   int s = -1;
 
   // Reset elast
-  ts.elast = -1;
+  for (uint i = 0; i < ts.N; i++)
+    ts.elast[i] = -1;
 
   // Iterate over all elements
   for (uint e = 0; e < ts.ne; e++)

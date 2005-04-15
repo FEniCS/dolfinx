@@ -18,10 +18,15 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   NewTimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
-  elast(N), u(0), f0(0), emax(0)
+  elast(0), u(0), f0(0), emax(0)
 {
   // Choose solver
   solver = chooseSolver();
+
+  // Initialize elast
+  elast = new int[N];
+  for (uint i = 0; i < N; i++)
+    elast[i] = -1;
 
   // Initialize solution vector
   u = new real[N];
@@ -55,6 +60,7 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 
   if ( solver ) delete solver;
 
+  if ( elast ) delete [] elast;
   if ( u ) delete [] u;
   if ( f0 ) delete [] f0;
 }
@@ -68,7 +74,8 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
   allocData(a, b);
 
   // Reset elast
-  elast = -1;
+  for (uint i = 0; i < N; i++)
+    elast[i] = -1;
 
   // Create time slab recursively
   b = createTimeSlab(a, b, 0);
@@ -685,8 +692,6 @@ dolfin::uint MultiAdaptiveTimeSlab::cover(int subslab, uint element)
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::cover(real t)
 {
-  //cout << "Covering t = " << t << endl;
-
   // Check if t is covered for all components
   bool ok = true;
   for (uint i = 0; i < N; i++)
@@ -697,7 +702,6 @@ void MultiAdaptiveTimeSlab::cover(real t)
     // Check if we need to start from the beginning
     if ( e == -1 )
     {
-      //cout << "Need to start from the beginning since e = -1" << endl;
       emax = 0;
       ok = false;
       break;
@@ -711,7 +715,6 @@ void MultiAdaptiveTimeSlab::cover(real t)
     // Check if we need to start from the beginning
     if ( t < (a + DOLFIN_EPS) )
     {
-      //cout << "Need to start from the beginning since we have stepped to far" << endl;
       emax = 0;
       ok = false;
       break;
@@ -720,7 +723,6 @@ void MultiAdaptiveTimeSlab::cover(real t)
     // Check if we need to search forward, starting at e = emax
     if ( t > (b + DOLFIN_EPS) )
     {
-      //cout << "Need to search forward" << endl;
       ok = false;
       break;
     }
@@ -742,8 +744,6 @@ void MultiAdaptiveTimeSlab::cover(real t)
       emax = 0;
   }
 
-  //cout << "Starting search at e = " << emax << endl;
-
   // Iterate forward until t is covered for all components
   for (uint e = emax; e < ne; e++)
   {
@@ -752,24 +752,14 @@ void MultiAdaptiveTimeSlab::cover(real t)
     const uint i = ei[e];
     const real a = sa[s];
 
-    //cout << "  Checking element:" << endl;
-    //cout << "    e = " << e << endl;
-    //cout << "    i = " << i << endl;
-    //cout << "    a = " << a << endl;
-    //cout << "    t = " << t << endl;
-
     // Check if we have stepped far enough
     if ( t < (a + DOLFIN_EPS) && _a < (a - DOLFIN_EPS) )
       break;
-
-    //cout << "  Element covered" << endl;
 
     // Cover element
     elast[i] = e;
     emax = e;
   }
-
-  //cout << "Time covered" << endl << endl;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::cGfeval(real* f, uint s0, uint e0, uint i0, 

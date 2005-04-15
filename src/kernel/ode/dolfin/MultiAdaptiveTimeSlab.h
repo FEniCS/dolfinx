@@ -147,7 +147,7 @@ namespace dolfin
     TimeSlabSolver* solver;     // The solver
     MultiAdaptivity adaptivity; // Adaptive time step regulation
     NewPartition partition;     // Time step partitioning 
-    NewArray<int> elast;        // Last element for each component
+    int* elast;                 // Last element for each component
     real* u;                    // Interpolated solution vector
     real* f0;                   // Right-hand side at left end-point for cG
     uint emax;                  // Last covered element for sample

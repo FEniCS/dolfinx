@@ -26,9 +26,6 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveFixedPointSolver::iteration()
 {
-  // DEBUG
-  //Vector Rd(ts.ne), Rdprev(ts.ne);
-
   // Reset dof
   uint j = 0;
 
@@ -36,7 +33,8 @@ real MultiAdaptiveFixedPointSolver::iteration()
   int s = -1;
 
   // Reset elast
-  ts.elast = -1;
+  for (uint i = 0; i < ts.N; i++)
+    ts.elast[i] = -1;
 
   // Reset maximum increment
   real max_increment = 0.0;
@@ -53,16 +51,16 @@ real MultiAdaptiveFixedPointSolver::iteration()
     const real b = ts.sb[s];
     const real k = b - a;
 
-    // Get initial value for element
-    const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
-
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == NewMethod::cG )
       ts.cGfeval(f, s, e, i, a, b, k);
     else
       ts.dGfeval(f, s, e, i, a, b, k);
     //cout << "f = "; Alloc::disp(f, method.qsize());
+
+    // Get initial value for element
+    const int ep = ts.ee[e];
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
     // Update values on element using fixed point iteration
     const real increment = method.update(x0, f, k, ts.jx + j);
@@ -80,6 +78,8 @@ real MultiAdaptiveFixedPointSolver::iteration()
 }
 //-----------------------------------------------------------------------------
 // DEBUG
+//
+//   Vector Rd(ts.ne), Rdprev(ts.ne);
 //
 //   Vector Rho(ts.ne), krecommend(ts.ne), comp(ts.ne);
 //   real rho;
