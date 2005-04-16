@@ -69,11 +69,11 @@ public:
       const unsigned int jx = j % m;
       const unsigned int jy = j / m;
 
-      unsigned int size = 1;
-      if ( jx > 0 ) size++;
-      if ( jy > 0 ) size++;
-      if ( jx < n ) size++;
-      if ( jy < n ) size++;
+      unsigned int size = 2;
+      if ( jx > 0 ) size += 2;
+      if ( jy > 0 ) size += 2;
+      if ( jx < n ) size += 2;
+      if ( jy < n ) size += 2;
       dependencies.setsize(i, size);
 
       dependencies.set(i, j);
@@ -81,7 +81,10 @@ public:
       if ( jy > 0 ) dependencies.set(i, j - m);
       if ( jx < n ) dependencies.set(i, j + 1);
       if ( jy < n ) dependencies.set(i, j + m);
-    }
+      if ( jx > 0 ) dependencies.set(i, i - 1);
+      if ( jy > 0 ) dependencies.set(i, i - m);
+      if ( jx < n ) dependencies.set(i, i + 1);
+      if ( jy < n ) dependencies.set(i, i + m);    }
   }
 
   // Initial data
@@ -101,21 +104,13 @@ public:
 
     const real dist = p.dist(center);
 
-     if ( dist >= w / 2 )
-       return 0.0;
-//     if ( fabs(0.5 - px) >= w / 2 )
-//       return 0.0;
-
+    if ( dist >= w / 2 )
+      return 0.0;
+    
     if ( i < offset )
-    {
       return 1.0 * 0.5 * (cos(2.0 * M_PI * dist / w) + 1);
-      //return 10.0 * 0.5 * (cos(2.0 * M_PI * px / w) + 1);
-    }
     else
-    {
       return 1.0 * c * M_PI / w * (sin(2.0 * M_PI * dist / w));
-      //return 10.0 * c * M_PI / w * (sin(2.0 * M_PI * px / w));
-    }
   }
 
   // Right-hand side, mono-adaptive version
@@ -135,13 +130,19 @@ public:
       const unsigned int jx = j % m;
       const unsigned int jy = j / m;
 
-      real sum = -4.0*u[j];
-      if ( jx > 0 ) sum += u[j - 1];
-      if ( jy > 0 ) sum += u[j - m];
-      if ( jx < n ) sum += u[j + 1];
-      if ( jy < n ) sum += u[j + m];
+      real sum0 = -4.0*u[j];
+      if ( jx > 0 ) sum0 += u[j - 1];
+      if ( jy > 0 ) sum0 += u[j - m];
+      if ( jx < n ) sum0 += u[j + 1];
+      if ( jy < n ) sum0 += u[j + m];
+
+      real sum1 = -4.0*u[i];
+      if ( jx > 0 ) sum1 += u[i - 1];
+      if ( jy > 0 ) sum1 += u[i - m];
+      if ( jx < n ) sum1 += u[i + 1];
+      if ( jy < n ) sum1 += u[i + m];
       
-      y[i] = a*sum;
+      y[i] = a*(sum0 + 0.01*sum1);
     }
   }
 
@@ -160,13 +161,19 @@ public:
     const unsigned int jx = j % m;
     const unsigned int jy = j / m;
 
-    real sum = -4.0*u[j];
-    if ( jx > 0 ) sum += u[j - 1];
-    if ( jy > 0 ) sum += u[j - m];
-    if ( jx < n ) sum += u[j + 1];
-    if ( jy < n ) sum += u[j + m];
-
-    return a*sum;
+    real sum0 = -4.0*u[j];
+    if ( jx > 0 ) sum0 += u[j - 1];
+    if ( jy > 0 ) sum0 += u[j - m];
+    if ( jx < n ) sum0 += u[j + 1];
+    if ( jy < n ) sum0 += u[j + m];
+    
+    real sum1 = -4.0*u[i];
+    if ( jx > 0 ) sum1 += u[i - 1];
+    if ( jy > 0 ) sum1 += u[i - m];
+    if ( jx < n ) sum1 += u[i + 1];
+    if ( jy < n ) sum1 += u[i + m];
+    
+    return a*(sum0 + 0.01*sum1);
   }
 
 #ifdef DEBUG_BENCHMARK

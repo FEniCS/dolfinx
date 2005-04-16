@@ -20,10 +20,6 @@ for i = 1:m
   rmin = min(rmin, min(r{i})); rmax = max(rmax, max(r{i}));
 end
 
-if(rmin == rmax)
-  rmax = rmax + 1.0;
-end
-
 % Plot solution
 clf
 for i = 1:m
@@ -54,7 +50,6 @@ for i = 1:m
 
   subplot(2, 4, 7)
   pdesurf(points, cells, k{i})
-  colorbar;
   view(2)
 
   subplot(2, 4, 8)
