@@ -14,14 +14,10 @@ umin = 0; umax = 0;
 kmin = 0; kmax = 0;
 rmin = 0; rmax = 0;
 for i = 1:m
-  umin = min(umin, min(u{i}));
-  umax = max(umax, max(u{i}));
-  vmin = min(vmin, min(v{i}));
-  vmax = max(vmax, max(v{i}));
-  kmin = min(kmin, min(k{i}));
-  kmax = max(kmax, max(k{i}));
-  rmin = min(rmin, min(r{i}));
-  rmax = max(rmax, max(r{i}));
+  umin = min(umin, min(u{i})); umax = max(umax, max(u{i}));
+  vmin = min(vmin, min(v{i})); vmax = max(vmax, max(v{i}));
+  kmin = min(kmin, min(k{i})); kmax = max(kmax, max(k{i}));
+  rmin = min(rmin, min(r{i})); rmax = max(rmax, max(r{i}));
 end
 
 if(rmin == rmax)

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -265,7 +265,7 @@ int main(int argc, const char* argv[])
   //dolfin_set("partitioning threshold", 0.01);
   
   // Parameters for optimization (Anders)
-  dolfin_set("discrete tolerance", 1e-3);
+  dolfin_set("discrete tolerance", 1e-7);
   dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
   

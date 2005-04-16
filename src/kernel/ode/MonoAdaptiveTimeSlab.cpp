@@ -148,7 +148,8 @@ bool MonoAdaptiveTimeSlab::shift()
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::sample(real t)
 {
-  // Do nothing
+  // Compute f at end-time
+  feval(method->qsize() - 1);
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab::usample(uint i, real t)
@@ -178,9 +179,21 @@ real MonoAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab::rsample(uint i, real t)
 {
-  // FIXME: not implemented
+  // Right-hand side at end-point already computed
 
-  return 0.0;
+  // Prepare data for computation of derivative
+  real* xx = x.array();
+  const real x0 = u0[i];
+  for (uint n = 0; n < method->nsize(); n++)
+    dofs[n] = xx[n*N + i];
+  x.restore(xx);
+  
+  // Compute residual
+  const real k = length();
+  const uint foffset = (method->qsize() - 1) * N;
+  const real r = method->residual(x0, dofs, f[foffset + i], k);
+
+  return r;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveTimeSlab::disp() const
