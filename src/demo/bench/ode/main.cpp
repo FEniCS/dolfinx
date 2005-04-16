@@ -293,7 +293,7 @@ int main(int argc, const char* argv[])
 
 #ifdef COMPUTE_REFERENCE
   // Parameters for reference solution
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("tolerance", 0.001);
   dolfin_set("discrete tolerance", 1e-12);
   dolfin_set("fixed time step", true);
 #else
