@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-#define DEBUG_BENCHMARK 1
+//#define DEBUG_BENCHMARK 1
 #define COMPUTE_REFERENCE 1
 
 using namespace dolfin;
@@ -28,7 +28,7 @@ public:
     a = c*c / (h*h);
     w = 10 * h;
 
-    nu = 0.01;
+    nu = 0.005;
 
     setSparsity();
 
@@ -215,15 +215,16 @@ public:
     *vfile << v;
     *kfile << k;
     *rfile << r;
-  }
-  
+  }  
 #endif
 
-#ifdef COMPUTE_REFERENCE_SOLUTION
+#ifdef COMPUTE_REFERENCE
   virtual bool update(const real u[], real t, bool end)
   {
     if ( !end )
       return true;
+
+    cout << "Saving reference solution" << endl;
 
     // Save solution at end-time
     FILE* fp = fopen("solution.data", "w");
@@ -253,7 +254,7 @@ private:
   unsigned int num_fi; // Number of evaluations of multi-adaptive f
 
 #ifdef DEBUG_BENCHMARK
-  UnitSquare* mesh;            // The mesh
+  UnitSquare* mesh;                    // The mesh
   File *ufile, *vfile, *kfile, *rfile; // Files for saving solution
 #endif
 
@@ -298,11 +299,11 @@ int main(int argc, const char* argv[])
 #else
   // Parameters for benchmarks
   dolfin_set("tolerance", 0.01);
-  dolfin_set("discrete tolerance", 1e-12);
+  dolfin_set("discrete tolerance", 1e-6);
   dolfin_set("fixed time step", true);
-  dolfin_set("maximum time step", 1e-3);
-  dolfin_set("initial time step", 1e-3);
-  dolfin_set("partitioning threshold", 0.5);
+  //dolfin_set("maximum time step", 1e-3);
+  //dolfin_set("initial time step", 1e-3);
+  //dolfin_set("partitioning threshold", 0.5);
 #endif
   
 #ifdef DEBUG_BENCHMARK
