@@ -67,8 +67,8 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
 {
-  //cout << "Multi-adaptive time slab: building between "
-  //     << a << " and " << b << endl;
+  // cout << "Multi-adaptive time slab: building between "
+  //      << a << " and " << b << endl;
 
   // Allocate data
   allocData(a, b);

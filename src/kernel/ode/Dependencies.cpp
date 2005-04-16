@@ -87,6 +87,8 @@ void Dependencies::set(const Matrix& A)
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)
 {
+  cout << "Dependencies::transp()" << endl;
+
   // Don't compute dependency pattern is full
   if ( !dependencies._sparse )
   {
@@ -126,6 +128,7 @@ void Dependencies::transp(const Dependencies& dependencies)
     for (uint pos = 0; pos < row.size(); ++pos)
       set(row[pos], i);
   }
+  cout << "Dependencies::transp() finished" << endl;
 }
 //-----------------------------------------------------------------------------
 void Dependencies::detect(ODE& ode)

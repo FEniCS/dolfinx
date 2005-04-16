@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-#define DEBUG_BENCHMARK 1
+//#define DEBUG_BENCHMARK 1
 
 using namespace dolfin;
 
@@ -25,6 +25,8 @@ public:
     h = 1.0 / static_cast<real>(n);
     a = c*c / (h*h);
     w = 10 * h;
+
+    nu = 0.01;
 
     setSparsity();
 
@@ -142,7 +144,7 @@ public:
       if ( jx < n ) sum1 += u[i + 1];
       if ( jy < n ) sum1 += u[i + m];
       
-      y[i] = a*(sum0 + 0.01*sum1);
+      y[i] = a*(sum0 + nu*sum1);
     }
   }
 
@@ -173,7 +175,7 @@ public:
     if ( jx < n ) sum1 += u[i + 1];
     if ( jy < n ) sum1 += u[i + m];
     
-    return a*(sum0 + 0.01*sum1);
+    return a*(sum0 + nu*sum1);
   }
 
 #ifdef DEBUG_BENCHMARK
@@ -223,6 +225,7 @@ private:
   real h; // Mesh size
   real a; // Product (c/h)^2
   real w; // Width of initial data
+  real nu;// Viscosity
 
   unsigned int n;      // Number of cells in each direction
   unsigned int offset; // Offset for second half of system
@@ -240,16 +243,20 @@ private:
 int main(int argc, const char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 3 )
+  if ( argc != 4 )
   {
-    dolfin_info("Usage: dolfin-bench-ode method n");
+    dolfin_info("Usage: dolfin-bench-ode method order n");
     dolfin_info("");
     dolfin_info("method - 'cg', 'dg', 'mcg' or 'mdg'");
+    dolfin_info("order - q, as in cG(q) or dG(q)");
     dolfin_info("n      - number of cells in each dimension");
     return 1;
   }
   const char* method = argv[1];
-  unsigned int n = static_cast<unsigned int>(atoi(argv[2]));
+  unsigned int q = static_cast<unsigned int>(atoi(argv[2]));
+  if ( q < 0 )
+    dolfin_error("The order must be positive.");
+  unsigned int n = static_cast<unsigned int>(atoi(argv[3]));
   if ( n < 1 )
     dolfin_error("Number of cells n must be positive.");
 
@@ -257,7 +264,9 @@ int main(int argc, const char* argv[])
   dolfin_set("solve dual problem", false);
   //dolfin_set("solver", "newton");
   dolfin_set("method", method);
-  dolfin_set("tolerance", 1e-5);
+  dolfin_set("order", q);
+  dolfin_set("discrete tolerance", 1e-5);
+  dolfin_set("tolerance", 1e-3);
   dolfin_set("save solution", false);
 
 #ifdef DEBUG_BENCHMARK
@@ -267,14 +276,15 @@ int main(int argc, const char* argv[])
 #endif
 
   // Parameters for adaptivity (Johan)
-  //dolfin_set("maximum time step", 1e-2);
-  //dolfin_set("initial time step", 1e-3);
-  //dolfin_set("partitioning threshold", 0.01);
+  dolfin_set("maximum time step", 1e-3);
+  dolfin_set("initial time step", 1e-3);
+  dolfin_set("partitioning threshold", 0.5);
+  dolfin_set("fixed time step", true);
   
   // Parameters for optimization (Anders)
-  dolfin_set("discrete tolerance", 1e-7);
-  dolfin_set("initial time step", 0.01);
-  dolfin_set("fixed time step", true);
+//   dolfin_set("discrete tolerance", 1e-7);
+//   dolfin_set("initial time step", 0.01);
+//   dolfin_set("fixed time step", true);
   
   // Solve the wave equation
   WaveEquation wave(n);
