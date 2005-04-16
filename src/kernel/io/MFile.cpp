@@ -35,7 +35,7 @@ void MFile::operator<<(Vector& x)
   // Write vector
   fprintf(fp, "%s = [", x.name().c_str());
   for (unsigned int i = 0; i < x.size(); i++)
-    fprintf(fp, " %.16e", x(i));
+    fprintf(fp, " %.15e", x(i));
   fprintf(fp, " ];\n");
   
   // Close file
@@ -86,15 +86,15 @@ void MFile::operator<<(Mesh& mesh)
     
     if ( mesh.type() == Mesh::triangles ) {
       if ( n.last() )
-	fprintf(fp,"%.16f %.16f]';\n", p.x, p.y);
+	fprintf(fp,"%.15f %.15f]';\n", p.x, p.y);
       else
-	fprintf(fp,"%.16f %.16f\n", p.x, p.y );
+	fprintf(fp,"%.15f %.15f\n", p.x, p.y );
     }
     else {
       if ( n.last() )
-	fprintf(fp,"%.16f %.16f %.16f]';\n", p.x, p.y, p.z);
+	fprintf(fp,"%.15f %.15f %.15f]';\n", p.x, p.y, p.z);
       else
-	fprintf(fp,"%.16f %.16f %.16f\n", p.x, p.y, p.z);
+	fprintf(fp,"%.15f %.15f %.15f\n", p.x, p.y, p.z);
     }
     
   }
@@ -160,14 +160,14 @@ void MFile::operator<<(Function& u)
   {
     fprintf(fp, "%s = [", u.name().c_str());
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.16f", u(*n));
+      fprintf(fp, " %.15f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
   else
   {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.16f", u(*n));
+      fprintf(fp, " %.15f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
   
@@ -203,14 +203,14 @@ void MFile::operator<<(NewFunction& u)
   {
     fprintf(fp, "%s = [", u.name().c_str());
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.16f", u(*n));
+      fprintf(fp, " %.15f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
   else
   {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
     for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.16f", u(*n));
+      fprintf(fp, " %.15f", u(*n));
     fprintf(fp, " ]';\n\n");
   }
   
@@ -222,59 +222,6 @@ void MFile::operator<<(NewFunction& u)
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
-}
-//-----------------------------------------------------------------------------
-void MFile::operator<< (Sample& sample)
-{
-  dolfin_error("This function needs to be updated to the new format.");
-  /*
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
-
-  // Initialize data structures first time
-  if ( no_frames == 0 )
-  {
-    fprintf(fp, "t = [];\n");
-    fprintf(fp, "%s = [];\n", sample.name().c_str());
-    fprintf(fp, "k = [];\n");
-    fprintf(fp, "r = [];\n");
-    fprintf(fp, "\n");
-  }
-  
-  // Save time
-  fprintf(fp, "t = [t %.16e];\n", sample.t());
-
-  // Save solution
-  fprintf(fp, "tmp = [ ");
-  for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.u(i));  
-  fprintf(fp, "];\n");
-  fprintf(fp, "%s = [%s tmp'];\n", 
-	  sample.name().c_str(), sample.name().c_str());
-  //fprintf(fp, "clear tmp;\n");
-
-  // Save time steps
-  fprintf(fp, "tmp = [ ");
-  for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.k(i));
-  fprintf(fp, "];\n");
-  fprintf(fp, "k = [k tmp'];\n");
-  //fprintf(fp, "clear tmp;\n");
-
-  // Save residuals
-  fprintf(fp, "tmp = [ ");
-  for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.r(i));
-  fprintf(fp, "];\n");
-  fprintf(fp, "r = [r tmp'];\n");
-  fprintf(fp, "clear tmp;\n");
-
-  // Increase frame counter
-  no_frames++;
-  
-  // Close file
-  fclose(fp);
-  */
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<< (NewSample& sample)
@@ -293,12 +240,12 @@ void MFile::operator<< (NewSample& sample)
   }
   
   // Save time
-  fprintf(fp, "t = [t %.16e];\n", sample.t());
+  fprintf(fp, "t = [t %.15e];\n", sample.t());
 
   // Save solution
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.u(i));  
+    fprintf(fp, "%.15e ", sample.u(i));  
   fprintf(fp, "];\n");
   fprintf(fp, "%s = [%s tmp'];\n", 
 	  sample.name().c_str(), sample.name().c_str());
@@ -307,7 +254,7 @@ void MFile::operator<< (NewSample& sample)
   // Save time steps
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.k(i));
+    fprintf(fp, "%.15e ", sample.k(i));
   fprintf(fp, "];\n");
   fprintf(fp, "k = [k tmp'];\n");
   //fprintf(fp, "clear tmp;\n");
@@ -315,7 +262,7 @@ void MFile::operator<< (NewSample& sample)
   // Save residuals
   fprintf(fp, "tmp = [ ");
   for (unsigned int i = 0; i < sample.size(); i++)
-    fprintf(fp, "%.16e ", sample.r(i));
+    fprintf(fp, "%.15e ", sample.r(i));
   fprintf(fp, "];\n");
   fprintf(fp, "r = [r tmp'];\n");
   fprintf(fp, "clear tmp;\n");
@@ -353,7 +300,7 @@ void MFile::operator<<(Function::Vector& u)
     for(int i = 0; i < u.size(); i++)
     { 
       for (NodeIterator n(u(0).mesh()); !n.end(); ++n)
-	fprintf(fp, " %.16f", u(i)(*n));
+	fprintf(fp, " %.15f", u(i)(*n));
       fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
@@ -363,7 +310,7 @@ void MFile::operator<<(Function::Vector& u)
     for(int i = 0; i < u.size(); i++)
     { 
       for (NodeIterator n(u(0).mesh()); !n.end(); ++n)
-	fprintf(fp, " %.16f", u(i)(*n));
+	fprintf(fp, " %.15f", u(i)(*n));
       fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");

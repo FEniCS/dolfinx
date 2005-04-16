@@ -4,10 +4,12 @@
 // Modified by Johan Jansson, 2005.
 // Modified by Anders Logg, 2005.
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
+#define COMPUTE_REFERENCE 1
 
 using namespace dolfin;
 
@@ -86,7 +88,8 @@ public:
       if ( jx > 0 ) dependencies.set(i, i - 1);
       if ( jy > 0 ) dependencies.set(i, i - m);
       if ( jx < n ) dependencies.set(i, i + 1);
-      if ( jy < n ) dependencies.set(i, i + m);    }
+      if ( jy < n ) dependencies.set(i, i + m);
+    }
   }
 
   // Initial data
@@ -100,10 +103,6 @@ public:
     const unsigned int jy = j / m;
     const Point p(h * static_cast<real>(jx), h * static_cast<real>(jy));
     const Point center(0.5, 0.5);
-
-    //const real px = h * static_cast<real>(jx);
-    //const real py = h * static_cast<real>(jy);
-
     const real dist = p.dist(center);
 
     if ( dist >= w / 2 )
@@ -217,6 +216,26 @@ public:
     *kfile << k;
     *rfile << r;
   }
+  
+#endif
+
+#ifdef COMPUTE_REFERENCE_SOLUTION
+  virtual bool update(const real u[], real t, bool end)
+  {
+    if ( !end )
+      return true;
+
+    // Save solution at end-time
+    FILE* fp = fopen("solution.data", "w");
+    for (unsigned int i = 0; i < N; i++)
+    {
+      fprintf(fp, "%.15e ", u[i]);
+    }
+    fprintf(fp, "\n");
+    fclose(fp);
+
+    return true;
+  }
 #endif
 
 private:
@@ -243,48 +262,54 @@ private:
 int main(int argc, const char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 4 )
+  if ( argc != 5 )
   {
-    dolfin_info("Usage: dolfin-bench-ode method order n");
+    dolfin_info("Usage: dolfin-bench-ode method order n k");
     dolfin_info("");
     dolfin_info("method - 'cg', 'dg', 'mcg' or 'mdg'");
-    dolfin_info("order - q, as in cG(q) or dG(q)");
+    dolfin_info("order  - q, as in cG(q) or dG(q)");
     dolfin_info("n      - number of cells in each dimension");
+    dolfin_info("k      - time step for reference solution");
     return 1;
   }
   const char* method = argv[1];
-  unsigned int q = static_cast<unsigned int>(atoi(argv[2]));
+  const unsigned int q = static_cast<unsigned int>(atoi(argv[2]));
   if ( q < 0 )
     dolfin_error("The order must be positive.");
-  unsigned int n = static_cast<unsigned int>(atoi(argv[3]));
+  const unsigned int n = static_cast<unsigned int>(atoi(argv[3]));
   if ( n < 1 )
     dolfin_error("Number of cells n must be positive.");
+  const real k = static_cast<real>(atof(argv[4]));
+  if ( k <= 0.0 )
+    dolfin_error("Time step must be positive.");
 
-  // Set parameters
-  dolfin_set("solve dual problem", false);
-  //dolfin_set("solver", "newton");
+  // Common parameters
   dolfin_set("method", method);
   dolfin_set("order", q);
-  dolfin_set("discrete tolerance", 1e-5);
-  dolfin_set("tolerance", 1e-3);
+  dolfin_set("initial time step", k);
+  dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);
 
-#ifdef DEBUG_BENCHMARK
-  dolfin_set("discrete tolerance", 1e-7);
-  dolfin_set("number of samples", 20);
-  dolfin_set("save solution", true);
-#endif
-
-  // Parameters for adaptivity (Johan)
+#ifdef COMPUTE_REFERENCE
+  // Parameters for reference solution
+  dolfin_set("tolerance", 0.01);
+  dolfin_set("discrete tolerance", 1e-12);
+  dolfin_set("fixed time step", true);
+#else
+  // Parameters for benchmarks
+  dolfin_set("tolerance", 0.01);
+  dolfin_set("discrete tolerance", 1e-12);
+  dolfin_set("fixed time step", true);
   dolfin_set("maximum time step", 1e-3);
   dolfin_set("initial time step", 1e-3);
   dolfin_set("partitioning threshold", 0.5);
-  dolfin_set("fixed time step", true);
+#endif
   
-  // Parameters for optimization (Anders)
-//   dolfin_set("discrete tolerance", 1e-7);
-//   dolfin_set("initial time step", 0.01);
-//   dolfin_set("fixed time step", true);
+#ifdef DEBUG_BENCHMARK
+  // Parameters for debug (save solution)
+  dolfin_set("number of samples", 20);
+  dolfin_set("save solution", true);
+#endif
   
   // Solve the wave equation
   WaveEquation wave(n);
