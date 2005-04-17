@@ -50,6 +50,9 @@ namespace dolfin
     // Maximum number of iterations
     uint maxiter;
 
+    // True if we should monitor the convergence
+    bool monitor;
+
   };
 
 }

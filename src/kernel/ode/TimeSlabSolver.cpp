@@ -9,19 +9,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
-  : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0)
+  : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
+    monitor(dolfin_get("monitor convergence"))
+  
 {
   // Get tolerance
   const real TOL = dolfin_get("tolerance");
   const real alpha = dolfin_get("discrete tolerance");
   tol = alpha * TOL;
-
-//   std::string method = dolfin_get("method");
-//   if ( method == "cg" || method == "dg" )
-//   {
-//     tol = sqrt(tol);
-//   }
-  
 
   cout << "Using tolerance tol = " << tol << "." << endl;
 
@@ -42,14 +37,15 @@ bool TimeSlabSolver::solve()
   {
     // Do one iteration
     real increment = iteration();
-    
-    //cout << "--- increment = " << increment << " ---" << endl;
+    if ( monitor )
+      dolfin_info("--- iter = %d: increment = %.3e", iter, increment);
     
     // Check convergenge
     if ( increment < tol )
     {
       end();
-      //dolfin_info("Time slab system converged in %d iterations.", iter + 1);
+      if ( monitor )
+	dolfin_info("Time slab system converged in %d iterations.", iter + 1);
       return true;
     }
   }

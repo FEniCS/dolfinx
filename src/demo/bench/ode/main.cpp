@@ -28,7 +28,7 @@ public:
     a = c*c / (h*h);
     w = 10 * h;
 
-    nu = 0.005;
+    nu = 0.002;
 
     setSparsity();
 
@@ -290,12 +290,15 @@ int main(int argc, const char* argv[])
   dolfin_set("initial time step", k);
   dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);
+  dolfin_set("monitor convergence", false);
 
 #ifdef COMPUTE_REFERENCE
   // Parameters for reference solution
-  dolfin_set("tolerance", 0.001);
-  dolfin_set("discrete tolerance", 1e-12);
+  dolfin_set("tolerance", 0.01);
+  dolfin_set("discrete tolerance", 1e-10);
   dolfin_set("fixed time step", true);
+  dolfin_set("maximum iterations", 200);
+  dolfin_set("progress step", 0.01);
 #else
   // Parameters for benchmarks
   dolfin_set("tolerance", 0.01);
