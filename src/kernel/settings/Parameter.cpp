@@ -1,32 +1,11 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Parameter.h>
-
-namespace dolfin {
-  
-  // Default function
-  real function_zero (real x, real y, real z, real t)
-  {
-    return 0.0;
-  }
-
-  // Default vector function
-  real vfunction_zero (real x, real y, real z, real t, int i)
-  { 
-    return 0.0;
-  }
-
-  // Default boundary condition function
-  void bcfunction_zero (BoundaryCondition& bc)
-  {
-    return;
-  }
-
-}
 
 using namespace dolfin;
 
@@ -44,7 +23,7 @@ Parameter::Parameter(Type type, const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 Parameter::~Parameter()
 {
-
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void Parameter::clear()
@@ -55,9 +34,6 @@ void Parameter::clear()
   val_int        = 0;
   val_bool       = false;
   val_string     = "";
-  val_function   = 0;
-  val_vfunction  = 0;
-  val_bcfunction = 0;
   
   _changed = false;
   
@@ -96,30 +72,6 @@ void Parameter::set(const char *identifier, va_list aptr)
     val_string = va_arg(aptr, char *);
     break;
     
-  case FUNCTION:
-    
-    val_function = va_arg(aptr, function);
-    if ( val_function == 0 )
-      val_function = function_zero;
-
-    break;
-    
-  case VFUNCTION:
-    
-    val_vfunction = va_arg(aptr, vfunction);
-    if ( val_vfunction == 0 )
-      val_vfunction = vfunction_zero;
-
-    break;
-    
-  case BCFUNCTION:
-
-    val_bcfunction = va_arg(aptr, bcfunction);
-    if ( val_bcfunction == 0 )
-      val_bcfunction = bcfunction_zero;
-
-    break;
-    
   default:
     dolfin_error1("Unknown type for parameter \"%s\".", identifier);
   }
@@ -137,9 +89,6 @@ void Parameter::get(va_list aptr)
   int        *p_int;
   int        *p_bool;
   string     *p_string;
-  function   *p_function;
-  vfunction  *p_vfunction;
-  bcfunction *p_bcfunction;
   
   // Set the value of the parameter
   switch ( type ){
@@ -167,24 +116,6 @@ void Parameter::get(va_list aptr)
     *p_string = val_string;
     break;
 
-  case FUNCTION:
-    
-    p_function = va_arg(aptr,function *);
-    *p_function = val_function;
-    break;
-    
-  case VFUNCTION:
-
-    p_vfunction = va_arg(aptr,vfunction *);
-    *p_vfunction = val_vfunction;
-    break;
-    
-  case BCFUNCTION:
-
-    p_bcfunction = va_arg(aptr,bcfunction *);
-    *p_bcfunction = val_bcfunction;
-    break;
-    
   default:
     dolfin_error1("Unknown type for parameter \"%s\".", identifier.c_str());
   }
@@ -213,9 +144,6 @@ void Parameter::operator= (const Parameter &p)
   val_int        = p.val_int;
   val_bool       = p.val_bool;
   val_string     = p.val_string;
-  val_function   = p.val_function;
-  val_vfunction  = p.val_vfunction;
-  val_bcfunction = p.val_bcfunction;
   
   _changed = p._changed;
   type     = p.type;
@@ -293,33 +221,6 @@ Parameter::operator const char*() const
   return val_string.c_str();
 }
 //-----------------------------------------------------------------------------
-Parameter::operator function() const
-{
-  if ( type != FUNCTION )
-    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <function>.",
-		  identifier.c_str());
-  
-  return val_function;
-}
-//-----------------------------------------------------------------------------
-Parameter::operator vfunction() const
-{
-  if ( type != VFUNCTION )
-    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <vfunction>.",
-		  identifier.c_str());
-  
-  return val_vfunction;
-}
-//-----------------------------------------------------------------------------
-Parameter::operator bcfunction() const
-{
-  if ( type != BCFUNCTION )
-    dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <bcfunction>.",
-		  identifier.c_str());
-  
-  return val_bcfunction;
-}
-//-----------------------------------------------------------------------------
 // Output
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p)
@@ -336,15 +237,6 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p)
     break;
   case Parameter::STRING:
     stream << "[ Parameter of type <string> with value " << p.val_string << ". ]";
-    break;
-  case Parameter::FUNCTION:
-    stream << "[ Parameter of type <function>.]";
-    break;
-  case Parameter::VFUNCTION:
-    stream << "[ Parameter of type <vfunction>.]";
-    break;
-  case Parameter::BCFUNCTION:
-    stream << "[ Parameter of type <bcfunction>.]";
     break;
   default:
     stream << "[ Parameter of unknown type. ]";

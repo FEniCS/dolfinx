@@ -3,7 +3,6 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/PDE.h>
 
 namespace dolfin
 {

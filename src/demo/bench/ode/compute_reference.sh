@@ -30,7 +30,7 @@ for n in $nlist; do
     done
 
     echo "load $filename" >> $MFILE
-    echo "max(abs(diff(solution_$n, 2))')" >> $MFILE
+    echo "max(abs(diff(solution_$n))')" >> $MFILE
 
 done
 

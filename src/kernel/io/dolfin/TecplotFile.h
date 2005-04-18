@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2005.
+// Modified by Anders Logg, 2005.
 
 #ifndef __TECPLOT_FILE_H
 #define __TECPLOT_FILE_H
@@ -10,12 +11,13 @@
 #include <dolfin/constants.h>
 #include <dolfin/GenericFile.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
-  class Function;
 
-  class TecplotFile : public GenericFile {
+  class TecplotFile : public GenericFile
+  {
   public:
 
     TecplotFile(const std::string filename);
@@ -24,10 +26,7 @@ namespace dolfin {
     // Input
 
     // Output
-
     void operator<< (Mesh& mesh);
-    void operator<< (Function& u);
-    void operator<< (Function::Vector& u);
 
   };
   

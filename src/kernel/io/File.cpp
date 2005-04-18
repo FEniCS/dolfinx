@@ -99,20 +99,6 @@ void File::operator>>(Mesh& mesh)
   *file >> mesh;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Function& u)
-{
-  file->read();
-  
-  *file >> u;
-}
-//-----------------------------------------------------------------------------
-void File::operator>>(Function::Vector& u)
-{
-  file->read();
-  
-  *file >> u;
-}
-//-----------------------------------------------------------------------------
 void File::operator>>(NewFunction& u)
 {
   file->read();
@@ -160,20 +146,6 @@ void File::operator<<(Mesh& mesh)
   file->write();
   
   *file << mesh;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(Function& u)
-{
-  file->write();
-  
-  *file << u;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(Function::Vector& u)
-{
-  file->write();
-  
-  *file << u;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(NewFunction& u)

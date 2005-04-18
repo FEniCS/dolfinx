@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __SETTINGS_H
 #define __SETTINGS_H
@@ -8,11 +10,13 @@
 #include <dolfin/constants.h>
 #include <dolfin/ParameterList.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   /// Pre-defined global parameters within DOLFIN.
 
-  class Settings : public ParameterList {
+  class Settings : public ParameterList
+  {
   public:
     
     Settings() : ParameterList()
@@ -33,9 +37,7 @@ namespace dolfin {
       add(Parameter::INT, "pc iterations", 5);
 
       add(Parameter::STRING, "temporary directory", "/tmp");
-
-      add(Parameter::BCFUNCTION, "boundary condition", 0);
-      
+            
       add(Parameter::BOOL, "save each mesh", false);
 
       // Parameters for multi-adaptive solver

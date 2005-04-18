@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -7,23 +9,23 @@
 #include <string>
 #include <stdarg.h>
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/FunctionPointer.h>
-#include <dolfin/VFunctionPointer.h>
-#include <dolfin/BCFunctionPointer.h>
 #include <dolfin/utils.h>
 
 #define PARAMETER_IDENTIFIER_LENGTH 128
 
 using std::string;
 
-namespace dolfin {
+namespace dolfin
+{
 
   // A small class for internal use in Settings
-  class Parameter{
+  class Parameter
+  {
   public:
     
-    enum Type { REAL, INT, BOOL, STRING, FUNCTION, VFUNCTION, BCFUNCTION, NONE };
+    enum Type { REAL, INT, BOOL, STRING, NONE };
     
     Parameter();
     Parameter(Type type, const char *identifier, va_list aptr);
@@ -53,9 +55,6 @@ namespace dolfin {
     operator bool() const;
     operator string() const;
     operator const char*() const;
-    operator function() const;
-    operator vfunction() const;
-    operator bcfunction() const;
 
     // Friends
     friend class XMLFile;
@@ -73,9 +72,6 @@ namespace dolfin {
     int        val_int;
     bool       val_bool;
     string     val_string;
-    function   val_function;
-    vfunction  val_vfunction;
-    bcfunction val_bcfunction;
     
     // True iff the default value was changed
     bool _changed;

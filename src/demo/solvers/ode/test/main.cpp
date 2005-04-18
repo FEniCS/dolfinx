@@ -1,6 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <stdio.h>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -33,7 +34,7 @@ public:
   Harmonic() : ODE(2)
   {
     // Final time
-    T = 30.0;
+    T = 20.0*DOLFIN_PI;
 
     // Compute sparsity
     sparse();
@@ -53,6 +54,28 @@ public:
       return u[1];
 
     return -u[0];
+  }
+
+  real timestep(unsigned int i)
+  {
+    real k = 0.0001;
+    if ( i == 0 )
+      return k;
+    else
+      return k / 8.0;
+  }
+
+  bool update(const real u[], real t, bool end)
+  {
+    if ( !end )
+      return true;
+
+    real e0 = u[0] - 0.0;
+    real e1 = u[1] - 1.0;
+    real e = std::max(fabs(e0), fabs(e1));
+    printf("Error: %.3e\n", e);
+
+    return true;
   }
   
 };
@@ -154,19 +177,19 @@ int main()
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
   dolfin_set("method", "mcg");
-  dolfin_set("order", 2);
+  dolfin_set("order", 1);
 
   //Simple ode;
   //ode.solve();
 
-  //Harmonic ode;
-  //ode.solve();
+  Harmonic ode;
+  ode.solve();
   
   //SpringSystem ode(10);
   //ode.solve();
 
-  TestSystem ode;
-  ode.solve();
+  //TestSystem ode;
+  //ode.solve();
 
   return 0;
 }

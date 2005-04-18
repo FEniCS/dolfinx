@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/TecplotFile.h>
 
@@ -96,6 +95,12 @@ void TecplotFile::operator<<(Mesh& mesh)
 
 }
 //-­---------------------------------------------------------------------------
+/*
+
+FIXME: BROKEN
+
+Needs to be updated for new function class.
+
 void TecplotFile::operator<<(Function& u)
 {
 //  dolfin_warning("Cannot write functions to Tecplot files.");
@@ -358,3 +363,4 @@ void TecplotFile::operator<<(Function::Vector& u)
        << ") to file " << filename << " in Tecplot format." << endl;
 }
 //-­---------------------------------------------------------------------------
+*/

@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/GiDFile.h>
 
@@ -99,6 +98,12 @@ void GiDFile::operator<<(Mesh& mesh)
   fclose(fp);
 }
 //-­---------------------------------------------------------------------------
+/*
+
+FIXME: BROKEN
+
+Needs to be updated for new function class.
+
 void GiDFile::operator<<(Function& u)
 {
   dolfin_info("Saving scalar function to GiD file .");
@@ -165,3 +170,4 @@ void GiDFile::operator<<(Function::Vector& u)
   fclose(fp);
 }
 //-­---------------------------------------------------------------------------
+*/

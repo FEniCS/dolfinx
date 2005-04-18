@@ -14,7 +14,6 @@
 namespace dolfin {
   
   class Mesh;
-  class Function;
   class NewFunction;
   
   class OpenDXFile : public GenericFile {
@@ -28,7 +27,6 @@ namespace dolfin {
     // Output
     
     void operator<< (Mesh& mesh);
-    void operator<< (Function& u);
     void operator<< (NewFunction& u);
 
   private:
@@ -36,9 +34,7 @@ namespace dolfin {
     void writeHeader   (FILE* fp);
     void writeMesh     (FILE* fp, Mesh& mesh);
     void writeMeshData (FILE* fp, Mesh& mesh);
-    void writeFunction (FILE* fp, Function& u);
     void writeFunction (FILE* fp, NewFunction& u);
-    void writeSeries   (FILE* fp, Function& u);
     void writeSeries   (FILE* fp, NewFunction& u);
   
     void removeSeries  (FILE* fp);

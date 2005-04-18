@@ -2,7 +2,6 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Vector.h>
-#include <dolfin/PDE.h>
 
 namespace dolfin
 {

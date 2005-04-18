@@ -143,7 +143,7 @@ fi
 DOLFIN_MODULES_NEW="poisson convdiff"
 
 # List of DOLFIN kernel libraries
-DOLFIN_KERNEL="common element fem form function io la log main map math mesh ode quadrature settings common"
+DOLFIN_KERNEL="common fem form function io la log main math mesh ode quadrature settings common"
 
 # Find modules
 #cd src/modules
@@ -198,8 +198,6 @@ AC_OUTPUT( Makefile \
            src/kernel/Makefile \
            src/kernel/common/Makefile \
            src/kernel/common/dolfin/Makefile \
-           src/kernel/element/Makefile \
-           src/kernel/element/dolfin/Makefile \
            src/kernel/fem/Makefile \
            src/kernel/fem/dolfin/Makefile \
            src/kernel/function/Makefile \
@@ -212,8 +210,6 @@ AC_OUTPUT( Makefile \
            src/kernel/la/dolfin/Makefile \
            src/kernel/main/Makefile \
            src/kernel/main/dolfin/Makefile \
-           src/kernel/map/Makefile \
-           src/kernel/map/dolfin/Makefile \
            src/kernel/math/Makefile \
            src/kernel/math/dolfin/Makefile \
            src/kernel/mesh/Makefile \

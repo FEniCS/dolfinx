@@ -6,12 +6,6 @@
 
 // Function
 
-#include <dolfin/DofFunction.h>
-#include <dolfin/ExpressionFunction.h>
-#include <dolfin/Function.h>
 #include <dolfin/NewFunction.h>
-#include <dolfin/GenericFunction.h>
-#include <dolfin/ScalarExpressionFunction.h>
-#include <dolfin/VectorExpressionFunction.h>
 
 #endif

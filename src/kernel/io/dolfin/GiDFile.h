@@ -11,9 +11,9 @@
 namespace dolfin {
 
   class Mesh;
-  class Function;
 
-  class GiDFile : public GenericFile {
+  class GiDFile : public GenericFile
+  {
   public:
 
     GiDFile(const std::string filename);
@@ -24,8 +24,6 @@ namespace dolfin {
     // Output
 
     void operator<< (Mesh& mesh);
-    void operator<< (Function& u);
-    void operator<< (Function::Vector& u);
 
   };
   

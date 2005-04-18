@@ -6,7 +6,6 @@
 
 #include <libxml/parser.h>
 #include <dolfin/constants.h>
-#include <dolfin/Function.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin {
@@ -14,8 +13,6 @@ namespace dolfin {
   class Vector;
   class Matrix;
   class Mesh;
-  class Function;
-  class Function::Vector;
   class ParameterList;
   class XMLObject;
   
@@ -37,7 +34,6 @@ namespace dolfin {
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
-    void operator<< (Function::Vector& u);
     void operator<< (ParameterList& parameters);
     
     // Friends

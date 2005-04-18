@@ -9,7 +9,6 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Function.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
@@ -69,6 +68,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
+  // FIXME: BROKEN
   dolfin_error("This function needs to be updated to the new format.");
 
   /*
@@ -101,6 +101,7 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
+  // FIXME: BROKEN
   dolfin_error("This function needs to be updated to the new format.");
 
   /*
@@ -253,11 +254,6 @@ void XMLFile::operator<<(ParameterList& parameters)
   fclose(fp);
 
   cout << "Saved parameters to file " << filename << " in XML format." << endl;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::operator<<(Function::Vector& u)
-{
-  dolfin_warning("Cannot write functions to XML files.");
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseFile()

@@ -5,9 +5,7 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Function.h>
 #include <dolfin/NewFunction.h>
-//#include <dolfin/Sample.h>
 #include <dolfin/NewSample.h>
 #include <dolfin/MFile.h>
 
@@ -27,6 +25,7 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)
 {
+  // FIXME: BROKEN
   dolfin_error("This function needs to be updated to the new format.");
   /*
   // Open file
@@ -138,49 +137,6 @@ void MFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(Function& u)
-{
-  // Write mesh the first time
-  if ( u.number() == 0 )
-    *this << u.mesh();
-  
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
-  
-  // Move old vector into list if we are saving a new value
-  if ( u.number() == 1 ) {
-    fprintf(fp, "tmp = %s;\n", u.name().c_str());
-    fprintf(fp, "clear %s\n", u.name().c_str());
-    fprintf(fp, "%s{1} = tmp;\n", u.name().c_str());
-    fprintf(fp, "clear tmp\n\n");
-  }
-
-  // Write vector
-  if ( u.number() == 0 )
-  {
-    fprintf(fp, "%s = [", u.name().c_str());
-    for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.15f", u(*n));
-    fprintf(fp, " ]';\n\n");
-  }
-  else
-  {
-    fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
-    for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.15f", u(*n));
-    fprintf(fp, " ]';\n\n");
-  }
-  
-  // Close file
-  fclose(fp);
-  
-  // Increase the number of times we have saved the function
-  ++u;
-
-  cout << "Saved function " << u.name() << " (" << u.label()
-       << ") to file " << filename << " in Octave/Matlab format." << endl;
-}
-//-----------------------------------------------------------------------------
 void MFile::operator<<(NewFunction& u)
 {
   // Write mesh the first time
@@ -274,6 +230,10 @@ void MFile::operator<< (NewSample& sample)
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
+/*
+
+FIXME: BROKEN
+
 void MFile::operator<<(Function::Vector& u)
 {
   // Assume mesh is the same for all components
@@ -296,7 +256,7 @@ void MFile::operator<<(Function::Vector& u)
 
   // Write vector
   if ( u(0).number() == 0 ) {
-    fprintf(fp, "%s = [", u(0).name().c_str());
+  fprintf(fp, "%s = [", u(0).name().c_str());
     for(int i = 0; i < u.size(); i++)
     { 
       for (NodeIterator n(u(0).mesh()); !n.end(); ++n)
@@ -326,3 +286,4 @@ void MFile::operator<<(Function::Vector& u)
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
+*/

@@ -44,16 +44,6 @@ void GenericFile::operator>>(Mesh& mesh)
   read_not_impl("Mesh");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator>>(Function& u)
-{
-  read_not_impl("Function");
-}
-//-­---------------------------------------------------------------------------
-void GenericFile::operator>>(Function::Vector& u)
-{
-  read_not_impl("Function::Vector");
-}
-//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(NewFunction& u)
 {
   read_not_impl("NewFunction");
@@ -87,16 +77,6 @@ void GenericFile::operator<<(Matrix& A)
 void GenericFile::operator<<(Mesh& mesh)
 {
   write_not_impl("Mesh");
-}
-//-­---------------------------------------------------------------------------
-void GenericFile::operator<<(Function& u)
-{
-  write_not_impl("Function");
-}
-//-­---------------------------------------------------------------------------
-void GenericFile::operator<<(Function::Vector& u)
-{
-  write_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(NewFunction& u)

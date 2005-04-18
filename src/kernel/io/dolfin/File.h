@@ -1,19 +1,19 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __FILE_H
 #define __FILE_H
 
 #include <string>
-#include <dolfin/Function.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Vector;
   class Matrix;
   class Mesh;
-  class Function;
-  class Function::Vector;
   class NewFunction;
   class Sample;
   class NewSample;
@@ -34,8 +34,6 @@ namespace dolfin {
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
-    void operator>> (Function& u);
-    void operator>> (Function::Vector& u);
     void operator>> (NewFunction& u);
     void operator>> (Sample& sample);
     void operator>> (NewSample& sample);
@@ -46,8 +44,6 @@ namespace dolfin {
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
-    void operator<< (Function& u);
-    void operator<< (Function::Vector& u);
     void operator<< (NewFunction& u);
     void operator<< (Sample& sample);
     void operator<< (NewSample& sample);

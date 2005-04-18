@@ -7,15 +7,13 @@
 #define __GENERIC_FILE_H
 
 #include <string>
-#include <dolfin/Function.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Vector;
   class Matrix;
   class Mesh;
-  class Function;
-  class Function::Vector;
   class NewFunction;
   class Sample;
   class NewSample;
@@ -32,8 +30,6 @@ namespace dolfin {
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
-    virtual void operator>> (Function& u);
-    virtual void operator>> (Function::Vector& u);
     virtual void operator>> (NewFunction& u);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (NewSample& sample);
@@ -44,8 +40,6 @@ namespace dolfin {
     virtual void operator<< (Vector& x);
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
-    virtual void operator<< (Function& u);
-    virtual void operator<< (Function::Vector& u);
     virtual void operator<< (NewFunction& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (NewSample& sample);

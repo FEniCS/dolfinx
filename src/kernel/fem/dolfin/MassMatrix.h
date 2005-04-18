@@ -2,7 +2,6 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/Matrix.h>
-#include <dolfin/PDE.h>
 
 namespace dolfin
 {
