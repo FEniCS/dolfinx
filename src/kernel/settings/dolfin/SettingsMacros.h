@@ -23,6 +23,9 @@ namespace dolfin {
   /// Get value of a parameter
   Parameter dolfin_get(const char* identifier);
 
+  /// Check if parameter has been changed
+  bool dolfin_parameter_changed(const char* identifier);
+  
   /// Load parameters from given file
   void dolfin_load(const char* filename);
 

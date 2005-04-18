@@ -177,15 +177,6 @@ public:
     return a*(sum0 + nu*sum1);
   }
 
-  // FIXME: Remove when working
-  real timestep(unsigned int i)
-  {
-    if ( i % 2 == 0 )
-      return default_timestep;
-    else
-      return default_timestep / 8.0;
-  }
-
 #ifdef DEBUG_BENCHMARK
   // Save solution  
   void save(NewSample& sample)
@@ -303,8 +294,7 @@ int main(int argc, const char* argv[])
 
 #ifdef COMPUTE_REFERENCE
   // Parameters for reference solution
-  dolfin_set("tolerance", 0.01);
-  dolfin_set("discrete tolerance", 1e-10);
+  dolfin_set("discrete tolerance", 1e-12);
   dolfin_set("fixed time step", true);
   dolfin_set("maximum iterations", 200);
   dolfin_set("progress step", 0.01);

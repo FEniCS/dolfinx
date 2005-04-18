@@ -15,10 +15,17 @@ TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
 {
   // Get tolerance
   const real TOL = dolfin_get("tolerance");
-  const real alpha = dolfin_get("discrete tolerance");
-  tol = alpha * TOL;
+  if ( dolfin_parameter_changed("discrete tolerance") )
+  {
+    tol = dolfin_get("discrete tolerance");
+  }
+  else
+  {
+    const real alpha = dolfin_get("discrete tolerance factor");
+    tol = alpha * TOL;
+  }
 
-  cout << "Using tolerance tol = " << tol << "." << endl;
+  cout << "Using discrete tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations
   maxiter = dolfin_get("maximum iterations");

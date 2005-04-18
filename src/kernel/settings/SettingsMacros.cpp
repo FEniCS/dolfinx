@@ -38,6 +38,11 @@ Parameter dolfin::dolfin_get(const char *identifier)
   return SettingsManager::settings.get(identifier);
 }
 //-----------------------------------------------------------------------------
+bool dolfin::dolfin_parameter_changed(const char* identifier)
+{
+  return SettingsManager::settings.changed(identifier);
+}
+//-----------------------------------------------------------------------------
 void dolfin::dolfin_load(const char* filename)
 {
   File file(filename);
