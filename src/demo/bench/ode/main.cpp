@@ -177,6 +177,15 @@ public:
     return a*(sum0 + nu*sum1);
   }
 
+  // FIXME: Remove when working
+  real timestep(unsigned int i)
+  {
+    if ( i % 2 == 0 )
+      return default_timestep;
+    else
+      return default_timestep / 8.0;
+  }
+
 #ifdef DEBUG_BENCHMARK
   // Save solution  
   void save(NewSample& sample)
@@ -315,6 +324,10 @@ int main(int argc, const char* argv[])
   dolfin_set("save solution", true);
 #endif
   
+  // FIXME: Remove when working
+  dolfin_set("save solution", true);
+  dolfin_set("progress step", 0.1);
+
   // Solve the wave equation
   WaveEquation wave(n);
   wave.solve();
