@@ -57,6 +57,9 @@ namespace dolfin
     /// Evaluate function at given node
     real operator() (const Node& node) const;
 
+    /// Evaluate function at given node
+    real operator() (const Node& node, uint i) const;
+
     /// Evaluate function at given point
     virtual real operator() (const Point& point) const;
 

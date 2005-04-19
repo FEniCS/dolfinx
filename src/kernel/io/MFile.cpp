@@ -7,6 +7,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/NewFunction.h>
 #include <dolfin/NewSample.h>
+#include <dolfin/NewFiniteElement.h>
 #include <dolfin/MFile.h>
 
 using namespace dolfin;
@@ -139,6 +140,20 @@ void MFile::operator<<(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MFile::operator<<(NewFunction& u)
 {
+  uint ncomponents = 0;
+  const NewFiniteElement& element = u.element();
+
+  if ( element.rank() == 0 )
+  {
+    ncomponents = 1;
+  }
+  else if ( element.rank() == 1 )
+  {
+    ncomponents = element.tensordim(0);
+  }
+  else
+    dolfin_error("Cannot handle tensor valued functions.");
+
   // Write mesh the first time
   if ( u.number() == 0 )
     *this << u.mesh();
@@ -158,15 +173,23 @@ void MFile::operator<<(NewFunction& u)
   if ( u.number() == 0 )
   {
     fprintf(fp, "%s = [", u.name().c_str());
-    for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.15f", u(*n));
+    for(unsigned int i = 0; i < ncomponents; i++)
+    { 
+      for (NodeIterator n(u.mesh()); !n.end(); ++n)
+	fprintf(fp, " %.15f", u(*n, i));
+      fprintf(fp, ";");
+    }
     fprintf(fp, " ]';\n\n");
   }
   else
   {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
-    for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      fprintf(fp, " %.15f", u(*n));
+    for(unsigned int i = 0; i < ncomponents; i++)
+    { 
+      for (NodeIterator n(u.mesh()); !n.end(); ++n)
+	fprintf(fp, " %.15f", u(*n, i));
+      fprintf(fp, ";");
+    }
     fprintf(fp, " ]';\n\n");
   }
   

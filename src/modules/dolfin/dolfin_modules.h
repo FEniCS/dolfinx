@@ -7,5 +7,6 @@
 #include <dolfin/NewSolver.h>
 #include <dolfin/dolfin_poisson.h>
 #include <dolfin/dolfin_convdiff.h>
+#include <dolfin/dolfin_elasticity.h>
 
 #endif

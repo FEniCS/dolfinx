@@ -8,11 +8,15 @@
 name = "Elasticity"
 element = FiniteElement("Lagrange", "tetrahedron", 1, 3)
 
+c1 = Constant()	# Lame coefficient
+c2 = Constant()	# Lame coefficient
+
 u = BasisFunction(element)
 v = BasisFunction(element)
 
 i = Index()
 j = Index()
 
-a = ((u[i].dx(j) + u[j].dx(i)) * (v[i].dx(j) + v[j].dx(i))) * dx
-#a = ((v[i].dx(j) + v[j].dx(i)) * (u[i].dx(j) + u[j].dx(i))) * dx
+#a = ((u[i].dx(j) + u[j].dx(i)) * (v[i].dx(j) + v[j].dx(i))) * dx
+a = ((c1 * u[i].dx(i) + 2 * c2 * (u[i].dx(j) + u[j].dx(i))) *
+	(v[i].dx(j) + v[j].dx(i))) * dx

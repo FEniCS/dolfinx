@@ -41,14 +41,11 @@ void NewFEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   A.init(N, N, 1);
   A = 0.0;
 
-  // Debug
-  //   A.apply();
-  //   cout << "A inside:" << endl;
-  //   A.disp();
-  
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    //cout << "cell: " << (*cell).id() << endl;
+
     // Update form
     a.update(*cell);
     
@@ -147,10 +144,6 @@ void NewFEM::assemble(BilinearForm& a, LinearForm& L,
   b.init(N);
   b = 0.0;
   
-  // Debug
-  //   cout << "A inside:" << endl;
-  //   A.disp();
-  
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -229,7 +222,7 @@ void NewFEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   BoundaryValue bv;
 
   // Allocate list of rows
-  int* rows = new int[boundary.noNodes()];
+  int* rows = new int[bc.noComp() * boundary.noNodes()];
 
   // Iterate over all nodes on the boundary
   uint m = 0;
@@ -245,7 +238,7 @@ void NewFEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
 	{
-	  uint dof = node->id();
+	  uint dof = c * mesh.noNodes() + node->id();
 	  rows[m++] = dof;
 	  b(dof) = bv.value;
 	}
@@ -257,5 +250,16 @@ void NewFEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
 
   // Delete list of rows
   delete [] rows;
+}
+//-----------------------------------------------------------------------------
+void NewFEM::lump(Matrix& M, Vector& m)
+{
+  m.init(M.size(0));
+
+  Vector one(m);
+  
+  one = 1.0;
+
+  M.mult(one, m);
 }
 //-----------------------------------------------------------------------------

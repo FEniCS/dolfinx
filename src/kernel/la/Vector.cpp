@@ -36,6 +36,14 @@ Vector::Vector(Vec x) : x(x), copy(true)
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
+Vector::Vector(const Vector& v) : x(0), copy(false)
+{
+  // Initialize PETSc 
+  PETScManager::init();
+
+  *this = v;
+}
+//-----------------------------------------------------------------------------
 Vector::~Vector()
 {
   clear();

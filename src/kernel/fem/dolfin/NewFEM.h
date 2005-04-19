@@ -49,6 +49,12 @@ namespace dolfin
     static void setBC(Matrix& A, Vector& b, Mesh& mesh,
 		      NewBoundaryCondition& bc);
 
+    // Utility functions
+
+    /// Lump matrix
+    static void lump(Matrix& M, Vector& m);
+
+
   private:
 
     // Count the degrees of freedom

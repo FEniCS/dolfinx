@@ -102,6 +102,21 @@ real NewFunction::operator() (const Node& node) const
   }
 }
 //-----------------------------------------------------------------------------
+real NewFunction::operator() (const Node& node, uint i) const
+{
+  if ( _x )
+  {
+    // FIXME: This is just a temporary fix for P1 elements
+
+    dolfin_assert(_mesh);
+    return (*_x)(i * _mesh->noNodes() + node.id());
+  }
+  else
+  {
+    return (*this)(node.coord(), i);
+  }
+}
+//-----------------------------------------------------------------------------
 real NewFunction::operator()(const Point& point) const
 {
   dolfin_error("User-defined function evaluation not implemented.");

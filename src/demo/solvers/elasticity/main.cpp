@@ -5,83 +5,81 @@
 
 using namespace dolfin;
 
-// Source term
-real f(real x, real y, real z, real t, int i)
+// Right-hand side
+class Source : public NewFunction
 {
-  if(i == 0)
+  real operator() (const Point& p, unsigned int i) const
   {
-    if(t > 0.0 && t < 0.5 && x > 0.99)
-    {
-      return -10.0;
-    }
-    else if(t > 0.0 && t < 0.5 && x < 0.01)
-    {
-      return 10.0;
-    }
+//     if(i == 0)
+//     {
+//       if(time() >= 0.0 && time() < 0.5 && p.x > 0.99)
+//       {
+// 	return -20.0;
+//       }
+//       else if(time() >= 0.0 && time() < 0.5 && p.x < 0.01)
+//       {
+// 	return 20.0;
+//       }
+//     }
+//     else
+//     {
+//       return 0.0;
+//     }
+//     return 0.0;
+    if(i == 1)
+      return -2.0;
+    else
+      return 0.0;
+  }
+};
+
+// Boundary condition
+class MyBC : public NewBoundaryCondition
+{
+public:
+  MyBC::MyBC() : NewBoundaryCondition(3)
+  {
   }
 
-
-  return 0.0;
-}
-
-// Boundary conditions
-void mybc(BoundaryCondition& bc)
-{
-  //bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
-  
-  /*
-  if ( bc.coord().x == 0.0 )
+  const BoundaryValue operator() (const Point& p, int i)
   {
-    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
-    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
-    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 2);
-  }
-  */
-    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 0);
-    //bc.set(BoundaryCondition::DIRICHLET, 0.0, 1);
+    BoundaryValue value;
 
-  /*
-  // u = 0 on the inflow boundary
-  if ( bc.coord().x == 0.0 )
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else if ( bc.coord().x == 1.0 )
-    bc.set(BoundaryCondition::DIRICHLET, 0.0);
-  else if ( bc.coord().y == 0.0)
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else if ( bc.coord().y == 1.0 )
-    bc.set(BoundaryCondition::NEUMANN, 0.0);
-  else
-    bc.set(BoundaryCondition::DIRICHLET, 1.0);
-  */
-}
+    if ( p.x == 0.0 )
+    {
+      value.set(0.0);
+    }    
+
+    return value;
+  }
+};
 
 int main(int argc, char **argv)
 {
-  dolfin_set("output", "plain text");
+  dolfin_output("plain text");
 
-  //Mesh mesh("dolfin.xml.gz");
-  //Mesh mesh("dolfin.xml.gz");
-  //Mesh mesh("trimesh-16.xml.gz");
-  //Mesh mesh("trimesh-2.xml.gz");
-  //Mesh mesh("trimesh-4.xml.gz");
-  //Mesh mesh("trimesh-64.xml.gz");
-  //Mesh mesh("trimesh-32.xml.gz");
+  //Mesh mesh("tetmesh-16.xml.gz");
+  //Mesh mesh("mymesh.xml.gz");
 
-  //Mesh mesh("tetmesh-4.xml.gz");
-  //Mesh mesh("tetmesh-8.xml.gz");
+  //File meshfile("mymesh.xml.gz");
 
-  Mesh mesh("unitcube0.xml.gz");
+  Mesh mesh("tetmesh-4.xml.gz");
+  //Mesh mesh("minimal.xml.gz");
 
-  /*
-  Problem elasticity("elasticity", mesh);
+  //mesh.refineUniformly();
+  
+  //meshfile << mesh;
 
-  elasticity.set("source", f);
-  elasticity.set("boundary condition", mybc);
-  elasticity.set("final time", 2.0);
-  elasticity.set("time step", 0.1);
+  //return 0;
 
-  elasticity.solve();
-  */
+//   mesh.refineUniformly();
+//   mesh.refineUniformly();
+//   mesh.refineUniformly();
+
+  Source f;
+  MyBC bc;
+
+  ElasticitySolver::solve(mesh, f, bc);
 
   return 0;
 }

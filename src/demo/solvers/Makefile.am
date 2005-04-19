@@ -1,5 +1,4 @@
-SUBDIRS = ode poisson convdiff
-# elasticity \
+SUBDIRS = ode poisson convdiff elasticity
 # elasticity-stationary \
 # elasticity-updated \
 # euler \

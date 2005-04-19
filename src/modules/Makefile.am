@@ -1,7 +1,7 @@
 SUBDIRS = dolfin \
           poisson \
-          convdiff
-#          elasticity \
+          convdiff \
+          elasticity
 #          elasticity-stationary \
 #          elasticity-updated \
 #          euler \

@@ -140,7 +140,7 @@ fi
 
 # List of DOLFIN module libraries
 # FIXME: Rename when old modules are removed
-DOLFIN_MODULES_NEW="poisson convdiff"
+DOLFIN_MODULES_NEW="poisson convdiff elasticity"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la log main math mesh ode quadrature settings common"
@@ -230,6 +230,8 @@ AC_OUTPUT( Makefile \
            src/modules/poisson-multigrid/Makefile \
            src/modules/convdiff/Makefile \
            src/modules/convdiff/dolfin/Makefile \
+           src/modules/elasticity/Makefile \
+           src/modules/elasticity/dolfin/Makefile \
            src/modules/euler/Makefile \
            src/modules/heat/Makefile \
            src/modules/heat/dolfin/Makefile \
@@ -238,7 +240,6 @@ AC_OUTPUT( Makefile \
            src/modules/odesolver/Makefile \
            src/modules/wave/Makefile \
            src/modules/wave-vector/Makefile \
-           src/modules/elasticity/Makefile \
            src/modules/elasticity-stationary/Makefile \
            src/modules/elasticity-updated/Makefile \
            src/config/Makefile \
