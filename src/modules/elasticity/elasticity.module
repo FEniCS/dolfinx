@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "elasticity"
-KEYWORD  = "elasticity"
-SOLVER   = "ElasticitySolver"
-NEEDS    = "mesh"

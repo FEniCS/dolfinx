@@ -50,6 +50,12 @@ real NewcGqMethod::timestep(real r, real tol, real kmax) const
   return pow(tol / fabs(r), 1.0 / static_cast<real>(q));
 }
 //-----------------------------------------------------------------------------
+real NewcGqMethod::error(real k, real r) const
+{
+  // FIXME: Missing interpolation constant
+  return pow(k, static_cast<real>(q)) * r;
+}
+//-----------------------------------------------------------------------------
 void NewcGqMethod::disp() const
 {
   dolfin_info("Data for the cG(%d) method", q);

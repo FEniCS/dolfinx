@@ -139,37 +139,27 @@ else
 fi
 
 # List of DOLFIN module libraries
-# FIXME: Rename when old modules are removed
-DOLFIN_MODULES_NEW="poisson convdiff elasticity"
+DOLFIN_MODULES="poisson convdiff elasticity"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la log main math mesh ode quadrature settings common"
 
-# Find modules
-#cd src/modules
-#./scanmodules.sh
-#cd ../..
-#DOLFIN_MODULES=""
-#for l in `cat src/modules/modules.list | grep -v "#"`; do
-#    DOLFIN_MODULES="$DOLFIN_MODULES$l "
-#done
-
 # Generate include path for kernel
 KERNEL_CFLAGS=""
-DOLFIN_MAIN="main"
-DIRS="$DOLFIN_MAIN $DOLFIN_KERNEL"
-KERNEL_CFLAGS="-I\$(top_builddir)/src/modules "
-for f in $DIRS; do
-    KERNEL_CFLAGS="$KERNEL_CFLAGS-I\$(top_builddir)/src/kernel/$f "
+for f in $DOLFIN_KERNEL; do
+    KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
 KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
+# Generate include path for modules
+MODULE_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/modules/"
+AC_SUBST(MODULE_CFLAGS)
+
 # Generate include path for main (including also module code)
 MAIN_CFLAGS=""
-DIRS="$DOLFIN_MODULES_NEW"
-for f in $DIRS; do
-    MAIN_CFLAGS="$MAIN_CFLAGS-I\$(top_builddir)/src/modules/$f "
+for f in $DOLFIN_MODULES; do
+    MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
 done
 MAIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
 AC_SUBST(MAIN_CFLAGS)
@@ -177,9 +167,9 @@ AC_SUBST(MAIN_CFLAGS)
 # Generate library list for linking in the correct order.
 # FIXME: Not very pretty to list the libraries multiple times
 DOLFIN_LIBS=""
-DIRS="$DOLFIN_MAIN $DOLFIN_MODULES_NEW $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
+DIRS="$DOLFIN_MODULES $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
 for f in $DIRS; do
-    DOLFIN_LIBS="$DOLFIN_LIBS-ldolfin-$f "
+    DOLFIN_LIBS="$DOLFIN_LIBS -ldolfin-$f"
 done
 DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
 AC_SUBST(DOLFIN_LIBS)
@@ -224,7 +214,6 @@ AC_OUTPUT( Makefile \
            src/kernel/settings/dolfin/Makefile \
            src/modules/Makefile \
            src/modules/dolfin/Makefile \
-           src/modules/template/Makefile \
            src/modules/poisson/Makefile \
            src/modules/poisson/dolfin/Makefile \
            src/modules/poisson-multigrid/Makefile \
@@ -232,16 +221,11 @@ AC_OUTPUT( Makefile \
            src/modules/convdiff/dolfin/Makefile \
            src/modules/elasticity/Makefile \
            src/modules/elasticity/dolfin/Makefile \
-           src/modules/euler/Makefile \
            src/modules/heat/Makefile \
            src/modules/heat/dolfin/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/navierstokes/dolfin/Makefile \
-           src/modules/odesolver/Makefile \
            src/modules/wave/Makefile \
-           src/modules/wave-vector/Makefile \
-           src/modules/elasticity-stationary/Makefile \
-           src/modules/elasticity-updated/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \

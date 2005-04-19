@@ -72,6 +72,9 @@ namespace dolfin
     /// Compute new time step based on the given residual
     virtual real timestep(real r, real tol, real kmax) const = 0;
 
+    /// Compute error estimate (modulo stability factor)
+    virtual real error(real k, real r) const = 0;
+    
     /// Display method data
     virtual void disp() const = 0;
 

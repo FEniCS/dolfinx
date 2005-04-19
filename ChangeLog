@@ -1,8 +1,11 @@
+ - Move elasticity module to new system based on FFC
+ - Add boundary conditions for systems
+ - Improve regulation of time steps
  - Clean out old assembly classes
  - Clean out old form classes
  - Remove kernel module map
  - Remove kernel module element
- - Move convection-diffusion module to new system base on FFC
+ - Move convection-diffusion module to new system based on FFC
  - Add iterators for cell neighbors of edges and faces
  - Implement polynomial for of CES economy
  - Rename all new linear algebra classes: NewFoo --> Foo

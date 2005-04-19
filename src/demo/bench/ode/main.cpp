@@ -9,7 +9,7 @@
 #include <dolfin.h>
 
 //#define DEBUG_BENCHMARK 1
-#define COMPUTE_REFERENCE 1
+//#define COMPUTE_REFERENCE 1
 
 using namespace dolfin;
 
@@ -25,10 +25,10 @@ public:
     c = 0.5;
 
     h = 1.0 / static_cast<real>(n);
-    a = c*c / (h*h);
+    a = 1.0 / (h*h);
     w = 10 * h;
 
-    nu = 0.002;
+    nu = 0.0005;
 
     setSparsity();
 
@@ -143,7 +143,7 @@ public:
       if ( jx < n ) sum1 += u[i + 1];
       if ( jy < n ) sum1 += u[i + m];
       
-      y[i] = a*(sum0 + nu*sum1);
+      y[i] = a*(c*c*sum0 + nu*sum1);
     }
   }
 
@@ -174,7 +174,7 @@ public:
     if ( jx < n ) sum1 += u[i + 1];
     if ( jy < n ) sum1 += u[i + m];
     
-    return a*(sum0 + nu*sum1);
+    return a*(c*c*sum0 + nu*sum1);
   }
 
 #ifdef DEBUG_BENCHMARK
@@ -218,7 +218,7 @@ public:
   }  
 #endif
 
-#ifdef COMPUTE_REFERENCE
+  //#ifdef COMPUTE_REFERENCE
   virtual bool update(const real u[], real t, bool end)
   {
     if ( !end )
@@ -237,7 +237,7 @@ public:
 
     return true;
   }
-#endif
+  //#endif
 
 private:
 
@@ -263,14 +263,15 @@ private:
 int main(int argc, const char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 5 )
+  if ( argc != 6 )
   {
-    dolfin_info("Usage: dolfin-bench-ode method order n k");
+    dolfin_info("Usage: dolfin-bench-ode method order n k TOL");
     dolfin_info("");
     dolfin_info("method - 'cg', 'dg', 'mcg' or 'mdg'");
     dolfin_info("order  - q, as in cG(q) or dG(q)");
     dolfin_info("n      - number of cells in each dimension");
-    dolfin_info("k      - time step for reference solution");
+    dolfin_info("k      - initial time step");
+    dolfin_info("TOL    - tolerance");
     return 1;
   }
   const char* method = argv[1];
@@ -283,6 +284,9 @@ int main(int argc, const char* argv[])
   const real k = static_cast<real>(atof(argv[4]));
   if ( k <= 0.0 )
     dolfin_error("Time step must be positive.");
+  const real TOL = static_cast<real>(atof(argv[5]));
+  if ( TOL <= 0.0 )
+    dolfin_error("Tolerance must be positive.");
 
   // Common parameters
   dolfin_set("method", method);
@@ -300,23 +304,29 @@ int main(int argc, const char* argv[])
   dolfin_set("progress step", 0.01);
 #else
   // Parameters for benchmarks
-  dolfin_set("tolerance", 0.01);
-  dolfin_set("discrete tolerance", 1e-6);
-  dolfin_set("fixed time step", true);
-  //dolfin_set("maximum time step", 1e-3);
-  //dolfin_set("initial time step", 1e-3);
-  //dolfin_set("partitioning threshold", 0.5);
+  dolfin_set("tolerance", TOL);
+  dolfin_set("discrete tolerance", 1e-10);
+  dolfin_set("maximum time step", 1.0 / static_cast<real>(n));
+  
+  dolfin_set("save solution", true);
+  dolfin_set("adaptive samples", true);
+  //dolfin_set("monitor convergence", true);
+  //dolfin_set("fixed time step", true);
+  dolfin_set("partitioning threshold", 0.5);
+  //dolfin_set("time step conservation", 5.0);
 #endif
   
 #ifdef DEBUG_BENCHMARK
   // Parameters for debug (save solution)
-  dolfin_set("number of samples", 20);
+  dolfin_set("number of samples", 10);
   dolfin_set("save solution", true);
 #endif
-  
+
   // FIXME: Remove when working
-  dolfin_set("save solution", true);
-  dolfin_set("progress step", 0.1);
+  //dolfin_set("save solution", true);
+  //dolfin_set("progress step", 0.1);
+  //dolfin_set("fixed time step", false);
+  //dolfin_set("tolerance", k);
 
   // Solve the wave equation
   WaveEquation wave(n);

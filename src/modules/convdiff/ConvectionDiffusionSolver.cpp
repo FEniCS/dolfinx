@@ -23,14 +23,13 @@ void ConvectionDiffusionSolver::solve()
 {
   real t = 0.0;  // current time
   real T = 1.0;  // final time
-  real k = 0.01; // time step
+  real k = 0.1;  // time step
   real c = 0.1;  // diffusion
 
   Matrix A;                 // matrix defining linear system
   Vector x0, x1, b;         // vectors 
   GMRES solver;             // linear system solver
   NewFunction u0(x0, mesh); // function at left end-point
-  NewFunction u1(x1, mesh); // function at right end-point
   File file("convdiff.m");  // file for saving solution
 
   // Create variational forms
@@ -42,6 +41,7 @@ void ConvectionDiffusionSolver::solve()
 
   // FIXME: Temporary fix
   x1.init(mesh.noNodes());
+  NewFunction u1(x1, mesh, a.trial());
 
   // Start time-stepping
   Progress p("Time-stepping");

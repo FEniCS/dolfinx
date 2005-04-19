@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "template"
-KEYWORD  = "my problem"
-SOLVER   = "TemplateSolver"
-NEEDS    = "mesh"

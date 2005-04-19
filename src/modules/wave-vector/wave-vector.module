@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "wave-vector"
-KEYWORD  = "wave-vector"
-SOLVER   = "WaveVectorSolver"
-NEEDS    = "mesh"

@@ -17,7 +17,6 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/MultiAdaptivePreconditioner.h \
              dolfin/MultiAdaptiveTimeSlab.h \
              dolfin/MultiAdaptivity.h \
-             dolfin/NewAdaptivity.h \
              dolfin/NewcGqMethod.h \
              dolfin/NewdGqMethod.h \
              dolfin/NewMethod.h \

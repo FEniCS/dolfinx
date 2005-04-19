@@ -66,6 +66,7 @@ namespace dolfin
       add(Parameter::REAL, "maximum time step", 0.1);
       add(Parameter::REAL, "partitioning threshold", 0.5);
       add(Parameter::REAL, "interval threshold", 0.9);
+      add(Parameter::REAL, "time step conservation", 5.0);
       add(Parameter::REAL, "sparsity check increment", 0.01);
       add(Parameter::REAL, "maximum divergence", 10.0);
       add(Parameter::REAL, "maximum convergence", 0.75);
@@ -80,12 +81,12 @@ namespace dolfin
       // FIXME: Temporary until we get ODE functions working
       add(Parameter::STRING, "file name", "primal.m");
 
-      // Parameters for multgrid solver
+      // Parameters for multgrid solver (multigrid solver currently broken)
 
-      add(Parameter::REAL, "multigrid tolerance", 1.0e-10);
-      add(Parameter::INT,  "multigrid pre-smoothing", 9);
-      add(Parameter::INT,  "multigrid post-smoothing", 9);
-      add(Parameter::INT,  "multigrid iterations", 100);
+      //add(Parameter::REAL, "multigrid tolerance", 1.0e-10);
+      //add(Parameter::INT,  "multigrid pre-smoothing", 9);
+      //add(Parameter::INT,  "multigrid post-smoothing", 9);
+      //add(Parameter::INT,  "multigrid iterations", 100);
 
       // Parameters for homotopy solver
       add(Parameter::REAL, "homotopy divergence tolerance", 10.0);

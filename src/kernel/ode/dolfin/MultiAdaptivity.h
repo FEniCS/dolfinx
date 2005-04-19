@@ -58,6 +58,12 @@ namespace dolfin
     // Threshold for reaching end of interval
     real beta;
 
+    // Time step conservation
+    real w;
+
+    // Updated margin for tolerance
+    real margin;
+
   };
 
 }

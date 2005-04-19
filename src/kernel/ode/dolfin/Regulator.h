@@ -28,7 +28,7 @@ namespace dolfin
     void init(real k);
 
     /// Update time step (set new desired value)
-    void update(real k, real kmax, bool kfixed);
+    void update(real k, real kmax, real w, bool kfixed);
 
     /// Update maximum time step
     void update(real kmax);

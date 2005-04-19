@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "odesolver"
-KEYWORD  = "ode"
-SOLVER   = "ODESolverWrapper"
-NEEDS    = "ode"

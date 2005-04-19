@@ -54,6 +54,12 @@ real NewdGqMethod::timestep(real r, real tol, real kmax) const
   return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
 }
 //-----------------------------------------------------------------------------
+real NewdGqMethod::error(real k, real r) const
+{
+  // FIXME: Missing jump term and interpolation constant
+  return pow(k, static_cast<real>(q)) * r;
+}
+//-----------------------------------------------------------------------------
 void NewdGqMethod::disp() const
 {
   dolfin_info("Data for the dG(%d) method", q);

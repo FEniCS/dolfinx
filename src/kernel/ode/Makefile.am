@@ -2,7 +2,6 @@ SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/NewcGqMethod.h \
                           dolfin/NewdGqMethod.h \
-                          dolfin/NewAdaptivity.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
                           dolfin/Dependencies.h \
@@ -37,7 +36,6 @@ INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
 libdolfin_ode_a_SOURCES = NewcGqMethod.cpp \
                           NewdGqMethod.cpp \
-                          NewAdaptivity.cpp \
                           Alloc.cpp \
                           ComplexODE.cpp \
                           Dependencies.cpp \

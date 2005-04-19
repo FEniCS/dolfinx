@@ -24,7 +24,6 @@
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptivity.h>
-#include <dolfin/NewAdaptivity.h>
 #include <dolfin/NewcGqMethod.h>
 #include <dolfin/NewdGqMethod.h>
 #include <dolfin/NewMethod.h>

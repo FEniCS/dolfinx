@@ -67,9 +67,9 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
 {
-  // cout << "Multi-adaptive time slab: building between "
-  //      << a << " and " << b << endl;
-
+  //cout << "Multi-adaptive time slab: building between "
+  //     << a << " and " << b << endl;
+  
   // Allocate data
   allocData(a, b);
 
@@ -126,7 +126,7 @@ bool MultiAdaptiveTimeSlab::shift()
     const int j = e * method->nsize();
     u[i] = jx[j + method->nsize() - 1];
   }
-
+  
   // Compute residual and new time step for each component
   for (uint i = 0; i < N; i++)
   {
@@ -151,7 +151,7 @@ bool MultiAdaptiveTimeSlab::shift()
 
     // Compute residual
     const real r = method->residual(x0, jx + j, f, k);
-
+    
     // Update adaptivity
     adaptivity.update(i, r, *method);
 
@@ -159,7 +159,7 @@ bool MultiAdaptiveTimeSlab::shift()
     if ( method->type() == NewMethod::cG )
       f0[i] = f;
   }
-
+  
   // Let user update ODE
   const bool end = (_b + DOLFIN_EPS) > ode.T;
   if ( !ode.update(u, _b, end) )
