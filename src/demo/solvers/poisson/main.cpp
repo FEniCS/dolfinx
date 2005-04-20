@@ -31,17 +31,6 @@ class MyFunction : public NewFunction
   }
 };
 
-// Right-hand side
-class MyVectorFunction : public NewFunction
-{
-  real operator() (const Point& p, int i) const
-  {
-    if (i==0) return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
-    if (i==1) return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
-    dolfin_error("Wrong vector component index");
-  }
-};
-
 // Boundary condition
 class MyBC : public NewBoundaryCondition
 {
@@ -51,26 +40,6 @@ class MyBC : public NewBoundaryCondition
     if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
       value.set(0.0);
     
-    return value;
-  }
-};
-
-// Boundary condition
-class MyVectorBC : public NewBoundaryCondition
-{
-  const BoundaryValue operator() (const Point& p, int i)
-  {
-    BoundaryValue value;
-    if (i==0){
-      if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
-	value.set(0.0);
-    } else if (i==1){
-      if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
-	value.set(0.0);
-    } else{
-      dolfin_error("Wrong vector component index");
-    }
-
     return value;
   }
 };
