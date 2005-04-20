@@ -27,7 +27,7 @@ class Source : public NewFunction
 //     }
 //     return 0.0;
     if(i == 1)
-      return -8.0;
+      return -2.0;
     else
       return 0.0;
   }
@@ -63,7 +63,13 @@ int main(int argc, char **argv)
   Source f;
   MyBC bc;
 
-  ElasticitySolver::solve(mesh, f, bc);
+  real T = 5.0;  // final time
+  real k = 0.01; // time step
+
+  real E = 10.0; // Young's modulus
+  real nu = 0.3; // Poisson's ratio
+
+  ElasticitySolver::solve(mesh, f, E, nu, bc, k, T);
 
   return 0;
 }

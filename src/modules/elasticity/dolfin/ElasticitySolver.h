@@ -13,20 +13,26 @@ namespace dolfin {
   public:
     
     // Create elasticity solver
-    ElasticitySolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc);
+    ElasticitySolver(Mesh& mesh, NewFunction& f, real E, real nu,
+		     NewBoundaryCondition& bc, real k, real T);
     
     // Solve elasticity
     void solve();
     
     // Solve elasticity (static version)
-    static void solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc);
+    static void solve(Mesh& mesh, NewFunction& f, real E, real nu,
+		      NewBoundaryCondition& bc, real k, real T);
     
   private:
     
     Mesh& mesh;
     NewFunction& f;
+    real E;
+    real nu;
     NewBoundaryCondition& bc;
-    
+    real k;
+    real T;
+
   };
   
 }

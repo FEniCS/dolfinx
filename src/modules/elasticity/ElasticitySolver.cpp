@@ -12,9 +12,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ElasticitySolver::ElasticitySolver(Mesh& mesh, 
-				   NewFunction &f,
-				   NewBoundaryCondition& bc)
-  : mesh(mesh), f(f), bc(bc)
+				   NewFunction &f, real E, real nu,
+				   NewBoundaryCondition& bc,
+				   real k, real T)
+  : mesh(mesh), f(f), E(E), nu(nu), bc(bc), k(k), T(T)
 {
   // Do nothing
 }
@@ -22,11 +23,11 @@ ElasticitySolver::ElasticitySolver(Mesh& mesh,
 void ElasticitySolver::solve()
 {
   real t = 0.0;  // current time
-  real T = 5.0;  // final time
-  real k = 0.01; // time step
+//   real T = 5.0;  // final time
+//   real k = 0.01; // time step
 
-  real E = 10.0;
-  real nu = 0.3;
+//   real E = 10.0;
+//   real nu = 0.3;
   
   real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
   real mu = E / (2 * (1 + nu));
@@ -212,9 +213,11 @@ void ElasticitySolver::solve()
 //-----------------------------------------------------------------------------
 void ElasticitySolver::solve(Mesh& mesh,
 			     NewFunction& f,
-			     NewBoundaryCondition& bc)
+			     real E, real nu,
+			     NewBoundaryCondition& bc,
+			     real k, real T)
 {
-  ElasticitySolver solver(mesh, f, bc);
+  ElasticitySolver solver(mesh, f, E, nu, bc, k, T);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
