@@ -120,7 +120,7 @@ AC_CHECK_PROG(mpi_found, mpirun, yes, no)
 if test $mpi_found = yes; then
     # FIXME: Do correct test
     DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
-    if [ test -d $DIR ]; then
+    if [ test -d $DIR/mpi ]; then
        MPI_CFLAGS="-I$DIR/mpi"
     else
        MPI_CFLAGS="-I$DIR"
