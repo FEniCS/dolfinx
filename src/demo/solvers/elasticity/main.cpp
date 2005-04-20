@@ -27,7 +27,7 @@ class Source : public NewFunction
 //     }
 //     return 0.0;
     if(i == 1)
-      return -2.0;
+      return -8.0;
     else
       return 0.0;
   }
