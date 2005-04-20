@@ -119,8 +119,13 @@ fi
 AC_CHECK_PROG(mpi_found, mpirun, yes, no)
 if test $mpi_found = yes; then
     # FIXME: Do correct test
-    MPI_CFLAGS=`which mpirun | sed 's/bin\/mpirun/include\/mpi/'`
-    echo "MPI_CFLAGS="$MPI_CFLAGS
+    DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
+    if [ test -d $DIR ]; then
+       MPI_CFLAGS="-I$DIR/mpi"
+    else
+       MPI_CFLAGS="-I$DIR"
+    fi
+    echo "MPI CFLAGS=$MPI_CFLAGS"
     AC_SUBST(MPI_CFLAGS)
 else
     echo "*** Unable to find MPI on your system."
