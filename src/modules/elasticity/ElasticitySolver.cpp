@@ -152,32 +152,8 @@ void ElasticitySolver::solve()
     // Set boundary conditions
     NewFEM::setBC(A, b, mesh, bc);
 
-//     cout << "b: " << endl;
-//     b.disp();
 
-    
-    // Implicit solver
-
-//     cout << "x11: " << endl;
-//     x11.disp();
-
-//     x11 = 1.0;
-
-//     // Solve the linear system
-//     solver.solve(A, x11, b);
-
-//     cout << "x11: " << endl;
-//     x11.disp();
-
-//     x21 = x11;
-//     x21.axpy(-1, x10);
-//     x21 *= 1 / k;
-
-    
-    
-
-
-//     // Fixed point iteration
+    // Fixed point iteration
     
     for(int fpiter = 0; fpiter < 50; fpiter++)
     {

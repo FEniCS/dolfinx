@@ -58,23 +58,7 @@ int main(int argc, char **argv)
 {
   dolfin_output("plain text");
 
-  //Mesh mesh("tetmesh-16.xml.gz");
-  //Mesh mesh("mymesh.xml.gz");
-
-  //File meshfile("mymesh.xml.gz");
-
   Mesh mesh("tetmesh-4.xml.gz");
-  //Mesh mesh("minimal.xml.gz");
-
-  //mesh.refineUniformly();
-  
-  //meshfile << mesh;
-
-  //return 0;
-
-//   mesh.refineUniformly();
-//   mesh.refineUniformly();
-//   mesh.refineUniformly();
 
   Source f;
   MyBC bc;
