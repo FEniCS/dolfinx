@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <dolfin.h>
 
-//#define DEBUG_BENCHMARK 1
+#define DEBUG_BENCHMARK 1
 //#define COMPUTE_REFERENCE 1
 
 using namespace dolfin;
@@ -307,12 +307,12 @@ int main(int argc, const char* argv[])
   // Parameters for benchmarks
   dolfin_set("tolerance", TOL);
   dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("partitioning threshold", 0.5);
   dolfin_set("maximum time step", 1.0 / static_cast<real>(n));
+  dolfin_set("partitioning threshold", 0.25);
   
-  dolfin_set("save solution", true);
+  //dolfin_set("save solution", true);
   //dolfin_set("number of samples", 200);
-  dolfin_set("adaptive samples", true);
+  //dolfin_set("adaptive samples", true);
   
   //dolfin_set("monitor convergence", true);
   //dolfin_set("fixed time step", true);

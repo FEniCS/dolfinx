@@ -27,34 +27,58 @@ for i = 1:m
   subplot(2, 4, 1)
   pdesurf(points, cells, u{i})
   axis([0 1 0 1 umin umax])
+  xlabel('x')
+  ylabel('y')
+  zlabel('u')
   
   subplot(2, 4, 2)
   pdesurf(points, cells, v{i})
   axis([0 1 0 1 vmin vmax])
-
+  xlabel('x')
+  ylabel('y')
+  zlabel('v')
+  
   subplot(2, 4, 3)
   pdesurf(points, cells, k{i})
   axis([0 1 0 1 kmin kmax])
-
+  xlabel('x')
+  ylabel('y')
+  zlabel('k')
+  
   subplot(2, 4, 4)
   pdesurf(points, cells, r{i})
   axis([0 1 0 1 rmin rmax])
+  xlabel('x')
+  ylabel('y')
+  zlabel('r')
   
   subplot(2, 4, 5)
   pdesurf(points, cells, u{i})
   view(2)
+  xlabel('x')
+  ylabel('y')
+  title('u')
   
   subplot(2, 4, 6)
   pdesurf(points, cells, v{i})
   view(2)
+  xlabel('x')
+  ylabel('y')
+  title('v')
 
   subplot(2, 4, 7)
   pdesurf(points, cells, k{i})
   view(2)
-
+  xlabel('x')
+  ylabel('y')
+  title('k')
+  
   subplot(2, 4, 8)
   pdesurf(points, cells, r{i})
   view(2)
+  xlabel('x')
+  ylabel('y')
+  title('r')
   
   disp('Press any key to continue')
   pause
