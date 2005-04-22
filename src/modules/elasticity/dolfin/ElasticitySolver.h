@@ -19,6 +19,8 @@ namespace dolfin {
     // Solve elasticity
     void solve();
     
+    void save(Mesh& mesh, NewFunction& u, NewFunction& v, File &solutionfile);
+
     // Solve elasticity (static version)
     static void solve(Mesh& mesh, NewFunction& f, real E, real nu,
 		      NewBoundaryCondition& bc, real k, real T);
@@ -32,6 +34,7 @@ namespace dolfin {
     NewBoundaryCondition& bc;
     real k;
     real T;
+    int counter;
 
   };
   

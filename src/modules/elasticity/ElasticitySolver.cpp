@@ -3,6 +3,10 @@
 //
 // Modified by Anders Logg, 2004.
 
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+
 #include "dolfin/timeinfo.h"
 #include "dolfin/ElasticitySolver.h"
 #include "dolfin/Elasticity.h"
@@ -15,7 +19,7 @@ ElasticitySolver::ElasticitySolver(Mesh& mesh,
 				   NewFunction &f, real E, real nu,
 				   NewBoundaryCondition& bc,
 				   real k, real T)
-  : mesh(mesh), f(f), E(E), nu(nu), bc(bc), k(k), T(T)
+  : mesh(mesh), f(f), E(E), nu(nu), bc(bc), k(k), T(T), counter(0)
 {
   // Do nothing
 }
@@ -112,34 +116,12 @@ void ElasticitySolver::solve()
 
   NewFEM::lump(M, m);
 
-//   A2 = M;
-
-//   for(unsigned int i = 0; i < A.size(0); i++)
-//   {
-//     for(unsigned int j = 0; j < A.size(0); j++)
-//     {
-//       if(fabs(A(i, j)) > DOLFIN_EPS)
-//       {
-// 	A2(i, j) = A2(i, j) + k * k * A(i, j);
-//       } 
-//     }
-//   }
-
-//   cout << "A2: " << endl;
-//   A2.disp(false);
-
-//   cout << "M: " << endl;
-//   M.disp(false);
-//   cout << "m: " << endl;
-//   m.disp();
-
-  file << u1;
+  // Save the solution
+  save(mesh, u1, w1, file);
 
   // Start a progress session
   Progress p("Time-stepping");
   
-  int counter = 0;
-
   // Start time-stepping
   while ( t < T ) {
   
@@ -179,8 +161,8 @@ void ElasticitySolver::solve()
       xtmp1.axpy(-1, x11old);
       xtmp2 = x21;
       xtmp2.axpy(-1, x21old);
-      cout << "inc1: " << xtmp1.norm(Vector::linf) << endl;
-      cout << "inc2: " << xtmp2.norm(Vector::linf) << endl;
+      //cout << "inc1: " << xtmp1.norm(Vector::linf) << endl;
+      //cout << "inc2: " << xtmp2.norm(Vector::linf) << endl;
       if(max(xtmp1.norm(Vector::linf), xtmp2.norm(Vector::linf)) < 1e-8)
       {
 	cout << "fixed point iteration converged" << endl;
@@ -196,10 +178,8 @@ void ElasticitySolver::solve()
 
     
     // Save the solution
-    if(counter % 3 == 0)
-    {
-      file << u1;
-    }
+    save(mesh, u1, w1, file);
+
     counter++;
 
     t += k;
@@ -208,6 +188,49 @@ void ElasticitySolver::solve()
     // Update progress
     p = t / T;
 
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticitySolver::save(Mesh& mesh, NewFunction& u, NewFunction& v,
+			    File& solutionfile)
+{
+  if(counter % (int)(1.0 / 33.0 / k) == 0)
+  {
+    std::ostringstream fileid, filename;
+    fileid.fill('0');
+    fileid.width(6);
+    
+    fileid << counter;
+    
+    filename << "mesh" << fileid.str() << ".xml.gz";
+    
+    std::cout << "writing: " << filename.str() << std::endl;
+    
+    std::string foo = filename.str();
+    const char *fname = foo.c_str();
+    
+    File meshfile(fname);
+    
+    // Deform the mesh
+    
+    for (NodeIterator n(&mesh); !n.end(); ++n)
+    {
+      (*n).coord().x += u(*n, 0);
+      (*n).coord().y += u(*n, 1);
+      (*n).coord().z += u(*n, 2);
+    }
+    
+    
+    meshfile << mesh;
+    
+    // Undo deformation
+    
+    for (NodeIterator n(&mesh); !n.end(); ++n)
+    {
+      (*n).coord().x -= u(*n, 0);
+      (*n).coord().y -= u(*n, 1);
+      (*n).coord().z -= u(*n, 2);
+    }
   }
 }
 //-----------------------------------------------------------------------------
