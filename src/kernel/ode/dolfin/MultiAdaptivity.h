@@ -30,7 +30,7 @@ namespace dolfin
     real timestep(uint i) const;
 
     /// Update time step
-    void update(uint i, real r, const NewMethod& method);
+    void update(uint i, real k0, real r, const NewMethod& method);
 
     /// Return threshold for reaching end of interval
     real threshold() const;
@@ -42,6 +42,12 @@ namespace dolfin
 
     // Regulators, one for each component
     NewArray<Regulator> regulators;
+
+    // Multi-adaptive time steps
+    real* timesteps;
+
+    // Time step regulator
+    Regulator regulator;
     
     // Tolerance
     real tol;
@@ -57,12 +63,6 @@ namespace dolfin
     
     // Threshold for reaching end of interval
     real beta;
-
-    // Time step conservation
-    real w;
-
-    // Updated margin for tolerance
-    real margin;
 
   };
 

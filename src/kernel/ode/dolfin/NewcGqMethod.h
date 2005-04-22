@@ -31,7 +31,7 @@ namespace dolfin
     real residual(real x0, real values[], real f, real k) const;
 
     /// Compute new time step based on the given residual
-    real timestep(real r, real tol, real kmax) const;
+    real timestep(real r, real tol, real k0, real kmax) const;
 
     /// Compute error estimate (modulo stability factor)
     real error(real k, real r) const;

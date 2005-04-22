@@ -153,7 +153,7 @@ bool MultiAdaptiveTimeSlab::shift()
     const real r = method->residual(x0, jx + j, f, k);
     
     // Update adaptivity
-    adaptivity.update(i, r, *method);
+    adaptivity.update(i, k, r, *method);
 
     // Save right-hand side at end-point for cG
     if ( method->type() == NewMethod::cG )
@@ -387,6 +387,9 @@ void MultiAdaptiveTimeSlab::create_e(uint index, uint subslab, real a, real b)
 
   //dolfin_info("  Creating element e = %d for i = %d at [%f, %f]", pos, index, a, b);
   
+  //if ( index == 145 )
+  //  cout << "Modified: " << b - a << endl << endl;
+
   // Create new element
   ei[pos] = index;
   es[pos] = subslab;
@@ -545,7 +548,7 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
 {
   // Update partitition 
-  real K = partition.update(offset, end, adaptivity);
+  real K = partition.update(offset, end, adaptivity, b - a);
 
   //partition.debug(offset, end);
   

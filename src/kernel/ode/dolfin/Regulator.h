@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __REGULATOR_H
 #define __REGULATOR_H
@@ -18,27 +20,16 @@ namespace dolfin
     /// Constructor
     Regulator();
 
-    /// Constructor
-    Regulator(real k);
-
-    /// Destructor
+    /// Desctructor
     ~Regulator();
 
-    /// Initialize regulator (specify first time step)
-    void init(real k);
-
-    /// Update time step (set new desired value)
-    void update(real k, real kmax, real w, bool kfixed);
-
-    /// Update maximum time step
-    void update(real kmax);
-    
-    /// Return time step
-    real timestep() const;
+    /// Regulate time step
+    real regulate(real knew, real k0, real kmax, bool kfixed);
 
   private:
 
-    real k;
+    /// Time step conservation
+    real w;
 
   };
 

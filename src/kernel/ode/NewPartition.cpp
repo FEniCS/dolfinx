@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <algorithm>
+#include <cmath>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -39,16 +40,17 @@ dolfin::uint NewPartition::index(uint i) const
   return indices[i];
 }
 //-----------------------------------------------------------------------------
-real NewPartition::update(uint offset, uint& end, MultiAdaptivity& adaptivity)
+real NewPartition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
+			  real K)
 {
   // Compute time steps for partition. We partition the components into two
-  // groups, one group with k < K and one with k >= K.
+  // groups, one group with k < Kpivot and one with k >= Kpivot.
 
   // Compute time step for partitioning
-  real K = threshold * maximum(offset, adaptivity);
+  real Kpivot = threshold * maximum(offset, adaptivity);
 
   // Comparison operator
-  Less less(K, adaptivity);
+  Less less(Kpivot, adaptivity);
 
   // NewPartition using std::partition
   NewArray<uint>::iterator start = indices.begin();
@@ -58,10 +60,22 @@ real NewPartition::update(uint offset, uint& end, MultiAdaptivity& adaptivity)
   // Compute pivot index
   end = std::distance(indices.begin(), middle);
 
-  // Modify time step to the smallest k such that k >= K.
-  K = minimum(offset, end, adaptivity);
+  // Modify time step to the smallest k such that k >= Kpivot.
+  Kpivot = minimum(offset, end, adaptivity);
 
-  return K;
+  // Modify time step so K is a multiple of Kpivot
+  Kpivot = K / ceil(K / Kpivot);
+
+  /*
+  for (uint i = offset; i < end ; i++)
+  {
+    uint index = indices[i];
+    cout << "i = " << index << ": " << adaptivity.timestep(index)
+	 << " --> " << Kpivot << endl;
+  }
+  */
+
+  return Kpivot;
 }
 //-----------------------------------------------------------------------------
 void NewPartition::debug(uint offset, uint end) const

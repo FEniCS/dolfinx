@@ -119,7 +119,7 @@ bool MonoAdaptiveTimeSlab::shift()
   }
 
   // Compute new time step
-  adaptivity.update(rmax, *method);
+  adaptivity.update(length(), rmax, *method);
   
   // Let user update ODE
   const bool end = (_b + DOLFIN_EPS) > ode.T;

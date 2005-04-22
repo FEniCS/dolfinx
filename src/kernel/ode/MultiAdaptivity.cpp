@@ -10,16 +10,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiAdaptivity::MultiAdaptivity(ODE& ode) : regulators(ode.size())
+MultiAdaptivity::MultiAdaptivity(ODE& ode) : regulators(ode.size()), timesteps(0)
 {
   // Get parameters
   tol    = dolfin_get("tolerance");
   kmax   = dolfin_get("maximum time step");
   kfixed = dolfin_get("fixed time step");
   beta   = dolfin_get("interval threshold");
-  w      = dolfin_get("time step conservation");
-  margin = 1.0;
   
+  // Initialize time steps
+  timesteps = new real[ode.size()];
+  for (uint i = 0; i < ode.size(); i++)
+    timesteps[i] = 0.0;
+
   // Start with given maximum time step
   kmax_current = kmax;
   
@@ -36,7 +39,7 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode) : regulators(ode.size())
       k = kmax;
       modified = true;
     }
-    regulators[i].init(k);
+    timesteps[i] = k;
   }
   if ( modified )
     dolfin_warning1("Initial time step too large for at least one component, using k = %.3e.", kmax);
@@ -44,27 +47,39 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode) : regulators(ode.size())
 //-----------------------------------------------------------------------------
 MultiAdaptivity::~MultiAdaptivity()
 {
-  // Do nothing
+  if ( timesteps ) delete [] timesteps;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptivity::timestep(uint i) const
 {
-  return regulators[i].timestep();
+  return timesteps[i];
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::update(uint i, real r, const NewMethod& method)
+void MultiAdaptivity::update(uint i, real k0, real r, const NewMethod& method)
 {
-  // Update margin
-  //const real error = method.error(regulators[i].timestep(), r);
-  //if ( error > tol )
-  //  margin = tol / error;
-  //cout << "margin = " << margin << endl;
-
   // Compute new time step
-  const real k = method.timestep(r, tol*margin, kmax_current);
+  const real k1 = method.timestep(r, tol, k0, kmax_current);
   
-  // Update regulator for component
-  regulators[i].update(k, kmax_current, w, kfixed);
+  // Regulate the time step
+  //timesteps[i] = regulator.regulate(k1, k0, kmax_current, kfixed);
+  timesteps[i] = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
+
+  /*
+  cout << "i = " << i << endl;
+  cout << "Residual:  " << fabs(r) << endl;
+  cout << "Previous:  " << k0 << endl;
+  cout << "Suggested: " << k1 << endl;
+  cout << "Regulated: " << timesteps[i] << endl << endl;
+  */
+
+  /*
+  if ( i == 145 )
+  {
+    cout << "Old step:  " << k0 << endl;
+    cout << "Suggested: " << k1 << endl;
+    cout << "Regulated: " << timesteps[i] << endl;
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptivity::threshold() const

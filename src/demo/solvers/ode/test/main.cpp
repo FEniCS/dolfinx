@@ -34,7 +34,7 @@ public:
   Harmonic() : ODE(2)
   {
     // Final time
-    T = 20.0*DOLFIN_PI;
+    T = 4.0*DOLFIN_PI;
 
     // Compute sparsity
     sparse();
@@ -56,6 +56,7 @@ public:
     return -u[0];
   }
 
+  /*
   real timestep(unsigned int i)
   {
     real k = 0.0001;
@@ -64,6 +65,7 @@ public:
     else
       return k / 8.0;
   }
+  */
 
   bool update(const real u[], real t, bool end)
   {
@@ -170,14 +172,18 @@ int main()
 {
   dolfin_set("solve dual problem", false);
   dolfin_set("initial time step", 0.01);
-  dolfin_set("fixed time step", true);
+  //dolfin_set("fixed time step", true);
   dolfin_set("solver", "fixed point");
+  dolfin_set("tolerance", 1e-4);
   dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("number of samples", 200);
+  dolfin_set("adaptive samples", true);
+  //dolfin_set("number of samples", 200);
   //dolfin_set("solver", "newton");
   //dolfin_set("implicit", true);
   dolfin_set("method", "mcg");
   dolfin_set("order", 1);
+  dolfin_set("partitioning threshold", 0.9);
+  dolfin_set("time step conservation", 5.0);
 
   //Simple ode;
   //ode.solve();

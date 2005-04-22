@@ -2,21 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Jansson, 2003.
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/Regulator.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Regulator::Regulator()
+Regulator::Regulator() : w(dolfin_get("time step conservation"))
 {
-  k = 0.0;
-}
-//-----------------------------------------------------------------------------
-Regulator::Regulator(real k)
-{
-  this->k = k;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Regulator::~Regulator()
@@ -24,36 +21,21 @@ Regulator::~Regulator()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Regulator::init(real k)
+real Regulator::regulate(real knew, real k0, real kmax, bool kfixed)
 {
-  this->k = k;
-}
-//-----------------------------------------------------------------------------
-void Regulator::update(real k, real kmax, real w, bool kfixed)
-{
+  real k = k0;
+  
   // Check if we should use a fixed time step
   if ( !kfixed )
   {
-    // Old time step
-    const real k0 = this->k;
-    
     // Compute new time step
-    this->k = (1.0 + w) * k0 * k / (k0 + w*k);
+    k = (1.0 + w) * k0 * knew / (k0 + w*knew);
   }
 
   // Check kmax
-  if ( this->k > kmax )
-    this->k = kmax;
-}
-//-----------------------------------------------------------------------------
-void Regulator::update(real kmax)
-{
   if ( k > kmax )
     k = kmax;
-}
-//-----------------------------------------------------------------------------
-real Regulator::timestep() const
-{
+
   return k;
 }
 //-----------------------------------------------------------------------------

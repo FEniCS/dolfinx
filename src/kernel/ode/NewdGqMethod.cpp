@@ -43,7 +43,7 @@ real NewdGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real NewdGqMethod::timestep(real r, real tol, real kmax) const
+real NewdGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
   // FIXME: Missing jump term
@@ -51,7 +51,10 @@ real NewdGqMethod::timestep(real r, real tol, real kmax) const
   if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
+  //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
+
+  const real qq = static_cast<real>(q);
+  return pow(tol * pow(k0, qq - 1.0) / fabs(r), 1.0 / (2.0*qq - 1.0));
 }
 //-----------------------------------------------------------------------------
 real NewdGqMethod::error(real k, real r) const

@@ -40,14 +40,17 @@ real NewcGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real NewcGqMethod::timestep(real r, real tol, real kmax) const
+real NewcGqMethod::timestep(real r, real tol, real k0, real kmax) const
 {
   // FIXME: Missing stability factor and interpolation constant
 
   if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  return pow(tol / fabs(r), 1.0 / static_cast<real>(q));
+  //return pow(tol / fabs(r), 1.0 / static_cast<real>(q));
+  
+  const real qq = static_cast<real>(q);
+  return pow(tol * pow(k0, qq) / fabs(r), 0.5 / qq);
 }
 //-----------------------------------------------------------------------------
 real NewcGqMethod::error(real k, real r) const

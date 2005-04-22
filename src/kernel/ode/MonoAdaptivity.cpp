@@ -10,14 +10,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MonoAdaptivity::MonoAdaptivity(ODE& ode)
+MonoAdaptivity::MonoAdaptivity(ODE& ode) : k(0)
 {
   // Get parameters
   tol    = dolfin_get("tolerance");
   kmax   = dolfin_get("maximum time step");
   kfixed = dolfin_get("fixed time step");
   beta   = dolfin_get("interval threshold");
-  w      = dolfin_get("time step conservation");
 
   // Start with given maximum time step
   kmax_current = kmax;
@@ -26,13 +25,12 @@ MonoAdaptivity::MonoAdaptivity(ODE& ode)
   //tol /= sqrt(static_cast<real>(ode.size()));
 
   // Specify initial time step
-  real k = ode.timestep();
+  k = ode.timestep();
   if ( k > kmax )
   {
     k = kmax;
     dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
   }
-  regulator.init(k);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptivity::~MonoAdaptivity()
@@ -42,18 +40,17 @@ MonoAdaptivity::~MonoAdaptivity()
 //-----------------------------------------------------------------------------
 real MonoAdaptivity::timestep() const
 {
-  return regulator.timestep();
+  return k;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptivity::update(real r, const NewMethod& method)
+void MonoAdaptivity::update(real k0, real r, const NewMethod& method)
 {
-  // FIXME: Implement margin in the same way as for multi-adaptive solver?
-
   // Compute new time step
-  const real k = method.timestep(r, tol, kmax_current);
+  const real k1 = method.timestep(r, tol, k0, kmax_current);
   
-  // Update regulator for component
-  regulator.update(k, kmax_current, w, kfixed);
+  // Regulate the time step
+  //k = regulator.regulate(k1, k0, kmax_current, kfixed);
+  k = regulator.regulate(k1, k, kmax_current, kfixed);
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptivity::threshold() const

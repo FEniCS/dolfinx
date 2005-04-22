@@ -29,7 +29,7 @@ namespace dolfin
     real timestep() const;
 
     /// Update time step
-    void update(real r, const NewMethod& method);
+    void update(real k0, real r, const NewMethod& method);
 
     /// Return threshold for reaching end of interval
     real threshold() const;
@@ -39,7 +39,10 @@ namespace dolfin
 
   private:
 
-    // The regulator for the time steps
+    // Mono-adaptive time step
+    real k;
+
+    // Time step regulator
     Regulator regulator;
     
     // Tolerance

@@ -34,7 +34,7 @@ namespace dolfin
     uint index(uint pos) const;
 
     /// Update partition (reorder components starting at offset)
-    real update(uint offset, uint& end, MultiAdaptivity& adaptivity);
+    real update(uint offset, uint& end, MultiAdaptivity& adaptivity, real K);
 
     /// Debug partition
     void debug(uint offset, uint end) const;
@@ -49,6 +49,9 @@ namespace dolfin
 
     // Compute smallest time step
     real minimum(uint offset, uint end, MultiAdaptivity& adaptivity) const;
+
+    // Update time steps
+    void update(uint offset, uint end, MultiAdaptivity& adaptivity, real k) const;
     
     // Comparison operator for the partition
     struct Less : public std::unary_function<uint, bool> 
