@@ -26,9 +26,6 @@ Homotopy::Homotopy(uint n)
   // System is implicit
   dolfin_set("implicit", true);
 
-  // Need to use the new ODE solver
-  dolfin_set("use new ode solver", true);
-
   // Get divergence tolerance
   divtol = dolfin_get("homotopy divergence tolerance");
 
@@ -250,7 +247,10 @@ void Homotopy::saveSolution()
   real* xx = x.array();
   for (uint i = 0; i < (2*n); i++)
   {
-    fprintf(fp, "%.14e ", xx[i]);
+    if ( fabs(xx[i]) < DOLFIN_EPS )
+      fprintf(fp, "%.15e ", 0.0);
+    else
+      fprintf(fp, "%.15e ", xx[i]);
   }
   fprintf(fp, "\n");
   x.restore(xx);

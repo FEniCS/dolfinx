@@ -149,14 +149,16 @@ int main()
   dolfin_set("order", 1);
   dolfin_set("tolerance", 0.01);
   dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("initial time step", 0.01);
-  dolfin_set("linear solver", "direct");
+  dolfin_set("initial time step", 0.001);
+  //dolfin_set("linear solver", "direct");
   dolfin_set("adaptive samples", false);
   dolfin_set("homotopy monitoring", false);
-  dolfin_set("homotopy divergence tolerance", 100.0);
+  dolfin_set("homotopy divergence tolerance", 10.0);
   dolfin_set("homotopy randomize", false);
 
-  test4();
+  //dolfin_set("monitor convergence", true);
+
+  test2();
 
   return 0;
 }

@@ -76,6 +76,9 @@ public:
 	     52.0 * pow(z[0], 1.6) * pow(z[1], 0.4) +
 	     44.0 * z[0] * z[1] -
 	     28.0 * pow(z[0], 0.8) * pow(z[1], 1.2) );
+
+    //y[1] += (z[0] + z[1]) * (z[0] + z[1]) - 1.0;
+    y[1] += (z[0] + z[1] - 1.0) * (z[0] + z[1] - 1.0);
   }
 
   void JF(const complex z[], const complex x[], complex y[])
@@ -92,6 +95,9 @@ public:
 	      20.8 * pow(z[0], 1.6)  * pow(z[1], -0.6) +
 	      44.0 * z[0] -
       	      33.6 * pow(z[0], 0.8)  * pow(z[1], 0.2)) * x[1] );
+
+    //y[1] += 2.0 * (z[0] + z[1]) * (x[0] + x[1]);
+    y[1] += 2.0 * (z[0] + z[1] - 1.0) * (x[0] + x[1]);
   }
   
   unsigned int degree(unsigned int i) const
