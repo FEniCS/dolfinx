@@ -1,3 +1,4 @@
+ - Fix broken log system, curses works again
  - Much improved multi-adaptive time-stepping
  - Move elasticity module to new system based on FFC
  - Add boundary conditions for systems

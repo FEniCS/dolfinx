@@ -1,9 +1,9 @@
 // Copyright (C) 2003 Fredrik Bengzon and Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2004.
+// Modified by Anders Logg, 2004, 2005.
 
-#include <iostream>
+//#include <iostream>
 #include <sstream>
 #include <iomanip>
 
@@ -204,7 +204,7 @@ void ElasticitySolver::save(Mesh& mesh, NewFunction& u, NewFunction& v,
     
     filename << "mesh" << fileid.str() << ".xml.gz";
     
-    std::cout << "writing: " << filename.str() << std::endl;
+    cout << "writing: " << filename.str() << endl;
     
     std::string foo = filename.str();
     const char *fname = foo.c_str();

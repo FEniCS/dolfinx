@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <iostream>
 
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/constants.h>
@@ -199,7 +200,7 @@ void Logger::init(const char* type)
     log = new TerminalLogger();
     return;
   }
-  else if ( strcasecmp(type, "curses") )
+  else if ( strcasecmp(type, "curses") == 0 )
   {
 #ifdef NO_CURSES
     log = new TerminalLogger();
@@ -210,7 +211,7 @@ void Logger::init(const char* type)
     return;
 #endif
   }
-  else if ( strcasecmp(type, "silent") )
+  else if ( strcasecmp(type, "silent") == 0 )
   {
     log = new SilentLogger();
     return;

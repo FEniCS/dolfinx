@@ -2,8 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <stdio.h>
-#include <iostream>
 #include <petsc.h>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/PETScManager.h>
 
@@ -18,7 +18,7 @@ void PETScManager::init()
   if ( petsc.initialized )
     return;
 
-  std::cout << "Initializing PETSc (ignoring command-line arguments)." << std::endl;
+  dolfin_info("Initializing PETSc (ignoring command-line arguments).");
 
   // Prepare fake command-line arguments for PETSc. This is needed since
   // PetscInitializeNoArguments() does not seem to work.
@@ -42,7 +42,7 @@ void PETScManager::init(int argc, char* argv[])
   if ( petsc.initialized )
     return;
 
-  std::cout << "Initializing PETSc with given command-line arguments." << std::endl;
+  dolfin_info("Initializing PETSc with given command-line arguments.");
   
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
@@ -59,7 +59,7 @@ PETScManager::~PETScManager()
 {
   if ( petsc.initialized )
   {
-    std::cout << "Finalizing PETSc." << std::endl;
+    dolfin_info("Finalizing PETSc.");
     PetscFinalize();
   }
 }

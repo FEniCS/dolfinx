@@ -61,8 +61,10 @@ class MyBC : public NewBoundaryCondition
   }
 };
 
-int main(int argc, char **argv)
+int main()
 {
+  dolfin_output("curses");
+
   Mesh mesh("dolfin.xml.gz");
   Convection w;
   Source f;

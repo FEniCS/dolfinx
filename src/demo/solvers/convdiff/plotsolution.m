@@ -10,7 +10,7 @@ title('Mesh')
 
 % Plot with pdesurf
 figure(2)
-pdesurf(points, cells, u{6})
+pdesurf(points, cells, u{5})
 title('Convection around a hot dolphin')
 
 % Plot contour lines

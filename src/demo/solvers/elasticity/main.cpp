@@ -56,7 +56,7 @@ public:
 
 int main(int argc, char **argv)
 {
-  dolfin_output("plain text");
+  dolfin_output("curses");
 
   Mesh mesh("tetmesh-4.xml.gz");
 
