@@ -1,3 +1,4 @@
+ - Bypass log system when finalizing PETSc (may be out of scope)
 0.5.5 [2005-04-26]
  - Fix broken log system, curses works again
  - Much improved multi-adaptive time-stepping

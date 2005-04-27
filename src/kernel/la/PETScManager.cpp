@@ -59,7 +59,10 @@ PETScManager::~PETScManager()
 {
   if ( petsc.initialized )
   {
-    dolfin_info("Finalizing PETSc.");
+    // FIXME: Can't use log system here because it may already
+    // FIXME: be out of scope/destroyed
+    //dolfin_info("Finalizing PETSc.");
+    printf("Finalizing PETSc.\n");
     PetscFinalize();
   }
 }
