@@ -2,9 +2,9 @@ SUBDIRS = dolfin \
           poisson \
           convdiff \
           elasticity
+#          navierstokes \
 #          elasticity-updated \
 #          heat \
-#          navierstokes \
 #          wave \
 
 INCLUDES = @KERNEL_CFLAGS@

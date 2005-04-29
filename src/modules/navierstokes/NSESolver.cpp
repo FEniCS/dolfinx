@@ -1,8 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman 
 // Licensed under the GNU GPL Version 2.
 
-//#include <dolfin/NSEMomentum.h>
-//#include <dolfin/NSEContinuity.h>
+#include <dolfin/NSEMomentum.h>
+#include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
 
 using namespace dolfin;
@@ -17,7 +17,6 @@ NSESolver::NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  /*
   NewFunction up;
   
   NSEMomentum::FiniteElement element_mom;
@@ -28,9 +27,10 @@ void NSESolver::solve()
   NSEContinuity::BilinearForm a_con;
   NSEContinuity::LinearForm L_con(f,u0);
 
-  NewMatrix A_mom,A_con;
-  NewVector x_mom, x_con, b_mom, b_con;
+  Matrix A_mom,A_con;
+  Vector x_mom, x_con, b_mom, b_con;
 
+  /*
   // Discretize Continuity equation 
   NewFEM::assemble(a_con, L_con, A_con, b_con, mesh, element_con);
 
@@ -42,8 +42,6 @@ void NSESolver::solve()
 
   // Discretize Continuity equation 
   NewFEM::assemble(L_con, b_con, mesh, element_con);
-
-  
 
   // Discretize
   NewFEM::assemble(a, L, A, b, mesh, element);
@@ -67,6 +65,7 @@ void NSESolver::solve()
   uold.rename("u", "temperature");
   File file("poisson.m");
   file << uold;
+
   */
 }
 //-----------------------------------------------------------------------------
