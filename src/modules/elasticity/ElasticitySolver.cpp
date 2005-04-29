@@ -16,10 +16,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ElasticitySolver::ElasticitySolver(Mesh& mesh, 
-				   NewFunction &f, real E, real nu,
+				   NewFunction &f,
+				   NewFunction &u0, NewFunction &v0,
+				   real E, real nu,
 				   NewBoundaryCondition& bc,
 				   real k, real T)
-  : mesh(mesh), f(f), E(E), nu(nu), bc(bc), k(k), T(T), counter(0)
+  : mesh(mesh), f(f), u0(u0), v0(v0), E(E), nu(nu), bc(bc), k(k), T(T),
+    counter(0)
 {
   // Do nothing
 }
@@ -42,6 +45,8 @@ void ElasticitySolver::solve()
   // Create variational forms
   Elasticity::BilinearForm a(lambda, mu);
   Elasticity::LinearForm L(f);
+  Elasticity::LinearForm Lu0(u0);
+  Elasticity::LinearForm Lv0(v0);
 
   ElasticityMass::BilinearForm amass;
 
@@ -51,9 +56,7 @@ void ElasticitySolver::solve()
   Matrix A, M, A2;
   Vector x10, x11, x20, x21, x11old, x21old, b, m, xtmp1, xtmp2, stepresidual;
   
-  NewFunction u0(x10, mesh, element);
   NewFunction u1(x11, mesh, element);
-  NewFunction w0(x20, mesh, element);
   NewFunction w1(x21, mesh, element);
 
   File         file("elasticity.m");
@@ -116,6 +119,19 @@ void ElasticitySolver::solve()
 
   NewFEM::lump(M, m);
 
+
+  // Assemble initial values
+  NewFEM::assemble(Lu0, xtmp1, mesh);
+  NewFEM::assemble(Lv0, xtmp2, mesh);
+
+  for(unsigned int i = 0; i < m.size(); i++)
+  {
+    x11(i) = xtmp1(i) / m(i);
+    x21(i) = xtmp2(i) / m(i);
+  }
+  
+
+
   // Save the solution
   save(mesh, u1, w1, file);
 
@@ -125,6 +141,13 @@ void ElasticitySolver::solve()
   // Start time-stepping
   while ( t < T ) {
   
+     cout << "x11: " << endl;
+     x11.disp();
+
+     cout << "x21: " << endl;
+     x21.disp();
+
+
     // Make time step
     x10 = x11;
     x20 = x21;
@@ -236,11 +259,12 @@ void ElasticitySolver::save(Mesh& mesh, NewFunction& u, NewFunction& v,
 //-----------------------------------------------------------------------------
 void ElasticitySolver::solve(Mesh& mesh,
 			     NewFunction& f,
+			     NewFunction &u0, NewFunction &v0,
 			     real E, real nu,
 			     NewBoundaryCondition& bc,
 			     real k, real T)
 {
-  ElasticitySolver solver(mesh, f, E, nu, bc, k, T);
+  ElasticitySolver solver(mesh, f, u0, v0, E, nu, bc, k, T);
   solver.solve();
 }
 //-----------------------------------------------------------------------------

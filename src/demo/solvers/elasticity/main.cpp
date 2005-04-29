@@ -33,6 +33,27 @@ class Source : public NewFunction
   }
 };
 
+// Initial displacement
+class InitialDisplacement : public NewFunction
+{
+  real operator() (const Point& p, unsigned int i) const
+  {
+    return 0.0;
+  }
+};
+
+// Initial displacement
+class InitialVelocity : public NewFunction
+{
+  real operator() (const Point& p, unsigned int i) const
+  {
+    if(i == 1 && p.x > 0.0 )
+      return 1.0;
+    else
+      return 0.0;
+  }
+};
+
 // Boundary condition
 class MyBC : public NewBoundaryCondition
 {
@@ -56,11 +77,13 @@ public:
 
 int main(int argc, char **argv)
 {
-  dolfin_output("curses");
+  dolfin_output("text");
 
   Mesh mesh("tetmesh-4.xml.gz");
 
   Source f;
+  InitialDisplacement u0;
+  InitialVelocity v0;
   MyBC bc;
 
   real T = 5.0;  // final time
@@ -69,7 +92,7 @@ int main(int argc, char **argv)
   real E = 10.0; // Young's modulus
   real nu = 0.3; // Poisson's ratio
 
-  ElasticitySolver::solve(mesh, f, E, nu, bc, k, T);
+  ElasticitySolver::solve(mesh, f, u0, v0, E, nu, bc, k, T);
 
   return 0;
 }

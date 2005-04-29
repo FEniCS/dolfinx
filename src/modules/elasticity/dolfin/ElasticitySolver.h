@@ -13,7 +13,9 @@ namespace dolfin {
   public:
     
     // Create elasticity solver
-    ElasticitySolver(Mesh& mesh, NewFunction& f, real E, real nu,
+    ElasticitySolver(Mesh& mesh,
+		     NewFunction& f, NewFunction& u0, NewFunction& v0,
+		     real E, real nu,
 		     NewBoundaryCondition& bc, real k, real T);
     
     // Solve elasticity
@@ -22,13 +24,17 @@ namespace dolfin {
     void save(Mesh& mesh, NewFunction& u, NewFunction& v, File &solutionfile);
 
     // Solve elasticity (static version)
-    static void solve(Mesh& mesh, NewFunction& f, real E, real nu,
+    static void solve(Mesh& mesh,
+		      NewFunction& f, NewFunction& u0, NewFunction& v0,
+		      real E, real nu,
 		      NewBoundaryCondition& bc, real k, real T);
     
   private:
     
     Mesh& mesh;
     NewFunction& f;
+    NewFunction& u0;
+    NewFunction& v0;
     real E;
     real nu;
     NewBoundaryCondition& bc;
