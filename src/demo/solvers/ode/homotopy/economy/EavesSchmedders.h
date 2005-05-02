@@ -77,8 +77,9 @@ public:
 	     44.0 * z[0] * z[1] -
 	     28.0 * pow(z[0], 0.8) * pow(z[1], 1.2) );
 
-    //y[1] += (z[0] + z[1]) * (z[0] + z[1]) - 1.0;
-    y[1] += (z[0] + z[1] - 1.0) * (z[0] + z[1] - 1.0);
+    // Regularization
+    y[1] += (z[0] + z[1]) * (z[0] + z[1]) - 1.0;
+    //y[1] += (z[0] + z[1]) * (z[0] + z[1]) * (z[0] + z[1]) - 1.0;
   }
 
   void JF(const complex z[], const complex x[], complex y[])
@@ -96,16 +97,64 @@ public:
 	      44.0 * z[0] -
       	      33.6 * pow(z[0], 0.8)  * pow(z[1], 0.2)) * x[1] );
 
-    //y[1] += 2.0 * (z[0] + z[1]) * (x[0] + x[1]);
-    y[1] += 2.0 * (z[0] + z[1] - 1.0) * (x[0] + x[1]);
+    // Regularization
+    y[1] += 2.0 * (z[0] + z[1]) * (x[0] + x[1]);
+    //y[1] += 3.0 * (z[0] + z[1]) * (z[0] + z[1]) * (x[0] + x[1]);
   }
   
   unsigned int degree(unsigned int i) const
   {
     if ( i == 0 )
-      return 1;
+      return 5;
     else
-      return 2;
+      return 9;
+  }
+
+};
+
+/// This class implements the true polynomial form
+/// for (z1^0.2, z2^0.2) --> (z1, z2)
+
+class TruePolynomialEavesSchmedders : public Homotopy
+{
+public:
+
+  TruePolynomialEavesSchmedders() : Homotopy(2) {}
+
+  void F(const complex z[], complex y[])
+  {
+    // First equation
+    y[0] = pow(z[0], 5) + pow(z[1], 5) - 1.0;
+    
+    // Second equation
+    y[1] = ( 26.0 * pow(z[0], 9) * z[1] -
+	     52.0 * pow(z[0], 8) * pow(z[1], 2) +
+	     44.0 * pow(z[0], 5) * pow(z[1], 5) -
+	     28.0 * pow(z[0], 4) * pow(z[1], 6) );
+  }
+
+  void JF(const complex z[], const complex x[], complex y[])
+  {
+    // First equation
+    y[0] = 5.0 * pow(z[0], 4) * x[0] + 5.0 * pow(z[1], 4) * x[1];
+
+    // Second equation
+    y[1] = ( (234.0 * pow(z[0], 8) * z[1] -
+	      416.0 * pow(z[0], 7) * pow(z[1], 2) +
+	      220.0 * pow(z[0], 4) * pow(z[1], 5) -
+	      112.0 * pow(z[0], 3) * pow(z[1], 6)) * x[0] +
+	     ( 26.0 * pow(z[0], 9) -
+	      104.0 * pow(z[0], 8) * z[1] +
+	      220.0 * pow(z[0], 5) * pow(z[1], 4) -
+      	      168.0 * pow(z[0], 4) * pow(z[1], 5)) * x[1] );
+  }
+  
+  unsigned int degree(unsigned int i) const
+  {
+    if ( i == 0 )
+      return 5;
+    else
+      return 9;
   }
 
 };

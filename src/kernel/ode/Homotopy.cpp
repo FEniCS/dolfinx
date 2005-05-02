@@ -1,6 +1,7 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <stdio.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
@@ -41,7 +42,7 @@ Homotopy::Homotopy(uint n)
   maxiter = dolfin_get("maximum iterations");
 
   // FIXME: Maybe this should be a parameter?
-  tol = 1e-14;
+  tol = 1e-12;
   
   // Choose solver
   //solver = new GMRES();
@@ -258,6 +259,7 @@ void Homotopy::saveSolution()
 //-----------------------------------------------------------------------------
 void Homotopy::randomize()
 {
+  // Choose values for c
   for (uint i = 0; i < n; i++)
   {
     if ( random )
@@ -275,6 +277,16 @@ void Homotopy::randomize()
       ci[i] = c;
     }
   }
+
+  //ci[0] = complex(-2.831791604946104e-02, -6.860112583567136e-01);
+  //ci[1] = complex(8.464610889887528e-02, 7.660579271509420e-02);
+
+  // Write to file
+  FILE* fp = fopen("initialsystem.data", "w");
+  for (uint i = 0; i < n; i++)
+    fprintf(fp, "%.15e %.15e ", ci[i].real(), ci[i].imag());
+  fprintf(fp, "\n");
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------
 void Homotopy::feval(Vector& F, ComplexODE& ode)

@@ -8,7 +8,7 @@
 
 name = "ConvectionDiffusion"
 scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = FiniteElement("Lagrange", "triangle", 1, 2)
+vector = FiniteElement("Vector Lagrange", "triangle", 1)
 
 v  = BasisFunction(scalar) # test function
 u1 = BasisFunction(scalar) # value at next time step

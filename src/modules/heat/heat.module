@@ -1,6 +1,0 @@
-# Module specifications
-
-NAME     = "heat"
-KEYWORD  = "heat"
-SOLVER   = "HeatSolver"
-NEEDS    = "mesh"

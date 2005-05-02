@@ -222,16 +222,12 @@ AC_OUTPUT( Makefile \
            src/modules/dolfin/Makefile \
            src/modules/poisson/Makefile \
            src/modules/poisson/dolfin/Makefile \
-           src/modules/poisson-multigrid/Makefile \
            src/modules/convdiff/Makefile \
            src/modules/convdiff/dolfin/Makefile \
            src/modules/elasticity/Makefile \
            src/modules/elasticity/dolfin/Makefile \
-           src/modules/heat/Makefile \
-           src/modules/heat/dolfin/Makefile \
            src/modules/navierstokes/Makefile \
            src/modules/navierstokes/dolfin/Makefile \
-           src/modules/wave/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
