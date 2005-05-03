@@ -44,19 +44,14 @@ void GenericFile::operator>>(Mesh& mesh)
   read_not_impl("Mesh");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator>>(NewFunction& u)
+void GenericFile::operator>>(Function& u)
 {
-  read_not_impl("NewFunction");
+  read_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator>>(Sample& sample)
 {
   read_not_impl("Sample");
-}
-//-­---------------------------------------------------------------------------
-void GenericFile::operator>>(NewSample& sample)
-{
-  read_not_impl("NewSample");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator>>(ParameterList& parameters)
@@ -79,19 +74,14 @@ void GenericFile::operator<<(Mesh& mesh)
   write_not_impl("Mesh");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator<<(NewFunction& u)
+void GenericFile::operator<<(Function& u)
 {
-  write_not_impl("NewFunction");
+  write_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Sample& sample)
 {
   write_not_impl("Sample");
-}
-//-­---------------------------------------------------------------------------
-void GenericFile::operator<<(NewSample& sample)
-{
-  write_not_impl("NewSample");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(ParameterList& parameters)

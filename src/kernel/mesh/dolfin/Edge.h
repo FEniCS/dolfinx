@@ -1,24 +1,28 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __EDGE_H
 #define __EDGE_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <set>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Point;
   class Mesh;
   class EdgeRefData;
 
-  class Edge{
+  class Edge
+  {
   public:
     
     /// Create empty edge
@@ -132,7 +136,7 @@ namespace dolfin {
     Node* n1;
 
     // Connectivity
-    Array<Cell*> ec;
+    PArray<Cell*> ec;
     
     // Mesh refinement data
     EdgeRefData* rd;

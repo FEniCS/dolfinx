@@ -1,13 +1,16 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __MESH_ITERATOR_H
 #define __MESH_ITERATOR_H
 
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <dolfin/General.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Mesh;
   class MeshHierarchy;  
@@ -16,7 +19,8 @@ namespace dolfin {
   
   /// Iterator for the meshs in a mesh hierarchy.
 
-  class MeshIterator {
+  class MeshIterator
+  {
   public:
     
     /// Create an iterator positioned at the top (coarsest) mesh
@@ -46,7 +50,7 @@ namespace dolfin {
 
   private:
     
-    Array<Mesh*>::Iterator it;
+    PArray<Mesh*>::Iterator it;
 	
   };
 

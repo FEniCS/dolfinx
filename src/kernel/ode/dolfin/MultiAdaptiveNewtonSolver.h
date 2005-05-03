@@ -16,7 +16,7 @@ namespace dolfin
 
   class ODE;
   class MultiAdaptiveTimeSlab;
-  class NewMethod;
+  class Method;
 
   /// This class implements Newton's method on multi-adaptive time
   /// slabs. In each iteration, the system F(x) is evaluated at the
@@ -52,12 +52,12 @@ namespace dolfin
     // Numerical evaluation of the Jacobian used for testing
     void debug();
 
-    MultiAdaptiveTimeSlab& ts; // The time slab;
-    MultiAdaptiveJacobian A;   // Jacobian of time slab system
-    real* f;                   // Values of right-hand side at quadrature points
-    Vector dx;              // Increment for Newton's method
-    Vector b;               // Right-hand side -F(x)
-    GMRES solver;           // GMRES solver
+    MultiAdaptiveTimeSlab& ts;       // The time slab;
+    MultiAdaptiveJacobian A;         // Jacobian of time slab system
+    real* f;                         // Values of right-hand side at quadrature points
+    Vector dx;                       // Increment for Newton's method
+    Vector b;                        // Right-hand side -F(x)
+    GMRES solver;                    // GMRES solver
     MultiAdaptivePreconditioner mpc; // Preconditioner
   };
 

@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Par Ingelstrom, 2004.
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -228,11 +229,11 @@ void MeshRefinement::closeMesh(Mesh& mesh)
   MeshInit::renumber(mesh);
 
   // Keep track of which cells are in the list
-  Array<bool> closed(mesh.noCells());
+  PArray<bool> closed(mesh.noCells());
   closed = true;
   
   // Create a list of all elements that need to be closed
-  List<Cell*> cells;
+  PList<Cell*> cells;
   for (CellIterator c(mesh); !c.end(); ++c) {
 
     // Remove marks for irregular refinement
@@ -310,11 +311,11 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
   MeshInit::renumber(*child);
 
   // Mark all nodes in the child for not re-use
-  Array<bool> reuse_node(child->noNodes());
+  PArray<bool> reuse_node(child->noNodes());
   reuse_node = false;
 
   // Mark all cells in the child for not re-use
-  Array<bool> reuse_cell(child->noCells());
+  PArray<bool> reuse_cell(child->noCells());
   reuse_cell = false;
 
   // Mark nodes and cells for reuse
@@ -355,7 +356,7 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
 }
 //-----------------------------------------------------------------------------
 void MeshRefinement::closeCell(Cell& cell,
-			       List<Cell*>& cells, Array<bool>& closed)
+			       PList<Cell*>& cells, PArray<bool>& closed)
 {
   // Close a cell, either by regular or irregular refinement. We check all
   // edges of the cell and try to find a matching refinement rule. This rule
@@ -470,13 +471,13 @@ bool MeshRefinement::edgeMarkedByOther(Cell& cell)
   return false;
 }
 //-----------------------------------------------------------------------------
-void MeshRefinement::sortNodes(const Cell& cell, Array<Node*>& nodes)
+void MeshRefinement::sortNodes(const Cell& cell, PArray<Node*>& nodes)
 {
   // Set the size of the list
   nodes.init(cell.noNodes());
 
   // Count the number of marked edges for each node
-  Array<int> no_marked_edges(nodes.size());
+  PArray<int> no_marked_edges(nodes.size());
   no_marked_edges = 0;
   for (EdgeIterator e(cell); !e.end(); ++e) {
     if ( e->marked() ) {

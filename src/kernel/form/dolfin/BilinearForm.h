@@ -11,7 +11,7 @@
 namespace dolfin
 {
 
-  class NewFiniteElement;
+  class FiniteElement;
 
   /// BilinearForm represents a bilinear form a(v, u) with arguments v
   /// and u basis functions of the finite element space defined by a
@@ -34,18 +34,18 @@ namespace dolfin
     virtual bool boundary(real* block) const;
 
     /// Return finite element defining the test space
-    const NewFiniteElement& test() const;
+    const FiniteElement& test() const;
 
     /// Return finite element defining the trial space
-    const NewFiniteElement& trial() const;
+    const FiniteElement& trial() const;
 
   protected:
 
     // Finite element defining the test space
-    NewFiniteElement* _test;
+    FiniteElement* _test;
 
     // Finite element defining the trial space
-    NewFiniteElement* _trial;
+    FiniteElement* _trial;
     
   };
 

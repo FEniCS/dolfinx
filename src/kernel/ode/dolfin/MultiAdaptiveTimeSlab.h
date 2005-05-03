@@ -8,15 +8,15 @@
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
 #include <dolfin/Alloc.h>
-#include <dolfin/NewPartition.h>
+#include <dolfin/Partition.h>
 #include <dolfin/MultiAdaptivity.h>
-#include <dolfin/NewTimeSlab.h>
+#include <dolfin/TimeSlab.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class NewMethod;
+  class Method;
   class TimeSlabSolver;
   
   /// This class represents a multi-adaptive time slab holding the
@@ -24,7 +24,7 @@ namespace dolfin
   /// synchronized time levels a and b, with individual time steps for
   /// the different components of the system.
 
-  class MultiAdaptiveTimeSlab : public NewTimeSlab
+  class MultiAdaptiveTimeSlab : public TimeSlab
   {
   public:
 
@@ -146,7 +146,7 @@ namespace dolfin
 
     TimeSlabSolver* solver;     // The solver
     MultiAdaptivity adaptivity; // Adaptive time step regulation
-    NewPartition partition;     // Time step partitioning 
+    Partition partition;        // Time step partitioning 
     int* elast;                 // Last element for each component
     real* u;                    // Interpolated solution vector
     real* f0;                   // Right-hand side at left end-point for cG

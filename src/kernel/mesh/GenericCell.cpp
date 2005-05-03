@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -85,7 +87,7 @@ Point GenericCell::midpoint() const
 {
   Point p;
 
-  for (Array<Node*>::Iterator n(cn); !n.end(); ++n)
+  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
     p += (*n)->coord();
 
   p /= real(cn.size());
@@ -163,7 +165,7 @@ bool GenericCell::neighbor(GenericCell& cell) const
 //-----------------------------------------------------------------------------
 bool GenericCell::haveNode(Node& node) const
 {
-  for (Array<Node*>::Iterator n(cn); !n.end(); ++n)
+  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
     if ( *n == &node )
       return true;
   return false;
@@ -171,7 +173,7 @@ bool GenericCell::haveNode(Node& node) const
 //-----------------------------------------------------------------------------
 bool GenericCell::haveEdge(Edge& edge) const
 {
-  for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
+  for (PArray<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e == &edge )
       return true;
   return false;
@@ -182,7 +184,7 @@ void GenericCell::createEdge(Node& n0, Node& n1)
   Edge* edge = 0;
 
   // Check neighbor cells if an edge already exists between the two nodes
-  for (Array<Cell*>::Iterator c(cc); !c.end(); ++c) {
+  for (PArray<Cell*>::Iterator c(cc); !c.end(); ++c) {
     edge = (*c)->findEdge(n0, n1);
     if ( edge )
       break;
@@ -202,7 +204,7 @@ void GenericCell::createFace(Edge& e0, Edge& e1, Edge& e2)
   Face* face = 0;
   
   // Check neighbor cells if the face already exists
-  for (Array<Cell*>::Iterator c(cc); !c.end(); ++c) {
+  for (PArray<Cell*>::Iterator c(cc); !c.end(); ++c) {
     face = (*c)->findFace(e0, e1, e2);
     if ( face )
       break;
@@ -218,7 +220,7 @@ void GenericCell::createFace(Edge& e0, Edge& e1, Edge& e2)
 //-----------------------------------------------------------------------------
 Node* GenericCell::findNode(const Point& p) const
 {
-  for (Array<Node*>::Iterator n(cn); !n.end(); ++n)
+  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
     if ( (*n)->dist(p) < DOLFIN_EPS )
       return *n;
 
@@ -227,7 +229,7 @@ Node* GenericCell::findNode(const Point& p) const
 //-----------------------------------------------------------------------------
 Edge* GenericCell::findEdge(Node& n0, Node& n1)
 {
-  for (Array<Edge*>::Iterator e(ce); !e.end(); ++e)
+  for (PArray<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e )
       if ( (*e)->equals(n0, n1) )
 	return *e;
@@ -237,7 +239,7 @@ Edge* GenericCell::findEdge(Node& n0, Node& n1)
 //-----------------------------------------------------------------------------
 Face* GenericCell::findFace(Edge& e0, Edge& e1, Edge& e2)
 {
-  for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
+  for (PArray<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
       if ( (*f)->equals(e0, e1, e2) )
 	return *f;
@@ -247,7 +249,7 @@ Face* GenericCell::findFace(Edge& e0, Edge& e1, Edge& e2)
 //-----------------------------------------------------------------------------
 Face* GenericCell::findFace(Edge& e0, Edge& e1)
 {
-  for (Array<Face*>::Iterator f(cf); !f.end(); ++f)
+  for (PArray<Face*>::Iterator f(cf); !f.end(); ++f)
     if ( *f )
       if ( (*f)->equals(e0, e1) )
 	return *f;

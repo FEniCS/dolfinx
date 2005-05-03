@@ -10,8 +10,8 @@ namespace dolfin
 {
   
   class ODE;
-  class NewMethod;
-  class NewTimeSlab;
+  class Method;
+  class TimeSlab;
     
   /// This is the base class for Jacobians defined on mono- or
   /// multi-adaptive time slabs.
@@ -21,7 +21,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    TimeSlabJacobian(NewTimeSlab& timeslab);
+    TimeSlabJacobian(TimeSlab& timeslab);
 
     /// Destructor
     ~TimeSlabJacobian();
@@ -38,7 +38,7 @@ namespace dolfin
     ODE& ode;
 
     // Method, mcG(q) or mdG(q)
-    const NewMethod& method;
+    const Method& method;
 
   };
 

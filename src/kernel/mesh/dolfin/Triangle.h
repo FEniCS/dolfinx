@@ -1,18 +1,22 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
 
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <dolfin/GenericCell.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Node;
   class Cell;
   
-  class Triangle : public GenericCell {
+  class Triangle : public GenericCell
+  {
   public:
     
     Triangle(Node& n0, Node& n1, Node& n2);

@@ -1,10 +1,10 @@
 EXTRA_DIST = dolfin_fem.h \
-             NewBoundaryCondition.h \
+             BoundaryCondition.h \
              BoundaryValue.h \
-             LinearTetElement.h\
-             LinearTriElement.h \
+             FEM.h \
+             FiniteElement.h \
              LoadVector.h \
              MassMatrix.h \
-             NewFEM.h \
-             NewFiniteElement.h \
+             P1Tet.h \
+             P1Tri.h \
              StiffnessMatrix.h

@@ -5,7 +5,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveFixedPointSolver.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
@@ -14,7 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
-  : NewTimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
+  : TimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -35,7 +35,7 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   x.init(nj);
 
   // Evaluate f at initial data for cG(q)
-  if ( method->type() == NewMethod::cG )
+  if ( method->type() == Method::cG )
     ode.f(u0, 0.0, f);
 }
 //-----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ bool MonoAdaptiveTimeSlab::shift()
     u0[i] = xx[xoffset + i];
 
   // Set f at first quadrature point to f at end-time for cG(q)
-  if ( method->type() == NewMethod::cG )
+  if ( method->type() == Method::cG )
   {
     for (uint i = 0; i < N; i++)
       f[i] = f[foffset + i];
@@ -216,7 +216,7 @@ void MonoAdaptiveTimeSlab::disp() const
 void MonoAdaptiveTimeSlab::feval(uint m)
 {
   // Evaluation depends on the choice of method
-  if ( method->type() == NewMethod::cG )
+  if ( method->type() == Method::cG )
   {
     // Special case: m = 0
     if ( m == 0 )
@@ -295,7 +295,7 @@ real* MonoAdaptiveTimeSlab::tmp()
   // needs to be done differently for cG and dG, since cG does not
   // recompute the right-hand side at the first quadrature point.
 
-  if ( method->type() == NewMethod::cG )
+  if ( method->type() == Method::cG )
     return f + N;
   else
     return f;

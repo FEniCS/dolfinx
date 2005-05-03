@@ -17,17 +17,17 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/MultiAdaptivePreconditioner.h \
              dolfin/MultiAdaptiveTimeSlab.h \
              dolfin/MultiAdaptivity.h \
-             dolfin/NewcGqMethod.h \
-             dolfin/NewdGqMethod.h \
-             dolfin/NewMethod.h \
-             dolfin/NewParticleSystem.h \
-             dolfin/NewPartition.h \
-             dolfin/NewSample.h \
-             dolfin/NewTimeSlab.h \
-             dolfin/NewTimeStepper.h \
+             dolfin/Method.h \
              dolfin/ODE.h \
              dolfin/ODESolver.h \
+             dolfin/ParticleSystem.h \
+             dolfin/Partition.h \
              dolfin/ReducedModel.h \
              dolfin/Regulator.h \
+             dolfin/Sample.h \
+             dolfin/TimeSlab.h \
+             dolfin/TimeStepper.h \
              dolfin/TimeSlabJacobian.h \
-             dolfin/TimeSlabSolver.h
+             dolfin/TimeSlabSolver.h \
+             dolfin/cGqMethod.h \
+             dolfin/dGqMethod.h

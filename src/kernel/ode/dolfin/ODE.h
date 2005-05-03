@@ -9,7 +9,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/Event.h>
 #include <dolfin/Dependencies.h>
-#include <dolfin/NewSample.h>
+#include <dolfin/Sample.h>
 
 namespace dolfin
 {
@@ -61,7 +61,7 @@ namespace dolfin
     virtual bool update(const real u[], real t, bool end);
 
     /// Save sample (optional)
-    virtual void save(NewSample& sample);
+    virtual void save(Sample& sample);
 
     /// Number of components N
     uint size() const;
@@ -81,7 +81,7 @@ namespace dolfin
     /// Friends
     friend class Dual;
     friend class RHS;
-    friend class NewTimeSlab;
+    friend class TimeSlab;
     friend class TimeSlabJacobian;
     friend class MonoAdaptiveTimeSlab;
     friend class MonoAdaptiveJacobian;

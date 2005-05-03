@@ -8,8 +8,8 @@ namespace dolfin
 {
 
   class ODE;
-  class NewMethod;
-  class NewTimeSlab;
+  class Method;
+  class TimeSlab;
   
   /// This is the base class for solvers of the system of equations
   /// defined on time slabs.
@@ -19,7 +19,7 @@ namespace dolfin
   public:
     
     /// Constructor
-    TimeSlabSolver(NewTimeSlab& timeslab);
+    TimeSlabSolver(TimeSlab& timeslab);
 
     /// Destructor
     virtual ~TimeSlabSolver();
@@ -42,7 +42,7 @@ namespace dolfin
     ODE& ode;
 
     // The method
-    const NewMethod& method;
+    const Method& method;
     
     // Tolerance for iterations (max-norm)
     real tol;

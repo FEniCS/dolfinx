@@ -1,20 +1,24 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __BOUNDARY_DATA_H
 #define __BOUNDARY_DATA_H
 
 #include <dolfin/NodeIterator.h>
-#include <dolfin/List.h>
+#include <dolfin/PList.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Node;
   class Edge;
   class Face;
   class Mesh;
 
-  class BoundaryData {
+  class BoundaryData
+  {
   public:
     
     // Create an empty set of boundary data
@@ -63,13 +67,13 @@ namespace dolfin {
     Mesh* mesh;
     
     // A list of all nodes on the boundary
-    List<Node*> nodes;
+    PList<Node*> nodes;
 
     // A list of all edges on the boundary
-    List<Edge*> edges;
+    PList<Edge*> edges;
 
     // A list of all faces on the boundary
-    List<Face*> faces;
+    PList<Face*> faces;
 
   };
 

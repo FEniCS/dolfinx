@@ -7,7 +7,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
 #include <dolfin/constants.h>
-#include <dolfin/List.h>
+#include <dolfin/PList.h>
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
 #include <dolfin/Cell.h>

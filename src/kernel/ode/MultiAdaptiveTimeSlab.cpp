@@ -6,7 +6,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
@@ -15,7 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) : 
-  NewTimeSlab(ode),
+  TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
   elast(0), u(0), f0(0), emax(0)
@@ -34,7 +34,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
     u[i] = 0.0;
 
   // Initialize f at left end-point for cG
-  if ( method->type() == NewMethod::cG )
+  if ( method->type() == Method::cG )
   {
     f0 = new real[N];
     for (uint i = 0; i < N; i++)
@@ -156,7 +156,7 @@ bool MultiAdaptiveTimeSlab::shift()
     adaptivity.update(i, k, r, *method);
 
     // Save right-hand side at end-point for cG
-    if ( method->type() == NewMethod::cG )
+    if ( method->type() == Method::cG )
       f0[i] = f;
   }
   

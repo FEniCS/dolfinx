@@ -16,10 +16,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ElasticitySolver::ElasticitySolver(Mesh& mesh, 
-				   NewFunction &f,
-				   NewFunction &u0, NewFunction &v0,
+				   Function& f,
+				   Function& u0, Function& v0,
 				   real E, real nu,
-				   NewBoundaryCondition& bc,
+				   BoundaryCondition& bc,
 				   real k, real T)
   : mesh(mesh), f(f), u0(u0), v0(v0), E(E), nu(nu), bc(bc), k(k), T(T),
     counter(0)
@@ -56,8 +56,8 @@ void ElasticitySolver::solve()
   Matrix A, M, A2;
   Vector x10, x11, x20, x21, x11old, x21old, b, m, xtmp1, xtmp2, stepresidual;
   
-  NewFunction u1(x11, mesh, element);
-  NewFunction w1(x21, mesh, element);
+  Function u1(x11, mesh, element);
+  Function w1(x21, mesh, element);
 
   File         file("elasticity.m");
 
@@ -84,7 +84,7 @@ void ElasticitySolver::solve()
   tic();
 
   // Assemble stiffness matrix
-  NewFEM::assemble(a, A, mesh);
+  FEM::assemble(a, A, mesh);
 
   elapsed = toc();
   dolfin_debug("Assembled matrix:");
@@ -94,7 +94,7 @@ void ElasticitySolver::solve()
   tic();
 
   // Assemble load vector
-  NewFEM::assemble(L, b, mesh);
+  FEM::assemble(L, b, mesh);
 
   elapsed = toc();
   dolfin_debug("Assembled vector:");
@@ -104,11 +104,11 @@ void ElasticitySolver::solve()
   //return;
 
   // Assemble mass matrix
-  NewFEM::assemble(amass, M, mesh);
+  FEM::assemble(amass, M, mesh);
 
 
   // Set BC
-  NewFEM::setBC(A, b, mesh, bc);
+  FEM::setBC(A, b, mesh, bc);
 
 //   cout << "A: " << endl;
 //   A.disp(false);
@@ -117,12 +117,12 @@ void ElasticitySolver::solve()
 
   // Lump mass matrix
 
-  NewFEM::lump(M, m);
+  FEM::lump(M, m);
 
 
   // Assemble initial values
-  NewFEM::assemble(Lu0, xtmp1, mesh);
-  NewFEM::assemble(Lv0, xtmp2, mesh);
+  FEM::assemble(Lu0, xtmp1, mesh);
+  FEM::assemble(Lv0, xtmp2, mesh);
 
   for(unsigned int i = 0; i < m.size(); i++)
   {
@@ -153,11 +153,10 @@ void ElasticitySolver::solve()
     x20 = x21;
 
     // Assemble load vector
-    NewFEM::assemble(L, b, mesh);
+    FEM::assemble(L, b, mesh);
 
     // Set boundary conditions
-    NewFEM::setBC(A, b, mesh, bc);
-
+    FEM::setBC(A, b, mesh, bc);
 
     // Fixed point iteration
     
@@ -214,7 +213,7 @@ void ElasticitySolver::solve()
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticitySolver::save(Mesh& mesh, NewFunction& u, NewFunction& v,
+void ElasticitySolver::save(Mesh& mesh, Function& u, Function& v,
 			    File& solutionfile)
 {
   if(counter % (int)(1.0 / 33.0 / k) == 0)
@@ -258,10 +257,10 @@ void ElasticitySolver::save(Mesh& mesh, NewFunction& u, NewFunction& v,
 }
 //-----------------------------------------------------------------------------
 void ElasticitySolver::solve(Mesh& mesh,
-			     NewFunction& f,
-			     NewFunction &u0, NewFunction &v0,
+			     Function& f,
+			     Function& u0, Function& v0,
 			     real E, real nu,
-			     NewBoundaryCondition& bc,
+			     BoundaryCondition& bc,
 			     real k, real T)
 {
   ElasticitySolver solver(mesh, f, u0, v0, E, nu, bc, k, T);

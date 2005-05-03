@@ -8,14 +8,14 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Point.h>
-#include <dolfin/NewFunction.h>
-#include <dolfin/NewFiniteElement.h>
+#include <dolfin/Function.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/Form.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(uint nfunctions) : w(0), nfunctions(nfunctions)
+Form::Form(uint num_functions) : w(0), num_functions(num_functions)
 {
   // Reset data
   det = 0.0;
@@ -29,19 +29,19 @@ Form::Form(uint nfunctions) : w(0), nfunctions(nfunctions)
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
 
   // Initialize list of functions
-  if ( nfunctions > 0 )
+  if ( num_functions > 0 )
   {
     // Reserve list of functions
     functions.clear();
-    functions.reserve(nfunctions);
+    functions.reserve(num_functions);
 
     // Reserve list of elements
     elements.clear();
-    elements.reserve(nfunctions);
+    elements.reserve(num_functions);
 
     // Initialize coefficients
-    w = new real* [nfunctions];
-    for (uint i = 0; i < nfunctions; i++)
+    w = new real* [num_functions];
+    for (uint i = 0; i < num_functions; i++)
       w[i] = 0;
   }
 }
@@ -55,7 +55,7 @@ Form::~Form()
   // Delete coefficients
   if ( w )
   {
-    for (uint i = 0; i < nfunctions; i++)
+    for (uint i = 0; i < num_functions; i++)
       delete [] w[i];
     delete [] w;
   }
@@ -162,19 +162,19 @@ void Form::updateTetLinMap(const Cell& cell)
 //-----------------------------------------------------------------------------
 void Form::updateCoefficients(const Cell& cell)
 {
-  dolfin_assert(nfunctions == functions.size());
+  dolfin_assert(num_functions == functions.size());
 
   // Compute the projection of all functions to the current element
-  for (uint i = 0; i < nfunctions; i++)
+  for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
     functions[i]->project(cell, w[i]);
   }
 }
 //-----------------------------------------------------------------------------
-void Form::add(NewFunction& function, const NewFiniteElement* element)
+void Form::add(Function& function, const FiniteElement* element)
 {
-  if ( functions.size() == nfunctions )
+  if ( functions.size() == num_functions )
     dolfin_error("All functions already added.");
   
   // Get number of new function

@@ -4,7 +4,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Vector.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
 
@@ -83,7 +83,7 @@ void MultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
   real* yy = y.array();
   
   // Choose method
-  if ( method.type() == NewMethod::cG )
+  if ( method.type() == Method::cG )
     cGmult(xx, yy);
   else
     dGmult(xx, yy);

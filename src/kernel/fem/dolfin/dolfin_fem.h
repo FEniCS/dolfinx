@@ -6,14 +6,14 @@
 
 // Assembly
 
-#include <dolfin/NewBoundaryCondition.h>
+#include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryValue.h>
-#include <dolfin/NewFEM.h>
-#include <dolfin/NewFiniteElement.h>
-#include <dolfin/LinearTriElement.h>
-#include <dolfin/LinearTetElement.h>
+#include <dolfin/FEM.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
+#include <dolfin/P1Tet.h>
+#include <dolfin/P1Tri.h>
 #include <dolfin/StiffnessMatrix.h>
 
 #endif

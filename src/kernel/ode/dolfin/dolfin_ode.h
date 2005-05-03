@@ -24,19 +24,19 @@
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptivity.h>
-#include <dolfin/NewcGqMethod.h>
-#include <dolfin/NewdGqMethod.h>
-#include <dolfin/NewMethod.h>
-#include <dolfin/NewParticleSystem.h>
-#include <dolfin/NewPartition.h>
-#include <dolfin/NewSample.h>
-#include <dolfin/NewTimeSlab.h>
-#include <dolfin/NewTimeStepper.h>
+#include <dolfin/Method.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ODESolver.h>
+#include <dolfin/ParticleSystem.h>
+#include <dolfin/Partition.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/Regulator.h>
+#include <dolfin/Sample.h>
+#include <dolfin/TimeSlab.h>
+#include <dolfin/TimeStepper.h>
 #include <dolfin/TimeSlabJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
+#include <dolfin/cGqMethod.h>
+#include <dolfin/dGqMethod.h>
 
 #endif

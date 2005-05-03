@@ -1,17 +1,21 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
 
 #include <stdarg.h>
 
-#include <dolfin/List.h>
+#include <dolfin/NewList.h>
 #include <dolfin/Parameter.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class ParameterList{
+  class ParameterList
+  {
   public:
 
     ParameterList();
@@ -40,7 +44,7 @@ namespace dolfin {
     
     Parameter* find(const char *identifier);
     
-    List<Parameter> list;
+    NewList<Parameter> list;
     
   };
   

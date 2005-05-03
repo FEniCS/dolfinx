@@ -4,7 +4,7 @@
 #include <cmath>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MonoAdaptivity.h>
 
 using namespace dolfin;
@@ -43,7 +43,7 @@ real MonoAdaptivity::timestep() const
   return k;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptivity::update(real k0, real r, const NewMethod& method)
+void MonoAdaptivity::update(real k0, real r, const Method& method)
 {
   // Compute new time step
   const real k1 = method.timestep(r, tol, k0, kmax_current);

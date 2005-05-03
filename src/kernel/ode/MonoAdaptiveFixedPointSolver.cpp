@@ -3,7 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Alloc.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveFixedPointSolver.h>
 

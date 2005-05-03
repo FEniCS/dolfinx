@@ -9,11 +9,11 @@
 
 using namespace dolfin;
 
-class Benchmark : public NewParticleSystem
+class Benchmark : public ParticleSystem
 {
 public:
   
-  Benchmark(unsigned int n) : NewParticleSystem(n, 1)
+  Benchmark(unsigned int n) : ParticleSystem(n, 1)
   {
     if ( n < 2 )
       dolfin_error("System must have at least 2 particles.");
@@ -75,7 +75,6 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("initial time step", 0.001);
   dolfin_set("save solution", true);
-  dolfin_set("use new ode solver", true);
   dolfin_set("method", "mcg");
   dolfin_set("order", 1);
   //dolfin_set("solver", "newton");

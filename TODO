@@ -53,6 +53,13 @@ Input/Output
 
 * Save edges in MATLAB format
 
+Solvers
+-------
+
+* Implement Navier-Stokes solver
+* Implement updated elasticity
+* Stabilation of convection-diffusion
+
 Multi-adaptive solver
 ---------------------
 
@@ -76,7 +83,7 @@ o [foufas] Finance module?
 General
 -------
 
-* Add complex to LogStream
+* Don't use cut in src/config script
 * Replace ::show() with ::disp() for all classes
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere

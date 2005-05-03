@@ -4,7 +4,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Vector.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
 
@@ -99,7 +99,7 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
 
       // Get correct weight
       real w = 0.0;
-      if ( method.type() == NewMethod::cG )
+      if ( method.type() == Method::cG )
 	w = - k * method.nweight(m, n + 1);
       else
 	w = - k * method.nweight(m, n);

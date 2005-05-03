@@ -5,7 +5,7 @@
 # Compile this form with FFC: ffc ElasticityMass.form.
 
 name = "ElasticityMass"
-element = FiniteElement("Lagrange", "tetrahedron", 1, 3)
+element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 u = BasisFunction(element)
 v = BasisFunction(element)

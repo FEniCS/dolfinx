@@ -11,9 +11,9 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ConvectionDiffusionSolver::ConvectionDiffusionSolver(Mesh& mesh, 
-						     NewFunction& w,
-						     NewFunction& f,
-						     NewBoundaryCondition& bc)
+						     Function& w,
+						     Function& f,
+						     BoundaryCondition& bc)
   : mesh(mesh), w(w), f(f), bc(bc)
 {
   // Do nothing
@@ -29,7 +29,7 @@ void ConvectionDiffusionSolver::solve()
   Matrix A;                 // matrix defining linear system
   Vector x0, x1, b;         // vectors 
   GMRES solver;             // linear system solver
-  NewFunction u0(x0, mesh); // function at left end-point
+  Function u0(x0, mesh);    // function at left end-point
   File file("convdiff.m");  // file for saving solution
 
   // Create variational forms
@@ -37,11 +37,11 @@ void ConvectionDiffusionSolver::solve()
   ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
 
   // Assemble stiffness matrix
-  NewFEM::assemble(a, A, mesh);
+  FEM::assemble(a, A, mesh);
 
   // FIXME: Temporary fix
   x1.init(mesh.noNodes());
-  NewFunction u1(x1, mesh, a.trial());
+  Function u1(x1, mesh, a.trial());
 
   // Start time-stepping
   Progress p("Time-stepping");
@@ -52,8 +52,8 @@ void ConvectionDiffusionSolver::solve()
     x0 = x1;
     
     // Assemble load vector and set boundary conditions
-    NewFEM::assemble(L, b, mesh);
-    NewFEM::setBC(A, b, mesh, bc);
+    FEM::assemble(L, b, mesh);
+    FEM::setBC(A, b, mesh, bc);
     
     // Solve the linear system
     solver.solve(A, x1, b);
@@ -67,8 +67,8 @@ void ConvectionDiffusionSolver::solve()
   }
 }
 //-----------------------------------------------------------------------------
-void ConvectionDiffusionSolver::solve(Mesh& mesh, NewFunction& w, NewFunction& f,
-				      NewBoundaryCondition& bc)
+void ConvectionDiffusionSolver::solve(Mesh& mesh, Function& w, Function& f,
+				      BoundaryCondition& bc)
 {
   ConvectionDiffusionSolver solver(mesh, w, f, bc);
   solver.solve();

@@ -86,7 +86,7 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-SUBDIRS = mesh fem quadrature ode bench form solvers
+SUBDIRS = mesh fem quadrature ode bench solvers
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

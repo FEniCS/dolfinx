@@ -1,25 +1,27 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __FORM_H
 #define __FORM_H
 
 #include <dolfin/constants.h>
 #include <dolfin/NewArray.h>
-#include <dolfin/NewFiniteElement.h>
+#include <dolfin/FiniteElement.h>
 
 namespace dolfin
 {
 
   class Cell;
-  class NewFunction;
+  class Function;
   
   class Form
   {
   public:
 
     /// Constructor
-    Form(uint nfunctions);
+    Form(uint num_functions);
 
     /// Destructor
     virtual ~Form();
@@ -28,7 +30,7 @@ namespace dolfin
     void update(const Cell& cell);
 
     /// Friends
-    friend class NewFEM;
+    friend class FEM;
 
   protected:
 
@@ -42,7 +44,7 @@ namespace dolfin
     void updateCoefficients(const Cell& cell);
 
     // Add function
-    void add(NewFunction& function, const NewFiniteElement* element);
+    void add(Function& function, const FiniteElement* element);
 
     // Determinant of Jacobian of map
     real det;
@@ -54,16 +56,16 @@ namespace dolfin
     real g00, g01, g02, g10, g11, g12, g20, g21, g22;
 
     // List of finite elements for functions (coefficients)
-    NewArray<const NewFiniteElement*> elements;
+    NewArray<const FiniteElement*> elements;
 
     // List of functions (coefficients)
-    NewArray<const NewFunction*> functions;
+    NewArray<const Function*> functions;
     
     // Coefficients of functions projected to current element
     real** w;
 
     // Number of functions
-    uint nfunctions;
+    uint num_functions;
 
   };
 

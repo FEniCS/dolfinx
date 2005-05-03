@@ -86,7 +86,7 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-EXTRA_DIST = dolfin_fem.h              NewBoundaryCondition.h              BoundaryValue.h              LinearTetElement.h              LinearTriElement.h              LoadVector.h              MassMatrix.h              NewFEM.h              NewFiniteElement.h              StiffnessMatrix.h
+EXTRA_DIST = dolfin_fem.h              BoundaryCondition.h              BoundaryValue.h              FEM.h              FiniteElement.h              LoadVector.h              MassMatrix.h              P1Tet.h              P1Tri.h              StiffnessMatrix.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

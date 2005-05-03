@@ -1,124 +1,102 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Johan Jansson, 2005.
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-#include <dolfin/Variable.h>
-#include <dolfin/ElementFunction.h>
-#include <dolfin/FunctionPointer.h>
-#include <dolfin/NewArray.h>
 
-namespace dolfin {
+#define HEJ 0.1
+
+#include <dolfin/constants.h>
+#include <dolfin/Point.h>
+#include <dolfin/Variable.h>
+
+namespace dolfin
+{
   
+  class Node;
   class Cell;
   class Mesh;
+  class FiniteElement;
   class Vector;
-  class ElementData;
-  class NewPDE;
-  class GenericFunction;
-
-  /// A Function represents a function that can be evaluated for given
-  /// input. The type of evaluation depends on which type of function
-  /// that is represented.
-
-  // FIXME: Needs to be redesigned. Which types do we need, and how
-  // FIXME: are they related?
   
-  class Function : public Variable {
+  /// This class represents a function defined on a mesh. The function
+  /// is defined in terms of a mesh, a finite element and a vector
+  /// containing the degrees of freedom of the function on the mesh.
+
+  /// Vector functions are initialized by a vector x containing the 
+  /// function values for all three vector components and no_comp, 
+  /// the number of vector components.  
+  /// The function values in x should be ordered as: 
+  /// vector component j at dof i is listed at i*no_comp+j.   
+
+  class Function : public Variable
+  {
   public:
 
-    /// Create a function of unspecified type
+    /// Create user-defined function
     Function();
 
-    /// Create function specified on given mesh with given nodal values
-    Function(Mesh& mesh, dolfin::Vector& x, int dim = 0, int size = 1);
+    /// Create a function (choose mesh and element automatically)
+    Function(Vector& x);
 
-    /// Create function specified by the given expression
-    Function(const char* name,  int dim = 0, int size = 1);
+    /// Create a function (choose element automatically)
+    Function(Vector& x, Mesh& mesh);
 
-    /// Create function from function pointer
-    Function(function fp);
+    /// Create a function
+    Function(Vector& x, Mesh& mesh, const FiniteElement& element);
 
     /// Destructor
-    ~Function();
+    virtual ~Function();
 
-    /// Initialize function on given mesh with given nodal values
-    void init(Mesh& mesh, dolfin::Vector& x, int dim = 0, int size = 1);
-    
-    /// Create function specified by the given expression
-    void init(const char* name,  int dim = 0, int size = 1);
-    
-    /// Create function from function pointer
-    void init(function fp);
+    /// Compute projection of function onto a given local finite element space
+    void project(const Cell& cell, real c[]) const;
 
-    /// Evaluation for given node and time
-    real operator() (const Node&  n, real t = 0.0) const;
-    real operator() (const Node&  n, real t = 0.0);
-    
-    /// Evaluation for given point and time
-    real operator() (const Point& p, real t = 0.0) const;
-    real operator() (const Point& p, real t = 0.0);
-    
-    /// Evaluation for given coordinates and time
-    real operator() (real x, real y, real z, real t) const;
-    real operator() (real x, real y, real z, real t);
-    
-    /// Evaluation for given component and time
-    real operator() (unsigned int i, real t) const;
-    real operator() (unsigned int i, real t);
-    
-    /// Absolute values 
-    real abs(const Node&  n, real t = 0.0);
-    real abs(const Point& p, real t = 0.0);
-    real abs(real x, real y, real z, real t);
-    real abs(unsigned int i, real t);
-    
-    // Update function to given time
-    void update(real t);
-    
-    // Return current time
+    /// Evaluate function at given node
+    real operator() (const Node& node) const;
+
+    /// Evaluate function at given node
+    real operator() (const Node& node, uint i) const;
+
+    /// Evaluate function at given point
+    virtual real operator() (const Point& point) const;
+
+    /// Evaluate vector-valued function at given point
+    virtual real operator() (const Point& point, uint i) const;
+
+    /// Return the mesh on which the function is defined
+    Mesh& mesh();
+
+    /// Return the finite element defining the function space
+    const FiniteElement& element() const;
+
+    /// Return current time
     real time() const;
-    
-    // FIXME: Special member functions below: Should they be removed?
-    //---------------------------------------------------------------
-    
-    // Get mesh
-    Mesh& mesh() const;
-    
-    // Get element data
-    ElementData& elmdata();
-    
-    // Update values of element function
-    void update(FunctionSpace::ElementFunction& v,
-		const FiniteElement& element, const Cell& cell, real t) const;
-    
-    // Vector function
-    class Vector {
-    public:
-      
-      Vector(Mesh& mesh, dolfin::Vector& x, int size = 3);
-      Vector(const char* name,  int size = 3);
-      ~Vector();
-      
-      int size() const;
-      
-      Function& operator() (int i);
-      
-    private:
-     
-      Function** f;
-      int _size;
 
-    };
+    /// Specify current time
+    void set(real time);
+
+    /// Specify finite element
+    void set(const FiniteElement& element);
 
   private:
-    
-    // Function
-    GenericFunction* f;
 
+    // Pointer to degrees of freedom
+    Vector* _x;
+
+    // Pointer to mesh
+    Mesh* _mesh;
+
+    // Pointer to finite element
+    const FiniteElement* _element;
+
+    // Current time
+    real t;
+    
   };
-  
+
 }
 
 #endif

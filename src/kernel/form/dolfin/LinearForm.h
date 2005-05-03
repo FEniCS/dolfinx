@@ -32,12 +32,12 @@ namespace dolfin
     virtual bool boundary(real* block) const;
 
     /// Return finite element defining the test space
-    const NewFiniteElement& test() const;
+    const FiniteElement& test() const;
 
   protected:
 
     // Finite element defining the test space
-    NewFiniteElement* _test;
+    FiniteElement* _test;
 
   };
 

@@ -4,40 +4,41 @@
 #ifndef __ELASTICITY_SOLVER_H
 #define __ELASTICITY_SOLVER_H
 
-#include <dolfin/NewSolver.h>
+#include <dolfin/Solver.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class ElasticitySolver : public NewSolver
+  class ElasticitySolver : public Solver
   {
   public:
     
     // Create elasticity solver
     ElasticitySolver(Mesh& mesh,
-		     NewFunction& f, NewFunction& u0, NewFunction& v0,
+		     Function& f, Function& u0, Function& v0,
 		     real E, real nu,
-		     NewBoundaryCondition& bc, real k, real T);
+		     BoundaryCondition& bc, real k, real T);
     
     // Solve elasticity
     void solve();
     
-    void save(Mesh& mesh, NewFunction& u, NewFunction& v, File &solutionfile);
+    void save(Mesh& mesh, Function& u, Function& v, File &solutionfile);
 
     // Solve elasticity (static version)
     static void solve(Mesh& mesh,
-		      NewFunction& f, NewFunction& u0, NewFunction& v0,
+		      Function& f, Function& u0, Function& v0,
 		      real E, real nu,
-		      NewBoundaryCondition& bc, real k, real T);
+		      BoundaryCondition& bc, real k, real T);
     
   private:
     
     Mesh& mesh;
-    NewFunction& f;
-    NewFunction& u0;
-    NewFunction& v0;
+    Function& f;
+    Function& u0;
+    Function& v0;
     real E;
     real nu;
-    NewBoundaryCondition& bc;
+    BoundaryCondition& bc;
     real k;
     real T;
     int counter;

@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -158,7 +160,7 @@ void TriMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes;
+  PArray<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
@@ -199,7 +201,7 @@ void TriMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes;
+  PArray<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes

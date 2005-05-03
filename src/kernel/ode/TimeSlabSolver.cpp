@@ -2,13 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/dolfin_settings.h>
-#include <dolfin/NewTimeSlab.h>
+#include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-TimeSlabSolver::TimeSlabSolver(NewTimeSlab& timeslab)
+TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
     monitor(dolfin_get("monitor convergence"))
   

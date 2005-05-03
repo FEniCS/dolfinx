@@ -10,8 +10,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PoissonSolver::PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)
-  : NewSolver(), mesh(mesh), f(f), bc(bc)
+PoissonSolver::PoissonSolver(Mesh& mesh, Function& f, BoundaryCondition& bc)
+  : Solver(), mesh(mesh), f(f), bc(bc)
 {
   // Do nothing
 }
@@ -25,19 +25,19 @@ void PoissonSolver::solve()
   // Discretize
   Matrix A;
   Vector x, b;
-  NewFEM::assemble(a, L, A, b, mesh, bc);
+  FEM::assemble(a, L, A, b, mesh, bc);
 
   // Solve the linear system
   GMRES solver;
   solver.solve(A, x, b);
 
   // Save function to file
-  NewFunction u(x, mesh, a.trial());
+  Function u(x, mesh, a.trial());
   File file("poisson.m");
   file << u;
 }
 //-----------------------------------------------------------------------------
-void PoissonSolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc)
+void PoissonSolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc)
 {
   PoissonSolver solver(mesh, f, bc);
   solver.solve();

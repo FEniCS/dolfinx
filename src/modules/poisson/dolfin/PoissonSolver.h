@@ -8,29 +8,29 @@
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H
 
-#include <dolfin/NewSolver.h>
+#include <dolfin/Solver.h>
 
 namespace dolfin
 {
 
-  class PoissonSolver : public NewSolver
+  class PoissonSolver : public Solver
   {
   public:
     
     // Create Poisson solver
-    PoissonSolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc);
+    PoissonSolver(Mesh& mesh, Function& f, BoundaryCondition& bc);
     
     // Solve Poisson's equation
     void solve();
 
     // Solve Poisson's equation (static version)
-    static void solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc);
+    static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc);
   
   private:
 
     Mesh& mesh;
-    NewFunction& f;
-    NewBoundaryCondition& bc;
+    Function& f;
+    BoundaryCondition& bc;
 
   };
 

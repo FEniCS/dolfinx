@@ -23,7 +23,7 @@
 using namespace dolfin;
 
 // Right-hand side
-class MyFunction : public NewFunction
+class MyFunction : public Function
 {
   real operator() (const Point& p) const
   {
@@ -32,7 +32,7 @@ class MyFunction : public NewFunction
 };
 
 // Boundary condition
-class MyBC : public NewBoundaryCondition
+class MyBC : public BoundaryCondition
 {
   const BoundaryValue operator() (const Point& p)
   {

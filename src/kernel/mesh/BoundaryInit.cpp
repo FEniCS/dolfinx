@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -65,11 +67,11 @@ void BoundaryInit::initNodes(Mesh& mesh)
   // an edge which is on the boundary. We need an extra list so that we don't
   // add a node more than once.
 
-  Array<bool> marker(mesh.noNodes());
+  PArray<bool> marker(mesh.noNodes());
   marker = false;
 
   // Mark all nodes which are on the boundary
-  for (List<Edge*>::Iterator e(mesh.bd->edges); !e.end(); ++e) {
+  for (PList<Edge*>::Iterator e(mesh.bd->edges); !e.end(); ++e) {
     marker((*e)->node(0).id()) = true;
     marker((*e)->node(1).id()) = true;
   }
@@ -96,7 +98,7 @@ void BoundaryInit::initFacesTet(Mesh& mesh)
   // for all faces. Warning: may not work if some faces have been
   // removed
 
-  Array<int> cellcount(mesh.noFaces());
+  PArray<int> cellcount(mesh.noFaces());
   cellcount = 0;
 
   // Count the number of cell neighbors for each face
@@ -129,7 +131,7 @@ void BoundaryInit::initEdgesTri(Mesh& mesh)
   // neighbors for all edges.  Warning: may not work if some edges
   // have been removed
 
-  Array<int> cellcount(mesh.noEdges());
+  PArray<int> cellcount(mesh.noEdges());
   cellcount = 0;
 
   // Count the number of cell neighbors for each edge
@@ -159,11 +161,11 @@ void BoundaryInit::initEdgesTet(Mesh& mesh)
   // a face which is on the boundary. We need an extra list so that we don't
   // add an edge more than once.
 
-  Array<bool> marker(mesh.noEdges());
+  PArray<bool> marker(mesh.noEdges());
   marker = false;
 
   // Mark all edges which are on the boundary
-  for (List<Face*>::Iterator f(mesh.bd->faces); !f.end(); ++f)
+  for (PList<Face*>::Iterator f(mesh.bd->faces); !f.end(); ++f)
     for (EdgeIterator e(**f); !e.end(); ++e)
       marker(e->id()) = true;
 

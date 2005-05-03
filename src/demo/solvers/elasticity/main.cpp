@@ -6,7 +6,7 @@
 using namespace dolfin;
 
 // Right-hand side
-class Source : public NewFunction
+class Source : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
@@ -34,7 +34,7 @@ class Source : public NewFunction
 };
 
 // Initial displacement
-class InitialDisplacement : public NewFunction
+class InitialDisplacement : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
@@ -43,7 +43,7 @@ class InitialDisplacement : public NewFunction
 };
 
 // Initial displacement
-class InitialVelocity : public NewFunction
+class InitialVelocity : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
@@ -55,10 +55,10 @@ class InitialVelocity : public NewFunction
 };
 
 // Boundary condition
-class MyBC : public NewBoundaryCondition
+class MyBC : public BoundaryCondition
 {
 public:
-  MyBC::MyBC() : NewBoundaryCondition(3)
+  MyBC::MyBC() : BoundaryCondition(3)
   {
   }
 

@@ -1,7 +1,5 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_ode.h \
-                          dolfin/NewcGqMethod.h \
-                          dolfin/NewdGqMethod.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
                           dolfin/Dependencies.h \
@@ -20,23 +18,23 @@ include_HEADERS         = dolfin/dolfin_ode.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
                           dolfin/MultiAdaptivity.h \
-                          dolfin/NewMethod.h \
+                          dolfin/Method.h \
                           dolfin/ODE.h \
                           dolfin/ODESolver.h \
-                          dolfin/NewParticleSystem.h \
-                          dolfin/NewPartition.h \
+                          dolfin/ParticleSystem.h \
+                          dolfin/Partition.h \
                           dolfin/ReducedModel.h \
                           dolfin/Regulator.h \
-                          dolfin/NewSample.h \
-                          dolfin/NewTimeSlab.h \
+                          dolfin/Sample.h \
+                          dolfin/TimeSlab.h \
                           dolfin/TimeSlabJacobian.h \
                           dolfin/TimeSlabSolver.h \
-                          dolfin/NewTimeStepper.h
+                          dolfin/TimeStepper.h \
+                          dolfin/cGqMethod.h \
+                          dolfin/dGqMethod.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = NewcGqMethod.cpp \
-                          NewdGqMethod.cpp \
-                          Alloc.cpp \
+libdolfin_ode_a_SOURCES = Alloc.cpp \
                           ComplexODE.cpp \
                           Dependencies.cpp \
                           Dual.cpp \
@@ -54,15 +52,17 @@ libdolfin_ode_a_SOURCES = NewcGqMethod.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \
                           MultiAdaptivity.cpp \
-                          NewMethod.cpp \
+                          Method.cpp \
                           ODE.cpp \
                           ODESolver.cpp \
-                          NewParticleSystem.cpp \
-                          NewPartition.cpp \
+                          ParticleSystem.cpp \
+                          Partition.cpp \
                           ReducedModel.cpp \
                           Regulator.cpp \
-                          NewSample.cpp \
-                          NewTimeSlab.cpp \
+                          Sample.cpp \
+                          TimeSlab.cpp \
                           TimeSlabJacobian.cpp \
                           TimeSlabSolver.cpp \
-                          NewTimeStepper.cpp
+                          TimeStepper.cpp \
+                          cGqMethod.cpp \
+                          dGqMethod.cpp

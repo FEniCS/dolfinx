@@ -6,12 +6,14 @@
 //   - Enums don't need to be called "refined_regular", just "regular" is enough?
 //   - Move data to GenericCell? Cell should only contain the GenericCell pointer?
 //   - Maybe more methods should be private?
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __CELL_H
 #define __CELL_H
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/NodeIterator.h>
 #include <dolfin/EdgeIterator.h>

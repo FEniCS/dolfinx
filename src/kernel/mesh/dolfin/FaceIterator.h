@@ -1,11 +1,13 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __FACE_ITERATOR_H
 #define __FACE_ITERATOR_H
 
-#include <dolfin/Array.h>
-#include <dolfin/List.h>
+#include <dolfin/PArray.h>
+#include <dolfin/PList.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
@@ -96,7 +98,7 @@ namespace dolfin {
 		
     private:
 
-      List<Face*>::Iterator face_iterator;
+      PList<Face*>::Iterator face_iterator;
       
     };
 
@@ -116,7 +118,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Face*>::Iterator face_iterator;
+      PArray<Face*>::Iterator face_iterator;
 		
     };
 

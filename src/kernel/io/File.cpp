@@ -99,7 +99,7 @@ void File::operator>>(Mesh& mesh)
   *file >> mesh;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(NewFunction& u)
+void File::operator>>(Function& u)
 {
   file->read();
   
@@ -107,13 +107,6 @@ void File::operator>>(NewFunction& u)
 }
 //-----------------------------------------------------------------------------
 void File::operator>>(Sample& sample)
-{
-  file->read();
-  
-  *file >> sample;
-}
-//-----------------------------------------------------------------------------
-void File::operator>>(NewSample& sample)
 {
   file->read();
   
@@ -148,7 +141,7 @@ void File::operator<<(Mesh& mesh)
   *file << mesh;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(NewFunction& u)
+void File::operator<<(Function& u)
 {
   file->write();
   
@@ -156,13 +149,6 @@ void File::operator<<(NewFunction& u)
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Sample& sample)
-{
-  file->write();
-  
-  *file << sample;
-}
-//-----------------------------------------------------------------------------
-void File::operator<<(NewSample& sample)
 {
   file->write();
   

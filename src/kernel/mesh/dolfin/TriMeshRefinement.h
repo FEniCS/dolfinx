@@ -1,12 +1,15 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __TRI_MESH_REFINEMENT_H
 #define __TRI_MESH_REFINEMENT_H
 
 #include <dolfin/MeshRefinement.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
   class Cell;
@@ -15,7 +18,8 @@ namespace dolfin {
   /// of the algorithm described in the paper "Tetrahedral Mesh Refinement"
   /// by Jürgen Bey, in Computing 55, pp. 355-378 (1995).
   
-  class TriMeshRefinement : public MeshRefinement {
+  class TriMeshRefinement : public MeshRefinement
+  {
   public:
 
     /// Choose refinement rule

@@ -6,7 +6,7 @@
 #ifndef __CELL_ITERATOR_H
 #define __CELL_ITERATOR_H
 
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
@@ -107,7 +107,7 @@ namespace dolfin {
 
     private:
 
-      Array<Cell*>::Iterator cell_iterator;
+      PArray<Cell*>::Iterator cell_iterator;
 		
     };
 
@@ -127,7 +127,7 @@ namespace dolfin {
 
     private:
 
-      Array<Cell*>::Iterator cell_iterator;
+      PArray<Cell*>::Iterator cell_iterator;
 		
     };
 
@@ -147,7 +147,7 @@ namespace dolfin {
 
     private:
 
-      Array<Cell*>::Iterator cell_iterator;
+      PArray<Cell*>::Iterator cell_iterator;
 		
     };
 
@@ -167,7 +167,7 @@ namespace dolfin {
 
     private:
 
-      Array<Cell*>::Iterator cell_iterator;
+      PArray<Cell*>::Iterator cell_iterator;
 		
     };
 	 

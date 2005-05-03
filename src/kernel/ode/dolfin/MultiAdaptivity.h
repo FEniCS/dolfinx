@@ -12,7 +12,7 @@ namespace dolfin
 {
   
   class ODE;
-  class NewMethod;
+  class Method;
 
   /// This class controls the multi-adaptive time-stepping
 
@@ -30,7 +30,7 @@ namespace dolfin
     real timestep(uint i) const;
 
     /// Update time step
-    void update(uint i, real k0, real r, const NewMethod& method);
+    void update(uint i, real k0, real r, const Method& method);
 
     /// Return threshold for reaching end of interval
     real threshold() const;

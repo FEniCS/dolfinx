@@ -1,7 +1,9 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
-#include <dolfin/NewFiniteElement.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
 
 using namespace dolfin;
@@ -33,13 +35,13 @@ bool BilinearForm::boundary(real* block) const
   return false;
 }
 //-----------------------------------------------------------------------------
-const NewFiniteElement& BilinearForm::test() const
+const FiniteElement& BilinearForm::test() const
 {
   dolfin_assert(_test); // Should be created by child class
   return *_test;
 }
 //-----------------------------------------------------------------------------
-const NewFiniteElement& BilinearForm::trial() const
+const FiniteElement& BilinearForm::trial() const
 {
   dolfin_assert(_trial); // Should be created by child class
   return *_trial;

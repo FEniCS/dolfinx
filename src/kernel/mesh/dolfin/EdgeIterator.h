@@ -1,11 +1,13 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __EDGE_ITERATOR_H
 #define __EDGE_ITERATOR_H
 
-#include <dolfin/Array.h>
-#include <dolfin/List.h>
+#include <dolfin/PArray.h>
+#include <dolfin/PList.h>
 #include <dolfin/Table.h>
 
 namespace dolfin {
@@ -106,7 +108,7 @@ namespace dolfin {
 		
     private:
 
-      List<Edge*>::Iterator edge_iterator;
+      PList<Edge*>::Iterator edge_iterator;
       
     };
 
@@ -126,7 +128,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Edge*>::Iterator edge_iterator;
+      PArray<Edge*>::Iterator edge_iterator;
 		
     };
 	 
@@ -146,7 +148,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Edge*>::Iterator edge_iterator;
+      PArray<Edge*>::Iterator edge_iterator;
 
     };
 
@@ -166,7 +168,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Edge*>::Iterator edge_iterator;
+      PArray<Edge*>::Iterator edge_iterator;
 
     };
 	 

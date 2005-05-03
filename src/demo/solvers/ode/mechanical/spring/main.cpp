@@ -7,11 +7,11 @@
 
 using namespace dolfin;
 
-class Spring : public NewParticleSystem
+class Spring : public ParticleSystem
 {
 public:
   
-  Spring() : NewParticleSystem(1, 1)
+  Spring() : ParticleSystem(1, 1)
   {
     // Final time
     T = 30.0;

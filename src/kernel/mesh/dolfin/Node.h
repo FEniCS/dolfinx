@@ -6,7 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <set>
 #include <dolfin/Point.h>
 #include <dolfin/NodeIterator.h>
@@ -173,9 +173,9 @@ namespace dolfin{
     Point p;
 
     // Connectivity
-    Array<Node*> nn;
-    Array<Cell*> nc;
-    Array<Edge*> ne;
+    PArray<Node*> nn;
+    PArray<Cell*> nc;
+    PArray<Edge*> ne;
     
     // Parent-child info
     Node* _parent;

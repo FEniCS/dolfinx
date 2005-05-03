@@ -5,9 +5,9 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/NewFunction.h>
-#include <dolfin/NewSample.h>
-#include <dolfin/NewFiniteElement.h>
+#include <dolfin/Function.h>
+#include <dolfin/Sample.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/MFile.h>
 
 using namespace dolfin;
@@ -138,18 +138,18 @@ void MFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<<(NewFunction& u)
+void MFile::operator<<(Function& u)
 {
-  uint ncomponents = 0;
-  const NewFiniteElement& element = u.element();
+  uint num_components = 0;
+  const FiniteElement& element = u.element();
 
   if ( element.rank() == 0 )
   {
-    ncomponents = 1;
+    num_components = 1;
   }
   else if ( element.rank() == 1 )
   {
-    ncomponents = element.tensordim(0);
+    num_components = element.tensordim(0);
   }
   else
     dolfin_error("Cannot handle tensor valued functions.");
@@ -173,7 +173,7 @@ void MFile::operator<<(NewFunction& u)
   if ( u.number() == 0 )
   {
     fprintf(fp, "%s = [", u.name().c_str());
-    for(unsigned int i = 0; i < ncomponents; i++)
+    for (unsigned int i = 0; i < num_components; i++)
     { 
       for (NodeIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));
@@ -184,7 +184,7 @@ void MFile::operator<<(NewFunction& u)
   else
   {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
-    for(unsigned int i = 0; i < ncomponents; i++)
+    for (unsigned int i = 0; i < num_components; i++)
     { 
       for (NodeIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));
@@ -203,7 +203,7 @@ void MFile::operator<<(NewFunction& u)
        << ") to file " << filename << " in Octave/Matlab format." << endl;
 }
 //-----------------------------------------------------------------------------
-void MFile::operator<< (NewSample& sample)
+void MFile::operator<< (Sample& sample)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");

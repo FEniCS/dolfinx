@@ -130,7 +130,7 @@ bool ODE::update(const real u[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
-void ODE::save(NewSample& sample)
+void ODE::save(Sample& sample)
 {
   // Do nothing
 }

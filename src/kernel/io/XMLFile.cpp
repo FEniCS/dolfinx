@@ -217,7 +217,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
-  for (List<Parameter>::Iterator p(parameters.list); !p.end(); ++p)
+  for (NewList<Parameter>::iterator p = parameters.list.begin(); p != parameters.list.end(); ++p)
   {
     switch ( p->type )
     {

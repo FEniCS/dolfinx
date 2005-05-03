@@ -90,7 +90,7 @@ SUBDIRS = dolfin           poisson           convdiff           elasticity
 
 
 INCLUDES = @KERNEL_CFLAGS@
-include_HEADERS = dolfin/dolfin_modules.h                   dolfin/NewSolver.h
+include_HEADERS = dolfin/dolfin_modules.h                   dolfin/Solver.h
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 

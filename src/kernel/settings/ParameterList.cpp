@@ -36,7 +36,7 @@ void ParameterList::add_aptr(Parameter::Type type, const char *identifier,
   Parameter p(type, identifier, aptr);
   
   // Add the parameter to the list
-  list.add(p);
+  list.push_back(p);
 }
 //----------------------------------------------------------------------------
 void ParameterList::set(const char *identifier, ...)
@@ -94,9 +94,9 @@ bool ParameterList::empty()
 //----------------------------------------------------------------------------
 Parameter* ParameterList::find(const char *identifier)
 {
-  for (List<Parameter>::Iterator p(list); !p.end(); ++p)
+  for (NewList<Parameter>::iterator p = list.begin(); p != list.end(); ++p)
     if ( p->matches(identifier) )
-      return p;
+      return &(*p);
 
   return 0;
 }

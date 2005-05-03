@@ -4,7 +4,7 @@
 #include <cmath>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MultiAdaptivity.h>
 
 using namespace dolfin;
@@ -55,7 +55,7 @@ real MultiAdaptivity::timestep(uint i) const
   return timesteps[i];
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::update(uint i, real k0, real r, const NewMethod& method)
+void MultiAdaptivity::update(uint i, real k0, real r, const Method& method)
 {
   // Compute new time step
   const real k1 = method.timestep(r, tol, k0, kmax_current);

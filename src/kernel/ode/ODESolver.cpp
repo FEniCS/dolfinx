@@ -4,7 +4,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
-#include <dolfin/NewTimeStepper.h>
+#include <dolfin/TimeStepper.h>
 #include <dolfin/ODESolver.h>
 
 using namespace dolfin;
@@ -15,7 +15,7 @@ void ODESolver::solve(ODE& ode)
   dolfin_start("Solving ODE");  
 
   // Temporary fix until we fix the dual problem again
-  NewTimeStepper::solve(ode);
+  TimeStepper::solve(ode);
 
   cout << "Not computing an error estimate. " 
        << "The solution may be inaccurate." << endl;
@@ -72,7 +72,7 @@ void ODESolver::solvePrimal(ODE& ode)
   //u.rename("u", "primal");
   
   // Solve primal problem
-  NewTimeStepper::solve(ode);
+  TimeStepper::solve(ode);
 
   dolfin_end();
 }
@@ -92,7 +92,7 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   
   // Solve dual problem
   if ( dolfin_get("use new ode solver") )
-    NewTimeStepper::solve(ode);
+    TimeStepper::solve(ode);
   else
     TimeStepper::solve(dual, phi);
 

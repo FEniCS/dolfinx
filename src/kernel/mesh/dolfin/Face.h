@@ -1,13 +1,16 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __FACE_H
 #define __FACE_H
 
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 #include <set>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Edge;
 
@@ -16,7 +19,8 @@ namespace dolfin {
   /// A triangle has no faces.
   /// A face has three edges for a tetrahedron.
 
-  class Face {
+  class Face
+  {
   public:
 
     /// Create an empty face
@@ -87,10 +91,10 @@ namespace dolfin {
     int _id;
 
     // The list of edges
-    Array<Edge*> fe;
+    PArray<Edge*> fe;
     
     // Connectivity
-    Array<Cell*> fc;
+    PArray<Cell*> fc;
     
   };
 

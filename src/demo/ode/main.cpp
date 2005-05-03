@@ -20,13 +20,13 @@ int main(int argc, char** argv)
 
   if ( strcasecmp(argv[1], "cg") == 0 ) {
     
-    NewcGqMethod cGq(q);
+    cGqMethod cGq(q);
     cGq.disp();
 
   }
   else if ( strcasecmp(argv[1], "dg") == 0 ) {
     
-    NewdGqMethod dGq(q);
+    dGqMethod dGq(q);
     dGq.disp();
     
   } 

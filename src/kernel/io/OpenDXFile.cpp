@@ -6,7 +6,7 @@
 #include <dolfin/timeinfo.h>
 #include <dolfin/System.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/NewFunction.h>
+#include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/OpenDXFile.h>
 
@@ -50,7 +50,7 @@ void OpenDXFile::operator<<(Mesh& mesh)
   fclose(fp);
 }
 //-­---------------------------------------------------------------------------
-void OpenDXFile::operator<<(NewFunction& u)
+void OpenDXFile::operator<<(Function& u)
 {
   event_saving_function();
 
@@ -166,7 +166,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
   fprintf(fp, "component \"data\" value \"diameter\"\n");
 }
 //-­---------------------------------------------------------------------------
-void OpenDXFile::writeFunction(FILE* fp, NewFunction& u)
+void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), frames.size());
@@ -200,7 +200,7 @@ void OpenDXFile::writeFunction(FILE* fp, NewFunction& u)
   frames.push_back(frame);
 }
 //-­---------------------------------------------------------------------------
-void OpenDXFile::writeSeries(FILE* fp, NewFunction& u)
+void OpenDXFile::writeSeries(FILE* fp, Function& u)
 {
   // Get position in file at start of series
   series_pos = ftell(fp);

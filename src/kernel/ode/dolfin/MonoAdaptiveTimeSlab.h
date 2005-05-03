@@ -8,20 +8,20 @@
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
 #include <dolfin/MonoAdaptivity.h>
-#include <dolfin/NewTimeSlab.h>
+#include <dolfin/TimeSlab.h>
 
 namespace dolfin
 {
   
   class ODE;
-  class NewMethod;
+  class Method;
   class TimeSlabSolver;
   
   /// This class represents a mono-adaptive time slab of length k = b - a
   /// holding the degrees of freedom for the solution of an ODE between
   /// two time levels a and b.
 
-  class MonoAdaptiveTimeSlab : public NewTimeSlab
+  class MonoAdaptiveTimeSlab : public TimeSlab
   {
   public:
 

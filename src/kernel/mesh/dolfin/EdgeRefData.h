@@ -1,15 +1,19 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __EDGE_REF_DATA_H
 #define __EDGE_REF_DATA_H
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Cell;
 
   /// Edge refinement data
-  class EdgeRefData {
+  class EdgeRefData
+  {
   public:
     
     /// Mark edge by given cell
@@ -27,7 +31,7 @@ namespace dolfin {
   private:
 
     /// Cells that have marked the edge
-    List<Cell*> cells;
+    PList<Cell*> cells;
     
   };
 

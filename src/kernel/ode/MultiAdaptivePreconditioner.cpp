@@ -4,8 +4,7 @@
 #include <dolfin/ODE.h>
 #include <dolfin/NewArray.h>
 #include <dolfin/Vector.h>
-#include <dolfin/NewMethod.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>

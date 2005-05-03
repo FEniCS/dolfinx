@@ -23,7 +23,7 @@ namespace dolfin
     void set(real value);
     
     /// Friends
-    friend class NewFEM;
+    friend class FEM;
 
   private:
 

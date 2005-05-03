@@ -1,14 +1,17 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __NODE_ITERATOR_H
 #define __NODE_ITERATOR_H
 
-#include <dolfin/Array.h>
-#include <dolfin/List.h>
+#include <dolfin/PArray.h>
+#include <dolfin/PList.h>
 #include <dolfin/Table.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Mesh;
   class Node;
@@ -19,7 +22,8 @@ namespace dolfin {
   
   typedef Node* NodePointer;
   
-  class NodeIterator {
+  class NodeIterator
+  {
   public:
     
     NodeIterator(const Mesh& mesh);
@@ -100,7 +104,7 @@ namespace dolfin {
 		
     private:
 
-      List<Node*>::Iterator node_iterator;
+      PList<Node*>::Iterator node_iterator;
       
     };
 
@@ -120,7 +124,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Node*>::Iterator node_iterator;
+      PArray<Node*>::Iterator node_iterator;
 		
     };
 	 
@@ -140,7 +144,7 @@ namespace dolfin {
 		
     private:
 
-      Array<Node*>::Iterator node_iterator;
+      PArray<Node*>::Iterator node_iterator;
 		
     };
 	 

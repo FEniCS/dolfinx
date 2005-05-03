@@ -1,12 +1,15 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __TET_MESH_REFINEMENT_H
 #define __TET_MESH_REFINEMENT_H
 
 #include <dolfin/MeshRefinement.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
   class Cell;
@@ -16,7 +19,8 @@ namespace dolfin {
   /// the algorithm described in the paper "Tetrahedral Mesh Refinement"
   /// by Jürgen Bey, in Computing 55, pp. 355-378 (1995).
   
-  class TetMeshRefinement : public MeshRefinement {
+  class TetMeshRefinement : public MeshRefinement
+  {
   public:
 
     /// Choose refinement rule
@@ -45,9 +49,9 @@ namespace dolfin {
 
     static void refineIrregular31(Cell& cell, Mesh& mesh);
     static void refineIrregular32(Cell& cell, Mesh& mesh,
-				  Array<Node*>& sorted_nodes);
+				  PArray<Node*>& sorted_nodes);
     static void refineIrregular33(Cell& cell, Mesh& mesh, 
-				  Array<Node*>& sorted_nodes, Cell& face_neighbor);
+				  PArray<Node*>& sorted_nodes, Cell& face_neighbor);
 
     static bool  markedEdgesOnSameFace (Cell& cell);
     static Cell* findNeighbor          (Cell& cell, Face& face);

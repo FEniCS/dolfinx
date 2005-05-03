@@ -3,7 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Alloc.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
 #include <dolfin/Vector.h>
@@ -52,7 +52,7 @@ real MultiAdaptiveFixedPointSolver::iteration()
     const real k = b - a;
 
     // Evaluate right-hand side at quadrature points of element
-    if ( method.type() == NewMethod::cG )
+    if ( method.type() == Method::cG )
       ts.cGfeval(f, s, e, i, a, b, k);
     else
       ts.dGfeval(f, s, e, i, a, b, k);

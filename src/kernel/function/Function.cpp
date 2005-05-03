@@ -1,223 +1,164 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <cmath>
-#include <dolfin/dolfin_settings.h>
-#include <dolfin/Point.h>
-#include <dolfin/Cell.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/ElementFunction.h>
 #include <dolfin/FiniteElement.h>
-#include <dolfin/GenericFunction.h>
-#include <dolfin/DofFunction.h>
-#include <dolfin/ExpressionFunction.h>
-#include <dolfin/ScalarExpressionFunction.h>
-#include <dolfin/VectorExpressionFunction.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
+  : Variable("u", "A function"), _x(0), _mesh(0), _element(0), t(0)
 {
-  f = new GenericFunction();
-  rename("u", "An unspecified function");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(Mesh& mesh, dolfin::Vector& x, int dim, int size)
+Function::Function(Vector& x)
+  : Variable("u", "A function"), _x(&x), _mesh(0), _element(0), t(0)
 {
-  f = 0;
-  rename("u", "Unnamed function");
-  init(mesh, x, dim, size);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(const char *name, int dim, int size)
+Function::Function(Vector& x, Mesh& mesh)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(0), t(0)
 {
-  f = 0;
-  rename("u", "Unnamed function");
-  init(name, dim, size);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function::Function(function fp)
+Function::Function(Vector& x, Mesh& mesh, const FiniteElement& element)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(&element), t(0)
 {
-  f = 0;
-  rename("u", "Unnamed function");
-  init(fp);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  if ( f != 0 )
-    delete f;
-  f = 0;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Function::init(Mesh& mesh, dolfin::Vector& x, int dim, int size)
+void Function::project(const Cell& cell, real c[]) const
 {
-  if ( f )
-    delete f;
-  
-  f = new DofFunction(mesh, x, dim, size);
-}
-//-----------------------------------------------------------------------------
-void Function::init(const char* name,  int dim, int size)
-{
-  if ( f )
-    delete f;
+  // Need to have an element to compute projection
+  if ( !_element )
+    dolfin_error("Function must be defined in terms of a finite element to compute projection.");
 
-  function fp;
-  vfunction vfp;
-  
-  if ( size == 1 )
+  // Two cases: either function is defined in terms of an element and
+  // a list of dofs or the function is user-defined (_x is null)
+  if ( _x )
   {
-    fp = dolfin_get(name);
-    f = new ScalarExpressionFunction(fp);
+    // First case: function defined in terms of an element an a list
+    // of dofs so we just need to pick the values
+
+    if ( _mesh && _mesh != &cell.mesh() )
+      dolfin_error("Function is defined on a different mesh.");
+
+    real* values = _x->array();
+    for (uint i = 0; i < _element->spacedim(); i++)
+      c[i] = values[_element->dof(i, cell, cell.mesh())];
+    _x->restore(values);
   }
   else
   {
-    vfp = dolfin_get(name);
-    f = new VectorExpressionFunction(vfp, dim, size);
+    // Second case: function is user-defined so we need to compute the
+    // projection to the given finite element space
+
+    // FIXME: This is just a temporary fix for P1 elements
+
+    if ( _element->rank() == 0 )
+    {
+      for (uint i = 0; i < _element->spacedim(); i++)
+	c[i] = (*this)(_element->coord(i, cell, cell.mesh()));
+    }
+    else if ( _element->rank() == 1 )
+    {
+      const uint scalar_dim = _element->spacedim() / _element->tensordim(0);
+      for (uint i = 0; i < _element->spacedim(); i++)
+      {
+	const uint component = i / scalar_dim;
+	c[i] = (*this)(_element->coord(i, cell, cell.mesh()), component);
+      }
+    }
+    else
+      dolfin_error("Cannot handle tensor valued functions.");
+  } 
+
+  // FIXME: If we know that the values are stored element-by-element
+  // FIXME: in x, then we can optimize by just calling
+  // FIXME: element::dof() one time with i = 0.
+}
+//-----------------------------------------------------------------------------
+real Function::operator() (const Node& node) const
+{
+  if ( _x )
+  {
+    // FIXME: This is just a temporary fix for P1 elements
+    return (*_x)(node.id());
+  }
+  else
+  {
+    return (*this)(node.coord());
   }
 }
 //-----------------------------------------------------------------------------
-void Function::init(function fp)
+real Function::operator() (const Node& node, uint i) const
 {
-  if ( f )
-    delete f;
-  
-  f = new ScalarExpressionFunction(fp);
+  if ( _x )
+  {
+    // FIXME: This is just a temporary fix for P1 elements
+
+    dolfin_assert(_mesh);
+    return (*_x)(i * _mesh->noNodes() + node.id());
+  }
+  else
+  {
+    return (*this)(node.coord(), i);
+  }
 }
 //-----------------------------------------------------------------------------
-real Function::operator() (const Node& n, real t) const
+real Function::operator()(const Point& point) const
 {
-  return (*f)(n, t);
+  dolfin_error("User-defined function evaluation not implemented.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Function::operator() (const Node& n, real t)
+real Function::operator()(const Point& point, uint i) const
 {
-  return (*f)(n, t);
+  dolfin_error("User-defined function evaluation not implemented.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-real Function::operator() (const Point& p, real t) const
+Mesh& Function::mesh()
 {
-  return (*f)(p, t);
+  if ( !_mesh )
+    dolfin_error("Mesh has not been specified.");
+
+  return *_mesh;
 }
 //-----------------------------------------------------------------------------
-real Function::operator() (const Point& p, real t)
+const FiniteElement& Function::element() const
 {
-  return (*f)(p, t);
-}
-//-----------------------------------------------------------------------------
-real Function::operator() (real x, real y, real z, real t) const
-{
-  return (*f)(x, y, z, t);
-}
-//-----------------------------------------------------------------------------
-real Function::operator() (real x, real y, real z, real t)
-{
-  return (*f)(x, y, z, t);
-}
-//-----------------------------------------------------------------------------
-real Function::operator() (unsigned int i, real t) const
-{
-  return (*f)(i, t);
-}
-//-----------------------------------------------------------------------------
-real Function::operator() (unsigned int i, real t)
-{
-  return (*f)(i, t);
-}
-//-----------------------------------------------------------------------------
-real Function::abs(const Node& n, real t)
-{
-  return fabs((*f)(n, t));
-}
-//-----------------------------------------------------------------------------
-real Function::abs(const Point& p, real t)
-{
-  return fabs((*f)(p, t));
-}
-//-----------------------------------------------------------------------------
-real Function::abs(real x, real y, real z, real t)
-{
-  return fabs((*f)(x, y, z, t));
-}
-//-----------------------------------------------------------------------------
-real Function::abs(unsigned int i, real t)
-{
-  return fabs((*f)(i, t));
-}
-//-----------------------------------------------------------------------------
-void Function::update(real t)
-{
-  f->update(t);
+  if ( !_element )
+    dolfin_error("Finite element has not been specified.");
+
+  return *_element;
 }
 //-----------------------------------------------------------------------------
 real Function::time() const
 {
-  return f->time();
+  return t;
 }
 //-----------------------------------------------------------------------------
-Mesh& Function::mesh() const
+void Function::set(real time)
 {
-  return f->mesh();
+  t = time;
 }
 //-----------------------------------------------------------------------------
-ElementData& Function::elmdata()
+void Function::set(const FiniteElement& element)
 {
-  return f->elmdata();
-}
-//-----------------------------------------------------------------------------
-void Function::update(FunctionSpace::ElementFunction& v,
-		      const FiniteElement& element,
-		      const Cell& cell, real t) const
-{
-  // Update degrees of freedom for element function, assuming it belongs to
-  // the local trial space of the finite element.
-
-  // Set dimension of function space for element function
-  v.init(element.dim());
-   
-  // Update coefficients
-  f->update(v, element, cell, t);
-}
-//-----------------------------------------------------------------------------
-// Vector function
-//-----------------------------------------------------------------------------
-Function::Vector::Vector(Mesh& mesh, dolfin::Vector& x, int size)
-{
-  f = new Function * [size];
-  
-  for (int i = 0; i < size; i++)
-    f[i] = new Function(mesh, x, i, size);
-  
-  _size = size;
-}
-//-----------------------------------------------------------------------------
-Function::Vector::Vector(const char* name, int size)
-{
-  f = new Function * [size];
-
-  for (int i = 0; i < size; i++)
-    f[i] = new Function(name, i, size);
-  
-  _size = size;
-}
-//-----------------------------------------------------------------------------
-Function::Vector::~Vector()
-{
-  for (int i = 0; i < _size; i++)
-    delete f[i];
-  delete [] f;
-}
-//-----------------------------------------------------------------------------
-Function& Function::Vector::operator() (int i)
-{
-  return *f[i];
-}
-//-----------------------------------------------------------------------------
-int Function::Vector::size() const
-{
-  return _size;
+  if ( _element )
+    dolfin_warning("Overriding previous choice of finite element.");
+  _element = &element;
 }
 //-----------------------------------------------------------------------------

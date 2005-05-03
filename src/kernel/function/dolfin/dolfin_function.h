@@ -6,6 +6,6 @@
 
 // Function
 
-#include <dolfin/NewFunction.h>
+#include <dolfin/Function.h>
 
 #endif

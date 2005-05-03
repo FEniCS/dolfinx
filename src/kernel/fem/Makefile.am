@@ -1,20 +1,20 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
-                          dolfin/NewBoundaryCondition.h \
+                          dolfin/BoundaryCondition.h \
                           dolfin/BoundaryValue.h \
-                          dolfin/LinearTetElement.h\
-                          dolfin/LinearTriElement.h \
+                          dolfin/FEM.h \
+                          dolfin/FiniteElement.h \
                           dolfin/LoadVector.h \
                           dolfin/MassMatrix.h \
-                          dolfin/NewFEM.h \
-                          dolfin/NewFiniteElement.h \
+                          dolfin/P1Tet.h \
+                          dolfin/P1Tri.h \
                           dolfin/StiffnessMatrix.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = NewBoundaryCondition.cpp \
+libdolfin_fem_a_SOURCES = BoundaryCondition.cpp \
                           BoundaryValue.cpp \
+                          FEM.cpp \
+                          FiniteElement.cpp \
                           LoadVector.cpp \
                           MassMatrix.cpp \
-                          NewFEM.cpp \
-                          NewFiniteElement.cpp \
                           StiffnessMatrix.cpp

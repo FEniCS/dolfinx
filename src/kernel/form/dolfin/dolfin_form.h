@@ -4,11 +4,11 @@
 #ifndef __DOLFIN_FORM_H
 #define __DOLFIN_FORM_H
 
-// Variational form algebra
+// Variational forms
 
-#include <dolfin/NewPDE.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/Form.h>
+#include <dolfin/PDE.h>
 
 #endif

@@ -9,7 +9,7 @@
 #include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/NewMethod.h>
+#include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
 

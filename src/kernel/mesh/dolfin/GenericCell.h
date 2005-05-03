@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __GENERIC_CELL_H
 #define __GENERIC_CELL_H
@@ -10,9 +12,10 @@
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Point;
   class Node;
@@ -20,7 +23,8 @@ namespace dolfin {
   class Mesh;
   class CellRefData;
   
-  class GenericCell {
+  class GenericCell
+  {
   public:
 	 
     GenericCell();
@@ -135,14 +139,14 @@ namespace dolfin {
     int _id;
 
     // Connectivity
-    Array<Node*> cn;
-    Array<Cell*> cc;
-    Array<Edge*> ce;
-    Array<Face*> cf;
+    PArray<Node*> cn;
+    PArray<Cell*> cc;
+    PArray<Edge*> ce;
+    PArray<Face*> cf;
 
     // Parent-child info
     Cell* _parent;
-    Array<Cell*> children;
+    PArray<Cell*> children;
 
     // Mesh refinement data
     CellRefData* rd;

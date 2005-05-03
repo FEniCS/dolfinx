@@ -1,8 +1,8 @@
 EXTRA_DIST = dolfin_common.h \
-             Array.h \
+             PArray.h \
              NewArray.h \
              General.h \
-             List.h \
+             PList.h \
              NewList.h \
              Table.h \
              Tensor.h \

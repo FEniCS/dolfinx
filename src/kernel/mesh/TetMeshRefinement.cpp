@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Par Ingelstrom, 2004.
+// Modified by Anders Logg, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -216,7 +217,7 @@ void TetMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes;
+  PArray<Node*> nodes;
   sortNodes(cell,nodes);
   
   // Create new nodes with the same coordinates as the old nodes
@@ -266,7 +267,7 @@ void TetMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes;
+  PArray<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Create new nodes with the same coordinates as the old nodes
@@ -320,7 +321,7 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_3);
 
   // Sort nodes by the number of marked edges
-  Array<Node*> nodes;
+  PArray<Node*> nodes;
   sortNodes(cell, nodes);
 
   // Find edges
@@ -373,7 +374,7 @@ void TetMeshRefinement::refineIrregular4(Cell& cell, Mesh& mesh)
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_4);
 
   // Find the two marked edges
-  Array<Edge*> marked_edges(2);
+  PArray<Edge*> marked_edges(2);
   marked_edges = 0;
   int cnt = 0;
   for (EdgeIterator e(cell); !e.end(); ++e)
@@ -412,7 +413,7 @@ void TetMeshRefinement::refineIrregular31(Cell& cell, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular32(Cell& cell, Mesh& mesh, 
-					  Array<Node*>& sorted_nodes)
+					  PArray<Node*>& sorted_nodes)
 {
   // If neighbor is marked refinement by rule 3, 
   // just chose an orientation, and it will be up to 
@@ -442,7 +443,7 @@ void TetMeshRefinement::refineIrregular32(Cell& cell, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh, 
-					  Array<Node*>& sorted_nodes,
+					  PArray<Node*>& sorted_nodes,
 					  Cell& face_neighbor)
 {
 
@@ -512,7 +513,7 @@ bool TetMeshRefinement::markedEdgesOnSameFace(Cell& cell)
   if (cnt > 3)  return false;
   
   // Create a list of the marked edges
-  Array<Edge*> marked_edges(cnt);
+  PArray<Edge*> marked_edges(cnt);
   marked_edges = 0;
   cnt = 0; 
   for (EdgeIterator e(cell); !e.end(); ++e)

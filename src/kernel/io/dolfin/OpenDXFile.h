@@ -11,12 +11,11 @@
 #include <dolfin/NewArray.h>
 #include <dolfin/GenericFile.h>
 
-namespace dolfin {
-  
-  class Mesh;
-  class NewFunction;
-  
-  class OpenDXFile : public GenericFile {
+namespace dolfin
+{
+    
+  class OpenDXFile : public GenericFile
+  {
   public:
     
     OpenDXFile(const std::string filename);
@@ -27,15 +26,15 @@ namespace dolfin {
     // Output
     
     void operator<< (Mesh& mesh);
-    void operator<< (NewFunction& u);
+    void operator<< (Function& u);
 
   private:
 
     void writeHeader   (FILE* fp);
     void writeMesh     (FILE* fp, Mesh& mesh);
     void writeMeshData (FILE* fp, Mesh& mesh);
-    void writeFunction (FILE* fp, NewFunction& u);
-    void writeSeries   (FILE* fp, NewFunction& u);
+    void writeFunction (FILE* fp, Function& u);
+    void writeSeries   (FILE* fp, Function& u);
   
     void removeSeries  (FILE* fp);
 

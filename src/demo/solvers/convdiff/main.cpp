@@ -25,7 +25,7 @@
 using namespace dolfin;
 
 // Convection
-class Convection : public NewFunction
+class Convection : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
@@ -37,7 +37,7 @@ class Convection : public NewFunction
 };
 
 // Right-hand side
-class Source : public NewFunction
+class Source : public Function
 {
   real operator() (const Point& p) const
   {
@@ -46,7 +46,7 @@ class Source : public NewFunction
 };
 
 // Boundary condition
-class MyBC : public NewBoundaryCondition
+class MyBC : public BoundaryCondition
 {
   const BoundaryValue operator() (const Point& p)
   {

@@ -1,12 +1,15 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __MESH_REFINEMENT_H
 #define __MESH_REFINEMENT_H
 
-#include <dolfin/List.h>
+#include <dolfin/PList.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
   class Cell;
@@ -14,7 +17,8 @@ namespace dolfin {
 
   /// Algorithm for the refinement of a triangular or tetrahedral mesh.
   
-  class MeshRefinement {
+  class MeshRefinement
+  {
   public:
 
     /// Refine a given mesh hierarchy according to marks
@@ -62,7 +66,7 @@ namespace dolfin {
     ///--- Algorithms working on a given cell ---
     
     // Close a cell
-    static void closeCell(Cell& cell, List<Cell*>& cells, Array<bool>& closed);
+    static void closeCell(Cell& cell, PList<Cell*>& cells, PArray<bool>& closed);
 
     /// Check refinement rule for given cell
     static bool checkRule(Cell& cell, int no_marked_edges);
@@ -85,7 +89,7 @@ namespace dolfin {
     static bool edgeMarkedByOther(Cell& cell);
 
     /// Sort nodes, placing the node belonging to the most number of marked edges first
-    static void sortNodes(const Cell& cell, Array<Node*>& nodes);
+    static void sortNodes(const Cell& cell, PArray<Node*>& nodes);
     
     /// Count the number of marked edges within a cell
     static int noMarkedEdges(const Cell& cell);

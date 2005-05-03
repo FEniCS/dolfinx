@@ -11,7 +11,7 @@ namespace dolfin
 
   class ODE;
   class Vector;
-  class NewMethod;
+  class Method;
   class MultiAdaptiveTimeSlab;
   class MultiAdaptiveJacobian;
   
@@ -46,7 +46,7 @@ namespace dolfin
     ODE& ode;
     
     // Method, mcG(q) or mdG(q)
-    const NewMethod& method;
+    const Method& method;
 
   };
 

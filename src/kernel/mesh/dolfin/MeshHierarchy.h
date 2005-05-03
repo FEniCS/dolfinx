@@ -1,16 +1,20 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __MESH_HIERARCHY
 #define __MESH_HIERARCHY
 
-#include <dolfin/Array.h>
+#include <dolfin/PArray.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
 
-  class MeshHierarchy {
+  class MeshHierarchy
+  {
   public:
 
     /// Create empty mesh hierarchy
@@ -52,7 +56,7 @@ namespace dolfin {
   private:
 
     // An array of mesh pointers
-    Array<Mesh*> meshes;
+    PArray<Mesh*> meshes;
 
   };
 
