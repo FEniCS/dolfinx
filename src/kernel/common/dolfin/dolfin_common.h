@@ -5,10 +5,10 @@
 
 #include <dolfin/General.h>
 
+#include <dolfin/Array.h>
+#include <dolfin/List.h>
 #include <dolfin/PArray.h>
-#include <dolfin/NewArray.h>
 #include <dolfin/PList.h>
-#include <dolfin/NewList.h>
 #include <dolfin/Table.h>
 #include <dolfin/Tensor.h>
 

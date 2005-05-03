@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <stdarg.h>
 #include <string.h>
@@ -94,7 +96,7 @@ bool ParameterList::empty()
 //----------------------------------------------------------------------------
 Parameter* ParameterList::find(const char *identifier)
 {
-  for (NewList<Parameter>::iterator p = list.begin(); p != list.end(); ++p)
+  for (List<Parameter>::iterator p = list.begin(); p != list.end(); ++p)
     if ( p->matches(identifier) )
       return &(*p);
 

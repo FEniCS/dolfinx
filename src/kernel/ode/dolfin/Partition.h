@@ -8,7 +8,7 @@
 
 #include <functional>
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 
 namespace dolfin
 {
@@ -66,7 +66,7 @@ namespace dolfin
     };
 
     // List of component indices
-    NewArray<uint> indices;
+    Array<uint> indices;
     
     // Threshold for partition
     real threshold;

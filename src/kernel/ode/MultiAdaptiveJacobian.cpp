@@ -62,7 +62,7 @@ void MultiAdaptiveJacobian::update()
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)
   {
-    const NewArray<uint>& deps = ode.dependencies[i];
+    const Array<uint>& deps = ode.dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
       Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u0, t, i, deps[pos]);
   }
@@ -128,7 +128,7 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
     uint Jpos = 0;
 
     // Iterate over dependencies for the current component
-    const NewArray<uint>& deps = ode.dependencies[i0];
+    const Array<uint>& deps = ode.dependencies[i0];
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get derivative
@@ -326,7 +326,7 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
     uint Jpos = 0;
 
     // Iterate over dependencies for the current component
-    const NewArray<uint>& deps = ode.dependencies[i0];
+    const Array<uint>& deps = ode.dependencies[i0];
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get derivative

@@ -1,5 +1,7 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __OPEN_DX_FILE_H
 #define __OPEN_DX_FILE_H
@@ -8,7 +10,7 @@
 #include <stdio.h>
 #include <dolfin/constants.h>
 #include <dolfin/Event.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin
@@ -50,7 +52,7 @@ namespace dolfin
     };
 
     // Frame data
-    NewArray<Frame> frames;
+    Array<Frame> frames;
 
     // Start position for latest time series
     long series_pos;

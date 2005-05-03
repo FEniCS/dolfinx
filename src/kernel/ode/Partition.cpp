@@ -55,9 +55,9 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
   Less less(Kpivot, adaptivity);
 
   // Partition using std::partition
-  NewArray<uint>::iterator start = indices.begin();
+  Array<uint>::iterator start = indices.begin();
   std::advance(start, offset);
-  NewArray<uint>::iterator middle = std::partition(start, indices.end(), less);
+  Array<uint>::iterator middle = std::partition(start, indices.end(), less);
   
   // Compute pivot index
   end = std::distance(indices.begin(), middle);

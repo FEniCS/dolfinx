@@ -5,18 +5,18 @@
 #include <petscksp.h>
 #include <petscerror.h>
 #include <dolfin.h>
-#include <dolfin/NewGMRES.h>
+#include <dolfin/GMRES.h>
 
 using namespace dolfin;
 
-class IdentityPreconditioner : public NewPreconditioner
+class IdentityPreconditioner : public Preconditioner
 {
 public:
   virtual ~IdentityPreconditioner()
   {
   };
 
-  virtual void solve(NewVector& x, const NewVector& b)
+  virtual void solve(Vector& x, const Vector& b)
   {
     cout << "preconditioning (identity)" << endl;
 
@@ -27,17 +27,17 @@ public:
   };
 };
 
-class JacobiPreconditioner : public NewPreconditioner
+class JacobiPreconditioner : public Preconditioner
 {
 public:
-  JacobiPreconditioner(NewMatrix &A) : A(A)
+  JacobiPreconditioner(Matrix &A) : A(A)
   {
   };
   virtual ~JacobiPreconditioner()
   {
   };
 
-  virtual void solve(NewVector& x, const NewVector& b)
+  virtual void solve(Vector& x, const Vector& b)
   {
     cout << "preconditioning (jacobi)" << endl;
 
@@ -53,7 +53,7 @@ public:
     }
   };
 
-  NewMatrix &A;
+  Matrix &A;
 };
 
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   dolfin::cout << "Test new LA matrix notation" << dolfin::endl;
   dolfin::cout << "--------------------------------------" << dolfin::endl;
   
-  NewVector c(10);
+  Vector c(10);
   dolfin::cout << "c: " << dolfin::endl;
   c.disp();
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
   dolfin::cout << "c(7): " << r << dolfin::endl;
 
 
-  NewMatrix B(4, 4);
+  Matrix B(4, 4);
   B.apply();
 
   B(2, 3) = 1.234;
@@ -116,8 +116,8 @@ int main(int argc, char **argv)
   dolfin::cout << "Aold = "; 
   Aold.show();
 
-  NewVector b(bold), x(b.size());
-  NewMatrix A(Aold);
+  Vector b(bold), x(b.size());
+  Matrix A(Aold);
 
   dolfin::cout << "b: " << dolfin::endl;
   b.disp();
@@ -155,8 +155,8 @@ int main(int argc, char **argv)
 
 
 
-  NewGMRES newsolver;
-  NewVector R(x.size());
+  GMRES newsolver;
+  Vector R(x.size());
 
 
   newsolver.solve(A, x, b);
@@ -176,8 +176,8 @@ int main(int argc, char **argv)
 
   const int N = 61;
 
-  NewMatrix A2(N, N);
-  NewVector b2(N), x2(N), R2(N);
+  Matrix A2(N, N);
+  Vector b2(N), x2(N), R2(N);
 
   for(int i = 0; i < N; i++)
   {
@@ -201,7 +201,7 @@ int main(int argc, char **argv)
 
 
 
-  NewGMRES newsolver2;
+  GMRES newsolver2;
 
   IdentityPreconditioner idpc;
   //JacobiPreconditioner jpc(A2);

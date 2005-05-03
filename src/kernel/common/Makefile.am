@@ -1,11 +1,11 @@
 SUBDIRS = dolfin
 
 include_HEADERS = dolfin/dolfin_common.h \
-                  dolfin/PArray.h \
-                  dolfin/NewArray.h \
+                  dolfin/Array.h \
                   dolfin/General.h \
+                  dolfin/List.h \
+                  dolfin/PArray.h \
                   dolfin/PList.h \
-                  dolfin/NewList.h \
                   dolfin/System.h \
                   dolfin/Table.h \
                   dolfin/Tensor.h \

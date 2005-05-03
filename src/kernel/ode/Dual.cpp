@@ -44,7 +44,7 @@ real Dual::f(const Vector& phi, real t, unsigned int i)
   
   if ( sparsity.sparse() )
   {
-    const NewArray<unsigned int>& row(sparsity.row(i));
+    const Array<unsigned int>& row(sparsity.row(i));
     for (unsigned int pos = 0; pos < row.size(); pos++)
       sum += rhs.dfdu(row[pos], i, T - t) * phi(row[pos]);
   }

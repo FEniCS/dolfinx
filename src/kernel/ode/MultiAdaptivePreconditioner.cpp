@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin/ODE.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
@@ -55,7 +55,7 @@ void MultiAdaptivePreconditioner::solve(Vector& x, const Vector& b)
     
     // Iterate over dependencies and sum contributions
     real sum = 0.0;
-    const NewArray<uint>& deps = ode.dependencies[i];
+    const Array<uint>& deps = ode.dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       // Get derivative

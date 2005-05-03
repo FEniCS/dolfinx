@@ -8,7 +8,7 @@
 
 #include <stdarg.h>
 
-#include <dolfin/NewList.h>
+#include <dolfin/List.h>
 #include <dolfin/Parameter.h>
 
 namespace dolfin
@@ -44,7 +44,7 @@ namespace dolfin
     
     Parameter* find(const char *identifier);
     
-    NewList<Parameter> list;
+    List<Parameter> list;
     
   };
   

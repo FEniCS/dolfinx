@@ -106,11 +106,11 @@ void Dependencies::transp(const Dependencies& dependencies)
   makeSparse();
 
   // Count the number of dependencies
-  NewArray<uint> rowsizes(N);
+  Array<uint> rowsizes(N);
   rowsizes = 0;
   for (uint i = 0; i < N; i++)
   {
-    const NewArray<uint>& row(dependencies.sdep[i]);
+    const Array<uint>& row(dependencies.sdep[i]);
     for (uint pos = 0; pos < row.size(); ++pos)
       rowsizes[row[pos]]++;
   }
@@ -122,7 +122,7 @@ void Dependencies::transp(const Dependencies& dependencies)
   // Set dependencies
   for (uint i = 0; i < N; i++)
   {
-    const NewArray<uint>& row(dependencies.sdep[i]);
+    const Array<uint>& row(dependencies.sdep[i]);
     for (uint pos = 0; pos < row.size(); ++pos)
       set(row[pos], i);
   }
@@ -173,7 +173,7 @@ bool Dependencies::sparse() const
   return _sparse;
 }
 //-----------------------------------------------------------------------------
-const NewArray<dolfin::uint>& Dependencies::operator[] (uint i) const
+const Array<dolfin::uint>& Dependencies::operator[] (uint i) const
 {
   return ( _sparse ? sdep[i] : ddep );
 }

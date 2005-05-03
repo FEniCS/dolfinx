@@ -88,7 +88,7 @@ petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
 
-include_HEADERS = dolfin/dolfin_common.h                   dolfin/PArray.h                   dolfin/NewArray.h                   dolfin/General.h                   dolfin/PList.h                   dolfin/NewList.h                   dolfin/System.h                   dolfin/Table.h                   dolfin/Tensor.h                   dolfin/Variable.h                   dolfin/meminfo.h                   dolfin/sysinfo.h                   dolfin/timeinfo.h                   dolfin/utils.h
+include_HEADERS = dolfin/dolfin_common.h                   dolfin/Array.h                   dolfin/General.h                   dolfin/List.h                   dolfin/PArray.h                   dolfin/PList.h                   dolfin/System.h                   dolfin/Table.h                   dolfin/Tensor.h                   dolfin/Variable.h                   dolfin/meminfo.h                   dolfin/sysinfo.h                   dolfin/timeinfo.h                   dolfin/utils.h
 
 
 INCLUDES = @KERNEL_CFLAGS@

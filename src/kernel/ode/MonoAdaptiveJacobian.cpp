@@ -78,7 +78,7 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
     for (uint i = 0; i < ts.N; i++)
     {
       real sum = 0.0;
-      const NewArray<uint>& deps = ode.dependencies[i];
+      const Array<uint>& deps = ode.dependencies[i];
       const uint Joffset = Jindices[i];
       for (uint pos = 0; pos < deps.size(); pos++)
       {

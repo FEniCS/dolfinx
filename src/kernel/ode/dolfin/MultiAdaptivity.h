@@ -5,7 +5,7 @@
 #define __MULTI_ADAPTIVITY_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/Regulator.h>
 
 namespace dolfin
@@ -41,7 +41,7 @@ namespace dolfin
   private:
 
     // Regulators, one for each component
-    NewArray<Regulator> regulators;
+    Array<Regulator> regulators;
 
     // Multi-adaptive time steps
     real* timesteps;

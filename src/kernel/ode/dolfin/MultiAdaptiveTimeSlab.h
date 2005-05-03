@@ -6,7 +6,6 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Partition.h>
 #include <dolfin/MultiAdaptivity.h>

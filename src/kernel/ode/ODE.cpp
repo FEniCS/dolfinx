@@ -72,7 +72,7 @@ void ODE::J(const real x[], real y[], const real u[], real t)
   for (uint i = 0; i < N; i++)
   {
     real sum = 0.0;
-    const NewArray<uint>& deps = dependencies[i];
+    const Array<uint>& deps = dependencies[i];
     for (uint pos = 0; pos < deps.size(); pos++)
     {
       const uint j = deps[pos];

@@ -1,7 +1,7 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/ComplexODE.h>
 
 using namespace dolfin;
@@ -87,7 +87,7 @@ real ComplexODE::f(const real u[], real t, uint i)
   // imaginary parts of the corresponding z_i
 
   // Update zvalues for correct components
-  const NewArray<uint>& deps = dependencies[i];
+  const Array<uint>& deps = dependencies[i];
   for (uint pos = 0; pos < deps.size(); pos++)
   {
     // Element of u that needs to be updated

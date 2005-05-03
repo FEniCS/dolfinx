@@ -5,7 +5,7 @@
 #define __REDUCED_MODEL_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin
@@ -107,7 +107,7 @@ namespace dolfin
     ODE& ode;
 
     // The reduced model
-    NewArray<Model> g;
+    Array<Model> g;
 
     // True if model has been reduced
     bool reduced;

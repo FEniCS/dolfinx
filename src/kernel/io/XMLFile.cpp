@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Updates by Erik Svensson 2003
+// Modified by Erik Svensson, 2003
+// Modified by Anders Logg, 2005.
 
 #include <stdarg.h>
 
@@ -217,7 +218,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
-  for (NewList<Parameter>::iterator p = parameters.list.begin(); p != parameters.list.end(); ++p)
+  for (List<Parameter>::iterator p = parameters.list.begin(); p != parameters.list.end(); ++p)
   {
     switch ( p->type )
     {

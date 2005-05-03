@@ -5,7 +5,7 @@
 #define __DEPENDENCIES_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 
 namespace dolfin
 {
@@ -48,10 +48,10 @@ namespace dolfin
     bool sparse() const;
 
     /// Get dependencies for given component (inline optimized)
-    inline NewArray<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
+    inline Array<uint>& operator[] (uint i) { return ( _sparse ? sdep[i] : ddep ); }
 
     /// Get dependencies for given component
-    const NewArray<uint>& operator[] (uint i) const;
+    const Array<uint>& operator[] (uint i) const;
 
     /// Display dependencies
     void disp() const;
@@ -74,10 +74,10 @@ namespace dolfin
     bool _sparse;
     
     // Sparse dependency pattern
-    NewArray< NewArray<uint> > sdep;
+    Array< Array<uint> > sdep;
 
     // Dense dependency pattern
-    NewArray<uint> ddep;
+    Array<uint> ddep;
     
   };
 

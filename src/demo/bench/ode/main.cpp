@@ -179,7 +179,7 @@ public:
 
 #ifdef DEBUG_BENCHMARK
   // Save solution  
-  void save(NewSample& sample)
+  void save(Sample& sample)
   {
     cout << "Saving data at t = " << sample.t() << endl;
 
@@ -189,10 +189,10 @@ public:
     static Vector kx(N/2);
     static Vector rx(N/2);
     static LinearTriElement element;
-    static NewFunction u(ux, *mesh, element);
-    static NewFunction v(vx, *mesh, element);
-    static NewFunction k(kx, *mesh, element);
-    static NewFunction r(rx, *mesh, element);
+    static Function u(ux, *mesh, element);
+    static Function v(vx, *mesh, element);
+    static Function k(kx, *mesh, element);
+    static Function r(rx, *mesh, element);
     u.rename("u", "Solution of the wave equation");
     v.rename("v", "Speed of the wave equation");
     k.rename("k", "Time steps for the wave equation");

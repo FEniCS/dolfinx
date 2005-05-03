@@ -7,7 +7,7 @@
 #define __FORM_H
 
 #include <dolfin/constants.h>
-#include <dolfin/NewArray.h>
+#include <dolfin/Array.h>
 #include <dolfin/FiniteElement.h>
 
 namespace dolfin
@@ -56,10 +56,10 @@ namespace dolfin
     real g00, g01, g02, g10, g11, g12, g20, g21, g22;
 
     // List of finite elements for functions (coefficients)
-    NewArray<const FiniteElement*> elements;
+    Array<const FiniteElement*> elements;
 
     // List of functions (coefficients)
-    NewArray<const Function*> functions;
+    Array<const Function*> functions;
     
     // Coefficients of functions projected to current element
     real** w;
