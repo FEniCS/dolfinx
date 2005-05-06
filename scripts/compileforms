@@ -14,7 +14,12 @@ if [ "$CHECK" != "scripts" ]; then
         exit 1
 fi
 
+cd src/modules
 FORMS=`find . -name '*.form'`
-for form in $FORMS; do
-	ffc $form
+for f in $FORMS; do
+	MODULE=`echo $f | cut -d'/' -f2`
+	FORMFILE=`echo $f | cut -d'/' -f4`
+	cd $MODULE/dolfin
+	ffc $FORMFILE
+	cd ../../
 done

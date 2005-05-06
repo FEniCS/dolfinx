@@ -62,7 +62,7 @@ PETScManager::~PETScManager()
     // FIXME: Can't use log system here because it may already
     // FIXME: be out of scope/destroyed
     //dolfin_info("Finalizing PETSc.");
-    printf("Finalizing PETSc.\n");
+    //printf("Finalizing PETSc.\n");
     PetscFinalize();
   }
 }
