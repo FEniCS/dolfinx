@@ -4,7 +4,6 @@
 # The bilinear form for classical linear elasticity (Navier)
 # Compile this form with FFC: ffc Elasticity.form.
 
-name = "Elasticity"
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 c1 = Constant()	# Lame coefficient

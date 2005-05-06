@@ -6,7 +6,6 @@
 #
 # Compile this form with FFC: ffc ConvectionDiffusion.form.
 
-name = "ConvectionDiffusion"
 scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = FiniteElement("Vector Lagrange", "triangle", 1)
 

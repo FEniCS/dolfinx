@@ -6,7 +6,6 @@
 #
 # Compile this form with FFC: ffc poisson.form.
 
-name = "Poisson"
 element = FiniteElement("Lagrange", "triangle", 1)
 
 v = BasisFunction(element)

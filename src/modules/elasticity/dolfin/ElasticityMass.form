@@ -4,7 +4,6 @@
 # The bilinear form for standard mass term
 # Compile this form with FFC: ffc ElasticityMass.form.
 
-name = "ElasticityMass"
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 u = BasisFunction(element)
