@@ -112,7 +112,7 @@ public:
 
 };
 
-/// This class implements the rational form with integer coefficients
+/// This class implements the rational form with integer exponents
 /// for (z1^0.2, z2^0.2) --> (z1, z2)
 
 class RationalIntegerES : public Homotopy
@@ -161,7 +161,7 @@ public:
 
 };
 
-/// This class implements the polynomial form with integer coefficients
+/// This class implements the polynomial form with integer exponents
 /// for (z1^0.2, z2^0.2) --> (z1, z2)
 
 class PolynomialIntegerES : public Homotopy
