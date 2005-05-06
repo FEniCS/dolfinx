@@ -11,13 +11,13 @@ using std::pow;
 /// CES economy with two goods from Eaves' and Schmedders' "General
 /// equilibrium models and homotopy methods" (1999).
 
-/// This class implements the original rational form.
+/// This class implements the original rational form with rational exponents.
 
-class EavesSchmedders : public Homotopy
+class RationalRationalES : public Homotopy
 {
 public:
 
-  EavesSchmedders() : Homotopy(2) {}
+  RationalRationalES() : Homotopy(2) {}
 
   void F(const complex z[], complex y[])
   {
@@ -58,13 +58,13 @@ public:
   
 };
 
-/// This class implements the polynomial form.
+/// This class implements the polynomial form with rational exponents.
 
-class PolynomialEavesSchmedders : public Homotopy
+class PolynomialRationalES : public Homotopy
 {
 public:
 
-  PolynomialEavesSchmedders() : Homotopy(2) {}
+  PolynomialRationalES() : Homotopy(2) {}
 
   void F(const complex z[], complex y[])
   {
@@ -112,14 +112,63 @@ public:
 
 };
 
-/// This class implements the true polynomial form
+/// This class implements the rational form with integer coefficients
 /// for (z1^0.2, z2^0.2) --> (z1, z2)
 
-class TruePolynomialEavesSchmedders : public Homotopy
+class RationalIntegerES : public Homotopy
 {
 public:
 
-  TruePolynomialEavesSchmedders() : Homotopy(2) {}
+  RationalIntegerES() : Homotopy(2) {}
+
+  void F(const complex z[], complex y[])
+  {
+    // First equation
+    y[0] = pow(z[0], 5) + pow(z[1], 5) - 1.0;
+    
+    // Second equation
+    const complex g0 = 4.0*pow(z[0], 4)*z[1] + pow(z[1], 5);
+    const complex g1 = pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5);
+    y[1] = ( (10.0*pow(z[0], 5) + pow(z[1], 5)) / g0 +
+	     (4.0*pow(z[0], 5) + 48.0*pow(z[1], 5)) / g1 - 13.0 );
+  }
+
+  void JF(const complex z[], const complex x[], complex y[])
+  {
+    // First equation
+    y[0] = 5.0 * pow(z[0], 4) * x[0] + 5.0 * pow(z[1], 4) * x[1];
+
+    // Second equation
+    const complex g0 = 4.0*pow(z[0], 4)*z[1] + pow(z[1], 5);
+    const complex g1 = pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5);
+    y[1] = ( ( (50.0*pow(z[0], 4)*(4.0*pow(z[0], 4)*z[1] + pow(z[1], 5)) - 
+		(10.0*pow(z[0], 5) + pow(z[1], 5))*16.0*pow(z[0], 3)*z[1]) / (g0*g0) +
+	       (20.0*pow(z[0], 4)*(pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5)) -
+		(4.0*pow(z[0], 5) + 48.0*pow(z[1], 5))*4.0*pow(z[2], 3)*z[1]) / (g1*g1)) * x[0] +
+	     ( (5.0*pow(z[1], 4)*(4.0*pow(z[0], 4)*z[1] + pow(z[1], 5)) -
+		(10.0*pow(z[0], 5) + pow(z[1], 5))*(4.0*pow(z[0], 4) + 5.0*pow(z[1], 4))) / (g0*g0) +
+	       (240.0*pow(z[1], 4)*(pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5)) -
+		(4.0*pow(z[0], 5) + 48.0*pow(z[1], 5))*(pow(z[0], 4) + 20.0*pow(z[1], 4))) / (g1*g1)) * x[1] );
+  }
+  
+  unsigned int degree(unsigned int i) const
+  {
+    if ( i == 0 )
+      return 5;
+    else
+      return 9;
+  }
+
+};
+
+/// This class implements the polynomial form with integer coefficients
+/// for (z1^0.2, z2^0.2) --> (z1, z2)
+
+class PolynomialIntegerES : public Homotopy
+{
+public:
+
+  PolynomialIntegerES() : Homotopy(2) {}
 
   void F(const complex z[], complex y[])
   {

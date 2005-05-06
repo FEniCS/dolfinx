@@ -9,7 +9,7 @@
 
 using namespace dolfin;
 
-/// CES test problem from Eaves and Schmedders (rational form).
+/// CES test problem from Eaves and Schmedders (rational-rational form).
 /// Has 3 solutions (one real-valued):
 ///
 ///   p = (0.951883, 0.048117)
@@ -18,11 +18,11 @@ using namespace dolfin;
 
 void test1()
 {
-  EavesSchmedders ec;
+  RationalRationalES ec;
   ec.solve();
 }
 
-/// CES test problem from Eaves and Schmedders (polynomial form)
+/// CES test problem from Eaves and Schmedders (polynomial-rational form)
 /// Has 3 solutions (one real-valued):
 ///
 ///   p = (0.951883, 0.048117)
@@ -31,11 +31,11 @@ void test1()
 
 void test2()
 {
-  PolynomialEavesSchmedders ec;
+  PolynomialRationalES ec;
   ec.solve();
 }
 
-/// CES test problem from Eaves and Schmedders (true polynomial form)
+/// CES test problem from Eaves and Schmedders (rational-integer form)
 /// Has 3 solutions (one real-valued):
 ///
 ///   p = (0.951883, 0.048117)
@@ -44,7 +44,20 @@ void test2()
 
 void test3()
 {
-  TruePolynomialEavesSchmedders ec;
+  RationalIntegerES ec;
+  ec.solve();
+}
+
+/// CES test problem from Eaves and Schmedders (polynomial-integer form)
+/// Has 3 solutions (one real-valued):
+///
+///   p = (0.951883, 0.048117)
+///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
+///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
+
+void test4()
+{
+  PolynomialIntegerES ec;
   ec.solve();
 }
 
@@ -55,7 +68,7 @@ void test3()
 ///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
 ///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
 
-void test4()
+void test5()
 {
   CES ec(2, 2, 0.5);
 
@@ -79,7 +92,7 @@ void test4()
 ///   p = (0.026816 + 0.309611*i, 0.973184 - 0.309611*i)
 ///   p = (0.026816 - 0.309611*i, 0.973184 + 0.309611*i)
 
-void test5()
+void test6()
 {
   PolynomialCES ec(2, 2, 0.5);
 
@@ -100,7 +113,7 @@ void test5()
 /// Has one unique solution: p = (0.5, 0.5)
 /// (Also p = (0, 1) with first equation removed)
 
-void test6()
+void test7()
 {
   Leontief ec(2, 2);
 
@@ -118,7 +131,7 @@ void test6()
 /// Has one unique solution: p = (0.5, 0.5)
 /// (Also p = (0, 1) with first equation removed)
 
-void test7()
+void test8()
 {
   PolynomialLeontief ec(2, 2);
 
@@ -138,7 +151,7 @@ void test7()
 ///   p = (1, 1)
 ///   p = (-2149/600, 1) = (-3.581667, 1)
 
-void test8()
+void test9()
 {
   Polemarchakis ec;
   ec.solve();
@@ -150,7 +163,7 @@ void test8()
 ///   p = (1, 1)
 ///   p = (-2149/600, 1) = (-3.581667, 1)
 
-void test9()
+void test10()
 {
   PolynomialPolemarchakis ec;
   ec.solve();
@@ -171,7 +184,7 @@ int main()
 
   //dolfin_set("monitor convergence", true);
 
-  test3();
+  test1();
 
   return 0;
 }
