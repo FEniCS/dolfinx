@@ -28,6 +28,7 @@ namespace dolfin
     int noBoundaries() const;
     
     Cell::Type type() const;
+    Cell::Orientation orientation() const;
 
     real volume() const;
     real diameter() const;
@@ -36,6 +37,7 @@ namespace dolfin
     
     void createEdges();
     void createFaces();
+    void sort();
 
   };
 

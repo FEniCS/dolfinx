@@ -35,7 +35,11 @@ namespace dolfin
   {
   public:
 
+    /// Cell types (triangle or tetrahedron)
     enum Type { triangle, tetrahedron, none };
+
+    /// Orientation (left or right), note that right means counter-clockwise for a triangle
+    enum Orientation { left, right };
 
     /// Create an empty cell
     Cell();
@@ -60,6 +64,9 @@ namespace dolfin
     /// Return cell type
     Type type() const;
 
+    /// Return orientation of cell
+    Orientation orientation() const;
+    
     /// Return number of nodes
     int noNodes() const;
 
@@ -229,6 +236,9 @@ namespace dolfin
 
     // Return cell status
     Status& status();
+
+    // Sort mesh entities locally
+    void sort();
 
     //--- Cell data ---
 

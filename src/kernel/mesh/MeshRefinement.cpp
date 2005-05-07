@@ -38,6 +38,12 @@ void MeshRefinement::refine(MeshHierarchy& meshes)
   // Check post-condition for all meshes
   checkPostCondition(meshes);
 
+  // FIXME: Unclear if sorting this affects the algorithm, since it is
+  // FIXME: based on keeping the ordering
+
+  // Sort all meshes locally
+  sort(meshes);
+
   dolfin_end();
 }
 //-----------------------------------------------------------------------------
@@ -181,6 +187,14 @@ void MeshRefinement::checkNumbering(MeshHierarchy& meshes)
   }
 
   dolfin_debug("Object numbers are ok.");
+}
+//-----------------------------------------------------------------------------
+void MeshRefinement::sort(MeshHierarchy& meshes)
+{
+  for (MeshIterator mesh(meshes); !mesh.end(); ++mesh)
+  {
+    MeshInit::sort(*mesh);
+  }
 }
 //-----------------------------------------------------------------------------
 void MeshRefinement::updateEdgeMarks(Mesh& mesh)

@@ -1,3 +1,4 @@
+ - Sort mesh entities locally (implemented only for triangles)
  - Add new format for dof maps (preparation for higher-order elements)
  - Code cleanups: NewFoo --> Foo complete
  - Updates for new version of FFC (0.1.7)

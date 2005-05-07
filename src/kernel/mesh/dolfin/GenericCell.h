@@ -32,6 +32,7 @@ namespace dolfin
 
     int id() const;
     virtual Cell::Type type() const = 0;
+    virtual Cell::Orientation orientation() const = 0;
 
     virtual int noNodes() const = 0;
     virtual int noEdges() const = 0;
@@ -129,6 +130,9 @@ namespace dolfin
 
     // Return cell status
     Cell::Status& status();
+
+    // Sort mesh entities locally
+    virtual void sort() = 0;
 
     //--- Cell data ---
 

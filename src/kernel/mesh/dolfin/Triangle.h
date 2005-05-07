@@ -28,14 +28,16 @@ namespace dolfin
     int noBoundaries() const;
     
     Cell::Type type() const;
+    Cell::Orientation orientation() const;
 
     real volume() const;
     real diameter() const;
     
   private:
-    
+
     void createEdges();
     void createFaces();
+    void sort();
     
   };
 

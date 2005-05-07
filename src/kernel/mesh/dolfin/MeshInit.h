@@ -17,10 +17,17 @@ namespace dolfin
   /// The trick is to compute the connections in the correct order, as
   /// indicated in MeshData.h, to obtain an O(n) algorithm.
   
-  class MeshInit {
+  class MeshInit
+  {
   public:
     
+    /// Initialize mesh (including sorting and renumbering)
     static void init     (Mesh& mesh);
+
+    /// Sort all mesh entities locally
+    static void sort     (Mesh& mesh);
+
+    /// Renumber all mesh entities (reassign IDs)
     static void renumber (Mesh& mesh);
     
   private:

@@ -23,10 +23,21 @@ void MeshInit::init(Mesh& mesh)
   // Compute connectivity
   initConnectivity(mesh);
 
+  // Sort all mesh entities locally
+  sort(mesh);
+
   // Renumber all objects
   renumber(mesh);
 
   dolfin_end();
+}
+//-----------------------------------------------------------------------------
+void MeshInit::sort(Mesh& mesh)
+{
+  dolfin_info("Sorting mesh entities locally.");
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    cell->sort();
 }
 //-----------------------------------------------------------------------------
 void MeshInit::renumber(Mesh& mesh)

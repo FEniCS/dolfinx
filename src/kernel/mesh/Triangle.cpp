@@ -1,11 +1,15 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <cmath>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
+#include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Triangle.h>
 
@@ -44,6 +48,15 @@ int Triangle::noBoundaries() const
 Cell::Type Triangle::type() const
 {
   return Cell::triangle;
+}
+//-----------------------------------------------------------------------------
+Cell::Orientation Triangle::orientation() const
+{
+  Point v01 = cn(1)->coord() - cn(0)->coord();
+  Point v02 = cn(2)->coord() - cn(0)->coord();
+  Point n(-v01.y, v01.x);
+
+  return ( n * v02 < 0.0 ? Cell::left : Cell::right );
 }
 //-----------------------------------------------------------------------------
 real Triangle::volume() const
@@ -91,5 +104,41 @@ void Triangle::createEdges()
 void Triangle::createFaces()
 {
   // A triangle has no faces
+}
+//-----------------------------------------------------------------------------
+void Triangle::sort()
+{
+  // Sort local mesh entities according to ordering used by FIAT,
+  // see Mesh.h for a detailed description of the ordering used.
+
+  // Soft the nodes counter-clockwise
+  if ( orientation() == Cell::left )
+  {
+    Node* tmp = cn(1);
+    cn(1) = cn(2);
+    cn(2) = tmp;
+  }
+  
+  // Sort the edges to have edge i opposite to node i
+  Array<Edge*> edges(3);
+  edges = 0;
+  for (uint i = 0; i < 3; i++)
+  {
+    Node* n = cn(i);
+    for (uint j = 0; j < 3; j++)
+    {
+      Edge* e = ce(j);
+      if ( !(e->contains(*n)) )
+      {
+	edges[i] = e;
+	break;
+      }
+    }
+  }
+  for (uint j = 0; j < 3; j++)
+  {
+    dolfin_assert(edges[j]);
+    ce(j) = edges[j];
+  }
 }
 //-----------------------------------------------------------------------------

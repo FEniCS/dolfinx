@@ -46,6 +46,9 @@ namespace dolfin
     // Check object numbering
     static void checkNumbering(MeshHierarchy& meshes);
 
+    // Sort all mesh entities locally
+    static void sort(MeshHierarchy& meshes);
+
     //--- Algorithms working on the mesh on a given level ---
     
     /// Update marks for edges

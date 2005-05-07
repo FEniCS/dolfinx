@@ -16,7 +16,8 @@
 #include <dolfin/BoundaryData.h>
 #include <dolfin/MeshData.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class MeshData;
 

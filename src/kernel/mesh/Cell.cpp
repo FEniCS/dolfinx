@@ -55,6 +55,12 @@ Cell::Type Cell::type() const
   return none;
 }
 //-----------------------------------------------------------------------------
+Cell::Orientation Cell::orientation() const
+{
+  dolfin_assert(c);
+  return c->orientation();
+}
+//-----------------------------------------------------------------------------
 int Cell::noNodes() const
 {
   if ( c )
@@ -363,5 +369,11 @@ Cell::Status& Cell::status()
 {
   dolfin_assert(c);
   return c->status();
+}
+//-----------------------------------------------------------------------------
+void Cell::sort()
+{
+  dolfin_assert(c);
+  c->sort();
 }
 //-----------------------------------------------------------------------------

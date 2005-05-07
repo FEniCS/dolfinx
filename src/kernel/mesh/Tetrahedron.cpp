@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <cmath>
 
@@ -45,6 +47,13 @@ int Tetrahedron::noBoundaries() const
 Cell::Type Tetrahedron::type() const
 {
   return Cell::tetrahedron;
+}
+//-----------------------------------------------------------------------------
+Cell::Orientation Tetrahedron::orientation() const
+{
+  dolfin_error("Not implemented.");
+
+  return Cell::right;
 }
 //-----------------------------------------------------------------------------
 real Tetrahedron::volume() const
@@ -109,5 +118,10 @@ void Tetrahedron::createFaces()
   createFace(*ce(0), *ce(4), *ce(3));
   createFace(*ce(1), *ce(5), *ce(4));
   createFace(*ce(2), *ce(5), *ce(3));
+}
+//-----------------------------------------------------------------------------
+void Tetrahedron::sort()
+{
+  // FIXME: Not implemented
 }
 //-----------------------------------------------------------------------------
