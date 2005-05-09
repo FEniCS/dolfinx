@@ -1,5 +1,8 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
+
 
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
@@ -90,6 +93,11 @@ bool Face::equals(const Edge& e0, const Edge& e1) const
     return true;
 
   return false;
+}
+//-----------------------------------------------------------------------------
+bool Face::contains(const Node& n) const
+{
+  return fe(0)->contains(n) || fe(1)->contains(n) || fe(2)->contains(n);
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)

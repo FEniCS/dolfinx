@@ -126,15 +126,15 @@ const Point& Point::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-Point cross(const Point& p) const
+Point Point::cross(const Point& p) const
 {
-  Point p;
+  Point q;
 
-  p.x = y*p.z - z*p.y;
-  p.y = z*p.x - x*p.z;
-  p.z = x*p.y - y*p.x;
+  q.x = y*p.z - z*p.y;
+  q.y = z*p.x - x*p.z;
+  q.z = x*p.y - y*p.x;
 
-  return p;
+  return q;
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Point& p)

@@ -41,6 +41,8 @@ namespace dolfin
     void createEdges();
     void createFaces();
     void sort();
+    Edge* findEdge(uint n0, uint n1) const;
+    Face* findFace(uint n) const;
 
   };
 
