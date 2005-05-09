@@ -51,8 +51,11 @@ Cell::Type Tetrahedron::type() const
 //-----------------------------------------------------------------------------
 Cell::Orientation Tetrahedron::orientation() const
 {
-  // FIXME: Not implemented
-  dolfin_error("Not implemented.");
+  //Point v01 = cn(1)->coord() - cn(0)->coord();
+  //Point v02 = cn(2)->coord() - cn(0)->coord();
+  //Point v03 = cn(2)->coord() - cn(0)->coord();
+  
+
 
   return Cell::right;
 }

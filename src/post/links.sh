@@ -28,9 +28,9 @@ link_octave src/demo/solvers/wave-vector/
 link_octave src/demo/solvers/elasticity/
 link_octave src/demo/solvers/elasticity-stationary/
 
-# Creat links to OpenDX programs
+# Create links to OpenDX programs
 link_dx src/demo/solvers/ode/bistable/
-link_dx src/demo/bench/ode/
+link_dx src/demo/mesh
 
 # Create links to plotslab.m
 link_plotslab src/demo/solvers/ode/test/

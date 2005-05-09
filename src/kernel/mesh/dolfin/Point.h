@@ -54,6 +54,9 @@ namespace dolfin {
     /// Divide by scalar
     const Point& operator/= (real a);
 
+    /// Cross product
+    Point cross(const Point& p) const;
+
     /// The three coordinates
     real x;
     real y;
