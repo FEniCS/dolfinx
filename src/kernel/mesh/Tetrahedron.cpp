@@ -51,6 +51,7 @@ Cell::Type Tetrahedron::type() const
 //-----------------------------------------------------------------------------
 Cell::Orientation Tetrahedron::orientation() const
 {
+  // FIXME: Not implemented
   dolfin_error("Not implemented.");
 
   return Cell::right;
@@ -94,6 +95,18 @@ real Tetrahedron::diameter() const
   real d = area / ( 3.0*volume() );
                                                                                                                              
   return d;
+}
+//-----------------------------------------------------------------------------
+bool Tetrahedron::edgeAligned(uint i) const
+{
+  dolfin_error("Not implemented.");
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool Tetrahedron::faceAligned(uint i) const
+{
+  dolfin_error("Not implemented.");
+  return true;
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::createEdges()

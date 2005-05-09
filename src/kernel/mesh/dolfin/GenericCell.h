@@ -54,6 +54,8 @@ namespace dolfin
     int   nodeID(int i) const;
     virtual real volume() const = 0;
     virtual real diameter() const = 0;
+    virtual bool edgeAligned(uint i) const = 0;
+    virtual bool faceAligned(uint i) const = 0;
 
     void mark();
 

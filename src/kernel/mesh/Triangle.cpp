@@ -67,14 +67,14 @@ real Triangle::volume() const
   real x1 = coord(0).x; real y1 = coord(0).y; real z1 = coord(0).z;
   real x2 = coord(1).x; real y2 = coord(1).y; real z2 = coord(1).z;
   real x3 = coord(2).x; real y3 = coord(2).y; real z3 = coord(2).z;
-                                                                                                                             
+                                                                                                                          
   // Formula for volume from http://mathworld.wolfram.com
   real v1 = (y1*z2 + z1*y3 + y2*z3) - ( y3*z2 + z3*y1 + y2*z1 );
   real v2 = (z1*x2 + x1*z3 + z2*x3) - ( z3*x2 + x3*z1 + z2*x1 );
   real v3 = (x1*y2 + y1*x3 + x2*y3) - ( x3*y2 + y3*x1 + x2*y1 );
-                                                                                                                             
+
   real v = 0.5 * sqrt( v1*v1 + v2*v2 + v3*v3 );
-                                                                                                                             
+  
   return v;
 }
 //-----------------------------------------------------------------------------
@@ -84,11 +84,27 @@ real Triangle::diameter() const
   real a  = coord(1).dist(coord(2));
   real b  = coord(0).dist(coord(2));
   real c  = coord(0).dist(coord(1));
-                                                                                                                             
+                                                                                                                          
   // Formula for diameter (2*circumradius) from http://mathworld.wolfram.com
   real d = 0.5 * a*b*c / volume();
-                                                                                                                             
+
   return d;
+}
+//-----------------------------------------------------------------------------
+bool Triangle::edgeAligned(uint i) const
+{
+  if ( cn((i + 1) % 3) == ce(i)->n0 )
+    cout << "Edge is aligned" << endl;
+  else
+    cout << "Edge is not aligned" << endl;
+
+  return cn((i + 1) % 3) == ce(i)->n0;
+}
+//-----------------------------------------------------------------------------
+bool Triangle::faceAligned(uint i) const
+{
+  dolfin_error("A triangle has no faces.");
+  return true;
 }
 //-----------------------------------------------------------------------------
 void Triangle::createEdges()

@@ -197,6 +197,18 @@ real Cell::diameter() const
   return c->diameter();
 }
 //-----------------------------------------------------------------------------
+bool Cell::edgeAligned(uint i) const
+{
+  dolfin_assert(c);
+  return c->edgeAligned(i);
+}
+//-----------------------------------------------------------------------------
+bool Cell::faceAligned(uint i) const
+{
+  dolfin_assert(c);
+  return c->faceAligned(i);
+}
+//-----------------------------------------------------------------------------
 bool Cell::operator==(const Cell& cell) const
 {
   return this == &cell;
