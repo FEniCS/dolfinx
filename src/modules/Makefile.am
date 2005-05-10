@@ -1,6 +1,7 @@
 SUBDIRS = dolfin \
           poisson \
           convdiff \
+          navierstokes \
           elasticity
 
 INCLUDES = @KERNEL_CFLAGS@

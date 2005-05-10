@@ -4,7 +4,7 @@
 #ifndef __NSE_SOLVER_H
 #define __NSE_SOLVER_H
 
-#include <dolfin/NewSolver.h>
+#include <dolfin/Solver.h>
 
 namespace dolfin
 {
@@ -14,23 +14,23 @@ namespace dolfin
   public:
     
     // Create Navier-Stokes solver
-    NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
-	      NewBoundaryCondition& bc_con, NewFunction& u0);
+    NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
+	      BoundaryCondition& bc_con, Function& u0);
     
     // Solve Navier-Stokes equations
     void solve();
 
     // Solve Navier-Stokes equations (static version)
-    static void solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
-		      NewBoundaryCondition& bc_con, NewFunction& u0);
+    static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
+		      BoundaryCondition& bc_con, Function& u0);
   
   private:
 
     Mesh& mesh;
-    NewFunction& f;
-    NewBoundaryCondition& bc_mom;
-    NewBoundaryCondition& bc_con;
-    NewFunction& u0;
+    Function& f;
+    BoundaryCondition& bc_mom;
+    BoundaryCondition& bc_con;
+    Function& u0;
 
   };
 

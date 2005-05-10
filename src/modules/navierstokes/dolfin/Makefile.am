@@ -1,4 +1,1 @@
-EXTRA_DIST = dolfin_module_navierstokes.h \
-             NSEContinuity.h \
-             NSEMomentum.h \
-             NSESolver.h 
+EXTRA_DIST = dolfin_navierstokes.h NSEMomentum.h NSEContinuity.h NSESolver.h

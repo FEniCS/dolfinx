@@ -1,15 +1,15 @@
 // Copyright (C) 2005 Johan Hoffman 
 // Licensed under the GNU GPL Version 2.
 
-#include <dolfin/NSEMomentum.h>
-#include <dolfin/NSEContinuity.h>
+//#include <dolfin/NSEMomentum.h>
+//#include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NSESolver::NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
-		     NewBoundaryCondition& bc_con, NewFunction& u0)
+NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
+		     BoundaryCondition& bc_con, Function& u0)
   : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), u0(u0)
 {
   // Do nothing
@@ -17,8 +17,9 @@ NSESolver::NSESolver(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  NewFunction up;
+  Function up;
   
+  /*
   NSEMomentum::FiniteElement element_mom;
   NSEMomentum::BilinearForm a_mom(uc);
   NSEMomentum::LinearForm L_mom(f,u0);
@@ -30,7 +31,6 @@ void NSESolver::solve()
   Matrix A_mom,A_con;
   Vector x_mom, x_con, b_mom, b_con;
 
-  /*
   // Discretize Continuity equation 
   NewFEM::assemble(a_con, L_con, A_con, b_con, mesh, element_con);
 
@@ -69,8 +69,8 @@ void NSESolver::solve()
   */
 }
 //-----------------------------------------------------------------------------
-void NSESolver::solve(Mesh& mesh, NewFunction& f, NewBoundaryCondition& bc_mom, 
-		      NewBoundaryCondition& bc_con, NewFunction& u0)
+void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
+		      BoundaryCondition& bc_con, Function& u0)
 {
   NSESolver solver(mesh, f, bc_mom, bc_con, u0);
   solver.solve();
