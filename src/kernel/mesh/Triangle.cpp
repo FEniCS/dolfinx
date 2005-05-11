@@ -97,14 +97,15 @@ bool Triangle::edgeAligned(uint i) const
     cout << "Edge is aligned" << endl;
   else
     cout << "Edge is not aligned" << endl;
-
+  
+  // Check alignment with convention used by FIAT
   return cn((i + 1) % 3) == ce(i)->n0;
 }
 //-----------------------------------------------------------------------------
-bool Triangle::faceAligned(uint i) const
+dolfin::uint Triangle::faceAlignment(uint i) const
 {
   dolfin_error("A triangle has no faces.");
-  return true;
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void Triangle::createEdges()

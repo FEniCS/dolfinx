@@ -184,7 +184,7 @@ int main()
 
   //dolfin_set("monitor convergence", true);
 
-  test1();
+  test4();
 
   return 0;
 }

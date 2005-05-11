@@ -16,6 +16,17 @@
 
 using namespace dolfin;
 
+// Alignment convention for edges (first vertex)
+static int edge_alignment[6] = {1, 2, 3, 3, 0, 0};
+
+// Alignment convention for faces
+static int face_alignment_00[4] = {1, 0, 0, 0}; // Edge 0 for alignment 0
+static int face_alignment_01[4] = {2, 3, 1, 2}; // Edge 1 for alignment 0 (otherwise 1)
+static int face_alignment_10[4] = {2, 3, 1, 2}; // Edge 0 for alignment 2
+static int face_alignment_11[4] = {3, 2, 3, 1}; // Edge 1 for alignment 2 (otherwise 3)
+static int face_alignment_20[4] = {3, 2, 3, 1}; // Edge 0 for alignment 4
+static int face_alignment_21[4] = {1, 0, 0, 0}; // Edge 1 for alignment 4 (otherwise 5)
+
 //-----------------------------------------------------------------------------
 Tetrahedron::Tetrahedron(Node& n0, Node& n1, Node& n2, Node& n3) : GenericCell()
 {
@@ -104,14 +115,24 @@ real Tetrahedron::diameter() const
 //-----------------------------------------------------------------------------
 bool Tetrahedron::edgeAligned(uint i) const
 {
-  dolfin_error("Not implemented.");
-  return true;
+  // Check alignment with convention used by FIAT  
+  return ce(i)->n0 == cn(edge_alignment[i]);
 }
 //-----------------------------------------------------------------------------
-bool Tetrahedron::faceAligned(uint i) const
+dolfin::uint Tetrahedron::faceAlignment(uint i) const
 {
-  dolfin_error("Not implemented.");
-  return true;
+  // Check alignment with convention used by FIAT
+  Edge* e0 = cf(i)->fe(0);
+  Edge* e1 = cf(i)->fe(1);
+  if ( e0 == ce(face_alignment_00[i]) )
+    return ( e1 == ce(face_alignment_01[i]) ? 0 : 1 );
+  else if ( e0 == ce(face_alignment_10[i]) )
+    return ( e1 == ce(face_alignment_11[i]) ? 2 : 3 );
+  else if ( e0 == ce(face_alignment_20[i]) )
+    return ( e1 == ce(face_alignment_21[i]) ? 4 : 5 );
+  
+  dolfin_error("Unable to compute alignment of tetrahedron.");
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void Tetrahedron::createEdges()

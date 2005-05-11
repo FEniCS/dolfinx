@@ -203,10 +203,10 @@ bool Cell::edgeAligned(uint i) const
   return c->edgeAligned(i);
 }
 //-----------------------------------------------------------------------------
-bool Cell::faceAligned(uint i) const
+dolfin::uint Cell::faceAlignment(uint i) const
 {
   dolfin_assert(c);
-  return c->faceAligned(i);
+  return c->faceAlignment(i);
 }
 //-----------------------------------------------------------------------------
 bool Cell::operator==(const Cell& cell) const

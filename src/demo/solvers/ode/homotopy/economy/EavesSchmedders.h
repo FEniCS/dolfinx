@@ -105,9 +105,9 @@ public:
   unsigned int degree(unsigned int i) const
   {
     if ( i == 0 )
-      return 5;
+      return 1;
     else
-      return 9;
+      return 2;
   }
 
 };
@@ -144,7 +144,7 @@ public:
     y[1] = ( ( (50.0*pow(z[0], 4)*(4.0*pow(z[0], 4)*z[1] + pow(z[1], 5)) - 
 		(10.0*pow(z[0], 5) + pow(z[1], 5))*16.0*pow(z[0], 3)*z[1]) / (g0*g0) +
 	       (20.0*pow(z[0], 4)*(pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5)) -
-		(4.0*pow(z[0], 5) + 48.0*pow(z[1], 5))*4.0*pow(z[2], 3)*z[1]) / (g1*g1)) * x[0] +
+		(4.0*pow(z[0], 5) + 48.0*pow(z[1], 5))*4.0*pow(z[0], 3)*z[1]) / (g1*g1)) * x[0] +
 	     ( (5.0*pow(z[1], 4)*(4.0*pow(z[0], 4)*z[1] + pow(z[1], 5)) -
 		(10.0*pow(z[0], 5) + pow(z[1], 5))*(4.0*pow(z[0], 4) + 5.0*pow(z[1], 4))) / (g0*g0) +
 	       (240.0*pow(z[1], 4)*(pow(z[0], 4)*z[1] + 4.0*pow(z[1], 5)) -
@@ -154,9 +154,9 @@ public:
   unsigned int degree(unsigned int i) const
   {
     if ( i == 0 )
-      return 5;
+      return 1;
     else
-      return 9;
+      return 2;
   }
 
 };
@@ -201,9 +201,9 @@ public:
   unsigned int degree(unsigned int i) const
   {
     if ( i == 0 )
-      return 5;
+      return 1;
     else
-      return 9;
+      return 2;
   }
 
 };
