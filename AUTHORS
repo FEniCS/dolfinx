@@ -1,16 +1,13 @@
-DOLFIN is written mainly by:
+DOLFIN is written and maintained by:
 
 	Johan Hoffman	email: hoffman@cims.nyu.edu
 			www:   http://www.cims.nyu.edu/~hoffman/
 
+	Johan Jansson   email: johanjan@math.chalmers.se
+                        www:   http://www.math.chalmers.se/~johanjan/
+
 	Anders Logg	email: logg@tti-c.org
 			www:   http://www.tti-c.org/logg/
-
-DOLFIN is currently maintained by:
-
-	Johan Hoffman		<hoffman@cims.nyu.edu>		hoffman
-	Johan Jansson		<johanjan@math.chalmers.se>	jj
-	Anders Logg		<logg@tti-c.org>		logg
 
 Contributors in alphabetical order:
 
