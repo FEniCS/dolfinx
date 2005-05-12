@@ -15,11 +15,15 @@ if [ "$CHECK" != "scripts" ]; then
 fi
 
 cd src/modules
+
 FORMS=`find . -name '*.form'`
 for f in $FORMS; do
 	MODULE=`echo $f | cut -d'/' -f2`
-	FORMFILE=`echo $f | cut -d'/' -f4`
-	cd $MODULE/dolfin
-	ffc $FORMFILE
-	cd ../../
+	# Temporarily skip Navier-Stokes to speed up testing
+	if [ $MODULE != "navierstokes" ]; then
+    		FORMFILE=`echo $f | cut -d'/' -f4`
+		cd $MODULE/dolfin
+		ffc $FORMFILE
+		cd ../../
+	fi
 done

@@ -1,8 +1,8 @@
 SUBDIRS = dolfin \
           poisson \
           convdiff \
-          navierstokes \
           elasticity
+# navierstokes
 
 INCLUDES = @KERNEL_CFLAGS@
 include_HEADERS = dolfin/dolfin_modules.h \

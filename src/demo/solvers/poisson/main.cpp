@@ -46,7 +46,7 @@ class MyBC : public BoundaryCondition
 
 int main()
 {
-  dolfin_output("curses");
+  //dolfin_output("curses");
 
   Mesh mesh("mesh.xml.gz");
   MyFunction f;

@@ -118,8 +118,14 @@ namespace dolfin
     /// Return midpoint of cell
     Point midpoint() const;
 
-    // Return id for node number i
+    // Return ID for node number i
     int nodeID(int i) const;
+
+    // Return ID for edge number i
+    int edgeID(int i) const;
+
+    // Return ID for face number i
+    int faceID(int i) const;
     
     // Compute and return volume / area
     real volume() const;

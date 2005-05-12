@@ -38,12 +38,7 @@ namespace dolfin
 
     /// Return vector dimension of the finite element space
     virtual unsigned int rank() const = 0;
-    
-    /// FIXME: Old version, remove
-    /// Return map from local to global degree of freedom
-    virtual unsigned int dof(unsigned int i, const Cell& cell, const Mesh& mesh) const = 0;
 
-    /// FIXME: New version, should replace dof()
     /// Compute map from local to global degrees of freedom
     virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
     

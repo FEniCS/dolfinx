@@ -51,7 +51,9 @@ namespace dolfin
     Cell* child(int i) const;
     Point& coord(int i) const;
     Point midpoint() const;
-    int   nodeID(int i) const;
+    int nodeID(int i) const;
+    int edgeID(int i) const;
+    int faceID(int i) const;
     virtual real volume() const = 0;
     virtual real diameter() const = 0;
     virtual bool edgeAligned(uint i) const = 0;

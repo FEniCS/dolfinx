@@ -48,16 +48,20 @@ void Function::project(const Cell& cell, real c[]) const
   // a list of dofs or the function is user-defined (_x is null)
   if ( _x )
   {
-    // First case: function defined in terms of an element an a list
-    // of dofs so we just need to pick the values
+    // First case: function defined in terms of an element and a
+    // vector of dofs so we just need to pick the values
 
     if ( _mesh && _mesh != &cell.mesh() )
       dolfin_error("Function is defined on a different mesh.");
 
     real* values = _x->array();
+    int* dofs = new int[_element->spacedim()]; // FIXME: Don't reallocate every time
+    _element->dofmap(dofs, cell, cell.mesh());
     for (uint i = 0; i < _element->spacedim(); i++)
-      c[i] = values[_element->dof(i, cell, cell.mesh())];
+      c[i] = values[dofs[i]];
+    delete [] dofs;
     _x->restore(values);
+    
   }
   else
   {

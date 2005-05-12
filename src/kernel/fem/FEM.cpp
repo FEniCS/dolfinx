@@ -23,40 +23,37 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
-  // Get finite element
-  // FIXME: Should not assume that test and trial elements are the same
-  const FiniteElement& element = a.test();
+  // Get finite elements
+  const FiniteElement& test_element = a.test();
+  const FiniteElement& trial_element = a.trial();
+  dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
-  // Initialize element matrix data block
-  unsigned int n = element.spacedim();
+  // Initialize local data
+  unsigned int n = test_element.spacedim();
   real* block = new real[n*n];
-  int* dofs = new int[n];
+  int* test_dofs = new int[n];
+  int* trial_dofs = new int[n];
 
   // Initialize global matrix 
-  // Max connectivity in Matrix::init() is assumed to 
-  // be 50, alternatively use connectivity information to
-  // minimize memory requirements.   
-  unsigned int N = size(mesh, element);
+  unsigned int N = size(mesh, test_element);
   A.init(N, N, 1);
   A = 0.0;
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    //cout << "cell: " << (*cell).id() << endl;
-
     // Update form
     a.update(*cell);
     
-    // Compute mapping from local to global degrees of freedom
-    for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell, mesh);
+    // Compute mappings from local to global degrees of freedom
+    test_element.dofmap(test_dofs, *cell, mesh);
+    trial_element.dofmap(trial_dofs, *cell, mesh);
 
     // Compute element matrix
     a.interior(block);
 
     // Add element matrix to global matrix
-    A.add(block, dofs, n, dofs, n);
+    A.add(block, test_dofs, n, trial_dofs, n);
 
     // Update progress
     p++;
@@ -67,7 +64,8 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 
   // Delete data
   delete [] block;
-  delete [] dofs;
+  delete [] test_dofs;
+  delete [] trial_dofs;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
@@ -76,15 +74,15 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   Progress p("Assembling vector (interior contribution)", mesh.noCells());
 
   // Get finite element
-  const FiniteElement& test = L.test();
+  const FiniteElement& test_element = L.test();
 
-  // Initialize element vector data block
-  unsigned int n = test.spacedim();
+  // Initialize local data
+  unsigned int n = test_element.spacedim();
   real* block = new real[n];
-  int* dofs = new int[n];
+  int* test_dofs = new int[n];
 
   // Initialize global vector 
-  unsigned int N = size(mesh, test);
+  unsigned int N = size(mesh, test_element);
   b.init(N);
   b = 0.0;
 
@@ -95,14 +93,13 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
     L.update(*cell);
 
     // Compute mapping from local to global degrees of freedom
-    for (unsigned int i = 0; i < n; i++)
-      dofs[i] = test.dof(i, *cell, mesh);
-    
+    test_element.dofmap(test_dofs, *cell, mesh);
+
     // Compute element matrix
     L.interior(block);
     
     // Add element matrix to global matrix
-    b.add(block, dofs, n);
+    b.add(block, test_dofs, n);
 
     // Update progress
     p++;
@@ -113,7 +110,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 
   // Delete data
   delete [] block;
-  delete [] dofs;
+  delete [] test_dofs;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, LinearForm& L,
@@ -123,46 +120,45 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   Progress p("Assembling matrix and vector (interior contributions)",
 	     mesh.noCells());
 
-  // Get finite element
-  // FIXME: Should not assume that test and trial element are the same
-  const FiniteElement& element = a.test();
+  // Get finite elements
+  const FiniteElement& test_element = a.test();
+  const FiniteElement& trial_element = a.trial();
+  dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
   // Initialize element matrix/vector data block
-  unsigned int n = element.spacedim();
+  unsigned int n = test_element.spacedim();
   real* block_A = new real[n*n];
   real* block_b = new real[n];
-  int* dofs = new int[n];
+  int* test_dofs = new int[n];
+  int* trial_dofs = new int[n];
 
   // Initialize global matrix 
-  // Max connectivity in Matrix::init() is assumed to 
-  // be 50, alternatively use connectivity information to
-  // minimize memory requirements.   
-  unsigned int N = size(mesh, element);
+  unsigned int N = size(mesh, test_element);
   A.init(N, N);
-  A = 0.0;
   b.init(N);
+  A = 0.0;
   b = 0.0;
   
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    // Update form
+    // Update forms
     a.update(*cell);
     L.update(*cell);
 
-    // Compute mapping from local to global degrees of freedom
-    for (unsigned int i = 0; i < n; i++)
-      dofs[i] = element.dof(i, *cell, mesh);
+    // Compute mappings from local to global degrees of freedom
+    test_element.dofmap(test_dofs, *cell, mesh);
+    trial_element.dofmap(trial_dofs, *cell, mesh);
    
     // Compute element matrix and vector 
     a.interior(block_A);
     L.interior(block_b);
     
     // Add element matrix to global matrix
-    A.add(block_A, dofs, n, dofs, n);
+    A.add(block_A, test_dofs, n, trial_dofs, n);
     
     // Add element vector to global vector
-    b.add(block_b, dofs, n);
+    b.add(block_b, test_dofs, n);
 
     // Update progress
     p++;
@@ -175,7 +171,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Delete data
   delete [] block_A;
   delete [] block_b;
-  delete [] dofs;
+  delete [] test_dofs;
+  delete [] trial_dofs;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, LinearForm& L,
@@ -189,19 +186,21 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
 {
   // Count the degrees of freedom (check maximum index)
-
-  uint dofmax = 0;
+  
+  int* dofs = new int[element.spacedim()];
+  int dofmax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    element.dofmap(dofs, *cell, mesh);
     for (uint i = 0; i < element.spacedim(); i++)
     {
-      uint dof = element.dof(i, *cell, mesh);
-      if ( dof > dofmax )
-	dofmax = dof;
+      if ( dofs[i] > dofmax )
+	dofmax = dofs[i];
     }
   }
+  delete [] dofs;
 
-  return dofmax + 1;
+  return static_cast<uint>(dofmax + 1);
 }
 //-----------------------------------------------------------------------------
 void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh, 

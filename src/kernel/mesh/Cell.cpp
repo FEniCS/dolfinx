@@ -179,10 +179,20 @@ Point Cell::midpoint() const
 //-----------------------------------------------------------------------------
 int Cell::nodeID(int i) const
 {
-  if ( c )
-    return c->nodeID(i);
-  
-  return -1;
+  dolfin_assert(c);
+  return c->nodeID(i);
+}
+//-----------------------------------------------------------------------------
+int Cell::edgeID(int i) const
+{
+  dolfin_assert(c);
+  return c->edgeID(i);
+}
+//-----------------------------------------------------------------------------
+int Cell::faceID(int i) const
+{
+  dolfin_assert(c);
+  return c->faceID(i);
 }
 //-----------------------------------------------------------------------------
 real Cell::volume() const

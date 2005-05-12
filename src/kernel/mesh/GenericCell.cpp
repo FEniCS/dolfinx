@@ -100,6 +100,16 @@ int GenericCell::nodeID(int i) const
   return cn(i)->id();
 }
 //-----------------------------------------------------------------------------
+int GenericCell::edgeID(int i) const
+{
+  return ce(i)->id();
+}
+//-----------------------------------------------------------------------------
+int GenericCell::faceID(int i) const
+{
+  return cf(i)->id();
+}
+//-----------------------------------------------------------------------------
 void GenericCell::mark()
 {
   marker() = Cell::marked_for_reg_ref;
