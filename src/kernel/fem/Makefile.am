@@ -1,5 +1,6 @@
 SUBDIRS                 = dolfin
 include_HEADERS         = dolfin/dolfin_fem.h \
+                          dolfin/AffineMap.h \
                           dolfin/BoundaryCondition.h \
                           dolfin/BoundaryValue.h \
                           dolfin/FEM.h \
@@ -11,7 +12,8 @@ include_HEADERS         = dolfin/dolfin_fem.h \
                           dolfin/StiffnessMatrix.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = BoundaryCondition.cpp \
+libdolfin_fem_a_SOURCES = AffineMap.cpp \
+                          BoundaryCondition.cpp \
                           BoundaryValue.cpp \
                           FEM.cpp \
                           FiniteElement.cpp \

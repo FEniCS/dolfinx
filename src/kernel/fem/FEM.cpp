@@ -7,6 +7,7 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
+#include <dolfin/AffineMap.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
@@ -28,6 +29,9 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   const FiniteElement& trial_element = a.trial();
   dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
+  // Create affine map
+  AffineMap map;
+
   // Initialize local data
   unsigned int n = test_element.spacedim();
   real* block = new real[n*n];
@@ -42,6 +46,9 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Update affine map
+    map.update(*cell);
+
     // Update form
     a.update(*cell);
     
@@ -50,7 +57,7 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     trial_element.dofmap(trial_dofs, *cell, mesh);
 
     // Compute element matrix
-    a.interior(block);
+    a.eval(block, map);
 
     // Add element matrix to global matrix
     A.add(block, test_dofs, n, trial_dofs, n);
@@ -76,6 +83,9 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   // Get finite element
   const FiniteElement& test_element = L.test();
 
+  // Create affine map
+  AffineMap map;
+
   // Initialize local data
   unsigned int n = test_element.spacedim();
   real* block = new real[n];
@@ -89,6 +99,9 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Update affine map
+    map.update(*cell);
+
     // Update form
     L.update(*cell);
 
@@ -96,7 +109,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
     test_element.dofmap(test_dofs, *cell, mesh);
 
     // Compute element matrix
-    L.interior(block);
+    L.eval(block, map);
     
     // Add element matrix to global matrix
     b.add(block, test_dofs, n);
@@ -125,6 +138,9 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   const FiniteElement& trial_element = a.trial();
   dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
+  // Create affine map
+  AffineMap map;
+
   // Initialize element matrix/vector data block
   unsigned int n = test_element.spacedim();
   real* block_A = new real[n*n];
@@ -142,6 +158,9 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
+    // Update affine map
+    map.update(*cell);
+
     // Update forms
     a.update(*cell);
     L.update(*cell);
@@ -151,8 +170,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
     trial_element.dofmap(trial_dofs, *cell, mesh);
    
     // Compute element matrix and vector 
-    a.interior(block_A);
-    L.interior(block_b);
+    a.eval(block_A, map);
+    L.eval(block_b, map);
     
     // Add element matrix to global matrix
     A.add(block_A, test_dofs, n, trial_dofs, n);

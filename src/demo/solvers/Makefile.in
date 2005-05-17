@@ -293,16 +293,7 @@ uninstall-am uninstall all-redirect all-am all installdirs-am \
 installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
-# elasticity-stationary \
-# elasticity-updated \
-# euler \
-# heat \
-# navierstokes \
-# ode \
-# poisson-multigrid \
-# template \
-# wave \
-# wave-vector
+# navierstokes
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

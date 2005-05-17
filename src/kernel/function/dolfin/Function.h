@@ -6,9 +6,6 @@
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
 
-
-#define HEJ 0.1
-
 #include <dolfin/constants.h>
 #include <dolfin/Point.h>
 #include <dolfin/Variable.h>

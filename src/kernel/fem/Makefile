@@ -87,11 +87,11 @@ mpi_found = yes
 petsc_found = yes
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_fem.h                           dolfin/BoundaryCondition.h                           dolfin/BoundaryValue.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/P1Tet.h                           dolfin/P1Tri.h                           dolfin/StiffnessMatrix.h
+include_HEADERS = dolfin/dolfin_fem.h                           dolfin/AffineMap.h                           dolfin/BoundaryCondition.h                           dolfin/BoundaryValue.h                           dolfin/FEM.h                           dolfin/FiniteElement.h                           dolfin/LoadVector.h                           dolfin/MassMatrix.h                           dolfin/P1Tet.h                           dolfin/P1Tri.h                           dolfin/StiffnessMatrix.h
 
 INCLUDES =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2
 lib_LIBRARIES = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = BoundaryCondition.cpp                           BoundaryValue.cpp                           FEM.cpp                           FiniteElement.cpp                           LoadVector.cpp                           MassMatrix.cpp                           StiffnessMatrix.cpp
+libdolfin_fem_a_SOURCES = AffineMap.cpp                           BoundaryCondition.cpp                           BoundaryValue.cpp                           FEM.cpp                           FiniteElement.cpp                           LoadVector.cpp                           MassMatrix.cpp                           StiffnessMatrix.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -103,8 +103,9 @@ CPPFLAGS =
 LDFLAGS = 
 LIBS = -lncurses 
 libdolfin_fem_a_LIBADD = 
-libdolfin_fem_a_OBJECTS =  BoundaryCondition.o BoundaryValue.o FEM.o \
-FiniteElement.o LoadVector.o MassMatrix.o StiffnessMatrix.o
+libdolfin_fem_a_OBJECTS =  AffineMap.o BoundaryCondition.o \
+BoundaryValue.o FEM.o FiniteElement.o LoadVector.o MassMatrix.o \
+StiffnessMatrix.o
 AR = ar
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -118,9 +119,9 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/BoundaryCondition.P .deps/BoundaryValue.P .deps/FEM.P \
-.deps/FiniteElement.P .deps/LoadVector.P .deps/MassMatrix.P \
-.deps/StiffnessMatrix.P
+DEP_FILES =  .deps/AffineMap.P .deps/BoundaryCondition.P \
+.deps/BoundaryValue.P .deps/FEM.P .deps/FiniteElement.P \
+.deps/LoadVector.P .deps/MassMatrix.P .deps/StiffnessMatrix.P
 SOURCES = $(libdolfin_fem_a_SOURCES)
 OBJECTS = $(libdolfin_fem_a_OBJECTS)
 

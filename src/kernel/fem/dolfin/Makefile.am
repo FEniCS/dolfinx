@@ -1,4 +1,5 @@
 EXTRA_DIST = dolfin_fem.h \
+             AffineMap.h \
              BoundaryCondition.h \
              BoundaryValue.h \
              FEM.h \

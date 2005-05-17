@@ -11,6 +11,7 @@
 namespace dolfin
 {
 
+  class AffineMap;
   class FiniteElement;
 
   /// BilinearForm represents a bilinear form a(v, u) with arguments v
@@ -22,16 +23,16 @@ namespace dolfin
   public:
     
     /// Constructor
-    BilinearForm(uint nfunctions = 0);
+    BilinearForm(uint num_functions = 0);
     
     /// Destructor
     virtual ~BilinearForm();
     
     /// Compute element matrix (interior contribution)
-    virtual bool interior(real* block) const;
+    virtual void eval(real block[], const AffineMap& map) const;
     
     /// Compute element matrix (boundary contribution)
-    virtual bool boundary(real* block) const;
+    virtual void eval(real block[], const AffineMap& map, uint boundary) const;
 
     /// Return finite element defining the test space
     const FiniteElement& test() const;

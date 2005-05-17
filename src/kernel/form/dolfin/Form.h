@@ -34,26 +34,11 @@ namespace dolfin
 
   protected:
 
-    // Update affine map from reference triangle
-    void updateTriLinMap(const Cell& cell);
-    
-    // Update affine map from reference tetrahedron
-    void updateTetLinMap(const Cell& cell);
-
     // Update coefficients
     void updateCoefficients(const Cell& cell);
 
     // Add function
     void add(Function& function, const FiniteElement* element);
-
-    // Determinant of Jacobian of map
-    real det;
-
-    // Jacobian of map
-    real f00, f01, f02, f10, f11, f12, f20, f21, f22;
-
-    // Inverse of Jacobian of map
-    real g00, g01, g02, g10, g11, g12, g20, g21, g22;
 
     // List of finite elements for functions (coefficients)
     Array<const FiniteElement*> elements;

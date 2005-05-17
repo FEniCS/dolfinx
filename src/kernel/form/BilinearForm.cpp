@@ -9,8 +9,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BilinearForm::BilinearForm(uint nfunctions)
-  : Form(nfunctions), _test(0), _trial(0)
+BilinearForm::BilinearForm(uint num_functions)
+  : Form(num_functions), _test(0), _trial(0)
 {
   // Do nothing
 }
@@ -21,18 +21,14 @@ BilinearForm::~BilinearForm()
   if ( _trial ) delete _trial;
 }
 //-----------------------------------------------------------------------------
-bool BilinearForm::interior(real* block) const
+void BilinearForm::eval(real block[], const AffineMap& map) const
 {
-  // The default version returns false, which means that the form does
-  // not contain any integrals over the interior of the domain.
-  return false;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool BilinearForm::boundary(real* block) const
+void BilinearForm::eval(real block[], const AffineMap& map, uint boundary) const
 {
-  // The default version returns true, which means that the form does
-  // not contain any integrals over the boundary of the domain.
-  return false;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 const FiniteElement& BilinearForm::test() const

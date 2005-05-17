@@ -10,6 +10,9 @@
 
 namespace dolfin
 {
+  
+  class AffineMap;
+  class FiniteElement;
 
   /// LinearForm represents a linear form L(v) with argument v (the
   /// test function) a basis function of the finite element space
@@ -20,16 +23,16 @@ namespace dolfin
   public:
     
     /// Constructor
-    LinearForm(uint nfunctions = 0);
+    LinearForm(uint num_functions = 0);
     
     /// Destructor
     virtual ~LinearForm();
 
     /// Compute element vector (interior contribution)
-    virtual bool interior(real* block) const;
+    virtual void eval(real block[], const AffineMap& map) const;
 
     /// Compute element vector (boundary contribution)
-    virtual bool boundary(real* block) const;
+    virtual void eval(real block[], const AffineMap& map, uint boundary) const;
 
     /// Return finite element defining the test space
     const FiniteElement& test() const;
