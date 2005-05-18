@@ -63,7 +63,7 @@ AWK = mawk
 BOPT = g_c++
 CC = gcc
 CXX = g++
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98 
+CXXFLAGS = -O3 -Wall -Werror -ansi -std=c++98
 DOLFIN_LIBS =  -ldolfin-poisson -ldolfin-convdiff -ldolfin-elasticity -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -lncurses -Wl,-rpath,/usr/local/lib/petsc//lib/libg_c++/linux-gnu -L/usr/local/lib/petsc//lib/libg_c++/linux-gnu -lpetscts -lpetscsnes -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -L/usr/X11R6/lib -lX11 -Wl,-rpath,/usr/local/lib/petsc/packages/hypre/linux-gnu/lib -L/usr/local/lib/petsc/packages/hypre/linux-gnu/lib -lHYPRE_DistributedMatrix -lHYPRE_DistributedMatrixPilutSolver -lHYPRE_Euclid -lHYPRE_IJ_mv -lHYPRE_LSI -lHYPRE_MatrixMatrix -lHYPRE_ParaSails -lHYPRE_krylov -lHYPRE_lobpcg -lHYPRE_parcsr_ls -lHYPRE_parcsr_mv -lHYPRE_seq_mv -lHYPRE_sstruct_ls -lHYPRE_sstruct_mv -lHYPRE_struct_ls -lHYPRE_struct_mv -lHYPRE_utilities -lstdc++ -llapack -lblas -ldl -ldl -ldl -ldl -lm -L/usr/lib/mpich/lib -lmpich -lfrtbegin -lg2c -lm -L/usr/lib/gcc-lib/i486-linux/3.3.5 -L/usr/lib/gcc-lib/i486-linux/3.3.5/../../.. -lm -lgcc_s -L/usr/lib -lxml2 -lz -lpthread -lm
 HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2
@@ -77,7 +77,7 @@ MODULE_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kerne
 MPI_CFLAGS = -I/usr/include/mpi
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.5.5
+PACKAGE_VERSION = 0.5.6
 PETSC_CFLAGS = -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include
 PETSC_DIR = /usr/local/lib/petsc/
 RANLIB = ranlib
@@ -98,7 +98,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.5\" -DPACKAGE_STRING=\"dolfin\ 0.5.5\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.6\" -DPACKAGE_STRING=\"dolfin\ 0.5.6\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = -lncurses 

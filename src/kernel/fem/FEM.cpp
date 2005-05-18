@@ -243,6 +243,9 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   // Allocate list of rows
   uint m = 0;
   int* rows = new int[b.size()];
+  bool* row_set = new bool[b.size()];
+  for (unsigned int i = 0; i < b.size(); i++)
+    row_set[i] = false;
   
   // Allocate local data
   uint n = element.spacedim();
@@ -254,7 +257,7 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->noCellNeighbors() == 1);
+    //dolfin_assert(edge->noCellNeighbors() == 1);
     const Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -284,8 +287,12 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
       if ( bv.fixed )
       {
 	int dof = dofs[i];
-	rows[m++] = dof;
-	b(dof) = bv.value;
+	if ( !row_set[dof] )
+	{
+	  rows[m++] = dof;
+	  b(dof) = bv.value;
+	  row_set[dof] = true;
+	}
       }
     }
   }
@@ -297,7 +304,8 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   delete [] dofs;
   delete [] components;
   delete [] points;
-  delete [] rows;  
+  delete [] rows;
+  delete [] row_set;
 }
 //-----------------------------------------------------------------------------
 void FEM::lump(Matrix& M, Vector& m)

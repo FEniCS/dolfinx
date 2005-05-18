@@ -287,3 +287,14 @@ This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 ---------------------------------------------------------------------------
+DOLFIN version: dolfin 0.5.6 (tis maj 17 18:13:11 CDT 2005)
+Compiler flags: -I/usr/local/include -O3 -Wall -Werror -ansi -std=c++98 -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi
+Elapsed time:   real: 8.331  user: 8.129  sys: 0.066  cpu: 98.35%
+ 
+Linux galerkin 2.6.10 #1 Mon Feb 7 11:17:57 CST 2005 i686 GNU/Linux
+g++ (GCC) 3.3.5 (Debian 1:3.3.5-12)
+Copyright (C) 2003 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+---------------------------------------------------------------------------
