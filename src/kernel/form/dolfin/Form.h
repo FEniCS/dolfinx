@@ -8,13 +8,12 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/Function.h>
+#include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
 
 namespace dolfin
 {
-
-  class Cell;
-  class Function;
   
   class Form
   {
@@ -27,7 +26,7 @@ namespace dolfin
     virtual ~Form();
 
     /// Update map to current cell
-    void update(const Cell& cell);
+    void update(const AffineMap& map);
 
     /// Friends
     friend class FEM;
@@ -35,7 +34,7 @@ namespace dolfin
   protected:
 
     // Update coefficients
-    void updateCoefficients(const Cell& cell);
+    void updateCoefficients(const AffineMap& map);
 
     // Add function
     void add(Function& function, const FiniteElement* element);
@@ -47,7 +46,7 @@ namespace dolfin
     Array<const Function*> functions;
     
     // Coefficients of functions projected to current element
-    real** w;
+    real** c;
 
     // Number of functions
     uint num_functions;

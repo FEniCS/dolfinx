@@ -7,17 +7,18 @@
 #define __FUNCTION_H
 
 #include <dolfin/constants.h>
-#include <dolfin/Point.h>
 #include <dolfin/Variable.h>
 
 namespace dolfin
 {
-  
+
+  class Point;
   class Node;
   class Cell;
   class Mesh;
-  class FiniteElement;
   class Vector;
+  class AffineMap;
+  class FiniteElement;
   
   /// This class represents a function defined on a mesh. The function
   /// is defined in terms of a mesh, a finite element and a vector
@@ -48,8 +49,8 @@ namespace dolfin
     /// Destructor
     virtual ~Function();
 
-    /// Compute projection of function onto a given local finite element space
-    void project(const Cell& cell, real c[]) const;
+    /// Compute interpolation of function onto the local finite element space
+    void interpolate(real coefficients[], const AffineMap& map) const;
 
     /// Evaluate function at given node
     real operator() (const Node& node) const;

@@ -12,11 +12,11 @@ namespace dolfin
 
   class Cell;
 
-  /// This class represents the affine map from the reference cell to
-  /// the current cell.
+  /// This class represents the affine map from the reference element to
+  /// the current element.
   ///
-  /// The 2D reference cell is given by (0,0) - (1,0) - (0,1).
-  /// The 3D reference cell is given by (0,0,0) - (1,0,0) - (0,1,0) - (0,0,1).
+  /// The 2D reference element is given by (0,0)-(1,0)-(0,1).
+  /// The 3D reference element is given by (0,0,0)-(1,0,0)-(0,1,0)-(0,0,1).
   ///
   /// The dimension d of the map is automatically determined from the
   /// arguments used when calling the map.
@@ -31,15 +31,18 @@ namespace dolfin
     /// Destructor
     ~AffineMap();
 
-    /// Update map for current cell
+    /// Update map for current element
     void update(const Cell& cell);
 
-    /// Map given point from the reference cell (2D)
+    /// Map given point from the reference element (2D)
     Point operator() (real X, real Y) const;
 
-    /// Map given point from the reference cell (3D)
+    /// Map given point from the reference element (3D)
     Point operator() (real X, real Y, real Z) const;
 
+    /// Return cell of current element
+    const Cell& cell() const;
+    
     // Determinant of Jacobian of map
     real det;
 
@@ -59,6 +62,9 @@ namespace dolfin
 
     // Vertices of current cell
     Point p0, p1, p2, p3;
+
+    // Current cell
+    const Cell* _cell;
 
   };
 

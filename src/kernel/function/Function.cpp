@@ -1,9 +1,13 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
+#include <dolfin/Point.h>
+#include <dolfin/Node.h>
+#include <dolfin/Cell.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/Vector.h>
+#include <dolfin/AffineMap.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/Function.h>
 
 using namespace dolfin;
@@ -38,7 +42,7 @@ Function::~Function()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Function::project(const Cell& cell, real c[]) const
+void Function::interpolate(real coefficients[], const AffineMap& map) const
 {
   // Need to have an element to compute projection
   if ( !_element )
@@ -51,14 +55,17 @@ void Function::project(const Cell& cell, real c[]) const
     // First case: function defined in terms of an element and a
     // vector of dofs so we just need to pick the values
 
-    if ( _mesh && _mesh != &cell.mesh() )
+    const Cell& cell = map.cell();
+    const Mesh& mesh = cell.mesh();
+
+    if ( _mesh && _mesh != &mesh )
       dolfin_error("Function is defined on a different mesh.");
 
     real* values = _x->array();
     int* dofs = new int[_element->spacedim()]; // FIXME: Don't reallocate every time
-    _element->dofmap(dofs, cell, cell.mesh());
+    _element->dofmap(dofs, cell, mesh);
     for (uint i = 0; i < _element->spacedim(); i++)
-      c[i] = values[dofs[i]];
+      coefficients[i] = values[dofs[i]];
     delete [] dofs;
     _x->restore(values);
     
@@ -68,7 +75,12 @@ void Function::project(const Cell& cell, real c[]) const
     // Second case: function is user-defined so we need to compute the
     // projection to the given finite element space
 
+    _element->interpolate(*this, coefficients, map);
+
+    
     // FIXME: This is just a temporary fix for P1 elements
+    
+    /*
 
     if ( _element->rank() == 0 )
     {
@@ -86,11 +98,10 @@ void Function::project(const Cell& cell, real c[]) const
     }
     else
       dolfin_error("Cannot handle tensor valued functions.");
-  } 
 
-  // FIXME: If we know that the values are stored element-by-element
-  // FIXME: in x, then we can optimize by just calling
-  // FIXME: element::dof() one time with i = 0.
+    */
+
+  }
 }
 //-----------------------------------------------------------------------------
 real Function::operator() (const Node& node) const

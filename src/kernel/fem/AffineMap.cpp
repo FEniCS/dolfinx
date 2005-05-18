@@ -18,6 +18,8 @@ AffineMap::AffineMap()
   g00 = 0.0; g01 = 0.0; g02 = 0.0;
   g10 = 0.0; g11 = 0.0; g12 = 0.0;
   g20 = 0.0; g21 = 0.0; g22 = 0.0;
+
+  _cell = 0;
 }
 //-----------------------------------------------------------------------------
 AffineMap::~AffineMap()
@@ -38,6 +40,8 @@ void AffineMap::update(const Cell& cell)
   default:
     dolfin_error("Unknown cell type for affine map.");
   }
+  
+  _cell = &cell;
 }
 //-----------------------------------------------------------------------------
 Point AffineMap::operator() (real X, real Y) const
@@ -53,6 +57,11 @@ Point AffineMap::operator() (real X, real Y, real Z) const
   return Point(w*p0.x + X*p1.x + Y*p2.x + Z*p3.x,
 	       w*p0.y + X*p1.y + Y*p2.y + Z*p3.y,
 	       w*p0.z + X*p1.z + Y*p2.z + Z*p3.z);
+}
+//-----------------------------------------------------------------------------
+const Cell& AffineMap::cell() const
+{
+  return *_cell;
 }
 //-----------------------------------------------------------------------------
 void AffineMap::updateTriangle(const Cell& cell)

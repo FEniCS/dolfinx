@@ -10,6 +10,8 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
+#include <dolfin/Function.h>
+#include <dolfin/AffineMap.h>
 
 namespace dolfin
 {
@@ -41,10 +43,10 @@ namespace dolfin
 
     /// Compute map from local to global degrees of freedom
     virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
-    
-    /// Return map from local degree of freedom to global coordinate
-    virtual const Point coord(unsigned int i, const Cell& cell, const Mesh& mesh) const = 0;
 
+    /// Compute interpolation of function onto the local finite element space
+    virtual void interpolate(const Function& function, real coefficients[], const AffineMap& map) const = 0;
+    
   };
 
 }

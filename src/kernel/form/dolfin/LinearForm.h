@@ -10,9 +10,6 @@
 
 namespace dolfin
 {
-  
-  class AffineMap;
-  class FiniteElement;
 
   /// LinearForm represents a linear form L(v) with argument v (the
   /// test function) a basis function of the finite element space

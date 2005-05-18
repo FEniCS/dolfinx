@@ -50,7 +50,7 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     map.update(*cell);
 
     // Update form
-    a.update(*cell);
+    a.update(map);
     
     // Compute mappings from local to global degrees of freedom
     test_element.dofmap(test_dofs, *cell, mesh);
@@ -103,7 +103,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
     map.update(*cell);
 
     // Update form
-    L.update(*cell);
+    L.update(map);
 
     // Compute mapping from local to global degrees of freedom
     test_element.dofmap(test_dofs, *cell, mesh);
@@ -162,8 +162,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
     map.update(*cell);
 
     // Update forms
-    a.update(*cell);
-    L.update(*cell);
+    a.update(map);
+    L.update(map);
 
     // Compute mappings from local to global degrees of freedom
     test_element.dofmap(test_dofs, *cell, mesh);

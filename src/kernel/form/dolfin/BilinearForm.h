@@ -11,9 +11,6 @@
 namespace dolfin
 {
 
-  class AffineMap;
-  class FiniteElement;
-
   /// BilinearForm represents a bilinear form a(v, u) with arguments v
   /// and u basis functions of the finite element space defined by a
   /// pair of finite elements (test and trial).
