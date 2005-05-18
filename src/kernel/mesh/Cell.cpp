@@ -207,10 +207,10 @@ real Cell::diameter() const
   return c->diameter();
 }
 //-----------------------------------------------------------------------------
-bool Cell::edgeAligned(uint i) const
+dolfin::uint Cell::edgeAlignment(uint i) const
 {
   dolfin_assert(c);
-  return c->edgeAligned(i);
+  return c->edgeAlignment(i);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Cell::faceAlignment(uint i) const

@@ -133,10 +133,10 @@ namespace dolfin
     // Compute and return diameter 
     real diameter() const;
 
-    /// Check if the given edge is aligned with the orientation of the cell
-    bool edgeAligned(uint i) const;
+    /// Compute alignment of given edge (0, 1)
+    uint edgeAlignment(uint i) const;
 
-    /// Compute alignment of given face (0,1,2,3,4,5)
+    /// Compute alignment of given face (0, 1, 2, 3, 4, 5)
     uint faceAlignment(uint i) const;
     
     /// Comparison with another cell

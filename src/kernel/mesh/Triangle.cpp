@@ -91,15 +91,15 @@ real Triangle::diameter() const
   return d;
 }
 //-----------------------------------------------------------------------------
-bool Triangle::edgeAligned(uint i) const
+dolfin::uint Triangle::edgeAlignment(uint i) const
 {
   if ( cn((i + 1) % 3) == ce(i)->n0 )
     cout << "Edge is aligned" << endl;
   else
     cout << "Edge is not aligned" << endl;
   
-  // Check alignment with convention used by FIAT
-  return cn((i + 1) % 3) == ce(i)->n0;
+  // Check alignment with convention in FFC manual
+  return ( cn((i + 1) % 3) == ce(i)->n0 ? 0 : 1 );
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Triangle::faceAlignment(uint i) const
@@ -113,9 +113,9 @@ void Triangle::createEdges()
   ce.init(3);
   ce.reset();
 
-  createEdge(*cn(0), *cn(1));
   createEdge(*cn(1), *cn(2));
   createEdge(*cn(2), *cn(0));
+  createEdge(*cn(0), *cn(1));
 }
 //-----------------------------------------------------------------------------
 void Triangle::createFaces()
@@ -125,10 +125,9 @@ void Triangle::createFaces()
 //-----------------------------------------------------------------------------
 void Triangle::sort()
 {
-  // Sort local mesh entities according to ordering used by FIAT,
-  // see Mesh.h for a detailed description of the ordering used.
+  // Sort local mesh entities according to ordering in FFC manual
 
-  // Soft the nodes counter-clockwise
+  // Sort the nodes counter-clockwise
   if ( orientation() == Cell::left )
   {
     Node* tmp = cn(1);
@@ -152,10 +151,10 @@ void Triangle::sort()
       }
     }
   }
-  for (uint j = 0; j < 3; j++)
+  for (uint i = 0; i < 3; i++)
   {
-    dolfin_assert(edges[j]);
-    ce(j) = edges[j];
+    dolfin_assert(edges[i]);
+    ce(i) = edges[i];
   }
 }
 //-----------------------------------------------------------------------------

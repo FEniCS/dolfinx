@@ -67,40 +67,14 @@ void Function::interpolate(real coefficients[], const AffineMap& map) const
     for (uint i = 0; i < _element->spacedim(); i++)
       coefficients[i] = values[dofs[i]];
     delete [] dofs;
-    _x->restore(values);
-    
+    _x->restore(values);    
   }
   else
   {
     // Second case: function is user-defined so we need to compute the
-    // projection to the given finite element space
+    // interpolation onto the given finite element space
 
     _element->interpolate(*this, coefficients, map);
-
-    
-    // FIXME: This is just a temporary fix for P1 elements
-    
-    /*
-
-    if ( _element->rank() == 0 )
-    {
-      for (uint i = 0; i < _element->spacedim(); i++)
-	c[i] = (*this)(_element->coord(i, cell, cell.mesh()));
-    }
-    else if ( _element->rank() == 1 )
-    {
-      const uint scalar_dim = _element->spacedim() / _element->tensordim(0);
-      for (uint i = 0; i < _element->spacedim(); i++)
-      {
-	const uint component = i / scalar_dim;
-	c[i] = (*this)(_element->coord(i, cell, cell.mesh()), component);
-      }
-    }
-    else
-      dolfin_error("Cannot handle tensor valued functions.");
-
-    */
-
   }
 }
 //-----------------------------------------------------------------------------

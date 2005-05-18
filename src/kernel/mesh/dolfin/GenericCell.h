@@ -56,7 +56,7 @@ namespace dolfin
     int faceID(int i) const;
     virtual real volume() const = 0;
     virtual real diameter() const = 0;
-    virtual bool edgeAligned(uint i) const = 0;
+    virtual uint edgeAlignment(uint i) const = 0;
     virtual uint faceAlignment(uint i) const = 0;
 
     void mark();

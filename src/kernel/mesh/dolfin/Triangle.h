@@ -33,7 +33,7 @@ namespace dolfin
     real volume() const;
     real diameter() const;
 
-    bool edgeAligned(uint i) const;
+    uint edgeAlignment(uint i) const;
     uint faceAlignment(uint i) const;
     
   private:
