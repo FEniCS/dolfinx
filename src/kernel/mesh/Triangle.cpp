@@ -93,11 +93,6 @@ real Triangle::diameter() const
 //-----------------------------------------------------------------------------
 dolfin::uint Triangle::edgeAlignment(uint i) const
 {
-  if ( cn((i + 1) % 3) == ce(i)->n0 )
-    cout << "Edge is aligned" << endl;
-  else
-    cout << "Edge is not aligned" << endl;
-  
   // Check alignment with convention in FFC manual
   return ( cn((i + 1) % 3) == ce(i)->n0 ? 0 : 1 );
 }

@@ -122,6 +122,17 @@ bool Edge::contains(const Node& n) const
   return false;
 }
 //-----------------------------------------------------------------------------
+bool Edge::contains(const Point& point) const
+{
+  // Quick check: return true if the point is on the same line by
+  // checking the size of the cross product (should be zero)
+  
+  Point v01 = n1->coord() - n0->coord();
+  Point v0p = point - n0->coord();
+  
+  return (v01.cross(v0p)).norm() < DOLFIN_EPS;
+}
+//-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
 {
   stream << "[ Edge: id = " << edge.id()

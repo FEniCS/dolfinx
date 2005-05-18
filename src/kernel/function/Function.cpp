@@ -14,32 +14,46 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
-  : Variable("u", "A function"), _x(0), _mesh(0), _element(0), t(0)
+  : Variable("u", "A function"), _x(0), _mesh(0), _element(0), t(0),
+    dofs(0), components(0), points(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x)
-  : Variable("u", "A function"), _x(&x), _mesh(0), _element(0), t(0)
+  : Variable("u", "A function"), _x(&x), _mesh(0), _element(0), t(0),
+    dofs(0), components(0), points(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh)
-  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(0), t(0)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(0), t(0),
+  dofs(0), components(0), points(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh, const FiniteElement& element)
-  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(&element), t(0)
+  : Variable("u", "A function"), _x(&x), _mesh(&mesh), _element(&element), t(0),
+    dofs(0), components(0), points(0)
 {
-  // Do nothing
+  // Allocate temporary data used for interpolation
+  dofs = new int[element.spacedim()];
+  components = new uint[element.spacedim()];
+  points = new Point[element.spacedim()];
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  // Do nothing
+  if ( dofs )
+    delete [] dofs;
+
+  if ( components )
+    delete [] components;
+  
+  if ( points )
+    delete [] points;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real coefficients[], const AffineMap& map) const
@@ -62,19 +76,27 @@ void Function::interpolate(real coefficients[], const AffineMap& map) const
       dolfin_error("Function is defined on a different mesh.");
 
     real* values = _x->array();
-    int* dofs = new int[_element->spacedim()]; // FIXME: Don't reallocate every time
     _element->dofmap(dofs, cell, mesh);
     for (uint i = 0; i < _element->spacedim(); i++)
       coefficients[i] = values[dofs[i]];
-    delete [] dofs;
     _x->restore(values);    
   }
   else
   {
     // Second case: function is user-defined so we need to compute the
     // interpolation onto the given finite element space
-
-    _element->interpolate(*this, coefficients, map);
+    
+    _element->pointmap(points, components, map);
+    if ( _element->rank() == 0 )
+    {
+      for (uint i = 0; i < _element->spacedim(); i++)
+	coefficients[i] = (*this)(points[i]);
+    }
+    else
+    {
+      for (uint i = 0; i < _element->spacedim(); i++)
+	coefficients[i] = (*this)(points[i], components[i]);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -146,8 +168,30 @@ void Function::set(real time)
 //-----------------------------------------------------------------------------
 void Function::set(const FiniteElement& element)
 {
+  bool alloc = false;
+  
   if ( _element )
+  {
     dolfin_warning("Overriding previous choice of finite element.");
+
+    if ( element.spacedim() != _element->spacedim() )
+    {
+      delete [] dofs;
+      delete [] components;
+      delete [] points;      
+      alloc = true;
+    }
+  }
+  else
+    alloc = true;
+
   _element = &element;
+
+  if ( alloc )
+  {
+    dofs = new int[element.spacedim()];
+    components = new uint[element.spacedim()];
+    points = new Point[element.spacedim()];
+  }
 }
 //-----------------------------------------------------------------------------

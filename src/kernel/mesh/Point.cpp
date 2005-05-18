@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <cmath>
 #include <dolfin/Point.h>
@@ -43,7 +45,12 @@ real Point::dist(real x, real y, real z) const
   real dy = y - this->y;
   real dz = z - this->z;
 
-  return sqrt( dx*dx + dy*dy + dz*dz );
+  return sqrt(dx*dx + dy*dy + dz*dz);
+}
+//-----------------------------------------------------------------------------
+real Point::norm() const
+{
+  return sqrt(x*x + y*y + z*z);
 }
 //-----------------------------------------------------------------------------
 Point Point::midpoint(Point p) const

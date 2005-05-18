@@ -47,13 +47,10 @@ namespace dolfin
     
     /// Set Dirichlet boundary conditions
     static void setBC(Matrix& A, Vector& b, Mesh& mesh,
-		      BoundaryCondition& bc);
-
-    // Utility functions
+		      const FiniteElement& element, BoundaryCondition& bc);
 
     /// Lump matrix
     static void lump(Matrix& M, Vector& m);
-
 
   private:
 

@@ -92,6 +92,11 @@ namespace dolfin
 
     // Current time
     real t;
+
+    // Temporary data used for interpolation
+    int* dofs;
+    uint* components;
+    Point* points;
     
   };
 

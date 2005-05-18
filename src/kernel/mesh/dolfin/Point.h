@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -23,6 +25,9 @@ namespace dolfin {
 
     /// Return distance to given point (x,y,z)
     real dist(real x, real y = 0.0, real z = 0.0) const;
+
+    /// Return norm of vector represented by point
+    real norm() const;
     
     /// Return midpoint on line to given point p
     Point midpoint(Point p) const;

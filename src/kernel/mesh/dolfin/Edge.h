@@ -72,6 +72,9 @@ namespace dolfin
     /// Check if edge contains the node
     bool contains(const Node& n) const;
 
+    /// Check if edge contains the point (point one the same line)
+    bool contains(const Point& point) const;
+
     ///--- Output ---
    
     /// Display condensed edge data

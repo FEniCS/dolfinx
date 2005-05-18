@@ -44,8 +44,8 @@ namespace dolfin
     /// Compute map from local to global degrees of freedom
     virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
 
-    /// Compute interpolation of function onto the local finite element space
-    virtual void interpolate(const Function& function, real coefficients[], const AffineMap& map) const = 0;
+    /// Compute map from local to global coordinates
+    virtual void pointmap(Point points[], uint components[], const AffineMap& map) const = 0;
     
   };
 
