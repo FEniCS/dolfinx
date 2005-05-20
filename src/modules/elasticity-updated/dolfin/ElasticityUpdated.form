@@ -1,0 +1,22 @@
+# Test form for updated elasticity
+
+name = "ElasticityUpdated"
+element1 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element2)
+sigma0 = Function(element1)
+sigma1 = Function(element1)
+sigma2 = Function(element1)
+
+L = (
+	sigma0[0] * v[0].dx(0) +
+	sigma0[1] * v[0].dx(1) +
+	sigma0[2] * v[0].dx(2) +
+	sigma1[0] * v[1].dx(0) +
+	sigma1[1] * v[1].dx(1) +
+	sigma1[2] * v[1].dx(2) +
+	sigma2[0] * v[2].dx(0) +
+	sigma2[1] * v[2].dx(1) +
+	sigma2[2] * v[2].dx(2)
+	) * dx

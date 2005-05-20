@@ -1,7 +1,8 @@
 SUBDIRS = dolfin \
           poisson \
           convdiff \
-          elasticity
+          elasticity \
+	  elasticity-updated
 # navierstokes
 
 INCLUDES = @KERNEL_CFLAGS@

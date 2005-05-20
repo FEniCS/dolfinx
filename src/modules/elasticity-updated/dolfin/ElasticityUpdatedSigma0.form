@@ -1,0 +1,14 @@
+# Test form for updated elasticity
+
+name = "ElasticityUpdatedSigma0"
+element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+
+c1 = Constant()	# Lame coefficient
+c2 = Constant()	# Lame coefficient
+
+q = BasisFunction(element2)
+v = Function(element1)
+
+L = ((c1 * v[i].dx(i) * q[0]) + 
+	(c2 * v[i].dx(0) + v[0].dx(i)) * q[i]) * dx
