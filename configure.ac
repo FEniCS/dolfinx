@@ -26,6 +26,12 @@ AC_ARG_ENABLE(curses,
                              [Compile without curses]),
               disable_curses=yes)
 
+# Option --disable-mpi
+AC_ARG_ENABLE(mpi,
+              AC_HELP_STRING([--disalbe-mpi],
+                             [Compile without MPI (assuming PETSc does not use MPI)]),
+              disable_mpi=yes)
+
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
             AC_HELP_STRING([--with-petsc-dir=<path>],
@@ -86,7 +92,6 @@ fi
 if test x$PETSC_DIR = x; then
     echo "assuming path to PETSc is /usr/local/lib/petsc"
     PETSC_DIR="/usr/local/lib/petsc/"
-    AC_SUBST(PETSC_DIR)
 else
     echo "using PETSC_DIR=$PETSC_DIR"
 fi
@@ -95,7 +100,6 @@ fi
 if test x$BOPT = x; then
     echo "assuming PETSc BOPT is g_c++"
     BOPT="g_c++"
-    AC_SUBST(BOPT)
 else
     echo "using BOPT=$BOPT"
 fi
@@ -106,7 +110,6 @@ if test $petsc_found = yes; then
     # Extract PETSc variables from PETSC_DIR/bmake/common/variables
     PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
     PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
-    AC_SUBST(PETSC_CFLAGS)
 else
     echo "*** Unable to find PETSc 2.2.1 on your system."
     echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
@@ -116,21 +119,22 @@ else
 fi
 
 # Check for MPI (needed by PETSc)
-AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-if test $mpi_found = yes; then
-    # FIXME: Do correct test
-    DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
-    if [ test -d $DIR/mpi ]; then
-       MPI_CFLAGS="-I$DIR/mpi"
+if test x$disable_mpi = x; then
+    AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+    if test $mpi_found = yes; then
+        DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
+        if [ test -d $DIR/mpi ]; then
+            MPI_CFLAGS="-I$DIR/mpi"
+        else
+	    MPI_CFLAGS="-I$DIR"
+        fi
     else
-       MPI_CFLAGS="-I$DIR"
+        echo "*** Unable to find MPI on your system."
+        echo "*** Perhaps you need to install the package mpich?"
+        exit 1
     fi
-    echo "MPI CFLAGS=$MPI_CFLAGS"
-    AC_SUBST(MPI_CFLAGS)
 else
-    echo "*** Unable to find MPI on your system."
-    echo "*** Perhaps you need to install the package mpich?"
-    exit 1
+    echo "disabling MPI (might not work if PETSc uses MPI)"
 fi
 
 # Check for libxml2
@@ -167,8 +171,8 @@ MAIN_CFLAGS=""
 for f in $DOLFIN_MODULES; do
     MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
 done
-MAIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
-AC_SUBST(MAIN_CFLAGS)
+DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
+AC_SUBST(DOLFIN_CFLAGS)
 
 # Generate library list for linking in the correct order.
 # FIXME: Not very pretty to list the libraries multiple times
@@ -181,7 +185,6 @@ DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
 # Export variables to makefiles
-AC_SUBST(CXXFLAGS)
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 
