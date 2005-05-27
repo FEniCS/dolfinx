@@ -15,7 +15,7 @@ namespace dolfin
     
     // Create ElasticityUpdated solver
     ElasticityUpdatedSolver(Mesh& mesh,
-		     Function& f, Function& u0, Function& v0,
+		     Function& f, Function& v0,
 		     real E, real nu,
 		     BoundaryCondition& bc, real k, real T);
     
@@ -26,7 +26,7 @@ namespace dolfin
 
     // Solve ElasticityUpdated (static version)
     static void solve(Mesh& mesh,
-		      Function& f, Function& u0, Function& v0,
+		      Function& f, Function& v0,
 		      real E, real nu,
 		      BoundaryCondition& bc, real k, real T);
     
@@ -34,7 +34,6 @@ namespace dolfin
     
     Mesh& mesh;
     Function& f;
-    Function& u0;
     Function& v0;
     real E;
     real nu;
