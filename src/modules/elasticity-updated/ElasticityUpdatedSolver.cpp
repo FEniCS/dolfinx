@@ -38,11 +38,13 @@ void ElasticityUpdatedSolver::solve()
 //   real E = 10.0;
 //   real nu = 0.3;
   
-//    real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
-//    real mu = E / (2 * (1 + nu));
+   real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+   real mu = E / (2 * (1 + nu));
   
 //   real lambda = 1.0;
-//   real mu = 1.0;
+//   real mu = 2.0;
+
+//   lambda = 0.0;
 
   // Create element
   ElasticityUpdated::LinearForm::TestElement element1;
@@ -124,12 +126,12 @@ void ElasticityUpdatedSolver::solve()
   //ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
   //ElasticityUpdated::LinearForm Lv;
   ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
-//   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, mu, lambda);
-//   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, mu, lambda);
-//   ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, mu, lambda);
-  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1);
-  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1);
-  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1);
+  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, lambda, mu);
+  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, lambda, mu);
+  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, lambda, mu);
+//   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1);
+//   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1);
+//   ElasticityUpdatedSigma2::LinearForm Lsigma2(v1);
   ElasticityUpdatedProj::LinearForm Lv0(v0);
   ElasticityUpdatedMass::BilinearForm amass;
 
@@ -183,6 +185,28 @@ void ElasticityUpdatedSolver::solve()
     FEM::assemble(Lsigma1, xtmp11, mesh);
     FEM::assemble(Lsigma2, xtmp21, mesh);
 
+    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      int id = (*cell).id();
+
+      xtmp01(3 * id + 0) *= 1.0 / (*cell).volume();
+      xtmp01(3 * id + 1) *= 1.0 / (*cell).volume();
+      xtmp01(3 * id + 2) *= 1.0 / (*cell).volume();
+      xtmp11(3 * id + 0) *= 1.0 / (*cell).volume();
+      xtmp11(3 * id + 1) *= 1.0 / (*cell).volume();
+      xtmp11(3 * id + 2) *= 1.0 / (*cell).volume();
+      xtmp21(3 * id + 0) *= 1.0 / (*cell).volume();
+      xtmp21(3 * id + 1) *= 1.0 / (*cell).volume();
+      xtmp21(3 * id + 2) *= 1.0 / (*cell).volume();
+
+      // Volume seems to be off by 1 / 6 for tetrahedrons
+      xtmp01 *= 6.0;
+      xtmp11 *= 6.0;
+      xtmp21 *= 6.0;
+    }
+
+
+
     xsigma01 = xsigma00;
     xsigma01.axpy(k, xtmp01);
 
@@ -206,7 +230,7 @@ void ElasticityUpdatedSolver::solve()
     
     b = xtmp1;
     b *= k;
-    b *= 6.0;
+//     b *= 6.0;
 
     cout << "b: " << endl;
     b.disp();
@@ -214,7 +238,7 @@ void ElasticityUpdatedSolver::solve()
     for(unsigned int i = 0; i < m.size(); i++)
     {
       stepresidual(i) = -x21(i) + x20(i) -
-	k * xtmp1(i) / m(i) * 6.0;
+	k * xtmp1(i) / m(i) * 1.0;
     }
 
     x21 += stepresidual;

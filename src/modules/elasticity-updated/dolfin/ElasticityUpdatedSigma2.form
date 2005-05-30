@@ -10,6 +10,7 @@ c2 = Constant()	# Lame coefficient
 q = BasisFunction(element2)
 v = Function(element1)
 
-#L = ((c1 * v[i].dx(i) * q[2]) + 
-#	(c2 * v[i].dx(2) + v[2].dx(i)) * q[i]) * dx
-L = ((v[i].dx(2) + v[2].dx(i)) * q[i]) * dx
+L = ((2 * c1 * v[i].dx(i) * q[2]) + 
+	(c2 * (v[i].dx(2) + v[2].dx(i))) * q[i]) * dx
+#L = ((v[i].dx(2) + v[2].dx(i)) * q[i]) * dx
+#L = ((v[i].dx(i) * q[2])) * dx
