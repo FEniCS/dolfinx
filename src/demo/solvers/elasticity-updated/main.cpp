@@ -22,10 +22,27 @@ class InitialVelocity : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
-    if(i == 1 && p.x > 0.0 )
+    //    if(i == 0)
+    if(i == 0 && p.x > 0.5 )
+    {
       return 1.0;
+    }
+    else if(i == 0 && p.x <= 0.5 && p.y > 0.5)
+    {
+      return -0.5;
+    }
+    else if(i == 0 && p.x <= 0.5 && p.y <= 0.5)
+    {
+      return -0.5;
+    }
+//     else if(i == 1 && p.x > 0.5 )
+//     {
+//       return 0.5;
+//     }
     else
+    {
       return 0.0;
+    }
   }
 };
 
@@ -55,6 +72,9 @@ int main(int argc, char **argv)
   dolfin_output("text");
 
   Mesh mesh("minimal2.xml.gz");
+
+//   mesh.refineUniformly();
+//   mesh.refineUniformly();
 
   Source f;
   InitialVelocity v0;

@@ -38,15 +38,17 @@ void ElasticityUpdatedSolver::solve()
 //   real E = 10.0;
 //   real nu = 0.3;
   
-  real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
-  real mu = E / (2 * (1 + nu));
+//    real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+//    real mu = E / (2 * (1 + nu));
   
 //   real lambda = 1.0;
 //   real mu = 1.0;
 
   // Create element
   ElasticityUpdated::LinearForm::TestElement element1;
-  ElasticityUpdatedSigma0::LinearForm::TestElement element2;
+  ElasticityUpdatedSigma0::LinearForm::TestElement element20;
+  ElasticityUpdatedSigma1::LinearForm::TestElement element21;
+  ElasticityUpdatedSigma2::LinearForm::TestElement element22;
 
   Matrix M;
   Vector x10, x11, x20, x21, x11old, x21old, b, m, xtmp1, xtmp2,
@@ -59,9 +61,9 @@ void ElasticityUpdatedSolver::solve()
 //   Function sigma21(xsigma21, mesh, element2);
 
   Function v1(x21, mesh, element1);
-  Function sigma01(xsigma01, mesh, element2);
-  Function sigma11(xsigma11, mesh, element2);
-  Function sigma21(xsigma21, mesh, element2);
+  Function sigma01(xsigma01, mesh, element20);
+  Function sigma11(xsigma11, mesh, element21);
+  Function sigma21(xsigma21, mesh, element22);
 
 
   File         file("elasticity.m");
@@ -69,6 +71,8 @@ void ElasticityUpdatedSolver::solve()
   // FIXME: Temporary fix
   int Nv = 3 * mesh.noNodes();
   int Nsigma = 3 * mesh.noCells();
+
+  int offset = mesh.noNodes();
 
   x10.init(Nv);
   x11.init(Nv);
@@ -88,23 +92,44 @@ void ElasticityUpdatedSolver::solve()
   xsigma00.init(Nsigma);
   xsigma01.init(Nsigma);
 
-  xsigma01 = 0;
-
   xsigma10.init(Nsigma);
   xsigma11.init(Nsigma);
 
   xsigma20.init(Nsigma);
   xsigma21.init(Nsigma);
 
+  xsigma01 = 0;
+  xsigma11 = 0;
+  xsigma21 = 0;
+
   stepresidual.init(Nv);
+
+  // Set initial velocities                                                     
+  for (NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    int id = (*n).id();
+    
+    real v0x, v0y, v0z;
+    
+    v0x = v0((*n).coord(), 0);
+    v0y = v0((*n).coord(), 1);
+    v0z = v0((*n).coord(), 2);
+    
+    x21(id + 0 * offset) = v0x;
+    x21(id + 1 * offset) = v0y;
+    x21(id + 2 * offset) = v0z;
+  }
 
   // Create variational forms
   //ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
   //ElasticityUpdated::LinearForm Lv;
   ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
-  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, lambda, mu);
-  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, lambda, mu);
-  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, lambda, mu);
+//   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, mu, lambda);
+//   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, mu, lambda);
+//   ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, mu, lambda);
+  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1);
+  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1);
+  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1);
   ElasticityUpdatedProj::LinearForm Lv0(v0);
   ElasticityUpdatedMass::BilinearForm amass;
 
@@ -115,20 +140,20 @@ void ElasticityUpdatedSolver::solve()
   FEM::lump(M, m);
 
   // Assemble v vector
-  FEM::assemble(Lv, x21, mesh);
+  //FEM::assemble(Lv, x21, mesh);
 
   // Assemble sigma0 vectors
-  FEM::assemble(Lsigma0, xsigma01, mesh);
-  FEM::assemble(Lsigma1, xsigma11, mesh);
-  FEM::assemble(Lsigma2, xsigma21, mesh);
+//   FEM::assemble(Lsigma0, xsigma01, mesh);
+//   FEM::assemble(Lsigma1, xsigma11, mesh);
+//   FEM::assemble(Lsigma2, xsigma21, mesh);
 
   // Assemble initial velocity
-  FEM::assemble(Lv0, xtmp1, mesh);
+  //FEM::assemble(Lv0, xtmp1, mesh);
 
-  for(unsigned int i = 0; i < m.size(); i++)
-  {
-    x21(i) = xtmp1(i) / m(i);
-  }
+//   for(unsigned int i = 0; i < m.size(); i++)
+//   {
+//     x21(i) = xtmp1(i) / m(i);
+//   }
 
   // Save the solution
   save(mesh, file);
@@ -145,14 +170,6 @@ void ElasticityUpdatedSolver::solve()
     cout << "x21: " << endl;
     x21.disp();
 
-    cout << "xsigma01: " << endl;
-    xsigma01.disp();
-
-    cout << "xsigma11: " << endl;
-    xsigma01.disp();
-
-    cout << "xsigma21: " << endl;
-    xsigma01.disp();
 
     // Make time step
     x10 = x11;
@@ -161,9 +178,6 @@ void ElasticityUpdatedSolver::solve()
     xsigma10 = xsigma11;
     xsigma20 = xsigma21;
 
-    // Assemble v vector
-    FEM::assemble(Lv, xtmp1, mesh);
-    
     // Assemble sigma0 vectors
     FEM::assemble(Lsigma0, xtmp01, mesh);
     FEM::assemble(Lsigma1, xtmp11, mesh);
@@ -178,10 +192,29 @@ void ElasticityUpdatedSolver::solve()
     xsigma21 = xsigma20;
     xsigma21.axpy(k, xtmp21);
 
+    cout << "xsigma01: " << endl;
+    xsigma01.disp();
+
+    cout << "xsigma11: " << endl;
+    xsigma11.disp();
+
+    cout << "xsigma21: " << endl;
+    xsigma21.disp();
+
+    // Assemble v vector
+    FEM::assemble(Lv, xtmp1, mesh);
+    
+    b = xtmp1;
+    b *= k;
+    b *= 6.0;
+
+    cout << "b: " << endl;
+    b.disp();
+
     for(unsigned int i = 0; i < m.size(); i++)
     {
       stepresidual(i) = -x21(i) + x20(i) -
-	k * xtmp1(i) / m(i);
+	k * xtmp1(i) / m(i) * 6.0;
     }
 
     x21 += stepresidual;
@@ -196,9 +229,9 @@ void ElasticityUpdatedSolver::solve()
       int id = (*n).id();
       
       //std::cout << "node id: " << id << std::endl;
-      (*n).coord().x += x11(3 * id + 0) - x10(3 * id + 0);
-      (*n).coord().y += x11(3 * id + 1) - x10(3 * id + 1);
-      (*n).coord().z += x11(3 * id + 2) - x10(3 * id + 2);
+      (*n).coord().x += x11(id + 0 * offset) - x10(id + 0 * offset);
+      (*n).coord().y += x11(id + 1 * offset) - x10(id + 1 * offset);
+      (*n).coord().z += x11(id + 2 * offset) - x10(id + 2 * offset);
     }
 
     // Save the solution
