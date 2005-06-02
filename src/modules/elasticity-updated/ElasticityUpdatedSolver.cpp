@@ -133,7 +133,7 @@ void ElasticityUpdatedSolver::solve()
   // Create variational forms
   //ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
   //ElasticityUpdated::LinearForm Lv;
-  ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
+  ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21);
   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, lambda, mu);
   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, lambda, mu);
   ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, lambda, mu);
@@ -316,7 +316,7 @@ void ElasticityUpdatedSolver::solve()
     tic();
 
     VecPointwiseDivide(xtmp1.vec(), m.vec(), stepresidual.vec());
-    stepresidual *= -k;
+    stepresidual *= k;
     stepresidual.axpy(-1, x21);
     stepresidual.axpy(1, x20);
 
@@ -342,7 +342,7 @@ void ElasticityUpdatedSolver::solve()
     cout << "elapsed: " << elapsed << endl;
 
     // Save the solution
-     save(mesh, file);
+    save(mesh, file);
 
     counter++;
 

@@ -4,12 +4,15 @@ name = "ElasticityUpdated"
 element1 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
+nu = Constant()	# viscosity coefficient
+
 v = BasisFunction(element2)
+f = Function(element2)
 sigma0 = Function(element1)
 sigma1 = Function(element1)
 sigma2 = Function(element1)
 
-L = (
+L = (	f[i] * v[i] - (
 	sigma0[0] * v[0].dx(0) +
 	sigma0[1] * v[0].dx(1) +
 	sigma0[2] * v[0].dx(2) +
@@ -19,5 +22,5 @@ L = (
 	sigma2[0] * v[2].dx(0) +
 	sigma2[1] * v[2].dx(1) +
 	sigma2[2] * v[2].dx(2)
-	) * dx
+	)) * dx
 

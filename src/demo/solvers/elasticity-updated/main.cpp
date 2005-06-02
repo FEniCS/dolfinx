@@ -11,7 +11,7 @@ class Source : public Function
   real operator() (const Point& p, unsigned int i) const
   {
     if(i == 1)
-      return -2.0;
+      return -1.0;
     else
       return 0.0;
   }
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   InitialVelocity v0;
   MyBC bc;
 
-//   real T = 0.01;  // final time
+//   real T = 0.1;  // final time
 //   real k = 0.001; // time step
 
   real T = 5.0;  // final time
