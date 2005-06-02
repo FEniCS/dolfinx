@@ -9,11 +9,13 @@
 name = "NSEContinuity"
 scalar_element = FiniteElement("Lagrange", "tetrahedron", 1)
 vector_element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+disc_vector_element = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 
 q = BasisFunction(scalar_element)
 p = BasisFunction(scalar_element)
-uc = Function(vector_element)
+u = Function(vector_element)
 f = Function(vector_element)
+uc = Function(disc_vector_element)
 
 d1 = Constant()
 
@@ -22,5 +24,5 @@ i1 = Index()
 i2 = Index()
 
 a = q.dx(i0)*p.dx(i0)*dx 
-L = q.dx(i0)*f[i0]*dx - q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - (1/d1)*q*uc[i0].dx(i0)*dx 
+L = q.dx(i0)*f[i0]*dx - q.dx(i0)*uc[i1]*u[i0].dx(i1)*dx - (1/d1)*q*u[i0].dx(i0)*dx 
 

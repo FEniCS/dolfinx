@@ -1,8 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman 
 // Licensed under the GNU GPL Version 2.
 
-//#include <dolfin/NSEMomentum.h>
-//#include <dolfin/NSEContinuity.h>
+#include <dolfin/NSEMomentum.h>
+#include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
 
 using namespace dolfin;
@@ -17,16 +17,90 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  Function up;
-  
-  /*
-  NSEMomentum::FiniteElement element_mom;
-  NSEMomentum::BilinearForm a_mom(uc);
-  NSEMomentum::LinearForm L_mom(f,u0);
+  Function u;      // velocity;
+  Function p;      // pressure; 
+  Function up;     // velocity from previous time step
+  Function uc;     // linearized convection velocity 
+  Function f;      // force term
 
-  NSEContinuity::FiniteElement element_con;
-  NSEContinuity::BilinearForm a_con;
-  NSEContinuity::LinearForm L_con(f,u0);
+  real t  = 0.0;   // current time
+  real T  = 1.0;   // final time
+  real k  = 0.1;   // time step
+  real h;          // local mesh size
+  real nu = 0.01;  // viscosity 
+
+  // stabilization parameters
+  real d1,d2;      
+  
+  // Create variational forms
+  NSEMomentum::BilinearForm a_mom(uc,k,nu,d1,d2);
+  NSEMomentum::LinearForm L_mom(uc,up,f,p,k,nu,d1,d2);
+
+  NSEContinuity::BilinearForm a_con();
+  NSEContinuity::LinearForm L_con(uc,f,d1);
+
+  Matrix Am, Ac;
+  Vector xu, xuc, xup, xp, bm, bc;
+
+  t=h+T;
+
+  /*
+
+  // Create variational forms
+  ConvectionDiffusion::BilinearForm a(w, k, c);
+  ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
+
+
+  real t = 0.0;  // current time
+  real T = 1.0;  // final time
+  real k = 0.1;  // time step
+  real c = 0.1;  // diffusion
+
+  Matrix A;                 // matrix defining linear system
+  Vector x0, x1, b;         // vectors 
+  GMRES solver;             // linear system solver
+  Function u0(x0, mesh);    // function at left end-point
+  File file("convdiff.m");  // file for saving solution
+
+  // Create variational forms
+  ConvectionDiffusion::BilinearForm a(w, k, c);
+  ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
+
+  // Assemble stiffness matrix
+  FEM::assemble(a, A, mesh);
+
+  // FIXME: Temporary fix
+  x1.init(mesh.noNodes());
+  Function u1(x1, mesh, a.trial());
+
+  // Start time-stepping
+  Progress p("Time-stepping");
+  while ( t < T )
+  {
+    // Make time step
+    t += k;
+    x0 = x1;
+    
+    // Assemble load vector and set boundary conditions
+    FEM::assemble(L, b, mesh);
+    FEM::setBC(A, b, mesh, a.trial(), bc);
+    
+    // Solve the linear system
+    solver.solve(A, x1, b);
+    
+    // Save the solution
+    u1.set(t);
+    file << u1;
+
+    // Update progress
+    p = t / T;
+  }
+
+
+
+
+
+
 
   Matrix A_mom,A_con;
   Vector x_mom, x_con, b_mom, b_con;
@@ -65,6 +139,14 @@ void NSESolver::solve()
   uold.rename("u", "temperature");
   File file("poisson.m");
   file << uold;
+
+
+
+
+
+
+
+
 
   */
 }

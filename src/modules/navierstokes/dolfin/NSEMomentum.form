@@ -9,15 +9,17 @@
 name = "NSEMomentum"
 scalar_element = FiniteElement("Lagrange", "tetrahedron", 1)
 vector_element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+disc_vector_element = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 
 v = BasisFunction(vector_element)
 u = BasisFunction(vector_element)
-uc = Function(vector_element)
+uc = Function(disc_vector_element)
 u0 = Function(vector_element)
 f = Function(vector_element)
 p = Function(scalar_element)
 
 k = Constant()
+nu = Constant()
 d1 = Constant()
 d2 = Constant()
 
@@ -25,7 +27,7 @@ i0 = Index()
 i1 = Index()
 i2 = Index()
 
-a = v[i0]*u[i0]*dx + k*0.5*v[i0].dx(i1)*u[i0].dx(i1)*dx + k*0.5*v[i0]*uc[i1]*u[i0].dx(i1)*dx + d2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx + d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u[i0].dx(i2)*dx  
-L = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx + d1*k*uc[i1]*v[i0].dx(i1)*f[i0]*dx - k*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - k*0.5*v[i0]*uc[i1]*u0[i0].dx(i1)*dx - d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u0[i0].dx(i2)*dx - d1*k*uc[i1]*v[i0].dx(i1)*p.dx(i0)*dx - d2*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
+a = v[i0]*u[i0]*dx + k*0.5*nu*v[i0].dx(i1)*u[i0].dx(i1)*dx + k*0.5*v[i0]*uc[i1]*u[i0].dx(i1)*dx + d2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx + d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u[i0].dx(i2)*dx  
+L = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx + d1*k*uc[i1]*v[i0].dx(i1)*f[i0]*dx - k*0.5*nu*v[i0].dx(i1)*u0[i0].dx(i1)*dx - k*0.5*v[i0]*uc[i1]*u0[i0].dx(i1)*dx - d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u0[i0].dx(i2)*dx - d1*k*uc[i1]*v[i0].dx(i1)*p.dx(i0)*dx - d2*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
 
 
