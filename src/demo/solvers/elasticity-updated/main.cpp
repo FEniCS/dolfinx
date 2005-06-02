@@ -72,13 +72,23 @@ int main(int argc, char **argv)
   dolfin_output("text");
 
   Mesh mesh("minimal2.xml.gz");
+  //Mesh mesh("mymesh01.xml.gz");
 
-//   mesh.refineUniformly();
-//   mesh.refineUniformly();
+//   File mymesh("mymesh.xml.gz");
+
+   for(int i = 0; i < 2; i++)
+   {
+     mesh.refineUniformly();
+   }
+
+//   mymesh << mesh;
 
   Source f;
   InitialVelocity v0;
   MyBC bc;
+
+//   real T = 0.01;  // final time
+//   real k = 0.001; // time step
 
   real T = 5.0;  // final time
   real k = 0.01; // time step

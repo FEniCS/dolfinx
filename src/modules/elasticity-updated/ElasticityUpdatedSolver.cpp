@@ -53,8 +53,8 @@ void ElasticityUpdatedSolver::solve()
   ElasticityUpdatedSigma2::LinearForm::TestElement element22;
 
   Matrix M;
-  Vector x10, x11, x20, x21, x11old, x21old, b, m, xtmp1, xtmp2,
-    xtmp01, xtmp11, xtmp21, stepresidual;
+  Vector x10, x11, x20, x21, x11old, x21old, b, m, msigma, xtmp1, xtmp2,
+    xtmp01, xtmp11, xtmp21, stepresidual, stepresidual2;
   Vector xsigma00, xsigma01, xsigma10, xsigma11, xsigma20, xsigma21;
 
 //   Function v1(x21, mesh, element1);
@@ -70,11 +70,16 @@ void ElasticityUpdatedSolver::solve()
 
   File         file("elasticity.m");
 
+//   real* block = new real[3];
+//   int* indices = new int[3];
+
   // FIXME: Temporary fix
   int Nv = 3 * mesh.noNodes();
   int Nsigma = 3 * mesh.noCells();
 
   int offset = mesh.noNodes();
+
+  real elapsed = 0;
 
   x10.init(Nv);
   x11.init(Nv);
@@ -86,6 +91,8 @@ void ElasticityUpdatedSolver::solve()
 
   xtmp1.init(Nv);
   xtmp2.init(Nv);
+
+  msigma.init(Nsigma);
 
   xtmp01.init(Nsigma);
   xtmp11.init(Nsigma);
@@ -105,6 +112,7 @@ void ElasticityUpdatedSolver::solve()
   xsigma21 = 0;
 
   stepresidual.init(Nv);
+  stepresidual2.init(Nv);
 
   // Set initial velocities                                                     
   for (NodeIterator n(&mesh); !n.end(); ++n)
@@ -135,11 +143,33 @@ void ElasticityUpdatedSolver::solve()
   ElasticityUpdatedProj::LinearForm Lv0(v0);
   ElasticityUpdatedMass::BilinearForm amass;
 
+  dolfin_debug("Assembling mass matrix");
+  tic();
+
   // Assemble mass matrix
   FEM::assemble(amass, M, mesh);
 
+  elapsed = toc();
+  dolfin_debug("Assembled matrix");
+  cout << "elapsed: " << elapsed << endl;
+
   // Lump mass matrix
   FEM::lump(M, m);
+
+
+  // Compute mass vector (sigma)
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    int id = (*cell).id();
+
+    real factor = 6.0 * 1.0 / (*cell).volume(); 
+
+    msigma(3 * id + 0) = factor;
+    msigma(3 * id + 1) = factor;
+    msigma(3 * id + 2) = factor;
+  }
+
 
   // Assemble v vector
   //FEM::assemble(Lv, x21, mesh);
@@ -158,7 +188,7 @@ void ElasticityUpdatedSolver::solve()
 //   }
 
   // Save the solution
-  save(mesh, file);
+  //save(mesh, file);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -166,11 +196,11 @@ void ElasticityUpdatedSolver::solve()
   // Start time-stepping
   while ( t < T ) {
   
-    cout << "x11: " << endl;
-    x11.disp();
+//     cout << "x11: " << endl;
+//     x11.disp();
     
-    cout << "x21: " << endl;
-    x21.disp();
+//     cout << "x21: " << endl;
+//     x21.disp();
 
 
     // Make time step
@@ -180,32 +210,67 @@ void ElasticityUpdatedSolver::solve()
     xsigma10 = xsigma11;
     xsigma20 = xsigma21;
 
+    dolfin_debug("Assembling sigma vectors");
+    tic();
+
     // Assemble sigma0 vectors
     FEM::assemble(Lsigma0, xtmp01, mesh);
     FEM::assemble(Lsigma1, xtmp11, mesh);
     FEM::assemble(Lsigma2, xtmp21, mesh);
 
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      int id = (*cell).id();
-
-      xtmp01(3 * id + 0) *= 1.0 / (*cell).volume();
-      xtmp01(3 * id + 1) *= 1.0 / (*cell).volume();
-      xtmp01(3 * id + 2) *= 1.0 / (*cell).volume();
-      xtmp11(3 * id + 0) *= 1.0 / (*cell).volume();
-      xtmp11(3 * id + 1) *= 1.0 / (*cell).volume();
-      xtmp11(3 * id + 2) *= 1.0 / (*cell).volume();
-      xtmp21(3 * id + 0) *= 1.0 / (*cell).volume();
-      xtmp21(3 * id + 1) *= 1.0 / (*cell).volume();
-      xtmp21(3 * id + 2) *= 1.0 / (*cell).volume();
-
-      // Volume seems to be off by 1 / 6 for tetrahedrons
-      xtmp01 *= 6.0;
-      xtmp11 *= 6.0;
-      xtmp21 *= 6.0;
-    }
+    elapsed = toc();
+    dolfin_debug("Assembled vectors");
+    cout << "elapsed: " << elapsed << endl;
 
 
+    dolfin_debug("Computing");
+    tic();
+
+//     for (CellIterator cell(mesh); !cell.end(); ++cell)
+//     {
+//       int id = (*cell).id();
+
+
+//       real factor = 6.0 * 1.0 / (*cell).volume(); 
+
+// //       block[0] = factor;
+// //       block[1] = factor;
+// //       block[2] = factor;
+
+// //       indices[0] = 3 * id + 0;
+// //       indices[1] = 3 * id + 1;
+// //       indices[2] = 3 * id + 2;
+
+// //       xtmp01.add(block, indices, 3);
+// //       xtmp11.add(block, indices, 3);
+// //       xtmp21.add(block, indices, 3);
+
+//       xtmp01(3 * id + 0) *= factor;
+//       xtmp01(3 * id + 1) *= factor;
+//       xtmp01(3 * id + 2) *= factor;
+//       xtmp11(3 * id + 0) *= factor;
+//       xtmp11(3 * id + 1) *= factor;
+//       xtmp11(3 * id + 2) *= factor;
+//       xtmp21(3 * id + 0) *= factor;
+//       xtmp21(3 * id + 1) *= factor;
+//       xtmp21(3 * id + 2) *= factor;
+
+
+//     }
+
+    VecPointwiseMult(xtmp01.vec(), msigma.vec(), xtmp01.vec());
+    VecPointwiseMult(xtmp11.vec(), msigma.vec(), xtmp11.vec());
+    VecPointwiseMult(xtmp21.vec(), msigma.vec(), xtmp21.vec());
+
+    xtmp01.apply();
+    xtmp11.apply();
+    xtmp21.apply();
+
+
+    elapsed = toc();
+    cout << "elapsed: " << elapsed << endl;
+    dolfin_debug("Computing");
+    tic();
 
     xsigma01 = xsigma00;
     xsigma01.axpy(k, xtmp01);
@@ -216,30 +281,45 @@ void ElasticityUpdatedSolver::solve()
     xsigma21 = xsigma20;
     xsigma21.axpy(k, xtmp21);
 
-    cout << "xsigma01: " << endl;
-    xsigma01.disp();
+    elapsed = toc();
+    cout << "elapsed: " << elapsed << endl;
 
-    cout << "xsigma11: " << endl;
-    xsigma11.disp();
 
-    cout << "xsigma21: " << endl;
-    xsigma21.disp();
+//     cout << "xsigma01: " << endl;
+//     xsigma01.disp();
+
+//     cout << "xsigma11: " << endl;
+//     xsigma11.disp();
+
+//     cout << "xsigma21: " << endl;
+//     xsigma21.disp();
+
+
+    dolfin_debug("Assembling velocity vector");
+    tic();
 
     // Assemble v vector
     FEM::assemble(Lv, xtmp1, mesh);
+
+    elapsed = toc();
+    dolfin_debug("Assembled vector");
+    cout << "elapsed: " << elapsed << endl;
     
     b = xtmp1;
     b *= k;
 //     b *= 6.0;
 
-    cout << "b: " << endl;
-    b.disp();
+//     cout << "b: " << endl;
+//     b.disp();
 
-    for(unsigned int i = 0; i < m.size(); i++)
-    {
-      stepresidual(i) = -x21(i) + x20(i) -
-	k * xtmp1(i) / m(i) * 1.0;
-    }
+    dolfin_debug("Computing");
+    tic();
+
+    VecPointwiseDivide(xtmp1.vec(), m.vec(), stepresidual.vec());
+    stepresidual *= -k;
+    stepresidual.axpy(-1, x21);
+    stepresidual.axpy(1, x20);
+
 
     x21 += stepresidual;
 
@@ -258,8 +338,11 @@ void ElasticityUpdatedSolver::solve()
       (*n).coord().z += x11(id + 2 * offset) - x10(id + 2 * offset);
     }
 
+    elapsed = toc();
+    cout << "elapsed: " << elapsed << endl;
+
     // Save the solution
-    save(mesh, file);
+     save(mesh, file);
 
     counter++;
 
