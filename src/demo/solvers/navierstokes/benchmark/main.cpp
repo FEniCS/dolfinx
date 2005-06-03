@@ -118,7 +118,7 @@ int main()
   // Set parameters: T0, T, nu,...
 
   //NSESolver nses(mesh, f, bc_mom, bc_con, u0); 
-  NSESolver::solve(mesh, f, bc_mom, bc_con, u0); 
+  //NSESolver::solve(mesh, f, bc_mom, bc_con, u0); 
   
   return 0;
 }
