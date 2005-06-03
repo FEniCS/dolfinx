@@ -9,5 +9,6 @@
 #include <dolfin/dolfin_convdiff.h>
 #include <dolfin/dolfin_elasticity.h>
 #include <dolfin/dolfin_elasticityupdated.h>
+#include <dolfin/dolfin_navierstokes.h>
 
 #endif

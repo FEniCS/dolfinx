@@ -18,7 +18,7 @@
 // This program illustrates the need for stabilisation, for
 // instance streamline-diffusion, for large values of b. For
 // |b| > 10 oscillations start to appear. Try b = (-100,0)
-// to see som quite large oscillations.
+// to see some quite large oscillations.
 
 #include <dolfin.h>
 

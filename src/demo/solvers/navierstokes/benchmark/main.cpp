@@ -7,12 +7,12 @@
 //     div u = 0 
 //
 
-#include <dolfin/NSESolver.h>
+#include <dolfin.h>
 
 using namespace dolfin;
 
 // Force term
-class ForceFunction : public NewFunction
+class ForceFunction : public Function
 {
   real operator() (const Point& p, int i) const
   {
@@ -25,7 +25,7 @@ class ForceFunction : public NewFunction
 };
 
 // Initial solution 
-class InitialSolution : public NewFunction
+class InitialSolution : public Function
 {
   real operator() (const Point& p, int i) const
   {
@@ -53,7 +53,7 @@ class InitialSolution : public NewFunction
 };
 
 // Boundary condition for momentum equation 
-class BC_Momentum : public NewBoundaryCondition
+class BC_Momentum : public BoundaryCondition
 {
   const BoundaryValue operator() (const Point& p, int i)
   {
@@ -94,7 +94,7 @@ class BC_Momentum : public NewBoundaryCondition
 };
 
 // Boundary condition for continuity equation 
-class BC_Continuity : public NewBoundaryCondition
+class BC_Continuity : public BoundaryCondition
 {
   const BoundaryValue operator() (const Point& p)
   {
@@ -108,7 +108,8 @@ class BC_Continuity : public NewBoundaryCondition
 
 int main()
 {
-  Mesh mesh("mesh.xml.gz");
+  //Mesh mesh("mesh.xml.gz");
+  Mesh mesh;
   ForceFunction f;
   InitialSolution u0; 
   BC_Momentum bc_mom;
@@ -116,7 +117,8 @@ int main()
   
   // Set parameters: T0, T, nu,...
 
-  //NSESolver::solve(mesh, f, bc_mom, bc_con, u0); 
+  //NSESolver nses(mesh, f, bc_mom, bc_con, u0); 
+  NSESolver::solve(mesh, f, bc_mom, bc_con, u0); 
   
   return 0;
 }
