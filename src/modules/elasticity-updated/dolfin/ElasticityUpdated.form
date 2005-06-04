@@ -11,16 +11,16 @@ f = Function(element2)
 sigma0 = Function(element1)
 sigma1 = Function(element1)
 sigma2 = Function(element1)
+sigmav0 = Function(element1)
+sigmav1 = Function(element1)
+sigmav2 = Function(element1)
 
-L = (	f[i] * v[i] - (
-	sigma0[0] * v[0].dx(0) +
-	sigma0[1] * v[0].dx(1) +
-	sigma0[2] * v[0].dx(2) +
-	sigma1[0] * v[1].dx(0) +
-	sigma1[1] * v[1].dx(1) +
-	sigma1[2] * v[1].dx(2) +
-	sigma2[0] * v[2].dx(0) +
-	sigma2[1] * v[2].dx(1) +
-	sigma2[2] * v[2].dx(2)
-	)) * dx
+L = (f[i] * v[i] -
+	(sigma0[i] * v[0].dx(i) +
+	sigma1[i] * v[1].dx(i) +
+	sigma2[i] * v[2].dx(i)) -
+	nu * (
+	sigmav0[i] * v[0].dx(i) +
+	sigmav1[i] * v[1].dx(i) +
+	sigmav2[i] * v[2].dx(i))) * dx
 

@@ -11,29 +11,29 @@ class Source : public Function
   real operator() (const Point& p, unsigned int i) const
   {
     if(i == 1)
-      return -1.0;
+      return 0.0;
     else
       return 0.0;
   }
 };
 
-// Initial displacement
+// Initial velocity
 class InitialVelocity : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
     //    if(i == 0)
-    if(i == 0 && p.x > 0.5 )
+    if(i == 1 && p.x > 0.5 )
     {
-      return 1.0;
+      return -0.01;
     }
-    else if(i == 0 && p.x <= 0.5 && p.y > 0.5)
+    else if(i == 1 && p.x <= 0.5 && p.x > -0.5)
     {
-      return -0.5;
+      return 0.4;
     }
-    else if(i == 0 && p.x <= 0.5 && p.y <= 0.5)
+    else if(i == 1 && p.x <= -0.5)
     {
-      return -0.5;
+      return -0.4;
     }
 //     else if(i == 1 && p.x > 0.5 )
 //     {
@@ -71,18 +71,27 @@ int main(int argc, char **argv)
 {
   dolfin_output("text");
 
-  Mesh mesh("minimal2.xml.gz");
+  //Mesh mesh("cow01.xml.gz");
+  Mesh mesh("cow05.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
 
-//   File mymesh("mymesh.xml.gz");
+//   File outfile("mymesh.xml.gz");
 
-   for(int i = 0; i < 2; i++)
-   {
-     mesh.refineUniformly();
-   }
+//   for (NodeIterator n(&mesh); !n.end();)
+//   {
+//     Node &cnode = *n;
+//     ++n;
 
-//   mymesh << mesh;
+//     if(cnode.coord().y > 10.0)
+//     {
+//       mesh.remove(cnode);
+//     }
+//   }
 
+//   mesh.init();
+
+//   outfile << mesh;
+  
   Source f;
   InitialVelocity v0;
   MyBC bc;
@@ -95,8 +104,9 @@ int main(int argc, char **argv)
 
   real E = 10.0; // Young's modulus
   real nu = 0.3; // Poisson's ratio
+  real nuv = 4.0; // viscosity
 
-  ElasticityUpdatedSolver::solve(mesh, f, v0, E, nu, bc, k, T);
+  ElasticityUpdatedSolver::solve(mesh, f, v0, E, nu, nuv, bc, k, T);
 
   return 0;
 }

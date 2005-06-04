@@ -20,12 +20,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh, 
-				   Function& f,
-				   Function& v0,
-				   real E, real nu,
-				   BoundaryCondition& bc,
-				   real k, real T)
-  : mesh(mesh), f(f), v0(v0), E(E), nu(nu), bc(bc), k(k), T(T),
+						 Function& f,
+						 Function& v0,
+						 real E, real nu, real nuv,
+						 BoundaryCondition& bc,
+						 real k, real T)
+  : mesh(mesh), f(f), v0(v0), E(E), nu(nu), nuv(nuv), bc(bc), k(k), T(T),
     counter(0)
 {
   // Do nothing
@@ -34,12 +34,13 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 void ElasticityUpdatedSolver::solve()
 {
   real t = 0.0;  // current time
-
-//   real E = 10.0;
-//   real nu = 0.3;
   
-   real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
-   real mu = E / (2 * (1 + nu));
+  //   real E = 10.0;
+  real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
+  real mu = E / (2 * (1 + nu));
+
+  cout << "lambda: " << lambda << endl;
+  cout << "mu: " << mu << endl;
   
 //   real lambda = 1.0;
 //   real mu = 2.0;
@@ -55,17 +56,22 @@ void ElasticityUpdatedSolver::solve()
   Matrix M;
   Vector x10, x11, x20, x21, x11old, x21old, b, m, msigma, xtmp1, xtmp2,
     xtmp01, xtmp11, xtmp21, stepresidual, stepresidual2;
-  Vector xsigma00, xsigma01, xsigma10, xsigma11, xsigma20, xsigma21;
+  Vector xsigma00, xsigma01, xsigma10, xsigma11, xsigma20, xsigma21,
+    xsigmav01, xsigmav11, xsigmav21;
 
 //   Function v1(x21, mesh, element1);
 //   Function sigma01(xsigma01, mesh, element2);
 //   Function sigma11(xsigma11, mesh, element2);
 //   Function sigma21(xsigma21, mesh, element2);
 
+  Function v1old(x20, mesh, element1);
   Function v1(x21, mesh, element1);
   Function sigma01(xsigma01, mesh, element20);
   Function sigma11(xsigma11, mesh, element21);
   Function sigma21(xsigma21, mesh, element22);
+  Function sigmav01(xsigmav01, mesh, element20);
+  Function sigmav11(xsigmav11, mesh, element21);
+  Function sigmav21(xsigmav21, mesh, element22);
 
 
   File         file("elasticity.m");
@@ -107,6 +113,10 @@ void ElasticityUpdatedSolver::solve()
   xsigma20.init(Nsigma);
   xsigma21.init(Nsigma);
 
+  xsigmav01.init(Nsigma);
+  xsigmav11.init(Nsigma);
+  xsigmav21.init(Nsigma);
+
   xsigma01 = 0;
   xsigma11 = 0;
   xsigma21 = 0;
@@ -133,7 +143,8 @@ void ElasticityUpdatedSolver::solve()
   // Create variational forms
   //ElasticityUpdated::LinearForm Lv(sigma01, sigma11, sigma21);
   //ElasticityUpdated::LinearForm Lv;
-  ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21);
+  ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21,
+				   sigmav01, sigmav11, sigmav21, nuv);
   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, lambda, mu);
   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, lambda, mu);
   ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, lambda, mu);
@@ -214,9 +225,9 @@ void ElasticityUpdatedSolver::solve()
     tic();
 
     // Assemble sigma0 vectors
-    FEM::assemble(Lsigma0, xtmp01, mesh);
-    FEM::assemble(Lsigma1, xtmp11, mesh);
-    FEM::assemble(Lsigma2, xtmp21, mesh);
+    FEM::assemble(Lsigma0, xsigmav01, mesh);
+    FEM::assemble(Lsigma1, xsigmav11, mesh);
+    FEM::assemble(Lsigma2, xsigmav21, mesh);
 
     elapsed = toc();
     dolfin_debug("Assembled vectors");
@@ -258,9 +269,9 @@ void ElasticityUpdatedSolver::solve()
 
 //     }
 
-    VecPointwiseMult(xtmp01.vec(), msigma.vec(), xtmp01.vec());
-    VecPointwiseMult(xtmp11.vec(), msigma.vec(), xtmp11.vec());
-    VecPointwiseMult(xtmp21.vec(), msigma.vec(), xtmp21.vec());
+    VecPointwiseMult(xsigmav01.vec(), msigma.vec(), xtmp01.vec());
+    VecPointwiseMult(xsigmav11.vec(), msigma.vec(), xtmp11.vec());
+    VecPointwiseMult(xsigmav21.vec(), msigma.vec(), xtmp21.vec());
 
     xtmp01.apply();
     xtmp11.apply();
@@ -280,6 +291,10 @@ void ElasticityUpdatedSolver::solve()
 
     xsigma21 = xsigma20;
     xsigma21.axpy(k, xtmp21);
+
+    xsigmav01 *= 1.0 / lambda;
+    xsigmav11 *= 1.0 / lambda;
+    xsigmav21 *= 1.0 / lambda;
 
     elapsed = toc();
     cout << "elapsed: " << elapsed << endl;
@@ -380,13 +395,13 @@ void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile)
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve(Mesh& mesh,
-			     Function& f,
-			     Function& v0,
-			     real E, real nu,
-			     BoundaryCondition& bc,
-			     real k, real T)
+				    Function& f,
+				    Function& v0,
+				    real E, real nu, real nuv,
+				    BoundaryCondition& bc,
+				    real k, real T)
 {
-  ElasticityUpdatedSolver solver(mesh, f, v0, E, nu, bc, k, T);
+  ElasticityUpdatedSolver solver(mesh, f, v0, E, nu, nuv, bc, k, T);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
