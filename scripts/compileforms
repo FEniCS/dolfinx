@@ -17,6 +17,7 @@ fi
 cd src/modules
 
 FORMS=`find . -name '*.form'`
+echo $FORMS
 for f in $FORMS; do
 	MODULE=`echo $f | cut -d'/' -f2`
 	# Temporarily skip Navier-Stokes to speed up testing
@@ -27,3 +28,10 @@ for f in $FORMS; do
 		cd ../../
 	fi
 done
+
+cd ../../
+cd src/kernel/fem/dolfin
+ffc MassMatrix2D.form
+ffc MassMatrix3D.form
+ffc StiffnessMatrix2D.form
+ffc StiffnessMatrix3D.form

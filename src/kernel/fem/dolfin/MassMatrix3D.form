@@ -1,0 +1,11 @@
+# Copyright (c) 2005 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# The bilinear form for a mass matrix.
+
+element = FiniteElement("Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element)
+u = BasisFunction(element)
+
+a = v*u*dx
