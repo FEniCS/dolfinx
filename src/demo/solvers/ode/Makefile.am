@@ -10,4 +10,5 @@ SUBDIRS = bench \
           performance \
           radiation-diffusion \
           stiff \
+          wave \
           test

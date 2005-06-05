@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __P1_TET_H
@@ -22,40 +22,45 @@ namespace dolfin
     
     ~P1Tet() {}
     
-    inline uint spacedim() const
+    inline unsigned int spacedim() const
     {
-      return 4 * vectordim;
+      return 4;
     }
-    
-    inline uint shapedim() const
+
+    inline unsigned int shapedim() const
     {
       return 3;
     }
-    
-    inline uint tensordim(uint i) const
-    {
-      if ( vectordim == 0 )
-	dolfin_error("Element is scalar.");
 
-      return vectordim;
-    }
-    
-    inline uint rank() const
+    inline unsigned int tensordim(unsigned int i) const
     {
-      if ( vectordim == 0 )
-	return 0;
+      dolfin_error("Element is scalar.");
+      return 0;
+    }
 
-      return 1;
-    }
-    
-    inline uint dof(uint i, const Cell& cell, const Mesh& mesh) const
+    inline unsigned int rank() const
     {
-      return (i/4) * mesh.noNodes() + cell.nodeID(i % 4);
+      return 0;
     }
-    
-    inline const Point coord(uint i, const Cell& cell, const Mesh& mesh) const
+
+    void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const
     {
-      return cell.node(i % 4).coord();
+      dofs[0] = cell.nodeID(0);
+      dofs[1] = cell.nodeID(1);
+      dofs[2] = cell.nodeID(2);
+      dofs[3] = cell.nodeID(3);
+    }
+
+    void pointmap(Point points[], unsigned int components[], const AffineMap& map) const
+    {
+      points[0] = map(0.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00);
+      points[1] = map(1.000000000000000e+00, 0.000000000000000e+00, 0.000000000000000e+00);
+      points[2] = map(0.000000000000000e+00, 1.000000000000000e+00, 0.000000000000000e+00);
+      points[3] = map(0.000000000000000e+00, 0.000000000000000e+00, 1.000000000000000e+00);
+      components[0] = 0;
+      components[1] = 0;
+      components[2] = 0;
+      components[3] = 0;
     }
 
   private:

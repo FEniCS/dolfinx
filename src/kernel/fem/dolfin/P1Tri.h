@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __P1_TRI_H
@@ -9,10 +9,11 @@
 namespace dolfin
 {
 
-  /// This class represents the standard scalar- or vector-valued linear
-  /// finite element on a tetrahedron. Note that finite elements are
-  /// normally generated automatically by FFC, but this class might be
-  /// useful for simple computations with standard linear elements.
+  /// This class represents the standard scalar- or vector-valued
+  /// linear finite element on a triangle. Note that finite elements
+  /// are normally generated automatically by FFC, but this class
+  /// might be useful for simple computations with standard linear
+  /// elements.
 
   class P1Tri : public FiniteElement
   {
@@ -21,41 +22,43 @@ namespace dolfin
     P1Tri(uint vectordim = 0) : FiniteElement(), vectordim(vectordim) {}
     
     ~P1Tri() {}
-    
-    inline uint spacedim() const
-    {
-      return 4 * vectordim;
-    }
-    
-    inline uint shapedim() const
+
+    inline unsigned int spacedim() const
     {
       return 3;
     }
-    
-    inline uint tensordim(uint i) const
-    {
-      if ( vectordim == 0 )
-	dolfin_error("Element is scalar.");
 
-      return vectordim;
-    }
-    
-    inline uint rank() const
+    inline unsigned int shapedim() const
     {
-      if ( vectordim == 0 )
-	return 0;
+      return 2;
+    }
 
-      return 1;
-    }
-    
-    inline uint dof(uint i, const Cell& cell, const Mesh& mesh) const
+    inline unsigned int tensordim(unsigned int i) const
     {
-      return (i/4) * mesh.noNodes() + cell.nodeID(i % 4);
+      dolfin_error("Element is scalar.");
+      return 0;
     }
-    
-    inline const Point coord(uint i, const Cell& cell, const Mesh& mesh) const
+
+    inline unsigned int rank() const
     {
-      return cell.node(i % 4).coord();
+      return 0;
+    }
+
+    void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const
+    {
+      dofs[0] = cell.nodeID(0);
+      dofs[1] = cell.nodeID(1);
+      dofs[2] = cell.nodeID(2);
+    }
+
+    void pointmap(Point points[], unsigned int components[], const AffineMap& map) const
+    {
+      points[0] = map(0.000000000000000e+00, 0.000000000000000e+00);
+      points[1] = map(1.000000000000000e+00, 0.000000000000000e+00);
+      points[2] = map(0.000000000000000e+00, 1.000000000000000e+00);
+      components[0] = 0;
+      components[1] = 0;
+      components[2] = 0;
     }
 
   private:
