@@ -144,6 +144,27 @@ void Matrix::mult(const Vector& x, Vector& Ax) const
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
+real Matrix::mult(const Vector& x, uint row) const
+{
+  // FIXME: Temporary fix (assumes uniprocessor case)
+
+  int ncols = 0;
+  const int* cols = 0;
+  const double* Avals = 0;
+  double* xvals = 0;
+  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
+  VecGetArray(x.x, &xvals);
+
+  real sum = 0.0;
+  for (int i = 0; i < ncols; i++)
+    sum += Avals[i] * xvals[cols[i]];
+
+  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
+  VecRestoreArray(x.x, &xvals);
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
 void Matrix::apply()
 {
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

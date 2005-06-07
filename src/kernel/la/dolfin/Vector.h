@@ -125,6 +125,9 @@ namespace dolfin
       Vector& x;
     };
 
+    // Friends
+    friend class Matrix;
+
   protected:
 
     // Element access

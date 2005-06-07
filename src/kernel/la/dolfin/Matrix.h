@@ -61,6 +61,9 @@ namespace dolfin
     /// Matrix-vector multiplication
     void mult(const Vector& x, Vector& Ax) const;
 
+    /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
+    real mult(const Vector& x, uint row) const;
+
     /// Apply changes to matrix
     void apply();
 

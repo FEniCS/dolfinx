@@ -21,7 +21,31 @@ public:
     // Parameters
     T = 1.0;
 
-    setSparsity();
+
+    Vector x(N/2);
+    for (unsigned int i = 0; i < N/2; i++)
+      x(i) = static_cast<double>(i % 7);
+    
+    Vector y(N/2);
+
+    unsigned int n = 1000;
+    
+    tic();
+    for (unsigned int i = 0; i < n; i++)
+    {
+      A.mult(x, y);
+    }
+    cout << "mult all:" << toc() << endl;
+    
+    tic();
+    for (unsigned int i = 0; i < n; i++)
+    {
+      for (unsigned int j = 0; j < N/2; j++)
+	A.mult(x, j);
+    }
+    cout << "mult individual:" << toc() << endl;
+    
+    //setSparsity();
   }
 
   // Initial condition: a wave coming in from the right
@@ -141,10 +165,10 @@ private:
 
 int main()
 {
-  UnitSquare mesh(8, 8);
+  UnitSquare mesh(64, 64);
   WaveEquation ode(mesh);
 
-  ode.solve();
+  //ode.solve();
 
   return 0;
 }
