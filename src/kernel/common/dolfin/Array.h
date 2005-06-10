@@ -1,3 +1,4 @@
+
 // Copyright (C) 2003 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //

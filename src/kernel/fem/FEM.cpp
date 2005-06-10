@@ -308,7 +308,7 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::lump(Matrix& M, Vector& m)
+void FEM::lump(const Matrix& M, Vector& m)
 {
   m.init(M.size(0));
 

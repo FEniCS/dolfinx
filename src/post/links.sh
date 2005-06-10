@@ -25,6 +25,7 @@ link_plotslab() {
 link_octave src/demo/solvers/poisson/
 link_octave src/demo/solvers/convdiff/
 link_octave src/demo/solvers/elasticity/
+link_octave src/demo/solvers/ode/wave/
 
 # Create links to OpenDX programs
 link_dx src/demo/solvers/ode/bistable/

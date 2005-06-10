@@ -50,7 +50,7 @@ namespace dolfin
 		      const FiniteElement& element, BoundaryCondition& bc);
 
     /// Lump matrix
-    static void lump(Matrix& M, Vector& m);
+    static void lump(const Matrix& M, Vector& m);
 
   private:
 

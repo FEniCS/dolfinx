@@ -165,6 +165,24 @@ real Matrix::mult(const Vector& x, uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+real Matrix::mult(const real x[], uint row) const
+{
+  // FIXME: Temporary fix (assumes uniprocessor case)
+
+  int ncols = 0;
+  const int* cols = 0;
+  const double* Avals = 0;
+  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
+
+  real sum = 0.0;
+  for (int i = 0; i < ncols; i++)
+    sum += Avals[i] * x[cols[i]];
+
+  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &Avals);
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
 void Matrix::apply()
 {
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);

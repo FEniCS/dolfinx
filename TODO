@@ -39,7 +39,8 @@ Linear Algebra
 
 o [jj] Add wrapper for PETSc preconditioners
 * Cleanup and PETSc linear algebra wrappers
-
+* Change (i) to [i]?
+* Update to PETSc 2.3
 
 Function
 --------
