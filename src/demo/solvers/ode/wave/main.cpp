@@ -59,6 +59,8 @@ public:
       if ( dmin < hmin )
 	hmin = dmin;
     }
+    dolfin::cout << "Minimum mesh size: h = " << hmin << dolfin::endl;
+    dolfin::cout << "Maximum time step: k = " << 0.25*hmin << dolfin::endl;
   }
 
   // Initial condition: a wave coming in from the right
@@ -182,9 +184,10 @@ private:
 
 int main()
 {
+  dolfin_set("method", "mcg");
+  dolfin_set("fixed time step", true);
   dolfin_set("save solution", false);
-  dolfin_set("method", "cg");
-  dolfin_set("monitor convergence", true);
+  dolfin_set("monitor convergence", false);
 
   UnitSquare mesh(16, 16);
   WaveEquation ode(mesh);
