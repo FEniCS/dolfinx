@@ -1,3 +1,4 @@
+ - Updates for gcc 4.0 (patches by Garth N. Wells)
  - Add Matrix::mult(const real x[], uint row) (temporary fix, assumes uniprocessor case)
  - Add Matrix::mult(const Vector& x, uint row) (temporary fix, assumes uniprocessor case)
  - Update shortcuts MassMatrix and StiffnessMatrix to new system

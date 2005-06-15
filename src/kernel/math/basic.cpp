@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Garth N. Wells, 2005.
 
 #include <time.h>
 #include <stdlib.h>
@@ -11,7 +13,7 @@ using namespace dolfin;
 namespace dolfin
 {
   // Seed only first time
-  bool dolfin::rand_seeded = false;
+  bool rand_seeded = false;
 }
 
 //-----------------------------------------------------------------------------

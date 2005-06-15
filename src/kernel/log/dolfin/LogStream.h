@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Garth N. Wells, 2005.
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -37,8 +39,8 @@ namespace dolfin {
     
   };
   
-  extern LogStream dolfin::cout;
-  extern LogStream dolfin::endl;
+  extern LogStream cout;
+  extern LogStream endl;
   
 }
 

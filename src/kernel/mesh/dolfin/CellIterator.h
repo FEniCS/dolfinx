@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005.
+// Modified by Garth N. Wells, 2005.
 
 #ifndef __CELL_ITERATOR_H
 #define __CELL_ITERATOR_H
@@ -64,6 +65,8 @@ namespace dolfin {
       virtual bool end() = 0;
       virtual bool last() = 0;
       virtual int index() = 0;
+
+      virtual ~GenericCellIterator(){};
 		
       virtual Cell& operator*() const = 0;
       virtual Cell* operator->() const = 0;

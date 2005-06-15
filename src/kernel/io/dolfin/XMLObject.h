@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Garth N. Wells, 2005.
 
 #ifndef __XML_OBJECT_H
 #define __XML_OBJECT_H
@@ -22,6 +24,7 @@ namespace dolfin {
     // Write message before and after reading file
     virtual void reading(std::string filename) {};
     virtual void done() {};
+    virtual ~XMLObject() {};
     
     bool dataOK();
     
