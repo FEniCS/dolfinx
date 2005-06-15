@@ -84,13 +84,30 @@ o [foufas] Finance module?
 General
 -------
 
+* Write a manual
+* Write FAQ and put on web page:
+
+  Q: When to use -DPETSC_USE_EXTERN_CXX?
+  A: When calling PETSc from C (not recommended), recompile PETSc.
+
+  Q: Parallel mesh?
+  A: Waiting for Matt.
+
+  Q: What does DOLFIN mean?
+  A: Dynamic Object-oriented Library for FINite element computation.
+
+  Q: Is it fast?
+  A: Yes.
+
+  Q: Can I help?
+  A: Yes.
+
 * Don't use cut in src/config script
 * Replace ::show() with ::disp() for all classes
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere
 * Use libtool?
 * Cleanup Parameter and ParameterList
-* Update manual
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem

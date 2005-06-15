@@ -88,7 +88,6 @@ else
 fi
 
 # Handle option --with-petsc-dir=<path>
-
 if test x$PETSC_DIR = x; then
     echo "assuming path to PETSc is /usr/local/lib/petsc"
     PETSC_DIR="/usr/local/lib/petsc/"
