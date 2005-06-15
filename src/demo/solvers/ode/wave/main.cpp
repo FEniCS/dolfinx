@@ -16,11 +16,11 @@ class WaveEquation : public ODE
 public:
 
   WaveEquation(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh),
-			     A(mesh), offset(N/2), h(N/2)
+			     A(mesh), offset(N/2), h(N/2),
+			     on_boundary(N/2)
   {
-    // Set parameters
-    T = 1.0;
-    w = 0.25;
+    T = 2.0;    // Final time
+    w = 0.25;   // Width of initial wave
 
     // Lump mass matrix
     MassMatrix M(mesh);
@@ -61,12 +61,25 @@ public:
     }
     dolfin::cout << "Minimum mesh size: h = " << hmin << dolfin::endl;
     dolfin::cout << "Maximum time step: k = " << 0.25*hmin << dolfin::endl;
+
+    // Mark the nodes on the internal boundary
+    on_boundary = false;
+    Boundary boundary(mesh);
+    for (NodeIterator n(boundary); !n.end(); ++n)
+    {
+      const Point& p = n->coord();
+      if ( p.x > DOLFIN_EPS && p.x < (1.5 - DOLFIN_EPS) &&
+	   p.y > DOLFIN_EPS && p.y < (0.5 - DOLFIN_EPS) )
+      {
+	on_boundary[n->id()] = true;
+      }
+    }
   }
 
   // Initial condition: a wave coming in from the right
   real u0(unsigned int i)
   {
-    const real x0 = 1.0 - 0.5*w;
+    const real x0 = 1.5 - 0.5*w;
     
     if ( i < offset )
     {
@@ -109,7 +122,10 @@ public:
     for (unsigned int i = offset; i < N; i++)
     {
       const unsigned int j = i - offset;
-      y[i] = -A.mult(u, j) / m(j);
+      if ( on_boundary[j] )
+	y[i] = 0.0;
+      else
+	y[i] = -A.mult(u, j) / m(j);
     }
   }
 
@@ -122,7 +138,10 @@ public:
     
     // Second half of system
     const unsigned int j = i - offset;
-    return -A.mult(u, j) / m(j);
+    if ( on_boundary[j] )
+      return 0.0;
+    else
+      return -A.mult(u, j) / m(j);
   }
   
   void save(Sample& sample)
@@ -171,12 +190,13 @@ public:
 
 private:
 
-  Mesh& mesh;       
-  StiffnessMatrix A;
-  Vector m;
-  Array<real> h;
-  real hmin;
-  real w;
+  Mesh& mesh;              // The mesh
+  StiffnessMatrix A;       // Stiffness matrix
+  Vector m;                // Lumped mass matrix
+  Array<real> h;           // Local mesh size
+  Array<bool> on_boundary; // Markers for boundary nodes
+  real hmin;               // Minimum mesh size
+  real w;                  // Width of initial wave
 
   unsigned int offset;
 
@@ -186,10 +206,12 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", false);
+  dolfin_set("save solution", true);
   dolfin_set("monitor convergence", false);
 
-  UnitSquare mesh(16, 16);
+  //UnitSquare mesh(32, 32);
+  Mesh mesh("cylinder.xml.gz");
+  mesh.refineUniformly();
   WaveEquation ode(mesh);
   
   ode.solve();

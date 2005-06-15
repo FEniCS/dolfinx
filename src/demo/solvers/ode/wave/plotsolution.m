@@ -6,4 +6,4 @@ solutionu
 
 % Plot solution
 pdesurf(points, cells, u{1})
-pdesurf(points, cells, u{50})
+pdesurf(points, cells, u{100})
