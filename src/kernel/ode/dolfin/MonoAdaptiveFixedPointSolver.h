@@ -34,6 +34,9 @@ namespace dolfin
     // Make an iteration
     real iteration();
 
+    /// Size of system
+    uint size() const;
+
   private:
 
     // The time slab

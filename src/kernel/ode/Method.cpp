@@ -81,11 +81,8 @@ void Method::init()
   computeDerivatives();
 }
 //-----------------------------------------------------------------------------
-real Method::update(real x0, real f[], real k, real values[]) const
+void Method::update(real x0, real f[], real k, real values[]) const
 {
-  // Save old end-time value
-  real x1 = values[nn - 1];
-
   // Update values
   for (uint i = 0; i < nn; i++)
   {
@@ -94,9 +91,6 @@ real Method::update(real x0, real f[], real k, real values[]) const
       sum += nweights[i][j] * f[j];
     values[i] = x0 + k*sum;
   }
-
-  // Return increment
-  return fabs(values[nn - 1] - x1);
 }
 //-----------------------------------------------------------------------------
 void Method::computeDerivatives()

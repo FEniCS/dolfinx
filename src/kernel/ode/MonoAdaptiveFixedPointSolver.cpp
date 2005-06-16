@@ -76,3 +76,8 @@ real MonoAdaptiveFixedPointSolver::iteration()
   return max_increment;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MonoAdaptiveFixedPointSolver::size() const
+{
+  return ts.nj;
+}
+//-----------------------------------------------------------------------------

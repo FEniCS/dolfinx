@@ -19,7 +19,7 @@ public:
 			     A(mesh), offset(N/2), h(N/2),
 			     on_boundary(N/2)
   {
-    T = 2.0;    // Final time
+    T = 0.2;    // Final time
     w = 0.25;   // Width of initial wave
 
     // Lump mass matrix
@@ -206,12 +206,14 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", true);
-  dolfin_set("monitor convergence", false);
+  dolfin_set("save solution", false);
+  dolfin_set("monitor convergence", true);
+  dolfin_set("partitioning threshold", 0.5);
 
   //UnitSquare mesh(32, 32);
-  Mesh mesh("cylinder.xml.gz");
-  mesh.refineUniformly();
+  //Mesh mesh("cylinder.xml.gz");
+  //mesh.refineUniformly();
+  Mesh mesh("cylinder_small.xml");
   WaveEquation ode(mesh);
   
   ode.solve();

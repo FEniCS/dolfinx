@@ -21,6 +21,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 {
+  dolfin_info("Multi-adaptive index: ?.");
+
   if ( f ) delete [] f;
 }
 //-----------------------------------------------------------------------------
@@ -39,6 +41,8 @@ real MultiAdaptiveFixedPointSolver::iteration()
   // Reset maximum increment
   real max_increment = 0.0;
 
+  return 0.0;
+
   // Iterate over all elements
   for (uint e = 0; e < ts.ne; e++)
   {
@@ -51,20 +55,26 @@ real MultiAdaptiveFixedPointSolver::iteration()
     const real b = ts.sb[s];
     const real k = b - a;
 
+    // Save old end-point value
+    const real x1 = ts.jx[j + method.nsize() - 1];
+
+    // Get initial value for element
+    const int ep = ts.ee[e];
+    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
+
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
       ts.cGfeval(f, s, e, i, a, b, k);
     else
       ts.dGfeval(f, s, e, i, a, b, k);
     //cout << "f = "; Alloc::disp(f, method.qsize());
-
-    // Get initial value for element
-    const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
-
+    
     // Update values on element using fixed point iteration
-    const real increment = method.update(x0, f, k, ts.jx + j);
+    method.update(x0, f, k, ts.jx + j);
     //cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
+
+    // Compute increment
+    const real increment = 0.0*fabs(ts.jx[j + method.nsize() - 1] - x1);
     
     // Update maximum increment
     if ( increment > max_increment )
@@ -75,6 +85,11 @@ real MultiAdaptiveFixedPointSolver::iteration()
   }
 
   return max_increment;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MultiAdaptiveFixedPointSolver::size() const
+{
+  return ts.nj;
 }
 //-----------------------------------------------------------------------------
 // DEBUG

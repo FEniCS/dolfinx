@@ -109,6 +109,11 @@ real MonoAdaptiveNewtonSolver::iteration()
   return max_increment;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MonoAdaptiveNewtonSolver::size() const
+{
+  return ts.nj;
+}
+//-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::beval()
 {
   if ( implicit )

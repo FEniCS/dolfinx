@@ -58,7 +58,7 @@ namespace dolfin
     inline real derivative(unsigned int i) const { return derivatives[i]; }
 
     /// Update solution values using fixed point iteration
-    real update(real x0, real f[], real k, real values[]) const;
+    void update(real x0, real f[], real k, real values[]) const;
 
     /// Evaluate solution at given point
     virtual real ueval(real x0, real values[], real tau) const = 0;

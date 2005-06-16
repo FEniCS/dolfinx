@@ -84,6 +84,11 @@ real MultiAdaptiveNewtonSolver::iteration()
   return max_increment;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MultiAdaptiveNewtonSolver::size() const
+{
+  return ts.nj;
+}
+//-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::beval()
 {
   // Get array of values for b (assumes uniprocessor case)

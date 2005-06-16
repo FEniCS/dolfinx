@@ -37,6 +37,9 @@ namespace dolfin
     // Make an iteration
     real iteration();
 
+    /// Size of system
+    uint size() const;
+
   private:
 
     // The time slab
@@ -44,6 +47,8 @@ namespace dolfin
 
     // Values of right-hand side at quadrature points
     real* f; 
+
+    // Array of elements that 
 
   };
 

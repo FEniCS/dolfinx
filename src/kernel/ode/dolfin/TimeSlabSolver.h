@@ -38,6 +38,9 @@ namespace dolfin
     /// Make an iteration
     virtual real iteration() = 0;
 
+    /// Size of system
+    virtual uint size() const = 0;
+
     // The ODE
     ODE& ode;
 
@@ -52,6 +55,9 @@ namespace dolfin
 
     // True if we should monitor the convergence
     bool monitor;
+
+    // Number of time slabs systems solved
+    uint num_timeslabs;
 
   };
 

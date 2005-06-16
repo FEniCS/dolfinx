@@ -44,6 +44,9 @@ namespace dolfin
     // Make an iteration
     real iteration();
 
+    /// Size of system
+    uint size() const;
+
   private:
 
     // Evaluate b = -F(x) at current x
