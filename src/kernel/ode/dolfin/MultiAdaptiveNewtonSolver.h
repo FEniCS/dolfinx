@@ -38,8 +38,11 @@ namespace dolfin
 
   protected:
 
-    /// Start iterations (optional)
+    /// Start iterations
     void start();
+
+    // End iterations
+    void end();
     
     // Make an iteration
     real iteration();
@@ -62,6 +65,9 @@ namespace dolfin
     Vector b;                        // Right-hand side -F(x)
     GMRES solver;                    // GMRES solver
     MultiAdaptivePreconditioner mpc; // Preconditioner
+    uint num_elements;               // Total number of elements
+    real num_elements_mono;          // Estimated number of elements for mono-adaptive system
+    
   };
 
 }

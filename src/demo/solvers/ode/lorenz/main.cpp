@@ -130,17 +130,17 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
+  dolfin_output("plain text");
+
   dolfin_set("number of samples", 500);
   dolfin_set("solve dual problem", false);
   dolfin_set("initial time step", 0.1);
   dolfin_set("fixed time step", true);
-  dolfin_set("use new ode solver", true);
   dolfin_set("solver", "newton");
   dolfin_set("method", "cg");
-  dolfin_set("order", 5);
-  dolfin_set("tolerance", 1e-12);
-  //dolfin_set("save solution", false);
+  dolfin_set("order", 3);
+  dolfin_set("discrete tolerance", 1e-12);
+  dolfin_set("save solution", true);
   
   Lorenz lorenz;
   lorenz.solve();

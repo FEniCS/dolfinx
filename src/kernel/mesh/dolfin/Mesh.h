@@ -114,9 +114,6 @@ namespace dolfin
 
     ///--- Mesh refinement ---
 
-    /// Mark cell for refinement
-    void mark(Cell& cell);
-
     /// Refine mesh
     void refine();
 

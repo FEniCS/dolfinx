@@ -18,7 +18,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode), partition(N),
-  elast(0), u(0), f0(0), emax(0)
+  elast(0), u(0), f0(0), emax(0), kmin(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -78,6 +78,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
     elast[i] = -1;
 
   // Create time slab recursively
+  kmin = ode.endtime();
   b = createTimeSlab(a, b, 0);
 
   //cout << "de = "; Alloc::disp(de, nd);
@@ -550,11 +551,16 @@ real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& en
   // Update partitition 
   real K = partition.update(offset, end, adaptivity, b - a);
 
+  cout << "Time step: " << b - a << endl;
+  
   //partition.debug(offset, end);
   
   // Modify time step if we're close to the end time
   if ( K < adaptivity.threshold() * (b - a) )
     b = a + K;
+
+  // Save minimum time step
+  kmin = std::min(kmin, b - a);
   
   return b;
 }

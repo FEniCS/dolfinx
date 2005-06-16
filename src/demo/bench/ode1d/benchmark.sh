@@ -9,7 +9,7 @@
 
 function runsingle()
 {
-    /usr/bin/time -f"$TIMEFORMAT" -otlog ./dolfin-bench-ode $1 $2 $3 $4 $5 1> log1 2> log2
+    /usr/bin/time -f"$TIMEFORMAT" -otlog ./dolfin-bench-ode $1 $2 $3 $4 $5 1> log-$1-$2-$3 2> error-$1-$2-$3
     TIME=$( cat tlog )
     echo "Elapsed time: "$TIME
     echo -n $( echo $TIME | awk '{ print $4 }' ) " + " $( echo $TIME | awk '{ print $6 }' ) >> timings.m

@@ -3,6 +3,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Alloc.h>
+#include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
@@ -12,7 +13,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
-(MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0)
+(MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0),
+				    num_elements(0), num_elements_mono(0)
 {
   f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
@@ -21,9 +23,18 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 {
-  dolfin_info("Multi-adaptive index: ?.");
+  // Compute multi-adaptive efficiency index
+  const real alpha = num_elements_mono / static_cast<real>(num_elements);
+  dolfin_info("Multi-adaptive efficiency index: %.3f.", alpha);
 
+  // Delete local array
   if ( f ) delete [] f;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptiveFixedPointSolver::end()
+{
+  num_elements += ts.ne;
+  num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveFixedPointSolver::iteration()
@@ -40,8 +51,6 @@ real MultiAdaptiveFixedPointSolver::iteration()
 
   // Reset maximum increment
   real max_increment = 0.0;
-
-  return 0.0;
 
   // Iterate over all elements
   for (uint e = 0; e < ts.ne; e++)
@@ -74,7 +83,7 @@ real MultiAdaptiveFixedPointSolver::iteration()
     //cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
 
     // Compute increment
-    const real increment = 0.0*fabs(ts.jx[j + method.nsize() - 1] - x1);
+    const real increment = fabs(ts.jx[j + method.nsize() - 1] - x1);
     
     // Update maximum increment
     if ( increment > max_increment )

@@ -33,7 +33,7 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()
 {
-  dolfin_info("Total number of macro time steps: %d.", num_timeslabs);
+  dolfin_info("Total number of (macro) time steps: %d.", num_timeslabs);
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
@@ -51,6 +51,7 @@ bool TimeSlabSolver::solve()
     // Check convergenge
     if ( d1 < tol )
     {
+      end();
       num_timeslabs += 1;
       if ( monitor )
 	dolfin_info("Time slab system of size %d converged in %d iterations.", size(), iter + 1);
@@ -68,7 +69,6 @@ bool TimeSlabSolver::solve()
     d0 = d1;
   }
 
-  end();
   dolfin_warning("Time slab system did not converge, solution stopped.");
   return false;
 }

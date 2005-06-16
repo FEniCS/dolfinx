@@ -34,6 +34,9 @@ namespace dolfin
 
   protected:
 
+    // End iterations
+    void end();
+
     // Make an iteration
     real iteration();
 
@@ -48,7 +51,11 @@ namespace dolfin
     // Values of right-hand side at quadrature points
     real* f; 
 
-    // Array of elements that 
+    // Total number of elements
+    uint num_elements;
+    
+    // Estimated number of elements for mono-adaptive system
+    real num_elements_mono;
 
   };
 

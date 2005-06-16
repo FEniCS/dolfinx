@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -150,6 +150,7 @@ namespace dolfin
     real* u;                    // Interpolated solution vector
     real* f0;                   // Right-hand side at left end-point for cG
     uint emax;                  // Last covered element for sample
+    real kmin;                  // Minimum time step (exluding threshold modified)
 
   };
 

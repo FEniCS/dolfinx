@@ -206,17 +206,29 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", false);
+  dolfin_set("save solution", true);
   dolfin_set("monitor convergence", true);
   dolfin_set("partitioning threshold", 0.5);
 
   //UnitSquare mesh(32, 32);
-  //Mesh mesh("cylinder.xml.gz");
-  //mesh.refineUniformly();
-  Mesh mesh("cylinder_small.xml");
-  WaveEquation ode(mesh);
+  Mesh mesh("cylinder.xml.gz");
   
-  ode.solve();
+  /*
+  for (unsigned int i = 0; i < 3; i++)
+  {
+    mesh.cell(0).mark();
+    mesh.refine();
+  }
+  */
+
+  //mesh.refineUniformly();
+  //Mesh mesh("cylinder_small.xml");
+  //WaveEquation ode(mesh);
+  
+  File file("mesh.m");
+  file << mesh;
+
+  //ode.solve();
 
   return 0;
 }

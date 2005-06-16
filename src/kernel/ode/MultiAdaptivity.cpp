@@ -71,15 +71,6 @@ void MultiAdaptivity::update(uint i, real k0, real r, const Method& method)
   cout << "Suggested: " << k1 << endl;
   cout << "Regulated: " << timesteps[i] << endl << endl;
   */
-
-  /*
-  if ( i == 145 )
-  {
-    cout << "Old step:  " << k0 << endl;
-    cout << "Suggested: " << k1 << endl;
-    cout << "Regulated: " << timesteps[i] << endl;
-  }
-  */
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptivity::threshold() const
