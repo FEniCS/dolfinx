@@ -43,7 +43,7 @@ MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab)
   }
 
   // Allocate lookup table for dependencies to components with small time steps
-  Jlookup = new real[max(1, maxsize - 1)];
+  Jlookup = new real[std::max(static_cast<unsigned int>(1), maxsize - 1)];
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveJacobian::~MultiAdaptiveJacobian()

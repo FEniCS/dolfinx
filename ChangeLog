@@ -1,3 +1,9 @@
+ - Add new test problem for CES economy
+ - Remove cast from Parameter to const char* (use std::string)
+ - Make solution data filename optional for homotopy solver
+ - Append homotopy solution data to file during solution
+ - Add dolfin::seed(int) for optionally seeding random number generator
+ - Remove dolfin::max,min (use std::max,min)
  - Add polynomial-integer (true polynomial) form of general CES system
  - Compute multi-adaptive efficiency index
  - Updates for gcc 4.0 (patches by Garth N. Wells)

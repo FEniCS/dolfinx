@@ -50,7 +50,7 @@ public:
 
   void disp()
   {
-    cout << "Utility parameters:" << endl;
+    cout << "Trader preferences:" << endl;
     for (unsigned int i = 0; i < m; i++)
     {
       cout << "  trader " << i << ":";

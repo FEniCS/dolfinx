@@ -161,7 +161,7 @@ void MultiAdaptiveNewtonSolver::debug()
   for (uint j = 0; j < n; j++)
   {
     const real xj = ts.jx[j];
-    real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
+    real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.jx[j] -= 0.5*dx;
     beval();

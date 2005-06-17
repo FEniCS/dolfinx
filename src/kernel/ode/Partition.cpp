@@ -100,7 +100,7 @@ real Partition::maximum(uint offset, MultiAdaptivity& adaptivity) const
   real K = 0.0;
 
   for (uint i = offset; i < indices.size(); i++)
-    K = max(adaptivity.timestep(indices[i]), K);
+    K = std::max(adaptivity.timestep(indices[i]), K);
 
   return K;
 }
@@ -111,7 +111,7 @@ real Partition::minimum(uint offset, uint end,
   real k = adaptivity.timestep(indices[offset]);
 
   for (uint i = offset + 1; i < end; i++)
-    k = min(adaptivity.timestep(indices[i]), k);
+    k = std::min(adaptivity.timestep(indices[i]), k);
 
   return k;
 }

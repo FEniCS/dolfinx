@@ -96,7 +96,7 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   real uj = uu[j];
   
   // Small change in u_j
-  real dU = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(uj));
+  real dU = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
   
   // Compute F values
   uu[j] -= 0.5 * dU;
@@ -109,7 +109,7 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   uu[j] = uj;
 
   // Compute derivative
-  if ( abs(f1 - f2) < DOLFIN_EPS * max(abs(f1), abs(f2)) )
+  if ( std::abs(f1 - f2) < DOLFIN_EPS * std::max(std::abs(f1), std::abs(f2)) )
     return 0.0;
 
   return (f2 - f1) / dU;

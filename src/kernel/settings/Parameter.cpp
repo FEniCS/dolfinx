@@ -212,14 +212,14 @@ Parameter::operator string() const
   return val_string;
 }
 //-----------------------------------------------------------------------------
-Parameter::operator const char*() const
+/*Parameter::operator const char*() const
 {
   if ( type != STRING )
     dolfin_error1("Assignment not possible. Parameter \"%s\" is not of type <string>.",
 		  identifier.c_str());
   
   return val_string.c_str();
-}
+}*/
 //-----------------------------------------------------------------------------
 // Output
 //-----------------------------------------------------------------------------

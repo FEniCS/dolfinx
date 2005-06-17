@@ -185,7 +185,7 @@ void ElasticitySolver::solve()
       xtmp2.axpy(-1, x21old);
       //cout << "inc1: " << xtmp1.norm(Vector::linf) << endl;
       //cout << "inc2: " << xtmp2.norm(Vector::linf) << endl;
-      if(max(xtmp1.norm(Vector::linf), xtmp2.norm(Vector::linf)) < 1e-8)
+      if(std::max(xtmp1.norm(Vector::linf), xtmp2.norm(Vector::linf)) < 1e-8)
       {
 	cout << "fixed point iteration converged" << endl;
 	break;

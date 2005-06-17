@@ -270,7 +270,7 @@ void MonoAdaptiveNewtonSolver::debug()
   for (uint j = 0; j < n; j++)
   {
     const real xj = ts.x(j);
-    real dx = max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * abs(xj));
+    real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.x(j) -= 0.5*dx;
     beval();

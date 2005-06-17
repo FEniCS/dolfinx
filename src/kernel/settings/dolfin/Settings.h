@@ -89,10 +89,11 @@ namespace dolfin
       //add(Parameter::INT,  "multigrid iterations", 100);
 
       // Parameters for homotopy solver
-      add(Parameter::REAL, "homotopy divergence tolerance", 10.0);
-      add(Parameter::BOOL, "homotopy randomize", true);
-      add(Parameter::BOOL, "homotopy monitoring", false);
-
+      add(Parameter::REAL,   "homotopy divergence tolerance", 10.0);
+      add(Parameter::BOOL,   "homotopy randomize", true);
+      add(Parameter::BOOL,   "homotopy monitoring", false);
+      add(Parameter::STRING, "homotopy solution file", "solution.data");
+      
      }
     
   };

@@ -54,7 +54,7 @@ namespace dolfin
     operator unsigned int() const;
     operator bool() const;
     operator string() const;
-    operator const char*() const;
+    //operator const char*() const;
 
     // Friends
     friend class XMLFile;

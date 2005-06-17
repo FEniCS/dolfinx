@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false), random(false),
-  solver(0), fp(0), mi(0), ci(0), x(2*n)
+  solver(0), filename(""), mi(0), ci(0), x(2*n)
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -41,6 +41,11 @@ Homotopy::Homotopy(uint n)
   // Get maximum number of iterations
   maxiter = dolfin_get("maximum iterations");
 
+  // Get filename
+  filename = static_cast<std::string>(dolfin_get("homotopy solution file"));
+  FILE* fp = fopen(filename.c_str(), "w");
+  fclose(fp);
+
   // FIXME: Maybe this should be a parameter?
   tol = 1e-12;
   
@@ -49,9 +54,6 @@ Homotopy::Homotopy(uint n)
   //((GMRES *) solver)->setAtol(0.1*tol);
   //((GMRES *) solver)->setReport(false);
   solver = new LU();
-
-  // Open file
-  fp = fopen("solution.data", "w");
 
   // Initialize array mi
   mi = new uint[n];
@@ -72,9 +74,6 @@ Homotopy::~Homotopy()
   if ( mi ) delete [] mi;
   if ( ci ) delete [] ci;
   if ( solver ) delete solver;
-
-  // Close file
-  fclose(fp);
 }
 //-----------------------------------------------------------------------------
 void Homotopy::solve()
@@ -106,9 +105,11 @@ void Homotopy::solve()
     if ( ode.state() == HomotopyODE::endgame )
     {
       dolfin_info("Homotopy path converged, using Newton's method to improve solution.");
-      computeSolution(ode);
-      saveSolution();
-      nroots += 1;
+      if ( computeSolution(ode) )
+      {
+	saveSolution();
+	nroots += 1;
+      }
     }
   }
 
@@ -167,7 +168,15 @@ dolfin::uint Homotopy::countPaths() const
 {
   uint product = 1;
   for (uint i = 0; i < n; i++)
+  {
+    if ( (degree(i) + 1) * product <= product )
+    {
+      const int max_paths = std::numeric_limits<int>::max();
+      dolfin_error1("Reached maximum number of homotopy paths (%d).", max_paths);
+    }
+    
     product *= (degree(i) + 1);
+  }
 
   return product;
 }
@@ -191,7 +200,7 @@ void Homotopy::computePath(uint m)
   }
 }
 //-----------------------------------------------------------------------------
-void Homotopy::computeSolution(HomotopyODE& ode)
+bool Homotopy::computeSolution(HomotopyODE& ode)
 {
   // Create right-hand side and increment vector
   Vector F(2*n), dx(2*n);
@@ -216,7 +225,7 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     {
       cout << "Solution converged: x = ";
       x.disp();
-      return;
+      return true;
     }
     
     //cout << "x = "; x.disp();
@@ -240,11 +249,14 @@ void Homotopy::computeSolution(HomotopyODE& ode)
     //x.disp();
   }
 
-  dolfin_error("Solution did not converge.");
+  dolfin_warning("Solution did not converge.");
+  return false;
 }
 //-----------------------------------------------------------------------------
 void Homotopy::saveSolution()
 {
+  FILE* fp = fopen(filename.c_str(), "a");
+
   real* xx = x.array();
   for (uint i = 0; i < (2*n); i++)
   {
@@ -255,6 +267,8 @@ void Homotopy::saveSolution()
   }
   fprintf(fp, "\n");
   x.restore(xx);
+
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------
 void Homotopy::randomize()

@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2005.
+// Modified by Anders Logg, 2005.
 
 #include <time.h>
 #include <stdlib.h>
@@ -17,59 +18,25 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-int dolfin::max(int x, int y)
-{
-  return x > y ? x : y;
-}
-//-----------------------------------------------------------------------------
-int dolfin::min(int x, int y)
-{
-  return x < y ? x : y;
-}
-//-----------------------------------------------------------------------------
-real dolfin::abs(real x)
-{
-  return x > 0 ? x : -x;
-}
-//-----------------------------------------------------------------------------
 real dolfin::sqr(real x)
 {
   return x*x;
 }
 //-----------------------------------------------------------------------------
-real dolfin::max(real x, real y)
-{
-  return x > y ? x : y;
-}
-//-----------------------------------------------------------------------------
-real dolfin::min(real x, real y)
-{
-  return x < y ? x : y;
-}
-//-----------------------------------------------------------------------------
 real dolfin::rand()
 {
   if ( !rand_seeded ) {
-    int seed = time(0);
+    long int seed = static_cast<long int>(time(0));
     srand48(seed);
     rand_seeded = true;
   }
   
-  return (real) drand48();
+  return static_cast<real>(drand48());
 }
 //-----------------------------------------------------------------------------
-int dolfin::round_int(real x)
+void dolfin::seed(int s)
 {
-  return (int) (x + 0.5);
-}
-//-----------------------------------------------------------------------------
-int dolfin::floor_int(real x)
-{
-  return (int) x;
-}
-//-----------------------------------------------------------------------------
-int dolfin::ceil_int(real x)
-{
-  return (int) ceil(x);
+  srand48(static_cast<long int>(s));
+  rand_seeded = true;
 }
 //-----------------------------------------------------------------------------
