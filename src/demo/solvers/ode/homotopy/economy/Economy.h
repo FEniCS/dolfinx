@@ -92,6 +92,15 @@ protected:
     return sum;
   }
 
+  // Compute sum of elements
+  complex bsum(const complex x[], unsigned int b) const
+  {
+    complex sum = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      sum += std::pow(x[j], b);
+    return sum;
+  }
+
   // Compute scalar product x . y
   complex dot(const real x[], const complex y[]) const
   {
@@ -102,11 +111,38 @@ protected:
   }
 
   // Compute special scalar product x . y.^b
+  complex bdot(const real x[], const complex y[], unsigned int b) const
+  {
+    complex sum = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      sum += x[j] * std::pow(y[j], b);
+    return sum;
+  }
+
+  // Compute special scalar product x . y.^b
   complex bdot(const real x[], const complex y[], real b) const
   {
     complex sum = 0.0;
     for (unsigned int j = 0; j < n; j++)
       sum += x[j] * std::pow(y[j], b);
+    return sum;
+  }
+
+  // Compute special scalar product x . y.^b
+  complex bdot(const complex x[], const complex y[], unsigned int b) const
+  {
+    complex sum = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      sum += x[j] * std::pow(y[j], b);
+    return sum;
+  }
+
+  // Compute special scalar product x . y. z^b
+  complex bdot(const real x[], const complex y[], const complex z[], unsigned int b) const
+  {
+    complex sum = 0.0;
+    for (unsigned int j = 0; j < n; j++)
+      sum += x[j] * y[j] * std::pow(z[j], b);
     return sum;
   }
 

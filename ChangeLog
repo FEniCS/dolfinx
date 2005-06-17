@@ -1,3 +1,4 @@
+ - Add polynomial-integer (true polynomial) form of general CES system
  - Compute multi-adaptive efficiency index
  - Updates for gcc 4.0 (patches by Garth N. Wells)
  - Add Matrix::mult(const real x[], uint row) (temporary fix, assumes uniprocessor case)
