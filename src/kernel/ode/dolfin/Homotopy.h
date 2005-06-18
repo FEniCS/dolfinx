@@ -5,6 +5,7 @@
 #define __HOMOTOPY_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Array.h>
 #include <dolfin/LU.h>
 #include <dolfin/Vector.h>
 
@@ -28,6 +29,9 @@ namespace dolfin
     /// Solve homotopy
     void solve();
 
+    /// Return array of solutions found
+    const Array<complex*>& solutions() const;
+
     /// Return initial value (solution of G(z) = 0), optional
     virtual complex z0(uint i);
 
@@ -43,8 +47,14 @@ namespace dolfin
     /// Compute y = G'(z) x, optional
     virtual void JG(const complex z[], const complex x[], complex y[]);
 
+    /// Modify or substitute found solution (optional)
+    virtual void modify(complex z[]);
+
+    /// Check if found solution is correct (optional)
+    virtual bool verify(const complex z[]);
+
     /// Return degree of polynomial F_i(z)
-    virtual uint degree(uint i) const = 0;
+    virtual uint degree(uint i) const = 0;    
 
     /// Friends
     friend class HomotopyODE;
@@ -80,7 +90,9 @@ namespace dolfin
     std::string filename; // Filename for saving solutions  
     uint* mi;             // Array of local path numbers
     complex* ci;          // Array of constants for system G(z) = 0
+    complex* tmp;         // Array used for temporary storage
     Vector x;             // Real-valued vector x corresponding to solution z of F(z) = 0
+    Array<complex*> zs;   // Array of solutions
 
   };
 

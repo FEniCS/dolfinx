@@ -22,10 +22,12 @@ public:
     T = 0.2;    // Final time
     w = 0.25;   // Width of initial wave
 
+    dolfin::cout << "Coordinate for node 222: " << mesh.node(222).coord() << dolfin::endl;
+
     // Lump mass matrix
     MassMatrix M(mesh);
     FEM::lump(M, m);
-    
+
     // Set dependencies
     for (unsigned int i = 0; i < offset; i++)
     {
@@ -36,9 +38,10 @@ public:
       // Dependencies for second half of system
       int ncols = 0;
       const int* cols = 0;
-      const double* vals = 0;
+      const real* vals = 0;
       MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
       dependencies.setsize(i + offset, ncols);
+      real rowsum = 0.0;
       for (unsigned int j = 0; j < ncols; j++)
 	dependencies.set(i + offset, cols[j]);
       MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
@@ -58,11 +61,14 @@ public:
       h[n->id()] = dmin;
       if ( dmin < hmin )
 	hmin = dmin;
+
+      //cout << "dmin = " << dmin << endl;
     }
     dolfin::cout << "Minimum mesh size: h = " << hmin << dolfin::endl;
     dolfin::cout << "Maximum time step: k = " << 0.25*hmin << dolfin::endl;
 
     // Mark the nodes on the internal boundary
+    /*
     on_boundary = false;
     Boundary boundary(mesh);
     for (NodeIterator n(boundary); !n.end(); ++n)
@@ -74,12 +80,13 @@ public:
 	on_boundary[n->id()] = true;
       }
     }
+    */
   }
 
   // Initial condition: a wave coming in from the right
   real u0(unsigned int i)
   {
-    const real x0 = 1.5 - 0.5*w;
+    const real x0 = 1.0 - 0.5*w;
     
     if ( i < offset )
     {
@@ -122,26 +129,37 @@ public:
     for (unsigned int i = offset; i < N; i++)
     {
       const unsigned int j = i - offset;
-      if ( on_boundary[j] )
-	y[i] = 0.0;
-      else
-	y[i] = -A.mult(u, j) / m(j);
+      //if ( on_boundary[j] )
+      //	y[i] = 0.0;
+      //else
+      y[i] = -A.mult(u, j) / m(j);
     }
   }
 
   // Right-hand side, multi-adaptive version
   real f(const real u[], real t, unsigned int i)
   {
+    if ( i == 222 )
+    {
+      dolfin_info("fu = %.16e", u[i + offset]);
+    }
+
     // First half of system
     if ( i < offset )
       return u[i + offset];
     
     // Second half of system
     const unsigned int j = i - offset;
-    if ( on_boundary[j] )
-      return 0.0;
-    else
-      return -A.mult(u, j) / m(j);
+    //if ( on_boundary[j] )
+    //  return 0.0;
+    //else
+
+    if ( i == 2529 )
+    {
+      dolfin_info("fv = %.16e", -A.mult(u, j) / m(j));
+    }
+
+    return -A.mult(u, j) / m(j);
   }
   
   void save(Sample& sample)
@@ -206,12 +224,14 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", true);
+  dolfin_set("save solution", false);
   dolfin_set("monitor convergence", true);
   dolfin_set("partitioning threshold", 0.5);
+  dolfin_set("discrete tolerance", 0.5);
 
   //UnitSquare mesh(32, 32);
-  Mesh mesh("cylinder.xml.gz");
+  //Mesh mesh("cylinder.xml.gz");
+  Mesh mesh("slit.xml");
   
   /*
   for (unsigned int i = 0; i < 3; i++)
@@ -223,12 +243,12 @@ int main()
 
   //mesh.refineUniformly();
   //Mesh mesh("cylinder_small.xml");
-  //WaveEquation ode(mesh);
+  WaveEquation ode(mesh);
   
-  File file("mesh.m");
-  file << mesh;
+  //File file("mesh.m");
+  //file << mesh;
 
-  //ode.solve();
+  ode.solve();
 
   return 0;
 }

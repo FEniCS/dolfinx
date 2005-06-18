@@ -71,6 +71,9 @@ real MultiAdaptiveFixedPointSolver::iteration()
     const int ep = ts.ee[e];
     const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
+    //for (uint iter = 0; iter < 2; iter++)
+    // {
+    
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
       ts.cGfeval(f, s, e, i, a, b, k);
@@ -82,13 +85,18 @@ real MultiAdaptiveFixedPointSolver::iteration()
     method.update(x0, f, k, ts.jx + j);
     //cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
 
+    //}
+
     // Compute increment
     const real increment = fabs(ts.jx[j + method.nsize() - 1] - x1);
-    
+
     // Update maximum increment
     if ( increment > max_increment )
+    {
+      cout << "  i = " << i << ": " << increment << endl;
       max_increment = increment;
-    
+    }
+
     // Update dof
     j += method.nsize();
   }

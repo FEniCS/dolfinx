@@ -551,8 +551,6 @@ real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& en
   // Update partitition 
   real K = partition.update(offset, end, adaptivity, b - a);
 
-  cout << "Time step: " << b - a << endl;
-  
   //partition.debug(offset, end);
   
   // Modify time step if we're close to the end time

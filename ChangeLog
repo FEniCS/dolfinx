@@ -1,3 +1,6 @@
+ - Allow user to modify and verify a converging homotopy path
+ - Make homotopy solver save a list of the solutions
+ - Add Matrix::norm()
  - Add new test problem for CES economy
  - Remove cast from Parameter to const char* (use std::string)
  - Make solution data filename optional for homotopy solver

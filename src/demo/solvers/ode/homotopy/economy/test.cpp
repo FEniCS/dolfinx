@@ -222,7 +222,7 @@ int main()
   //
   // Test 1 and 5 should give the same result (one solution).
   // Test 2 and 6 should give the same result (two solutions).
-  // Test 4 and 7 should give the same result (six solutions, including extras and multiples).
+  // Test 4 and 7 should give the same result (three solution + three extra invalid)
   //
   // Test 4 and 7 find the most solutions.
   

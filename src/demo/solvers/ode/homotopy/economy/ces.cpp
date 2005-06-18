@@ -9,12 +9,12 @@ using namespace dolfin;
 void test1()
 {
   // Seed random number generator so we get the same system every time
-  seed(0);
+  //seed(0);
 
-  unsigned int m = 5;
-  unsigned int n = 5;
+  unsigned int m = 3;
+  unsigned int n = 3;
   
-  PolynomialIntegerCES ec(m, n);
+  PolynomialIntegerCES ec(m, n, true);
 
   ec.alpha = 5;
 

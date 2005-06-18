@@ -67,6 +67,10 @@ namespace dolfin
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
     real mult(const real x[], uint row) const;
 
+    /// Compute given norm of matrix
+    enum Norm { l1, linf, frobenius };
+    real norm(Norm type = l1) const;
+
     /// Apply changes to matrix
     void apply();
 

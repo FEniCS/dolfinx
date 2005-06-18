@@ -17,7 +17,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false), random(false),
-  solver(0), filename(""), mi(0), ci(0), x(2*n)
+  solver(0), filename(""), mi(0), ci(0), tmp(0), x(2*n)
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -73,22 +73,25 @@ Homotopy::~Homotopy()
 {
   if ( mi ) delete [] mi;
   if ( ci ) delete [] ci;
+  if ( tmp ) delete [] tmp;
   if ( solver ) delete solver;
+  
+  for (unsigned int i = 0; i < zs.size(); i++)
+    delete [] zs[i];
 }
 //-----------------------------------------------------------------------------
 void Homotopy::solve()
 {
-  uint nroots = 0;
-
   // Compute the total number of paths
   M = countPaths();
   dolfin_info("Total number of paths is %d.", M);
 
   char filename[64];
 
+  uint num_roots = 0;
   for (uint m = 0; m < M; m++)
   {
-    dolfin_info("Computing path number %d out of %d.", m + 1, M);
+    dolfin_info("\nComputing path number %d out of %d...", m + 1, M);
 
     // Change name of output file for each path
     sprintf(filename, "primal_%d.m", m);
@@ -107,13 +110,21 @@ void Homotopy::solve()
       dolfin_info("Homotopy path converged, using Newton's method to improve solution.");
       if ( computeSolution(ode) )
       {
+	num_roots += 1;
 	saveSolution();
-	nroots += 1;
       }
     }
+
+    dolfin_info("Number of solutions so far: %d (%d dropped).",
+		zs.size(), num_roots - zs.size());
   }
 
-  dolfin_info("Total number of solutions found: %d.", nroots);
+  dolfin_info("\nTotal number of solutions found: %d.", zs.size());
+}
+//-----------------------------------------------------------------------------
+const Array<complex*>& Homotopy::solutions() const
+{
+  return zs;
 }
 //-----------------------------------------------------------------------------
 complex Homotopy::z0(uint i)
@@ -162,6 +173,28 @@ void Homotopy::JG(const complex z[], const complex x[], complex y[])
     
     y[i] = tmp * x[i];
   }
+}
+//-----------------------------------------------------------------------------
+void Homotopy::modify(complex z[])
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+bool Homotopy::verify(const complex z[])
+{
+  // Initialize temporary array
+  if ( !tmp )
+    tmp = new complex[n];
+
+  // Evaluate y = F(z)
+  F(z, tmp);
+
+  // Check size of y
+  real Fmax = 0.0;
+  for (unsigned int i = 0; i < n; i++)
+    Fmax = std::max(Fmax, std::abs(tmp[i]));
+  
+  return Fmax < 2.0*tol;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint Homotopy::countPaths() const
@@ -255,19 +288,31 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
 //-----------------------------------------------------------------------------
 void Homotopy::saveSolution()
 {
-  FILE* fp = fopen(filename.c_str(), "a");
-
+  // Copy values to complex array
   real* xx = x.array();
-  for (uint i = 0; i < (2*n); i++)
-  {
-    if ( fabs(xx[i]) < DOLFIN_EPS )
-      fprintf(fp, "%.15e ", 0.0);
-    else
-      fprintf(fp, "%.15e ", xx[i]);
-  }
-  fprintf(fp, "\n");
+  complex* z = new complex[n];
+  for (uint i = 0; i < n; i++)
+    z[i] = complex(xx[2*i], xx[2*i + 1]);
   x.restore(xx);
 
+  // Allow user to modify solution
+  modify(z);
+
+  // Check if solution is valid
+  if ( !verify(z) )
+  {
+    dolfin_info("Verification of solution failed, dropping solution.");
+    delete [] z;
+    return;
+  }
+  dolfin_info("Solution verified, keeping solution.");
+  zs.push_back(z);
+
+  // Save solution to file
+  FILE* fp = fopen(filename.c_str(), "a");
+  for (uint i = 0; i < n; i++)
+    fprintf(fp, "%.15e %.15e ", z[i].real(), z[i].imag());
+  fprintf(fp, "\n");
   fclose(fp);
 }
 //-----------------------------------------------------------------------------

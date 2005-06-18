@@ -183,6 +183,28 @@ real Matrix::mult(const real x[], uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+real Matrix::norm(Norm type) const
+{
+  real value = 0.0;
+
+  switch ( type )
+  {
+  case l1:
+    MatNorm(A, NORM_1, &value);
+    break;
+  case linf:
+    MatNorm(A, NORM_INFINITY, &value);
+    break;
+  case frobenius:
+    MatNorm(A, NORM_FROBENIUS, &value);
+    break;
+  default:
+    dolfin_error("Unknown norm type.");
+  }
+  
+  return value;
+}
+//-----------------------------------------------------------------------------
 void Matrix::apply()
 {
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
