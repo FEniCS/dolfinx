@@ -1,3 +1,5 @@
+ - Initialize all values of u before solution in multi-adaptive solver,
+   not only components given by dependencies
  - Allow user to modify and verify a converging homotopy path
  - Make homotopy solver save a list of the solutions
  - Add Matrix::norm()

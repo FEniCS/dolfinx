@@ -101,6 +101,12 @@ bool MultiAdaptiveTimeSlab::solve()
 {
   //dolfin_info("Solving time slab system on [%f, %f].", _a, _b);
 
+  // Copy u0 to u. This happens automatically in feval if user has set
+  // dependencies correctly, but you never know...
+  for (unsigned int i = 0; i < N; i++)
+    u[i] = u0[i];
+
+  // Solve system
   return solver->solve();
 
   //for (uint i = 0; i < N; i++)

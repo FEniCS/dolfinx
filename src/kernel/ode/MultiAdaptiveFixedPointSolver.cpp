@@ -93,7 +93,7 @@ real MultiAdaptiveFixedPointSolver::iteration()
     // Update maximum increment
     if ( increment > max_increment )
     {
-      cout << "  i = " << i << ": " << increment << endl;
+      //cout << "  i = " << i << ": " << increment << endl;
       max_increment = increment;
     }
 

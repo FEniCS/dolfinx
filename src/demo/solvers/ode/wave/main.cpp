@@ -19,8 +19,8 @@ public:
 			     A(mesh), offset(N/2), h(N/2),
 			     on_boundary(N/2)
   {
-    T = 0.2;    // Final time
-    w = 0.25;   // Width of initial wave
+    T  = 1.0;    // Final time
+    w  = 0.25;   // Width of initial wave
 
     dolfin::cout << "Coordinate for node 222: " << mesh.node(222).coord() << dolfin::endl;
 
@@ -32,7 +32,8 @@ public:
     for (unsigned int i = 0; i < offset; i++)
     {
       // Dependencies for first half of system
-      dependencies.setsize(i, 1);
+      dependencies.setsize(i, 2);
+      dependencies.set(i, i);
       dependencies.set(i, i + offset);
 
       // Dependencies for second half of system
@@ -40,8 +41,9 @@ public:
       const int* cols = 0;
       const real* vals = 0;
       MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
-      dependencies.setsize(i + offset, ncols);
+      dependencies.setsize(i + offset, ncols + 1);
       real rowsum = 0.0;
+      dependencies.set(i + offset, i + offset);
       for (unsigned int j = 0; j < ncols; j++)
 	dependencies.set(i + offset, cols[j]);
       MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
@@ -139,14 +141,14 @@ public:
   // Right-hand side, multi-adaptive version
   real f(const real u[], real t, unsigned int i)
   {
-    if ( i == 222 )
-    {
-      dolfin_info("fu = %.16e", u[i + offset]);
-    }
+    //if ( i == 222 )
+    // {
+    // dolfin_info("fu = %.16e", u[i + offset]);
+    // }
 
     // First half of system
     if ( i < offset )
-      return u[i + offset];
+      return u[i + offset] - u[i];
     
     // Second half of system
     const unsigned int j = i - offset;
@@ -154,12 +156,12 @@ public:
     //  return 0.0;
     //else
 
-    if ( i == 2529 )
-    {
-      dolfin_info("fv = %.16e", -A.mult(u, j) / m(j));
-    }
+    //if ( i == 2529 )
+    // {
+    //  dolfin_info("fv = %.16e", -A.mult(u, j) / m(j));
+    // }
 
-    return -A.mult(u, j) / m(j);
+    return -A.mult(u, j) / m(j) - u[i];
   }
   
   void save(Sample& sample)
@@ -224,10 +226,11 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", false);
-  dolfin_set("monitor convergence", true);
+  dolfin_set("save solution", true);
+  dolfin_set("monitor convergence", false);
   dolfin_set("partitioning threshold", 0.5);
   dolfin_set("discrete tolerance", 0.5);
+  dolfin_set("number of samples", 10);
 
   //UnitSquare mesh(32, 32);
   //Mesh mesh("cylinder.xml.gz");
