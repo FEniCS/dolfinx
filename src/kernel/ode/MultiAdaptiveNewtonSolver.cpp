@@ -61,7 +61,7 @@ void MultiAdaptiveNewtonSolver::start()
   //A.disp();
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration()
+real MultiAdaptiveNewtonSolver::iteration(uint iter)
 {
   cout << "MultiAdaptiveNewtonSolver::iteration()" << endl;
 

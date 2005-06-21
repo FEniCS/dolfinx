@@ -31,13 +31,23 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   if ( f ) delete [] f;
 }
 //-----------------------------------------------------------------------------
+void MultiAdaptiveFixedPointSolver::start()
+{
+  converged = new bool[ts.ne];
+  for (unsigned int i = 0; i < ts.ne; i++)
+    converged[i] = false;
+}
+//-----------------------------------------------------------------------------
 void MultiAdaptiveFixedPointSolver::end()
 {
+  delete [] converged;
+
+  // Count the number of elements
   num_elements += ts.ne;
   num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration()
+real MultiAdaptiveFixedPointSolver::iteration(uint iter)
 {
   // Reset dof
   uint j = 0;
@@ -58,6 +68,12 @@ real MultiAdaptiveFixedPointSolver::iteration()
     // Cover all elements in current sub slab
     s = ts.cover(s, e);
 
+    //if ( converged[e] )
+    // {
+    //  cout << "skipping" << endl;
+    //  continue;
+    //}
+
     // Get element data
     const uint i = ts.ei[e];
     const real a = ts.sa[s];
@@ -71,9 +87,6 @@ real MultiAdaptiveFixedPointSolver::iteration()
     const int ep = ts.ee[e];
     const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
 
-    //for (uint iter = 0; iter < 2; iter++)
-    // {
-    
     // Evaluate right-hand side at quadrature points of element
     if ( method.type() == Method::cG )
       ts.cGfeval(f, s, e, i, a, b, k);
@@ -85,10 +98,10 @@ real MultiAdaptiveFixedPointSolver::iteration()
     method.update(x0, f, k, ts.jx + j);
     //cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
 
-    //}
-
     // Compute increment
     const real increment = fabs(ts.jx[j + method.nsize() - 1] - x1);
+    if ( increment < 0.05 && iter > 0 )
+      converged[e] = true;
 
     // Update maximum increment
     if ( increment > max_increment )

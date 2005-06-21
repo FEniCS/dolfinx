@@ -34,11 +34,14 @@ namespace dolfin
 
   protected:
 
+    // Start iterations
+    void start();
+
     // End iterations
     void end();
 
     // Make an iteration
-    real iteration();
+    real iteration(uint iter);
 
     /// Size of system
     uint size() const;
@@ -56,6 +59,9 @@ namespace dolfin
     
     // Estimated number of elements for mono-adaptive system
     real num_elements_mono;
+    
+    // FIXME: Temporary
+    bool* converged;
 
   };
 

@@ -44,7 +44,7 @@ bool TimeSlabSolver::solve()
   for (uint iter = 0; iter < maxiter; iter++)
   {
     // Do one iteration
-    real d1 = iteration();
+    real d1 = iteration(iter);
     if ( monitor )
       dolfin_info("--- iter = %d: increment = %.3e", iter, d1);
     

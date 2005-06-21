@@ -36,7 +36,7 @@ namespace dolfin
     virtual void end();
 
     /// Make an iteration
-    virtual real iteration() = 0;
+    virtual real iteration(uint iter) = 0;
 
     /// Size of system
     virtual uint size() const = 0;

@@ -41,7 +41,7 @@ namespace dolfin
     void start();
     
     // Make an iteration
-    real iteration();
+    real iteration(uint iter);
 
     /// Size of system
     uint size() const;

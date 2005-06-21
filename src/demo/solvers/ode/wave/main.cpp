@@ -5,22 +5,21 @@
 
 using namespace dolfin;
 
-/// This test problem solves the wave equation in 2D, using the
-/// largest possible stable time step given by the CFL condition. The
-/// problem can be run either in mono-adaptive mode (using the same
-/// time step in the entire domain) or in multi-adaptive mode (using
-/// small time steps only where the mesh size is small).
+/// This test problem solves the wave equation in 2D, using large time
+/// steps given by the CFL condition. The problem can be run either in
+/// mono-adaptive mode (using the same time step in the entire domain)
+/// or in multi-adaptive mode (using small time steps only where the
+/// mesh size is small).
 
 class WaveEquation : public ODE
 {
 public:
 
   WaveEquation(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh),
-			     A(mesh), offset(N/2), h(N/2),
-			     on_boundary(N/2)
+			     A(mesh), offset(N/2), h(N/2)
   {
-    T  = 1.0;    // Final time
-    w  = 0.25;   // Width of initial wave
+    T = 1.0;  // Final time
+    w = 0.25; // Width of initial wave
 
     dolfin::cout << "Coordinate for node 222: " << mesh.node(222).coord() << dolfin::endl;
 
@@ -32,8 +31,7 @@ public:
     for (unsigned int i = 0; i < offset; i++)
     {
       // Dependencies for first half of system
-      dependencies.setsize(i, 2);
-      dependencies.set(i, i);
+      dependencies.setsize(i, 1);
       dependencies.set(i, i + offset);
 
       // Dependencies for second half of system
@@ -41,9 +39,8 @@ public:
       const int* cols = 0;
       const real* vals = 0;
       MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
-      dependencies.setsize(i + offset, ncols + 1);
+      dependencies.setsize(i + offset, ncols);
       real rowsum = 0.0;
-      dependencies.set(i + offset, i + offset);
       for (unsigned int j = 0; j < ncols; j++)
 	dependencies.set(i + offset, cols[j]);
       MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
@@ -63,26 +60,9 @@ public:
       h[n->id()] = dmin;
       if ( dmin < hmin )
 	hmin = dmin;
-
-      //cout << "dmin = " << dmin << endl;
     }
     dolfin::cout << "Minimum mesh size: h = " << hmin << dolfin::endl;
     dolfin::cout << "Maximum time step: k = " << 0.25*hmin << dolfin::endl;
-
-    // Mark the nodes on the internal boundary
-    /*
-    on_boundary = false;
-    Boundary boundary(mesh);
-    for (NodeIterator n(boundary); !n.end(); ++n)
-    {
-      const Point& p = n->coord();
-      if ( p.x > DOLFIN_EPS && p.x < (1.5 - DOLFIN_EPS) &&
-	   p.y > DOLFIN_EPS && p.y < (0.5 - DOLFIN_EPS) )
-      {
-	on_boundary[n->id()] = true;
-      }
-    }
-    */
   }
 
   // Initial condition: a wave coming in from the right
@@ -109,13 +89,13 @@ public:
   // Global time step
   real timestep()
   {
-    return 0.25*hmin;
+    return 0.1*hmin;
   }
   
   // Local time step
   real timestep(unsigned int i)
   {
-    return 0.25*h[i % offset];
+    return 0.1*h[i % offset];
   }
 
   // Right-hand side, mono-adaptive version
@@ -131,9 +111,6 @@ public:
     for (unsigned int i = offset; i < N; i++)
     {
       const unsigned int j = i - offset;
-      //if ( on_boundary[j] )
-      //	y[i] = 0.0;
-      //else
       y[i] = -A.mult(u, j) / m(j);
     }
   }
@@ -141,27 +118,17 @@ public:
   // Right-hand side, multi-adaptive version
   real f(const real u[], real t, unsigned int i)
   {
-    //if ( i == 222 )
-    // {
-    // dolfin_info("fu = %.16e", u[i + offset]);
-    // }
-
     // First half of system
     if ( i < offset )
-      return u[i + offset] - u[i];
+      return u[i + offset];
     
     // Second half of system
     const unsigned int j = i - offset;
-    //if ( on_boundary[j] )
+
+    //if ( mesh.node(j).coord().dist(0.5, 0.5) < 0.01 )
     //  return 0.0;
-    //else
 
-    //if ( i == 2529 )
-    // {
-    //  dolfin_info("fv = %.16e", -A.mult(u, j) / m(j));
-    // }
-
-    return -A.mult(u, j) / m(j) - u[i];
+    return -A.mult(u, j) / m(j);
   }
   
   void save(Sample& sample)
@@ -210,47 +177,29 @@ public:
 
 private:
 
-  Mesh& mesh;              // The mesh
-  StiffnessMatrix A;       // Stiffness matrix
-  Vector m;                // Lumped mass matrix
-  Array<real> h;           // Local mesh size
-  Array<bool> on_boundary; // Markers for boundary nodes
-  real hmin;               // Minimum mesh size
-  real w;                  // Width of initial wave
-
-  unsigned int offset;
+  Mesh& mesh;          // The mesh
+  StiffnessMatrix A;   // Stiffness matrix
+  Vector m;            // Lumped mass matrix
+  Array<real> h;       // Local mesh size
+  real hmin;           // Minimum mesh size
+  real w;              // Width of initial wave
+  unsigned int offset; // N/2, number of nodes
 
 };
 
 int main()
 {
-  dolfin_set("method", "mcg");
+  dolfin_set("method", "cg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", true);
+  dolfin_set("save solution", false);
   dolfin_set("monitor convergence", false);
-  dolfin_set("partitioning threshold", 0.5);
-  dolfin_set("discrete tolerance", 0.5);
+  dolfin_set("partitioning threshold", 0.1);
+  dolfin_set("discrete tolerance", 0.1);
   dolfin_set("number of samples", 10);
 
-  //UnitSquare mesh(32, 32);
-  //Mesh mesh("cylinder.xml.gz");
-  Mesh mesh("slit.xml");
-  
-  /*
-  for (unsigned int i = 0; i < 3; i++)
-  {
-    mesh.cell(0).mark();
-    mesh.refine();
-  }
-  */
-
-  //mesh.refineUniformly();
-  //Mesh mesh("cylinder_small.xml");
+  Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);
   
-  //File file("mesh.m");
-  //file << mesh;
-
   ode.solve();
 
   return 0;
