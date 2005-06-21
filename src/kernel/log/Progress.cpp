@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Thanks to Jim Tilander for many helpful hints.
+// Modified by Anders Logg, 2005.
 
 #include <stdio.h>
 
@@ -35,6 +36,11 @@ Progress::Progress(const char* title, unsigned int n)
 
   // Notify that we have created a new progress bar
   LogManager::log.progress_add(this);
+
+  dolfin_info("Creating progress bar");
+
+  // Write first progress bar
+  LogManager::log.progress(_title, _label, p1);
 }
 //-----------------------------------------------------------------------------
 Progress::Progress(const char* title)

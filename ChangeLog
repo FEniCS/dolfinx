@@ -1,3 +1,4 @@
+ - Make progress bar write first update at 0%
  - Initialize all values of u before solution in multi-adaptive solver,
    not only components given by dependencies
  - Allow user to modify and verify a converging homotopy path

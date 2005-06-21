@@ -189,7 +189,7 @@ private:
 
 int main()
 {
-  dolfin_set("method", "cg");
+  dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
   dolfin_set("save solution", false);
   dolfin_set("monitor convergence", false);

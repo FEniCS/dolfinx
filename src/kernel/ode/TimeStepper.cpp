@@ -74,6 +74,7 @@ void TimeStepper::solve(ODE& ode)
     TimeStepper timeStepper(ode);
     
     // Do time stepping
+
     while ( !timeStepper.finished() && !timeStepper.stopped )
       timeStepper.step();
   }
