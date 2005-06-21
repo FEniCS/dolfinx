@@ -21,8 +21,6 @@ public:
     T = 1.0;  // Final time
     w = 0.25; // Width of initial wave
 
-    dolfin::cout << "Coordinate for node 222: " << mesh.node(222).coord() << dolfin::endl;
-
     // Lump mass matrix
     MassMatrix M(mesh);
     FEM::lump(M, m);
@@ -125,9 +123,6 @@ public:
     // Second half of system
     const unsigned int j = i - offset;
 
-    //if ( mesh.node(j).coord().dist(0.5, 0.5) < 0.01 )
-    //  return 0.0;
-
     return -A.mult(u, j) / m(j);
   }
   
@@ -191,11 +186,10 @@ int main()
 {
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
-  dolfin_set("save solution", false);
-  dolfin_set("monitor convergence", false);
-  dolfin_set("partitioning threshold", 0.1);
   dolfin_set("discrete tolerance", 0.1);
-  dolfin_set("number of samples", 10);
+
+  // Comment this out to save solution
+  dolfin_set("save solution", false);
 
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);

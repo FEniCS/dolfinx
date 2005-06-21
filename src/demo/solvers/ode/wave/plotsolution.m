@@ -5,5 +5,8 @@
 solutionu
 
 % Plot solution
+figure(1)
 pdesurf(points, cells, u{1})
-pdesurf(points, cells, u{100})
+
+figure(2)
+pdesurf(points, cells, u{45})
