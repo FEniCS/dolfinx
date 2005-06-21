@@ -10,8 +10,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(dolfin_get("monitor convergence")), num_timeslabs(0)
-  
+    monitor(dolfin_get("monitor convergence")),
+    num_timeslabs(0), num_iterations(0)
 {
   // Get tolerance
   const real TOL = dolfin_get("tolerance");
@@ -34,6 +34,8 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
 TimeSlabSolver::~TimeSlabSolver()
 {
   dolfin_info("Total number of (macro) time steps: %d.", num_timeslabs);
+  dolfin_info("Average number of iterations per step: %.2f.",
+	      static_cast<real>(num_iterations) / static_cast<real>(num_timeslabs));
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
@@ -53,6 +55,7 @@ bool TimeSlabSolver::solve()
     {
       end();
       num_timeslabs += 1;
+      num_iterations += iter + 1;
       if ( monitor )
 	dolfin_info("Time slab system of size %d converged in %d iterations.", size(), iter + 1);
       return true;

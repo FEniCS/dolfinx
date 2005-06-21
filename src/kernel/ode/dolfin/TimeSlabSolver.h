@@ -59,6 +59,9 @@ namespace dolfin
     // Number of time slabs systems solved
     uint num_timeslabs;
 
+    // Number of iterations made
+    uint num_iterations;
+
   };
 
 }
