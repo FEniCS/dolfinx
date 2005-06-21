@@ -91,7 +91,7 @@ void Homotopy::solve()
   uint num_roots = 0;
   for (uint m = 0; m < M; m++)
   {
-    dolfin_info("\nComputing path number %d out of %d...", m + 1, M);
+    dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
     sprintf(filename, "primal_%d.m", m);
