@@ -93,7 +93,7 @@ public:
   // Local time step
   real timestep(unsigned int i)
   {
-    return 0.1*h[i % offset];
+    return 0.25*h[i % offset];
   }
 
   // Right-hand side, mono-adaptive version
