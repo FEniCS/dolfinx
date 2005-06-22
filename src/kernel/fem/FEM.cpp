@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005.
+// Modified by Andy Terrel, 2005.
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -27,20 +28,21 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   // Get finite elements
   const FiniteElement& test_element = a.test();
   const FiniteElement& trial_element = a.trial();
-  dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
   // Create affine map
   AffineMap map;
 
   // Initialize local data
+  uint m = trial_element.spacedim();
   uint n = test_element.spacedim();
-  real* block = new real[n*n];
+  real* block = new real[m*n];
   int* test_dofs = new int[n];
-  int* trial_dofs = new int[n];
+  int* trial_dofs = new int[m];
 
-  // Initialize global matrix 
+  // Initialize global matrix
+  uint M = size(mesh, trial_element);
   uint N = size(mesh, test_element);
-  A.init(N, N, 1);
+  A.init(M, N, 1);
   A = 0.0;
 
   // Iterate over all cells in the mesh
@@ -136,21 +138,22 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Get finite elements
   const FiniteElement& test_element = a.test();
   const FiniteElement& trial_element = a.trial();
-  dolfin_assert(test_element.spacedim() == trial_element.spacedim());
 
   // Create affine map
   AffineMap map;
 
   // Initialize element matrix/vector data block
+  uint m = trial_element.spacedim();
   uint n = test_element.spacedim();
-  real* block_A = new real[n*n];
+  real* block_A = new real[m*n];
   real* block_b = new real[n];
   int* test_dofs = new int[n];
-  int* trial_dofs = new int[n];
+  int* trial_dofs = new int[m];
 
-  // Initialize global matrix 
+  // Initialize global matrix
+  uint M = size(mesh, trial_element);
   uint N = size(mesh, test_element);
-  A.init(N, N);
+  A.init(M, N);
   b.init(N);
   A = 0.0;
   b = 0.0;
