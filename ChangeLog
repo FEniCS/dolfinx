@@ -1,3 +1,4 @@
+ - Add support for assembly of non-square systems (Andy Terrel)	
  - Make ODE solver report average number of iterations
  - Make progress bar write first update at 0%
  - Initialize all values of u before solution in multi-adaptive solver,

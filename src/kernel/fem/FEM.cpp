@@ -33,15 +33,15 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   AffineMap map;
 
   // Initialize local data
-  uint m = trial_element.spacedim();
-  uint n = test_element.spacedim();
+  uint m = test_element.spacedim();
+  uint n = trial_element.spacedim();
   real* block = new real[m*n];
-  int* test_dofs = new int[n];
-  int* trial_dofs = new int[m];
+  int* test_dofs = new int[m];
+  int* trial_dofs = new int[n];
 
   // Initialize global matrix
-  uint M = size(mesh, trial_element);
-  uint N = size(mesh, test_element);
+  uint M = size(mesh, test_element);
+  uint N = size(mesh, trial_element);
   A.init(M, N, 1);
   A = 0.0;
 
@@ -62,7 +62,7 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     a.eval(block, map);
 
     // Add element matrix to global matrix
-    A.add(block, test_dofs, n, trial_dofs, n);
+    A.add(block, test_dofs, m, trial_dofs, n);
 
     // Update progress
     p++;
@@ -89,13 +89,13 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   AffineMap map;
 
   // Initialize local data
-  uint n = test_element.spacedim();
-  real* block = new real[n];
-  int* test_dofs = new int[n];
+  uint m = test_element.spacedim();
+  real* block = new real[m];
+  int* test_dofs = new int[m];
 
   // Initialize global vector 
-  uint N = size(mesh, test_element);
-  b.init(N);
+  uint M = size(mesh, test_element);
+  b.init(M);
   b = 0.0;
 
   // Iterate over all cells in the mesh
@@ -114,7 +114,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
     L.eval(block, map);
     
     // Add element matrix to global matrix
-    b.add(block, test_dofs, n);
+    b.add(block, test_dofs, m);
 
     // Update progress
     p++;
@@ -143,18 +143,18 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   AffineMap map;
 
   // Initialize element matrix/vector data block
-  uint m = trial_element.spacedim();
-  uint n = test_element.spacedim();
+  uint m = test_element.spacedim();
+  uint n = trial_element.spacedim();
   real* block_A = new real[m*n];
-  real* block_b = new real[n];
-  int* test_dofs = new int[n];
-  int* trial_dofs = new int[m];
+  real* block_b = new real[m];
+  int* test_dofs = new int[m];
+  int* trial_dofs = new int[n];
 
   // Initialize global matrix
-  uint M = size(mesh, trial_element);
-  uint N = size(mesh, test_element);
+  uint M = size(mesh, test_element);
+  uint N = size(mesh, trial_element);
   A.init(M, N);
-  b.init(N);
+  b.init(M);
   A = 0.0;
   b = 0.0;
   
@@ -177,10 +177,10 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
     L.eval(block_b, map);
     
     // Add element matrix to global matrix
-    A.add(block_A, test_dofs, n, trial_dofs, n);
+    A.add(block_A, test_dofs, m, trial_dofs, n);
     
     // Add element vector to global vector
-    b.add(block_b, test_dofs, n);
+    b.add(block_b, test_dofs, m);
 
     // Update progress
     p++;
