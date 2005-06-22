@@ -1,13 +1,9 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
 
 using namespace dolfin;
-
-// FIXME: BROKEN
-
-/*
 
 class TestProblem9 : public ODE
 {
@@ -38,31 +34,15 @@ public:
     return 1.0;
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     if ( i == 0 )
-      return u(1);
+      return u[1];
 
     if ( i == 1 )
-      return -(1.0-u(2))*u(0);
+      return -(1.0 - u[2])*u[0];
 
-    return -lambda * (u(0)*u(0) + u(1)*u(1)) * u(2);
-  }
-
-  Element::Type method(unsigned int i)
-  {
-    if ( i == 2 )
-      return Element::dg;
-    
-    return Element::cg;
-  }
-
-  unsigned int order(unsigned int i)
-  {
-    if ( i == 2 )
-      return 0;
-    
-    return 1;
+    return -lambda * (u[0]*u[0] + u[1]*u[1]) * u[2];
   }
 
 private:
@@ -70,5 +50,3 @@ private:
   real lambda;
 
 };
-
-*/

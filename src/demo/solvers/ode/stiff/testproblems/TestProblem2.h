@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004, 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
@@ -17,8 +17,8 @@ public:
     T = 10;
 
     // The matrix A
-    A(0,0) = 100;
-    A(1,1) = 1000;
+    A(0,0) = 100.0;
+    A(1,1) = 1000.0;
 
     // Compute sparsity
     sparse();
@@ -29,12 +29,9 @@ public:
     return 1.0;
   }
   
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
-    // FIXME: BROKEN
-    dolfin_error("Broken, needs to be updated.");
-    //    return -A.mult(u, i);
-    return 0.0;
+    return -A.mult(u, i);
   }
 
 private:

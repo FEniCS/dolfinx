@@ -13,14 +13,15 @@ ODE::ODE(uint N) : N(N), T(1.0), dependencies(N), transpose(N),
 		   default_timestep(dolfin_get("initial time step")),
 		   not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
 		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
-		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
+		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency."),
+		   tmp(0)
 {
   dolfin_info("Creating ODE of size %d.", N);
 }
 //-----------------------------------------------------------------------------
 ODE::~ODE()
 {
-  // Do nothing
+  if ( tmp ) delete [] tmp;
 }
 //-----------------------------------------------------------------------------
 real ODE::f(const real u[], real t, uint i)
@@ -59,29 +60,42 @@ void ODE::J(const real x[], real y[], const real u[], real t)
 {
   // If a user does not supply J, then compute it by the approximation
   //
-  //     Jx = ( f(z + hx) - f(z - hx) ) / 2h
+  //     Jx = ( f(u + hx) - f(u - hx) ) / 2h
 
   // Display a warning, more efficiently if implemented
   not_impl_J();
 
-  dolfin_error("Not implemented yet...");
+  // Small change in u
+  real umax = 0.0;
+  for (unsigned int i = 0; i < N; i++)
+    umax = std::max(umax, std::abs(u[i]));
+  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 
-  /* Old version, should not be used
+  // We are not allowed to change u, but we restore it afterwards,
+  // so maybe we can cheat a little...
+  real* uu = const_cast<real*>(u);
+
+  // Allocate temporary array if not already allocated
+  if ( !tmp )
+    tmp = new real[N];
   
-  // Compute product
-  for (uint i = 0; i < N; i++)
-  {
-    real sum = 0.0;
-    const Array<uint>& deps = dependencies[i];
-    for (uint pos = 0; pos < deps.size(); pos++)
-    {
-      const uint j = deps[pos];
-      sum += dfdu(u, t, i, j) * x[j];
-    }
-    y[i] = sum;
-  }
+  // Evaluate at u + hx
+  for (unsigned int i = 0; i < N; i++)
+    uu[i] += h*x[i];
+  f(uu, t, y);
 
-  */
+  // Evaluate at u - hx
+  for (unsigned int i = 0; i < N; i++)
+    uu[i] -= 2.0*h*x[i];
+  f(uu, t, tmp);
+
+  // Reset u
+  for (unsigned int i = 0; i < N; i++)
+    uu[i] += h*x[i];
+
+  // Compute product y = Jx
+  for (unsigned int i = 0; i < N; i++)
+    y[i] = (y[i] - tmp[i]) / (2.0*h);
 }
 //-----------------------------------------------------------------------------
 real ODE::dfdu(const real u[], real t, uint i, uint j)
@@ -96,13 +110,13 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   real uj = uu[j];
   
   // Small change in u_j
-  real dU = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
+  real h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(uj));
   
   // Compute F values
-  uu[j] -= 0.5 * dU;
+  uu[j] -= 0.5 * h;
   real f1 = f(uu, t, i);
   
-  uu[j] = uj + 0.5*dU;
+  uu[j] = uj + 0.5*h;
   real f2 = f(uu, t, i);
          
   // Reset value of uj
@@ -112,7 +126,7 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   if ( std::abs(f1 - f2) < DOLFIN_EPS * std::max(std::abs(f1), std::abs(f2)) )
     return 0.0;
 
-  return (f2 - f1) / dU;
+  return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
 real ODE::timestep()

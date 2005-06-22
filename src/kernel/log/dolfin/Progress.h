@@ -1,7 +1,7 @@
 // Copyright (C) 2003 Jim Tilander.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified for DOLFIN by Anders Logg.
+// Modified by Anders Logg, 2003-2005.
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -9,9 +9,11 @@
 #include <stdarg.h>
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class Progress {
+  class Progress
+  {
   public:
     
     Progress(const char* title, unsigned int n);
@@ -25,6 +27,8 @@ namespace dolfin {
     
     void update(unsigned int i,  const char* format, ...);
     void update(real p, const char* format, ...);
+
+    void stop();
     
     real value();
     const char* title();
@@ -47,6 +51,8 @@ namespace dolfin {
     
     unsigned int i;
     unsigned int n;
+
+    bool stopped;
     
   };
   

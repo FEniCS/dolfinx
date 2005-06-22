@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004, 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
@@ -22,9 +22,9 @@ public:
     return 1.0;
   }
   
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
-    return -1000.0 * u(0);
+    return -1000.0 * u[0];
   }
   
 };

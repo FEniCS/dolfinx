@@ -31,7 +31,7 @@ public:
     n1 = 0;
 
     // Open file
-    fp = fopen("lorenz.txt", "w");
+    fp = fopen("lorenz.data", "w");
 
     // Final time
     //T = 1e5;

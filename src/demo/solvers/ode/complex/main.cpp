@@ -38,9 +38,7 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
-  dolfin_set("use new ode solver", true);
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
 

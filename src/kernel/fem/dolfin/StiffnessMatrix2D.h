@@ -134,7 +134,7 @@ public:
 
   };
 
-  BilinearForm() : dolfin::BilinearForm(0)
+  BilinearForm(const real& c0) : dolfin::BilinearForm(0), c0(c0)
   {
     // Create finite element for test space
     _test = new TestElement();
@@ -146,10 +146,10 @@ public:
   void eval(real block[], const AffineMap& map) const
   {
     // Compute geometry tensors
-    real G0_0_0 = map.det*(map.g00*map.g00 + map.g01*map.g01);
-    real G0_0_1 = map.det*(map.g00*map.g10 + map.g01*map.g11);
-    real G0_1_0 = map.det*(map.g10*map.g00 + map.g11*map.g01);
-    real G0_1_1 = map.det*(map.g10*map.g10 + map.g11*map.g11);
+    real G0_0_0 = map.det*c0*(map.g00*map.g00 + map.g01*map.g01);
+    real G0_0_1 = map.det*c0*(map.g00*map.g10 + map.g01*map.g11);
+    real G0_1_0 = map.det*c0*(map.g10*map.g00 + map.g11*map.g01);
+    real G0_1_1 = map.det*c0*(map.g10*map.g10 + map.g11*map.g11);
 
     // Compute element tensor
     block[0] = 4.999999999999998e-01*G0_0_0 + 4.999999999999997e-01*G0_0_1 + 4.999999999999997e-01*G0_1_0 + 4.999999999999996e-01*G0_1_1;
@@ -162,6 +162,10 @@ public:
     block[7] = 4.999999999999997e-01*G0_1_0;
     block[8] = 4.999999999999996e-01*G0_1_1;
   }
+        
+private:
+
+  const real& c0;
 
 };
 

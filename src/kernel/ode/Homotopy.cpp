@@ -16,8 +16,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
-  : n(n), M(0), maxiter(0), tol(0.0), divtol(0), monitor(false), random(false),
-  solver(0), filename(""), mi(0), ci(0), tmp(0), x(2*n)
+  : tol(0), n(n), M(0), maxiter(0), maxpaths(0), divtol(0), monitor(false),
+    random(false), solver(0), filename(""), mi(0), ci(0), tmp(0), x(2*n)
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -41,13 +41,16 @@ Homotopy::Homotopy(uint n)
   // Get maximum number of iterations
   maxiter = dolfin_get("maximum iterations");
 
+  // Get maximum number of paths
+  maxpaths = dolfin_get("homotopy maximum size");
+
   // Get filename
   filename = static_cast<std::string>(dolfin_get("homotopy solution file"));
   FILE* fp = fopen(filename.c_str(), "w");
   fclose(fp);
 
   // FIXME: Maybe this should be a parameter?
-  tol = 1e-12;
+  tol = dolfin_get("homotopy solution tolerance");
   
   // Choose solver
   //solver = new GMRES();
@@ -85,6 +88,8 @@ void Homotopy::solve()
   // Compute the total number of paths
   M = countPaths();
   dolfin_info("Total number of paths is %d.", M);
+  if ( M > maxpaths )
+    dolfin_info("Computing only %d paths as requested.", maxpaths);
 
   char filename[64];
 
@@ -117,9 +122,17 @@ void Homotopy::solve()
 
     dolfin_info("Number of solutions so far: %d (%d dropped).",
 		zs.size(), num_roots - zs.size());
+
+    // Check if we reached the maximum number of paths
+    if ( m == (maxpaths - 1) )
+    {
+      dolfin_info("Maximum number of paths reached, stopping.");
+      break;
+    }
   }
 
-  dolfin_info("\nTotal number of solutions found: %d.", zs.size());
+  dolfin_info("\nTotal number of solutions found: %d (%d dropped).",
+	      zs.size(), num_roots - zs.size());
 }
 //-----------------------------------------------------------------------------
 const Array<complex*>& Homotopy::solutions() const
@@ -305,6 +318,8 @@ void Homotopy::saveSolution()
     delete [] z;
     return;
   }
+
+  // Save solution
   dolfin_info("Solution verified, keeping solution.");
   zs.push_back(z);
 

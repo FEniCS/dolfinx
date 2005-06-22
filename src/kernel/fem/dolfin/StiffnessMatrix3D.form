@@ -7,5 +7,6 @@ element = FiniteElement("Lagrange", "tetrahedron", 1)
 
 v = BasisFunction(element)
 u = BasisFunction(element)
+c = Constant()
 
-a = v.dx(i)*u.dx(i)*dx
+a = c*v.dx(i)*u.dx(i)*dx

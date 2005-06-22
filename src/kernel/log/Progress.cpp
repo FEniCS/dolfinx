@@ -34,6 +34,8 @@ Progress::Progress(const char* title, unsigned int n)
   i = 0;
   this->n = n;
 
+  stopped = false;
+
   // Notify that we have created a new progress bar
   LogManager::log.progress_add(this);
 
@@ -64,7 +66,7 @@ Progress::Progress(const char* title)
 Progress::~Progress()
 {
   // Step to end
-  if ( p1 != 1.0 )
+  if ( p1 != 1.0 && !stopped )
   {
     p1 = 1.0;
     LogManager::log.progress(_title, _label, p1);
@@ -150,6 +152,11 @@ void Progress::update(real p, const char* format, ...)
   
   p1 = checkBounds(p);
   update();
+}
+//-----------------------------------------------------------------------------
+void Progress::stop()
+{
+  stopped = true;
 }
 //-----------------------------------------------------------------------------
 real Progress::value()

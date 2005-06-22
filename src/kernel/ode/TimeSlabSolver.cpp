@@ -34,8 +34,10 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
 TimeSlabSolver::~TimeSlabSolver()
 {
   dolfin_info("Total number of (macro) time steps: %d.", num_timeslabs);
-  dolfin_info("Average number of iterations per step: %.2f.",
-	      static_cast<real>(num_iterations) / static_cast<real>(num_timeslabs));
+  if ( num_timeslabs > 0 )
+    dolfin_info("Average number of iterations per step: %.2f.",
+		static_cast<real>(num_iterations) / 
+		static_cast<real>(num_timeslabs));
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()

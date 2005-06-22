@@ -1,4 +1,4 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <dolfin.h>
@@ -32,12 +32,9 @@ public:
     return 1.0;
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
-    // FIXME: BROKEN
-    dolfin_error("Broken, needs to be updated.");
-    //    return -A.mult(u, i);
-    return 0.0;
+    return -A.mult(u, i);
   }
 
 private:

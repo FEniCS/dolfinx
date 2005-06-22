@@ -15,12 +15,12 @@ StiffnessMatrix::StiffnessMatrix(Mesh& mesh, real epsilon)
 {
   if ( mesh.type() == Mesh::triangles )
   {
-    StiffnessMatrix2D::BilinearForm a;
+    StiffnessMatrix2D::BilinearForm a(epsilon);
     FEM::assemble(a, *this, mesh);
   }
   else if ( mesh.type() == Mesh::tetrahedrons )
   {
-    StiffnessMatrix3D::BilinearForm a;
+    StiffnessMatrix3D::BilinearForm a(epsilon);
     FEM::assemble(a, *this, mesh);
   }
   else

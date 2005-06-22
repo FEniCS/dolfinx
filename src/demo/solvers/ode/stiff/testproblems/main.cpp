@@ -1,7 +1,7 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Stiff test problems for the multi-adaptive solver.
+// Stiff test problems for the ODE solver.
 
 #include <string>
 #include <iostream>
@@ -57,30 +57,20 @@ void solveTestProblem6()
 
 void solveTestProblem7()
 {
-  // Decrease partitioning threshold for efficiency
-  dolfin_set("partitioning threshold", 0.1);
-  
   TestProblem7 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem8()
 {
-  // Decrease tolerance to resolve 2:nd component
-  dolfin_set("tolerance", 0.01);
-  
   TestProblem8 testProblem;
   testProblem.solve();
 }
 
 void solveTestProblem9()
 {
-  // FIXME: BROKEN
-
-  dolfin_error("Broken");
-
-  //TestProblem9 testProblem;
-  //testProblem.solve();
+  TestProblem9 testProblem;
+  testProblem.solve();
 }
 
 int main(int argc, char* argv[])
@@ -109,14 +99,14 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // DOLFIN settings
-  dolfin_set("output", "plain text");
   dolfin_set("method", "dg");
-  dolfin_set("order", 0);
+  dolfin_set("order", 1);
   dolfin_set("maximum time step", 1.0);
-  dolfin_set("tolerance", 0.1);
+  dolfin_set("tolerance", 0.01);
+  dolfin_set("solver", "newton");
+  dolfin_set("linear solver", "direct");
   dolfin_set("adaptive samples", true);
   dolfin_set("solve dual problem", false);
-  dolfin_set("debug time steps", true);
 
   sysinfo();
   cout << endl;

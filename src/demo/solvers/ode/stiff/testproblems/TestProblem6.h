@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <cmath>
@@ -34,13 +34,13 @@ public:
     }
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     switch (i) {
     case 0:
-      return u(1);
+      return u[1];
     default:
-      return mu*(1.0-u(0)*u(0))*u(1) - u(0);
+      return mu*(1.0 - u[0]*u[0])*u[1] - u[0];
     }
   }
 

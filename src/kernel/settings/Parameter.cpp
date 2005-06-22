@@ -85,10 +85,10 @@ void Parameter::set(const char *identifier, va_list aptr)
 //-----------------------------------------------------------------------------
 void Parameter::get(va_list aptr)
 {
-  real       *p_real;
-  int        *p_int;
-  int        *p_bool;
-  string     *p_string;
+  real   *p_real;
+  int    *p_int;
+  int    *p_bool;
+  string *p_string;
   
   // Set the value of the parameter
   switch ( type ){

@@ -122,8 +122,6 @@ public:
 
 int main()
 {
-  dolfin_set("output", "plain text");
-
   dolfin_set("tolerance", 0.01);
   dolfin_set("stiffness", "stiff");
 

@@ -10,7 +10,7 @@ using namespace dolfin;
 void ces(unsigned int m, unsigned int n, unsigned int alpha, unsigned int beta)
 {
   // Seed random number generator so we get the same system every time
-  //seed(0);
+  seed(0);
 
   PolynomialIntegerCES ec(m, n, true);
 
@@ -43,7 +43,7 @@ int main(int argc, const char* argv[])
 
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
-  dolfin_set("tolerance", 0.01);
+  dolfin_set("tolerance", 1e-3);
   dolfin_set("discrete tolerance", 1e-10);
   dolfin_set("initial time step", 0.0001);
   dolfin_set("linear solver", "direct");
@@ -51,6 +51,7 @@ int main(int argc, const char* argv[])
   dolfin_set("homotopy monitoring", false);
   dolfin_set("homotopy divergence tolerance", 10.0);
   dolfin_set("homotopy randomize", false);
+  dolfin_set("homotopy maximum size", 9);
 
   ces(m, n, a, b);
 

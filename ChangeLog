@@ -1,3 +1,6 @@
+ - Implement automatic detection of sparsity pattern from given matrix
+ - Clean up homotopy solver
+ - Implement automatic computation of Jacobian
  - Add support for assembly of non-square systems (Andy Terrel)	
  - Make ODE solver report average number of iterations
  - Make progress bar write first update at 0%

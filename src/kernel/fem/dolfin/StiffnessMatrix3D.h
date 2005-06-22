@@ -140,7 +140,7 @@ public:
 
   };
 
-  BilinearForm() : dolfin::BilinearForm(0)
+  BilinearForm(const real& c0) : dolfin::BilinearForm(0), c0(c0)
   {
     // Create finite element for test space
     _test = new TestElement();
@@ -152,15 +152,15 @@ public:
   void eval(real block[], const AffineMap& map) const
   {
     // Compute geometry tensors
-    real G0_0_0 = map.det*(map.g00*map.g00 + map.g01*map.g01 + map.g02*map.g02);
-    real G0_0_1 = map.det*(map.g00*map.g10 + map.g01*map.g11 + map.g02*map.g12);
-    real G0_0_2 = map.det*(map.g00*map.g20 + map.g01*map.g21 + map.g02*map.g22);
-    real G0_1_0 = map.det*(map.g10*map.g00 + map.g11*map.g01 + map.g12*map.g02);
-    real G0_1_1 = map.det*(map.g10*map.g10 + map.g11*map.g11 + map.g12*map.g12);
-    real G0_1_2 = map.det*(map.g10*map.g20 + map.g11*map.g21 + map.g12*map.g22);
-    real G0_2_0 = map.det*(map.g20*map.g00 + map.g21*map.g01 + map.g22*map.g02);
-    real G0_2_1 = map.det*(map.g20*map.g10 + map.g21*map.g11 + map.g22*map.g12);
-    real G0_2_2 = map.det*(map.g20*map.g20 + map.g21*map.g21 + map.g22*map.g22);
+    real G0_0_0 = map.det*c0*(map.g00*map.g00 + map.g01*map.g01 + map.g02*map.g02);
+    real G0_0_1 = map.det*c0*(map.g00*map.g10 + map.g01*map.g11 + map.g02*map.g12);
+    real G0_0_2 = map.det*c0*(map.g00*map.g20 + map.g01*map.g21 + map.g02*map.g22);
+    real G0_1_0 = map.det*c0*(map.g10*map.g00 + map.g11*map.g01 + map.g12*map.g02);
+    real G0_1_1 = map.det*c0*(map.g10*map.g10 + map.g11*map.g11 + map.g12*map.g12);
+    real G0_1_2 = map.det*c0*(map.g10*map.g20 + map.g11*map.g21 + map.g12*map.g22);
+    real G0_2_0 = map.det*c0*(map.g20*map.g00 + map.g21*map.g01 + map.g22*map.g02);
+    real G0_2_1 = map.det*c0*(map.g20*map.g10 + map.g21*map.g11 + map.g22*map.g12);
+    real G0_2_2 = map.det*c0*(map.g20*map.g20 + map.g21*map.g21 + map.g22*map.g22);
 
     // Compute element tensor
     block[0] = 1.666666666666665e-01*G0_0_0 + 1.666666666666665e-01*G0_0_1 + 1.666666666666665e-01*G0_0_2 + 1.666666666666665e-01*G0_1_0 + 1.666666666666665e-01*G0_1_1 + 1.666666666666665e-01*G0_1_2 + 1.666666666666665e-01*G0_2_0 + 1.666666666666665e-01*G0_2_1 + 1.666666666666665e-01*G0_2_2;
@@ -180,6 +180,10 @@ public:
     block[14] = 1.666666666666665e-01*G0_2_1;
     block[15] = 1.666666666666665e-01*G0_2_2;
   }
+        
+private:
+
+  const real& c0;
 
 };
 

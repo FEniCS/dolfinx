@@ -163,7 +163,6 @@ int main(int argC, char* argV[])
       dolfin_error("Unknown method.");
   }
 
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.1);
   dolfin_set("solve dual problem", false);
   dolfin_set("save solution", false);

@@ -52,7 +52,6 @@ private:
 
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 1e-12);
   dolfin_set("method", "dg");
   dolfin_set("order", 0);

@@ -59,6 +59,10 @@ namespace dolfin
     /// Friends
     friend class HomotopyODE;
 
+  protected:
+    
+    real tol; // Tolerance for Newton's method
+
   private:
 
     // Count the number of paths
@@ -82,7 +86,7 @@ namespace dolfin
     uint n;               // Size of system
     uint M;               // Number of paths
     uint maxiter;         // Maximum number of iterations
-    real tol;             // Tolerance for Newton's method
+    uint maxpaths;        // Maximum number of paths
     real divtol;          // Tolerance for divergence of homotopy path
     bool monitor;         // True if we should monitor the homotopy
     bool random;          // True if we should choose random initial data

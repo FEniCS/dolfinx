@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 
 #include <cmath>
@@ -50,7 +50,7 @@ public:
     }
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     switch (i) {
     case 0:
@@ -64,40 +64,40 @@ public:
     case 4:
       return r2(u) - r3(u) + r5(u);
     default:
-      return Ks*u(0)*u(3) - u(5);
+      return Ks*u[0]*u[3] - u[5];
     }
   }
 
 private:
 
-  real r1(const Vector& u)
+  real r1(const real u[])
   {
-    return k1*pow(u(0),4.0)*sqrt(u(1));
+    return k1*pow(u[0], 4.0)*sqrt(u[1]);
   }
   
-  real r2(const Vector& u)
+  real r2(const real u[])
   {
-    return k2*u(2)*u(3);
+    return k2*u[2]*u[3];
   }
 
-  real r3(const Vector& u)
+  real r3(const real u[])
   {
-    return (k2/K)*u(0)*u(4);
+    return (k2/K)*u[0]*u[4];
   }
 
-  real r4(const Vector& u)
+  real r4(const real u[])
   {
-    return k3*u(0)*pow(u(3),2.0);
+    return k3*u[0]*pow(u[3], 2.0);
   }
 
-  real r5(const Vector& u)
+  real r5(const real u[])
   {
-    return k4*pow(u(5),2.0)*sqrt(u(1));
+    return k4*pow(u[5], 2.0)*sqrt(u[1]);
   }
 
-  real F(const Vector& u)
+  real F(const real u[])
   {
-    return klA * (p/H - u(1));
+    return klA * (p/H - u[1]);
   }
 
   real k1, k2, k3, k4, K, klA, Ks, p, H;

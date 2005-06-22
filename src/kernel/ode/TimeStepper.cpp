@@ -107,7 +107,10 @@ real TimeStepper::step()
   }
 
   // Update progress
-  p = t / T;
+  if ( !stopped )
+    p = t / T;
+  else
+    p.stop();
 
   return t;
 }

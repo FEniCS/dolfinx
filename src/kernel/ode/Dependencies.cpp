@@ -59,10 +59,6 @@ void Dependencies::set(uint i, uint j, bool checknew)
 //-----------------------------------------------------------------------------
 void Dependencies::set(const Matrix& A)
 {
-  // FIXME: BROKEN
-  dolfin_error("This function needs to be updated to the new format.");
-
-  /*
   // Prepare sparse pattern if necessary
   makeSparse();
 
@@ -70,19 +66,18 @@ void Dependencies::set(const Matrix& A)
   if ( A.size(0) != N )
     dolfin_error("Incorrect matrix dimensions for dependency pattern.");
 
-  // Set dependencies for each row
+  // Get data from PETSc
   for (uint i = 0; i < N; i++)
   {
-    setsize(i, A.rowsize(i));
-    sdep[i].clear();
-    uint j = 0;
-    for (uint pos = 0; !A.endrow(i, pos); ++pos)
-    {
-      if ( fabs(A(i, j, pos)) > DOLFIN_EPS )
-	sdep[i].push_back(j);
-    }
+    int ncols = 0;
+    const int* cols = 0;
+    const real* vals = 0;
+    MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+    setsize(i, ncols);
+    for (uint j = 0; j < static_cast<uint>(ncols); j++)
+      set(i, cols[j]);
+    MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
   }
-  */
 }
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)

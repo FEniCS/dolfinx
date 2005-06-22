@@ -110,9 +110,13 @@ namespace dolfin
 
   private:
 
+    // Events
     Event not_impl_f;
     Event not_impl_M;
     Event not_impl_J;
+
+    // Temporary array
+    real* tmp;
 
   };
 

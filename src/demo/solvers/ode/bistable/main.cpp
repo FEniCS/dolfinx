@@ -1,17 +1,17 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <dolfin.h>
 
 using namespace dolfin;
 
-/*
-
-class Bistable : public ODE {
+class Bistable : public ODE
+{
 public:
 
-  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), 
-			 A(mesh, 0.001), b(mesh),
+  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), A(mesh, 0.001),
 			 ufile("solution.dx"), kfile("timesteps.dx")
   {
     // Parameters
@@ -19,7 +19,7 @@ public:
     
     // Create lumped mass matrix
     MassMatrix M(mesh);
-    M.lump(m);
+    FEM::lump(M, m);
 
     // Compute sparsity
     sparse(A);
@@ -30,24 +30,25 @@ public:
     return 2.0*(dolfin::rand() - 0.5);
   }
   
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
-    return (-A.mult(u, i) + b(i)*u(i)*(1.0 - u(i)*u(i))) / m(i);
+    return (-A.mult(u, i) + m(i)*u[i]*(1.0 - u[i]*u[i])) / m(i);
   }
 
   void save(Sample& sample)
   {
     // Create a mesh-dependent function from the sample
-    Vector ux(N);
-    Vector kx(N);
-    Function u(mesh, ux);
-    Function k(mesh, kx);
+    static Vector ux(N);
+    static Vector kx(N);
+    static P1Tri element;
+    static Function u(ux, mesh, element);
+    static Function k(kx, mesh, element);
     u.rename("u", "Solution of the bistable equation");
     k.rename("k", "Time steps for the bistable equation");
 
     // Get the degrees of freedom and set current time
-    u.update(sample.t());
-    k.update(sample.t());
+    u.set(sample.t());
+    k.set(sample.t());
     for (unsigned int i = 0; i < N; i++)
     {
       ux(i) = sample.u(i);
@@ -63,7 +64,6 @@ private:
 
   Mesh& mesh;        // The mesh
   StiffnessMatrix A; // The stiffness matrix
-  LoadVector b;      // The load vector
   Vector m;          // Lumped mass matrix
 
   File ufile; // OpenDX file for the solution
@@ -71,26 +71,19 @@ private:
 
 };
 
-*/
-
-
 int main()
 {
-  // FIXME: BROKEN
-  dolfin_error("Broken, needs to be updated.");
-  
-  /*
-
   // Settings
-  dolfin_set("output", "plain text");
   dolfin_set("solve dual problem", false);
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);
   dolfin_set("number of samples", 100);
   dolfin_set("progress step", 0.01);
-
+  dolfin_set("solver", "newton");
+  
   // Number of refinements
-  unsigned int refinements = 5;
+  unsigned int refinements = 3;
+  //unsigned int refinements = 5;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");
@@ -104,8 +97,6 @@ int main()
   // Solve equation
   Bistable bistable(mesh);
   bistable.solve();
-
-  */
 
   return 0;
 }

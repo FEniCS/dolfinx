@@ -3,7 +3,7 @@
 %
 % Plot the number of laps around each fixed point for Lorenz.
 
-load lorenz.txt
+load lorenz.data
 
 t     = lorenz(:, 1);
 n0    = lorenz(:, 3);
