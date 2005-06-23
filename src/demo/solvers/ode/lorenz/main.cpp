@@ -69,7 +69,7 @@ public:
     y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
   }
 
-  void update(const real u[], real t)
+  bool update(const real u[], real t, bool end)
   {
     // Check in which region the point is
     Point p(u[0], u[1], u[2]);
@@ -100,6 +100,8 @@ public:
     }
     else
       pos = -1;
+
+    return true;
   }
 
 private:
@@ -134,7 +136,7 @@ int main()
 
   dolfin_set("number of samples", 500);
   dolfin_set("solve dual problem", false);
-  dolfin_set("initial time step", 0.1);
+  dolfin_set("initial time step", 0.01);
   dolfin_set("fixed time step", true);
   dolfin_set("solver", "newton");
   dolfin_set("method", "cg");
