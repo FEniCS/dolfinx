@@ -138,7 +138,7 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("solver", "newton");
   dolfin_set("method", "cg");
-  dolfin_set("order", 3);
+  dolfin_set("order", 5);
   dolfin_set("discrete tolerance", 1e-12);
   dolfin_set("save solution", true);
   
