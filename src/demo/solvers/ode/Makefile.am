@@ -5,8 +5,6 @@ SUBDIRS = bench \
           lorenz \
           mechanical \
           modeling \
-          newton \
-          performance \
           stiff \
           wave \
           test
