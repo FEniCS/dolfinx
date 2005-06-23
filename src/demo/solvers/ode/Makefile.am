@@ -1,5 +1,4 @@
-SUBDIRS = bench \
-          bistable \
+SUBDIRS = bistable \
           complex \
           homotopy \
           lorenz \
