@@ -5,10 +5,6 @@
 
 using namespace dolfin;
 
-// FIXME: BROKEN
-
-/*
-
 class Lattice : public ParticleSystem
 {
 public:
@@ -301,11 +297,8 @@ private:
 
 };
 
-*/
-
 int main()
 {
-  dolfin_set("output", "plain text");
   dolfin_set("tolerance", 0.001);
   dolfin_set("initial time step", 0.0000001);
   dolfin_set("solve dual problem", false);
@@ -313,10 +306,10 @@ int main()
   dolfin_set("automatic modeling", true);
   dolfin_set("average length", 0.0001);
   dolfin_set("average samples", 100);
-  dolfin_set("element cache size", 128);
+  //dolfin_set("element cache size", 128);
 
-  //Lattice lattice(5);
-  //lattice.solve();
+  Lattice lattice(5);
+  lattice.solve();
   
   return 0;
 }

@@ -188,8 +188,8 @@ int main()
   dolfin_set("fixed time step", true);
   dolfin_set("discrete tolerance", 0.01);
 
-  // Comment this out to save solution
-  dolfin_set("save solution", false);
+  // Comment this out to run benchmarks
+  dolfin_set("save solution", true);
   
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);

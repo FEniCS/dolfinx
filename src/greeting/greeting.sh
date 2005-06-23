@@ -13,7 +13,7 @@ echo "was successful. The next thing you want to do is probably to try out some 
 echo "the demo programs in the sub-directory src/demo/."
 echo " "
 echo "To improve future releases of DOLFIN, any feedback or suggestions are very much"
-echo "appreciated. Send any comments to dolfin@fenics.org."
+echo "appreciated. Send any comments to dolfin-dev@fenics.org."
 #echo " "
 #echo "If you like, you can try to type the following command:"
 #echo " "

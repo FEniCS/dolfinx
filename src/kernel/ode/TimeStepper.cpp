@@ -54,9 +54,8 @@ void TimeStepper::solve(ODE& ode)
   // Check if we should create a reduced model (automatic modeling)
   if ( dolfin_get("automatic modeling") )
   {
-    dolfin_error("Not implemented.");
-
     dolfin_info("Creating reduced model (automatic modeling).");
+    dolfin_error("Automatic modeling temporarily broken.");
 
     // Create the reduced model
     //ReducedModel reducedModel(ode);
