@@ -78,12 +78,10 @@ int main()
   dolfin_set("maximum time step", 1.0);
   dolfin_set("tolerance", 0.001);
   dolfin_set("number of samples", 100);
-  dolfin_set("progress step", 0.01);
   dolfin_set("solver", "newton");
   
   // Number of refinements
-  unsigned int refinements = 3;
-  //unsigned int refinements = 5;
+  unsigned int refinements = 4;
   
   // Read and refine mesh
   Mesh mesh("mesh.xml.gz");

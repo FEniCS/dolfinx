@@ -19,14 +19,20 @@ public:
       dolfin_error("System must have at least 2 particles.");
 
     // Final time
-    T = 100;
+    T = 2.0;
     
     // Grid size
     h = 1.0 / static_cast<real>(n - 1);
 
+    num_fevals = 0;
+
     // Compute sparsity
-    dependencies.detect(*this);
-    //sparse();
+    sparse();
+  }
+
+  ~Benchmark()
+  {
+    dolfin_info("Number of fevals: %d", num_fevals);
   }
 
   real x0(unsigned int i)
@@ -44,6 +50,8 @@ public:
 
   real Fx(unsigned int i, real t)
   {
+    num_fevals += 1;
+
     if ( i == 0 )
       return - 100.0*x(i) + (x(i+1) - x(i) - h);
     else if ( i == (n-1) )
@@ -52,32 +60,25 @@ public:
       return - (x(i) - x(i-1) - h) + (x(i+1) - x(i) - h);
   }
 
-  real k(unsigned int i)
-  {
-    if ( i == 0 )
-      return 0.01 * 1;
-    else
-      return 0.1 * 1;
-  }
-
 private:
 
   real h;
+  
+  unsigned int num_fevals;
   
 };
 
 int main()
 {
   //dolfin_set("output", "plain text");
-  dolfin_set("tolerance", 1e-6);
+  dolfin_set("discrete tolerance", 1e-4);
   dolfin_set("number of samples", 100);
   dolfin_set("solve dual problem", false);
   dolfin_set("fixed time step", true);
-  dolfin_set("initial time step", 0.001);
-  dolfin_set("save solution", true);
+  dolfin_set("initial time step", 0.01);
+  dolfin_set("save solution", false);
   dolfin_set("method", "mcg");
   dolfin_set("order", 1);
-  //dolfin_set("solver", "newton");
 
   Benchmark bench(1000);
   bench.solve();

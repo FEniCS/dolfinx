@@ -30,7 +30,3 @@ link_octave src/demo/solvers/ode/wave/
 # Create links to OpenDX programs
 link_dx src/demo/solvers/ode/bistable/
 link_dx src/demo/mesh
-
-# Create links to plotslab.m
-link_plotslab src/demo/solvers/ode/test/
-link_plotslab src/demo/solvers/ode/stiff/testproblems/
