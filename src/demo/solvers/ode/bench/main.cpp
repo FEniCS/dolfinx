@@ -70,9 +70,13 @@ private:
 
 int main()
 {
-  //dolfin_set("output", "plain text");
+  // Parameters for DOLFIN 0.5.6+ (2005-06-22)
   dolfin_set("discrete tolerance", 1e-4);
-  dolfin_set("number of samples", 100);
+
+  // Parameters for DOLFIN 0.4.11
+  //dolfin_set("output", "plain text");
+  //dolfin_set("tolerance", 0.01);
+
   dolfin_set("solve dual problem", false);
   dolfin_set("fixed time step", true);
   dolfin_set("initial time step", 0.01);
