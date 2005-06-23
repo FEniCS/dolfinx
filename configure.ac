@@ -240,7 +240,6 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/solvers/ode/Makefile \
-           src/demo/solvers/ode/mechanical/Makefile \
            src/demo/solvers/ode/modeling/Makefile \
            src/demo/solvers/ode/homotopy/Makefile \
            src/utils/Makefile \

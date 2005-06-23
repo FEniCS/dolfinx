@@ -1,5 +1,7 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -12,7 +14,7 @@ public:
   
   Simple() : ODE(1)
   {
-    T = 0.05;
+    T = 1.0;
   }
   
   real u0(unsigned int i)
@@ -56,17 +58,6 @@ public:
     return -u[0];
   }
 
-  /*
-  real timestep(unsigned int i)
-  {
-    real k = 0.0001;
-    if ( i == 0 )
-      return k;
-    else
-      return k / 8.0;
-  }
-  */
-
   bool update(const real u[], real t, bool end)
   {
     if ( !end )
@@ -75,7 +66,7 @@ public:
     real e0 = u[0] - 0.0;
     real e1 = u[1] - 1.0;
     real e = std::max(fabs(e0), fabs(e1));
-    printf("Error: %.3e\n", e);
+    dolfin_info("Error: %.3e", e);
 
     return true;
   }
@@ -118,10 +109,7 @@ public:
   TestSystem() : ODE(3)
   {
     // Final time
-    T = 64;
-
-    // Compute sparsity
-    //dependencies.detect(*this);
+    T = 64.0;
   }
 
   real u0(unsigned int i)
@@ -148,43 +136,10 @@ public:
     }
   }
 
-  //real dfdu(real u[], real t, unsigned int i, unsigned int j)
-  // {
-  //  real a[3][3] = { {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {7.0, 8.0, 9.0} };
-  //  return a[i][j];
-  // }
-
-  real timestep(unsigned int i)
-  {
-    switch ( i ) {
-    case 0:
-      return 0.16;
-    case 1:
-      return 0.04;
-    default:
-      return 0.01;
-    }
-  }
-  
 };
 
 int main()
 {
-  dolfin_set("solve dual problem", false);
-  dolfin_set("initial time step", 0.01);
-  //dolfin_set("fixed time step", true);
-  dolfin_set("solver", "fixed point");
-  dolfin_set("tolerance", 1e-4);
-  dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("adaptive samples", true);
-  //dolfin_set("number of samples", 200);
-  //dolfin_set("solver", "newton");
-  //dolfin_set("implicit", true);
-  dolfin_set("method", "mcg");
-  dolfin_set("order", 1);
-  dolfin_set("partitioning threshold", 0.9);
-  dolfin_set("time step conservation", 5.0);
-
   //Simple ode;
   //ode.solve();
 
