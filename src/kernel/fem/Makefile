@@ -1,6 +1,6 @@
-# Makefile.in generated automatically by automake 1.4-p6 from Makefile.am
+# Makefile.in generated automatically by automake 1.4-p4 from Makefile.am
 
-# Copyright (C) 1994, 1995-8, 1999, 2001 Free Software Foundation, Inc.
+# Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
 # This Makefile.in is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -40,9 +40,9 @@ pkgincludedir = $(includedir)/
 
 top_builddir = ../../..
 
-ACLOCAL = /home/logg/work/src/fenics/dolfin/current/dolfin/missing aclocal-1.4
+ACLOCAL = aclocal
 AUTOCONF = autoconf
-AUTOMAKE = /home/logg/work/src/fenics/dolfin/current/dolfin/missing automake-1.4
+AUTOMAKE = automake
 AUTOHEADER = autoheader
 
 INSTALL = /usr/bin/install -c
@@ -74,7 +74,7 @@ MAKEINFO = makeinfo
 MODULE_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2 -I$(top_builddir)/src/modules/
 PACKAGE = 
 PACKAGE_NAME = dolfin
-PACKAGE_VERSION = 0.5.6
+PACKAGE_VERSION = 0.5.7
 RANLIB = ranlib
 VERSION = 
 libxml2_found = yes
@@ -93,7 +93,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES =  $(lib_LIBRARIES)
 
 
-DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.6\" -DPACKAGE_STRING=\"dolfin\ 0.5.6\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
+DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.7\" -DPACKAGE_STRING=\"dolfin\ 0.5.7\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1  -I. -I$(srcdir) 
 CPPFLAGS = 
 LDFLAGS = 
 LIBS = -lncurses 
@@ -102,7 +102,7 @@ libdolfin_fem_a_OBJECTS =  AffineMap.o BoundaryCondition.o \
 BoundaryValue.o FEM.o FiniteElement.o LoadVector.o MassMatrix.o \
 StiffnessMatrix.o
 AR = ar
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98 
+CXXFLAGS = -O3 -Wall -Werror -ansi -std=c++98
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@
@@ -238,7 +238,7 @@ maintainer-clean-recursive:
 	dot_seen=no; \
 	rev=''; list='$(SUBDIRS)'; for subdir in $$list; do \
 	  rev="$$subdir $$rev"; \
-	  test "$$subdir" != "." || dot_seen=yes; \
+	  test "$$subdir" = "." && dot_seen=yes; \
 	done; \
 	test "$$dot_seen" = "no" && rev=". $$rev"; \
 	target=`echo $@ | sed s/-recursive//`; \
@@ -280,7 +280,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

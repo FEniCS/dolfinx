@@ -30,11 +30,11 @@ echo '- Running DOLFIN benchmark problem'
 sleep 1
 src/demo/bench/la/dolfin-bench-la >> src/demo/bench/la/bench.log
 
-echo '- Running benchmark problem for multi-adaptive solver'
-sleep 1
-cd src/demo/solvers/ode/bench/
-./run-bench.sh >> bench.log 2>&1
-cd ../../../../..
+#echo '- Running benchmark problem for multi-adaptive solver'
+#sleep 1
+#cd src/demo/solvers/ode/bench/
+#./run-bench.sh >> bench.log 2>&1
+#cd ../../../../..
 
 echo '- Commiting changes to cvs'
 sleep 1
