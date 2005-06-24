@@ -65,7 +65,7 @@ void MonoAdaptiveNewtonSolver::start()
   //A.disp();
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveNewtonSolver::iteration(uint iter)
+real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
   // Evaluate b = -F(x) at current x
   beval();

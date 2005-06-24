@@ -25,7 +25,7 @@ MonoAdaptiveFixedPointSolver::~MonoAdaptiveFixedPointSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveFixedPointSolver::iteration(uint iter)
+real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 {
   // Compute size of time step
   const real k = ts.length();

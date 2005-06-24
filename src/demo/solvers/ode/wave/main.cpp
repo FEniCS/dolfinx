@@ -187,9 +187,11 @@ int main()
   dolfin_set("method", "mcg");
   dolfin_set("fixed time step", true);
   dolfin_set("discrete tolerance", 0.01);
-
-  // Comment this out to run benchmarks
-  dolfin_set("save solution", true);
+  dolfin_set("partitioning threshold", 0.25);
+  dolfin_set("maximum local iterations", 2);
+  
+  // Uncomment this to run benchmarks
+  //dolfin_set("save solution", false);
   
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);

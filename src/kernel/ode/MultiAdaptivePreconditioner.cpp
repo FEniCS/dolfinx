@@ -41,7 +41,7 @@ void MultiAdaptivePreconditioner::solve(Vector& x, const Vector& b)
   for (uint e = 0; e < ts.ne; e++)
   {
     // Cover all elements in current sub slab
-    s = ts.cover(s, e);
+    s = ts.coverNext(s, e);
 
     // Get element data
     const uint i = ts.ei[e];

@@ -101,11 +101,14 @@ namespace dolfin
     // Check if the first given interval is within the second interval
     bool within(real a0, real b0, real a1, real b1) const;
 
-    // Cover all elements in current sub slab
-    uint cover(int subslab, uint element);
+    // Cover all elements in sub slab and return e1, with e0 <= e < e1
+    uint coverSlab(int subslab, uint e0);
+
+    // Cover all elements in next sub slab and return next sub slab
+    uint coverNext(int subslab, uint element);
 
     // Cover given time for all components
-    void cover(real t);
+    void coverTime(real t);
 
     // Evaluate right-hand side at quadrature points of given element (cG)
     void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);

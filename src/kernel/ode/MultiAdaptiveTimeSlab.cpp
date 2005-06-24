@@ -119,7 +119,7 @@ bool MultiAdaptiveTimeSlab::solve()
 bool MultiAdaptiveTimeSlab::shift()
 {
   // Cover end time
-  cover(_b);
+  coverTime(_b);
   
   // Update the solution vector at the end time for each component
   for (uint i = 0; i < N; i++)
@@ -182,7 +182,7 @@ bool MultiAdaptiveTimeSlab::shift()
 void MultiAdaptiveTimeSlab::sample(real t)
 {
   // Cover the given time
-  cover(t);
+  coverTime(t);
 
   //cout << "t = " << t << " elast: ";
   //for (uint i = 0; i < N; i++)
@@ -237,7 +237,7 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
   // Note that the residual is always sampled at the end-time
 
   // Cover end time
-  cover(_b);
+  coverTime(_b);
   
   // Update the solution vector at the end time for each dependent component
 
@@ -680,7 +680,25 @@ bool MultiAdaptiveTimeSlab::within(real a0, real b0, real a1, real b1) const
   return a1 <= (a0 + DOLFIN_EPS) && (b0 - DOLFIN_EPS) <= b1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint MultiAdaptiveTimeSlab::cover(int subslab, uint element)
+dolfin::uint MultiAdaptiveTimeSlab::coverSlab(int subslab, uint e0)
+{
+  // Start at e0 and step until we reach a new sub slab
+  uint e = e0;
+  for (; e < ne; e++)
+  {
+    // Check if we have reached the next sub slab
+    if ( static_cast<int>(es[e]) != subslab )
+      break;
+    
+    // Update elast 
+    elast[ei[e]] = e;
+  }
+
+  // Return e1
+  return e;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint MultiAdaptiveTimeSlab::coverNext(int subslab, uint element)
 {
   // Check if we are still on the same sub slab
   if ( subslab == static_cast<int>(es[element]) )
@@ -703,7 +721,7 @@ dolfin::uint MultiAdaptiveTimeSlab::cover(int subslab, uint element)
   return subslab;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveTimeSlab::cover(real t)
+void MultiAdaptiveTimeSlab::coverTime(real t)
 {
   // Check if t is covered for all components
   bool ok = true;

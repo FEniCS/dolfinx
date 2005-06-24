@@ -106,7 +106,7 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.cover(s0, e0);
+    s0 = ts.coverNext(s0, e0);
     
     // Get element data
     const uint i0 = ts.ei[e0];
@@ -304,7 +304,7 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
   for (uint e0 = 0; e0 < ts.ne; e0++)
   {
     // Cover all elements in current sub slab
-    s0 = ts.cover(s0, e0);
+    s0 = ts.coverNext(s0, e0);
     
     // Get element data
     const uint i0 = ts.ei[e0];

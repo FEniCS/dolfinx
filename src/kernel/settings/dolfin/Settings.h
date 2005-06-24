@@ -43,6 +43,7 @@ namespace dolfin
       add(Parameter::INT, "number of samples", 101);
       add(Parameter::INT, "sample density", 1);
       add(Parameter::INT, "maximum iterations", 100);
+      add(Parameter::INT, "maximum local iterations", 2);
       add(Parameter::INT, "average samples", 1000);
 
       add(Parameter::REAL, "tolerance", 0.1);

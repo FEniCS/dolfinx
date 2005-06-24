@@ -41,7 +41,7 @@ namespace dolfin
     void end();
 
     // Make an iteration
-    real iteration(uint iter);
+    real iteration(uint iter, real tol);
 
     /// Size of system
     uint size() const;
@@ -59,9 +59,12 @@ namespace dolfin
     
     // Estimated number of elements for mono-adaptive system
     real num_elements_mono;
+
+    // Maximum number of local iterations
+    uint maxiter_local;
     
-    // FIXME: Temporary
-    bool* converged;
+    // Total number of scaled local iterations
+    real num_iterations_local;
 
   };
 

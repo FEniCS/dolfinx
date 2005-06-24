@@ -61,7 +61,7 @@ void MultiAdaptiveNewtonSolver::start()
   //A.disp();
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(uint iter)
+real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
   cout << "MultiAdaptiveNewtonSolver::iteration()" << endl;
 
@@ -117,7 +117,7 @@ void MultiAdaptiveNewtonSolver::beval()
   for (uint e = 0; e < ts.ne; e++)
   {
     // Cover all elements in current sub slab
-    s = ts.cover(s, e);
+    s = ts.coverNext(s, e);
 
     // Get element data
     const uint i = ts.ei[e];
