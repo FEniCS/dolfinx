@@ -16,8 +16,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
-  : tol(0), n(n), M(0), maxiter(0), maxpaths(0), divtol(0), monitor(false),
-    random(false), solver(0), filename(""), mi(0), ci(0), tmp(0), x(2*n)
+  : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
+    divtol(0), monitor(false), random(false), solver(0), filename(""),
+    mi(0), ci(0), tmp(0), x(2*n),
+    degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
   
@@ -43,6 +45,11 @@ Homotopy::Homotopy(uint n)
 
   // Get maximum number of paths
   maxpaths = dolfin_get("homotopy maximum size");
+  dolfin_info("Maximum number of homotopy paths is %d.", maxpaths);
+
+  // Get maximum degree for a single equation
+  maxdegree = dolfin_get("homotopy maximum degree");
+  dolfin_info("Maximum degree for a single equations is %d.", maxdegree);
 
   // Get filename
   filename = static_cast<std::string>(dolfin_get("homotopy solution file"));
@@ -142,7 +149,7 @@ const Array<complex*>& Homotopy::solutions() const
 //-----------------------------------------------------------------------------
 complex Homotopy::z0(uint i)
 {
-  const real pp = static_cast<real>(degree(i));
+  const real pp = static_cast<real>(adjustedDegree(i));
   const real mm = static_cast<real>(mi[i]);
   const complex c = ci[i];
   
@@ -161,7 +168,7 @@ void Homotopy::G(const complex z[], complex y[])
   // Compute G_i(z_i) = z_i^(p_i + 1) - c_i
   for (uint i = 0; i < n; i++)
   {
-    const uint p = degree(i);
+    const uint p = adjustedDegree(i);
     const complex zi = z[i];
     complex tmp = zi;
     for (uint j = 0; j < p; j++)
@@ -178,7 +185,7 @@ void Homotopy::JG(const complex z[], const complex x[], complex y[])
   // Compute (G'(z)*x)_i = (p_i + 1) z_i^p_i x_i
   for (uint i = 0; i < n; i++)
   {
-    const uint p = degree(i);
+    const uint p = adjustedDegree(i);
     const complex zi = z[i];
     complex tmp = static_cast<complex>(p + 1);
     for (uint j = 0; j < p ; j++)
@@ -210,18 +217,31 @@ bool Homotopy::verify(const complex z[])
   return Fmax < 2.0*tol;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Homotopy::countPaths() const
+dolfin::uint Homotopy::adjustedDegree(uint i)
+{
+  uint q = degree(i);
+
+  if ( q > maxdegree )
+  {
+    degree_adjusted();
+    q = maxdegree;
+  }
+
+  return q;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Homotopy::countPaths()
 {
   uint product = 1;
   for (uint i = 0; i < n; i++)
   {
-    if ( (degree(i) + 1) * product <= product )
+    if ( (adjustedDegree(i) + 1) * product <= product )
     {
       const int max_paths = std::numeric_limits<int>::max();
       dolfin_error1("Reached maximum number of homotopy paths (%d).", max_paths);
     }
     
-    product *= (degree(i) + 1);
+    product *= (adjustedDegree(i) + 1);
   }
 
   return product;
@@ -238,7 +258,7 @@ void Homotopy::computePath(uint m)
   uint sum = m;
   for (uint i = 0; i < n; i++)
   {
-    const uint dim = degree(i) + 1;
+    const uint dim = adjustedDegree(i) + 1;
     posvalue /= dim;
     const uint digit = sum / posvalue;
     mi[i] = digit;

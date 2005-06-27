@@ -65,8 +65,11 @@ namespace dolfin
 
   private:
 
+    // Adjusted degree (limited by maxdegree)
+    uint adjustedDegree(uint i);
+
     // Count the number of paths
-    uint countPaths() const;
+    uint countPaths();
 
     // Compute component path numbers from global path number
     void computePath(uint m);
@@ -83,20 +86,22 @@ namespace dolfin
     // Evaluate right-hand side
     void feval(Vector& F, ComplexODE& ode);
 
-    uint n;               // Size of system
-    uint M;               // Number of paths
-    uint maxiter;         // Maximum number of iterations
-    uint maxpaths;        // Maximum number of paths
-    real divtol;          // Tolerance for divergence of homotopy path
-    bool monitor;         // True if we should monitor the homotopy
-    bool random;          // True if we should choose random initial data
-    LinearSolver* solver; // GMRES solver
-    std::string filename; // Filename for saving solutions  
-    uint* mi;             // Array of local path numbers
-    complex* ci;          // Array of constants for system G(z) = 0
-    complex* tmp;         // Array used for temporary storage
-    Vector x;             // Real-valued vector x corresponding to solution z of F(z) = 0
-    Array<complex*> zs;   // Array of solutions
+    uint n;                // Size of system
+    uint M;                // Number of paths
+    uint maxiter;          // Maximum number of iterations
+    uint maxpaths;         // Maximum number of paths
+    uint maxdegree;        // Maximum degree for a single equation
+    real divtol;           // Tolerance for divergence of homotopy path
+    bool monitor;          // True if we should monitor the homotopy
+    bool random;           // True if we should choose random initial data
+    LinearSolver* solver;  // GMRES solver
+    std::string filename;  // Filename for saving solutions  
+    uint* mi;              // Array of local path numbers
+    complex* ci;           // Array of constants for system G(z) = 0
+    complex* tmp;          // Array used for temporary storage
+    Vector x;              // Real-valued vector x corresponding to solution z of F(z) = 0
+    Array<complex*> zs;    // Array of solutions
+    Event degree_adjusted; // Message if degree has to be adjusted
 
   };
 

@@ -45,13 +45,14 @@ int main(int argc, const char* argv[])
   dolfin_set("order", 1);
   dolfin_set("tolerance", 1e-3);
   dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("initial time step", 0.0001);
+  dolfin_set("initial time step", 0.001);
   dolfin_set("linear solver", "direct");
   dolfin_set("adaptive samples", false);
   dolfin_set("homotopy monitoring", false);
   dolfin_set("homotopy divergence tolerance", 10.0);
   dolfin_set("homotopy randomize", false);
-  dolfin_set("homotopy maximum size", 9);
+  dolfin_set("homotopy maximum size", 100);
+  dolfin_set("homotopy maximum degree", 5);
 
   ces(m, n, a, b);
 

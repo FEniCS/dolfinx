@@ -67,6 +67,7 @@ namespace dolfin
 
       // Parameters for homotopy solver
       add(Parameter::INT,    "homotopy maximum size", std::numeric_limits<int>::max());
+      add(Parameter::INT,    "homotopy maximum degree", std::numeric_limits<int>::max());
       add(Parameter::REAL,   "homotopy solution tolerance", 1e-12);
       add(Parameter::REAL,   "homotopy divergence tolerance", 10.0);
       add(Parameter::BOOL,   "homotopy randomize", true);
