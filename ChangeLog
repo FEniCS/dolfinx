@@ -1,4 +1,6 @@
- - Add simple demo program src/demo/poisson
+ - Move src/demo/fem/ demo to src/demo/fem/simple/
+ - Add README file in src/demo/poisson/ (simple manual)
+ - Add simple demo program src/demo/poisson/
  - Update computation of alignment of faces to match FFC/FIAT
 0.5.7 [2005-06-23]
  - Clean up ODE test problems
