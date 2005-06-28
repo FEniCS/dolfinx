@@ -21,10 +21,10 @@ static int edge_alignment[6] = {1, 2, 0, 0, 1, 2};
 
 // Alignment convention for faces
 static int face_alignment_00[4] = {5, 3, 2, 0}; // Edge 0 for alignment 0
-static int face_alignment_01[4] = {4, 1, 4, 1}; // Edge 1 for alignment 0 (otherwise 1)
-static int face_alignment_10[4] = {4, 1, 4, 1}; // Edge 0 for alignment 2
-static int face_alignment_11[4] = {0, 5, 3, 2}; // Edge 1 for alignment 2 (otherwise 3)
-static int face_alignment_20[4] = {0, 5, 3, 2}; // Edge 0 for alignment 4
+static int face_alignment_01[4] = {0, 1, 3, 1}; // Edge 1 for alignment 0 (otherwise 1)
+static int face_alignment_10[4] = {0, 1, 3, 1}; // Edge 0 for alignment 2
+static int face_alignment_11[4] = {4, 5, 4, 2}; // Edge 1 for alignment 2 (otherwise 3)
+static int face_alignment_20[4] = {4, 5, 4, 2}; // Edge 0 for alignment 4
 static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (otherwise 5)
 
 //-----------------------------------------------------------------------------
