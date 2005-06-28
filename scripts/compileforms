@@ -14,6 +14,7 @@ if [ "$CHECK" != "scripts" ]; then
         exit 1
 fi
 
+toplevel=`pwd`
 cd src/modules
 
 FORMS=`find . -name '*.form'`
@@ -29,9 +30,11 @@ for f in $FORMS; do
 	fi
 done
 
-cd ../../
-cd src/kernel/fem/dolfin
+cd $toplevel/cd src/kernel/fem/dolfin
 ffc MassMatrix2D.form
 ffc MassMatrix3D.form
 ffc StiffnessMatrix2D.form
 ffc StiffnessMatrix3D.form
+
+cd $toplevel/src/demo/poisson
+ffc Poisson.form

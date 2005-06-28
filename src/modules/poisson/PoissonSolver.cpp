@@ -22,7 +22,7 @@ void PoissonSolver::solve()
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
 
-  // Discretize
+  // Discretize equation
   Matrix A;
   Vector x, b;
   FEM::assemble(a, L, A, b, mesh, bc);

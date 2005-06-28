@@ -1,2 +1,2 @@
-SUBDIRS = mesh fem quadrature ode bench solvers
-#SUBDIRS = la mesh fem quadrature ode bench form solvers
+SUBDIRS = bench fem mesh ode poisson quadrature solvers
+#SUBDIRS = bench fem la mesh ode poisson quadrature solvers

@@ -22,6 +22,7 @@ link_plotslab() {
 }
 
 # Create links to Octave scripts
+link_octave src/demo/poisson
 link_octave src/demo/solvers/poisson/
 link_octave src/demo/solvers/convdiff/
 link_octave src/demo/solvers/elasticity/
