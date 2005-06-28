@@ -79,9 +79,6 @@ namespace dolfin
     /// Apply changes to vector
     void apply();
 
-    /// Element access operator (needed for const objects)
-    real operator() (uint i) const;
-
     /// Element assignment operator
     Element operator() (uint i);
 
@@ -103,6 +100,9 @@ namespace dolfin
     /// Divide vector by scalar
     const Vector& operator/= (real a);
 
+    /// Scalar product
+    real operator*(const Vector& x);
+
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
     real norm(NormType type = l2) const;
@@ -115,7 +115,9 @@ namespace dolfin
     {
     public:
       Element(uint i, Vector& x);
+      Element(Element& e);
       operator real() const;
+      const Element& operator=(const Element& e);
       const Element& operator=(const real a);
       const Element& operator+=(const real a);
       const Element& operator-=(const real a);

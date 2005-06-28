@@ -163,11 +163,6 @@ void Vector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-real Vector::operator() (uint i) const
-{
-  return getval(i);
-}
-//-----------------------------------------------------------------------------
 Vector::Element Vector::operator() (uint i)
 {
   Element index(i, *this);
@@ -235,6 +230,17 @@ const Vector& Vector::operator/= (real a)
   VecScale(&b, x);
   
   return *this;
+}
+//-----------------------------------------------------------------------------
+real Vector::operator*(const Vector& x)
+{
+  dolfin_assert(x.x);
+  dolfin_assert(this->x);
+
+  real a;
+  VecDot(x.x, this->x, &a);
+
+  return a;
 }
 //-----------------------------------------------------------------------------
 real Vector::norm(NormType type) const
@@ -312,9 +318,21 @@ Vector::Element::Element(uint i, Vector& x) : i(i), x(x)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Vector::Element::Element(Element& e) : i(i), x(x)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 Vector::Element::operator real() const
 {
   return x.getval(i);
+}
+//-----------------------------------------------------------------------------
+const Vector::Element& Vector::Element::operator=(const Element& e)
+{
+  x.setval(i, (real)e);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 const Vector::Element& Vector::Element::operator=(const real a)
