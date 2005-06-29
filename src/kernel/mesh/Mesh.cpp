@@ -300,7 +300,7 @@ Cell& Mesh::createCell(int n0, int n1, int n2)
 Cell& Mesh::createCell(int n0, int n1, int n2, int n3)
 {
   // Warning: mesh type will be type of last added cell
-  _type = tetrahedrons;
+  _type = tetrahedra;
   
   return md->createCell(n0, n1, n2, n3);
 }
@@ -316,7 +316,7 @@ Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2)
 Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
 {
   // Warning: mesh type will be type of last added cell
-  _type = tetrahedrons;
+  _type = tetrahedra;
   
   return md->createCell(n0, n1, n2, n3);
 }
@@ -406,8 +406,8 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
   case Mesh::triangles:
     stream << "(triangles)";
     break;
-  case Mesh::tetrahedrons:
-    stream << "(tetrahedrons)";
+  case Mesh::tetrahedra:
+    stream << "(tetrahedra)";
     break;
   default:
     stream << "(unknown type)";

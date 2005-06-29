@@ -39,7 +39,7 @@ void BoundaryInit::initFaces(Mesh& mesh)
   case Mesh::triangles:
     initFacesTri(mesh);
     break;
-  case Mesh::tetrahedrons:
+  case Mesh::tetrahedra:
     initFacesTet(mesh);
     break;
   default:
@@ -53,7 +53,7 @@ void BoundaryInit::initEdges(Mesh& mesh)
   case Mesh::triangles:
     initEdgesTri(mesh);
     break;
-  case Mesh::tetrahedrons:
+  case Mesh::tetrahedra:
     initEdgesTet(mesh);
     break;
   default:
@@ -126,7 +126,7 @@ void BoundaryInit::initEdgesTri(Mesh& mesh)
 {
   // Go through all edges and for each edge check if it is on the
   // boundary. This is similar to what is done in initFacesTet() for
-  // tetrahedrons. An edge is on the boundary if it is contained in
+  // tetrahedra. An edge is on the boundary if it is contained in
   // only one cell. A list is used to count the number of cell
   // neighbors for all edges.  Warning: may not work if some edges
   // have been removed

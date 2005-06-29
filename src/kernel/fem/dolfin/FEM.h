@@ -45,14 +45,22 @@ namespace dolfin
 			 Matrix& A, Vector& b, Mesh& mesh,
 			 BoundaryCondition& bc);
     
-    /// Set Dirichlet boundary conditions
-    static void setBC(Matrix& A, Vector& b, Mesh& mesh,
-		      const FiniteElement& element, BoundaryCondition& bc);
+    /// Apply boundary conditions
+    static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
+			const FiniteElement& element, BoundaryCondition& bc);
 
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
 
   private:
+
+    // Apply boundary conditions on triangular mesh
+    static void applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
+			   const FiniteElement& element, BoundaryCondition& bc);
+
+    // Apply boundary conditions on tetrahedral mesh
+    static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
+			   const FiniteElement& element, BoundaryCondition& bc);
 
     // Count the degrees of freedom
     static uint size(Mesh& mesh, const FiniteElement& element);

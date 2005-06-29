@@ -9,6 +9,8 @@ using namespace dolfin;
 
 int main()
 {
+  class hej { int a; };
+
   // Load reference mesh and matrices
   Mesh mesh("tetrahedron.xml.gz");
 

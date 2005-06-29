@@ -207,7 +207,7 @@ void TetMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
   // Three edges are marked on the same face. Insert three new nodes
   // at the midpoints on the marked edges, connect the new nodes to
   // each other, as well as to the node that is not on the marked
-  // face. This gives 4 new tetrahedrons.
+  // face. This gives 4 new tetrahedra.
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
@@ -257,7 +257,7 @@ void TetMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
 {
   // One edge is marked. Insert one new node at the midpoint of the
   // marked edge, then connect this new node to the two nodes not on
-  // the marked edge. This gives 2 new tetrahedrons.
+  // the marked edge. This gives 2 new tetrahedra.
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined

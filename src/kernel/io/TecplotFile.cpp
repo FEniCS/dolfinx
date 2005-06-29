@@ -1,7 +1,7 @@
 // Copyright (C) 2004 Harald Svensson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2004.
+// Modified by Anders Logg, 2004, 2005.
 // Modified by Garth N. Wells, 2005.
 
 #include <stdio.h>
@@ -31,7 +31,8 @@ void TecplotFile::operator<<(Mesh& mesh)
   FILE* fp = fopen(filename.c_str(), "a");
 
   // Tetrahedra
-  if ( mesh.type() == Mesh::tetrahedrons ) {
+  if ( mesh.type() == Mesh::tetrahedra )
+  {
   
     // Write header
     fprintf(fp, "TITLE = \"Dolfin Output\"  \n");
@@ -110,7 +111,7 @@ void TecplotFile::operator<<(Function& u)
   if ( u.number() == 0 )
   {
     // Tetrahedra
-    if ( u.mesh().type() == Mesh::tetrahedrons ) {
+    if ( u.mesh().type() == Mesh::tetrahedra ) {
   
       // Write header
       fprintf(fp, "TITLE = \"Dolfin output\"  \n");
@@ -173,7 +174,7 @@ void TecplotFile::operator<<(Function& u)
   if ( u.number() != 0 )
   {
     // Tetrahedra
-    if ( u.mesh().type() == Mesh::tetrahedrons ) {
+    if ( u.mesh().type() == Mesh::tetrahedra ) {
   
       // Write header
       fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron, D=(FECONNECT) \n", u.number(), u.mesh().noNodes(), u.mesh().noCells());
@@ -237,7 +238,7 @@ void TecplotFile::operator<<(Function::Vector& u)
   if ( u(0).number() == 0 )
   {
     // Tetrahedra
-    if ( mesh->type() == Mesh::tetrahedrons ) {
+    if ( mesh->type() == Mesh::tetrahedra ) {
   
       // Write header
       fprintf(fp, "TITLE = \"Dolfin output\"  \n");
@@ -308,7 +309,7 @@ void TecplotFile::operator<<(Function::Vector& u)
   if ( u(0).number() != 0 )
   {
     // Tetrahedra
-    if ( mesh->type() == Mesh::tetrahedrons ) {
+    if ( mesh->type() == Mesh::tetrahedra ) {
   
       // Write header
       fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron, D=(FECONNECT) \n", u(0).number(), mesh->noNodes(), mesh->noCells());

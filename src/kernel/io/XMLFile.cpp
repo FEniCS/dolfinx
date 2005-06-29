@@ -182,7 +182,7 @@ void XMLFile::operator<<(Mesh& mesh)
   {
     Cell &cell = *c;
 
-    if(mesh.type() == Mesh::tetrahedrons)
+    if ( mesh.type() == Mesh::tetrahedra )
     {
       fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
 	      cell.id(), cell.node(0).id(), cell.node(1).id(), cell.node(2).id(), cell.node(3).id());
@@ -196,7 +196,6 @@ void XMLFile::operator<<(Mesh& mesh)
   }
 
   fprintf(fp, "    </cells>\n");
-
   
   fprintf(fp, "  </mesh>\n");
   fprintf(fp, "</dolfin>\n");

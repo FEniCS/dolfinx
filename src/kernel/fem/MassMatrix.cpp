@@ -17,7 +17,7 @@ MassMatrix::MassMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
     MassMatrix2D::BilinearForm a;
     FEM::assemble(a, *this, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedrons )
+  else if ( mesh.type() == Mesh::tetrahedra )
   {
     MassMatrix3D::BilinearForm a;
     FEM::assemble(a, *this, mesh);

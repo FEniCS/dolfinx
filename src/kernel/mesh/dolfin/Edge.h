@@ -83,6 +83,7 @@ namespace dolfin
     // Friends
     friend class Mesh;
     friend class Node;
+    friend class Face;
     friend class GenericCell;
     friend class MeshData;
     friend class MeshInit;

@@ -152,7 +152,7 @@ void MeshInit::initFaces(Mesh& mesh)
 {
   // Go through all cells and add new faces
 
-  // Go through all cells for a mesh of tetrahedrons
+  // Go through all cells for a mesh of tetrahedra
   for (CellIterator c(mesh); !c.end(); ++c)
     c->createFaces();
 
@@ -339,8 +339,9 @@ void MeshInit::initFaceBoundaryids(Mesh& mesh)
   std::set <int> tmp;
   
   // Faces are only relevant in 3D
-  if ( mesh.type() == Mesh::tetrahedrons )
-    for (FaceIterator f(mesh); !f.end(); ++f){
+  if ( mesh.type() == Mesh::tetrahedra )
+    for (FaceIterator f(mesh); !f.end(); ++f)
+    {
       tmp.clear();
       // Intersect boundaryids in edge 0 and 1, put the result in tmp
       set_intersection( f->edge(0).ebids.begin(), f->edge(0).ebids.end(),

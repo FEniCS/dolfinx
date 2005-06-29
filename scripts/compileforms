@@ -15,10 +15,9 @@ if [ "$CHECK" != "scripts" ]; then
 fi
 
 toplevel=`pwd`
-cd src/modules
 
+cd $toplevel/src/modules
 FORMS=`find . -name '*.form'`
-echo $FORMS
 for f in $FORMS; do
 	MODULE=`echo $f | cut -d'/' -f2`
 	# Temporarily skip Navier-Stokes to speed up testing
@@ -38,3 +37,8 @@ ffc StiffnessMatrix3D.form
 
 cd $toplevel/src/demo/poisson
 ffc Poisson.form
+
+cd $toplevel/src/demo/fem/convergence
+for f in *.form; do
+    ffc $f
+done

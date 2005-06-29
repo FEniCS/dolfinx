@@ -59,8 +59,11 @@ namespace dolfin
     /// Check if face consists of the given edges
     bool equals(const Edge& e0, const Edge& e1) const;
 
-    /// Check if edge contains the node
+    /// Check if face contains the node
     bool contains(const Node& n) const;
+
+    /// Check if face contains the point (point in the same plane)
+    bool contains(const Point& point) const;
 
     ///--- Output ---
    

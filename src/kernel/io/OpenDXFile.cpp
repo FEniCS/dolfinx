@@ -1,5 +1,7 @@
 // Copyright (C) 2003 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg, 2005.
 
 #include <stdio.h>
 #include <dolfin/dolfin_settings.h>
@@ -92,7 +94,7 @@ void OpenDXFile::writeHeader(FILE* fp)
 void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 {
   // Check that we have a tetrahedral mesh
-  if ( mesh.type() != Mesh::tetrahedrons )
+  if ( mesh.type() != Mesh::tetrahedra )
     dolfin_error("Mesh must be a 3D tetrahedral mesh for OpenDX file format.");
 
   // Write nodes

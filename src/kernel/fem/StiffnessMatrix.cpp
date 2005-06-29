@@ -18,7 +18,7 @@ StiffnessMatrix::StiffnessMatrix(Mesh& mesh, real epsilon)
     StiffnessMatrix2D::BilinearForm a(epsilon);
     FEM::assemble(a, *this, mesh);
   }
-  else if ( mesh.type() == Mesh::tetrahedrons )
+  else if ( mesh.type() == Mesh::tetrahedra )
   {
     StiffnessMatrix3D::BilinearForm a(epsilon);
     FEM::assemble(a, *this, mesh);

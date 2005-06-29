@@ -36,7 +36,7 @@ namespace dolfin
   {
   public:
     
-    enum Type { triangles, tetrahedrons };
+    enum Type { triangles, tetrahedra };
     
     /// Create an empty mesh
     Mesh();

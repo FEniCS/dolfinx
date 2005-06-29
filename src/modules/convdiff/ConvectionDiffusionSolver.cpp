@@ -53,7 +53,7 @@ void ConvectionDiffusionSolver::solve()
     
     // Assemble load vector and set boundary conditions
     FEM::assemble(L, b, mesh);
-    FEM::setBC(A, b, mesh, a.trial(), bc);
+    FEM::applyBC(A, b, mesh, a.trial(), bc);
     
     // Solve the linear system
     solver.solve(A, x1, b);

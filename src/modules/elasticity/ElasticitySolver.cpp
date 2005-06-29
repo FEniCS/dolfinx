@@ -108,7 +108,7 @@ void ElasticitySolver::solve()
 
 
   // Set BC
-  FEM::setBC(A, b, mesh, element, bc);
+  FEM::applyBC(A, b, mesh, element, bc);
 
 //   cout << "A: " << endl;
 //   A.disp(false);
@@ -156,7 +156,7 @@ void ElasticitySolver::solve()
     FEM::assemble(L, b, mesh);
 
     // Set boundary conditions
-    FEM::setBC(A, b, mesh, element, bc);
+    FEM::applyBC(A, b, mesh, element, bc);
 
     // Fixed point iteration
     

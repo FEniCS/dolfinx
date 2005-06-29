@@ -1,3 +1,8 @@
+ - Change FEM::setBC() --> FEM::applyBC()
+ - Change Mesh::tetrahedrons --> Mesh::tetrahedra
+ - Implement Dirichlet boundary conditions for tetrahedra
+ - Implement Face::contains(const Point& p)
+ - Add test for shape dimension of mesh and form in FEM::assemble()
  - Move src/demo/fem/ demo to src/demo/fem/simple/
  - Add README file in src/demo/poisson/ (simple manual)
  - Add simple demo program src/demo/poisson/

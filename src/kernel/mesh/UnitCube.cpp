@@ -26,7 +26,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz)
     }
   }
 
-  // Create tetrahedrons
+  // Create tetrahedra
   for (uint iz = 0; iz < nz; iz++)
   {
     for (uint iy = 0; iy < ny; iy++)

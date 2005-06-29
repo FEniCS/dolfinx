@@ -3,7 +3,8 @@
 //
 // Modified by Anders Logg, 2005.
 
-
+#include <dolfin/Point.h>
+#include <dolfin/Node.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
 
@@ -98,6 +99,26 @@ bool Face::equals(const Edge& e0, const Edge& e1) const
 bool Face::contains(const Node& n) const
 {
   return fe(0)->contains(n) || fe(1)->contains(n) || fe(2)->contains(n);
+}
+//-----------------------------------------------------------------------------
+bool Face::contains(const Point& point) const
+{
+  // Quick check: return true if the point is in the same plane by
+  // checking the size of the scalar product with the normal of the plain
+  // obtained from the cross product (should be zero)
+  
+  const Edge* e0 = fe(0);
+  const Edge* e1 = fe(1);
+
+  Point v0 = e0->n1->coord() - e0->n0->coord();
+  Point v1 = e1->n1->coord() - e1->n0->coord();
+
+  Point n = v0.cross(v1);
+  Point v = point - e0->n0->coord();
+ 
+  printf("Checking %.3e\n",  DOLFIN_EPS*n.norm()*v.norm());
+ 
+  return n*v < (DOLFIN_EPS*n.norm()*v.norm());
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)

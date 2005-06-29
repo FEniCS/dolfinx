@@ -212,17 +212,42 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 		   BoundaryCondition& bc)
 {
   assemble(a, L, A, b, mesh);
-  setBC(A, b, mesh, a.trial(), bc);
+  applyBC(A, b, mesh, a.trial(), bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
-		const FiniteElement& element, BoundaryCondition& bc)
+void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
+		  const FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions.");
 
-  // FIXME: Implement for tetrahedrons (iterate over faces) when working
-  if ( mesh.type() == Mesh::tetrahedrons )
-    dolfin_warning("Boundary conditions might not work for tetrahedrons.");
+  // Choose type of mesh
+  switch ( mesh.type() )
+  {
+  case Mesh::triangles:
+    applyBC_2D(A, b, mesh, element, bc);
+    break;
+  case Mesh::tetrahedra:
+    applyBC_3D(A, b, mesh, element, bc);
+    break;
+  default:
+    dolfin_error("Unknown mesh type.");
+  }
+}
+//-----------------------------------------------------------------------------
+void FEM::lump(const Matrix& M, Vector& m)
+{
+  m.init(M.size(0));
+
+  Vector one(m);
+  one = 1.0;
+
+  M.mult(one, m);
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
+	       const FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_assert(mesh.type() == Mesh::triangles);
 
   // Create boundary
   Boundary boundary(mesh);
@@ -250,7 +275,7 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    //dolfin_assert(edge->noCellNeighbors() == 1);
+    dolfin_assert(edge->noCellNeighbors() == 1);
     const Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -301,14 +326,86 @@ void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::lump(const Matrix& M, Vector& m)
+void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
+		     const FiniteElement& element, BoundaryCondition& bc)
 {
-  m.init(M.size(0));
+  dolfin_assert(mesh.type() == Mesh::tetrahedra);
+  
+  // Create boundary
+  Boundary boundary(mesh);
 
-  Vector one(m);
-  one = 1.0;
+  // Create boundary value
+  BoundaryValue bv;
 
-  M.mult(one, m);
+  // Create affine map
+  AffineMap map;
+
+  // Allocate list of rows
+  uint m = 0;
+  int* rows = new int[b.size()];
+  bool* row_set = new bool[b.size()];
+  for (unsigned int i = 0; i < b.size(); i++)
+    row_set[i] = false;
+  
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+
+  // Iterate over all faces on the boundary
+  for (EdgeIterator face(boundary); !face.end(); ++face)
+  {
+    // Get cell containing the edge (pick first, should only be one)
+    dolfin_assert(face->noCellNeighbors() == 1);
+    const Cell& cell = face->cell(0);
+
+    // Update affine map
+    map.update(cell);
+
+    // Compute map from local to global degrees of freedom
+    element.dofmap(dofs, cell, mesh);
+
+    // Compute map from local to global coordinates
+    element.pointmap(points, components, map);
+
+    // Set boundary conditions for dofs on the boundary
+    for (uint i = 0; i < n; i++)
+    {
+      // Skip points that are not contained in face
+      const Point& point = points[i];
+      if ( !(face->contains(point)) )
+	continue;
+
+      // Get boundary condition
+      if ( bc.numComponents() > 1 )
+	bv = bc(point, components[i]);
+      else
+	bv = bc(point);
+    
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+      {
+	int dof = dofs[i];
+	if ( !row_set[dof] )
+	{
+	  rows[m++] = dof;
+	  b(dof) = bv.value;
+	  row_set[dof] = true;
+	}
+      }
+    }
+  }
+
+  // Set rows of matrix to the identity matrix
+  A.ident(rows, m);
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
+  delete [] rows;
+  delete [] row_set;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
@@ -341,7 +438,7 @@ void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
     if ( a.trial().shapedim() != 2 )
       dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
     break;
-  case Mesh::tetrahedrons:
+  case Mesh::tetrahedra:
     if ( a.test().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     if ( a.trial().shapedim() != 3 )
@@ -360,7 +457,7 @@ void FEM::checkdims(const LinearForm& L, const Mesh& mesh)
     if ( L.test().shapedim() != 2 )
       dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
     break;
-  case Mesh::tetrahedrons:
+  case Mesh::tetrahedra:
     if ( L.test().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;

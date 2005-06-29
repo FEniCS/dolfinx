@@ -42,7 +42,7 @@ bool dolfin::dolfin_finished()
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_segfault()
 {
-  dolfin_info("Deliberately raising a segmentation fault.");
+  dolfin_info("Deliberately raising a segmentation fault (so you can attach a debugger).");
   raise(SIGSEGV);
 }
 //-----------------------------------------------------------------------------
