@@ -22,6 +22,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 {
+  // Check that the mesh matches the form
+  checkdims(a, mesh);
+
   // Start a progress session
   Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
@@ -79,6 +82,9 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 {
+  // Check that the mesh matches the form
+  checkdims(L, mesh);
+
   // Start a progress session
   Progress p("Assembling vector (interior contribution)", mesh.noCells());
 
@@ -131,6 +137,10 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 void FEM::assemble(BilinearForm& a, LinearForm& L,
 		   Matrix& A, Vector& b, Mesh& mesh)
 {
+  // Check that the mesh matches the forms
+  checkdims(a, mesh);
+  checkdims(L, mesh);
+
   // Start a progress session
   Progress p("Assembling matrix and vector (interior contributions)",
 	     mesh.noCells());
@@ -203,26 +213,6 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 {
   assemble(a, L, A, b, mesh);
   setBC(A, b, mesh, a.trial(), bc);
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
-{
-  // Count the degrees of freedom (check maximum index)
-  
-  int* dofs = new int[element.spacedim()];
-  int dofmax = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    element.dofmap(dofs, *cell, mesh);
-    for (uint i = 0; i < element.spacedim(); i++)
-    {
-      if ( dofs[i] > dofmax )
-	dofmax = dofs[i];
-    }
-  }
-  delete [] dofs;
-
-  return static_cast<uint>(dofmax + 1);
 }
 //-----------------------------------------------------------------------------
 void FEM::setBC(Matrix& A, Vector& b, Mesh& mesh,
@@ -319,5 +309,63 @@ void FEM::lump(const Matrix& M, Vector& m)
   one = 1.0;
 
   M.mult(one, m);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
+{
+  // Count the degrees of freedom (check maximum index)
+  
+  int* dofs = new int[element.spacedim()];
+  int dofmax = 0;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    element.dofmap(dofs, *cell, mesh);
+    for (uint i = 0; i < element.spacedim(); i++)
+    {
+      if ( dofs[i] > dofmax )
+	dofmax = dofs[i];
+    }
+  }
+  delete [] dofs;
+
+  return static_cast<uint>(dofmax + 1);
+}
+//-----------------------------------------------------------------------------
+void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
+{
+  switch ( mesh.type() )
+  {
+  case Mesh::triangles:
+    if ( a.test().shapedim() != 2 )
+      dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
+    if ( a.trial().shapedim() != 2 )
+      dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
+    break;
+  case Mesh::tetrahedrons:
+    if ( a.test().shapedim() != 3 )
+      dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
+    if ( a.trial().shapedim() != 3 )
+      dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
+    break;
+ default:
+   dolfin_error("Unknown mesh type.");
+  }
+}
+//-----------------------------------------------------------------------------
+void FEM::checkdims(const LinearForm& L, const Mesh& mesh)
+{
+  switch ( mesh.type() )
+  {
+  case Mesh::triangles:
+    if ( L.test().shapedim() != 2 )
+      dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
+    break;
+  case Mesh::tetrahedrons:
+    if ( L.test().shapedim() != 3 )
+      dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
+    break;
+ default:
+   dolfin_error("Unknown mesh type.");
+  }
 }
 //-----------------------------------------------------------------------------

@@ -57,6 +57,12 @@ namespace dolfin
     // Count the degrees of freedom
     static uint size(Mesh& mesh, const FiniteElement& element);
 
+    // Check that dimension of the mesh matches the form
+    static void checkdims(const BilinearForm& a, const Mesh& mesh);
+
+    // Check that dimension of the mesh matches the form
+    static void checkdims(const LinearForm& L, const Mesh& mesh);
+
   };
 
 }
