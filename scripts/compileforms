@@ -14,31 +14,20 @@ if [ "$CHECK" != "scripts" ]; then
         exit 1
 fi
 
-toplevel=`pwd`
+TOPLEVEL=`pwd`
 
-cd $toplevel/src/modules
-FORMS=`find . -name '*.form'`
-for f in $FORMS; do
-	MODULE=`echo $f | cut -d'/' -f2`
-	# Temporarily skip Navier-Stokes to speed up testing
-	if [ $MODULE != "navierstokes" ]; then
-    		FORMFILE=`echo $f | cut -d'/' -f4`
-		cd $MODULE/dolfin
-		ffc $FORMFILE
-		cd ../../
-	fi
-done
+DIRS='src/modules/poisson/dolfin
+      src/modules/convdiff/dolfin
+      src/modules/elasticity/dolfin
+      src/modules/elasticity-updated/dolfin
+      src/kernel/fem/dolfin
+      src/demo/poisson
+      src/demo/fem/convergence'
 
-cd $toplevel/cd src/kernel/fem/dolfin
-ffc MassMatrix2D.form
-ffc MassMatrix3D.form
-ffc StiffnessMatrix2D.form
-ffc StiffnessMatrix3D.form
-
-cd $toplevel/src/demo/poisson
-ffc Poisson.form
-
-cd $toplevel/src/demo/fem/convergence
-for f in *.form; do
-    ffc $f
+for DIR in $DIRS; do
+    cd $TOPLEVEL/$DIR
+    for f in *.form; do
+	echo $DIR
+	ffc $f
+    done
 done
