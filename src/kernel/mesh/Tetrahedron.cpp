@@ -124,6 +124,7 @@ dolfin::uint Tetrahedron::faceAlignment(uint i) const
   // Check alignment with convention in FFC manual
   Edge* e0 = cf(i)->fe(0);
   Edge* e1 = cf(i)->fe(1);
+
   if ( e0 == ce(face_alignment_00[i]) )
     return ( e1 == ce(face_alignment_01[i]) ? 0 : 1 );
   else if ( e0 == ce(face_alignment_10[i]) )
