@@ -130,13 +130,13 @@ real Function::operator() (const Node& node, uint i) const
 //-----------------------------------------------------------------------------
 real Function::operator()(const Point& point) const
 {
-  dolfin_error("User-defined function evaluation not implemented.");
+  dolfin_error("Point evaluation has not been supplied by user-defined function.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 real Function::operator()(const Point& point, uint i) const
 {
-  dolfin_error("User-defined function evaluation not implemented.");
+  dolfin_error("Point evaluation has not been supplied by user-defined function.");
   return 0.0;
 }
 //-----------------------------------------------------------------------------

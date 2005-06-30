@@ -5,19 +5,19 @@
 #include <dolfin.h>
 #include "Poisson2D_1.h"
 #include "Poisson2D_2.h"
-//#include "Poisson2D_3.h"
-//#include "Poisson2D_4.h"
-//#include "Poisson2D_5.h"
+#include "Poisson2D_3.h"
+#include "Poisson2D_4.h"
+#include "Poisson2D_5.h"
 #include "Poisson3D_1.h"
 #include "Poisson3D_2.h"
-//#include "Poisson3D_3.h"
-//#include "Poisson3D_4.h"
-//#include "Poisson3D_5.h"
+#include "Poisson3D_3.h"
+#include "Poisson3D_4.h"
+#include "Poisson3D_5.h"
 
 using namespace dolfin;
 
-// Boundary condition: homogeneous Dirichlet
-class MyBC : public BoundaryCondition
+// Boundary condition
+class BC : public BoundaryCondition
 {
   const BoundaryValue operator() (const Point& p)
   {
@@ -28,7 +28,7 @@ class MyBC : public BoundaryCondition
 };
 
 // Right-hand side, 2D
-class MyFunction2D : public Function
+class Source2D : public Function
 {
   real operator() (const Point& p) const
   {
@@ -37,7 +37,7 @@ class MyFunction2D : public Function
 };
 
 // Right-hand side, 3D
-class MyFunction3D : public Function
+class Source3D : public Function
 {
   real operator() (const Point& p) const
   {
@@ -46,16 +46,16 @@ class MyFunction3D : public Function
 };
 
 // Solve equation and compute error, 2D
-real solve2D(unsigned int q, unsigned int n)
+real solve2D(int q, int n)
 {
-  dolfin_info("----------------------------------------------------");
-  dolfin_info("--- Solving Poisson's equation in 2D for q = %d, n = %d. ---", q, n);
-  dolfin_info("----------------------------------------------------");
+  dolfin_info("--------------------------------------------------");
+  dolfin_info("Solving Poisson's equation in 2D for q = %d, n = %d.", q, n);
+  dolfin_info("--------------------------------------------------");
 
   // Set up problem
   UnitSquare mesh(n, n);
-  MyFunction2D f;
-  MyBC bc;
+  Source2D f;
+  BC bc;
 
   // Choose forms
   BilinearForm* a;
@@ -70,7 +70,7 @@ real solve2D(unsigned int q, unsigned int n)
     a = new Poisson2D_2::BilinearForm();
     L = new Poisson2D_2::LinearForm(f);
     break;
-    /* case 3:
+  case 3:
     a = new Poisson2D_3::BilinearForm();
     L = new Poisson2D_3::LinearForm(f);
     break;
@@ -81,10 +81,12 @@ real solve2D(unsigned int q, unsigned int n)
   case 5:
     a = new Poisson2D_5::BilinearForm();
     L = new Poisson2D_5::LinearForm(f);
-    break; */
+    break;
   default:
     dolfin_error1("Forms not compiled for q = %d.", q);
   }    
+
+  //FEM::disp(mesh, a->test());
   
   // Discretize equation
   Matrix A;
@@ -93,6 +95,7 @@ real solve2D(unsigned int q, unsigned int n)
 
   // Solve the linear system
   GMRES solver;
+  solver.setRtol(1e-14);
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -100,8 +103,10 @@ real solve2D(unsigned int q, unsigned int n)
   for (NodeIterator n(mesh); !n.end(); ++n)
   {
     const Point& p = n->coord();
+    const real U = x(n->id());
     const real u = sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y);
-    emax = std::max(emax, std::abs(x(n->id()) - u));
+    const real e = std::abs(U - u);
+    emax = std::max(emax, e);
   }
 
   delete a;
@@ -111,16 +116,16 @@ real solve2D(unsigned int q, unsigned int n)
 }
 
 // Solve equation and compute error, 3D
-real solve3D(unsigned int q, unsigned int n)
+real solve3D(int q, int n)
 {
-  dolfin_info("----------------------------------------------------");
+  dolfin_info("--------------------------------------------------");
   dolfin_info("Solving Poisson's equation in 3D for q = %d, n = %d.", q, n);
-  dolfin_info("----------------------------------------------------");
-  
+  dolfin_info("--------------------------------------------------");
+
   // Set up problem
   UnitCube mesh(n, n, n);
-  MyFunction3D f;
-  MyBC bc;
+  Source3D f;
+  BC bc;
 
   // Choose forms
   BilinearForm* a;
@@ -135,7 +140,7 @@ real solve3D(unsigned int q, unsigned int n)
     a = new Poisson3D_2::BilinearForm();
     L = new Poisson3D_2::LinearForm(f);
     break;
-    /* case 3:
+  case 3:
     a = new Poisson3D_3::BilinearForm();
     L = new Poisson3D_3::LinearForm(f);
     break;
@@ -146,18 +151,23 @@ real solve3D(unsigned int q, unsigned int n)
   case 5:
     a = new Poisson3D_5::BilinearForm();
     L = new Poisson3D_5::LinearForm(f);
-    break; */
+    break;
   default:
     dolfin_error1("Forms not compiled for q = %d.", q);
   }    
+
+  //FEM::disp(mesh, a->test());
   
   // Discretize equation
   Matrix A;
   Vector x, b;
   FEM::assemble(*a, *L, A, b, mesh, bc);
 
+  cout << "Maximum number of nonzeros: " << A.nzmax() << endl;
+  
   // Solve the linear system
   GMRES solver;
+  solver.setRtol(1e-14);
   solver.solve(A, x, b);
 
   // Compute maximum norm of error
@@ -165,8 +175,10 @@ real solve3D(unsigned int q, unsigned int n)
   for (NodeIterator n(mesh); !n.end(); ++n)
   {
     const Point& p = n->coord();
-    const real u = sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y);
-    emax = std::max(emax, std::abs(x(n->id()) - u));
+    const real U = x(n->id());
+    const real u = sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y)*sin(DOLFIN_PI*p.z);
+    const real e = std::abs(U - u);
+    emax = std::max(emax, e);
   }
 
   delete a;
@@ -177,16 +189,16 @@ real solve3D(unsigned int q, unsigned int n)
 
 int main()
 {
-  unsigned int qmax = 2;
-  unsigned int num_meshes = 5;
+  int qmax = 5;
+  int num_meshes = 3;
   real e2D[qmax][num_meshes];
   real e3D[qmax][num_meshes];
 
   // Compute errors in 2D
-  for (unsigned int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax; q++)
   {
     int n = 2;
-    for (unsigned int i = 0; i < num_meshes; i++)
+    for (int i = 0; i < num_meshes; i++)
     {
       e2D[q - 1][i] = solve2D(q, n);
       n *= 2;
@@ -194,10 +206,10 @@ int main()
   }
 
   // Compute errors in 3D
-  for (unsigned int q = 1; q <= qmax; q++)
+  for (int q = 1; q <= qmax; q++)
   {
     int n = 2;
-    for (unsigned int i = 0; i < num_meshes; i++)
+    for (int i = 0; i < num_meshes; i++)
     {
       e3D[q - 1][i] = solve3D(q, n);
       n *= 2;
@@ -205,21 +217,23 @@ int main()
   }
 
   // Write errors in 2D
-  printf("\n");
-  for (unsigned int q = 1; q <= qmax; q++)
+  printf("\nMaximum norm error in 2D:\n");
+  printf("-------------------------\n");
+  for (int q = 1; q <= qmax; q++)
   {
-    printf("2D, q = %d:", q);
-    for (unsigned int i = 0; i < num_meshes; i++)
+    printf("q = %d:", q);
+    for (int i = 0; i < num_meshes; i++)
       printf(" %.3e", e2D[q - 1][i]);
     printf("\n");
   }
 
   // Write errors in 3D
-  printf("\n");
-  for (unsigned int q = 1; q <= qmax; q++)
+  printf("\nMaximum norm error in 2D:\n");
+  printf("-------------------------\n");
+  for (int q = 1; q <= qmax; q++)
   {
-    printf("3D, q = %d:", q);
-    for (unsigned int i = 0; i < num_meshes; i++)
+    printf("q = %d:", q);
+    for (int i = 0; i < num_meshes; i++)
       printf(" %.3e", e3D[q - 1][i]);
     printf("\n");
   }

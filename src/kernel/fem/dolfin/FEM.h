@@ -48,9 +48,12 @@ namespace dolfin
     /// Apply boundary conditions
     static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
 			const FiniteElement& element, BoundaryCondition& bc);
-
+    
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
+
+    /// Display assembly data (useful for debugging)
+    static void disp(const Mesh& mesh, const FiniteElement& element);
 
   private:
 
@@ -63,13 +66,19 @@ namespace dolfin
 			   const FiniteElement& element, BoundaryCondition& bc);
 
     // Count the degrees of freedom
-    static uint size(Mesh& mesh, const FiniteElement& element);
+    static uint size(const Mesh& mesh, const FiniteElement& element);
+    
+    // Estimate the maximum number of nonzeros in each row
+    static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
     // Check that dimension of the mesh matches the form
     static void checkdims(const BilinearForm& a, const Mesh& mesh);
 
     // Check that dimension of the mesh matches the form
     static void checkdims(const LinearForm& L, const Mesh& mesh);
+
+    // Check number of nonzeros in each row
+    static void checknz(const Matrix& A, uint nz);
 
   };
 

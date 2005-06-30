@@ -47,6 +47,9 @@ namespace dolfin
     /// Compute map from local to global coordinates
     virtual void pointmap(Point points[], uint components[], const AffineMap& map) const = 0;
     
+    /// Display finite element data
+    void disp() const;
+
   };
 
 }

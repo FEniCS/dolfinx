@@ -115,10 +115,8 @@ bool Face::contains(const Point& point) const
 
   Point n = v0.cross(v1);
   Point v = point - e0->n0->coord();
- 
-  printf("Checking %.3e\n",  DOLFIN_EPS*n.norm()*v.norm());
- 
-  return n*v < (DOLFIN_EPS*n.norm()*v.norm());
+
+  return std::abs(n*v) < DOLFIN_EPS;
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Face& face)

@@ -65,13 +65,15 @@ void Matrix::init(uint M, uint N)
       MatDestroy(A);
   }
   
+  // FIXME: maybe 50 should be a parameter?
+
   // Create a sparse matrix in compressed row format
   MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, 50, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void Matrix::init(uint M, uint N, uint bs)
+void Matrix::init(uint M, uint N, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -82,14 +84,13 @@ void Matrix::init(uint M, uint N, uint bs)
       MatDestroy(A);
   }
   
-  // Creates a sparse matrix in block AIJ (block compressed row) format.
-  // Given blocksize bs, and assuming max no connectivity = 50. 
-  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, 50, PETSC_NULL, &A);
+  // Create a sparse matrix in compressed row format
+  MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, nz, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void Matrix::init(uint M, uint N, uint bs, uint mnc)
+void Matrix::init(uint M, uint N, uint bs, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -102,7 +103,7 @@ void Matrix::init(uint M, uint N, uint bs, uint mnc)
   
   // Creates a sparse matrix in block AIJ (block compressed row) format.
   // Given blocksize bs, and max no connectivity mnc.  
-  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, mnc, PETSC_NULL, &A);
+  MatCreateSeqBAIJ(PETSC_COMM_SELF, bs, bs*M, bs*N, nz, PETSC_NULL, &A);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
@@ -113,6 +114,38 @@ dolfin::uint Matrix::size(uint dim) const
   int N = 0;
   MatGetSize(A, &M, &N);
   return (dim == 0 ? M : N);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Matrix::nz(uint row) const
+{
+  // FIXME: this can probably be done better
+  int ncols = 0;
+  const int* cols = 0;
+  const double* vals = 0;
+  MatGetRow(A, static_cast<int>(row), &ncols, &cols, &vals);
+  MatRestoreRow(A, static_cast<int>(row), &ncols, &cols, &vals);
+
+  return ncols;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Matrix::nzsum() const
+{
+  uint M = size(0);
+  uint sum = 0;
+  for (uint i = 0; i < M; i++)
+    sum += nz(i);
+
+  return sum;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint Matrix::nzmax() const
+{
+  uint M = size(0);
+  uint max = 0;
+  for (uint i = 0; i < M; i++)
+    max = std::max(max, nz(i));
+
+  return max;
 }
 //-----------------------------------------------------------------------------
 Matrix& Matrix::operator= (real zero)

@@ -25,9 +25,6 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   // Check that the mesh matches the form
   checkdims(a, mesh);
 
-  // Start a progress session
-  Progress p("Assembling matrix (interior contribution)", mesh.noCells());
-
   // Get finite elements
   const FiniteElement& test_element = a.test();
   const FiniteElement& trial_element = a.trial();
@@ -36,17 +33,22 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   AffineMap map;
 
   // Initialize local data
-  uint m = test_element.spacedim();
-  uint n = trial_element.spacedim();
+  const uint m = test_element.spacedim();
+  const uint n = trial_element.spacedim();
   real* block = new real[m*n];
   int* test_dofs = new int[m];
   int* trial_dofs = new int[n];
 
   // Initialize global matrix
-  uint M = size(mesh, test_element);
-  uint N = size(mesh, trial_element);
-  A.init(M, N, 1);
+  const uint M = size(mesh, test_element);
+  const uint N = size(mesh, trial_element);
+  const uint nz = nzsize(mesh, trial_element);
+  A.init(M, N, nz);
   A = 0.0;
+
+  // Start a progress session
+  dolfin_info("Assembling matrix of size %d x %d.", M, N);
+  Progress p("Assembling matrix (interior contribution)", mesh.noCells());
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -74,6 +76,9 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   // Complete assembly
   A.apply();
 
+  // Check number of nonzeros
+  checknz(A, nz);
+
   // Delete data
   delete [] block;
   delete [] test_dofs;
@@ -85,9 +90,6 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   // Check that the mesh matches the form
   checkdims(L, mesh);
 
-  // Start a progress session
-  Progress p("Assembling vector (interior contribution)", mesh.noCells());
-
   // Get finite element
   const FiniteElement& test_element = L.test();
 
@@ -95,14 +97,18 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   AffineMap map;
 
   // Initialize local data
-  uint m = test_element.spacedim();
+  const uint m = test_element.spacedim();
   real* block = new real[m];
   int* test_dofs = new int[m];
 
   // Initialize global vector 
-  uint M = size(mesh, test_element);
+  const uint M = size(mesh, test_element);
   b.init(M);
   b = 0.0;
+
+  // Start a progress session
+  dolfin_info("Assembling vector of size %d.", M);
+  Progress p("Assembling vector (interior contribution)", mesh.noCells());
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -140,11 +146,7 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Check that the mesh matches the forms
   checkdims(a, mesh);
   checkdims(L, mesh);
-
-  // Start a progress session
-  Progress p("Assembling matrix and vector (interior contributions)",
-	     mesh.noCells());
-
+ 
   // Get finite elements
   const FiniteElement& test_element = a.test();
   const FiniteElement& trial_element = a.trial();
@@ -153,21 +155,26 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   AffineMap map;
 
   // Initialize element matrix/vector data block
-  uint m = test_element.spacedim();
-  uint n = trial_element.spacedim();
+  const uint m = test_element.spacedim();
+  const uint n = trial_element.spacedim();
   real* block_A = new real[m*n];
   real* block_b = new real[m];
   int* test_dofs = new int[m];
   int* trial_dofs = new int[n];
 
   // Initialize global matrix
-  uint M = size(mesh, test_element);
-  uint N = size(mesh, trial_element);
-  A.init(M, N);
+  const uint M = size(mesh, test_element);
+  const uint N = size(mesh, trial_element);
+  const uint nz = nzsize(mesh, trial_element);
+  A.init(M, N, nz);
   b.init(M);
   A = 0.0;
   b = 0.0;
-  
+ 
+  // Start a progress session
+  dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+  Progress p("Assembling matrix and vector (interior contributions)", mesh.noCells());
+ 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
@@ -199,6 +206,9 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Complete assembly
   A.apply();
   b.apply();
+
+  // Check the number of nonzeros
+  checknz(A, nz);
 
   // Delete data
   delete [] block_A;
@@ -242,6 +252,52 @@ void FEM::lump(const Matrix& M, Vector& m)
   one = 1.0;
 
   M.mult(one, m);
+}
+//-----------------------------------------------------------------------------
+void FEM::disp(const Mesh& mesh, const FiniteElement& element)
+{
+  dolfin_info("Assembly data:");
+  dolfin_info("--------------");
+  dolfin_info("");
+
+  // Total number of dofs
+  uint N = size(mesh, element);
+  dolfin_info("  Total number of degrees of freedom: %d.", N);
+  dolfin_info("");
+
+  // Display mesh data
+  mesh.disp();
+
+  // Display finite element data
+  element.disp();
+
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+  AffineMap map;
+
+  // Display data for each cell
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    map.update(*cell);
+    element.dofmap(dofs, *cell, mesh);
+    element.pointmap(points, components, map);
+
+    cout << "  " << *cell << endl;
+    
+    for (uint i = 0; i < n; i++)
+    {
+      cout << "    i = " << i << ": x = " << points[i] << " mapped to global dof "
+	   << dofs[i] << " (component = " << components[i] << ")" << endl;
+    }
+  }
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
@@ -315,6 +371,8 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
     }
   }
 
+  dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
+
   // Set rows of matrix to the identity matrix
   A.ident(rows, m);
 
@@ -354,9 +412,9 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   Point* points = new Point[n];
 
   // Iterate over all faces on the boundary
-  for (EdgeIterator face(boundary); !face.end(); ++face)
+  for (FaceIterator face(boundary); !face.end(); ++face)
   {
-    // Get cell containing the edge (pick first, should only be one)
+    // Get cell containing the face (pick first, should only be one)
     dolfin_assert(face->noCellNeighbors() == 1);
     const Cell& cell = face->cell(0);
 
@@ -397,6 +455,8 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
     }
   }
 
+  dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
+
   // Set rows of matrix to the identity matrix
   A.ident(rows, m);
 
@@ -408,7 +468,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
+dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 {
   // Count the degrees of freedom (check maximum index)
   
@@ -426,6 +486,17 @@ dolfin::uint FEM::size(Mesh& mesh, const FiniteElement& element)
   delete [] dofs;
 
   return static_cast<uint>(dofmax + 1);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
+{
+  // Estimate the number of nonzeros in each row
+
+  uint nzmax = 0;
+  for (NodeIterator node(mesh); !node.end(); ++node)
+    nzmax = std::max(nzmax, node->noNodeNeighbors() * element.spacedim());
+
+  return nzmax;
 }
 //-----------------------------------------------------------------------------
 void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
@@ -464,5 +535,15 @@ void FEM::checkdims(const LinearForm& L, const Mesh& mesh)
  default:
    dolfin_error("Unknown mesh type.");
   }
+}
+//-----------------------------------------------------------------------------
+void FEM::checknz(const Matrix& A, uint nz)
+{
+  uint nz_actual = A.nzmax();
+  if ( nz_actual > nz )
+    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
+  else
+    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
+		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------

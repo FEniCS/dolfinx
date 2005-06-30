@@ -40,15 +40,27 @@ namespace dolfin
     /// Destructor
     ~Matrix();
 
-    /// Initialize matrix: no rows m, columns n, block size bs, 
-    /// and max number of connectivity mnc. 
+    /// Initialize M x N matrix
     void init(uint M, uint N);
-    void init(uint M, uint N, uint bs);
-    void init(uint M, uint N, uint bs, uint mnc);
+
+    /// Initialize M x N matrix with given maximum number of nonzeros in each row
+    void init(uint M, uint N, uint nzmax);
+
+    /// Initialize M x N matrix with given block size and maximum number of nonzeros in each row
+    void init(uint M, uint N, uint bs, uint nzmax);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;
 
+    /// Return number of nonzero entries in given row
+    uint nz(uint row) const;
+
+    /// Return total number of nonzero entries
+    uint nzsum() const;
+
+    /// Return maximum number of nonzero entries
+    uint nzmax() const;
+    
     /// Set all entries to zero
     Matrix& operator= (real zero);
 

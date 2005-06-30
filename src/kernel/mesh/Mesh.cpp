@@ -240,27 +240,37 @@ bool Mesh::operator!=(const Mesh& mesh) const
   return this != &mesh;
 }
 //-----------------------------------------------------------------------------
-void Mesh::show()
+void Mesh::disp() const
 {
-  cout << "---------------------------------------";
-  cout << "----------------------------------------" << endl;
+  cout << "Mesh data:" << endl;
+  cout << "----------" << endl << endl;
 
-  cout << "Mesh with " << noNodes() << " nodes and " 
-       << noCells() << " cells:" << endl;
+  cout << "  " << "Number of nodes: " << noNodes() << endl;
+  cout << "  " << "Number of edges: " << noEdges() << endl;
+  if ( type() == tetrahedra )
+    cout << "  " << "Number of faces: " << noFaces() << endl;
+  cout << "  " << "Number of cells: " << noCells() << endl;
+
   cout << endl;
-
   for (NodeIterator n(this); !n.end(); ++n)
     cout << "  " << *n << endl;
 
   cout << endl;
-  
+  for (EdgeIterator e(this); !e.end(); ++e)
+    cout << "  " << *e << endl;
+
+  if ( type() == tetrahedra )
+  {
+    cout << endl;
+    for (FaceIterator f(this); !f.end(); ++f)
+      cout << "  " << *f << endl;
+  }
+
+  cout << endl;  
   for (CellIterator c(this); !c.end(); ++c)
     cout << "  " << *c << endl;
   
   cout << endl;
-  
-  cout << "---------------------------------------";
-  cout << "----------------------------------------" << endl;
 }
 //-----------------------------------------------------------------------------
 Mesh& Mesh::createChild()

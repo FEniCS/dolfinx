@@ -318,6 +318,10 @@ void MeshInit::initFaceCell(Mesh& mesh)
   for (FaceIterator f(mesh); !f.end(); ++f)
     f->fc.init();
 
+  for (FaceIterator f(mesh); !f.end(); ++f)
+    if ( f->fc.size() > 2 )
+      cout << "size = " << f->fc.size() << endl;
+
   // Add the cells to the cell lists
   for (CellIterator c(mesh); !c.end(); ++c)
     for (FaceIterator f(c); !f.end(); ++f)

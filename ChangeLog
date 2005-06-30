@@ -1,3 +1,9 @@
+ - Make FEM::assemble() estimate the number of nonzeros in each row
+ - Implement Matrix::init(M, N, nzmax)
+ - Add Matrix::nz(), Matrix::nzsum() and Matrix::nzmax()
+ - Improve Mesh::disp()
+ - Add FiniteElement::disp() and FEM::disp() (useful for debugging)
+ - Remove old class SparseMatrix
  - Change FEM::setBC() --> FEM::applyBC()
  - Change Mesh::tetrahedrons --> Mesh::tetrahedra
  - Implement Dirichlet boundary conditions for tetrahedra

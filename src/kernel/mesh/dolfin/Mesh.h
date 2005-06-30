@@ -136,7 +136,7 @@ namespace dolfin
     ///--- Output ---
 
     /// Display mesh data
-    void show();
+    void disp() const;
 
     /// Display condensed mesh data
     friend LogStream& operator<< (LogStream& stream, const Mesh& mesh);
