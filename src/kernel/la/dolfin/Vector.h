@@ -79,8 +79,11 @@ namespace dolfin
     /// Apply changes to vector
     void apply();
 
-    /// Element assignment operator
+    /// Element assignment/access operator
     Element operator() (uint i);
+
+    /// Element access operator for a const Vector
+    real operator() (uint i) const;
 
     /// Assignment of vector
     const Vector& operator= (const Vector& x);
@@ -111,6 +114,11 @@ namespace dolfin
     void disp() const;
 
     /// Reference to an element of the vector
+    ///
+    /// This design is a bit confusing, since there are actually
+    /// two different ways to access an element, depending on whether the
+    /// Vector is const or not. But I don't see a clear alternative. /johanjan
+
     class Element
     {
     public:

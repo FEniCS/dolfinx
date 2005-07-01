@@ -169,6 +169,11 @@ Vector::Element Vector::operator() (uint i)
   return index;
 }
 //-----------------------------------------------------------------------------
+real Vector::operator() (uint i) const
+{
+  return getval(i);
+}
+//-----------------------------------------------------------------------------
 const Vector& Vector::operator= (const Vector& x)
 {
   if ( !x.x )
@@ -330,7 +335,7 @@ Vector::Element::operator real() const
 //-----------------------------------------------------------------------------
 const Vector::Element& Vector::Element::operator=(const Element& e)
 {
-  x.setval(i, (real)e);
+  x.setval(i, e.x.getval(i));
 
   return *this;
 }
