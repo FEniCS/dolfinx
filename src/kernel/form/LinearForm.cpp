@@ -23,7 +23,7 @@ void LinearForm::eval(real block[], const AffineMap& map) const
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void LinearForm::eval(real block[], const AffineMap& map, uint boundary) const
+void LinearForm::eval(real block[], const AffineMap& map, uint segment) const
 {
   // Do nothing
 }

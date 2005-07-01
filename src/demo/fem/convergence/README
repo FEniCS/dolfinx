@@ -1,0 +1,40 @@
+This test program solves Poisson's equation
+
+    - div grad u = f
+
+on the unit square and on the unit cube with homogeneous Dirichlet
+boundary conditions.
+
+In 2D, the right-hand side f is given by
+
+    f(x, y) = 2 pi^2 sin(x) sin(y)
+
+and the exact solution is u(x, y) = sin(x) sin(y).
+
+In 3D, the right-hand side f is given by
+
+    f(x, y) = 3 pi^2 sin(x) sin(y) sin(z)
+
+and the exact solution is u(x, y) = sin(x) sin(y) sin(z).
+
+The solution is computed with Lagrange finite elements of degree 1-5
+and the error is computed in the maximum norm (maximum taken only over
+the values at vertices).
+
+Here are the results (2005-06-30, DOLFIN version 0.5.7+):
+
+Maximum norm error in 2D:
+-------------------------
+q = 1: 3.831e-01 1.375e-01 3.748e-02
+q = 2: 1.067e-02 1.782e-03 1.480e-04
+q = 3: 3.675e-03 5.417e-04 4.243e-05
+q = 4: 1.027e-03 2.644e-05 4.862e-07
+q = 5: 1.639e-05 1.803e-06 3.985e-08
+
+Maximum norm error in 2D:
+-------------------------
+q = 1: 5.065e-01 2.129e-01 6.127e-02
+q = 2: 3.890e-02 6.874e-03 5.589e-04
+q = 3: 1.088e-03 1.722e-03 1.535e-04
+q = 4: 6.868e-03 2.154e-04 3.983e-06
+q = 5: 3.821e-04 1.450e-05 3.598e-07

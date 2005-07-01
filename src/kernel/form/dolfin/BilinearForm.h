@@ -29,7 +29,7 @@ namespace dolfin
     virtual void eval(real block[], const AffineMap& map) const;
     
     /// Compute element matrix (boundary contribution)
-    virtual void eval(real block[], const AffineMap& map, uint boundary) const;
+    virtual void eval(real block[], const AffineMap& map, uint segment) const;
 
     /// Return finite element defining the test space
     const FiniteElement& test() const;
