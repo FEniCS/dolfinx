@@ -228,7 +228,7 @@ int main()
   }
 
   // Write errors in 3D
-  printf("\nMaximum norm error in 2D:\n");
+  printf("\nMaximum norm error in 3D:\n");
   printf("-------------------------\n");
   for (int q = 1; q <= qmax; q++)
   {
