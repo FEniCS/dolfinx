@@ -4,7 +4,6 @@
 #ifndef __DOLFIN_ELASTICITY_H
 #define __DOLFIN_ELASTICITY_H
 
-#include <dolfin/Elasticity.h>
 #include <dolfin/ElasticitySolver.h>
 
 #endif

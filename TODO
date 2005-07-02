@@ -64,7 +64,7 @@ Solvers
 Multi-adaptive solver
 ---------------------
 
-o [jj, logg] Maybe two methods: fi() and f()?
+o [jj, logg] Preconditioner for multi-adaptive solver
 o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver
 o [jj, logg] Implement preconditioner for multi-adaptive Newton
@@ -102,6 +102,7 @@ General
   Q: Can I help?
   A: Yes.
 
+* New repository dolfin-contrib?
 * Don't use cut in src/config script
 * Replace ::show() with ::disp() for all classes
 * Replace unsigned int and int with uint when possible

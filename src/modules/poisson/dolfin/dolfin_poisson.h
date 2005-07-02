@@ -4,7 +4,6 @@
 #ifndef __DOLFIN_POISSON_H
 #define __DOLFIN_POISSON_H
 
-#include <dolfin/Poisson.h>
 #include <dolfin/PoissonSolver.h>
 
 #endif

@@ -4,7 +4,6 @@
 #ifndef __DOLFIN_CONV_DIFF_H
 #define __DOLFIN_CONV_DIFF_H
 
-#include <dolfin/ConvectionDiffusion.h>
 #include <dolfin/ConvectionDiffusionSolver.h>
 
 #endif

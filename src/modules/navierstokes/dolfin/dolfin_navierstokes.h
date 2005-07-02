@@ -4,8 +4,6 @@
 #ifndef __DOLFIN_NSE_H
 #define __DOLFIN_NSE_H
 
-#include <dolfin/NSEMomentum.h>
-#include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
 
 #endif
