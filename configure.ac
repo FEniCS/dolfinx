@@ -38,12 +38,6 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
-# Option --with-petsc-bopt
-AC_ARG_WITH(petsc-bopt,
-            AC_HELP_STRING([--with-petsc-bopt=<bopt>],
-                           [Specify compiler flag BOPT for PETSc (O_c++ or g_c++)]),
-            [BOPT=$with_petsc_bopt],)
-
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
@@ -95,22 +89,14 @@ else
     echo "using PETSC_DIR=$PETSC_DIR"
 fi
 
-# Handle option --with-petsc-bopt=<bopt>
-if test x$BOPT = x; then
-    echo "assuming PETSc BOPT is g_c++"
-    BOPT="g_c++"
-else
-    echo "using BOPT=$BOPT"
-fi
-
 # Check for PETSc
 AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
 if test $petsc_found = yes; then
     # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-    PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
-    PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR BOPT=$BOPT`
+    PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
+    PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
 else
-    echo "*** Unable to find PETSc 2.2.1 on your system."
+    echo "*** Unable to find PETSc 2.3.0 on your system."
     echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
     echo "*** or set the environment variable PETSC_DIR to the correct path."
     echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"

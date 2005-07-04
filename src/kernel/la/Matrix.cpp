@@ -1,5 +1,7 @@
 // Copyright (C) 2004 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Garth N. Wells 2005.
 
 #include <iostream>
 #include <sstream>
@@ -167,8 +169,8 @@ void Matrix::ident(const int rows[], int m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
-  real one = 1.0;
-  MatZeroRows(A, is, &one);
+	PetscScalar one = 1.0;
+  MatZeroRowsIS(A, is, one);
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------

@@ -9,7 +9,7 @@ Contents
 -------------------------------------------------------------------------------
 1. Dependencies
 
-DOLFIN depends on PETSc, version 2.2.1. PETSc can be downloaded from
+DOLFIN depends on PETSc, version 2.3.0. PETSc can be downloaded from
 
     http://www-unix.mcs.anl.gov/petsc/petsc-2/
 
@@ -18,12 +18,14 @@ you should only have to perform the following simple steps in the PETSc
 source directory:
 
     export PETSC_DIR=`pwd`
-    ./config/configure.py
-    make BOPT=g_c++
-    make BOPT=O_c++
+    ./config/configure.py --with-clanguage=cxx
+    make all
 
-Replace "export PETSC_DIR=" with "setenv PETSC_DIR " if you're using tcsh.
-Add --download-hypre=yes to configure.py if you want to install Hypre.
+Replace export PETSC_DIR=`pwd` with setenv PETSC_DIR `pwd` if you're using
+tcsh. Add --download-hypre=yes to configure.py if you want to install Hypre.
+
+DOLFIN assumes that PETSC_DIR is /usr/local/lib/petsc/ but this can be
+controlled using the flag --with-petsc-dir=<path> when configuring DOLFIN.
 
 -------------------------------------------------------------------------------
 2. Installation
@@ -44,12 +46,13 @@ More information is availabel in the file INSTALL.
 3. License
 
 DOLFIN is licensed under the GNU GPL Version 2, see http://www.gnu.org.
+
 -------------------------------------------------------------------------------
 4. Feed back
 
 Feed back, patches, and comments should be sent to
 
-    dolfin@fenics.org
+    dolfin-dev@fenics.org
 
 ------------------------------------------------------------------------------
 5. About
@@ -62,4 +65,4 @@ For more information about DOLFIN, visit
 
 -------------------------------------------------------------------------------
 Chicago
-March 2005
+July 2005

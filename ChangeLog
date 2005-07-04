@@ -1,3 +1,4 @@
+ - Move to PETSc 2.3.0
  - Complete support for general order Lagrange elements in triangles and tetrahedra
  - Add test problem in src/demo/fem/convergence/ for general Lagrange elements
  - Make FEM::assemble() estimate the number of nonzeros in each row

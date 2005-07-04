@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2005.
+// Modified by Garth N. Wells 2005.
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -78,13 +79,13 @@ void Vector::init(uint size)
   VecSetFromOptions(x);
 
   // Set all entries to zero
-  real a = 0.0;
-  VecSet(&a, x);
+  PetscScalar a = 0.0;
+  VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
 void Vector::axpy(const real a, const Vector& x) const
 {
-  VecAXPY(&a, x.vec(), this->x);
+  VecAXPY(this->x, a, x.vec());
 }
 //-----------------------------------------------------------------------------
 void Vector::add(const real block[], const int cols[], int n)
@@ -191,7 +192,7 @@ const Vector& Vector::operator= (const Vector& x)
 const Vector& Vector::operator= (real a)
 {
   dolfin_assert(x);
-  VecSet(&a, x);
+  VecSet(x, a);
 
   return *this;
 }
@@ -202,7 +203,7 @@ const Vector& Vector::operator+= (const Vector& x)
   dolfin_assert(this->x);
 
   const real a = 1.0;
-  VecAXPY(&a, x.x, this->x);
+  VecAXPY(this->x, a, x.x);
 
   return *this;
 }
@@ -213,7 +214,7 @@ const Vector& Vector::operator-= (const Vector& x)
   dolfin_assert(this->x);
 
   const real a = -1.0;
-  VecAXPY(&a, x.x, this->x);
+  VecAXPY(this->x, a, x.x);
 
   return *this;
 }
@@ -221,7 +222,7 @@ const Vector& Vector::operator-= (const Vector& x)
 const Vector& Vector::operator*= (real a)
 {
   dolfin_assert(x);
-  VecScale(&a, x);
+  VecScale(x, a);
   
   return *this;
 }
@@ -232,7 +233,7 @@ const Vector& Vector::operator/= (real a)
   dolfin_assert(a != 0.0);
 
   const real b = 1.0 / a;
-  VecScale(&b, x);
+  VecScale(x, b);
   
   return *this;
 }

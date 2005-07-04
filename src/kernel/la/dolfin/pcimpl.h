@@ -1,4 +1,10 @@
-
+// This file copied from the PETSc source distribution.
+// For copyrights and license terms, see the page
+//
+// http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/copyright.html
+//
+// FIXME: Do we really need this?
+    
 #ifndef _PCIMPL
 #define _PCIMPL
 
@@ -28,7 +34,7 @@ struct _PCOps {
    Preconditioner context
 */
 struct _p_PC {
-  PETSCHEADER(struct _PCOps)
+  PETSCHEADER(struct _PCOps);
   PetscInt       setupcalled;
   MatStructure   flag;
   Mat            mat,pmat;
