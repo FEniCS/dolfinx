@@ -8,7 +8,7 @@
 
 #include <petscpc.h>
 
-#include <dolfin/pcimpl.h>
+#include <src/ksp/pc/pcimpl.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/GMRES.h>

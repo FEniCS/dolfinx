@@ -4,7 +4,7 @@
 // First added:  2005
 // Last changed: 2005
 
-#include <dolfin/pcimpl.h>
+#include <src/ksp/pc/pcimpl.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/Vector.h>
 
