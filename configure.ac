@@ -223,7 +223,6 @@ AC_OUTPUT( Makefile \
            src/demo/Makefile \
            src/demo/bench/Makefile \
            src/demo/fem/Makefile \
-           src/demo/la/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/solvers/ode/Makefile \

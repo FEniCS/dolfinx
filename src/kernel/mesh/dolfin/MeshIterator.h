@@ -7,7 +7,6 @@
 #define __MESH_ITERATOR_H
 
 #include <dolfin/PArray.h>
-#include <dolfin/General.h>
 
 namespace dolfin
 {

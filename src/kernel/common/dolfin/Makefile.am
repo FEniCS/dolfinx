@@ -1,6 +1,5 @@
 EXTRA_DIST = dolfin_common.h \
              Array.h \
-             General.h \
              List.h \
              PArray.h \
              PList.h \

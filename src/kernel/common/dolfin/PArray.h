@@ -9,10 +9,12 @@
 #include <signal.h>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/General.h>
 
 namespace dolfin
 {
+
+  enum Range { all };
+  enum Index { first, last };
   
   /// DON'T USE PArray. USE Array INSTEAD. WILL REPLACE Array IN FUTURE VERSIONS.
 
