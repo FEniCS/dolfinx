@@ -18,7 +18,7 @@ you should only have to perform the following simple steps in the PETSc
 source directory:
 
     export PETSC_DIR=`pwd`
-    ./config/configure.py --with-clanguage=cxx
+    ./config/configure.py --with-clanguage=cxx --with-shared=1
     make all
 
 Replace export PETSC_DIR=`pwd` with setenv PETSC_DIR `pwd` if you're using
