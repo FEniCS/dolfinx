@@ -6,10 +6,9 @@
 // First added:  2004
 // Last changed: 2005
 
-#include <stdio.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/dolfin_log.h>
 #include <dolfin/TecplotFile.h>
+#include <dolfin/FiniteElement.h>
 
 using namespace dolfin;
 
@@ -32,134 +31,85 @@ void TecplotFile::operator<<(Mesh& mesh)
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
 
-  // Tetrahedra
-  if ( mesh.type() == Mesh::tetrahedra )
+	// Write header
+  fprintf(fp, "TITLE = \"Dolfin output\"  \n");
+  fprintf(fp, "VARIABLES = ");
+  if ( mesh.type() == Mesh::tetrahedra ){
+	  fprintf(fp, " X1  X2  X3 \n");
+	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", mesh.noNodes(), mesh.noCells());
+  }
+	if ( mesh.type() == Mesh::triangles ){    
+	  fprintf(fp, " X1  X2  X3 \n");
+    fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   mesh.noNodes(), mesh.noCells());
+   }
+
+  // Write node locations
+  for (NodeIterator n(mesh); !n.end(); ++n)
   {
-  
-    // Write header
-    fprintf(fp, "TITLE = \"Dolfin Output\"  \n");
-    fprintf(fp, "VARIABLES = \"X1\",  \"X2\",  \"X3\"  \n");
-    fprintf(fp, "ZONE  N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron \n", mesh.noNodes(), mesh.noCells());
+    Point   p = n->coord();
 
-    // Write node positions
-    for (NodeIterator n(mesh); !n.end(); ++n)
-    {
-
-      Point   p = n->coord();
-
-      float x1 = (float) p.x;
-      float x2 = (float) p.y;
-      float x3 = (float) p.z;
-
-      fprintf(fp," %e %ef %e \n",x1, x2, x3);
-    }
-  
-      // Write cell connectivity
-     for (CellIterator c(mesh); !c.end(); ++c)
-     {
-       for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
-       fprintf(fp," \n");
-     }  
+    if ( mesh.type() == Mesh::tetrahedra )  fprintf(fp," %e %e %e \n",p.x, p.y, p.z);
+    if ( mesh.type() == Mesh::triangles )     fprintf(fp," %e %e  ",p.x, p.y);
+    fprintf(fp,"\n");
 
   }
 
-  // Triangles
-  if ( mesh.type() == Mesh::triangles ) {
-
-    // Write header
-    fprintf(fp, "TITLE = \"Dolfin Output\"  \n");
-    fprintf(fp, "VARIABLES = \"X1\",  \"X2\" \n");
-    fprintf(fp, "ZONE  N = %8d, E = %8d, F = FEPOINT, ET=Triangles \n", mesh.noNodes(), mesh.noCells());
-
-      // Write node positions
-    for (NodeIterator n(mesh); !n.end(); ++n)
-    {
-
-      Point   p = n->coord();
-
-      float x1 = (float) p.x;
-      float x2 = (float) p.y;
-
-      fprintf(fp," %e %e  \n",x1, x2);
-
-    }
-
-      // Write cell connectivity
-     for (CellIterator c(mesh); !c.end(); ++c)
-     {
-       for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
-       fprintf(fp," \n");
-     }  
-
-  }
+  // Write cell connectivity
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
+    fprintf(fp," \n");
+  }  
 
   // Close file
   fclose(fp);
 
 }
 //-­---------------------------------------------------------------------------
-/*
-
-FIXME: BROKEN
-
-Needs to be updated for new function class.
-
 void TecplotFile::operator<<(Function& u)
 {
-//  dolfin_warning("Cannot write functions to Tecplot files.");
-  FILE *fp = fopen(filename.c_str(), "a");
 
+  const FiniteElement& element = u.element();
+	
+	FILE *fp = fopen(filename.c_str(), "a");
+    
+  uint ShapeDim  = element.shapedim();
+  uint VectorDim = 0;
+
+  if ( element.rank() == 0 )
+  {
+    VectorDim = 1;
+  }
+  else if ( element.rank() == 1 )
+  {
+    VectorDim = element.tensordim(0);
+  }
+	
   // Write mesh the first time
   if ( u.number() == 0 )
   {
-    // Tetrahedra
-    if ( u.mesh().type() == Mesh::tetrahedra ) {
-  
-      // Write header
-      fprintf(fp, "TITLE = \"Dolfin output\"  \n");
-      fprintf(fp, "VARIABLES = \"X1\",  \"X2\",  \"X3\", ,\"U\" \n");
-	  fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron \n", u.number(), u.mesh().noNodes(), u.mesh().noCells());
-
-      // Write node positions and results
-      for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-        float x3 = (float) p.z;
-
-        fprintf(fp," %e %e %e %e \n",x1, x2, x3, u(*n));
-      }
-
-      // Write cell connectivity
-     for (CellIterator c(u.mesh()); !c.end(); ++c)
-     {
-       for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
-       fprintf(fp," \n");
-     }  
-
-    }
-
-    // Triangles
-    if ( u.mesh().type() == Mesh::triangles ) {
-  	  
 	  // Write header
-      fprintf(fp, "TITLE = \"Dolfin output\"  \n");
-      fprintf(fp, "VARIABLES = \"X1\",  \"X2\", \"U\"  \n");
-      fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, F = FEPOINT, ET=Triangle \n", u.number(), u.mesh().noNodes(), u.mesh().noCells());
+    fprintf(fp, "TITLE = \"Dolfin output\"  \n");
+    fprintf(fp, "VARIABLES = ");
+    for (uint i=0; i<ShapeDim; ++i)   fprintf(fp, " X%d  ", i+1);	  
+    for (uint i=0; i<VectorDim; ++i)  fprintf(fp, " U%d  ", i+1);	  
+    fprintf(fp, "\n");	  
+    if ( u.mesh().type() == Mesh::tetrahedra )
+	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", u.number()+1, u.mesh().noNodes(), u.mesh().noCells());
+    if ( u.mesh().type() == Mesh::triangles )
+       fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   u.number()+1, u.mesh().noNodes(), u.mesh().noCells());
 
-      // Write nodes and results
-      for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      {
 
-        Point   p = n->coord();
+    // Write node locations and results
+    for (NodeIterator n(u.mesh()); !n.end(); ++n)
+    {
+      Point p = n->coord();
 
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
+      if ( u.mesh().type() == Mesh::tetrahedra )  fprintf(fp," %e %e %e \n", p.x, p.y, p.z);
+      if ( u.mesh().type() == Mesh::triangles )     fprintf(fp," %e %e  ", p.x, p.y);
+      for (uint i=0; i < VectorDim; ++i) fprintf(fp,"%e ", u(*n,i) );
+      fprintf(fp,"\n");
 
-        fprintf(fp," %e %e %e \n",x1, x2, u(*n));
       }
 
       // Write cell connectivity
@@ -169,52 +119,27 @@ void TecplotFile::operator<<(Function& u)
        fprintf(fp," \n");
      }  
 
-    }
-  }
+   }
+	  
 
   // Write data for seccond and subsequent times
   if ( u.number() != 0 )
   {
-    // Tetrahedra
-    if ( u.mesh().type() == Mesh::tetrahedra ) {
-  
       // Write header
-      fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron, D=(FECONNECT) \n", u.number(), u.mesh().noNodes(), u.mesh().noCells());
+	  if ( u.mesh().type() == Mesh::tetrahedra )
+      	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", u.number()+1, u.mesh().noNodes(), u.mesh().noCells());
+     if ( u.mesh().type() == Mesh::triangles )
+           fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", u.number()+1, u.mesh().noNodes(), u.mesh().noCells());
 
-      // Write node positions and results
+
+      // Write node locations and results
       for (NodeIterator n(u.mesh()); !n.end(); ++n)
       {
 
-        Point   p = n->coord();
+        for (uint i=0; i < VectorDim; ++i) fprintf(fp,"%e ", u(*n,i) );
+        fprintf(fp,"\n");
 
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-        float x3 = (float) p.z;
-
-        fprintf(fp," %e %e %e %e \n",x1, x2, x3, u(*n));
       }
-
-    }
-
-    // Triangles
-    if ( u.mesh().type() == Mesh::triangles ) {
-  
-      // Write header
-      fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, F = FEPOINT, ET=Triangle, D=(FECONNECT) \n", u.number(), u.mesh().noNodes(), u.mesh().noCells());
-
-      // Write node positions and results
-      for (NodeIterator n(u.mesh()); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-
-        fprintf(fp," %e %e %e \n",x1, x2, u(*n));
-      }
-
-    }
   }
     
   // Close file
@@ -226,144 +151,7 @@ void TecplotFile::operator<<(Function& u)
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Tecplot format." << endl;
 
+
+
 }
 //-­---------------------------------------------------------------------------
-void TecplotFile::operator<<(Function::Vector& u)
-{
-  // Assume mesh is the same for all components
-  Mesh* mesh = &(u(0).mesh());
-
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
-
-  // Write mesh the first time
-  if ( u(0).number() == 0 )
-  {
-    // Tetrahedra
-    if ( mesh->type() == Mesh::tetrahedra ) {
-  
-      // Write header
-      fprintf(fp, "TITLE = \"Dolfin output\"  \n");
-      fprintf(fp, "VARIABLES = \"X1\",  \"X2\",  \"X3\" ");
-      for (int i=0; i<u.size(); ++i) fprintf(fp, " ,\"U%d\"  ", i+1);	  
-      fprintf(fp, "\n");	  
-	  fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron \n", u(0).number(), mesh->noNodes(), mesh->noCells());
-
-      // Write node positions and results
-      for (NodeIterator n(mesh); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-        float x3 = (float) p.z;
-
-        fprintf(fp," %e %e %e  ",x1, x2, x3);
-        for (int i=0; i < u.size(); ++i) fprintf(fp,"%e ", u(i)(*n) );
-        fprintf(fp,"\n");
-      }
-
-      // Write cell connectivity
-     for (CellIterator c(mesh); !c.end(); ++c)
-     {
-       for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
-       fprintf(fp," \n");
-     }  
-
-    }
-
-    // Triangles
-    if ( mesh->type() == Mesh::triangles ) {
-  	  
-	  // Write header
-      fprintf(fp, "TITLE = \"Dolfin output\"  \n");
-      fprintf(fp, "VARIABLES = \"X1\",  \"X2\"");
-      for (int i=0; i<u.size(); ++i) fprintf(fp, " ,\"U%d\"  ", i+1);	  
-      fprintf(fp, "\n");	  
-      fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, F = FEPOINT, ET=Triangle \n", u(0).number(), mesh->noNodes(), mesh->noCells());
-
-      // Write nodes and results
-      for (NodeIterator n(mesh); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-
-        fprintf(fp," %e %e  ",x1, x2);
-        for (int i=0; i < u.size(); ++i) fprintf(fp,"%e ", u(i)(*n) );
-        fprintf(fp,"\n");
-      }
-
-      // Write cell connectivity
-     for (CellIterator c(mesh); !c.end(); ++c)
-     {
-       for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id()+1);
-       fprintf(fp," \n");
-     }  
-
-    }
-  }
-
-  // Write data for seccond and subsequent times
-  if ( u(0).number() != 0 )
-  {
-    // Tetrahedra
-    if ( mesh->type() == Mesh::tetrahedra ) {
-  
-      // Write header
-      fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, F = FEPOINT, ET=Tetrahedron, D=(FECONNECT) \n", u(0).number(), mesh->noNodes(), mesh->noCells());
-
-      // Write node positions and results
-      for (NodeIterator n(mesh); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-        float x3 = (float) p.z;
-
-        fprintf(fp," %e %e %e  ",x1, x2, x3);
-        for (int i=0; i < u.size(); ++i) fprintf(fp,"%e ", u(i)(*n) );
-        fprintf(fp,"\n");
-      }
-
-    }
-
-    // Triangles
-    if ( mesh->type() == Mesh::triangles ) {
-  
-      // Write header
-      fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, F = FEPOINT, ET=Triangle, D=(FECONNECT) \n", u(0).number(), mesh->noNodes(), mesh->noCells());
-
-      // Write node positions and results
-      for (NodeIterator n(mesh); !n.end(); ++n)
-      {
-
-        Point   p = n->coord();
-
-        float x1 = (float) p.x;
-        float x2 = (float) p.y;
-
-        fprintf(fp," %e %e  ",x1, x2);
-        for (int i=0; i < u.size(); ++i) fprintf(fp,"%e ", u(i)(*n) );
-        fprintf(fp,"\n");
-      }
-
-    }
-  }
-    
-  // Close file
-  fclose(fp);
-  
-  // Increase the number of times we have saved the function
-  ++u(0);
-
-  cout << "Saved function " << u(0).name() << " (" << u(0).label()
-       << ") to file " << filename << " in Tecplot format." << endl;
-}
-//-­---------------------------------------------------------------------------
-*/

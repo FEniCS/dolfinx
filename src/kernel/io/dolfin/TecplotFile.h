@@ -1,4 +1,4 @@
-// Copyright (C) 2004 Garth N. Wells.
+// Copyright (C) 2004-2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005.
@@ -9,14 +9,10 @@
 #ifndef __TECPLOT_FILE_H
 #define __TECPLOT_FILE_H
 
-#include <string>
-#include <dolfin/constants.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin
 {
-
-  class Mesh;
 
   class TecplotFile : public GenericFile
   {
@@ -29,6 +25,7 @@ namespace dolfin
 
     // Output
     void operator<< (Mesh& mesh);
+    void operator<< (Function& u);
 
   };
   
