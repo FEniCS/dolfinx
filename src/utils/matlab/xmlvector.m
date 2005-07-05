@@ -9,7 +9,11 @@ function xmlvector(filename, x)
 % Copyright (C) 2004 Georgios Foufas.
 % Licensed under the GNU GPL Version 2.
 %
-% Modified by Anders Logg, 2004.
+% Modified by Anders Logg 2004-2005.
+%
+% First added:  2004-02-10
+% Last changed: 2005
+
 
 % Open file
 fp = fopen(filename,'w');

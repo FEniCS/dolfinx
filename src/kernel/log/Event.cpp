@@ -1,5 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-01-03
+// Last changed: 2005
 
 #include <dolfin/LoggerMacros.h>
 #include <dolfin/Event.h>

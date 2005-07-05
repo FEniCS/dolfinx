@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman 
+// Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005
+// Last changed: 2005
 
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>

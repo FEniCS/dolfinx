@@ -1,7 +1,10 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005.
+// Modified by Garth N. Wells 2005.
+//
+// First added:  2003-03-13
+// Last changed: 2005
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -9,9 +12,11 @@
 #include <string>
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class LogStream {
+  class LogStream
+  {
   public:
     
     enum Type {COUT, ENDL};

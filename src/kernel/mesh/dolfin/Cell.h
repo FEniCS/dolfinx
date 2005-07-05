@@ -1,13 +1,14 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
+//
+// First added:  2002
+// Last changed: 2005
+//
 // A couple of comments:
 //
 //   - Enums don't need to be called "refined_regular", just "regular" is enough?
 //   - Move data to GenericCell? Cell should only contain the GenericCell pointer?
 //   - Maybe more methods should be private?
-//
-// Modified by Anders Logg, 2005.
 
 #ifndef __CELL_H
 #define __CELL_H

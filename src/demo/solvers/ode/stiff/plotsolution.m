@@ -1,7 +1,8 @@
-% Copyright (C) 2004 Johan Hoffman and Anders Logg.
+% Copyright (C) 2004-2005 Anders Logg.
 % Licensed under the GNU GPL Version 2.
 %
-% Plot solution and time steps for the stiff test problems.
+% First added:  2004
+% Last changed: 2005
 
 %--- Test problem 1 ---
 

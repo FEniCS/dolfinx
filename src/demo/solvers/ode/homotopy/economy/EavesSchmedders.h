@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005-04-05
+// Last changed: 2005
 
 #ifndef __EAVES_SCHMEDDERS_H
 #define __EAVES_SCHMEDDERS_H

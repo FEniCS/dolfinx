@@ -1,7 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// First added:  2003
+// Last changed: 2005
 
 #ifndef __TET_MESH_REFINEMENT_H
 #define __TET_MESH_REFINEMENT_H

@@ -1,6 +1,8 @@
-# Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
-# Licensed under the GNU GPL Version 2
+# Copyright (C) 2005 Johan Jansson.
+# Licensed under the GNU GPL Version 2.
 #
+# First added:  2005
+# Last changed: 2005
 
 name = "ElasticityUpdatedMass"
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)

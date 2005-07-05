@@ -1,8 +1,11 @@
-// Copyright (C) 2005 Johan Jansson.
+// Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
-// Modified by Johan Hoffman, 2005.
+// Modified by Anders Logg 2005.
+// Modified by Johan Hoffman 2005.
+//
+// First added:  2004-06-22
+// Last changed: 2005
 
 #ifndef __GMRES_H
 #define __GMRES_H

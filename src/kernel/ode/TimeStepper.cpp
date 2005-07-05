@@ -1,8 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Johan Jansson 2003, 2004.
-// Modified by Anders Logg, 2005.
+// First added:  2003
+// Last changed: 2005
 
 #include <cmath>
 #include <string>

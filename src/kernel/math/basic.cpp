@@ -1,8 +1,10 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005.
-// Modified by Anders Logg, 2005.
+// Modified by Garth N. Wells 2005.
+//
+// First added:  2003-02-06
+// Last changed: 2005
 
 #include <time.h>
 #include <stdlib.h>

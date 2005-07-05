@@ -1,8 +1,10 @@
-// Copyright (C) 2004 Harald Svensson.
+// Copyright (C) 2004 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005.
 // Modified by Anders Logg, 2005.
+//
+// First added:  2004
+// Last changed: 2005
 
 #ifndef __TECPLOT_FILE_H
 #define __TECPLOT_FILE_H

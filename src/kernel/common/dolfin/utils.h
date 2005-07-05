@@ -1,6 +1,9 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
+//
+// First added:  2003-02-06
+// Last changed: 2005
+//
 // Contains small nonspecific utility functions useful for various
 // tasks, such as string manipulation, simple type definitions, ...
 
@@ -10,7 +13,8 @@
 #include <stdio.h>
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   bool suffix         (const char *string, const char *suffix);
   void remove_newline (char *string);

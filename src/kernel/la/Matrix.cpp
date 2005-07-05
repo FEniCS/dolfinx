@@ -1,7 +1,10 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
+//
+// First added:  2004
+// Last changed: 2005
 
 #include <iostream>
 #include <sstream>

@@ -1,12 +1,16 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-06-03
+// Last changed: 2005
 
 #ifndef __RADAU_QUADRATURE_H
 #define __RADAU_QUADRATURE_H
 
 #include <dolfin/GaussianQuadrature.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Radau (Gauss-Radau) quadrature on the interval [-1,1].
   /// The n quadrature points are given by the zeros of
@@ -20,7 +24,8 @@ namespace dolfin {
   /// determined by the condition that Radau quadrature with n points
   /// should be exact for polynomials of degree 2n-2.
 
-  class RadauQuadrature : public GaussianQuadrature {
+  class RadauQuadrature : public GaussianQuadrature
+  {
   public:
     
     RadauQuadrature(unsigned int n);

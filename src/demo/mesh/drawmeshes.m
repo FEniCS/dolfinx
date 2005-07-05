@@ -1,7 +1,8 @@
-% Copyright (C) 2003 Johan Hoffman and Anders Logg.
+% Copyright (C) 2003 Anders Logg.
 % Licensed under the GNU GPL Version 2.
 %
-% Draw meshes from the 2D mesh refinement example.
+% First added:  2003-10-21
+% Last changed: 2003
 
 % Load the meshes
 disp('Loading meshes')

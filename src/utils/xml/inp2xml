@@ -4,8 +4,11 @@
 #
 # Usage: inp2xml grid.inp grid.xml
 #
-# Copyright (C) 2002 Johan Hoffman and Anders Logg.
+# Copyright (C) 2002 Anders Logg.
 # Licensed under the GNU GPL Version 2.
+#
+# First added:  2002-12-06
+# Last changed: 2002
 
 use Text::ParseWords;
 

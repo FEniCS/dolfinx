@@ -1,7 +1,10 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson, 2003.
+//
+// First added:  2003-02-17
+// Last changed: 2005
 
 #include <stdio.h>
 

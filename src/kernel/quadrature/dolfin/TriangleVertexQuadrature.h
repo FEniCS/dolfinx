@@ -1,18 +1,24 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-02-06
+// Last changed: 2005
 
 #ifndef __TRIANGLE_VERTEX_QUADRATURE_H
 #define __TRIANGLE_VERTEX_QUADRATURE_H
 
 #include <dolfin/Quadrature.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Quadrature using the three vertices on the reference triangle.
-  class TriangleVertexQuadrature : public Quadrature {
+  class TriangleVertexQuadrature : public Quadrature
+  {
   public:
     
-    TriangleVertexQuadrature() : Quadrature(3) {
+    TriangleVertexQuadrature() : Quadrature(3)
+    {
       
       // Area of triangle
       m = 0.5;

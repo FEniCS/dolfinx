@@ -1,5 +1,8 @@
-% Copyright (C) 2005 Johan Hoffman and Anders Logg.
+% Copyright (C) 2005 Anders Logg.
 % Licensed under the GNU GPL Version 2.
+%
+% First added:  2005-01-13
+% Last changed: 2005
 %
 % Plot the number of laps around each fixed point for Lorenz.
 

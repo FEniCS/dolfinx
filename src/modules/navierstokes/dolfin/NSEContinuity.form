@@ -1,5 +1,8 @@
-# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
-# Licensed under the GNU GPL Version 2
+# Copyright (C) 2005 Johan Hoffman.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2005
 #
 # The contiuity equation for the incompressible 
 # Navier-Stokes equations using cG(1)cG(1)

@@ -1,14 +1,19 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-02-06
+// Last changed: 2005
 
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
 
 #include <dolfin/Point.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class Quadrature {
+  class Quadrature
+  {
   public:
     
     Quadrature(unsigned int n);

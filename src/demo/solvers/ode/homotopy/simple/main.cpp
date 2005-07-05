@@ -1,6 +1,9 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
+//
+// First added:  2005-02-03
+// Last changed: 2005
+//
 // This example demonstrates the homotopy for finding
 // all solutions of a system of polynomial equations
 // for a couple of simple test systems taken from

@@ -1,11 +1,13 @@
-// Copyright (C) 2005 Johan Hoffman 
+// Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2002-11-29
+// Last changed: 2005
 //
 // A cG(1)cG(1) solver for the Navier-Stokes equations in 3D 
 //
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
-//
 
 #include <dolfin.h>
 

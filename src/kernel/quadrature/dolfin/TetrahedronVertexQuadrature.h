@@ -1,18 +1,24 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-02-12
+// Last changed: 2005
 
 #ifndef __TETRAHEDRON_VERTEX_QUADRATURE_H
 #define __TETRAHEDRON_VERTEX_QUADRATURE_H
 
 #include <dolfin/Quadrature.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Quadrature using the four vertices on the reference tetrahedron.  
-  class TetrahedronVertexQuadrature : public Quadrature {
+  class TetrahedronVertexQuadrature : public Quadrature
+  {
   public:
     
-    TetrahedronVertexQuadrature() : Quadrature(4) {
+    TetrahedronVertexQuadrature() : Quadrature(4)
+    {
       
       // Volume of tetrahedron
       m = 1.0 / 6.0;

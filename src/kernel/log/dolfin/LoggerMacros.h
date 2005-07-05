@@ -1,7 +1,8 @@
-// Copyright (C) 2003 Jim Tilander.
+// Copyright (C) 2003-2005 Anders Logg and Jim Tilander.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified for DOLFIN by Anders Logg.
+// First added:  2003-03-13
+// Last changed: 2005
 
 #ifndef __LOGGER_MACROS_H
 #define __LOGGER_MACROS_H

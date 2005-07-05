@@ -7,10 +7,13 @@ function xmlmesh(filename,p,t)
 %   p - points    (exported from PDE Toolbox)
 %   t - triangles (exported from PDE Toolbox)
 %
-% Copyright (C) 2003 Erik Svensson.
+% Copyright (C) 2004 Erik Svensson.
 % Licensed under the GNU GPL Version 2.
 %
-% Modified by Anders Logg 2003, 2004.
+% Modified by Anders Logg 2004-2005.
+%
+% First added:  2004-02-10
+% Last changed: 2005
 
 % Open file
 fp = fopen(filename,'w');

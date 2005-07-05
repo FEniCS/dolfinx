@@ -1,5 +1,8 @@
-# Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
-# Licensed under the GNU GPL Version 2
+# Copyright (C) 2005 Johan Jansson.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2005
 #
 # The bilinear form for standard mass term
 # Compile this form with FFC: ffc ElasticityMass.form.

@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005-02-02
+// Last changed: 2005
 
 #include <dolfin/Array.h>
 #include <dolfin/ComplexODE.h>

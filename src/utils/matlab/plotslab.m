@@ -1,3 +1,9 @@
+% Copyright (C) 2003-2005 Anders Logg.
+% Licensed under the GNU GPL Version 2.
+%
+% First added:  2003-11-07
+% Last changed: 2005
+
 function M = plotslab(debugfile, interval, drawupdates, drawtext, saveps, savepng)
 
 % Usage: M = plotslab(debugfile, interval, drawupdates, drawtext, saveps, savepng)

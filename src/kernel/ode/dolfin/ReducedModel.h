@@ -1,5 +1,8 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-04-04
+// Last changed: 2005
 
 #ifndef __REDUCED_MODEL_H
 #define __REDUCED_MODEL_H

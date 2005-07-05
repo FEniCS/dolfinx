@@ -1,7 +1,8 @@
-// Copyright (C) 2003 Jim Tilander.
+// Copyright (C) 2003-2005 Anders Logg and Jim Tilander.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2003-2005.
+// First added:  2003-03-14
+// Last changed: 2005
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H

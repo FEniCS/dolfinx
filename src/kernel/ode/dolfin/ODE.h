@@ -1,7 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2004, 2005.
+// First added:  2003
+// Last changed: 2005
 
 #ifndef __ODE_H
 #define __ODE_H

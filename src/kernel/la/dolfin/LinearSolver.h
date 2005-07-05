@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-06-19
+// Last changed: 2005
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H

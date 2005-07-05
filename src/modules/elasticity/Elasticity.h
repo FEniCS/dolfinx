@@ -1,14 +1,19 @@
-// Copyright (C) 2003 Fredrik Bengzon and Johan Jansson.
+// Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-02-26
+// Last changed: 2005
 
 #ifndef __ELASTICITY_H
 #define __ELASTICITY_H
 
 #include <dolfin/PDE.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class Elasticity : public PDE {
+  class Elasticity : public PDE
+  {
   public:
     
     Elasticity(Function::Vector& source,

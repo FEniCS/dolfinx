@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005
+// Last changed: 2005
 
 #ifndef __HOMOTOPY_H
 #define __HOMOTOPY_H

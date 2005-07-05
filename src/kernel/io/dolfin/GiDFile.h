@@ -1,5 +1,8 @@
 // Copyright (C) 2004 Harald Svensson.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-03-30
+// Last changed: 2004
 
 #ifndef __GID_FILE_H
 #define __GID_FILE_H
@@ -8,7 +11,8 @@
 #include <dolfin/constants.h>
 #include <dolfin/GenericFile.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
 

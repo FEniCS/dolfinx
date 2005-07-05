@@ -1,5 +1,8 @@
-% Copyright (C) 2005 Johan Hoffman and Anders Logg.
+% Copyright (C) 2005 Johan Jansson and Anders Logg.
 % Licensed under the GNU GPL Version 2.
+%
+% First added:  
+% Last changed: 2005
 
 % Load data
 primal

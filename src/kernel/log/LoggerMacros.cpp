@@ -1,7 +1,12 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Thanks to Jim Tilander for many helpful hints.
+//
+// First added:  2003-03-13
+// Last changed: 2005
+
+
 
 #include <stdarg.h>
 #include <signal.h>

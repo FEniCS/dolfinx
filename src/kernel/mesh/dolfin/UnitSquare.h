@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005
+// Last changed: 2005
 
 #ifndef __UNIT_SQUARE_H
 #define __UNIT_SQUARE_H

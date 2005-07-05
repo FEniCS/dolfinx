@@ -1,5 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-06-03
+// Last changed: 2005
 
 #ifndef __GAUSS_QUADRATURE_H
 #define __GAUSS_QUADRATURE_H
@@ -7,7 +10,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/GaussianQuadrature.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Gauss (Gauss-Legendre) quadrature on the interval [-1,1].
   /// The n quadrature points are given by the zeros of the
@@ -18,7 +22,8 @@ namespace dolfin {
   /// determined by the condition that Gauss quadrature with n points
   /// should be exact for polynomials of degree 2n-1.
 
-  class GaussQuadrature : public GaussianQuadrature {
+  class GaussQuadrature : public GaussianQuadrature
+  {
   public:
     
     GaussQuadrature(unsigned int n);

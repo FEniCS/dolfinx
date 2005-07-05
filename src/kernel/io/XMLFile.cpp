@@ -1,8 +1,10 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Erik Svensson, 2003
-// Modified by Anders Logg, 2005.
+// Modified by Erik Svensson 2003.
+//
+// First added:  2002-12-03
+// Last changed: 2005
 
 #include <stdarg.h>
 

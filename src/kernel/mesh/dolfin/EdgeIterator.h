@@ -1,8 +1,10 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
-// Modified by Garth N. Wells, 2005.
+// Modified by Garth N. Wells 2005.
+//
+// First added:  2003
+// Last changed: 2005
 
 #ifndef __EDGE_ITERATOR_H
 #define __EDGE_ITERATOR_H
@@ -11,7 +13,8 @@
 #include <dolfin/PList.h>
 #include <dolfin/Table.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Mesh;
   class Node;
@@ -26,7 +29,8 @@ namespace dolfin {
 
   typedef Edge* EdgePointer;
   
-  class EdgeIterator {
+  class EdgeIterator
+  {
   public:
 	 
     EdgeIterator(const Mesh& mesh);

@@ -1,19 +1,25 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-02-12
+// Last changed: 2005
 
 #ifndef __TETRAHEDRON_MIDPOINT_QUADRATURE_H
 #define __TETRAHEDRON_MIDPOINT_QUADRATURE_H
 
 #include <dolfin/Quadrature.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Quadrature using the four midpoints on the edges
   /// of the reference tetrahedron.  
-  class TetrahedronMidpointQuadrature : public Quadrature {
+  class TetrahedronMidpointQuadrature : public Quadrature
+  {
   public:
     
-    TetrahedronMidpointQuadrature() : Quadrature(6) {
+    TetrahedronMidpointQuadrature() : Quadrature(6)
+    {
       
       // Volume of tetrahedron
       m = 1 / 6.0;

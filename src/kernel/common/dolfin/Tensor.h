@@ -1,10 +1,14 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-02-06
+// Last changed: 2005
 
 #ifndef __TENSOR_H
 #define __TENSOR_H
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// A Tensor is a datastructure containing values accessed by a number of
   /// indices. The number of such indices is the order of the tensor. If the
@@ -22,7 +26,8 @@ namespace dolfin {
   ///
   /// where m is the order and n is the dimension.
 
-  template <class T> class Tensor {
+  template <class T> class Tensor
+  {
   public:
 
     /// Create empty tensor

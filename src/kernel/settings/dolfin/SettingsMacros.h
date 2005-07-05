@@ -1,6 +1,9 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
+//
+// First added:  2003-05-06
+// Last changed: 2005
+//
 // These are not really macros, but we try to mimic the structure
 // of the log system.
 
@@ -9,7 +12,8 @@
 
 #include <stdarg.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Add new parameter
   void dolfin_parameter(Parameter::Type type, const char* identifier, ...);

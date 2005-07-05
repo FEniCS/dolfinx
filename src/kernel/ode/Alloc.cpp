@@ -1,5 +1,8 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-12-21
+// Last changed: 2005
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Alloc.h>

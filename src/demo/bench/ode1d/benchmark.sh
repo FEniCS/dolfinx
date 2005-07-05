@@ -3,6 +3,9 @@
 # Copyright (C) 2005 Johan Jansson.
 # Licensed under the GNU GPL Version 2.
 #
+# First added:  2005
+# Last changed: 2005
+#
 # Note: /usr/bin/time (Debian package time) is needed
 # to avoid using the bash built-in time, which is
 # difficult to redirect.

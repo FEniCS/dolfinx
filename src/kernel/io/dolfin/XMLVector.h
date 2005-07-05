@@ -1,5 +1,8 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2003-07-15
+// Last changed: 2005
 
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H

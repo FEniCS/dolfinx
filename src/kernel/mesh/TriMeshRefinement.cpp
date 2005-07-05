@@ -1,7 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// First added:  2003
+// Last changed: 2005
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>

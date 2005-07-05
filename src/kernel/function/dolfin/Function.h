@@ -1,7 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Johan Jansson, 2005.
+// First added:  2003-11-28
+// Last changed: 2005
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H

@@ -1,5 +1,8 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-03-31
+// Last changed: 2005
 
 #ifndef __XML_PARAMETER_LIST_H
 #define __XML_PARAMETER_LIST_H

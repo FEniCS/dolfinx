@@ -1,5 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2002-12-16
+// Last changed: 2005
 
 #ifndef __DOLFIN_CONSTANTS_H
 #define __DOLFIN_CONSTANTS_H

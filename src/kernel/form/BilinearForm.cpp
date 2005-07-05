@@ -1,7 +1,8 @@
-// Copyright (C) 2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// First added:  2004-05-28
+// Last changed: 2005
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>

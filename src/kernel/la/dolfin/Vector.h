@@ -1,7 +1,8 @@
-// Copyright (C) 2004 Johan Jansson.
+// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// First added:  2004
+// Last changed: 2005
 
 #ifndef __VECTOR_H
 #define __VECTOR_H

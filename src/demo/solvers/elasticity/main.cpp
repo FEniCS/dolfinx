@@ -1,5 +1,8 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2004-02-26
+// Last changed: 2005
 
 #include <dolfin.h>
 

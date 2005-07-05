@@ -1,9 +1,10 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Johan Hoffman, 2005.
-// Modified by Johan Jansson, 2005.
-// Modified by Anders Logg, 2005.
+// Modified by Johan Jansson 2005.
+//
+// First added:  2002
+// Last changed: 2005
 
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H

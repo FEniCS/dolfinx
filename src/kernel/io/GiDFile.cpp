@@ -2,6 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2004.
+//
+// First added:  2004-03-30
+// Last changed: 2004
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>

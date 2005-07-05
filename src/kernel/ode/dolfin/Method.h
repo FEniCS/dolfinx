@@ -1,5 +1,8 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005-05-02
+// Last changed: 2005
 
 #ifndef __METHOD_H
 #define __METHOD_H

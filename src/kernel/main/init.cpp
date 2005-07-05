@@ -1,5 +1,8 @@
-// Copyright (C) 2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005-02-13
+// Last changed: 2005
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
