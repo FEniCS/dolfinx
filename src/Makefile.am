@@ -1,1 +1,1 @@
-SUBDIRS = pre kernel modules config post demo utils greeting
+SUBDIRS = pre kernel modules config post utils greeting
