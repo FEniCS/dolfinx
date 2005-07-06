@@ -71,6 +71,10 @@ scp $TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
 ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
 
+# Notify dolfin-dev of the new version
+SUBJECT="Version "$VERSION" of DOLFIN released"
+cat ChangeLog | mail -s "$SUBJECT" dolfin-dev@fenics.org
+
 # Write a message
 echo ' '
 echo 'Now update at freshmeat.'
