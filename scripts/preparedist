@@ -25,6 +25,7 @@ scripts/preconfigure
 ./configure --enable-optimization
 make clean
 make
+make demo
 
 echo '- Running DOLFIN benchmark problem'
 sleep 1
