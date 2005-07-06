@@ -67,6 +67,10 @@ scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 echo 'Copying tarball to web server'
 scp $TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 
+# Update on web server
+ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
+ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
+
 # Write a message
 echo ' '
-echo 'Now update the version number on the web page and update at freshmeat.'
+echo 'Now update at freshmeat.'
