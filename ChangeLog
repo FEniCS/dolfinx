@@ -1,3 +1,4 @@
+ - Add new output format Paraview/VTK (Garth N. Wells)
  - Update Tecplot interface
  - Move to PETSc 2.3.0
  - Complete support for general order Lagrange elements in triangles and tetrahedra

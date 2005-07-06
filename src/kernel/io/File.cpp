@@ -1,8 +1,10 @@
 // Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2005
+//
 // First added:  2002-11-12
-// Last changed: 2005
+// Last changed: 2005-07-05
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -14,6 +16,7 @@
 #include <dolfin/OpenDXFile.h>
 #include <dolfin/GiDFile.h>
 #include <dolfin/TecplotFile.h>
+#include <dolfin/VTKFile.h>
 
 using namespace dolfin;
 
@@ -40,6 +43,8 @@ File::File(const std::string& filename)
     file = new OpenDXFile(filename);
   else if ( filename.rfind(".tec") != filename.npos )
     file = new TecplotFile(filename);
+  else if ( filename.rfind(".vtu") != filename.npos )
+    file = new VTKFile(filename);
   else
   {
     file = 0;
@@ -67,6 +72,9 @@ File::File(const std::string& filename, Type type)
     break;
   case TECPLOT:
     file = new TecplotFile(filename);
+    break;
+  case VTK:
+    file = new VTKFile(filename);
     break;
   default:
     file = 0;

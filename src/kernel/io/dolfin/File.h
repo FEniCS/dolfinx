@@ -1,8 +1,10 @@
 // Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2005
+//
 // First added:  2002-11-12
-// Last changed: 2005
+// Last changed: 2005-07-05
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -23,7 +25,7 @@ namespace dolfin
   class File {
   public:
     
-    enum Type { XML, MATLAB, OCTAVE, OPENDX, GID, TECPLOT };
+    enum Type { XML, MATLAB, OCTAVE, OPENDX, GID, TECPLOT, VTK };
     
     File(const std::string& filename);
     File(const std::string& filename, Type type);
