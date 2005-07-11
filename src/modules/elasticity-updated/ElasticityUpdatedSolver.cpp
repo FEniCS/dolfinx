@@ -177,12 +177,15 @@ void ElasticityUpdatedSolver::solve()
   {
     int id = (*cell).id();
 
-    real factor = 6.0 * 1.0 / (*cell).volume(); 
+    real factor = 1.0 / (*cell).volume(); 
 
     msigma(3 * id + 0) = factor;
     msigma(3 * id + 1) = factor;
     msigma(3 * id + 2) = factor;
   }
+
+  cout << "msigma: " << endl;
+  msigma.disp();
 
 
   // Assemble v vector
@@ -272,14 +275,13 @@ void ElasticityUpdatedSolver::solve()
 
 //     }
 
-    VecPointwiseMult(xsigmav01.vec(), msigma.vec(), xtmp01.vec());
-    VecPointwiseMult(xsigmav11.vec(), msigma.vec(), xtmp11.vec());
-    VecPointwiseMult(xsigmav21.vec(), msigma.vec(), xtmp21.vec());
+    VecPointwiseMult(xtmp01.vec(), xsigmav01.vec(), msigma.vec());
+    VecPointwiseMult(xtmp11.vec(), xsigmav11.vec(), msigma.vec());
+    VecPointwiseMult(xtmp21.vec(), xsigmav21.vec(), msigma.vec());
 
     xtmp01.apply();
     xtmp11.apply();
     xtmp21.apply();
-
 
     elapsed = toc();
     cout << "elapsed: " << elapsed << endl;
@@ -305,13 +307,13 @@ void ElasticityUpdatedSolver::solve()
 
 //     cout << "xsigma01: " << endl;
 //     xsigma01.disp();
-
+    
 //     cout << "xsigma11: " << endl;
 //     xsigma11.disp();
-
+    
 //     cout << "xsigma21: " << endl;
 //     xsigma21.disp();
-
+    
 
     dolfin_debug("Assembling velocity vector");
     tic();
@@ -333,7 +335,7 @@ void ElasticityUpdatedSolver::solve()
     dolfin_debug("Computing");
     tic();
 
-    VecPointwiseDivide(xtmp1.vec(), m.vec(), stepresidual.vec());
+    VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
     stepresidual *= k;
     stepresidual.axpy(-1, x21);
     stepresidual.axpy(1, x20);

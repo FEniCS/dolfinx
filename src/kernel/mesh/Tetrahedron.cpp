@@ -88,7 +88,7 @@ real Tetrahedron::volume() const
 	     x3 * ( y1*z2 + y4*z1 + y2*z4 - y2*z1 - y1*z4 - y4*z2 ) -
 	     x4 * ( y1*z2 + y2*z3 + y3*z1 - y2*z1 - y3*z2 - y1*z3 ) );
 
-  return fabs(v);
+  return fabs(v) / 6.0;
 }
 //-----------------------------------------------------------------------------
 real Tetrahedron::diameter() const

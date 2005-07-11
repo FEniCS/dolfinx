@@ -75,8 +75,9 @@ int main(int argc, char **argv)
   dolfin_output("text");
 
   //Mesh mesh("cow01.xml.gz");
-  Mesh mesh("cow05.xml.gz");
+  //Mesh mesh("cow05.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
+  Mesh mesh("minimal2.xml.gz");
 
 //   File outfile("mymesh.xml.gz");
 
