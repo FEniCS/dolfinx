@@ -172,7 +172,7 @@ void Matrix::ident(const int rows[], int m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
-	PetscScalar one = 1.0;
+  PetscScalar one = 1.0;
   MatZeroRowsIS(A, is, one);
   ISDestroy(is);
 }

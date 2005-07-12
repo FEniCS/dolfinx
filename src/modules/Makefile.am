@@ -1,6 +1,7 @@
 SUBDIRS = dolfin \
           poisson \
           convdiff \
+	  navierstokes \
           elasticity \
 	  elasticity-updated
 # navierstokes

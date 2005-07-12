@@ -134,7 +134,7 @@ else
 fi
 
 # List of DOLFIN module libraries
-DOLFIN_MODULES="poisson convdiff elasticity elasticity-updated"
+DOLFIN_MODULES="poisson convdiff navierstokes elasticity elasticity-updated"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la log main math mesh ode quadrature settings common"

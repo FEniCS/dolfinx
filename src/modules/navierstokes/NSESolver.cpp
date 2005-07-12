@@ -20,12 +20,6 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  Function u;      // velocity;
-  Function p;      // pressure; 
-  Function up;     // velocity from previous time step
-  Function uc;     // linearized convection velocity 
-  Function f;      // force term
-
   real t  = 0.0;   // current time
   real T  = 1.0;   // final time
   real k  = 0.1;   // time step
@@ -34,124 +28,96 @@ void NSESolver::solve()
 
   // stabilization parameters
   real d1,d2;      
+
+  // FIXME: remove this!
+  d1 = d2 = h = 1.0;
   
-  // Create variational forms
-  NSEMomentum::BilinearForm a_mom(uc,k,nu,d1,d2);
-  NSEMomentum::LinearForm L_mom(uc,up,f,p,k,nu,d1,d2);
+  // Create matrices and vectors 
+  Matrix Amom, Acon;
+  Vector xvel, xpvel, xcvel, xpre, bmom, bcon;
 
-  NSEContinuity::BilinearForm a_con();
-  NSEContinuity::LinearForm L_con(uc,f,d1);
+  // Create functions
+  Function u(xvel, mesh);   // Velocity
+  Function up(xpvel, mesh); // Velocity from previous time step 
+  Function uc(xcvel, mesh); // Velocity linearized convection 
+  Function p(xpre, mesh);   // Pressure
 
-  Matrix Am, Ac;
-  Vector xu, xuc, xup, xp, bm, bc;
+  // Define the bilinear and linear forms
+  NSEMomentum::BilinearForm amom(uc,k,nu,d1,d2);
+  NSEMomentum::LinearForm Lmom(uc,up,f,p,k,nu,d1,d2);
 
-  t=h+T;
+  NSEContinuity::BilinearForm acon;
+  NSEContinuity::LinearForm Lcon(uc,f,d1);
 
   /*
+  // Set finite elements
+  u.set(amom.trial());   
+  up.set(amom.trial());   
+  uc.set(amom.trial());   
+  p.set(acon.trial());   
+  */
 
-  // Create variational forms
-  ConvectionDiffusion::BilinearForm a(w, k, c);
-  ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
-
-
-  real t = 0.0;  // current time
-  real T = 1.0;  // final time
-  real k = 0.1;  // time step
-  real c = 0.1;  // diffusion
-
-  Matrix A;                 // matrix defining linear system
-  Vector x0, x1, b;         // vectors 
-  GMRES solver;             // linear system solver
-  Function u0(x0, mesh);    // function at left end-point
-  File file("convdiff.m");  // file for saving solution
-
-  // Create variational forms
-  ConvectionDiffusion::BilinearForm a(w, k, c);
-  ConvectionDiffusion::LinearForm L(u0, w, f, k, c);
-
-  // Assemble stiffness matrix
-  FEM::assemble(a, A, mesh);
-
-  // FIXME: Temporary fix
-  x1.init(mesh.noNodes());
-  Function u1(x1, mesh, a.trial());
-
-  // Start time-stepping
-  Progress p("Time-stepping");
-  while ( t < T )
-  {
-    // Make time step
-    t += k;
-    x0 = x1;
-    
-    // Assemble load vector and set boundary conditions
-    FEM::assemble(L, b, mesh);
-    FEM::setBC(A, b, mesh, a.trial(), bc);
-    
-    // Solve the linear system
-    solver.solve(A, x1, b);
-    
-    // Save the solution
-    u1.set(t);
-    file << u1;
-
-    // Update progress
-    p = t / T;
-  }
-
-
-
-
-
-
-
-  Matrix A_mom,A_con;
-  Vector x_mom, x_con, b_mom, b_con;
+  File file("pressure.m");  // file for saving pressure
 
   // Discretize Continuity equation 
-  NewFEM::assemble(a_con, L_con, A_con, b_con, mesh, element_con);
+  FEM::assemble(acon, Acon, mesh);
 
-  // Set boundary conditions
-  NewFEM::setBC(A_con, b_con, mesh, bc);
+  GMRES solver;
 
+  // Initialize velocity;
+  u = u0;
+  uc = u0;
+  up = u0;
+
+  // Start time-stepping
+  Progress prog("Time-stepping");
   while (t<T) 
   {
 
-  // Discretize Continuity equation 
-  NewFEM::assemble(L_con, b_con, mesh, element_con);
+    up = u;
 
-  // Discretize
-  NewFEM::assemble(a, L, A, b, mesh, element);
+    for (int i=0;i<1;i++){
 
-  // Set boundary conditions
-  NewFEM::setBC(A, b, mesh, bc);
-  
-  // Solve the linear system
-  // FIXME: Make NewGMRES::solve() static
-  NewGMRES solver;
-  solver.solve(A, x, b);
+      uc = u;
 
+      // Discretize Continuity equation 
+      FEM::assemble(Lcon, bcon, mesh);
+
+      // Set boundary conditions
+      FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
+
+      // Solve the linear system
+      solver.solve(Acon, xpre, bcon);
+
+      // Discretize Momentum equations
+      FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
+
+      // Set boundary conditions
+      FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
+
+      // Solve the linear system
+      solver.solve(Amom, xvel, bmom);
+
+    }
+
+
+    // Save the solution
+    p.set(t);
+    file << p;
+
+    // Update progress
+    prog = t / T;
   }
 
 
-  // FIXME: Remove this and implement output for NewFunction
-  Vector xold(b.size());
-  for(uint i = 0; i < x.size(); i++)
-    xold(i) = x(i);
-  Function uold(mesh, xold);
-  uold.rename("u", "temperature");
+  /*
+  // Save function to file
+  Function u(x, mesh, a.trial());
   File file("poisson.m");
-  file << uold;
-
-
-
-
-
-
-
-
-
+  file << u;
   */
+
+
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 

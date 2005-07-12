@@ -123,7 +123,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 
     // Compute map from local to global degrees of freedom
     test_element.dofmap(test_dofs, *cell, mesh);
-
+    
     // Compute element matrix
     L.eval(block, map);
     

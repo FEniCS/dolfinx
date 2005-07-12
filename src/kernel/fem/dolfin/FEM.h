@@ -46,7 +46,7 @@ namespace dolfin
 			 Matrix& A, Vector& b, Mesh& mesh,
 			 BoundaryCondition& bc);
     
-    /// Apply boundary conditions
+    /// Apply boundary conditions to matrix and vector 
     static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
 			const FiniteElement& element, BoundaryCondition& bc);
     
