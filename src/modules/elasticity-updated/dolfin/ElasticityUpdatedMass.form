@@ -6,10 +6,12 @@
 
 name = "ElasticityUpdatedMass"
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+element2 = FiniteElement("Lagrange", "tetrahedron", 1)
 
 u = BasisFunction(element)
 v = BasisFunction(element)
+rho = Function(element2) # Density
 
 i = Index()
 
-a = u[i] * v[i] * dx
+a = rho * u[i] * v[i] * dx

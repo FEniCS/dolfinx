@@ -6,9 +6,19 @@ element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 
 c1 = Constant()	# Lame coefficient
 c2 = Constant()	# Lame coefficient
+vplast = Constant()	# Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
+sigma0 = Function(element2)
+sigma1 = Function(element2)
+sigma2 = Function(element2)
+sigmanorm = Function(element2)	# Norm of sigma (stress)
 
-L = ((2 * c1 * v[i].dx(i) * q[2]) + 
-	(c2 * (v[i].dx(2) + v[2].dx(i))) * q[i]) * dx
+Lplast = ((2 * c1 * (sigma0[0] + sigma1[1] + sigma2[2]) * q[2]) + 
+          (c2 * sigma2[i] * q[i]))
+
+Lelast = ((2 * c1 * v[i].dx(i) * q[2]) + 
+          (c2 * (v[i].dx(2) + v[2].dx(i))) * q[i])
+
+L = (Lelast - vplast * (1 - sigmanorm[0]) * Lplast) * dx
