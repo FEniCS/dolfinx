@@ -45,7 +45,7 @@ void ElasticityUpdatedSolver::solve()
 
   real rtol = 1e-6;
 
-  real vplast = 1.0e-4;
+  real vplast = 1.0e-5;
 
   cout << "lambda: " << lambda << endl;
   cout << "mu: " << mu << endl;
@@ -252,8 +252,8 @@ void ElasticityUpdatedSolver::solve()
 	if(norm > yield)
 	{
 	  cout << "sigmanorm(" << id << "): " << norm << endl;
-	  //proj = 1.0 / norm;
-	  proj = 1.0;
+	  proj = 1.0 / norm;
+	  //proj = 1.0;
 	}
 
 	xsigmanorm(3 * id + 0) = proj;
@@ -326,6 +326,9 @@ void ElasticityUpdatedSolver::solve()
       elapsed = toc();
       dolfin_debug("Assembled vector");
       cout << "elapsed: " << elapsed << endl;
+
+      // Set BC
+      FEM::applyBC(M, xtmp1, mesh, element1, bc);
     
       b = xtmp1;
       b *= k;

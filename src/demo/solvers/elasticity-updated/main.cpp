@@ -15,7 +15,7 @@ class Density : public Function
   real operator() (const Point& p) const
   {
     if(p.x < 0.01 && p.y > 0.0)
-      return 1.0e12;
+      return 1.0e3;
     else
       return 1.0e3;
   }
@@ -26,10 +26,10 @@ class Source : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
-    if(i == 1)
+    if(i == 0)
     {
-      if(p.x >= 0.01)
-	return -10.0 * 1.0e3;
+      if(time() > 1.0 && time() < 5.0)
+	return 10.0 * 1.0e3;
     }
 
     return 0.0;
@@ -85,7 +85,7 @@ public:
   {
     BoundaryValue value;
 
-    if(p.x < 0.01 && p.y >= 0.0)
+    if(p.x == -1.0 && p.y >= 0.0)
     {
       value.set(0.0);
     }    
@@ -101,7 +101,8 @@ int main(int argc, char **argv)
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow05.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
-  Mesh mesh("tetmesh-1c.xml.gz");
+//   Mesh mesh("tetmesh-1c.xml.gz");
+  Mesh mesh("diamond-1.xml.gz");
 
   //Mesh mesh("tetmesh-1c.xml.gz");
 
@@ -131,11 +132,11 @@ int main(int argc, char **argv)
 //   real k = 0.001; // time step
 
   real T = 10.0;  // final time
-  real k = 0.001; // time step
+  real k = 0.0001; // time step
 
-  real E = 5.0e5; // Young's modulus
+  real E = 5.0e4; // Young's modulus
   real nu = 0.3; // Poisson's ratio
-  real nuv = 1.0e2; // viscosity
+  real nuv = 1.0e5; // viscosity
 
   ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv, bc, k, T);
 
