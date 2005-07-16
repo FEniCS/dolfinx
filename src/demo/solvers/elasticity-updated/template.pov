@@ -13,7 +13,7 @@ global_settings { assumed_gamma 2.2 }
 //}
 
 camera {
-   location  <1.5, 0.0, 6.0>
+   location  <1.5, 0.0, 10.0>
    direction <0, 0,    -1>
    up        <0, 1,    0>
    right   <1, 0,    0>

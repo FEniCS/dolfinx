@@ -14,7 +14,7 @@ class Density : public Function
 {
   real operator() (const Point& p) const
   {
-    if(p.x < -0.6 && p.y > -0.3)
+    if(p.x < 0.01 && p.y > 0.0)
       return 1.0e12;
     else
       return 1.0e3;
@@ -26,9 +26,9 @@ class Source : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
-    if(i == 1 && time() > 1.0 && time() < 4.5)
+    if(i == 1)
     {
-      if(p.x >= -0.6)
+      if(p.x >= 0.01)
 	return -10.0 * 1.0e3;
     }
 
@@ -85,7 +85,7 @@ public:
   {
     BoundaryValue value;
 
-    if(p.x <= -0.5 && p.y >= -0.4)
+    if(p.x < 0.01 && p.y >= 0.0)
     {
       value.set(0.0);
     }    
@@ -99,8 +99,9 @@ int main(int argc, char **argv)
   dolfin_output("plain text");
 
   //Mesh mesh("cow01.xml.gz");
-  Mesh mesh("cow05.xml.gz");
+  //Mesh mesh("cow05.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
+  Mesh mesh("tetmesh-1c.xml.gz");
 
   //Mesh mesh("tetmesh-1c.xml.gz");
 
@@ -132,9 +133,9 @@ int main(int argc, char **argv)
   real T = 10.0;  // final time
   real k = 0.001; // time step
 
-  real E = 2.0e5; // Young's modulus
+  real E = 5.0e5; // Young's modulus
   real nu = 0.3; // Poisson's ratio
-  real nuv = 1.0e6; // viscosity
+  real nuv = 1.0e2; // viscosity
 
   ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv, bc, k, T);
 

@@ -43,7 +43,9 @@ void ElasticityUpdatedSolver::solve()
   real lambda = E * nu / ((1 + nu) * (1 - 2 * nu));
   real mu = E / (2 * (1 + nu));
 
-  real vplast = 1.0e-2;
+  real rtol = 1e-6;
+
+  real vplast = 1.0e-4;
 
   cout << "lambda: " << lambda << endl;
   cout << "mu: " << mu << endl;
@@ -157,11 +159,11 @@ void ElasticityUpdatedSolver::solve()
   //ElasticityUpdated::LinearForm Lv;
   ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21,
 				   sigmav01, sigmav11, sigmav21, nuv);
-  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma00, sigma10, sigma20,
+  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma00, sigma10, sigma20,
+  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma00, sigma10, sigma20,
+  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
 //   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1);
 //   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1);
@@ -227,121 +229,132 @@ void ElasticityUpdatedSolver::solve()
 
     f.set(t);
 
-    // Compute norm of stress (sigmanorm)
-    
-    for (CellIterator cell(mesh); !cell.end(); ++cell)
+    for(int iter = 0; iter < 10; iter++)
     {
-      int id = (*cell).id();
+
+      // Compute norm of stress (sigmanorm)
+    
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+	int id = (*cell).id();
       
-      real yield = 1.0e5;
+	real yield = 2.0e4;
 
-      real proj = 1;
-      real norm = 0;
-      for(int i = 0; i < 3; i++)
-      {
-	norm = std::max(norm, fabs(xsigma00(3 * id + i)));
-	norm = std::max(norm, fabs(xsigma10(3 * id + i)));
-	norm = std::max(norm, fabs(xsigma20(3 * id + i)));
+	real proj = 1;
+	real norm = 0;
+	for(int i = 0; i < 3; i++)
+	{
+	  norm = std::max(norm, fabs(xsigma00(3 * id + i)));
+	  norm = std::max(norm, fabs(xsigma10(3 * id + i)));
+	  norm = std::max(norm, fabs(xsigma20(3 * id + i)));
+	}
+
+	if(norm > yield)
+	{
+	  cout << "sigmanorm(" << id << "): " << norm << endl;
+	  //proj = 1.0 / norm;
+	  proj = 1.0;
+	}
+
+	xsigmanorm(3 * id + 0) = proj;
+	xsigmanorm(3 * id + 1) = proj;
+	xsigmanorm(3 * id + 2) = proj;
       }
 
-      if(norm > yield)
-      {
-	cout << "sigmanorm(" << id << "): " << norm << endl;
-	proj = 1.0 / norm;
-	//proj = 1.0;
-      }
+      dolfin_debug("Assembling sigma vectors");
+      tic();
 
-      xsigmanorm(3 * id + 0) = proj;
-      xsigmanorm(3 * id + 1) = proj;
-      xsigmanorm(3 * id + 2) = proj;
+      // Assemble sigma0 vectors
+      FEM::assemble(Lsigma0, xsigmav01, mesh);
+      FEM::assemble(Lsigma1, xsigmav11, mesh);
+      FEM::assemble(Lsigma2, xsigmav21, mesh);
+
+      elapsed = toc();
+      dolfin_debug("Assembled vectors");
+      cout << "elapsed: " << elapsed << endl;
+
+
+      dolfin_debug("Computing");
+      tic();
+
+      VecPointwiseMult(xtmp01.vec(), xsigmav01.vec(), msigma.vec());
+      VecPointwiseMult(xtmp11.vec(), xsigmav11.vec(), msigma.vec());
+      VecPointwiseMult(xtmp21.vec(), xsigmav21.vec(), msigma.vec());
+
+      xtmp01.apply();
+      xtmp11.apply();
+      xtmp21.apply();
+
+      elapsed = toc();
+      cout << "elapsed: " << elapsed << endl;
+      dolfin_debug("Computing");
+      tic();
+
+      xsigma01 = xsigma00;
+      xsigma01.axpy(k, xtmp01);
+
+      xsigma11 = xsigma10;
+      xsigma11.axpy(k, xtmp11);
+
+      xsigma21 = xsigma20;
+      xsigma21.axpy(k, xtmp21);
+
+      xsigmav01 *= 1.0 / lambda;
+      xsigmav11 *= 1.0 / lambda;
+      xsigmav21 *= 1.0 / lambda;
+
+      elapsed = toc();
+      cout << "elapsed: " << elapsed << endl;
+
+
+      //     cout << "xsigma01: " << endl;
+      //     xsigma01.disp();
+    
+      //     cout << "xsigma11: " << endl;
+      //     xsigma11.disp();
+    
+      //     cout << "xsigma21: " << endl;
+      //     xsigma21.disp();
+    
+
+      dolfin_debug("Assembling velocity vector");
+      tic();
+
+      // Assemble v vector
+      FEM::assemble(Lv, xtmp1, mesh);
+
+      elapsed = toc();
+      dolfin_debug("Assembled vector");
+      cout << "elapsed: " << elapsed << endl;
+    
+      b = xtmp1;
+      b *= k;
+      //     b *= 6.0;
+
+      //     cout << "b: " << endl;
+      //     b.disp();
+
+      dolfin_debug("Computing");
+      tic();
+
+      VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
+      stepresidual *= k;
+      stepresidual.axpy(-1, x21);
+      stepresidual.axpy(1, x20);
+
+
+      x21 += stepresidual;
+
+      x11 = x10;
+      x11.axpy(k, x20);
+
+      cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
+
+      if(stepresidual.norm(Vector::linf) <= rtol)
+	break;
     }
 
-    dolfin_debug("Assembling sigma vectors");
-    tic();
 
-    // Assemble sigma0 vectors
-    FEM::assemble(Lsigma0, xsigmav01, mesh);
-    FEM::assemble(Lsigma1, xsigmav11, mesh);
-    FEM::assemble(Lsigma2, xsigmav21, mesh);
-
-    elapsed = toc();
-    dolfin_debug("Assembled vectors");
-    cout << "elapsed: " << elapsed << endl;
-
-
-    dolfin_debug("Computing");
-    tic();
-
-    VecPointwiseMult(xtmp01.vec(), xsigmav01.vec(), msigma.vec());
-    VecPointwiseMult(xtmp11.vec(), xsigmav11.vec(), msigma.vec());
-    VecPointwiseMult(xtmp21.vec(), xsigmav21.vec(), msigma.vec());
-
-    xtmp01.apply();
-    xtmp11.apply();
-    xtmp21.apply();
-
-    elapsed = toc();
-    cout << "elapsed: " << elapsed << endl;
-    dolfin_debug("Computing");
-    tic();
-
-    xsigma01 = xsigma00;
-    xsigma01.axpy(k, xtmp01);
-
-    xsigma11 = xsigma10;
-    xsigma11.axpy(k, xtmp11);
-
-    xsigma21 = xsigma20;
-    xsigma21.axpy(k, xtmp21);
-
-    xsigmav01 *= 1.0 / lambda;
-    xsigmav11 *= 1.0 / lambda;
-    xsigmav21 *= 1.0 / lambda;
-
-    elapsed = toc();
-    cout << "elapsed: " << elapsed << endl;
-
-
-//     cout << "xsigma01: " << endl;
-//     xsigma01.disp();
-    
-//     cout << "xsigma11: " << endl;
-//     xsigma11.disp();
-    
-//     cout << "xsigma21: " << endl;
-//     xsigma21.disp();
-    
-
-    dolfin_debug("Assembling velocity vector");
-    tic();
-
-    // Assemble v vector
-    FEM::assemble(Lv, xtmp1, mesh);
-
-    elapsed = toc();
-    dolfin_debug("Assembled vector");
-    cout << "elapsed: " << elapsed << endl;
-    
-    b = xtmp1;
-    b *= k;
-//     b *= 6.0;
-
-//     cout << "b: " << endl;
-//     b.disp();
-
-    dolfin_debug("Computing");
-    tic();
-
-    VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
-    stepresidual *= k;
-    stepresidual.axpy(-1, x21);
-    stepresidual.axpy(1, x20);
-
-
-    x21 += stepresidual;
-
-    x11 = x10;
-    x11.axpy(k, x20);
 
     //Update the mesh
 
