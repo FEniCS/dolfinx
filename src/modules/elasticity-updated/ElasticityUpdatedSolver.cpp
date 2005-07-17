@@ -30,7 +30,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 						 BoundaryCondition& bc,
 						 real k, real T)
   : mesh(mesh), f(f), v0(v0), rho(rho), E(E), nu(nu), nuv(nuv), bc(bc), k(k),
-    T(T), counter(0)
+    T(T), counter(0), lastsample(0)
 {
   // Do nothing
 }
@@ -45,7 +45,8 @@ void ElasticityUpdatedSolver::solve()
 
   real rtol = 1e-6;
 
-  real vplast = 1.0e-5;
+//   real vplast = 4e-1;
+  real vplast = 2e-5;
 
   cout << "lambda: " << lambda << endl;
   cout << "mu: " << mu << endl;
@@ -97,7 +98,7 @@ void ElasticityUpdatedSolver::solve()
 
   int offset = mesh.noNodes();
 
-  real elapsed = 0;
+//   real elapsed = 0;
 
   x10.init(Nv);
   x11.init(Nv);
@@ -159,11 +160,11 @@ void ElasticityUpdatedSolver::solve()
   //ElasticityUpdated::LinearForm Lv;
   ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21,
 				   sigmav01, sigmav11, sigmav21, nuv);
-  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma01, sigma11, sigma21,
+  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma01,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma01, sigma11, sigma21,
+  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma11,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma01, sigma11, sigma21,
+  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma21,
 					      sigmanorm, lambda, mu, vplast);
 //   ElasticityUpdatedSigma0::LinearForm Lsigma0(v1);
 //   ElasticityUpdatedSigma1::LinearForm Lsigma1(v1);
@@ -171,15 +172,15 @@ void ElasticityUpdatedSolver::solve()
   ElasticityUpdatedProj::LinearForm Lv0(v0);
   ElasticityUpdatedMass::BilinearForm amass(rho);
 
-  dolfin_debug("Assembling mass matrix");
-  tic();
+//   dolfin_debug("Assembling mass matrix");
+//   tic();
 
   // Assemble mass matrix
   FEM::assemble(amass, M, mesh);
 
-  elapsed = toc();
-  dolfin_debug("Assembled matrix");
-  cout << "elapsed: " << elapsed << endl;
+//   elapsed = toc();
+//   dolfin_debug("Assembled matrix");
+//   cout << "elapsed: " << elapsed << endl;
 
   // Lump mass matrix
   FEM::lump(M, m);
@@ -203,7 +204,7 @@ void ElasticityUpdatedSolver::solve()
 
 
   // Save the solution
-  //save(mesh, file);
+  save(mesh, file, t);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -227,6 +228,7 @@ void ElasticityUpdatedSolver::solve()
     xsigma10 = xsigma11;
     xsigma20 = xsigma21;
 
+    t += k;
     f.set(t);
 
     for(int iter = 0; iter < 10; iter++)
@@ -261,21 +263,21 @@ void ElasticityUpdatedSolver::solve()
 	xsigmanorm(3 * id + 2) = proj;
       }
 
-      dolfin_debug("Assembling sigma vectors");
-      tic();
+//       dolfin_debug("Assembling sigma vectors");
+//       tic();
 
       // Assemble sigma0 vectors
       FEM::assemble(Lsigma0, xsigmav01, mesh);
       FEM::assemble(Lsigma1, xsigmav11, mesh);
       FEM::assemble(Lsigma2, xsigmav21, mesh);
 
-      elapsed = toc();
-      dolfin_debug("Assembled vectors");
-      cout << "elapsed: " << elapsed << endl;
+//       elapsed = toc();
+//       dolfin_debug("Assembled vectors");
+//       cout << "elapsed: " << elapsed << endl;
 
 
-      dolfin_debug("Computing");
-      tic();
+//       dolfin_debug("Computing");
+//       tic();
 
       VecPointwiseMult(xtmp01.vec(), xsigmav01.vec(), msigma.vec());
       VecPointwiseMult(xtmp11.vec(), xsigmav11.vec(), msigma.vec());
@@ -285,10 +287,10 @@ void ElasticityUpdatedSolver::solve()
       xtmp11.apply();
       xtmp21.apply();
 
-      elapsed = toc();
-      cout << "elapsed: " << elapsed << endl;
-      dolfin_debug("Computing");
-      tic();
+//       elapsed = toc();
+//       cout << "elapsed: " << elapsed << endl;
+//       dolfin_debug("Computing");
+//       tic();
 
       xsigma01 = xsigma00;
       xsigma01.axpy(k, xtmp01);
@@ -303,8 +305,8 @@ void ElasticityUpdatedSolver::solve()
       xsigmav11 *= 1.0 / lambda;
       xsigmav21 *= 1.0 / lambda;
 
-      elapsed = toc();
-      cout << "elapsed: " << elapsed << endl;
+//       elapsed = toc();
+//       cout << "elapsed: " << elapsed << endl;
 
 
       //     cout << "xsigma01: " << endl;
@@ -317,15 +319,15 @@ void ElasticityUpdatedSolver::solve()
       //     xsigma21.disp();
     
 
-      dolfin_debug("Assembling velocity vector");
-      tic();
+//       dolfin_debug("Assembling velocity vector");
+//       tic();
 
       // Assemble v vector
       FEM::assemble(Lv, xtmp1, mesh);
 
-      elapsed = toc();
-      dolfin_debug("Assembled vector");
-      cout << "elapsed: " << elapsed << endl;
+//       elapsed = toc();
+//       dolfin_debug("Assembled vector");
+//       cout << "elapsed: " << elapsed << endl;
 
       // Set BC
       FEM::applyBC(M, xtmp1, mesh, element1, bc);
@@ -337,8 +339,8 @@ void ElasticityUpdatedSolver::solve()
       //     cout << "b: " << endl;
       //     b.disp();
 
-      dolfin_debug("Computing");
-      tic();
+//       dolfin_debug("Computing");
+//       tic();
 
       VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
       stepresidual *= k;
@@ -371,16 +373,14 @@ void ElasticityUpdatedSolver::solve()
       (*n).coord().z += x11(id + 2 * offset) - x10(id + 2 * offset);
     }
 
-    elapsed = toc();
-    cout << "elapsed: " << elapsed << endl;
+//     elapsed = toc();
+//     cout << "elapsed: " << elapsed << endl;
 
     // Save the solution
-    save(mesh, file);
+    save(mesh, file, t);
 
-    counter++;
+//     counter++;
 
-    t += k;
-    f.set(t);
 
     // Update progress
     p = t / T;
@@ -388,9 +388,11 @@ void ElasticityUpdatedSolver::solve()
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile)
+void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
 {
-  if(counter % (int)(1.0 / 33.0 / k) == 0)
+  real samplefreq = 1.0 / 33.0;
+
+  while(lastsample + samplefreq < t || t == 0.0)
   {
     std::ostringstream fileid, filename;
     fileid.fill('0');
@@ -400,7 +402,7 @@ void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile)
     
     filename << "mesh" << fileid.str() << ".xml.gz";
     
-    cout << "writing: " << filename.str() << endl;
+    cout << "writing: " << filename.str() << " at t: " << t << endl;
     
     std::string foo = filename.str();
     const char *fname = foo.c_str();
@@ -408,8 +410,38 @@ void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile)
     File meshfile(fname);
     
     meshfile << mesh;
-    
+    counter++;
+
+    cout << "lastsample: " << lastsample << " t: " << t << endl;
+
+    lastsample = std::min(t, lastsample + samplefreq);
+
+    if(t == 0.0)
+    {
+      break;
+    }
   }
+
+//   if(counter % (int)(1.0 / 33.0 / k) == 0)
+//   {
+//     std::ostringstream fileid, filename;
+//     fileid.fill('0');
+//     fileid.width(6);
+    
+//     fileid << counter;
+    
+//     filename << "mesh" << fileid.str() << ".xml.gz";
+    
+//     cout << "writing: " << filename.str() << endl;
+    
+//     std::string foo = filename.str();
+//     const char *fname = foo.c_str();
+    
+//     File meshfile(fname);
+    
+//     meshfile << mesh;
+    
+//   }
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve(Mesh& mesh,

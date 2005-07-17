@@ -25,7 +25,7 @@ namespace dolfin
     // Solve ElasticityUpdated
     void solve();
     
-    void save(Mesh& mesh, File &solutionfile);
+    void save(Mesh& mesh, File &solutionfile, real t);
 
     // Solve ElasticityUpdated (static version)
     static void solve(Mesh& mesh,
@@ -46,6 +46,7 @@ namespace dolfin
     real k;
     real T;
     int counter;
+    real lastsample;
 
   };
   
