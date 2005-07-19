@@ -24,3 +24,6 @@ Lelast = ((2 * c1 * v[i].dx(i) * q[2]) +
           (c2 * (v[i].dx(2) + v[2].dx(i))) * q[i])
 
 L = (Lelast - vplast * (1 - sigmanorm[0]) * Lplast) * dx
+
+#L = ((2 * c1 * v[i].dx(i) * q[2]) + 
+#          (c2 * (v[i].dx(2) + v[2].dx(i))) * q[i]) * dx
