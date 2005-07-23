@@ -126,9 +126,13 @@ int main(int argc, char **argv)
 //   real nu = 0.3; // Poisson's ratio
 //   real nuv = 1.0e4; // viscosity
 
-  real E = 1.0e4; // Young's modulus
+//   real E = 1.0e5; // Young's modulus
+//   real nu = 0.3; // Poisson's ratio
+//   real nuv = 1.0e3; // viscosity
+
+  real E = 5.0e4; // Young's modulus
   real nu = 0.3; // Poisson's ratio
-  real nuv = 1.0e3; // viscosity
+  real nuv = 1.0e2; // viscosity
 
   ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv, bc, k, T);
 

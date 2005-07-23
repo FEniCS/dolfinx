@@ -177,7 +177,7 @@ void ElasticityUpdatedSolver::solve()
   }
 
   // Save the solution
-  save(mesh, file, t);
+  //save(mesh, file, t);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -194,7 +194,8 @@ void ElasticityUpdatedSolver::solve()
 
     t += k;
     f.set(t);
-
+    cout << "t: " << t << endl;
+      
     for(int iter = 0; iter < 10; iter++)
     {
       
@@ -295,10 +296,11 @@ void ElasticityUpdatedSolver::solve()
     }
 
     // Save the solution
-    save(mesh, file, t);
+    //save(mesh, file, t);
 
     // Update progress
     p = t / T;
+
 
   }
 }
