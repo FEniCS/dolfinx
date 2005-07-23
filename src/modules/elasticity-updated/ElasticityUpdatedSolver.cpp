@@ -63,7 +63,7 @@ void ElasticityUpdatedSolver::solve()
   Vector x10, x11, x20, x21, x11old, x21old, b, m, msigma, xtmp1, xtmp2,
     xtmp01, xtmp11, xtmp21, stepresidual, stepresidual2;
   Vector xsigma00, xsigma01, xsigma10, xsigma11, xsigma20, xsigma21,
-    xsigmav01, xsigmav11, xsigmav21, xsigmanorm;
+    xepsilon01, xepsilon11, xepsilon21, xsigmanorm;
 
   Function v1old(x20, mesh, element1);
   Function v1(x21, mesh, element1);
@@ -73,9 +73,9 @@ void ElasticityUpdatedSolver::solve()
   Function sigma00(xsigma00, mesh, element20);
   Function sigma10(xsigma10, mesh, element21);
   Function sigma20(xsigma20, mesh, element22);
-  Function sigmav01(xsigmav01, mesh, element20);
-  Function sigmav11(xsigmav11, mesh, element21);
-  Function sigmav21(xsigmav21, mesh, element22);
+  Function epsilon01(xepsilon01, mesh, element20);
+  Function epsilon11(xepsilon11, mesh, element21);
+  Function epsilon21(xepsilon21, mesh, element22);
   Function sigmanorm(xsigmanorm, mesh, element22);
 
 
@@ -113,9 +113,9 @@ void ElasticityUpdatedSolver::solve()
   xsigma20.init(Nsigma);
   xsigma21.init(Nsigma);
 
-  xsigmav01.init(Nsigma);
-  xsigmav11.init(Nsigma);
-  xsigmav21.init(Nsigma);
+  xepsilon01.init(Nsigma);
+  xepsilon11.init(Nsigma);
+  xepsilon21.init(Nsigma);
 
   xsigmanorm.init(Nsigma);
 
@@ -146,12 +146,12 @@ void ElasticityUpdatedSolver::solve()
 
   // Create variational forms
   ElasticityUpdated::LinearForm Lv(f, sigma01, sigma11, sigma21,
-				   sigmav01, sigmav11, sigmav21, nuv);
-  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma01,
+				   epsilon01, epsilon11, epsilon21, nuv);
+  ElasticityUpdatedSigma0::LinearForm Lsigma0(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma11,
+  ElasticityUpdatedSigma1::LinearForm Lsigma1(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
-  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma21,
+  ElasticityUpdatedSigma2::LinearForm Lsigma2(v1, sigma01, sigma11, sigma21,
 					      sigmanorm, lambda, mu, vplast);
 
 
@@ -228,13 +228,13 @@ void ElasticityUpdatedSolver::solve()
       tic();
 
       // Assemble sigma0 vectors
-      FEM::assemble(Lsigma0, xsigmav01, mesh);
-      FEM::assemble(Lsigma1, xsigmav11, mesh);
-      FEM::assemble(Lsigma2, xsigmav21, mesh);
+      FEM::assemble(Lsigma0, xsigma01, mesh);
+      FEM::assemble(Lsigma1, xsigma11, mesh);
+      FEM::assemble(Lsigma2, xsigma21, mesh);
 
-      VecPointwiseMult(xtmp01.vec(), xsigmav01.vec(), msigma.vec());
-      VecPointwiseMult(xtmp11.vec(), xsigmav11.vec(), msigma.vec());
-      VecPointwiseMult(xtmp21.vec(), xsigmav21.vec(), msigma.vec());
+      VecPointwiseMult(xtmp01.vec(), xsigma01.vec(), msigma.vec());
+      VecPointwiseMult(xtmp11.vec(), xsigma11.vec(), msigma.vec());
+      VecPointwiseMult(xtmp21.vec(), xsigma21.vec(), msigma.vec());
 
       xtmp01.apply();
       xtmp11.apply();
@@ -249,9 +249,9 @@ void ElasticityUpdatedSolver::solve()
       xsigma21 = xsigma20;
       xsigma21.axpy(k, xtmp21);
 
-      xsigmav01 *= 1.0 / lambda;
-      xsigmav11 *= 1.0 / lambda;
-      xsigmav21 *= 1.0 / lambda;
+      xepsilon01 *= 1.0 / lambda;
+      xepsilon11 *= 1.0 / lambda;
+      xepsilon21 *= 1.0 / lambda;
 
       // Assemble v vector
       FEM::assemble(Lv, xtmp1, mesh);

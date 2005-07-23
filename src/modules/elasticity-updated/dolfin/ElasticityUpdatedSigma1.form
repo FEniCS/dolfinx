@@ -10,15 +10,15 @@ vplast = Constant()	# Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
-#sigma0 = Function(element2)
+sigma0 = Function(element2)
 sigma1 = Function(element2)
-#sigma2 = Function(element2)
+sigma2 = Function(element2)
 sigmanorm = Function(element2)	# Norm of sigma (stress)
 
-#Lplast = ((0 * c1 * (sigma0[0] + sigma1[1] + sigma2[2]) * q[1]) + 
-#          (c2 * sigma1[i] * q[i]))
+Lplast = ((0 * c1 * (sigma0[0] + sigma1[1] + sigma2[2]) * q[1]) + 
+          (c2 * sigma1[i] * q[i]))
 
-Lplast = c2 * sigma1[i] * q[i]
+#Lplast = c2 * sigma1[i] * q[i]
 
 
 Lelast = ((2 * c1 * v[i].dx(i) * q[1]) + 

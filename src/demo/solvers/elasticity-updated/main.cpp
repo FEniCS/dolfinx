@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   dolfin_output("text");
 
   //Mesh mesh("cow01.xml.gz");
-  Mesh mesh("cow05.xml.gz");
+  Mesh mesh("cow07.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
   //Mesh mesh("minimal2.xml.gz");
 
@@ -120,13 +120,18 @@ int main(int argc, char **argv)
 //   real k = 0.001; // time step
 
   real T = 5.0;  // final time
-  real k = 1.0e-2; // time step
+  real k = 3.0e-3; // time step
+
+//   real E = 1.0e4; // Young's modulus
+//   real nu = 0.3; // Poisson's ratio
+//   real nuv = 1.0e4; // viscosity
 
   real E = 1.0e4; // Young's modulus
   real nu = 0.3; // Poisson's ratio
-  real nuv = 4.0e3; // viscosity
+  real nuv = 1.0e3; // viscosity
 
   ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv, bc, k, T);
 
   return 0;
 }
+
