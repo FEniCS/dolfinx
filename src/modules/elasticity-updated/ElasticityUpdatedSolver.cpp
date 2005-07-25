@@ -177,7 +177,7 @@ void ElasticityUpdatedSolver::solve()
   }
 
   // Save the solution
-  //save(mesh, file, t);
+//   save(mesh, file, t);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -194,7 +194,7 @@ void ElasticityUpdatedSolver::solve()
 
     t += k;
     f.set(t);
-    cout << "t: " << t << endl;
+//     cout << "t: " << t << endl;
       
     for(int iter = 0; iter < 10; iter++)
     {
@@ -225,8 +225,8 @@ void ElasticityUpdatedSolver::solve()
 	}
       }
 
-      dolfin_debug("Assembling sigma vectors");
-      tic();
+//       dolfin_debug("Assembling sigma vectors");
+//       tic();
 
       // Assemble sigma0 vectors
       FEM::assemble(Lsigma0, xsigma01, mesh);
@@ -257,9 +257,9 @@ void ElasticityUpdatedSolver::solve()
       // Assemble v vector
       FEM::assemble(Lv, xtmp1, mesh);
 
-      cout << "xtmp1: " << xtmp1.norm(Vector::linf) << endl;
+//       cout << "xtmp1: " << xtmp1.norm(Vector::linf) << endl;
 
-      cout << "m: " << m.norm(Vector::linf) << endl;
+//       cout << "m: " << m.norm(Vector::linf) << endl;
 
 
       b = xtmp1;
@@ -276,7 +276,7 @@ void ElasticityUpdatedSolver::solve()
       x11 = x10;
       x11.axpy(k, x20);
 
-      cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
+//       cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
 
       if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
 	break;
@@ -296,7 +296,7 @@ void ElasticityUpdatedSolver::solve()
     }
 
     // Save the solution
-    //save(mesh, file, t);
+//     save(mesh, file, t);
 
     // Update progress
     p = t / T;

@@ -87,14 +87,15 @@ public:
 
 int main(int argc, char **argv)
 {
-  dolfin_output("text");
+  dolfin_output("plain text");
+//   dolfin_output("silent");
 
   //Mesh mesh("cow01.xml.gz");
-  Mesh mesh("cow07.xml.gz");
+  //Mesh mesh("cow07.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
   //Mesh mesh("minimal2.xml.gz");
 
-//   File outfile("mymesh.xml.gz");
+  UnitCube mesh(7, 7, 7);
 
 //   for (NodeIterator n(&mesh); !n.end();)
 //   {
@@ -109,6 +110,7 @@ int main(int argc, char **argv)
 
 //   mesh.init();
 
+//   File outfile("unitcube-07.xml.gz");
 //   outfile << mesh;
   
   Source f;
