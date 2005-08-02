@@ -26,7 +26,14 @@ namespace dolfin
     // Solve Navier-Stokes equations (static version)
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
 		      BoundaryCondition& bc_con, Function& u0);
-  
+
+    // Compute element diameter
+    void ComputeElementSize(Mesh& mesh, Vector& h);
+      
+    // Compute inverse of norm of convection
+    void ConvectionNormInv(Function& w, Function& wnorm,
+			   Vector& wnorm_vector);
+
   private:
 
     Mesh& mesh;

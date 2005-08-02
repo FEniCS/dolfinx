@@ -23,31 +23,39 @@ void NSESolver::solve()
   real t  = 0.0;   // current time
   real T  = 1.0;   // final time
   real k  = 0.1;   // time step
-  real h;          // local mesh size
   real nu = 0.01;  // viscosity 
+  real C1 = 1.0;   // stabilization parameter 
+  real C2 = 1.0;   // stabilization parameter 
 
-  // stabilization parameters
-  real d1,d2;      
-
-  // FIXME: remove this!
-  d1 = d2 = h = 1.0;
-  
   // Create matrices and vectors 
   Matrix Amom, Acon;
-  Vector xvel, xpvel, xcvel, xpre, bmom, bcon;
+  Vector xvel, x0vel, xcvel, bmom, bcon;
+
+  GMRES solver;
 
   // Create functions
   Function u(xvel, mesh);   // Velocity
-  Function up(xpvel, mesh); // Velocity from previous time step 
+  Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
 
+  // vectors for functions for element size and inverse of velocity norm
+  Vector hvector, wnorm_vector; 
+  // functions for element size and inverse of velocity norm
+  Function h(hvector), wnorm(wnorm_vector);
+
   // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(uc,k,nu,d1,d2);
-  NSEMomentum::LinearForm Lmom(uc,up,f,p,k,nu,d1,d2);
+  NSEMomentum::BilinearForm amom(uc,k,nu,C1,C2);
+  NSEMomentum::LinearForm Lmom(uc,up,f,p,C1,C2,k,nu);
 
   NSEContinuity::BilinearForm acon;
-  NSEContinuity::LinearForm Lcon(uc,f,d1);
+  NSEContinuity::LinearForm Lcon(uc,f,C1);
+
+  // Compute local element size h
+  ComputeElementSize(mesh, hvector);  
+  // Compute inverse of advective velocity norm 1/|a|
+  ConvectionNormInv(w, wnorm, wnorm_vector);
+
 
   /*
   // Set finite elements
@@ -68,6 +76,7 @@ void NSESolver::solve()
   u = u0;
   uc = u0;
   up = u0;
+
 
   // Start time-stepping
   Progress prog("Time-stepping");
@@ -125,5 +134,52 @@ void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 {
   NSESolver solver(mesh, f, bc_mom, bc_con, u0);
   solver.solve();
+}
+//-----------------------------------------------------------------------------
+void NSESolver::ComputeElementSize(Mesh& mesh, Vector& h)
+{
+  // Compute element size h
+  h.init(mesh.noCells());	
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      h((*cell).id()) = (*cell).diameter();
+    }
+}
+//-----------------------------------------------------------------------------
+void NSESolver::ConvectionNormInv(Function& w, Function& wnorm,
+				  Vector& wnorm_vector)
+{
+  // Compute inverse norm of w
+  const FiniteElement& wn_element = wnorm.element();
+  const FiniteElement& w_element  = w.element();
+  uint n = wn_element.spacedim();
+  uint m = w_element.tensordim(0);
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+  AffineMap map;
+  real convection_norm;
+	
+  wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
+  
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      map.update(*cell);
+      wn_element.dofmap(dofs, *cell, mesh);
+      wn_element.pointmap(points, components, map);
+      for (uint i = 0; i < n; i++)
+	{
+	  convection_norm = 0.0;
+	  for(uint j=0; j < m; ++j) convection_norm += pow(w(points[i], j), 2);		  
+	  wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
+	}
+    }
+  
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
+  
+  
 }
 //-----------------------------------------------------------------------------

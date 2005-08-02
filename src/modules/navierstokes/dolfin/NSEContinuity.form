@@ -1,8 +1,5 @@
-# Copyright (C) 2005 Johan Hoffman.
-# Licensed under the GNU GPL Version 2.
-#
-# First added:  2005
-# Last changed: 2005
+# Copyright (c) 2005 Johan Hoffman (hoffman@cims.nyu.edu)
+# Licensed under the GNU GPL Version 2
 #
 # The contiuity equation for the incompressible 
 # Navier-Stokes equations using cG(1)cG(1)
@@ -12,20 +9,25 @@
 name = "NSEContinuity"
 scalar_element = FiniteElement("Lagrange", "tetrahedron", 1)
 vector_element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-disc_vector_element = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+scalar_element_const = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 q = BasisFunction(scalar_element)
 p = BasisFunction(scalar_element)
-u = Function(vector_element)
+uc = Function(vector_element)
 f = Function(vector_element)
-uc = Function(disc_vector_element)
 
-d1 = Constant()
+inv_uc_norm  = Function(scalar_element)      # 1/|w|
+h = Function(scalar_element_const)           # element size
+C1 = Constant()                              # stabilisation parameter
+
+d1 = C1*0.5*h*inv_w_norm                     # stabiliation term: FIXME: include timestep!!
 
 i0 = Index()
 i1 = Index()
 i2 = Index()
 
-a = q.dx(i0)*p.dx(i0)*dx 
-L = q.dx(i0)*f[i0]*dx - q.dx(i0)*uc[i1]*u[i0].dx(i1)*dx - (1/d1)*q*u[i0].dx(i0)*dx 
+a = d1*q.dx(i0)*p.dx(i0)*dx 
+L = d1*q.dx(i0)*f[i0]*dx - d1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 
+
+
 

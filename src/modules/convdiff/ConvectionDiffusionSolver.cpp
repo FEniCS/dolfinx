@@ -94,8 +94,8 @@ void ConvectionDiffusionSolver::ComputeElementSize(Mesh& mesh, Vector& h)
   h.init(mesh.noCells());	
 	for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-     h((*cell).id()) = (*cell).diameter();
-	}
+    h((*cell).id()) = (*cell).diameter();
+  }
 }
 //-----------------------------------------------------------------------------
 void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Function& wnorm,
