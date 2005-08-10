@@ -44,7 +44,7 @@ namespace dolfin
     Array<const FiniteElement*> elements;
 
     // List of functions (coefficients)
-    Array<const Function*> functions;
+    Array<Function*> functions;
     
     // Coefficients of functions projected to current element
     real** c;

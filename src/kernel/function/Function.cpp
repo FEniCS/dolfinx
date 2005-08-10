@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Function::Function()
   : Variable("u", "A function"), _x(0), _mesh(0), _element(0), t(0),
-    dofs(0), components(0), points(0)
+    dofs(0), components(0), points(0), _cell(0)
 {
   // Do nothing
 }
@@ -59,7 +59,7 @@ Function::~Function()
     delete [] points;
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(real coefficients[], const AffineMap& map) const
+void Function::interpolate(real coefficients[], const AffineMap& map)
 {
   // Need to have an element to compute projection
   if ( !_element )
@@ -89,6 +89,9 @@ void Function::interpolate(real coefficients[], const AffineMap& map) const
     // Second case: function is user-defined so we need to compute the
     // interpolation onto the given finite element space
     
+    const Cell& cell = map.cell();
+    _cell = &cell;
+
     _element->pointmap(points, components, map);
     if ( _element->rank() == 0 )
     {

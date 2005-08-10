@@ -51,7 +51,7 @@ namespace dolfin
     virtual ~Function();
 
     /// Compute interpolation of function onto the local finite element space
-    void interpolate(real coefficients[], const AffineMap& map) const;
+    void interpolate(real coefficients[], const AffineMap& map);
 
     /// Evaluate function at given node
     real operator() (const Node& node) const;
@@ -99,6 +99,11 @@ namespace dolfin
     uint* components;
     Point* points;
     
+  protected:
+
+    // Pointer to current cell (for user-defined functions)
+    const Cell* _cell;
+
   };
 
 }
