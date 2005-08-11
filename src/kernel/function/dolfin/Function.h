@@ -85,9 +85,6 @@ namespace dolfin
     // Pointer to degrees of freedom
     Vector* _x;
 
-    // Pointer to mesh
-    Mesh* _mesh;
-
     // Pointer to finite element
     const FiniteElement* _element;
 
@@ -100,6 +97,9 @@ namespace dolfin
     Point* points;
     
   protected:
+
+    // Pointer to mesh
+    Mesh* _mesh;
 
     // Pointer to current cell (for user-defined functions)
     const Cell* _cell;
