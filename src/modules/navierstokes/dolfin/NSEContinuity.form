@@ -7,9 +7,9 @@
 # Compile this form with FFC: ffc NSEContinuity.form.
 
 name = "NSEContinuity"
-scalar_element = FiniteElement("Lagrange", "tetrahedron", 1)
-vector_element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-scalar_element_const = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+scalar_element = FiniteElement("Lagrange", "triangle", 1)
+vector_element = FiniteElement("Vector Lagrange", "triangle", 1)
+scalar_element_const = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
 q = BasisFunction(scalar_element)
 p = BasisFunction(scalar_element)
@@ -20,7 +20,7 @@ inv_uc_norm  = Function(scalar_element)      # 1/|w|
 h = Function(scalar_element_const)           # element size
 C1 = Constant()                              # stabilisation parameter
 
-d1 = C1*0.5*h*inv_w_norm                     # stabiliation term: FIXME: include timestep!!
+d1 = C1*0.5*h*inv_uc_norm                     # stabiliation term: FIXME: include timestep!!
 
 i0 = Index()
 i1 = Index()

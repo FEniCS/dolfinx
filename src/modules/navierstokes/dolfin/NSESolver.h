@@ -28,7 +28,7 @@ namespace dolfin
 		      BoundaryCondition& bc_con, Function& u0);
 
     // Compute element diameter
-    void ComputeElementSize(Mesh& mesh, Vector& h);
+    void ComputeElementSize(Mesh& mesh, Vector& hvector);
       
     // Compute inverse of norm of convection
     void ConvectionNormInv(Function& w, Function& wnorm,

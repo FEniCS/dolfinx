@@ -29,68 +29,74 @@ void NSESolver::solve()
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
-  Vector xvel, x0vel, xcvel, bmom, bcon;
+  Vector xvel, x0vel, xcvel, xpre, bmom, bcon;
 
   GMRES solver;
 
+  cout << "Create functions" << endl;
+  
   // Create functions
   Function u(xvel, mesh);   // Velocity
   Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
 
+  // Initialize velocity;
+  u  = u0;
+  uc = u0;
+
   // vectors for functions for element size and inverse of velocity norm
   Vector hvector, wnorm_vector; 
   // functions for element size and inverse of velocity norm
   Function h(hvector), wnorm(wnorm_vector);
 
-  // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(uc,k,nu,C1,C2);
-  NSEMomentum::LinearForm Lmom(uc,up,f,p,C1,C2,k,nu);
+  cout << "Create bilinear form: momentum" << endl;
 
-  NSEContinuity::BilinearForm acon;
-  NSEContinuity::LinearForm Lcon(uc,f,C1);
+  // Define the bilinear and linear forms
+  NSEMomentum::BilinearForm amom(uc,wnorm,h,k,nu,C1,C2);
+  NSEMomentum::LinearForm Lmom(uc,u0,f,p,wnorm,h,C1,C2,k,nu);
+
+  cout << "Create bilinear form: continuity" << endl;
+
+  NSEContinuity::BilinearForm acon(wnorm,h,C1);
+  NSEContinuity::LinearForm Lcon(uc,f,wnorm,h,C1);
+
+  cout << "Compute element size" << endl;
 
   // Compute local element size h
   ComputeElementSize(mesh, hvector);  
+
+  cout << "Compute inverse norm" << endl;
+
   // Compute inverse of advective velocity norm 1/|a|
-  ConvectionNormInv(w, wnorm, wnorm_vector);
+  ConvectionNormInv(uc, wnorm, wnorm_vector);
 
-
-  /*
-  // Set finite elements
-  u.set(amom.trial());   
-  up.set(amom.trial());   
-  uc.set(amom.trial());   
-  p.set(acon.trial());   
-  */
+  cout << "Create file" << endl;
 
   File file("pressure.m");  // file for saving pressure
 
+  cout << "Assemble form: continuity" << endl;
+
   // Discretize Continuity equation 
   FEM::assemble(acon, Acon, mesh);
-
-  GMRES solver;
-
-  // Initialize velocity;
-  u = u0;
-  uc = u0;
-  up = u0;
-
 
   // Start time-stepping
   Progress prog("Time-stepping");
   while (t<T) 
   {
 
-    up = u;
+    u0 = u;
 
     for (int i=0;i<1;i++){
 
       uc = u;
 
+      cout << "Assemble form: continuity" << endl;
+
       // Discretize Continuity equation 
       FEM::assemble(Lcon, bcon, mesh);
+
+      cout << "Set boundary conditions: continuity" << endl;
 
       // Set boundary conditions
       FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
@@ -98,17 +104,25 @@ void NSESolver::solve()
       // Solve the linear system
       solver.solve(Acon, xpre, bcon);
 
+      cout << "Assemble form: momentum" << endl;
+
       // Discretize Momentum equations
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
 
+      cout << "Set boundary conditions: momentum" << endl;
+
       // Set boundary conditions
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
+
+      cout << "Solve equation" << endl;
 
       // Solve the linear system
       solver.solve(Amom, xvel, bmom);
 
     }
 
+
+    cout << "Save solution" << endl;
 
     // Save the solution
     p.set(t);
@@ -136,13 +150,14 @@ void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-void NSESolver::ComputeElementSize(Mesh& mesh, Vector& h)
+void NSESolver::ComputeElementSize(Mesh& mesh, Vector& hvector)
 {
+  cout << "check" << endl;
   // Compute element size h
-  h.init(mesh.noCells());	
+  hvector.init(mesh.noCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      h((*cell).id()) = (*cell).diameter();
+      hvector((*cell).id()) = (*cell).diameter();
     }
 }
 //-----------------------------------------------------------------------------
