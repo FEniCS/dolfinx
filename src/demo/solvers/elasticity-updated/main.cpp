@@ -25,6 +25,8 @@ class Source : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
+    int id = _cell->id();
+
     if(i == 1)
       return 0.0;
     else
@@ -122,7 +124,7 @@ int main(int argc, char **argv)
 //   real k = 0.001; // time step
 
   real T = 5.0;  // final time
-  real k = 3.0e-3; // time step
+  real k = 1.0e-3; // time step
 
 //   real E = 1.0e4; // Young's modulus
 //   real nu = 0.3; // Poisson's ratio
@@ -135,8 +137,10 @@ int main(int argc, char **argv)
   real E = 5.0e4; // Young's modulus
   real nu = 0.3; // Poisson's ratio
   real nuv = 1.0e2; // viscosity
+  real nuplast = 0.0; // plastic viscosity
 
-  ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv, bc, k, T);
+  ElasticityUpdatedSolver::solve(mesh, f, v0, rho, E, nu, nuv,
+				 nuplast, bc, k, T);
 
   return 0;
 }

@@ -5,7 +5,7 @@
 
 # For demo programs in the DOLFIN source tree
 CFLAGS  = `../../../config/dolfin-config --cflags_dolfin`
-LIBS    = `../../../config/dolfin-config --libs_dolfin`
+LIBS    = "-pg" `../../../config/dolfin-config --libs_dolfin`
 CXX     = `../../../config/dolfin-config --compiler`
 
 DEST    = dolfin-elasticity-updated
