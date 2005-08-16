@@ -67,8 +67,10 @@ void ElasticityUpdatedSolver::init()
   Matrix M;
 
   // FIXME: Temporary fix, sizes should be automatically computable
-  int Nv = 3 * mesh.noNodes();
-  int Nsigma = 3 * mesh.noCells();
+//   int Nv = 3 * mesh.noNodes();
+//   int Nsigma = 3 * mesh.noCells();
+  int Nv = FEM::size(mesh, element1);
+  int Nsigma = FEM::size(mesh, element2_0);
 
   int offset = mesh.noNodes();
 
@@ -147,7 +149,12 @@ void ElasticityUpdatedSolver::init()
   }
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::timestep()
+void ElasticityUpdatedSolver::preparestep()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::step()
 {
   int offset = mesh.noNodes();
 
@@ -284,7 +291,8 @@ void ElasticityUpdatedSolver::solve()
   // Start time-stepping
   while ( true && t < T ) {
   
-    timestep();
+    preparestep();
+    step();
     
     // Save the solution
     save(mesh, file, t);

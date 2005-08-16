@@ -34,8 +34,11 @@ namespace dolfin
     void solve();
 
     // Make a time step
-    void timestep();
+    void step();
     
+    // Prepare time step
+    virtual void preparestep();
+
     virtual void save(Mesh& mesh, File &solutionfile, real t);
 
     // Solve ElasticityUpdated (static version)

@@ -56,6 +56,9 @@ namespace dolfin
     /// Display assembly data (useful for debugging)
     static void disp(const Mesh& mesh, const FiniteElement& element);
 
+    // Count the degrees of freedom
+    static uint size(const Mesh& mesh, const FiniteElement& element);
+    
   private:
 
     // Apply boundary conditions on triangular mesh
@@ -66,9 +69,6 @@ namespace dolfin
     static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 			   const FiniteElement& element, BoundaryCondition& bc);
 
-    // Count the degrees of freedom
-    static uint size(const Mesh& mesh, const FiniteElement& element);
-    
     // Estimate the maximum number of nonzeros in each row
     static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
