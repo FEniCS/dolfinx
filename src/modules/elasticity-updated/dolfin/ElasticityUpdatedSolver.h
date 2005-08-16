@@ -27,10 +27,13 @@ namespace dolfin
 			    real E, real nu, real nuv, real nuplast,
 			    BoundaryCondition& bc, real k, real T);
     
+    // Initialize data
+    void init();
+
     // Solve ElasticityUpdated
     void solve();
 
-    // Solve ElasticityUpdated
+    // Make a time step
     void timestep();
     
     virtual void save(Mesh& mesh, File &solutionfile, real t);
@@ -74,6 +77,7 @@ namespace dolfin
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
     Vector xsigma0_0, xsigma0_1, xsigma1_0, xsigma1_1, xsigma2_0, xsigma2_1,
       xepsilon0_1, xepsilon1_1, xepsilon2_1, xsigmanorm;
+    Vector xtmp1, xtmp2, xtmp0_1, xtmp1_1, xtmp2_1;
     
     Function v1;
     Function sigma0_1;

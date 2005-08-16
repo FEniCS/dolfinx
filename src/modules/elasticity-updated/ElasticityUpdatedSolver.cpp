@@ -59,17 +59,12 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   
 {
   // Do nothing
+  init();
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::solve()
+void ElasticityUpdatedSolver::init()
 {
-  cout << "lambda: " << lambda << endl;
-  cout << "mu: " << mu << endl;
-  
   Matrix M;
-  Vector xtmp1, xtmp2, xtmp0_1, xtmp1_1, xtmp2_1, stepresidual;
-
-  File         file("elasticity.m");
 
   // FIXME: Temporary fix, sizes should be automatically computable
   int Nv = 3 * mesh.noNodes();
@@ -150,6 +145,135 @@ void ElasticityUpdatedSolver::solve()
     msigma(3 * id + 1) = factor;
     msigma(3 * id + 2) = factor;
   }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::timestep()
+{
+  int offset = mesh.noNodes();
+
+  // Make time step
+  x1_0 = x1_1;
+  x2_0 = x2_1;
+  xsigma0_0 = xsigma0_1;
+  xsigma1_0 = xsigma1_1;
+  xsigma2_0 = xsigma2_1;
+  
+  t += k;
+  f.set(t);
+  //     cout << "t: " << t << endl;
+  
+  for(int iter = 0; iter < maxiters; iter++)
+  {
+    // Compute norm of stress (sigmanorm)
+    if(do_plasticity)
+    {
+      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      {
+	int id = (*cell).id();
+	
+	real proj = 1;
+	real norm = 0;
+	for(int i = 0; i < 3; i++)
+	{
+	  norm = std::max(norm, fabs(xsigma0_0(3 * id + i)));
+	  norm = std::max(norm, fabs(xsigma1_0(3 * id + i)));
+	  norm = std::max(norm, fabs(xsigma2_0(3 * id + i)));
+	}
+	
+	if(norm > yield)
+	{
+	  cout << "sigmanorm(" << id << "): " << norm << endl;
+	  proj = 1.0 / norm;
+	}
+	
+	xsigmanorm(3 * id + 0) = proj;
+      }
+    }
+    
+    //       dolfin_debug("Assembling sigma vectors");
+    //       tic();
+    
+    // Assemble sigma0 vectors
+    FEM::assemble(Lsigma0, xsigma0_1, mesh);
+    FEM::assemble(Lsigma1, xsigma1_1, mesh);
+    FEM::assemble(Lsigma2, xsigma2_1, mesh);
+    
+    VecPointwiseMult(xtmp0_1.vec(), xsigma0_1.vec(), msigma.vec());
+    VecPointwiseMult(xtmp1_1.vec(), xsigma1_1.vec(), msigma.vec());
+    VecPointwiseMult(xtmp2_1.vec(), xsigma2_1.vec(), msigma.vec());
+    
+    xtmp0_1.apply();
+    xtmp1_1.apply();
+    xtmp2_1.apply();
+    
+    xsigma0_1 = xsigma0_0;
+    xsigma0_1.axpy(k, xtmp0_1);
+    
+    xsigma1_1 = xsigma1_0;
+    xsigma1_1.axpy(k, xtmp1_1);
+    
+    xsigma2_1 = xsigma2_0;
+    xsigma2_1.axpy(k, xtmp2_1);
+    
+    xepsilon0_1 *= 1.0 / lambda;
+    xepsilon1_1 *= 1.0 / lambda;
+    xepsilon2_1 *= 1.0 / lambda;
+    
+    // Assemble v vector
+    FEM::assemble(Lv, xtmp1, mesh);
+    
+    //       cout << "xtmp1: " << xtmp1.norm(Vector::linf) << endl;
+    
+    //       cout << "m: " << m.norm(Vector::linf) << endl;
+    
+    
+    b = xtmp1;
+    b *= k;
+    
+    VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
+    stepresidual *= k;
+    stepresidual.axpy(-1, x2_1);
+    stepresidual.axpy(1, x2_0);
+    
+    
+    x2_1 += stepresidual;
+    
+    x1_1 = x1_0;
+    x1_1.axpy(k, x2_0);
+    
+    cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
+    
+    if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
+    {
+      cout << "converged" << endl;
+      break;
+    }
+    else if(iter == maxiters - 1)
+    {
+      cout << "did not converge" << endl;
+    }
+  }
+  
+  
+  
+  // Update the mesh
+  for (NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    int id = (*n).id();
+    
+    //std::cout << "node id: " << id << std::endl;
+    (*n).coord().x += k * x2_1(id + 0 * offset);
+    (*n).coord().y += k * x2_1(id + 1 * offset);
+    (*n).coord().z += k * x2_1(id + 2 * offset);
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::solve()
+{
+  cout << "lambda: " << lambda << endl;
+  cout << "mu: " << mu << endl;
+  
+  File         file("elasticity.m");
 
   // Save the solution
   save(mesh, file, t);
@@ -157,142 +281,19 @@ void ElasticityUpdatedSolver::solve()
   // Start a progress session
   Progress p("Time-stepping");
   
-  while ( false && t < T ) {
-    t += k;
-
-    // Assemble sigma vectors
-    FEM::assemble(Lsigma0, xsigma0_1, mesh);
-  }
-
   // Start time-stepping
   while ( true && t < T ) {
   
-    // Make time step
-    x1_0 = x1_1;
-    x2_0 = x2_1;
-    xsigma0_0 = xsigma0_1;
-    xsigma1_0 = xsigma1_1;
-    xsigma2_0 = xsigma2_1;
-
-    t += k;
-    f.set(t);
-//     cout << "t: " << t << endl;
-      
-    for(int iter = 0; iter < maxiters; iter++)
-    {
-      // Compute norm of stress (sigmanorm)
-      if(do_plasticity)
-      {
-	for (CellIterator cell(mesh); !cell.end(); ++cell)
-	{
-	  int id = (*cell).id();
-	  
-	  real proj = 1;
-	  real norm = 0;
-	  for(int i = 0; i < 3; i++)
-	  {
-	    norm = std::max(norm, fabs(xsigma0_0(3 * id + i)));
-	    norm = std::max(norm, fabs(xsigma1_0(3 * id + i)));
-	    norm = std::max(norm, fabs(xsigma2_0(3 * id + i)));
-	  }
-	  
-	  if(norm > yield)
-	  {
-	    cout << "sigmanorm(" << id << "): " << norm << endl;
-	    proj = 1.0 / norm;
-	  }
-	  
-	  xsigmanorm(3 * id + 0) = proj;
-	}
-      }
-
-//       dolfin_debug("Assembling sigma vectors");
-//       tic();
-
-      // Assemble sigma0 vectors
-      FEM::assemble(Lsigma0, xsigma0_1, mesh);
-      FEM::assemble(Lsigma1, xsigma1_1, mesh);
-      FEM::assemble(Lsigma2, xsigma2_1, mesh);
-
-      VecPointwiseMult(xtmp0_1.vec(), xsigma0_1.vec(), msigma.vec());
-      VecPointwiseMult(xtmp1_1.vec(), xsigma1_1.vec(), msigma.vec());
-      VecPointwiseMult(xtmp2_1.vec(), xsigma2_1.vec(), msigma.vec());
-
-      xtmp0_1.apply();
-      xtmp1_1.apply();
-      xtmp2_1.apply();
-
-      xsigma0_1 = xsigma0_0;
-      xsigma0_1.axpy(k, xtmp0_1);
-
-      xsigma1_1 = xsigma1_0;
-      xsigma1_1.axpy(k, xtmp1_1);
-
-      xsigma2_1 = xsigma2_0;
-      xsigma2_1.axpy(k, xtmp2_1);
-
-      xepsilon0_1 *= 1.0 / lambda;
-      xepsilon1_1 *= 1.0 / lambda;
-      xepsilon2_1 *= 1.0 / lambda;
-
-      // Assemble v vector
-      FEM::assemble(Lv, xtmp1, mesh);
-
-//       cout << "xtmp1: " << xtmp1.norm(Vector::linf) << endl;
-
-//       cout << "m: " << m.norm(Vector::linf) << endl;
-
-
-      b = xtmp1;
-      b *= k;
-
-      VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
-      stepresidual *= k;
-      stepresidual.axpy(-1, x2_1);
-      stepresidual.axpy(1, x2_0);
-
-
-      x2_1 += stepresidual;
-
-      x1_1 = x1_0;
-      x1_1.axpy(k, x2_0);
-
-      cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
-
-      if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
-      {
-	cout << "converged" << endl;
-	break;
-      }
-      else if(iter == maxiters - 1)
-      {
-	cout << "did not converge" << endl;
-      }
-    }
-
-
-
-    // Update the mesh
-    for (NodeIterator n(&mesh); !n.end(); ++n)
-    {
-      int id = (*n).id();
-      
-      //std::cout << "node id: " << id << std::endl;
-//       (*n).coord().x += x1_1(id + 0 * offset) - x1_0(id + 0 * offset);
-//       (*n).coord().y += x1_1(id + 1 * offset) - x1_0(id + 1 * offset);
-//       (*n).coord().z += x1_1(id + 2 * offset) - x1_0(id + 2 * offset);
-      (*n).coord().x += k * x2_1(id + 0 * offset);
-      (*n).coord().y += k * x2_1(id + 1 * offset);
-      (*n).coord().z += k * x2_1(id + 2 * offset);
-    }
-
+    timestep();
+    
     // Save the solution
-     save(mesh, file, t);
+    save(mesh, file, t);
 
+    // Benchmark
+//     FEM::assemble(Lsigma0, xsigma0_1, mesh);
+    
     // Update progress
     p = t / T;
-
-
   }
 }
 //-----------------------------------------------------------------------------
