@@ -67,12 +67,8 @@ void ElasticityUpdatedSolver::init()
   Matrix M;
 
   // FIXME: Temporary fix, sizes should be automatically computable
-//   int Nv = 3 * mesh.noNodes();
-//   int Nsigma = 3 * mesh.noCells();
   int Nv = FEM::size(mesh, element1);
   int Nsigma = FEM::size(mesh, element2_0);
-
-  int offset = mesh.noNodes();
 
   x1_0.init(Nv);
   x1_1.init(Nv);
@@ -110,24 +106,32 @@ void ElasticityUpdatedSolver::init()
   stepresidual.init(Nv);
 
   // Set initial velocities
-  for (NodeIterator n(&mesh); !n.end(); ++n)
+
+  AffineMap map;
+  v0.set(element1);
+
+  for(CellIterator c(&mesh); !c.end(); ++c)
   {
-    int id = (*n).id();
-    
-    real v0x, v0y, v0z;
-    
-    v0x = v0((*n).coord(), 0);
-    v0y = v0((*n).coord(), 1);
-    v0z = v0((*n).coord(), 2);
-    
-    x2_1(id + 0 * offset) = v0x;
-    x2_1(id + 1 * offset) = v0y;
-    x2_1(id + 2 * offset) = v0z;
+    Cell& cell = *c;
+
+    // Use DOLFIN's interpolation
+
+    real coefficients[element1.spacedim()];
+    int dofs[element1.spacedim()];
+
+    map.update(cell);
+    v0.interpolate(coefficients, map);
+    element1.dofmap(dofs, cell, mesh);
+
+    for(uint i = 0; i < element1.spacedim(); i++)
+      x2_1(dofs[i]) = coefficients[i];
   }
+
+  cout << "x2_1:" << endl;
+  x2_1.disp();
 
   xsigmanorm = 1.0;
 
-//   ElasticityUpdatedProj::LinearForm Lv0(v0);
   ElasticityUpdatedMass::BilinearForm amass(rho);
 
   // Assemble mass matrix
@@ -137,15 +141,17 @@ void ElasticityUpdatedSolver::init()
   FEM::lump(M, m);
 
   // Compute mass vector (sigma)
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  for (CellIterator c(mesh); !c.end(); ++c)
   {
-    int id = (*cell).id();
+    Cell& cell = *c;
 
-    real factor = 1.0 / (*cell).volume(); 
+    int dofs[element2_0.spacedim()];
+    element2_0.dofmap(dofs, cell, mesh);
 
-    msigma(3 * id + 0) = factor;
-    msigma(3 * id + 1) = factor;
-    msigma(3 * id + 2) = factor;
+    real factor = 1.0 / cell.volume(); 
+
+    for(uint i = 0; i < element2_0.spacedim(); i++)
+      msigma(dofs[i]) = factor;
   }
 }
 //-----------------------------------------------------------------------------
@@ -156,8 +162,6 @@ void ElasticityUpdatedSolver::preparestep()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::step()
 {
-  int offset = mesh.noNodes();
-
   // Make time step
   x1_0 = x1_1;
   x2_0 = x2_1;
@@ -174,26 +178,29 @@ void ElasticityUpdatedSolver::step()
     // Compute norm of stress (sigmanorm)
     if(do_plasticity)
     {
-      for (CellIterator cell(mesh); !cell.end(); ++cell)
+      for (CellIterator c(mesh); !c.end(); ++c)
       {
-	int id = (*cell).id();
-	
+	Cell& cell = *c;
+
+	int dofs[element2_0.spacedim()];
+	element2_0.dofmap(dofs, cell, mesh);
+
 	real proj = 1;
 	real norm = 0;
-	for(int i = 0; i < 3; i++)
+	for(uint i = 0; i < element2_0.spacedim(); i++)
 	{
-	  norm = std::max(norm, fabs(xsigma0_0(3 * id + i)));
-	  norm = std::max(norm, fabs(xsigma1_0(3 * id + i)));
-	  norm = std::max(norm, fabs(xsigma2_0(3 * id + i)));
+	  norm = std::max(norm, fabs(xsigma0_0(dofs[i])));
+	  norm = std::max(norm, fabs(xsigma1_0(dofs[i])));
+	  norm = std::max(norm, fabs(xsigma2_0(dofs[i])));
 	}
 	
 	if(norm > yield)
 	{
-	  cout << "sigmanorm(" << id << "): " << norm << endl;
+	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
 	  proj = 1.0 / norm;
 	}
 	
-	xsigmanorm(3 * id + 0) = proj;
+	xsigmanorm(dofs[0]) = proj;
       }
     }
     
@@ -229,11 +236,6 @@ void ElasticityUpdatedSolver::step()
     // Assemble v vector
     FEM::assemble(Lv, xtmp1, mesh);
     
-    //       cout << "xtmp1: " << xtmp1.norm(Vector::linf) << endl;
-    
-    //       cout << "m: " << m.norm(Vector::linf) << endl;
-    
-    
     b = xtmp1;
     b *= k;
     
@@ -266,12 +268,11 @@ void ElasticityUpdatedSolver::step()
   // Update the mesh
   for (NodeIterator n(&mesh); !n.end(); ++n)
   {
-    int id = (*n).id();
-    
-    //std::cout << "node id: " << id << std::endl;
-    (*n).coord().x += k * x2_1(id + 0 * offset);
-    (*n).coord().y += k * x2_1(id + 1 * offset);
-    (*n).coord().z += k * x2_1(id + 2 * offset);
+    Node& node = *n;
+
+    node.coord().x += k * v1(node, 0);
+    node.coord().y += k * v1(node, 1);
+    node.coord().z += k * v1(node, 2);
   }
 }
 //-----------------------------------------------------------------------------
