@@ -18,14 +18,14 @@ namespace dolfin
     
     // Create Navier-Stokes solver
     NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-	      BoundaryCondition& bc_con, Function& u0);
+	      BoundaryCondition& bc_con);
     
     // Solve Navier-Stokes equations
     void solve();
 
     // Solve Navier-Stokes equations (static version)
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-		      BoundaryCondition& bc_con, Function& u0);
+		      BoundaryCondition& bc_con);
 
     // Compute element diameter
     void ComputeElementSize(Mesh& mesh, Vector& hvector);
@@ -40,7 +40,6 @@ namespace dolfin
     Function& f;
     BoundaryCondition& bc_mom;
     BoundaryCondition& bc_con;
-    Function& u0;
 
   };
 

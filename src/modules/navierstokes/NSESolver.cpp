@@ -12,8 +12,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-		     BoundaryCondition& bc_con, Function& u0)
-  : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con), u0(u0)
+		     BoundaryCondition& bc_con)
+  : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con) 
 {
   // Do nothing
 }
@@ -29,7 +29,19 @@ void NSESolver::solve()
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
-  Vector xvel, x0vel, xcvel, xpre, bmom, bcon;
+  //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
+  Vector bmom, bcon;
+
+  // Initialize velocity;
+  Vector x0vel(mesh.noNodes());
+  Vector xcvel(mesh.noNodes());
+  Vector xvel(mesh.noNodes());
+  x0vel = 0.0;
+  xcvel = 0.0;
+  xvel = 0.0;
+
+  Vector xpre(mesh.noNodes());
+  xpre = 0.0;
 
   GMRES solver;
 
@@ -40,10 +52,6 @@ void NSESolver::solve()
   Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
-
-  // Initialize velocity;
-  u  = u0;
-  uc = u0;
 
   // vectors for functions for element size and inverse of velocity norm
   Vector hvector, wnorm_vector; 
@@ -69,7 +77,9 @@ void NSESolver::solve()
   cout << "Compute inverse norm" << endl;
 
   // Compute inverse of advective velocity norm 1/|a|
-  ConvectionNormInv(uc, wnorm, wnorm_vector);
+  //ConvectionNormInv(uc, wnorm, wnorm_vector);
+  wnorm_vector.init(mesh.noNodes());
+  wnorm_vector = 1.0;
 
   cout << "Create file" << endl;
 
@@ -85,11 +95,14 @@ void NSESolver::solve()
   while (t<T) 
   {
 
-    u0 = u;
+    x0vel = xvel;
 
     for (int i=0;i<1;i++){
 
-      uc = u;
+      xcvel = xvel;
+    
+      // Compute inverse of advective velocity norm 1/|a|
+      // ConvectionNormInv(uc, wnorm, wnorm_vector);
 
       cout << "Assemble form: continuity" << endl;
 
@@ -100,6 +113,10 @@ void NSESolver::solve()
 
       // Set boundary conditions
       FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
+
+      // Save the solution
+      p.set(t);
+      file << p;
 
       // Solve the linear system
       solver.solve(Acon, xpre, bcon);
@@ -144,15 +161,14 @@ void NSESolver::solve()
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
-		      BoundaryCondition& bc_con, Function& u0)
+		      BoundaryCondition& bc_con)
 {
-  NSESolver solver(mesh, f, bc_mom, bc_con, u0);
+  NSESolver solver(mesh, f, bc_mom, bc_con);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
 void NSESolver::ComputeElementSize(Mesh& mesh, Vector& hvector)
 {
-  cout << "check" << endl;
   // Compute element size h
   hvector.init(mesh.noCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -177,6 +193,8 @@ void NSESolver::ConvectionNormInv(Function& w, Function& wnorm,
 	
   wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
   
+  cout << "check" << endl;
+
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       map.update(*cell);
@@ -185,11 +203,17 @@ void NSESolver::ConvectionNormInv(Function& w, Function& wnorm,
       for (uint i = 0; i < n; i++)
 	{
 	  convection_norm = 0.0;
-	  for(uint j=0; j < m; ++j) convection_norm += pow(w(points[i], j), 2);		  
+	  for(uint j=0; j < m; ++j){
+	    cout << "check j = " << j << endl;
+	    convection_norm += pow(w(points[i], j), 2);		  
+	    cout << "check" << endl;
+	  }
 	  wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
 	}
     }
   
+  cout << "check" << endl;
+
   // Delete data
   delete [] dofs;
   delete [] components;
