@@ -16,9 +16,9 @@ sigma2 = Function(element2)
 sigmanorm = Function(element2)	# Norm of sigma (stress)
 
 Lplast = ((lmbda * (sigma0[0] + sigma1[1] + sigma2[2]) * q[1]) + 
-          (2 * mu * sigma1[i] * q[i]))
+          (mu * sigma1[i] * q[i]))
 
 Lelast = ((lmbda * v[i].dx(i) * q[1]) + 
-          (2 * mu * (v[i].dx(1) + v[1].dx(i))) * q[i])
+          (mu * (v[i].dx(1) + v[1].dx(i))) * q[i])
 
 L = (Lelast - vplast * (1 - sigmanorm[0]) * Lplast) * dx

@@ -18,5 +18,5 @@ v = BasisFunction(element)
 u = BasisFunction(element)
 
 a = (lmbda * u[i].dx(i) * v[j].dx(j) +
-	2 * mu * (u[i].dx(j) + u[j].dx(i)) * v[i].dx(j)) * dx
+	mu * (u[i].dx(j) + u[j].dx(i)) * v[i].dx(j)) * dx
 L = f[i] * v[i] * dx
