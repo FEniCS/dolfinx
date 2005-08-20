@@ -81,7 +81,7 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-EXTRA_DIST = dolfin_elasticity.h Elasticity.h ElasticitySolver.h
+EXTRA_DIST = dolfin_elasticityupdated.h Elasticity.h ElasticitySolver.h ElasticityUpdated.h ElasticityUpdatedMass.h ElasticityUpdatedSigma0.h ElasticityUpdatedSigma1.h ElasticityUpdatedSigma2.h
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in

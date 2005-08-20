@@ -284,7 +284,7 @@ void ElasticityUpdatedSolver::solve()
   File         file("elasticity.m");
 
   // Save the solution
-  save(mesh, file, t);
+  condsave(mesh, file, t);
 
   // Start a progress session
   Progress p("Time-stepping");
@@ -296,7 +296,7 @@ void ElasticityUpdatedSolver::solve()
     step();
     
     // Save the solution
-    save(mesh, file, t);
+    condsave(mesh, file, t);
 
     // Benchmark
 //     FEM::assemble(Lsigma0, xsigma0_1, mesh);
@@ -308,10 +308,6 @@ void ElasticityUpdatedSolver::solve()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
 {
-  real samplefreq = 1.0 / 33.0;
-
-  while(lastsample + samplefreq < t || t == 0.0)
-  {
     std::ostringstream fileid, filename;
     fileid.fill('0');
     fileid.width(6);
@@ -328,18 +324,27 @@ void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
     File meshfile(fname);
     
     meshfile << mesh;
+
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::condsave(Mesh& mesh, File& solutionfile, real t)
+{
+  real samplefreq = 1.0 / 33.0;
+
+  while(lastsample + samplefreq < t || t == 0.0)
+  {
+    save(mesh, solutionfile, t);
+
     counter++;
 
-    cout << "lastsample: " << lastsample << " t: " << t << endl;
-
     lastsample = std::min(t, lastsample + samplefreq);
+    cout << "lastsample: " << lastsample << " t: " << t << endl;
 
     if(t == 0.0)
     {
       break;
     }
   }
-
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve(Mesh& mesh,

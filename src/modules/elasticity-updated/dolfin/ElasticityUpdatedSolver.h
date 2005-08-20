@@ -40,14 +40,13 @@ namespace dolfin
     virtual void preparestep();
 
     virtual void save(Mesh& mesh, File &solutionfile, real t);
+    void condsave(Mesh& mesh, File &solutionfile, real t);
 
     // Solve ElasticityUpdated (static version)
     static void solve(Mesh& mesh,
 		      Function& f, Function& v0, Function& rho,
 		      real E, real nu, real nuv, real nuplast,
 		      BoundaryCondition& bc, real k, real T);
-    
-  protected:
     
     Mesh& mesh;
     Function& f;
@@ -70,6 +69,8 @@ namespace dolfin
     bool do_plasticity;
     real yield;
 
+  protected:
+    
     // Elements
 
     ElasticityUpdated::LinearForm::TestElement element1;
