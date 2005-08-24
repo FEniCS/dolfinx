@@ -69,8 +69,6 @@ namespace dolfin
     bool do_plasticity;
     real yield;
 
-  protected:
-    
     // Elements
 
     ElasticityUpdated::LinearForm::TestElement element1;
@@ -80,10 +78,13 @@ namespace dolfin
 
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
     Vector xsigma0_0, xsigma0_1, xsigma1_0, xsigma1_1, xsigma2_0, xsigma2_1,
-      xepsilon0_1, xepsilon1_1, xepsilon2_1, xsigmanorm;
+      xepsilon0_1, xepsilon1_1, xepsilon2_1, xsigmanorm, mesh0;
     Vector xtmp1, xtmp2, xtmp0_1, xtmp1_1, xtmp2_1;
+    Matrix Dummy;
     
     Function v1;
+    Function u0;
+    Function u1;
     Function sigma0_1;
     Function sigma1_1;
     Function sigma2_1;
