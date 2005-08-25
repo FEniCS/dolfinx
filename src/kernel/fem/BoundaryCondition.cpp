@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-08-23
 
 #include <dolfin/BoundaryCondition.h>
 
@@ -41,6 +43,16 @@ const dolfin::BoundaryValue BoundaryCondition::operator() (const Point& p,
 dolfin::uint BoundaryCondition::numComponents() const
 {
   return num_components;
+ }
+//-----------------------------------------------------------------------------
+real BoundaryCondition::time() const
+{
+  return t;
 }
 //-----------------------------------------------------------------------------
-
+void BoundaryCondition::set(real time)
+{
+  t = time;
+}
+//-----------------------------------------------------------------------------
+ 

@@ -9,7 +9,7 @@
 #
 # Compile this form with FFC: ffc poisson.form.
 
-element = FiniteElement("Lagrange", "triangle", 1)
+element = FiniteElement("Lagrange", "tetrahedron", 7)
 
 v = BasisFunction(element)
 u = BasisFunction(element)
