@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2003-11-28
-// Last changed: 2005
+// Last changed: 2005-08-26
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -64,6 +66,9 @@ namespace dolfin
 
     /// Evaluate vector-valued function at given point
     virtual real operator() (const Point& point, uint i) const;
+
+    /// Return the vector with which the function is defined
+    Vector& vector();
 
     /// Return the mesh on which the function is defined
     Mesh& mesh();

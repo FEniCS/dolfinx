@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2003-11-28
-// Last changed: 2005
+// Last changed: 2005-08-26
 
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
@@ -143,6 +145,14 @@ real Function::operator()(const Point& point, uint i) const
 {
   dolfin_error("Point evaluation has not been supplied by user-defined function.");
   return 0.0;
+}
+//-----------------------------------------------------------------------------
+Vector& Function::vector()
+{
+  if ( !_x )
+    dolfin_error("Vector has not been specified.");
+  
+  return *_x;
 }
 //-----------------------------------------------------------------------------
 Mesh& Function::mesh()
