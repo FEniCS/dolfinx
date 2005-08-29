@@ -118,6 +118,9 @@ class BC_Momentum_2D : public BoundaryCondition
       if (fabs(p.x - 0.0) < DOLFIN_EPS){
 	value.set(1.0);
       } 
+      if (fabs( sqrt(sqr(p.x - 0.3) + sqr(p.y - 0.25)) - 0.1 ) < DOLFIN_EPS){
+	value.set(0.0);
+      }       
     } else if (i==1){
       if (fabs(p.y - 0.0) < DOLFIN_EPS){
 	value.set(0.0);
@@ -125,6 +128,9 @@ class BC_Momentum_2D : public BoundaryCondition
       if (fabs(p.y - 0.5) < DOLFIN_EPS){
 	value.set(0.0);
       } 
+      if (fabs( sqrt(sqr(p.x - 0.3) + sqr(p.y - 0.25)) - 0.1 ) < DOLFIN_EPS){
+	value.set(0.0);
+      }       
     } else{
       dolfin_error("Wrong vector component index");
     }
