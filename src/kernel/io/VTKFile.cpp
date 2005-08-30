@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-07-05
-// Last changed: 2005-07-05
+// Last changed: 2005-08-26
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -95,7 +95,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
   for (int offsets = 1; offsets <= mesh.noCells(); offsets++)
   {
-    if (mesh.type() == Mesh::tetrahedra ) fprintf(fp, " %8d \n",  offsets*4);
+    if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " %8d \n",  offsets*4);
     if (mesh.type() == Mesh::triangles )    fprintf(fp, " %8d \n", offsets*3);
   }
   fprintf(fp, "</DataArray> \n");
@@ -104,7 +104,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
   for (int types = 1; types <= mesh.noCells(); types++)
   {
-    if (mesh.type() == Mesh::tetrahedra ) fprintf(fp, " 10 \n");
+    if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " 10 \n");
     if (mesh.type() == Mesh::triangles )    fprintf(fp, " 5 \n");
   }
   fprintf(fp, "</DataArray> \n");
@@ -146,12 +146,23 @@ void VTKFile::ResultsWrite(Function& u) const
     fprintf(fp, "<PointData  Vectors=\"U\"> \n");
     fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
-  
+
+  if(no_components > 3)
+  	dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+	
   for (NodeIterator n(u.mesh()); !n.end(); ++n)
   {    
-    for(uint i =0; i < no_components; ++i)
+    if(no_components == 1) 
+		{
+		  fprintf(fp," %e ",u(*n, 0));
+    }
+		else if(no_components == 2) 
     {
-      fprintf(fp," %e ",u(*n, i));
+      fprintf(fp," %e %e  0.0",u(*n, 0), u(*n, 1));
+		}
+		else  
+		{
+      fprintf(fp," %e %e  %e",u(*n, 0), u(*n, 1), u(*n, 2));
     }
     fprintf(fp,"\n");
   }	 
