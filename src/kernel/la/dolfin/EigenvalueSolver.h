@@ -29,7 +29,7 @@ namespace dolfin
 
     /// Compute all eigenvalues of the matrix A directly
     void eigen(const Matrix& A, Vector& r, Vector& c);
-           
+
   private:
 
     // PETSc solver pointer
