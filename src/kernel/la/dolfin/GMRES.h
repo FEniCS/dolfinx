@@ -6,7 +6,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-06-22
-// Last changed: 2005-08-23
+// Last changed: 2005-09-01
 
 #ifndef __GMRES_H
 #define __GMRES_H
@@ -35,11 +35,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b
     void solve(const Matrix& A, Vector& x, const Vector& b);
-      
-    /// Solve system and compute eigenvalues directly
-    void solveEigenvalues(const Matrix& A, Vector& x, Vector& EigenReal, 
-			  Vector& EigenComplex, const Vector& b, uint n);
-    
+          
     /// Solve linear system Ax = b (matrix-free version)
     void solve(const VirtualMatrix& A, Vector& x, const Vector& b);
     

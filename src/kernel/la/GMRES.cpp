@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-08-23
+// Last changed: 2005-09-01
 
 #include <petscpc.h>
 
@@ -78,63 +78,6 @@ void GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
     KSPGetIterationNumber(ksp, &its);
     dolfin_info("GMRES converged in %d iterations.", its);
   }
-}
-//-----------------------------------------------------------------------------
-void GMRES::solveEigenvalues(const Matrix& A, Vector& x, Vector& EigenReal, 
-			     Vector& EigenComplex,  const Vector& b, uint n)
-{
-  // Check dimensions
-  if ( A.size(0) != b.size() )
-    dolfin_error("Non-matching dimensions for linear system.");
-  
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.init(A.size(1));
-  
-  // Solve linear system
-  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
-  
-  // Check if the solution converged
-  KSPConvergedReason reason;
-  KSPGetConvergedReason(ksp, &reason);
-  if ( reason < 0 )
-    dolfin_error("GMRES solver did not converge.");
-  
-  // Report number of iterations
-  if ( report )
-    {
-      //KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
-      int its = 0;
-      KSPGetIterationNumber(ksp, &its);
-      dolfin_info("GMRES converged in %d iterations.", its);
-    }
-  
-  // Check requested number of eigenvalues
-  if ( A.size(0) < n )
-    dolfin_error("Requested number of eigenvalues exceeds system size.");
-  
-  // Initialize vectors for n eigenvalues
-  EigenReal.init(n);
-  EigenComplex.init(n);
-  
-  real* er   = new real[n];   
-  real* ec   = new real[n]; 
-  
-  //Compute n eigenvalues using explicit algorithm
-  dolfin_info("Computing eigenvalues directly. Use only for small system.");
-  dolfin_info("Computing %d eigenvalues.", n);
-  KSPComputeEigenvaluesExplicitly(ksp, n, er, ec);  
-  
-  //Copy result into vectors 
-  for(uint i=0; i< n; ++i)
-    {
-      EigenReal(i)    = *(er+i);
-      EigenComplex(i) = *(ec+i);
-    }
-  
-  delete [] er;
-  delete [] ec;
-  
 }
 //-----------------------------------------------------------------------------
 void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)

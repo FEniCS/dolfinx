@@ -1,5 +1,6 @@
 SUBDIRS                = dolfin
 include_HEADERS        = dolfin/dolfin_la.h \
+                         dolfin/EigenvalueSolver.h \
                          dolfin/GMRES.h \
                          dolfin/LinearSolver.h \
                          dolfin/LU.h \
@@ -10,7 +11,8 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/VirtualMatrix.h 
 INCLUDES               = @KERNEL_CFLAGS@
 lib_LIBRARIES          = libdolfin-la.a
-libdolfin_la_a_SOURCES = GMRES.cpp \
+libdolfin_la_a_SOURCES = EigenvalueSolver.cpp \
+                         GMRES.cpp \
                          LinearSolver.cpp \
                          LU.cpp \
                          Matrix.cpp \

@@ -3,6 +3,7 @@
 
 // DOLFIN linear algebra
 
+#include <dolfin/EigenvalueSolver.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/LU.h>
