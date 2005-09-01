@@ -22,20 +22,22 @@ void NSESolver::solve()
 {
   real t  = 0.0;   // current time
   real T  = 1.0;   // final time
-  real k  = 0.1;   // time step
-  real nu = 0.01;  // viscosity 
-  real C1 = 1.0;   // stabilization parameter 
-  real C2 = 1.0;   // stabilization parameter 
+  real k  = 0.01;   // time step
+  real nu = 0.001; // viscosity 
+  real C1 = 2.0;   // stabilization parameter 
+  real C2 = 2.0;   // stabilization parameter 
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
   //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
   Vector bmom, bcon;
 
+  int nsd = 2;
+
   // Initialize velocity;
-  Vector x0vel(mesh.noNodes());
-  Vector xcvel(mesh.noNodes());
-  Vector xvel(mesh.noNodes());
+  Vector x0vel(nsd*mesh.noNodes());
+  Vector xcvel(nsd*mesh.noNodes());
+  Vector xvel(nsd*mesh.noNodes());
   x0vel = 0.0;
   xcvel = 0.0;
   xvel = 0.0;
@@ -43,7 +45,8 @@ void NSESolver::solve()
   Vector xpre(mesh.noNodes());
   xpre = 0.0;
 
-  GMRES solver;
+  GMRES solver_con;
+  GMRES solver_mom;
 
   cout << "Create functions" << endl;
   
@@ -68,6 +71,7 @@ void NSESolver::solve()
 
   NSEContinuity::BilinearForm acon(wnorm,h,C1);
   NSEContinuity::LinearForm Lcon(uc,f,wnorm,h,C1);
+  //NSEContinuity::LinearForm Lcon(uc);
 
   cout << "Compute element size" << endl;
 
@@ -97,7 +101,7 @@ void NSESolver::solve()
 
     x0vel = xvel;
 
-    for (int i=0;i<1;i++){
+    for (int i=0;i<10;i++){
 
       xcvel = xvel;
     
@@ -115,11 +119,22 @@ void NSESolver::solve()
       FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
 
       // Save the solution
-      p.set(t);
-      file << p;
+      //p.set(t);
+      //file << p;
+
+      /*
+      Acon.disp();
+      bcon.disp();
+      solver.setRtol(1.0e-5);
+      solver.setAtol(1.0e-5);
+      solver.disp();
+      */
+      
+      //bcon.disp();
+      //bcon = 0.0; 
 
       // Solve the linear system
-      solver.solve(Acon, xpre, bcon);
+      solver_con.solve(Acon, xpre, bcon);
 
       cout << "Assemble form: momentum" << endl;
 
@@ -134,7 +149,7 @@ void NSESolver::solve()
       cout << "Solve equation" << endl;
 
       // Solve the linear system
-      solver.solve(Amom, xvel, bmom);
+      solver_mom.solve(Amom, xvel, bmom);
 
     }
 
@@ -144,6 +159,8 @@ void NSESolver::solve()
     // Save the solution
     p.set(t);
     file << p;
+
+    t = t + k;
 
     // Update progress
     prog = t / T;

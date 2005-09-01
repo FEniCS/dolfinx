@@ -111,6 +111,12 @@ class BC_Continuity : public BoundaryCondition
 // Boundary condition for momentum equation 
 class BC_Momentum_2D : public BoundaryCondition
 {
+
+public:
+  BC_Momentum_2D::BC_Momentum_2D() : BoundaryCondition(2)
+  {
+  }
+
   const BoundaryValue operator() (const Point& p, int i)
   {
     BoundaryValue value;
@@ -145,8 +151,9 @@ class BC_Continuity_2D : public BoundaryCondition
   const BoundaryValue operator() (const Point& p)
   {
     BoundaryValue value;
-    if (fabs(p.x - 1.5) < DOLFIN_EPS)
+    if (fabs(p.x - 1.5) < DOLFIN_EPS){
       value.set(0.0);
+    }
     
     return value;
   }
