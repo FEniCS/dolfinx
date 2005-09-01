@@ -6,14 +6,16 @@ from math import *
 name = "ElasticityUpdatedSigma"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
+element3 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 1)
 
 lmbda  = Constant() # Lame coefficient
 mu     = Constant() # Lame coefficient
-vplast = Constant() # Plastic viscosity
+nuplast = Constant() # Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
 sigma = Function(element2)
+sigmanorm = Function(element3)
 
 global zero
 zero = 0.0 * Constant()
@@ -59,4 +61,4 @@ def E(e, lmbda, mu):
 Lelast = vdot(E(epsilon(v), lmbda, mu), sigma)
 
 
-L = (Lelast) * dx
+L = (Lelast - nuplast * (1 - sigmanorm) * Lplast)) * dx

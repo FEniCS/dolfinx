@@ -6,13 +6,16 @@ from math import *
 name = "ElasticityUpdatedSigma"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
+element3 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 1)
 
-lmbda  = Constant() # Lame coefficient
-mu     = Constant() # Lame coefficient
+lmbda   = Constant() # Lame coefficient
+mu      = Constant() # Lame coefficient
+nuplast = Constant() # Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
-#sigma = Function(element2)
+sigma = Function(element2)
+sigmanorm = Function(element2)
 
 global zero
 zero = 0.0 * Constant()
@@ -63,13 +66,11 @@ def tomatrix(q):
     return qmatrix
 
 qmatrix = tomatrix(q)
+sigmamatrix = tomatrix(sigma)
 
 Eev = E(epsilon(v), lmbda, mu)
 
-
 Lelast = vdot(E(epsilon(v), lmbda, mu), qmatrix)
+Lplast = vdot(E(sigmamatrix, lmbda, mu), qmatrix)
 
-print("hello")
-print(qmatrix)
-
-L = Lelast * dx
+L = (Lelast - nuplast * (1 - sigmanorm[0]) * Lplast) * dx

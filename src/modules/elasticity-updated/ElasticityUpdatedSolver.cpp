@@ -42,7 +42,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     epsilon1(xepsilon1, mesh, element2),
     sigmanorm(xsigmanorm, mesh, element2),
     Lv(f, sigma1, epsilon1, nuv),
-    Lsigma(v1, lambda, mu)
+    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
 {
   // Do nothing
   init();
