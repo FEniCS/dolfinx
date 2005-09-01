@@ -93,7 +93,7 @@ AMTAR = tar
 AUTOCONF = autoconf
 AUTOHEADER = autoheader
 AUTOMAKE = automake-1.9
-AWK = gawk
+AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
@@ -105,8 +105,8 @@ CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.8\" -DPACKAGE_STRING=\"dolfin\ 0.5.8\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 
 DEPDIR = .deps
-DOLFIN_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc-2.3.0 -I/usr/local/lib/petsc-2.3.0/bmake/linux-gnu -I/usr/local/lib/petsc-2.3.0/include -I/usr/local/include -I/usr/local/include -I/usr/include/libxml2  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated 
-DOLFIN_LIBS =  -ldolfin-poisson -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-elasticity -ldolfin-elasticity-updated -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -lncurses -Wl,-rpath,/usr/local/lib/petsc-2.3.0/lib/linux-gnu -Wl,-rpath,/usr/local/lib/petsc-2.3.0/lib/linux-gnu -L/usr/local/lib/petsc-2.3.0/lib/linux-gnu -lpetscts -lpetscsnes -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lnsl -lrt -llapack -lblas -lm -L/usr/local/lib -lmpich -lpthread -lrt -lg2c -lm -L/usr/lib/gcc-lib/i486-linux/3.3.5 -L/usr/lib/gcc-lib/i486-linux/3.3.5/../../.. -lm -lgcc_s -L/usr/local/lib -L/usr/lib/gcc-lib/i486-linux/3.3.5 -L/usr/lib/gcc-lib/i486-linux/3.3.5/../../.. -lmpichcxx -lmpich -lpthread -lrt -lstdc++ -lgcc_s -L/usr/lib -lxml2 -lz -lpthread -lm
+DOLFIN_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2  -I$(top_builddir)/src/modules/poisson  -I$(top_builddir)/src/modules/convdiff  -I$(top_builddir)/src/modules/navierstokes  -I$(top_builddir)/src/modules/elasticity  -I$(top_builddir)/src/modules/elasticity-updated 
+DOLFIN_LIBS =  -ldolfin-poisson -ldolfin-convdiff -ldolfin-navierstokes -ldolfin-elasticity -ldolfin-elasticity-updated -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -ldolfin-common -ldolfin-fem -ldolfin-form -ldolfin-function -ldolfin-io -ldolfin-la -ldolfin-log -ldolfin-main -ldolfin-math -ldolfin-mesh -ldolfin-ode -ldolfin-quadrature -ldolfin-settings -ldolfin-common -lncurses -Wl,-rpath,/usr/local/lib/petsc//lib/linux-gnu -Wl,-rpath,/usr/local/lib/petsc//lib/linux-gnu -L/usr/local/lib/petsc//lib/linux-gnu -lpetscts -lpetscsnes -lpetscksp -lpetscdm -lpetscmat -lpetscvec -lpetsc -lnsl -lrt -L/usr/X11R6/lib -lX11 -llapack -lblas -lm -L/usr/lib/mpich/lib -lmpich -lg2c -lm -L/usr/lib/gcc-lib/i486-linux/3.3.6 -L/usr/lib/gcc-lib/i486-linux/3.3.6/../../.. -lm -lgcc_s -L/usr/lib/mpich/lib -L/usr/lib/gcc-lib/i486-linux/3.3.6 -L/usr/lib/gcc-lib/i486-linux/3.3.6/../../.. -lpmpich++ -lmpich -lstdc++ -lgcc_s -L/usr/lib -lxml2 -lz -lm
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
@@ -116,7 +116,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-KERNEL_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc-2.3.0 -I/usr/local/lib/petsc-2.3.0/bmake/linux-gnu -I/usr/local/lib/petsc-2.3.0/include -I/usr/local/include -I/usr/local/include -I/usr/include/libxml2
+KERNEL_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2
 LDFLAGS = 
 LIBOBJS = 
 LIBS = -lncurses 
@@ -126,7 +126,7 @@ MAINT = #
 MAINTAINER_MODE_FALSE = 
 MAINTAINER_MODE_TRUE = #
 MAKEINFO = makeinfo
-MODULE_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc-2.3.0 -I/usr/local/lib/petsc-2.3.0/bmake/linux-gnu -I/usr/local/lib/petsc-2.3.0/include -I/usr/local/include -I/usr/local/include -I/usr/include/libxml2 -I$(top_builddir)/src/modules/
+MODULE_CFLAGS =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2 -I$(top_builddir)/src/modules/
 OBJEXT = o
 PACKAGE = 
 PACKAGE_BUGREPORT = dolfin@fenics.org
@@ -160,7 +160,7 @@ exec_prefix = ${prefix}
 host_alias = 
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /usr/local/garth/fenics/dolfin/cvs/dolfin/install-sh
+install_sh = /home/logg/work/src/fenics/dolfin/current/dolfin/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 libxml2_found = yes
@@ -189,7 +189,7 @@ include_HEADERS = dolfin/dolfin_fem.h \
                           dolfin/P1Tri.h \
                           dolfin/StiffnessMatrix.h
 
-INCLUDES =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc-2.3.0 -I/usr/local/lib/petsc-2.3.0/bmake/linux-gnu -I/usr/local/lib/petsc-2.3.0/include -I/usr/local/include -I/usr/local/include -I/usr/include/libxml2
+INCLUDES =  -I$(top_builddir)/src/kernel/common -I$(top_builddir)/src/kernel/fem -I$(top_builddir)/src/kernel/form -I$(top_builddir)/src/kernel/function -I$(top_builddir)/src/kernel/io -I$(top_builddir)/src/kernel/la -I$(top_builddir)/src/kernel/log -I$(top_builddir)/src/kernel/main -I$(top_builddir)/src/kernel/math -I$(top_builddir)/src/kernel/mesh -I$(top_builddir)/src/kernel/ode -I$(top_builddir)/src/kernel/quadrature -I$(top_builddir)/src/kernel/settings -I$(top_builddir)/src/kernel/common  -I/usr/local/lib/petsc/ -I/usr/local/lib/petsc//bmake/linux-gnu -I/usr/local/lib/petsc//include -I/usr/include/mpi -I/usr/include/libxml2
 lib_LIBRARIES = libdolfin-fem.a
 libdolfin_fem_a_SOURCES = AffineMap.cpp \
                           BoundaryCondition.cpp \
