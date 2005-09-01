@@ -13,9 +13,7 @@
 #include "dolfin/timeinfo.h"
 #include "dolfin/ElasticityUpdatedSolver.h"
 #include "dolfin/ElasticityUpdated.h"
-#include "dolfin/ElasticityUpdatedSigma0.h"
-#include "dolfin/ElasticityUpdatedSigma1.h"
-#include "dolfin/ElasticityUpdatedSigma2.h"
+#include "dolfin/ElasticityUpdatedSigma.h"
 #include "dolfin/ElasticityUpdatedProj.h"
 #include "dolfin/ElasticityUpdatedMass.h"
 
@@ -39,26 +37,12 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
     u1(x1_1, mesh, element1),
-    sigma0_1(xsigma0_1, mesh, element2_0),
-    sigma1_1(xsigma1_1, mesh, element2_1),
-    sigma2_1(xsigma2_1, mesh, element2_2),
-    sigma0_0(xsigma0_0, mesh, element2_0),
-    sigma1_0(xsigma1_0, mesh, element2_1),
-    sigma2_0(xsigma2_0, mesh, element2_2),
-    epsilon0_1(xepsilon0_1, mesh, element2_0),
-    epsilon1_1(xepsilon1_1, mesh, element2_1),
-    epsilon2_1(xepsilon2_1, mesh, element2_2),
-    sigmanorm(xsigmanorm, mesh, element2_2),
-    Lv(f, sigma0_1, sigma1_1, sigma2_1,
-       epsilon0_1, epsilon1_1, epsilon2_1, nuv),
-    Lsigma0(v1, sigma0_1, sigma1_1, sigma2_1,
-	    sigmanorm, lambda, mu, nuplast),
-    Lsigma1(v1, sigma0_1, sigma1_1, sigma2_1,
-	    sigmanorm, lambda, mu, nuplast),
-    Lsigma2(v1, sigma0_1, sigma1_1, sigma2_1,
-	    sigmanorm, lambda, mu, nuplast)
-
-  
+    sigma0(xsigma0, mesh, element2),
+    sigma1(xsigma1, mesh, element2),
+    epsilon1(xepsilon1, mesh, element2),
+    sigmanorm(xsigmanorm, mesh, element2),
+    Lv(f, sigma1, epsilon1, nuv),
+    Lsigma(v1, lambda, mu)
 {
   // Do nothing
   init();
@@ -68,9 +52,8 @@ void ElasticityUpdatedSolver::init()
 {
   Matrix M;
 
-  // FIXME: Temporary fix, sizes should be automatically computable
   int Nv = FEM::size(mesh, element1);
-  int Nsigma = FEM::size(mesh, element2_0);
+  int Nsigma = FEM::size(mesh, element2);
   int Nmesh = 3 * mesh.noNodes();
 
   x1_0.init(Nv);
@@ -91,30 +74,18 @@ void ElasticityUpdatedSolver::init()
 
   msigma.init(Nsigma);
 
-  xtmp0_1.init(Nsigma);
-  xtmp1_1.init(Nsigma);
-  xtmp2_1.init(Nsigma);
+  xsigmatmp1.init(Nsigma);
 
-  xsigma0_0.init(Nsigma);
-  xsigma0_1.init(Nsigma);
+  xsigma0.init(Nsigma);
+  xsigma1.init(Nsigma);
 
-  xsigma1_0.init(Nsigma);
-  xsigma1_1.init(Nsigma);
-
-  xsigma2_0.init(Nsigma);
-  xsigma2_1.init(Nsigma);
-
-  xepsilon0_1.init(Nsigma);
-  xepsilon1_1.init(Nsigma);
-  xepsilon2_1.init(Nsigma);
+  xepsilon1.init(Nsigma);
 
   xsigmanorm.init(Nsigma);
 
   mesh0.init(Nmesh);
 
-  xsigma0_1 = 0;
-  xsigma1_1 = 0;
-  xsigma2_1 = 0;
+  xsigma1 = 0;
 
   stepresidual.init(Nv);
 
@@ -140,6 +111,9 @@ void ElasticityUpdatedSolver::init()
       x2_1(dofs[i]) = coefficients[i];
   }
 
+  FEM::applyBC(Dummy, x2_1, mesh, element1, bc);
+
+
 //   cout << "x2_1:" << endl;
 //   x2_1.disp();
 
@@ -158,12 +132,12 @@ void ElasticityUpdatedSolver::init()
   {
     Cell& cell = *c;
 
-    int dofs[element2_0.spacedim()];
-    element2_0.dofmap(dofs, cell, mesh);
+    int dofs[element2.spacedim()];
+    element2.dofmap(dofs, cell, mesh);
 
     real factor = 1.0 / cell.volume(); 
 
-    for(uint i = 0; i < element2_0.spacedim(); i++)
+    for(uint i = 0; i < element2.spacedim(); i++)
       msigma(dofs[i]) = factor;
   }
 }
@@ -178,9 +152,7 @@ void ElasticityUpdatedSolver::step()
   // Make time step
   x1_0 = x1_1;
   x2_0 = x2_1;
-  xsigma0_0 = xsigma0_1;
-  xsigma1_0 = xsigma1_1;
-  xsigma2_0 = xsigma2_1;
+  xsigma0 = xsigma1;
 
   // Copy mesh values
 
@@ -207,16 +179,14 @@ void ElasticityUpdatedSolver::step()
       {
 	Cell& cell = *c;
 
-	int dofs[element2_0.spacedim()];
-	element2_0.dofmap(dofs, cell, mesh);
+	int dofs[element2.spacedim()];
+	element2.dofmap(dofs, cell, mesh);
 
 	real proj = 1;
 	real norm = 0;
-	for(uint i = 0; i < element2_0.spacedim(); i++)
+	for(uint i = 0; i < element2.spacedim(); i++)
 	{
-	  norm = std::max(norm, fabs(xsigma0_0(dofs[i])));
-	  norm = std::max(norm, fabs(xsigma1_0(dofs[i])));
-	  norm = std::max(norm, fabs(xsigma2_0(dofs[i])));
+	  norm = std::max(norm, fabs(xsigma0(dofs[i])));
 	}
 	
 	if(norm > yield)
@@ -233,32 +203,16 @@ void ElasticityUpdatedSolver::step()
     //       tic();
     
     // Assemble sigma0 vectors
-    FEM::assemble(Lsigma0, xsigma0_1, mesh);
-    FEM::assemble(Lsigma1, xsigma1_1, mesh);
-    FEM::assemble(Lsigma2, xsigma2_1, mesh);
-
-
+    FEM::assemble(Lsigma, xsigma1, mesh);
     
-    VecPointwiseMult(xtmp0_1.vec(), xsigma0_1.vec(), msigma.vec());
-    VecPointwiseMult(xtmp1_1.vec(), xsigma1_1.vec(), msigma.vec());
-    VecPointwiseMult(xtmp2_1.vec(), xsigma2_1.vec(), msigma.vec());
+    VecPointwiseMult(xsigmatmp1.vec(), xsigma1.vec(), msigma.vec());
     
-    xtmp0_1.apply();
-    xtmp1_1.apply();
-    xtmp2_1.apply();
+    xsigmatmp1.apply();
     
-    xsigma0_1 = xsigma0_0;
-    xsigma0_1.axpy(k, xtmp0_1);
+    xsigma1 = xsigma0;
+    xsigma1.axpy(k, xsigmatmp1);
     
-    xsigma1_1 = xsigma1_0;
-    xsigma1_1.axpy(k, xtmp1_1);
-    
-    xsigma2_1 = xsigma2_0;
-    xsigma2_1.axpy(k, xtmp2_1);
-    
-    xepsilon0_1 *= 1.0 / lambda;
-    xepsilon1_1 *= 1.0 / lambda;
-    xepsilon2_1 *= 1.0 / lambda;
+    xepsilon1 *= 1.0 / lambda;
     
     // Assemble v vector
     FEM::assemble(Lv, xtmp1, mesh);

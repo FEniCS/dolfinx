@@ -9,9 +9,7 @@
 
 #include <dolfin/Solver.h>
 #include "dolfin/ElasticityUpdated.h"
-#include "dolfin/ElasticityUpdatedSigma0.h"
-#include "dolfin/ElasticityUpdatedSigma1.h"
-#include "dolfin/ElasticityUpdatedSigma2.h"
+#include "dolfin/ElasticityUpdatedSigma.h"
 #include "dolfin/ElasticityUpdatedMass.h"
 
 namespace dolfin
@@ -72,36 +70,25 @@ namespace dolfin
     // Elements
 
     ElasticityUpdated::LinearForm::TestElement element1;
-    ElasticityUpdatedSigma0::LinearForm::TestElement element2_0;
-    ElasticityUpdatedSigma1::LinearForm::TestElement element2_1;
-    ElasticityUpdatedSigma2::LinearForm::TestElement element2_2;
+    ElasticityUpdatedSigma::LinearForm::TestElement element2;
 
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
-    Vector xsigma0_0, xsigma0_1, xsigma1_0, xsigma1_1, xsigma2_0, xsigma2_1,
-      xepsilon0_1, xepsilon1_1, xepsilon2_1, xsigmanorm, mesh0;
-    Vector xtmp1, xtmp2, xtmp0_1, xtmp1_1, xtmp2_1;
+    Vector xsigma0, xsigma1, xepsilon1, xsigmanorm, mesh0;
+    Vector xtmp1, xtmp2, xsigmatmp1;
     Matrix Dummy;
     
     Function v1;
     Function u0;
     Function u1;
-    Function sigma0_1;
-    Function sigma1_1;
-    Function sigma2_1;
-    Function sigma0_0;
-    Function sigma1_0;
-    Function sigma2_0;
-    Function epsilon0_1;
-    Function epsilon1_1;
-    Function epsilon2_1;
+    Function sigma0;
+    Function sigma1;
+    Function epsilon1;
     Function sigmanorm;
 
     // Forms
 
     ElasticityUpdated::LinearForm Lv;
-    ElasticityUpdatedSigma0::LinearForm Lsigma0;
-    ElasticityUpdatedSigma1::LinearForm Lsigma1;
-    ElasticityUpdatedSigma2::LinearForm Lsigma2;
+    ElasticityUpdatedSigma::LinearForm Lsigma;
   };
   
 }

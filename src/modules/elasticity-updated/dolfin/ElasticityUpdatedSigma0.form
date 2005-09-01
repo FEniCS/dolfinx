@@ -1,8 +1,11 @@
 # Test form for updated elasticity
 
-name = "ElasticityUpdatedSigma0"
+from Numeric import *
+from math import *
+
+name = "ElasticityUpdatedSigma"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
 
 lmbda  = Constant() # Lame coefficient
 mu     = Constant() # Lame coefficient
@@ -10,19 +13,50 @@ vplast = Constant() # Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
-sigma0 = Function(element2)
-sigma1 = Function(element2)
-sigma2 = Function(element2)
-sigmanorm = Function(element2)	# Norm of sigma (stress)
+sigma = Function(element2)
 
-Lplast = ((lmbda * (sigma0[0] + sigma1[1] + sigma2[2]) * q[0]) + 
-          (mu * sigma0[i] * q[i]))
+global zero
+zero = 0.0 * Constant()
 
-Ljaumann1 = ((v[i].dx(0) - v[0].dx(i)) * sigma0[i])
+def ffczeros(m, n):
+    A = array((zero))
+    A = resize(A, (m, n))
+    A *= 0.0
+    
+    return A
 
-Ljaumann2 = ((v[i].dx(0) - v[0].dx(i)) * sigma0[i])
+def ffcidentity(m):
+    A = myzeros(m, m)
 
-Lelast = ((lmbda * v[i].dx(i) * q[0]) + 
-          (mu * (v[i].dx(0) + v[0].dx(i))) * q[i])
+    for ii in range(m):
+        for jj in range(m):
+            if ii == jj:
+                A[ii, jj] = 1.0
+                    
+    return A
 
-L = (Lelast - vplast * (1 - sigmanorm[0]) * Lplast) * dx
+def epsilon(u):
+    eu = ffczeros(3, 3)
+
+    for ii in range(3):
+        for jj in range(3):
+            eu[ii, jj] = 0.5 * (u[ii].dx(jj) + u[jj].dx(ii))
+
+    return eu
+
+
+def E(e, lmbda, mu):
+    Ee = 2.0 * multiply(mu, e)
+    for ii in range(3):
+        for jj in range(3):
+            if ii == jj:
+                Ee[ii, jj] += lmbda * trace(e)
+
+    return Ee
+
+
+
+Lelast = vdot(E(epsilon(v), lmbda, mu), sigma)
+
+
+L = (Lelast) * dx
