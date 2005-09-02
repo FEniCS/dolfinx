@@ -12,12 +12,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(uint num_components)
-  : num_components(num_components)
+  : Synchronizer(), num_components(num_components)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition() 
+BoundaryCondition::BoundaryCondition() : Synchronizer() 
 {
   num_components = 1;
 }
@@ -44,15 +44,5 @@ dolfin::uint BoundaryCondition::numComponents() const
 {
   return num_components;
  }
-//-----------------------------------------------------------------------------
-real BoundaryCondition::time() const
-{
-  return t;
-}
-//-----------------------------------------------------------------------------
-void BoundaryCondition::set(real time)
-{
-  t = time;
-}
 //-----------------------------------------------------------------------------
  

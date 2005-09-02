@@ -5,6 +5,7 @@ include_HEADERS = dolfin/dolfin_common.h \
                   dolfin/List.h \
                   dolfin/PArray.h \
                   dolfin/PList.h \
+                  dolfin/Synchronizer.h \
                   dolfin/System.h \
                   dolfin/Table.h \
                   dolfin/Tensor.h \
@@ -18,7 +19,8 @@ INCLUDES = @KERNEL_CFLAGS@
 
 lib_LIBRARIES = libdolfin-common.a
 
-libdolfin_common_a_SOURCES = System.cpp \
+libdolfin_common_a_SOURCES = Synchronizer.cpp \
+                             System.cpp \
                              Variable.cpp \
                              meminfo.cpp \
                              sysinfo.cpp \

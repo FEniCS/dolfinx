@@ -9,6 +9,7 @@
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
+#include <dolfin/Synchronizer.h>
 #include <dolfin/constants.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/Point.h>
@@ -16,7 +17,7 @@
 namespace dolfin
 {
 
-  class BoundaryCondition
+  class BoundaryCondition : public Synchronizer
   {
   public:
     
@@ -36,19 +37,9 @@ namespace dolfin
     /// Return number of components (scalar = 1, vector > 1)
     uint numComponents() const;
 
-    /// Return current time
-    real time() const;
-
-    /// Specify current time
-    void set(real time);
-
    private:
  
      uint num_components;
- 
-    // Current time
-    real t;
-
   };
   
 }

@@ -3,6 +3,7 @@ EXTRA_DIST = dolfin_common.h \
              List.h \
              PArray.h \
              PList.h \
+             Synchronizer.h \
              Table.h \
              Tensor.h \
              Variable.h \
