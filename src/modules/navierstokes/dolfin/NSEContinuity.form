@@ -19,15 +19,16 @@ inv_uc_norm  = Function(scalar)          # 1/|w|
 h            = Function(constant)        # element size
 C1           = Constant()                # stabilisation parameter
 
-d1 = C1*0.5*h*inv_uc_norm                # stabiliation term: FIXME: include timestep!!
+d1 = C1*0.5*h*h                      # stabiliation term: FIXME: include timestep!!
+#d1 = C1*0.5*h*inv_uc_norm                # stabiliation term: FIXME: include timestep!!
 
 i0 = Index()
 i1 = Index()
 i2 = Index()
 
 a = d1*q.dx(i0)*p.dx(i0)*dx 
-#L = - q*uc[i0].dx(i0)*dx 
-L = d1*q.dx(i0)*f[i0]*dx - d1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 
+L = - q*uc[i0].dx(i0)*dx 
+#L = d1*q.dx(i0)*f[i0]*dx - d1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 
 
 
 

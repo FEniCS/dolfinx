@@ -21,11 +21,11 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 void NSESolver::solve()
 {
   real t  = 0.0;   // current time
-  real T  = 1.0;   // final time
   real k  = 0.01;   // time step
+  real T  = 100*k;   // final time
   real nu = 0.001; // viscosity 
-  real C1 = 2.0;   // stabilization parameter 
-  real C2 = 2.0;   // stabilization parameter 
+  real C1 = 1.0;   // stabilization parameter 
+  real C2 = 1.0;   // stabilization parameter 
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
@@ -45,13 +45,26 @@ void NSESolver::solve()
   Vector xpre(mesh.noNodes());
   xpre = 0.0;
 
+  Vector residual_mom(nsd*mesh.noNodes());
+  Vector residual_con(mesh.noNodes());
+  residual_mom = 1.0e3;
+  residual_con = 1.0e3;
+
   GMRES solver_con;
   GMRES solver_mom;
+  
+  /*
+  solver_con.setRtol(1.0e-10);
+  solver_con.setAtol(1.0e-10);
+
+  solver_mom.setRtol(1.0e-10);
+  solver_mom.setAtol(1.0e-10);
+  */
 
   cout << "Create functions" << endl;
   
   // Create functions
-  Function u(xvel, mesh);   // Velocity
+  //  Function u(xvel, mesh);   // Velocity
   Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
@@ -64,14 +77,18 @@ void NSESolver::solve()
   cout << "Create bilinear form: momentum" << endl;
 
   // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(uc,wnorm,h,k,nu,C1,C2);
-  NSEMomentum::LinearForm Lmom(uc,u0,f,p,wnorm,h,C1,C2,k,nu);
+  //NSEMomentum::BilinearForm amom(uc,wnorm,h,k,nu,C1,C2);
+  //NSEMomentum::LinearForm Lmom(uc,u0,f,p,wnorm,h,C1,C2,k,nu);
+  NSEMomentum::BilinearForm amom(uc,h,k,nu,C1,C2);
+  NSEMomentum::LinearForm Lmom(uc,u0,f,p,h,C1,C2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
 
-  NSEContinuity::BilinearForm acon(wnorm,h,C1);
-  NSEContinuity::LinearForm Lcon(uc,f,wnorm,h,C1);
-  //NSEContinuity::LinearForm Lcon(uc);
+  NSEContinuity::BilinearForm acon(h,C1);
+  //NSEContinuity::LinearForm Lcon(uc,f,h,C1);
+  //NSEContinuity::BilinearForm acon(wnorm,h,C1);
+  //NSEContinuity::LinearForm Lcon(uc,f,wnorm,h,C1);
+  NSEContinuity::LinearForm Lcon(uc);
 
   cout << "Compute element size" << endl;
 
@@ -87,7 +104,10 @@ void NSESolver::solve()
 
   cout << "Create file" << endl;
 
-  File file("pressure.m");  // file for saving pressure
+  Function u(xvel, mesh, uc.element());   // Velocity
+
+  File file_p("pressure.m");  // file for saving pressure
+  File file_u("velocity.m");  // file for saving velocity 
 
   cout << "Assemble form: continuity" << endl;
 
@@ -101,10 +121,11 @@ void NSESolver::solve()
 
     x0vel = xvel;
 
-    for (int i=0;i<10;i++){
+    residual_mom = 1.0e3;
+    residual_con = 1.0e3;
 
-      xcvel = xvel;
-    
+    //for (int i=0;i<10;i++){
+    while (sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) > 1.0e-2){
       // Compute inverse of advective velocity norm 1/|a|
       // ConvectionNormInv(uc, wnorm, wnorm_vector);
 
@@ -118,20 +139,7 @@ void NSESolver::solve()
       // Set boundary conditions
       FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
 
-      // Save the solution
-      //p.set(t);
-      //file << p;
-
-      /*
-      Acon.disp();
-      bcon.disp();
-      solver.setRtol(1.0e-5);
-      solver.setAtol(1.0e-5);
-      solver.disp();
-      */
-      
-      //bcon.disp();
-      //bcon = 0.0; 
+      cout << "Solve linear system" << endl;
 
       // Solve the linear system
       solver_con.solve(Acon, xpre, bcon);
@@ -146,11 +154,26 @@ void NSESolver::solve()
       // Set boundary conditions
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
 
-      cout << "Solve equation" << endl;
+      cout << "Solve linear system" << endl;
 
       // Solve the linear system
       solver_mom.solve(Amom, xvel, bmom);
-
+      
+      xcvel = xvel;
+    
+      FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
+      FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
+      Amom.mult(xvel,residual_mom);
+      residual_mom -= bmom;
+      
+      FEM::assemble(Lcon, bcon, mesh);
+      FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
+      Acon.mult(xpre,residual_con);
+      residual_con -= bcon;
+      
+      cout << "Momentum residual  : l2 norm = " << residual_mom.norm() << endl;
+      cout << "Continuity residual: l2 norm = " << residual_con.norm() << endl;
+      cout << "Total NSE residual : l2 norm = " << sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) << endl;
     }
 
 
@@ -158,22 +181,15 @@ void NSESolver::solve()
 
     // Save the solution
     p.set(t);
-    file << p;
+    u.set(t);
+    file_p << p;
+    file_u << u;
 
     t = t + k;
 
     // Update progress
     prog = t / T;
   }
-
-
-  /*
-  // Save function to file
-  Function u(x, mesh, a.trial());
-  File file("poisson.m");
-  file << u;
-  */
-
 
 }
 //-----------------------------------------------------------------------------
