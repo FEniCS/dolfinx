@@ -233,7 +233,7 @@ void ElasticityUpdatedSolver::step()
     x1_1 = x1_0;
     x1_1.axpy(k, x2_0);
     
-    cout << "stepresidual: " << stepresidual.norm(Vector::linf) << endl;
+    cout << "stepresidual(j): " << stepresidual.norm(Vector::linf) << endl;
 
     // Update the mesh
     for (NodeIterator n(&mesh); !n.end(); ++n)
