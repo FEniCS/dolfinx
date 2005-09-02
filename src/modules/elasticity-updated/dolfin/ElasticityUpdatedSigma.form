@@ -6,7 +6,7 @@ from math import *
 name = "ElasticityUpdatedSigma"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
-#element3 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 1)
+element3 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 1)
 
 lmbda   = Constant() # Lame coefficient
 mu      = Constant() # Lame coefficient
@@ -15,7 +15,7 @@ nuplast = Constant() # Plastic viscosity
 q = BasisFunction(element2)
 v = Function(element1)
 sigma = Function(element2)
-sigmanorm = Function(element2)
+sigmanorm = Function(element3)
 
 global zero
 zero = 0.0 * Constant()

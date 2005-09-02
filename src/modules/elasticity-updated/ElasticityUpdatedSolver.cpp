@@ -40,7 +40,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     sigma0(xsigma0, mesh, element2),
     sigma1(xsigma1, mesh, element2),
     epsilon1(xepsilon1, mesh, element2),
-    sigmanorm(xsigmanorm, mesh, element2),
+    sigmanorm(xsigmanorm, mesh, element3),
     Lv(f, sigma1, epsilon1, nuv),
     Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
 {
@@ -54,6 +54,7 @@ void ElasticityUpdatedSolver::init()
 
   int Nv = FEM::size(mesh, element1);
   int Nsigma = FEM::size(mesh, element2);
+  int Nsigmanorm = FEM::size(mesh, element3);
   int Nmesh = 3 * mesh.noNodes();
 
   x1_0.init(Nv);
@@ -81,7 +82,7 @@ void ElasticityUpdatedSolver::init()
 
   xepsilon1.init(Nsigma);
 
-  xsigmanorm.init(Nsigma);
+  xsigmanorm.init(Nsigmanorm);
 
   mesh0.init(Nmesh);
 
