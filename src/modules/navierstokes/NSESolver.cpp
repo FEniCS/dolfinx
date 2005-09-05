@@ -22,10 +22,8 @@ void NSESolver::solve()
 {
   real t  = 0.0;   // current time
   real k  = 0.01;   // time step
-  real T  = 100*k;   // final time
+  real T  = 8.0;   // final time
   real nu = 0.001; // viscosity 
-  real C1 = 1.0;   // stabilization parameter 
-  real C2 = 1.0;   // stabilization parameter 
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
@@ -69,38 +67,20 @@ void NSESolver::solve()
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
 
-  // vectors for functions for element size and inverse of velocity norm
-  Vector hvector, wnorm_vector; 
-  // functions for element size and inverse of velocity norm
-  Function h(hvector), wnorm(wnorm_vector);
+  // vectors for functions for stabilization 
+  Vector d1vector, d2vector;
+  Function delta1(d1vector), delta2(d2vector);
 
   cout << "Create bilinear form: momentum" << endl;
 
   // Define the bilinear and linear forms
-  //NSEMomentum::BilinearForm amom(uc,wnorm,h,k,nu,C1,C2);
-  //NSEMomentum::LinearForm Lmom(uc,u0,f,p,wnorm,h,C1,C2,k,nu);
-  NSEMomentum::BilinearForm amom(uc,h,k,nu,C1,C2);
-  NSEMomentum::LinearForm Lmom(uc,u0,f,p,h,C1,C2,k,nu);
+  NSEMomentum::BilinearForm amom(uc,delta1,delta2,k,nu);
+  NSEMomentum::LinearForm Lmom(uc,u0,f,p,delta1,delta2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
 
-  NSEContinuity::BilinearForm acon(h,C1);
-  //NSEContinuity::LinearForm Lcon(uc,f,h,C1);
-  //NSEContinuity::BilinearForm acon(wnorm,h,C1);
-  //NSEContinuity::LinearForm Lcon(uc,f,wnorm,h,C1);
-  NSEContinuity::LinearForm Lcon(uc);
-
-  cout << "Compute element size" << endl;
-
-  // Compute local element size h
-  ComputeElementSize(mesh, hvector);  
-
-  cout << "Compute inverse norm" << endl;
-
-  // Compute inverse of advective velocity norm 1/|a|
-  //ConvectionNormInv(uc, wnorm, wnorm_vector);
-  wnorm_vector.init(mesh.noNodes());
-  wnorm_vector = 1.0;
+  NSEContinuity::BilinearForm acon(delta1);
+  NSEContinuity::LinearForm Lcon(uc,f,delta1);
 
   cout << "Create file" << endl;
 
@@ -111,23 +91,34 @@ void NSESolver::solve()
 
   cout << "Assemble form: continuity" << endl;
 
+  ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
+
   // Discretize Continuity equation 
   FEM::assemble(acon, Acon, mesh);
+
+  // Set time step
+  real hmin;
+  GetMinimumCellSize(mesh, hmin);  
+  k = hmin;
+
+  int time_step = 0;
 
   // Start time-stepping
   Progress prog("Time-stepping");
   while (t<T) 
   {
+    time_step++;
+    cout << "Stating time step " << time_step << endl;
 
     x0vel = xvel;
+
+    ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
 
     residual_mom = 1.0e3;
     residual_con = 1.0e3;
 
     //for (int i=0;i<10;i++){
     while (sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) > 1.0e-2){
-      // Compute inverse of advective velocity norm 1/|a|
-      // ConvectionNormInv(uc, wnorm, wnorm_vector);
 
       cout << "Assemble form: continuity" << endl;
 
@@ -176,8 +167,7 @@ void NSESolver::solve()
       cout << "Total NSE residual : l2 norm = " << sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) << endl;
     }
 
-
-    cout << "Save solution" << endl;
+    //cout << "Save solution" << endl;
 
     // Save the solution
     p.set(t);
@@ -191,6 +181,14 @@ void NSESolver::solve()
     prog = t / T;
   }
 
+    cout << "Save solution" << endl;
+
+    // Save the solution
+    p.set(t);
+    u.set(t);
+    file_p << p;
+    file_u << u;
+
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
@@ -200,9 +198,9 @@ void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
-void NSESolver::ComputeElementSize(Mesh& mesh, Vector& hvector)
+void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
 {
-  // Compute element size h
+  // Compute cell size h
   hvector.init(mesh.noCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
@@ -210,48 +208,42 @@ void NSESolver::ComputeElementSize(Mesh& mesh, Vector& hvector)
     }
 }
 //-----------------------------------------------------------------------------
-void NSESolver::ConvectionNormInv(Function& w, Function& wnorm,
-				  Vector& wnorm_vector)
+void NSESolver::GetMinimumCellSize(Mesh& mesh, real& hmin)
 {
-  // Compute inverse norm of w
-  const FiniteElement& wn_element = wnorm.element();
-  const FiniteElement& w_element  = w.element();
-  uint n = wn_element.spacedim();
-  uint m = w_element.tensordim(0);
-  int* dofs = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-  AffineMap map;
-  real convection_norm;
-	
-  wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
-  
-  cout << "check" << endl;
+  // Get minimum cell diameter
+  hmin = 1.0e6;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      if ((*cell).diameter() < hmin) hmin = (*cell).diameter();
+    }
+}
+//-----------------------------------------------------------------------------
+void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
+				     Vector& d1vector, Vector& d2vector)
+{
+  // Stabilization parameters 
+  real C1 = 2.0;   
+  real C2 = 2.0;   
+
+  d1vector.init(mesh.noCells());	
+  d2vector.init(mesh.noCells());	
+
+  real normw; 
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
-      map.update(*cell);
-      wn_element.dofmap(dofs, *cell, mesh);
-      wn_element.pointmap(points, components, map);
-      for (uint i = 0; i < n; i++)
-	{
-	  convection_norm = 0.0;
-	  for(uint j=0; j < m; ++j){
-	    cout << "check j = " << j << endl;
-	    convection_norm += pow(w(points[i], j), 2);		  
-	    cout << "check" << endl;
-	  }
-	  wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
-	}
+      //normw = sqrt(sqr(w((*cell).midpoint(),0)) + sqr(w((*cell).midpoint(),1)));
+      normw = 0.0;
+      for (NodeIterator n(cell); !n.end(); ++n)
+	normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
+      normw /= (*cell).noNodes();
+      if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
+	d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
+	d2vector((*cell).id()) = C2 * (*cell).diameter();
+      } else{
+	d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
+	d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
+      }	
     }
-  
-  cout << "check" << endl;
-
-  // Delete data
-  delete [] dofs;
-  delete [] components;
-  delete [] points;
-  
-  
 }
 //-----------------------------------------------------------------------------

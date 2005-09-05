@@ -10,7 +10,7 @@
 #include <dolfin/List.h>
 #include <dolfin/PArray.h>
 #include <dolfin/PList.h>
-#include <dolfin/Synchronizer.h>
+//#include <dolfin/Synchronizer.h>
 #include <dolfin/Table.h>
 #include <dolfin/Tensor.h>
 

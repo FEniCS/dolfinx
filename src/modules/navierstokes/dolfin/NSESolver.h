@@ -27,12 +27,15 @@ namespace dolfin
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
 		      BoundaryCondition& bc_con);
 
-    // Compute element diameter
-    void ComputeElementSize(Mesh& mesh, Vector& hvector);
+    // Compute cell diameter
+    void ComputeCellSize(Mesh& mesh, Vector& hvector);
       
-    // Compute inverse of norm of convection
-    void ConvectionNormInv(Function& w, Function& wnorm,
-			   Vector& wnorm_vector);
+    // Get minimum cell diameter
+    void GetMinimumCellSize(Mesh& mesh, real& hmin);
+
+    // Compute stabilization 
+    void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
+			      Vector& d1vector, Vector& d2vector);
 
   private:
 

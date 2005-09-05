@@ -17,26 +17,21 @@ uc           = Function(vector)
 u0           = Function(vector)
 f            = Function(vector)
 p            = Function(scalar)
-inv_uc_norm  = Function(scalar)         # 1/|w|
-h            = Function(constant)       # element size
-C1           = Constant()               # stabilisation parameter
-C2           = Constant()               # stabilisation parameter
+delta1       = Function(constant)       # stabilization 
+delta2       = Function(constant)       # stabilization
+
 k            = Constant()
 nu           = Constant()
-
-#d1 = C1*0.5*h*inv_uc_norm               # stabiliation term: FIXME: include timestep!!
-d1 = C1*0.5*h*h                # stabiliation term: FIXME: include timestep!!
-d2 = C2*h*h;                              # stabiliation term: FIXME: include timestep!!
 
 i0 = Index()
 i1 = Index()
 i2 = Index()
 
 G_a  = v[i0]*u[i0]*dx + k*nu*0.5*v[i0].dx(i1)*u[i0].dx(i1)*dx + k*0.5*v[i0]*uc[i1]*u[i0].dx(i1)*dx 	
-SD_a = d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u[i0].dx(i2)*dx + d2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx  
+SD_a = delta1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u[i0].dx(i2)*dx + delta2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx  
 
 G_L  = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx - k*nu*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - k*0.5*v[i0]*uc[i1]*u0[i0].dx(i1)*dx 
-SD_L = d1*k*uc[i1]*v[i0].dx(i1)*f[i0]*dx - d1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u0[i0].dx(i2)*dx - d1*k*uc[i1]*v[i0].dx(i1)*p.dx(i0)*dx - d2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
+SD_L = delta1*k*uc[i1]*v[i0].dx(i1)*f[i0]*dx - delta1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u0[i0].dx(i2)*dx - delta1*k*uc[i1]*v[i0].dx(i1)*p.dx(i0)*dx - delta2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
 
 a = G_a + SD_a  
 L = G_L + SD_L

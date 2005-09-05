@@ -119,28 +119,29 @@ public:
 
   const BoundaryValue operator() (const Point& p, int i)
   {
+    real time = 4.0;
     BoundaryValue value;
     if (i==0){
-      if (fabs(p.x - 0.0) < DOLFIN_EPS){
-	value.set(1.0);
+      if ( p.x < 0.0 + 0.01 + DOLFIN_EPS){
+	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time*0.125) * 6.0*p.y*(0.41-p.y) );
       } 
-      if ( p.y < 0.0 + DOLFIN_EPS){
+      if ( p.y < 0.0 + 0.01 + DOLFIN_EPS){
 	value.set(0.0);
       } 
-      if ( p.y > 0.5 - DOLFIN_EPS){
+      if ( p.y > 0.41 - 0.01 - DOLFIN_EPS){
 	value.set(0.0);
       } 
-      if ( sqrt(sqr(p.x - 0.3) + sqr(p.y - 0.25)) < 0.11 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < 0.051 + DOLFIN_EPS){
 	value.set(0.0);
       }       
     } else if (i==1){
-      if ( p.y < 0.0 + DOLFIN_EPS){
+      if ( p.y < 0.0 + 0.01 + DOLFIN_EPS){
 	value.set(0.0);
       } 
-      if ( p.y > 0.5 - DOLFIN_EPS){
+      if ( p.y > 0.41 - 0.01 - DOLFIN_EPS){
 	value.set(0.0);
       } 
-      if (sqrt(sqr(p.x - 0.3) + sqr(p.y - 0.25)) < 0.11 + DOLFIN_EPS){
+      if (sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < 0.051 + DOLFIN_EPS){
 	value.set(0.0);
       }       
     } else{
@@ -157,7 +158,7 @@ class BC_Continuity_2D : public BoundaryCondition
   const BoundaryValue operator() (const Point& p)
   {
     BoundaryValue value;
-    if (fabs(p.x - 1.5) < DOLFIN_EPS){
+    if (fabs(p.x - 2.2) < DOLFIN_EPS){
       value.set(0.0);
     }
     
@@ -168,10 +169,10 @@ class BC_Continuity_2D : public BoundaryCondition
 int main()
 {
   //Mesh mesh("tetmesh_backward_facing_step_32_8_8.xml.gz");
-  Mesh mesh("cylinder.xml.gz");
+  Mesh mesh("cylinder_2d_bmk.xml");
   ForceFunction f;
 
-  mesh.refineUniformly(2);
+  //mesh.refineUniformly(2);
 
   //InitialSolution u0; 
 
