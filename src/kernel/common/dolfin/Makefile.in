@@ -139,9 +139,9 @@ EXTRA_DIST = dolfin_common.h \
              List.h \
              PArray.h \
              PList.h \
-             Synchronizer.h \
              Table.h \
              Tensor.h \
+             TimeDependent.h \
              Variable.h \
              meminfo.h \
              sysinfo.h \

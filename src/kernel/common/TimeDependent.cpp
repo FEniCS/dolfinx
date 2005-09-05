@@ -4,37 +4,36 @@
 // First added:  2005-09-02
 // Last changed: 2005
 
-#include <dolfin/Synchronizer.h>
+#include <dolfin/TimeDependent.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Synchronizer::Synchronizer() : time_set(false)
+TimeDependent::TimeDependent() : t(0)
 {
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Synchronizer::Synchronizer(const real& t) : t(&t), time_set(true)
+TimeDependent::TimeDependent(const real& t) : t(&t)
 {
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-Synchronizer::~Synchronizer() 
+TimeDependent::~TimeDependent() 
 {
  // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Synchronizer::sync(const real& t)
+void TimeDependent::sync(const real& t)
 {
   this->t  = &t;
-  time_set = true;
 }
 //-----------------------------------------------------------------------------
-real Synchronizer::time() const
+real TimeDependent::time() const
 {
-	if( !time_set)
+	if( !t )
     dolfin_error("Time has not been associated with object.");
-
+		
 	return *t;
 }
 //-----------------------------------------------------------------------------

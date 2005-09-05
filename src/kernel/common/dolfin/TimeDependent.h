@@ -4,10 +4,9 @@
 // First added:  2005-09-02
 // Last changed: 2005
 
-#ifndef __SYNCHRONIZER_H
-#define __SYNCHRONIZER_H 
+#ifndef __TIME_DEPENDENT_H
+#define __TIME_DEPENDENT_H 
  
-#include <string>
 #include <dolfin/dolfin_log.h>
 
 namespace dolfin
@@ -15,16 +14,16 @@ namespace dolfin
   
   /// Associates an object with time t 
 
-  class Synchronizer
+  class TimeDependent
   {
   public:
     
     /// Constructors
-		Synchronizer();
-    Synchronizer(const real& t);
+		TimeDependent();
+    TimeDependent(const real& t);
     
     /// Destructor
-    ~Synchronizer();
+    ~TimeDependent();
 
     /// Associate object with time t
 		void sync(const real& t);
@@ -36,9 +35,6 @@ namespace dolfin
     
     // Pointer to the current time
     const real* t;
-    
-    // True if synchronized to time
-    bool time_set;
 
   };
   

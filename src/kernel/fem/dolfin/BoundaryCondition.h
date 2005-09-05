@@ -9,7 +9,7 @@
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
 
-#include <dolfin/Synchronizer.h>
+#include <dolfin/TimeDependent.h>
 #include <dolfin/constants.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/Point.h>
@@ -17,7 +17,7 @@
 namespace dolfin
 {
 
-  class BoundaryCondition : public Synchronizer
+  class BoundaryCondition : public TimeDependent
   {
   public:
     

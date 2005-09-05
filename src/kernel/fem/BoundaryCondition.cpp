@@ -12,12 +12,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition(uint num_components)
-  : Synchronizer(), num_components(num_components)
+  : TimeDependent(), num_components(num_components)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition() : Synchronizer() 
+BoundaryCondition::BoundaryCondition() : TimeDependent() 
 {
   num_components = 1;
 }
