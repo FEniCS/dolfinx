@@ -1,9 +1,8 @@
-# Copyright (c) 2004 Anders Logg (logg@tti-c.org)
+# Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
 # Licensed under the GNU GPL Version 2
 #
-# The bilinear form for a mass matrix.
-#
-# Compile this form with FFC: ffc Mass.form
+# The bilinear form for classical linear elasticity (Navier)
+# Compile this form with FFC: ffc Elasticity.form.
 
 # Provides matrix operators
 from Numeric import *
