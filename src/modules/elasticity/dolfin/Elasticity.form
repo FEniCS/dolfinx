@@ -1,22 +1,39 @@
-# Copyright (C) 2005 Johan Jansson.
-# Licensed under the GNU GPL Version 2.
+# Copyright (c) 2004 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
 #
-# First added:  2005
-# Last changed: 2005
+# The bilinear form for a mass matrix.
 #
-# The bilinear form for classical linear elasticity (Navier)
-# Compile this form with FFC: ffc Elasticity.form.
+# Compile this form with FFC: ffc Mass.form
+
+# Provides matrix operators
+from Numeric import *
 
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element)
+u = BasisFunction(element)
 
 lmbda = Constant() # Lame coefficient
 mu    = Constant() # Lame coefficient
 
 f = Function(element) # Source
 
-v = BasisFunction(element)
-u = BasisFunction(element)
+# Dimension (FFC should provide this)
+d = 3
 
-a = (lmbda * u[i].dx(i) * v[j].dx(j) +
-	mu * (u[i].dx(j) + u[j].dx(i)) * v[i].dx(j)) * dx
+def grad(u):
+    return [ [u[i].dx(j) for i in range(d)] for j in range(d) ]
+
+def epsilon(u):
+    return 0.5 * (grad(u) + transpose(grad(u)))
+
+def E(e, lmbda, mu):
+    Ee = 2.0 * multiply(mu, e) + \
+         multiply(lmbda, multiply(trace(e), identity(3)))
+    
+    return Ee
+        
+sigma = E(epsilon(u), lmbda, mu)
+
+a = vdot(sigma, epsilon(v)) * dx
 L = f[i] * v[i] * dx
