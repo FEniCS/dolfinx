@@ -1,0 +1,148 @@
+\chapter{Contributing code}
+\index{contributing}
+
+If you have created a new module, fixed a bug somewhere, or have made
+a small change which you want to contribute to \dolfin{}, then the
+best way to do so is to send us your contribution in the form of a
+patch. A patch is a file which describes how to transform a file or
+directory structure into another. The patch is built by comparing a
+version which both parties have against the modified version which
+only you have.
+
+%------------------------------------------------------------------------------
+\section{Creating a patch}
+\index{diff}
+\index{patch}
+
+The tool used to create a patch is called \texttt{diff} and the tool
+used to apply the patch is called \texttt{patch}. These tools are free
+software and are standard on most Unix systems.
+
+Here's an example of how it works. Start from the latest release of
+\dolfin{}, which we here assume is release 0.5.0. You then have a
+directory structure under \texttt{dolfin-0.5.0} where you have made
+modifications to some files which you think could be useful to
+other users.
+
+\begin{enumerate}
+\item
+  Clean up your modified directory structure to remove temporary and binary
+  files which will be rebuilt anyway:
+  \begin{verbatim}
+    # make clean
+  \end{verbatim}
+\item
+  From the parent directory, rename the \dolfin{} directory to something else:
+  \begin{verbatim}
+    # mv dolfin-0.5.0 dolfin-0.5.0-mod
+  \end{verbatim}
+\item
+  Unpack the version of \dolfin{} that you started from:
+  \begin{verbatim}
+    # tar zxfv dolfin-0.5.0.tar.gz
+  \end{verbatim}
+\item
+  You should now have two \dolfin{} directory structures in your current directory:
+  \begin{verbatim}
+    # ls
+    dolfin-0.5.0
+    dolfin-0.5.0-mod
+  \end{verbatim}
+\item
+  Now use the \texttt{diff} tool to create the patch:
+  \begin{verbatim}
+    # diff -u --new-file --recursive dolfin-0.5.0
+      dolfin-0.5.0-mod > dolfin-<identifier>-<date>.patch
+  \end{verbatim}
+  written as one line, where \texttt{<identifier>} is a keyword that
+  can be used to identify the patch as coming from you (your username,
+  last name, first name, a nickname etc) and \texttt{<date>} is
+  today's date in the format \texttt{yyyy-mm-dd}.
+\item
+  The patch now exists as \texttt{dolfin-<identifier>-<date>.patch}
+  and can be distributed to other people who already have
+  \texttt{dolfin-0.5.0} to easily create your modified version. If the
+  patch is large, compressing it with for example \texttt{gzip} is
+  advisable:
+  \begin{verbatim}
+    # gzip dolfin-<identifier>-<date>.patch
+  \end{verbatim}
+\end{enumerate}
+
+%------------------------------------------------------------------------------
+\section{License agreement}
+\index{license}
+
+By contributing a patch to \dolfin{}, you agree to license your
+contributed code under the GNU General Public License (a condition
+also built into the GPL license of the code you have modified). Before
+creating the patch, please update the author and date information of
+the file(s) you have modified according to the following example:
+
+\begin{verbatim}
+  // Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
+  // Licensed under the GNU GPL Version 2.
+  //
+  // Modified by Johan Jansson 2005.
+  // Modified by Garth N. Wells 2005.
+  //
+  // First added:  2004-06-22
+  // Last changed: 2005-09-01
+\end{verbatim}
+
+As a rule of thumb, the original author of a file holds the copyright.
+
+%------------------------------------------------------------------------------
+\section{Sending patches}
+\index{patch}
+
+Patch files should be sent to the \dolfin{} mailing list at the address
+\begin{verbatim}
+  dolfin-dev@fenics.org
+\end{verbatim}
+Include a short description of what your patch accomplishes. Small
+patches have a better chance of being accepted, so if you are making a
+major contribution, please consider breaking your changes up into
+several small self-contained patches if possible.
+
+%------------------------------------------------------------------------------
+\section{Applying a patch (maintainers)}
+\index{patch}
+
+Let's say that a patch has been built relative to \dolfin{} release 0.5.0.
+The following description then shows how to apply the patch to a clean
+version of release 0.5.0.
+
+\begin{enumerate}
+\item
+  Unpack the version of \dolfin{} which the patch is built relative to:
+  \begin{verbatim}
+    # tar zxfv dolfin-0.5.0.tar.gz
+  \end{verbatim}
+\item
+  Check that you have the patch \texttt{dolfin-<identifier>-<date>.patch} and the \dolfin{}
+  directory structure in the current directory:
+  \begin{verbatim}
+    # ls
+    dolfin-0.5.0
+    dolfin-<identifier>-<date>.patch
+  \end{verbatim}
+  Unpack the patch file using \texttt{gunzip} if necessary.
+\item
+  Enter the \dolfin{} directory structure:
+  \begin{verbatim}
+    # cd dolfin-0.5.0
+  \end{verbatim}
+\item
+  Apply the patch:
+  \begin{verbatim}
+    # patch -p1 < ../dolfin-<identifier>-<date>.patch
+  \end{verbatim}
+  The option \texttt{-p1} strips the leading directory from the filename
+  references in the patch, to match the fact that we are applying the
+  patch from inside the directory. Another useful option to
+  \texttt{patch} is \texttt{--dry-run} which can be used to test the
+  patch without actually applying it.
+\item
+  The modified version now exists as \texttt{dolfin-0.5.0}.
+\end{enumerate}
