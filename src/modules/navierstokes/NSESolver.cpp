@@ -20,6 +20,7 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
+  real T0 = 0.0;   // start time 
   real t  = 0.0;   // current time
   real k  = 0.01;   // time step
   real T  = 8.0;   // final time
@@ -175,7 +176,7 @@ void NSESolver::solve()
     //cout << "Save solution" << endl;
 
     // Save the solution
-    if ( t > (T-t)*(sample/no_samples) ){
+    if ( t > (T-T0)*(real(sample)/real(no_samples)) ){
       p.set(t);
       u.set(t);
       file_p << p;
