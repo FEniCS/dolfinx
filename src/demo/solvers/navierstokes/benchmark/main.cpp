@@ -4,7 +4,7 @@
 // First added:  2002-11-29
 // Last changed: 2005
 //
-// A cG(1)cG(1) solver for the Navier-Stokes equations in 3D 
+// A solver for the Navier-Stokes equations 
 //
 //     du/dt + u * grad u - nu * div grad u + grad p = f 
 //     div u = 0 
@@ -119,11 +119,10 @@ public:
 
   const BoundaryValue operator() (const Point& p, int i)
   {
-    real time = 4.0;
     BoundaryValue value;
     if (i==0){
       if ( p.x < 0.0 + 0.01 + DOLFIN_EPS){
-	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time*0.125) * 6.0*p.y*(0.41-p.y) );
+	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time()*0.125) * 6.0*p.y*(0.41-p.y) );
       } 
       if ( p.y < 0.0 + 0.01 + DOLFIN_EPS){
 	value.set(0.0);
@@ -166,8 +165,10 @@ class BC_Continuity_2D : public BoundaryCondition
   }
 };
 
-int main()
+int main(int argc, char* argv[])
 {
+  dolfin_init(argc, argv);
+
   //Mesh mesh("tetmesh_backward_facing_step_32_8_8.xml.gz");
   Mesh mesh("cylinder_2d_bmk.xml");
   ForceFunction f;

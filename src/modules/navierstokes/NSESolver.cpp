@@ -102,6 +102,8 @@ void NSESolver::solve()
   k = hmin;
 
   int time_step = 0;
+  int sample = 0;
+  int no_samples = 10;
 
   // Start time-stepping
   Progress prog("Time-stepping");
@@ -109,6 +111,9 @@ void NSESolver::solve()
   {
     time_step++;
     cout << "Stating time step " << time_step << endl;
+    
+    bc_con.sync(t);
+    bc_mom.sync(t);
 
     x0vel = xvel;
 
@@ -170,10 +175,13 @@ void NSESolver::solve()
     //cout << "Save solution" << endl;
 
     // Save the solution
-    p.set(t);
-    u.set(t);
-    file_p << p;
-    file_u << u;
+    if ( t > (T-t)*(sample/no_samples) ){
+      p.set(t);
+      u.set(t);
+      file_p << p;
+      file_u << u;
+      sample++;
+    }
 
     t = t + k;
 
