@@ -1,6 +1,8 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Andy R. Terrel, 2005.
+//
 // First added:  2005-01-17
 // Last changed: 2005
 
@@ -75,6 +77,28 @@ void VirtualMatrix::init(const Vector& x, const Vector& y)
   }
   
   MatCreateShell(PETSC_COMM_WORLD, m, n, M, M, (void*) this, &A);
+  MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
+}
+//-----------------------------------------------------------------------------
+void VirtualMatrix::init(int M, int N)
+{
+  // Put here to set up arbitrary Shell of global size M,N.
+  // Analagous to the matrix being on one processor. 
+
+  // Free previously allocated memory if necessary
+  if ( A )
+    {
+      // Get size and local size of existing matrix                                                            
+      int MM(0), NN(0);
+      MatGetSize(A, &MM, &NN);
+
+      if ( MM == M && NN == N )
+	return;
+      else
+	MatDestroy(A);
+    }
+
+  MatCreateShell(PETSC_COMM_WORLD, M, N, M, N, (void*) this, &A);
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------

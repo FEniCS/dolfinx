@@ -4,6 +4,7 @@
 // Modified by Anders Logg 2005.
 // Modified by Johan Hoffman 2005.
 // Modified by Garth N. Wells 2005.
+// Modified by Andy R. Terrel 2005.
 //
 // First added:  2004-06-22
 // Last changed: 2005-09-01
@@ -61,7 +62,9 @@ namespace dolfin
     void setPreconditioner(Preconditioner &pc);
 
     /// Return PETSc solver pointer
-    KSP solver();
+    KSP solver(){
+      return ksp;
+    }
 
     /// Display GMRES solver data
     void disp() const;

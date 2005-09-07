@@ -1,6 +1,8 @@
 // Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Andy R. Terrel, 2005.
+//
 // First added:  2004
 // Last changed: 2005
 
@@ -31,6 +33,9 @@ namespace dolfin
 
     /// Constructor
     Matrix();
+
+    /// Constructor
+    Matrix(Mat A);
 
     /// Constructor
     Matrix(uint M, uint N);

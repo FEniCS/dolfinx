@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
+// Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
 // Last changed: 2005
@@ -18,6 +19,12 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Matrix::Matrix() : A(0)
+{
+  // Initialize PETSc
+  PETScManager::init();
+}
+//-----------------------------------------------------------------------------
+Matrix::Matrix(Mat A) : A(A)
 {
   // Initialize PETSc
   PETScManager::init();

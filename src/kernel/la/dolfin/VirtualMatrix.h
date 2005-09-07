@@ -1,6 +1,8 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Andy R. Terrel, 2005.
+//
 // First added:  2005-01-17
 // Last changed: 2005
 
@@ -44,6 +46,9 @@ namespace dolfin
 
     /// Initialize virtual matrix matching the given vectors
     void init(const Vector& x, const Vector& y);
+
+    /// Initialize virtual matrix of given size, all on one processor
+    void init(int M, int N);
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
     uint size(uint dim) const;
