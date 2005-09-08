@@ -15,7 +15,6 @@ Assembly
 * Use MatSetOption(A, MAT_ROWS_SORTED), MatSetOption(A, MAT_COLUMNS_SORTED)?
 * Use MatSetOption(A, MAT_USE_HASH_TABLE)?
 * Make two forms share the same map and only update the map
-* Update DOLFIN with latest output from FFC
 * Compute number of nonzeros before assembly
 * Boundary conditions for other than linear elements
 * Parallel assembly
@@ -45,13 +44,13 @@ o [jj] Add wrapper for PETSc preconditioners
 Function
 --------
 
-o [hoffman, jj, logg] General function representations
-* Optimize NewFunction::project()
-* Fix NewFunction for vector valued functions
+* Save Function to file
+* Load Function from file
 
 Input/Output
 ------------
 
+* Add script/program dolfin-convert for converting between file formats
 * Save edges in MATLAB format
 
 Solvers
@@ -59,7 +58,6 @@ Solvers
 
 * Implement Navier-Stokes solver
 * Implement updated elasticity
-* Stabilation of convection-diffusion
 
 Multi-adaptive solver
 ---------------------
@@ -76,7 +74,6 @@ o [jj, logg] Use two files for matlab format
 Modules
 -------
 
-* Move all modules to new format
 o [hoffman] Navier-Stokes module
 o [harald] Euler module?
 o [foufas] Finance module?
