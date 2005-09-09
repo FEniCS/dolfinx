@@ -3,19 +3,13 @@
 from Numeric import *
 from math import *
 
-name = "ElasticityUpdatedSigma"
+name = "ElasticityUpdatedJaumann"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
-element3 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 1)
-
-lmbda   = Constant() # Lame coefficient
-mu      = Constant() # Lame coefficient
-nuplast = Constant() # Plastic viscosity
 
 q = BasisFunction(element2)
 v = Function(element1)
 sigma = Function(element2)
-sigmanorm = Function(element3)
 
 global zero
 zero = 0.0 * Constant()
@@ -77,16 +71,15 @@ def tomatrix(q):
 qmatrix = tomatrix(q)
 sigmamatrix = tomatrix(sigma)
 
+D = epsilon(v)
+
 W = epsilonspin(v)
 
-Eev = E(epsilon(v), lmbda, mu)
+#Ljaumann = vdot(matrixmultiply(W, sigmamatrix) -
+#	matrixmultiply(sigmamatrix, W), qmatrix)
 
-Ljaumann = vdot(matrixmultiply(W, sigmamatrix) -
-	matrixmultiply(sigmamatrix, W), qmatrix)
+Ljaumann = vdot(matrixmultiply(W, sigmamatrix) - matrixmultiply(sigmamatrix, W), qmatrix)
 
-Lelast = vdot(E(epsilon(v), lmbda, mu), qmatrix)
-Lplast = vdot(E(sigmamatrix, lmbda, mu), qmatrix)
+#Ljaumann = vdot(W, qmatrix) + 0.0 * vdot(sigmamatrix, qmatrix)
 
-#L = (Lelast + Ljaumann - nuplast * (1 - sigmanorm[0]) * Lplast) * dx
-#L = (Lelast - nuplast * (1 - sigmanorm[0]) * Lplast) * dx
-L = (Lelast + Ljaumann - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx
+L = Ljaumann * dx

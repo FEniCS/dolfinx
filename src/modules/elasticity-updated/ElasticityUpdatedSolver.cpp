@@ -12,10 +12,6 @@
 
 #include "dolfin/timeinfo.h"
 #include "dolfin/ElasticityUpdatedSolver.h"
-#include "dolfin/ElasticityUpdated.h"
-#include "dolfin/ElasticityUpdatedSigma.h"
-#include "dolfin/ElasticityUpdatedProj.h"
-#include "dolfin/ElasticityUpdatedMass.h"
 
 using namespace dolfin;
 
@@ -42,9 +38,13 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     epsilon1(xepsilon1, mesh, element2),
     sigmanorm(xsigmanorm, mesh, element3),
     Lv(f, sigma1, epsilon1, nuv),
-    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
+    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast),
+    Ljaumann(v1, sigma1)
 {
-  // Do nothing
+  cout << "nuv: " << nuv << endl;
+  cout << "lambda: " << lambda << endl;
+  cout << "mu: " << mu << endl;
+
   init();
 }
 //-----------------------------------------------------------------------------
@@ -80,6 +80,8 @@ void ElasticityUpdatedSolver::init()
   xsigma0.init(Nsigma);
   xsigma1.init(Nsigma);
 
+  xjaumann1.init(Nsigma);
+
   xepsilon1.init(Nsigma);
 
   xsigmanorm.init(Nsigmanorm);
@@ -95,14 +97,14 @@ void ElasticityUpdatedSolver::init()
   AffineMap map;
   v0.set(element1);
 
+  {
+  int *dofs = new int[element1.spacedim()];
+  real *coefficients = new real[element1.spacedim()];
   for(CellIterator c(&mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
     // Use DOLFIN's interpolation
-
-    real coefficients[element1.spacedim()];
-    int dofs[element1.spacedim()];
 
     map.update(cell);
     v0.interpolate(coefficients, map);
@@ -110,6 +112,8 @@ void ElasticityUpdatedSolver::init()
 
     for(uint i = 0; i < element1.spacedim(); i++)
       x2_1(dofs[i]) = coefficients[i];
+  }
+  delete dofs;
   }
 
   FEM::applyBC(Dummy, x2_1, mesh, element1, bc);
@@ -129,17 +133,20 @@ void ElasticityUpdatedSolver::init()
   FEM::lump(M, m);
 
   // Compute mass vector (sigma)
+  {
+  int *dofs = new int[element2.spacedim()];
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
-    int dofs[element2.spacedim()];
     element2.dofmap(dofs, cell, mesh);
 
     real factor = 1.0 / cell.volume(); 
 
     for(uint i = 0; i < element2.spacedim(); i++)
       msigma(dofs[i]) = factor;
+  }
+  delete dofs;
   }
 }
 //-----------------------------------------------------------------------------
@@ -169,18 +176,19 @@ void ElasticityUpdatedSolver::step()
   
   t += k;
   f.set(t);
-  //     cout << "t: " << t << endl;
+  cout << "t: " << t << endl;
   
   for(int iter = 0; iter < maxiters; iter++)
   {
     // Compute norm of stress (sigmanorm)
     if(do_plasticity)
     {
+      {
+      int *dofs = new int[element2.spacedim()];
       for (CellIterator c(mesh); !c.end(); ++c)
       {
 	Cell& cell = *c;
 
-	int dofs[element2.spacedim()];
 	element2.dofmap(dofs, cell, mesh);
 
 	real proj = 1;
@@ -198,6 +206,8 @@ void ElasticityUpdatedSolver::step()
 	
 	xsigmanorm(dofs[0]) = proj;
       }
+      delete dofs;
+      }
     }
     
     //       dolfin_debug("Assembling sigma vectors");
@@ -205,21 +215,61 @@ void ElasticityUpdatedSolver::step()
     
     // Assemble sigma0 vectors
     FEM::assemble(Lsigma, xsigma1, mesh);
+    FEM::assemble(Ljaumann, xjaumann1, mesh);
     
     VecPointwiseMult(xsigmatmp1.vec(), xsigma1.vec(), msigma.vec());
     
     xsigmatmp1.apply();
     
+    xepsilon1 = xsigmatmp1;
+    xepsilon1 *= 1.0 / lambda;
+
+    cout << "epsilon:" << endl;
+    xepsilon1.disp();
+
     xsigma1 = xsigma0;
     xsigma1.axpy(k, xsigmatmp1);
     
-    xepsilon1 *= 1.0 / lambda;
+
+
+//     // Print dot(sigma)
     
+//     for (CellIterator c(mesh); !c.end(); ++c)
+//     {
+//       Cell& cell = *c;
+//       if(cell.id() == 20)
+//       {
+	
+//   	cout << "t: " << t << endl;
+//   	cout << "cell: " << cell.id() << endl;
+//   	cout << cell.midpoint() << endl;
+	
+//   	int dofs[element2.spacedim()];
+//   	element2.dofmap(dofs, cell, mesh);
+	
+//   	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "dot(sigma)(:, " << i << "): " << xsigmatmp1(dofs[i]) << endl;
+//   	}
+//   	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "sigma(:, " << i << "): " << xsigma1(dofs[i]) << endl;
+//   	}
+//   	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "jaumann(:, " << i << "): " << xjaumann1(dofs[i]) << endl;
+//   	}
+//       }
+//     }
+	
     // Assemble v vector
     FEM::assemble(Lv, xtmp1, mesh);
 
     FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
     
+    cout << "b:" << endl;
+    xtmp1.disp();
+
     b = xtmp1;
     b *= k;
     
@@ -228,9 +278,12 @@ void ElasticityUpdatedSolver::step()
     stepresidual.axpy(-1, x2_1);
     stepresidual.axpy(1, x2_0);
     
-    
     x2_1 += stepresidual;
-    
+
+//     cout << "x2_1:" << endl;
+//     x2_1.disp();
+
+
     x1_1 = x1_0;
     x1_1.axpy(k, x2_0);
     
@@ -258,29 +311,6 @@ void ElasticityUpdatedSolver::step()
     }
   }
   
-  //     // Print dot(sigma)
-  
-  //     for (CellIterator c(mesh); !c.end(); ++c)
-  //     {
-  //       Cell& cell = *c;
-  //       if(cell.id() == 0)
-  //       {
-  
-  // 	cout << "t: " << t << endl;
-  // 	cout << "cell: " << cell.id() << endl;
-  // 	cout << cell.midpoint() << endl;
-  
-  // 	int dofs[element2_0.spacedim()];
-  // 	element2_0.dofmap(dofs, cell, mesh);
-  
-  // 	for(uint i = 0; i < element2_0.spacedim(); i++)
-  // 	{
-  // 	  cout << "dot(sigma)(:, 0): " << xtmp0_1(dofs[i]) << " " << xtmp1_1(dofs[i]) << " " << xtmp2_1(dofs[i]) << endl;
-  // 	}
-  // 	for(uint i = 0; i < element2_0.spacedim(); i++)
-  // 	{
-  // 	  cout << "sigma(:, 0): " << xsigma0_1(dofs[i]) << " " << xsigma1_1(dofs[i]) << " " << xsigma2_1(dofs[i]) << endl;
-  // 	}
   
 }
 //-----------------------------------------------------------------------------

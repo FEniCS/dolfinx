@@ -7,51 +7,18 @@ name = "ElasticityUpdated"
 element1 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
 element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
-nu = Constant()	# viscosity coefficient
+nuv = Constant()	# viscosity coefficient
 
 v = BasisFunction(element2)
 f = Function(element2)
 sigma = Function(element1)
 epsilon = Function(element1)
 
-global zero
-zero = 0.0 * Constant()
-
-def ffczeros(m, n):
-    A = array((zero))
-    A = resize(A, (m, n))
-    A *= 0.0
-    
-    return A
-
-def ffcidentity(m):
-    A = myzeros(m, m)
-
-    for ii in range(m):
-        for jj in range(m):
-            if ii == jj:
-                A[ii, jj] = 1.0
-                    
-    return A
-
 def grad(u):
-    gu = ffczeros(3, 3)
-
-    for ii in range(3):
-        for jj in range(3):
-            gu[ii, jj] = u[ii].dx(jj)
-
-    return gu
+    return [ [u[i].dx(j) for i in range(3)] for j in range(3) ]
 
 def tomatrix(q):
-    qmatrix = ffczeros(3, 3)
-
-    for ii in range(3):
-        for jj in range(3):
-            qmatrix[ii, jj] = q[3 * ii + jj];
-
-    return qmatrix
-
+    return [ [q[3 * i + j] for i in range(3)] for j in range(3) ]
 
 gradv = grad(v)
 sigmam = tomatrix(sigma)
@@ -59,4 +26,4 @@ epsilonm = tomatrix(epsilon)
 
 L = (f[i] * v[i] -
 	vdot(sigmam, gradv) -
-	nu * (vdot(epsilonm, gradv))) * dx
+	nuv * (vdot(epsilonm, gradv))) * dx
