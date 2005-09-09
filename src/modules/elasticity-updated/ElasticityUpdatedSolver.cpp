@@ -113,7 +113,8 @@ void ElasticityUpdatedSolver::init()
     for(uint i = 0; i < element1.spacedim(); i++)
       x2_1(dofs[i]) = coefficients[i];
   }
-  delete dofs;
+  delete [] dofs;
+  delete [] coefficients;
   }
 
   FEM::applyBC(Dummy, x2_1, mesh, element1, bc);
@@ -146,7 +147,7 @@ void ElasticityUpdatedSolver::init()
     for(uint i = 0; i < element2.spacedim(); i++)
       msigma(dofs[i]) = factor;
   }
-  delete dofs;
+  delete [] dofs;
   }
 }
 //-----------------------------------------------------------------------------
@@ -206,7 +207,7 @@ void ElasticityUpdatedSolver::step()
 	
 	xsigmanorm(dofs[0]) = proj;
       }
-      delete dofs;
+      delete [] dofs;
       }
     }
     
