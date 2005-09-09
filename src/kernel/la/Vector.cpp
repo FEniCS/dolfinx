@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-09-09
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -268,6 +268,30 @@ real Vector::norm(NormType type) const
     VecNorm(x, NORM_INFINITY, &value);
   }
   
+  return value;
+}
+//-----------------------------------------------------------------------------
+real Vector::max() const
+{
+  dolfin_assert(x);
+
+  int  position = 0;
+  real value    = 0.0;
+  
+  VecMax(x, &position, &value);
+
+  return value;
+}
+//-----------------------------------------------------------------------------
+real Vector::min() const
+{
+  dolfin_assert(x);
+
+  int  position = 0;
+  real value   = 0.0;
+  
+  VecMin(x, &position, &value);
+
   return value;
 }
 //-----------------------------------------------------------------------------

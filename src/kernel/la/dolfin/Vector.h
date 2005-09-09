@@ -1,8 +1,10 @@
 // Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005.
+//
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-09-09
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -111,6 +113,12 @@ namespace dolfin
     enum NormType { l1, l2, linf };
     real norm(NormType type = l2) const;
 
+    /// Return value of maximum component of vector
+    real max() const;
+    
+    /// Return value of minimum component of vector
+    real min() const;
+    
     /// Display vector
     void disp() const;
 
