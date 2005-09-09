@@ -67,6 +67,12 @@ if test x$enable_optimization = xyes; then
     CXXFLAGS='-O3 -Wall -Werror -ansi -std=c++98'
 fi
 
+# Add '-U__STRICT_ANSI__'  flag if building under cygwin
+if test `uname -o` = Cygwin; then
+    echo "adding compiler flags for cygwin"
+    CXXFLAGS=$CXXFLAGS' -U__STRICT_ANSI__ '
+fi
+
 # Handle option --disable-curses
 if test x$disable_curses = x; then
     echo "enabling curses, use --disable-curses to disable"
