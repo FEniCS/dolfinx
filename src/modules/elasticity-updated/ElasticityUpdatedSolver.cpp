@@ -225,8 +225,8 @@ void ElasticityUpdatedSolver::step()
     xepsilon1 = xsigmatmp1;
     xepsilon1 *= 1.0 / lambda;
 
-    cout << "epsilon:" << endl;
-    xepsilon1.disp();
+//     cout << "epsilon:" << endl;
+//     xepsilon1.disp();
 
     xsigma1 = xsigma0;
     xsigma1.axpy(k, xsigmatmp1);
@@ -268,12 +268,9 @@ void ElasticityUpdatedSolver::step()
 
     FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
     
-    cout << "b:" << endl;
-    xtmp1.disp();
+//     cout << "b:" << endl;
+//     xtmp1.disp();
 
-    b = xtmp1;
-    b *= k;
-    
     VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
     stepresidual *= k;
     stepresidual.axpy(-1, x2_1);
