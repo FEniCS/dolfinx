@@ -1,8 +1,10 @@
+% This chapter is common to the DOLFIN and FFC manuals.
+
 \chapter{Contributing code}
 \index{contributing}
 
 If you have created a new module, fixed a bug somewhere, or have made
-a small change which you want to contribute to \dolfin{}, then the
+a small change which you want to contribute to \package{}, then the
 best way to do so is to send us your contribution in the form of a
 patch. A patch is a file which describes how to transform a file or
 directory structure into another. The patch is built by comparing a
@@ -19,8 +21,8 @@ used to apply the patch is called \texttt{patch}. These tools are free
 software and are standard on most Unix systems.
 
 Here's an example of how it works. Start from the latest release of
-\dolfin{}, which we here assume is release 0.5.0. You then have a
-directory structure under \texttt{dolfin-0.5.0} where you have made
+\package{}, which we here assume is release 0.1.0. You then have a
+directory structure under \texttt{\packagett{}-0.1.0} where you have made
 modifications to some files which you think could be useful to
 other users.
 
@@ -28,58 +30,58 @@ other users.
 \item
   Clean up your modified directory structure to remove temporary and binary
   files which will be rebuilt anyway:
-  \begin{verbatim}
+  \begin{code}
     # make clean
-  \end{verbatim}
+  \end{code}
 \item
-  From the parent directory, rename the \dolfin{} directory to something else:
-  \begin{verbatim}
-    # mv dolfin-0.5.0 dolfin-0.5.0-mod
-  \end{verbatim}
+  From the parent directory, rename the \package{} directory to something else:
+  \begin{code}
+    # mv \packagett{}-0.1.0 \packagett{}-0.1.0-mod
+  \end{code}
 \item
-  Unpack the version of \dolfin{} that you started from:
-  \begin{verbatim}
-    # tar zxfv dolfin-0.5.0.tar.gz
-  \end{verbatim}
+  Unpack the version of \package{} that you started from:
+  \begin{code}
+    # tar zxfv \packagett{}-0.1.0.tar.gz
+  \end{code}
 \item
-  You should now have two \dolfin{} directory structures in your current directory:
-  \begin{verbatim}
+  You should now have two \package{} directory structures in your current directory:
+  \begin{code}
     # ls
-    dolfin-0.5.0
-    dolfin-0.5.0-mod
-  \end{verbatim}
+    \packagett{}-0.1.0
+    \packagett{}-0.1.0-mod
+  \end{code}
 \item
   Now use the \texttt{diff} tool to create the patch:
-  \begin{verbatim}
-    # diff -u --new-file --recursive dolfin-0.5.0
-      dolfin-0.5.0-mod > dolfin-<identifier>-<date>.patch
-  \end{verbatim}
+  \begin{code}
+    # diff -u --new-file --recursive \packagett{}-0.1.0
+      \packagett{}-0.1.0-mod > \packagett{}-<identifier>-<date>.patch
+  \end{code}
   written as one line, where \texttt{<identifier>} is a keyword that
   can be used to identify the patch as coming from you (your username,
   last name, first name, a nickname etc) and \texttt{<date>} is
   today's date in the format \texttt{yyyy-mm-dd}.
 \item
-  The patch now exists as \texttt{dolfin-<identifier>-<date>.patch}
+  The patch now exists as \texttt{\packagett{}-<identifier>-<date>.patch}
   and can be distributed to other people who already have
-  \texttt{dolfin-0.5.0} to easily create your modified version. If the
+  \texttt{\packagett{}-0.1.0} to easily create your modified version. If the
   patch is large, compressing it with for example \texttt{gzip} is
   advisable:
-  \begin{verbatim}
-    # gzip dolfin-<identifier>-<date>.patch
-  \end{verbatim}
+  \begin{code}
+    # gzip \packagett{}-<identifier>-<date>.patch
+  \end{code}
 \end{enumerate}
 
 %------------------------------------------------------------------------------
 \section{License agreement}
 \index{license}
 
-By contributing a patch to \dolfin{}, you agree to license your
+By contributing a patch to \package{}, you agree to license your
 contributed code under the GNU General Public License (a condition
 also built into the GPL license of the code you have modified). Before
 creating the patch, please update the author and date information of
 the file(s) you have modified according to the following example:
 
-\begin{verbatim}
+\begin{code}
   // Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
   // Licensed under the GNU GPL Version 2.
   //
@@ -88,7 +90,7 @@ the file(s) you have modified according to the following example:
   //
   // First added:  2004-06-22
   // Last changed: 2005-09-01
-\end{verbatim}
+\end{code}
 
 As a rule of thumb, the original author of a file holds the copyright.
 
@@ -96,10 +98,10 @@ As a rule of thumb, the original author of a file holds the copyright.
 \section{Sending patches}
 \index{patch}
 
-Patch files should be sent to the \dolfin{} mailing list at the address
-\begin{verbatim}
-  dolfin-dev@fenics.org
-\end{verbatim}
+Patch files should be sent to the \package{} mailing list at the address
+\begin{code}
+  \packagett{}-dev@fenics.org
+\end{code}
 Include a short description of what your patch accomplishes. Small
 patches have a better chance of being accepted, so if you are making a
 major contribution, please consider breaking your changes up into
@@ -109,40 +111,40 @@ several small self-contained patches if possible.
 \section{Applying a patch (maintainers)}
 \index{patch}
 
-Let's say that a patch has been built relative to \dolfin{} release 0.5.0.
+Let's say that a patch has been built relative to \package{} release 0.1.0.
 The following description then shows how to apply the patch to a clean
-version of release 0.5.0.
+version of release 0.1.0.
 
 \begin{enumerate}
 \item
-  Unpack the version of \dolfin{} which the patch is built relative to:
-  \begin{verbatim}
-    # tar zxfv dolfin-0.5.0.tar.gz
-  \end{verbatim}
+  Unpack the version of \package{} which the patch is built relative to:
+  \begin{code}
+    # tar zxfv \packagett{}-0.1.0.tar.gz
+  \end{code}
 \item
-  Check that you have the patch \texttt{dolfin-<identifier>-<date>.patch} and the \dolfin{}
+  Check that you have the patch \texttt{\packagett{}-<identifier>-<date>.patch} and the \package{}
   directory structure in the current directory:
-  \begin{verbatim}
+  \begin{code}
     # ls
-    dolfin-0.5.0
-    dolfin-<identifier>-<date>.patch
-  \end{verbatim}
+    \packagett{}-0.1.0
+    \packagett{}-<identifier>-<date>.patch
+  \end{code}
   Unpack the patch file using \texttt{gunzip} if necessary.
 \item
-  Enter the \dolfin{} directory structure:
-  \begin{verbatim}
-    # cd dolfin-0.5.0
-  \end{verbatim}
+  Enter the \package{} directory structure:
+  \begin{code}
+    # cd \packagett{}-0.1.0
+  \end{code}
 \item
   Apply the patch:
-  \begin{verbatim}
-    # patch -p1 < ../dolfin-<identifier>-<date>.patch
-  \end{verbatim}
+  \begin{code}
+    # patch -p1 < ../\packagett{}-<identifier>-<date>.patch
+  \end{code}
   The option \texttt{-p1} strips the leading directory from the filename
   references in the patch, to match the fact that we are applying the
   patch from inside the directory. Another useful option to
   \texttt{patch} is \texttt{--dry-run} which can be used to test the
   patch without actually applying it.
 \item
-  The modified version now exists as \texttt{dolfin-0.5.0}.
+  The modified version now exists as \texttt{\packagett{}-0.1.0}.
 \end{enumerate}

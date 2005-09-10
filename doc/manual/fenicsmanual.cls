@@ -16,6 +16,7 @@
 \RequirePackage{psfrag}
 \RequirePackage{fancyhdr}
 \RequirePackage{fancybox}
+\RequirePackage{fancyvrb}
 \RequirePackage{sectsty}
 \RequirePackage{amsmath}
 \RequirePackage{makeidx}
@@ -40,6 +41,11 @@
     \begin{center}
       \includegraphics[height=8cm]{#1}
     \end{center}}}
+\newcommand{\@fenicspackage}{<package unspecified>}
+\newcommand{\@fenicspackagett}{<package unspecified>}
+\newcommand{\fenicspackage}[2]{\renewcommand{\@fenicspackage}{#1}\renewcommand{\@fenicspackagett}{#2}}
+\newcommand{\package}{\@fenicspackage}
+\newcommand{\packagett}{\@fenicspackagett}
 
 %--- Commands ---
 \renewcommand{\maketitle}{
@@ -62,7 +68,7 @@
   \null\vfill
   \normalsize
   Visit \texttt{http://www.fenics.org/} for the latest version of this manual. \\
-  Send comments and suggestions to \texttt{fenics@fenics.org}.
+  Send comments and suggestions to \texttt{\@fenicspackagett{}-dev@fenics.org}.
   \thispagestyle{empty}
   \cleardoublepage
   \tableofcontents}
@@ -72,3 +78,6 @@
 \newcommand{\ffc}{\textbf{\textsf{FFC}}}
 \newcommand{\fiat}{\textbf{\textsf{FIAT}}}
 \newcommand{\fixme}[1]{\ \\ \begin{tabular}{||p{\textwidth}||}\hline \rm \textbf{FIXME:} \rm  #1  \\ \hline \end{tabular} \\}
+
+%--- Environments ---
+\DefineVerbatimEnvironment{code}{Verbatim}{commandchars=\\\{\}}

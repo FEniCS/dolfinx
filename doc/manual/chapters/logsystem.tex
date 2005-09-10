@@ -8,23 +8,23 @@ and errors.
 
 The following functions / macros are provided for logging:
 
-\begin{verbatim}
+\begin{code}
   dolfin_info();
   dolfin_debug();
   dolfin_warning();
   dolfin_error();
   dolfin_assert();
-\end{verbatim}
+\end{code}
 
 Examples of usage:
 
-\begin{verbatim}
+\begin{code}
   dolfin_info("Created vector of size %d.", x.size());
   dolfin_debug("Opened file");
   dolfin_warning("Unknown cell type.");
   dolfin_error("Out of memory.");
   dolfin_assert(i < m);
-\end{verbatim}
+\end{code}
 
 Note that in order to pass additional arguments to the last
 three functions (which are really macros, in order to
@@ -39,10 +39,10 @@ of the function \texttt{dolfin\_info()}.
 
 Examples of usage:
 
-\begin{verbatim}
+\begin{code}
   cout << "Assembling matrix: " << A << endl;
   cout << "Refining grid: " << grid << endl;
-\end{verbatim}
+\end{code}
 
 The \texttt{dolfin\_assert()} macro should be used for simple tests that
 may occur often, such as checking indexing in vectors. The check
@@ -53,19 +53,19 @@ Progress.
 
 Examples of usage:
 
-\begin{verbatim}
+\begin{code}
   Progress p("Assembling", grid.noCells());
   
   for (CellIterator c(grid); !c.end(); ++c) {
     ...
     p++;
   }
-\end{verbatim}
+\end{code}
 
 Progress also supports the following usage:
 
-\begin{verbatim}
+\begin{code}
   p = i;    // Specify step number
   p = 0.5;  // Specify percentage
   p.update(t/T, "Time is t = %f", t);
-\end{verbatim}
+\end{code}
