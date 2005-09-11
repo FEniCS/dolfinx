@@ -23,8 +23,8 @@ namespace dolfin
     // Create ElasticityUpdated solver
     ElasticityUpdatedSolver(Mesh& mesh,
 			    Function& f, Function& v0, Function& rho,
-			    real E, real nu, real nuv, real nuplast,
-			    BoundaryCondition& bc, real k, real T);
+			    real& E, real& nu, real& nuv, real& nuplast,
+			    BoundaryCondition& bc, real& k, real& T);
     
     // Initialize data
     void init();
@@ -44,8 +44,8 @@ namespace dolfin
     // Solve ElasticityUpdated (static version)
     static void solve(Mesh& mesh,
 		      Function& f, Function& v0, Function& rho,
-		      real E, real nu, real nuv, real nuplast,
-		      BoundaryCondition& bc, real k, real T);
+		      real& E, real& nu, real& nuv, real& nuplast,
+		      BoundaryCondition& bc, real& k, real& T);
     
     Mesh& mesh;
     Function& f;
@@ -76,7 +76,7 @@ namespace dolfin
 
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
     Vector xsigma0, xsigma1, xepsilon1, xsigmanorm, mesh0, xjaumann1;
-    Vector xtmp1, xtmp2, xsigmatmp1;
+    Vector xtmp1, xtmp2, xsigmatmp1, xcontact1;
     Matrix Dummy;
     
     Function v1;

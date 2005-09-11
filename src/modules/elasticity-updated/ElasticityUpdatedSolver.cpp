@@ -20,10 +20,10 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 						 Function& f,
 						 Function& v0,
 						 Function& rho,
-						 real E, real nu, real nuv,
-						 real nuplast,
+						 real& E, real& nu, real& nuv,
+						 real& nuplast,
 						 BoundaryCondition& bc,
-						 real k, real T)
+						 real& k, real& T)
   : mesh(mesh), f(f), v0(v0), rho(rho), E(E), nu(nu), nuv(nuv),
     nuplast(nuplast), bc(bc), k(k),
     T(T), counter(0), lastsample(0),
@@ -61,6 +61,8 @@ void ElasticityUpdatedSolver::init()
   x1_1.init(Nv);
   x2_0.init(Nv);
   x2_1.init(Nv);
+
+  xcontact1.init(Nv);
 
   xtmp1.init(Nv);
   xtmp2.init(Nv);
@@ -387,10 +389,10 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
 				    Function& f,
 				    Function& v0,
 				    Function& rho,
-				    real E, real nu, real nuv,
-				    real nuplast,
+				    real& E, real& nu, real& nuv,
+				    real& nuplast,
 				    BoundaryCondition& bc,
-				    real k, real T)
+				    real& k, real& T)
 {
   ElasticityUpdatedSolver solver(mesh, f, v0, rho, E, nu, nuv, nuplast,
 				 bc, k, T);
