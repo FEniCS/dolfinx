@@ -19,6 +19,7 @@
 \RequirePackage{fancyvrb}
 \RequirePackage{sectsty}
 \RequirePackage{amsmath}
+\RequirePackage{amssymb}
 \RequirePackage{makeidx}
 \RequirePackage[latin1]{inputenc}
 
@@ -81,3 +82,8 @@
 
 %--- Environments ---
 \DefineVerbatimEnvironment{code}{Verbatim}{commandchars=\\\{\}}
+
+%--- Macros ---
+\newcommand{\dx}{\, \mathrm{d}x}
+\newcommand{\dX}{\, \mathrm{d}X}
+\newcommand{\R}{\mathbb{R}}
