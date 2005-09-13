@@ -1,3 +1,4 @@
+ - Add compiler flag -U__STRICT_ANSI__ when compiling under Cygwin 
  - Add class EigenvalueSolver
 0.5.8 [2005-07-05]
  - Add new output format Paraview/VTK (Garth N. Wells)
