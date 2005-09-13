@@ -101,7 +101,7 @@ CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
 CXXDEPMODE = depmode=gcc3
-CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -pedantic -std=c++98 
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98 
 CYGPATH_W = echo
 DEFS = -DPACKAGE_NAME=\"dolfin\" -DPACKAGE_TARNAME=\"dolfin\" -DPACKAGE_VERSION=\"0.5.8\" -DPACKAGE_STRING=\"dolfin\ 0.5.8\" -DPACKAGE_BUGREPORT=\"dolfin@fenics.org\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 
 DEPDIR = .deps
@@ -160,7 +160,7 @@ exec_prefix = ${prefix}
 host_alias = 
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /home/garth/fenics/dolfin/cvs/dolfin/install-sh
+install_sh = /usr/local/garth/fenics/dolfin/cvs/dolfin/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 libxml2_found = yes
