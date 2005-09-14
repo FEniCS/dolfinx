@@ -78,6 +78,18 @@ o [hoffman] Navier-Stokes module
 o [harald] Euler module?
 o [foufas] Finance module?
 
+Parameters
+----------
+
+o Add base class for local parameters
+o Use hash list to store parameters (use STL hash)
+o Make sure parameters work with type std::string
+o Does saving/loading parameters work?
+o Collect default parameters in an appropriate place (not Settings)
+o Change from Parameter::REAL to Parameter::real etc
+o Add function to display all parameters
+o Decide on proper namespace/class for parameters
+
 General
 -------
 

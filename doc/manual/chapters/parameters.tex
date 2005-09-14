@@ -1,3 +1,155 @@
 \chapter{Parameters}
+\index{parameters}
 
-\fixme{Parameter database, setting values, getting values, defining new parameters}
+\dolfin{} keeps a global database of parameters that control the
+behavior of the various components of \dolfin{}. Parameters are
+controlled using a uniform type-independent interface that allows
+retrieving the values of existing parameters, modifying existing
+parameters and adding new parameters to the database.
+
+%------------------------------------------------------------------------------
+\section{Retrieving the value of a parameter}
+\index{\texttt{dolfin\_get()}}
+
+To retrieve the value of a parameter, use the function \texttt{dolfin\_get()}
+available in the \texttt{dolfin} namespace:
+\begin{code}
+  Parameter dolfin_get(const char* key);
+\end{code}
+This function accepts as argument a string \texttt{key} and returns
+the value of the parameter matching the given key. An error message is
+printed through the log system if there is no parameter with the given
+key in the database.
+
+The value of the parameter is automatically cast to the correct type
+when assigning the value of \texttt{dolfin\_get()} to a variable, as
+illustrated by the following examples:
+\begin{code}
+  real TOL = dolfin_get(``tolerance'');
+  int num_samples = dolfin_get(``number of samples'');
+  bool solve_dual = dolfin_get(``solve dual problem'');
+  std::string filename = dolfin_get(``file name'');
+\end{code}
+
+Note that there is a cost associated with accessing the value of a
+parameter, so if the value of a parameter is to be used multiple
+times, then it should be retrieved once and stored in a local variable
+as illustrated by the following example:
+\begin{code}
+  int num_samples = dolfin_get(``number of samples'');
+  for (int i = 0; i < num_samples; i++)
+  \{
+    ...
+  \}
+\end{code}
+
+%------------------------------------------------------------------------------
+\section{Modifying the value of a parameter}
+\index{\texttt{dolfin\_set()}}
+
+To modify the value of a parameter, use the function \texttt{dolfin\_set()}
+available in the \texttt{dolfin} namespace:
+\begin{code}
+  void dolfin_set(const char* key, ...);
+\end{code}
+This function accepts as arguments a string \texttt{key} together with
+the corresponding value. The value type should match the type of
+parameter that is being modified. An error message is
+printed through the log system if there is no parameter with the given
+key in the database.
+
+The following examples illustrate
+the use of \texttt{dolfin\_set()}:
+\begin{code}
+  dolfin_set(``tolerance'', 0.01);
+  dolfin_set(``number of samples'', 10);
+  dolfin_set(``solve dual problem'', true);
+  dolfin_set(``file name'', ``solution.xml'');
+\end{code}
+
+Note that changing the values of parameters using
+\texttt{dolfin\_set()} does not change the values of already retrieved
+parameters; it only changes the values of parameters in the
+database. Thus, the value of a parameter must be changed before using
+a component that is controlled by the parameter in question.
+
+%------------------------------------------------------------------------------
+\section{Adding a new parameter}
+\index{\texttt{dolfin\_parameter()}}
+
+To add a parameter to the database, use the function
+\texttt{dolfin\_parameter()} available in the \texttt{dolfin}
+namespace:
+\begin{code}
+  void dolfin_parameter(Parameter::Type type, 
+                        const char* key, ...);
+\end{code}
+This function accepts three arguments: the type of the new parameter,
+a unique key identifying the new parameter and the value of the new
+parameter.
+
+Possible values for \texttt{type} are
+\begin{itemize}
+\item
+  \texttt{Parameter::REAL}, corresponding to \texttt{real};
+\item
+  \texttt{Parameter::INT}, corresponding to \texttt{int};
+\item
+  \texttt{Parameter::BOOL}, corresponding to \texttt{bool};
+\item
+  \texttt{Parameter::STRING}, corresponding to \texttt{std::string}.
+\end{itemize}
+
+The following examples illustrate the use of
+\texttt{dolfin\_parameter()}:
+\footnotesize
+\begin{code}
+  dolfin_parameter(Parameter::REAL, ``tolerance'', 0.01);
+  dolfin_parameter(Parameter::INT, ``number of samples'', 10);
+  dolfin_parameter(Parameter::BOOL, ``solve dual problem'', true);
+  dolfin_parameter(Parameter::STRING, ``file name'', ``solution.xml'');
+\end{code}
+\normalsize
+
+%------------------------------------------------------------------------------
+\section{Saving parameters to file}
+\index{\texttt{dolfin\_save()}}
+\index{XML}
+
+To save the current database of parameters to a file in \dolfin{} XML
+format, use the function \texttt{dolfin\_save()} available in the
+\texttt{dolfin} namespace:
+\begin{code}
+  void dolfin_save(const char* filename);
+\end{code}
+When running a simulation in \dolfin{}, saving the parameter database
+to a file is an easy way to document the set of parameters used in the
+simulation.
+
+%------------------------------------------------------------------------------
+\section{Loading parameters from file}
+\index{\texttt{dolfin\_load()}}
+\index{XML}
+
+To load a set of parameters from a file into the parameter database,
+use the function \texttt{dolfin\_load()} available in the
+\texttt{dolfin} namespace:
+\begin{code}
+  void dolfin_load(const char* filename);
+\end{code}
+This function accepts as argument the name of a file containing a list
+of a parameters in \dolfin{} XML format, as illustrated below:
+\footnotesize
+\begin{code}
+<?xml version=''1.0'' encoding=''UTF-8''?> 
+
+<dolfin xmlns:dolfin=''http://www.fenics.org/dolfin/''> 
+  <parameters>
+    <parameter name=''tolerance'' type=''real'' value=''0.01''/>
+    <parameter name=''number of samples'' type=''int'' value=''10''/>
+    <parameter name=''solve dual problem'' type=''bool'' value=''false''/>
+    <parameter name=''file name'' type=''string'' value=''solution.xml''/>
+  </parameters>
+</dolfin>
+\end{code}
+\normalsize

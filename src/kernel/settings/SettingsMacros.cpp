@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005
+// Last changed: 2005-09-14
 
 #include <dolfin/File.h>
 #include <dolfin/SettingsManager.h>
@@ -11,39 +11,39 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_parameter(Parameter::Type type,const char *identifier,...)
+void dolfin::dolfin_parameter(Parameter::Type type, const char *key,...)
 {
   va_list aptr;
-  va_start(aptr, identifier);
+  va_start(aptr, key);
   
-  SettingsManager::settings.add_aptr(type, identifier, aptr);
+  SettingsManager::settings.add_aptr(type, key, aptr);
   
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_set(const char *identifier, ...)
+void dolfin::dolfin_set(const char *key, ...)
 {
   va_list aptr;
-  va_start(aptr, identifier);
+  va_start(aptr, key);
 
-  SettingsManager::settings.set_aptr(identifier, aptr);
+  SettingsManager::settings.set_aptr(key, aptr);
   
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_set_aptr(const char *identifier, va_list aptr)
+void dolfin::dolfin_set_aptr(const char *key, va_list aptr)
 {
-  SettingsManager::settings.set_aptr(identifier, aptr);
+  SettingsManager::settings.set_aptr(key, aptr);
 }
 //-----------------------------------------------------------------------------
-Parameter dolfin::dolfin_get(const char *identifier)
+Parameter dolfin::dolfin_get(const char *key)
 {
-  return SettingsManager::settings.get(identifier);
+  return SettingsManager::settings.get(key);
 }
 //-----------------------------------------------------------------------------
-bool dolfin::dolfin_parameter_changed(const char* identifier)
+bool dolfin::dolfin_parameter_changed(const char* key)
 {
-  return SettingsManager::settings.changed(identifier);
+  return SettingsManager::settings.changed(key);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_load(const char* filename)

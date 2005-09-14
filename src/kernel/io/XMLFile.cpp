@@ -216,7 +216,7 @@ void XMLFile::operator<<(ParameterList& parameters)
 
   // Write parameter list in XML format
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
   for (List<Parameter>::iterator p = parameters.list.begin(); p != parameters.list.end(); ++p)
