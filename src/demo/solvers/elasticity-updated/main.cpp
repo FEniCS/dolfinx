@@ -39,30 +39,33 @@ class InitialVelocity : public Function
 {
   real operator() (const Point& p, unsigned int i) const
   {
-    //    if(i == 0)
-    if(i == 1 && p.x > 0.5 )
+    real result = 0.0;
+
+    Point w, r, v, center;
+
+    center.x = 1.0;
+    center.y = 1.0;
+    center.z = 0.0;
+
+    r = p - center;
+
+    w.x = 0.0;
+    w.y = 0.0;
+    w.z = 2.0;
+
+    v = w.cross(r);
+
+    if(i == 0)
     {
-      return -0.01;
+      result += v.x;
     }
-    else if(i == 1 && p.x <= 0.5 && p.x > -0.5)
+    if(i == 1)
     {
-      return 0.4;
-    }
-    else if(i == 1 && p.x <= -0.5)
-    {
-      return -0.4;
-    }
-    else
-    {
-      return 0.0;
+      result += v.y;
     }
 
-//     if(i == 1 && p.x > 0.0 )
-//     {
-//       return 0.8;
-//     }
 
-    return 0.0;
+    return result;
   }
 };
 
@@ -74,17 +77,17 @@ public:
   {
   }
 
-  const BoundaryValue operator() (const Point& p, int i)
-  {
-    BoundaryValue value;
+//   const BoundaryValue operator() (const Point& p, int i)
+//   {
+//     BoundaryValue value;
 
-    if(p.x == 0.0)
-    {
-      value.set(0.0);
-    }    
+//     if(p.x == 0.0 && p.y == 0.0)
+//     {
+//       value.set(0.0);
+//     }    
 
-    return value;
-  }
+//     return value;
+//   }
 };
 
 int main(int argc, char **argv)
@@ -95,9 +98,10 @@ int main(int argc, char **argv)
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow07.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
-  //Mesh mesh("minimal2.xml.gz");
+//   Mesh mesh("minimal3.xml.gz");
 
-  UnitCube mesh(7, 7, 7);
+  Mesh mesh("roterror01.xml.gz");
+//   UnitCube mesh(7, 7, 7);
 
 //   for (NodeIterator n(&mesh); !n.end();)
 //   {

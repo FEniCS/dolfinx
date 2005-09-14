@@ -75,11 +75,24 @@ D = epsilon(v)
 
 W = epsilonspin(v)
 
+A = ones((3, 3))
+
 #Ljaumann = vdot(matrixmultiply(W, sigmamatrix) -
 #	matrixmultiply(sigmamatrix, W), qmatrix)
 
 Ljaumann = vdot(matrixmultiply(W, sigmamatrix) - matrixmultiply(sigmamatrix, W), qmatrix)
 
-#Ljaumann = vdot(W, qmatrix) + 0.0 * vdot(sigmamatrix, qmatrix)
+#Ljaumann = vdot(matrixmultiply(W, sigmamatrix), qmatrix)
+#Ljaumann = vdot(matrixmultiply(W, A), qmatrix)
+
+#Ljaumann = vdot(W, qmatrix)
+
+#Ljaumann = (W[0, 0] * A[0, 0] +
+#	 W[0, 1] * A[1, 0] +
+#	W[0, 2] * A[2, 0]) * q[0]
+
+#Ljaumann = (W[0, 0] * sigma[0] +
+#	 W[0, 1] * sigma[1] +
+#	W[0, 2] * sigma[2]) * q[0]
 
 L = Ljaumann * dx
