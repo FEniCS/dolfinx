@@ -23,6 +23,9 @@ namespace dolfin
     ~BoundaryValue();
 
     /// Set Dirichlet boundary value
+    const BoundaryValue& operator= (real value);
+
+    /// Set Dirichlet boundary value
     void set(real value);
     
     /// Friends

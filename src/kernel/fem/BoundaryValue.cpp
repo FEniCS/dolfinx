@@ -20,6 +20,12 @@ BoundaryValue::~BoundaryValue()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+const BoundaryValue& BoundaryValue::operator= (real value)
+{
+  set(value);
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void BoundaryValue::set(real value)
 {
   fixed = true;
