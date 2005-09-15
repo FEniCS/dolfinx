@@ -191,19 +191,19 @@ void Logger::active(bool state)
   this->state = state;
 }
 //-----------------------------------------------------------------------------
-void Logger::init(const char* type)
+void Logger::init(const char* destination)
 {
   // Delete old logger
   if ( log )
     delete log;
   
-  // Choose output type
-  if ( strcasecmp(type, "plain text") == 0 )
+  // Choose output destination
+  if ( strcasecmp(destination, "plain text") == 0 )
   {
     log = new TerminalLogger();
     return;
   }
-  else if ( strcasecmp(type, "curses") == 0 )
+  else if ( strcasecmp(destination, "curses") == 0 )
   {
 #ifdef NO_CURSES
     log = new TerminalLogger();
@@ -214,7 +214,7 @@ void Logger::init(const char* type)
     return;
 #endif
   }
-  else if ( strcasecmp(type, "silent") == 0 )
+  else if ( strcasecmp(destination, "silent") == 0 )
   {
     log = new SilentLogger();
     return;
@@ -222,7 +222,7 @@ void Logger::init(const char* type)
   else
   {
     log = new TerminalLogger();
-    dolfin_warning1("Unknown output type \"%s\", using plain text.", type);
+    dolfin_warning1("Unknown output destination \"%s\", using plain text.", destination);
   }
 }
 //-----------------------------------------------------------------------------

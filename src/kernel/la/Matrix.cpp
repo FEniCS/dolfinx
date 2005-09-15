@@ -301,6 +301,13 @@ void Matrix::disp(bool sparse, int precision) const
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
 {
+  // Check if matrix has been defined
+  if ( !A.A )
+  {
+    stream << "[ PETSc matrix (empty) ]";
+    return stream;
+  }
+
   MatType type = 0;
   MatGetType(A.mat(), &type);
   int m = A.size(0);

@@ -83,9 +83,9 @@ void dolfin::dolfin_end(const char* msg, ...)
   va_end(aptr);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_output(const char* type)
+void dolfin::dolfin_output(const char* destination)
 {
-  LogManager::log.init(type);
+  LogManager::log.init(destination);
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_log(bool state)

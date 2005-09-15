@@ -4,7 +4,7 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #ifndef __LOGGER_H
 #define __LOGGER_H
@@ -44,7 +44,7 @@ namespace dolfin
 
     void active(bool state);
 
-    void init(const char* type);
+    void init(const char* destination);
 
   private:
 

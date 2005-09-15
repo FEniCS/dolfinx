@@ -33,7 +33,7 @@ namespace dolfin { void dolfin_end(); }
 namespace dolfin { void dolfin_end(const char* msg, ...); }
 
 // Specify output type ("plain text", "curses", or "silent")
-namespace dolfin { void dolfin_output(const char* type); }
+namespace dolfin { void dolfin_output(const char* destination); }
 
 // Switch logging on or off
 namespace dolfin { void dolfin_log(bool state); }

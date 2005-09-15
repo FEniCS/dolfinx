@@ -1,18 +1,22 @@
 \chapter{The log system}
+\index{log system}
 
 \dolfin{} provides provides a simple interface for uniform handling of
 log messages, including warnings and errors. All messages are
-collected to a single stream which allows the destination and
-formatting of the output from a entire program, including the
+collected to a single stream, which allows the destination and
+formatting of the output from an entire program, including the
 \dolfin{} library, to be controlled by the user.
 
 %------------------------------------------------------------------------------
 \section{Generating log messages}
+\index{\texttt{dolfin\_info()}}
+\index{\texttt{cout}}
+\index{\texttt{endl}}
 
 Log messages can be generated using the function
 \texttt{dolfin\_info()} available in the \texttt{dolfin} namespace:
 \begin{code}
-  void dolfin_info(const char *msg, ...);
+  void dolfin_info(const char *message, ...);
 \end{code}
 which works similarly to the standard C library function \texttt{printf}.
 The following examples illustrate the usage of
@@ -33,14 +37,35 @@ can also be implemented as follows:
   cout << ``R = `` << R << `` (TOL = `` << TOL << ``)'' << endl;
 \end{code}
 \normalsize
-using \texttt{dolfin::cout} and \texttt{dolfin::endl} from the \texttt{dolfin}
-namespace, corresponding to the standard standard \texttt{std::cout}
-and \texttt{std::endl} in namespace \texttt{std}. If log messages are
+Note the use of \texttt{dolfin::cout} and
+\texttt{dolfin::endl} from the \texttt{dolfin} namespace,
+corresponding to the standard standard \texttt{std::cout} and
+\texttt{std::endl} in namespace \texttt{std}. If log messages are
 directed to standard output (see below), then \texttt{dolfin::cout}
 and \texttt{std::cout} may be mixed freely.
 
+Most classes provided by \dolfin{} can be used together with
+\texttt{dolfin::cout} and \texttt{dolfin::endl} to display short
+informative messages about objects:
+\begin{code}
+  Matrix A(10, 10);
+  cout << A << endl;
+\end{code}
+To display detailed information for an object,  use the member function
+\texttt{disp()}:
+\begin{code}
+  Matrix A(10, 10);
+  A.disp();
+\end{code}
+Use with caution for large objects. For a \texttt{Matrix}, calling
+\texttt{disp()} will displays all matrix entries.
+
 %------------------------------------------------------------------------------
 \section{Warnings and errors}
+\index{warnings}
+\index{errors}
+\index{\texttt{dolfin\_warning()}}
+\index{\texttt{dolfin\_error()}}
 
 Warnings and error messages can be generated using the macros
 \begin{code}
@@ -67,28 +92,33 @@ the following examples:
 
 %------------------------------------------------------------------------------
 \section{Debug messages and assertions}
+\index{debugging}
+\index{assertions}
+\index{\texttt{dolfin\_debug()}}
+\index{\texttt{dolfin\_assert()}}
 
 The macro \texttt{dolfin\_debug()} works similarly to
 \texttt{dolfin\_info()}:
 \begin{code}
   dolfin_debug(message);
 \end{code}
-but in addition to displaying a message, information is printed about
+but in addition to displaying the given message, information is printed about
 the location of the code that generated the debug message (file,
 function name and line number).
 
 Note that in order to pass formatting strings and additional arguments
 with debug messages, the variations \texttt{dolfin\_debug1()},
-\texttt{dolfin\_debug2()}, depending on the number of arguments.
+\texttt{dolfin\_debug2()} and so on, depending on the number of
+arguments, must be used.
 
 Assertions can often be a helpful programming tool. Use assertions
 whenever you assume something about about a variable in your code,
-such as checking that given input to a function is valid. \dolfin{}
+such as assuming that given input to a function is valid. \dolfin{}
 provides the macro \texttt{dolfin\_assert()} for creating assertions:
 \begin{code}
   dolfin\_assert(check);
 \end{code}
-This function accepts a boolean expression and if the expression
+This macro accepts a boolean expression and if the expression
 evaluates to false, an error message is displayed, including the
 file, function name and line number of the assertion, and a
 segmentation fault is raised (to enable easy attachment to a
@@ -100,69 +130,135 @@ debugger). The following examples illustrate the use of
   dolfin_assert(cell.type() == Cell::triangle);
   dolfin_assert(cell.type() == Cell::tetrahedron);
 \end{code}
-Note that assertions are only active if \dolfin{} when compiling
+Note that assertions are only active when compiling
 \dolfin{} and your program with \texttt{DEBUG} defined (configure
 option \texttt{--enable-debug} or compiler flag \texttt{-DDEBUG}).
 Otherwise, the macro \texttt{dolfin\_assert()} expands to nothing,
-meaning that liberal use of assertions does not mean a performance
-penalty, since assertions only are present during development and
+meaning that liberal use of assertions does not affect performance,
+since assertions are only present during development and
 debugging.
 
 %------------------------------------------------------------------------------
 \section{Task notification}
+\index{tasks}
+\index{\texttt{dolfin\_begin()}}
+\index{\texttt{dolfin\_end()}}
 
-The two function \texttt{dolfin\_begin()} and \texttt{dolfin\_end()}
+The two functions \texttt{dolfin\_begin()} and \texttt{dolfin\_end()}
 available in the \texttt{dolfin} name space can be used to notify the
-\dolfin{} log system about the beginning and end
-The \dolfin{} log system indents log messages hierarchically 
-To notify the \dolfin{} log system about the beginning of 
-\dolfin{} provides two functions 
-%// Task notification
-%namespace dolfin { void dolfin_begin(); }
-%namespace dolfin { void dolfin_begin(const char* msg, ...); }
-%namespace dolfin { void dolfin_end(); }
-%namespace dolfin { void dolfin_end(const char* msg, ...); }
+\dolfin{} log system about the beginning and end of a task:
+\begin{code}
+  void dolfin_begin();
+  void dolfin_end();
+\end{code}
+Alternatively, a string message (or a formatting string with optional
+arguments) can be supplied:
+\begin{code}
+  void dolfin_begin(const char* message, ...);
+  void dolfin_end(const char* message, ...);
+\end{code}
+
+These functions enable the \dolfin{} log system to display messages,
+warnings and errors hierarchically, by automatically indenting the
+output produced between calls to \texttt{dolfin\_begin()} and
+\texttt{dolfin\_end()}. A program may contain an arbitrary number of
+nested tasks.
 
 %------------------------------------------------------------------------------
 \section{Progress bars}
 \index{progress bar}
+\index{\texttt{Progress}}
 
-To notify progress by a progress session, use the class
-Progress.
+The \dolfin{} log system provides the class \texttt{Progress} for
+simple creation of progress sessions. A progress session automatically
+displays the progress of a computation using a progress bar.
 
-Examples of usage:
-
+If the number of steps of a computation is known, a progress session
+should  be defined in terms of the number of steps and updated in each
+step of the computation as illustrated by the following example:
 \begin{code}
-  Progress p("Assembling", grid.noCells());
-  
-  for (CellIterator c(grid); !c.end(); ++c) {
+  Progress p(``Assembling'', mesh.noCells());  
+  for (CellIterator c(mesh); !c.end(); ++c)
+  \{
     ...
     p++;
-  }
+  \}
 \end{code}
-
-Progress also supports the following usage:
-
+It is also possible to specify the step number explicitly by assigning
+an integer to the progress session:
 \begin{code}
-  p = i;    // Specify step number
-  p = 0.5;  // Specify percentage
-  p.update(t/T, "Time is t = %f", t);
+  Progress p(``Iterating over vector'', x.size())
+  for (uint i = 0; i < x.size(); i++)
+  \{
+    ...
+    p = i;
+  \}
 \end{code}
+
+Alternatively, if the number of steps is unknown, the progress session
+needs to be updated with the current percentage of the progress:
+\begin{code}
+  Progress p(``Time-stepping'');
+  while ( t < T )
+  \{
+    ...
+    p = t / T;
+  \}
+\end{code}
+
+The progress bar created by the progress session will only be updated
+if the progress has changed significantly since the last update (by
+default at least $10\%$). The
+amount of change needed for an update can be controlled using the
+parameter \texttt{``progress step''}:
+\begin{code}
+  dolfin_set(``progress step'', 0.01);
+\end{code}
+
+Note that several progress sessions may be created simultaneously, or
+nested within tasks.
 
 %------------------------------------------------------------------------------
 \section{Controlling the destination of output}
+\index{output destination}
+\index{curses interface}
+\index{\texttt{dolfin\_output()}}
+\index{\texttt{dolfin\_log()}}
 
-% curses, terminal, silent
-%
-% // Update (force refresh of curses interface)
-% namespace dolfin { void dolfin_update(); }
-%
-%
-%// Specify output type (``plain text'', ``curses'', or ``silent'')
-%void dolfin_output(const char* type);
-%
-%// Switch logging on or off
-%void dolfin_log(bool state);
+By default, the \dolfin{} log system directs messages to standard
+output (the terminal). Other options include directing messages to a
+curses interface or turning of messages completely. To specify the
+output destination, use the function \texttt{dolfin\_output()}
+available in the \texttt{dolfin} namespace:
+\begin{code}
+  void dolfin_output(const char* destination);
+\end{code}
+where \texttt{destination} is one of
+\texttt{``plain text''} (standard output),
+\texttt{``curses''} (curses interface)
+or \texttt{`silent''} (no messages printed).
 
+When messages are directed to the \dolfin{} curses interface, a
+text-mode graphical and interactive user-interface is started in the
+current terminal window. To see a list of options, press 'h' for
+help. The curses-interface is updated periodically but the function
+\texttt{dolfin\_update()} can be used to force a refresh of the
+display.
 
-
+It is possible to switch the \dolfin{} log system on or off using the
+function \texttt{dolfin\_log()} available in the \texttt{dolfin} namespace.
+This function accepts as argument a \texttt{bool}, specifying whether
+or not messages should be directed to the current output destination.
+This function can be useful to suppress excessive logging, for example
+when calling a function that generates log messages multiple times:
+\begin{code}
+  GMRES gmres;
+  while ( ... )
+  \{
+    ...
+    dolfin_log(false);
+    gmres.solve(A, x, b);
+    dolfin_log(true);
+    ...
+  \}
+\end{code}
