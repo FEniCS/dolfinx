@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-07-05
-// Last changed: 2005-08-26
+// Last changed: 2005-09-15
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -11,17 +11,17 @@
 
 using namespace dolfin;
 
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 VTKFile::VTKFile(const std::string filename) : GenericFile(filename)
 {
   type = "VTK";
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 VTKFile::~VTKFile()
 {
   // Do nothing
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void VTKFile::operator<<(Mesh& mesh)
 {
 
@@ -30,20 +30,26 @@ void VTKFile::operator<<(Mesh& mesh)
   // Write headers
   VTKHeaderOpen(mesh);
 
+  // Write mesh
   MeshWrite(mesh);
   
   // Write headers
   VTKHeaderClose();
   
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
 
   dolfin_info("Writing Function to VTK file");
-  
-  const Mesh& mesh = u.mesh(); 
 
+  // Update vtu file name and clear file
+  vtuNameUpdate(u.number());
+  
+  // Write pvd file
+  pvdFileWrite(u);
+    
+  const Mesh& mesh = u.mesh(); 
   // Write headers
   VTKHeaderOpen(mesh);
   
@@ -63,12 +69,12 @@ void VTKFile::operator<<(Function& u)
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void VTKFile::MeshWrite(const Mesh& mesh) const
 {
 
   // Open file
-  FILE* fp = fopen(filename.c_str(), "a");
+  FILE* fp = fopen(vtu_filename.c_str(), "a");
 
   // Write node positions
   fprintf(fp, "<Points>  \n");
@@ -114,7 +120,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fclose(fp);
 
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void VTKFile::ResultsWrite(Function& u) const
 {
 
@@ -133,7 +139,7 @@ void VTKFile::ResultsWrite(Function& u) const
     dolfin_error("Cannot handle tensor valued functions.");
 
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   //Write PointData displacement	
   if(no_components == 1)
@@ -174,15 +180,52 @@ void VTKFile::ResultsWrite(Function& u) const
   fclose(fp);
 
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+void VTKFile::pvdFileWrite(Function& u)
+{
+  std::fstream pvdFile;
+
+  if( u.number() == 0)
+  {
+    // Open pvd file
+    pvdFile.open(filename.c_str(), std::ios::out|std::ios::trunc);
+    // Write header    
+    pvdFile << "<?xml version=\"1.0\"?> " << std::endl;
+    pvdFile << "<VTKFile type=\"Collection\" version=\"0.1\" > " << std::endl;
+    pvdFile << "<Collection> " << std::endl;
+  } 
+  else
+  {
+    // Open pvd file
+    pvdFile.open(filename.c_str(),  std::ios::out|std::ios::in);
+    pvdFile.seekp(mark);
+  
+  }
+  // Remove directory path from name for pvd file
+  std::string fname;
+  fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size()); 
+  
+  // Data file name 
+  pvdFile << "<DataSet timestep=\"" << u.number() << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
+  mark = pvdFile.tellp();
+  
+  // Close headers
+  pvdFile << "</Collection> " << std::endl;
+  pvdFile << "</VTKFile> " << std::endl;
+  
+  // Close file
+  pvdFile.close();  
+
+}
+//----------------------------------------------------------------------------
 void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
 
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   // Write headers
-  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"  byte_order=\"LittleEndian\"  compressor=\"vtkZLibDataCompressor\">  \n");
+  fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
   fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n", mesh.noNodes(), mesh.noCells());
   
@@ -190,12 +233,12 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   fclose(fp);
   
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 void VTKFile::VTKHeaderClose() const
 {
   
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   // Close headers
   fprintf(fp, "</Piece> \n </UnstructuredGrid> \n </VTKFile>"); 	
@@ -205,4 +248,28 @@ void VTKFile::VTKHeaderClose() const
   
 
 }
-//-­---------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+void VTKFile::vtuNameUpdate(const int counter) 
+{
+    std::string filestart, extension;
+    std::ostringstream fileid, newfilename;
+    
+    fileid.fill('0');
+    fileid.width(6);
+    
+    filestart.assign(filename, 0, filename.find("."));
+    extension.assign(filename, filename.find("."), filename.size());
+
+    fileid << counter;
+    newfilename << filestart << fileid.str() << ".vtu";
+    
+    vtu_filename = newfilename.str();
+    
+    // Make sure file is empty
+    FILE* fp = fopen(vtu_filename.c_str(), "w");
+    fclose(fp);
+
+    
+}
+//----------------------------------------------------------------------------
+

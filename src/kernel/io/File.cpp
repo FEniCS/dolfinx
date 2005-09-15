@@ -43,7 +43,7 @@ File::File(const std::string& filename)
     file = new OpenDXFile(filename);
   else if ( filename.rfind(".tec") != filename.npos )
     file = new TecplotFile(filename);
-  else if ( filename.rfind(".vtu") != filename.npos )
+  else if ( filename.rfind(".pvd") != filename.npos )
     file = new VTKFile(filename);
   else
   {

@@ -1,3 +1,4 @@
+ - VTK output interface now handles time-dependent functions automatically
  - Fix cout for empty matrix
  - Change dolfin_start() --> dolfin_end()
  - Add chapters to manual: reference about, elements, installation, contributing, license
