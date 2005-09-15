@@ -55,6 +55,10 @@ namespace dolfin
 
     ///--- Basic functions
 
+    /// Merge in another mesh. The two meshes are not connected by the
+    /// operation.
+    void merge(Mesh& mesh2);
+
     /// Compute connectivity
     void init();
 

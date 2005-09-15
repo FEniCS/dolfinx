@@ -8,6 +8,8 @@
 #include <math.h>
 #include <strings.h>
 
+#include <map>
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 #include <dolfin/constants.h>
@@ -377,6 +379,47 @@ void Mesh::remove(Face& face)
 void Mesh::init()
 {
   MeshInit::init(*this);
+}
+//-----------------------------------------------------------------------------
+void Mesh::merge(Mesh& mesh2)
+{
+  std::map<int, int> nodemap;
+
+  for (NodeIterator n(&mesh2); !n.end(); ++n)
+  {
+    Node& node = *n;
+    int nid = node.id();
+
+    Node& newnode = createNode(node.coord());
+    int newnid = newnode.id();
+
+    nodemap[nid] = newnid;
+  }
+
+  for (CellIterator c(mesh2); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+
+    if(cell.type() == Cell::tetrahedron)
+    {
+      int nid0 = nodemap[cell.node(0).id()];
+      int nid1 = nodemap[cell.node(1).id()];
+      int nid2 = nodemap[cell.node(2).id()];
+      int nid3 = nodemap[cell.node(3).id()];
+
+      createCell(nid0, nid1, nid2, nid3);
+    }
+    else
+    {
+      int nid0 = nodemap[cell.nodeID(0)];
+      int nid1 = nodemap[cell.nodeID(1)];
+      int nid2 = nodemap[cell.nodeID(2)];
+
+      createCell(nid0, nid1, nid2);
+    }
+  }
+
+  init();
 }
 //-----------------------------------------------------------------------------
 void Mesh::swap(Mesh& mesh)
