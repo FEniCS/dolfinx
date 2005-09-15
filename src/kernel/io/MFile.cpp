@@ -155,7 +155,7 @@ void MFile::operator<<(Function& u)
     num_components = element.tensordim(0);
   }
   else
-    dolfin_error("Cannot handle tensor valued functions.");
+    dolfin_error("Cannot handle tensor-valued functions.");
 
   // Write mesh the first time
   if ( u.number() == 0 )

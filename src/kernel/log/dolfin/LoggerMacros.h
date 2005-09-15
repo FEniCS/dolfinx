@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #ifndef __LOGGER_MACROS_H
 #define __LOGGER_MACROS_H
@@ -27,8 +27,8 @@ namespace dolfin { bool dolfin_finished(); }
 namespace dolfin { void dolfin_segfault(); }
 
 // Task notification
-namespace dolfin { void dolfin_start(); }
-namespace dolfin { void dolfin_start(const char* msg, ...); }
+namespace dolfin { void dolfin_begin(); }
+namespace dolfin { void dolfin_begin(const char* msg, ...); }
 namespace dolfin { void dolfin_end(); }
 namespace dolfin { void dolfin_end(const char* msg, ...); }
 

@@ -39,7 +39,7 @@ namespace dolfin
     void progress_add    (Progress* p);
     void progress_remove (Progress *p);
 
-    void start();
+    void begin();
     void end();
 
     void active(bool state);

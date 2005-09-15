@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Node.h>
@@ -16,7 +16,7 @@ using namespace dolfin;
 void MeshInit::init(Mesh& mesh)
 {
   // Write a message
-  dolfin_start("Computing mesh connectivity:");
+  dolfin_begin("Computing mesh connectivity:");
   cout << "Found " << mesh.noNodes() << " nodes" << endl;
   cout << "Found " << mesh.noCells() << " cells" << endl;
   

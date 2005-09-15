@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <stdio.h>
 #include <unistd.h>
@@ -174,10 +174,10 @@ void Logger::progress_remove (Progress *p)
   log->progress_remove(p);
 }
 //-----------------------------------------------------------------------------
-void Logger::start()
+void Logger::begin()
 {
   init();
-  log->start();
+  log->begin();
 }
 //-----------------------------------------------------------------------------
 void Logger::end()

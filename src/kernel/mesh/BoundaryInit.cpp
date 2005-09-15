@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -18,7 +18,7 @@ void BoundaryInit::init(Mesh& mesh)
   // to compute edges, and finally compute the nodes from the edges.
 
   // Write a message
-  dolfin_start("Computing boundary:");
+  dolfin_begin("Computing boundary:");
 
   clear(mesh);
 

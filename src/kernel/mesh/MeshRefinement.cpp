@@ -4,7 +4,7 @@
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -23,7 +23,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void MeshRefinement::refine(MeshHierarchy& meshes)
 {
-  dolfin_start("Refining mesh:");
+  dolfin_begin("Refining mesh:");
 
   // Check pre-condition for all meshes
   checkPreCondition(meshes);

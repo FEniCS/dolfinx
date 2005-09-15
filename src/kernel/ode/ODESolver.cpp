@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
 {
-  dolfin_start("Solving ODE");  
+  dolfin_begin("Solving ODE");  
 
   // Temporary fix until we fix the dual problem again
   TimeStepper::solve(ode);
@@ -49,7 +49,7 @@ void ODESolver::solve(ODE& ode)
   // Check if we should solve the dual problem
   bool solve_dual = dolfin_get("solve dual problem");
 
-  dolfin_start("Solving ODE");  
+  dolfin_begin("Solving ODE");  
 
   // Solve primal problem
   solvePrimal(ode, u);
@@ -68,7 +68,7 @@ void ODESolver::solve(ODE& ode)
 //-----------------------------------------------------------------------------
 void ODESolver::solvePrimal(ODE& ode)
 {
-  dolfin_start("Solving primal problem");
+  dolfin_begin("Solving primal problem");
   
   // Initialize primal solution
   //u.init(ode.size());
@@ -82,7 +82,7 @@ void ODESolver::solvePrimal(ODE& ode)
 //-----------------------------------------------------------------------------
 void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
 { 
-  dolfin_start("Solving dual problem");
+  dolfin_begin("Solving dual problem");
   
   // FIXME: BROKEN
 

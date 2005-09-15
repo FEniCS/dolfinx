@@ -4,9 +4,7 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-13
-// Last changed: 2005
-
-
+// Last changed: 2005-09-15
 
 #include <stdarg.h>
 #include <signal.h>
@@ -51,12 +49,12 @@ void dolfin::dolfin_segfault()
   raise(SIGSEGV);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_start()
+void dolfin::dolfin_begin()
 {
-  LogManager::log.start();
+  LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_start(const char* msg, ...)
+void dolfin::dolfin_begin(const char* msg, ...)
 {
   va_list aptr;
   va_start(aptr, msg);
@@ -65,7 +63,7 @@ void dolfin::dolfin_start(const char* msg, ...)
 
   va_end(aptr);
 
-  LogManager::log.start();
+  LogManager::log.begin();
 }
 //-----------------------------------------------------------------------------
 void dolfin::dolfin_end()

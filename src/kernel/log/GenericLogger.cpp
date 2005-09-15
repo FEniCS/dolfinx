@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #include <stdio.h>
 
@@ -16,7 +16,7 @@ GenericLogger::GenericLogger()
   level = 0;
 }
 //-----------------------------------------------------------------------------
-void GenericLogger::start()
+void GenericLogger::begin()
 {
   level++;
 }

@@ -222,7 +222,7 @@ Mesh& Mesh::parent()
   if ( _parent )
     return *_parent;
 
-  dolfin_warning("Mesh has now parent.");
+  dolfin_warning("Mesh has no parent.");
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -231,7 +231,7 @@ Mesh& Mesh::child()
   if ( _child )
     return *_child;
 
-  dolfin_warning("Mesh has now child.");
+  dolfin_warning("Mesh has no child.");
   return *this;
 }
 //-----------------------------------------------------------------------------

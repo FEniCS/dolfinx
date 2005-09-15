@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-09-15
 
 #ifndef __GENERIC_LOGGER_H
 #define __GENERIC_LOGGER_H
@@ -32,7 +32,7 @@ namespace dolfin {
     virtual void progress_add    (Progress* p) = 0;
     virtual void progress_remove (Progress *p) = 0;
     
-    void start();
+    void begin();
     void end();
     
   protected:

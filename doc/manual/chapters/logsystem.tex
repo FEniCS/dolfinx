@@ -1,52 +1,131 @@
 \chapter{The log system}
 
-\fixme{This needs to be rewritten}
+\dolfin{} provides provides a simple interface for uniform handling of
+log messages, including warnings and errors. All messages are
+collected to a single stream which allows the destination and
+formatting of the output from a entire program, including the
+\dolfin{} library, to be controlled by the user.
 
-The purpose of the log system is to provide a simple and
-clean interface for logging messages, including warnings
-and errors.
+%------------------------------------------------------------------------------
+\section{Generating log messages}
 
-The following functions / macros are provided for logging:
-
+Log messages can be generated using the function
+\texttt{dolfin\_info()} available in the \texttt{dolfin} namespace:
 \begin{code}
-  dolfin_info();
-  dolfin_debug();
-  dolfin_warning();
-  dolfin_error();
-  dolfin_assert();
+  void dolfin_info(const char *msg, ...);
+\end{code}
+which works similarly to the standard C library function \texttt{printf}.
+The following examples illustrate the usage of
+\texttt{dolfin\_info()}:
+\begin{code}
+  dolfin_info(``Solving linear system.'');
+  dolfin_info(``Size of vector: \%d.'', x.size());
+  dolfin_info(``R = \%.3e (TOL = \%.3e)'', R, TOL);
 \end{code}
 
-Examples of usage:
-
+As an alternative to \texttt{dolfin\_info()}, \dolfin{} provides a C++
+style interface to generating log messages. Thus, the above examples
+can also be implemented as follows:
+\footnotesize
 \begin{code}
-  dolfin_info("Created vector of size %d.", x.size());
-  dolfin_debug("Opened file");
-  dolfin_warning("Unknown cell type.");
-  dolfin_error("Out of memory.");
-  dolfin_assert(i < m);
+  cout << ``Solving linear system.'' << endl;
+  cout << ``Size of vector: `` << x.size() << ``.'' << endl;
+  cout << ``R = `` << R << `` (TOL = `` << TOL << ``)'' << endl;
+\end{code}
+\normalsize
+using \texttt{dolfin::cout} and \texttt{dolfin::endl} from the \texttt{dolfin}
+namespace, corresponding to the standard standard \texttt{std::cout}
+and \texttt{std::endl} in namespace \texttt{std}. If log messages are
+directed to standard output (see below), then \texttt{dolfin::cout}
+and \texttt{std::cout} may be mixed freely.
+
+%------------------------------------------------------------------------------
+\section{Warnings and errors}
+
+Warnings and error messages can be generated using the macros
+\begin{code}
+  dolfin_warning(message);
+  dolfin_error(message);
 \end{code}
 
-Note that in order to pass additional arguments to the last
-three functions (which are really macros, in order to
-automatically print information about file names, line numbers
-and function names), the variations \texttt{dolfin\_debug1()},
-\texttt{dolfin\_debug2()} and so on, must be used.
+In addition to displaying the given string message, the macro
+\texttt{dolfin\_error()} also displays information about the location
+of the code that generated the error (file, function name and line
+number). Once an error is encountered, the program is stopped.
 
-As an alternative to \texttt{dolfin\_info()}, C++ style output to cout
-(\texttt{dolfin::cout}, and not \texttt{std::cout}) can be used. These messages
-will be delivered to the same destination as messages by use
-of the function \texttt{dolfin\_info()}.
-
-Examples of usage:
-
+Note that in order to pass formatting strings and additional arguments
+to warnings or errors, the variations \texttt{dolfin\_error1()},
+\texttt{dolfin\_error2()} and so on must be used, as illustrated by
+the following examples:
+\footnotesize
 \begin{code}
-  cout << "Assembling matrix: " << A << endl;
-  cout << "Refining grid: " << grid << endl;
+  dolfin_error(``GMRES solver did not converge.'');
+  dolfin_error1(``Unable to find face opposite to node %d.'', n);
+  dolfin_error2(``Unable to find edge between nodes %d and %d.'', n0, n1);
 \end{code}
+\normalsize
 
-The \texttt{dolfin\_assert()} macro should be used for simple tests that
-may occur often, such as checking indexing in vectors. The check
-is turned on only if DEBUG is defined.
+%------------------------------------------------------------------------------
+\section{Debug messages and assertions}
+
+The macro \texttt{dolfin\_debug()} works similarly to
+\texttt{dolfin\_info()}:
+\begin{code}
+  dolfin_debug(message);
+\end{code}
+but in addition to displaying a message, information is printed about
+the location of the code that generated the debug message (file,
+function name and line number).
+
+Note that in order to pass formatting strings and additional arguments
+with debug messages, the variations \texttt{dolfin\_debug1()},
+\texttt{dolfin\_debug2()}, depending on the number of arguments.
+
+Assertions can often be a helpful programming tool. Use assertions
+whenever you assume something about about a variable in your code,
+such as checking that given input to a function is valid. \dolfin{}
+provides the macro \texttt{dolfin\_assert()} for creating assertions:
+\begin{code}
+  dolfin\_assert(check);
+\end{code}
+This function accepts a boolean expression and if the expression
+evaluates to false, an error message is displayed, including the
+file, function name and line number of the assertion, and a
+segmentation fault is raised (to enable easy attachment to a
+debugger). The following examples illustrate the use of
+\texttt{dolfin\_assert()}:
+\begin{code}
+  dolfin_assert(i >= 0);
+  dolfin_assert(i < n);
+  dolfin_assert(cell.type() == Cell::triangle);
+  dolfin_assert(cell.type() == Cell::tetrahedron);
+\end{code}
+Note that assertions are only active if \dolfin{} when compiling
+\dolfin{} and your program with \texttt{DEBUG} defined (configure
+option \texttt{--enable-debug} or compiler flag \texttt{-DDEBUG}).
+Otherwise, the macro \texttt{dolfin\_assert()} expands to nothing,
+meaning that liberal use of assertions does not mean a performance
+penalty, since assertions only are present during development and
+debugging.
+
+%------------------------------------------------------------------------------
+\section{Task notification}
+
+The two function \texttt{dolfin\_begin()} and \texttt{dolfin\_end()}
+available in the \texttt{dolfin} name space can be used to notify the
+\dolfin{} log system about the beginning and end
+The \dolfin{} log system indents log messages hierarchically 
+To notify the \dolfin{} log system about the beginning of 
+\dolfin{} provides two functions 
+%// Task notification
+%namespace dolfin { void dolfin_begin(); }
+%namespace dolfin { void dolfin_begin(const char* msg, ...); }
+%namespace dolfin { void dolfin_end(); }
+%namespace dolfin { void dolfin_end(const char* msg, ...); }
+
+%------------------------------------------------------------------------------
+\section{Progress bars}
+\index{progress bar}
 
 To notify progress by a progress session, use the class
 Progress.
@@ -69,3 +148,21 @@ Progress also supports the following usage:
   p = 0.5;  // Specify percentage
   p.update(t/T, "Time is t = %f", t);
 \end{code}
+
+%------------------------------------------------------------------------------
+\section{Controlling the destination of output}
+
+% curses, terminal, silent
+%
+% // Update (force refresh of curses interface)
+% namespace dolfin { void dolfin_update(); }
+%
+%
+%// Specify output type (``plain text'', ``curses'', or ``silent'')
+%void dolfin_output(const char* type);
+%
+%// Switch logging on or off
+%void dolfin_log(bool state);
+
+
+
