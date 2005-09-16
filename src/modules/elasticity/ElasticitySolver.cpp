@@ -113,8 +113,8 @@ void ElasticitySolver::solve()
   // Set BC
   FEM::applyBC(A, b, mesh, element, bc);
 
-//   cout << "A: " << endl;
-//   A.disp(false);
+  cout << "A: " << endl;
+  A.disp(false);
   
   dolfin_debug("Assembled matrix:");
 
