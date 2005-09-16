@@ -1,8 +1,79 @@
 \chapter{Partial differential equations}
 
+
+\section{Boundary value problems}
+
+As a prototype of a boundary value problem in $\Bbb{R}^d$ we consider the 
+scalar Poisson equation with homogeneous Dirichlet boundary conditions 
+\begin{eqnarray}
+-\Delta u(x)&=&f(x) \quad x\in \Omega \subset \Bbb{R}^d \label{pde:poisson:strong} \\
+u(x)&=&0 \quad x\in \partial \Omega. \nonumber  
+\end{eqnarray}
+
 \section{Variational formulation}
 
+A variational formulation of (\ref{pde:poisson:strong}) take the form: 
+find $u\in V$ such that  
+\begin{equation}\label{pde:poisson:weak}
+a(u,v)=L(v) \quad \forall v\in V, 
+\end{equation}
+where $a(\cdot,\cdot):V\times V\rightarrow \Bbb{R}$ is a bilinear form 
+on $V$ defined by 
+\begin{equation}
+a(u,v)=\int_{\Omega} \nabla u \cdot \nabla v ~dx 
+=\int_{\Omega} \frac{\partial u}{\partial x_i} \frac{\partial v}{\partial x_i} ~ dx,  
+\end{equation}
+where we employ tensor notation so that the double index $i$ means summation from $i=1,...,d$, 
+and $L(\cdot):V\rightarrow \Bbb{R}$ is a linear form on $V$ defined by 
+\begin{equation}
+L(v)=\int_{\Omega} f v ~dx.  
+\end{equation}
+$V=H^1_0(\Omega)$ is the standard Sobolev space of square integrable 
+functions with also their first derivatives square integrable (in the Lebesgue sense), 
+with the functions being zero on the boundary (in the sense of traces).   
+
+The Finite Element Method FEM for (\ref{pde:poisson:weak}) is now: 
+find $U\in V_h$ such that  
+\begin{equation}\label{pde:poisson:fem}
+a(U,v)=L(v) \quad \forall v\in V_h, 
+\end{equation}
+where $V_h\subset V$ is a finite dimensional subspace of dimension $N$. 
+The finite element space $V_h$ is characterized by the set of basis 
+functions $\{\varphi_i\}_{i=1}^N$, and thus the FEM method 
+(\ref{pde:poisson:fem}) is specified by the variational form and 
+the basis functions of $V_h$. 
+
+In \dolfin{} a PDE is defined in variational form using tensor notation 
+in a \texttt{.form} file, which is compiled using FFC. 
+
+At \texttt{/dolfin/src/demo/solvers/poisson/dolfin/} the following 
+\texttt{poisson.form} file for (\ref{pde:poisson:fem}) can be found  
+\begin{code}
+# Copyright (C) 2005 Johan Hoffman and Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005-04-04
+# Last changed: 2005
+#
+# The bilinear form a(u,v) and linear form L(v) for
+# Poisson's equation.
+#
+# Compile this form with FFC: ffc poisson.form.
+
+element = FiniteElement("Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element)
+u = BasisFunction(element)
+f = Function(element)
+
+a = v.dx(i)*u.dx(i)*dx
+L = v*f*dx
+\end{code}
+
+
 Bilinear form, linear form, FFC
+
+\section{Boundary conditions}
 
 \section{Finite elements}
 
@@ -23,6 +94,14 @@ dofs, vector dofs,
 
 postprocess FFC 
 
+
+\section{Initial value problems}
+
+semidiscretization, space-time FEM, 
+
+
 \fixme{Variational formulation, examplify with Poisson, FFC, finite elements, FIAT, assembly, functionals}
+
+\dolfin{}
 
 % Insert note that constants are passed into forms as references
