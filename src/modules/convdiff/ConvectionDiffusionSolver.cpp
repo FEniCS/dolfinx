@@ -4,7 +4,7 @@
 //  Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-07-12
+// Last changed: 2005-09-16
 
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion.h"
@@ -56,6 +56,9 @@ void ConvectionDiffusionSolver::solve()
   // FIXME: Temporary fix
   x1.init(mesh.noNodes());
   Function u1(x1, mesh, a.trial());
+  
+  // Synchronize function u1 with time t
+  u1.sync(t);
 
   // Start time-stepping
   Progress p("Time-stepping");
@@ -73,7 +76,6 @@ void ConvectionDiffusionSolver::solve()
     solver.solve(A, x1, b);
     
     // Save the solution
-    u1.set(t);
     file << u1;
 
     // Update progress

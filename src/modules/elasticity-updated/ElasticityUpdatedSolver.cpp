@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2004-2005.
+// Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-09-16
 
 //#include <iostream>
 #include <sstream>
@@ -187,7 +188,6 @@ void ElasticityUpdatedSolver::step()
   }
   
   t += k;
-  f.set(t);
   cout << "t: " << t << endl;
   
   for(int iter = 0; iter < maxiters; iter++)
@@ -332,6 +332,9 @@ void ElasticityUpdatedSolver::solve()
   
   File         file("elasticity.m");
 
+  // Synchronize f with time t
+  f.sync(t);
+  
   // Save the solution
   condsave(mesh, file, t);
 

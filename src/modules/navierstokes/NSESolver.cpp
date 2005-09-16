@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-09-16
 
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>
@@ -68,6 +70,8 @@ void NSESolver::solve()
   Function uc(xcvel, mesh); // Velocity linearized convection 
   Function p(xpre, mesh);   // Pressure
 
+  
+  
   // vectors for functions for stabilization 
   Vector d1vector, d2vector;
   Function delta1(d1vector), delta2(d2vector);
@@ -87,6 +91,14 @@ void NSESolver::solve()
 
   Function u(xvel, mesh, uc.element());   // Velocity
 
+  // Synchronise functions and boundary conditions with time
+  u.sync(t);
+  p.sync(t);
+  bc_con.sync(t);
+  bc_mom.sync(t);
+
+  
+    
   File file_p("pressure.m");  // file for saving pressure
   File file_u("velocity.m");  // file for saving velocity 
 
@@ -113,9 +125,6 @@ void NSESolver::solve()
     time_step++;
     cout << "Stating time step " << time_step << endl;
     
-    bc_con.sync(t);
-    bc_mom.sync(t);
-
     x0vel = xvel;
 
     ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
@@ -177,8 +186,6 @@ void NSESolver::solve()
 
     // Save the solution
     if ( t > (T-T0)*(real(sample)/real(no_samples)) ){
-      p.set(t);
-      u.set(t);
       file_p << p;
       file_u << u;
       sample++;
@@ -193,8 +200,6 @@ void NSESolver::solve()
     cout << "Save solution" << endl;
 
     // Save the solution
-    p.set(t);
-    u.set(t);
     file_p << p;
     file_u << u;
 

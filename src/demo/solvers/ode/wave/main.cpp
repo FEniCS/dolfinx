@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-09-16
 
 #include <dolfin.h>
 
@@ -154,10 +156,10 @@ public:
     r.rename("r", "Time residual for the wave equation");
 
     // Get the degrees of freedom and set current time
-    u.set(sample.t());
-    v.set(sample.t());
-    k.set(sample.t());
-    r.set(sample.t());
+    u.sync(sample.t());
+    v.sync(sample.t());
+    k.sync(sample.t());
+    r.sync(sample.t());
     for (unsigned int i = 0; i < offset; i++)
     {
       ux(i) = sample.u(i);

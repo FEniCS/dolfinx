@@ -11,6 +11,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Variable.h>
+#include <dolfin/TimeDependent.h>
 
 namespace dolfin
 {
@@ -33,7 +34,7 @@ namespace dolfin
   /// The function values in x should be ordered as: 
   /// vector component j at dof i is listed at i*no_comp+j.   
 
-  class Function : public Variable
+  class Function : public Variable, public TimeDependent
   {
   public:
 
@@ -76,11 +77,11 @@ namespace dolfin
     /// Return the finite element defining the function space
     const FiniteElement& element() const;
 
-    /// Return current time
-    real time() const;
+//    /// Return current time
+//    real time() const;
 
-    /// Specify current time
-    void set(real time);
+//    /// Specify current time
+//    void set(real time);
 
     /// Specify finite element
     void set(const FiniteElement& element);
@@ -94,7 +95,7 @@ namespace dolfin
     const FiniteElement* _element;
 
     // Current time
-    real t;
+//    real t;
 
     // Temporary data used for interpolation
     int* dofs;

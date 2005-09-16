@@ -62,6 +62,9 @@ void ElasticitySolver::solve()
   Function u1(x11, mesh, element);
   Function w1(x21, mesh, element);
 
+  // Synchronize f with time t
+  f.sync(t);
+  
   File         file("elasticity.m");
 
   // FIXME: Temporary fix
@@ -208,7 +211,6 @@ void ElasticitySolver::solve()
     counter++;
 
     t += k;
-    f.set(t);
 
     // Update progress
     p = t / T;

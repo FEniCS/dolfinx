@@ -19,28 +19,29 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
-  : Variable("u", "A function"), _x(0), _element(0), t(0),
-    dofs(0), components(0), points(0), _mesh(0), _cell(0)
+  : Variable("u", "A function"), TimeDependent(), _x(0), _element(0), dofs(0), 
+    components(0), points(0), _mesh(0), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x)
-  : Variable("u", "A function"), _x(&x), _element(0), t(0),
-    dofs(0), components(0), points(0), _mesh(0), _cell(0)
+  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(0), dofs(0),
+    components(0), points(0), _mesh(0), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh)
-  : Variable("u", "A function"), _x(&x), _element(0), t(0),
-    dofs(0), components(0), points(0), _mesh(&mesh), _cell(0)
+  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(0), dofs(0),
+    components(0), points(0), _mesh(&mesh), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh, const FiniteElement& element)
-  : Variable("u", "A function"), _x(&x), _element(&element), t(0), dofs(0), components(0), points(0), _mesh(&mesh), _cell(0)
+  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(&element), 
+    dofs(0), components(0), points(0), _mesh(&mesh), _cell(0)
 {
   // Allocate temporary data used for interpolation
   dofs = new int[element.spacedim()];
@@ -171,15 +172,15 @@ const FiniteElement& Function::element() const
   return *_element;
 }
 //-----------------------------------------------------------------------------
-real Function::time() const
-{
-  return t;
-}
+//real Function::time() const
+//{
+//  return t;
+//}
 //-----------------------------------------------------------------------------
-void Function::set(real time)
-{
-  t = time;
-}
+//void Function::set(real time)
+//{
+//  t = time;
+//}
 //-----------------------------------------------------------------------------
 void Function::set(const FiniteElement& element)
 {

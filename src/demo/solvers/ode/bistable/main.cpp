@@ -1,8 +1,10 @@
 // Copyright (C) 2004-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2004-02-29
-// Last changed: 2005
+// Last changed: 2005-09-16
 
 #include <dolfin.h>
 
@@ -48,8 +50,8 @@ public:
     k.rename("k", "Time steps for the bistable equation");
 
     // Get the degrees of freedom and set current time
-    u.set(sample.t());
-    k.set(sample.t());
+    u.sync(sample.t());
+    k.sync(sample.t());
     for (unsigned int i = 0; i < N; i++)
     {
       ux(i) = sample.u(i);
