@@ -1,5 +1,33 @@
 \chapter{Solvers}
 
+\dolfin{} provides a number of pre-defined PDE solvers (called
+``modules'' in the source structure) by default. The solver interface
+is intentionally very simple to facilitate users writing their own
+solvers. These are the pre-defined solvers:
+
+\begin{enumerate}
+\item
+Poisson
+\item
+Convection-Diffusion
+\item
+Navies-Stokes
+\item
+Elasticity
+\end{enumerate}
+
+A solver for a PDE should provide the following interface:
+
+\begin{enumerate}
+\item
+a constructor which takes a mesh, equation coefficients and possibly
+additional data.
+\item
+a \texttt{solve()} function which solves the equation given the
+specified data.
+\end{enumerate}
+
+
 \fixme{List solvers, then present in detail, include lots of nice images with
 solver output}
 
@@ -7,9 +35,46 @@ solver output}
 \section{Poisson's equation}
 \index{Poisson's equation}
 
-Write introduction here, equations etc.
+The variational formulation of Poisson's equation with Dirichlet and
+homogenous Neumann boundary conditions:
+
+\begin{equation} \label{eq:poisson}
+  \begin{array}{rcl}
+    - \Delta u &=& f \quad \mbox{in } \Omega, \\
+    u &=& g_D \quad \mbox{on } \Gamma_1, \\
+    - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2
+  \end{array}
+\end{equation}
+
+is given by
+
+\begin{equation} \label{eq:poisson-varform}
+\begin{array}{rcl}
+  \int_{\Omega} \nabla u \cdot \nabla v \, dx &=&
+  \int_{\Omega} fv \, dx 
+  \quad \forall v.
+\end{array}
+\end{equation}
+
+The boundary conditions are enforced strongly and thus don't appear in
+the variational formulation.
 
 \subsection{Usage}
+
+\begin{verbatim}
+int main()
+{
+  //dolfin_output("curses");
+
+  Mesh mesh("mesh.xml.gz");
+  MyFunction f;
+  MyBC bc;
+  
+  PoissonSolver::solve(mesh, f, bc);
+  
+  return 0;
+}
+\end{verbatim}
 
 Present API of solver and give an example.
 
