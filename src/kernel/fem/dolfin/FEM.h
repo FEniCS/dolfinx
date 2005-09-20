@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-19
-// Last changed: 2005
+// Last changed: 2005-09-20
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -53,11 +53,11 @@ namespace dolfin
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
 
-    /// Display assembly data (useful for debugging)
-    static void disp(const Mesh& mesh, const FiniteElement& element);
-
     // Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
+
+    /// Display assembly data (useful for debugging)
+    static void disp(const Mesh& mesh, const FiniteElement& element);
     
   private:
 

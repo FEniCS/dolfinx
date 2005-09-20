@@ -4,7 +4,7 @@
 // Modified by Andy Terrel 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005
+// Last changed: 2005-09-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -256,6 +256,26 @@ void FEM::lump(const Matrix& M, Vector& m)
   M.mult(one, m);
 }
 //-----------------------------------------------------------------------------
+dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
+{
+  // Count the degrees of freedom (check maximum index)
+  
+  int* dofs = new int[element.spacedim()];
+  int dofmax = 0;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    element.dofmap(dofs, *cell, mesh);
+    for (uint i = 0; i < element.spacedim(); i++)
+    {
+      if ( dofs[i] > dofmax )
+	dofmax = dofs[i];
+    }
+  }
+  delete [] dofs;
+
+  return static_cast<uint>(dofmax + 1);
+}
+//-----------------------------------------------------------------------------
 void FEM::disp(const Mesh& mesh, const FiniteElement& element)
 {
   dolfin_info("Assembly data:");
@@ -307,6 +327,9 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 {
   dolfin_assert(mesh.type() == Mesh::triangles);
 
+  dolfin_debug("Applying 2D boundary conditions");
+
+
   // Create boundary
   Boundary boundary(mesh);
 
@@ -354,10 +377,16 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 	continue;
 
       // Get boundary condition
-      if ( bc.numComponents() > 1 )
+      if ( element.rank() > 0 )
+      {
+	cout << "tjoho: vector" << endl;
 	bv = bc(point, components[i]);
+      }
       else
+      {
+	cout << "scalar" << endl;
 	bv = bc(point);
+      }
     
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
@@ -438,7 +467,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 	continue;
 
       // Get boundary condition
-      if ( bc.numComponents() > 1 )
+      if ( element.rank() > 1 )
 	bv = bc(point, components[i]);
       else
 	bv = bc(point);
@@ -468,26 +497,6 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] points;
   delete [] rows;
   delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
-{
-  // Count the degrees of freedom (check maximum index)
-  
-  int* dofs = new int[element.spacedim()];
-  int dofmax = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    element.dofmap(dofs, *cell, mesh);
-    for (uint i = 0; i < element.spacedim(); i++)
-    {
-      if ( dofs[i] > dofmax )
-	dofmax = dofs[i];
-    }
-  }
-  delete [] dofs;
-
-  return static_cast<uint>(dofmax + 1);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)

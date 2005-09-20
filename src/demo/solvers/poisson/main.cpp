@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005
+// Last changed: 2005-09-20
 //
 // A simple test program for the Poisson solver, solving
 //
@@ -47,8 +47,6 @@ class MyBC : public BoundaryCondition
 
 int main()
 {
-  //dolfin_output("curses");
-
   Mesh mesh("mesh.xml.gz");
   MyFunction f;
   MyBC bc;

@@ -1,2 +1,7 @@
-SUBDIRS = ode poisson convdiff elasticity navierstokes elasticity-updated
-# navierstokes
+SUBDIRS = ode \
+          convdiff \
+          elasticity \
+          elasticity-updated \
+          navierstokes \
+          poisson \
+          stokes

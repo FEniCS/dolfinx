@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-05-02
-// Last changed: 2005-08-23
+// Last changed: 2005-09-20
 
 #ifndef __BOUNDARY_CONDITION_H
 #define __BOUNDARY_CONDITION_H
@@ -22,7 +22,6 @@ namespace dolfin
   public:
     
     /// Constructors
-    BoundaryCondition(uint num_components);
     BoundaryCondition();
     
     /// Destructor
@@ -32,14 +31,8 @@ namespace dolfin
     virtual const BoundaryValue operator() (const Point& p);
     
     /// User-defined boundary value for given part of boundary: vector component i 
-    virtual const BoundaryValue operator() (const Point& p, const int i);
+    virtual const BoundaryValue operator() (const Point& p, uint i);
 
-    /// Return number of components (scalar = 1, vector > 1)
-    uint numComponents() const;
-
-   private:
- 
-     uint num_components;
   };
   
 }

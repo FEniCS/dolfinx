@@ -81,9 +81,8 @@ libxml2_found = @libxml2_found@
 mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
-SUBDIRS = dolfin           poisson           convdiff 	  navierstokes           elasticity 	  elasticity-updated
+SUBDIRS = dolfin           convdiff           elasticity 	  elasticity-updated 	  navierstokes           poisson           stokes
 
-# navierstokes
 
 INCLUDES = @KERNEL_CFLAGS@
 include_HEADERS = dolfin/dolfin_modules.h                   dolfin/Solver.h

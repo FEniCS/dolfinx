@@ -4,22 +4,16 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005-05-02
-// Last changed: 2005-08-23
+// Last changed: 2005-09-20
 
 #include <dolfin/BoundaryCondition.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-BoundaryCondition::BoundaryCondition(uint num_components)
-  : TimeDependent(), num_components(num_components)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 BoundaryCondition::BoundaryCondition() : TimeDependent() 
 {
-  num_components = 1;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 BoundaryCondition::~BoundaryCondition()
@@ -34,15 +28,9 @@ const dolfin::BoundaryValue BoundaryCondition::operator() (const Point& p)
 }
 //-----------------------------------------------------------------------------
 const dolfin::BoundaryValue BoundaryCondition::operator() (const Point& p, 
-							   const int i)
+							   uint i)
 {
   BoundaryValue value;
   return value;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint BoundaryCondition::numComponents() const
-{
-  return num_components;
- }
-//-----------------------------------------------------------------------------
- 

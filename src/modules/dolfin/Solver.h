@@ -2,7 +2,6 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
 
 #ifndef __SOLVER_H
 #define __SOLVER_H
@@ -12,6 +11,8 @@
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/File.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/UnitSquare.h>
+#include <dolfin/UnitCube.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/GMRES.h>
