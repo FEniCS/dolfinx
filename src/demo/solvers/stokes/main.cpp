@@ -27,6 +27,8 @@ class MyBC : public BoundaryCondition
     BoundaryValue value;
     if ( i == 0 && fabs(p.y - 1.0) )
       value = 1.0;
+    //else if ( i == 0 || i == 1 )
+    //  value = 0.0;
     
     return value;
   }

@@ -378,15 +378,9 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 
       // Get boundary condition
       if ( element.rank() > 0 )
-      {
-	cout << "tjoho: vector" << endl;
 	bv = bc(point, components[i]);
-      }
       else
-      {
-	cout << "scalar" << endl;
 	bv = bc(point);
-      }
     
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
