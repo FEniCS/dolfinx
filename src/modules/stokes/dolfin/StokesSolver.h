@@ -12,6 +12,11 @@
 namespace dolfin
 {
 
+  /// This class implements a solver for Stokes equations, using
+  /// a mixed formulation (Taylor-Hood elements).
+  ///
+  /// FIXME: Make dimension-independent (currently 2D)
+
   class StokesSolver : public Solver
   {
   public:

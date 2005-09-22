@@ -1,8 +1,8 @@
 # Copyright (c) 2005 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
-# The bilinear form a(v, u) for the Stokes equations
-# using a mixed formulation (Taylor-Hood elements).
+# The bilinear form a(v, u) and Linear form L(v) for the Stokes
+# equations using a mixed formulation (Taylor-Hood elements).
 
 # Compile this form with FFC: ffc Stokes.form
 
@@ -15,5 +15,8 @@ TH = P2 + P1
 
 f = Function(P2)
 
-a = (dot(grad(u), grad(v)) - p*div(v) + div(u)*q)*dx
+#a = (dot(grad(u), grad(v)) - p*div(v) + div(u)*q)*dx
+
+a = (dot(grad(u), grad(v)) + dot(grad(p), grad(q)))*dx
+
 L = dot(f, v)*dx

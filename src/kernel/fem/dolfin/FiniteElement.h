@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-09-20
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -41,13 +41,18 @@ namespace dolfin
 
     /// Return vector dimension of the finite element space
     virtual unsigned int rank() const = 0;
-
+    
     /// Compute map from local to global degrees of freedom
     virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
 
     /// Compute map from local to global coordinates
     virtual void pointmap(Point points[], uint components[], const AffineMap& map) const = 0;
-    
+
+    // FIXME: Make this abstract when working
+
+    /// Compute map from (vertex, component) to function value
+    virtual void vertexeval(real values[], unsigned int vertex, const Vector& x, const Mesh& mesh) const {}
+
     /// Display finite element data
     void disp() const;
 

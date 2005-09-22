@@ -49,7 +49,6 @@ void ConvectionDiffusionSolver::solve()
   // Compute inverse of advective velocity norm 1/|a|
   ConvectionNormInv(w, wnorm, wnorm_vector);
 
-
   // Assemble stiffness matrix
   FEM::assemble(a, A, mesh);
 

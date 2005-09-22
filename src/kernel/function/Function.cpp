@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2005-08-26
+// Last changed: 2005-09-20
 
 #include <dolfin/Point.h>
 #include <dolfin/Node.h>
@@ -19,46 +19,37 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Function::Function()
-  : Variable("u", "A function"), TimeDependent(), _x(0), _element(0), dofs(0), 
-    components(0), points(0), _mesh(0), _cell(0)
+  : Variable("u", "A function"), TimeDependent(), 
+    _x(0), _mesh(0), _element(0), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x)
-  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(0), dofs(0),
-    components(0), points(0), _mesh(0), _cell(0)
+  : Variable("u", "A function"), TimeDependent(),
+    _x(&x), _mesh(0), _element(0), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh)
-  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(0), dofs(0),
-    components(0), points(0), _mesh(&mesh), _cell(0)
+  : Variable("u", "A function"), TimeDependent(),
+    _x(&x), _mesh(&mesh), _element(0), _cell(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Function::Function(Vector& x, Mesh& mesh, const FiniteElement& element)
-  : Variable("u", "A function"), TimeDependent(), _x(&x), _element(&element), 
-    dofs(0), components(0), points(0), _mesh(&mesh), _cell(0)
+  : Variable("u", "A function"), TimeDependent(),
+    _x(&x), _mesh(&mesh), _element(&element), _cell(0)
 {
-  // Allocate temporary data used for interpolation
-  dofs = new int[element.spacedim()];
-  components = new uint[element.spacedim()];
-  points = new Point[element.spacedim()];
+  // Allocate local data
+  local.init(element);
 }
 //-----------------------------------------------------------------------------
 Function::~Function()
 {
-  if ( dofs )
-    delete [] dofs;
-
-  if ( components )
-    delete [] components;
-  
-  if ( points )
-    delete [] points;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real coefficients[], const AffineMap& map)
@@ -80,11 +71,11 @@ void Function::interpolate(real coefficients[], const AffineMap& map)
     if ( _mesh && _mesh != &mesh )
       dolfin_error("Function is defined on a different mesh.");
 
-    real* values = _x->array();
-    _element->dofmap(dofs, cell, mesh);
+    real* xvals = _x->array();
+    _element->dofmap(local.dofs, cell, mesh);
     for (uint i = 0; i < _element->spacedim(); i++)
-      coefficients[i] = values[dofs[i]];
-    _x->restore(values);    
+      coefficients[i] = xvals[local.dofs[i]];
+    _x->restore(xvals);    
   }
   else
   {
@@ -94,16 +85,16 @@ void Function::interpolate(real coefficients[], const AffineMap& map)
     const Cell& cell = map.cell();
     _cell = &cell;
 
-    _element->pointmap(points, components, map);
+    _element->pointmap(local.points, local.components, map);
     if ( _element->rank() == 0 )
     {
       for (uint i = 0; i < _element->spacedim(); i++)
-	coefficients[i] = (*this)(points[i]);
+	coefficients[i] = (*this)(local.points[i]);
     }
     else
     {
       for (uint i = 0; i < _element->spacedim(); i++)
-	coefficients[i] = (*this)(points[i], components[i]);
+	coefficients[i] = (*this)(local.points[i], local.components[i]);
     }
   }
 }
@@ -112,8 +103,17 @@ real Function::operator() (const Node& node) const
 {
   if ( _x )
   {
-    // FIXME: This is just a temporary fix for P1 elements
-    return (*_x)(node.id());
+    // Need to have a mesh to evaluate function
+    if ( !_mesh )
+      dolfin_error("Mesh not specified for function.");
+
+    // Need to have an element to evaluate function
+    if ( !_element )
+      dolfin_error("Finite element not specified for function.");
+
+    // Evaluate all components at given vertex and pick first component
+    _element->vertexeval(local.values, node.id(), *_x, *_mesh);
+    return local.values[0];
   }
   else
   {
@@ -125,10 +125,17 @@ real Function::operator() (const Node& node, uint i) const
 {
   if ( _x )
   {
-    // FIXME: This is just a temporary fix for P1 elements
+    // Need to have a mesh to evaluate function
+    if ( !_mesh )
+      dolfin_error("Mesh not specified for function.");
 
-    dolfin_assert(_mesh);
-    return (*_x)(i * _mesh->noNodes() + node.id());
+    // Need to have an element to evaluate function
+    if ( !_element )
+      dolfin_error("Finite element not specified for function.");
+
+    // Evaluate all components at given vertex and pick given component
+    _element->vertexeval(local.values, node.id(), *_x, *_mesh);
+    return local.values[i];
   }
   else
   {
@@ -172,42 +179,67 @@ const FiniteElement& Function::element() const
   return *_element;
 }
 //-----------------------------------------------------------------------------
-//real Function::time() const
-//{
-//  return t;
-//}
-//-----------------------------------------------------------------------------
-//void Function::set(real time)
-//{
-//  t = time;
-//}
-//-----------------------------------------------------------------------------
 void Function::set(const FiniteElement& element)
 {
-  bool alloc = false;
-  
+  // Give a warning if element has previously been specified
   if ( _element )
-  {
     dolfin_warning("Overriding previous choice of finite element.");
+  
+  // Allocate local data
+  local.init(element);
 
-    if ( element.spacedim() != _element->spacedim() )
-    {
-      delete [] dofs;
-      delete [] components;
-      delete [] points;      
-      alloc = true;
-    }
-  }
-  else
-    alloc = true;
-
+  // Save given element
   _element = &element;
+}
+//-----------------------------------------------------------------------------
+Function::LocalData::LocalData() : dofs(0), components(0), points(0), values(0)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+Function::LocalData::~LocalData()
+{
+  // Clear data if initialized
+  clear();
+}
+//-----------------------------------------------------------------------------
+void Function::LocalData::init(const FiniteElement& element)
+{
+  // Clear data if initialized
+  clear();
 
-  if ( alloc )
-  {
-    dofs = new int[element.spacedim()];
-    components = new uint[element.spacedim()];
-    points = new Point[element.spacedim()];
-  }
+  // Initialize local degrees of freedom
+  dofs = new int[element.spacedim()];
+
+  // Initialize local components
+  components = new uint[element.spacedim()];
+
+  // Initialize local nodal points
+  points = new Point[element.spacedim()];
+
+  // Initialize local vertex values
+  if ( element.rank() == 0 )
+    values = new real[1];
+  else
+    values = new real[element.tensordim(0)];
+}
+//-----------------------------------------------------------------------------
+void Function::LocalData::clear()
+{
+  if ( dofs )
+    delete [] dofs;
+  dofs = 0;
+  
+  if ( components )
+    delete [] components;
+  components = 0;
+  
+  if ( points )
+    delete [] points;
+  points = 0;
+  
+  if ( values )
+    delete [] values;
+  values = 0;
 }
 //-----------------------------------------------------------------------------

@@ -327,9 +327,6 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 {
   dolfin_assert(mesh.type() == Mesh::triangles);
 
-  dolfin_debug("Applying 2D boundary conditions");
-
-
   // Create boundary
   Boundary boundary(mesh);
 
@@ -386,6 +383,7 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
       if ( bv.fixed )
       {
 	int dof = dofs[i];
+
 	if ( !row_set[dof] )
 	{
 	  rows[m++] = dof;

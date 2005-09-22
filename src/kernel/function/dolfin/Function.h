@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-08-26
+// Last changed: 2005-09-20
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -27,12 +27,6 @@ namespace dolfin
   /// This class represents a function defined on a mesh. The function
   /// is defined in terms of a mesh, a finite element and a vector
   /// containing the degrees of freedom of the function on the mesh.
-
-  /// Vector functions are initialized by a vector x containing the 
-  /// function values for all three vector components and no_comp, 
-  /// the number of vector components.  
-  /// The function values in x should be ordered as: 
-  /// vector component j at dof i is listed at i*no_comp+j.   
 
   class Function : public Variable, public TimeDependent
   {
@@ -59,7 +53,7 @@ namespace dolfin
     /// Evaluate function at given node
     real operator() (const Node& node) const;
 
-    /// Evaluate function at given node
+    /// Evaluate vector-valued function at given node
     real operator() (const Node& node, uint i) const;
 
     /// Evaluate function at given point
@@ -77,39 +71,52 @@ namespace dolfin
     /// Return the finite element defining the function space
     const FiniteElement& element() const;
 
-//    /// Return current time
-//    real time() const;
-
-//    /// Specify current time
-//    void set(real time);
-
     /// Specify finite element
     void set(const FiniteElement& element);
 
-  private:
+  protected:
 
     // Pointer to degrees of freedom
     Vector* _x;
 
-    // Pointer to finite element
-    const FiniteElement* _element;
-
-    // Current time
-//    real t;
-
-    // Temporary data used for interpolation
-    int* dofs;
-    uint* components;
-    Point* points;
-    
-  protected:
-
     // Pointer to mesh
     Mesh* _mesh;
+
+    // Pointer to finite element
+    const FiniteElement* _element;
 
     // Pointer to current cell (for user-defined functions)
     const Cell* _cell;
 
+  private:
+
+    // Class collecting local storage for interpolation and evaluation
+    class LocalData
+    {
+    public:
+     
+      // Constructor
+      LocalData();
+
+      // Destructor
+      ~LocalData();
+
+      // Initialize data for given element
+      void init(const FiniteElement& element);
+ 
+      // Clear data
+      void clear();
+
+      int* dofs;
+      uint* components;
+      Point* points;
+      real* values;
+
+    };
+
+    // Local storage for interpolation and evaluation
+    LocalData local;
+    
   };
 
 }

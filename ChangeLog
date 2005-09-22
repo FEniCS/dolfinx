@@ -1,5 +1,5 @@
- - Add Stokes module (experimental)
- - Support for arbitrary mixed elements through FFC (experimental)
+ - Add Stokes module
+ - Support for arbitrary mixed elements through FFC
  - VTK output interface now handles time-dependent functions automatically
  - Fix cout for empty matrix
  - Change dolfin_start() --> dolfin_end()

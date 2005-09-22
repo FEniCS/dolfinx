@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2005
+// Last changed: 2005-09-21
 
 #include <dolfin/Poisson.h>
 #include <dolfin/PoissonSolver.h>
