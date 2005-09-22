@@ -15,8 +15,5 @@ TH = P2 + P1
 
 f = Function(P2)
 
-#a = (dot(grad(u), grad(v)) - p*div(v) + div(u)*q)*dx
-
-a = (dot(grad(u), grad(v)) + dot(grad(p), grad(q)))*dx
-
+a = (dot(grad(u), grad(v)) - p*div(v) + div(u)*q)*dx
 L = dot(f, v)*dx
