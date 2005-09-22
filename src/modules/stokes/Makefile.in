@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(libdolfin_log_a_SOURCES)
+SOURCES = $(libdolfin_stokes_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -37,7 +37,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/kernel/log
+subdir = src/modules/stokes
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,14 +57,10 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libdolfin_log_a_AR = $(AR) $(ARFLAGS)
-libdolfin_log_a_LIBADD =
-am_libdolfin_log_a_OBJECTS = Buffer.$(OBJEXT) GenericLogger.$(OBJEXT) \
-	CursesLogger.$(OBJEXT) Event.$(OBJEXT) Logger.$(OBJEXT) \
-	LoggerMacros.$(OBJEXT) LogManager.$(OBJEXT) \
-	LogStream.$(OBJEXT) Progress.$(OBJEXT) SilentLogger.$(OBJEXT) \
-	TerminalLogger.$(OBJEXT)
-libdolfin_log_a_OBJECTS = $(am_libdolfin_log_a_OBJECTS)
+libdolfin_stokes_a_AR = $(AR) $(ARFLAGS)
+libdolfin_stokes_a_LIBADD =
+am_libdolfin_stokes_a_OBJECTS = StokesSolver.$(OBJEXT)
+libdolfin_stokes_a_OBJECTS = $(am_libdolfin_stokes_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -73,8 +69,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(libdolfin_log_a_SOURCES)
-DIST_SOURCES = $(libdolfin_log_a_SOURCES)
+SOURCES = $(libdolfin_stokes_a_SOURCES)
+DIST_SOURCES = $(libdolfin_stokes_a_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -178,33 +174,13 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_log.h \
-                          dolfin/Buffer.h \
-                          dolfin/CursesLogger.h \
-                          dolfin/Event.h \
-                          dolfin/GenericLogger.h \
-                          dolfin/Logger.h \
-                          dolfin/LoggerMacros.h \
-                          dolfin/LogManager.h \
-                          dolfin/LogStream.h \
-                          dolfin/Progress.h \
-                          dolfin/SilentLogger.h \
-                          dolfin/TerminalLogger.h
+include_HEADERS = dolfin/dolfin_stokes.h \
+                             dolfin/Stokes.h \
+                             dolfin/StokesSolver.h
 
-INCLUDES = @KERNEL_CFLAGS@
-lib_LIBRARIES = libdolfin-log.a
-libdolfin_log_a_SOURCES = Buffer.cpp \
-                          GenericLogger.cpp \
-                          CursesLogger.cpp \
-                          Event.cpp \
-                          Logger.cpp \
-                          LoggerMacros.cpp \
-                          LogManager.cpp \
-                          LogStream.cpp \
-                          Progress.cpp \
-                          SilentLogger.cpp \
-                          TerminalLogger.cpp
-
+INCLUDES = @MODULE_CFLAGS@
+lib_LIBRARIES = libdolfin-stokes.a
+libdolfin_stokes_a_SOURCES = StokesSolver.cpp
 all: all-recursive
 
 .SUFFIXES:
@@ -218,9 +194,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/kernel/log/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/modules/stokes/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/kernel/log/Makefile
+	  $(AUTOMAKE) --gnu  src/modules/stokes/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -267,10 +243,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libdolfin-log.a: $(libdolfin_log_a_OBJECTS) $(libdolfin_log_a_DEPENDENCIES) 
-	-rm -f libdolfin-log.a
-	$(libdolfin_log_a_AR) libdolfin-log.a $(libdolfin_log_a_OBJECTS) $(libdolfin_log_a_LIBADD)
-	$(RANLIB) libdolfin-log.a
+libdolfin-stokes.a: $(libdolfin_stokes_a_OBJECTS) $(libdolfin_stokes_a_DEPENDENCIES) 
+	-rm -f libdolfin-stokes.a
+	$(libdolfin_stokes_a_AR) libdolfin-stokes.a $(libdolfin_stokes_a_OBJECTS) $(libdolfin_stokes_a_LIBADD)
+	$(RANLIB) libdolfin-stokes.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -278,17 +254,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Buffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CursesLogger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Event.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericLogger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogStream.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Logger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoggerMacros.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Progress.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SilentLogger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TerminalLogger.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StokesSolver.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
