@@ -57,7 +57,7 @@ class InitialSolution : public Function
 // Boundary condition for momentum equation 
 class BC_Momentum : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p, int i)
+  const BoundaryValue operator() (const Point& p, uint i)
   {
     BoundaryValue value;
     if (i==0){
@@ -117,7 +117,7 @@ public:
   {
   }
 
-  const BoundaryValue operator() (const Point& p, int i)
+  const BoundaryValue operator() (const Point& p, uint i)
   {
     BoundaryValue value;
     if (i==0){
@@ -169,23 +169,13 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  //Mesh mesh("tetmesh_backward_facing_step_32_8_8.xml.gz");
   Mesh mesh("cylinder_2d_bmk.xml");
   ForceFunction f;
 
-  //mesh.refineUniformly(2);
 
-  //InitialSolution u0; 
-
-  /*  
-  BC_Momentum bc_mom;
-  BC_Continuity bc_con;
-  */
   BC_Momentum_2D bc_mom;
   BC_Continuity_2D bc_con;
   
-  // Set parameters: T0, T, nu,...
-
   NSESolver::solve(mesh, f, bc_mom, bc_con); 
   
   return 0;
