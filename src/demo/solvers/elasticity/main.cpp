@@ -61,7 +61,7 @@ class InitialVelocity : public Function
 class MyBC : public BoundaryCondition
 {
 public:
-  MyBC::MyBC() : BoundaryCondition(3)
+  MyBC::MyBC() : BoundaryCondition()
   {
   }
 

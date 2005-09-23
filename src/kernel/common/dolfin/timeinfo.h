@@ -2,14 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2005-09-22
 
 #ifndef __TIMEINFO_H
 #define __TIMEINFO_H
 
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   /// Return a string containing current date and time
   const char* date();

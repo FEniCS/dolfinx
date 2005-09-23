@@ -113,7 +113,7 @@ class BC_Momentum_2D : public BoundaryCondition
 {
 
 public:
-  BC_Momentum_2D::BC_Momentum_2D() : BoundaryCondition(2)
+  BC_Momentum_2D::BC_Momentum_2D() : BoundaryCondition()
   {
   }
 
