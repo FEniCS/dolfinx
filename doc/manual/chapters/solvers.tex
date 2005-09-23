@@ -23,8 +23,11 @@ A solver for a PDE should provide the following interface:
 a constructor which takes a mesh, equation coefficients and possibly
 additional data.
 \item
-a \texttt{solve()} function which solves the equation given the
+a \texttt{solve()} method which solves the equation given the
 specified data.
+\item
+a static \texttt{solve()} function which constructs and solves the
+equation.
 \end{enumerate}
 
 
@@ -35,8 +38,8 @@ solver output}
 \section{Poisson's equation}
 \index{Poisson's equation}
 
-The variational formulation of Poisson's equation with Dirichlet and
-homogenous Neumann boundary conditions:
+Poisson's equation with Dirichlet and homogenous Neumann boundary
+conditions:
 
 \begin{equation} \label{eq:poisson}
   \begin{array}{rcl}
@@ -46,7 +49,7 @@ homogenous Neumann boundary conditions:
   \end{array}
 \end{equation}
 
-is given by
+The variational formulation is given by
 
 \begin{equation} \label{eq:poisson-varform}
 \begin{array}{rcl}
@@ -61,11 +64,24 @@ the variational formulation.
 
 \subsection{Usage}
 
+The API for the Poisson solver:
+
+\begin{verbatim}
+// Create Poisson solver
+PoissonSolver(Mesh& mesh, Function& f, BoundaryCondition& bc);
+    
+// Solve Poisson's equation
+void solve();
+
+// Solve Poisson's equation (static version)
+static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc);
+\end{verbatim}
+
+A simple example of using the solver:
+
 \begin{verbatim}
 int main()
 {
-  //dolfin_output("curses");
-
   Mesh mesh("mesh.xml.gz");
   MyFunction f;
   MyBC bc;
@@ -76,33 +92,95 @@ int main()
 }
 \end{verbatim}
 
-Present API of solver and give an example.
+Where ``f'' is a Function specifying the right-hand side of the
+equation and ``bc'' is a BoundaryCondition.
 
 \subsection{Performance}
 
-Write something about the performance of the solver.
+The solver is an illustrative example and performance has not been a
+goal. It uses a GMRES linear solver, where a multi-grid linear solver
+would give optimal performance.
 
 \subsection{Limitations}
 
-Write something about the limitations of the solver.
+The solver is meant to be the simplest example solver, and therefore
+some simplifications have been made. Typically the general form of
+Poisson's equation includes a diffusion coefficient which has been
+omitted here.
 
 %------------------------------------------------------------------------------
 \section{Convection--diffusion}
 \index{convection--diffusion}
 
-Write introduction here, equations etc.
+The convection-diffusion equation with Dirichlet and homogenous
+Neumann boundary conditions is given by:
+
+\begin{equation} \label{eq:convdiff}
+  \begin{array}{rcl}
+    \dot{u} + b \cdot \nabla u - \nabla \cdot (a \nabla u) &=& f \quad \mbox{in } \Omega \times (0,T], \\
+    u &=& g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
+    - \partial_n u &=& 0 \quad \mbox{on } \Gamma_2 \times (0,T], \\
+    u(\cdot,0) &=& u_0 \quad \mbox{in } \Omega,
+  \end{array}
+\end{equation}
+
+where the convection is given by the vector $b = b(x,t)$ and the
+diffusion is given by $a = a(x,t)$.
+
+The variational formulation is:
+
+\fixme{Stabilized convection-diffusion}
+
+This is a stabilized FEM-formulation, so the solver can handle
+convection-dominated problems.
+
+The time integration is done using cG(1) (Crank-Nicolson).
 
 \subsection{Usage}
 
-Present API of solver and give an example.
+The API for the convection-diffusion solver:
+
+\begin{verbatim}
+// Create convection-diffusion solver
+ConvectionDiffusionSolver(Mesh& mesh, Function& w, Function& f,
+  BoundaryCondition& bc);
+    
+// Solve convection-diffusion
+void solve();
+    
+// Solve convection-diffusion (static version)
+static void solve(Mesh& mesh, Function& w, Function& f,
+  BoundaryCondition& bc);
+\end{verbatim}
+
+A simple example of using the solver:
+
+\begin{verbatim}
+int main()
+{
+  dolfin_output("curses");
+
+  Mesh mesh("dolfin.xml.gz");
+  Convection w;
+  Source f;
+  MyBC bc;
+
+  ConvectionDiffusionSolver::solve(mesh, w, f, bc);
+  
+  return 0;
+}
+\end{verbatim}
+
 
 \subsection{Performance}
 
-Write something about the performance of the solver.
+There are no particular performance issues with the solver. GMRES is
+used for solving the linear system.
 
 \subsection{Limitations}
 
-Write something about the limitations of the solver.
+Currently many coefficients (such as diffusitivity) are not
+user-definable, they need to be exposed by the interface.
 
 %------------------------------------------------------------------------------
 \section{Incompressible Navier--Stokes}
@@ -126,7 +204,36 @@ Write something about the limitations of the solver.
 %------------------------------------------------------------------------------
 \section{Elasticity}
 
-Write introduction here, equations etc.
+Navier's equations of elasticity with Dirichlet and homogenous Neumann
+boundary conditions:
+
+\begin{equation*}
+\label{classicalelast}
+\begin{split}
+u &= x - X,\\
+\dot{u}-v &= 0\quad\mbox{in } \Omega^0,\\
+\dot{v} - \nabla \cdot \sigma& =f \quad\mbox{in } \Omega^0,\\
+\sigma &= E\epsilon (u) = E(\nabla u^\top +\nabla u)\\
+E\epsilon &= \lambda tr(\epsilon) I + 2\mu \epsilon,\\
+v(0,\cdot ) &= v^0,\quad u(0,\cdot ) = u^0\quad\mbox{in } \Omega^0, \\
+u &= g_D \quad \mbox{on } \Gamma_1 \times (0,T], \\
+- \partial_n u &= 0 \quad \mbox{on } \Gamma_2 \times (0,T]
+\end{split}
+\end{equation*}
+
+The variational form:
+
+\begin{equation} \label{eq:elasticity-varform}
+\begin{array}{rcl}
+  \int_{\Omega} \dot{v} w \, dx = \int_{\Omega} -\sigma(u) \epsilon(v) + f w \, dx,
+  \quad \forall w.
+\end{array}
+\end{equation}
+
+The time integration is done using dG(0) (backward Euler).
+
+The mass matrix appearing from $\int_{\Omega} \dot{v} w dx$ is lumped
+(equivalent to computing it using nodal quadrature).
 
 \subsection{Usage}
 
