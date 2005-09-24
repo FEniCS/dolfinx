@@ -1,3 +1,4 @@
+0.5.9 [2005-09-23]
  - Add Stokes module
  - Support for arbitrary mixed elements through FFC
  - VTK output interface now handles time-dependent functions automatically

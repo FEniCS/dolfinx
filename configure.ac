@@ -1,5 +1,5 @@
 # Init autoconf
-AC_INIT(dolfin, 0.5.8, dolfin@fenics.org)
+AC_INIT(dolfin, 0.5.9, dolfin@fenics.org)
 
 # Init automake
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)

@@ -57,7 +57,7 @@ class InitialSolution : public Function
 // Boundary condition for momentum equation 
 class BC_Momentum : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p, uint i)
+  const BoundaryValue operator() (const Point& p, unsigned int i)
   {
     BoundaryValue value;
     if (i==0){
@@ -117,7 +117,7 @@ public:
   {
   }
 
-  const BoundaryValue operator() (const Point& p, uint i)
+  const BoundaryValue operator() (const Point& p, unsigned int i)
   {
     BoundaryValue value;
     if (i==0){
