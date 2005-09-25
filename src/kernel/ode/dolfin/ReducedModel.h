@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-04-04
-// Last changed: 2005
+// Last changed: 2005-09-24
 
 #ifndef __REDUCED_MODEL_H
 #define __REDUCED_MODEL_H
@@ -103,9 +103,13 @@ namespace dolfin
 
     };
 
+    /*
+
     // Compute averages
     void computeAverages(RHS& f, Function& u, Vector& fbar, Vector& ubar);
     
+    */
+
     // The given model
     ODE& ode;
 

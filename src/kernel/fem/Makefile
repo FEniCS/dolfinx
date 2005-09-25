@@ -102,7 +102,7 @@ libdolfin_fem_a_OBJECTS =  AffineMap.o BoundaryCondition.o \
 BoundaryValue.o FEM.o FiniteElement.o LoadVector.o MassMatrix.o \
 StiffnessMatrix.o
 AR = ar
-CXXFLAGS = -O3 -Wall -Werror -ansi -std=c++98
+CXXFLAGS = -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@

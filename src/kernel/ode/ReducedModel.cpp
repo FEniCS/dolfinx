@@ -125,12 +125,14 @@ void ReducedModel::save(Sample& sample)
 }
 */
 //-----------------------------------------------------------------------------
+
+/*
+
 void ReducedModel::computeAverages(RHS& f, Function& u,
 				   Vector& fbar, Vector& ubar)
 {
 dolfin_error("This function needs to be updated to the new format.");
 
-/*
   // Sample length
   real k = tau / static_cast<real>(samples);
 
@@ -232,8 +234,10 @@ dolfin_error("This function needs to be updated to the new format.");
     // Save average
     ubar(i) = 0.5*(ubar(i) + ubar2(i));
   }
-*/
+
 }
+
+*/
 //-----------------------------------------------------------------------------
 // ReducedModel::Model
 //-----------------------------------------------------------------------------
