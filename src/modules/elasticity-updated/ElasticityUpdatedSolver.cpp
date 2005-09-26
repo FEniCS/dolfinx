@@ -30,7 +30,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     T(T), counter(0), lastsample(0),
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
-    t(0.0), rtol(1.0e-4), maxiters(10), do_plasticity(false), yield(0.0),
+    t(0.0), rtol(1.0e+4), maxiters(10), do_plasticity(false), yield(0.0),
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
     u1(x1_1, mesh, element1),
@@ -66,6 +66,8 @@ void ElasticityUpdatedSolver::init()
 
   xtmp1.init(Nv);
   xtmp2.init(Nv);
+
+  fcontact.init(Nv);
 
   Dummy.init(Nv, Nv);
 
@@ -125,7 +127,7 @@ void ElasticityUpdatedSolver::init()
 
   // Set initial stress
 
-  xsigma1 = 1.0;
+  xsigma1 = 0.0;
 
   cout << "xsigma1:" << endl;
   xsigma1.disp();
@@ -139,6 +141,13 @@ void ElasticityUpdatedSolver::init()
 
   // Lump mass matrix
   FEM::lump(M, m);
+
+//   m = 20.0;
+
+  cout << "m:" << endl;
+  m.disp();
+
+
 
   // Compute mass vector (sigma)
   {
@@ -237,6 +246,7 @@ void ElasticityUpdatedSolver::step()
     
     xepsilon1 = xsigmatmp1;
     xepsilon1 *= 1.0 / lambda;
+    //    xepsilon1 *= 1.0 / (3 * lambda + 2 * mu);
 
 //     cout << "epsilon:" << endl;
 //     xepsilon1.disp();
@@ -246,44 +256,51 @@ void ElasticityUpdatedSolver::step()
     
 
 
-    // Print dot(sigma)
+//     // Print dot(sigma)
     
-    for (CellIterator c(mesh); !c.end(); ++c)
-    {
-      Cell& cell = *c;
-      if(cell.id() == 0)
-      {
+//     for (CellIterator c(mesh); !c.end(); ++c)
+//     {
+//       Cell& cell = *c;
+//       if(cell.id() == 0)
+//       {
 	
-  	cout << "t: " << t << endl;
-  	cout << "cell: " << cell.id() << endl;
-  	cout << cell.midpoint() << endl;
+//   	cout << "t: " << t << endl;
+//   	cout << "cell: " << cell.id() << endl;
+//   	cout << cell.midpoint() << endl;
 	
-  	int dofs[element2.spacedim()];
-  	element2.dofmap(dofs, cell, mesh);
+//   	int dofs[element2.spacedim()];
+//   	element2.dofmap(dofs, cell, mesh);
 	
-  	for(uint i = 0; i < element2.spacedim(); i++)
-  	{
-  	  cout << "dot(sigma)(:, " << i << "): " << xsigmatmp1(dofs[i]) << endl;
-  	}
-  	for(uint i = 0; i < element2.spacedim(); i++)
-  	{
-  	  cout << "sigma(:, " << i << "): " << xsigma1(dofs[i]) << endl;
-  	}
-   	for(uint i = 0; i < element2.spacedim(); i++)
-  	{
-  	  cout << "jaumann(:, " << i << "): " << xjaumann1(dofs[i]) << endl;
-  	}
-      }
-    }
+//   	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "dot(sigma)(:, " << i << "): " << xsigmatmp1(dofs[i]) << endl;
+//   	}
+//   	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "sigma(:, " << i << "): " << xsigma1(dofs[i]) << endl;
+//   	}
+//    	for(uint i = 0; i < element2.spacedim(); i++)
+//   	{
+//   	  cout << "jaumann(:, " << i << "): " << xjaumann1(dofs[i]) << endl;
+//   	}
+//       }
+//     }
 	
     // Assemble v vector
     FEM::assemble(Lv, xtmp1, mesh);
 
+    // Add contact forces
+    xtmp1.axpy(1, fcontact);
+
     FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
-    
-//     cout << "b:" << endl;
+//     FEM::applyBC(Dummy, fcontact, mesh, element1, bc);
+
+//     cout << "fcontact: " << endl;
+//     fcontact.disp();
+//     cout << "xtmp1: " << endl;
 //     xtmp1.disp();
 
+    
     VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
     stepresidual *= k;
     stepresidual.axpy(-1, x2_1);
