@@ -1,8 +1,5 @@
 # Test form for updated elasticity
 
-from Numeric import *
-from math import *
-
 name = "ElasticityUpdated"
 element1 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
 element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
@@ -14,16 +11,12 @@ f = Function(element2)
 sigma = Function(element1)
 epsilon = Function(element1)
 
-def grad(u):
-    return [ [u[i].dx(j) for i in range(3)] for j in range(3) ]
-
 def tomatrix(q):
     return [ [q[3 * i + j] for i in range(3)] for j in range(3) ]
 
-gradv = grad(v)
 sigmam = tomatrix(sigma)
 epsilonm = tomatrix(epsilon)
 
 L = (f[i] * v[i] -
-	vdot(sigmam, gradv) -
-	nuv * (vdot(epsilonm, gradv))) * dx
+	dot(sigmam, grad(v)) -
+	nuv * (dot(epsilonm, grad(v)))) * dx

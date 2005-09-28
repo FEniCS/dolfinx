@@ -31,6 +31,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(1.0e+4), maxiters(10), do_plasticity(false), yield(0.0),
+    savesamplefreq(33.0),
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
     u1(x1_1, mesh, element1),
@@ -39,9 +40,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     epsilon1(xepsilon1, mesh, element2),
     sigmanorm(xsigmanorm, mesh, element3),
     Lv(f, sigma1, epsilon1, nuv),
-    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast),
-//     Ljaumann(v1)
-    Ljaumann(v1, sigma1)
+    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
 {
   cout << "nuv: " << nuv << endl;
   cout << "lambda: " << lambda << endl;
@@ -238,7 +237,7 @@ void ElasticityUpdatedSolver::step()
     
     // Assemble sigma1 vectors
     FEM::assemble(Lsigma, xsigmatmp2, mesh);
-    FEM::assemble(Ljaumann, xjaumann1, mesh);
+//     FEM::assemble(Ljaumann, xjaumann1, mesh);
     
     VecPointwiseMult(xsigmatmp1.vec(), xsigmatmp2.vec(), msigma.vec());
     
@@ -317,12 +316,19 @@ void ElasticityUpdatedSolver::step()
     
     cout << "stepresidual(j): " << stepresidual.norm(Vector::linf) << endl;
 
+//     cout << "x2_1:" << endl;
+//     x2_1.disp();
+
     // Update the mesh
     for (NodeIterator n(&mesh); !n.end(); ++n)
     {
       Node& node = *n;
       int nid = node.id();
       
+//       cout << "k * v1(0): " << k * v1(node, 0) << endl;
+//       cout << "k * v1(1): " << k * v1(node, 1) << endl;
+//       cout << "k * v1(2): " << k * v1(node, 2) << endl;
+
       node.coord().x = mesh0(3 * nid + 0) + k * v1(node, 0);
       node.coord().y = mesh0(3 * nid + 1) + k * v1(node, 1);
       node.coord().z = mesh0(3 * nid + 2) + k * v1(node, 2);
@@ -398,15 +404,16 @@ void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::condsave(Mesh& mesh, File& solutionfile, real t)
 {
-  real samplefreq = 1.0 / 33.0;
+//   real samplefreq = 1.0 / 33.0;
+  real sampleperiod = 1.0 / savesamplefreq;
 
-  while(lastsample + samplefreq < t || t == 0.0)
+  while(lastsample + sampleperiod < t || t == 0.0)
   {
     save(mesh, solutionfile, t);
 
     counter++;
 
-    lastsample = std::min(t, lastsample + samplefreq);
+    lastsample = std::min(t, lastsample + sampleperiod);
     cout << "lastsample: " << lastsample << " t: " << t << endl;
 
     if(t == 0.0)

@@ -10,7 +10,6 @@
 #include <dolfin/Solver.h>
 #include "dolfin/ElasticityUpdated.h"
 #include "dolfin/ElasticityUpdatedSigma.h"
-#include "dolfin/ElasticityUpdatedJaumann.h"
 #include "dolfin/ElasticityUpdatedMass.h"
 
 namespace dolfin
@@ -71,6 +70,8 @@ namespace dolfin
     bool do_plasticity;
     real yield;
 
+    real savesamplefreq;
+
     // Elements
 
     ElasticityUpdated::LinearForm::TestElement element1;
@@ -95,7 +96,6 @@ namespace dolfin
 
     ElasticityUpdated::LinearForm Lv;
     ElasticityUpdatedSigma::LinearForm Lsigma;
-    ElasticityUpdatedJaumann::LinearForm Ljaumann;
   };
   
 }
