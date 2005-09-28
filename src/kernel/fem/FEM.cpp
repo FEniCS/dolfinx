@@ -459,15 +459,18 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 	continue;
 
       // Get boundary condition
-      if ( element.rank() > 1 )
+      if ( element.rank() > 0 )
 	bv = bc(point, components[i]);
       else
 	bv = bc(point);
-    
+
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
 	int dof = dofs[i];
+
+	cout << "bc2: " << i << " " << dof << endl;
+
 	if ( !row_set[dof] )
 	{
 	  rows[m++] = dof;
