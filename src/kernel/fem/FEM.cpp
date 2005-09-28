@@ -469,8 +469,6 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
       {
 	int dof = dofs[i];
 
-	cout << "bc2: " << i << " " << dof << endl;
-
 	if ( !row_set[dof] )
 	{
 	  rows[m++] = dof;
