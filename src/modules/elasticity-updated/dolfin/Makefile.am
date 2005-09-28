@@ -3,9 +3,5 @@ EXTRA_DIST = dolfin_elasticityupdated.h \
              ElasticitySolver.h \
              ElasticityUpdated.h \
              ElasticityUpdatedMass.h \
-             ElasticityUpdateSigma.h \
-             ElasticityUpdateJaumann.h \
-             ElasticityUpdatedSigma0.h \
-             ElasticityUpdatedSigma1.h \
-             ElasticityUpdatedSigma2.h
+             ElasticityUpdateSigma.h
 

@@ -57,18 +57,13 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-host_alias = @host_alias@
-host_triplet = @host@
 AWK = @AWK@
 CC = @CC@
 CXX = @CXX@
 DOLFIN_CFLAGS = @DOLFIN_CFLAGS@
 DOLFIN_LIBS = @DOLFIN_LIBS@
-HAVE_LIB = @HAVE_LIB@
 KERNEL_CFLAGS = @KERNEL_CFLAGS@
-LIB = @LIB@
 LN_S = @LN_S@
-LTLIB = @LTLIB@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MODULE_CFLAGS = @MODULE_CFLAGS@
@@ -82,7 +77,7 @@ mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_elasticityupdated.h                                  dolfin/ElasticityUpdated.h                                  dolfin/ElasticityUpdatedMass.h                                  dolfin/ElasticityUpdatedJaumann.h                                  dolfin/ElasticityUpdatedSigma.h                                  dolfin/ElasticityUpdatedSigma0.h                                  dolfin/ElasticityUpdatedSigma1.h                                  dolfin/ElasticityUpdatedSigma2.h                                  dolfin/ElasticityUpdatedSolver.h
+include_HEADERS = dolfin/dolfin_elasticityupdated.h                                  dolfin/ElasticityUpdated.h                                  dolfin/ElasticityUpdatedMass.h                                  dolfin/ElasticityUpdatedSigma.h                                  dolfin/ElasticityUpdatedSolver.h
 
 INCLUDES = @MODULE_CFLAGS@
 lib_LIBRARIES = libdolfin-elasticity-updated.a

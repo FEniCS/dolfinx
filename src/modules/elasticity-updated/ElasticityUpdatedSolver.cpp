@@ -141,7 +141,7 @@ void ElasticityUpdatedSolver::init()
   // Lump mass matrix
   FEM::lump(M, m);
 
-//   m = 20.0;
+  m = 2.0;
 
   cout << "m:" << endl;
   m.disp();
