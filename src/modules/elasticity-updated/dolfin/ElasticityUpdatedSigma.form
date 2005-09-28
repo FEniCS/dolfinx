@@ -3,6 +3,8 @@
 #from Numeric import *
 #from math import *
 
+import Numeric
+
 name = "ElasticityUpdatedSigma"
 element1 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0, 9)
@@ -41,10 +43,13 @@ W = epsilonspin(v)
 
 Eev = E(epsilon(v), lmbda, mu)
 
-Ljaumann = dot(mult(W, sigmamatrix) -
-	mult(sigmamatrix, W), qmatrix)
+Ljaumann = dot(Numeric.matrixmultiply(W, sigmamatrix) -
+	Numeric.matrixmultiply(sigmamatrix, W), qmatrix)
+
+Llie = dot(Numeric.matrixmultiply(grad(v), sigmamatrix) -
+	Numeric.matrixmultiply(sigmamatrix, grad(v)), qmatrix)
 
 Lelast = dot(E(epsilon(v), lmbda, mu), qmatrix)
 Lplast = dot(E(sigmamatrix, lmbda, mu), qmatrix)
 
-L = (Lelast + 1.0 * Ljaumann - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx
+L = (Lelast + 1.0 * Llie - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx

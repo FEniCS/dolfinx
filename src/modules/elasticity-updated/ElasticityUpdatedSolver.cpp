@@ -30,7 +30,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     T(T), counter(0), lastsample(0),
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
-    t(0.0), rtol(1.0e+4), maxiters(10), do_plasticity(false), yield(0.0),
+    t(0.0), rtol(1.0e-4), maxiters(10), do_plasticity(false), yield(0.0),
     savesamplefreq(33.0),
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
@@ -141,11 +141,8 @@ void ElasticityUpdatedSolver::init()
   // Lump mass matrix
   FEM::lump(M, m);
 
-  m = 2.0;
-
   cout << "m:" << endl;
   m.disp();
-
 
 
   // Compute mass vector (sigma)

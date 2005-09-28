@@ -93,12 +93,13 @@ public:
 int main(int argc, char **argv)
 {
   dolfin_output("plain text");
+  dolfin_set("progress step", 1.0);
 //   dolfin_output("silent");
 
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow07.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
-//   Mesh mesh("minimal3.xml.gz");
+//    Mesh mesh("minimal2.xml.gz");
 
   Mesh mesh("roterror01.xml.gz");
 //   UnitCube mesh(7, 7, 7);
