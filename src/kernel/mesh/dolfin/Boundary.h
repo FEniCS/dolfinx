@@ -16,6 +16,9 @@ namespace dolfin {
   class Boundary {
   public:
     
+    /// Create an empty boundary
+    Boundary();
+
     /// Create a boundary for given mesh
     Boundary(Mesh& mesh);
 
