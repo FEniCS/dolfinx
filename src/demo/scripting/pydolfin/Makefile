@@ -9,7 +9,9 @@ CPPFLAGS = -I/usr/include/python2.4 -I/usr/local/include $(DOLFIN_CFLAGS)
 LFLAGS = $(DOLFIN_LFLAGS)
 SWIGFLAGS = -I../../../../include
 
-default: pydolfin.py _pydolfin.so
+default: all
+
+all: pydolfin.py _pydolfin.so
 
 pydolfin.py: pydolfin.i
 	$(SWIG) -python -c++ $(SWIGFLAGS) $<
