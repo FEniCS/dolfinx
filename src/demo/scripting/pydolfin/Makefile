@@ -14,7 +14,7 @@ default: all
 all: dolfin.py _dolfin.so
 
 dolfin.py: dolfin.i
-	$(SWIG) -python -c++ $(SWIGFLAGS) $<
+	$(SWIG) -python -c++ -nodefault $(SWIGFLAGS) $<
 	mv dolfin_wrap.cxx dolfin_wrap.cpp
 	echo "}" >> dolfin_wrap.cpp
 

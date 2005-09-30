@@ -318,9 +318,9 @@ LogStream& dolfin::operator<< (LogStream& stream, const Matrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-Matrix::Element Matrix::operator()(uint i, uint j)
+MatrixElement Matrix::operator()(uint i, uint j)
 {
-  Element element(i, j, *this);
+  MatrixElement element(i, j, *this);
 
   return element;
 }
@@ -358,47 +358,51 @@ void Matrix::addval(uint i, uint j, const real a)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-// Matrix::Element
+// MatrixElement
 //-----------------------------------------------------------------------------
-Matrix::Element::Element(uint i, uint j, Matrix& A) : i(i), j(j), A(A)
+MatrixElement::MatrixElement(uint i, uint j, Matrix& A) : i(i), j(j), A(A)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Matrix::Element::operator real() const
+MatrixElement::MatrixElement(const MatrixElement& e) : i(i), j(j), A(A)
+{
+}
+//-----------------------------------------------------------------------------
+MatrixElement::operator real() const
 {
   return A.getval(i, j);
 }
 //-----------------------------------------------------------------------------
-const Matrix::Element& Matrix::Element::operator=(const real a)
+const MatrixElement& MatrixElement::operator=(const real a)
 {
   A.setval(i, j, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Matrix::Element& Matrix::Element::operator=(const Element& e)
+const MatrixElement& MatrixElement::operator=(const MatrixElement& e)
 {
   A.setval(i, j, e.A.getval(e.i, e.j));
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Matrix::Element& Matrix::Element::operator+=(const real a)
+const MatrixElement& MatrixElement::operator+=(const real a)
 {
   A.addval(i, j, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Matrix::Element& Matrix::Element::operator-=(const real a)
+const MatrixElement& MatrixElement::operator-=(const real a)
 {
   A.addval(i, j, -a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Matrix::Element& Matrix::Element::operator*=(const real a)
+const MatrixElement& MatrixElement::operator*=(const real a)
 {
   const real val = A.getval(i, j) * a;
   A.setval(i, j, val);

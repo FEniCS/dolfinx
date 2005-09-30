@@ -23,11 +23,12 @@ namespace dolfin
   /// pointer using the function vec() and use the standard PETSc
   /// interface.
 
+  class VectorElement;
+
   class Vector
   {
   public:
 
-    class Element;
 
     /// Empty vector
     Vector();
@@ -83,7 +84,7 @@ namespace dolfin
     void apply();
 
     /// Element assignment/access operator
-    Element operator() (uint i);
+    VectorElement operator() (uint i);
 
     /// Element access operator for a const Vector
     real operator() (uint i) const;
@@ -122,32 +123,10 @@ namespace dolfin
     /// Display vector
     void disp() const;
 
-    /// Reference to an element of the vector
-    ///
-    /// This design is a bit confusing, since there are actually
-    /// two different ways to access an element, depending on whether the
-    /// Vector is const or not. But I don't see a clear alternative. /johanjan
-
-    class Element
-    {
-    public:
-      Element(uint i, Vector& x);
-      Element(Element& e);
-      operator real() const;
-      const Element& operator=(const Element& e);
-      const Element& operator=(const real a);
-      const Element& operator+=(const real a);
-      const Element& operator-=(const real a);
-      const Element& operator*=(const real a);
-    protected:
-      uint i;
-      Vector& x;
-    };
 
     // Friends
     friend class Matrix;
-
-  protected:
+    friend class VectorElement;
 
     // Element access
     real getval(uint i) const;
@@ -167,6 +146,30 @@ namespace dolfin
     bool copy;
 
   };
+
+
+    /// Reference to an element of the vector
+    ///
+    /// This design is a bit confusing, since there are actually
+    /// two different ways to access an element, depending on whether the
+    /// Vector is const or not. But I don't see a clear alternative. /johanjan
+
+    class VectorElement
+    {
+    public:
+      VectorElement(uint i, Vector& x);
+      VectorElement(const VectorElement& e);
+      operator real() const;
+      const VectorElement& operator=(const VectorElement& e);
+      const VectorElement& operator=(const real a);
+      const VectorElement& operator+=(const real a);
+      const VectorElement& operator-=(const real a);
+      const VectorElement& operator*=(const real a);
+    protected:
+      uint i;
+      Vector& x;
+    };
+
 }
 
 #endif

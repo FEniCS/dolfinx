@@ -166,9 +166,9 @@ void Vector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-Vector::Element Vector::operator() (uint i)
+VectorElement Vector::operator() (uint i)
 {
-  Element index(i, *this);
+  VectorElement index(i, *this);
   return index;
 }
 //-----------------------------------------------------------------------------
@@ -343,52 +343,52 @@ void Vector::addval(uint i, const real a)
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
-// Vector::Element
+// VectorElement
 //-----------------------------------------------------------------------------
-Vector::Element::Element(uint i, Vector& x) : i(i), x(x)
+VectorElement::VectorElement(uint i, Vector& x) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Vector::Element::Element(Element& e) : i(i), x(x)
+VectorElement::VectorElement(const VectorElement& e) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Vector::Element::operator real() const
+VectorElement::operator real() const
 {
   return x.getval(i);
 }
 //-----------------------------------------------------------------------------
-const Vector::Element& Vector::Element::operator=(const Element& e)
+const VectorElement& VectorElement::operator=(const VectorElement& e)
 {
   x.setval(i, e.x.getval(i));
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector::Element& Vector::Element::operator=(const real a)
+const VectorElement& VectorElement::operator=(const real a)
 {
   x.setval(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector::Element& Vector::Element::operator+=(const real a)
+const VectorElement& VectorElement::operator+=(const real a)
 {
   x.addval(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector::Element& Vector::Element::operator-=(const real a)
+const VectorElement& VectorElement::operator-=(const real a)
 {
   x.addval(i, -a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector::Element& Vector::Element::operator*=(const real a)
+const VectorElement& VectorElement::operator*=(const real a)
 {
   const real val = x.getval(i) * a;
   x.setval(i, val);

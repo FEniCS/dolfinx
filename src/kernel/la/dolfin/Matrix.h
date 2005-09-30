@@ -24,12 +24,11 @@ namespace dolfin
   /// interface.
 
   class Vector;
+  class MatrixElement;
 
   class Matrix
   {
   public:
-
-    class Element;
 
     /// Constructor
     Matrix();
@@ -104,30 +103,16 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const Matrix& A);
     
-    /// Element access operator (needed for const objects)
+    /// MatrixElement access operator (needed for const objects)
     real operator() (uint i, uint j) const;
 
-    /// Element assignment operator
-    Element operator()(uint i, uint j);
+    /// MatrixElement assignment operator
+    MatrixElement operator()(uint i, uint j);
 
-    class Element
-    {
-    public:
-      Element(uint i, uint j, Matrix& A);
-      operator real() const;
-      const Element& operator=(const real a);
-      const Element& operator=(const Element& e); 
-      const Element& operator+=(const real a);
-      const Element& operator-=(const real a);
-      const Element& operator*=(const real a);
-    protected:
-      uint i, j;
-      Matrix& A;
-    };
+    // Friends
+    friend class MatrixElement;
 
-  protected:
-
-    // Element access
+    // MatrixElement access
     real getval(uint i, uint j) const;
 
     // Set value of element
@@ -142,6 +127,22 @@ namespace dolfin
     Mat A;
 
   };
+
+  class MatrixElement
+    {
+    public:
+      MatrixElement(uint i, uint j, Matrix& A);
+      MatrixElement(const MatrixElement& e);
+      operator real() const;
+      const MatrixElement& operator=(const real a);
+      const MatrixElement& operator=(const MatrixElement& e); 
+      const MatrixElement& operator+=(const real a);
+      const MatrixElement& operator-=(const real a);
+      const MatrixElement& operator*=(const real a);
+    protected:
+      uint i, j;
+      Matrix& A;
+    };
 
 }
 
