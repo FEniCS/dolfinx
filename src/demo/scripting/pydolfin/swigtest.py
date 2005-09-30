@@ -1,7 +1,7 @@
-import pydolfin
+import dolfin
 
-mesh1 = pydolfin.Mesh("cow05b.xml.gz")
-mesh2 = pydolfin.Mesh("cow05c.xml.gz")
+mesh1 = dolfin.Mesh("cow05b.xml.gz")
+mesh2 = dolfin.Mesh("cow05c.xml.gz")
 
 print
 print "mesh1 #nodes: " + str(mesh1.noNodes())
@@ -18,5 +18,5 @@ print "mesh1 #nodes: " + str(mesh1.noNodes())
 print "mesh2 #nodes: " + str(mesh2.noNodes())
 print
 
-meshfile1 = pydolfin.File("mymesh.xml.gz")
+meshfile1 = dolfin.File("mymesh.xml.gz")
 meshfile1 << mesh1

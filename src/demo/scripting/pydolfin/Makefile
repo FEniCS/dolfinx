@@ -11,18 +11,18 @@ SWIGFLAGS = -I../../../../include
 
 default: all
 
-all: pydolfin.py _pydolfin.so
+all: dolfin.py _dolfin.so
 
-pydolfin.py: pydolfin.i
+dolfin.py: dolfin.i
 	$(SWIG) -python -c++ $(SWIGFLAGS) $<
-	mv pydolfin_wrap.cxx pydolfin_wrap.cpp
-	echo "}" >> pydolfin_wrap.cpp
+	mv dolfin_wrap.cxx dolfin_wrap.cpp
+	echo "}" >> dolfin_wrap.cpp
 
-_pydolfin.so: pydolfin_wrap.o
+_dolfin.so: dolfin_wrap.o
 	$(CXX) -shared $< $(LFLAGS) -o $@ $(LFLAGS)
 
-pydolfin_wrap.o: pydolfin_wrap.cpp
+dolfin_wrap.o: dolfin_wrap.cpp
 
 clean:
-	rm -f pydolfin.py pydolfin.pyc _pydolfin.so pydolfin_wrap.o pydolfin_wrap.cpp *~
+	rm -f dolfin.py dolfin.pyc _dolfin.so dolfin_wrap.o dolfin_wrap.cpp *~
 
