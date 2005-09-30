@@ -101,7 +101,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write nodes
   fprintf(fp, "# A list of all node positions\n");
   fprintf(fp, "object \"nodes %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
-	  frames.size(), mesh.noNodes());
+	  (int)frames.size(), mesh.noNodes());
 
   for (NodeIterator n(mesh); !n.end(); ++n)
   {
@@ -120,7 +120,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write cells
   fprintf(fp, "# A list of all cells (connections)\n");
   fprintf(fp, "object \"cells %d\" class array type int rank 1 shape 4 items %d lsb binary data follows\n",
-	  frames.size(), mesh.noCells());
+	  (int)frames.size(), mesh.noCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
@@ -172,9 +172,9 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
 void OpenDXFile::writeFunction(FILE* fp, Function& u)
 {
   // Write header for object
-  fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), frames.size());
+  fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
   fprintf(fp,"object \"data %d\" class array type float rank 1 shape 1 items %d lsb binary data follows\n",
-	  frames.size(), u.mesh().noNodes());
+	  (int)frames.size(), u.mesh().noNodes());
   
   // Write data
   for (NodeIterator n(u.mesh()); !n.end(); ++n)
@@ -186,17 +186,17 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   fprintf(fp,"attribute \"dep\" string \"positions\"\n\n");
   
   // Write field
-  fprintf(fp,"# Field for [%s], frame %d\n", u.label().c_str(), frames.size());
-  fprintf(fp,"object \"field %d\" class field\n", frames.size());
+  fprintf(fp,"# Field for [%s], frame %d\n", u.label().c_str(), (int)frames.size());
+  fprintf(fp,"object \"field %d\" class field\n", (int)frames.size());
   if ( save_each_mesh )
-    fprintf(fp,"component \"positions\" value \"nodes %d\"\n", frames.size());
+    fprintf(fp,"component \"positions\" value \"nodes %d\"\n", (int)frames.size());
   else
     fprintf(fp,"component \"positions\" value \"nodes 0\"\n");
   if ( save_each_mesh )
-    fprintf(fp,"component \"connections\" value \"cells %d\"\n", frames.size());
+    fprintf(fp,"component \"connections\" value \"cells %d\"\n", (int)frames.size());
   else
     fprintf(fp,"component \"connections\" value \"cells 0\"\n");
-  fprintf(fp,"component \"data\" value \"data %d\"\n\n", frames.size());
+  fprintf(fp,"component \"data\" value \"data %d\"\n\n", (int)frames.size());
   
   // Add the new frame
   Frame frame(u.time());
