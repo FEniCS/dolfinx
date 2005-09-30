@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python swigtest.py
+python -i swigtest.py

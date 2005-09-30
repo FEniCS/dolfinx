@@ -23,9 +23,6 @@ _pydolfin.so: pydolfin_wrap.o
 
 pydolfin_wrap.o: pydolfin_wrap.cpp
 
-%.o: %.cpp
-	$(CXX) $(CPPFLAGS) -c $<
-
 clean:
 	rm -f pydolfin.py pydolfin.pyc _pydolfin.so pydolfin_wrap.o pydolfin_wrap.cpp *~
 
