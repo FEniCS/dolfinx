@@ -2,16 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-21
-// Last changed: 2005
+// Last changed: 2005-09-29
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/File.h>
 #include <dolfin/Form.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Form::Form(uint num_functions) : c(0), num_functions(num_functions)
+Form::Form(uint num_functions)
+  : c(0), num_functions(num_functions), blas_A(0), blas_G(0)
 {
   // Initialize list of functions
   if ( num_functions > 0 )
@@ -44,24 +46,16 @@ Form::~Form()
       delete [] c[i];
     delete [] c;
   }
+
+  // Delete form data for BLAS
+  delete [] blas_A;
+  delete [] blas_G;
 }
 //-----------------------------------------------------------------------------
 void Form::update(const AffineMap& map)
 {
   // Update coefficients
   updateCoefficients(map);
-}
-//-----------------------------------------------------------------------------
-void Form::updateCoefficients(const AffineMap& map)
-{
-  dolfin_assert(num_functions == functions.size());
-
-  // Interpolate all functions to the current element
-  for (uint i = 0; i < num_functions; i++)
-  {
-    dolfin_assert(functions[i]);
-    functions[i]->interpolate(c[i], map);
-  }
 }
 //-----------------------------------------------------------------------------
 void Form::add(Function& function, const FiniteElement* element)
@@ -83,5 +77,23 @@ void Form::add(Function& function, const FiniteElement* element)
   c[i] = new real[element->spacedim()];
   for (uint j = 0; j < element->spacedim(); j++)
     c[i][j] = 0.0;
+}
+//-----------------------------------------------------------------------------
+void Form::updateCoefficients(const AffineMap& map)
+{
+  dolfin_assert(num_functions == functions.size());
+
+  // Interpolate all functions to the current element
+  for (uint i = 0; i < num_functions; i++)
+  {
+    dolfin_assert(functions[i]);
+    functions[i]->interpolate(c[i], map);
+  }
+}
+//-----------------------------------------------------------------------------
+void initBLAS(const char* filename)
+{
+  //File file(filename);
+  //file << *this;
 }
 //-----------------------------------------------------------------------------

@@ -2,6 +2,7 @@ FILENAME='dolfin-user-manual'
 
 all:
 	latex $(FILENAME).tex
+	bibtex $(FILENAME)
 	makeindex $(FILENAME)
 	latex $(FILENAME)
 	dvips -P pdf -o $(FILENAME).ps $(FILENAME).dvi

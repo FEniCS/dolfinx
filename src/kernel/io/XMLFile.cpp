@@ -71,7 +71,7 @@ void XMLFile::operator>>(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-  // FIXME: BROKEN
+  // FIXME: update to new format
   dolfin_error("This function needs to be updated to the new format.");
 
   /*
@@ -104,7 +104,7 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
-  // FIXME: BROKEN
+  // FIXME: update to new format
   dolfin_error("This function needs to be updated to the new format.");
 
   /*

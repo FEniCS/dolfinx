@@ -38,7 +38,7 @@ File::File(const std::string& filename)
   else if ( filename.rfind(".res") != filename.npos )
     file = new GiDFile(filename);
   else if ( filename.rfind(".m") != filename.npos )
-    file = new MatlabFile(filename);
+    file = new OctaveFile(filename);
   else if ( filename.rfind(".dx") != filename.npos )
     file = new OpenDXFile(filename);
   else if ( filename.rfind(".tec") != filename.npos )
@@ -55,25 +55,25 @@ File::File(const std::string& filename)
 File::File(const std::string& filename, Type type)
 {
   switch ( type ) {
-  case XML:
+  case xml:
     file = new XMLFile(filename);
     break;
-  case MATLAB:
+  case matlab:
     file = new MatlabFile(filename);
     break;
-  case OCTAVE:
+  case octave:
     file = new OctaveFile(filename);
     break;
-  case OPENDX:
+  case opendx:
     file = new OpenDXFile(filename);
     break;
-  case GID:
+  case gid:
     file = new GiDFile(filename);
     break;
-  case TECPLOT:
+  case tecplot:
     file = new TecplotFile(filename);
     break;
-  case VTK:
+  case vtk:
     file = new VTKFile(filename);
     break;
   default:
@@ -85,7 +85,7 @@ File::File(const std::string& filename, Type type)
 File::~File()
 {
   if ( file )
-	 delete file;
+    delete file;
   file = 0;
 }
 //-----------------------------------------------------------------------------

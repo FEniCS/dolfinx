@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-07-05
+// Last changed: 2005-09-30
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -25,7 +25,7 @@ namespace dolfin
   class File {
   public:
     
-    enum Type { XML, MATLAB, OCTAVE, OPENDX, GID, TECPLOT, VTK };
+    enum Type { xml, matlab, octave, opendx, gid, tecplot, vtk };
     
     File(const std::string& filename);
     File(const std::string& filename, Type type);

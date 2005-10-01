@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005
+// Last changed: 2005-09-30
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -11,7 +11,8 @@
 #include <dolfin/constants.h>
 #include <dolfin/GenericFile.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
   class Vector;
   class Matrix;
@@ -19,7 +20,8 @@ namespace dolfin {
   class ParameterList;
   class XMLObject;
   
-  class XMLFile : public GenericFile {
+  class XMLFile : public GenericFile
+  {
   public:
     
     XMLFile(const std::string filename);

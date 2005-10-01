@@ -92,6 +92,7 @@ void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 {
+  // FIXME: update to new format
   dolfin_error("This function needs to be updated to the new format.");
 
   /*

@@ -30,6 +30,7 @@ OctaveFile::~OctaveFile()
 //-----------------------------------------------------------------------------
 void OctaveFile::operator<<(Matrix& A)
 {
+  // FIXME: update to new format
   dolfin_error("This function needs to be updated to the new format.");
 
   /*

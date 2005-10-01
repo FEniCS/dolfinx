@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005
+// Last changed: 2005-05-29
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -34,11 +34,14 @@ namespace dolfin
 
   protected:
 
+    // Add function
+    void add(Function& function, const FiniteElement* element);
+
     // Update coefficients
     void updateCoefficients(const AffineMap& map);
 
-    // Add function
-    void add(Function& function, const FiniteElement* element);
+    // Initialize form data for BLAS
+    void initBLAS(const char* filename);
 
     // List of finite elements for functions (coefficients)
     Array<const FiniteElement*> elements;
@@ -51,6 +54,10 @@ namespace dolfin
 
     // Number of functions
     uint num_functions;
+
+    // Form data for BLAS
+    real* blas_A;
+    real* blas_G;
 
   };
 

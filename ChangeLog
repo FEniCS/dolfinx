@@ -1,3 +1,6 @@
+ - Change enum types in File to lowercase
+ - Change default file type for .m to Octave
+ - Add experimental Python interface PyDOLFIN
  - Fix compilation for gcc 4.0
 0.5.9 [2005-09-23]
  - Add Stokes module
