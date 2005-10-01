@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-10-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
@@ -34,6 +34,16 @@ EdgeIterator::EdgeIterator(const Boundary &boundary)
 EdgeIterator::EdgeIterator(const Boundary *boundary)
 {
   e = new BoundaryEdgeIterator(*boundary);
+}
+//-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const Node& node)
+{
+  e = new NodeEdgeIterator(node);
+}
+//-----------------------------------------------------------------------------
+EdgeIterator::EdgeIterator(const NodeIterator &nodeIterator)
+{
+  e = new NodeEdgeIterator(*nodeIterator);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Cell &cell)
