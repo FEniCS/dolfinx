@@ -5,7 +5,7 @@ DOLFIN_LFLAGS = `../../../config/dolfin-config --libs_dolfin`
 CXX = `../../../config/dolfin-config --compiler`
 SWIG = swig
 
-CPPFLAGS = -I/usr/include/python2.4 -I/usr/local/include $(DOLFIN_CFLAGS) -g
+CPPFLAGS = -I/usr/include/python2.4 $(DOLFIN_CFLAGS) -g -fPIC
 LFLAGS = $(DOLFIN_LFLAGS)
 SWIGFLAGS = -I../../../../include
 
@@ -16,7 +16,6 @@ all: dolfin.py _dolfin.so
 dolfin.py: dolfin.i
 	$(SWIG) -python -c++ -nodefault $(SWIGFLAGS) $<
 	mv dolfin_wrap.cxx dolfin_wrap.cpp
-# 	echo "}" >> dolfin_wrap.cpp
 
 _dolfin.so: dolfin_wrap.o
 	$(CXX) -g -shared $< -o $@ $(LFLAGS) 
