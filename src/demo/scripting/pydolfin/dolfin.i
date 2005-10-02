@@ -1,20 +1,27 @@
-%module dolfin
+%module(directors="1") dolfin
+
 %{
 #include <dolfin.h>
 #include <string>
-
-namespace dolfin {
-
+  
+using namespace dolfin;
 %}
 
 %include "std_string.i"
 
 
-
+%typemap(python,in) real = double; 
 %typemap(python,out) real = double; 
 %typemap(python,in) uint = int; 
+%typemap(python,out) uint = int; 
+
+
+%feature("director") Function;
+%feature("director") BoundaryCondition;
+
 
 %import "dolfin.h"
+%import "dolfin/constants.h"
 
 %rename(increment) dolfin::NodeIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
@@ -91,8 +98,8 @@ namespace dolfin {
 %include "dolfin/EdgeIterator.h"
 %include "dolfin/FaceIterator.h"
 %include "dolfin/MeshIterator.h"
-%include "dolfin/MeshIterator.h"
-%include "dolfin/MeshIterator.h"
+%include "dolfin/UnitSquare.h"
+%include "dolfin/UnitCube.h"
 
 /* modules */
 

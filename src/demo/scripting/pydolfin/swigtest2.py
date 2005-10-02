@@ -15,3 +15,4 @@ while not ci.end():
     print "cell(" + str(cell.id()) + "): ",
     print "h: " + str(cell.diameter())
     ci.increment()
+
