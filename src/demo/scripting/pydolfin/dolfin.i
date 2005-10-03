@@ -2,6 +2,8 @@
 
 %{
 #include <dolfin.h>
+#include "PoissonTest.h"
+
 #include <string>
   
 using namespace dolfin;
@@ -26,6 +28,11 @@ using namespace dolfin;
 %rename(increment) dolfin::NodeIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
+
+%rename(PoissonBilinearForm) dolfin::Poisson::BilinearForm;
+%rename(PoissonLinearForm) dolfin::Poisson::LinearForm;
+%rename(PoissonBilinearFormTestElement) dolfin::Poisson::BilinearFormTestElement;
+%rename(PoissonBilinearFormTrialElement) dolfin::Poisson::BilinearFormTrialElement;
 
 
 /* DOLFIN public interface */
@@ -106,3 +113,4 @@ using namespace dolfin;
 /* poisson */
 
 %include "dolfin/PoissonSolver.h"
+%include "PoissonTest.h"

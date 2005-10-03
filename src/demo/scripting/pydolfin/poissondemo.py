@@ -23,8 +23,7 @@ class SimpleBC(BoundaryCondition):
     
 f = Source()
 bc = SimpleBC()
-mesh = UnitSquare(20, 20)
-testnode = mesh.node(10)
+mesh = UnitSquare(5, 5)
 
 PoissonSolver_solve(mesh, f, bc)
 
