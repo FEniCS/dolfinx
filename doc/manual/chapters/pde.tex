@@ -48,10 +48,18 @@ functions $\{\varphi_i\}_{i=1}^N,\{\hat \varphi_i\}_{i=1}^N$,
 and thus the FEM method (\ref{pde:poisson:fem}) is specified by the 
 variational form and the basis functions of $V_h$ and $\hat V_h$. 
 
+\section{Finite elements and \fiat{}}
+
+Finite element basis functions in \dolfin{} are defined using \fiat{}, 
+which supports the generation of arbitrary order Lagrange finite 
+elements on lines, triangles, and tetrahedra. 
+Upcoming versions of \fiat{} will also support Hermite and nonconforming 
+elements as well as H(div) and H(curl) elements such as Raviart-Thomas and Nedelec.
+
 \section{Compiling the variational form with \ffc{}}
 
 In \dolfin{} a PDE is defined in variational form using tensor notation 
-in a \texttt{.form} file, which is compiled using \ffc{}. 
+in a \texttt{.form} file, which is compiled using the {\em FEniCS Form Compiler} \ffc{}. 
 
 In the language of \ffc{}, with $V_h=\hat V_h$ the space of piecewise linear Lagrange 
 finite elements on a tetrahedral mesh, (\ref{pde:poisson:fem}) is defined as:  
@@ -65,7 +73,10 @@ f = Function(element)
 a = v.dx(i)*u.dx(i)*dx
 L = v*f*dx
 \end{code}
-where \texttt{*dx} signifies integration over the domain $\Omega$. 
+where \texttt{*dx} signifies integration over the domain $\Omega$, and 
+the finite element space is constructed using \fiat{}. 
+\dolfin{} is not communicating directly with \fiat{}, but only through 
+\ffc{} in the definition of the variational form in the \texttt{.form} file.  
 
 Compiling the file with 
 \begin{code}
@@ -99,17 +110,64 @@ FEM::assemble(a,L,A,b,mesh);
 In the \texttt{assemble()} function the element matrices and vectors are 
 computed by calling the function \texttt{eval()} in the classes 
 \texttt{Bilinearform} and \texttt{Linearform}. 
-The \texttt{eval()} function at a certain element in the assebly algorithm 
-takes as argument an \texttt{AffineMap} object, 
+The \texttt{eval()} functions at a certain element in the assembly algorithm 
+take as argument an \texttt{AffineMap} object, 
 describing the mapping from the reference element to the actual element, 
 by computing the jacobian $J$ of the mapping (also $J^{-1}$ and $det(J)$ 
 are computed).  
 
-\section{Boundary conditions}
+\section{Specifying boundary conditions and data}
 
-\section{Finite elements}
+The boundary conditions are specified by defining a new subclass 
+of the class \texttt{BoundaryCondition}, 
+which we here will name \texttt{MyBC}: 
+\begin{code}
+  class MyBC : public BoundaryCondition
+  \{
+    const BoundaryValue operator() (const Point& p)
+    \{
+      BoundaryValue value;
+      if ( std::abs(p.x - 0.0) < DOLFIN_EPS ) value = 0.0;
+      if ( std::abs(p.x - 1.0) < DOLFIN_EPS ) value = 0.0;
+      if ( std::abs(p.y - 0.0) < DOLFIN_EPS ) value = 0.0;
+      if ( std::abs(p.y - 1.0) < DOLFIN_EPS ) value = 0.0;
+      if ( std::abs(p.z - 0.0) < DOLFIN_EPS ) value = 0.0;
+      if ( std::abs(p.z - 1.0) < DOLFIN_EPS ) value = 0.0;
+        return value;
+    \}
+  \};
+\end{code}
+where we have assumed homogeneous Dirichlet boundary conditions for the 
+unit cube. 
+We only need to specify the boundary condition explicitly on the
+Dirichlet boundary. On the remaining part of the boundary, \dolfin{}
+assumes homogeneous Neumann boundary conditions by default.
 
-Finite Element by Ciarlet, FIAT, \ffc{}  
+The boundary condition is then imposed as an argument for 
+the \texttt{assemble()} function. 
+\begin{code}
+MyBC bc; 
+FEM::assemble(a,L,A,b,mesh,bc);
+\end{code}
+
+There is currently no easy way to impose non-homogeneous
+Neumann boundary conditions or other combinations of boundary
+conditions. This will be added to a future release of \dolfin{}.
+
+The right-hand side $f$ of (\ref{pde:poisson:strong}) is similarly 
+specified by defining a new subclass of \texttt{Function}, which we
+here will name \texttt{MyFunction}, and overloading the evaluation
+operator: 
+\begin{code}
+  class MyFunction : public Function
+  \{
+    real operator() (const Point& p) const
+    \{
+      return p.x*p.z*sin(p.y);
+    \}
+  \};
+\end{code}
+with the source $f(x, y, z) = x z \sin(y)$. 
 
 \section{Computation of Element matrices and vectors} 
 
