@@ -86,6 +86,17 @@ generates a file \texttt{Poisson.h}, containing classes for
 the bilinear form $a(\cdot,\cdot)$ and the linear form $L(\cdot)$, 
 and classes for the finite element spaces $V_h$ and $\hat V_h$. 
 
+\section{Element matrices and vectors} 
+
+The element matrices and vectors for a given cell may be factored 
+into two tensors, with one tensor depending on the geometry of the cell, 
+and the other tensor only involving integration of products of 
+basis functions and their derivatives over the reference element.  
+
+For efficiency in the computation of the element matrices 
+and vectors, \ffc{} precomputes the tensors that are independent of 
+the geometry of a certain cell. 
+
 \section{Assemble matrices and vectors}
 
 The class \texttt{FEM} automates the assembly algorithm, constructing a linear 
@@ -168,13 +179,6 @@ operator:
   \};
 \end{code}
 with the source $f(x, y, z) = x z \sin(y)$. 
-
-\section{Computation of Element matrices and vectors} 
-
-divide element matrix into geometry tensor and integration 
-over reference element FErari
-
-precomputation of integrals, quadrature, tensorrepresentation factored out, \ffc{} 
 
 \section{Initial value problems}
 
