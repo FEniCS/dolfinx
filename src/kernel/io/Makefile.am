@@ -10,6 +10,7 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/TecplotFile.h \
                          dolfin/VTKFile.h \
                          dolfin/XMLFile.h \
+                         dolfin/XMLForm.h \
                          dolfin/XMLMesh.h \
                          dolfin/XMLMatrix.h \
                          dolfin/XMLObject.h \
@@ -27,6 +28,7 @@ libdolfin_io_a_SOURCES = File.cpp \
                          TecplotFile.cpp \
                          VTKFile.cpp \
                          XMLFile.cpp \
+                         XMLForm.cpp \
                          XMLMesh.cpp \
                          XMLMatrix.cpp \
                          XMLObject.cpp \

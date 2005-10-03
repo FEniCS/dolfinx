@@ -48,6 +48,11 @@ int main()
   MyBC bc;
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
+
+
+  //File xmlfile("Poisson-0.xml");
+  //xmlfile >> a;
+
   
   // Assemble linear system
   Matrix A;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005
+// Last changed: 2005-10-02
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -18,8 +18,10 @@ namespace dolfin
   class Function;
   class Sample;
   class ParameterList;
+  class Form;
   
-  class GenericFile {
+  class GenericFile
+  {
   public:
     
     GenericFile(const std::string filename);
@@ -33,6 +35,7 @@ namespace dolfin
     virtual void operator>> (Function& u);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (ParameterList& parameters);
+    virtual void operator>> (Form& form);
     
     // Output
     
@@ -42,6 +45,7 @@ namespace dolfin
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (ParameterList& parameters);
+    virtual void operator<< (Form& form);
     
     void read();
     void write();

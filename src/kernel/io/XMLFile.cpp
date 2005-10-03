@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2005
+// Last changed: 2005-10-02
 
 #include <stdarg.h>
 
@@ -15,12 +15,13 @@
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
-#include <dolfin/XMLFile.h>
 #include <dolfin/XMLObject.h>
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
 #include <dolfin/XMLParameterList.h>
+#include <dolfin/XMLForm.h>
+#include <dolfin/XMLFile.h>
 
 using namespace dolfin;
 
@@ -66,6 +67,14 @@ void XMLFile::operator>>(ParameterList& parameters)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLParameterList(parameters);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(Form& form)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLForm(form);
   parseFile();
 }
 //-----------------------------------------------------------------------------

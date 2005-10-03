@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-12
-// Last changed: 2005
+// Last changed: 2005-10-02
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -60,6 +60,11 @@ void GenericFile::operator>>(ParameterList& parameters)
   read_not_impl("ParameterList");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator>>(Form& form)
+{
+  read_not_impl("Form");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Vector& x)
 {
   write_not_impl("Vector");
@@ -88,6 +93,11 @@ void GenericFile::operator<<(Sample& sample)
 void GenericFile::operator<<(ParameterList& parameters)
 {
   write_not_impl("ParameterList");
+}
+//-----------------------------------------------------------------------------
+void GenericFile::operator<<(Form& form)
+{
+  write_not_impl("Form");
 }
 //-----------------------------------------------------------------------------
 void GenericFile::read()

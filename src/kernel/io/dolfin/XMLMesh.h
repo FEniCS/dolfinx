@@ -2,18 +2,20 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005
+// Last changed: 2005-10-02
 
 #ifndef __XML_MESH_H
 #define __XML_MESH_H
 
 #include <dolfin/XMLObject.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
   
-  class XMLMesh : public XMLObject {
+  class XMLMesh : public XMLObject
+  {
   public:
 
     XMLMesh(Mesh& mesh_);

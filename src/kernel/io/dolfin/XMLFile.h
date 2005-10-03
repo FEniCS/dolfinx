@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005-09-30
+// Last changed: 2005-10-02
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -18,6 +18,8 @@ namespace dolfin
   class Matrix;
   class Mesh;
   class ParameterList;
+  class Form;
+
   class XMLObject;
   
   class XMLFile : public GenericFile
@@ -33,6 +35,7 @@ namespace dolfin
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (ParameterList& parameters);
+    void operator>> (Form& form);
     
     // Output
     

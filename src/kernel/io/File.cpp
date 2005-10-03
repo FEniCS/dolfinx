@@ -131,6 +131,13 @@ void File::operator>>(ParameterList& parameters)
   *file >> parameters;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(Form& form)
+{
+  file->read();
+  
+  *file >> form;
+}
+//-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)
 {
   file->write();
@@ -171,5 +178,12 @@ void File::operator<<(ParameterList& parameters)
   file->write();
   
   *file << parameters;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(Form& form)
+{
+  file->write();
+  
+  *file << form;
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-09-30
+// Last changed: 2005-10-02
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -21,8 +21,10 @@ namespace dolfin
   class Sample;
   class ParameterList;
   class GenericFile;
+  class Form;
   
-  class File {
+  class File
+  {
   public:
     
     enum Type { xml, matlab, octave, opendx, gid, tecplot, vtk };
@@ -32,14 +34,15 @@ namespace dolfin
     ~File();
     
     // Input
-    
+  
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (Function& u);
     void operator>> (Sample& sample);
     void operator>> (ParameterList& parameters);
-    
+    void operator>> (Form& form);
+  
     // Output
     
     void operator<< (Vector& x);
@@ -48,6 +51,7 @@ namespace dolfin
     void operator<< (Function& u);
     void operator<< (Sample& sample);
     void operator<< (ParameterList& parameters);
+    void operator<< (Form& form);
     
   private:
     
