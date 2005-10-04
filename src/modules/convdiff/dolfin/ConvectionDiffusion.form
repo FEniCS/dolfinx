@@ -4,15 +4,15 @@
 # Modified by Garth N. Wells 2005
 #
 # First added:  2005-04-04
-# Last changed: 2005-07-08
+# Last changed: 2005-10-03
 #
 # The bilinear form a(u,v) and linear form L(v) for
 # convection-diffusion using cG(1)cG(1) with SUPG stabilisation.
 #
 # Compile this form with FFC: ffc ConvectionDiffusion.form.
 
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = FiniteElement("Vector Lagrange", "triangle", 1)
+scalar   = FiniteElement("Lagrange", "triangle", 1)
+vector   = FiniteElement("Vector Lagrange", "triangle", 1)
 constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
 v           = BasisFunction(scalar) # test function
@@ -26,10 +26,16 @@ k           = Constant()            # time step
 c           = Constant()            # diffusion
 tau         = Constant()            # stabilisation parameter
 
-beta         = tau*0.5*h*inv_w_norm               # stabiliation term
-residual1    = (w[j]*u1.dx(j) - c*u1.dx(j).dx(j)) # "steady" residual at next time step
-residual0    = (w[j]*u0.dx(j) - c*u0.dx(j).dx(j)) # "steady" residual at previous time step
-SUPG_weight  = beta*w[i]*v.dx(i)                  # SUPG weighting
+beta        = 0.5*mult(tau, mult(h,inv_w_norm))  # stabiliation term
+r1          = dot(w, grad(u1)) - c*div(grad(u1)) # "steady" residual at next time step
+r0          = dot(w, grad(u0)) - c*div(grad(u0)) # "steady" residual at previous time step
+SUPG        = beta*dot(w, grad(v))               # SUPG weighting
 
-a = v*u1*dx + SUPG_weight*u1*dx + 0.5*k*(v*w[i]*u1.dx(i)*dx + c*v.dx(i)*u1.dx(i)*dx  + SUPG_weight*residual1*dx)  
-L = v*u0*dx + SUPG_weight*u0*dx - 0.5*k*(v*w[i]*u0.dx(i)*dx + c*v.dx(i)*u0.dx(i)*dx  + SUPG_weight * residual0*dx)  + v*f*dx + SUPG_weight*f*dx
+a_galerkin  = v*u1*dx + 0.5*k*(v*dot(w, grad(u1))*dx + c*dot( grad(v), grad(u1) )*dx) 
+a_stabilise = SUPG*u1*dx + 0.5*k*SUPG*r1*dx
+
+L_galerkin  = v*u0*dx - 0.5*k*(v*dot(w, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + v*f*dx 
+L_stabilise = SUPG*u0*dx - 0.5*k*SUPG*r0*dx + SUPG*f*dx
+
+a = a_galerkin + a_stabilise
+L = L_galerkin + L_stabilise

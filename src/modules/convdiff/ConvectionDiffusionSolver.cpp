@@ -33,7 +33,7 @@ void ConvectionDiffusionSolver::solve()
   Vector x0, x1, b;           // vectors 
   GMRES solver;               // linear system solver
   Function u0(x0, mesh);      // function at left end-point
-  File file("convdiff.tec");  // file for saving solution
+  File file("convdiff.pvd");  // file for saving solution
 
   // vectors for functions for element size and inverse of velocity norm
   Vector hvector, wnorm_vector; 
