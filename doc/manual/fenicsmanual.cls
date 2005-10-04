@@ -30,6 +30,14 @@
 \allsectionsfont{\sffamily}
 \makeindex
 
+%--- Remove header and footer from blank pages  ---
+\let\origdoublepage\cleardoublepage
+\newcommand{\clearemptydoublepage}{%
+  \clearpage
+  {\pagestyle{empty}\origdoublepage}%
+}
+\let\cleardoublepage\clearemptydoublepage
+
 %--- Print index at end of document ---
 \AtEndDocument{\cleardoublepage\printindex}
 
