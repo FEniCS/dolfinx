@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005
+// Last changed: 2005-10-03
 
 #ifndef __XML_OBJECT_H
 #define __XML_OBJECT_H
@@ -12,9 +12,11 @@
 
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class XMLObject {
+  class XMLObject
+  {
   public:
     
     XMLObject();

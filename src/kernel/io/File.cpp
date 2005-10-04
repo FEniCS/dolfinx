@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-07-05
+// Last changed: 2005-10-03
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -131,11 +131,11 @@ void File::operator>>(ParameterList& parameters)
   *file >> parameters;
 }
 //-----------------------------------------------------------------------------
-void File::operator>>(Form& form)
+void File::operator>>(BLASFormData& blas)
 {
   file->read();
   
-  *file >> form;
+  *file >> blas;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)
@@ -180,10 +180,10 @@ void File::operator<<(ParameterList& parameters)
   *file << parameters;
 }
 //-----------------------------------------------------------------------------
-void File::operator<<(Form& form)
+void File::operator<<(BLASFormData& blas)
 {
   file->write();
   
-  *file << form;
+  *file << blas;
 }
 //-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-10-02
+// Last changed: 2005-10-03
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -20,8 +20,8 @@ namespace dolfin
   class Function;
   class Sample;
   class ParameterList;
+  class BLASFormData;
   class GenericFile;
-  class Form;
   
   class File
   {
@@ -41,8 +41,8 @@ namespace dolfin
     void operator>> (Function& u);
     void operator>> (Sample& sample);
     void operator>> (ParameterList& parameters);
-    void operator>> (Form& form);
-  
+    void operator>> (BLASFormData& blas);
+
     // Output
     
     void operator<< (Vector& x);
@@ -51,7 +51,7 @@ namespace dolfin
     void operator<< (Function& u);
     void operator<< (Sample& sample);
     void operator<< (ParameterList& parameters);
-    void operator<< (Form& form);
+    void operator<< (BLASFormData& blas);
     
   private:
     

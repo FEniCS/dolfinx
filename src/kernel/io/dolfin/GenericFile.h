@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005-10-02
+// Last changed: 2005-10-03
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -18,7 +18,7 @@ namespace dolfin
   class Function;
   class Sample;
   class ParameterList;
-  class Form;
+  class BLASFormData;
   
   class GenericFile
   {
@@ -35,7 +35,7 @@ namespace dolfin
     virtual void operator>> (Function& u);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (ParameterList& parameters);
-    virtual void operator>> (Form& form);
+    virtual void operator>> (BLASFormData& blas);
     
     // Output
     
@@ -45,7 +45,7 @@ namespace dolfin
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (ParameterList& parameters);
-    virtual void operator<< (Form& form);
+    virtual void operator<< (BLASFormData& blas);
     
     void read();
     void write();

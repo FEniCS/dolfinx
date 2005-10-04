@@ -82,11 +82,11 @@ mpi_found = @mpi_found@
 petsc_found = @petsc_found@
 
 SUBDIRS = dolfin
-include_HEADERS = dolfin/dolfin_form.h                            dolfin/BilinearForm.h                            dolfin/Form.h                            dolfin/LinearForm.h                            dolfin/PDE.h
+include_HEADERS = dolfin/dolfin_form.h                            dolfin/BLASFormData.h                            dolfin/BilinearForm.h                            dolfin/Form.h                            dolfin/LinearForm.h                            dolfin/PDE.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-form.a
-libdolfin_form_a_SOURCES = BilinearForm.cpp                            Form.cpp                            LinearForm.cpp                            PDE.cpp
+libdolfin_form_a_SOURCES = BLASFormData.cpp                            BilinearForm.cpp                            Form.cpp                            LinearForm.cpp                            PDE.cpp
 
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
@@ -98,7 +98,8 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 libdolfin_form_a_LIBADD = 
-libdolfin_form_a_OBJECTS =  BilinearForm.o Form.o LinearForm.o PDE.o
+libdolfin_form_a_OBJECTS =  BLASFormData.o BilinearForm.o Form.o \
+LinearForm.o PDE.o
 AR = ar
 CXXFLAGS = @CXXFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -113,8 +114,8 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DEP_FILES =  .deps/BilinearForm.P .deps/Form.P .deps/LinearForm.P \
-.deps/PDE.P
+DEP_FILES =  .deps/BLASFormData.P .deps/BilinearForm.P .deps/Form.P \
+.deps/LinearForm.P .deps/PDE.P
 SOURCES = $(libdolfin_form_a_SOURCES)
 OBJECTS = $(libdolfin_form_a_OBJECTS)
 

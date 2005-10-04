@@ -18,7 +18,7 @@ namespace dolfin
   class Matrix;
   class Mesh;
   class ParameterList;
-  class Form;
+  class BLASFormData;
 
   class XMLObject;
   
@@ -35,7 +35,7 @@ namespace dolfin
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (ParameterList& parameters);
-    void operator>> (Form& form);
+    void operator>> (BLASFormData& blas);
     
     // Output
     

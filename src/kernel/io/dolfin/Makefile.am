@@ -8,7 +8,7 @@ EXTRA_DIST = dolfin_io.h \
              OctaveFile.h \
              TecplotFile.h \
              VTKFile.h \
-             XMLForm.h \
+             XMLBLASFormData.h \
              XMLFile.h \
              XMLMatrix.h \
              XMLMesh.h \

@@ -49,11 +49,6 @@ int main()
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
 
-
-  //File xmlfile("Poisson-0.xml");
-  //xmlfile >> a;
-
-  
   // Assemble linear system
   Matrix A;
   Vector x, b;

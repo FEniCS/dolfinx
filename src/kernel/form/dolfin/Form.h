@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-05-29
+// Last changed: 2005-10-03
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -12,6 +12,7 @@
 #include <dolfin/Function.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/BLASFormData.h>
 
 namespace dolfin
 {
@@ -40,9 +41,6 @@ namespace dolfin
     // Update coefficients
     void updateCoefficients(const AffineMap& map);
 
-    // Initialize form data for BLAS
-    void initBLAS(const char* filename);
-
     // List of finite elements for functions (coefficients)
     Array<const FiniteElement*> elements;
 
@@ -55,9 +53,8 @@ namespace dolfin
     // Number of functions
     uint num_functions;
 
-    // Form data for BLAS
-    real* blas_A;
-    real* blas_G;
+    // BLAS form data
+    BLASFormData blas;
 
   };
 

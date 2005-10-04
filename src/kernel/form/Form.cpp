@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-21
-// Last changed: 2005-09-29
+// Last changed: 2005-10-03
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -13,7 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(uint num_functions)
-  : c(0), num_functions(num_functions), blas_A(0), blas_G(0)
+  : c(0), num_functions(num_functions)
 {
   // Initialize list of functions
   if ( num_functions > 0 )
@@ -46,10 +46,6 @@ Form::~Form()
       delete [] c[i];
     delete [] c;
   }
-
-  // Delete form data for BLAS
-  delete [] blas_A;
-  delete [] blas_G;
 }
 //-----------------------------------------------------------------------------
 void Form::update(const AffineMap& map)
@@ -89,11 +85,5 @@ void Form::updateCoefficients(const AffineMap& map)
     dolfin_assert(functions[i]);
     functions[i]->interpolate(c[i], map);
   }
-}
-//-----------------------------------------------------------------------------
-void initBLAS(const char* filename)
-{
-  //File file(filename);
-  //file << *this;
 }
 //-----------------------------------------------------------------------------
