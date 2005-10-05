@@ -2,6 +2,13 @@
 \label{sec:pde}
 \index{partial differential equations}
 
+\dolfin{} provides a general interface for defining a partial differential 
+equation (PDE) in variational form. The variational form is compiled 
+with \ffc{}, which generates code for the assembly of a matrix and a 
+vector, corresponding to the discretization of the PDE with a user-defined  
+finite element method (FEM), where the basis functions of the FEM space 
+are constructed using \fiat{}. 
+
 \section{Boundary value problems}
 
 As a prototype of a boundary value problem in $\Bbb{R}^d$ we consider the 
@@ -13,7 +20,7 @@ u(x)&=&0 \quad x\in \partial \Omega. \nonumber
 
 \section{Variational formulation}
 
-A variational formulation of (\ref{pde:poisson:strong}) take the form: 
+A variational formulation of (\ref{pde:poisson:strong}) takes the form: 
 find $u\in V$ such that  
 \begin{equation}\label{pde:poisson:weak}
 a(v,u)=L(v) \quad \forall v\in \hat V, 
@@ -29,23 +36,23 @@ where we employ tensor notation so that the double index $i$ means summation fro
 and $L(\cdot):\hat V\rightarrow \Bbb{R}$ is a linear form acting on the test space $\hat V$,  
 defined by 
 \begin{equation}
-L(v)=\int_{\Omega} f v ~dx.  
+L(v)=\int_{\Omega} v f ~dx.  
 \end{equation}
 For this problem we typically use $V=\hat V=H^1_0(\Omega)$, with $H^1_0(\Omega)$ 
 the standard Sobolev space of square integrable functions with also their first 
 derivatives square integrable (in the Lebesgue sense), 
 with the functions being zero on the boundary (in the sense of traces).   
 
-The Finite Element Method FEM for (\ref{pde:poisson:weak}) is now: 
+The FEM metod for (\ref{pde:poisson:weak}) is now: 
 find $U\in V_h$ such that  
 \begin{equation}\label{pde:poisson:fem}
 a(v,U)=L(v) \quad \forall v\in \hat V_h, 
 \end{equation}
 where $V_h\subset V$ and $\hat V_h\subset \hat V$ are finite dimensional 
-subspaces of dimension $N$. 
+subspaces of dimension $M$. 
 The finite element spaces $V_h,\hat V_h$ are characterized by their sets of basis 
-functions $\{\varphi_i\}_{i=1}^N,\{\hat \varphi_i\}_{i=1}^N$, 
-and thus the FEM method (\ref{pde:poisson:fem}) is specified by the 
+functions $\{\varphi_i\}_{i=1}^M,\{\hat \varphi_i\}_{i=1}^M$. 
+The FEM method (\ref{pde:poisson:fem}) is thus specified by the 
 variational form and the basis functions of $V_h$ and $\hat V_h$. 
 
 \section{Finite elements and \fiat{}}
@@ -59,7 +66,7 @@ elements as well as H(div) and H(curl) elements such as Raviart-Thomas and Nedel
 \section{Compiling the variational form with \ffc{}}
 
 In \dolfin{} a PDE is defined in variational form using tensor notation 
-in a \texttt{.form} file, which is compiled using the {\em FEniCS Form Compiler} \ffc{}. 
+in a \texttt{.form} file, which is compiled using \ffc{}. 
 
 In the language of \ffc{}, with $V_h=\hat V_h$ the space of piecewise linear Lagrange 
 finite elements on a tetrahedral mesh, (\ref{pde:poisson:fem}) is defined as:  
@@ -78,7 +85,7 @@ the finite element space is constructed using \fiat{}.
 \dolfin{} is not communicating directly with \fiat{}, but only through 
 \ffc{} in the definition of the variational form in the \texttt{.form} file.  
 
-Compiling the file with 
+Compiling the \texttt{.form} file with 
 \begin{code}
 # ffc Poisson.form
 \end{code}
@@ -100,7 +107,7 @@ the geometry of a certain cell.
 \section{Assemble matrices and vectors}
 
 The class \texttt{FEM} automates the assembly algorithm, constructing a linear 
-system of equations from a given PDE, 
+system of equations from a PDE, 
 given in the form of a variational problem (\ref{pde:poisson:weak}), 
 with a bilinear form $a(\cdot,\cdot)$ and a linear form $L(\cdot)$. 
 
@@ -150,12 +157,13 @@ which we here will name \texttt{MyBC}:
 \end{code}
 where we have assumed homogeneous Dirichlet boundary conditions for the 
 unit cube. 
-We only need to specify the boundary condition explicitly on the
-Dirichlet boundary. On the remaining part of the boundary, \dolfin{}
-assumes homogeneous Neumann boundary conditions by default.
+We only need to specify the boundary conditions explicitly on the
+Dirichlet boundary. On the remaining part of the boundary, 
+homogeneous Neumann boundary conditions are automatically imposed 
+weakly by the variational form. 
 
-The boundary condition is then imposed as an argument for 
-the \texttt{assemble()} function. 
+The boundary conditions are then imposed as an argument to  
+the \texttt{assemble()} function: 
 \begin{code}
 MyBC bc; 
 FEM::assemble(a,L,A,b,mesh,bc);
@@ -182,6 +190,32 @@ with the source $f(x, y, z) = x z \sin(y)$.
 
 \section{Initial value problems}
 
-semidiscretization, space-time FEM, 
+A time dependent problem has to be discretized in time manually, 
+and the resulting variational form is then discretized in space 
+using \ffc{} similarly to a stationary problem, with the solution 
+at previous time steps provided as data to the \texttt{form} file. 
 
-% Insert note that constants are passed into forms as references
+For example, the form file \texttt{Heat.form} for the heat equation 
+discretized in time with the implicit Euler method, takes the form: 
+\begin{code}
+v           = BasisFunction(scalar) # test function
+u1          = BasisFunction(scalar) # value at next time step
+u0          = Function(scalar)      # value at previous time step
+f           = Function(scalar)      # source term
+k           = Constant()            # time step
+
+a = v*u1*dx + k*v.dx(i)*u1.dx(i)*dx 
+L = v*u0*dx + v*f*dx 
+\end{code}
+which generates a file \texttt{Heat.h} when compiled with \ffc{}. 
+To initializations the corresponding forms we write:  
+\begin{code}
+real k;                  // time step
+Vector x0;               // vector containing dofs for u0
+Function u0(x0, mesh);   // solution at previous time step 
+
+Heat::BilinearForm a(k);
+Heat::LinearForm L(u0,f,k);
+\end{code}
+
+
