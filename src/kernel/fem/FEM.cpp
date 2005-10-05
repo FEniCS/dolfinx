@@ -8,6 +8,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
+#include <dolfin/timeinfo.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/AffineMap.h>
@@ -65,8 +66,16 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     test_element.dofmap(test_dofs, *cell, mesh);
     trial_element.dofmap(trial_dofs, *cell, mesh);
 
+
+    //tic();
+    //for (int i = 0; i < 100000; i++)
+    //{
+    
     // Compute element matrix
     a.eval(block, map);
+        
+    //}
+    //cout << "Time to assemble: " << toc() << endl;
 
     // Add element matrix to global matrix
     A.add(block, test_dofs, m, trial_dofs, n);

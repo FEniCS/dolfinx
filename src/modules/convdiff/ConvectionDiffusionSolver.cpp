@@ -1,7 +1,7 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-//  Modified by Garth N. Wells, 2005
+// Modified by Garth N. Wells, 2005
 //
 // First added:  2003
 // Last changed: 2005-09-16
@@ -113,25 +113,24 @@ void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Function& wnorm,
   AffineMap map;
   real convection_norm;
 	
-	wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
-
-	for (CellIterator cell(mesh); !cell.end(); ++cell)
+  wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
+  
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     map.update(*cell);
     wn_element.dofmap(dofs, *cell, mesh);
     wn_element.pointmap(points, components, map);
     for (uint i = 0; i < n; i++)
     {
-     convection_norm = 0.0;
-		 for(uint j=0; j < m; ++j) convection_norm += pow(w(points[i], j), 2);		  
-		 wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
+      convection_norm = 0.0;
+      for(uint j=0; j < m; ++j) convection_norm += pow(w(points[i], j), 2);		  
+      wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
     }
-	}
-	
-	// Delete data
+  }
+  
+  // Delete data
   delete [] dofs;
   delete [] components;
   delete [] points;
-
-
 }
+//-----------------------------------------------------------------------------

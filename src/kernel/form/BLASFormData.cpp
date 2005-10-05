@@ -42,6 +42,10 @@ void BLASFormData::init(uint mi, uint ni,
   for (uint i = 0; i < data_boundary.size(); i++)
     size_boundary += data_boundary[i].size();
   
+  cout << "mi = " << mi << endl;
+  cout << "ni = " << ni << endl;
+  cout << "size_interiori = " << size_interior << endl;
+
   // Check data dimensions
   if ( mi * ni != size_interior )
     dolfin_error("Inconsistent BLAS form data for interior contribution.");
