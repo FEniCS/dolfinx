@@ -103,7 +103,7 @@ void BLASFormData::disp() const
   {
     for (uint j = 0; j < nb; j++)
     {
-      cout << Ai[i*nb + j];
+      cout << Ab[i*nb + j];
       if ( j < (nb - 1) )
 	cout << " ";
       else
@@ -124,7 +124,9 @@ void BLASFormData::init(uint m, uint n, const Array<Array<real> >& data,
   // matrices next to each other. To complicate things even more, the
   // new big matrix is stored as one big array to make BLAS happy.
 
-  *A = new real[m*n];
+  cout << "Allocating, size = " << m*n << endl;
+
+  (*A) = new real[m*n];
   uint offset_cols = 0;
   for (uint term = 0; term < data.size(); term++)
   {
@@ -139,7 +141,7 @@ void BLASFormData::init(uint m, uint n, const Array<Array<real> >& data,
     offset_cols += cols;
   }
 
-  *G = new real[n];
+  (*G) = new real[n];
   for (uint i = 0; i < n; i++)
     (*G)[i] = 0.0;
 }

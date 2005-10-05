@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-02
-// Last changed: 2005-10-03
+// Last changed: 2005-10-04
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/BLASFormData.h>
@@ -216,8 +216,6 @@ void XMLBLASFormData::done()
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readForm(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading form..." << endl;
-
   // Reset data
   data_interior.clear();
   data_boundary.clear();
@@ -225,18 +223,16 @@ void XMLBLASFormData::readForm(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readInterior(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading interior..." << endl;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readBoundary(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading boundary..." << endl;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading term..." << endl;
-
   Array<real> tensor;
 
   // Add new term and read number of rows
@@ -259,8 +255,6 @@ void XMLBLASFormData::readTerm(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readGeoTensor(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading geometry tensor..." << endl;
-
   // Read number of columns
   switch ( state )
   {
@@ -277,13 +271,11 @@ void XMLBLASFormData::readGeoTensor(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readRefTensor(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading reference tensor..." << endl;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void XMLBLASFormData::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-  cout << "Reading entry..." << endl;
-
   // Read value
   real value = 0.0;
   parseRealRequired(name, attrs, "value", value);

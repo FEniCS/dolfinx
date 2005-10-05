@@ -43,10 +43,12 @@ namespace dolfin
     real* Gi;
     real* Ab;
     real* Gb;
+    
+    /// Matrix dimensions
+    uint mi, ni;
+    uint mb, nb;
 
   private:
-    
-    uint mi, ni, mb, nb;
 
     // Initialize data (independent of interiori/boundary)
     void init(uint m, uint n, const Array<Array<real> >& data, real** A, real** G);
