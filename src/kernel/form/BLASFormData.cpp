@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-03
-// Last changed: 2005-10-03
+// Last changed: 2005-10-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/File.h>
@@ -42,10 +42,6 @@ void BLASFormData::init(uint mi, uint ni,
   for (uint i = 0; i < data_boundary.size(); i++)
     size_boundary += data_boundary[i].size();
   
-  cout << "mi = " << mi << endl;
-  cout << "ni = " << ni << endl;
-  cout << "size_interiori = " << size_interior << endl;
-
   // Check data dimensions
   if ( mi * ni != size_interior )
     dolfin_error("Inconsistent BLAS form data for interior contribution.");
@@ -127,8 +123,6 @@ void BLASFormData::init(uint m, uint n, const Array<Array<real> >& data,
   // the matrix-vector multiplications term by term, we stack the
   // matrices next to each other. To complicate things even more, the
   // new big matrix is stored as one big array to make BLAS happy.
-
-  cout << "Allocating, size = " << m*n << endl;
 
   (*A) = new real[m*n];
   uint offset_cols = 0;

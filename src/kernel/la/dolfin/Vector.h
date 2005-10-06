@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2005-09-09
+// Last changed: 2005-10-06
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -150,28 +150,23 @@ namespace dolfin
 
   };
 
-
-    /// Reference to an element of the vector
-    ///
-    /// This design is a bit confusing, since there are actually
-    /// two different ways to access an element, depending on whether the
-    /// Vector is const or not. But I don't see a clear alternative. /johanjan
-
-    class VectorElement
-    {
-    public:
-      VectorElement(uint i, Vector& x);
-      VectorElement(const VectorElement& e);
-      operator real() const;
-      const VectorElement& operator=(const VectorElement& e);
-      const VectorElement& operator=(const real a);
-      const VectorElement& operator+=(const real a);
-      const VectorElement& operator-=(const real a);
-      const VectorElement& operator*=(const real a);
-    protected:
-      uint i;
-      Vector& x;
-    };
+  /// Reference to an element of the vector
+  
+  class VectorElement
+  {
+  public:
+    VectorElement(uint i, Vector& x);
+    VectorElement(const VectorElement& e);
+    operator real() const;
+    const VectorElement& operator=(const VectorElement& e);
+    const VectorElement& operator=(const real a);
+    const VectorElement& operator+=(const real a);
+    const VectorElement& operator-=(const real a);
+    const VectorElement& operator*=(const real a);
+  protected:
+    uint i;
+    Vector& x;
+  };
 
 }
 

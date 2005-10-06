@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-10-06
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -127,6 +127,8 @@ namespace dolfin
     Mat A;
 
   };
+
+  /// Reference to an element of the vector
 
   class MatrixElement
     {

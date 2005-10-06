@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-10-06
 
 #include <iostream>
 #include <sstream>
