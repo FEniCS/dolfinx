@@ -15,7 +15,7 @@ mu    = Constant() # Lame coefficient
 f = Function(element) # Source
 
 # Dimension (FFC should provide this)
-d = len(v)
+d = element.shapedim()
 
 def epsilon(u):
     return 0.5 * (grad(u) + transp(grad(u)))
