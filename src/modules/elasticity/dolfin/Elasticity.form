@@ -14,7 +14,7 @@ mu    = Constant() # Lame coefficient
 
 f = Function(element) # Source
 
-# Dimension (FFC should provide this)
+# Dimension of domain
 d = element.shapedim()
 
 def epsilon(u):
