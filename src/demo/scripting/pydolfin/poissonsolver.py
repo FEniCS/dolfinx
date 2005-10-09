@@ -3,7 +3,8 @@ from math import *
 
 class Source(Function):
     def __call__(self, point):
-        return pi * pi * sin(pi * point.x)
+#        return pi * pi * sin(pi * point.x)
+        return point.y
 
 class SimpleBC(BoundaryCondition):
     def __call__(self, point):
@@ -46,3 +47,6 @@ file = File("poisson.m")
 file << u
 
 # Plotting should also be handled by Python modules
+
+vtkfile = File("poisson.vtk", File.VTK)
+vtkfile << u

@@ -36,7 +36,7 @@ namespace dolfin
     ~MonoAdaptiveNewtonSolver();
 
     /// Solve system
-    void solve();
+//     void solve();
 
   protected:
 

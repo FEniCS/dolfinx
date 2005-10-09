@@ -38,7 +38,7 @@ namespace dolfin
     real threshold() const;
 
     /// Use a stabilizing time step sequence
-    void stabilize(real k, uint m);
+//     void stabilize(real k, uint m);
 
   private:
 

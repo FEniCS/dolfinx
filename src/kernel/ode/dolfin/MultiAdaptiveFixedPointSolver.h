@@ -33,7 +33,7 @@ namespace dolfin
     ~MultiAdaptiveFixedPointSolver();
 
     /// Solve system
-    void solve();
+//     void solve();
 
   protected:
 

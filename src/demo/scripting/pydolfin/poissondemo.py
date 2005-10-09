@@ -23,9 +23,10 @@ class SimpleBC(BoundaryCondition):
     
 f = Source()
 bc = SimpleBC()
-mesh = UnitSquare(5, 5)
+mesh = UnitSquare(30, 30)
 
 PoissonSolver_solve(mesh, f, bc)
 
 meshfile = File("square01.xml.gz")
 meshfile << mesh
+

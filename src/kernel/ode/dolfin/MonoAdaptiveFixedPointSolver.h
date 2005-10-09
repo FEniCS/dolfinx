@@ -30,7 +30,7 @@ namespace dolfin
     ~MonoAdaptiveFixedPointSolver();
 
     /// Solve system
-    bool solve();
+//     bool solve();
 
   protected:
 
