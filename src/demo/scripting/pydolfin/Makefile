@@ -17,8 +17,8 @@ dolfin.py: dolfin.i
 	$(SWIG) -python -c++ -nodefault $(SWIGFLAGS) $<
 	mv dolfin_wrap.cxx dolfin_wrap.cpp
 
-_dolfin.so: dolfin_wrap.o PoissonTest.o
-	$(CXX) -g -shared $< -o $@ $(LFLAGS) 
+_dolfin.so: dolfin_wrap.o PoissonTest.o ODEInit.o
+	$(CXX) -g -shared $? -o $@ $(LFLAGS) 
 
 dolfin_wrap.o: dolfin_wrap.cpp
 

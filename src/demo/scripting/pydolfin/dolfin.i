@@ -2,20 +2,38 @@
 
 %{
 #include <dolfin.h>
+#include <dolfin/Settings.h>
+#include <dolfin/SettingsManager.h>
 #include "PoissonTest.h"
+#include "ODEInit.h"
 
 #include <string>
   
 using namespace dolfin;
 %}
 
-%include "std_string.i"
-
-
 %typemap(python,in) real = double; 
 %typemap(python,out) real = double; 
 %typemap(python,in) uint = int; 
 %typemap(python,out) uint = int; 
+
+// Typemap for dolfin::real array arguments in virtual methods
+// probably not very safe
+%typemap(directorin) dolfin::real [] {
+  {
+    $input = SWIG_NewPointerObj((dolfin::real *) &$1_name, $&1_descriptor, $owner);
+  }
+}
+
+
+%include "typemaps.i"
+%include "std_string.i"
+
+%include "carrays.i"
+
+%array_functions(dolfin::real, realArray);
+
+
 
 
 %feature("director") Function;
@@ -29,6 +47,8 @@ using namespace dolfin;
 %rename(increment) dolfin::NodeIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
+%rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
+%rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
 %rename(PoissonBilinearForm) dolfin::Poisson::BilinearForm;
 %rename(PoissonLinearForm) dolfin::Poisson::LinearForm;
@@ -55,6 +75,13 @@ using namespace dolfin;
 %include "dolfin/sysinfo.h"
 %include "dolfin/timeinfo.h"
 %include "dolfin/utils.h"
+
+/* settings includes */
+
+//%include "dolfin/Settings.h"
+%include "dolfin/SettingsMacros.h"
+%include "dolfin/SettingsManager.h"
+%include "dolfin/Settings.h"
 
 /* io includes */
 
@@ -147,3 +174,4 @@ using namespace dolfin;
 
 %include "dolfin/PoissonSolver.h"
 %include "PoissonTest.h"
+%include "ODEInit.h"
