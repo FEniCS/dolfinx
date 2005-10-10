@@ -79,7 +79,7 @@ namespace dolfin
     ElasticityUpdatedSigma::LinearForm::FunctionElement_2 element3;
 
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
-    Vector xsigma0, xsigma1, xepsilon1, xsigmanorm, mesh0, xjaumann1;
+    Vector xsigma0, xsigma1, xepsilon1, xsigmanorm, xjaumann1;
     Vector xtmp1, xtmp2, xsigmatmp1, xsigmatmp2;
     Vector fcontact;
     Matrix Dummy;

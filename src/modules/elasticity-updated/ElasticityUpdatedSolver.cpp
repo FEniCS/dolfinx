@@ -56,7 +56,6 @@ void ElasticityUpdatedSolver::init()
   int Nv = FEM::size(mesh, element1);
   int Nsigma = FEM::size(mesh, element2);
   int Nsigmanorm = FEM::size(mesh, element3);
-  int Nmesh = 3 * mesh.noNodes();
 
   x1_0.init(Nv);
   x1_1.init(Nv);
@@ -89,8 +88,6 @@ void ElasticityUpdatedSolver::init()
   xepsilon1.init(Nsigma);
 
   xsigmanorm.init(Nsigmanorm);
-
-  mesh0.init(Nmesh);
 
   stepresidual.init(Nv);
 
@@ -161,6 +158,19 @@ void ElasticityUpdatedSolver::init()
   }
   delete [] dofs;
   }
+
+  // The mesh points are the initial values of u
+  int offset = mesh.noNodes();
+  for (NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    Node& node = *n;
+    int nid = node.id();
+
+    x1_1(0 * offset + nid) = node.coord().x;
+    x1_1(1 * offset + nid) = node.coord().y;
+    x1_1(2 * offset + nid) = node.coord().z;
+  }
+
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::preparestep()
@@ -180,24 +190,24 @@ void ElasticityUpdatedSolver::step()
   x2_0 = x2_1;
   xsigma0 = xsigma1;
 
-  // Copy mesh values
-
-  for (NodeIterator n(&mesh); !n.end(); ++n)
-  {
-    Node& node = *n;
-    int nid = node.id();
-
-    mesh0(3 * nid + 0) = node.coord().x;
-    mesh0(3 * nid + 1) = node.coord().y;
-    mesh0(3 * nid + 2) = node.coord().z;
-  }
-  
   t += k;
   cout << "t: " << t << endl;
   
   for(int iter = 0; iter < maxiters; iter++)
   {
     prepareiteration();
+
+    // Update the mesh
+    for (NodeIterator n(&mesh); !n.end(); ++n)
+    {
+      Node& node = *n;
+
+      node.coord().x = u1(node, 0);
+      node.coord().y = u1(node, 1);
+      node.coord().z = u1(node, 2);
+    }
+
+
 
     // Compute norm of stress (sigmanorm)
     if(do_plasticity)
@@ -316,21 +326,6 @@ void ElasticityUpdatedSolver::step()
 //     cout << "x2_1:" << endl;
 //     x2_1.disp();
 
-    // Update the mesh
-    for (NodeIterator n(&mesh); !n.end(); ++n)
-    {
-      Node& node = *n;
-      int nid = node.id();
-      
-//       cout << "k * v1(0): " << k * v1(node, 0) << endl;
-//       cout << "k * v1(1): " << k * v1(node, 1) << endl;
-//       cout << "k * v1(2): " << k * v1(node, 2) << endl;
-
-      node.coord().x = mesh0(3 * nid + 0) + k * v1(node, 0);
-      node.coord().y = mesh0(3 * nid + 1) + k * v1(node, 1);
-      node.coord().z = mesh0(3 * nid + 2) + k * v1(node, 2);
-    }
-    
     if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
     {
       cout << "converged" << endl;
