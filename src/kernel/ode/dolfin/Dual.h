@@ -39,7 +39,7 @@ namespace dolfin {
   {
   public:
 
-    Dual() : ODE(1) {}
+    Dual() : ODE(1, 1.0) {}
 
     /// Constructor
     //Dual(ODE& primal);

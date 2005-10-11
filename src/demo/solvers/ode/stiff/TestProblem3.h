@@ -12,13 +12,10 @@ class TestProblem3 : public ODE
 {
 public:
   
-  TestProblem3() : ODE(2), A(2,2)
+  TestProblem3() : ODE(2, 1.0), A(2,2)
   {
     dolfin_info("A non-normal test problem, critically damped oscillation");
     dolfin_info("with eigenvalues l1 = l2 = 100.");
-
-    // Final time
-    T = 1.0;
 
     // The matrix A
     A(0,0) = 0.0;    

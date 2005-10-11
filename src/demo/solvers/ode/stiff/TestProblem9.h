@@ -12,15 +12,12 @@ class TestProblem9 : public ODE
 {
 public:
   
-  TestProblem9() : ODE(3)
+  TestProblem9() : ODE(3, 30.0)
   {
     dolfin_info("A mixed stiff/nonstiff test problem.");
 
     // Parameters
     lambda = 1000.0;
-
-    // Final time
-    T = 30.0;
 
     // Compute sparsity
     sparse();

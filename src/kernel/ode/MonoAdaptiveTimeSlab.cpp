@@ -19,6 +19,7 @@ using namespace dolfin;
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : TimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
 {
+  cout << "Choosing solver" << endl;
   // Choose solver
   solver = chooseSolver();
 
@@ -37,9 +38,12 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   // Initialize solution
   x.init(nj);
 
+  cout << "Evaluating f (u0) (only cG)" << endl;
   // Evaluate f at initial data for cG(q)
   if ( method->type() == Method::cG )
     ode.f(u0, 0.0, f);
+
+  cout << "ctor end" << endl;
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
@@ -77,10 +81,14 @@ real MonoAdaptiveTimeSlab:: build(real a, real b)
   //cout << "Mono-adaptive time slab: finished building between "
   //     << a << " and " << b << endl;
 
+  cout << "Updating ODE" << endl;
+  cout << "u0: " << u0[0] << endl;
+  cout << "t: " << a << endl;
   // Update at t = 0.0
   if ( a < DOLFIN_EPS )
     ode.update(u0, a, false);
 
+  cout << "Build end" << endl;
   return b;
 }
 //-----------------------------------------------------------------------------

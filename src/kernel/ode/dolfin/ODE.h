@@ -28,7 +28,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    ODE(uint N);
+    ODE(uint N, real T);
     
     /// Destructor
     virtual ~ODE();

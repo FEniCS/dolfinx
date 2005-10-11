@@ -11,8 +11,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ParticleSystem::ParticleSystem(unsigned int n, unsigned int dim) : 
-  ODE(2*dim*n), n(n), dim(dim), offset(0), u(0)
+ParticleSystem::ParticleSystem(unsigned int n, real T, unsigned int dim) : 
+  ODE(2*dim*n, T), n(n), dim(dim), offset(0), u(0)
 {
   // Check dimension
   if ( dim == 0 )

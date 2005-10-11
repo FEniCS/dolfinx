@@ -34,7 +34,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    ParticleSystem(unsigned int n, unsigned int dim = 3);
+    ParticleSystem(unsigned int n, real T, unsigned int dim = 3);
 
     /// Destructor
     ~ParticleSystem();

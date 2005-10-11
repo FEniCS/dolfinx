@@ -13,12 +13,9 @@ class TestProblem5 : public ODE
 {
 public:
   
-  TestProblem5() : ODE(6)
+  TestProblem5() : ODE(6, 180.0)
   {
     dolfin_info("The Chemical Akzo-Nobel problem.");
-
-    // Final time
-    T = 180;
 
     // Parameters
     k1  = 18.7;

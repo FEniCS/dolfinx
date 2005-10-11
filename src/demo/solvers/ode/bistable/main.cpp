@@ -14,12 +14,9 @@ class Bistable : public ODE
 {
 public:
 
-  Bistable(Mesh& mesh) : ODE(mesh.noNodes()), mesh(mesh), A(mesh, 0.001),
+  Bistable(Mesh& mesh) : ODE(mesh.noNodes(), 20.0), mesh(mesh), A(mesh, 0.001),
 			 ufile("solution.dx"), kfile("timesteps.dx")
   {
-    // Parameters
-    T = 20.0;
-    
     // Create lumped mass matrix
     MassMatrix M(mesh);
     FEM::lump(M, m);

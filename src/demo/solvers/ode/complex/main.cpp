@@ -22,9 +22,8 @@ class Exponential : public ComplexODE
 {
 public:
   
-  Exponential() : ComplexODE(1)
+  Exponential() : ComplexODE(1, 10.0)
   {
-    T = 10.0;
   }
   
   complex z0(unsigned int i)

@@ -116,7 +116,8 @@ void Homotopy::solve()
     computePath(m);
 
     // Create and solve ODE
-    HomotopyODE ode(*this, n);
+    // FIXME: what T should be used for HomotopyODE?
+    HomotopyODE ode(*this, n, 1.0);
     ode.solve();
 
     // Use Newton's method to find the solution

@@ -12,9 +12,8 @@ class Simple : public ODE
 {
 public:
   
-  Simple() : ODE(1)
+  Simple() : ODE(1, 1.0)
   {
-    T = 1.0;
   }
   
   real u0(unsigned int i)
@@ -33,11 +32,8 @@ class Harmonic : public ODE
 {
 public:
   
-  Harmonic() : ODE(2)
+  Harmonic() : ODE(2, 4.0 * DOLFIN_PI)
   {
-    // Final time
-    T = 4.0*DOLFIN_PI;
-
     // Compute sparsity
     sparse();
   }
@@ -77,11 +73,8 @@ class SpringSystem : public ODE
 {
 public:
   
-  SpringSystem(unsigned int N) : ODE(2*N)
+  SpringSystem(unsigned int N) : ODE(2*N, 5.0)
   {
-    // Final time
-    T = 5.0;
-
     // Compute sparsity
     sparse();
   }
@@ -106,10 +99,8 @@ class TestSystem : public ODE
 {
 public:
   
-  TestSystem() : ODE(3)
+  TestSystem() : ODE(3, 64.0)
   {
-    // Final time
-    T = 64.0;
   }
 
   real u0(unsigned int i)

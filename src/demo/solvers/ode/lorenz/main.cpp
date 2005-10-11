@@ -12,7 +12,7 @@ using namespace dolfin;
 class Lorenz : public ODE {
 public:
 
-  Lorenz() : ODE(3)
+  Lorenz() : ODE(3, 50.0)
   {
     // Parameters
     s = 10.0;
@@ -35,10 +35,6 @@ public:
 
     // Open file
     fp = fopen("lorenz.data", "w");
-
-    // Final time
-    //T = 1e5;
-    T = 50.0;
   }
   
   ~Lorenz()

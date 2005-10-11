@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ComplexODE::ComplexODE(uint n) : ODE(2*n), n(n), j(0.0, 1.0),
+ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
 				 zvalues(0), fvalues(0), yvalues(0)
 {
   dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);

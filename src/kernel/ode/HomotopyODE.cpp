@@ -12,8 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HomotopyODE::HomotopyODE(Homotopy& homotopy, uint n)
-  : ComplexODE(n), homotopy(homotopy), n(n), _state(ode), tmp(0)
+HomotopyODE::HomotopyODE(Homotopy& homotopy, uint n, real T)
+  : ComplexODE(n, T), homotopy(homotopy), n(n), _state(ode), tmp(0)
 {
   tmp = new complex[n];
   for (uint i = 0; i < n; i++)

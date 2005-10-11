@@ -11,13 +11,10 @@ class TestProblem8 : public ODE
 {
 public:
   
-  TestProblem8() : ODE(3)
+  TestProblem8() : ODE(3, 0.3)
   {
     dolfin_info("System of fast and slow chemical reactions, taken from the book by");
     dolfin_info("Hairer and Wanner, page 3.");
-
-    // Final time
-    T = 0.3;
 
     // Compute sparsity
     sparse();

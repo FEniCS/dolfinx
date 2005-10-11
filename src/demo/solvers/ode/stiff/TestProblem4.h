@@ -12,12 +12,9 @@ class TestProblem4 : public ODE
 {
 public:
   
-  TestProblem4() : ODE(8)
+  TestProblem4() : ODE(8, 321.8122)
   {
     dolfin_info("The HIRES problem.");
-
-    // Final time
-    T = 321.8122;
 
     // Compute sparsity
     sparse();

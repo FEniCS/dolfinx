@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N) : N(N), T(1.0), dependencies(N), transpose(N),
+ODE::ODE(uint N, real T) : N(N), T(T), dependencies(N), transpose(N),
 		   default_timestep(dolfin_get("initial time step")),
 		   not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
 		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
@@ -144,6 +144,7 @@ real ODE::timestep(uint i)
 //-----------------------------------------------------------------------------
 bool ODE::update(const real u[], real t, bool end)
 {
+  cout << "ODE::update" << endl;
   return true;
 }
 //-----------------------------------------------------------------------------

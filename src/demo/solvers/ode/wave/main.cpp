@@ -20,10 +20,9 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(Mesh& mesh) : ODE(2*mesh.noNodes()), mesh(mesh),
+  WaveEquation(Mesh& mesh) : ODE(2*mesh.noNodes(), 1.0), mesh(mesh),
 			     A(mesh), offset(N/2), h(N/2)
   {
-    T = 1.0;  // Final time
     w = 0.25; // Width of initial wave
 
     // Lump mass matrix

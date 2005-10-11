@@ -12,13 +12,10 @@ class TestProblem7 : public ODE
 {
 public:
   
-  TestProblem7() : ODE(101)
+  TestProblem7() : ODE(101, 1.0)
   {
     // Mesh size
     h = 1.0 / (static_cast<real>(N) - 1);
-
-    // Final time
-    T = 1.0;
 
     dolfin_info("The heat equation on [0,1] with h = %f", h);
     

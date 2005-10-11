@@ -12,12 +12,10 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ReducedModel::ReducedModel(ODE& ode) 
-  : ODE(ode.size()), ode(ode), g(ode.size()), reduced(false)
+  : ODE(ode.size(), ode.endtime()), ode(ode), g(ode.size()), reduced(false)
 {
   dolfin_warning("Automatic modeling is EXPERIMENTAL.");
 
-  T = ode.endtime();
-  
   tau     = dolfin_get("average length");
   samples = dolfin_get("average samples");
   tol     = dolfin_get("average tolerance");

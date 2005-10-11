@@ -12,12 +12,9 @@ class TestProblem1 : public ODE
 {
 public:
   
-  TestProblem1() : ODE(1)
+  TestProblem1() : ODE(1, 10.0)
   {
     dolfin_info("The simple test equation: u' = -1000 u, u(0) = 1.");
-
-    // Final time
-    T = 10;
   }
 
   real u0(unsigned int i)

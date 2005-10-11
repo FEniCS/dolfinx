@@ -26,7 +26,7 @@ namespace dolfin
     enum State { ode, endgame };
 
     /// Constructor
-    HomotopyODE(Homotopy& homotopy, uint n);
+    HomotopyODE(Homotopy& homotopy, uint n, real T);
 
     /// Destructor
     ~HomotopyODE();

@@ -13,12 +13,9 @@ class TestProblem6 : public ODE
 {
 public:
   
-  TestProblem6() : ODE(2)
+  TestProblem6() : ODE(2, 100.0)
   {
     dolfin_info("Van der Pol's equation.");
-
-    // Final time
-    T = 100.0;
 
     // Parameters
     mu = 10.0;

@@ -38,7 +38,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    ComplexODE(uint n);
+    ComplexODE(uint n, real T);
 
     /// Destructor
     ~ComplexODE();
