@@ -3,5 +3,6 @@
 
 void odeinit()
 {
-  dolfin::dolfin_set("method", "mcg");
+  dolfin::dolfin_set("method", "cg");
+  dolfin::dolfin_set("order", 1);
 }

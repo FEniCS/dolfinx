@@ -14,7 +14,7 @@ class Simple(ODE):
     def fmono(self, u, t, y):
         print "Evaluating Python fmono function: "
         print "u: " + str(realArray_getitem(u,0))
-        print "foo"
+        realArray_setitem(y, 0, 1.0)
 
     def fmulti(self, u, t, i):
         print "Evaluating Python fmulti function: "
@@ -38,6 +38,5 @@ print "utest: "
 for i in range(0,N):
     print realArray_getitem(utest,i),
 
-
-
-#ode.solve()
+odeinit()
+ode.solve()

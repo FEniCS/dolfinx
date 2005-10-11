@@ -18,7 +18,7 @@ dolfin.py: dolfin.i
 	mv dolfin_wrap.cxx dolfin_wrap.cpp
 
 _dolfin.so: dolfin_wrap.o PoissonTest.o ODEInit.o
-	$(CXX) -g -shared $? -o $@ $(LFLAGS) 
+	$(CXX) -g -shared dolfin_wrap.o PoissonTest.o ODEInit.o -o $@ $(LFLAGS) 
 
 dolfin_wrap.o: dolfin_wrap.cpp
 

@@ -17,13 +17,20 @@ using namespace dolfin;
 %typemap(python,in) uint = int; 
 %typemap(python,out) uint = int; 
 
-// Typemap for dolfin::real array arguments in virtual methods
+// Typemaps for dolfin::real array arguments in virtual methods
 // probably not very safe
 %typemap(directorin) dolfin::real [] {
   {
-    $input = SWIG_NewPointerObj((dolfin::real *) &$1_name, $&1_descriptor, $owner);
+    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
   }
 }
+
+%typemap(directorin) dolfin::real const [] {
+  {
+    $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
+  }
+}
+
 
 
 %include "typemaps.i"
