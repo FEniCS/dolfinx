@@ -56,7 +56,7 @@ enable_debug="yes"
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS='-fPIC -DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98'
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98'
     # We should also add -pedantic, but then we get an error when we try
     # to include mpio.h (long long not supported by ISO C++)
 fi
@@ -71,6 +71,12 @@ fi
 if test `uname -o` = Cygwin; then
     echo "adding compiler flags for cygwin"
     CXXFLAGS=$CXXFLAGS' -U__STRICT_ANSI__ '
+fi
+
+# Add '-fPIC' for AMD 64 bit system
+if test `uname -m` = x86_64; then
+    echo "adding -fPIC to compiler flags"
+    CXXFLAGS=$CXXFLAGS' -fPIC'
 fi
 
 # Handle option --disable-curses
