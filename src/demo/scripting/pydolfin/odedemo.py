@@ -23,9 +23,8 @@ class Simple(ODE):
         return 1.0
         
         
-#dolfin_set("method", "cg");
-
-settings = Settings()
+# Use until DOLFIN Settings system is available
+odeinit("dg", 0)
 
 ode = Simple()
 print "ODE size: " + str(ode.size())
@@ -38,5 +37,4 @@ print "utest: "
 for i in range(0,N):
     print realArray_getitem(utest,i),
 
-odeinit()
 ode.solve()
