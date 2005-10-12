@@ -1,3 +1,4 @@
+0.5.10 [2005-10-11]
  - Modify ODE solver interface: add T to constructor
  - Fix compilation on AMD 64 bit systems (add -fPIC)
  - Add new BLAS mode for form evaluation
