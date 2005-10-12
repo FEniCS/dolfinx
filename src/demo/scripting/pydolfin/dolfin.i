@@ -92,9 +92,6 @@ using namespace dolfin;
 %rename(increment) dolfin::EdgeIterator::operator++;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
-//%rename(string) dolfin::Parameter::operator std::string;
-//%rename(real) dolfin::Parameter::operator real;
-//%rename(uint) dolfin::Parameter::operator unsigned int;
 
 %rename(PoissonBilinearForm) dolfin::Poisson::BilinearForm;
 %rename(PoissonLinearForm) dolfin::Poisson::LinearForm;
