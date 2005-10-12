@@ -57,12 +57,10 @@ Solvers
 -------
 
 * Implement Navier-Stokes solver
-* Implement updated elasticity
 
 Multi-adaptive solver
 ---------------------
 
-o [jj, logg] Add T to constructor
 o [jj, logg] Preconditioner for multi-adaptive solver
 o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver

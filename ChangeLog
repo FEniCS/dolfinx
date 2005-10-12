@@ -1,3 +1,6 @@
+ - Modify ODE solver interface: add T to constructor
+ - Fix compilation on AMD 64 bit systems (add -fPIC)
+ - Add new BLAS mode for form evaluation
  - Change enum types in File to lowercase
  - Change default file type for .m to Octave
  - Add experimental Python interface PyDOLFIN

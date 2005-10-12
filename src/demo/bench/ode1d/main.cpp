@@ -17,11 +17,10 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(unsigned int n) : ODE(2*(n+1)), 
+  WaveEquation(unsigned int n) : ODE(2*(n+1), 1.0), 
 				 n(n), offset(N/2),
 				 num_f(0), num_fi(0)
   {
-    T = 1.0;
     c = 0.5;
 
     h = 1.0e-3;
