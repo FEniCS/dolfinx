@@ -4,8 +4,7 @@ from math import *
 class Simple(ODE):
     def __init__(self):
         print "Simple ctor"
-        ODE.__init__(self, 1)
-        self.T = 1.0
+        ODE.__init__(self, 1, 1.0)
 
     def u0(self, i):
         print "Evaluating Python u0 function: "
