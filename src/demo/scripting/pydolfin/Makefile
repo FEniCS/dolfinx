@@ -17,11 +17,11 @@ dolfin.py: dolfin.i
 	$(SWIG) -python -c++ -nodefault -dirprot $(SWIGFLAGS) $<
 	mv dolfin_wrap.cxx dolfin_wrap.cpp
 
-_dolfin.so: dolfin_wrap.o PoissonTest.o ODEInit.o
-	$(CXX) -g -shared dolfin_wrap.o PoissonTest.o ODEInit.o -o $@ $(LFLAGS) 
+_dolfin.so: dolfin_wrap.o PoissonTest.o SettingsGlue.o
+	$(CXX) -g -shared dolfin_wrap.o PoissonTest.o SettingsGlue.o -o $@ $(LFLAGS) 
 
 dolfin_wrap.o: dolfin_wrap.cpp
 
 clean:
-	rm -f dolfin.py dolfin.pyc _dolfin.so dolfin_wrap.o dolfin_wrap.cpp *~
+	rm -f dolfin.py dolfin.pyc _dolfin.so dolfin_wrap.o dolfin_wrap.cpp SettingsGlue.o PoissonTest.o *~
 

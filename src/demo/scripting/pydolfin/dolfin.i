@@ -2,10 +2,8 @@
 
 %{
 #include <dolfin.h>
-#include <dolfin/Settings.h>
-#include <dolfin/SettingsManager.h>
 #include "PoissonTest.h"
-#include "ODEInit.h"
+#include "SettingsGlue.h"
 
 #include <string>
   
@@ -17,19 +15,54 @@ using namespace dolfin;
 %typemap(python,in) uint = int; 
 %typemap(python,out) uint = int; 
 
+%typemap(out) dolfin::Parameter {
+  {
+    // CustomParameter typemap
+
+    switch ( $1.type )
+    {
+    case Parameter::REAL:
+      
+      $result = SWIG_From_double((real)($1));
+      break;
+
+    case Parameter::INT:
+      
+      $result = SWIG_From_int((int)($1));
+      break;
+      
+    case Parameter::BOOL:
+      
+      $result = SWIG_From_bool((bool)($1));
+      break;
+      
+    case Parameter::STRING:
+      
+      $result = SWIG_From_std_string((std::string)($1));
+      break;
+      
+    default:
+      dolfin_error1("Unknown type for parameter \"%s\".", $1.identifier.c_str());
+    }
+  }
+}
+
 // Typemaps for dolfin::real array arguments in virtual methods
 // probably not very safe
 %typemap(directorin) dolfin::real [] {
   {
+    // Custom typemap
     $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
   }
 }
 
 %typemap(directorin) dolfin::real const [] {
   {
+    // Custom typemap
     $input = SWIG_NewPointerObj((void *) $1_name, $1_descriptor, $owner);
   }
 }
+
 
 
 
@@ -51,11 +84,17 @@ using namespace dolfin;
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
+%ignore dolfin::dolfin_set;
+
+%rename(dolfin_set) glueset;
 %rename(increment) dolfin::NodeIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
+//%rename(string) dolfin::Parameter::operator std::string;
+//%rename(real) dolfin::Parameter::operator real;
+//%rename(uint) dolfin::Parameter::operator unsigned int;
 
 %rename(PoissonBilinearForm) dolfin::Poisson::BilinearForm;
 %rename(PoissonLinearForm) dolfin::Poisson::LinearForm;
@@ -85,10 +124,12 @@ using namespace dolfin;
 
 /* settings includes */
 
+//%include "dolfin/Parameter.h"
 //%include "dolfin/Settings.h"
+//%include "dolfin/ParameterList.h"
 %include "dolfin/SettingsMacros.h"
-%include "dolfin/SettingsManager.h"
-%include "dolfin/Settings.h"
+//%include "dolfin/SettingsManager.h"
+//%include "dolfin/Settings.h"
 
 /* io includes */
 
@@ -181,4 +222,4 @@ using namespace dolfin;
 
 %include "dolfin/PoissonSolver.h"
 %include "PoissonTest.h"
-%include "ODEInit.h"
+%include "SettingsGlue.h"
