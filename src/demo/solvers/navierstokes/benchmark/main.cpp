@@ -54,6 +54,8 @@ class InitialSolution : public Function
   }
 };
 
+
+/*
 // Boundary condition for momentum equation 
 class BC_Momentum : public BoundaryCondition
 {
@@ -102,6 +104,61 @@ class BC_Continuity : public BoundaryCondition
   {
     BoundaryValue value;
     if (fabs(p.x - 12.0) < DOLFIN_EPS)
+      value.set(0.0);
+    
+    return value;
+  }
+};
+*/
+
+// Boundary condition for momentum equation 
+class BC_Momentum : public BoundaryCondition
+{
+  const BoundaryValue operator() (const Point& p, unsigned int i)
+  {
+    BoundaryValue value;
+    if (i==0){
+      if (fabs(p.x - 0.0) < DOLFIN_EPS){
+	value.set(1.0);
+      }      
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+	value.set(0.0);
+      }       
+    } else if (i==1){
+      if (fabs(p.x - 0.0) < DOLFIN_EPS){
+	value.set(0.0);
+      }
+      if ( (fabs(p.y - 0.0) < DOLFIN_EPS) || (fabs(p.y - 1.4) < DOLFIN_EPS) ){
+	value.set(0.0);
+      }
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+	value.set(0.0);
+      }       
+    } else if (i==2){
+      if (fabs(p.x - 0.0) < DOLFIN_EPS){
+	value.set(0.0);
+      }
+      if ( (fabs(p.z - 0.0) < DOLFIN_EPS) || (fabs(p.z - 0.4) < DOLFIN_EPS) ){
+	value.set(0.0);
+      }
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+	value.set(0.0);
+      }       
+    } else{
+      dolfin_error("Wrong vector component index");
+    }
+  
+    return value;
+  }
+};
+
+// Boundary condition for continuity equation 
+class BC_Continuity : public BoundaryCondition
+{
+  const BoundaryValue operator() (const Point& p)
+  {
+    BoundaryValue value;
+    if (fabs(p.x - 2.1) < DOLFIN_EPS)
       value.set(0.0);
     
     return value;
@@ -169,12 +226,17 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  Mesh mesh("cylinder_2d_bmk.xml");
+  //Mesh mesh("cylinder_2d_bmk.xml");
+  Mesh mesh("tetgrid_cc_initial_unique.inp");
   ForceFunction f;
 
-
+  /*
   BC_Momentum_2D bc_mom;
   BC_Continuity_2D bc_con;
+  */
+
+  BC_Momentum bc_mom;
+  BC_Continuity bc_con;
   
   NSESolver::solve(mesh, f, bc_mom, bc_con); 
   

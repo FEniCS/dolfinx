@@ -53,6 +53,13 @@ void NSESolver::solve()
 
   GMRES solver_con;
   GMRES solver_mom;
+
+  KSP ksp_con = solver_con.solver();
+  PC pc;
+  KSPGetPC(ksp_con,&pc);
+  PCSetType(pc,PCHYPRE);
+  PCHYPRESetType(pc,"boomeramg");
+  
   
   /*
   solver_con.setRtol(1.0e-10);
