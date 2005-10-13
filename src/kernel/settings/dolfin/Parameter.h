@@ -63,10 +63,13 @@ namespace dolfin
     // Output
     friend LogStream& dolfin::operator<<(LogStream& stream, const Parameter& p);    
 
-  private:
-    
+    // Type of data
+    Type type;
+
     // A description of the parameter
     string identifier;
+    
+  private:
     
     // Values
     real       val_real;
@@ -77,8 +80,6 @@ namespace dolfin
     // True iff the default value was changed
     bool _changed;
     
-    // Type of data
-    Type type;
     
   };
   
