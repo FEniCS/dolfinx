@@ -62,6 +62,9 @@ void ElasticityUpdatedSolver::init()
   x2_0.init(Nv);
   x2_1.init(Nv);
 
+  x1ode.init(Nv);
+  x2ode.init(Nv);
+
   xtmp1.init(Nv);
   xtmp2.init(Nv);
 
@@ -82,6 +85,8 @@ void ElasticityUpdatedSolver::init()
 
   xsigma0.init(Nsigma);
   xsigma1.init(Nsigma);
+
+  xsigmaode.init(Nsigma);
 
   xjaumann1.init(Nsigma);
 
@@ -427,5 +432,39 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
   ElasticityUpdatedSolver solver(mesh, f, v0, rho, E, nu, nuv, nuplast,
 				 bc, k, T);
   solver.solve();
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fu()
+{
+  // Compute x1ode, x2ode and xsigmaode based on x2_1 and xsigma1
+
+
+  // x1ode
+  x1ode = x2_1;
+
+
+  // xsigma1
+  FEM::assemble(Lsigma, xsigmatmp1, mesh);
+  VecPointwiseMult(xsigmaode.vec(), xsigmatmp1.vec(), msigma.vec());
+    
+  xsigmaode.apply();
+    
+  // xepsilon1 (needed for x2ode)
+
+  xepsilon1 = xsigmaode;
+  xepsilon1 *= 1.0 / lambda;
+
+  // x2ode
+
+  // Assemble v vector
+  FEM::assemble(Lv, xtmp1, mesh);
+  
+  // Add contact forces
+  xtmp1.axpy(1, fcontact);
+  
+  FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
+  VecPointwiseDivide(x2ode.vec(), xtmp1.vec(), m.vec());
+
+  x2ode.apply();
 }
 //-----------------------------------------------------------------------------

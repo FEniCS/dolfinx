@@ -33,6 +33,9 @@ namespace dolfin
 
     // Make a time step
     void step();
+
+    // Compute f(u) in dot(u) = f(u)
+    void fu();
     
     // Prepare time step
     virtual void preparestep();
@@ -83,6 +86,8 @@ namespace dolfin
     Vector xtmp1, xtmp2, xsigmatmp1, xsigmatmp2;
     Vector fcontact;
     Matrix Dummy;
+
+    Vector x1ode, x2ode, xsigmaode;
     
     Function v1;
     Function u0;
