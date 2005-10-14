@@ -190,6 +190,66 @@ void ElasticityUpdatedSolver::prepareiteration()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::step()
 {
+
+
+  // Make time step
+  x1_0 = x1_1;
+  x2_0 = x2_1;
+  xsigma0 = xsigma1;
+
+  t += k;
+  cout << "t: " << t << endl;
+  
+  for(int iter = 0; iter < maxiters; iter++)
+  {
+    prepareiteration();
+
+    // Compute RHS of ODE system
+    fu();
+
+
+    // Time step method (dG(0)), position
+
+    x1_1 = x1_0;
+    x1_1.axpy(k, x1ode);
+
+    // Time step method (dG(0)), velocity (also compute residual)
+
+    stepresidual = x2_0;
+    stepresidual.axpy(k, x2ode);
+    stepresidual.axpy(-1, x2_1);
+    x2_1 += stepresidual;
+
+//     cout << "x2_1:" << endl;
+//     x2_1.disp();
+
+    
+    cout << "stepresidual(j): " << stepresidual.norm(Vector::linf) << endl;
+
+    // Time step method (dG(0)), stress
+
+    xsigma1 = xsigma0;
+    xsigma1.axpy(k, xsigmaode);
+
+
+//     cout << "x2_1:" << endl;
+//     x2_1.disp();
+
+    if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
+    {
+      cout << "converged" << endl;
+      break;
+    }
+    else if(iter == maxiters - 1)
+    {
+      cout << "did not converge" << endl;
+    }
+  }
+
+
+
+
+  /*
   // Make time step
   x1_0 = x1_1;
   x2_0 = x2_1;
@@ -341,7 +401,7 @@ void ElasticityUpdatedSolver::step()
       cout << "did not converge" << endl;
     }
   }
-  
+  */  
   
 }
 //-----------------------------------------------------------------------------
@@ -436,12 +496,22 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::fu()
 {
-  // Compute x1ode, x2ode and xsigmaode based on x2_1 and xsigma1
+  cout << "fu()" << endl;
 
+  // Compute x1ode, x2ode and xsigmaode based on x1_1, x2_1 and xsigma1
+
+  // Update the mesh
+  for (NodeIterator n(&mesh); !n.end(); ++n)
+  {
+    Node& node = *n;
+    
+    node.coord().x = u1(node, 0);
+    node.coord().y = u1(node, 1);
+    node.coord().z = u1(node, 2);
+  }
 
   // x1ode
   x1ode = x2_1;
-
 
   // xsigma1
   FEM::assemble(Lsigma, xsigmatmp1, mesh);
