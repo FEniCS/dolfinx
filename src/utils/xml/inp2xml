@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 
-# Convert an inp grid file to an xml file that can be read by DOLFIN
+# Convert an inp mesh file to an xml file that can be read by DOLFIN
 #
-# Usage: inp2xml grid.inp grid.xml
+# Usage: inp2xml mesh.inp mesh.xml
 #
 # Copyright (C) 2002 Anders Logg.
 # Licensed under the GNU GPL Version 2.
@@ -42,7 +42,7 @@ while ($line=<INFILE>) {
 	 print ( OUTFILE "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" );
 	 print ( OUTFILE "\n" );
 	 print ( OUTFILE "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\">\n" );
-	 print ( OUTFILE "  <grid>\n");
+	 print ( OUTFILE "  <mesh>\n");
 	 print ( OUTFILE "    <nodes size=\"$nodes\">\n" );
 	 
 	 $state = "nodes";
@@ -84,7 +84,7 @@ while ($line=<INFILE>) {
 		if ( $number == ($cells - 1) ){
 
 		  print ( OUTFILE "    </cells>\n");
-		  print ( OUTFILE "  </grid>\n");
+		  print ( OUTFILE "  </mesh>\n");
 		  print ( OUTFILE "</dolfin>");
 		
 		}
@@ -101,7 +101,7 @@ while ($line=<INFILE>) {
 		if ( $number == ($cells - 1) ) {
 
 		  print ( OUTFILE "    </cells>\n");
-		  print ( OUTFILE "  </grid>\n");
+		  print ( OUTFILE "  </mesh>\n");
 		  print ( OUTFILE "</dolfin>");
 		
 		}

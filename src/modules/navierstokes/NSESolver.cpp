@@ -9,6 +9,7 @@
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
+#include <ctime>
 
 using namespace dolfin;
 
@@ -33,7 +34,7 @@ void NSESolver::solve()
   //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
   Vector bmom, bcon;
 
-  int nsd = 2;
+  int nsd = 3;
 
   // Initialize velocity;
   Vector x0vel(nsd*mesh.noNodes());
@@ -103,11 +104,14 @@ void NSESolver::solve()
   p.sync(t);
   bc_con.sync(t);
   bc_mom.sync(t);
-
-  
     
+  /*
   File file_p("pressure.m");  // file for saving pressure
   File file_u("velocity.m");  // file for saving velocity 
+  */
+
+  File file_p("pressure.dx");  // file for saving pressure
+  File file_u("velocity.dx");  // file for saving velocity 
 
   cout << "Assemble form: continuity" << endl;
 
@@ -125,10 +129,14 @@ void NSESolver::solve()
   int sample = 0;
   int no_samples = 10;
 
+  int time_t1 = 0;
+  int time_t2 = 0;
+
   // Start time-stepping
   Progress prog("Time-stepping");
   while (t<T) 
   {
+
     time_step++;
     cout << "Stating time step " << time_step << endl;
     
@@ -157,10 +165,17 @@ void NSESolver::solve()
       // Solve the linear system
       solver_con.solve(Acon, xpre, bcon);
 
-      cout << "Assemble form: momentum" << endl;
+
+      time_t1 = time(NULL);
+
+      cout << "Assemble form: momentum" << endl;      
 
       // Discretize Momentum equations
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
+
+      time_t2 = time(NULL);
+
+      cout << "Assembly took: " << time_t2-time_t1 << " seconds" << endl; 
 
       cout << "Set boundary conditions: momentum" << endl;
 
@@ -187,12 +202,16 @@ void NSESolver::solve()
       cout << "Momentum residual  : l2 norm = " << residual_mom.norm() << endl;
       cout << "Continuity residual: l2 norm = " << residual_con.norm() << endl;
       cout << "Total NSE residual : l2 norm = " << sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) << endl;
+
+      file_p << p;
+      file_u << u;
+
     }
 
     //cout << "Save solution" << endl;
 
     // Save the solution
-    if ( t > (T-T0)*(real(sample)/real(no_samples)) ){
+    if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ){
       file_p << p;
       file_u << u;
       sample++;
@@ -206,9 +225,11 @@ void NSESolver::solve()
 
     cout << "Save solution" << endl;
 
+    /*
     // Save the solution
     file_p << p;
     file_u << u;
+    */
 
 }
 //-----------------------------------------------------------------------------
