@@ -38,6 +38,9 @@ namespace dolfin
     // Make a time step
     void step();
 
+    // Old implementation of time integration (kept for reference)
+    void oldstep();
+
     // Compute f(u) in dot(u) = f(u)
     void fu();
     
@@ -78,6 +81,8 @@ namespace dolfin
     real yield;
 
     real savesamplefreq;
+
+    int fevals;
 
     uint Nv, Nsigma, Nsigmanorm;
 

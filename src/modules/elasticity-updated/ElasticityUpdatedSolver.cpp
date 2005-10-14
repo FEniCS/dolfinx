@@ -32,6 +32,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(1.0e-4), maxiters(10), do_plasticity(false), yield(0.0),
     savesamplefreq(33.0),
+    fevals(0),
     ode(0),
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
@@ -220,9 +221,11 @@ void ElasticityUpdatedSolver::step()
   cout << "t: " << t << endl;
 
   ts->step();
-  
-
-  /*
+//   oldstep();
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::oldstep()
+{
   x1_0 = x1_1;
   x2_0 = x2_1;
   xsigma0 = xsigma1;
@@ -273,7 +276,6 @@ void ElasticityUpdatedSolver::step()
       cout << "did not converge" << endl;
     }
   }
-  */
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve()
@@ -307,6 +309,8 @@ void ElasticityUpdatedSolver::solve()
     // Update progress
     p = t / T;
   }
+
+  cout << "total fevals: " << fevals << endl;
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
@@ -368,6 +372,7 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
 void ElasticityUpdatedSolver::fu()
 {
   cout << "fu()" << endl;
+  fevals++;
 
 //   int Nv = FEM::size(mesh, element1);
 //   int Nsigma = FEM::size(mesh, element2);
@@ -419,9 +424,6 @@ void ElasticityUpdatedSolver::fu()
 
   xepsilon1 = xsigmaode;
   xepsilon1 *= 1.0 / lambda;
-
-
-
 
   // x1ode
   x1ode = x2_1;
@@ -559,6 +561,8 @@ bool ElasticityUpdatedODE::update(const real u[], real t, bool end)
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::fromArray(const real u[])
 {
+  // This should be done with PETSc VecScatter*
+
   real* vals = 0;
 
   // Copy values from ODE array
@@ -592,6 +596,8 @@ void ElasticityUpdatedODE::fromArray(const real u[])
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::toArray(real y[])
 {
+  // This should be done with PETSc VecScatter*
+
   real* vals = 0;
 
   // Copy values into ODE array
