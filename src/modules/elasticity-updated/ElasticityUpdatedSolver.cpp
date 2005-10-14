@@ -32,6 +32,7 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     mu(E / (2 * (1 + nu))),
     t(0.0), rtol(1.0e-4), maxiters(10), do_plasticity(false), yield(0.0),
     savesamplefreq(33.0),
+    ode(0),
     v1(x2_1, mesh, element1),
     u0(x1_0, mesh, element1),
     u1(x1_1, mesh, element1),
@@ -47,15 +48,17 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   cout << "mu: " << mu << endl;
 
   init();
+  ode = new ElasticityUpdatedODE(*this);
+  ts = new TimeStepper(*ode);
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::init()
 {
   Matrix M;
 
-  int Nv = FEM::size(mesh, element1);
-  int Nsigma = FEM::size(mesh, element2);
-  int Nsigmanorm = FEM::size(mesh, element3);
+  Nv = FEM::size(mesh, element1);
+  Nsigma = FEM::size(mesh, element2);
+  Nsigmanorm = FEM::size(mesh, element3);
 
   x1_0.init(Nv);
   x1_1.init(Nv);
@@ -72,7 +75,7 @@ void ElasticityUpdatedSolver::init()
 
   Dummy.init(Nv, Nv);
 
-  for(int i = 0; i < Nv; i++)
+  for(uint i = 0; i < Nv; i++)
   {
     Dummy(i, i) = 1.0;
   }
@@ -95,6 +98,27 @@ void ElasticityUpdatedSolver::init()
   xsigmanorm.init(Nsigmanorm);
 
   stepresidual.init(Nv);
+
+  // ODE indices
+
+  x1ode_indices = new int[Nv];
+  x2ode_indices = new int[Nv];
+  xsigmaode_indices = new int[Nsigma];
+
+  for(uint i = 0; i < Nv; i++)
+  {
+    x1ode_indices[i] = i;
+    x2ode_indices[i] = Nv + i;
+  }
+
+  for(uint i = 0; i < Nsigma; i++)
+  {
+    xsigmaode_indices[i] = 2 * Nv + i;
+  }
+
+  uode = new real[2 * Nv + Nsigma];
+  yode = new real[2 * Nv + Nsigma];
+
 
   // Set initial velocities
 
@@ -190,15 +214,19 @@ void ElasticityUpdatedSolver::prepareiteration()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::step()
 {
-
-
   // Make time step
+
+  t += k;
+  cout << "t: " << t << endl;
+
+  ts->step();
+  
+
+  /*
   x1_0 = x1_1;
   x2_0 = x2_1;
   xsigma0 = xsigma1;
 
-  t += k;
-  cout << "t: " << t << endl;
   
   for(int iter = 0; iter < maxiters; iter++)
   {
@@ -245,164 +273,7 @@ void ElasticityUpdatedSolver::step()
       cout << "did not converge" << endl;
     }
   }
-
-
-
-
-  /*
-  // Make time step
-  x1_0 = x1_1;
-  x2_0 = x2_1;
-  xsigma0 = xsigma1;
-
-  t += k;
-  cout << "t: " << t << endl;
-  
-  for(int iter = 0; iter < maxiters; iter++)
-  {
-    prepareiteration();
-
-    // Update the mesh
-    for (NodeIterator n(&mesh); !n.end(); ++n)
-    {
-      Node& node = *n;
-
-      node.coord().x = u1(node, 0);
-      node.coord().y = u1(node, 1);
-      node.coord().z = u1(node, 2);
-    }
-
-
-
-    // Compute norm of stress (sigmanorm)
-    if(do_plasticity)
-    {
-      {
-      int *dofs = new int[element2.spacedim()];
-      for (CellIterator c(mesh); !c.end(); ++c)
-      {
-	Cell& cell = *c;
-
-	element2.dofmap(dofs, cell, mesh);
-
-	real proj = 1;
-	real norm = 0;
-	for(uint i = 0; i < element2.spacedim(); i++)
-	{
-	  norm = std::max(norm, fabs(xsigma0(dofs[i])));
-	}
-	
-	if(norm > yield)
-	{
-	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
-	  proj = 1.0 / norm;
-	}
-	
-	xsigmanorm(dofs[0]) = proj;
-      }
-      delete [] dofs;
-      }
-    }
-    
-    //       dolfin_debug("Assembling sigma vectors");
-    //       tic();
-    
-    // Assemble sigma1 vectors
-    FEM::assemble(Lsigma, xsigmatmp2, mesh);
-//     FEM::assemble(Ljaumann, xjaumann1, mesh);
-    
-    VecPointwiseMult(xsigmatmp1.vec(), xsigmatmp2.vec(), msigma.vec());
-    
-    xsigmatmp1.apply();
-    
-    xepsilon1 = xsigmatmp1;
-    xepsilon1 *= 1.0 / lambda;
-    //    xepsilon1 *= 1.0 / (3 * lambda + 2 * mu);
-
-//     cout << "epsilon:" << endl;
-//     xepsilon1.disp();
-
-    xsigma1 = xsigma0;
-    xsigma1.axpy(k, xsigmatmp1);
-    
-
-
-//     // Print dot(sigma)
-    
-//     for (CellIterator c(mesh); !c.end(); ++c)
-//     {
-//       Cell& cell = *c;
-//       if(cell.id() == 0)
-//       {
-	
-//   	cout << "t: " << t << endl;
-//   	cout << "cell: " << cell.id() << endl;
-//   	cout << cell.midpoint() << endl;
-	
-//   	int dofs[element2.spacedim()];
-//   	element2.dofmap(dofs, cell, mesh);
-	
-//   	for(uint i = 0; i < element2.spacedim(); i++)
-//   	{
-//   	  cout << "dot(sigma)(:, " << i << "): " << xsigmatmp1(dofs[i]) << endl;
-//   	}
-//   	for(uint i = 0; i < element2.spacedim(); i++)
-//   	{
-//   	  cout << "sigma(:, " << i << "): " << xsigma1(dofs[i]) << endl;
-//   	}
-//    	for(uint i = 0; i < element2.spacedim(); i++)
-//   	{
-//   	  cout << "jaumann(:, " << i << "): " << xjaumann1(dofs[i]) << endl;
-//   	}
-//       }
-//     }
-	
-    // Assemble v vector
-    FEM::assemble(Lv, xtmp1, mesh);
-
-    // Add contact forces
-    xtmp1.axpy(1, fcontact);
-
-    FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
-//     FEM::applyBC(Dummy, fcontact, mesh, element1, bc);
-
-//     cout << "fcontact: " << endl;
-//     fcontact.disp();
-//     cout << "xtmp1: " << endl;
-//     xtmp1.disp();
-
-    
-    VecPointwiseDivide(stepresidual.vec(), xtmp1.vec(), m.vec());
-    stepresidual *= k;
-    stepresidual.axpy(-1, x2_1);
-    stepresidual.axpy(1, x2_0);
-    
-    x2_1 += stepresidual;
-
-//     cout << "x2_1:" << endl;
-//     x2_1.disp();
-
-
-    x1_1 = x1_0;
-    x1_1.axpy(k, x2_0);
-    
-    cout << "stepresidual(j): " << stepresidual.norm(Vector::linf) << endl;
-
-//     cout << "x2_1:" << endl;
-//     x2_1.disp();
-
-    if(stepresidual.norm(Vector::linf) <= rtol && iter >= 0)
-    {
-      cout << "converged" << endl;
-      break;
-    }
-    else if(iter == maxiters - 1)
-    {
-      cout << "did not converge" << endl;
-    }
-  }
-  */  
-  
+  */
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::solve()
@@ -498,6 +369,10 @@ void ElasticityUpdatedSolver::fu()
 {
   cout << "fu()" << endl;
 
+//   int Nv = FEM::size(mesh, element1);
+//   int Nsigma = FEM::size(mesh, element2);
+//   int Nsigmanorm = FEM::size(mesh, element3);
+
   // Compute x1ode, x2ode and xsigmaode based on x1_1, x2_1 and xsigma1
 
   // Update the mesh
@@ -510,8 +385,47 @@ void ElasticityUpdatedSolver::fu()
     node.coord().z = u1(node, 2);
   }
 
+  // Compute norm of stress (sigmanorm)
+  if(do_plasticity)
+  {
+    {
+      int *dofs = new int[element2.spacedim()];
+      for (CellIterator c(mesh); !c.end(); ++c)
+      {
+	Cell& cell = *c;
+	
+	element2.dofmap(dofs, cell, mesh);
+	
+	real proj = 1;
+	real norm = 0;
+	for(uint i = 0; i < element2.spacedim(); i++)
+	{
+	  norm = std::max(norm, fabs(xsigmaode(dofs[i])));
+	}
+	
+	if(norm > yield)
+	{
+	  cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+	  proj = 1.0 / norm;
+	}
+	
+	xsigmanorm(dofs[0]) = proj;
+      }
+      delete [] dofs;
+    }
+  }
+  
+  // xepsilon1 (needed for x2ode)
+
+  xepsilon1 = xsigmaode;
+  xepsilon1 *= 1.0 / lambda;
+
+
+
+
   // x1ode
   x1ode = x2_1;
+
 
   // xsigma1
   FEM::assemble(Lsigma, xsigmatmp1, mesh);
@@ -519,11 +433,6 @@ void ElasticityUpdatedSolver::fu()
     
   xsigmaode.apply();
     
-  // xepsilon1 (needed for x2ode)
-
-  xepsilon1 = xsigmaode;
-  xepsilon1 *= 1.0 / lambda;
-
   // x2ode
 
   // Assemble v vector
@@ -536,5 +445,181 @@ void ElasticityUpdatedSolver::fu()
   VecPointwiseDivide(x2ode.vec(), xtmp1.vec(), m.vec());
 
   x2ode.apply();
+
+  
+}
+//-----------------------------------------------------------------------------
+ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
+  ODE(1, 1.0), solver(solver)
+{
+  T = solver.T;
+  N = 2 * solver.Nv + solver.Nsigma;
+}
+//-----------------------------------------------------------------------------
+real ElasticityUpdatedODE::u0(unsigned int i)
+{
+  if(i < solver.Nv)
+  {
+    return solver.x1_1(i);
+  }
+  else if(i >= solver.Nv && i < 2 * solver.Nv)
+  {
+    return solver.x2_1(i - solver.Nv);
+  }
+  else if(i >= 2 * solver.Nv && i < 2 * solver.Nv + solver.Nsigma)
+  {
+    return solver.xsigma1(i - 2 * solver.Nv);
+  }
+  else
+  {
+    dolfin_error("ElasticityUpdatedODE::u0(): out of bounds");
+    return 0.0;
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedODE::f(const real u[], real t, real y[])
+{
+//   real* vals = 0;
+
+  // Copy values from ODE array
+
+  fromArray(u);
+
+//   for(uint i = 0; i < 2 * solver.Nv + solver.Nsigma; i++)
+//   {
+//     cout << "u[" << i << "]: " << u[i] << endl;
+//   }
+
+//   vals = solver.x1_1.array();
+//   for(uint i = 0; i < solver.Nv; i++)
+//   {
+//     vals[i] = u[i];
+//   }
+//   solver.x1_1.restore(vals);
+
+//   vals = solver.x2_1.array();
+//   for(uint i = 0; i < solver.Nv; i++)
+//   {
+//     vals[i] = u[i + solver.Nv];
+//   }
+//   solver.x2_1.restore(vals);
+
+//   vals = solver.xsigma1.array();
+//   for(uint i = 0; i < solver.Nsigma; i++)
+//   {
+//     vals[i] = u[i + 2 * solver.Nv];
+//   }
+//   solver.xsigma1.restore(vals);
+
+  // Compute solver RHS (puts result in Vector variables)
+  solver.fu();
+
+  // Copy values into ODE array
+
+  toArray(y);
+
+//   real* vals = 0;
+//   vals = x1ode.array();
+//   VecSetValues(y, Nv, x1ode_indices, vals, INSERT_VALUES);
+//   x1ode.restore(vals);
+
+//   vals = solver.x1ode.array();
+//   for(uint i = 0; i < solver.Nv; i++)
+//   {
+//     y[i] = vals[i];
+//   }
+//   solver.x1ode.restore(vals);
+
+//   vals = solver.x2ode.array();
+//   for(uint i = 0; i < solver.Nv; i++)
+//   {
+//     y[solver.Nv + i] = vals[i];
+//   }
+//   solver.x2ode.restore(vals);
+
+//   vals = solver.xsigmaode.array();
+//   for(uint i = 0; i < solver.Nsigma; i++)
+//   {
+//     y[2 * solver.Nv + i] = vals[i];
+//   }
+//   solver.xsigmaode.restore(vals);
+
+//   for(uint i = 0; i < 2 * solver.Nv + solver.Nsigma; i++)
+//   {
+//     cout << "y[" << i << "]: " << y[i] << endl;
+//   }
+}
+//-----------------------------------------------------------------------------
+bool ElasticityUpdatedODE::update(const real u[], real t, bool end)
+{
+  fromArray(u);
+
+  return true;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedODE::fromArray(const real u[])
+{
+  real* vals = 0;
+
+  // Copy values from ODE array
+
+//   for(uint i = 0; i < 2 * solver.Nv + solver.Nsigma; i++)
+//   {
+//     cout << "u[" << i << "]: " << u[i] << endl;
+//   }
+
+  vals = solver.x1_1.array();
+  for(uint i = 0; i < solver.Nv; i++)
+  {
+    vals[i] = u[i];
+  }
+  solver.x1_1.restore(vals);
+
+  vals = solver.x2_1.array();
+  for(uint i = 0; i < solver.Nv; i++)
+  {
+    vals[i] = u[i + solver.Nv];
+  }
+  solver.x2_1.restore(vals);
+
+  vals = solver.xsigma1.array();
+  for(uint i = 0; i < solver.Nsigma; i++)
+  {
+    vals[i] = u[i + 2 * solver.Nv];
+  }
+  solver.xsigma1.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedODE::toArray(real y[])
+{
+  real* vals = 0;
+
+  // Copy values into ODE array
+
+  vals = solver.x1ode.array();
+  for(uint i = 0; i < solver.Nv; i++)
+  {
+    y[i] = vals[i];
+  }
+  solver.x1ode.restore(vals);
+
+  vals = solver.x2ode.array();
+  for(uint i = 0; i < solver.Nv; i++)
+  {
+    y[solver.Nv + i] = vals[i];
+  }
+  solver.x2ode.restore(vals);
+
+  vals = solver.xsigmaode.array();
+  for(uint i = 0; i < solver.Nsigma; i++)
+  {
+    y[2 * solver.Nv + i] = vals[i];
+  }
+  solver.xsigmaode.restore(vals);
+
+//   for(uint i = 0; i < 2 * solver.Nv + solver.Nsigma; i++)
+//   {
+//     cout << "y[" << i << "]: " << y[i] << endl;
+//   }
 }
 //-----------------------------------------------------------------------------

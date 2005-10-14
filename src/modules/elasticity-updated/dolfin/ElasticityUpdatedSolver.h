@@ -7,6 +7,8 @@
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
 
+#include <dolfin/ODE.h>
+#include <dolfin/TimeStepper.h>
 #include <dolfin/Solver.h>
 #include "dolfin/ElasticityUpdated.h"
 #include "dolfin/ElasticityUpdatedSigma.h"
@@ -15,6 +17,8 @@
 namespace dolfin
 {
   
+  class ElasticityUpdatedODE;
+
   class ElasticityUpdatedSolver : public Solver
   {
   public:
@@ -75,6 +79,13 @@ namespace dolfin
 
     real savesamplefreq;
 
+    uint Nv, Nsigma, Nsigmanorm;
+
+    // ODE
+
+    ElasticityUpdatedODE* ode;
+    TimeStepper* ts;
+
     // Elements
 
     ElasticityUpdated::LinearForm::TestElement element1;
@@ -88,6 +99,13 @@ namespace dolfin
     Matrix Dummy;
 
     Vector x1ode, x2ode, xsigmaode;
+
+    int* x1ode_indices;
+    int* x2ode_indices;
+    int* xsigmaode_indices;
+
+    real* uode;
+    real* yode;
     
     Function v1;
     Function u0;
@@ -102,6 +120,23 @@ namespace dolfin
     ElasticityUpdated::LinearForm Lv;
     ElasticityUpdatedSigma::LinearForm Lsigma;
   };
+
+  class ElasticityUpdatedODE : public ODE
+  {
+  public:
+    ElasticityUpdatedODE(ElasticityUpdatedSolver& solver);
+    real u0(unsigned int i);
+    /// Evaluate right-hand side (mono-adaptive version)
+    virtual void f(const real u[], real t, real y[]);
+    virtual bool update(const real u[], real t, bool end);
+
+    void fromArray(const real u[]);
+    void toArray(real y[]);
+
+    ElasticityUpdatedSolver& solver;
+  };
+
+
   
 }
 
