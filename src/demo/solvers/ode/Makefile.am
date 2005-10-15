@@ -4,6 +4,7 @@ SUBDIRS = bistable \
           lorenz \
           mechanical \
           modeling \
+          reaction \
           stiff \
           wave \
           test
