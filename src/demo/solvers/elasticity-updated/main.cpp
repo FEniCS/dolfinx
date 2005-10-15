@@ -96,10 +96,21 @@ int main(int argc, char **argv)
   dolfin_set("progress step", 1.0);
 //   dolfin_output("silent");
 
+  real T = 20.0;  // final time
+  real k = 1.0e-3; // time step
+
+  dolfin_set("method", "cg");
+  dolfin_set("order", 1);
+  dolfin_set("save solution", false);
+  dolfin_set("fixed time step", true);
+  dolfin_set("initial time step", k);
+  dolfin_set("maximum time step", k);
+//   dolfin_set("solver", "fixed point");
+
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow07.xml.gz");
   //Mesh mesh("mymesh01.xml.gz");
-//    Mesh mesh("minimal2.xml.gz");
+//   Mesh mesh("minimal2.xml.gz");
 
   Mesh mesh("roterror01.xml.gz");
 //   UnitCube mesh(7, 7, 7);
@@ -127,9 +138,6 @@ int main(int argc, char **argv)
 
 //   real T = 0.1;  // final time
 //   real k = 0.001; // time step
-
-  real T = 5.0;  // final time
-  real k = 1.0e-3; // time step
 
 //   real E = 1.0e4; // Young's modulus
 //   real nu = 0.3; // Poisson's ratio

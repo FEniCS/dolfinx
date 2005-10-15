@@ -52,4 +52,5 @@ Llie = dot(Numeric.matrixmultiply(grad(v), sigmamatrix) -
 Lelast = dot(E(epsilon(v), lmbda, mu), qmatrix)
 Lplast = dot(E(sigmamatrix, lmbda, mu), qmatrix)
 
-L = (Lelast + 1.0 * Llie - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx
+#L = (Lelast + 1.0 * Llie - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx
+L = (Lelast + 1.0 * Ljaumann - 0.0 * nuplast * (1 - sigmanorm[0]) * Lplast) * dx

@@ -47,6 +47,9 @@ namespace dolfin
     // Gather x1ode, x2ode and xsigmaode into dotu
     void gather();
 
+    // Gather x1 (subector) into x2
+    void gather(Vector& x1, Vector& x2, VecScatter& x1sc);
+
     // Scatter dotu into x1_1, x2_1 and xsigma1
 //     void scatter();
     
@@ -109,20 +112,17 @@ namespace dolfin
     Vector fcontact;
     Matrix Dummy;
 
-    Vector x1ode, x2ode, xsigmaode, dotu;
+    Vector dotu_x1, dotu_x2, dotu_xsigma, dotu;
 
-    VecScatter x1odesc, x2odesc, xsigmaodesc;
-    IS x1odeis, x2odeis, xsigmaodeis;
+    VecScatter dotu_x1sc, dotu_x2sc, dotu_xsigmasc;
+    IS dotu_x1is, dotu_x2is, dotu_xsigmais;
     
 
 
-    int* x1ode_indices;
-    int* x2ode_indices;
-    int* xsigmaode_indices;
+    int* dotu_x1_indices;
+    int* dotu_x2_indices;
+    int* dotu_xsigma_indices;
 
-    real* uode;
-    real* yode;
-    
     Function v1;
     Function u0;
     Function u1;

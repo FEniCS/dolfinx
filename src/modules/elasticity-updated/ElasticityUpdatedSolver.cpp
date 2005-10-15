@@ -66,8 +66,8 @@ void ElasticityUpdatedSolver::init()
   x2_0.init(Nv);
   x2_1.init(Nv);
 
-  x1ode.init(Nv);
-  x2ode.init(Nv);
+  dotu_x1.init(Nv);
+  dotu_x2.init(Nv);
 
   xtmp1.init(Nv);
   xtmp2.init(Nv);
@@ -90,7 +90,7 @@ void ElasticityUpdatedSolver::init()
   xsigma0.init(Nsigma);
   xsigma1.init(Nsigma);
 
-  xsigmaode.init(Nsigma);
+  dotu_xsigma.init(Nsigma);
 
   dotu.init(2 * Nv + Nsigma);
 
@@ -104,24 +104,20 @@ void ElasticityUpdatedSolver::init()
 
   // ODE indices
 
-  x1ode_indices = new int[Nv];
-  x2ode_indices = new int[Nv];
-  xsigmaode_indices = new int[Nsigma];
+  dotu_x1_indices = new int[Nv];
+  dotu_x2_indices = new int[Nv];
+  dotu_xsigma_indices = new int[Nsigma];
 
   for(uint i = 0; i < Nv; i++)
   {
-    x1ode_indices[i] = i;
-    x2ode_indices[i] = Nv + i;
+    dotu_x1_indices[i] = i;
+    dotu_x2_indices[i] = Nv + i;
   }
 
   for(uint i = 0; i < Nsigma; i++)
   {
-    xsigmaode_indices[i] = 2 * Nv + i;
+    dotu_xsigma_indices[i] = 2 * Nv + i;
   }
-
-  uode = new real[2 * Nv + Nsigma];
-  yode = new real[2 * Nv + Nsigma];
-
 
   // Set initial velocities
 
@@ -203,29 +199,29 @@ void ElasticityUpdatedSolver::init()
     x1_1(2 * offset + nid) = node.coord().z;
   }
 
-  int x1odeoffset = 0;
+  int dotu_x1offset = 0;
   
-  ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &x1odeoffset, &x1odeis);
-  VecScatterCreate(x1ode.vec(), PETSC_NULL, dotu.vec(), x1odeis,
-		   &x1odesc);
+  ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &dotu_x1offset, &dotu_x1is);
+  VecScatterCreate(dotu_x1.vec(), PETSC_NULL, dotu.vec(), dotu_x1is,
+		   &dotu_x1sc);
 
-  int x2odeoffset = Nv;
+  int dotu_x2offset = Nv;
 
-  ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &x2odeoffset, &x2odeis);
-  VecScatterCreate(x2ode.vec(), PETSC_NULL, dotu.vec(), x2odeis,
-		   &x2odesc);
+  ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &dotu_x2offset, &dotu_x2is);
+  VecScatterCreate(dotu_x2.vec(), PETSC_NULL, dotu.vec(), dotu_x2is,
+		   &dotu_x2sc);
 
-  int xsigmaodeoffset = 2 * Nv;
+  int dotu_xsigmaoffset = 2 * Nv;
 
-  ISCreateBlock(MPI_COMM_WORLD, Nsigma, 1, &xsigmaodeoffset, &xsigmaodeis);
-  VecScatterCreate(xsigmaode.vec(), PETSC_NULL, dotu.vec(), xsigmaodeis,
-		   &xsigmaodesc);
+  ISCreateBlock(MPI_COMM_WORLD, Nsigma, 1, &dotu_xsigmaoffset, &dotu_xsigmais);
+  VecScatterCreate(dotu_xsigma.vec(), PETSC_NULL, dotu.vec(), dotu_xsigmais,
+		   &dotu_xsigmasc);
 
   // Initial values for ODE
 
-  x1ode = x1_1;
-  x2ode = x2_1;
-  xsigmaode = xsigma1;
+  dotu_x1 = x1_1;
+  dotu_x2 = x2_1;
+  dotu_xsigma = xsigma1;
 
   gather();
 }
@@ -269,12 +265,12 @@ void ElasticityUpdatedSolver::oldstep()
     // Time step method (dG(0)), position
 
     x1_1 = x1_0;
-    x1_1.axpy(k, x1ode);
+    x1_1.axpy(k, dotu_x1);
 
     // Time step method (dG(0)), velocity (also compute residual)
 
     stepresidual = x2_0;
-    stepresidual.axpy(k, x2ode);
+    stepresidual.axpy(k, dotu_x2);
     stepresidual.axpy(-1, x2_1);
     x2_1 += stepresidual;
 
@@ -287,7 +283,7 @@ void ElasticityUpdatedSolver::oldstep()
     // Time step method (dG(0)), stress
 
     xsigma1 = xsigma0;
-    xsigma1.axpy(k, xsigmaode);
+    xsigma1.axpy(k, dotu_xsigma);
 
 
 //     cout << "x2_1:" << endl;
@@ -401,7 +397,7 @@ void ElasticityUpdatedSolver::fu()
   cout << "fu()" << endl;
   fevals++;
 
-  // Compute x1ode, x2ode and xsigmaode based on x1_1, x2_1 and xsigma1
+  // Compute dotu_x1, dotu_x2 and dotu_xsigma based on x1_1, x2_1 and xsigma1
   // Ultimately compute dotu = f(u, t)
 
   // Update the mesh
@@ -429,7 +425,7 @@ void ElasticityUpdatedSolver::fu()
 	real norm = 0;
 	for(uint i = 0; i < element2.spacedim(); i++)
 	{
-	  norm = std::max(norm, fabs(xsigmaode(dofs[i])));
+	  norm = std::max(norm, fabs(dotu_xsigma(dofs[i])));
 	}
 	
 	if(norm > yield)
@@ -444,22 +440,22 @@ void ElasticityUpdatedSolver::fu()
     }
   }
   
-  // xepsilon1 (needed for x2ode)
+  // xepsilon1 (needed for dotu_x2)
 
-  xepsilon1 = xsigmaode;
+  xepsilon1 = dotu_xsigma;
   xepsilon1 *= 1.0 / lambda;
 
-  // x1ode
-  x1ode = x2_1;
+  // dotu_x1
+  dotu_x1 = x2_1;
 
 
   // xsigma1
   FEM::assemble(Lsigma, xsigmatmp1, mesh);
-  VecPointwiseMult(xsigmaode.vec(), xsigmatmp1.vec(), msigma.vec());
+  VecPointwiseMult(dotu_xsigma.vec(), xsigmatmp1.vec(), msigma.vec());
     
-  xsigmaode.apply();
+  dotu_xsigma.apply();
     
-  // x2ode
+  // dotu_x2
 
   // Assemble v vector
   FEM::assemble(Lv, xtmp1, mesh);
@@ -468,9 +464,9 @@ void ElasticityUpdatedSolver::fu()
   xtmp1.axpy(1, fcontact);
   
   FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
-  VecPointwiseDivide(x2ode.vec(), xtmp1.vec(), m.vec());
+  VecPointwiseDivide(dotu_x2.vec(), xtmp1.vec(), m.vec());
 
-  x2ode.apply();
+  dotu_x2.apply();
 
   gather();
 }
@@ -479,48 +475,35 @@ void ElasticityUpdatedSolver::gather()
 {
   // Gather values into dotu
 
-//   VecScatter x1odesc;
-//   IS x1odeis;
-//   int x1odeoffset = 0;
-
-//   ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &x1odeoffset, &x1odeis);
-//   VecScatterCreate(x1ode.vec(), PETSC_NULL, dotu.vec(), x1odeis,
-// 		   &x1odesc);
-  VecScatterBegin(x1ode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  x1odesc);
-  VecScatterEnd(x1ode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		x1odesc);
+  VecScatterBegin(dotu_x1.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		  dotu_x1sc);
+  VecScatterEnd(dotu_x1.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		dotu_x1sc);
   
 
-//   VecScatter x2odesc;
-//   IS x2odeis;
-//   int x2odeoffset = Nv;
-
-//   ISCreateBlock(MPI_COMM_WORLD, Nv, 1, &x2odeoffset, &x2odeis);
-//   VecScatterCreate(x2ode.vec(), PETSC_NULL, dotu.vec(), x2odeis,
-// 		   &x2odesc);
-  VecScatterBegin(x2ode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  x2odesc);
-  VecScatterEnd(x2ode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		x2odesc);
+  VecScatterBegin(dotu_x2.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		  dotu_x2sc);
+  VecScatterEnd(dotu_x2.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		dotu_x2sc);
 
 
-//   VecScatter xsigmaodesc;
-//   IS xsigmaodeis;
-//   int xsigmaodeoffset = 2 * Nv;
-
-//   ISCreateBlock(MPI_COMM_WORLD, Nsigma, 1, &xsigmaodeoffset, &xsigmaodeis);
-//   VecScatterCreate(xsigmaode.vec(), PETSC_NULL, dotu.vec(), xsigmaodeis,
-// 		   &xsigmaodesc);
-  VecScatterBegin(xsigmaode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  xsigmaodesc);
-  VecScatterEnd(xsigmaode.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		xsigmaodesc);
+  VecScatterBegin(dotu_xsigma.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		  dotu_xsigmasc);
+  VecScatterEnd(dotu_xsigma.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		dotu_xsigmasc);
 
 
 //   cout << "dotu: " << endl;
 //   dotu.disp();
 
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::gather(Vector& x1, Vector& x2, VecScatter& x1sc)
+{
+  VecScatterBegin(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		  x1sc);
+  VecScatterEnd(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		x1sc);
 }
 //-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
@@ -532,31 +515,12 @@ ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
 //-----------------------------------------------------------------------------
 real ElasticityUpdatedODE::u0(unsigned int i)
 {
-//   if(i < solver.Nv)
-//   {
-//     return solver.x1_1(i);
-//   }
-//   else if(i >= solver.Nv && i < 2 * solver.Nv)
-//   {
-//     return solver.x2_1(i - solver.Nv);
-//   }
-//   else if(i >= 2 * solver.Nv && i < 2 * solver.Nv + solver.Nsigma)
-//   {
-//     return solver.xsigma1(i - 2 * solver.Nv);
-//   }
-//   else
-//   {
-//     dolfin_error("ElasticityUpdatedODE::u0(): out of bounds");
-//     return 0.0;
-//   }
-  
    return solver.dotu(i);
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::f(const real u[], real t, real y[])
 {
   // Copy values from ODE array
-
   fromArray(u, solver.x1_1, 0, solver.Nv);
   fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
   fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
@@ -565,11 +529,7 @@ void ElasticityUpdatedODE::f(const real u[], real t, real y[])
   solver.fu();
 
   // Copy values into ODE array
-
-//   toArray(y, solver.dotu, 0);
-  toArray(y, solver.x1ode, 0, solver.Nv);
-  toArray(y, solver.x2ode, solver.Nv, solver.Nv);
-  toArray(y, solver.xsigmaode, 2 * solver.Nv, solver.Nsigma);
+  toArray(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
 }
 //-----------------------------------------------------------------------------
 bool ElasticityUpdatedODE::update(const real u[], real t, bool end)
@@ -593,7 +553,6 @@ void ElasticityUpdatedODE::fromArray(const real u[], Vector& x, uint offset,
     vals[i] = u[i + offset];
   }
   x.restore(vals);
-
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedODE::toArray(real y[], Vector& x, uint offset, uint size)
@@ -607,6 +566,5 @@ void ElasticityUpdatedODE::toArray(real y[], Vector& x, uint offset, uint size)
     y[offset + i] = vals[i];
   }
   x.restore(vals);
-  
 }
 //-----------------------------------------------------------------------------
