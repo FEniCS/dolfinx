@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 //   dolfin_output("silent");
 
   real T = 20.0;  // final time
-  real k = 1.0e-3; // time step
+  real k = 1.0e-2; // time step
 
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   dolfin_set("fixed time step", true);
   dolfin_set("initial time step", k);
   dolfin_set("maximum time step", k);
-//   dolfin_set("solver", "fixed point");
+//   dolfin_set("solver", "newton");
 
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow07.xml.gz");

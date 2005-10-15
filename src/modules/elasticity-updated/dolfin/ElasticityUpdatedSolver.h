@@ -44,14 +44,11 @@ namespace dolfin
     // Compute f(u) in dot(u) = f(u)
     void fu();
 
-    // Gather x1ode, x2ode and xsigmaode into dotu
-    void gather();
-
     // Gather x1 (subector) into x2
     void gather(Vector& x1, Vector& x2, VecScatter& x1sc);
 
-    // Scatter dotu into x1_1, x2_1 and xsigma1
-//     void scatter();
+    // Scatter x2 into x1 (subvector)
+//     void scatter(Vector& x1, Vector& x2, VecScatter& x1sc);
     
     // Prepare time step
     virtual void preparestep();

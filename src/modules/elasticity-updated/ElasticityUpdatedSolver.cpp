@@ -223,7 +223,10 @@ void ElasticityUpdatedSolver::init()
   dotu_x2 = x2_1;
   dotu_xsigma = xsigma1;
 
-  gather();
+  // Gather values into dotu
+  gather(dotu_x1, dotu, dotu_x1sc);
+  gather(dotu_x2, dotu, dotu_x2sc);
+  gather(dotu_xsigma, dotu, dotu_xsigmasc);
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::preparestep()
@@ -468,34 +471,10 @@ void ElasticityUpdatedSolver::fu()
 
   dotu_x2.apply();
 
-  gather();
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::gather()
-{
   // Gather values into dotu
-
-  VecScatterBegin(dotu_x1.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  dotu_x1sc);
-  VecScatterEnd(dotu_x1.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		dotu_x1sc);
-  
-
-  VecScatterBegin(dotu_x2.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  dotu_x2sc);
-  VecScatterEnd(dotu_x2.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		dotu_x2sc);
-
-
-  VecScatterBegin(dotu_xsigma.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		  dotu_xsigmasc);
-  VecScatterEnd(dotu_xsigma.vec(), dotu.vec(), INSERT_VALUES, SCATTER_FORWARD,
-		dotu_xsigmasc);
-
-
-//   cout << "dotu: " << endl;
-//   dotu.disp();
-
+  gather(dotu_x1, dotu, dotu_x1sc);
+  gather(dotu_x2, dotu, dotu_x2sc);
+  gather(dotu_xsigma, dotu, dotu_xsigmasc);
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::gather(Vector& x1, Vector& x2, VecScatter& x1sc)
