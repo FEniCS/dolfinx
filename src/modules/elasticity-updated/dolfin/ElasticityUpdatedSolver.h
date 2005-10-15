@@ -43,6 +43,12 @@ namespace dolfin
 
     // Compute f(u) in dot(u) = f(u)
     void fu();
+
+    // Gather x1ode, x2ode and xsigmaode into dotu
+    void gather();
+
+    // Scatter dotu into x1_1, x2_1 and xsigma1
+//     void scatter();
     
     // Prepare time step
     virtual void preparestep();
@@ -103,7 +109,12 @@ namespace dolfin
     Vector fcontact;
     Matrix Dummy;
 
-    Vector x1ode, x2ode, xsigmaode;
+    Vector x1ode, x2ode, xsigmaode, dotu;
+
+    VecScatter x1odesc, x2odesc, xsigmaodesc;
+    IS x1odeis, x2odeis, xsigmaodeis;
+    
+
 
     int* x1ode_indices;
     int* x2ode_indices;
@@ -135,8 +146,8 @@ namespace dolfin
     virtual void f(const real u[], real t, real y[]);
     virtual bool update(const real u[], real t, bool end);
 
-    void fromArray(const real u[]);
-    void toArray(real y[]);
+    void fromArray(const real u[], Vector& x, uint offset, uint size);
+    void toArray(real y[], Vector&x, uint offset, uint size);
 
     ElasticityUpdatedSolver& solver;
   };
