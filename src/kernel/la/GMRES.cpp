@@ -60,6 +60,11 @@ void GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
 
+  // FIXME: Temporary
+  //Matrix B(A.size(0), A.size(1));
+  //KSPSetOperators(ksp, A.mat(), B.mat(), DIFFERENT_NONZERO_PATTERN);
+  //KSPSolve(ksp, b.vec(), x.vec());
+
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
@@ -91,6 +96,10 @@ void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCNONE);
 
+  cout << A << endl;
+  cout << b << endl;
+  cout << x << endl;
+
   // Check dimensions
   if ( A.size(0) != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
@@ -111,7 +120,7 @@ void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   // Report number of iterations
   if ( report )
   {
-    KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
+    //KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
     int its = 0;
     KSPGetIterationNumber(ksp, &its);
     dolfin_info("GMRES converged in %d iterations.", its);

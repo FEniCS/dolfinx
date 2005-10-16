@@ -126,6 +126,8 @@ namespace dolfin
     /// Display vector
     void disp() const;
 
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const Vector& A);
 
     // Friends
     friend class Matrix;

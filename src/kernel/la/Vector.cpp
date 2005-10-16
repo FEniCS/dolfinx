@@ -329,6 +329,20 @@ void Vector::disp() const
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
+{
+  // Check if matrix has been defined
+  if ( !x.x )
+  {
+    stream << "[ PETSc vector (empty) ]";
+    return stream;
+  }
+
+  stream << "[ PETSc vector of size " << x.size() << " ]";
+
+  return stream;
+}
+//-----------------------------------------------------------------------------
 real Vector::getval(uint i) const
 {
   dolfin_assert(x);
