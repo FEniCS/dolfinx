@@ -8,27 +8,32 @@
 
 using namespace dolfin;
 
-/// Test problem taken from "..." by ...:
+/// Test problem taken from "Multirate time stepping for parabolic PDEs"
+/// by Savcenco, Hundsdorfer and Verwer:
 ///
-///    u' - u'' = ...      in (0,1) x (0,T)
+///    u' - epsilon u'' = gamma u^2 (1 - u)  in (0, L) x (0, T).
 ///
-/// with T = ... The solution is a reaction front sweeping across
-/// the domain.
+/// The solution is a reaction front sweeping across the domain.
 
 class Reaction : public ODE
 {
 public:
 
   /// Constructor
-  Reaction(unsigned int n) : ODE(n, 1.0), h(1.0/n)
+  Reaction(unsigned int N, real T, real L, real epsilon, real gamma)
+    : ODE(N, T), L(L), epsilon(epsilon), gamma(gamma)
   {
+    // Compute parameters
+    h = L / static_cast<real>(N - 1);
+    lambda = 0.5*sqrt(2.0*gamma/epsilon);
+    
     // Set sparse dependency pattern
-    for (unsigned int i = 0; i < n; i++)
+    for (unsigned int i = 0; i < N; i++)
     {
       dependencies.setsize(i, 3);
       if ( i > 0 ) dependencies.set(i, i - 1);
       dependencies.set(i, i);
-      if ( i < n ) dependencies.set(i, i + 1);
+      if ( i < (N - 1) ) dependencies.set(i, i + 1);
     }
   }
 
@@ -36,7 +41,7 @@ public:
   real u0(unsigned int i)
   {
     const real x = static_cast<real>(i)*h;
-    return x;
+    return 1.0 / (1.0 + exp(lambda*(x - 1.0)));
   }
 
   /// Right-hand side, mono-adaptive version
@@ -44,42 +49,53 @@ public:
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      real sum = -2.0*u[i];
-      if ( i > 0 ) sum += u[i - 1];
-      if ( i < N ) sum += u[i + 1];
+      const real ui = u[i];
 
-      y[i] = sum;
+      real sum = -2.0*ui;
+      if ( i > 0 ) sum += u[i - 1];
+      if ( i < (N - 1.0) ) sum += u[i + 1];
+
+      y[i] = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
     }
   }
 
   /// Right-hand side, multi-adaptive version
   real f(const real u[], real t, unsigned int i)
   {
-    real sum = -2.0*u[i];
-    if ( i > 0 ) sum += u[i - 1];
-    if ( i < N ) sum += u[i + 1];
+    const real ui = u[i];
     
-    return sum;
+    real sum = -2.0*ui;
+    if ( i > 0 ) sum += u[i - 1];
+    if ( i < (N - 1.0) ) sum += u[i + 1];
+    
+    return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
   
 private:
 
-  real h; // Mesh size
+  real L;       // Length of domain
+  real epsilon; // Diffusivity
+  real gamma;   // Reaction rate
+  real h;       // Mesh size
+  real lambda;  // Parameter for initial data
 
 };
 
 int main()
 {
-  //dolfin_set("method", "cg");
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 0.01);
   //dolfin_set("partitioning threshold", 0.25);
-  //dolfin_set("maximum local iterations", 2);
   
   // Uncomment this to run benchmarks
   //dolfin_set("save solution", false);
   
-  Reaction ode(100);
+  dolfin_set("solver", "newton");
+  dolfin_set("tolerance", 0.001);
+  dolfin_set("monitor convergence", true);
+  dolfin_set("method", "cg");
+
+  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   ode.solve();
 
   return 0;
