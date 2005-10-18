@@ -4,8 +4,8 @@
 // Modified by Anders Logg 2005.
 // Modified by Garth N. Wells 2005.
 //
-// First added:  2005
-// Last changed: 2005-09-01
+// First added:  2004-06-22
+// Last changed: 2005-10-18
 
 #include <petscpc.h>
 
@@ -17,29 +17,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GMRES::GMRES() : LinearSolver(), report(true), ksp(0), B(0)
+GMRES::GMRES() : LinearSolver(), report(true), ksp(0), B(0), M(0), N(0)
 {
   // Initialize PETSc
   PETScManager::init();
   
-  // Set up solver environment
-  KSPCreate(PETSC_COMM_SELF, &ksp);
-  KSPSetFromOptions(ksp);  
-  KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-  //KSPSetType(ksp, KSPGMRES);
-
-  // Choose preconditioner
-  PC pc;
-  KSPGetPC(ksp, &pc);
-  PCSetFromOptions(pc);  
-  //PCSetType(pc, PCNONE);
-  //PCSetType(pc, PCILU);
-
-  // Display tolerances
-  real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
-	      _rtol, _atol, _dtol, _maxiter);
+  // Initialize KSP solver
+  init(0, 0);
 }
 //-----------------------------------------------------------------------------
 GMRES::~GMRES()
@@ -54,16 +38,16 @@ GMRES::~GMRES()
 void GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
 {
   // Check dimensions
-  if ( A.size(0) != b.size() )
+  uint M = A.size(0);
+  uint N = A.size(1);
+  if ( N != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
-  
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.init(A.size(1));
 
-  // FIXME: Temporary
-  //Matrix B(A.size(0), A.size(1));
-  //KSPSetOperators(ksp, A.mat(), B.mat(), DIFFERENT_NONZERO_PATTERN);
-  //KSPSolve(ksp, b.vec(), x.vec());
+  // Reinitialize KSP solver if necessary
+  init(M, N);
+
+  // Reinitialize solution vector if necessary
+  x.init(M);
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
@@ -91,24 +75,25 @@ void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   //if ( !B )
   // createVirtualPreconditioner(A);
 
+  // Check dimensions
+  uint M = A.size(0);
+  uint N = A.size(1);
+  if ( N != b.size() )
+    dolfin_error("Non-matching dimensions for linear system.");
+
+  // Reinitialize KSP solver if necessary
+  init(M, N);
+
+  // Reinitialize solution vector if necessary
+  x.init(M);
+
   // Skip preconditioner for now
   PC pc;
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCNONE);
 
-  cout << A << endl;
-  cout << b << endl;
-  cout << x << endl;
-
-  // Check dimensions
-  if ( A.size(0) != b.size() )
-    dolfin_error("Non-matching dimensions for linear system.");
-  
-  // Initialize solution vector (remains untouched if dimensions match)
-  x.init(A.size(1));
-
   // Solve linear system
-  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_PRECONDITIONER);
+  KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Check if the solution converged
@@ -193,6 +178,45 @@ void GMRES::setPreconditioner(Preconditioner &pc)
 void GMRES::disp() const
 {
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
+}
+//-----------------------------------------------------------------------------
+void GMRES::init(uint M, uint N)
+{
+  // Check if we need to reinitialize
+  if ( ksp != 0 && M == this->M && N == this->N )
+    return;
+
+  // Don't reinitialize on first solve
+  if ( ksp != 0 && this->M == 0 && this->N == 0 )
+  {
+    this->M = M;
+    this->N = N;
+    return;
+  }
+
+  // Save size of system
+  this->M = M;
+  this->N = N;
+
+  // Destroy old solver environment if necessary
+  if ( ksp != 0 )
+    KSPDestroy(ksp);
+
+  // Set up solver environment
+  KSPCreate(PETSC_COMM_SELF, &ksp);
+  KSPSetFromOptions(ksp);  
+  //KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+
+  // Choose preconditioner
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  PCSetFromOptions(pc);
+
+  // Display tolerances
+  real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
+  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+  dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
+	      _rtol, _atol, _dtol, _maxiter);
 }
 //-----------------------------------------------------------------------------
 void GMRES::createVirtualPreconditioner(const VirtualMatrix& A)

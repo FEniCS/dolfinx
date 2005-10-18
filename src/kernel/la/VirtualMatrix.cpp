@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2005
+// Last changed: 2005-10-18
 
 #include <iostream>
 
@@ -69,14 +69,21 @@ void VirtualMatrix::init(const Vector& x, const Vector& y)
     int mm(0), nn(0), MM(0), NN(0);
     MatGetLocalSize(A, &mm, &nn);
     MatGetSize(A, &MM, &NN);
+
+    cout << "Size of old virtual matrix: " << MM << " x " << NN << endl;
     
     if ( mm == m && nn == n && MM == M && NN == N )
       return;
     else
+    {
+      cout << "Destroying old virtual matrix" << endl;
       MatDestroy(A);
+    }
   }
   
-  MatCreateShell(PETSC_COMM_WORLD, m, n, M, M, (void*) this, &A);
+  cout << "Size of new virtual matrix: " << M << " x " << N << endl;
+  
+  MatCreateShell(PETSC_COMM_WORLD, m, n, M, N, (void*) this, &A);
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------

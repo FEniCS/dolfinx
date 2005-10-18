@@ -81,7 +81,12 @@ private:
 
 };
 
-int main()
+int usermult(Mat A, Vec x, Vec y)
+{
+  VecCopy(x, y);
+}
+
+int main(int argc, char* argv[])
 {
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 0.01);
@@ -93,8 +98,8 @@ int main()
   dolfin_set("solver", "newton");
   dolfin_set("tolerance", 0.001);
   dolfin_set("monitor convergence", true);
-  dolfin_set("method", "cg");
-
+  dolfin_set("method", "mcg");
+  
   Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   ode.solve();
 

@@ -7,7 +7,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004-06-22
-// Last changed: 2005-09-01
+// Last changed: 2005-10-18
 
 #ifndef __GMRES_H
 #define __GMRES_H
@@ -71,6 +71,9 @@ namespace dolfin
      
   private:
 
+    // Initialize KSP solver
+    void init(uint M, uint N);
+
     // Create preconditioner matrix for virtual matrix
     void createVirtualPreconditioner(const VirtualMatrix& A);
 
@@ -82,6 +85,10 @@ namespace dolfin
 
     // Diagonal matrix used for preconditioning with virtual matrix
     Mat B;
+
+    // Size of old system (need to reinitialize when changing)
+    uint M;
+    uint N;
 
   };
 

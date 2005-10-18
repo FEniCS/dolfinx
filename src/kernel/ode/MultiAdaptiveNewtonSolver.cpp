@@ -24,7 +24,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   f = new real[method.qsize()];
 
   // Set preconditioner
-  solver.setPreconditioner(mpc);
+  //solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
