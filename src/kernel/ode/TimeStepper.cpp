@@ -86,20 +86,14 @@ real TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
-  cout << "Building time slab" << endl;
-
   // Build time slab
   t = timeslab->build(t, T);
   
   //timeslab->disp();
   
-  cout << "Solving time slab" << endl;
-
   // Solve time slab system
   if ( !timeslab->solve() )
     stopped = true;
-
-  cout << "Saving solution" << endl;
 
   // Save solution
   save();
