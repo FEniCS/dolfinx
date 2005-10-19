@@ -27,6 +27,12 @@ void VTKFile::operator<<(Mesh& mesh)
 
   dolfin_info("Saving mesh to VTK file.");
   
+  // Update vtu file name and clear file
+  vtuNameUpdate(mesh.number());
+
+  // Write pvd file
+  pvdFileWrite(mesh.number());
+
   // Write headers
   VTKHeaderOpen(mesh);
 
@@ -47,9 +53,10 @@ void VTKFile::operator<<(Function& u)
   vtuNameUpdate(u.number());
   
   // Write pvd file
-  pvdFileWrite(u);
+  pvdFileWrite(u.number());
     
   const Mesh& mesh = u.mesh(); 
+
   // Write headers
   VTKHeaderOpen(mesh);
   
@@ -181,11 +188,11 @@ void VTKFile::ResultsWrite(Function& u) const
 
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvdFileWrite(Function& u)
+void VTKFile::pvdFileWrite(int num)
 {
   std::fstream pvdFile;
 
-  if( u.number() == 0)
+  if( num == 0)
   {
     // Open pvd file
     pvdFile.open(filename.c_str(), std::ios::out|std::ios::trunc);
@@ -206,7 +213,7 @@ void VTKFile::pvdFileWrite(Function& u)
   fname.assign(vtu_filename, filename.find_last_of("/") + 1, vtu_filename.size()); 
   
   // Data file name 
-  pvdFile << "<DataSet timestep=\"" << u.number() << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
+  pvdFile << "<DataSet timestep=\"" << num << "\" part=\"0\"" << " file=\"" <<  fname <<  "\"/>" << std::endl; 
   mark = pvdFile.tellp();
   
   // Close headers

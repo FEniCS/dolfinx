@@ -60,7 +60,7 @@ int main()
   
   // Save function to file
   Function u(x, mesh, a.trial());
-  File file("poisson.m");
+  File file("poisson.pvd");
   file << u;
   
   return 0;
