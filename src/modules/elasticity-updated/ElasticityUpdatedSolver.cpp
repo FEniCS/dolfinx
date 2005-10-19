@@ -30,7 +30,9 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     T(T), counter(0), lastsample(0),
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
-    t(0.0), rtol(1.0e-4), maxiters(10), do_plasticity(false), yield(0.0),
+    t(0.0), rtol(dolfin_get("discrete tolerance")),
+    maxiters(dolfin_get("maximum iterations")), do_plasticity(false),
+    yield(0.0),
     savesamplefreq(33.0),
     fevals(0),
     ode(0),
@@ -503,6 +505,8 @@ void ElasticityUpdatedODE::f(const real u[], real t, real y[])
   fromArray(u, solver.x1_1, 0, solver.Nv);
   fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
   fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+
+  solver.prepareiteration();
 
   // Compute solver RHS (puts result in Vector variables)
   solver.fu();
