@@ -226,8 +226,8 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  //Mesh mesh("cylinder_2d_bmk.xml");
-  Mesh mesh("cylinder_3d_bmk.xml");
+  //Mesh mesh("cylinder_2d_bmk.xml.gz");
+  Mesh mesh("cylinder_3d_bmk.xml.gz");
   ForceFunction f;
 
   /*

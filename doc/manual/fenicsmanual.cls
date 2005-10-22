@@ -23,6 +23,7 @@
 \RequirePackage{makeidx}
 \RequirePackage{url}
 \RequirePackage[latin1]{inputenc}
+\RequirePackage[colorlinks]{hyperref}
 
 %--- Misc options ---
 \setlength{\parindent}{0pt}
