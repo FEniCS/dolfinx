@@ -27,7 +27,7 @@ namespace dolfin
   {
   public:
     
-    enum Type { xml, matlab, octave, opendx, gid, tecplot, vtk };
+    enum Type { xml, matlab, octave, opendx, gid, tecplot, vtk, python };
     
     File(const std::string& filename);
     File(const std::string& filename, Type type);

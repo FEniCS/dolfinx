@@ -14,6 +14,7 @@
 #include <dolfin/MatlabFile.h>
 #include <dolfin/OctaveFile.h>
 #include <dolfin/OpenDXFile.h>
+#include <dolfin/PythonFile.h>
 #include <dolfin/GiDFile.h>
 #include <dolfin/TecplotFile.h>
 #include <dolfin/VTKFile.h>
@@ -41,6 +42,8 @@ File::File(const std::string& filename)
     file = new OctaveFile(filename);
   else if ( filename.rfind(".dx") != filename.npos )
     file = new OpenDXFile(filename);
+  else if ( filename.rfind(".py") != filename.npos )
+    file = new PythonFile(filename);
   else if ( filename.rfind(".tec") != filename.npos )
     file = new TecplotFile(filename);
   else if ( filename.rfind(".pvd") != filename.npos )
@@ -75,6 +78,9 @@ File::File(const std::string& filename, Type type)
     break;
   case vtk:
     file = new VTKFile(filename);
+    break;
+  case python:
+    file = new PythonFile(filename);
     break;
   default:
     file = 0;

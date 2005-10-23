@@ -7,6 +7,7 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/MFile.h \
                          dolfin/OctaveFile.h \
                          dolfin/OpenDXFile.h \
+                         dolfin/PythonFile.h \
                          dolfin/TecplotFile.h \
                          dolfin/VTKFile.h \
                          dolfin/XMLBLASFormData.h \
@@ -25,6 +26,7 @@ libdolfin_io_a_SOURCES = File.cpp \
                          MFile.cpp \
                          OctaveFile.cpp \
                          OpenDXFile.cpp \
+                         PythonFile.cpp \
                          TecplotFile.cpp \
                          VTKFile.cpp \
                          XMLBLASFormData.cpp \
