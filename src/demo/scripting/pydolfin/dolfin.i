@@ -15,9 +15,9 @@ using namespace dolfin;
 %typemap(python,in) uint = int; 
 %typemap(python,out) uint = int; 
 
-%typemap(out) dolfin::Parameter {
+%typemap(out) Parameter {
   {
-    // CustomParameter typemap
+    // Custom typemap
 
     switch ( $1.type )
     {
@@ -80,11 +80,11 @@ using namespace dolfin;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
 
+%ignore dolfin::dolfin_set;
+%ignore dolfin::dolfin_set_aptr;
 
 %import "dolfin.h"
 %import "dolfin/constants.h"
-
-%ignore dolfin::dolfin_set;
 
 %rename(dolfin_set) glueset;
 %rename(increment) dolfin::NodeIterator::operator++;
@@ -97,6 +97,7 @@ using namespace dolfin;
 %rename(PoissonLinearForm) dolfin::Poisson::LinearForm;
 %rename(PoissonBilinearFormTestElement) dolfin::Poisson::BilinearFormTestElement;
 %rename(PoissonBilinearFormTrialElement) dolfin::Poisson::BilinearFormTrialElement;
+
 
 
 /* DOLFIN public interface */
