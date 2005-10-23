@@ -96,16 +96,22 @@ int main(int argc, char **argv)
   dolfin_set("progress step", 1.0);
 //   dolfin_output("silent");
 
-  real T = 20.0;  // final time
+  real T = 10.0;  // final time
   real k = 1.0e-2; // time step
 
   dolfin_set("method", "cg");
   dolfin_set("order", 1);
-  dolfin_set("save solution", false);
+
+  dolfin_set("save solution", true);
+  dolfin_set("file name", "primal.py");
+  dolfin_set("number of samples", 400);
+
   dolfin_set("fixed time step", true);
   dolfin_set("initial time step", k);
   dolfin_set("maximum time step", k);
 //   dolfin_set("solver", "newton");
+
+
 
   //Mesh mesh("cow01.xml.gz");
   //Mesh mesh("cow07.xml.gz");
