@@ -4,6 +4,7 @@ EXTRA_DIST = dolfin_la.h \
              LinearSolver.h \
              LU.h \
              Matrix.h \
+             NonlinearSolver.h \
              PETScManager.h \
              Preconditioner.h \
              Vector.h \

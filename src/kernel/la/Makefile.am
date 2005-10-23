@@ -5,6 +5,7 @@ include_HEADERS        = dolfin/dolfin_la.h \
                          dolfin/LinearSolver.h \
                          dolfin/LU.h \
                          dolfin/Matrix.h \
+                         dolfin/NonlinearSolver.h \
                          dolfin/PETScManager.h \
                          dolfin/Preconditioner.h \
                          dolfin/Vector.h \
@@ -16,6 +17,7 @@ libdolfin_la_a_SOURCES = EigenvalueSolver.cpp \
                          LinearSolver.cpp \
                          LU.cpp \
                          Matrix.cpp \
+                         NonlinearSolver.cpp \
                          PETScManager.cpp \
                          Preconditioner.cpp \
                          Vector.cpp \
