@@ -1,8 +1,8 @@
 # Swig test
 
-DOLFIN_CFLAGS = `../../../config/dolfin-config --cflags_dolfin`
-DOLFIN_LFLAGS = `../../../config/dolfin-config --libs_dolfin`
-CXX = `../../../config/dolfin-config --compiler`
+DOLFIN_CFLAGS = `dolfin-config --cflags_dolfin`
+DOLFIN_LFLAGS = `dolfin-config --libs_dolfin`
+CXX = `dolfin-config --compiler`
 SWIG = swig
 
 CPPFLAGS = @PYTHON_CPPFLAGS@ $(DOLFIN_CFLAGS) -I. -g -fPIC
