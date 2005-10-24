@@ -49,6 +49,14 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
+
+AM_PATH_PYTHON(2.3)
+AC_PYTHON_DEVEL
+AC_PROG_SWIG(1.3.25)
+SWIG_ENABLE_CXX
+SWIG_PYTHON
+
+
 # Make debug option default so developers don't forget it
 echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
 enable_debug="yes"
@@ -234,6 +242,7 @@ AC_OUTPUT( Makefile \
            src/modules/poisson/dolfin/Makefile \
            src/modules/stokes/Makefile \
            src/modules/stokes/dolfin/Makefile \
+           src/pydolfin/Makefile \
            src/config/Makefile \
            src/post/Makefile \
            src/demo/Makefile \
