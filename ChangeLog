@@ -1,3 +1,4 @@
+ - Add Matrix Market format (Haiko Etzel)
  - Automatically reinitialize GMRES solver when system size changes
  - Implement cout << for class Vector
 0.5.10 [2005-10-11]

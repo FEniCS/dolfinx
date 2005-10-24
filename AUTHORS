@@ -9,10 +9,14 @@ DOLFIN is written and maintained by:
 	Anders Logg	email: logg@tti-c.org
 			www:   http://www.tti-c.org/logg/
 
+	Garth N. Wells  email: g.n.wells@citg.tudelft.nl
+                        www:   http://www.mechanics.citg.tudelft.nl/~garth/
+
 Contributors in alphabetical order:
 
 	Fredrik Bengzon		<bengzon@math.chalmers.se>
 	Niklas Ericsson		<nen@math.chalmers.se>
+        Haiko Etzel             <hetzel.devel@web.de>
 	Georgios Foufas		<foufas@math.chalmers.se>	foufas
 	Rasmus Hemph		<PDE project course 2001/2002>
 	David Heintz		<david.heintz@comhem.se>
@@ -27,8 +31,7 @@ Contributors in alphabetical order:
 	Harald Svensson		<harald.s@home.se>		harald
         Andy Terrel             <aterrel@uchicago.edu>
 	Jim Tilander		<jt@dd.chalmers.se>
-	Garth N. Wells  	<g.n.wells@citg.tudelft.nl>
 	Walter Villanueva	<PDE project course 2001/2002>
 
-Missing credits? Please tell us and we will fix it.
+Missing credits? Tell us and we will fix it.
 Send an email to dolfin@fenics.org.
