@@ -1,0 +1,31 @@
+PyDOLFIN - A Python module wrapper for DOLFIN
+
+Introduction:
+
+The idea behind PyDOLFIN is that DOLFIN should be usable from
+Python. This enables much simpler testing, experimenting,
+demonstration. For some applications it could likely replace the C++
+interface entirely.
+
+Installation:
+
+PyDOLFIN requires a correctly configured DOLFIN source tree, as well
+as an installation of DOLFIN. With that in place, simply type "make"
+in "src/pydolfin" to build the module, then "python setup.py install"
+to install it (a standard Python module installation
+procedure). Possibly "python setup.py install
+--prefix=/your/local/directory/" if you do not wish a system-wide
+install.
+
+Usage:
+
+PyDOLFIN is used just like any Python module:
+
+>>> from dolfin import *
+>>> dolfin_get("tolerance")
+0.10000000000000001
+>>> 
+
+See the included demos for usage examples, for example
+"settingsdemo.py".
+
