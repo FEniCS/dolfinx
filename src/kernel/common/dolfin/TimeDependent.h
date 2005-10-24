@@ -19,17 +19,17 @@ namespace dolfin
   public:
     
     /// Constructors
-		TimeDependent();
+    TimeDependent();
     TimeDependent(const real& t);
     
     /// Destructor
     ~TimeDependent();
 
     /// Associate object with time t
-		void sync(const real& t);
+    void sync(const real& t);
     
     /// Return the current time t
-		real time() const;
+    real time() const;
 
   private:
     

@@ -7,14 +7,18 @@
 #ifndef __NONLINEAR_SOLVER_H
 #define __NONLINEAR_SOLVER_H
 
+#include <petscsnes.h>
+
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 
 namespace dolfin
 {
 
-  /// This class defines the interface of all nonlinear solvers for
+  /// This class defines the interface of nonlinear solvers for
   /// equations of the form F(x) = 0.
   
   class NonlinearSolver
@@ -26,9 +30,44 @@ namespace dolfin
 
     /// Destructor
     virtual ~NonlinearSolver();
+  
+    /// Initialize nonlinear solver
+    void init(uint M, uint N);
+
+    /// Solve nonlinear problem F(u) = 0
+    void solve(Vector& x);
+
+  private:
+
+    // PETSc nonlinear solver pointer
+    SNES snes;
+
+    // Size of old system (need to reinitialize when changing)
+    uint M;
+    uint N;
 
   };
 
+  class NonlinearFunctional
+  {
+  public:
+
+    /// Constructor
+    NonlinearFunctional();
+
+    /// Destructor
+    virtual ~NonlinearFunctional();
+  
+  private:
+
+    const Mesh* mesh;
+    const BilinearForm* a;
+    const LinearForm* L;
+    const Matrix* A;
+    const Vector* b;
+    const Vector* x;
+
+  };
 }
 
 #endif
