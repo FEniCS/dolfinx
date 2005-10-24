@@ -48,5 +48,5 @@ file << u
 
 # Plotting should also be handled by Python modules
 
-vtkfile = File("poisson.vtk", File.VTK)
+vtkfile = File("poisson.vtk", File.vtk)
 vtkfile << u

@@ -28,8 +28,9 @@ class Harmonic(ODE):
         else:
             return -realArray_getitem(u, 0)
 
-# Use until DOLFIN Settings system is available
-odeinit("cg", 1)
+dolfin_set("method", "cg")
+dolfin_set("order", 1)
+dolfin_set("file name", "primal.py")
 
 ode = Harmonic()
 ode.solve()

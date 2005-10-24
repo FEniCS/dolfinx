@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python -i swigtest.py
+python -i meshdemo.py
