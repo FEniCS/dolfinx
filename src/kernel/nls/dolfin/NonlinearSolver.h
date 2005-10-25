@@ -11,9 +11,6 @@
 
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
 
 namespace dolfin
 {
@@ -48,26 +45,6 @@ namespace dolfin
 
   };
 
-  class NonlinearFunctional
-  {
-  public:
-
-    /// Constructor
-    NonlinearFunctional();
-
-    /// Destructor
-    virtual ~NonlinearFunctional();
-  
-  private:
-
-    const Mesh* mesh;
-    const BilinearForm* a;
-    const LinearForm* L;
-    const Matrix* A;
-    const Vector* b;
-    const Vector* x;
-
-  };
 }
 
 #endif
