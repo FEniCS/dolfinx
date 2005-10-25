@@ -54,7 +54,8 @@ vtkfile << u
 # Plot using Mayavi
 
 import mayavi
-v = mayavi.mayavi(geometry="743x504") # create a MayaVi window.
+#v = mayavi.mayavi(geometry="743x504") # create a MayaVi window.
+v = mayavi.mayavi() # create a MayaVi window.
 d = v.open_vtk_xml("poisson000001.vtu", config=0) # open the data file.
 # The config option turns on/off showing a GUI control for the
 # data/filter/module.
@@ -83,7 +84,7 @@ def myanim(t, v, f):
     f.fil.SetScaleFactor(1.5 * (sin(t[0]) + 1.2))
     v.Render()
 #    v.renwin.save_png('/tmp/anim%f.png' % t[0])
-    v.renwin.save_png('anim%4.4f.png' % t[0])
+#    v.renwin.save_png('anim%4.4f.png' % t[0])
 
 t = [0.0] # wrap the float in a mutable object
 v.start_animation(10, myanim, t, v, f)
