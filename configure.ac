@@ -28,7 +28,7 @@ AC_ARG_ENABLE(curses,
 
 # Option --disable-mpi
 AC_ARG_ENABLE(mpi,
-              AC_HELP_STRING([--disalbe-mpi],
+              AC_HELP_STRING([--disable-mpi],
                              [Compile without MPI (assuming PETSc does not use MPI)]),
               disable_mpi=yes)
 
@@ -37,6 +37,12 @@ AC_ARG_WITH(petsc-dir,
             AC_HELP_STRING([--with-petsc-dir=<path>],
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
+
+# Option --enable-optimization
+AC_ARG_ENABLE(pydolfin,
+              AC_HELP_STRING([--enable-pydolfin],
+                             [Turn on compilation of PyDOLFIN]),
+              enable_pydolfin=yes)
 
 # Standard tests
 AC_PROG_CC
@@ -107,6 +113,14 @@ if test x$PETSC_DIR = x; then
     PETSC_DIR="/usr/local/lib/petsc/"
 else
     echo "using PETSC_DIR=$PETSC_DIR"
+fi
+
+# Handle option --enable-pydolfin
+AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
+if test x$enable_pydolfin = xyes; then
+    echo "enabling compilation of PyDOLFIN"
+else
+    echo "disabling compilation of PyDOLFIN"
 fi
 
 # Check for PETSc
