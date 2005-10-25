@@ -28,9 +28,19 @@ class Harmonic(ODE):
         else:
             return -realArray_getitem(u, 0)
 
-dolfin_set("method", "cg")
+dolfin_set("method", "mcg")
 dolfin_set("order", 1)
 dolfin_set("file name", "primal.py")
 
 ode = Harmonic()
 ode.solve()
+
+# Plot result
+
+from primal import *
+
+gplt.plot(t, u[:, 0], 'title "u(0)" with linespoints',
+          t, u[:, 1], 'title "u(1)" with linespoints')
+gplt.title('Harmonic oscillator')
+gplt.xtitle("t")
+gplt.ytitle("u")
