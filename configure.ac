@@ -157,7 +157,7 @@ fi
 DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stokes"
 
 # List of DOLFIN kernel libraries
-DOLFIN_KERNEL="common fem form function io la log main math mesh nlsolver ode quadrature settings"
+DOLFIN_KERNEL="common fem form function io la log main math mesh nls ode quadrature settings"
 
 # Generate include path for kernel
 KERNEL_CFLAGS=""
@@ -218,8 +218,8 @@ AC_OUTPUT( Makefile \
            src/kernel/math/dolfin/Makefile \
            src/kernel/mesh/Makefile \
            src/kernel/mesh/dolfin/Makefile \
-           src/kernel/nlsolver/Makefile \
-           src/kernel/nlsolver/dolfin/Makefile \
+           src/kernel/nls/Makefile \
+           src/kernel/nls/dolfin/Makefile \
            src/kernel/ode/Makefile \
            src/kernel/ode/dolfin/Makefile \
            src/kernel/quadrature/Makefile \
