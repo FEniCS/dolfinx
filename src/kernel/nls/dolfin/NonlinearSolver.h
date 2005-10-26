@@ -33,7 +33,7 @@ namespace dolfin
     ~NonlinearSolver();
   
     /// Solve nonlinear problem F(u) = 0
-    const void solve(Vector& x);
+    void solve(Vector& x);
 
     /// Form RHS vector F(u)
     static int FormRHS(SNES snes, Vec x, Vec f, void* ptr);

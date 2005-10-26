@@ -4,6 +4,8 @@
 // First added:  2005-10-23
 // Last changed: 2005
 
+#include <petscsnes.h>
+
 #include <dolfin/PETScManager.h>
 #include <dolfin/NonlinearSolver.h>
 
@@ -33,7 +35,7 @@ NonlinearSolver::~NonlinearSolver()
   if( snes ) SNESDestroy(snes); 
 }
 //-----------------------------------------------------------------------------
-const void NonlinearSolver::solve(Vector& x)
+void NonlinearSolver::solve(Vector& x)
 {
   //FIXME
   // Initiate approximate solution vector
@@ -41,6 +43,7 @@ const void NonlinearSolver::solve(Vector& x)
   x0.init(x.size());
 
   x0 = 1;  
+
   // RHS vector 
   Vector b;
   b.init(x.size());
@@ -67,8 +70,8 @@ const void NonlinearSolver::solve(Vector& x)
   PCSetType(pc, PCILU);
 
   // Set pointer to approximate solution vector
-  dolfin_error("Commented this one out, didn't compile for me. /Anders");
-  //  SNESSetSolution(snes, x0.vec());
+//  dolfin_error("Commented this one out, didn't compile for me. /Anders");
+    SNESSetSolution(snes, x0.vec());
 
   // Set Jacobian Function
   SNESSetJacobian(snes, A.mat(), A.mat(), FormJacobian, _nlfunction);
@@ -88,10 +91,9 @@ const void NonlinearSolver::solve(Vector& x)
   cout << "After Jacobian test " << test << endl;  
 */
 
-  dolfin_error("Commented this one out, didn't compile for me. /Anders");
-  //SNESSetSolution(snes, x0.vec());
 
   int iter;
+  // Get number of iterations
   SNESGetIterationNumber(snes, &iter);
 
   // Solve nonlinear problem
