@@ -102,7 +102,7 @@ pythondir = @pythondir@
 @COMPILE_PYDOLFIN_TRUE@PYDOLFIN = pydolfin
 @COMPILE_PYDOLFIN_FALSE@PYDOLFIN = 
 
-SUBDIRS = pre kernel modules config $(PYDOLFIN) post utils test greeting
+SUBDIRS = pre kernel modules config $(PYDOLFIN) post utils greeting
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES = 
 DIST_COMMON =  Makefile.am Makefile.in
@@ -112,8 +112,7 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = tar
 GZIP_ENV = --best
-DIST_SUBDIRS =  pre kernel modules config pydolfin post utils test \
-greeting
+DIST_SUBDIRS =  pre kernel modules config pydolfin post utils greeting
 all: all-redirect
 .SUFFIXES:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am $(top_srcdir)/configure.ac $(ACLOCAL_M4) 

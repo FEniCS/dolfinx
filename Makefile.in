@@ -353,6 +353,9 @@ installdirs mostlyclean-generic distclean-generic clean-generic \
 maintainer-clean-generic clean mostlyclean distclean maintainer-clean
 
 
+test:
+	make -C src/test
+
 demo:
 	make -C src/demo/
 
