@@ -1,12 +1,6 @@
-# With DOLFIN installed system-wide
-#CFLAGS  = `dolfin-config --cflags`
-#LIBS    = `dolfin-config --libs`
-#CXX     = `dolfin-config --compiler`
-
-# For demo programs in the DOLFIN source tree
-CFLAGS  = `../../../../../config/dolfin-config --cflags_dolfin`
-LIBS    = `../../../../../config/dolfin-config --libs_dolfin`
-CXX     = `../../../../../config/dolfin-config --compiler`
+CFLAGS  = `dolfin-config --cflags`
+LIBS    = `dolfin-config --libs`
+CXX     = `dolfin-config --compiler`
 
 DEST    = dolfin-ode-homotopy-simple
 OBJECTS = main.o

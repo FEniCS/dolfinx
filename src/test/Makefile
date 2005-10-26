@@ -1,6 +1,6 @@
-CFLAGS  = `../config/dolfin-config --cflags_dolfin`
-LIBS    = `../config/dolfin-config --libs_dolfin`
-CXX     = `../config/dolfin-config --compiler`
+CFLAGS  = `dolfin-config --cflags`
+LIBS    = `dolfin-config --libs`
+CXX     = `dolfin-config --compiler`
 
 DEST    = dolfin-test
 OBJECTS = main.o
