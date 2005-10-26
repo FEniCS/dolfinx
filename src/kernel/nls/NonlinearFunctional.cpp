@@ -7,13 +7,26 @@
 #include <dolfin/NonlinearFunctional.h>
 
 using namespace dolfin;
-NonlinearFunctional::NonlinearFunctional() : mesh(0), a(0), L(0), b(0), x(0)
+NonlinearFunctional::NonlinearFunctional() : _a(0), _L(0), _mesh(0), _x0(0), 
+   _A(0), _b(0)
 {
-//FIXME
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+NonlinearFunctional::NonlinearFunctional(BilinearForm& a, LinearForm& L, 
+  Mesh& mesh, Vector& x0, Matrix& A, Vector& b) : _a(&a), _L(&L), _mesh(&mesh), 
+  _x0(&x0), _A(&A), _b(&b)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 NonlinearFunctional::~NonlinearFunctional()
 {
-// Do nothing 
+  // Do nothing 
+}
+//-----------------------------------------------------------------------------
+void NonlinearFunctional::UpdateNonlinearFunction()
+{
+  dolfin_warning("Nonlinear function update has not been supplied by user. Nothing updated");
 }
 //-----------------------------------------------------------------------------

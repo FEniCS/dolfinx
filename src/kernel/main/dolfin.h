@@ -1,8 +1,10 @@
 // Copyright (C) 2002-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005.
+//
 // First added:  2002-11-05
-// Last changed: 2005
+// Last changed: 2005-10-25
 
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
@@ -17,6 +19,7 @@
 #include <dolfin/dolfin_main.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_mesh.h>
+#include <dolfin/dolfin_nls.h>
 #include <dolfin/dolfin_ode.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/dolfin_settings.h>
