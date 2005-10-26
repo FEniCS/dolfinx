@@ -67,7 +67,8 @@ const void NonlinearSolver::solve(Vector& x)
   PCSetType(pc, PCILU);
 
   // Set pointer to approximate solution vector
-  SNESSetSolution(snes, x0.vec());
+  dolfin_error("Commented this one out, didn't compile for me. /Anders");
+  //  SNESSetSolution(snes, x0.vec());
 
   // Set Jacobian Function
   SNESSetJacobian(snes, A.mat(), A.mat(), FormJacobian, _nlfunction);
@@ -87,7 +88,8 @@ const void NonlinearSolver::solve(Vector& x)
   cout << "After Jacobian test " << test << endl;  
 */
 
-  SNESSetSolution(snes, x0.vec());
+  dolfin_error("Commented this one out, didn't compile for me. /Anders");
+  //SNESSetSolution(snes, x0.vec());
 
   int iter;
   SNESGetIterationNumber(snes, &iter);
