@@ -1,4 +1,4 @@
 #!/bin/sh
 
-./libs.sh
+#./libs.sh
 ./links.sh
