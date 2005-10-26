@@ -8,9 +8,6 @@ Usage: dolfin-config [options]
        --libs     (get libraries for linking)
        --compiler (get compiler)
 
-       --cflags_dolfin (for demo programs in the source tree)
-       --libs_dolfin   (for demo programs in the source tree)
-
 EOF
    exit $1
 }
@@ -31,12 +28,6 @@ case $1 in
       ;;
 	--compiler)
 		echo $COMPILER
-      ;;
-	--cflags_dolfin)
-      echo $CFLAGS_DOLFIN
-      ;;
-	--libs_dolfin)
-		echo $LIBS_DOLFIN
       ;;
 	*)
       usage 1 1>&2

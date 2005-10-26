@@ -18,12 +18,9 @@ cd src/config
 
 # Set variables
 CFLAGS_SYSTEM="-I$PREFIX/include $CFLAGS"
-CFLAGS_DOLFIN="-I$TOPDIR/include $CFLAGS"
 LIBS_SYSTEM="-L$PREFIX/lib $LIBS"
-LIBS_DOLFIN="-L$TOPDIR/lib $LIBS"
 FILE="./dolfin-config"
 TEMPLATE="./dolfin-config.template"
-DOLFIN_MAIN_INCLUDE="../kernel/main/dolfin.h"
 
 # Generate configure script
 echo "Generating data for dolfin-config..."
@@ -34,8 +31,6 @@ echo >> $FILE
 echo COMPILER=\"$COMPILER\" >> $FILE
 echo CFLAGS=\"$CFLAGS_SYSTEM\" >> $FILE
 echo LIBS=\"$LIBS_SYSTEM\" >> $FILE
-echo CFLAGS_DOLFIN=\"$CFLAGS_DOLFIN\" >> $FILE
-echo LIBS_DOLFIN=\"$LIBS_DOLFIN\" >> $FILE
 echo PACKAGE=\"$PACKAGE\" >> $FILE
 echo VERSION=\"$VERSION\" >> $FILE
 echo >> $FILE
