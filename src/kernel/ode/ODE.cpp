@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
@@ -12,12 +12,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-ODE::ODE(uint N, real T) : N(N), T(T), dependencies(N), transpose(N),
-		   default_timestep(dolfin_get("initial time step")),
-		   not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
-		   not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
-		   not_impl_J("Warning: consider implementing ODE::J() to improve efficiency."),
-		   tmp(0)
+ODE::ODE(uint N, real T)
+  : N(N), T(T), dependencies(N), transpose(N),
+    default_timestep(dolfin_get("initial time step")), tmp(0),
+    not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
+    not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
+    not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
 {
   dolfin_info("Creating ODE of size %d.", N);
 }
@@ -144,7 +144,6 @@ real ODE::timestep(uint i)
 //-----------------------------------------------------------------------------
 bool ODE::update(const real u[], real t, bool end)
 {
-  cout << "ODE::update" << endl;
   return true;
 }
 //-----------------------------------------------------------------------------

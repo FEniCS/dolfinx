@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #ifndef __LU_H
 #define __LU_H
@@ -14,7 +14,6 @@
 
 namespace dolfin
 {
-
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
@@ -30,10 +29,10 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
-    void solve(const Matrix& A, Vector& x, const Vector& b);
+    uint solve(const Matrix& A, Vector& x, const Vector& b);
 
-    /// Solve linear system Ax = b (matrix-free version)
-    void solve(const VirtualMatrix& A, Vector& x, const Vector& b);
+    /// Solve linear system Ax = b
+    uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
 
     /// Display LU solver data
     void disp() const;

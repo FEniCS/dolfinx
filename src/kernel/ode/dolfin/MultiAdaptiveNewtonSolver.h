@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
@@ -16,7 +16,6 @@
 
 namespace dolfin
 {
-
   class ODE;
   class MultiAdaptiveTimeSlab;
   class Method;
@@ -35,9 +34,6 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptiveNewtonSolver();
-
-    /// Solve system
-//     void solve();
 
   protected:
 

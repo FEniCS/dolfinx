@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -237,7 +237,8 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   {
     dolfin_info("Using iterative linear solver: GMRES.");
     GMRES* solver = new GMRES();
-    solver->setReport(false);
+    if ( !monitor )
+      solver->setReport(false);
     solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
     return solver;
   }
@@ -251,7 +252,8 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   {
     dolfin_info("Using iterative linear solver: GMRES (default).");
     GMRES* solver = new GMRES();
-    solver->setReport(false);
+    if ( !monitor )
+      solver->setReport(false);
     solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
     return solver;
   }

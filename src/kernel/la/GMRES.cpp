@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-06-22
-// Last changed: 2005-10-18
+// Last changed: 2005-10-24
 
 #include <petscpc.h>
 
@@ -35,7 +35,7 @@ GMRES::~GMRES()
   if ( B ) MatDestroy(B);
 }
 //-----------------------------------------------------------------------------
-void GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -59,17 +59,18 @@ void GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
   if ( reason < 0 )
     dolfin_error("GMRES solver did not converge.");
 
+  // Get the number of iterations
+  int num_iterations = 0;
+  KSPGetIterationNumber(ksp, &num_iterations);
+  
   // Report number of iterations
   if ( report )
-  {
-    //KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
-    int its = 0;
-    KSPGetIterationNumber(ksp, &its);
-    dolfin_info("GMRES converged in %d iterations.", its);
-  }
+    dolfin_info("GMRES converged in %d iterations.", num_iterations);
+
+  return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
 {
   // Create preconditioner for virtual system the first time
   //if ( !B )
@@ -102,14 +103,15 @@ void GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   if ( reason < 0 )
     dolfin_error("GMRES solver did not converge.");
   
+  // Get the number of iterations
+  int num_iterations = 0;
+  KSPGetIterationNumber(ksp, &num_iterations);
+  
   // Report number of iterations
   if ( report )
-  {
-    //KSPSetMonitor(ksp, KSPDefaultMonitor, PETSC_NULL, PETSC_NULL);
-    int its = 0;
-    KSPGetIterationNumber(ksp, &its);
-    dolfin_info("GMRES converged in %d iterations.", its);
-  }
+    dolfin_info("GMRES converged in %d iterations.", num_iterations);
+
+  return num_iterations;
 }
 //-----------------------------------------------------------------------------
 void GMRES::setReport(bool report)
@@ -213,10 +215,12 @@ void GMRES::init(uint M, uint N)
   PCSetFromOptions(pc);
 
   // Display tolerances
-  real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
-	      _rtol, _atol, _dtol, _maxiter);
+  /*
+    real _rtol(0.0), _atol(0.0), _dtol(0.0); int _maxiter(0);
+    KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
+    dolfin_info("Setting up PETSc GMRES solver: (rtol, atol, dtol, maxiter) = (%.1e, %.1e, %.1e, %d).",
+    _rtol, _atol, _dtol, _maxiter);
+  */
 }
 //-----------------------------------------------------------------------------
 void GMRES::createVirtualPreconditioner(const VirtualMatrix& A)

@@ -55,13 +55,12 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-
+# Test for PyDOLFIN
 AM_PATH_PYTHON(2.3)
 AC_PYTHON_DEVEL
 AC_PROG_SWIG(1.3.25)
 SWIG_ENABLE_CXX
 SWIG_PYTHON
-
 
 # Make debug option default so developers don't forget it
 echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
@@ -207,7 +206,7 @@ AC_SUBST(DOLFIN_LIBS)
 AC_SUBST(PACKAGE_VERSION)
 AC_SUBST(PACKAGE_NAME)
 
-# Create Makefiles Seems like automake cannot handle a variable
+# Create Makefiles, seems like automake cannot handle a variable
 # containing the list of files, so this cannot be done
 # automatically. We have to list all the files.
 AC_OUTPUT( Makefile \
@@ -271,3 +270,37 @@ AC_OUTPUT( Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/greeting/Makefile )
+
+# Display some configuration options
+echo '---------------------------------------------------------'
+echo 'Configuration of DOLFIN finished. Now type'
+echo ''
+echo '   make'
+echo '   make install'
+echo ''
+echo 'to install DOLFIN on your system. After DOLFIN has been'
+echo 'installed, you can compile all the demo programs in the'
+echo 'subdirectory src/demo by running'
+echo ''
+echo '   make demo'
+echo ''
+echo 'Note that you may need to be root in order to install.'
+echo 'To specify an alternative installation directory, rerun'
+echo 'configure with option --prefix=<path>. You may also run'
+echo './configure.local to configure for a local installation'
+echo 'in the DOLFIN source tree.'
+echo '---------------------------------------------------------'
+
+# Check that the installation directory is set up correctly
+__BINDIR=`echo $prefix/bin | sed 's/\//-/g'`
+__PATH=`echo $PATH | sed 's/\//-/g'`
+if test $__PATH = `echo $__PATH | sed s/$__BINDIR//`; then
+   echo 'Warning: installation directory is not in PATH.'
+   echo ''
+   echo 'To compile a program against DOLFIN (including the demos)'
+   echo 'you need to add the bin subdirectory of the installation'
+   echo 'diretory to your PATH which you can do with the command'
+   echo ''
+   echo "    export PATH=\"\$PATH:$prefix/bin\""
+   echo ''
+fi

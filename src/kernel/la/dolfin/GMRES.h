@@ -7,7 +7,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004-06-22
-// Last changed: 2005-10-18
+// Last changed: 2005-10-24
 
 #ifndef __GMRES_H
 #define __GMRES_H
@@ -19,7 +19,6 @@
 
 namespace dolfin
 {
-
   /// This class implements the GMRES method for linear systems
   /// of the form Ax = b. It is a wrapper for the GMRES solver
   /// of PETSc.
@@ -34,11 +33,11 @@ namespace dolfin
     /// Destructor
     ~GMRES();
 
-    /// Solve linear system Ax = b
-    void solve(const Matrix& A, Vector& x, const Vector& b);
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const Matrix& A, Vector& x, const Vector& b);
           
-    /// Solve linear system Ax = b (matrix-free version)
-    void solve(const VirtualMatrix& A, Vector& x, const Vector& b);
+    /// Solve linear system Ax = b and return number of iterations
+    uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
     
     /// FIXME: Options below should be moved to some parameter system,
     /// FIXME: not very nice to have a long list of setFoo() functions.

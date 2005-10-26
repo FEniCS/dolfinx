@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #ifndef __MONO_ADAPTIVE_NEWTON_SOLVER_H
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
@@ -14,7 +14,6 @@
 
 namespace dolfin
 {
-
   class ODE;
   class MonoAdaptiveTimeSlab;
   class NewMethod;
@@ -28,15 +27,12 @@ namespace dolfin
   class MonoAdaptiveNewtonSolver : public TimeSlabSolver
   {
   public:
-
+    
     /// Constructor
     MonoAdaptiveNewtonSolver(MonoAdaptiveTimeSlab& timeslab, bool implicit = false);
 
     /// Destructor
     ~MonoAdaptiveNewtonSolver();
-
-    /// Solve system
-//     void solve();
 
   protected:
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -14,7 +14,6 @@
 
 namespace dolfin
 {
-
   /// A ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t),t) on (0,T],
@@ -111,13 +110,13 @@ namespace dolfin
 
   private:
 
+    // Temporary array
+    real* tmp;
+
     // Events
     Event not_impl_f;
     Event not_impl_M;
     Event not_impl_J;
-
-    // Temporary array
-    real* tmp;
 
   };
 

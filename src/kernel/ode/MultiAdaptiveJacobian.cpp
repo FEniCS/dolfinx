@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
@@ -60,7 +60,7 @@ void MultiAdaptiveJacobian::update()
 {
   // Compute Jacobian at the beginning of the slab
   real t = ts.starttime();
-  dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
+  //dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
   
   // Compute Jacobian
   for (uint i = 0; i < ode.size(); i++)

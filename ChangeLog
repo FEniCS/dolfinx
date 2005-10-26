@@ -1,3 +1,5 @@
+ - Make GMRES solver return the number of iterations
+ - Add installation script for Python interface
  - Add Matrix Market format (Haiko Etzel)
  - Automatically reinitialize GMRES solver when system size changes
  - Implement cout << for class Vector

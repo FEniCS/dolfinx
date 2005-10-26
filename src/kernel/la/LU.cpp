@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -37,7 +37,7 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-void LU::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
 {
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
@@ -45,9 +45,11 @@ void LU::solve(const Matrix& A, Vector& x, const Vector& b)
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
+  
+  return 1;
 }
 //-----------------------------------------------------------------------------
-void LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
 {
   //cout << "LU got matrix:" << endl;
   //cout << "A = "; A.disp(false);
@@ -74,6 +76,8 @@ void LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
     else
       dolfin_warning1("Matrix has large condition number (%.1e).", kappa);
   }
+
+  return 1;
 }
 //-----------------------------------------------------------------------------
 void LU::disp() const

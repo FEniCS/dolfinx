@@ -2,14 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #ifndef __TIME_SLAB_SOLVER_H
 #define __TIME_SLAB_SOLVER_H
 
 namespace dolfin
 {
-
   class ODE;
   class Method;
   class TimeSlab;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-10-14
+// Last changed: 2005-10-24
 
 #include <dolfin.h>
 
@@ -97,8 +97,8 @@ int main(int argc, char* argv[])
   
   dolfin_set("solver", "newton");
   dolfin_set("tolerance", 0.001);
-  dolfin_set("monitor convergence", true);
-  dolfin_set("method", "mcg");
+  dolfin_set("monitor convergence", false);
+  dolfin_set("method", "cg");
   
   Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   ode.solve();

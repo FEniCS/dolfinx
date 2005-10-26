@@ -9,6 +9,8 @@ all: $(DEST)
 
 install:
 
+uninstall:
+
 clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 

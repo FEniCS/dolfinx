@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-10-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -22,7 +22,11 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 {
   // Initialize local array
   f = new real[method.qsize()];
-
+  
+  // Don't report number of GMRES iteration if not asked to
+  if ( !monitor )
+    solver.setReport(false);
+  
   // Set preconditioner
   //solver.setPreconditioner(mpc);
 }
@@ -66,8 +70,6 @@ void MultiAdaptiveNewtonSolver::start()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
-  cout << "MultiAdaptiveNewtonSolver::iteration()" << endl;
-
   // Evaluate b = -F(x) at current x
   beval();
   
@@ -92,7 +94,7 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 
   // Restore array
   dx.restore(dxx);
-
+  
   return max_increment;
 }
 //-----------------------------------------------------------------------------
