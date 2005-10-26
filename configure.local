@@ -7,4 +7,5 @@
 # directory.
 
 INSTALLDIR=`pwd`"/local"
-./configure --prefix=$INSTALLDIR
+
+./configure --prefix=$INSTALLDIR $*
