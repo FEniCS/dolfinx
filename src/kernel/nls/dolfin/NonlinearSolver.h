@@ -33,7 +33,7 @@ namespace dolfin
     ~NonlinearSolver();
   
     /// Solve nonlinear problem F(u) = 0
-    void solve(Vector& x);
+    void solve(Vector& x, NonlinearFunctional& nlfunction);
 
     /// Form RHS vector F(u)
     static int FormRHS(SNES snes, Vec x, Vec f, void* ptr);
@@ -47,7 +47,7 @@ namespace dolfin
     void FormSystem();
 
     // Details of the nonliner function
-    NonlinearFunctional* _nlfunction;
+    NonlinearFunctional* nlfunc;
 
     // PETSc nonlinear solver pointer
     SNES snes;

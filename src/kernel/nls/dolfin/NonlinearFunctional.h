@@ -14,6 +14,7 @@
 #include <dolfin/Mesh.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
+#include <dolfin/BoundaryCondition.h>
 
 namespace dolfin
 {
@@ -31,7 +32,7 @@ namespace dolfin
     /// Create nonlinear functional with bilinear form, linear form, mesh, RHS 
     /// vector, Jacobian matrix and solution vector
     NonlinearFunctional(BilinearForm& a, LinearForm& L, Mesh& mesh, Vector& x, 
-                        Matrix& A, Vector& b);
+                        Matrix& A, Vector& b, BoundaryCondition& bc);
 
     /// Destructor
     virtual ~NonlinearFunctional();
@@ -39,14 +40,17 @@ namespace dolfin
     /// User-defined function to update functions in forms
     virtual void UpdateNonlinearFunction();
 
-  private:
+  friend class NonlinearSolver;
 
-    const BilinearForm* _a;
-    const LinearForm* _L;
-    const Mesh* _mesh;
+//  private:
+
+    BilinearForm* _a;
+    LinearForm* _L;
+    Mesh* _mesh;
     Vector* _x0;
     Matrix* _A;
     Vector* _b;
+    BoundaryCondition* _bc;
 
   };
 }
