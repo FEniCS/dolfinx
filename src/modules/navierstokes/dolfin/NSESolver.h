@@ -36,6 +36,9 @@ namespace dolfin
     // Compute stabilization 
     void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
 			      Vector& d1vector, Vector& d2vector);
+    
+    // Compute cell mean velocity
+    void ComputeMeanVelocity(Vector& xnodal, Vector& xcell);
 
   private:
 

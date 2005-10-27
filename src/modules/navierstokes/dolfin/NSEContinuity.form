@@ -9,7 +9,8 @@
 name = "NSEContinuity"
 #scalar = FiniteElement("Lagrange", "triangle", 1)
 #vector = FiniteElement("Vector Lagrange", "triangle", 1)
-#constant = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+#constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+#constant_vector = FiniteElement("Discontinuous vector Lagrange", "triangle", 0)
 scalar = FiniteElement("Lagrange", "tetrahedron", 1)
 vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 constant_vector = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
@@ -17,9 +18,9 @@ constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 q            = BasisFunction(scalar)
 p            = BasisFunction(scalar)
-#uc           = Function(constant_vector)
+um           = Function(constant_vector)
 uc           = Function(vector)
-f            = Function(constant_vector)
+f            = Function(vector)
 
 delta1       = Function(constant_scalar)        # stabilization
 
@@ -28,7 +29,7 @@ i1 = Index()
 i2 = Index()
 
 a = delta1*dot(grad(q), grad(p))*dx;
-L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx #- delta1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx 
+L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
 
 #a = delta1*q.dx(i0)*p.dx(i0)*dx 
 #L = delta1*q.dx(i0)*f[i0]*dx - delta1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 

@@ -78,9 +78,10 @@ void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfu)
   // Set preconditioner type
   PCSetType(pc, PCILU);
 
+  /*
   // Set pointer to approximate solution vector
   SNESSetSolution(snes, x0.vec());
-
+  */
   // Set RHS Function
   SNESSetFunction(snes, b->vec(), FormRHS, nlfunc);
 

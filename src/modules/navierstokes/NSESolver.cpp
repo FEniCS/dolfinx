@@ -34,14 +34,16 @@ void NSESolver::solve()
   //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
   Vector bmom, bcon;
 
-  int nsd = 3;
+  int nsd = 2;
 
   // Initialize velocity;
   Vector x0vel(nsd*mesh.noNodes());
   Vector xcvel(nsd*mesh.noNodes());
+  Vector xmvel(nsd*mesh.noCells());
   Vector xvel(nsd*mesh.noNodes());
   x0vel = 0.0;
   xcvel = 0.0;
+  xmvel = 0.0;
   xvel = 0.0;
 
   Vector xpre(mesh.noNodes());
@@ -76,6 +78,7 @@ void NSESolver::solve()
   //  Function u(xvel, mesh);   // Velocity
   Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
+  Function um(xmvel, mesh); // Cell mean velocity  
   Function p(xpre, mesh);   // Pressure
 
   
@@ -87,13 +90,13 @@ void NSESolver::solve()
   cout << "Create bilinear form: momentum" << endl;
 
   // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(uc,delta1,delta2,k,nu);
-  NSEMomentum::LinearForm Lmom(uc,u0,f,p,delta1,delta2,k,nu);
+  NSEMomentum::BilinearForm amom(um,uc,delta1,delta2,k,nu);
+  NSEMomentum::LinearForm Lmom(um,uc,u0,f,p,delta1,delta2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
 
   NSEContinuity::BilinearForm acon(delta1);
-  NSEContinuity::LinearForm Lcon(uc,f,delta1);
+  NSEContinuity::LinearForm Lcon(um,uc,f,delta1);
 
   cout << "Create file" << endl;
 
@@ -110,8 +113,8 @@ void NSESolver::solve()
   File file_u("velocity.m");  // file for saving velocity 
   */
 
-  File file_p("pressure.dx");  // file for saving pressure
-  File file_u("velocity.dx");  // file for saving velocity 
+  File file_p("pressure.pvd");  // file for saving pressure
+  File file_u("velocity.pvd");  // file for saving velocity 
 
   cout << "Assemble form: continuity" << endl;
 
@@ -188,6 +191,7 @@ void NSESolver::solve()
       solver_mom.solve(Amom, xvel, bmom);
       
       xcvel = xvel;
+      ComputeMeanVelocity(xcvel,xmvel);
     
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
@@ -286,6 +290,19 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 	d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
 	d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
       }	
+    }
+}
+//-----------------------------------------------------------------------------
+void NSESolver::ComputeMeanVelocity(Vector& xnodal, Vector& xcell)
+{
+  // Compute cell mean 
+  xcell.init(mesh.noCells());	
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+    {
+      xcell((*cell).id()) = 0.0;
+      for (NodeIterator node(cell); !node.end(); ++node)
+	xcell((*cell).id()) += xnodal((*node).id());
+      xcell((*cell).id()) = xcell((*cell).id()) / real(cell->noNodes());
     }
 }
 //-----------------------------------------------------------------------------
