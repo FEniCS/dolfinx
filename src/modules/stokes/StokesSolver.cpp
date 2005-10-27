@@ -33,7 +33,7 @@ void StokesSolver::solve()
 
   // Save function to file
   Function u(x, mesh, a.trial());
-  File file("stokes.m");
+  File file("stokes.pvd");
   file << u;
 }
 //-----------------------------------------------------------------------------
