@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-10-03
+// Last changed: 2005-10-24
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -27,7 +27,7 @@ namespace dolfin
   {
   public:
     
-    enum Type { xml, matlab, octave, opendx, gid, tecplot, vtk, python };
+    enum Type { xml, matlab, matrixmarket, octave, opendx, gid, tecplot, vtk, python };
     
     File(const std::string& filename);
     File(const std::string& filename, Type type);

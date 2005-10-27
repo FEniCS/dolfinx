@@ -5,6 +5,7 @@ EXTRA_DIST = dolfin_io.h \
              MFile.h \
              OpenDXFile.h \
              MatlabFile.h \
+             MTXFile.h \
              OctaveFile.h \
              TecplotFile.h \
              VTKFile.h \

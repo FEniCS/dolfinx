@@ -5,7 +5,8 @@ include_HEADERS        = dolfin/dolfin_io.h \
                          dolfin/GiDFile.h \
                          dolfin/MatlabFile.h \
                          dolfin/MFile.h \
-                         dolfin/OctaveFile.h \
+                         dolfin/MTXFile.h \
+	                 dolfin/OctaveFile.h \
                          dolfin/OpenDXFile.h \
                          dolfin/PythonFile.h \
                          dolfin/TecplotFile.h \
@@ -24,6 +25,7 @@ libdolfin_io_a_SOURCES = File.cpp \
                          GiDFile.cpp \
                          MatlabFile.cpp \
                          MFile.cpp \
+                         MTXFile.cpp \
                          OctaveFile.cpp \
                          OpenDXFile.cpp \
                          PythonFile.cpp \

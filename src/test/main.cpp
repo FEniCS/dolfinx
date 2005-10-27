@@ -16,5 +16,17 @@ int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
 
+  UnitSquare mesh(3, 3);
+  MassMatrix A(mesh);
+
+  File file("matrix.mtx");
+  file << A;
+
+  Matrix B;
+  file >> B;
+
+  A.disp();
+  B.disp();
+
   return 0;
 }
