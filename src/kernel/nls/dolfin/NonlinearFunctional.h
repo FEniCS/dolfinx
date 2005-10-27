@@ -40,6 +40,9 @@ namespace dolfin
     /// User-defined function to update functions in forms
     virtual void UpdateNonlinearFunction();
 
+    /// Return mesh
+    Mesh& rmesh();
+
   friend class NonlinearSolver;
 
 //  private:

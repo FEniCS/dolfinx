@@ -5,24 +5,16 @@
 // Last changed: 2005
 
 #include <petscsnes.h>
+#include <petscversion.h>
 
 #include <dolfin/PETScManager.h>
 #include <dolfin/NonlinearSolver.h>
 #include <dolfin/FEM.h>
+#include <dolfin/BilinearForm.h>
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-NonlinearSolver::NonlinearSolver() : nlfunc(0), snes(0)
-{
-  // Initialize PETSc
-  PETScManager::init();
-
-  SNESCreate(PETSC_COMM_SELF, &snes);
-
-}
-//-----------------------------------------------------------------------------
-NonlinearSolver::NonlinearSolver(NonlinearFunctional& nlfunction) : 
-  nlfunc(&nlfunction), snes(0)
+NonlinearSolver::NonlinearSolver() : snes(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -36,7 +28,7 @@ NonlinearSolver::~NonlinearSolver()
   if( snes ) SNESDestroy(snes); 
 }
 //-----------------------------------------------------------------------------
-void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfu)
+void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfunc)
 {
   //FIXME
   // Initiate approximate solution vector
@@ -47,11 +39,12 @@ void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfu)
 
   // RHS vector 
   Vector* b;
-  b = nlfu._b;
+  b = nlfunc._b;
 
 
   Matrix* A;
-  A = nlfu._A;
+  A = nlfunc._A;
+
 
 //  b.init(x.size());
 //  cout << "Display vector b " << endl;
@@ -79,14 +72,25 @@ void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfu)
   PCSetType(pc, PCILU);
 
   /*
-  // Set pointer to approximate solution vector
-  SNESSetSolution(snes, x0.vec());
+  Due to a bug in PETSc 2.3.0, patch level < 38, we need to check PETSc path 
+  level. If the PETSc version is old, a fatal error is raised when trying to 
+  call the PETSc function SNESSetSolution. 
   */
+  // Set pointer to approximate solution vector
+  #if PETSC_VERSION_PATCH < 38
+    dolfin_error("Your version of PETSc is not compatible with the nonlinear "
+                 "solver. Download the latest version (2.3.0, patch "
+                 "level > 37). Note that the PETSc version numbers are not "
+                 "updated. You need a version from after 12 October 2005.");
+  #else
+    SNESSetSolution(snes, x0.vec());
+  #endif
+
   // Set RHS Function
-  SNESSetFunction(snes, b->vec(), FormRHS, nlfunc);
+  SNESSetFunction(snes, b->vec(), FormRHS, &nlfunc);
 
   // Set Jacobian Function
-  SNESSetJacobian(snes, A->mat(), A->mat(), FormJacobian, nlfunc);
+  SNESSetJacobian(snes, A->mat(), A->mat(), FormJacobian, &nlfunc);
 
 // Test Jacobian function
 
@@ -115,35 +119,30 @@ int NonlinearSolver::FormRHS(SNES snes, Vec x, Vec f, void *nlProblem)
 {
   cout << "inside FormRHS " << endl;
 
+  // Pointer to NonlinearFunction object
   NonlinearFunctional* nlp = (NonlinearFunctional*)nlProblem;
 
-  // Extract parts of the nonlinear problem
-//  BilinearForm aa       = *(nlp->_a);
-//  LinearForm L         = *nlp->_L;
-//  Matrix A             = *nlp->_A;
-//  Vector b             = *nlp->_b;
-//  Vector x0            = *nlp->_x0;
-//   Mesh* mesh            = (Mesh*)(nlp->_mesh);
-//  BoundaryCondition bc = *nlp->_bc;
+//    Mesh mesh  =  *nlp->rmesh();
+//   cout << "tetsing here " << (*nlp).rmesh() << endl;;
+//   Mesh* AAA;
+//   AAA = *nlp._mesh;
 
-//  cout << "testing " << mesh->noNodes() <<  endl;
+  Matrix* AB;
+  AB = nlp->_A;
+
+  BilinearForm* a;
+  a = nlp->_a;
 
   // Update functions (user defined)
-//  nlp->UpdateNonlinearFunction();
+  nlp->UpdateNonlinearFunction();
 
-  // Initialise b vector with pointer to PETSc RHS vector f
-//  Vector b(x);
+  // Assemble RHS vector
+//  FEM::assemble(*nlp->_a, *nlp->_L, *nlp->_A, *nlp->_b, *nlp->_mesh, *nlp->_bc);
+  FEM::assemble(*a, *nlp->_L, *nlp->_A, *nlp->_b, *nlp->_mesh, *nlp->_bc);
+  (*nlp->_A).disp();
 
-  // Form RHS vector
-  cout << "assemble " <<  endl;
-//  FEM::assemble(a, L, A, b, mesh, bc);
-  FEM::assemble(*nlp->_a, *nlp->_L, *nlp->_A, *nlp->_b, *nlp->_mesh, *nlp->_bc);
-//  FEM::assemble(aa, *nlp->_L, *nlp->_A, *nlp->_b, *nlp->_mesh, *nlp->_bc);
+//  FEM::assemble(*nlp->_a, *nlp->_L, *nlp->_A, *nlp->_b, *mesh, *nlp->_bc);
   cout << "finish assemble " <<   endl;
-
-  VecSetValue(f, 2, 1.2, INSERT_VALUES);
-
-  cout << "finished inside FormRHS " << endl;
 
   return 0;
 }
@@ -151,11 +150,13 @@ int NonlinearSolver::FormRHS(SNES snes, Vec x, Vec f, void *nlProblem)
 int NonlinearSolver::FormJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
 {
   cout << "inside FormJacobian " << endl;
+
+  // Pointer to NonlinearFunction object
   NonlinearFunctional* nlp = (NonlinearFunctional*)nlProblem;
 
+  // Assemble Jacobian vector
   FEM::assemble(*nlp->_a, *nlp->_L, *nlp->_A, *nlp->_b, *nlp->_mesh, *nlp->_bc);
   *flag = SAME_NONZERO_PATTERN;
-  (*nlp->_A).disp();
 
 
 

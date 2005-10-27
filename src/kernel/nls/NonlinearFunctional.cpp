@@ -31,3 +31,8 @@ void NonlinearFunctional::UpdateNonlinearFunction()
   dolfin_warning("Nonlinear function update has not been supplied by user. Nothing updated");
 }
 //-----------------------------------------------------------------------------
+Mesh& NonlinearFunctional::rmesh()
+{
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------

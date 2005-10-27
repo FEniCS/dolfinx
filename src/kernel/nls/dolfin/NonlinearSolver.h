@@ -23,11 +23,8 @@ namespace dolfin
   {
   public:
 
-    /// Constructor
-    NonlinearSolver();
-
     /// Initialise nonlinear solver for a given nonlinear function
-    NonlinearSolver(NonlinearFunctional& nlfunction);
+    NonlinearSolver();
 
     /// Destructor
     ~NonlinearSolver();
@@ -36,18 +33,15 @@ namespace dolfin
     void solve(Vector& x, NonlinearFunctional& nlfunction);
 
     /// Form RHS vector F(u)
-    static int FormRHS(SNES snes, Vec x, Vec f, void* ptr);
+    static int FormRHS(SNES snes, Vec x, Vec f, void* nlfunc);
 
     /// Form Jacobian (stiffness matrix) F'(u) = dF(u)/du
-    static int FormJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* ptr);
+    static int FormJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
 
-  private:
+//  private:
 
     /// Form RHS vector F(u) and  Jacobian F'(u) = dF(u)/du
     void FormSystem();
-
-    // Details of the nonliner function
-    NonlinearFunctional* nlfunc;
 
     // PETSc nonlinear solver pointer
     SNES snes;
