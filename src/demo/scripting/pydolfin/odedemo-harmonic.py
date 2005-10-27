@@ -47,21 +47,35 @@ from pylab import *
 #gplt.xtitle("t")
 #gplt.ytitle("u")
 
-title('Harmonic oscillator')
-subplot(311)
+uexact = zeros((size(u, 0), size(u, 1)), 'd')
+uexact[:, 0] = sin(t)
+uexact[:, 1] = cos(t)
+
+e = uexact - u
+
+#title('Harmonic oscillator')
+subplot(411)
 plot(t, u[:, 0], label='u(0)')
 plot(t, u[:, 1], label='u(1)')
 grid(True)
 title('Harmonic oscillator')
 ylabel('u')
 
-subplot(312)
+subplot(412)
 plot(t, r[:, 0], label='r(0)')
 plot(t, r[:, 1], label='r(1)')
 ylabel('r')
 
-subplot(313)
+subplot(413)
 plot(t, k[:, 0], label='k(0)')
 plot(t, k[:, 1], label='k(1)')
 ylabel('k')
+
+subplot(414)
+plot(t, e[:, 0], label='e(0)')
+plot(t, e[:, 1], label='e(1)')
+ylabel('e')
+
+savefig('harmonic.eps')
+
 show()

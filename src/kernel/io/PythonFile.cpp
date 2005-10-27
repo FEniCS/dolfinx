@@ -78,7 +78,7 @@ void PythonFile::operator<<(Sample& sample)
   }
 
   // Save time
-  fprintf(fp_t, "%.15e ", sample.t());
+  fprintf(fp_t, "%.15e\n", sample.t());
 
   // Save solution
   for (unsigned int i = 0; i < sample.size(); i++)

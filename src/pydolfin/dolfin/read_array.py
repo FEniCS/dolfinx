@@ -23,7 +23,12 @@ def read_array(fp):
                 
     fp.seek(0)
                             
-    A = zeros((N, M), 'd')
+    if(M == 1):
+        A = zeros((N), 'd')
+    elif(N == 1):
+        A = zeros((M), 'd')
+    else:
+        A = zeros((N, M), 'd')
 
     i = 0
     while 1:
@@ -33,7 +38,12 @@ def read_array(fp):
         elements = line.split()
         j = 0
         for e in elements:
-            A[i, j] = float(e)
+            if(M == 1):
+                A[i] = float(e)
+            elif(M == 1):
+                A[j] = float(e)
+            else:
+                A[i, j] = float(e)
             j += 1
         i += 1
 
