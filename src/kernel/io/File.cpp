@@ -1,7 +1,8 @@
 // Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2005
+// Modified by Garth N. Wells 2005.
+// Modified by Haiko Etzel 2005.
 //
 // First added:  2002-11-12
 // Last changed: 2005-10-24

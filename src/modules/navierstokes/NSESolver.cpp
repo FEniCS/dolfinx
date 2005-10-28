@@ -61,9 +61,11 @@ void NSESolver::solve()
   PC pc;
   KSPGetPC(ksp_con,&pc);
   PCSetType(pc,PCHYPRE);
-  PCHYPRESetType(pc,"boomeramg");
-  
-  
+
+  // FIXME: Unable to link Navier-Stokes module if Hypre is not installed.
+  // FIXME: Need to check if Hypre is available and warn if it is not.
+  //PCHYPRESetType(pc,"boomeramg");
+    
   /*
   solver_con.setRtol(1.0e-10);
   solver_con.setAtol(1.0e-10);
