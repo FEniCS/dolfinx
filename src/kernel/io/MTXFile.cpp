@@ -104,7 +104,9 @@ void MTXFile::operator>>(Matrix& A)
 
   // find out size of matrix
   if (MTXFile::mm_read_mtx_crd_size(f, &M, &N, &nz) !=0)
+  {
     dolfin_error("Could not parse matrix size.");
+  }
   // resize A
   A.init(M,N,nz);
 
@@ -219,11 +221,17 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
   mm_clear_typecode(matcode);
 
   if (fgets(line, MM_MAX_LINE_LENGTH, f) == NULL)
-    return MM_PREMATURE_EOF;
+  {
+    dolfin_error("premature EOF");
+    return 1;
+  }
 
   if (sscanf(line, "%s %s %s %s %s", banner, mtx, crd, data_type,
 	     storage_scheme) != 5)
-    return MM_PREMATURE_EOF;
+  {
+    dolfin_error("premature EOF");
+    return 1;
+  }
 
   for (p=mtx; *p!='\0'; *p=tolower(*p),p++);  /* convert to lower case */
   for (p=crd; *p!='\0'; *p=tolower(*p),p++);
@@ -231,64 +239,82 @@ int MTXFile::mm_read_banner(FILE *f, MM_typecode *matcode)
   for (p=storage_scheme; *p!='\0'; *p=tolower(*p),p++);
 
   // check for banner
-  if (strncmp(banner, MatrixMarketBanner, strlen(MatrixMarketBanner)) != 0)
-    return MM_NO_HEADER;
+  if (strncmp(banner, "%%MatrixMarket", strlen("%%MatrixMarket")) != 0)
+  {
+    dolfin_error("no header in file"); 
+    return 0;
+  }
 
   // first field should be "mtx"
-  if (strcmp(mtx, MM_MTX_STR) != 0)
-    return  MM_UNSUPPORTED_TYPE;
+  if (strcmp(mtx, "matrix") != 0)
+  {
+    dolfin_error("unsupported type in first field"); 
+    return 0;
+  }
   mm_set_matrix(matcode);
 
   // second field describes whether this is a sparse matrix 
   // (in coordinate storage) or a dense array
 
-  if (strcmp(crd, MM_SPARSE_STR) == 0)
+  if (strcmp(crd, "coordinate") == 0)
     mm_set_sparse(matcode);
   else
-    if (strcmp(crd, MM_DENSE_STR) == 0)
+    if (strcmp(crd, "array") == 0)
       mm_set_dense(matcode);
     else
-      return MM_UNSUPPORTED_TYPE;
+    {
+      dolfin_error("unsupported type in second field"); 
+      return 0;
+    }
 
   // third field
 
-  if (strcmp(data_type, MM_REAL_STR) == 0)
+  if (strcmp(data_type, "real") == 0)
     mm_set_real(matcode);
   else
-    if (strcmp(data_type, MM_COMPLEX_STR) == 0)
+    if (strcmp(data_type, "complex") == 0)
       mm_set_complex(matcode);
     else
-      if (strcmp(data_type, MM_PATTERN_STR) == 0)
+      if (strcmp(data_type, "pattern") == 0)
 	mm_set_pattern(matcode);
       else
-	if (strcmp(data_type, MM_INT_STR) == 0)
+	if (strcmp(data_type, "integer") == 0)
 	  mm_set_integer(matcode);
 	else
-	  return MM_UNSUPPORTED_TYPE;
+	{
+	  dolfin_error("unsupported type in third field"); 
+	  return 0;
+	}
 
   // fourth field
 
-  if (strcmp(storage_scheme, MM_GENERAL_STR) == 0)
+  if (strcmp(storage_scheme, "general") == 0)
     mm_set_general(matcode);
   else
-    if (strcmp(storage_scheme, MM_SYMM_STR) == 0)
+    if (strcmp(storage_scheme, "symmetric") == 0)
       mm_set_symmetric(matcode);
     else
-      if (strcmp(storage_scheme, MM_HERM_STR) == 0)
+      if (strcmp(storage_scheme, "hermitian") == 0)
 	mm_set_hermitian(matcode);
       else
-	if (strcmp(storage_scheme, MM_SKEW_STR) == 0)
+	if (strcmp(storage_scheme, "skew-symmetric") == 0)
 	  mm_set_skew(matcode);
 	else
-	  return MM_UNSUPPORTED_TYPE;
+	{
+	  dolfin_error("unsupported type in fourth field"); 
+	  return 0;
+	}
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 int MTXFile::mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
 {
-  if (fprintf(f, "%d %d %d\n", M, N, nz) != 3)
-    return MM_COULD_NOT_WRITE_FILE;
+  if (fprintf(f, "%d %d %d\n", M, N, nz) < 3)
+  {
+    dolfin_error("Unable to write file");
+    return 0;
+  }
   else
     return 0;
 }
@@ -305,7 +331,11 @@ int MTXFile::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
   do
   {
     if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL)
-      return MM_PREMATURE_EOF;
+    {
+      dolfin_error("premature EOF");
+      return 1;
+    }
+    
   }
   while (line[0] == '%');
 
@@ -317,7 +347,11 @@ int MTXFile::mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
     do
     {
       num_items_read = fscanf(f, "%d %d %d", M, N, nz);
-      if (num_items_read == EOF) return MM_PREMATURE_EOF;
+      if (num_items_read == EOF)
+      {
+        dolfin_error("premature EOF");
+        return 1;
+      }
     }
     while (num_items_read != 3);
 
@@ -335,7 +369,10 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
   do
   {
     if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL)
-      return MM_PREMATURE_EOF;
+    {
+      dolfin_error("premature EOF");
+      return 1;
+    }
   }
   while (line[0] == '%');
 
@@ -348,7 +385,11 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
     {
       num_items_read = fscanf(f, "%d %d", M, N);
       if (num_items_read == EOF) 
-        return MM_PREMATURE_EOF;
+      {
+        dolfin_error("premature EOF");
+        return 1;
+      }
+      
     }
     while (num_items_read != 2);
 
@@ -357,87 +398,101 @@ int MTXFile::mm_read_mtx_array_size(FILE *f, int *M, int *N)
 //-----------------------------------------------------------------------------
 int MTXFile::mm_write_mtx_array_size(FILE *f, int M, int N)
 {
-  if (fprintf(f, "%d %d\n", M, N) != 2)
-    return MM_COULD_NOT_WRITE_FILE;
+  if (fprintf(f, "%d %d\n", M, N) < 0)
+  {
+    dolfin_error("Unable to write file");
+    return 0;
+  }
   else
     return 0;
 }
 //-----------------------------------------------------------------------------
 int MTXFile::mm_write_banner(FILE *f, MM_typecode matcode)
 {
-  char *str = MTXFile::mm_typecode_to_str(matcode);
+  char* str=new char[MM_MAX_LINE_LENGTH];
+  MTXFile::mm_typecode_to_str(matcode, str);
   int ret_code;
 
-  ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, str);
-  free(str);
-  if (ret_code !=2 )
-    return MM_COULD_NOT_WRITE_FILE;
+  ret_code = fprintf(f, "%%MatrixMarket %s\n", str);
+  delete[] str;
+  if (ret_code < 0 )
+  {
+    dolfin_error("Unable to write file");
+    return 0;
+  }
   else
     return 0;
 }
 //-----------------------------------------------------------------------------
-char *MTXFile::strdup(const char *s)
+int  MTXFile::mm_typecode_to_str(MM_typecode matcode, char* buffer)
 {
-  //  Create a new copy of a string s.  strdup() is a common routine, but
-  //  not part of ANSI C, so it is included here.  Used by mm_typecode_to_str().
-  int len = strlen(s);
-  char *s2 = (char *) malloc((len+1)*sizeof(char));
-  return strcpy(s2, s);
-}
-//-----------------------------------------------------------------------------
-char  *MTXFile::mm_typecode_to_str(MM_typecode matcode)
-{
-  char buffer[MM_MAX_LINE_LENGTH];
   char *types[4] = {0, 0, 0, 0};
-  int  error =0;
 
   // check for MTX type
   if (mm_is_matrix(matcode))
-    types[0] = MM_MTX_STR;
+    types[0] = "matrix";
   else
-    error=1;
+  {
+    dolfin_error("invalid matrix type");
+    return 0;
+  }
 
   // check for CRD or ARR matrix
   if (mm_is_sparse(matcode))
-    types[1] = MM_SPARSE_STR;
+    types[1] = "coordinate";
   else
     if (mm_is_dense(matcode))
-      types[1] = MM_DENSE_STR;
+      types[1] = "array";
     else
-      return NULL;
+    {
+      dolfin_error("invalid spares/dense specification");
+      return 0;
+    }
 
   // check for element data type
   if (mm_is_real(matcode))
-    types[2] = MM_REAL_STR;
+    types[2] = "real";
   else
     if (mm_is_complex(matcode))
-      types[2] = MM_COMPLEX_STR;
+      types[2] = "complex";
     else
       if (mm_is_pattern(matcode))
-	types[2] = MM_PATTERN_STR;
+	types[2] = "pattern";
       else
 	if (mm_is_integer(matcode))
-	  types[2] = MM_INT_STR;
+	  types[2] = "integer";
 	else
-	  return NULL;
+	{
+	  dolfin_error("invalid data type");
+	  return 0;
+	}
 
   // check for symmetry type
   if (mm_is_general(matcode))
-    types[3] = MM_GENERAL_STR;
+    types[3] = "general";
   else
     if (mm_is_symmetric(matcode))
-      types[3] = MM_SYMM_STR;
+      types[3] = "symmetric";
     else
       if (mm_is_hermitian(matcode))
-	types[3] = MM_HERM_STR;
+	types[3] = "hermitian";
       else
 	if (mm_is_skew(matcode))
-	  types[3] = MM_SKEW_STR;
+	  types[3] = "skew-symmetric";
 	else
-	  return NULL;
+	{
+	  dolfin_error("invalid symmetry type");
+	  return 0;
+	}
 
-  sprintf(buffer,"%s %s %s %s", types[0], types[1], types[2], types[3]);
-  return MTXFile::strdup(buffer);
+  strcat (buffer,types[0]);
+  strcat (buffer," ");
+  strcat (buffer,types[1]);
+  strcat (buffer," ");
+  strcat (buffer,types[2]);
+  strcat (buffer," ");
+  strcat (buffer,types[3]);
+  return 0;
 }
 //-----------------------------------------------------------------------------
 void MTXFile::mm_clear_typecode(MM_typecode *typecode)
@@ -449,5 +504,135 @@ void MTXFile::mm_clear_typecode(MM_typecode *typecode)
 void MTXFile::mm_initialize_typecode(MM_typecode *typecode)
 {
   MTXFile::mm_clear_typecode(typecode);
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_matrix(MM_typecode typecode)
+{
+  return typecode[0]==MM_MATRIX;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_sparse(MM_typecode typecode)
+{
+  return typecode[1]==MM_COORDINATE;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_coordinate(MM_typecode typecode)
+{
+  return typecode[1]==MM_COORDINATE;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_dense(MM_typecode typecode)
+{
+  return typecode[1]==MM_ARRAY;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_array(MM_typecode typecode)
+{
+  return typecode[1]==MM_ARRAY;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_complex(MM_typecode typecode)
+{
+  return typecode[2]==MM_COMPLEX;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_real(MM_typecode typecode)
+{
+  return typecode[2]==MM_REAL;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_pattern(MM_typecode typecode)
+{
+  return typecode[2]==MM_PATTERN;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_integer(MM_typecode typecode)
+{
+  return typecode[2]==MM_INTEGER;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_symmetric(MM_typecode typecode)
+{
+  return typecode[3]==MM_SYMMETRIC;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_general(MM_typecode typecode)
+{
+  return typecode[3]==MM_GENERAL;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_skew(MM_typecode typecode)
+{
+  return typecode[3]==MM_SKEW;
+}
+//-----------------------------------------------------------------------------
+inline bool MTXFile::mm_is_hermitian(MM_typecode typecode)
+{
+  return typecode[3]==MM_HERMITIAN;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_matrix(MM_typecode* typecode)
+{
+  (*typecode)[0]=MM_MATRIX;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_coordinate(MM_typecode* typecode)
+{
+  (*typecode)[1]=MM_COORDINATE;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_array(MM_typecode* typecode)
+{
+  (*typecode)[1]=MM_ARRAY;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_dense(MM_typecode* typecode)
+{
+  mm_set_array(typecode);
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_sparse(MM_typecode* typecode)
+{
+  mm_set_coordinate(typecode);
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_complex(MM_typecode* typecode)
+{
+  (*typecode)[2]=MM_COMPLEX;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_real(MM_typecode* typecode)
+{
+  (*typecode)[2]=MM_REAL;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_pattern(MM_typecode* typecode)
+{
+  (*typecode)[2]=MM_PATTERN;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_integer(MM_typecode* typecode)
+{
+  (*typecode)[2]=MM_INTEGER;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_symmetric(MM_typecode* typecode)
+{
+  (*typecode)[3]=MM_SYMMETRIC;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_general(MM_typecode* typecode)
+{
+  (*typecode)[3]=MM_GENERAL;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_skew(MM_typecode* typecode)
+{
+  (*typecode)[3]=MM_SKEW;
+}
+//-----------------------------------------------------------------------------
+inline void MTXFile::mm_set_hermitian(MM_typecode* typecode)
+{
+  (*typecode)[3]=MM_HERMITIAN;
 }
 //-----------------------------------------------------------------------------
