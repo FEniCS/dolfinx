@@ -1,5 +1,5 @@
 SUBDIRS                 = dolfin
-include_HEADERS         = dolfin/dolfin_ode.h \
+nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
                           dolfin/Dependencies.h \

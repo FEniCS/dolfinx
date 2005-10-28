@@ -1,5 +1,5 @@
 SUBDIRS                = dolfin
-include_HEADERS        = dolfin/dolfin_la.h \
+nobase_include_HEADERS = dolfin/dolfin_la.h \
                          dolfin/EigenvalueSolver.h \
                          dolfin/GMRES.h \
                          dolfin/LinearSolver.h \

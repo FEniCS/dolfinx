@@ -1,5 +1,5 @@
 SUBDIRS                        = dolfin
-include_HEADERS                = dolfin/dolfin_quadrature.h \
+nobase_include_HEADERS         = dolfin/dolfin_quadrature.h \
                                  dolfin/GaussianQuadrature.h \
                                  dolfin/GaussQuadrature.h \
                                  dolfin/LobattoQuadrature.h \

@@ -1,5 +1,5 @@
 SUBDIRS                      = dolfin
-include_HEADERS              = dolfin/dolfin_settings.h \
+nobase_include_HEADERS       = dolfin/dolfin_settings.h \
                                dolfin/Parameter.h \
                                dolfin/ParameterList.h \
                                dolfin/Settings.h \

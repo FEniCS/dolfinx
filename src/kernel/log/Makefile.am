@@ -1,5 +1,5 @@
 SUBDIRS                 = dolfin
-include_HEADERS         = dolfin/dolfin_log.h \
+nobase_include_HEADERS  = dolfin/dolfin_log.h \
                           dolfin/Buffer.h \
                           dolfin/CursesLogger.h \
                           dolfin/Event.h \

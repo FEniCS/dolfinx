@@ -1,5 +1,5 @@
 SUBDIRS                        = dolfin
-include_HEADERS                = dolfin/dolfin_elasticityupdated.h \
+nobase_include_HEADERS         = dolfin/dolfin_elasticityupdated.h \
                                  dolfin/ElasticityUpdated.h \
                                  dolfin/ElasticityUpdatedMass.h \
                                  dolfin/ElasticityUpdatedSigma.h \

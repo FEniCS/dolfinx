@@ -7,5 +7,6 @@ SUBDIRS = dolfin \
           stokes
 
 INCLUDES = @KERNEL_CFLAGS@
-include_HEADERS = dolfin/dolfin_modules.h \
-                  dolfin/Solver.h
+
+nobase_include_HEADERS = dolfin/dolfin_modules.h \
+                         dolfin/Solver.h

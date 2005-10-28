@@ -1,5 +1,5 @@
 SUBDIRS                 = dolfin
-include_HEADERS         = dolfin/dolfin_nls.h \
+nobase_include_HEADERS  = dolfin/dolfin_nls.h \
                           dolfin/NonlinearFunctional.h \
                           dolfin/NonlinearSolver.h
 INCLUDES                = @KERNEL_CFLAGS@

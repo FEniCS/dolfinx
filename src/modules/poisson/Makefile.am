@@ -1,5 +1,5 @@
 SUBDIRS                     = dolfin
-include_HEADERS             = dolfin/dolfin_poisson.h \
+nobase_include_HEADERS      = dolfin/dolfin_poisson.h \
                               dolfin/Poisson.h \
                               dolfin/PoissonSolver.h
 INCLUDES                    = @MODULE_CFLAGS@

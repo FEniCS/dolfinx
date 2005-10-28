@@ -1,5 +1,5 @@
 SUBDIRS                        = dolfin
-include_HEADERS                = dolfin/dolfin_elasticity.h \
+nobase_include_HEADERS         = dolfin/dolfin_elasticity.h \
                                  dolfin/Elasticity.h \
                                  dolfin/ElasticitySolver.h
 INCLUDES                       = @MODULE_CFLAGS@

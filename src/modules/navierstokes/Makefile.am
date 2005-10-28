@@ -1,5 +1,5 @@
 SUBDIRS                          = dolfin
-include_HEADERS                  = dolfin/dolfin_navierstokes.h \
+nobase_include_HEADERS           = dolfin/dolfin_navierstokes.h \
                                    dolfin/NSEMomentum.h \
                                    dolfin/NSEContinuity.h \
                                    dolfin/NSESolver.h

@@ -1,5 +1,5 @@
 SUBDIRS                  = dolfin
-include_HEADERS          = dolfin/dolfin_mesh.h \
+nobase_include_HEADERS   = dolfin/dolfin_mesh.h \
                            dolfin/Boundary.h \
                            dolfin/BoundaryData.h \
                            dolfin/BoundaryInit.h \

@@ -1,5 +1,5 @@
 SUBDIRS                  = dolfin
-include_HEADERS          = dolfin/dolfin_form.h \
+nobase_include_HEADERS   = dolfin/dolfin_form.h \
                            dolfin/BLASFormData.h \
                            dolfin/BilinearForm.h \
                            dolfin/Form.h \

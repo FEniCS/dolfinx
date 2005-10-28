@@ -1,3 +1,6 @@
+
+ - Fixes for automake 1.9 (nobase_include_HEADERS)
+ - Reorganize build system, remove fake install and require make install
  - Add checks for non-standard PETSc component HYPRE in NSE solver
  - Make GMRES solver return the number of iterations
  - Add installation script for Python interface

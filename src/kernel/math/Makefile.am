@@ -1,5 +1,5 @@
 SUBDIRS                  = dolfin
-include_HEADERS          = dolfin/dolfin_math.h \
+nobase_include_HEADERS   = dolfin/dolfin_math.h \
                            dolfin/basic.h \
                            dolfin/Lagrange.h \
                            dolfin/Legendre.h

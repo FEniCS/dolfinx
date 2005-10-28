@@ -1,5 +1,5 @@
 SUBDIRS                 = dolfin
-include_HEADERS         = dolfin/dolfin_fem.h \
+nobase_include_HEADERS  = dolfin/dolfin_fem.h \
                           dolfin/AffineMap.h \
                           dolfin/BoundaryCondition.h \
                           dolfin/BoundaryValue.h \

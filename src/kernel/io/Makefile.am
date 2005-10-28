@@ -1,5 +1,5 @@
 SUBDIRS                = dolfin
-include_HEADERS        = dolfin/dolfin_io.h \
+nobase_include_HEADERS = dolfin/dolfin_io.h \
                          dolfin/File.h \
                          dolfin/GenericFile.h \
                          dolfin/GiDFile.h \
