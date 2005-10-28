@@ -72,7 +72,7 @@ void NonlinearSolver::solve(Vector& x, NonlinearFunctional& nlfunc)
   PCSetType(pc, PCILU);
 
   /*
-  Due to a bug in PETSc 2.3.0, patch level < 38, we need to check PETSc path 
+  Due to a bug in PETSc 2.3.0, patch level < 38, we need to check PETSc patch 
   level. If the PETSc version is old, a fatal error is raised when trying to 
   call the PETSc function SNESSetSolution. 
   */

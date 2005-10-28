@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005
-// Last changed: 2005-09-16
+// Last changed: 2005-10-28
 
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>
@@ -60,11 +60,18 @@ void NSESolver::solve()
   KSP ksp_con = solver_con.solver();
   PC pc;
   KSPGetPC(ksp_con,&pc);
-  PCSetType(pc,PCHYPRE);
 
-  // FIXME: Unable to link Navier-Stokes module if Hypre is not installed.
-  // FIXME: Need to check if Hypre is available and warn if it is not.
-  //PCHYPRESetType(pc,"boomeramg");
+  // Check that PETSc was compiled with HYPRE
+  #ifdef PETSC_HAVE_HYPRE
+    PCSetType(pc,PCHYPRE);
+    PCHYPRESetType(pc,"boomeramg");
+  #else
+    dolfin_warning("PETSc has not been compiled with the HYPRE library for "
+                   "algerbraic multigrid. Navier Stokes module will use the "
+                   "GMRES solver for the continuity equation. For performance " 
+                   "installation of HYPRE is recommended. See the DOLFIN user " 
+                   "manual. ");
+  #endif
     
   /*
   solver_con.setRtol(1.0e-10);
@@ -143,7 +150,7 @@ void NSESolver::solve()
   {
 
     time_step++;
-    cout << "Stating time step " << time_step << endl;
+    cout << "Starting time step " << time_step << endl;
     
     x0vel = xvel;
 
@@ -163,7 +170,7 @@ void NSESolver::solve()
       cout << "Set boundary conditions: continuity" << endl;
 
       // Set boundary conditions
-      FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
+      FEM::applyBC(Acon, bcon, mesh, acon.trial(), bc_con);
 
       cout << "Solve linear system" << endl;
 
