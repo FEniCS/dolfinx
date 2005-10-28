@@ -9,6 +9,23 @@ estimate of when the task should be ready.
 
 Send suggestions, comments, and corrections to dolfin@fenics.org.
 
+Dependencies
+------------
+
+* SciPy
+* ParaView
+* MayaVI
+* PETSc
+* FFC
+* FIAT
+* libxml2
+* Hypre?
+
+Manual
+------
+
+* Write section on coding style
+
 Assembly
 --------
 
@@ -91,7 +108,6 @@ o Decide on proper namespace/class for parameters
 General
 -------
 
-* Write a manual
 * Write FAQ and put on web page:
 
   Q: When to use -DPETSC_USE_EXTERN_CXX?
