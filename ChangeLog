@@ -1,3 +1,4 @@
+ - Add checks for non-standard PETSc component HYPRE in NSE solver
  - Make GMRES solver return the number of iterations
  - Add installation script for Python interface
  - Add Matrix Market format (Haiko Etzel)
