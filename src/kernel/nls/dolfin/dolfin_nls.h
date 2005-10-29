@@ -3,7 +3,7 @@
 
 // DOLFIN nonlinear solver
 
-#include <dolfin/NonlinearFunctional.h>
+#include <dolfin/NonlinearFunction.h>
 #include <dolfin/NonlinearSolver.h>
 
 #endif

@@ -4,8 +4,8 @@
 // First added:  2005-10-24
 // Last changed: 2005
 
-#ifndef __NONLINEAR_FUNCTIONAL_H
-#define __NONLINEAR_FUNCTIONAL_H
+#ifndef __NONLINEAR_FUNCTION_H
+#define __NONLINEAR_FUNCTION_H
 
 #include <petscsnes.h>
 
@@ -19,33 +19,33 @@
 namespace dolfin
 {
 
-  /// This class contains pointers to the necessary components to form a 
-  /// nonlinear functional F(x) and its Jacobian F'(x).
+  /// This class contains pointers to the necessary components to form the 
+  /// nonlinear function F(x) and its Jacobian F'(x).
   
-  class NonlinearFunctional
+  class NonlinearFunction
   {
   public:
 
-    /// Create nonlinear functional
-    NonlinearFunctional();
+    /// Create nonlinear function
+    NonlinearFunction();
 
-    /// Create nonlinear functional with bilinear form, linear form, mesh, RHS 
+    /// Create nonlinear function with bilinear form, linear form, mesh, RHS 
     /// vector, Jacobian matrix and solution vector
-    NonlinearFunctional(BilinearForm& a, LinearForm& L, Mesh& mesh, Vector& x, 
+    NonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh, Vector& x, 
                         Matrix& A, Vector& b, BoundaryCondition& bc);
 
     /// Destructor
-    virtual ~NonlinearFunctional();
+    virtual ~NonlinearFunction();
   
     /// User-defined function to update functions in forms
-    virtual void UpdateNonlinearFunction();
+    virtual void update();
 
     /// Return mesh
-    Mesh& rmesh();
+    Mesh& mesh();
 
   friend class NonlinearSolver;
 
-//  private:
+  private:
 
     BilinearForm* _a;
     LinearForm* _L;

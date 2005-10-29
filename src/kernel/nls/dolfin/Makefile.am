@@ -1,3 +1,3 @@
 EXTRA_DIST = dolfin_nls.h \
-             NonlinearFunctional.h \
+             NonlinearFunction.h \
              NonlinearSolver.h
