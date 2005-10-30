@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-10-29
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
@@ -76,9 +76,14 @@ namespace dolfin
     real _a; // Start time of time slab
     real _b; // End time of time slab
     
-    ODE& ode;                 // The ODE
-    const Method* method;  // Method, mcG(q) or mdG(q)  
-    real* u0;                 // Initial values
+    ODE& ode;             // The ODE
+    const Method* method; // Method, mcG(q) or mdG(q)  
+    real* u0;             // Initial values
+
+    bool save_final; // True if we should save the solution at final time
+
+    // Write given solution to file
+    void write(const real u[]);
 
   };
 

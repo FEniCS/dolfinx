@@ -34,6 +34,7 @@ namespace dolfin
       add(Parameter::BOOL, "fixed time step", false);
       add(Parameter::BOOL, "solve dual problem", false);
       add(Parameter::BOOL, "save solution", true);
+      add(Parameter::BOOL, "save final solution", false);
       add(Parameter::BOOL, "adaptive samples", false);
       add(Parameter::BOOL, "automatic modeling", false);
       add(Parameter::BOOL, "implicit", false);

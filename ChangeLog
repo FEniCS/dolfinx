@@ -1,4 +1,5 @@
-
+ - New option for ODE solver: "save final solution" --> solution.data
+ - New ODE test problem: reaction
  - Fixes for automake 1.9 (nobase_include_HEADERS)
  - Reorganize build system, remove fake install and require make install
  - Add checks for non-standard PETSc component HYPRE in NSE solver

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-10-29
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -170,8 +170,14 @@ bool MultiAdaptiveTimeSlab::shift()
       f0[i] = f;
   }
   
-  // Let user update ODE
+  // Check if we reached the end time
   const bool end = (_b + DOLFIN_EPS) > ode.T;
+  
+  // Write solution at final time if we should
+  if ( save_final && end )
+    write(u);
+
+  // Let user update ODE
   if ( !ode.update(u, _b, end) )
     return false;
 

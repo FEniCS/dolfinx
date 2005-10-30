@@ -2,8 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-10-29
 
+#include <stdio.h>
 #include <string>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/ODE.h>
@@ -15,7 +16,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0)
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
+  save_final(dolfin_get("save final solution"))
 {
   // Choose method
   std::string m = dolfin_get("method");
@@ -72,5 +74,21 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 	 << " and b = " << timeslab.endtime() << " ]";
   
   return stream;
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::write(const real u[])
+{
+  // FIXME: Make this a parameter?
+  string filename = "solution.data";
+  dolfin_info("Saving solution at final time to file \"%s\".",
+	      filename.c_str());
+
+  FILE* fp = fopen(filename.c_str(), "w");
+  for (uint i = 0; i < N; i++)
+  {
+    fprintf(fp, "%.15e ", u[i]);
+  }
+  fprintf(fp, "\n");
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------

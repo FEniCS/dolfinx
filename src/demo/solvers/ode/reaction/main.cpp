@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-10-24
+// Last changed: 2005-10-29
 
 #include <dolfin.h>
 
@@ -51,9 +51,13 @@ public:
     {
       const real ui = u[i];
 
-      real sum = -2.0*ui;
-      if ( i > 0 ) sum += u[i - 1];
-      if ( i < (N - 1.0) ) sum += u[i + 1];
+      real sum = 0.0;
+      if ( i == 0 )
+	sum = u[i + 1] - ui;
+      else if ( i == (N - 1) )
+	sum = u[i - 1] - ui;
+      else
+	sum = u[i + 1] - 2.0*ui + u[i - 1];
 
       y[i] = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
     }
@@ -64,14 +68,18 @@ public:
   {
     const real ui = u[i];
     
-    real sum = -2.0*ui;
-    if ( i > 0 ) sum += u[i - 1];
-    if ( i < (N - 1.0) ) sum += u[i + 1];
+    real sum = 0.0;
+    if ( i == 0 )
+      sum = u[i + 1] - ui;
+    else if ( i == (N - 1) )
+      sum = u[i - 1] - ui;
+    else
+      sum = u[i + 1] - 2.0*ui + u[i - 1];
     
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
-  
-private:
+
+public:
 
   real L;       // Length of domain
   real epsilon; // Diffusivity
@@ -81,11 +89,6 @@ private:
 
 };
 
-int usermult(Mat A, Vec x, Vec y)
-{
-  VecCopy(x, y);
-}
-
 int main(int argc, char* argv[])
 {
   //dolfin_set("fixed time step", true);
@@ -93,14 +96,24 @@ int main(int argc, char* argv[])
   //dolfin_set("partitioning threshold", 0.25);
   
   // Uncomment this to run benchmarks
-  //dolfin_set("save solution", false);
+  dolfin_set("save solution", false);
   
   dolfin_set("solver", "newton");
   dolfin_set("tolerance", 0.001);
   dolfin_set("monitor convergence", false);
   dolfin_set("method", "cg");
+
+  // Uncomment to compute reference solution
+  /*
+    dolfin_set("save final solution", true);
+    dolfin_set("fixed time step", true);
+    dolfin_set("initial time step", 0.01);
+    dolfin_set("method", "cg");
+    dolfin_set("order", 3);
+  */
   
   Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+
   ode.solve();
 
   return 0;

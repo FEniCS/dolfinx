@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-10-29
 
 #include <cmath>
 #include <string>
@@ -38,7 +38,9 @@ TimeStepper::TimeStepper(ODE& ode) :
     timeslab = new MultiAdaptiveTimeSlab(ode);
   }
   else    
+  {
     timeslab = new MonoAdaptiveTimeSlab(ode);
+  }
 }
 //-----------------------------------------------------------------------------
 TimeStepper::~TimeStepper()

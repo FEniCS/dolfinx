@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-10-29
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -124,8 +124,14 @@ bool MonoAdaptiveTimeSlab::shift()
   // Compute new time step
   adaptivity.update(length(), rmax, *method);
   
-  // Let user update ODE
+  // Check if we reached the end time
   const bool end = (_b + DOLFIN_EPS) > ode.T;
+
+  // Write solution at final time if we should
+  if ( save_final && end )
+    write(xx + xoffset);
+
+  // Let user update ODE
   if ( !ode.update(xx + xoffset, _b, end) )
   {
     x.restore(xx);
