@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-09-20
+// Last changed: 2005-10-30
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -48,10 +48,9 @@ namespace dolfin
     /// Compute map from local to global coordinates
     virtual void pointmap(Point points[], uint components[], const AffineMap& map) const = 0;
 
-    // FIXME: Make this abstract when working
-
     /// Compute map from (vertex, component) to function value
-    virtual void vertexeval(real values[], unsigned int vertex, const Vector& x, const Mesh& mesh) const {}
+    virtual void vertexeval(real values[], unsigned int vertex, 
+			    const Vector& x, const Mesh& mesh) const = 0;
 
     /// Display finite element data
     void disp() const;
