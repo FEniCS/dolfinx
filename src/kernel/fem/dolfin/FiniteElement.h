@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-10-30
+// Last changed: 2005-10-31
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -39,6 +39,10 @@ namespace dolfin
     /// Return vector dimension of the finite element space
     virtual unsigned int tensordim(unsigned int i) const = 0;
 
+    // FIXME: Make pure virtual when working
+    /// Return dimension of (mixed) element (number of sub elements)
+    virtual unsigned int elementdim() const { return 1; }
+
     /// Return vector dimension of the finite element space
     virtual unsigned int rank() const = 0;
     
@@ -46,11 +50,16 @@ namespace dolfin
     virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
 
     /// Compute map from local to global coordinates
-    virtual void pointmap(Point points[], uint components[], const AffineMap& map) const = 0;
+    virtual void pointmap(Point points[], unsigned int components[],
+			  const AffineMap& map) const = 0;
 
     /// Compute map from (vertex, component) to function value
     virtual void vertexeval(real values[], unsigned int vertex, 
 			    const Vector& x, const Mesh& mesh) const = 0;
+
+    // FIXME: Make pure virtual when working
+    /// Return given sub element of (mixed) element
+    virtual const FiniteElement& operator[] (unsigned int i) const { return *this; }
 
     /// Display finite element data
     void disp() const;
