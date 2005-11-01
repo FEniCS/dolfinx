@@ -132,6 +132,8 @@ public:
   
   void save(Sample& sample)
   {
+    /*
+
     cout << "Saving data at t = " << sample.t() << endl;
 
     // Create functions
@@ -172,6 +174,8 @@ public:
     vfile << v;
     kfile << k;
     rfile << r;
+
+    */
   }
 
 private:

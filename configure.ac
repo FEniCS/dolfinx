@@ -301,6 +301,7 @@ if test $__PATH = `echo $__PATH | sed s/$__BINDIR//`; then
    echo 'you need to add the bin subdirectory of the installation'
    echo 'diretory to your PATH which you can do with the command'
    echo ''
-   echo "    export PATH=\"\$PATH:$prefix/bin\""
+   echo "    export PATH=\"\$PATH:$prefix/bin\"        (bash)"
+   echo "    setenv PATH \${PATH}:$prefix/bin        (tcsh)"
    echo ''
 fi

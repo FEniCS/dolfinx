@@ -37,6 +37,8 @@ public:
 
   void save(Sample& sample)
   {
+    /*
+
     // Create a mesh-dependent function from the sample
     static Vector ux(N);
     static Vector kx(N);
@@ -58,6 +60,8 @@ public:
     // Save solution to file
     ufile << u;
     kfile << k;
+
+    */
   }
   
 private:
