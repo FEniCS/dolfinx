@@ -1,3 +1,4 @@
+ - Implement nonlinear solver
  - New option for ODE solver: "save final solution" --> solution.data
  - New ODE test problem: reaction
  - Fixes for automake 1.9 (nobase_include_HEADERS)
