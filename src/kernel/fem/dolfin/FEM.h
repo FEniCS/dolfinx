@@ -1,8 +1,10 @@
 // Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2004-05-19
-// Last changed: 2005-09-20
+// Last changed: 2005-11-01
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -56,9 +58,12 @@ namespace dolfin
     // Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
 
+    // Estimate the maximum number of nonzeros in each row
+    static uint nzsize(const Mesh& mesh, const FiniteElement& element);
+
     /// Display assembly data (useful for debugging)
     static void disp(const Mesh& mesh, const FiniteElement& element);
-    
+      
   private:
 
     // Apply boundary conditions on triangular mesh
@@ -68,9 +73,6 @@ namespace dolfin
     // Apply boundary conditions on tetrahedral mesh
     static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 			   const FiniteElement& element, BoundaryCondition& bc);
-
-    // Estimate the maximum number of nonzeros in each row
-    static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
     // Check that dimension of the mesh matches the form
     static void checkdims(const BilinearForm& a, const Mesh& mesh);

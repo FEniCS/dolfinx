@@ -9,6 +9,7 @@
 
 #include <petscsnes.h>
 
+#include <dolfin/constants.h>
 #include <dolfin/NonlinearFunction.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -30,7 +31,7 @@ namespace dolfin
     ~NonlinearSolver();
   
     /// Solve nonlinear problem F(u) = 0
-    void solve(Vector& x, NonlinearFunction& nlf);
+    uint solve(Vector& x, NonlinearFunction& nonlinear_function);
 
     /// Form RHS vector F(u)
     static int formRHS(SNES snes, Vec x, Vec f, void* nlfunc);
@@ -41,10 +42,16 @@ namespace dolfin
     /// Form RHS vector and Jacobian 
     static int formSystem(SNES snes, Vec x, Vec f, void* nlfunc);
 
+    /// Dummy call for computing Jacobian 
+    static int formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
+
   private:
 
     // PETSc nonlinear solver pointer
     SNES snes;
+
+    // Pointer to Jacobian matrix
+    Matrix* _AA;
 
   };
 

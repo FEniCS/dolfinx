@@ -9,7 +9,6 @@
 #include <petscversion.h>
 
 #include <dolfin/PETScManager.h>
-#include <petscversion.h>
 #include <dolfin/NonlinearSolver.h>
 #include <dolfin/FEM.h>
 #include <dolfin/BilinearForm.h>
@@ -30,174 +29,152 @@ NonlinearSolver::~NonlinearSolver()
   if( snes ) SNESDestroy(snes); 
 }
 //-----------------------------------------------------------------------------
-void NonlinearSolver::solve(Vector& x, NonlinearFunction& NonlinearFunction)
+dolfin::uint NonlinearSolver::solve(Vector& x, NonlinearFunction& nonlinear_function)
 {
-  //FIXME
-  // Initiate approximate solution vector
-  Vector x0;
-  x0.init(x.size());
 
-  x0 = 1;  
+  Matrix A;
+  Vector b, r;
 
-  // RHS vector 
-  Vector* b;
-  b = NonlinearFunction._b;
+  BilinearForm& a       = nonlinear_function.a();
+  BoundaryCondition& bc = nonlinear_function.bc();
+  Mesh& mesh = nonlinear_function.mesh();
+
+  // Initialize global RHS vector, Jacobian matrix, solution vector and approximate 
+  // solution vector
+  const uint M = FEM::size(mesh, a.test());
+  const uint N = FEM::size(mesh, a.trial());
+  const uint nz = FEM::nzsize(mesh, a.trial());
+  A.init(M, N, nz);
+  b.init(M);
+  x.init(M);
+  r.init(M);
+
+  FEM::applyBC(A, r, mesh, a.trial(), bc);
+
+  // Store address of Jacobian matrix so that it can be assembled at same time as F(u)
+  nonlinear_function._A = &A;
+  nonlinear_function._b = &b;
+
+  // Set constant r (F(u) = r) (used for setting inhomeneous Dirichlet BC
+  SNESSetRhs(snes, r.vec());
+
+  // Set nonlinar function and Jacobian function (two functions)
+//  SNESSetFunction(snes, b.vec(), formSystem, &nonlinear_function);
+//  SNESSetJacobian(snes, A.mat(), A.mat(), formDummy, &nonlinear_function);
 
 
-  Matrix* A;
-  A = NonlinearFunction._A;
+///  FIXME - implement separate functions for computing RHS and Jacobian. 
+///  Application of boundary conditions requires work.
+
+  // Set nonlinar function and Jacobian function (in one function)
+  SNESSetFunction(snes, b.vec(), formRHS, &nonlinear_function);
+  SNESSetJacobian(snes, A.mat(), A.mat(), formJacobian, &nonlinear_function);
 
 
-//  b.init(x.size());
-//  cout << "Display vector b " << endl;
-//  b.disp();
-
-  // Initiate matrix
-//  Matrix A;
-//  A.init(x.size(),x.size());
-//  A(0,0) = 1.0; A(1,1) = 1.0; A(2,2) = 1.0; A(3,3) = 1.0; A(4,4) = 1.0; A(5,5) = 1.0; 
-//  A(6,6) = 1.0; A(7,7) = 1.0; A(8,8) = 1.0; A(9,9) = 1.0; 
-
-  KSP ksp;
-  PC  pc;
-  
-  // Get Krylov solver
+  // Set options for linear solver
+  KSP ksp;   
   SNESGetKSP(snes, &ksp);
-
-  // Set Krylov tolerances
   KSPSetTolerances(ksp, 1.0e-15, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
 
-  // Get Krylov preconditioner
-  KSPGetPC(ksp, &pc);
-
   // Set preconditioner type
+  PC  pc; 
+  KSPGetPC(ksp, &pc);
   PCSetType(pc, PCILU);
 
-  /*
-  Due to a bug in PETSc 2.3.0, patch level < 38, we need to check PETSc patch 
-  level. If the PETSc version is old, a fatal error is raised when trying to 
-  call the PETSc function SNESSetSolution. 
-  */
-  // Set pointer to approximate solution vector
-  #if PETSC_VERSION_PATCH < 38
-    dolfin_error("Your version of PETSc is not compatible with the nonlinear "
-                 "solver. Download the latest version (2.3.0, patch "
-                 "level > 37). Note that the PETSc version numbers are not "
-                 "updated. You need a version from after 12 October 2005.");
-  #else
-    SNESSetSolution(snes, x0.vec());
-  #endif
-
-  // Set RHS Function
-  SNESSetFunction(snes, b->vec(), formRHS, &NonlinearFunction);
-
-  // Set Jacobian Function
-  SNESSetJacobian(snes, A->mat(), A->mat(), formJacobian, &NonlinearFunction);
-
-// Test Jacobian function
-
-//  MatStructure  flg;
-//  Mat AA, BB;
-//  AA = A.mat();  
-//  BB = A.mat();  
-//  int test = SNESComputeJacobian(snes, x.vec(), &AA, &BB, &flg);
-//  cout << "After Jacobian test " << test << endl;  
-
-
+  // Set nonlinear solver parameters
   SNESSetFromOptions(snes);
-
-  int iter;
-  // Get number of iterations
-  SNESGetIterationNumber(snes, &iter);
 
   // Solve nonlinear problem
   SNESSolve(snes, PETSC_NULL, x.vec());
-  cout << "Number of Newton iterations iterations: " << iter << endl;  
 
+  // Report number of Newton iterations
+  int iterations;
+  SNESGetIterationNumber(snes, &iterations);
+  dolfin_info("Nonlinear solver converged in %d iterations.", iterations);
 
+  return 0;
 } 
 //-----------------------------------------------------------------------------
 int NonlinearSolver::formRHS(SNES snes, Vec x, Vec f, void *nlProblem)
 {
-  cout << "inside FormRHS (new) " << endl;
+  // Pointer to nonlinear function
+  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
 
-  // Pointer to NonlinearFunction
-  NonlinearFunction* NonlinearFunc = (NonlinearFunction*)nlProblem;
+  // Objects within NonlinearFunction
+  BilinearForm& a = nonlinear_function->a();
+  LinearForm& L   = nonlinear_function->L();
+  BoundaryCondition& bc = nonlinear_function->bc();
+  Mesh& mesh = nonlinear_function->mesh();
 
-  // Set pointers to objects within NonlinearFunction
-  BilinearForm* a       = NonlinearFunc->_a;
-  LinearForm* L         = NonlinearFunc->_L;
-  BoundaryCondition* bc = NonlinearFunc->_bc;
-  Mesh* mesh = NonlinearFunc->_mesh;
-  Matrix* A  = NonlinearFunc->_A;
-  Vector* b  = NonlinearFunc->_b;
+  Matrix& A  = *(nonlinear_function->_A);
+
+  Vector b(f);
 
   // Update nonlinear function (user defined)
-  NonlinearFunc->update();
-
-  //FIXME - should assmble vector n only
+  Vector xsol(x);
+  nonlinear_function->update(xsol);
+  
+  //FIXME - should assmble vector b only
   // Assemble RHS vector
-  FEM::assemble(*a, *L, *A, *b, *mesh, *bc);
-
-  A->disp();
-
-  cout << "finished RHS assemble " <<   endl;
+  FEM::assemble(a, L, A, b, mesh, bc);
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 int NonlinearSolver::formJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
 {
-  cout << "inside FormJacobian " << endl;
-
   // Pointer to NonlinearFunction
-  NonlinearFunction* nlp = (NonlinearFunction*)nlProblem;
+  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
 
   // Set pointers to objects within NonlinearFunction
-  BilinearForm* a       = nlp->_a;
-  LinearForm* L         = nlp->_L;
-  BoundaryCondition* bc = nlp->_bc;
-  Mesh* mesh = nlp->_mesh;
-  Matrix* A  = nlp->_A;
-  Vector* b  = nlp->_b;
+  // Objects within NonlinearFunction
+  BilinearForm& a = nonlinear_function->a();
+  LinearForm& L   = nonlinear_function->L();
+  BoundaryCondition& bc = nonlinear_function->bc();
+  Mesh& mesh = nonlinear_function->mesh();
 
-  //FIXME - should assmble matrix A  n only
+  Matrix& A  = *(nonlinear_function->_A);
+  Vector& b  = *(nonlinear_function->_b);
+
+  //FIXME - should assmble matrix A only
   // Assemble Jacobian vector
-  FEM::assemble(*a, *L, *A, *b, *mesh, *bc);
+  FEM::assemble(a, L, A, b, mesh, bc);
 
   // Structure of returned matrix
   *flag = SAME_NONZERO_PATTERN;
-
-  cout << "finished Jacobian assemble " <<   endl;
 
   return 0;
 }
 //-----------------------------------------------------------------------------
 int NonlinearSolver::formSystem(SNES snes, Vec x, Vec f, void *nlProblem)
 {
-  cout << "inside formSystem " << endl;
+  // Pointer to nonlinear function
+  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
 
-  // Pointer to NonlinearFunction
-  NonlinearFunction* NonlinearFunc = (NonlinearFunction*)nlProblem;
+  // Objects within NonlinearFunction
+  BilinearForm& a = nonlinear_function->a();
+  LinearForm& L   = nonlinear_function->L();
+  BoundaryCondition& bc = nonlinear_function->bc();
+  Mesh& mesh = nonlinear_function->mesh();
 
-  // Set pointers to objects within NonlinearFunction
-  BilinearForm* a       = NonlinearFunc->_a;
-  LinearForm* L         = NonlinearFunc->_L;
-  BoundaryCondition* bc = NonlinearFunc->_bc;
-  Mesh* mesh = NonlinearFunc->_mesh;
-  Matrix* A  = NonlinearFunc->_A;
-  Vector* b  = NonlinearFunc->_b;
+  Matrix& A  = *(nonlinear_function->_A);
+
+  // Vector for F(u)
+  Vector b(f);
 
   // Update nonlinear function (user defined)
-  NonlinearFunc->update();
+  Vector xsol(x);
+  nonlinear_function->update(xsol);
+  
+  // Assemble RHS vector, Jacobian, and apply boundary conditions 
+  FEM::assemble(a, L, A, b, mesh, bc);
 
-  // Assemble RHS vector b and Jacobain A
-  FEM::assemble(*a, *L, *A, *b, *mesh, *bc);
-
-  A->disp();
-
-  cout << "finished system assemble " <<   endl;
-
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int NonlinearSolver::formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
+{
+  // Dummy function for computing Jacobian. Do nothing.
   return 0;
 }
 //-----------------------------------------------------------------------------

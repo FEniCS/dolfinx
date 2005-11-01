@@ -31,17 +31,29 @@ namespace dolfin
 
     /// Create nonlinear function with bilinear form, linear form, mesh, RHS 
     /// vector, Jacobian matrix and solution vector
-    NonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh, Vector& x, 
-                        Matrix& A, Vector& b, BoundaryCondition& bc);
+    NonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh, 
+                        BoundaryCondition& bc);
 
     /// Destructor
     virtual ~NonlinearFunction();
   
     /// User-defined function to update functions in forms
-    virtual void update();
+    virtual void update(Vector& xsol);
+
+    /// Set bilinear and linear form
+    void setForm(BilinearForm &a, LinearForm&L);
 
     /// Return mesh
     Mesh& mesh();
+
+    /// Return bilinear form
+    BilinearForm& a();
+
+    /// Return linear form
+    LinearForm& L();
+
+    /// Return RHS vector
+    BoundaryCondition& bc();
 
   friend class NonlinearSolver;
 
@@ -50,10 +62,10 @@ namespace dolfin
     BilinearForm* _a;
     LinearForm* _L;
     Mesh* _mesh;
-    Vector* _x0;
+    BoundaryCondition* _bc;
+
     Matrix* _A;
     Vector* _b;
-    BoundaryCondition* _bc;
 
   };
 }
