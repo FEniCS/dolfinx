@@ -94,23 +94,23 @@ int main(int argc, char* argv[])
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 0.01);
   //dolfin_set("partitioning threshold", 0.25);
-  
-  // Uncomment this to run benchmarks
-  dolfin_set("save solution", false);
+  //dolfin_set("monitor convergence", false);
   
   dolfin_set("solver", "newton");
   dolfin_set("tolerance", 0.001);
-  dolfin_set("monitor convergence", false);
   dolfin_set("method", "cg");
 
+  // Uncomment this to run benchmarks
+  //dolfin_set("save solution", false);
+
   // Uncomment to compute reference solution
-  /*
+    dolfin_set("save solution", false);
     dolfin_set("save final solution", true);
     dolfin_set("fixed time step", true);
-    dolfin_set("initial time step", 0.01);
+    dolfin_set("initial time step", 0.00005);
+    dolfin_set("discrete tolerance", 1e-14);
     dolfin_set("method", "cg");
     dolfin_set("order", 3);
-  */
   
   Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
 
