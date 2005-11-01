@@ -32,7 +32,7 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 {
   // Compute multi-adaptive efficiency index
   const real alpha = num_elements_mono / static_cast<real>(num_elements);
-  dolfin_info("Multi-adaptive efficiency index: %.3f.", alpha);
+  dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
 
   // Compute average number of local iterations
   if ( num_timeslabs > 0 )

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-10-29
+// Last changed: 2005-10-31
 
 #include <dolfin.h>
 
@@ -91,19 +91,33 @@ public:
 
 int main(int argc, char* argv[])
 {
-  //dolfin_set("fixed time step", true);
-  //dolfin_set("discrete tolerance", 0.01);
-  //dolfin_set("partitioning threshold", 0.25);
-  //dolfin_set("monitor convergence", false);
-  
-  dolfin_set("solver", "newton");
-  dolfin_set("tolerance", 0.001);
-  dolfin_set("method", "cg");
+  // Parse command line arguments
+  if ( argc != 3 )
+  {
+    dolfin_info("Usage: dolfin-reaction method TOL");
+    dolfin_info("");
+    dolfin_info("method - 'cg' or 'mcg'");
+    dolfin_info("TOL    - tolerance");
+    return 1;
+  }
+  const char* method = argv[1];
+  const real TOL = static_cast<real>(atof(argv[2]));
 
-  // Uncomment this to run benchmarks
-  //dolfin_set("save solution", false);
+  dolfin_set("solver", "newton");
+  dolfin_set("maximum time step", 0.1);
+  dolfin_set("tolerance", TOL);
+  dolfin_set("method", method);
+  dolfin_set("order", 1);
+  dolfin_set("save final solution", true);
+  dolfin_set("save solution", false);
+
+  //dolfin_set("fixed time step", true);
+  //dolfin_set("partitioning threshold", 0.25);
+  //dolfin_set("monitor convergence", true);
+  //dolfin_set("discrete tolerance", 1e-10);
 
   // Uncomment to compute reference solution
+  /*
     dolfin_set("save solution", false);
     dolfin_set("save final solution", true);
     dolfin_set("fixed time step", true);
@@ -111,9 +125,9 @@ int main(int argc, char* argv[])
     dolfin_set("discrete tolerance", 1e-14);
     dolfin_set("method", "cg");
     dolfin_set("order", 3);
+  */
   
   Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
-
   ode.solve();
 
   return 0;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005
+// Last changed: 2005-10-31
 
 #ifndef __SETTINGS_H
 #define __SETTINGS_H

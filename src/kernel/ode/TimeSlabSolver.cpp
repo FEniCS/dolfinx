@@ -39,10 +39,10 @@ TimeSlabSolver::~TimeSlabSolver()
   if ( num_timeslabs > 0 )
   {
     const real n = static_cast<real>(num_iterations) / static_cast<real>(num_timeslabs);
-    dolfin_info("Average number of global iterations per step: %.2f.", n);
+    dolfin_info("Average number of global iterations per step: %.2f", n);
   }
 
-  dolfin_info("Total number of (macro) time steps: %d.", num_timeslabs);
+  dolfin_info("Total number of (macro) time steps: %d", num_timeslabs);
 }
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
