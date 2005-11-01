@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2005-10-06
+// Last changed: 2005-11-01
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -116,6 +116,9 @@ namespace dolfin
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
     real norm(NormType type = l2) const;
+
+    /// Compute sum of vector
+    real sum() const;
 
     /// Return value of maximum component of vector
     real max() const;

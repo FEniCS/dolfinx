@@ -1,3 +1,4 @@
+ - Implement Vector::sum()
  - Implement nonlinear solver
  - New option for ODE solver: "save final solution" --> solution.data
  - New ODE test problem: reaction
