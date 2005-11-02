@@ -31,7 +31,7 @@ v.Render()
 # Is there a cleaner way to perform sweeping through a time series?
 
 def myanim(v, d, f):
-    v.renwin.save_png('convdiff%4.4d.png' % d.get_time_step())
+    v.renwin.save_png('convdiff%4.4d.png' % d.get_timestep())
     N = len(d.get_file_list())
     i = d.get_timestep() + 1
     d.set_timestep(i % N)
