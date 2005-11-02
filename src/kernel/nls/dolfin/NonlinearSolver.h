@@ -33,19 +33,20 @@ namespace dolfin
     /// Solve nonlinear problem F(u) = 0
     uint solve(NonlinearFunction& nonlinear_function, Vector& x);
 
-    /// Form RHS vector F(u)
-    static int formRHS(SNES snes, Vec x, Vec f, void* nlfunc);
-
-    /// Form Jacobian (stiffness matrix) F'(u) = dF(u)/du
-    static int formJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
-
-    /// Form RHS vector and Jacobian 
-    static int formSystem(SNES snes, Vec x, Vec f, void* nlfunc);
-
-    /// Dummy call for computing Jacobian 
-    static int formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
 
   private:
+
+    /// Function passed to PETSc to form RHS vector F(u)
+    static int formRHS(SNES snes, Vec x, Vec f, void* nlfunc);
+
+    /// Function passed to PETSc to form Jacobian (stiffness matrix) F'(u) = dF(u)/du
+    static int formJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
+
+    /// Function passed to PETSc to form RHS vector and Jacobian 
+    static int formSystem(SNES snes, Vec x, Vec f, void* nlfunc);
+
+    /// Dummy function passed to PETSc for computing Jacobian 
+    static int formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
 
     // PETSc nonlinear solver pointer
     SNES snes;
