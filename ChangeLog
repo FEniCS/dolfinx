@@ -1,3 +1,4 @@
+ - Check residual at end of time step, reject step if too large
  - Implement Vector::sum()
  - Implement nonlinear solver
  - New option for ODE solver: "save final solution" --> solution.data

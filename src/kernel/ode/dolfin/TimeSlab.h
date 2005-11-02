@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-10-29
+// Last changed: 2005-11-01
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
@@ -32,6 +32,9 @@ namespace dolfin
 
     /// Solve time slab system
     virtual bool solve() = 0;
+
+    /// Check if current solution can be accepted
+    virtual bool check() = 0;
 
     /// Shift time slab (prepare for next time slab)
     virtual bool shift() = 0;

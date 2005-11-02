@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-10-29
+// Last changed: 2005-11-01
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
-  : TimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0)
+  : TimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0), rmax(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -49,7 +49,7 @@ MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
   if ( f ) delete [] f;
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveTimeSlab:: build(real a, real b)
+real MonoAdaptiveTimeSlab::build(real a, real b)
 {
   //cout << "Mono-adaptive time slab: building between "
   //     << a << " and " << b << endl;
@@ -91,21 +91,20 @@ bool MonoAdaptiveTimeSlab::solve()
   return solver->solve();
 }
 //-----------------------------------------------------------------------------
-bool MonoAdaptiveTimeSlab::shift()
+bool MonoAdaptiveTimeSlab::check()
 {
   // Get array
   real* xx = x.array();
 
-  // Compute offsets
+  // Compute offset for f
   const uint foffset = (method->qsize() - 1) * N;
-  const uint xoffset = (method->nsize() - 1) * N;
 
   // Compute f at end-time
   feval(method->qsize() - 1);
 
   // Compute maximum norm of residual at end-time
   const real k = length();
-  real rmax = 0.0;
+  rmax = 0.0;
   for (uint i = 0; i < N; i++)
   {
     // Prepare data for computation of derivative
@@ -121,8 +120,24 @@ bool MonoAdaptiveTimeSlab::shift()
       rmax = r;
   }
 
+  // Restore array
+  x.restore(xx);
+
   // Compute new time step
   adaptivity.update(length(), rmax, *method);
+
+  // Check if current solution can be accepted
+  return adaptivity.accept();
+}
+//-----------------------------------------------------------------------------
+bool MonoAdaptiveTimeSlab::shift()
+{
+  // Compute offsets
+  const uint xoffset = (method->nsize() - 1) * N;
+  const uint foffset = (method->qsize() - 1) * N;
+
+  // Get array
+  real* xx = x.array();
   
   // Check if we reached the end time
   const bool end = (_b + DOLFIN_EPS) > ode.T;

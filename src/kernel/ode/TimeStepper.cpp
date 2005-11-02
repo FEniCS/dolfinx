@@ -88,14 +88,27 @@ real TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
-  // Build time slab
-  t = timeslab->build(t, T);
-  
-  //timeslab->disp();
-  
-  // Solve time slab system
-  if ( !timeslab->solve() )
-    stopped = true;
+  // Iterate until solution is accepted
+  const real a = t;
+  while ( true )
+  {
+    // Build time slab
+    t = timeslab->build(a, T);
+    //timeslab->disp();
+    
+    // Solve time slab system
+    if ( !timeslab->solve() )
+    {
+      stopped = true;
+      break;
+    }
+    
+    // Check if solution can be accepted
+    if ( timeslab->check() )
+      break;
+
+    dolfin_info("Rejecting time step, trying again.");
+  }
 
   // Save solution
   save();

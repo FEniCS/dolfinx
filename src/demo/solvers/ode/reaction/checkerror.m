@@ -9,4 +9,4 @@ load reference.data
 
 e = max(abs(solution - reference));
 
-printf('Error %.3e', e)
+printf('Error: %.3e\n', e)

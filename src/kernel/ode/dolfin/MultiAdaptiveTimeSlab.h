@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -42,6 +42,9 @@ namespace dolfin
     /// Solve time slab system
     bool solve();
 
+    /// Check if current solution can be accepted
+    bool check();
+    
     /// Shift time slab (prepare for next time slab)
     bool shift();
 

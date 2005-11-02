@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
@@ -39,6 +39,9 @@ namespace dolfin
 
     /// Solve time slab system
     bool solve();
+
+    /// Check if current solution can be accepted
+    bool check();
 
     /// Shift time slab (prepare for next time slab)
     bool shift();
@@ -80,7 +83,8 @@ namespace dolfin
     real* dofs;                // Local dofs for an element used for interpolation
     real* f;                   // Values of right-hand side at all quadrature points
     Vector x;                  // Degrees of freedom for the solution
-
+    real rmax;                 // Previously computed maximum norm of residual
+    
   };
 
 }

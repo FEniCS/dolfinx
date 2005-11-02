@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-10-31
+// Last changed: 2005-11-01
 
 #ifndef __SETTINGS_H
 #define __SETTINGS_H
@@ -57,6 +57,7 @@ namespace dolfin
       add(Parameter::REAL, "maximum time step", 0.1);
       add(Parameter::REAL, "partitioning threshold", 0.1);
       add(Parameter::REAL, "interval threshold", 0.9);
+      add(Parameter::REAL, "safety factor", 0.9);
       add(Parameter::REAL, "time step conservation", 5.0);
       add(Parameter::REAL, "sparsity check increment", 0.01);
       add(Parameter::REAL, "average length", 0.1);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-10-29
+// Last changed: 2005-11-01
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -117,6 +117,11 @@ bool MultiAdaptiveTimeSlab::solve()
   //  real endval = jx[elast[i] * method->nsize() + method->nsize() - 1];
   //  dolfin_info("i = %d: u = %.16e", i, endval);
   // }
+}
+//-----------------------------------------------------------------------------
+bool MultiAdaptiveTimeSlab::check()
+{
+  return true;
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::shift()

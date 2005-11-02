@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #ifndef __MONO_ADAPTIVITY_H
 #define __MONO_ADAPTIVITY_H
@@ -34,11 +34,14 @@ namespace dolfin
     /// Update time step
     void update(real k0, real r, const Method& method);
 
+    /// Check if current solution can be accepted
+    bool accept();
+
     /// Return threshold for reaching end of interval
     real threshold() const;
 
     /// Use a stabilizing time step sequence
-//     void stabilize(real k, uint m);
+    //     void stabilize(real k, uint m);
 
   private:
 
@@ -63,8 +66,14 @@ namespace dolfin
     // Threshold for reaching end of interval
     real beta;
 
-    // Time step conservation
-    real w;
+    // Safety factor for tolerance
+    real safety;
+
+    // True if we should accept the current solution
+    bool _accept;
+
+    // Number of rejected time steps
+    uint num_rejected;
 
   };
 
