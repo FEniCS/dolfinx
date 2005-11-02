@@ -33,8 +33,8 @@ int main()
   MyFunction f;
   MyBC bc;
 
-  dolfin_set("method", "cg");
-  dolfin_set("order", 1);
+  dolfin_set("method", "dg");
+  dolfin_set("order", 0);
   dolfin_set("solver", "newton");
   dolfin_set("tolerance", 1e-3);
 
@@ -46,7 +46,7 @@ int main()
   dolfin_set("file name", "primal.py");
   dolfin_set("number of samples", 400);
 
-  real T = 1000.0;
+  real T = 10.0;
 
   HeatSolver::solve(mesh, f, bc, T);
 

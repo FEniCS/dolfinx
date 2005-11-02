@@ -14,14 +14,22 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 HeatSolver::HeatSolver(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T)
   : Solver(), mesh(mesh), f(f), bc(bc), u(x, mesh, element),
-    L(u, f), N(mesh.noNodes()),
+    L(u, f), fevals(0),
     ode(0), ts(0), T(T)
 {
-  uint N = mesh.noNodes();
+  N = FEM::size(mesh, element);
 
   x.init(N);
   x = 0.0;
   dotu.init(N);
+
+  Matrix M;
+
+  // Assemble mass matrix
+  FEM::assemble(a, M, mesh);
+
+  // Lump mass matrix
+  FEM::lump(M, m);
 
   // Dummy matrix needed for boundary condition function
   Dummy.init(N, N);
@@ -50,6 +58,7 @@ void HeatSolver::solve()
     file << u;
     dolfin_log(true);
   }
+  cout << "total fevals: " << fevals << endl;
 }
 //-----------------------------------------------------------------------------
 void HeatSolver::fu()
@@ -57,6 +66,8 @@ void HeatSolver::fu()
   dolfin_log(false);
   FEM::assemble(L, dotu, mesh);
   FEM::applyBC(Dummy, dotu, mesh, element, bc);
+  VecPointwiseDivide(dotu.vec(), dotu.vec(), m.vec());
+  fevals++;
   dolfin_log(true);
 }
 //-----------------------------------------------------------------------------

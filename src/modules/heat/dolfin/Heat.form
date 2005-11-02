@@ -8,7 +8,9 @@
 element = FiniteElement("Lagrange", "triangle", 1)
 
 v = BasisFunction(element)
-u = Function(element)
+u = BasisFunction(element)
+u1 = Function(element)
 f = Function(element)
 
-L = (-dot(grad(u), grad(v)) + f * v) * dx
+a = u * v * dx
+L = (-dot(grad(u1), grad(v)) + f * v) * dx

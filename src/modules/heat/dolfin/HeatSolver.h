@@ -43,16 +43,17 @@ namespace dolfin
     Function& f;
     BoundaryCondition& bc;
 
-    Matrix A, Dummy;
-    Vector x, dotu;
+    Matrix Dummy;
+    Vector x, dotu, m;
 
     Heat::LinearForm::TestElement element;
 
     Function u;
 
+    Heat::BilinearForm a;
     Heat::LinearForm L;
 
-    uint N;
+    uint N, fevals;
 
     // ODE
 
