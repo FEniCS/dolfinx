@@ -11,6 +11,7 @@
 #include <dolfin/dolfin_convdiff.h>
 #include <dolfin/dolfin_elasticity.h>
 #include <dolfin/dolfin_elasticityupdated.h>
+#include <dolfin/dolfin_heat.h>
 #include <dolfin/dolfin_poisson.h>
 #include <dolfin/dolfin_navierstokes.h>
 #include <dolfin/dolfin_stokes.h>

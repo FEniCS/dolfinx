@@ -167,7 +167,7 @@ else
 fi
 
 # List of DOLFIN module libraries
-DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stokes"
+DOLFIN_MODULES="elasticity elasticity-updated convdiff navierstokes poisson stokes heat"
 
 # List of DOLFIN kernel libraries
 DOLFIN_KERNEL="common fem form function io la log main math mesh nls ode quadrature settings"
@@ -253,6 +253,8 @@ AC_OUTPUT( Makefile \
            src/modules/navierstokes/dolfin/Makefile \
            src/modules/poisson/Makefile \
            src/modules/poisson/dolfin/Makefile \
+           src/modules/heat/Makefile \
+           src/modules/heat/dolfin/Makefile \
            src/modules/stokes/Makefile \
            src/modules/stokes/dolfin/Makefile \
            src/pydolfin/Makefile \

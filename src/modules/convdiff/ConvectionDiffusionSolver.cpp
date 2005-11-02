@@ -24,8 +24,8 @@ ConvectionDiffusionSolver::ConvectionDiffusionSolver(Mesh& mesh,
 void ConvectionDiffusionSolver::solve()
 {
   real t   = 0.0;  // current time
-  real T   = 1.0;  // final time
-  real k   = 0.1;  // time step
+  real T   = 0.3;  // final time
+  real k   = 0.01;  // time step
   real c   = 0.05;  // diffusion
   real tau = 1.0;  // stabilisation parameter
 
