@@ -75,7 +75,7 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
   _b = b;
 
   //cout << "Mono-adaptive time slab: finished building between "
-  //     << a << " and " << b << endl;
+  //     << a << " and " << b << ": K = " << b - a << endl;
 
   // Update at t = 0.0
   if ( a < DOLFIN_EPS )

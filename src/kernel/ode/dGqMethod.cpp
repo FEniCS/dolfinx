@@ -57,13 +57,13 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
   //return pow(tol / fabs(r), 1.0 / static_cast<real>(q+1));
 
   const real qq = static_cast<real>(q);
-  return pow(tol * pow(k0, qq - 1.0) / fabs(r), 1.0 / (2.0*qq - 1.0));
+  return pow(tol * pow(k0, qq) / fabs(r), 1.0 / (2.0*qq + 1.0));
 }
 //-----------------------------------------------------------------------------
 real dGqMethod::error(real k, real r) const
 {
   // FIXME: Missing jump term and interpolation constant
-  return pow(k, static_cast<real>(q)) * fabs(r);
+  return pow(k, static_cast<real>(q + 1)) * fabs(r);
 }
 //-----------------------------------------------------------------------------
 void dGqMethod::disp() const
