@@ -9,18 +9,15 @@
 
 #include <petscsnes.h>
 
+#include <dolfin/constants.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
-#include <dolfin/BoundaryCondition.h>
 
 namespace dolfin
 {
 
-  /// This class contains pointers to the necessary components to form the 
-  /// nonlinear function F(x) and its Jacobian F'(x).
+  /// This class contains pointers to the nonlinear function F(u) and its 
+  /// Jacobian J = dF(u)/du.
   
   class NonlinearFunction
   {
@@ -29,40 +26,34 @@ namespace dolfin
     /// Create nonlinear function
     NonlinearFunction();
 
-    /// Create nonlinear function with bilinear form, linear form, mesh, RHS 
-    /// vector, Jacobian matrix and solution vector
-    NonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-                        BoundaryCondition& bc);
-
     /// Destructor
     virtual ~NonlinearFunction();
   
-    /// User-defined function to update functions in forms
-    virtual void update(Vector& xsol);
+    /// Set pointer to F
+    void setF(Vector& b);
 
-    /// Set bilinear and linear form
-    void setForm(BilinearForm &a, LinearForm&L);
+    /// Set pointer to Jacobian matrix
+    void setJ(Matrix& A); 
 
-    /// Return mesh
-    Mesh& mesh();
+     /// User-defined function to compute system dimension
+    virtual uint size();
 
-    /// Return bilinear form
-    BilinearForm& a();
+     /// User-defined function to compute F(u)
+    virtual void F(Vector& b, const Vector& x);
 
-    /// Return linear form
-    LinearForm& L();
+     /// User-defined function to compute Jacobian
+    virtual void J(Matrix& A, const Vector& x);
+
+     /// User-defined function to compute F(u) and Jacobian
+    virtual void form(Matrix& A, Vector& b, const Vector& x);
+
+    /// Return Jacobian
+    Matrix& J() const;
 
     /// Return RHS vector
-    BoundaryCondition& bc();
-
-  friend class NonlinearSolver;
+    Vector& F() const;
 
   private:
-
-    BilinearForm* _a;
-    LinearForm* _L;
-    Mesh* _mesh;
-    BoundaryCondition* _bc;
 
     Matrix* _A;
     Vector* _b;

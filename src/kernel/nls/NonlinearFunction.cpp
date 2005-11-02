@@ -7,14 +7,7 @@
 #include <dolfin/NonlinearFunction.h>
 
 using namespace dolfin;
-NonlinearFunction::NonlinearFunction() : _a(0), _L(0), _mesh(0), _bc(0),
-                                         _A(0), _b(0)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-NonlinearFunction::NonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh,
-  BoundaryCondition& bc) : _a(&a), _L(&L), _mesh(&mesh), _bc(&bc), _A(0), _b(0) 
+NonlinearFunction::NonlinearFunction() : _A(0), _b(0)
 {
   // Do nothing
 }
@@ -24,41 +17,50 @@ NonlinearFunction::~NonlinearFunction()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-void NonlinearFunction::update(Vector& x)
+void NonlinearFunction::setF(Vector& b) 
 {
-//  cout << "Inside UpdateNonlinearFunction " << endl;
-  dolfin_warning("Nonlinear function update has not been supplied by user. Nothing updated");
+  _b = &b; 
 }
 //-----------------------------------------------------------------------------
-BilinearForm& NonlinearFunction::a()
+void NonlinearFunction::setJ(Matrix& A) 
 {
-  if( !_a)
-    dolfin_error("Bilinear form has not been specified.");
-
-  return *_a;
+  _A = &A; 
 }
 //-----------------------------------------------------------------------------
-LinearForm& NonlinearFunction::L()
+dolfin::uint NonlinearFunction::size()
 {
-  if( !_L)
-    dolfin_error("Linear form has not been specified.");
-
-  return *_L;
+  dolfin_error("Nonlinear function size has not been supplied by user.");
+  return 1;
 }
 //-----------------------------------------------------------------------------
-Mesh& NonlinearFunction::mesh()
+void NonlinearFunction::F(Vector& b, const Vector& x)
 {
-  if( !_mesh)
-    dolfin_error("Mesh has not been specified.");
-
-  return *_mesh;
+  dolfin_error("Nonlinear function update for F(u)  has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
-BoundaryCondition& NonlinearFunction::bc()
+void NonlinearFunction::J(Matrix& A, const Vector& x)
 {
-  if( !_bc)
-    dolfin_error("Mesh has not been specified.");
+  dolfin_error("Nonlinear function update for Jacobian has not been supplied by user.");
+}
+//-----------------------------------------------------------------------------
+void NonlinearFunction::form(Matrix& A, Vector& b, const Vector& x)
+{
+  dolfin_error("Nonlinear function update for F(u) and Jacobian has not been supplied by user.");
+}
+//-----------------------------------------------------------------------------
+Matrix& NonlinearFunction::J() const
+{
+  if( !_A )
+    dolfin_error("Jacobian matrix has not been specified.");
 
-  return *_bc;
+  return *_A;
+}
+//-----------------------------------------------------------------------------
+Vector& NonlinearFunction::F() const
+{
+  if( !_b )
+    dolfin_error("RHS vector has not been specified.");
+
+  return *_b;
 }
 //-----------------------------------------------------------------------------

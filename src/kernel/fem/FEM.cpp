@@ -277,7 +277,7 @@ dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
     for (uint i = 0; i < element.spacedim(); i++)
     {
       if ( dofs[i] > dofmax )
-	dofmax = dofs[i];
+        dofmax = dofs[i];
     }
   }
   delete [] dofs;
@@ -380,25 +380,25 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
       // Skip points that are not contained in edge
       const Point& point = points[i];
       if ( !(edge->contains(point)) )
-	continue;
+        continue;
 
       // Get boundary condition
       if ( element.rank() > 0 )
-	bv = bc(point, components[i]);
+        bv = bc(point, components[i]);
       else
-	bv = bc(point);
+        bv = bc(point);
     
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-	int dof = dofs[i];
+        int dof = dofs[i];
 
-	if ( !row_set[dof] )
-	{
-	  rows[m++] = dof;
-	  b(dof) = bv.value;
-	  row_set[dof] = true;
-	}
+        if ( !row_set[dof] )
+        {
+          rows[m++] = dof;
+          b(dof) = bv.value;
+          row_set[dof] = true;
+        }
       }
     }
   }
@@ -465,25 +465,25 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
       // Skip points that are not contained in face
       const Point& point = points[i];
       if ( !(face->contains(point)) )
-	continue;
+        continue;
 
       // Get boundary condition
       if ( element.rank() > 0 )
-	bv = bc(point, components[i]);
+        bv = bc(point, components[i]);
       else
-	bv = bc(point);
+        bv = bc(point);
 
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-	int dof = dofs[i];
+        int dof = dofs[i];
 
-	if ( !row_set[dof] )
-	{
-	  rows[m++] = dof;
-	  b(dof) = bv.value;
-	  row_set[dof] = true;
-	}
+        if ( !row_set[dof] )
+        {
+          rows[m++] = dof;
+          b(dof) = bv.value;
+          row_set[dof] = true;
+        }
       }
     }
   }
@@ -528,8 +528,8 @@ void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
     if ( a.trial().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;
- default:
-   dolfin_error("Unknown mesh type.");
+  default:
+    dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -545,8 +545,8 @@ void FEM::checkdims(const LinearForm& L, const Mesh& mesh)
     if ( L.test().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;
- default:
-   dolfin_error("Unknown mesh type.");
+  default:
+    dolfin_error("Unknown mesh type.");
   }
 }
 //-----------------------------------------------------------------------------

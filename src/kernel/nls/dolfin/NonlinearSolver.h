@@ -18,7 +18,7 @@ namespace dolfin
 {
 
   /// This class defines the interface of nonlinear solvers for
-  /// equations of the form F(x) = 0.
+  /// equations of the form F(u) = 0.
   
   class NonlinearSolver
   {
@@ -31,7 +31,7 @@ namespace dolfin
     ~NonlinearSolver();
   
     /// Solve nonlinear problem F(u) = 0
-    uint solve(Vector& x, NonlinearFunction& nonlinear_function);
+    uint solve(NonlinearFunction& nonlinear_function, Vector& x);
 
     /// Form RHS vector F(u)
     static int formRHS(SNES snes, Vec x, Vec f, void* nlfunc);
@@ -49,9 +49,6 @@ namespace dolfin
 
     // PETSc nonlinear solver pointer
     SNES snes;
-
-    // Pointer to Jacobian matrix
-    Matrix* _AA;
 
   };
 
