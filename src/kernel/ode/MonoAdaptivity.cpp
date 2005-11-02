@@ -56,14 +56,15 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
   const real k1 = method.timestep(r, safety*tol, k0, kmax_current);
 
   // Regulate the time step
-  //k = regulator.regulate(k1, k0, kmax_current, kfixed);
-  k = regulator.regulate(k1, k, kmax_current, kfixed);
+  k = regulator.regulate(k1, k0, kmax_current, kfixed);
+  //k = regulator.regulate(k1, k, kmax_current, kfixed);
 
   // Check the size of the residual
   const real error = method.error(k0, r);
   _accept = true;
   if ( error > tol )
   {
+    k = std::min(k, 0.5*k0);
     //dolfin_info("i = %d e = %.3e  tol = %.3e", i, error, tol);
     //safety = std::min(safety, regulator.regulate(tol/error, safety, 1.0, false));
     _accept = false;
@@ -75,8 +76,8 @@ bool MonoAdaptivity::accept()
   if ( !_accept )
     num_rejected++;
   
-  return true;
-  //return _accept;
+  //return true;
+  return _accept;
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptivity::threshold() const
