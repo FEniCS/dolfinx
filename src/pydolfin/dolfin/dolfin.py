@@ -152,6 +152,7 @@ class File(_object):
         return "<%s.%s; proxy of C++ dolfin::File instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     xml = _dolfin.File_xml
     matlab = _dolfin.File_matlab
+    matrixmarket = _dolfin.File_matrixmarket
     octave = _dolfin.File_octave
     opendx = _dolfin.File_opendx
     gid = _dolfin.File_gid
@@ -211,6 +212,7 @@ class Vector(_object):
     l2 = _dolfin.Vector_l2
     linf = _dolfin.Vector_linf
     def norm(*args): return _dolfin.Vector_norm(*args)
+    def sum(*args): return _dolfin.Vector_sum(*args)
     def max(*args): return _dolfin.Vector_max(*args)
     def min(*args): return _dolfin.Vector_min(*args)
     def disp(*args): return _dolfin.Vector_disp(*args)
@@ -518,6 +520,8 @@ class FEM(_object):
     if _newclass:lump = staticmethod(_dolfin.FEM_lump)
     __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
     if _newclass:size = staticmethod(_dolfin.FEM_size)
+    __swig_getmethods__["nzsize"] = lambda x: _dolfin.FEM_nzsize
+    if _newclass:nzsize = staticmethod(_dolfin.FEM_nzsize)
     __swig_getmethods__["disp"] = lambda x: _dolfin.FEM_disp
     if _newclass:disp = staticmethod(_dolfin.FEM_disp)
 
@@ -535,6 +539,8 @@ FEM_applyBC = _dolfin.FEM_applyBC
 FEM_lump = _dolfin.FEM_lump
 
 FEM_size = _dolfin.FEM_size
+
+FEM_nzsize = _dolfin.FEM_nzsize
 
 FEM_disp = _dolfin.FEM_disp
 
@@ -554,6 +560,7 @@ class FiniteElement(_object):
     def spacedim(*args): return _dolfin.FiniteElement_spacedim(*args)
     def shapedim(*args): return _dolfin.FiniteElement_shapedim(*args)
     def tensordim(*args): return _dolfin.FiniteElement_tensordim(*args)
+    def elementdim(*args): return _dolfin.FiniteElement_elementdim(*args)
     def rank(*args): return _dolfin.FiniteElement_rank(*args)
     def dofmap(*args): return _dolfin.FiniteElement_dofmap(*args)
     def pointmap(*args): return _dolfin.FiniteElement_pointmap(*args)
@@ -1675,6 +1682,7 @@ class MonoAdaptiveTimeSlab(_object):
 
     def build(*args): return _dolfin.MonoAdaptiveTimeSlab_build(*args)
     def solve(*args): return _dolfin.MonoAdaptiveTimeSlab_solve(*args)
+    def check(*args): return _dolfin.MonoAdaptiveTimeSlab_check(*args)
     def shift(*args): return _dolfin.MonoAdaptiveTimeSlab_shift(*args)
     def sample(*args): return _dolfin.MonoAdaptiveTimeSlab_sample(*args)
     def usample(*args): return _dolfin.MonoAdaptiveTimeSlab_usample(*args)
@@ -1706,6 +1714,7 @@ class MonoAdaptivity(_object):
 
     def timestep(*args): return _dolfin.MonoAdaptivity_timestep(*args)
     def update(*args): return _dolfin.MonoAdaptivity_update(*args)
+    def accept(*args): return _dolfin.MonoAdaptivity_accept(*args)
     def threshold(*args): return _dolfin.MonoAdaptivity_threshold(*args)
 
 class MonoAdaptivityPtr(MonoAdaptivity):
@@ -1804,6 +1813,7 @@ class MultiAdaptiveTimeSlab(_object):
 
     def build(*args): return _dolfin.MultiAdaptiveTimeSlab_build(*args)
     def solve(*args): return _dolfin.MultiAdaptiveTimeSlab_solve(*args)
+    def check(*args): return _dolfin.MultiAdaptiveTimeSlab_check(*args)
     def shift(*args): return _dolfin.MultiAdaptiveTimeSlab_shift(*args)
     def sample(*args): return _dolfin.MultiAdaptiveTimeSlab_sample(*args)
     def usample(*args): return _dolfin.MultiAdaptiveTimeSlab_usample(*args)
@@ -1834,7 +1844,9 @@ class MultiAdaptivity(_object):
         except: pass
 
     def timestep(*args): return _dolfin.MultiAdaptivity_timestep(*args)
-    def update(*args): return _dolfin.MultiAdaptivity_update(*args)
+    def updateInit(*args): return _dolfin.MultiAdaptivity_updateInit(*args)
+    def updateComponent(*args): return _dolfin.MultiAdaptivity_updateComponent(*args)
+    def accept(*args): return _dolfin.MultiAdaptivity_accept(*args)
     def threshold(*args): return _dolfin.MultiAdaptivity_threshold(*args)
 
 class MultiAdaptivityPtr(MultiAdaptivity):
@@ -2070,6 +2082,7 @@ class TimeSlab(_object):
 
     def build(*args): return _dolfin.TimeSlab_build(*args)
     def solve(*args): return _dolfin.TimeSlab_solve(*args)
+    def check(*args): return _dolfin.TimeSlab_check(*args)
     def shift(*args): return _dolfin.TimeSlab_shift(*args)
     def sample(*args): return _dolfin.TimeSlab_sample(*args)
     def size(*args): return _dolfin.TimeSlab_size(*args)

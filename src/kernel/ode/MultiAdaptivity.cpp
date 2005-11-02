@@ -72,20 +72,19 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
 				      const Method& method)
 {
   // Compute new time step
-  const real k1 = method.timestep(r, safety*tol, k0, kmax_current);
+  real k1 = method.timestep(r, safety*tol, k0, kmax_current);
   
   // Regulate the time step
-  //timesteps[i] = regulator.regulate(k1, k0, kmax_current, kfixed);
-  timesteps[i] = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
+  timesteps[i] = regulator.regulate(k1, k0, kmax_current, kfixed);
 
   // Check the size of the residual
   const real error = method.error(k0, r);
-  //dolfin_info("e = %.3e  tol = %.3e", error, tol);
   if ( error > tol )
+  {
+    //dolfin_info("i = %d e = %.3e  tol = %.3e", i, error, tol);
+    safety = std::min(safety, regulator.regulate(tol/error, safety, 1.0, false));
     _accept = false;
-  
-  _accept = true;
-
+  }
 
   /*
   cout << "i = " << i << endl;

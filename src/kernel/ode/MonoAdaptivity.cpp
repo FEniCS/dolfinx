@@ -61,8 +61,13 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
 
   // Check the size of the residual
   const real error = method.error(k0, r);
-  //dolfin_info("e = %.3e  tol = %.3e", error, tol);
-  _accept = error <= tol;
+  _accept = true;
+  if ( error > tol )
+  {
+    //dolfin_info("i = %d e = %.3e  tol = %.3e", i, error, tol);
+    safety = std::min(safety, regulator.regulate(tol/error, safety, 1.0, false));
+    _accept = false;
+  }
 }
 //-----------------------------------------------------------------------------
 bool MonoAdaptivity::accept()

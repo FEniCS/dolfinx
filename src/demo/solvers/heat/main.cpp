@@ -1,6 +1,5 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
-//
 
 #include <dolfin.h>
   

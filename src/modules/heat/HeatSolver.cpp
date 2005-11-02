@@ -1,8 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2005.
+//
 // First added:  2005-11-01
-// Last changed: 2005-11-01
+// Last changed: 2005-11-02
 
 #include <dolfin/Heat.h>
 #include <dolfin/HeatSolver.h>
@@ -42,16 +44,20 @@ void HeatSolver::solve()
   while(t < T)
   {
     t = ts->step();
-    cout << "t: " << t << endl;
+    // cout << "t: " << t << endl;
     // Save function to file
+    dolfin_log(false);
     file << u;
+    dolfin_log(true);
   }
 }
 //-----------------------------------------------------------------------------
 void HeatSolver::fu()
 {
+  dolfin_log(false);
   FEM::assemble(L, dotu, mesh);
   FEM::applyBC(Dummy, dotu, mesh, element, bc);
+  dolfin_log(true);
 }
 //-----------------------------------------------------------------------------
 void HeatSolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T)
