@@ -4,7 +4,7 @@ nobase_include_HEADERS   = dolfin/dolfin_form.h \
                            dolfin/BilinearForm.h \
                            dolfin/Form.h \
                            dolfin/LinearForm.h \
-                           dolfin/functional.h \
+                           dolfin/Functional.h \
                            dolfin/PDE.h
 INCLUDES                 = @KERNEL_CFLAGS@
 lib_LIBRARIES            = libdolfin-form.a
