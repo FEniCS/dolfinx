@@ -43,7 +43,7 @@ the standard Sobolev space of square integrable functions with also their first
 derivatives square integrable (in the Lebesgue sense), 
 with the functions being zero on the boundary (in the sense of traces).   
 
-The FEM metod for (\ref{pde:poisson:weak}) is now: 
+The FEM method for (\ref{pde:poisson:weak}) is now: 
 find $U\in V_h$ such that  
 \begin{equation}\label{pde:poisson:fem}
 a(v,U)=L(v) \quad \forall v\in \hat V_h, 
@@ -131,7 +131,7 @@ computed by calling the function \texttt{eval()} in the classes
 The \texttt{eval()} functions at a certain element in the assembly algorithm 
 take as argument an \texttt{AffineMap} object, 
 describing the mapping from the reference element to the actual element, 
-by computing the jacobian $J$ of the mapping (also $J^{-1}$ and $det(J)$ 
+by computing the Jacobian $J$ of the mapping (also $J^{-1}$ and $det(J)$ 
 are computed).  
 
 \section{Specifying boundary conditions and data}
