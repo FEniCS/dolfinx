@@ -26,7 +26,9 @@ MonoAdaptivity::MonoAdaptivity(ODE& ode)
   // Start with given maximum time step
   kmax_current = kmax;
 
-  // Start with 
+  // Start with maximum allowed safety factor
+  safety_max = safety;
+  safety_old = safety;
 
   // Scale tolerance with the square root of the number of components
   //tol /= sqrt(static_cast<real>(ode.size()));
@@ -65,18 +67,45 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
   if ( error > tol )
   {
     k = std::min(k, 0.5*k0);
-    //dolfin_info("i = %d e = %.3e  tol = %.3e", i, error, tol);
-    //safety = std::min(safety, regulator.regulate(tol/error, safety, 1.0, false));
     _accept = false;
+
+    //dolfin_info("e = %.3e  tol = %.3e", error, tol);
+    safety = regulator.regulate(tol/error, safety, 1.0, false);
   }
+  else
+  {
+    safety = regulator.regulate(0.9, safety, 1.0, false);
+  }
+
+  //cout << "safefy factor = " << safety << endl;
 }
 //-----------------------------------------------------------------------------
 bool MonoAdaptivity::accept()
 {
-  if ( !_accept )
+  if ( _accept )
+  {
+    safety_old = safety;
+    safety = regulator.regulate(safety_max, safety_old, 1.0, false);
+    //cout << "---------------------- Time step ok -----------------------" << endl;
+  }
+  else
+  {
+    if ( safety > safety_old )
+    {
+      safety_max = safety_old;
+      safety_old = safety;
+    }
+    else
+    {
+      safety_old = safety;
+      safety = 0.5*safety;
+    }
+
     num_rejected++;
+  }
+
+  //dolfin_info("safefy factor = %.3e", safety);
   
-  //return true;
   return _accept;
 }
 //-----------------------------------------------------------------------------

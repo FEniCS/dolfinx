@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-01
+// Last changed: 2005-11-02
 
 #include <cmath>
 #include <dolfin/dolfin_settings.h>
@@ -30,7 +30,11 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode)
 
   // Start with given maximum time step
   kmax_current = kmax;
-  
+
+  // Start with maximum allowed safety factor
+  safety_max = safety;
+  safety_old = safety;
+
   // Scale tolerance with the square root of the number of components
   //tol /= sqrt(static_cast<real>(ode.size()));
   
@@ -75,16 +79,20 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   real k1 = method.timestep(r, safety*tol, k0, kmax_current);
   
   // Regulate the time step
-  timesteps[i] = regulator.regulate(k1, k0, kmax_current, kfixed);
+  //real k = regulator.regulate(k1, k0, kmax_current, kfixed);
+  real k = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
 
   // Check the size of the residual
   const real error = method.error(k0, r);
   if ( error > tol )
   {
-    //dolfin_info("i = %d e = %.3e  tol = %.3e", i, error, tol);
-    safety = std::min(safety, regulator.regulate(tol/error, safety, 1.0, false));
+    k = std::min(k, 0.5*k0);
     _accept = false;
+    //dolfin_info("i = %d  e = %.3e  tol = %.3e", i, error, tol);
   }
+ 
+  // Save time step for component
+  timesteps[i] = k;
 
   /*
   cout << "i = " << i << endl;
@@ -97,9 +105,30 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
 //-----------------------------------------------------------------------------
 bool MultiAdaptivity::accept()
 {
-  if ( !_accept )
+  if ( _accept )
+  {
+    safety_old = safety;
+    safety = regulator.regulate(safety_max, safety_old, 1.0, false);
+    //cout << "---------------------- Time step ok -----------------------" << endl;
+  }
+  else
+  {
+    if ( safety > safety_old )
+    {
+      safety_max = safety_old;
+      safety_old = safety;
+    }
+    else
+    {
+      safety_old = safety;
+      safety = 0.5*safety;
+    }
+
     num_rejected++;
-  
+  }
+
+  //dolfin_info("safefy factor = %.3e", safety);
+
   return _accept;
 }
 //-----------------------------------------------------------------------------

@@ -2,13 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-01
+// Last changed: 2005-11-02
 
 #ifndef __MONO_ADAPTIVITY_H
 #define __MONO_ADAPTIVITY_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Regulator.h>
+
+// FIXME: Use common base class Adaptivity
 
 namespace dolfin
 {
@@ -68,6 +70,12 @@ namespace dolfin
 
     // Safety factor for tolerance
     real safety;
+
+    // Previous safety factor for tolerance
+    real safety_old;
+
+    // Maximum allowed safety factor for tolerance
+    real safety_max;
 
     // True if we should accept the current solution
     bool _accept;

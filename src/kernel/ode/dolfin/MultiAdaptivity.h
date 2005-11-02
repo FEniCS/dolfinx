@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-01
+// Last changed: 2005-11-02
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
@@ -76,10 +76,16 @@ namespace dolfin
     // Safety factor for tolerance
     real safety;
 
+    // Previous safety factor for tolerance
+    real safety_old;
+
+    // Maximum allowed safety factor for tolerance
+    real safety_max;
+
     // True if we should accept the current solution
     bool _accept;
 
-    // Number of rejected time steps
+    // Total number of rejected time steps
     uint num_rejected;
 
   };

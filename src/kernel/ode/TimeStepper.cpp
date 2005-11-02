@@ -107,7 +107,7 @@ real TimeStepper::step()
     if ( timeslab->check() )
       break;
 
-    dolfin_info("Rejecting time slab K = %.3f, trying again.", timeslab->length());
+    dolfin_info("Rejecting time slab K = %.3e, trying again.", timeslab->length());
   }
 
   // Save solution

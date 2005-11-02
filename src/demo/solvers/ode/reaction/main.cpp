@@ -110,8 +110,6 @@ int main(int argc, char* argv[])
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
 
-
-  dolfin_set("order", 0);
   dolfin_set("save solution", true);
 
   //dolfin_set("initial time step", 2.5e-3);
