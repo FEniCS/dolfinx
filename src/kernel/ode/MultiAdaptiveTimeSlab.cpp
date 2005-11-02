@@ -121,14 +121,9 @@ bool MultiAdaptiveTimeSlab::solve()
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::check()
 {
-  return true;
-}
-//-----------------------------------------------------------------------------
-bool MultiAdaptiveTimeSlab::shift()
-{
   // Cover end time
   coverTime(_b);
-  
+
   // Update the solution vector at the end time for each component
   for (uint i = 0; i < N; i++)
   {
@@ -141,6 +136,9 @@ bool MultiAdaptiveTimeSlab::shift()
     const int j = e * method->nsize();
     u[i] = jx[j + method->nsize() - 1];
   }
+
+  // Initialize time step update for system
+  adaptivity.updateInit();
   
   // Compute residual and new time step for each component
   for (uint i = 0; i < N; i++)
@@ -168,13 +166,19 @@ bool MultiAdaptiveTimeSlab::shift()
     const real r = method->residual(x0, jx + j, f, k);
     
     // Update adaptivity
-    adaptivity.update(i, k, r, *method);
+    adaptivity.updateComponent(i, k, r, *method);
 
     // Save right-hand side at end-point for cG
     if ( method->type() == Method::cG )
       f0[i] = f;
   }
-  
+
+  // Check if current solution can be accepted
+  return adaptivity.accept();  
+}
+//-----------------------------------------------------------------------------
+bool MultiAdaptiveTimeSlab::shift()
+{
   // Check if we reached the end time
   const bool end = (_b + DOLFIN_EPS) > ode.T;
   

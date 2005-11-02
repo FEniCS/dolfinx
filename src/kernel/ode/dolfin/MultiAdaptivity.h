@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
@@ -32,8 +32,14 @@ namespace dolfin
     /// Return time step for given component
     real timestep(uint i) const;
 
-    /// Update time step
-    void update(uint i, real k0, real r, const Method& method);
+    /// Initialize time step update for system
+    void updateInit();
+
+    /// Update time step for given component
+    void updateComponent(uint i, real k0, real r, const Method& method);
+
+    /// Check if current solution can be accepted
+    bool accept();
 
     /// Return threshold for reaching end of interval
     real threshold() const;
@@ -66,6 +72,15 @@ namespace dolfin
     
     // Threshold for reaching end of interval
     real beta;
+
+    // Safety factor for tolerance
+    real safety;
+
+    // True if we should accept the current solution
+    bool _accept;
+
+    // Number of rejected time steps
+    uint num_rejected;
 
   };
 
