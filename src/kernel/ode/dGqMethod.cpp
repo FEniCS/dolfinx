@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -63,7 +63,7 @@ real dGqMethod::timestep(real r, real tol, real k0, real kmax) const
 real dGqMethod::error(real k, real r) const
 {
   // FIXME: Missing jump term and interpolation constant
-  return pow(k, static_cast<real>(q)) * r;
+  return pow(k, static_cast<real>(q)) * fabs(r);
 }
 //-----------------------------------------------------------------------------
 void dGqMethod::disp() const

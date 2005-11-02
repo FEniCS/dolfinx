@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-11-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -59,7 +59,7 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
 real cGqMethod::error(real k, real r) const
 {
   // FIXME: Missing interpolation constant
-  return pow(k, static_cast<real>(q)) * r;
+  return pow(k, static_cast<real>(q)) * fabs(r);
 }
 //-----------------------------------------------------------------------------
 void cGqMethod::disp() const
