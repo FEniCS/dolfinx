@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-10-29
+// Last changed: 2005-11-02
 
 #include <stdio.h>
 #include <string>
@@ -23,9 +23,17 @@ TimeSlab::TimeSlab(ODE& ode) :
   std::string m = dolfin_get("method");
   int q = dolfin_get("order");
   if ( m == "cg" || m == "mcg" )
+  {
+    if ( q < 1 )
+      dolfin_error("Minimal order is q = 1 for continuous Galerkin.");
     method = new cGqMethod(q);
+  }
   else if ( m == "dg" || m == "mdg" )
+  {
+    if ( q < 0 )
+      dolfin_error("Minimal order is q = 0 for discontinuous Galerkin.");
     method = new dGqMethod(q);
+  }
   else
     dolfin_error1("Unknown ODE method: %s", m.c_str());
 
