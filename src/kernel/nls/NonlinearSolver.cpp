@@ -35,7 +35,7 @@ dolfin::uint NonlinearSolver::solve(NonlinearFunction& nonlinear_function, Vecto
   // Initialize global RHS vector, Jacobian matrix, solution vector and approximate 
   // solution vector
   const uint M  = nonlinear_function.size();
-  const uint nz = 10;
+  const uint nz = nonlinear_function.nzsize();
 
   A.init(M, M, nz);
   b.init(M);

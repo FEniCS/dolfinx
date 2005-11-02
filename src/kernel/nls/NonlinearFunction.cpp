@@ -33,6 +33,12 @@ dolfin::uint NonlinearFunction::size()
   return 1;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint NonlinearFunction::nzsize()
+{
+  dolfin_error("Maximum number of nonzeros per rwo (nzsize) has not been supplied by user.");
+  return 1;
+}
+//-----------------------------------------------------------------------------
 void NonlinearFunction::F(Vector& b, const Vector& x)
 {
   dolfin_error("Nonlinear function update for F(u)  has not been supplied by user.");

@@ -1,1 +1,1 @@
-SUBDIRS = bench fem mesh ode poisson quadrature solvers
+SUBDIRS = bench fem mesh ode nls poisson quadrature solvers

@@ -33,7 +33,6 @@ namespace dolfin
     /// Solve nonlinear problem F(u) = 0
     uint solve(NonlinearFunction& nonlinear_function, Vector& x);
 
-
   private:
 
     /// Function passed to PETSc to form RHS vector F(u)

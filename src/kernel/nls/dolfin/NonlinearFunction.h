@@ -38,6 +38,9 @@ namespace dolfin
      /// User-defined function to compute system dimension
     virtual uint size();
 
+     /// User-defined function to compute maximum nonzeros on a row
+    virtual uint nzsize();
+
      /// User-defined function to compute F(u)
     virtual void F(Vector& b, const Vector& x);
 
