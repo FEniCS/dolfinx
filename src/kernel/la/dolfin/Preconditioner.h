@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2005.
+//
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-11-02
 
 #ifndef __PRECONDITIONER_H
 #define __PRECONDITIONER_H
@@ -32,12 +34,17 @@ namespace dolfin
     /// Solve linear system approximately for given right-hand side b
     virtual void solve(Vector& x, const Vector& b) = 0;
 
-    static int PCApply(PC pc, Vec x, Vec y);
-    static int PCCreate(PC pc);
+    /// Friends
+    friend class GMRES;
 
   protected:
 
     PC petscpc;
+
+  private:
+
+    static int PCApply(PC pc, Vec x, Vec y);
+    static int PCCreate(PC pc);
 
   };
 
