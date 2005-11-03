@@ -70,6 +70,8 @@ void MultiAdaptiveNewtonSolver::start()
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
+  //cout << "Size of system: " << dx.size() << endl;
+
   // Evaluate b = -F(x) at current x
   beval();
   

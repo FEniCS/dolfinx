@@ -110,13 +110,14 @@ int main(int argc, char* argv[])
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
 
-  //dolfin_set("save solution", true);
+  dolfin_set("save solution", true);
+  dolfin_set("solver", "fixed point");
+  dolfin_set("monitor convergence", true);
 
   //dolfin_set("initial time step", 2.5e-3);
 
   //dolfin_set("fixed time step", true);
   //dolfin_set("partitioning threshold", 0.25);
-  dolfin_set("monitor convergence", true);
   //dolfin_set("discrete tolerance", 1e-10);
 
   // Uncomment to compute reference solution

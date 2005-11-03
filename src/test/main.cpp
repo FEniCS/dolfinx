@@ -18,6 +18,7 @@ public:
 
   void solve(Vector& x, const Vector& b)
   {
+    x = b;
     dolfin_info("Calling preconditioner");
   }
 

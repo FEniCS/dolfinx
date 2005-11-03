@@ -2,8 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-10-24
+// Last changed: 2005-11-02
 
+#include <cmath>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabSolver.h>
@@ -70,7 +71,7 @@ bool TimeSlabSolver::solve()
 
     // Check divergence
     // FIXME: implement better check and make this a parameter
-    if ( iter > 0 && d1 > 1000.0 * d0 )
+    if ( (iter > 0 && d1 > 1000.0 * d0) || !std::isnormal(d1) )
     {
       dolfin_warning("Time slab system seems to be diverging, solution stopped.");
       return false;
