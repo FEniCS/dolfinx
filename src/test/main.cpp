@@ -12,21 +12,33 @@
 
 using namespace dolfin;
 
+class MyPreconditioner : public Preconditioner
+{
+public:
+
+  void solve(Vector& x, const Vector& b)
+  {
+    dolfin_info("Calling preconditioner");
+  }
+
+};
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
 
-  UnitSquare mesh(3, 3);
+  UnitSquare mesh(2, 2);
   MassMatrix A(mesh);
+  Vector x;
+  Vector b(A.size(0));
+  b = 1.0;
 
-  File file("matrix.mtx");
-  file << A;
-
-  Matrix B;
-  file >> B;
-
-  A.disp();
-  B.disp();
+  GMRES solver;
+  MyPreconditioner pc;
+  solver.setPreconditioner(pc);
+  solver.solve(A, x, b);
+  
+  x.disp();
 
   return 0;
 }
