@@ -42,7 +42,7 @@ MonoAdaptivity::MonoAdaptivity(ODE& ode, const Method& method)
   }
 
   // Initialize controller
-  controller.init(k, safety*tol, method.order());
+  controller.init(k, safety*tol, method.order(), kmax);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptivity::~MonoAdaptivity()
@@ -79,10 +79,13 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
   // Compute local error estimate
   const real error = method.error(k0, r);
   
+  // Let controller choose new time step
+  k = controller.update(error, safety*tol);
+
   //k = controller.updateSimple(error, safety*tol);
   //k = controller.updateHarmonic(error, safety*tol);
   //k = controller.updateH0211(error, safety*tol);
-  k = controller.updateH211PI(error, safety*tol);
+  //k = controller.updateH211PI(error, safety*tol);
 
   _accept = true;  
   

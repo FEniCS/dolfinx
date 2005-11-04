@@ -110,13 +110,12 @@ int main(int argc, char* argv[])
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
 
-  dolfin_set("adaptive samples", true);
 
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
 
-  dolfin_set("save solution", true);
-  dolfin_set("adaptive samples", true);
+  //dolfin_set("save solution", true);
+  //dolfin_set("adaptive samples", true);
 
   //dolfin_set("solver", "fixed point");
   //dolfin_set("monitor convergence", true);

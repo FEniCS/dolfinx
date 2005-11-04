@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-02
-// Last changed: 2005-11-02
+// Last changed: 2005-11-03
 
 #ifndef __CONTROLLER_H
 #define __CONTROLLRE_H
@@ -24,13 +24,13 @@ namespace dolfin
     Controller();
 
     /// Create controller with given initial state
-    Controller(real k, real tol, uint p);
+    Controller(real k, real tol, uint p, real kmax);
 
     /// Destructor
     ~Controller();
 
     /// Initialize controller
-    void init(real k, real tol, uint p);
+    void init(real k, real tol, uint p, real kmax);
 
     /// Default controller
     real update(real e, real tol);
@@ -57,6 +57,9 @@ namespace dolfin
 
     // Asymptotics: e ~ k^p
     real p;
+
+    // Maximum time step
+    real kmax;
 
   };
 
