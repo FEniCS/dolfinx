@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-01
+// Last changed: 2005-11-03
 
 #include <cmath>
 #include <dolfin/dolfin_settings.h>
@@ -64,31 +64,14 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
     return;
   }
 
-  // Compute new time step
-  //const real k1 = method.timestep(r, safety*tol, k0, kmax_current);
-
-  // Regulate the time step
-  //k = regulator.regulate(k1, k0, kmax_current, kfixed);
-  //k = regulator.regulate(k1, k, kmax_current, kfixed);
-  
-
-  //k = (1.0 + 20.0)*k1*k/(k+20.0*k1);
-
-  //k = 2.0*k1*k0/(k0+k1);
-  
   // Compute local error estimate
   const real error = method.error(k0, r);
   
   // Let controller choose new time step
   k = controller.update(error, safety*tol);
 
-  //k = controller.updateSimple(error, safety*tol);
-  //k = controller.updateHarmonic(error, safety*tol);
-  //k = controller.updateH0211(error, safety*tol);
-  //k = controller.updateH211PI(error, safety*tol);
-
-  _accept = true;  
-  
+  // Check if time step can be accepted
+  _accept = true;    
   if ( error > tol )
   {
     k = std::min(k, 0.5*k0);

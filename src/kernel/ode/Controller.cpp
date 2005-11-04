@@ -5,6 +5,7 @@
 // Last changed: 2005-11-03
 
 #include <cmath>
+#include <dolfin/dolfin_log.h>
 #include <dolfin/Controller.h>
 
 using namespace dolfin;
@@ -41,12 +42,12 @@ real Controller::update(real e, real tol)
 //-----------------------------------------------------------------------------
 real Controller::updateH0211(real e, real tol)
 {
-  // Choose kmax if error is too small
-  real k = kmax;
-
   // Compute new time step
-  if ( e > DOLFIN_EPS )
-    k = k1*pow(tol/e, 1.0/(2.0*p))*pow(tol/e0, 1.0/(2.0*p))/sqrt(k1/k0);
+  real k = k1*pow(tol/e, 1.0/(2.0*p))*pow(tol/e0, 1.0/(2.0*p))/sqrt(k1/k0);
+
+  // Choose kmax if error is too small (should also catch nan or inf)
+  if ( !(k <= kmax) )
+    k = 2.0*k1*kmax / (k1 + kmax);
   
   // Update history (note that e1 == e)
   k0 = k1; k1 = k;
@@ -57,12 +58,12 @@ real Controller::updateH0211(real e, real tol)
 //-----------------------------------------------------------------------------
 real Controller::updateH211PI(real e, real tol)
 {
-  // Choose kmax if error is too small
-  real k = kmax;
-
   // Compute new time step
-  if ( e > DOLFIN_EPS )
-    k = k1*pow(tol/e, 1.0/(6.0*p))*pow(tol/e0, 1.0/(6.0*p));
+  real k = k1*pow(tol/e, 1.0/(6.0*p))*pow(tol/e0, 1.0/(6.0*p));
+    
+  // Choose kmax if error is too small (should also catch nan or inf)
+  if ( !(k <= kmax) )
+    k = 2.0*k1*kmax / (k1 + kmax);
 
   // Update history (note that e1 == e)
   k0 = k1; k1 = k;
@@ -73,13 +74,13 @@ real Controller::updateH211PI(real e, real tol)
 //-----------------------------------------------------------------------------
 real Controller::updateSimple(real e, real tol)
 {
-  // Choose kmax if error is too small
-  real k = kmax;
-
   // Compute new time step
-  if ( e > DOLFIN_EPS )
-    k = k1*pow(tol/e, 1.0/p);
+  real k = k1*pow(tol/e, 1.0/p);
   
+  // Choose kmax if error is too small (should also catch nan or inf)
+  if ( !(k <= kmax) )
+    k = 2.0*k1*kmax / (k1 + kmax);
+
   // Update history (note that e1 == e)
   k0 = k1; k1 = k;
   e0 = e;
@@ -89,16 +90,16 @@ real Controller::updateSimple(real e, real tol)
 //-----------------------------------------------------------------------------
 real Controller::updateHarmonic(real e, real tol)
 {
-  // Choose kmax if error is too small
-  real k = kmax;
-
   // Compute new time step
-  if ( e > DOLFIN_EPS )
-    k = k1*pow(tol/e, 1.0/p);
+  real k = k1*pow(tol/e, 1.0/p);
+
+  // Choose kmax if error is too small (should also catch nan or inf)
+  if ( !(k <= kmax) )
+    k = 2.0*k1*kmax / (k1 + kmax);
 
   // Take harmonic mean value with weight
   real w = 5.0;
-  k = (1.0 + w) * k1 * k / (k1 + w*k);
+  k = (1.0 + w)*k1*k / (k1 + w*k);
 
   // Update history (note that e1 == e)
   k0 = k1; k1 = k;

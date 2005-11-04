@@ -5,7 +5,7 @@
 // Last changed: 2005-11-03
 
 #ifndef __CONTROLLER_H
-#define __CONTROLLRE_H
+#define __CONTROLLER_H
 
 #include <dolfin/constants.h>
 
