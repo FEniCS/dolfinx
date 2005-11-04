@@ -92,6 +92,9 @@ namespace dolfin
     // Total number of rejected time steps
     uint num_rejected;
 
+    // Weight for time step conservation
+    real weight;
+
   };
 
 }

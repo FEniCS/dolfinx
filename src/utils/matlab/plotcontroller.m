@@ -7,10 +7,10 @@
 clf
 
 subplot(2,1,1)
-plot(t, k(1,:))
+plot(t, k)
 
 subplot(2,1,2)
-e = k(1,:).*max(abs(r));
+e = k.*abs(r);
 semilogy(t, e);
 hold on
 plot(t, 2.0*tol*ones(size(t)))

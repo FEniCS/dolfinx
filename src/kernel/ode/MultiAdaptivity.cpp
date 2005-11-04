@@ -23,6 +23,7 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode, const Method& method)
   kfixed = dolfin_get("fixed time step");
   beta   = dolfin_get("interval threshold");
   safety = dolfin_get("safety factor");
+  weight = dolfin_get("time step conservation");
   
   // Initialize time steps
   timesteps = new real[ode.size()];
@@ -89,11 +90,16 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   const real error = method.error(k0, r);
   
   // Let controller choose new time step
-  real k = controllers[i].updateHarmonic(error, safety*tol);
-  
+  //real k = controllers[i].update(error, safety*tol);
+
+
+  //real k = controllers[i].updateHarmonic(error, safety*tol, timesteps[i]);
   //real k1 = method.timestep(r, safety*tol, k0, kmax_current);
-  //real k = regulator.regulate(k1, k0, kmax_current, kfixed);
-  //k1 = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
+  //real k = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
+
+  real k1 = timesteps[i];
+  real k  = method.timestep(r, safety*tol, k0, kmax_current);
+  k = std::min(kmax_current, (1.0 + weight) * k1 * k / (k1 + weight*k));
 
   //dolfin_info("i = %d k0 = %.3e k_old = %.3e k_new = %.3e r = %.3e e = %.3e", 
   //	i, k0, k1, k, r, error);
@@ -133,14 +139,15 @@ bool MultiAdaptivity::accept()
   {
     safety_old = safety;
     safety = regulator.regulate(safety_max, safety_old, 1.0, false);
-    cout << "---------------------- Time step ok -----------------------" << endl;
+    //cout << "---------------------- Time step ok -----------------------" << endl;
   }
   else
   {
     if ( safety > safety_old )
     {
-      safety_max = safety_old;
+      safety_max = 0.9*safety_old;
       safety_old = safety;
+      safety = safety_max;
     }
     else
     {
@@ -151,7 +158,7 @@ bool MultiAdaptivity::accept()
     num_rejected++;
   }
 
-  dolfin_info("safefy factor = %.3e", safety);
+  //dolfin_info("safefy factor = %.3e", safety);
   
   return _accept;
 }
