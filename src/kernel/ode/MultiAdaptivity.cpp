@@ -14,8 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptivity::MultiAdaptivity(ODE& ode, const Method& method)
-  : regulators(ode.size()), timesteps(0), controllers(ode.size()),
-    _accept(false), num_rejected(0)
+  : timesteps(0), _accept(false), num_rejected(0)
 {
   // Get parameters
   tol    = dolfin_get("tolerance");
@@ -23,7 +22,6 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode, const Method& method)
   kfixed = dolfin_get("fixed time step");
   beta   = dolfin_get("interval threshold");
   safety = dolfin_get("safety factor");
-  weight = dolfin_get("time step conservation");
   
   // Initialize time steps
   timesteps = new real[ode.size()];
@@ -42,7 +40,7 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode, const Method& method)
   
   // Specify initial time steps
   bool modified = false;
-  for (uint i = 0; i < regulators.size(); i++)
+  for (uint i = 0; i < ode.size(); i++)
   {
     real k = ode.timestep(i);
     if ( k > kmax )
@@ -51,8 +49,6 @@ MultiAdaptivity::MultiAdaptivity(ODE& ode, const Method& method)
       modified = true;
     }
     timesteps[i] = k;
-
-    controllers[i].init(k, safety*tol, method.order(), kmax);
   }
   if ( modified )
     dolfin_warning1("Initial time step too large for at least one component, using k = %.3e.", kmax);
@@ -89,45 +85,16 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   // Compute local error estimate
   const real error = method.error(k0, r);
   
-  // Let controller choose new time step
-  //real k = controllers[i].update(error, safety*tol);
-
-
-  //real k = controllers[i].updateHarmonic(error, safety*tol, timesteps[i]);
-  //real k1 = method.timestep(r, safety*tol, k0, kmax_current);
-  //real k = regulator.regulate(k1, timesteps[i], kmax_current, kfixed);
-
-  real k1 = timesteps[i];
-  real k  = method.timestep(r, safety*tol, k0, kmax_current);
-  k = std::min(kmax_current, (1.0 + weight) * k1 * k / (k1 + weight*k));
-
-  //dolfin_info("i = %d k0 = %.3e k_old = %.3e k_new = %.3e r = %.3e e = %.3e", 
-  //	i, k0, k1, k, r, error);
-  //  k = k1;
+  // Compute new time step
+  real k = method.timestep(r, safety*tol, k0, kmax_current);
+  k = Controller::updateHarmonic(k, timesteps[i], kmax_current);
   
   // Check if time step can be accepted
   if ( error > tol )
   {
     k = std::min(k, 0.5*k0);
     _accept = false;
-    
-    // FIXME: Use method.order()
-    controllers[i].init(tol, safety*tol, 2, kmax);
-
-    //dolfin_info("e = %.3e  tol = %.3e", error, tol);
-    //safety = regulator.regulate(tol/error, safety, 1.0, false);
   }
-
-  /*
-  //  if ( i == 0 )
-  // {
-  cout << "i = " << i << endl;
-  cout << "Residual:  " << fabs(r) << endl;
-  cout << "Previous:  " << timesteps[i] << endl;
-  cout << "Used:      " << k0 << endl;
-  cout << "Suggested: " << k  << endl;
-  //}
-  */
 
   // Save time step for component
   timesteps[i] = k;
@@ -138,7 +105,7 @@ bool MultiAdaptivity::accept()
   if ( _accept )
   {
     safety_old = safety;
-    safety = regulator.regulate(safety_max, safety_old, 1.0, false);
+    safety = Controller::updateHarmonic(safety_max, safety_old, safety_max);
     //cout << "---------------------- Time step ok -----------------------" << endl;
   }
   else

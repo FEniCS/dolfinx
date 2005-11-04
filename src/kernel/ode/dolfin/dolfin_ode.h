@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-11-04
 
 #ifndef __DOLFIN_ODE_H
 #define __DOLFIN_ODE_H
@@ -11,6 +11,7 @@
 
 #include <dolfin/Alloc.h>
 #include <dolfin/ComplexODE.h>
+#include <dolfin/Controller.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Dual.h>
 #include <dolfin/Homotopy.h>
@@ -33,7 +34,6 @@
 #include <dolfin/ParticleSystem.h>
 #include <dolfin/Partition.h>
 #include <dolfin/ReducedModel.h>
-#include <dolfin/Regulator.h>
 #include <dolfin/Sample.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeStepper.h>

@@ -47,6 +47,9 @@ namespace dolfin
     /// Control by harmonic mean value
     real updateHarmonic(real e, real tol);
 
+    /// Control by harmonic mean value (no history supplied)
+    static real updateHarmonic(real knew, real kold, real kmax);
+
   private:
 
     // Time step history

@@ -2,13 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-02
+// Last changed: 2005-11-04
 
 #ifndef __MONO_ADAPTIVITY_H
 #define __MONO_ADAPTIVITY_H
 
 #include <dolfin/constants.h>
-#include <dolfin/Regulator.h>
 #include <dolfin/Controller.h>
 
 // FIXME: Use common base class Adaptivity
@@ -51,9 +50,6 @@ namespace dolfin
     // Mono-adaptive time step
     real k;
 
-    // Time step regulator (old)
-    Regulator regulator;
-    
     // Time step controller
     Controller controller;
 

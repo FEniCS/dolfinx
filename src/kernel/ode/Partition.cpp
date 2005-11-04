@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-11-04
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +10,6 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/Regulator.h>
 #include <dolfin/MultiAdaptivity.h>
 #include <dolfin/Partition.h>
 

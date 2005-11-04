@@ -24,7 +24,6 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/ParticleSystem.h \
              dolfin/Partition.h \
              dolfin/ReducedModel.h \
-             dolfin/Regulator.h \
              dolfin/Sample.h \
              dolfin/TimeSlab.h \
              dolfin/TimeStepper.h \

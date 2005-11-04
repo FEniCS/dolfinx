@@ -2,14 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-03
+// Last changed: 2005-11-04
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
-#include <dolfin/Regulator.h>
 #include <dolfin/Controller.h>
 
 namespace dolfin
@@ -50,17 +49,8 @@ namespace dolfin
 
   private:
 
-    // Regulators, one for each component
-    Array<Regulator> regulators;
-
     // Multi-adaptive time steps
     real* timesteps;
-
-    // Time step regulator (old)
-    Regulator regulator;
-    
-    // Time step controllers, one for each component
-    Array<Controller> controllers;
 
     // Tolerance
     real tol;
@@ -91,9 +81,6 @@ namespace dolfin
 
     // Total number of rejected time steps
     uint num_rejected;
-
-    // Weight for time step conservation
-    real weight;
 
   };
 

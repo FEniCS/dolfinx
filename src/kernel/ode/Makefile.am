@@ -25,7 +25,6 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/ReducedModel.h \
-                          dolfin/Regulator.h \
                           dolfin/Sample.h \
                           dolfin/TimeSlab.h \
                           dolfin/TimeSlabJacobian.h \
@@ -60,7 +59,6 @@ libdolfin_ode_a_SOURCES = Alloc.cpp \
                           ParticleSystem.cpp \
                           Partition.cpp \
                           ReducedModel.cpp \
-                          Regulator.cpp \
                           Sample.cpp \
                           TimeSlab.cpp \
                           TimeSlabJacobian.cpp \

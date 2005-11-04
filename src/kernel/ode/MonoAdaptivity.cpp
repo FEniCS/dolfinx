@@ -78,7 +78,6 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
     _accept = false;
 
     //dolfin_info("e = %.3e  tol = %.3e", error, tol);
-    //safety = regulator.regulate(tol/error, safety, 1.0, false);
   }
 }
 //-----------------------------------------------------------------------------
@@ -87,15 +86,16 @@ bool MonoAdaptivity::accept()
   if ( _accept )
   {
     safety_old = safety;
-    safety = regulator.regulate(safety_max, safety_old, 1.0, false);
+    safety = Controller::updateHarmonic(safety_max, safety_old, safety_max);
     //cout << "---------------------- Time step ok -----------------------" << endl;
   }
   else
   {
     if ( safety > safety_old )
     {
-      safety_max = safety_old;
+      safety_max = 0.9*safety_old;
       safety_old = safety;
+      safety = safety_max;
     }
     else
     {

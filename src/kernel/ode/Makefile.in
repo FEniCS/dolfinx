@@ -72,10 +72,9 @@ am_libdolfin_ode_a_OBJECTS = Alloc.$(OBJEXT) ComplexODE.$(OBJEXT) \
 	MultiAdaptiveTimeSlab.$(OBJEXT) MultiAdaptivity.$(OBJEXT) \
 	Method.$(OBJEXT) ODE.$(OBJEXT) ODESolver.$(OBJEXT) \
 	ParticleSystem.$(OBJEXT) Partition.$(OBJEXT) \
-	ReducedModel.$(OBJEXT) Regulator.$(OBJEXT) Sample.$(OBJEXT) \
-	TimeSlab.$(OBJEXT) TimeSlabJacobian.$(OBJEXT) \
-	TimeSlabSolver.$(OBJEXT) TimeStepper.$(OBJEXT) \
-	cGqMethod.$(OBJEXT) dGqMethod.$(OBJEXT)
+	ReducedModel.$(OBJEXT) Sample.$(OBJEXT) TimeSlab.$(OBJEXT) \
+	TimeSlabJacobian.$(OBJEXT) TimeSlabSolver.$(OBJEXT) \
+	TimeStepper.$(OBJEXT) cGqMethod.$(OBJEXT) dGqMethod.$(OBJEXT)
 libdolfin_ode_a_OBJECTS = $(am_libdolfin_ode_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -235,7 +234,6 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/ParticleSystem.h \
                           dolfin/Partition.h \
                           dolfin/ReducedModel.h \
-                          dolfin/Regulator.h \
                           dolfin/Sample.h \
                           dolfin/TimeSlab.h \
                           dolfin/TimeSlabJacobian.h \
@@ -271,7 +269,6 @@ libdolfin_ode_a_SOURCES = Alloc.cpp \
                           ParticleSystem.cpp \
                           Partition.cpp \
                           ReducedModel.cpp \
-                          Regulator.cpp \
                           Sample.cpp \
                           TimeSlab.cpp \
                           TimeSlabJacobian.cpp \
@@ -378,7 +375,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSystem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Partition.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReducedModel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Regulator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Sample.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeSlab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeSlabJacobian.Po@am__quote@

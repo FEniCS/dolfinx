@@ -108,3 +108,9 @@ real Controller::updateHarmonic(real e, real tol)
   return k;
 }
 //-----------------------------------------------------------------------------
+real Controller::updateHarmonic(real knew, real kold, real kmax)
+{
+  const real w = 5.0;
+  return std::min(kmax, (1.0 + w)*kold*knew / (kold + w*knew));
+}
+//-----------------------------------------------------------------------------
