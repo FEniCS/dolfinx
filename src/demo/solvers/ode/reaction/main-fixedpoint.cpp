@@ -106,9 +106,13 @@ int main(int argc, char* argv[])
   dolfin_set("solver", "newton");
   dolfin_set("initial time step", 1e-5);
   dolfin_set("maximum time step", 1e-3);
+//   dolfin_set("maximum time step", 2e-7);
+//   dolfin_set("initial time step", 2e-7);
+//   dolfin_set("fixed time step", true);
   dolfin_set("tolerance", TOL);
   dolfin_set("method", method);
   dolfin_set("order", 1);
+//   dolfin_set("order", 3);
   dolfin_set("save final solution", true);
 
   // Need to save in Python format for plot_reaction.py to work
@@ -117,7 +121,8 @@ int main(int argc, char* argv[])
   dolfin_set("save solution", true);
   dolfin_set("solver", "fixed point");
 //   dolfin_set("solver", "newton");
-  dolfin_set("monitor convergence", true);
+//   dolfin_set("monitor convergence", true);
+  dolfin_set("monitor convergence", false);
 
   //dolfin_set("initial time step", 2.5e-3);
 

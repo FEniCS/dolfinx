@@ -30,7 +30,7 @@ for TOL in $TOLERANCES; do
 	STEPS=`cat $LOGFILE | grep 'Total number of (macro) time steps' | awk '{ print $7 }'`
 	ITERATIONS=`cat $LOGFILE | grep 'Average number of global iterations' | awk '{ print $8 }'`
 	REJECTED=`cat $LOGFILE | grep 'Number of rejected time steps' | awk '{ print $6 }'`
-	ERROR=`octave checkerror.m | grep Error | awk '{ print $2 }'`
+	ERROR=`octave checkerror-fixedpoint.m | grep Error | awk '{ print $2 }'`
 	
 	echo -e "cG(1) \t $TOL \t $ERROR \t $CPUTIME \t $STEPS ($REJECTED) \t $ITERATIONS" >> $RESULTS
     else
@@ -51,7 +51,7 @@ for TOL in $TOLERANCES; do
 	CPUTIME=`cat $LOGFILE | grep 'Solution computed in' | awk '{ print $4 }'`
 	STEPS=`cat $LOGFILE | grep 'Total number of (macro) time steps' | awk '{ print $7 }'`
 	ITERATIONS=`cat $LOGFILE | grep 'Average number of global iterations' | awk '{ print $8 }'`
-	ERROR=`octave checkerror.m | grep Error | awk '{ print $2 }'`
+	ERROR=`octave checkerror-fixedpoint.m | grep Error | awk '{ print $2 }'`
 	REJECTED=`cat $LOGFILE | grep 'Number of rejected time steps' | awk '{ print $6 }'`
 	INDEX=`cat $LOGFILE | grep 'Multi-adaptive efficiency index' | awk '{ print $4 }'`
 
