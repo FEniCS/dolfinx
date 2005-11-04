@@ -163,7 +163,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = la ode ode1d
+SUBDIRS = la
 all: all-recursive
 
 .SUFFIXES:
