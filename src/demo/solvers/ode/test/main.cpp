@@ -1,7 +1,8 @@
 // Copyright (C) 2002 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// First added:  2002
+// Last changed: 2005-11-03
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -84,13 +85,13 @@ public:
     return 1.0;
   }
 
-  real f(const Vector& u, real t, unsigned int i)
+  real f(const real u[], real t, unsigned int i)
   {
     if ( i < N / 2 )
-      return u(i+N/2);
+      return u[i+N/2];
     
     real k = (real) (i+1);
-    return -k*u(i-N/2);
+    return -k*u[i-N/2];
   }
 
 };
@@ -133,15 +134,15 @@ int main()
 {
   //Simple ode;
   //ode.solve();
-
-  Harmonic ode;
-  ode.solve();
+  
+  //Harmonic ode;
+  //ode.solve();
   
   //SpringSystem ode(10);
   //ode.solve();
 
-  //TestSystem ode;
-  //ode.solve();
+  TestSystem ode;
+  ode.solve();
 
   return 0;
 }

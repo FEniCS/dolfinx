@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MonoAdaptivity::MonoAdaptivity(ODE& ode)
+MonoAdaptivity::MonoAdaptivity(ODE& ode, const Method& method)
   : k(0), _accept(false), num_rejected(0)
 {
   // Get parameters
@@ -40,6 +40,9 @@ MonoAdaptivity::MonoAdaptivity(ODE& ode)
     k = kmax;
     dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
   }
+
+  // Initialize controller
+  controller.init(k, safety*tol, method.order());
 }
 //-----------------------------------------------------------------------------
 MonoAdaptivity::~MonoAdaptivity()
@@ -54,30 +57,43 @@ real MonoAdaptivity::timestep() const
 //-----------------------------------------------------------------------------
 void MonoAdaptivity::update(real k0, real r, const Method& method)
 {
+  // Check if time step is fixed
+  if ( kfixed )
+  {
+    _accept = true;
+    return;
+  }
+
   // Compute new time step
-  const real k1 = method.timestep(r, safety*tol, k0, kmax_current);
+  //const real k1 = method.timestep(r, safety*tol, k0, kmax_current);
 
   // Regulate the time step
-  k = regulator.regulate(k1, k0, kmax_current, kfixed);
+  //k = regulator.regulate(k1, k0, kmax_current, kfixed);
   //k = regulator.regulate(k1, k, kmax_current, kfixed);
+  
 
-  // Check the size of the residual
+  //k = (1.0 + 20.0)*k1*k/(k+20.0*k1);
+
+  //k = 2.0*k1*k0/(k0+k1);
+  
+  // Compute local error estimate
   const real error = method.error(k0, r);
-  _accept = true;
+  
+  //k = controller.updateSimple(error, safety*tol);
+  //k = controller.updateHarmonic(error, safety*tol);
+  //k = controller.updateH0211(error, safety*tol);
+  k = controller.updateH211PI(error, safety*tol);
+
+  _accept = true;  
+  
   if ( error > tol )
   {
     k = std::min(k, 0.5*k0);
     _accept = false;
 
     //dolfin_info("e = %.3e  tol = %.3e", error, tol);
-    safety = regulator.regulate(tol/error, safety, 1.0, false);
+    //safety = regulator.regulate(tol/error, safety, 1.0, false);
   }
-  else
-  {
-    safety = regulator.regulate(0.9, safety, 1.0, false);
-  }
-
-  //cout << "safefy factor = " << safety << endl;
 }
 //-----------------------------------------------------------------------------
 bool MonoAdaptivity::accept()

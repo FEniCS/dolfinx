@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-11-03
 
 #include <dolfin.h>
 
@@ -47,6 +47,7 @@ private:
 int main()
 {
   dolfin_set("tolerance", 0.01);
+  dolfin_set("solver", "newton");
 
   Spring spring;
   spring.solve();

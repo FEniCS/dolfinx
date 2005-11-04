@@ -142,7 +142,7 @@ int main()
   dolfin_set("order", 5);
   dolfin_set("discrete tolerance", 1e-12);
   dolfin_set("save solution", true);
-  
+ 
   Lorenz lorenz;
   lorenz.solve();
   

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-01
+// Last changed: 2005-11-02
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -23,6 +23,8 @@ dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
   init();
 
   _type = Method::dG;
+
+  p = 2*q + 1;
 }
 //-----------------------------------------------------------------------------
 real dGqMethod::ueval(real x0, real values[], real tau) const

@@ -2,6 +2,7 @@ SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
+                          dolfin/Controller.h \
                           dolfin/Dependencies.h \
                           dolfin/Dual.h \
                           dolfin/Homotopy.h \
@@ -36,6 +37,7 @@ INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
 libdolfin_ode_a_SOURCES = Alloc.cpp \
                           ComplexODE.cpp \
+                          Controller.cpp \
                           Dependencies.cpp \
                           Dual.cpp \
                           Homotopy.cpp \

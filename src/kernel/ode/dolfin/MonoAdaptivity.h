@@ -9,6 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Regulator.h>
+#include <dolfin/Controller.h>
 
 // FIXME: Use common base class Adaptivity
 
@@ -25,7 +26,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    MonoAdaptivity(ODE& ode);
+    MonoAdaptivity(ODE& ode, const Method& method);
 
     /// Destructor
     ~MonoAdaptivity();
@@ -50,9 +51,12 @@ namespace dolfin
     // Mono-adaptive time step
     real k;
 
-    // Time step regulator
+    // Time step regulator (old)
     Regulator regulator;
     
+    // Time step controller
+    Controller controller;
+
     // Tolerance
     real tol;
 

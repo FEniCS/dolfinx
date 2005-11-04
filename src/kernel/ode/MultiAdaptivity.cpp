@@ -90,17 +90,19 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
     _accept = false;
     //dolfin_info("i = %d  e = %.3e  tol = %.3e", i, error, tol);
   }
- 
-  // Save time step for component
-  timesteps[i] = k;
 
-  /*
+  //  if ( i == 0 )
+  // {
   cout << "i = " << i << endl;
   cout << "Residual:  " << fabs(r) << endl;
-  cout << "Previous:  " << k0 << endl;
+  cout << "Previous:  " << timesteps[i] << endl;
+  cout << "Used:      " << k0 << endl;
   cout << "Suggested: " << k1 << endl;
-  cout << "Regulated: " << timesteps[i] << endl << endl;
-  */
+  cout << "Regulated: " << k  << endl << endl;
+  //}
+
+    // Save time step for component
+  timesteps[i] = k;
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptivity::accept()
@@ -113,6 +115,7 @@ bool MultiAdaptivity::accept()
   }
   else
   {
+    /*
     if ( safety > safety_old )
     {
       safety_max = safety_old;
@@ -123,13 +126,20 @@ bool MultiAdaptivity::accept()
       safety_old = safety;
       safety = 0.5*safety;
     }
+    */
 
     num_rejected++;
   }
 
   //dolfin_info("safefy factor = %.3e", safety);
 
-  return _accept;
+  
+
+  //  return _accept;
+
+  cout << "---------------------- Time step ok -----------------------" << endl;
+
+  return true;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptivity::threshold() const

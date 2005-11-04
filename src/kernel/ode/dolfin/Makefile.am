@@ -1,6 +1,7 @@
 EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/Alloc.h \
              dolfin/ComplexODE.h \
+             dolfin/Controller.h \
              dolfin/Dependencies.h \
              dolfin/Dual.h \
              dolfin/Homotopy.h \

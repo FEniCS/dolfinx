@@ -17,7 +17,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
-  : TimeSlab(ode), solver(0), adaptivity(ode), nj(0), dofs(0), f(0), rmax(0)
+  : TimeSlab(ode), solver(0), adaptivity(ode, *method), nj(0), dofs(0), 
+    f(0), rmax(0)
 {
   // Choose solver
   solver = chooseSolver();

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005
+// Last changed: 2005-11-02
 
 #ifndef __METHOD_H
 #define __METHOD_H
@@ -35,6 +35,9 @@ namespace dolfin
 
     /// Return degree (inline optimized)
     inline unsigned int degree() const { return q; }
+
+    /// Return order (inline optimized)
+    virtual unsigned int order() const { return p; }
 
     /// Return number of nodal points (inline optimized)
     inline unsigned int nsize() const { return nn; }
@@ -91,7 +94,8 @@ namespace dolfin
 
     void computeDerivatives();
 
-    unsigned int q;  // Polynomial order
+    unsigned int q;  // Polynomial degree
+    unsigned int p;  // Convergence order
     unsigned int nq; // Number of quadrature points
     unsigned int nn; // Number of nodal points
 

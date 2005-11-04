@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-10-31
+// Last changed: 2005-11-03
 
 #include <dolfin.h>
 
@@ -110,13 +110,16 @@ int main(int argc, char* argv[])
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
 
+  dolfin_set("adaptive samples", true);
+
   // Need to save in Python format for plot_reaction.py to work
-  dolfin_set("file name", "primal.py");
+  //dolfin_set("file name", "primal.py");
 
   dolfin_set("save solution", true);
+  dolfin_set("adaptive samples", true);
+
   //dolfin_set("solver", "fixed point");
-  dolfin_set("solver", "newton");
-  dolfin_set("monitor convergence", true);
+  //dolfin_set("monitor convergence", true);
 
   //dolfin_set("initial time step", 2.5e-3);
 
@@ -135,7 +138,8 @@ int main(int argc, char* argv[])
     dolfin_set("order", 3);
   */
   
-  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+  //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+  Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   ode.solve();
 
   return 0;
