@@ -254,6 +254,7 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
     GMRES* solver = new GMRES();
     if ( !monitor )
       solver->setReport(false);
+    solver->setRtol(0.01); // FIXME: Is this a good choice?
     solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
     return solver;
   }

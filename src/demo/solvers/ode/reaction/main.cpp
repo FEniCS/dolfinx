@@ -112,10 +112,8 @@ int main(int argc, char* argv[])
 
   //dolfin_set("save solution", true);
 
-
-  //  dolfin_set("maximum time step", 0.01);
-  //dolfin_set("partitioning threshold", 0.5);
-
+  dolfin_set("maximum time step", 0.01);
+  dolfin_set("partitioning threshold", 0.5);
 
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
@@ -144,11 +142,11 @@ int main(int argc, char* argv[])
     dolfin_set("order", 3);
   */
   
-  //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
+  //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
-
+  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+  
   ode.solve();
 
   return 0;

@@ -26,6 +26,9 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   // Don't report number of GMRES iteration if not asked to
   if ( !monitor )
     solver.setReport(false);
+
+  solver.setRtol(0.01);
+  solver.setAtol(0.01*tol);
   
   // Set preconditioner
   //solver.setPreconditioner(mpc);

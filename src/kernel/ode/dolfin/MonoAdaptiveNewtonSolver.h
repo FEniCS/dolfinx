@@ -67,9 +67,9 @@ namespace dolfin
 
     MonoAdaptiveTimeSlab& ts; // The time slab;
     MonoAdaptiveJacobian A;   // Jacobian of time slab system
-    Vector dx;             // Increment for Newton's method
-    Vector b;              // Right-hand side -F(x)
-    LinearSolver* solver;  // Linear solver
+    Vector dx;                // Increment for Newton's method
+    Vector b;                 // Right-hand side -F(x)
+    LinearSolver* solver;     // Linear solver
     real* Mu0;                // Precomputed product M*u0 for implicit system
     
   };

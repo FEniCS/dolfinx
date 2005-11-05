@@ -23,7 +23,7 @@ for TOL in $TOLERANCES; do
     
     echo "Mono-adaptive cG(1), TOL = $TOL ..."
     rm -f $LOGFILE
-    ./dolfin-ode-reaction cg $TOL > $LOGFILE
+    ./dolfin-ode-reaction-fixedpoint cg $TOL > $LOGFILE
 
     if [ 'x'`grep 'did not converge' $LOGFILE` = 'x' ]; then
 	CPUTIME=`cat $LOGFILE | grep 'Solution computed in' | awk '{ print $4 }'`
@@ -45,7 +45,7 @@ for TOL in $TOLERANCES; do
     
     echo "Multi-adaptive mcG(1), TOL = $TOL ..."
     rm -f $LOGFILE
-    ./dolfin-ode-reaction mcg $TOL > $LOGFILE
+    ./dolfin-ode-reaction-fixedpoint mcg $TOL > $LOGFILE
 
     if [ 'x'`grep 'did not converge' $LOGFILE` = 'x' ]; then
 	CPUTIME=`cat $LOGFILE | grep 'Solution computed in' | awk '{ print $4 }'`
