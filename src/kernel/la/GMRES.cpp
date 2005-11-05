@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-06-22
-// Last changed: 2005-10-24
+// Last changed: 2005-11-24
 
 #include <petscpc.h>
 
@@ -158,7 +158,7 @@ void GMRES::setMaxiter(int maxiter)
   int _maxiter(0);
 
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing maxiter for GMRES solver from %e to %e.", _maxiter, maxiter);
+  dolfin_info("Changing maxiter for GMRES solver from %d to %d.", _maxiter, maxiter);
   _maxiter = maxiter;
   KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
