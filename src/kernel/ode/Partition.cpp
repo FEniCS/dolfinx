@@ -43,7 +43,7 @@ dolfin::uint Partition::index(uint i) const
 }
 //-----------------------------------------------------------------------------
 real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
-			  real K)
+		       real K)
 {
   // Compute time steps for partition. We partition the components into two
   // groups, one group with k < Kpivot and one with k >= Kpivot.

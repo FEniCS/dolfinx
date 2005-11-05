@@ -14,7 +14,7 @@ Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   : ode(ode), method(method)
 {
   tol    = dolfin_get("tolerance");
-  kmax   = dolfin_get("maximum time step");
+  _kmax  = dolfin_get("maximum time step");
   beta   = dolfin_get("interval threshold");
   safety = dolfin_get("safety factor");
   kfixed = dolfin_get("fixed time step");
@@ -68,5 +68,10 @@ bool Adaptivity::accept()
 real Adaptivity::threshold() const
 {
   return beta;
+}
+//-----------------------------------------------------------------------------
+real Adaptivity::kmax() const
+{
+  return _kmax;
 }
 //-----------------------------------------------------------------------------

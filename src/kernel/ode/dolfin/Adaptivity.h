@@ -35,6 +35,9 @@ namespace dolfin
     /// Return threshold for reaching end of interval
     real threshold() const;
 
+    /// Return maximum allowed time step
+    real kmax() const;
+
   protected:
 
     // The ODE
@@ -47,7 +50,7 @@ namespace dolfin
     real tol;
 
     // Maximum allowed time step
-    real kmax;
+    real _kmax;
 
     // Threshold for reaching end of interval
     real beta;

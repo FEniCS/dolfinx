@@ -26,15 +26,15 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
   for (uint i = 0; i < ode.size(); i++)
   {
     real k = ode.timestep(i);
-    if ( k > kmax )
+    if ( k > _kmax )
     {
-      k = kmax;
+      k = _kmax;
       modified = true;
     }
     timesteps[i] = k;
   }
   if ( modified )
-    dolfin_warning1("Initial time step too large for at least one component, using k = %.3e.", kmax);
+    dolfin_warning1("Initial time step too large for at least one component, using k = %.3e.", _kmax);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptivity::~MultiAdaptivity()
@@ -67,8 +67,8 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   const real error = method.error(k0, r);
   
   // Compute new time step
-  real k = method.timestep(r, safety*tol, k0, kmax);
-  k = Controller::updateHarmonic(k, timesteps[i], kmax);
+  real k = method.timestep(r, safety*tol, k0, _kmax);
+  k = Controller::updateHarmonic(k, timesteps[i], _kmax);
   
   // Check if time step can be accepted
   if ( error > tol )

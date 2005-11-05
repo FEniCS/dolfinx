@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-01
+// Last changed: 2005-11-04
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -573,7 +573,8 @@ void MultiAdaptiveTimeSlab::alloc_d(uint newsize)
 real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& end)
 {
   // Update partitition 
-  real K = partition.update(offset, end, adaptivity, b - a);
+  real K = std::min(adaptivity.kmax(), b - a);
+  K = partition.update(offset, end, adaptivity, K);
 
   //partition.debug(offset, end);
   

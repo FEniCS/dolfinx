@@ -18,14 +18,14 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
 {
   // Specify initial time step
   k = ode.timestep();
-  if ( k > kmax )
+  if ( k > _kmax )
   {
-    k = kmax;
+    k = _kmax;
     dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
   }
 
   // Initialize controller
-  controller.init(k, safety*tol, method.order(), kmax);
+  controller.init(k, safety*tol, method.order(), _kmax);
 }
 //-----------------------------------------------------------------------------
 MonoAdaptivity::~MonoAdaptivity()

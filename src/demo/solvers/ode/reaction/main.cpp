@@ -104,11 +104,17 @@ int main(int argc, char* argv[])
   const real TOL = static_cast<real>(atof(argv[2]));
 
   dolfin_set("solver", "newton");
-  dolfin_set("maximum time step", 0.1);
   dolfin_set("tolerance", TOL);
+  dolfin_set("maximum time step", 0.1);
   dolfin_set("method", method);
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
+
+  //dolfin_set("save solution", true);
+
+
+  //  dolfin_set("maximum time step", 0.01);
+  //dolfin_set("partitioning threshold", 0.5);
 
 
   // Need to save in Python format for plot_reaction.py to work
@@ -124,7 +130,7 @@ int main(int argc, char* argv[])
   //dolfin_set("initial time step", 2.5e-3);
 
   //dolfin_set("fixed time step", true);
-  //dolfin_set("partitioning threshold", 0.25);
+
   //dolfin_set("discrete tolerance", 1e-10);
 
   // Uncomment to compute reference solution
@@ -139,7 +145,10 @@ int main(int argc, char* argv[])
   */
   
   //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
-  Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
+  //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
+
+  Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
+
   ode.solve();
 
   return 0;
