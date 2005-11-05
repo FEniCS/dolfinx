@@ -155,6 +155,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin/dolfin_ode.h \
+             dolfin/Adaptivity.h \
              dolfin/Alloc.h \
              dolfin/ComplexODE.h \
              dolfin/Controller.h \

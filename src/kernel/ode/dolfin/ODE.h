@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-10-24
+// Last changed: 2005-11-04
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -52,10 +52,10 @@ namespace dolfin
     virtual real dfdu(const real u[], real t, uint i, uint j);
 
     /// Time step to use for whole system (optional)
-    virtual real timestep();
+    virtual real timestep() const;
     
     /// Time step to use for given component (optional)
-    virtual real timestep(uint i);
+    virtual real timestep(uint i) const;
 
     /// Update ODE, return false to stop (optional)
     virtual bool update(const real u[], real t, bool end);

@@ -58,10 +58,11 @@ AR = ar
 ARFLAGS = cru
 libdolfin_ode_a_AR = $(AR) $(ARFLAGS)
 libdolfin_ode_a_LIBADD =
-am_libdolfin_ode_a_OBJECTS = Alloc.$(OBJEXT) ComplexODE.$(OBJEXT) \
-	Controller.$(OBJEXT) Dependencies.$(OBJEXT) Dual.$(OBJEXT) \
-	Homotopy.$(OBJEXT) HomotopyJacobian.$(OBJEXT) \
-	HomotopyODE.$(OBJEXT) MonoAdaptiveFixedPointSolver.$(OBJEXT) \
+am_libdolfin_ode_a_OBJECTS = Adaptivity.$(OBJEXT) Alloc.$(OBJEXT) \
+	ComplexODE.$(OBJEXT) Controller.$(OBJEXT) \
+	Dependencies.$(OBJEXT) Dual.$(OBJEXT) Homotopy.$(OBJEXT) \
+	HomotopyJacobian.$(OBJEXT) HomotopyODE.$(OBJEXT) \
+	MonoAdaptiveFixedPointSolver.$(OBJEXT) \
 	MonoAdaptiveJacobian.$(OBJEXT) \
 	MonoAdaptiveNewtonSolver.$(OBJEXT) \
 	MonoAdaptiveTimeSlab.$(OBJEXT) MonoAdaptivity.$(OBJEXT) \
@@ -209,6 +210,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_ode.h \
+                          dolfin/Adaptivity.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
                           dolfin/Controller.h \
@@ -244,7 +246,8 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = Alloc.cpp \
+libdolfin_ode_a_SOURCES = Adaptivity.cpp \
+                          Alloc.cpp \
                           ComplexODE.cpp \
                           Controller.cpp \
                           Dependencies.cpp \
@@ -350,6 +353,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Adaptivity.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ComplexODE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Controller.Po@am__quote@

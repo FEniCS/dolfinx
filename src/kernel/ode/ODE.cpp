@@ -132,12 +132,12 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep()
+real ODE::timestep() const
 {
   return default_timestep;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(uint i)
+real ODE::timestep(uint i) const
 {
   return timestep();
 }

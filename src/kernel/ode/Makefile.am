@@ -1,5 +1,6 @@
 SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_ode.h \
+                          dolfin/Adaptivity.h \
                           dolfin/Alloc.h \
                           dolfin/ComplexODE.h \
                           dolfin/Controller.h \
@@ -34,7 +35,8 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/dGqMethod.h
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LIBRARIES           = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = Alloc.cpp \
+libdolfin_ode_a_SOURCES = Adaptivity.cpp \
+                          Alloc.cpp \
                           ComplexODE.cpp \
                           Controller.cpp \
                           Dependencies.cpp \

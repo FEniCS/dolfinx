@@ -1,4 +1,5 @@
 EXTRA_DIST = dolfin/dolfin_ode.h \
+             dolfin/Adaptivity.h \
              dolfin/Alloc.h \
              dolfin/ComplexODE.h \
              dolfin/Controller.h \
