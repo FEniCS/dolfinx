@@ -64,17 +64,12 @@ void PythonFile::operator<<(Sample& sample)
   if ( no_frames == 0 )
   {
     fprintf(fp, "from Numeric import *\n");
-    fprintf(fp, "from scipy import *\n");
-    fprintf(fp, "import dolfin\n");
+    fprintf(fp, "from Scientific.IO.ArrayIO import *\n");
     fprintf(fp, "\n");
-    fprintf(fp, "fp_t = open(\"%s\")\n", filename_t.c_str());
-    fprintf(fp, "fp_u = open(\"%s\")\n", filename_u.c_str());
-    fprintf(fp, "fp_k = open(\"%s\")\n", filename_k.c_str());
-    fprintf(fp, "fp_r = open(\"%s\")\n", filename_r.c_str());
-    fprintf(fp, "t = dolfin.read_array(fp_t)\n");
-    fprintf(fp, "u = dolfin.read_array(fp_u)\n");
-    fprintf(fp, "k = dolfin.read_array(fp_k)\n");
-    fprintf(fp, "r = dolfin.read_array(fp_r)\n");
+    fprintf(fp, "t = readFloatArray(\"%s.t\")\n", filename.c_str());
+    fprintf(fp, "u = readFloatArray(\"%s.u\")\n", filename.c_str());
+    fprintf(fp, "k = readFloatArray(\"%s.k\")\n", filename.c_str());
+    fprintf(fp, "r = readFloatArray(\"%s.r\")\n", filename.c_str());
   }
 
   // Save time
