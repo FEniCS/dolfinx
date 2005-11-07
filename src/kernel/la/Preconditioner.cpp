@@ -14,6 +14,7 @@ using namespace dolfin;
 Preconditioner::Preconditioner()
 {
   // Do nothing
+
 }
 //-----------------------------------------------------------------------------
 Preconditioner::~Preconditioner()
@@ -54,9 +55,7 @@ int Preconditioner::PCCreate(PC pc)
   pc->ops->destroy = 0;
   pc->ops->setup = 0;
 
-  std::string pcname("DOLFIN");
-
-  pc->type_name = strdup(pcname.c_str());
+  PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 
   return 0;
 }
