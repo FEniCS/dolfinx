@@ -17,7 +17,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GMRES::GMRES() : LinearSolver(), report(true), ksp(0), B(0), M(0), N(0)
+GMRES::GMRES() : LinearSolver(), report(true), ksp(0), B(0), M(0), N(0),
+		 dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -48,6 +49,20 @@ dolfin::uint GMRES::solve(const Matrix& A, Vector& x, const Vector& b)
 
   // Reinitialize solution vector if necessary
   x.init(M);
+
+  PC pc;
+  KSPGetPC(ksp, &pc);
+  // PCSetType(pc, PCNONE);
+
+  // Override with DOLFIN PC if available, else set the default PETSc PC
+  if(dolfin_pc)
+  {
+    setPreconditioner(*dolfin_pc);
+  }
+  else
+  {
+    PCSetFromOptions(pc);
+  }
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
@@ -88,10 +103,20 @@ dolfin::uint GMRES::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   // Reinitialize solution vector if necessary
   x.init(M);
 
-  // Skip preconditioner for now
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCNONE);
+  // PCSetType(pc, PCNONE);
+
+  // Override with DOLFIN PC if available, else set the default PETSc PC
+  if(dolfin_pc)
+  {
+    setPreconditioner(*dolfin_pc);
+  }
+  else
+  {
+    PCSetType(pc, PCNONE);
+//     PCSetFromOptions(pc);
+  }
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
@@ -165,6 +190,9 @@ void GMRES::setMaxiter(int maxiter)
 //-----------------------------------------------------------------------------
 void GMRES::setPreconditioner(Preconditioner &pc)
 {
+  // Store pc, to be able to set it again
+  dolfin_pc = &pc;
+
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
 
@@ -212,7 +240,17 @@ void GMRES::init(uint M, uint N)
   // Choose preconditioner
   PC pc;
   KSPGetPC(ksp, &pc);
-  PCSetFromOptions(pc);
+
+  // Override with DOLFIN PC if available, else set the default PETSc PC
+  if(dolfin_pc)
+  {
+    setPreconditioner(*dolfin_pc);
+  }
+  else
+  {
+    PCSetType(pc, PCNONE);
+//     PCSetFromOptions(pc);
+  }
 
   // Display tolerances
   /*

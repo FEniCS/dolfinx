@@ -13,6 +13,9 @@
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
 
+#include <petscpc.h>
+#include <src/ksp/pc/pcimpl.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -31,7 +34,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   solver.setAtol(0.01*tol);
   
   // Set preconditioner
-  //solver.setPreconditioner(mpc);
+  solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
@@ -77,7 +80,7 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 
   // Evaluate b = -F(x) at current x
   beval();
-  
+
   // Solve linear system F for dx
   solver.solve(A, dx, b);
    
@@ -99,7 +102,7 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 
   // Restore array
   dx.restore(dxx);
-  
+
   return max_increment;
 }
 //-----------------------------------------------------------------------------

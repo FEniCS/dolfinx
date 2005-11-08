@@ -89,6 +89,9 @@ namespace dolfin
     uint M;
     uint N;
 
+    // Optional DOLFIN preconditioner (can't be set with PCSetType yet)
+    Preconditioner *dolfin_pc;
+
   };
 
 }
