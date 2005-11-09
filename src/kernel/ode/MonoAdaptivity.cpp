@@ -58,6 +58,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method)
   if ( error > tol )
   {
     k = std::min(k, 0.5*k0);
+    controller.reset(k);
     _accept = false;
 
     //dolfin_info("e = %.3e  tol = %.3e", error, tol);

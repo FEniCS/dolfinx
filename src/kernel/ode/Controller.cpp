@@ -35,6 +35,12 @@ void Controller::init(real k, real tol, uint p, real kmax)
   this->kmax = kmax;
 }
 //-----------------------------------------------------------------------------
+void Controller::reset(real k)
+{
+  k0 = k;
+  k1 = k;
+}
+//-----------------------------------------------------------------------------
 real Controller::update(real e, real tol)
 {
   return updateH211PI(e, tol);

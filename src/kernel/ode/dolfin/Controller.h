@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-02
-// Last changed: 2005-11-03
+// Last changed: 2005-11-09
 
 #ifndef __CONTROLLER_H
 #define __CONTROLLER_H
@@ -31,6 +31,9 @@ namespace dolfin
 
     /// Initialize controller
     void init(real k, real tol, uint p, real kmax);
+
+    /// Reset controller
+    void reset(real k);
 
     /// Default controller
     real update(real e, real tol);
