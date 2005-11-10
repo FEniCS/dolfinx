@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2005-10-06
+// Last changed: 2005-11-09
 
 #include <iostream>
 #include <sstream>
@@ -268,33 +268,45 @@ const Mat Matrix::mat() const
 //-----------------------------------------------------------------------------
 void Matrix::disp(bool sparse, int precision) const
 {
-  // Use PETSc sparse output as default
-  if ( sparse )
-  {
-    MatView(A, PETSC_VIEWER_STDOUT_SELF);
-    return;
-  }
+  // FIXME: Maybe this could be an option?
+  //MatView(A, PETSC_VIEWER_STDOUT_SELF);
 
-  // Dense output
   const uint M = size(0);
   const uint N = size(1);
 
+  // Sparse output
   for (uint i = 0; i < M; i++)
   {
-    std::stringstream line;  
+    std::stringstream line;
+    line << std::setiosflags(std::ios::scientific);
     line << std::setprecision(precision);
-    line << "| ";
-
-    for (uint j = 0; j < N; j++)
-    {
-      real value = getval(i, j);
-      if ( fabs(value) < DOLFIN_EPS )
-	value = 0.0;
-
-      line << std::setw(precision + 3) << value << " ";
-    }
+    
     line << "|";
-
+    
+    if ( sparse )
+    {
+      int ncols = 0;
+      const int* cols = 0;
+      const double* vals = 0;
+      MatGetRow(A, i, &ncols, &cols, &vals);
+      for (int pos = 0; pos < ncols; pos++)
+      {
+	line << " (" << i << ", " << cols[pos] << ", " << vals[pos] << ")";
+      }
+      MatRestoreRow(A, i, &ncols, &cols, &vals);
+    }
+    else
+    {
+      for (uint j = 0; j < N; j++)
+      {
+	real value = getval(i, j);
+	if ( fabs(value) < DOLFIN_EPS )
+	  value = 0.0;	
+	line << " " << value;
+      }
+    }
+    
+    line << "|";
     cout << line.str().c_str() << endl;
   }
 }
