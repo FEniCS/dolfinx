@@ -82,13 +82,15 @@ public:
   /// Specify time step, mono-adaptive version
   real timestep(real t) const
   {
-    return 0.005 * (1.0 + t);
+    return 0.01;
+    //return 0.005 * (1.0 + t);
   }
 
   /// Specify time step, mono-adaptive version
   real timestep(real t, unsigned int i) const
   {
-    return 0.005 * (1.0 + t);
+    return 0.01;
+    //return 0.005 * (1.0 + t);
   }
 
 public:
@@ -137,7 +139,7 @@ int main(int argc, char* argv[])
 
   //dolfin_set("initial time step", 2.5e-3);
 
-  //dolfin_set("fixed time step", true);
+  dolfin_set("fixed time step", true);
 
   //dolfin_set("discrete tolerance", 1e-10);
 
@@ -152,10 +154,10 @@ int main(int argc, char* argv[])
     dolfin_set("order", 3);
   */
   
-  //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
+  Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+  //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   
   ode.solve();
 
