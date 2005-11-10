@@ -66,7 +66,7 @@ real Partition::update(uint offset, uint& end, MultiAdaptivity& adaptivity,
   Kpivot = minimum(offset, end, adaptivity);
 
   // Modify time step so K is a multiple of Kpivot
-  Kpivot = K / ceil(K / Kpivot);
+  //Kpivot = K / ceil(K / Kpivot);
 
   /*
   for (uint i = offset; i < end ; i++)

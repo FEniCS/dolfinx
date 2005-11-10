@@ -17,11 +17,18 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  k = ode.timestep();
-  if ( k > _kmax )
+  if ( kfixed )
   {
-    k = _kmax;
-    dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
+    k = ode.timestep(0.0);
+  }
+  else
+  {
+    k = dolfin_get("initial time step");
+    if ( k > _kmax )
+    {
+      k = _kmax;
+      dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
+    }
   }
 
   // Initialize controller
@@ -38,11 +45,12 @@ real MonoAdaptivity::timestep() const
   return k;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptivity::update(real k0, real r, const Method& method)
+void MonoAdaptivity::update(real k0, real r, const Method& method, real t)
 {
   // Check if time step is fixed
   if ( kfixed )
   {
+    k = ode.timestep(t);
     _accept = true;
     return;
   }

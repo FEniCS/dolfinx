@@ -52,10 +52,10 @@ namespace dolfin
     virtual real dfdu(const real u[], real t, uint i, uint j);
 
     /// Time step to use for whole system (optional)
-    virtual real timestep() const;
+    virtual real timestep(real t) const;
     
     /// Time step to use for given component (optional)
-    virtual real timestep(uint i) const;
+    virtual real timestep(real t, uint i) const;
 
     /// Update ODE, return false to stop (optional)
     virtual bool update(const real u[], real t, bool end);

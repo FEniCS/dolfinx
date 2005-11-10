@@ -166,7 +166,7 @@ bool MultiAdaptiveTimeSlab::check()
     const real r = method->residual(x0, jx + j, f, k);
     
     // Update adaptivity
-    adaptivity.updateComponent(i, k, r, *method);
+    adaptivity.updateComponent(i, k, r, *method, _b);
 
     // Save right-hand side at end-point for cG
     if ( method->type() == Method::cG )

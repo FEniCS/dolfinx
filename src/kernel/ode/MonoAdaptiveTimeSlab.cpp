@@ -125,7 +125,7 @@ bool MonoAdaptiveTimeSlab::check()
   x.restore(xx);
 
   // Compute new time step
-  adaptivity.update(length(), rmax, *method);
+  adaptivity.update(length(), rmax, *method, _b);
 
   // Check if current solution can be accepted
   return adaptivity.accept();

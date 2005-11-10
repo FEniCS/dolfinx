@@ -36,7 +36,7 @@ namespace dolfin
     void updateInit();
 
     /// Update time step for given component
-    void updateComponent(uint i, real k0, real r, const Method& method);
+    void updateComponent(uint i, real k0, real r, const Method& method, real t);
 
   private:
 

@@ -79,6 +79,18 @@ public:
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
 
+  /// Specify time step, mono-adaptive version
+  real timestep(real t) const
+  {
+    return 0.005 * (1.0 + t);
+  }
+
+  /// Specify time step, mono-adaptive version
+  real timestep(real t, unsigned int i) const
+  {
+    return 0.005 * (1.0 + t);
+  }
+
 public:
 
   real L;       // Length of domain
@@ -110,20 +122,18 @@ int main(int argc, char* argv[])
   dolfin_set("order", 1);
   dolfin_set("save final solution", true);
 
-  //dolfin_set("save solution", true);
-
   dolfin_set("maximum time step", 0.01);
   dolfin_set("partitioning threshold", 0.5);
 
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
 
-  //dolfin_set("save solution", true);
+  dolfin_set("save solution", true);
   //dolfin_set("adaptive samples", true);
   //dolfin_set("maximum time step", 0.01);
 
   //dolfin_set("solver", "fixed point");
-  dolfin_set("monitor convergence", true);
+  //dolfin_set("monitor convergence", true);
 
   //dolfin_set("initial time step", 2.5e-3);
 

@@ -34,7 +34,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   solver.setAtol(0.01*tol);
   
   // Set preconditioner
-  solver.setPreconditioner(mpc);
+  //  solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()

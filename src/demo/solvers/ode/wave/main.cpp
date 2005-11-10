@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-09-16
+// Last changed: 2005-11-09
 
 #include <dolfin.h>
 
@@ -89,13 +89,13 @@ public:
   }
 
   // Global time step
-  real timestep()
+  real timestep(real k)
   {
     return 0.1*hmin;
   }
   
   // Local time step
-  real timestep(unsigned int i)
+  real timestep(real k, unsigned int i)
   {
     return 0.1*h[i % offset];
   }

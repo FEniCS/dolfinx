@@ -13,8 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ODE::ODE(uint N, real T)
-  : N(N), T(T), dependencies(N), transpose(N),
-    default_timestep(dolfin_get("initial time step")), tmp(0),
+  : N(N), T(T), dependencies(N), transpose(N), tmp(0),
     not_impl_f("Warning: consider implementing mono-adaptive ODE::f() to improve efficiency."),
     not_impl_M("Warning: multiplication with M not implemented, assuming identity."),
     not_impl_J("Warning: consider implementing ODE::J() to improve efficiency.")
@@ -132,14 +131,16 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep() const
+real ODE::timestep(real t) const
 {
-  return default_timestep;
+  dolfin_error("Time step should be fixed but has not been specified.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(uint i) const
+real ODE::timestep(real t, uint i) const
 {
-  return timestep();
+  dolfin_error("Time step should be fixed but has not been specified.");
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 bool ODE::update(const real u[], real t, bool end)

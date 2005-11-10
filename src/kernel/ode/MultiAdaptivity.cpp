@@ -18,23 +18,22 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
 {
   // Initialize time steps
   timesteps = new real[ode.size()];
-  for (uint i = 0; i < ode.size(); i++)
-    timesteps[i] = 0.0;
-
-  // Specify initial time steps
-  bool modified = false;
-  for (uint i = 0; i < ode.size(); i++)
+  if ( kfixed )
   {
-    real k = ode.timestep(i);
+    for (uint i = 0; i < ode.size(); i++)
+      timesteps[i] = ode.timestep(0.0, i);
+  }
+  else
+  {
+    real k = dolfin_get("initial time step");
     if ( k > _kmax )
     {
       k = _kmax;
-      modified = true;
+      dolfin_warning1("Initial time step larger than maximum time step, using k = %.3e.", k);
     }
-    timesteps[i] = k;
+    for (uint i = 0; i < ode.size(); i++)
+      timesteps[i] = k;
   }
-  if ( modified )
-    dolfin_warning1("Initial time step too large for at least one component, using k = %.3e.", _kmax);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptivity::~MultiAdaptivity()
@@ -54,11 +53,12 @@ void MultiAdaptivity::updateInit()
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptivity::updateComponent(uint i, real k0, real r,
-				      const Method& method)
+				      const Method& method, real t)
 {
   // Check if time step is fixed
   if ( kfixed )
   {
+    timesteps[i] = ode.timestep(t, i);
     _accept = true;
     return;
   }

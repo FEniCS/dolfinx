@@ -33,7 +33,7 @@ namespace dolfin
     real timestep() const;
 
     /// Update time step
-    void update(real k0, real r, const Method& method);
+    void update(real k0, real r, const Method& method, real t);
 
   private:
 
