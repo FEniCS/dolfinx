@@ -267,7 +267,7 @@ void FEM::applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element,
     applyBC_2D(A, mesh, element, bc);
     break;
   case Mesh::tetrahedra:
-//    applyBC_3D(A, mesh, element, bc);
+    applyBC_3D(A, mesh, element, bc);
     break;
   default:
     dolfin_error("Unknown mesh type.");
@@ -286,7 +286,7 @@ void FEM::applyBC(Vector& b, Mesh& mesh,
     applyBC_2D(b, mesh, element, bc);
     break;
   case Mesh::tetrahedra:
-//    applyBC_3D(b, mesh, element, bc);
+    applyBC_3D(b, mesh, element, bc);
     break;
   default:
     dolfin_error("Unknown mesh type.");
