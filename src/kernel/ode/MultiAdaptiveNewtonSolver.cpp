@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-10-24
+// Last changed: 2005-11-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -12,6 +12,8 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
+#include <dolfin/MultiAdaptiveJacobian.h>
+#include <dolfin/UpdatedMultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
 
 #include <petscpc.h>
@@ -22,9 +24,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab),
-    A(*this, timeslab), B(*this, timeslab),
-    f(0), mpc(A)
+  : TimeSlabSolver(timeslab), ts(timeslab), A(0), mpc(timeslab, method),
+    f(0), num_elements(0), num_elements_mono(0),
+    updated_jacobian(dolfin_get("updated jacobian"))
 {
   // Initialize local array
   f = new real[method.qsize()];
@@ -35,11 +37,15 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 
   solver.setRtol(0.01);
   solver.setAtol(0.01*tol);
-
-  use_new_jacobian = dolfin_get("use new jacobian");
   
   // Set preconditioner
   solver.setPreconditioner(mpc);
+
+  // Initialize Jacobian
+  if ( updated_jacobian )
+    A = new UpdatedMultiAdaptiveJacobian(*this, timeslab);
+  else
+    A = new MultiAdaptiveJacobian(*this, timeslab);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
@@ -50,6 +56,9 @@ MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
   
   // Delete local array
   if ( f ) delete [] f;
+
+  // Delete Jacobian
+  delete A;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::end()
@@ -69,25 +78,14 @@ void MultiAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.init(nj);
 
-  if ( use_new_jacobian )
-  {
-    // Initialize Jacobian matrix
-    B.init(dx, dx);
-    
-    // Recompute Jacobian on each time slab
-    B.update();
-  }
-  else
-  {
-    // Initialize Jacobian matrix
-    A.init(dx, dx);
-    
-    // Recompute Jacobian on each time slab
-    A.update();
-  }
+  // Initialize Jacobian matrix
+  A->init(dx, dx);
+  
+  // Recompute Jacobian on each time slab
+  A->update();
 
   //debug();
-  //A.disp(true, 10);
+  //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
@@ -100,17 +98,10 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // Solve linear system, seems like we need to scale the right-hand
   // side to make it work with the PETSc GMRES solver
   
-  if ( use_new_jacobian )
-  {
-    num_local_iterations += solver.solve(B, dx, b);
-  }
-  else
-  {
-    //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
-    //b /= r;
-    num_local_iterations += solver.solve(A, dx, b);
-    //dx *= r;
-  }
+  //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
+  //b /= r;
+  num_local_iterations += solver.solve(*A, dx, b);
+  //dx *= r;
 
   //cout << "A = "; A.disp(true, 10);
   //cout << "dx = "; dx.disp();

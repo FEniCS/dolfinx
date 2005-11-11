@@ -17,14 +17,24 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
-(MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0),
-				    num_elements(0), num_elements_mono(0), tmp(0)
+(MultiAdaptiveTimeSlab& timeslab)
+  : TimeSlabSolver(timeslab), ts(timeslab), f(0),
+    num_elements(0), num_elements_mono(0), 
+    maxiter_local(dolfin_get("maximum local iterations")),
+    diagonal_newton_damping(dolfin_get("diagonal newton damping")), dfdu(0)
 {
+  // Initialize local array for quadrature
   f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
     f[i] = 0.0;
-
-  maxiter_local = dolfin_get("maximum local iterations");
+  
+  // Initialize diagonal of Jacobian df/du for diagonal Newton damping
+  if ( diagonal_newton_damping )
+  {
+    dfdu = new real[ts.N];
+    for (uint i = 0; i < ts.N; i++)
+      dfdu[i] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
@@ -36,21 +46,17 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   // Delete local array
   if ( f ) delete [] f;
   
-  
-  // TMP: Testing diagonally scaled fixed-point
-  if ( tmp ) delete [] tmp;
+  // Delete diagonal of Jacobian
+  if ( dfdu ) delete [] dfdu;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveFixedPointSolver::start()
 {
-  // Do nothing
-
-  // TMP: Testing diagonally scaled fixed-point
-  if ( !tmp )
-    tmp = new real[ts.N];
-  for (uint i = 0; i < ts.N; i++)
+  // Update diagonal of Jacobian if used
+  if ( diagonal_newton_damping )
   {
-    tmp[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
+    for (uint i = 0; i < ts.N; i++)
+      dfdu[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -72,6 +78,9 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 
   // Reset maximum increment
   real increment_max = 0.0;
+
+  // Keep track of the number of local iterations
+  real num_local = 0.0;
 
   // Iterate over all sub slabs
   uint e0 = 0;
@@ -117,13 +126,17 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 	//cout << "f = "; Alloc::disp(f, method.qsize());
 	
 	// Update values on element using fixed point iteration
-	//method.update(x0, f, k, ts.jx + j);
+	if ( diagonal_newton_damping )
+	{
+	  // FIXME: Parameter 0.5 most suited for cG(1)
+	  const real alpha = 1.0 / (1.0 - 0.5*k*dfdu[i]);
+	  method.update(x0, f, k, ts.jx + j, alpha);
+	}
+	else
+	{
+	  method.update(x0, f, k, ts.jx + j);
+	}
 	//cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
-	
-	// TMP: Testing diagonally scaled fixed-point
-	// Update values using diagonally damped fixed point iteration
-	const real alpha = 1.0 / (1.0 - 0.5*k*tmp[i]);
-	method.update(x0, f, k, ts.jx + j, alpha);
 
 	// Compute increment
 	const real increment = std::abs(ts.jx[j + method.nsize() - 1] - x1);
@@ -139,17 +152,22 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
       }
 
       // Update counter of local iterations
-      // FIXME: Broken
-      //num_local_iterations += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
+      num_local += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
       
       // Check if we are done
       if ( increment_local < tol )
+      {
+	
 	break;
+      }
     }
 
     // Step to next sub slab
     e0 = e1;
   }
+  
+  // Add to common counter of local iterations
+  num_local_iterations += static_cast<uint>(num_local + 0.5);
 
   return increment_max;
 }

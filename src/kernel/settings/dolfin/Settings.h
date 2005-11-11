@@ -40,7 +40,8 @@ namespace dolfin
       add(Parameter::BOOL, "implicit", false);
       add(Parameter::BOOL, "matrix piecewise constant", true);
       add(Parameter::BOOL, "monitor convergence", false);
-      add(Parameter::BOOL, "use new jacobian", false); // temporary for testing
+      add(Parameter::BOOL, "updated jacobian", false); // only multi-adaptive Newton
+      add(Parameter::BOOL, "diagonal newton damping", false); // only multi-adaptive fixed-point
 
       add(Parameter::INT, "order", 1);
       add(Parameter::INT, "number of samples", 101);

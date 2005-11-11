@@ -2,21 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-11-11
 
-#include <dolfin/ODE.h>
-#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
-#include <dolfin/MultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptivePreconditioner::MultiAdaptivePreconditioner
-(const MultiAdaptiveJacobian& A) : A(A), ts(A.ts), ode(A.ode), method(A.method)
+(MultiAdaptiveTimeSlab& timeslab, const Method& method) : ts(timeslab), method(method)
 {
   // Do nothing
 }

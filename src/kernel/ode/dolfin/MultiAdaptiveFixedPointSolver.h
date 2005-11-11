@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-11-11
 
 #ifndef __MULTI_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MULTI_ADAPTIVE_FIXED_POINT_SOLVER_H
@@ -12,7 +12,6 @@
 
 namespace dolfin
 {
-
   class MultiAdaptiveTimeSlab;
   
   /// This class implements fixed point iteration on multi-adaptive
@@ -31,9 +30,6 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptiveFixedPointSolver();
-
-    /// Solve system
-//     void solve();
 
   protected:
 
@@ -66,11 +62,11 @@ namespace dolfin
     // Maximum number of local iterations
     uint maxiter_local;
     
-    // Total number of scaled local iterations
-    real num_iterations_local;
+    // True if we should use diagonal Newton damping
+    bool diagonal_newton_damping;
 
-    // TMP: Testing diagonally scaled fixed-point
-    real* tmp;
+    // Diagonal of Jacobian df/du
+    real* dfdu;
 
   };
 

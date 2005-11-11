@@ -4,7 +4,7 @@
 // Modified by Andy Terrel 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005-09-20
+// Last changed: 2005-11-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -256,7 +256,7 @@ void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
-    BoundaryCondition& bc)
+		  BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
 
@@ -696,7 +696,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
-      BoundaryCondition& bc)
+		     BoundaryCondition& bc)
 {
   // Create boundary
   Boundary boundary(mesh);

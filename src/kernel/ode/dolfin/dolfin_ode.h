@@ -39,6 +39,7 @@
 #include <dolfin/TimeStepper.h>
 #include <dolfin/TimeSlabJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
+#include <dolfin/UpdatedMultiAdaptiveJacobian.h>
 #include <dolfin/cGqMethod.h>
 #include <dolfin/dGqMethod.h>
 

@@ -15,7 +15,6 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/MonoAdaptivity.h \
              dolfin/MultiAdaptiveFixedPointSolver.h \
              dolfin/MultiAdaptiveJacobian.h \
-	     dolfin/NewMultiAdaptiveJacobian.h \
              dolfin/MultiAdaptiveNewtonSolver.h \
              dolfin/MultiAdaptivePreconditioner.h \
              dolfin/MultiAdaptiveTimeSlab.h \
@@ -31,5 +30,6 @@ EXTRA_DIST = dolfin/dolfin_ode.h \
              dolfin/TimeStepper.h \
              dolfin/TimeSlabJacobian.h \
              dolfin/TimeSlabSolver.h \
+	     dolfin/UpdatedMultiAdaptiveJacobian.h \
              dolfin/cGqMethod.h \
              dolfin/dGqMethod.h

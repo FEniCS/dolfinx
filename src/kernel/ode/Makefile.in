@@ -68,7 +68,6 @@ am_libdolfin_ode_a_OBJECTS = Adaptivity.$(OBJEXT) Alloc.$(OBJEXT) \
 	MonoAdaptiveTimeSlab.$(OBJEXT) MonoAdaptivity.$(OBJEXT) \
 	MultiAdaptiveFixedPointSolver.$(OBJEXT) \
 	MultiAdaptiveJacobian.$(OBJEXT) \
-	NewMultiAdaptiveJacobian.$(OBJEXT) \
 	MultiAdaptiveNewtonSolver.$(OBJEXT) \
 	MultiAdaptivePreconditioner.$(OBJEXT) \
 	MultiAdaptiveTimeSlab.$(OBJEXT) MultiAdaptivity.$(OBJEXT) \
@@ -76,7 +75,8 @@ am_libdolfin_ode_a_OBJECTS = Adaptivity.$(OBJEXT) Alloc.$(OBJEXT) \
 	ParticleSystem.$(OBJEXT) Partition.$(OBJEXT) \
 	ReducedModel.$(OBJEXT) Sample.$(OBJEXT) TimeSlab.$(OBJEXT) \
 	TimeSlabJacobian.$(OBJEXT) TimeSlabSolver.$(OBJEXT) \
-	TimeStepper.$(OBJEXT) cGqMethod.$(OBJEXT) dGqMethod.$(OBJEXT)
+	TimeStepper.$(OBJEXT) UpdatedMultiAdaptiveJacobian.$(OBJEXT) \
+	cGqMethod.$(OBJEXT) dGqMethod.$(OBJEXT)
 libdolfin_ode_a_OBJECTS = $(am_libdolfin_ode_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -227,7 +227,6 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/MonoAdaptivity.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
-                          dolfin/NewMultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
@@ -243,6 +242,7 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/TimeSlabJacobian.h \
                           dolfin/TimeSlabSolver.h \
                           dolfin/TimeStepper.h \
+                          dolfin/UpdatedMultiAdaptiveJacobian.h \
                           dolfin/cGqMethod.h \
                           dolfin/dGqMethod.h
 
@@ -264,7 +264,6 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           MonoAdaptivity.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
-                          NewMultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \
@@ -280,6 +279,7 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           TimeSlabJacobian.cpp \
                           TimeSlabSolver.cpp \
                           TimeStepper.cpp \
+                          UpdatedMultiAdaptiveJacobian.cpp \
                           cGqMethod.cpp \
                           dGqMethod.cpp
 
@@ -377,7 +377,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivePreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptiveTimeSlab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivity.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMultiAdaptiveJacobian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODESolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSystem.Po@am__quote@
@@ -388,6 +387,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeSlabJacobian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeSlabSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UpdatedMultiAdaptiveJacobian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cGqMethod.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dGqMethod.Po@am__quote@
 

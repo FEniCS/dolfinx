@@ -2,34 +2,31 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-11-11
 
-#ifndef __PROPAGATING_PRECONDITIONER_H
-#define __PROPAGATING_PRECONDITIONER_H
+#ifndef __MULTI_ADAPTIVE_PRECONDITIONER_H
+#define __MULTI_ADAPTIVE_PRECONDITIONER_H
 
 #include <dolfin/Preconditioner.h>
 
 namespace dolfin
 {
-
   class ODE;
   class Vector;
   class Method;
   class MultiAdaptiveTimeSlab;
-  class MultiAdaptiveJacobian;
   
   /// This class implements a preconditioner for the Newton system to
-  /// be solved on a multi-adaptive time slab. The preconditioner does
-  /// Gauss-Seidel type fixed point iteration forward in time using
-  /// diagonally scaled dG(0), and is responsible for propagating the
-  /// values forward in time in each GMRES iteration.
+  /// be solved on a multi-adaptive time slab. The preconditioner just
+  /// does simple forward propagation of values on internal elements
+  /// of the time slab (without so much as looking at the Jacobian).
 
   class MultiAdaptivePreconditioner : public Preconditioner
   {
   public:
 
     /// Constructor
-    MultiAdaptivePreconditioner(const MultiAdaptiveJacobian& A);
+    MultiAdaptivePreconditioner(MultiAdaptiveTimeSlab& timeslab, const Method& method);
 
     /// Destructor
     ~MultiAdaptivePreconditioner();
@@ -39,15 +36,9 @@ namespace dolfin
 
   private:
 
-    // The Jacobian of the time slab system
-    const MultiAdaptiveJacobian& A;
-
     // The time slab
     MultiAdaptiveTimeSlab& ts;
 
-    // The ODE
-    ODE& ode;
-    
     // Method, mcG(q) or mdG(q)
     const Method& method;
 

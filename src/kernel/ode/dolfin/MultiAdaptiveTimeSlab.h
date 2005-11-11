@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-01
+// Last changed: 2005-11-11
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -16,7 +16,6 @@
 
 namespace dolfin
 {
-
   class ODE;
   class Method;
   class TimeSlabSolver;
@@ -67,7 +66,7 @@ namespace dolfin
     friend class MultiAdaptiveFixedPointSolver;
     friend class MultiAdaptiveNewtonSolver;
     friend class MultiAdaptiveJacobian;
-    friend class NewMultiAdaptiveJacobian;
+    friend class UpdatedMultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;
 
   private:

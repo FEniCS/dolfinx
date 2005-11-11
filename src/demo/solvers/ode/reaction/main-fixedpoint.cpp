@@ -116,14 +116,14 @@ int main(int argc, char* argv[])
   dolfin_set("save final solution", true);
 
   // Need to save in Python format for plot_reaction.py to work
-  dolfin_set("file name", "primal.py");
-
-  dolfin_set("save solution", true);
+  //dolfin_set("file name", "primal.py");
+  //dolfin_set("save solution", true);
   dolfin_set("solver", "fixed point");
+  //dolfin_set("diagonal newton damping", true);
+  //  dolfin_set("
 //   dolfin_set("solver", "newton");
-//   dolfin_set("monitor convergence", true);
-  dolfin_set("monitor convergence", false);
-
+  //dolfin_set("monitor convergence", true);
+  
   //dolfin_set("initial time step", 2.5e-3);
 
   //dolfin_set("fixed time step", true);

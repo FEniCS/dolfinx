@@ -4,30 +4,29 @@
 // First added:  2005-01-27
 // Last changed: 2005-11-10
 
-#ifndef __NEW_MULTI_ADAPTIVE_JACOBIAN_H
-#define __NEW_MULTI_ADAPTIVE_JACOBIAN_H
+#ifndef __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
+#define __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
 namespace dolfin
 {
-  
   class MultiAdaptiveNewtonSolver;
   class MultiAdaptiveTimeSlab;
     
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a multi-adaptive time slab.
 
-  class NewMultiAdaptiveJacobian : public TimeSlabJacobian
+  class UpdatedMultiAdaptiveJacobian : public TimeSlabJacobian
   {
   public:
 
     /// Constructor
-    NewMultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
+    UpdatedMultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
 			     MultiAdaptiveTimeSlab& timeslab);
 
     /// Destructor
-    ~NewMultiAdaptiveJacobian();
+    ~UpdatedMultiAdaptiveJacobian();
 
     /// Compute product y = Ax
     void mult(const Vector& x, Vector& y) const;

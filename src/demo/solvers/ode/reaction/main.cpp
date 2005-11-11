@@ -140,7 +140,6 @@ int main(int argc, char* argv[])
   //dolfin_set("adaptive samples", true);
   //dolfin_set("maximum time step", 0.01);
 
-  dolfin_set("solver", "fixed point");
   //dolfin_set("monitor convergence", true);
 
   //dolfin_set("initial time step", 2.5e-3);
@@ -148,8 +147,10 @@ int main(int argc, char* argv[])
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
 
-  //dolfin_set("use new jacobian", true);
-
+  dolfin_set("solver", "fixed point");
+  //dolfin_set("diagonal newton damping", true);
+  //dolfin_set("updated jacobian", true);
+  
   // Uncomment to compute reference solution
   /*
     dolfin_set("save solution", false);

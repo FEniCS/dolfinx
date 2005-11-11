@@ -16,7 +16,6 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/MonoAdaptivity.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
-                          dolfin/NewMultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
@@ -32,6 +31,7 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/TimeSlabJacobian.h \
                           dolfin/TimeSlabSolver.h \
                           dolfin/TimeStepper.h \
+                          dolfin/UpdatedMultiAdaptiveJacobian.h \
                           dolfin/cGqMethod.h \
                           dolfin/dGqMethod.h
 INCLUDES                = @KERNEL_CFLAGS@
@@ -52,7 +52,6 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           MonoAdaptivity.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
-                          NewMultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \
@@ -68,5 +67,6 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           TimeSlabJacobian.cpp \
                           TimeSlabSolver.cpp \
                           TimeStepper.cpp \
+                          UpdatedMultiAdaptiveJacobian.cpp \
                           cGqMethod.cpp \
                           dGqMethod.cpp

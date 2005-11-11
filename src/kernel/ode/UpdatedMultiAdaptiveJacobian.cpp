@@ -10,24 +10,24 @@
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
-#include <dolfin/NewMultiAdaptiveJacobian.h>
+#include <dolfin/UpdatedMultiAdaptiveJacobian.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewMultiAdaptiveJacobian::NewMultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
-						   MultiAdaptiveTimeSlab& timeslab)
+UpdatedMultiAdaptiveJacobian::UpdatedMultiAdaptiveJacobian
+(MultiAdaptiveNewtonSolver& newton, MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabJacobian(timeslab), newton(newton), ts(timeslab), tmp(0), nj(0), h(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewMultiAdaptiveJacobian::~NewMultiAdaptiveJacobian()
+UpdatedMultiAdaptiveJacobian::~UpdatedMultiAdaptiveJacobian()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NewMultiAdaptiveJacobian::update()
+void UpdatedMultiAdaptiveJacobian::update()
 {
   // Check if we need to reallocate the temporary array
   if ( ts.nj > nj )
@@ -47,7 +47,7 @@ void NewMultiAdaptiveJacobian::update()
   h = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * umax);
 }
 //-----------------------------------------------------------------------------
-void NewMultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
+void UpdatedMultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
 {
   // Compute product by the approximation y = J(u) x = (F(u + hx) - F(u)) / h.
   // Since Feval() compute -F rather than F, we compute according to

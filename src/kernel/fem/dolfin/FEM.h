@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2004-05-19
-// Last changed: 2005-11-01
+// Last changed: 2005-11-11
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-
   class BilinearForm;
   class LinearForm;
   class Mesh;
@@ -54,11 +53,11 @@ namespace dolfin
     
     /// Apply boundary conditions to matrix 
     static void applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
-        BoundaryCondition& bc);
+			BoundaryCondition& bc);
 
     /// Apply boundary conditions to vector 
     static void applyBC(Vector& b, Mesh& mesh, const FiniteElement& element,
-        BoundaryCondition& bc);
+			BoundaryCondition& bc);
 
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
