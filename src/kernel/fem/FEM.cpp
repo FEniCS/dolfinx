@@ -372,8 +372,6 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
 void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 	       const FiniteElement& element, BoundaryCondition& bc)
 {
-  dolfin_assert(mesh.type() == Mesh::triangles);
-
   // Create boundary
   Boundary boundary(mesh);
 
@@ -457,7 +455,6 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
         BoundaryCondition& bc)
 {
-
   // Create boundary
   Boundary boundary(mesh);
 
@@ -540,8 +537,6 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element,
 void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element, 
         BoundaryCondition& bc)
 {
-  dolfin_assert(mesh.type() == Mesh::triangles);
-
   // Create boundary
   Boundary boundary(mesh);
 
@@ -620,8 +615,6 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element,
 void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 		     const FiniteElement& element, BoundaryCondition& bc)
 {
-  dolfin_assert(mesh.type() == Mesh::tetrahedra);
-  
   // Create boundary
   Boundary boundary(mesh);
 
@@ -705,7 +698,6 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
       BoundaryCondition& bc)
 {
-  
   // Create boundary
   Boundary boundary(mesh);
 
