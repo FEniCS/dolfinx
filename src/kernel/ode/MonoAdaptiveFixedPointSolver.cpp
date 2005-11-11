@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-11-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Alloc.h>

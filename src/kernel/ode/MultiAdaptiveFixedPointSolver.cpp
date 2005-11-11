@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005
+// Last changed: 2005-11-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -18,8 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0),
-				    num_elements(0), num_elements_mono(0),
-				    num_iterations_local(0.0)
+				    num_elements(0), num_elements_mono(0)
 {
   f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
@@ -33,13 +32,6 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
   // Compute multi-adaptive efficiency index
   const real alpha = num_elements_mono / static_cast<real>(num_elements);
   dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
-
-  // Compute average number of local iterations
-  if ( num_timeslabs > 0 )
-  {
-    const real n = num_iterations_local / static_cast<real>(num_iterations);
-    dolfin_info("Average number of local iterations per step:  %.2f.", n);
-  }
 
   // Delete local array
   if ( f ) delete [] f;
@@ -130,7 +122,8 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
       }
 
       // Update counter of local iterations
-      num_iterations_local += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
+      // FIXME: Broken
+      //num_local_iterations += static_cast<real>(e1 - e0) / static_cast<real>(ts.ne);
       
       // Check if we are done
       if ( increment_local < tol )

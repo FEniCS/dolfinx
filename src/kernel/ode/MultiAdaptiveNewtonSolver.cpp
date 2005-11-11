@@ -39,7 +39,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   use_new_jacobian = dolfin_get("use new jacobian");
   
   // Set preconditioner
-  //solver.setPreconditioner(mpc);
+  solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
@@ -102,13 +102,13 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   
   if ( use_new_jacobian )
   {
-    solver.solve(B, dx, b);
+    num_local_iterations += solver.solve(B, dx, b);
   }
   else
   {
     //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
     //b /= r;
-    solver.solve(A, dx, b);
+    num_local_iterations += solver.solve(A, dx, b);
     //dx *= r;
   }
 

@@ -61,8 +61,11 @@ namespace dolfin
     // Number of time slabs systems solved
     uint num_timeslabs;
 
-    // Number of iterations made
-    uint num_iterations;
+    // Number of global iterations made
+    uint num_global_iterations;
+
+    // Number of local iterations made (GMRES)
+    uint num_local_iterations;
 
   };
 

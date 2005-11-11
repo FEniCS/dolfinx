@@ -39,7 +39,7 @@ namespace dolfin
 
   private:
 
-    /// The Jacobian of the time slab system
+    // The Jacobian of the time slab system
     const MultiAdaptiveJacobian& A;
 
     // The time slab

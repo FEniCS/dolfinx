@@ -16,11 +16,20 @@ class MyPreconditioner : public Preconditioner
 {
 public:
 
+  MyPreconditioner(const Vector& m) : m(m) {}
+
   void solve(Vector& x, const Vector& b)
   {
-    x = b;
     dolfin_info("Calling preconditioner");
+    for (unsigned int i = 0; i < x.size(); i++)
+    {
+      x(i) = b(i) / m(i);
+    }
   }
+
+private:
+
+  const Vector& m;
 
 };
 
@@ -29,15 +38,18 @@ int main(int argc, char* argv[])
   dolfin_info("Testing DOLFIN...");
 
   UnitSquare mesh(2, 2);
-  MassMatrix A(mesh);
+  MassMatrix M(mesh);
   Vector x;
-  Vector b(A.size(0));
+  Vector b(M.size(0));
   b = 1.0;
+  Vector m;
+  FEM::lump(M, m);
 
+ 
   GMRES solver;
-  MyPreconditioner pc;
+  MyPreconditioner pc(m);
   solver.setPreconditioner(pc);
-  solver.solve(A, x, b);
+  solver.solve(M, x, b);
   
   x.disp();
 

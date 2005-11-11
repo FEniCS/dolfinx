@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   dolfin_set("save final solution", true);
 
   dolfin_set("maximum time step", 0.01);
-  dolfin_set("partitioning threshold", 0.5);
+  dolfin_set("partitioning threshold", 0.7);
   
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
 
-  dolfin_set("use new jacobian", true);
+  //dolfin_set("use new jacobian", true);
 
   // Uncomment to compute reference solution
   /*
@@ -163,10 +163,9 @@ int main(int argc, char* argv[])
   
   //Reaction ode(10, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
-  Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
+  //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
-  
+  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   ode.solve();
 
   return 0;

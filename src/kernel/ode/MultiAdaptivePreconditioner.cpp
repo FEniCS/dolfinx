@@ -28,51 +28,30 @@ MultiAdaptivePreconditioner::~MultiAdaptivePreconditioner()
 //-----------------------------------------------------------------------------
 void MultiAdaptivePreconditioner::solve(Vector& x, const Vector& b)
 {
-  cout << "preconditioning (multi-adaptive)" << endl;
+  // Get data arrays (assumes uniprocessor case)
+  real* xx = x.array();
+  const real* bb = b.array();
 
   // Reset dof
   uint j = 0;
 
-  // Reset current sub slab
-  int s = -1;
-
-  // Reset elast
-  for (uint i = 0; i < ts.N; i++)
-    ts.elast[i] = -1;
-
   // Iterate over all elements
   for (uint e = 0; e < ts.ne; e++)
   {
-    // Cover all elements in current sub slab
-    s = ts.coverNext(s, e);
-
-    // Get element data
-    const uint i = ts.ei[e];
-    const real a = ts.sa[s];
-    const real b = ts.sb[s];
-    const real k = b - a;
-    
     // Get initial value for element
     const int ep = ts.ee[e];
-    const real x0 = ( ep != -1 ? ts.jx[ep*method.nsize() + method.nsize() - 1] : ts.u0[i] );
-    
-    // Iterate over dependencies and sum contributions
-    real sum = 0.0;
-    const Array<uint>& deps = ode.dependencies[i];
-    for (uint pos = 0; pos < deps.size(); pos++)
-    {
-      // Get derivative
-      const real dfdu = A.Jvalues[A.Jindices[i] + pos];
+    const real x0 = ( ep != -1 ? xx[ep*method.nsize() + method.nsize() - 1] : 0.0 );
 
-      sum += x0 + k*dfdu;
-
-
-    }
+    // Propagate value on element
+    for (uint n = 0; n < method.nsize(); n++)
+      xx[j + n] = x0 + bb[j + n];
 
     // Update dof
     j += method.nsize();
   }
-
-  x = b;
+  
+  // Restore arrays
+  x.restore(xx);
+  b.restore(bb);
 }
 //-----------------------------------------------------------------------------
