@@ -78,6 +78,13 @@ namespace dolfin
       add(Parameter::BOOL,   "homotopy monitoring", false);
       add(Parameter::STRING, "homotopy solution file", "solution.data");
       
+      // Parameters for nonlinear Newton solver
+      add(Parameter::REAL,   "NLS Newton absolute convergence tolerance", 1e-50);
+      add(Parameter::REAL,   "NLS Newton relative convergence tolerance", 1e-8);
+      add(Parameter::REAL,   "NLS Newton successive convergence tolerance", 1e-8);
+      add(Parameter::INT,    "NLS Newton maximum iterations", 50);
+      add(Parameter::INT,    "NLS Newton maximum function evaluations", 10000);
+
     }
     
   };
