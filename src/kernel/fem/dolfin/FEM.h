@@ -52,13 +52,21 @@ namespace dolfin
     static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
 			const FiniteElement& element, BoundaryCondition& bc);
     
+    /// Apply boundary conditions to matrix 
+    static void applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+        BoundaryCondition& bc);
+
+    /// Apply boundary conditions to vector 
+    static void applyBC(Vector& b, Mesh& mesh, const FiniteElement& element,
+        BoundaryCondition& bc);
+
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
 
-    // Count the degrees of freedom
+    /// Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
 
-    // Estimate the maximum number of nonzeros in each row
+    /// Estimate the maximum number of nonzeros in each row
     static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
     /// Display assembly data (useful for debugging)
@@ -66,21 +74,37 @@ namespace dolfin
       
   private:
 
-    // Apply boundary conditions on triangular mesh
+    /// Apply boundary conditions on triangular mesh
     static void applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
 			   const FiniteElement& element, BoundaryCondition& bc);
 
-    // Apply boundary conditions on tetrahedral mesh
+    /// Apply boundary conditions to matrix on triangular mesh
+    static void applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element,
+         BoundaryCondition& bc);
+
+    /// Apply boundary conditions to vector on triangular mesh
+    static void applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element,
+        BoundaryCondition& bc);
+
+    /// Apply boundary conditions on tetrahedral mesh
     static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 			   const FiniteElement& element, BoundaryCondition& bc);
 
-    // Check that dimension of the mesh matches the form
+    /// Apply boundary conditions to matrix on tetrahedral mesh
+    static void applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element,
+         BoundaryCondition& bc);
+
+    /// Apply boundary conditions to vector on tetrahedral mesh
+    static void applyBC_3D(Vector& b, Mesh& mesh, const FiniteElement& element,
+         BoundaryCondition& bc);
+
+    /// Check that dimension of the mesh matches the form
     static void checkdims(const BilinearForm& a, const Mesh& mesh);
 
-    // Check that dimension of the mesh matches the form
+    /// Check that dimension of the mesh matches the form
     static void checkdims(const LinearForm& L, const Mesh& mesh);
 
-    // Check number of nonzeros in each row
+    /// Check number of nonzeros in each row
     static void checknz(const Matrix& A, uint nz);
 
   };

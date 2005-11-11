@@ -255,6 +255,44 @@ void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
+void FEM::applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+    BoundaryCondition& bc)
+{
+  dolfin_info("Applying Dirichlet boundary conditions to matrix.");
+
+  // Choose type of mesh
+  switch ( mesh.type() )
+  {
+  case Mesh::triangles:
+    applyBC_2D(A, mesh, element, bc);
+    break;
+  case Mesh::tetrahedra:
+//    applyBC_3D(A, mesh, element, bc);
+    break;
+  default:
+    dolfin_error("Unknown mesh type.");
+  }
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC(Vector& b, Mesh& mesh,
+		  const FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Applying Dirichlet boundary conditions to vector.");
+
+  // Choose type of mesh
+  switch ( mesh.type() )
+  {
+  case Mesh::triangles:
+    applyBC_2D(b, mesh, element, bc);
+    break;
+  case Mesh::tetrahedra:
+//    applyBC_3D(b, mesh, element, bc);
+    break;
+  default:
+    dolfin_error("Unknown mesh type.");
+  }
+}
+//-----------------------------------------------------------------------------
 void FEM::lump(const Matrix& M, Vector& m)
 {
   m.init(M.size(0));
@@ -416,6 +454,169 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
+void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+        BoundaryCondition& bc)
+{
+
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Create boundary value
+  BoundaryValue bv;
+
+  // Create affine map
+  AffineMap map;
+
+  // Allocate list of rows
+  uint m = 0;
+  int* rows = new int[A.size(0)];
+  bool* row_set = new bool[A.size(0)];
+  for (unsigned int i = 0; i < A.size(0); i++)
+    row_set[i] = false;
+  
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+
+  // Iterate over all edges on the boundary
+  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  {
+    // Get cell containing the edge (pick first, should only be one)
+    dolfin_assert(edge->noCellNeighbors() == 1);
+    const Cell& cell = edge->cell(0);
+
+    // Update affine map
+    map.update(cell);
+
+    // Compute map from local to global degrees of freedom
+    element.dofmap(dofs, cell, mesh);
+
+    // Compute map from local to global coordinates
+    element.pointmap(points, components, map);
+
+    // Set boundary conditions for dofs on the boundary
+    for (uint i = 0; i < n; i++)
+    {
+      // Skip points that are not contained in edge
+      const Point& point = points[i];
+      if ( !(edge->contains(point)) )
+        continue;
+
+      // Get boundary condition
+      if ( element.rank() > 0 )
+        bv = bc(point, components[i]);
+      else
+        bv = bc(point);
+    
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+      {
+        int dof = dofs[i];
+
+        if ( !row_set[dof] )
+        {
+          rows[m++] = dof;
+          row_set[dof] = true;
+        }
+      }
+    }
+  }
+
+  dolfin_info("Boundary condition on matrix applied to %d degrees of freedom on the boundary.", m);
+
+  // Set rows of matrix to the identity matrix
+  A.ident(rows, m);
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
+  delete [] rows;
+  delete [] row_set;
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element, 
+        BoundaryCondition& bc)
+{
+  dolfin_assert(mesh.type() == Mesh::triangles);
+
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Create boundary value
+  BoundaryValue bv;
+
+  // Create affine map
+  AffineMap map;
+
+  // Allocate list of rows
+  uint m = 0;
+  bool* row_set = new bool[b.size()];
+  for (unsigned int i = 0; i < b.size(); i++)
+    row_set[i] = false;
+  
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+
+  // Iterate over all edges on the boundary
+  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  {
+    // Get cell containing the edge (pick first, should only be one)
+    dolfin_assert(edge->noCellNeighbors() == 1);
+    const Cell& cell = edge->cell(0);
+
+    // Update affine map
+    map.update(cell);
+
+    // Compute map from local to global degrees of freedom
+    element.dofmap(dofs, cell, mesh);
+
+    // Compute map from local to global coordinates
+    element.pointmap(points, components, map);
+
+    // Set boundary conditions for dofs on the boundary
+    for (uint i = 0; i < n; i++)
+    {
+      // Skip points that are not contained in edge
+      const Point& point = points[i];
+      if ( !(edge->contains(point)) )
+        continue;
+
+      // Get boundary condition
+      if ( element.rank() > 0 )
+        bv = bc(point, components[i]);
+      else
+        bv = bc(point);
+    
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+      {
+        int dof = dofs[i];
+
+        if ( !row_set[dof] )
+        {
+          m++;
+          b(dof) = bv.value;
+          row_set[dof] = true;
+        }
+      }
+    }
+  }
+
+  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
+  delete [] row_set;
+}
+//-----------------------------------------------------------------------------
 void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
 		     const FiniteElement& element, BoundaryCondition& bc)
 {
@@ -498,6 +699,167 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] components;
   delete [] points;
   delete [] rows;
+  delete [] row_set;
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+      BoundaryCondition& bc)
+{
+  
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Create boundary value
+  BoundaryValue bv;
+
+  // Create affine map
+  AffineMap map;
+
+  // Allocate list of rows
+  uint m = 0;
+  int* rows = new int[A.size(0)];
+  bool* row_set = new bool[A.size(0)];
+  for (unsigned int i = 0; i < A.size(0); i++)
+    row_set[i] = false;
+  
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+
+  // Iterate over all faces on the boundary
+  for (FaceIterator face(boundary); !face.end(); ++face)
+  {
+    // Get cell containing the face (pick first, should only be one)
+    dolfin_assert(face->noCellNeighbors() == 1);
+    const Cell& cell = face->cell(0);
+
+    // Update affine map
+    map.update(cell);
+
+    // Compute map from local to global degrees of freedom
+    element.dofmap(dofs, cell, mesh);
+
+    // Compute map from local to global coordinates
+    element.pointmap(points, components, map);
+
+    // Set boundary conditions for dofs on the boundary
+    for (uint i = 0; i < n; i++)
+    {
+      // Skip points that are not contained in face
+      const Point& point = points[i];
+      if ( !(face->contains(point)) )
+        continue;
+
+      // Get boundary condition
+      if ( element.rank() > 0 )
+        bv = bc(point, components[i]);
+      else
+        bv = bc(point);
+
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+      {
+        int dof = dofs[i];
+
+        if ( !row_set[dof] )
+        {
+          rows[m++] = dof;
+          row_set[dof] = true;
+        }
+      }
+    }
+  }
+
+  dolfin_info("Boundary condition on matrix applied to %d degrees of freedom on the boundary.", m);
+
+  // Set rows of matrix to the identity matrix
+  A.ident(rows, m);
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
+  delete [] rows;
+  delete [] row_set;
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC_3D(Vector& b, Mesh& mesh,
+		     const FiniteElement& element, BoundaryCondition& bc)
+{  
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Create boundary value
+  BoundaryValue bv;
+
+  // Create affine map
+  AffineMap map;
+
+  // Allocate list of rows
+  uint m = 0;
+  bool* row_set = new bool[b.size()];
+  for (unsigned int i = 0; i < b.size(); i++)
+    row_set[i] = false;
+  
+  // Allocate local data
+  uint n = element.spacedim();
+  int* dofs = new int[n];
+  uint* components = new uint[n];
+  Point* points = new Point[n];
+
+  // Iterate over all faces on the boundary
+  for (FaceIterator face(boundary); !face.end(); ++face)
+  {
+    // Get cell containing the face (pick first, should only be one)
+    dolfin_assert(face->noCellNeighbors() == 1);
+    const Cell& cell = face->cell(0);
+
+    // Update affine map
+    map.update(cell);
+
+    // Compute map from local to global degrees of freedom
+    element.dofmap(dofs, cell, mesh);
+
+    // Compute map from local to global coordinates
+    element.pointmap(points, components, map);
+
+    // Set boundary conditions for dofs on the boundary
+    for (uint i = 0; i < n; i++)
+    {
+      // Skip points that are not contained in face
+      const Point& point = points[i];
+      if ( !(face->contains(point)) )
+        continue;
+
+      // Get boundary condition
+      if ( element.rank() > 0 )
+        bv = bc(point, components[i]);
+      else
+        bv = bc(point);
+
+      // Set boundary condition if Dirichlet
+      if ( bv.fixed )
+      {
+        int dof = dofs[i];
+
+        if ( !row_set[dof] )
+        {
+          m++;
+          b(dof) = bv.value;
+          row_set[dof] = true;
+        }
+      }
+    }
+  }
+
+  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
+
+  // Delete data
+  delete [] dofs;
+  delete [] components;
+  delete [] points;
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
