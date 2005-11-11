@@ -16,6 +16,7 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/MonoAdaptivity.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
+                          dolfin/NewMultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
@@ -51,6 +52,7 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           MonoAdaptivity.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
+                          NewMultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \

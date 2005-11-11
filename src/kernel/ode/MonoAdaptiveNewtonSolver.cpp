@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-10-24
+// Last changed: 2005-11-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -57,7 +57,7 @@ void MonoAdaptiveNewtonSolver::start()
   // Initialize Jacobian matrix
   A.init(dx, dx);
 
-  // Recompute Jacobian 
+  // Recompute Jacobian
   //A.update();
 
   // Precompute product M*u0
@@ -65,13 +65,15 @@ void MonoAdaptiveNewtonSolver::start()
     ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
 
   //debug();
-  //A.disp();
+  //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
   // Evaluate b = -F(x) at current x
-  beval();
+  real* bb = b.array(); // Assumes uniprocessor case
+  Feval(bb);
+  b.restore(bb);
 
   //cout << "A = ";
   //A.disp(false);
@@ -85,8 +87,9 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   solver->solve(A, dx, b);
   dx *= r;
 
-  //cout << "dx = ";
-  //dx.disp();
+  //cout << "A = "; A.disp(true, 10);
+  //cout << "b = "; b.disp();
+  //cout << "dx = "; dx.disp();
    
   // Get arrays of values for x and dx
   real* xx = ts.x.array();
@@ -117,18 +120,17 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::beval()
+void MonoAdaptiveNewtonSolver::Feval(real F[])
 {
   if ( implicit )
-    bevalImplicit();
+    FevalImplicit(F);
   else
-    bevalExplicit();
+    FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::bevalExplicit()
+void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
 {
-  // Get arrays of values for x and b (assumes uniprocessor case)
-  real* bb = b.array();
+  // Get arrays of values for x
   real* xx = ts.x.array();
 
   // Compute size of time step
@@ -145,7 +147,7 @@ void MonoAdaptiveNewtonSolver::bevalExplicit()
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      bb[noffset + i] = ts.u0[i];
+      F[noffset + i] = ts.u0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -153,23 +155,21 @@ void MonoAdaptiveNewtonSolver::bevalExplicit()
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	bb[noffset + i] += tmp * ts.f[moffset + i];
+	F[noffset + i] += tmp * ts.f[moffset + i];
     }
   }
 
   // Subtract current values
   for (uint j = 0; j < ts.nj; j++)
-    bb[j] -= xx[j];
+    F[j] -= xx[j];
 
-  // Restore arrays
-  b.restore(bb);
+  // Restore array
   ts.x.restore(xx);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::bevalImplicit()
+void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 {
-  // Get arrays of values for x and b (assumes uniprocessor case)
-  real* bb = b.array();
+  // Get arrays of values for x (assumes uniprocessor case)
   real* xx = ts.x.array();
 
   // Compute size of time step
@@ -187,7 +187,7 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      bb[noffset + i] = Mu0[i];
+      F[noffset + i] = Mu0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -195,7 +195,7 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	bb[noffset + i] += tmp * ts.f[moffset + i];
+	F[noffset + i] += tmp * ts.f[moffset + i];
     }
   }
   
@@ -218,15 +218,11 @@ void MonoAdaptiveNewtonSolver::bevalImplicit()
     }
 
     for (uint i = 0; i < ts.N; i++)
-      bb[noffset + i] -= z[i];
+      F[noffset + i] -= z[i];
   }
 
-  // Restore arrays
-  b.restore(bb);
+  // Restore array
   ts.x.restore(xx);
-  
-  //cout << "b = ";
-  //b.disp();
 }
 //-----------------------------------------------------------------------------
 LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
@@ -279,11 +275,15 @@ void MonoAdaptiveNewtonSolver::debug()
     real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.x(j) -= 0.5*dx;
-    beval();
+    real* F = b.array();
+    Feval(F);
+    b.restore(F);
     F1 = b; // Should be -b
 
     ts.x(j) = xj + 0.5*dx;
-    beval();
+    F = b.array();
+    Feval(F);
+    b.restore(F);
     F2 = b; // Should be -b
     
     ts.x(j) = xj;

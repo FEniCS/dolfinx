@@ -4,8 +4,8 @@
 // First added:  2005-01-27
 // Last changed: 2005-11-10
 
-#ifndef __MULTI_ADAPTIVE_JACOBIAN_H
-#define __MULTI_ADAPTIVE_JACOBIAN_H
+#ifndef __NEW_MULTI_ADAPTIVE_JACOBIAN_H
+#define __NEW_MULTI_ADAPTIVE_JACOBIAN_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
@@ -18,16 +18,16 @@ namespace dolfin
   /// This class represents the Jacobian matrix of the system of
   /// equations defined on a multi-adaptive time slab.
 
-  class MultiAdaptiveJacobian : public TimeSlabJacobian
+  class NewMultiAdaptiveJacobian : public TimeSlabJacobian
   {
   public:
 
     /// Constructor
-    MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
-			  MultiAdaptiveTimeSlab& timeslab);
+    NewMultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
+			     MultiAdaptiveTimeSlab& timeslab);
 
     /// Destructor
-    ~MultiAdaptiveJacobian();
+    ~NewMultiAdaptiveJacobian();
 
     /// Compute product y = Ax
     void mult(const Vector& x, Vector& y) const;
@@ -40,26 +40,20 @@ namespace dolfin
 
   private:
 
-    // Compute product for mcG(q)
-    void cGmult(const real x[], real y[]) const;
-
-    // Compute product for mdG(q)
-    void dGmult(const real x[], real y[]) const;
-
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;
 
     // The time slab
     MultiAdaptiveTimeSlab& ts;
 
-    // Values of the Jacobian df/du of the right-hand side
-    real* Jvalues;
+    // Temporary storage
+    real* tmp;
 
-    // Indices for first element of each row for the Jacobian df/du
-    uint* Jindices;
-    
-    // Lookup table for dependencies to components with smaller time steps
-    real* Jlookup;
+    // Current size of system
+    uint nj;
+
+    // Size of increment
+    real h;
     
   };
 

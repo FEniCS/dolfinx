@@ -6,6 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/dolfin_settings.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Matrix.h>
@@ -21,7 +22,9 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(timeslab), f(0), mpc(A)
+  : TimeSlabSolver(timeslab), ts(timeslab),
+    A(*this, timeslab), B(*this, timeslab),
+    f(0), mpc(A)
 {
   // Initialize local array
   f = new real[method.qsize()];
@@ -32,9 +35,11 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 
   solver.setRtol(0.01);
   solver.setAtol(0.01*tol);
+
+  use_new_jacobian = dolfin_get("use new jacobian");
   
   // Set preconditioner
-  //  solver.setPreconditioner(mpc);
+  //solver.setPreconditioner(mpc);
 }
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
@@ -64,25 +69,52 @@ void MultiAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.init(nj);
 
-  // Initialize Jacobian matrix
-  A.init(dx, dx);
-
-  // Recompute Jacobian
-  A.update();
+  if ( use_new_jacobian )
+  {
+    // Initialize Jacobian matrix
+    B.init(dx, dx);
+    
+    // Recompute Jacobian on each time slab
+    B.update();
+  }
+  else
+  {
+    // Initialize Jacobian matrix
+    A.init(dx, dx);
+    
+    // Recompute Jacobian on each time slab
+    A.update();
+  }
 
   //debug();
-  //A.disp();
+  //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
-  //cout << "Size of system: " << dx.size() << endl;
-
   // Evaluate b = -F(x) at current x
-  beval();
+  real* bb = b.array(); // Assumes uniprocessor case
+  Feval(bb);
+  b.restore(bb);
+  
+  // Solve linear system, seems like we need to scale the right-hand
+  // side to make it work with the PETSc GMRES solver
+  
+  if ( use_new_jacobian )
+  {
+    solver.solve(B, dx, b);
+  }
+  else
+  {
+    //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
+    //b /= r;
+    solver.solve(A, dx, b);
+    //dx *= r;
+  }
 
-  // Solve linear system F for dx
-  solver.solve(A, dx, b);
+  //cout << "A = "; A.disp(true, 10);
+  //cout << "dx = "; dx.disp();
+  //cout << "b = "; b.disp();
    
   // Get array containing the increments (assumes uniprocessor case)
   real* dxx = dx.array();
@@ -111,11 +143,8 @@ dolfin::uint MultiAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveNewtonSolver::beval()
+void MultiAdaptiveNewtonSolver::Feval(real F[])
 {
-  // Get array of values for b (assumes uniprocessor case)
-  real* bb = b.array();
-
   // Reset dof
   uint j = 0;
 
@@ -150,18 +179,15 @@ void MultiAdaptiveNewtonSolver::beval()
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
     // Update values on element using fixed point iteration
-    method.update(x0, f, k, bb + j);
+    method.update(x0, f, k, F + j);
     
     // Subtract current values
     for (uint n = 0; n < method.nsize(); n++)
-      bb[j + n] -= ts.jx[j + n];
+      F[j + n] -= ts.jx[j + n];
 
     // Update dof
     j += method.nsize();
   }
-
-  // Restore array
-  b.restore(bb);
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveNewtonSolver::debug()
@@ -177,11 +203,15 @@ void MultiAdaptiveNewtonSolver::debug()
     real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.jx[j] -= 0.5*dx;
-    beval();
+    real* F = b.array();
+    Feval(F);
+    b.restore(F);
     F1 = b; // Should be -b
 
     ts.jx[j] = xj + 0.5*dx;
-    beval();
+    F = b.array();
+    Feval(F);
+    b.restore(F);
     F2 = b; // Should be -b
 
     ts.jx[j] = xj;

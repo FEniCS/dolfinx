@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-10-24
+// Last changed: 2005-11-10
 
 #ifndef __MONO_ADAPTIVE_NEWTON_SOLVER_H
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
@@ -47,14 +47,14 @@ namespace dolfin
 
   private:
 
-    // Evaluate b = -F(x) at current x
-    void beval();
+    // Evaluate -F(x) at current x
+    void Feval(real F[]);
 
-    // Evaluate b = -F(x) for explicit system: u' = f
-    void bevalExplicit();
+    // Evaluate -F(x) for explicit system: u' = f
+    void FevalExplicit(real F[]);
 
-    // Evaluate b = -F(x) for explicit system: u' = f
-    void bevalImplicit();
+    // Evaluate -F(x) for implicit system: Mu' = f
+    void FevalImplicit(real F[]);
 	
     // Choose linear solver
     LinearSolver* chooseLinearSolver() const;

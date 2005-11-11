@@ -2,20 +2,22 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-10-24
+// Last changed: 2005-11-10
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
+#include <dolfin/MultiAdaptiveNewtonSolver.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabJacobian(timeslab), ts(timeslab),
+MultiAdaptiveJacobian::MultiAdaptiveJacobian(MultiAdaptiveNewtonSolver& newton,
+					     MultiAdaptiveTimeSlab& timeslab)
+  : TimeSlabJacobian(timeslab), newton(newton), ts(timeslab),
     Jvalues(0), Jindices(0), Jlookup(0)
 {
   // Allocate Jacobian row indices
@@ -69,6 +71,20 @@ void MultiAdaptiveJacobian::update()
     for (uint pos = 0; pos < deps.size(); pos++)
       Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u0, t, i, deps[pos]);
   }
+
+  /*
+  // Compute Jacobian at the end of the slab
+  real t = ts.endtime();
+  //dolfin_info("Recomputing Jacobian matrix at t = %f.", t);
+  
+  // Compute Jacobian
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    const Array<uint>& deps = ode.dependencies[i];
+    for (uint pos = 0; pos < deps.size(); pos++)
+      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u, t, i, deps[pos]);
+  }
+  */
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
@@ -87,9 +103,9 @@ void MultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
   
   // Choose method
   if ( method.type() == Method::cG )
-    cGmult(xx, yy);
+  cGmult(xx, yy);
   else
-    dGmult(xx, yy);
+  dGmult(xx, yy);
 
   // Restore data arrays
   x.restore(xx);

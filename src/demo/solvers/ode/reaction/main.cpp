@@ -26,6 +26,7 @@ public:
     // Compute parameters
     h = L / static_cast<real>(N - 1);
     lambda = 0.5*sqrt(2.0*gamma/epsilon);
+    v = 0.5*sqrt(2.0*gamma*epsilon);
     
     // Set sparse dependency pattern
     for (unsigned int i = 0; i < N; i++)
@@ -79,18 +80,22 @@ public:
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
 
-  /// Specify time step, mono-adaptive version
+  /// Specify time step, mono-adaptive version (used for testing)
   real timestep(real t) const
   {
     return 0.01;
     //return 0.005 * (1.0 + t);
   }
 
-  /// Specify time step, mono-adaptive version
+  /// Specify time step, mono-adaptive version (used for testing)
   real timestep(real t, unsigned int i) const
   {
-    return 0.01;
-    //return 0.005 * (1.0 + t);
+    const real w  = 0.2;
+    const real x  = static_cast<real>(i)*h;
+    if ( fabs(x - 1.0 - v*t) < w )
+      return 0.005;
+    else
+      return 0.01;
   }
 
 public:
@@ -100,6 +105,7 @@ public:
   real gamma;   // Reaction rate
   real h;       // Mesh size
   real lambda;  // Parameter for initial data
+  real v;       // Speed of reaction front
 
 };
 
@@ -126,11 +132,11 @@ int main(int argc, char* argv[])
 
   dolfin_set("maximum time step", 0.01);
   dolfin_set("partitioning threshold", 0.5);
-
+  
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
 
-  dolfin_set("save solution", true);
+  //dolfin_set("save solution", true);
   //dolfin_set("adaptive samples", true);
   //dolfin_set("maximum time step", 0.01);
 
@@ -139,9 +145,10 @@ int main(int argc, char* argv[])
 
   //dolfin_set("initial time step", 2.5e-3);
 
-  dolfin_set("fixed time step", true);
-
+  //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
+
+  dolfin_set("use new jacobian", true);
 
   // Uncomment to compute reference solution
   /*
@@ -154,8 +161,9 @@ int main(int argc, char* argv[])
     dolfin_set("order", 3);
   */
   
-  Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
-  //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
+  //Reaction ode(10, 3.0, 5.0, 0.01, 100.0);
+  //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
+  Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
   //Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
   

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-11-04
+// Last changed: 2005-11-10
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -87,6 +87,7 @@ namespace dolfin
     friend class MonoAdaptiveJacobian;
     friend class MultiAdaptiveTimeSlab;
     friend class MultiAdaptiveJacobian;
+    friend class NewMultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;
     friend class ReducedModel;
     friend class JacobianMatrix;

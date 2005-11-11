@@ -68,6 +68,7 @@ am_libdolfin_ode_a_OBJECTS = Adaptivity.$(OBJEXT) Alloc.$(OBJEXT) \
 	MonoAdaptiveTimeSlab.$(OBJEXT) MonoAdaptivity.$(OBJEXT) \
 	MultiAdaptiveFixedPointSolver.$(OBJEXT) \
 	MultiAdaptiveJacobian.$(OBJEXT) \
+	NewMultiAdaptiveJacobian.$(OBJEXT) \
 	MultiAdaptiveNewtonSolver.$(OBJEXT) \
 	MultiAdaptivePreconditioner.$(OBJEXT) \
 	MultiAdaptiveTimeSlab.$(OBJEXT) MultiAdaptivity.$(OBJEXT) \
@@ -226,6 +227,7 @@ nobase_include_HEADERS = dolfin/dolfin_ode.h \
                           dolfin/MonoAdaptivity.h \
                           dolfin/MultiAdaptiveFixedPointSolver.h \
                           dolfin/MultiAdaptiveJacobian.h \
+                          dolfin/NewMultiAdaptiveJacobian.h \
                           dolfin/MultiAdaptiveNewtonSolver.h \
                           dolfin/MultiAdaptivePreconditioner.h \
                           dolfin/MultiAdaptiveTimeSlab.h \
@@ -262,6 +264,7 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           MonoAdaptivity.cpp \
                           MultiAdaptiveFixedPointSolver.cpp \
                           MultiAdaptiveJacobian.cpp \
+                          NewMultiAdaptiveJacobian.cpp \
                           MultiAdaptiveNewtonSolver.cpp \
                           MultiAdaptivePreconditioner.cpp \
                           MultiAdaptiveTimeSlab.cpp \
@@ -374,6 +377,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivePreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptiveTimeSlab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiAdaptivity.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMultiAdaptiveJacobian.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ODESolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParticleSystem.Po@am__quote@

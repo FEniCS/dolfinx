@@ -67,6 +67,7 @@ namespace dolfin
     friend class MultiAdaptiveFixedPointSolver;
     friend class MultiAdaptiveNewtonSolver;
     friend class MultiAdaptiveJacobian;
+    friend class NewMultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;
 
   private:

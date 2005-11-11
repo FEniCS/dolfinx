@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-10-24
+// Last changed: 2005-11-10
 
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
@@ -11,6 +11,7 @@
 #include <dolfin/GMRES.h>
 #include <dolfin/Vector.h>
 #include <dolfin/MultiAdaptiveJacobian.h>
+#include <dolfin/NewMultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/TimeSlabSolver.h>
 
@@ -35,6 +36,10 @@ namespace dolfin
     /// Destructor
     ~MultiAdaptiveNewtonSolver();
 
+    /// Friends
+    friend class MultiAdaptiveJacobian;
+    friend class NewMultiAdaptiveJacobian;
+
   protected:
 
     /// Start iterations
@@ -51,14 +56,15 @@ namespace dolfin
 
   private:
 
-    // Evaluate b = -F(x) at current x
-    void beval();
+    // Evaluate -F(x) at current x
+    void Feval(real F[]);
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
 
     MultiAdaptiveTimeSlab& ts;       // The time slab;
     MultiAdaptiveJacobian A;         // Jacobian of time slab system
+    NewMultiAdaptiveJacobian B;      // Jacobian of time slab system (new version)
     real* f;                         // Values of right-hand side at quadrature points
     Vector dx;                       // Increment for Newton's method
     Vector b;                        // Right-hand side -F(x)
@@ -66,7 +72,8 @@ namespace dolfin
     MultiAdaptivePreconditioner mpc; // Preconditioner
     uint num_elements;               // Total number of elements
     real num_elements_mono;          // Estimated number of elements for mono-adaptive system
-    
+    bool use_new_jacobian;           // Temporary for testing
+
   };
 
 }
