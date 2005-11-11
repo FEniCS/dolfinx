@@ -66,6 +66,9 @@ namespace dolfin
     /// Update solution values using fixed point iteration
     void update(real x0, real f[], real k, real values[]) const;
 
+    /// Update solution values using fixed point iteration (damped version)
+    void update(real x0, real f[], real k, real values[], real alpha) const;
+
     /// Evaluate solution at given point
     virtual real ueval(real x0, real values[], real tau) const = 0;
 

@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab) : TimeSlabSolver(timeslab), ts(timeslab), f(0),
-				    num_elements(0), num_elements_mono(0)
+				    num_elements(0), num_elements_mono(0), tmp(0)
 {
   f = new real[method.qsize()];
   for (unsigned int i = 0; i < method.qsize(); i++)
@@ -35,11 +35,23 @@ MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 
   // Delete local array
   if ( f ) delete [] f;
+  
+  
+  // TMP: Testing diagonally scaled fixed-point
+  if ( tmp ) delete [] tmp;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveFixedPointSolver::start()
 {
   // Do nothing
+
+  // TMP: Testing diagonally scaled fixed-point
+  if ( !tmp )
+    tmp = new real[ts.N];
+  for (uint i = 0; i < ts.N; i++)
+  {
+    tmp[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
+  }
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveFixedPointSolver::end()
@@ -105,9 +117,14 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 	//cout << "f = "; Alloc::disp(f, method.qsize());
 	
 	// Update values on element using fixed point iteration
-	method.update(x0, f, k, ts.jx + j);
+	//method.update(x0, f, k, ts.jx + j);
 	//cout << "x = "; Alloc::disp(ts.jx + j, method.nsize());
 	
+	// TMP: Testing diagonally scaled fixed-point
+	// Update values using diagonally damped fixed point iteration
+	const real alpha = 1.0 / (1.0 - 0.5*k*tmp[i]);
+	method.update(x0, f, k, ts.jx + j, alpha);
+
 	// Compute increment
 	const real increment = std::abs(ts.jx[j + method.nsize() - 1] - x1);
 	

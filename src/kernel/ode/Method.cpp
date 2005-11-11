@@ -96,6 +96,18 @@ void Method::update(real x0, real f[], real k, real values[]) const
   }
 }
 //-----------------------------------------------------------------------------
+void Method::update(real x0, real f[], real k, real values[], real alpha) const
+{
+  // Update values
+  for (uint i = 0; i < nn; i++)
+  {
+    real sum = 0.0;
+    for (uint j = 0; j < nq; j++)
+      sum += nweights[i][j] * f[j];
+    values[i] += alpha*(x0 + k*sum - values[i]);
+  }
+}
+//-----------------------------------------------------------------------------
 void Method::computeDerivatives()
 {
   for (unsigned int i = 0; i < nq; i++)

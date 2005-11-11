@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
   //dolfin_set("adaptive samples", true);
   //dolfin_set("maximum time step", 0.01);
 
-  //dolfin_set("solver", "fixed point");
+  dolfin_set("solver", "fixed point");
   //dolfin_set("monitor convergence", true);
 
   //dolfin_set("initial time step", 2.5e-3);

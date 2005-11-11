@@ -69,6 +69,9 @@ namespace dolfin
     // Total number of scaled local iterations
     real num_iterations_local;
 
+    // TMP: Testing diagonally scaled fixed-point
+    real* tmp;
+
   };
 
 }
