@@ -172,7 +172,7 @@ void MultiAdaptiveNewtonSolver::Feval(real F[])
       ts.dGfeval(f, s, e, i, a, b, k);  
     //cout << "f = "; Alloc::disp(f, method.qsize());
 
-    // Update values on element using fixed point iteration
+    // Update values on element using fixed-point iteration
     method.update(x0, f, k, F + j);
     
     // Subtract current values

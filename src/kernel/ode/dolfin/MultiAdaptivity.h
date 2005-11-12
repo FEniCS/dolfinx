@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-04
+// Last changed: 2005-11-11
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-  
   class ODE;
   class Method;
 
@@ -32,11 +31,14 @@ namespace dolfin
     /// Return time step for given component
     real timestep(uint i) const;
 
-    /// Initialize time step update for system
-    void updateInit();
+    /// Start time step update for system
+    void updateStart();
 
     /// Update time step for given component
     void updateComponent(uint i, real k0, real r, const Method& method, real t);
+    
+    /// End time step update for system
+    void updateEnd(bool first);
 
   private:
 

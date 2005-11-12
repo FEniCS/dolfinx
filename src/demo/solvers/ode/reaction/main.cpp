@@ -112,25 +112,33 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 3 )
+  if ( argc != 7 )
   {
-    dolfin_info("Usage: dolfin-reaction method TOL");
+    dolfin_info("Usage: dolfin-reaction gamma method solver TOL k0 kmax");
     dolfin_info("");
     dolfin_info("method - 'cg' or 'mcg'");
+    dolfin_info("solver - 'fixed-point' or 'newton'");
     dolfin_info("TOL    - tolerance");
+    dolfin_info("k0     - initial time step");
+    dolfin_info("kmax   - initial time step");
+    dolfin_info("gamma  - reaction rate, something like 100.0 or 1000.0");
     return 1;
   }
   const char* method = argv[1];
-  const real TOL = static_cast<real>(atof(argv[2]));
-
-  dolfin_set("solver", "newton");
-  dolfin_set("tolerance", TOL);
-  dolfin_set("maximum time step", 0.1);
+  const char* solver = argv[2];
+  const real TOL = static_cast<real>(atof(argv[3]));
+  const real k0 = static_cast<real>(atof(argv[4]));
+  const real kmax = static_cast<real>(atof(argv[5]));
+  const real gamma = static_cast<real>(atof(argv[6]));
+  
+  // Set solver parameters
   dolfin_set("method", method);
+  dolfin_set("solver", solver);
   dolfin_set("order", 1);
+  dolfin_set("tolerance", TOL);
+  dolfin_set("initial time step", k0);
+  dolfin_set("maximum time step", kmax);
   dolfin_set("save final solution", true);
-
-  dolfin_set("maximum time step", 0.01);
   dolfin_set("partitioning threshold", 0.7);
   
   // Need to save in Python format for plot_reaction.py to work
@@ -138,16 +146,9 @@ int main(int argc, char* argv[])
 
   //dolfin_set("save solution", true);
   //dolfin_set("adaptive samples", true);
-  //dolfin_set("maximum time step", 0.01);
-
   //dolfin_set("monitor convergence", true);
-
-  //dolfin_set("initial time step", 2.5e-3);
-
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
-
-  dolfin_set("solver", "fixed point");
   //dolfin_set("diagonal newton damping", true);
   //dolfin_set("updated jacobian", true);
   
@@ -166,7 +167,7 @@ int main(int argc, char* argv[])
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(1000, 3.0, 5.0, 0.01, 100.0);
+  Reaction ode(1000, 1.0, 5.0, 0.01, gamma);
   ode.solve();
 
   return 0;

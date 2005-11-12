@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005
+// Last changed: 2005-11-11
 
 #ifndef __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
@@ -12,12 +12,11 @@
 
 namespace dolfin
 {
-
   class MonoAdaptiveTimeSlab;
   
-  /// This class implements fixed point iteration on mono-adaptive
+  /// This class implements fixed-point iteration on mono-adaptive
   /// time slabs. In each iteration, the solution is updated according
-  /// to the fixed point iteration x = g(x).
+  /// to the fixed-point iteration x = g(x).
 
   class MonoAdaptiveFixedPointSolver : public TimeSlabSolver
   {

@@ -46,7 +46,7 @@ real MultiAdaptivity::timestep(uint i) const
   return timesteps[i];
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::updateInit()
+void MultiAdaptivity::updateStart()
 {
   // Will remain true if solution can be accepted for all components
   _accept = true;
@@ -79,5 +79,19 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
 
   // Save time step for component
   timesteps[i] = k;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptivity::updateEnd(bool first)
+{
+  // Reduce overall size of time slab if this is the first time slab
+  if ( first )
+  {
+    real K = 0.0;
+    for (uint i = 0; i < ode.size(); i++)
+      K = std::max(K, timesteps[i]);
+ 
+    for (uint i = 0; i < ode.size(); i++)
+      timesteps[i] = std::min(K, timesteps[i]);
+  }
 }
 //-----------------------------------------------------------------------------

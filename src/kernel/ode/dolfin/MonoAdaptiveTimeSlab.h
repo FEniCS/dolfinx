@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-11-01
+// Last changed: 2005-11-11
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
@@ -14,8 +14,7 @@
 #include <dolfin/TimeSlab.h>
 
 namespace dolfin
-{
-  
+{  
   class ODE;
   class Method;
   class TimeSlabSolver;
@@ -41,7 +40,7 @@ namespace dolfin
     bool solve();
 
     /// Check if current solution can be accepted
-    bool check();
+    bool check(bool first);
 
     /// Shift time slab (prepare for next time slab)
     bool shift();

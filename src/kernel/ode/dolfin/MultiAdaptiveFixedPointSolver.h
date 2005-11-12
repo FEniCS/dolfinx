@@ -14,9 +14,9 @@ namespace dolfin
 {
   class MultiAdaptiveTimeSlab;
   
-  /// This class implements fixed point iteration on multi-adaptive
+  /// This class implements fixed-point iteration on multi-adaptive
   /// time slabs. In each iteration, the solution is updated according
-  /// to the fixed point iteration x = g(x). The iteration is
+  /// to the fixed-point iteration x = g(x). The iteration is
   /// performed forward in time Gauss-Seidel style, i.e., the degrees
   /// of freedom on an element are updated according to x = g(x) and
   /// the new values are used when updating the remaining elements.

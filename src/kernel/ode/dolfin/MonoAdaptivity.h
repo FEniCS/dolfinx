@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-04
+// Last changed: 2005-11-11
 
 #ifndef __MONO_ADAPTIVITY_H
 #define __MONO_ADAPTIVITY_H
@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-  
   class ODE;
   class Method;
 
@@ -33,7 +32,7 @@ namespace dolfin
     real timestep() const;
 
     /// Update time step
-    void update(real k0, real r, const Method& method, real t);
+    void update(real k0, real r, const Method& method, real t, bool first);
 
   private:
 

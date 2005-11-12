@@ -119,7 +119,7 @@ bool MultiAdaptiveTimeSlab::solve()
   // }
 }
 //-----------------------------------------------------------------------------
-bool MultiAdaptiveTimeSlab::check()
+bool MultiAdaptiveTimeSlab::check(bool first)
 {
   // Cover end time
   coverTime(_b);
@@ -137,8 +137,8 @@ bool MultiAdaptiveTimeSlab::check()
     u[i] = jx[j + method->nsize() - 1];
   }
 
-  // Initialize time step update for system
-  adaptivity.updateInit();
+  // Start time step update for system
+  adaptivity.updateStart();
   
   // Compute residual and new time step for each component
   for (uint i = 0; i < N; i++)
@@ -172,9 +172,12 @@ bool MultiAdaptiveTimeSlab::check()
     if ( method->type() == Method::cG )
       f0[i] = f;
   }
+  
+  // End time step update for system
+  adaptivity.updateEnd(first);
 
   // Check if current solution can be accepted
-  return adaptivity.accept();  
+  return adaptivity.accept();
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::shift()
@@ -1059,9 +1062,9 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   if ( implicit )
     dolfin_error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");
 
-  if ( solver == "fixed point" )
+  if ( solver == "fixed-point" )
   {
-    dolfin_info("Using multi-adaptive fixed point solver.");
+    dolfin_info("Using multi-adaptive fixed-point solver.");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else if ( solver == "newton" )
@@ -1071,7 +1074,7 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   }
   else if ( solver == "default" )
   {
-    dolfin_info("Using multi-adaptive fixed point solver (default for mc/dG(q)).");
+    dolfin_info("Using multi-adaptive fixed-point solver (default for mc/dG(q)).");
     return new MultiAdaptiveFixedPointSolver(*this);
   }
   else

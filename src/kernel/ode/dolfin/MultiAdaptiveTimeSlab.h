@@ -42,7 +42,7 @@ namespace dolfin
     bool solve();
 
     /// Check if current solution can be accepted
-    bool check();
+    bool check(bool first);
     
     /// Shift time slab (prepare for next time slab)
     bool shift();

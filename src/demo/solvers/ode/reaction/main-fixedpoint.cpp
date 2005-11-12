@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
   //dolfin_set("save solution", true);
-  dolfin_set("solver", "fixed point");
+  dolfin_set("solver", "fixed-point");
   //dolfin_set("diagonal newton damping", true);
   //  dolfin_set("
 //   dolfin_set("solver", "newton");

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-11-01
+// Last changed: 2005-11-11
 
 #include <string>
 #include <dolfin/dolfin_settings.h>
@@ -92,7 +92,7 @@ bool MonoAdaptiveTimeSlab::solve()
   return solver->solve();
 }
 //-----------------------------------------------------------------------------
-bool MonoAdaptiveTimeSlab::check()
+bool MonoAdaptiveTimeSlab::check(bool first)
 {
   // Get array
   real* xx = x.array();
@@ -125,7 +125,7 @@ bool MonoAdaptiveTimeSlab::check()
   x.restore(xx);
 
   // Compute new time step
-  adaptivity.update(length(), rmax, *method, _b);
+  adaptivity.update(length(), rmax, *method, _b, first);
 
   // Check if current solution can be accepted
   return adaptivity.accept();
@@ -270,12 +270,12 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
   bool implicit = dolfin_get("implicit");
   std::string solver = dolfin_get("solver");
 
-  if ( solver == "fixed point" )
+  if ( solver == "fixed-point" )
   {
     if ( implicit )
       dolfin_error("Newton solver must be used for implicit ODE.");
 
-    dolfin_info("Using mono-adaptive fixed point solver.");
+    dolfin_info("Using mono-adaptive fixed-point solver.");
     return new MonoAdaptiveFixedPointSolver(*this);
   }
   else if ( solver == "newton" )
@@ -300,7 +300,7 @@ TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
     }
     else
     {
-      dolfin_info("Using mono-adaptive fixed point solver (default for c/dG(q)).");
+      dolfin_info("Using mono-adaptive fixed-point solver (default for c/dG(q)).");
       return new MonoAdaptiveFixedPointSolver(*this);
     }
   }

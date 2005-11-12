@@ -2,14 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-01
+// Last changed: 2005-11-11
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
 
 namespace dolfin
 {
-
   class ODE;
   class Method;
 
@@ -34,7 +33,7 @@ namespace dolfin
     virtual bool solve() = 0;
 
     /// Check if current solution can be accepted
-    virtual bool check() = 0;
+    virtual bool check(bool first) = 0;
 
     /// Shift time slab (prepare for next time slab)
     virtual bool shift() = 0;

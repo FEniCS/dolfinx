@@ -149,7 +149,7 @@ real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 	  ts.dGfeval(f, s, e, i, a, b, k);
 	//cout << "f = "; Alloc::disp(f, method.qsize());
 	
-	// Update values on element using fixed point iteration
+	// Update values on element using fixed-point iteration
 	if ( diagonal_newton_damping )
 	{
 	  // FIXME: Parameter 0.5 most suited for cG(1)

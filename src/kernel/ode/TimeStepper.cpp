@@ -88,6 +88,9 @@ real TimeStepper::step()
 {
   // FIXME: Change type of time slab if solution does not converge
 
+  // Check if this is the first time step
+  const bool first = t < DOLFIN_EPS;
+
   // Iterate until solution is accepted
   const real a = t;
   while ( true )
@@ -104,9 +107,9 @@ real TimeStepper::step()
     }
     
     // Check if solution can be accepted
-    if ( timeslab->check() )
+    if ( timeslab->check(first) )
       break;
-
+    
     dolfin_info("Rejecting time slab K = %.3e, trying again.", timeslab->length());
   }
 

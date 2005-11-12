@@ -63,10 +63,10 @@ namespace dolfin
     /// Evaluation of derivative of basis function i at t = 1 (inline optimized)
     inline real derivative(unsigned int i) const { return derivatives[i]; }
 
-    /// Update solution values using fixed point iteration
+    /// Update solution values using fixed-point iteration
     void update(real x0, real f[], real k, real values[]) const;
 
-    /// Update solution values using fixed point iteration (damped version)
+    /// Update solution values using fixed-point iteration (damped version)
     void update(real x0, real f[], real k, real values[], real alpha) const;
 
     /// Evaluate solution at given point
