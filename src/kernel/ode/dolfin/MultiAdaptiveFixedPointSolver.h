@@ -33,6 +33,9 @@ namespace dolfin
 
   protected:
 
+    /// Retry solution of system by switching strategy
+    bool retry();
+
     // Start iterations
     void start();
 

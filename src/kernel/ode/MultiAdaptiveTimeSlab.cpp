@@ -197,6 +197,24 @@ bool MultiAdaptiveTimeSlab::shift()
   return true;
 }
 //-----------------------------------------------------------------------------
+void MultiAdaptiveTimeSlab::reset()
+{
+  // Iterate over all elements
+  uint j = 0;
+  for (uint e = 0; e < ne; e++)
+  {
+    // Get component index
+    const uint i = ei[e];
+
+    // Iterate over degrees of freedom on element
+    for (uint n = 0; n < method->nsize(); n++)
+      jx[j + n] = u0[i];
+
+    // Step to next element
+    j += method->nsize();
+  }
+}
+//-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::sample(real t)
 {
   // Cover the given time

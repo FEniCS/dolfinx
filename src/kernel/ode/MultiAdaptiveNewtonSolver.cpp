@@ -51,8 +51,11 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 MultiAdaptiveNewtonSolver::~MultiAdaptiveNewtonSolver()
 {
   // Compute multi-adaptive efficiency index
-  const real alpha = num_elements_mono / static_cast<real>(num_elements);
-  dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+  if ( num_elements > 0 )
+  {
+    const real alpha = num_elements_mono / static_cast<real>(num_elements);
+    dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+  }
   
   // Delete local array
   if ( f ) delete [] f;

@@ -95,14 +95,14 @@ bool TimeSlabSolver::solve(uint attempt)
     // FIXME: implement better check and make this a parameter
     if ( (iter > 0 && d1 > 1000.0 * d0) || !std::isnormal(d1) )
     {
-      dolfin_warning("Time slab system seems to be diverging, solution stopped.");
+      dolfin_warning("Time slab system seems to be diverging.");
       return false;
     }
     
     d0 = d1;
   }
 
-  dolfin_warning("Time slab system did not converge, solution stopped.");
+  dolfin_warning("Time slab system did not converge.");
   return false;
 }
 //-----------------------------------------------------------------------------

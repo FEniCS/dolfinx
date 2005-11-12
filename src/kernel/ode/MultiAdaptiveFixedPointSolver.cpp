@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-10
+// Last changed: 2005-11-11
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -40,14 +40,38 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 MultiAdaptiveFixedPointSolver::~MultiAdaptiveFixedPointSolver()
 {
   // Compute multi-adaptive efficiency index
-  const real alpha = num_elements_mono / static_cast<real>(num_elements);
-  dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+  if ( num_elements > 0 )
+  {
+    const real alpha = num_elements_mono / static_cast<real>(num_elements);
+    dolfin_info("Multi-adaptive efficiency index: %.3f", alpha);
+  }
 
   // Delete local array
   if ( f ) delete [] f;
   
   // Delete diagonal of Jacobian
   if ( dfdu ) delete [] dfdu;
+}
+//-----------------------------------------------------------------------------
+bool MultiAdaptiveFixedPointSolver::retry()
+{
+  // If we're already using damping, then we don't know what to do
+  if ( diagonal_newton_damping )
+    return false;
+
+  // Otherwise, use damping
+  dolfin_assert(dfdu == 0);
+  diagonal_newton_damping = true;
+  dfdu = new real[ts.N];
+  for (uint i = 0; i < ts.N; i++)
+    dfdu[i] = 0.0;
+
+  // Reset system
+  ts.reset();
+
+  dolfin_info("Direct fixed-point iteration does not converge.");
+  dolfin_info("Trying diagonally damped fixed-point iteration.");
+  return true;
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveFixedPointSolver::start()

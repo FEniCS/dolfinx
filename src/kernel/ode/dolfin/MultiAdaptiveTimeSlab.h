@@ -47,6 +47,9 @@ namespace dolfin
     /// Shift time slab (prepare for next time slab)
     bool shift();
 
+    /// Reset to initial data
+    void reset();
+    
     /// Prepare sample at time t
     void sample(real t);
 

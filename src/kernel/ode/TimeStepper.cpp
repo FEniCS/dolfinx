@@ -113,6 +113,10 @@ real TimeStepper::step()
   // Save solution
   save();
 
+  // Check if solution was stopped
+  if ( stopped )
+    dolfin_warning1("Solution stopped at t = %.3e.", t);
+
   // Update for next time slab
   if ( !timeslab->shift() )
   {
