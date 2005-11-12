@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-11-02
+// Last changed: 2005-11-11
 
 #include <cmath>
 #include <dolfin/dolfin_settings.h>
@@ -54,6 +54,22 @@ TimeSlabSolver::~TimeSlabSolver()
 //-----------------------------------------------------------------------------
 bool TimeSlabSolver::solve()
 {
+  for (uint attempt = 0; attempt < maxiter; attempt++)
+  {
+    // Try to solve system
+    if ( solve(attempt) )
+      return true;
+    
+    // Check if we should try again
+    if ( !retry() )
+      return false;
+  }
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool TimeSlabSolver::solve(uint attempt)
+{
   start();
 
   real d0 = 0.0;
@@ -87,6 +103,12 @@ bool TimeSlabSolver::solve()
   }
 
   dolfin_warning("Time slab system did not converge, solution stopped.");
+  return false;
+}
+//-----------------------------------------------------------------------------
+bool TimeSlabSolver::retry()
+{
+  // By default, we don't know how to make a new attempt
   return false;
 }
 //-----------------------------------------------------------------------------

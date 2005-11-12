@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-10-24
+// Last changed: 2005-11-11
 
 #ifndef __TIME_SLAB_SOLVER_H
 #define __TIME_SLAB_SOLVER_H
@@ -31,13 +31,19 @@ namespace dolfin
 
   protected:
 
+    /// Solve system
+    bool solve(uint attempt);
+
+    /// Retry solution of system, perhaps with a new strategy (optional)
+    virtual bool retry();
+
     /// Start iterations (optional)
     virtual void start();
 
     /// End iterations (optional)
     virtual void end();
 
-    /// Make an iteration
+    /// Make an iteration, return 
     virtual real iteration(uint iter, real tol) = 0;
 
     /// Size of system

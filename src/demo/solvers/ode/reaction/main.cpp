@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
   //dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
 
-  dolfin_set("solver", "fixed point");
+  //dolfin_set("solver", "fixed point");
   //dolfin_set("diagonal newton damping", true);
   //dolfin_set("updated jacobian", true);
   
