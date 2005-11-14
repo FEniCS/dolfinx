@@ -43,9 +43,9 @@ TimeSlabSolver::~TimeSlabSolver()
     const real global_average = static_cast<real>(num_global_iterations) / n;
     const real local_average = static_cast<real>(num_local_iterations) / 
       static_cast<real>(num_global_iterations);
-    dolfin_info("Average number of global iterations per step: %.2f",
+    dolfin_info("Average number of global iterations per step: %.3f",
 		global_average);
-    dolfin_info("Average number of local iterations per global iteration: %.2f",
+    dolfin_info("Average number of local iterations per global iteration: %.3f",
 		local_average);
   }
 

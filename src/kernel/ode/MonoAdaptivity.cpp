@@ -17,13 +17,14 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
+  real k0 = dolfin_get("initial time step");
   if ( kfixed )
   {
-    k = ode.timestep(0.0);
+    k = ode.timestep(0.0, k0);
   }
   else
   {
-    k = dolfin_get("initial time step");
+    k = k0;
     if ( k > _kmax )
     {
       k = _kmax;
@@ -51,7 +52,7 @@ void MonoAdaptivity::update(real k0, real r, const Method& method, real t,
   // Check if time step is fixed
   if ( kfixed )
   {
-    k = ode.timestep(t);
+    k = ode.timestep(t, k0);
     _accept = true;
     return;
   }

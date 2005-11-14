@@ -17,15 +17,16 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method)
 {
   // Initialize time steps
+  real k0 = dolfin_get("initial time step");
   timesteps = new real[ode.size()];
   if ( kfixed )
   {
     for (uint i = 0; i < ode.size(); i++)
-      timesteps[i] = ode.timestep(0.0, i);
+      timesteps[i] = ode.timestep(0.0, i, k0);
   }
   else
   {
-    real k = dolfin_get("initial time step");
+    real k = k0;
     if ( k > _kmax )
     {
       k = _kmax;
@@ -58,7 +59,7 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   // Check if time step is fixed
   if ( kfixed )
   {
-    timesteps[i] = ode.timestep(t, i);
+    timesteps[i] = ode.timestep(t, i, 0.0);
     _accept = true;
     return;
   }

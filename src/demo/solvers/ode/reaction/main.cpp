@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-11-03
+// Last changed: 2005-11-14
 
 #include <dolfin.h>
 
@@ -81,13 +81,16 @@ public:
   }
 
   /// Specify time step, mono-adaptive version (used for testing)
+  /*
   real timestep(real t) const
   {
     return 0.01;
     //return 0.005 * (1.0 + t);
   }
+  */
 
   /// Specify time step, mono-adaptive version (used for testing)
+  /*
   real timestep(real t, unsigned int i) const
   {
     const real w  = 0.2;
@@ -97,6 +100,7 @@ public:
     else
       return 0.01;
   }
+  */
 
 public:
 
@@ -112,15 +116,16 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 7 )
+  if ( argc != 8 )
   {
-    dolfin_info("Usage: dolfin-reaction gamma method solver TOL k0 kmax");
+    dolfin_info("Usage: dolfin-reaction method solver TOL k0 kmax T gamma");
     dolfin_info("");
     dolfin_info("method - 'cg' or 'mcg'");
     dolfin_info("solver - 'fixed-point' or 'newton'");
     dolfin_info("TOL    - tolerance");
     dolfin_info("k0     - initial time step");
     dolfin_info("kmax   - initial time step");
+    dolfin_info("T      - final time");
     dolfin_info("gamma  - reaction rate, something like 100.0 or 1000.0");
     return 1;
   }
@@ -129,7 +134,8 @@ int main(int argc, char* argv[])
   const real TOL = static_cast<real>(atof(argv[3]));
   const real k0 = static_cast<real>(atof(argv[4]));
   const real kmax = static_cast<real>(atof(argv[5]));
-  const real gamma = static_cast<real>(atof(argv[6]));
+  const real T = static_cast<real>(atof(argv[6]));
+  const real gamma = static_cast<real>(atof(argv[7]));
   
   // Set solver parameters
   dolfin_set("method", method);
@@ -138,13 +144,14 @@ int main(int argc, char* argv[])
   dolfin_set("tolerance", TOL);
   dolfin_set("initial time step", k0);
   dolfin_set("maximum time step", kmax);
+  dolfin_set("save solution", false);
   dolfin_set("save final solution", true);
   dolfin_set("partitioning threshold", 0.7);
   
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
-
   //dolfin_set("save solution", true);
+
   //dolfin_set("adaptive samples", true);
   //dolfin_set("monitor convergence", true);
   //dolfin_set("fixed time step", true);
@@ -157,7 +164,7 @@ int main(int argc, char* argv[])
     dolfin_set("save solution", false);
     dolfin_set("save final solution", true);
     dolfin_set("fixed time step", true);
-    dolfin_set("initial time step", 0.00005);
+    dolfin_set("initial time step", 0.0001);
     dolfin_set("discrete tolerance", 1e-14);
     dolfin_set("method", "cg");
     dolfin_set("order", 3);
@@ -167,7 +174,7 @@ int main(int argc, char* argv[])
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(1000, 1.0, 5.0, 0.01, gamma);
+  Reaction ode(1000, T, 5.0, 0.01, gamma);
   ode.solve();
 
   return 0;

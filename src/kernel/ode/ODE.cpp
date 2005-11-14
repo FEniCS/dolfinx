@@ -131,16 +131,18 @@ real ODE::dfdu(const real u[], real t, uint i, uint j)
   return (f2 - f1) / h;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(real t) const
+real ODE::timestep(real t, real k0) const
 {
-  dolfin_error("Time step should be fixed but has not been specified.");
-  return 0.0;
+  // Keep old time step by default when "fixed time step" is set
+  // and user has not overloaded this function
+  return k0;
 }
 //-----------------------------------------------------------------------------
-real ODE::timestep(real t, uint i) const
+real ODE::timestep(real t, uint i, real k0) const
 {
-  dolfin_error("Time step should be fixed but has not been specified.");
-  return 0.0;
+  // Keep old time step by default when "fixed time step" is set
+  // and user has not overloaded this function
+  return k0;
 }
 //-----------------------------------------------------------------------------
 bool ODE::update(const real u[], real t, bool end)

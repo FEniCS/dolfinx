@@ -1,2 +1,3 @@
-Reference solution (reference.data) computed with mono-adaptive cG(3) and
-fixed time step k = 0.00005 and is correct to within a tolerance of 2e-14.
+Reference solutions correct to within a tolerance of 2e-14.
+Computed with mono-adaptive cG(3) and a fixed time step of
+size k = 0.00005.

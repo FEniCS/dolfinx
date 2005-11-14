@@ -81,7 +81,7 @@ void TimeStepper::solve(ODE& ode)
   }
 
   // Report elapsed time
-  cout << "Solution computed in " << toc() << " seconds." << endl;
+  dolfin_info("Solution computed in %.3f seconds.", toc());
 }
 //-----------------------------------------------------------------------------
 real TimeStepper::step()
