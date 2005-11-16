@@ -4,7 +4,7 @@
 // Modified by Erik Svensson, 2003.
 //
 // First added:  2003-02-26
-// Last changed: 2005
+// Last changed: 2005-11-15
 
 // FIXME: Use streams rather than stdio
 #include <stdio.h>
@@ -30,41 +30,51 @@ OctaveFile::~OctaveFile()
 //-----------------------------------------------------------------------------
 void OctaveFile::operator<<(Matrix& A)
 {
-  // FIXME: update to new format
-  dolfin_error("This function needs to be updated to the new format.");
-
-  /*
   // Octave file format for Matrix is not the same as the Matlab format,
   // since octave cannot handle sparse matrices.
-  
-  real value;
+
+  uint M = A.size(0);
+  uint N = A.size(1);
+  real* row = new real[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
-  
   fprintf(fp, "%s = [", A.name().c_str());
-  for (unsigned int i = 0; i < A.size(0); i++) {
 
-    for (unsigned int j = 0; j < A.size(1); j++) {
-      if ( (value = A(i,j)) == 0.0 )
-		  fprintf(fp, " 0");
+  for (uint i = 0; i < M; i++)
+  {
+    // Reset entries on row
+    for (uint j = 0; j < N; j++)
+      row[j] = 0.0;
+
+    // Get nonzero entries
+    int ncols = 0;
+    const int* cols = 0;
+    const double* vals = 0;
+    MatGetRow(A.mat(), i, &ncols, &cols, &vals);
+    for (int pos = 0; pos < ncols; pos++)
+      row[cols[pos]] = vals[pos];
+    MatRestoreRow(A.mat(), i, &ncols, &cols, &vals);
+
+    // Write row
+    for (uint j = 0; j < N; j++)
+    {
+      if ( row[j] == 0.0 )
+	fprintf(fp, " 0");
       else
-	fprintf(fp, " %.16e", value);
+	fprintf(fp, " %.15e", row[j]);
     }
-    
-    if ( i == (A.size(0) - 1) )
+
+    // New line or end of matrix
+    if ( i == (M - 1) )
       fprintf(fp, "];\n");
     else
       fprintf(fp, "\n");
-    
   }
   
   fclose(fp);
-
-  // Increase the number of times we have saved the matrix
-  ++A;
-
+  delete [] row;
+  
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in Octave format." << endl;
-  */
 }
 //-----------------------------------------------------------------------------

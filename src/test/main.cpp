@@ -53,5 +53,8 @@ int main(int argc, char* argv[])
   
   x.disp();
 
+  File file("matrix.m");
+  file << M;
+
   return 0;
 }

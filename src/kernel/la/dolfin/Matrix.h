@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2004
-// Last changed: 2005-10-06
+// Last changed: 2005-11-15
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -12,7 +12,7 @@
 #include <petscmat.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/Variable.h>
 
 namespace dolfin
 {
@@ -26,7 +26,7 @@ namespace dolfin
   class Vector;
   class MatrixElement;
 
-  class Matrix
+  class Matrix : public Variable
   {
   public:
 

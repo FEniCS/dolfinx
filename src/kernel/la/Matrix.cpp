@@ -18,19 +18,19 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix() : A(0)
+Matrix::Matrix() : Variable("A", "a sparse matrix"), A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(Mat A) : A(A)
+Matrix::Matrix(Mat A) : Variable("A", "a sparse matrix"), A(A)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(uint M, uint N) : A(0)
+Matrix::Matrix(uint M, uint N) : Variable("A", "a sparse matrix"), A(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -39,7 +39,7 @@ Matrix::Matrix(uint M, uint N) : A(0)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(const Matrix& B) : A(0)
+Matrix::Matrix(const Matrix& B) : Variable("A", "a sparse matrix"), A(0)
 {
   // Initialize PETSc
   PETScManager::init();

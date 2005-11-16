@@ -119,7 +119,8 @@ void MFile::operator<<(Mesh& mesh)
       fprintf(fp, "\n");
   }
   fprintf(fp,"\n");
-  
+
+  // FIXME: Save all edges correctly
   // Write edges (to make the pdeplot routines happy)
   if ( no_meshes == 0 )
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
