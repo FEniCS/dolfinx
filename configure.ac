@@ -38,7 +38,7 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
-# Option --enable-optimization
+# Option --enable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--enable-pydolfin],
                              [Turn on compilation of PyDOLFIN]),
@@ -56,11 +56,13 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 
 # Test for PyDOLFIN
-AM_PATH_PYTHON(2.3)
-AC_PYTHON_DEVEL
-AC_PROG_SWIG(1.3.25)
-SWIG_ENABLE_CXX
-SWIG_PYTHON
+if test x$enable_pydolfin = xyes; then
+    AM_PATH_PYTHON(2.3)
+    AC_PYTHON_DEVEL
+    AC_PROG_SWIG(1.3.25)
+    SWIG_ENABLE_CXX
+    SWIG_PYTHON
+fi
 
 # Make debug option default so developers don't forget it
 echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
