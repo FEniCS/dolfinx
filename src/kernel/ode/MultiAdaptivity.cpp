@@ -59,7 +59,7 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
   // Check if time step is fixed
   if ( kfixed )
   {
-    timesteps[i] = ode.timestep(t, i, 0.0);
+    timesteps[i] = ode.timestep(t, i, k0);
     _accept = true;
     return;
   }
