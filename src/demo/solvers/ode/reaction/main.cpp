@@ -81,26 +81,22 @@ public:
   }
 
   /// Specify time step, mono-adaptive version (used for testing)
-  /*
-  real timestep(real t) const
+  real timestep(real t, real k0) const
   {
-    return 0.01;
-    //return 0.005 * (1.0 + t);
+    return 1e-5;
   }
-  */
 
   /// Specify time step, mono-adaptive version (used for testing)
-  /*
-  real timestep(real t, unsigned int i) const
+  real timestep(real t, unsigned int i, real k0) const
   {
-    const real w  = 0.2;
+    const real w  = 0.4;
+    const real v  = 0.22;
     const real x  = static_cast<real>(i)*h;
     if ( fabs(x - 1.0 - v*t) < w )
-      return 0.005;
+      return 1e-5;
     else
-      return 0.01;
+      return 1e-3;
   }
-  */
 
 public:
 
@@ -116,7 +112,7 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 8 )
+  if ( argc != 10 )
   {
     dolfin_info("Usage: dolfin-reaction method solver TOL k0 kmax T gamma");
     dolfin_info("");
@@ -127,6 +123,8 @@ int main(int argc, char* argv[])
     dolfin_info("kmax   - initial time step");
     dolfin_info("T      - final time");
     dolfin_info("gamma  - reaction rate, something like 100.0 or 1000.0");
+    dolfin_info("N      - number of components");
+    dolfin_info("params - a DOLFIN parameter file for other parameters");
     return 1;
   }
   const char* method = argv[1];
@@ -136,7 +134,12 @@ int main(int argc, char* argv[])
   const real kmax = static_cast<real>(atof(argv[5]));
   const real T = static_cast<real>(atof(argv[6]));
   const real gamma = static_cast<real>(atof(argv[7]));
+  const unsigned int N = static_cast<unsigned int>(atoi(argv[8]));
+  const char* params = argv[9];
   
+  // Load parameters from file
+  dolfin_load(params);
+
   // Set solver parameters
   dolfin_set("method", method);
   dolfin_set("solver", solver);
@@ -146,7 +149,8 @@ int main(int argc, char* argv[])
   dolfin_set("maximum time step", kmax);
   dolfin_set("save solution", false);
   dolfin_set("save final solution", true);
-  dolfin_set("partitioning threshold", 0.7);
+//   dolfin_set("partitioning threshold", 0.7);
+//   dolfin_set("partitioning threshold", 1e-5);
   
   // Need to save in Python format for plot_reaction.py to work
   //dolfin_set("file name", "primal.py");
@@ -174,7 +178,7 @@ int main(int argc, char* argv[])
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(1000, T, 5.0, 0.01, gamma);
+  Reaction ode(N, T, 5.0, 0.01, gamma);
   ode.solve();
 
   return 0;

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
+  <parameters>
+    <parameter name="partitioning threshold" type="real" value="0.7"/>
+  </parameters>
+</dolfin>
