@@ -9,6 +9,7 @@
 // not suitable to be implemented as demos in src/demo.
 
 #include <dolfin.h>
+#include "L2Norm.h"
 
 using namespace dolfin;
 
@@ -33,10 +34,8 @@ private:
 
 };
 
-int main(int argc, char* argv[])
+void testPreconditioner()
 {
-  dolfin_info("Testing DOLFIN...");
-
   UnitSquare mesh(2, 2);
   MassMatrix M(mesh);
   Vector x;
@@ -52,9 +51,45 @@ int main(int argc, char* argv[])
   solver.solve(M, x, b);
   
   x.disp();
+}
+
+void testMatrixOutput()
+{
+  UnitSquare mesh(2, 2);
+  MassMatrix M(mesh);
 
   File file("matrix.m");
   file << M;
+}
+
+class MyFunction : public Function
+{
+public:
+
+  real operator() (const Point& p) const
+  {
+    return sin(DOLFIN_PI*p.x);
+  }
+
+};
+
+void testFunctional()
+{
+  UnitSquare mesh(16, 16);
+  MyFunction f;
+  L2Norm::LinearForm L(f);
+  Vector b;
+  FEM::assemble(L, b, mesh);
+  real norm = sqrt(b.sum());
+
+  cout << "L2 norm of function: " << norm << endl;
+}
+
+int main(int argc, char* argv[])
+{
+  dolfin_info("Testing DOLFIN...");
+
+  testFunctional();
 
   return 0;
 }

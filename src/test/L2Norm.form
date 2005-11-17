@@ -1,0 +1,13 @@
+# Copyright (c) 2005 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# Testing computation of functionals using the old approach,
+# by assembling a LinearForm in a Vector and summing the entries.
+
+P0 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+P1 = FiniteElement("Lagrange", "triangle", 1)
+
+v = BasisFunction(P0)
+f = Function(P0)
+
+L = v*f*f*dx
