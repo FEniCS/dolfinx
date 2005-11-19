@@ -62,32 +62,42 @@ void testMatrixOutput()
   file << M;
 }
 
-class MyFunction : public Function
+class MyFunction0 : public Function
 {
 public:
 
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p) const
   {
-    //return 1.0;
+    return p.x;
+  }
 
-    if ( i == 0 )
-      return sin(DOLFIN_PI*p.x) * cos(DOLFIN_PI*p.y);
-    else
-      return -cos(DOLFIN_PI*p.x) * sin(DOLFIN_PI*p.y);
+};
+
+class MyFunction1 : public Function
+{
+public:
+
+  real operator() (const Point& p) const
+  {
+    return p.y;
   }
 
 };
 
 void testFunctional()
 {
+  dolfin_info("Computing L2 norm of f(x, y) = x - y on the unit square.");
+
   UnitSquare mesh(16, 16);
-  MyFunction f;
-  L2Norm::LinearForm L(f);
+  MyFunction0 f;
+  MyFunction1 g;
+  L2Norm::LinearForm L(f, g);
   Vector b;
   FEM::assemble(L, b, mesh);
   real norm = sqrt(b.sum());
 
-  cout << "L2 norm of function: " << norm << endl;
+  dolfin_info("Result:   %.15f", norm);
+  dolfin_info("Analytic: 0.408248290463863");
 }
 
 int main(int argc, char* argv[])
