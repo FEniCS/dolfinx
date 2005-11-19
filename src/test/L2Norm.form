@@ -6,8 +6,12 @@
 
 P0 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 P1 = FiniteElement("Lagrange", "triangle", 1)
+P2 = FiniteElement("Vector Lagrange", "triangle", 2)
+TH = P2 + P1
 
+U = Function(TH)
 v = BasisFunction(P0)
-f = Function(P0)
 
-L = v*f*f*dx
+e = [U[0], U[1]]
+
+L = v*dot(e, e)*dx

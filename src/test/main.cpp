@@ -66,9 +66,14 @@ class MyFunction : public Function
 {
 public:
 
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i) const
   {
-    return sin(DOLFIN_PI*p.x);
+    //return 1.0;
+
+    if ( i == 0 )
+      return sin(DOLFIN_PI*p.x) * cos(DOLFIN_PI*p.y);
+    else
+      return -cos(DOLFIN_PI*p.x) * sin(DOLFIN_PI*p.y);
   }
 
 };
