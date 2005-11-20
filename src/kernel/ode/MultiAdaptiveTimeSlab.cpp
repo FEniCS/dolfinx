@@ -201,7 +201,8 @@ bool MultiAdaptiveTimeSlab::shift()
   for (uint i = 0; i < N; i++)
   {
     u0[i] = u[i];
-    f0[i] = f0tmp[i];
+    if ( method->type() == Method::cG )
+      f0[i] = f0tmp[i];
   }
 
   return true;
