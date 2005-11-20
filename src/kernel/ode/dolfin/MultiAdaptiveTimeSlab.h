@@ -161,6 +161,7 @@ namespace dolfin
     int* elast;                 // Last element for each component
     real* u;                    // Interpolated solution vector
     real* f0;                   // Right-hand side at left end-point for cG
+    real* f0tmp;                // Temporary storage for f0 when copying
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
 
