@@ -21,7 +21,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), f0tmp(0), emax(0), kmin(0)
+  elast(0), u(0), f0(0), emax(0), kmin(0), f0tmp(0)
 {
   // Choose solver
   solver = chooseSolver();
