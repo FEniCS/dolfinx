@@ -248,8 +248,8 @@ void GMRES::init(uint M, uint N)
   }
   else
   {
-    PCSetType(pc, PCNONE);
-//     PCSetFromOptions(pc);
+//    PCSetType(pc, PCNONE);
+     PCSetFromOptions(pc);
   }
 
   // Display tolerances
