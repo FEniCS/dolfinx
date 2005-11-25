@@ -76,13 +76,15 @@ dolfin::uint NonlinearSolver::solve(NonlinearFunction& nonlinear_function, Vecto
   // Set preconditioner type
   PC  pc; 
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCILU);
+//  PCSetType(pc, PCILU);
+//  PCSetType(pc, PCSOR);
+//  PCSetType(pc, PCJACOBI);
+//  PCSetType(pc, PCICC);
 
+  // Set monitor function
+  SNESSetMonitor(snes, &monitor, PETSC_NULL, PETSC_NULL);  
 
-  // Set monitor
-  SNESSetRatioMonitor(snes);  
-
-  // Get Newton parameters from database
+  // Get Newton parameters from DOLFIN settings
   real rtol = dolfin_get("NLS Newton relative convergence tolerance");
   real stol = dolfin_get("NLS Newton successive convergence tolerance");
   real atol = dolfin_get("NLS Newton absolute convergence tolerance");
@@ -91,7 +93,7 @@ dolfin::uint NonlinearSolver::solve(NonlinearFunction& nonlinear_function, Vecto
 
 //  SNESGetTolerances(snes, &atol, &rtol, &stol, &maxit, &maxf);
 
-  dolfin_info("Newton solver tolerances (relastive, successive, absolute) = (%.1e, %.1e, %.1e,).",
+  dolfin_info("Newton solver tolerances (relative, successive, absolute) = (%.1e, %.1e, %.1e,).",
       rtol, stol, atol);
   dolfin_info("Newton solver maximum iterations = %d", maxit);
   
@@ -191,7 +193,13 @@ int NonlinearSolver::formSystem(SNES snes, Vec x, Vec f, void *nlProblem)
 //-----------------------------------------------------------------------------
 int NonlinearSolver::formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
 {
-  // Dummy function for computing Jacobian. Do nothing.
+  // Dummy function for computing Jacobian to trick PETSc. Do nothing.
+  return 0;
+}
+//-----------------------------------------------------------------------------
+int NonlinearSolver::monitor(SNES snes, int iter, real fnorm , void* dummy)
+{
+  dolfin_info("Iteration number = %d, residual norm = %e.", iter, fnorm);
   return 0;
 }
 //-----------------------------------------------------------------------------

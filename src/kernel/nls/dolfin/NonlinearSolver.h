@@ -59,6 +59,9 @@ namespace dolfin
     /// Dummy function passed to PETSc for computing Jacobian 
     static int formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
 
+    /// Monitor function for nonlinear solver 
+    static int monitor(SNES snes, int iter, real fnorm, void* dummy);
+
     // PETSc nonlinear solver pointer
     SNES snes;
 
