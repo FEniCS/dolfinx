@@ -9,6 +9,8 @@
 
 #include <dolfin/PETScManager.h>
 #include <dolfin/NonlinearSolver.h>
+#include <dolfin/Parameter.h>
+#include <dolfin/SettingsMacros.h>
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
@@ -80,6 +82,22 @@ dolfin::uint NonlinearSolver::solve(NonlinearFunction& nonlinear_function, Vecto
   // Set monitor
   SNESSetRatioMonitor(snes);  
 
+  // Get Newton parameters from database
+  real rtol = dolfin_get("NLS Newton relative convergence tolerance");
+  real stol = dolfin_get("NLS Newton successive convergence tolerance");
+  real atol = dolfin_get("NLS Newton absolute convergence tolerance");
+  int maxit = dolfin_get("NLS Newton maximum iterations");
+  int maxf  = dolfin_get("NLS Newton maximum function evaluations");
+
+//  SNESGetTolerances(snes, &atol, &rtol, &stol, &maxit, &maxf);
+
+  dolfin_info("Newton solver tolerances (relastive, successive, absolute) = (%.1e, %.1e, %.1e,).",
+      rtol, stol, atol);
+  dolfin_info("Newton solver maximum iterations = %d", maxit);
+  
+  // Set Netwon solver parameters
+  SNESSetTolerances(snes, atol, rtol, stol, maxit, maxf);
+
   // Set nonlinear solver parameters
   SNESSetFromOptions(snes);
 
@@ -89,10 +107,34 @@ dolfin::uint NonlinearSolver::solve(NonlinearFunction& nonlinear_function, Vecto
   // Report number of Newton iterations
   int iterations;
   SNESGetIterationNumber(snes, &iterations);
-  dolfin_info("Nonlinear solver converged in %d iterations.", iterations);
+  dolfin_info("Newton solver finished in %d iterations.", iterations);
 
   return 0;
 } 
+//-----------------------------------------------------------------------------
+void NonlinearSolver::setMaxiter(int maxiter)
+{
+  dolfin_set("NLS Newton maximum iterations", maxiter);
+  dolfin_info("Maximum number of Newton iterations: %d.",maxiter);
+}
+//-----------------------------------------------------------------------------
+void NonlinearSolver::setRtol(double rtol)
+{
+  dolfin_set("NLS Newton relative convergence tolerance", rtol);
+  dolfin_info("Relative increment tolerance for Newton solver: %e.", rtol);
+}
+//-----------------------------------------------------------------------------
+void NonlinearSolver::setStol(double stol)
+{
+  dolfin_set("NLS Newton successive convergence tolerance", stol);
+  dolfin_info("Successive increment tolerance for Newton solver: %e.", stol);
+}
+//-----------------------------------------------------------------------------
+void NonlinearSolver::setAtol(double atol)
+{
+  dolfin_set("NLS Newton successive convergence tolerance", atol);
+  dolfin_info("Absolute increment tolerance for Newton solver: %e.", atol);
+}
 //-----------------------------------------------------------------------------
 int NonlinearSolver::formRHS(SNES snes, Vec x, Vec f, void *nlProblem)
 {

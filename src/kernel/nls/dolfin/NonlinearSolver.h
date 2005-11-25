@@ -33,6 +33,18 @@ namespace dolfin
     /// Solve nonlinear problem F(u) = 0
     uint solve(NonlinearFunction& nonlinear_function, Vector& x);
 
+    /// Set maximum number of Netwon iterations
+    void setMaxiter(int maxiter);
+
+    /// Set relative convergence tolerance: du_i / du_0 < rtol
+    void setRtol(real rtol);
+
+    /// Set successive convergence tolerance:  du_i+1 / du_i < stol
+    void setStol(real stol);
+
+    /// Set absolute convergence tolerance:  du_i < atol
+    void setAtol(real atol);
+
   private:
 
     /// Function passed to PETSc to form RHS vector F(u)

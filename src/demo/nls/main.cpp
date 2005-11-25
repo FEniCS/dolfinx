@@ -79,7 +79,9 @@ class MyNonlinearFunction : public NonlinearFunction
       x0 = x;
 
       // Assemble RHS vector, Jacobian, and apply boundary conditions 
+      dolfin_log(false);
       FEM::assemble(a, L, A, b, mesh, bc);
+      dolfin_log(true);
     }
 
     // Compute system size
@@ -130,6 +132,8 @@ int main()
 
   // Initialise nonlinear solver
   NonlinearSolver nonlinear_solver;
+  nonlinear_solver.setMaxiter(8);
+  nonlinear_solver.setRtol(1e-5);
 
   // Solve nonlinear problem
   cout << "Starting nonlinear assemble and solve. " << endl;
@@ -138,7 +142,9 @@ int main()
   
   // Assemble and solve linear problem
   cout << "Starting linear assemble and solve. " << endl;
+  dolfin_log(false);
   FEM::assemble(a, L, A, b, mesh, bc);
+  dolfin_log(true);
   GMRES solver;
   solver.solve(A, y, b);  
   cout << "Finished linear solve. " << endl;
