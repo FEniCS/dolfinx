@@ -8,8 +8,8 @@
 from os import system
 from commands import getoutput
 
-outputcg = getoutput("./dolfin-ode-test cg")
-outputmcg = getoutput("./dolfin-ode-test mcg")
+outputcg = getoutput("./dolfin-ode-residual cg")
+outputmcg = getoutput("./dolfin-ode-residual mcg")
 
 filecg = open("outputcg.log", "w")
 filecg.write(outputcg)

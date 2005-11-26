@@ -15,7 +15,7 @@ class Harmonic : public ODE
 {
 public:
   
-  Harmonic() : ODE(3, 40.0)
+  Harmonic() : ODE(2, 0.4)
   {
     // Compute sparsity
 //     sparse();
@@ -25,23 +25,14 @@ public:
   {
     if ( i == 0 )
       return 0.0;
-    if ( i == 1 )
-      return 1.0;
 
     return 0.0;
   }
 
   real f(const real u[], real t, unsigned int i)
   {
-//     if ( i == 0 )
-//       return u[1];
-
-//     return -u[0];
-
     if ( i == 0 )
-      return u[1];
-    if ( i == 1 )
-      return -u[0];
+      return pow(t, 3);
 
     return 0.0;
   }
@@ -49,35 +40,19 @@ public:
   /// Specify time step, mono-adaptive version (used for testing)
   real timestep(real t, real k0) const
   {
-//     real k_0 = 5e-5 + 5e-4 * fabs(pow(cos(t), 1));
-//     real k_1 = 5e-5 + 5e-4 * fabs(pow(sin(t), 1));
-
-//     return std::min(k_0, k_1);
-    return 1e-3;
+    return 5e-2;
   }
 
   /// Specify time step, mono-adaptive version (used for testing)
   real timestep(real t, unsigned int i, real k0) const
   {
-//     real k_0 = 5e-5 + 5e-4 * fabs(pow(cos(t + i), 1));
-//     real k_1 = 5e-5 + 5e-4 * fabs(pow(sin(t + i), 1));
-
-//     if(i == 0)
-//     {
-//       return std::min(1.5e-3, k_0);
-//     }
-//     else
-//     {
-//       return std::min(1.5e-3, k_1);
-//     }
-
     if(i == 0)
     {
-      return 1e-3;
+      return 5e-2;
     }
     else if(i == 1)
     {
-      return 1e-3;
+      return 5e-2;
     }
     else
     {
