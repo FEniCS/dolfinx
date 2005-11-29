@@ -89,8 +89,8 @@ public:
   /// Specify time step, mono-adaptive version (used for testing)
   real timestep(real t, unsigned int i, real k0) const
   {
-    const real w  = 0.4;
-    const real v  = 0.22;
+    const real w  = 0.1;
+    const real v  = 2.22;
     const real x  = static_cast<real>(i)*h;
     if ( fabs(x - 1.0 - v*t) < w )
       return 1e-5;
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
   dolfin_set("tolerance", TOL);
   dolfin_set("initial time step", k0);
   dolfin_set("maximum time step", kmax);
-  dolfin_set("save solution", false);
+//   dolfin_set("save solution", false);
   dolfin_set("save final solution", true);
 //   dolfin_set("partitioning threshold", 0.7);
 //   dolfin_set("partitioning threshold", 1e-5);
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
 
   //dolfin_set("adaptive samples", true);
   //dolfin_set("monitor convergence", true);
-  //dolfin_set("fixed time step", true);
+//   dolfin_set("fixed time step", true);
   //dolfin_set("discrete tolerance", 1e-10);
   //dolfin_set("diagonal newton damping", true);
   //dolfin_set("updated jacobian", true);
