@@ -85,6 +85,8 @@ namespace dolfin
       add(Parameter::REAL,   "NLS Newton successive convergence tolerance", 1e-50);
       add(Parameter::INT,    "NLS Newton maximum iterations", 50);
       add(Parameter::INT,    "NLS Newton maximum function evaluations", 10000);
+      add(Parameter::STRING, "NLS type", "line search");
+      add(Parameter::STRING, "NLS form", "separate");
 
     }
     
