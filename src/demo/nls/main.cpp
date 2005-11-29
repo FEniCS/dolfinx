@@ -39,7 +39,7 @@ class MyFunction : public Function
 {
   real operator() (const Point& p) const
   {
-    return p.x*sin(p.y);
+    return time()*p.x*sin(p.y);
   }
 };
 
@@ -66,13 +66,16 @@ class MyNonlinearFunction : public NonlinearFunction
       BoundaryCondition& bc, Function& u0) : NonlinearFunction(), 
       _a(&a), _L(&L), _mesh(&mesh), _bc(&bc), _u0(&u0) {}
  
+/*
     // Compute F(u) and J at same time
-    void form(Matrix& A, Vector& b, const Vector& x)
+    void form(Matrix& A, Vector& b, const Vector& x, real t)
     {
       BilinearForm& a = *_a;
       LinearForm& L   = *_L;
       BoundaryCondition& bc = *_bc;
       Mesh& mesh = *_mesh;
+
+      cout << "time = " << t << endl; 
 
       // Update function u0
       Vector& x0 = _u0->vector();
@@ -83,6 +86,89 @@ class MyNonlinearFunction : public NonlinearFunction
       FEM::assemble(a, L, A, b, mesh, bc);
       dolfin_log(true);
     }
+
+*/
+    // Compute F(u) and J at same time
+    void F(Vector& b, const Vector& x, real t)
+    {
+      BilinearForm& a = *_a;
+      LinearForm& L   = *_L;
+      BoundaryCondition& bc = *_bc;
+      Mesh& mesh = *_mesh;
+
+      cout << "time (F)= " << t << endl; 
+
+      // Update function u0
+      Vector& x0 = _u0->vector();
+      x0 = x;
+
+      // Assemble RHS vector, Jacobian, and apply boundary conditions 
+      dolfin_log(false);
+      FEM::assemble(L, b, mesh);
+      FEM::applyBC(b, mesh, a.test(), bc);
+      dolfin_log(true);
+    }
+
+    // Compute F(u) and J at same time
+    void J(Matrix& A, const Vector& x, real t)
+    {
+      BilinearForm& a = *_a;
+      LinearForm& L   = *_L;
+      BoundaryCondition& bc = *_bc;
+      Mesh& mesh = *_mesh;
+
+      cout << "time (J)= " << t << endl; 
+
+      // Assemble RHS vector, Jacobian, and apply boundary conditions 
+      dolfin_log(false);
+      FEM::assemble(a, A, mesh);
+      FEM::applyBC(A, mesh, a.test(), bc);
+      dolfin_log(true);
+    }
+
+
+
+
+    // Compute F(u) 
+    void F(Vector& b, const Vector& x)
+    {
+      BilinearForm& a = *_a;
+      LinearForm& L   = *_L;
+      BoundaryCondition& bc = *_bc;
+      Mesh& mesh = *_mesh;
+
+
+      // Update function u0
+      Vector& x0 = _u0->vector();
+      x0 = x;
+
+      // Assemble RHS vector and apply boundary conditions 
+      dolfin_log(false);
+      FEM::assemble(L, b, mesh);
+      FEM::applyBC(b, mesh, a.test(), bc);
+      dolfin_log(true);
+    }
+
+    // Compute J
+    void J(Matrix& A, const Vector& x)
+    {
+      BilinearForm& a = *_a;
+      LinearForm& L   = *_L;
+      BoundaryCondition& bc = *_bc;
+      Mesh& mesh = *_mesh;
+
+
+      // Assemble Jacobian, and apply boundary conditions 
+      dolfin_log(false);
+      FEM::assemble(a, A, mesh);
+      FEM::applyBC(A, mesh, a.test(), bc);
+      dolfin_log(true);
+    }
+
+
+
+
+
 
     // Compute system size
     dolfin::uint size()
@@ -112,7 +198,7 @@ class MyNonlinearFunction : public NonlinearFunction
 int main()
 {
   // Set up problem
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(4, 4);
   MyFunction f;
   MyBC bc;
   Matrix A;
@@ -127,19 +213,36 @@ int main()
   PoissonNl::BilinearForm a_nl;
   PoissonNl::LinearForm L_nl(u0, f);
 
-  // Define nonlinear function
+  // Create nonlinear function
   MyNonlinearFunction nonlinear_function(a_nl, L_nl, mesh, bc, u0);  
 
   // Initialise nonlinear solver
-  NonlinearSolver nonlinear_solver;
-  nonlinear_solver.setMaxiter(8);
-  nonlinear_solver.setRtol(1e-5);
+  NewtonSolver nonlinear_solver(nonlinear_function);
+
+  // Set Newton parameters
+  nonlinear_solver.setMaxiter(50);
+  nonlinear_solver.setRtol(1e-8);
+  nonlinear_solver.setAtol(1e-10);
+  nonlinear_solver.setParameters();
 
   // Solve nonlinear problem
   cout << "Starting nonlinear assemble and solve. " << endl;
-  nonlinear_solver.solve(nonlinear_function, x);
+
+  real dt = 1.0;
+  real t  = 0.0;
+  real T  = 3.0;
+  f.sync(t);
+
+  // Associate matrix and vectors with solver
+  nonlinear_solver.init(A, b, x);
+  while( t < T)
+  {
+    t += dt;
+      nonlinear_solver.solve();
+  }
   cout << "Finished nonlinear solve. " << endl;
-  
+
+
   // Assemble and solve linear problem
   cout << "Starting linear assemble and solve. " << endl;
   dolfin_log(false);
