@@ -61,7 +61,7 @@ ARFLAGS = cru
 libdolfin_nls_a_AR = $(AR) $(ARFLAGS)
 libdolfin_nls_a_LIBADD =
 am_libdolfin_nls_a_OBJECTS = NewtonSolver.$(OBJEXT) \
-	NonlinearFunction.$(OBJEXT) NonlinearSolver.$(OBJEXT)
+	NonlinearFunction.$(OBJEXT)
 libdolfin_nls_a_OBJECTS = $(am_libdolfin_nls_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -197,14 +197,12 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_nls.h \
                           dolfin/NewtonSolver.h \
-                          dolfin/NonlinearFunction.h \
-                          dolfin/NonlinearSolver.h
+                          dolfin/NonlinearFunction.h 
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-nls.a
 libdolfin_nls_a_SOURCES = NewtonSolver.cpp \
-                          NonlinearFunction.cpp \
-                          NonlinearSolver.cpp 
+                          NonlinearFunction.cpp 
 
 all: all-recursive
 
@@ -281,7 +279,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewtonSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearFunction.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearSolver.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

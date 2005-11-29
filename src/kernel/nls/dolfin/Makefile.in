@@ -156,8 +156,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_nls.h \
              NewtonSolver.h \
-             NonlinearFunction.h \
-             NonlinearSolver.h
+             NonlinearFunction.h
 
 all: all-am
 

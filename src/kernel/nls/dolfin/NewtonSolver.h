@@ -11,7 +11,6 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/NonlinearFunction.h>
-#include <dolfin/NonlinearSolver.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 
