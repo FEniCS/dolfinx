@@ -57,7 +57,7 @@ void NonlinearFunction::form(Matrix& A, Vector& b, const Vector& x)
 Matrix& NonlinearFunction::J() const
 {
   if( !_A )
-    dolfin_error("Jacobian matrix has not been specified.");
+    dolfin_error("Jacobian maatrix has not been specified.");
 
   return *_A;
 }
