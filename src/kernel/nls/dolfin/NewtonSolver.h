@@ -46,6 +46,9 @@ namespace dolfin
     /// Initialise Newton solver
     void init(Matrix& A, Vector& b, Vector& x);
 
+    /// Return Newton iteration number
+    int getIteration(SNES snes);
+
     /// Set nonlinear solve type
     void setType(std::string solver_type);
 

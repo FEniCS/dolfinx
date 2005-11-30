@@ -177,6 +177,13 @@ void NewtonSolver::init(Matrix& A, Vector& b, Vector& x)
 
 } 
 //-----------------------------------------------------------------------------
+int NewtonSolver::getIteration(SNES snes)
+{
+  int iteration;
+  SNESGetIterationNumber(snes, &iteration);
+  return iteration; 
+}
+//-----------------------------------------------------------------------------
 void NewtonSolver::setType(std::string solver_type)
 {
   dolfin_set("NLS type", solver_type.c_str());
