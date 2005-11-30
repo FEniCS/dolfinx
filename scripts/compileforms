@@ -21,6 +21,7 @@ DIRS='src/modules/poisson/dolfin
       src/modules/elasticity/dolfin
       src/modules/elasticity-updated/dolfin
       src/modules/stokes
+      src/modules/heat
       src/kernel/fem/dolfin
       src/demo/poisson
       src/demo/fem/convergence'

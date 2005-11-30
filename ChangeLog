@@ -1,3 +1,4 @@
+ - Update interface for FiniteElement for latest FFC version
  - Improve and restructure implementation of the Function class
  - Dynamically adjust safety factor during integration
  - Improve output Matrix::disp()
