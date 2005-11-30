@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #include <dolfin.h>
 
@@ -13,7 +13,7 @@ using namespace dolfin;
 // Density
 class Density : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     if(p.x < 0.01 && p.y > 0.0)
       return 1.0e3;
@@ -25,7 +25,7 @@ class Density : public Function
 // Right-hand side
 class Source : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     int id = cell().id();
 
@@ -39,7 +39,7 @@ class Source : public Function
 // Initial velocity
 class InitialVelocity : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     real result = 0.0;
 

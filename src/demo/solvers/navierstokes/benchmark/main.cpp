@@ -18,7 +18,7 @@ using namespace dolfin;
 // Force term
 class ForceFunction : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     if (i==0) return 0.0;
     if (i==1) return 0.0;
@@ -31,7 +31,7 @@ class ForceFunction : public Function
 // Initial solution 
 class InitialSolution : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     if (i==0){
       if (p.y < 0.2) 

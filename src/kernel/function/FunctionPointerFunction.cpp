@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #include <dolfin/Node.h>
 #include <dolfin/Vector.h>
@@ -18,6 +18,12 @@ FunctionPointerFunction::FunctionPointerFunction(FunctionPointer f,
   : f(f), _vectordim(vectordim), _mesh(0)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+FunctionPointerFunction::FunctionPointerFunction(const FunctionPointerFunction& f)
+  : f(f.f), _vectordim(f._vectordim), _mesh(f._mesh)
+{
+  // Do nothing, just copy the values
 }
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::~FunctionPointerFunction()

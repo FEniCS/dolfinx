@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 //
 // A simple test program for convection-diffusion, solving
 //
@@ -28,7 +28,7 @@ using namespace dolfin;
 // Convection
 class Convection : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     if ( i == 0 )
       return -5.0;
@@ -40,7 +40,7 @@ class Convection : public Function
 // Right-hand side
 class Source : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return 0.0;
   }

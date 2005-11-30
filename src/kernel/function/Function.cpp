@@ -53,9 +53,56 @@ Function::Function(Vector& x, Mesh& mesh, FiniteElement& element)
   f = new DiscreteFunction(x, mesh, element);
 }
 //-----------------------------------------------------------------------------
+Function::Function(const Function& f)
+{
+  switch ( f.type() )
+  {
+  case user:
+    this->f = new UserFunction(*((UserFunction *) f.f));
+    break;
+  case functionpointer:
+    this->f = new FunctionPointerFunction(*((FunctionPointerFunction *) f.f));
+    break;
+  case discrete:
+    this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
+    break;
+  default:
+    dolfin_error("Unknown function type.");
+  }
+}
+//-----------------------------------------------------------------------------
 Function::~Function()
 {
   delete f;
+}
+//-----------------------------------------------------------------------------
+Function Function::operator[] (const uint i)
+{
+  // FIXME: Not implemented
+  Function f;
+  return f;
+}
+//-----------------------------------------------------------------------------
+const Function& Function::operator= (const Function& f)
+{
+  delete this->f;
+
+  switch ( f.type() )
+  {
+  case user:
+    this->f = new UserFunction(*((UserFunction *) f.f));
+    break;
+  case functionpointer:
+    this->f = new FunctionPointerFunction(*((FunctionPointerFunction *) f.f));
+    break;
+  case discrete:
+    this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
+    break;
+  default:
+    dolfin_error("Unknown function type.");
+  }
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(real coefficients[], AffineMap& map,

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 //
 // This simple program solves Poisson's equation
 //
@@ -25,7 +25,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return p.x*sin(p.y);
   }

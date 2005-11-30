@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-28
+// Last changed: 2005-11-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -35,6 +35,12 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
   : _x(&x), _mesh(&mesh), _element(&element)
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
+  : _x(f._x), _mesh(f._mesh), _element(f._element)
+{
+  // Do nothing, just copy the values
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()

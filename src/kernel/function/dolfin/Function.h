@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -32,8 +32,8 @@ namespace dolfin
   /// distribution of degrees of freedom on the mesh.
   ///
   /// It is also possible to have user-defined functions, either by
-  /// overloading the evaluation operator of this class or by giving
-  /// a function (pointer) that returns the value of the function.
+  /// overloading the eval function of this class or by giving a
+  /// function (pointer) that returns the value of the function.
 
   class Function : public Variable, public TimeDependent
   {
@@ -54,16 +54,26 @@ namespace dolfin
     /// Create discrete function
     Function(Vector& x, Mesh& mesh, FiniteElement& element);
 
+    /// Copy constructor
+    Function(const Function& f);
+
     /// Destructor
     virtual ~Function();
 
+    /// Evaluate function at given point (must be implemented for user-defined function)
+    virtual real eval(const Point& p, uint i = 0) { return (*f)(p, i); }
+
     /// Evaluate function at given point
-    virtual inline real operator() (const Point& p, uint i = 0)
-    { return (*f)(p, i); }
+    inline real operator() (const Point& p, uint i = 0) { return (*f)(p, i); }
 
     /// Evaluate function at given node
-    inline real operator() (const Node& node, uint i = 0)
-    { return (*f)(node, i); }
+    inline real operator() (const Node& node, uint i = 0) { return (*f)(node, i); }
+
+    /// Pick sub function (of mixed function) or component of vector-valued function
+    Function operator[] (const uint i);
+
+    /// Assignment operator
+    const Function& operator= (const Function& f);
 
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
@@ -90,7 +100,7 @@ namespace dolfin
     inline void attach(FiniteElement& element) { f->attach(element); }
 
     /// Return current type of function
-    enum Type { discrete, user, functionpointer };
+    enum Type { user, functionpointer, discrete };
     inline Type type() const { return _type; } 
 
   protected:

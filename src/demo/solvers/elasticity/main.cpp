@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004-02-26
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #include <dolfin.h>
 
@@ -13,7 +13,7 @@ using namespace dolfin;
 // Right-hand side
 class Source : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
 //     if(i == 0)
 //     {
@@ -41,7 +41,7 @@ class Source : public Function
 // Initial displacement
 class InitialDisplacement : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return 0.0;
   }
@@ -50,7 +50,7 @@ class InitialDisplacement : public Function
 // Initial displacement
 class InitialVelocity : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     if(i == 1 && p.x > 0.0 )
       return 1.0;

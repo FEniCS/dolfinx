@@ -69,7 +69,7 @@ class MyFunction0 : public Function
 {
 public:
 
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return p.x;
   }
@@ -80,7 +80,7 @@ class MyFunction1 : public Function
 {
 public:
 
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return p.y;
   }

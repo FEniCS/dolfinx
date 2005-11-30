@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -33,7 +33,7 @@ class BC : public BoundaryCondition
 // Right-hand side, 2D
 class Source2D : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return 2.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y);
   }
@@ -42,7 +42,7 @@ class Source2D : public Function
 // Right-hand side, 3D
 class Source3D : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return 3.0*DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x)*sin(DOLFIN_PI*p.y)*sin(DOLFIN_PI*p.z);
   }

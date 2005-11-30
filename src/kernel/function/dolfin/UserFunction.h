@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
@@ -24,6 +24,9 @@ namespace dolfin
 
     /// Create user-defined function
     UserFunction(Function* f, uint vectordim);
+
+    /// Copy constructor
+    UserFunction(const UserFunction& f);
 
     /// Destructor
     ~UserFunction();

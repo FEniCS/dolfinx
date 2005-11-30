@@ -14,7 +14,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p, unsigned int i)
+  real eval(const Point& p, unsigned int i)
   {
     return 0.0;
   }

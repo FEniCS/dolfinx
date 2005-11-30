@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -23,6 +23,12 @@ UserFunction::UserFunction(Function* f, uint vectordim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+UserFunction::UserFunction(const UserFunction& f)
+  : f(f.f), _vectordim(f._vectordim), _mesh(f._mesh)
+{
+  // Do nothing, just copy the values
+}
+//-----------------------------------------------------------------------------
 UserFunction::~UserFunction()
 {
   // Do nothing
@@ -37,8 +43,8 @@ real UserFunction::operator()(const Point& p, uint i)
 //-----------------------------------------------------------------------------
 real UserFunction::operator() (const Node& node, uint i)
 {
-  // Call overloaded evaluation operator at given node
-  return (*f)(node.coord(), i);
+  // Call overloaded eval function at given node
+  return f->eval(node.coord(), i);
 }
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real coefficients[], AffineMap& map,
@@ -52,7 +58,7 @@ void UserFunction::interpolate(real coefficients[], AffineMap& map,
 
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)
-    coefficients[i] = (*f)(local.points[i], local.components[i]);
+    coefficients[i] = f->eval(local.points[i], local.components[i]);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UserFunction::vectordim() const

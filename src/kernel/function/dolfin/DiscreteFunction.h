@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -30,6 +30,9 @@ namespace dolfin
 
     /// Create discrete function from given data
     DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element);
+
+    /// Copy constructor
+    DiscreteFunction(const DiscreteFunction& f);
 
     /// Destructor
     ~DiscreteFunction();
