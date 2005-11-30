@@ -1,6 +1,9 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
-
+//
+// First added:  2005
+// Last changed: 2005-11-29
+//
 // This file is used for testing out new features implemented
 // in the library, which means that the contents of this file
 // might be (should be) constantly changing. Anything can be
@@ -66,7 +69,7 @@ class MyFunction0 : public Function
 {
 public:
 
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return p.x;
   }
@@ -77,7 +80,7 @@ class MyFunction1 : public Function
 {
 public:
 
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return p.y;
   }
@@ -100,11 +103,18 @@ void testFunctional()
   dolfin_info("Analytic: 0.408248290463863");
 }
 
+void testOutput()
+{
+  Mesh mesh("dolfin-1.xml.gz");
+  File file("mesh.m");
+  file << mesh;
+}
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
 
-  testFunctional();
+  testOutput();
 
   return 0;
 }

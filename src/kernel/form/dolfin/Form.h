@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-10-03
+// Last changed: 2005-11-29
 
 #ifndef __FORM_H
 #define __FORM_H
@@ -28,7 +28,7 @@ namespace dolfin
     virtual ~Form();
 
     /// Update map to current cell
-    void update(const AffineMap& map);
+    void update(AffineMap& map);
 
     /// Friends
     friend class FEM;
@@ -36,13 +36,13 @@ namespace dolfin
   protected:
 
     // Add function
-    void add(Function& function, const FiniteElement* element);
+    void add(Function& f, FiniteElement* element);
 
     // Update coefficients
-    void updateCoefficients(const AffineMap& map);
+    void updateCoefficients(AffineMap& map);
 
     // List of finite elements for functions (coefficients)
-    Array<const FiniteElement*> elements;
+    Array<FiniteElement*> elements;
 
     // List of functions (coefficients)
     Array<Function*> functions;

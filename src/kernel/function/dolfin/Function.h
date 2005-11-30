@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-09-20
+// Last changed: 2005-11-29
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -12,10 +12,11 @@
 #include <dolfin/constants.h>
 #include <dolfin/Variable.h>
 #include <dolfin/TimeDependent.h>
+#include <dolfin/FunctionPointer.h>
+#include <dolfin/GenericFunction.h>
 
 namespace dolfin
 {
-
   class Point;
   class Node;
   class Cell;
@@ -23,101 +24,93 @@ namespace dolfin
   class Vector;
   class AffineMap;
   class FiniteElement;
-  
-  /// This class represents a function defined on a mesh. The function
-  /// is defined in terms of a mesh, a finite element and a vector
-  /// containing the degrees of freedom of the function on the mesh.
+
+  /// This class represents a function that can be evaluated on a
+  /// mesh. The actual representation of the function can vary, but
+  /// the typical representation is in terms of a mesh, a vector of
+  /// degrees of freedom and a finite element that determines the
+  /// distribution of degrees of freedom on the mesh.
+  ///
+  /// It is also possible to have user-defined functions, either by
+  /// overloading the evaluation operator of this class or by giving
+  /// a function (pointer) that returns the value of the function.
 
   class Function : public Variable, public TimeDependent
   {
   public:
+    
+    /// Create user-defined function (evaluation operator must be overloaded)
+    Function(uint vectordim = 1);
 
-    /// Create user-defined function
-    Function();
-
-    /// Create a function (choose mesh and element automatically)
+    /// Create user-defined function from the given function pointer
+    Function(FunctionPointer fp, uint vectordim = 1);
+    
+    /// Create discrete function (mesh and finite element chosen automatically)
     Function(Vector& x);
 
-    /// Create a function (choose element automatically)
+    /// Create discrete function (finite element chosen automatically)
     Function(Vector& x, Mesh& mesh);
 
-    /// Create a function
-    Function(Vector& x, Mesh& mesh, const FiniteElement& element);
+    /// Create discrete function
+    Function(Vector& x, Mesh& mesh, FiniteElement& element);
 
     /// Destructor
     virtual ~Function();
 
-    /// Compute interpolation of function onto the local finite element space
-    void interpolate(real coefficients[], const AffineMap& map);
+    /// Evaluate function at given point
+    virtual inline real operator() (const Point& p, uint i = 0)
+    { return (*f)(p, i); }
 
     /// Evaluate function at given node
-    real operator() (const Node& node) const;
+    inline real operator() (const Node& node, uint i = 0)
+    { return (*f)(node, i); }
 
-    /// Evaluate vector-valued function at given node
-    real operator() (const Node& node, uint i) const;
+    /// Compute interpolation of function onto local finite element space
+    void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
+    
+    /// Return vector dimension of function
+    inline uint vectordim() const { return f->vectordim(); }
 
-    /// Evaluate function at given point
-    virtual real operator() (const Point& point) const;
+    /// Return vector associated with function (if any)
+    inline Vector& vector() { return f->vector(); }
 
-    /// Evaluate vector-valued function at given point
-    virtual real operator() (const Point& point, uint i) const;
+    /// Return mesh associated with function (if any)
+    inline Mesh& mesh() { return f->mesh(); }
 
-    /// Return the vector with which the function is defined
-    Vector& vector();
+    /// Return element associated with function (if any)
+    inline FiniteElement& element() { return f->element(); }
 
-    /// Return the mesh on which the function is defined
-    Mesh& mesh();
+    /// Attach vector to function
+    inline void attach(Vector& x) { f->attach(x); }
 
-    /// Return the finite element defining the function space
-    const FiniteElement& element() const;
+    /// Attach mesh to function
+    inline void attach(Mesh& mesh) { f->attach(mesh); }
 
-    /// Specify finite element
-    void set(const FiniteElement& element);
+    /// Attach finite element to function
+    inline void attach(FiniteElement& element) { f->attach(element); }
+
+    /// Return current type of function
+    enum Type { discrete, user, functionpointer };
+    inline Type type() const { return _type; } 
 
   protected:
 
-    // Pointer to degrees of freedom
-    Vector* _x;
-
-    // Pointer to mesh
-    Mesh* _mesh;
-
-    // Pointer to finite element
-    const FiniteElement* _element;
-
-    // Pointer to current cell (for user-defined functions)
-    const Cell* _cell;
+    /// Return current cell (can be called by user-defined function during assembly)
+    Cell& cell();
 
   private:
-
-    // Class collecting local storage for interpolation and evaluation
-    class LocalData
-    {
-    public:
-     
-      // Constructor
-      LocalData();
-
-      // Destructor
-      ~LocalData();
-
-      // Initialize data for given element
-      void init(const FiniteElement& element);
- 
-      // Clear data
-      void clear();
-
-      int* dofs;
-      uint* components;
-      Point* points;
-      real* values;
-
-    };
-
-    // Local storage for interpolation and evaluation
-    LocalData local;
     
+    // Pointer to current implementation (letter base class)
+    GenericFunction* f;
+
+    // Current function type
+    Type _type;
+
+    // Pointer to current cell
+    Cell* _cell;
+
   };
+
 
 }
 

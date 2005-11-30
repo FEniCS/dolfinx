@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-09-20
+// Last changed: 2005-11-29
 //
 // A simple test program for the Poisson solver, solving
 //
@@ -26,7 +26,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return DOLFIN_PI*DOLFIN_PI*sin(DOLFIN_PI*p.x);
   }

@@ -1,3 +1,4 @@
+ - Improve and restructure implementation of the Function class
  - Dynamically adjust safety factor during integration
  - Improve output Matrix::disp()
  - Check residual at end of time step, reject step if too large

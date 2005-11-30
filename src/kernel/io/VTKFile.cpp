@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2005.
+
 // First added:  2005-07-05
-// Last changed: 2005-09-15
+// Last changed: 2005-11-29
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -24,7 +26,6 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Mesh& mesh)
 {
-
   dolfin_info("Saving mesh to VTK file.");
   
   // Update vtu file name and clear file
@@ -41,12 +42,10 @@ void VTKFile::operator<<(Mesh& mesh)
   
   // Write headers
   VTKHeaderClose();
-  
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
-
   dolfin_info("Writing Function to VTK file");
 
   // Update vtu file name and clear file
@@ -130,26 +129,11 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
 //----------------------------------------------------------------------------
 void VTKFile::ResultsWrite(Function& u) const
 {
-
-  uint no_components = 0;
-  const FiniteElement& element = u.element();
-
-  if ( element.rank() == 0 )
-  {
-    no_components = 1;
-  }
-  else if ( element.rank() == 1 )
-  {
-    no_components = element.tensordim(0);
-  }
-  else
-    dolfin_error("Cannot handle tensor valued functions.");
-
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
   //Write PointData displacement	
-  if(no_components == 1)
+  if ( u.vectordim() == 1 )
   {
     fprintf(fp, "<PointData  Scalars=\"U\"> \n");
     fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  format=\"ascii\">	 \n");
@@ -160,21 +144,21 @@ void VTKFile::ResultsWrite(Function& u) const
     fprintf(fp, "<DataArray  type=\"Float32\"  Name=\"U\"  NumberOfComponents=\"3\" format=\"ascii\">	 \n");	
   }
 
-  if(no_components > 3)
-  	dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
+  if ( u.vectordim() > 3 )
+    dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
   for (NodeIterator n(u.mesh()); !n.end(); ++n)
   {    
-    if(no_components == 1) 
-		{
-		  fprintf(fp," %e ",u(*n, 0));
+    if ( u.vectordim() == 1 ) 
+    {
+      fprintf(fp," %e ",u(*n, 0));
     }
-		else if(no_components == 2) 
+    else if ( u.vectordim() == 2 ) 
     {
       fprintf(fp," %e %e  0.0",u(*n, 0), u(*n, 1));
-		}
-		else  
-		{
+    }
+    else  
+    {
       fprintf(fp," %e %e  %e",u(*n, 0), u(*n, 1), u(*n, 2));
     }
     fprintf(fp,"\n");
@@ -185,7 +169,6 @@ void VTKFile::ResultsWrite(Function& u) const
   
   // Close file
   fclose(fp);
-
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvdFileWrite(int num)
@@ -227,7 +210,6 @@ void VTKFile::pvdFileWrite(int num)
 //----------------------------------------------------------------------------
 void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
 {
-
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
@@ -238,12 +220,10 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   
   // Close file
   fclose(fp);
-  
 }
 //----------------------------------------------------------------------------
 void VTKFile::VTKHeaderClose() const
 {
-  
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
@@ -252,31 +232,27 @@ void VTKFile::VTKHeaderClose() const
   
   // Close file
   fclose(fp);
-  
-
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtuNameUpdate(const int counter) 
 {
-    std::string filestart, extension;
-    std::ostringstream fileid, newfilename;
-    
-    fileid.fill('0');
-    fileid.width(6);
-    
-    filestart.assign(filename, 0, filename.find("."));
-    extension.assign(filename, filename.find("."), filename.size());
-
-    fileid << counter;
-    newfilename << filestart << fileid.str() << ".vtu";
-    
-    vtu_filename = newfilename.str();
-    
-    // Make sure file is empty
-    FILE* fp = fopen(vtu_filename.c_str(), "w");
-    fclose(fp);
-
-    
+  std::string filestart, extension;
+  std::ostringstream fileid, newfilename;
+  
+  fileid.fill('0');
+  fileid.width(6);
+  
+  filestart.assign(filename, 0, filename.find("."));
+  extension.assign(filename, filename.find("."), filename.size());
+  
+  fileid << counter;
+  newfilename << filestart << fileid.str() << ".vtu";
+  
+  vtu_filename = newfilename.str();
+  
+  // Make sure file is empty
+  FILE* fp = fopen(vtu_filename.c_str(), "w");
+  fclose(fp);
 }
 //----------------------------------------------------------------------------
 

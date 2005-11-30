@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2005.
+//
 // First added:  2002-11-29
-// Last changed: 2005
+// Last changed: 2005-11-29
 //
 // A solver for the Navier-Stokes equations 
 //
@@ -16,7 +18,7 @@ using namespace dolfin;
 // Force term
 class ForceFunction : public Function
 {
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p, unsigned int i)
   {
     if (i==0) return 0.0;
     if (i==1) return 0.0;
@@ -29,7 +31,7 @@ class ForceFunction : public Function
 // Initial solution 
 class InitialSolution : public Function
 {
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p, unsigned int i)
   {
     if (i==0){
       if (p.y < 0.2) 

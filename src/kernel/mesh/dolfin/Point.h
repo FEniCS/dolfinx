@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-11-28
 
 #ifndef __POINT_H
 #define __POINT_H
@@ -10,9 +10,11 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class Point {
+  class Point
+  {
   public:
     
     Point();

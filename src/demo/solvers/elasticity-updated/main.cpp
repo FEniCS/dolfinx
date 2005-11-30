@@ -1,8 +1,10 @@
 // Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2005.
+//
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #include <dolfin.h>
 
@@ -11,7 +13,7 @@ using namespace dolfin;
 // Density
 class Density : public Function
 {
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     if(p.x < 0.01 && p.y > 0.0)
       return 1.0e3;
@@ -23,9 +25,9 @@ class Density : public Function
 // Right-hand side
 class Source : public Function
 {
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p, unsigned int i)
   {
-    int id = _cell->id();
+    int id = cell().id();
 
     if(i == 1)
       return 0.0;
@@ -37,7 +39,7 @@ class Source : public Function
 // Initial velocity
 class InitialVelocity : public Function
 {
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p, unsigned int i)
   {
     real result = 0.0;
 

@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-09-16
+// Last changed: 2005-11-29
 
 //#include <iostream>
 #include <sstream>
@@ -124,7 +124,7 @@ void ElasticityUpdatedSolver::init()
   // Set initial velocities
 
   AffineMap map;
-  v0.set(element1);
+  v0.attach(element1);
 
   {
   int *dofs = new int[element1.spacedim()];
@@ -136,7 +136,7 @@ void ElasticityUpdatedSolver::init()
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    v0.interpolate(coefficients, map);
+    v0.interpolate(coefficients, map, element1);
     element1.dofmap(dofs, cell, mesh);
 
     for(uint i = 0; i < element1.spacedim(); i++)

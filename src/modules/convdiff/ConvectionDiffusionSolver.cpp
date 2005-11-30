@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-09-16
+// Last changed: 2005-11-29
 
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion.h"
@@ -100,13 +100,12 @@ void ConvectionDiffusionSolver::ComputeElementSize(Mesh& mesh, Vector& h)
 }
 //-----------------------------------------------------------------------------
 void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Function& wnorm,
-                           Vector& wnorm_vector)
+						  Vector& wnorm_vector)
 {
   // Compute inverse norm of w
   const FiniteElement& wn_element = wnorm.element();
-  const FiniteElement& w_element  = w.element();
   uint n = wn_element.spacedim();
-  uint m = w_element.tensordim(0);
+  uint m = w.vectordim();
   int* dofs = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];

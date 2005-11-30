@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #include <dolfin/LinearForm.h>
 
@@ -29,7 +29,7 @@ void LinearForm::eval(real block[], const AffineMap& map, uint segment) const
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const FiniteElement& LinearForm::test() const
+FiniteElement& LinearForm::test()
 {
   dolfin_assert(_test); // Should be created by child class
   return *_test;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
@@ -32,13 +32,13 @@ void BilinearForm::eval(real block[], const AffineMap& map, uint segment) const
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const FiniteElement& BilinearForm::test() const
+FiniteElement& BilinearForm::test()
 {
   dolfin_assert(_test); // Should be created by child class
   return *_test;
 }
 //-----------------------------------------------------------------------------
-const FiniteElement& BilinearForm::trial() const
+FiniteElement& BilinearForm::trial()
 {
   dolfin_assert(_trial); // Should be created by child class
   return *_trial;

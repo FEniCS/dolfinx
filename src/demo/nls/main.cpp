@@ -1,6 +1,11 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2005
+//
+// First added:  2005
+// Last changed: 2005-11-29
+//
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
 // function (Fu) and update of the (approximate) Jacobian.  
@@ -37,7 +42,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return time()*p.x*sin(p.y);
   }

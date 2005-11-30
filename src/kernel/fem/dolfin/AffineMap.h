@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-17
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #ifndef __AFFINE_MAP_H
 #define __AFFINE_MAP_H
@@ -12,7 +12,6 @@
 
 namespace dolfin
 {
-
   class Cell;
 
   /// This class represents the affine map from the reference element to
@@ -35,7 +34,7 @@ namespace dolfin
     ~AffineMap();
 
     /// Update map for current element
-    void update(const Cell& cell);
+    void update(Cell& cell);
 
     /// Map given point from the reference element (2D)
     Point operator() (real X, real Y) const;
@@ -44,7 +43,7 @@ namespace dolfin
     Point operator() (real X, real Y, real Z) const;
 
     /// Return cell of current element
-    const Cell& cell() const;
+    inline Cell& cell() const { return *_cell; }
     
     // Determinant of Jacobian of map
     real det;
@@ -58,16 +57,16 @@ namespace dolfin
   private:
 
     // Update affine map from reference triangle
-    void updateTriangle(const Cell& cell);
+    void updateTriangle(Cell& cell);
     
     // Update affine map from reference tetrahedron
-    void updateTetrahedron(const Cell& cell);
+    void updateTetrahedron(Cell& cell);
 
     // Vertices of current cell
     Point p0, p1, p2, p3;
 
     // Current cell
-    const Cell* _cell;
+    Cell* _cell;
 
   };
 

@@ -36,7 +36,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = src/kernel/function
-DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = README $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
@@ -58,7 +58,10 @@ AR = ar
 ARFLAGS = cru
 libdolfin_function_a_AR = $(AR) $(ARFLAGS)
 libdolfin_function_a_LIBADD =
-am_libdolfin_function_a_OBJECTS = Function.$(OBJEXT)
+am_libdolfin_function_a_OBJECTS = DiscreteFunction.$(OBJEXT) \
+	Function.$(OBJEXT) FunctionPointerFunction.$(OBJEXT) \
+	GenericFunction.$(OBJEXT) LocalFunctionData.$(OBJEXT) \
+	UserFunction.$(OBJEXT)
 libdolfin_function_a_OBJECTS = $(am_libdolfin_function_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -193,11 +196,23 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_function.h \
-                               dolfin/Function.h
+                               dolfin/DiscreteFunction.h \
+                               dolfin/Function.h \
+                               dolfin/FunctionPointer.h \
+                               dolfin/FunctionPointerFunction.h \
+                               dolfin/GenericFunction.h \
+                               dolfin/LocalFunctionData.h \
+                               dolfin/UserFunction.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-function.a
-libdolfin_function_a_SOURCES = Function.cpp
+libdolfin_function_a_SOURCES = DiscreteFunction.cpp \
+                               Function.cpp \
+                               FunctionPointerFunction.cpp \
+                               GenericFunction.cpp \
+                               LocalFunctionData.cpp \
+                               UserFunction.cpp
+
 all: all-recursive
 
 .SUFFIXES:
@@ -271,7 +286,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiscreteFunction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Function.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FunctionPointerFunction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericFunction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalFunctionData.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserFunction.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

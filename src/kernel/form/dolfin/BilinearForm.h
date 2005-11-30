@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
@@ -33,10 +33,10 @@ namespace dolfin
     virtual void eval(real block[], const AffineMap& map, uint segment) const;
 
     /// Return finite element defining the test space
-    const FiniteElement& test() const;
+    FiniteElement& test();
 
     /// Return finite element defining the trial space
-    const FiniteElement& trial() const;
+    FiniteElement& trial();
 
   protected:
 

@@ -4,7 +4,7 @@
 // Modified by Andy Terrel 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005-11-11
+// Last changed: 2005-11-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -29,8 +29,8 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   checkdims(a, mesh);
 
   // Get finite elements
-  const FiniteElement& test_element = a.test();
-  const FiniteElement& trial_element = a.trial();
+  FiniteElement& test_element = a.test();
+  FiniteElement& trial_element = a.trial();
 
   // Create affine map
   AffineMap map;
@@ -102,7 +102,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   checkdims(L, mesh);
 
   // Get finite element
-  const FiniteElement& test_element = L.test();
+  FiniteElement& test_element = L.test();
 
   // Create affine map
   AffineMap map;
@@ -159,8 +159,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   checkdims(L, mesh);
  
   // Get finite elements
-  const FiniteElement& test_element = a.test();
-  const FiniteElement& trial_element = a.trial();
+  FiniteElement& test_element = a.test();
+  FiniteElement& trial_element = a.trial();
 
   // Create affine map
   AffineMap map;
@@ -237,7 +237,7 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
-		  const FiniteElement& element, BoundaryCondition& bc)
+		  FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions.");
 
@@ -255,7 +255,7 @@ void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+void FEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
 		  BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
@@ -275,7 +275,7 @@ void FEM::applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(Vector& b, Mesh& mesh,
-		  const FiniteElement& element, BoundaryCondition& bc)
+		  FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to vector.");
 
@@ -370,7 +370,7 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
-	       const FiniteElement& element, BoundaryCondition& bc)
+		     FiniteElement& element, BoundaryCondition& bc)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -399,7 +399,7 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   {
     // Get cell containing the edge (pick first, should only be one)
     dolfin_assert(edge->noCellNeighbors() == 1);
-    const Cell& cell = edge->cell(0);
+    Cell& cell = edge->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -452,8 +452,8 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
-        BoundaryCondition& bc)
+void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element, 
+		     BoundaryCondition& bc)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -482,7 +482,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element,
   {
     // Get cell containing the edge (pick first, should only be one)
     dolfin_assert(edge->noCellNeighbors() == 1);
-    const Cell& cell = edge->cell(0);
+    Cell& cell = edge->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -534,7 +534,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element, 
+void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element, 
         BoundaryCondition& bc)
 {
   // Create boundary
@@ -563,7 +563,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element,
   {
     // Get cell containing the edge (pick first, should only be one)
     dolfin_assert(edge->noCellNeighbors() == 1);
-    const Cell& cell = edge->cell(0);
+    Cell& cell = edge->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -613,7 +613,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
-		     const FiniteElement& element, BoundaryCondition& bc)
+		     FiniteElement& element, BoundaryCondition& bc)
 {
   // Create boundary
   Boundary boundary(mesh);
@@ -642,7 +642,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   {
     // Get cell containing the face (pick first, should only be one)
     dolfin_assert(face->noCellNeighbors() == 1);
-    const Cell& cell = face->cell(0);
+    Cell& cell = face->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -695,7 +695,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element, 
 		     BoundaryCondition& bc)
 {
   // Create boundary
@@ -725,7 +725,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element,
   {
     // Get cell containing the face (pick first, should only be one)
     dolfin_assert(face->noCellNeighbors() == 1);
-    const Cell& cell = face->cell(0);
+    Cell& cell = face->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -778,7 +778,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element,
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC_3D(Vector& b, Mesh& mesh,
-		     const FiniteElement& element, BoundaryCondition& bc)
+		     FiniteElement& element, BoundaryCondition& bc)
 {  
   // Create boundary
   Boundary boundary(mesh);
@@ -806,7 +806,7 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh,
   {
     // Get cell containing the face (pick first, should only be one)
     dolfin_assert(face->noCellNeighbors() == 1);
-    const Cell& cell = face->cell(0);
+    Cell& cell = face->cell(0);
 
     // Update affine map
     map.update(cell);
@@ -866,7 +866,7 @@ dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
   return nzmax;
 }
 //-----------------------------------------------------------------------------
-void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
+void FEM::checkdims(BilinearForm& a, const Mesh& mesh)
 {
   switch ( mesh.type() )
   {
@@ -887,7 +887,7 @@ void FEM::checkdims(const BilinearForm& a, const Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::checkdims(const LinearForm& L, const Mesh& mesh)
+void FEM::checkdims(LinearForm& L, const Mesh& mesh)
 {
   switch ( mesh.type() )
   {

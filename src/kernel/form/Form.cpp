@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-10-21
-// Last changed: 2005-10-03
+// Last changed: 2005-11-29
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -48,13 +48,13 @@ Form::~Form()
   }
 }
 //-----------------------------------------------------------------------------
-void Form::update(const AffineMap& map)
+void Form::update(AffineMap& map)
 {
   // Update coefficients
   updateCoefficients(map);
 }
 //-----------------------------------------------------------------------------
-void Form::add(Function& function, const FiniteElement* element)
+void Form::add(Function& f, FiniteElement* element)
 {
   if ( functions.size() == num_functions )
     dolfin_error("All functions already added.");
@@ -62,11 +62,12 @@ void Form::add(Function& function, const FiniteElement* element)
   // Get number of new function
   uint i = functions.size();
 
-  // Set finite element for function
-  function.set(*element);
+  // Set finite element for function, but only for discrete functions
+  if ( f.type() == Function::discrete )
+    f.attach(*element);
 
   // Add function and element
-  functions.push_back(&function);
+  functions.push_back(&f);
   elements.push_back(element);
 
   // Initialize coefficients
@@ -75,7 +76,7 @@ void Form::add(Function& function, const FiniteElement* element)
     c[i][j] = 0.0;
 }
 //-----------------------------------------------------------------------------
-void Form::updateCoefficients(const AffineMap& map)
+void Form::updateCoefficients(AffineMap& map)
 {
   dolfin_assert(num_functions == functions.size());
 
@@ -83,7 +84,7 @@ void Form::updateCoefficients(const AffineMap& map)
   for (uint i = 0; i < num_functions; i++)
   {
     dolfin_assert(functions[i]);
-    functions[i]->interpolate(c[i], map);
+    functions[i]->interpolate(c[i], map, *elements[i]);
   }
 }
 //-----------------------------------------------------------------------------

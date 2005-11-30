@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-09-21
+// Last changed: 2005-11-29
 //
 // This demo solves the driven cavity test problem
 // on the unit square.
@@ -14,7 +14,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p, unsigned int i) const
+  real operator() (const Point& p, unsigned int i)
   {
     return 0.0;
   }

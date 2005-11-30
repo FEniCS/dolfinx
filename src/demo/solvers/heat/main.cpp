@@ -1,5 +1,10 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
+//
+// Modified by Anders Logg 2005.
+//
+// First added:  ?
+// Last changed: 2005-11-29
 
 #include <dolfin.h>
   
@@ -8,7 +13,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return p.x*sin(p.y);
   }

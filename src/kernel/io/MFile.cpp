@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-09-20
+// Last changed: 2005-11-28
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -144,20 +144,6 @@ void MFile::operator<<(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Function& u)
 {
-  uint num_components = 0;
-  const FiniteElement& element = u.element();
-
-  if ( element.rank() == 0 )
-  {
-    num_components = 1;
-  }
-  else if ( element.rank() == 1 )
-  {
-    num_components = element.tensordim(0);
-  }
-  else
-    dolfin_error("Cannot handle tensor-valued functions.");
-
   // Write mesh the first time
   if ( u.number() == 0 )
     *this << u.mesh();
@@ -178,7 +164,7 @@ void MFile::operator<<(Function& u)
   if ( u.number() == 0 )
   {
     fprintf(fp, "%s = [", u.name().c_str());
-    for (unsigned int i = 0; i < num_components; i++)
+    for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
       for (NodeIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));
@@ -189,7 +175,7 @@ void MFile::operator<<(Function& u)
   else
   {
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
-    for (unsigned int i = 0; i < num_components; i++)
+    for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
       for (NodeIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));

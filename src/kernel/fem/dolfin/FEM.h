@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2004-05-19
-// Last changed: 2005-11-11
+// Last changed: 2005-11-29
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -49,14 +49,14 @@ namespace dolfin
     
     /// Apply boundary conditions to matrix and vector 
     static void applyBC(Matrix& A, Vector& b, Mesh& mesh,
-			const FiniteElement& element, BoundaryCondition& bc);
+			FiniteElement& element, BoundaryCondition& bc);
     
     /// Apply boundary conditions to matrix 
-    static void applyBC(Matrix& A, Mesh& mesh, const FiniteElement& element, 
+    static void applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
 			BoundaryCondition& bc);
 
     /// Apply boundary conditions to vector 
-    static void applyBC(Vector& b, Mesh& mesh, const FiniteElement& element,
+    static void applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
 			BoundaryCondition& bc);
 
     /// Lump matrix
@@ -75,33 +75,33 @@ namespace dolfin
 
     /// Apply boundary conditions on triangular mesh
     static void applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
-			   const FiniteElement& element, BoundaryCondition& bc);
+			   FiniteElement& element, BoundaryCondition& bc);
 
     /// Apply boundary conditions to matrix on triangular mesh
-    static void applyBC_2D(Matrix& A, Mesh& mesh, const FiniteElement& element,
-         BoundaryCondition& bc);
+    static void applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
+			   BoundaryCondition& bc);
 
     /// Apply boundary conditions to vector on triangular mesh
-    static void applyBC_2D(Vector& b, Mesh& mesh, const FiniteElement& element,
-        BoundaryCondition& bc);
+    static void applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
+			   BoundaryCondition& bc);
 
     /// Apply boundary conditions on tetrahedral mesh
     static void applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
-			   const FiniteElement& element, BoundaryCondition& bc);
+			   FiniteElement& element, BoundaryCondition& bc);
 
     /// Apply boundary conditions to matrix on tetrahedral mesh
-    static void applyBC_3D(Matrix& A, Mesh& mesh, const FiniteElement& element,
-         BoundaryCondition& bc);
+    static void applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
+			   BoundaryCondition& bc);
 
     /// Apply boundary conditions to vector on tetrahedral mesh
-    static void applyBC_3D(Vector& b, Mesh& mesh, const FiniteElement& element,
-         BoundaryCondition& bc);
+    static void applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
+			   BoundaryCondition& bc);
 
     /// Check that dimension of the mesh matches the form
-    static void checkdims(const BilinearForm& a, const Mesh& mesh);
+    static void checkdims(BilinearForm& a, const Mesh& mesh);
 
     /// Check that dimension of the mesh matches the form
-    static void checkdims(const LinearForm& L, const Mesh& mesh);
+    static void checkdims(LinearForm& L, const Mesh& mesh);
 
     /// Check number of nonzeros in each row
     static void checknz(const Matrix& A, uint nz);

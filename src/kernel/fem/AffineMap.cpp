@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-17
-// Last changed: 2005
+// Last changed: 2005-11-29
 
 #include <dolfin/Cell.h>
 #include <dolfin/AffineMap.h>
@@ -30,7 +30,7 @@ AffineMap::~AffineMap()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void AffineMap::update(const Cell& cell)
+void AffineMap::update(Cell& cell)
 {
   switch ( cell.type() )
   {
@@ -62,12 +62,7 @@ Point AffineMap::operator() (real X, real Y, real Z) const
 	       w*p0.z + X*p1.z + Y*p2.z + Z*p3.z);
 }
 //-----------------------------------------------------------------------------
-const Cell& AffineMap::cell() const
-{
-  return *_cell;
-}
-//-----------------------------------------------------------------------------
-void AffineMap::updateTriangle(const Cell& cell)
+void AffineMap::updateTriangle(Cell& cell)
 {
   dolfin_assert(cell.type() == Cell::triangle);
   
@@ -99,7 +94,7 @@ void AffineMap::updateTriangle(const Cell& cell)
   det = fabs(det);
 }
 //-----------------------------------------------------------------------------
-void AffineMap::updateTetrahedron(const Cell& cell)
+void AffineMap::updateTetrahedron(Cell& cell)
 {
   dolfin_assert(cell.type() == Cell::tetrahedron);
   

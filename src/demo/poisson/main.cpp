@@ -1,6 +1,9 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// First added:  2005
+// Last changed: 2005-11-29
+//
 // This simple program solves Poisson's equation
 //
 //     - div grad u(x, y) = f(x, y)
@@ -22,7 +25,7 @@ using namespace dolfin;
 // Right-hand side
 class MyFunction : public Function
 {
-  real operator() (const Point& p) const
+  real operator() (const Point& p, unsigned int i)
   {
     return p.x*sin(p.y);
   }
