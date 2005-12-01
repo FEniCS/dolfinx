@@ -1,0 +1,2 @@
+SUBDIRS = nonlinearpoisson \
+          poisson
