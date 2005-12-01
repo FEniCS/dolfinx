@@ -45,6 +45,7 @@ class MyFunction : public Function
   real eval(const Point& p, unsigned int i)
   {
     return time()*p.x*sin(p.y);
+    cout << "time in function " << endl;
   }
 };
 
@@ -55,7 +56,7 @@ class MyBC : public BoundaryCondition
   {
     BoundaryValue value;
     if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
-      value = 0.0;
+      value = 1.0*time();
     return value;
   }
 };
@@ -75,65 +76,9 @@ class MyNonlinearFunction : public NonlinearFunction
     // Compute F(u) and J at same time
     void form(Matrix& A, Vector& b, const Vector& x, real t)
     {
-      BilinearForm& a = *_a;
-      LinearForm& L   = *_L;
-      BoundaryCondition& bc = *_bc;
-      Mesh& mesh = *_mesh;
-
-      cout << "time = " << t << endl; 
-
-      // Update function u0
-      Vector& x0 = _u0->vector();
-      x0 = x;
-
-      // Assemble RHS vector, Jacobian, and apply boundary conditions 
-      dolfin_log(false);
-      FEM::assemble(a, L, A, b, mesh, bc);
-      dolfin_log(true);
     }
 
 */
-    // Compute F(u) and J at same time
-    void F(Vector& b, const Vector& x, real t)
-    {
-      BilinearForm& a = *_a;
-      LinearForm& L   = *_L;
-      BoundaryCondition& bc = *_bc;
-      Mesh& mesh = *_mesh;
-
-      cout << "time (F)= " << t << endl; 
-
-      // Update function u0
-      Vector& x0 = _u0->vector();
-      x0 = x;
-
-      // Assemble RHS vector, Jacobian, and apply boundary conditions 
-      dolfin_log(false);
-      FEM::assemble(L, b, mesh);
-      FEM::applyBC(b, mesh, a.test(), bc);
-      dolfin_log(true);
-    }
-
-    // Compute F(u) and J at same time
-    void J(Matrix& A, const Vector& x, real t)
-    {
-      BilinearForm& a = *_a;
-      LinearForm& L   = *_L;
-      BoundaryCondition& bc = *_bc;
-      Mesh& mesh = *_mesh;
-
-      cout << "time (J)= " << t << endl; 
-
-      // Assemble RHS vector, Jacobian, and apply boundary conditions 
-      dolfin_log(false);
-      FEM::assemble(a, A, mesh);
-      FEM::applyBC(A, mesh, a.test(), bc);
-      dolfin_log(true);
-    }
-
-
-
-
     // Compute F(u) 
     void F(Vector& b, const Vector& x)
     {
@@ -141,17 +86,37 @@ class MyNonlinearFunction : public NonlinearFunction
       LinearForm& L   = *_L;
       BoundaryCondition& bc = *_bc;
       Mesh& mesh = *_mesh;
+ 
+      Vector btemp, ctemp;
+      btemp = x;
+      ctemp = x;
+      ctemp = 0.0;
 
+//      cout << "  (F) = " << endl; 
 
       // Update function u0
       Vector& x0 = _u0->vector();
       x0 = x;
 
-      // Assemble RHS vector and apply boundary conditions 
+      // Assemble RHS vector 
       dolfin_log(false);
       FEM::assemble(L, b, mesh);
+
+      // Assemble BC to RHS vector 
       FEM::applyBC(b, mesh, a.test(), bc);
+      FEM::applyBC(btemp, mesh, a.test(), bc);
+      FEM::applyBC(ctemp, mesh, a.test(), bc);
       dolfin_log(true);
+
+      // btemp: contains Dirichlet BC + solution x
+      // ctemp: contains Dirichlet BC + zeroes
+
+      // Contains \Delta BC. + zeroes
+      btemp -= x;         
+      // RHS + zeroes for BC
+      b -= ctemp;
+      // RHS - \Delta BC
+      b -= btemp;
     }
 
     // Compute J
@@ -162,6 +127,7 @@ class MyNonlinearFunction : public NonlinearFunction
       BoundaryCondition& bc = *_bc;
       Mesh& mesh = *_mesh;
 
+//      cout << "   (J) = " << endl; 
 
       // Assemble Jacobian, and apply boundary conditions 
       dolfin_log(false);
@@ -169,11 +135,6 @@ class MyNonlinearFunction : public NonlinearFunction
       FEM::applyBC(A, mesh, a.test(), bc);
       dolfin_log(true);
     }
-
-
-
-
-
 
     // Compute system size
     dolfin::uint size()
@@ -203,7 +164,7 @@ class MyNonlinearFunction : public NonlinearFunction
 int main()
 {
   // Set up problem
-  UnitSquare mesh(4, 4);
+  UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
   Matrix A;
@@ -226,7 +187,7 @@ int main()
 
   // Set Newton parameters
   nonlinear_solver.setMaxiter(50);
-  nonlinear_solver.setRtol(1e-8);
+  nonlinear_solver.setRtol(1e-10);
   nonlinear_solver.setAtol(1e-10);
   nonlinear_solver.setParameters();
 
@@ -237,13 +198,22 @@ int main()
   real t  = 0.0;
   real T  = 3.0;
   f.sync(t);
+  bc.sync(t);
+
+  Vector xtemp;
 
   // Associate matrix and vectors with solver
   nonlinear_solver.init(A, b, x);
   while( t < T)
   {
+    xtemp = x;
     t += dt;
-      nonlinear_solver.solve();
+    cout << "Starting step " << t << endl;
+    nonlinear_solver.solve();
+//    x.disp();
+//    x = 0.0; // Compute initial guess
+//    x += x;
+//    x -= xtemp; 
   }
   cout << "Finished nonlinear solve. " << endl;
 
@@ -253,7 +223,8 @@ int main()
   dolfin_log(false);
   FEM::assemble(a, L, A, b, mesh, bc);
   dolfin_log(true);
-  GMRES solver;
+  LU solver;
+//  solver.setRtol(1.e-15);
   solver.solve(A, y, b);  
   cout << "Finished linear solve. " << endl;
   
@@ -262,7 +233,8 @@ int main()
   Vector e;
   e = x; e-=  y;
   cout << " norm || u^nonlin - u^lin || =  " << e.norm() << endl; 
-
+//  y.disp();
+  
   // Save function to file
   Function u(x, mesh, a.trial());
   File file("poisson_nl.pvd");

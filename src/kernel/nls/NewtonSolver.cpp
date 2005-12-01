@@ -103,7 +103,7 @@ void NewtonSolver::setParameters()
   // Set options for linear solver and preconditioner
   KSP ksp;   
   SNESGetKSP(snes, &ksp);
-  KSPSetTolerances(ksp, 1.0e-10, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
+  KSPSetTolerances(ksp, 1.0e-15, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
 
   PC  pc; 
   KSPGetPC(ksp, &pc);

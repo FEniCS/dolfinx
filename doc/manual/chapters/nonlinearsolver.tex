@@ -1,0 +1,82 @@
+\chapter{Nonlinear solver}
+\index{nonlinear solver}
+
+\devnote{This chapter is currently being written\ldots}
+
+\dolfin{} provides tools for solving nonlinear equations of the form
+\begin{equation}
+  F(u) = 0
+\end{equation}
+where $F: \mathbb{R}^{n} \rightarrow \mathbb{R}^{n}$. The nonlinear solvers are
+based on Newton's method and utilise functions from PETSc \cite{www:petsc}.    
+
+To use the nonlinear solver, a nonlinear function must be defined. The nonlinear
+solver is then initialised with this function and a solution computed.
+
+
+
+\section{Nonlinear functions}
+\index{NonlinearFunction}
+
+To solve a nonlinear problem, the user must defined a class which . The class 
+should be derived from the \dolfin class \texttt{NonlinearFunction}. The class 
+should contain the necessary functions to form the function $F(u)$ and the 
+Jacobian matrix  $J = \partial F / \partial u$. The precise form of the user 
+defined class will depend on the PDE being solved and the numerical method.
+The structu of a user defined class \texttt{MyNonlinearFunction} is shown below.
+\begin{code}
+class MyNonlinearFunction : public NonlinearFunction
+\{
+  public: 
+  
+    // Constructor 
+    MyNonlinearFunction() : NonlinearFunction()\{\}
+  
+    // Compute F(u) 
+    void F(Vector\& b, const Vector\& x)
+    \{
+      // Insert F(u) into the vector b 
+    \}
+
+    // Compute J
+    void J(Matrix\& A, const Vector\& x)
+    \{
+      // Insert the Jacobian into the matrix A 
+    \}
+
+    dolfin::uint size()
+    \{      
+      // Return the dimension of the Jacobian matrix 
+    \}
+
+    dolfin::uint nzsize()
+    \{      
+      // Return the maximum number of zeroes per row of the Jacobian
+    \}
+
+  private:
+    // Pointers to objects with which F(u) is defined
+\};
+\end{code}
+
+
+\section{Newton solver}
+\index{Newton's method}
+\index{NewtonSolver}
+
+\subsection{Linear solver}
+
+\subsection{Application of Dirichlet boundary conditions}
+
+The application of inhomogenuous Dirichlet boundary conditions in the context
+of a Newton solver requires particular attention.
+
+
+
+\subsection{Newton solver parameters}
+
+\subsection{Application of Dirichlet boundary conditions}
+
+
+\section{Incremental Newton solver}
+
