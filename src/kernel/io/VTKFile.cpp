@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2005.
-
+//
 // First added:  2005-07-05
-// Last changed: 2005-11-29
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -26,7 +26,7 @@ VTKFile::~VTKFile()
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Mesh& mesh)
 {
-  dolfin_info("Saving mesh to VTK file.");
+  //dolfin_info("Saving mesh to VTK file.");
   
   // Update vtu file name and clear file
   vtuNameUpdate(mesh.number());
@@ -42,11 +42,14 @@ void VTKFile::operator<<(Mesh& mesh)
   
   // Write headers
   VTKHeaderClose();
+
+  cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
+       << ") to file " << filename << " in VTK format." << endl;
 }
 //----------------------------------------------------------------------------
 void VTKFile::operator<<(Function& u)
 {
-  dolfin_info("Writing Function to VTK file");
+  //dolfin_info("Writing Function to VTK file.");
 
   // Update vtu file name and clear file
   vtuNameUpdate(u.number());
@@ -78,7 +81,6 @@ void VTKFile::operator<<(Function& u)
 //----------------------------------------------------------------------------
 void VTKFile::MeshWrite(const Mesh& mesh) const
 {
-
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
 
@@ -255,4 +257,3 @@ void VTKFile::vtuNameUpdate(const int counter)
   fclose(fp);
 }
 //----------------------------------------------------------------------------
-
