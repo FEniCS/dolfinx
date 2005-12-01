@@ -1,0 +1,17 @@
+# Copyright (C) 2005 Garth N. Wells.
+# Licensed under the GNU GPL Version 2.
+#
+# The linear form L(v) for Poisson's equation and the 
+# modified bilinear form a(v,u)
+#
+# Compile this form with FFC: ffc PoissonNl.form.
+
+element = FiniteElement("Lagrange", "triangle", 1)
+
+v = BasisFunction(element)
+u = BasisFunction(element)
+u0= Function(element)
+f = Function(element)
+
+a = 1.1*v.dx(i)*u.dx(i)*dx
+L = v.dx(i)*u0.dx(i)*dx -v*f*dx
