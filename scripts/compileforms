@@ -20,11 +20,13 @@ DIRS='src/modules/poisson/dolfin
       src/modules/convdiff/dolfin
       src/modules/elasticity/dolfin
       src/modules/elasticity-updated/dolfin
-      src/modules/stokes
-      src/modules/heat
+      src/modules/navierstokes/dolfin
+      src/modules/stokes/dolfin
+      src/modules/heat/dolfin
       src/kernel/fem/dolfin
       src/demo/poisson
-      src/demo/fem/convergence'
+      src/demo/fem/convergence
+      src/demo/nls'
 
 for DIR in $DIRS; do
     cd $TOPLEVEL/$DIR

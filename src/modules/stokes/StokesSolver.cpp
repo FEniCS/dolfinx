@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-09-20
+// Last changed: 2005-11-30
 
 #include <dolfin/Stokes.h>
 #include <dolfin/StokesSolver.h>
@@ -30,11 +30,19 @@ void StokesSolver::solve()
   // Solve the linear system
   GMRES solver;
   solver.solve(A, x, b);
+  Function w(x, mesh, a.trial());
 
-  // Save function to file
-  Function u(x, mesh, a.trial());
-  File file("stokes.pvd");
-  file << u;
+  // Pick the two sub functions of the solution
+  Function u = w[0];
+  Function p = w[1];
+
+  // Save the solutions to file
+  u.rename("u", "velocity");
+  p.rename("p", "pressure");
+  File ufile("velocity.m");
+  File pfile("pressure.m");
+  ufile << u;
+  pfile << p;
 }
 //-----------------------------------------------------------------------------
 void StokesSolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc)

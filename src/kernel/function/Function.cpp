@@ -54,7 +54,11 @@ Function::Function(Vector& x, Mesh& mesh, FiniteElement& element)
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& f)
+  : Variable("u", "no description"), TimeDependent(),
+    f(0), _type(f._type), _cell(0)
 {
+  cout << "Function type: " << f.type() << endl;
+
   switch ( f.type() )
   {
   case user:
@@ -78,8 +82,12 @@ Function::~Function()
 //-----------------------------------------------------------------------------
 Function Function::operator[] (const uint i)
 {
-  // FIXME: Not implemented
-  Function f;
+  // Create copy
+  Function f(*this);
+
+  // Restrict copy to sub function or component
+  f.f->sub(i);
+
   return f;
 }
 //-----------------------------------------------------------------------------

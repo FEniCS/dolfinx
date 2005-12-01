@@ -10,6 +10,7 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Vector.h>
+#include <dolfin/FEM.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/DiscreteFunction.h>
@@ -18,27 +19,33 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x)
-  : _x(&x), _mesh(0), _element(0)
+  : GenericFunction(), _x(&x), _mesh(0), _element(0),
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
 {
   // Mesh and element need to be specified later or are automatically
   // chosen during assembly.
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
-  : _x(&x), _mesh(&mesh), _element(0)
+  : GenericFunction(), _x(&x), _mesh(&mesh), _element(0),
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
 {
   // Element needs to be specified later or are automatically
   // chosen during assembly.
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element)
-  : _x(&x), _mesh(&mesh), _element(&element)
+  : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element),
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
 {
-  // Do nothing
+  // Update vector dimension from element
+  updateVectorDimension();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
-  : _x(f._x), _mesh(f._mesh), _element(f._element)
+  : GenericFunction(), _x(f._x), _mesh(f._mesh), _element(f._element),
+    _vectordim(f._vectordim), component(f.component),
+    mixed_offset(f.mixed_offset), component_offset(f.component_offset)
 {
   // Do nothing, just copy the values
 }
@@ -61,9 +68,67 @@ real DiscreteFunction::operator() (const Node& node, uint i)
   // Initialize local data (if not already initialized correctly)
   local.init(*_element);
 
+  // Get array of values (assumes uniprocessor case)
+  real* xx = _x->array();
+
   // Evaluate all components at given vertex and pick given component
-  _element->vertexeval(local.values, node.id(), *_x, *_mesh);
-  return local.values[i];
+  _element->vertexeval(local.values, node.id(), xx + mixed_offset, *_mesh);
+
+  // Restore array
+  _x->restore(xx);
+
+  return local.values[component + i];
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::sub(uint i)
+{
+  // Check that we have an element
+  if ( !_element )
+    dolfin_error("Unable to pick sub function or component of function since no element has been attached.");
+
+  // Check that we have a mesh
+  if ( !_mesh )
+    dolfin_error("Unable to pick sub function or component of function since no mesh has been attached.");
+
+  // Check if function is mixed
+  if ( _element->elementdim() > 1 )
+  {
+    // Check the dimension
+    if ( i >= _element->elementdim() )
+      dolfin_error2("Illegal sub function index %d for mixed function with %d sub functions.",
+		    i, _element->elementdim());
+
+    // Compute offset for mixed sub function
+    mixed_offset = 0;
+    for (uint j = 0; j < i; j++)
+      mixed_offset += FEM::size(*_mesh, (*_element)[j]);
+    
+    // Pick sub element and update vector dimension
+    _element = &((*_element)[i]);
+    updateVectorDimension();
+
+    // Make sure component and component offset are zero
+    component = 0;
+    component_offset = 0;
+  }
+  else
+  {
+    // Check if function is vector-valued
+    if ( _vectordim == 1 )
+      dolfin_error("Cannot pick component of scalar function.");
+    
+    // Check the dimension
+    if ( i >= _vectordim )
+      dolfin_error2("Illegal component index %d for function with %d components.",
+		    i, _vectordim);
+    
+    // Compute offset for component
+    component_offset = FEM::size(*_mesh, *_element) / _vectordim;    
+
+    // Save the component and make function scalar
+    component = i;
+    _vectordim = 1;
+  }
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
@@ -84,28 +149,15 @@ void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
 
   // Pick values
   for (uint i = 0; i < _element->spacedim(); i++)
-    coefficients[i] = xx[local.dofs[i]];
+    coefficients[i] = xx[mixed_offset + component_offset + local.dofs[i]];
 
   // Restore array
-  _x->restore(xx);    
+  _x->restore(xx);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint DiscreteFunction::vectordim() const
 {
-  dolfin_assert(_element);
-
-  if ( _element->rank() == 0 )
-  {
-    return 1;
-  }
-  else if ( _element->rank() == 1 )
-  {
-    return _element->tensordim(0);
-  }
-  else
-    dolfin_error("Cannot handle tensor-valued functions.");
-
-  return 0;
+  return _vectordim;
 }
 //-----------------------------------------------------------------------------
 Vector& DiscreteFunction::vector()
@@ -139,5 +191,24 @@ void DiscreteFunction::attach(Mesh& mesh)
 void DiscreteFunction::attach(FiniteElement& element)
 {
   _element = &element;
+  updateVectorDimension();
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::updateVectorDimension()
+{
+  dolfin_assert(_element);
+
+  if ( _element->rank() == 0 )
+  {
+    _vectordim = 1;
+  }
+  else if ( _element->rank() == 1 )
+  {
+    _vectordim = _element->tensordim(0);
+  }
+  else
+  {
+    dolfin_error("Cannot handle tensor-valued functions.");
+  }
 }
 //-----------------------------------------------------------------------------

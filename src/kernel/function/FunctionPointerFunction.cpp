@@ -15,15 +15,21 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::FunctionPointerFunction(FunctionPointer f,
 						 uint vectordim)
-  : f(f), _vectordim(vectordim), _mesh(0)
+  : GenericFunction(),
+    f(f), _vectordim(vectordim), component(0), _mesh(0)
 {
-  // Do nothing
+  // Check vector dimension
+  if ( _vectordim == 0 )
+    dolfin_error("Vector-valued function must have at least one component.");
 }
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::FunctionPointerFunction(const FunctionPointerFunction& f)
-  : f(f.f), _vectordim(f._vectordim), _mesh(f._mesh)
+  : GenericFunction(),
+    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh)
 {
-  // Do nothing, just copy the values
+  // Check vector dimension
+  if ( _vectordim == 0 )
+    dolfin_error("Vector-valued function must have at least one component.");
 }
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::~FunctionPointerFunction()
@@ -33,14 +39,30 @@ FunctionPointerFunction::~FunctionPointerFunction()
 //-----------------------------------------------------------------------------
 real FunctionPointerFunction::operator()(const Point& p, uint i)
 {
-  // Call overloaded evaluation operator at given point
-  return (*f)(p, i);
+  // Call function at given point
+  return (*f)(p, component + i);
 }
 //-----------------------------------------------------------------------------
 real FunctionPointerFunction::operator() (const Node& node, uint i)
 {
-  // Call overloaded evaluation operator at given node
-  return (*f)(node.coord(), i);
+  // Call function at given node
+  return (*f)(node.coord(), component + i);
+}
+//-----------------------------------------------------------------------------
+void FunctionPointerFunction::sub(uint i)
+{
+  // Check if function is vector-valued
+  if ( _vectordim == 1 )
+    dolfin_error("Cannot pick component of scalar function.");
+
+  // Check the dimension
+  if ( i >= _vectordim )
+    dolfin_error2("Illegal component index %d for function with %d components.",
+		  i, _vectordim);
+
+  // Save the component and make function scalar
+  component = i;
+  _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::interpolate(real coefficients[],
@@ -55,7 +77,7 @@ void FunctionPointerFunction::interpolate(real coefficients[],
 
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)
-    coefficients[i] = (*f)(local.points[i], local.components[i]);
+    coefficients[i] = (*f)(local.points[i], component + local.components[i]);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FunctionPointerFunction::vectordim() const

@@ -18,15 +18,21 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 UserFunction::UserFunction(Function* f, uint vectordim)
-  : f(f), _vectordim(vectordim),  _mesh(0)
+  : GenericFunction(),
+    f(f), _vectordim(vectordim), component(0), _mesh(0)
 {
-  // Do nothing
+  // Check vector dimension
+  if ( _vectordim == 0 )
+    dolfin_error("Vector-valued function must have at least one component.");
 }
 //-----------------------------------------------------------------------------
 UserFunction::UserFunction(const UserFunction& f)
-  : f(f.f), _vectordim(f._vectordim), _mesh(f._mesh)
+  : GenericFunction(),
+    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh)
 {
-  // Do nothing, just copy the values
+  // Check vector dimension
+  if ( _vectordim == 0 )
+    dolfin_error("Vector-valued function must have at least one component.");
 }
 //-----------------------------------------------------------------------------
 UserFunction::~UserFunction()
@@ -36,15 +42,30 @@ UserFunction::~UserFunction()
 //-----------------------------------------------------------------------------
 real UserFunction::operator()(const Point& p, uint i)
 {
-  dolfin_info("User-defined functions must implement real operator()(const Point& p, unsigned int i).");
-  dolfin_error("Missing evaluation operator.");
-  return 0.0;
+  // Call overloaded eval function at given node
+  return f->eval(p, component + i);
 }
 //-----------------------------------------------------------------------------
 real UserFunction::operator() (const Node& node, uint i)
 {
   // Call overloaded eval function at given node
-  return f->eval(node.coord(), i);
+  return f->eval(node.coord(), component + i);
+}
+//-----------------------------------------------------------------------------
+void UserFunction::sub(uint i)
+{
+  // Check if function is vector-valued
+  if ( _vectordim == 1 )
+    dolfin_error("Cannot pick component of scalar function.");
+
+  // Check the dimension
+  if ( i >= _vectordim )
+    dolfin_error2("Illegal component index %d for function with %d components.",
+		  i, _vectordim);
+
+  // Save the component and make function scalar
+  component = i;
+  _vectordim = 1;
 }
 //-----------------------------------------------------------------------------
 void UserFunction::interpolate(real coefficients[], AffineMap& map,
@@ -58,7 +79,7 @@ void UserFunction::interpolate(real coefficients[], AffineMap& map,
 
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)
-    coefficients[i] = f->eval(local.points[i], local.components[i]);
+    coefficients[i] = f->eval(local.points[i], component + local.components[i]);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UserFunction::vectordim() const

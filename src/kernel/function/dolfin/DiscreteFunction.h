@@ -43,6 +43,9 @@ namespace dolfin
     /// Evaluate function at given node
     real operator() (const Node& node, uint i);
 
+    // Restrict to sub function or component (if possible)
+    void sub(uint i);
+
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
 
@@ -69,6 +72,9 @@ namespace dolfin
 
   private:
 
+    // Update vector dimension from current element
+    void updateVectorDimension();
+
     // Pointer to degrees of freedom
     Vector* _x;
 
@@ -78,6 +84,18 @@ namespace dolfin
     // Pointer to finite element
     FiniteElement* _element;
     
+    // Number of vector dimensions
+    uint _vectordim;
+
+    // Current component
+    uint component;
+
+    // Current offset for mixed sub function
+    uint mixed_offset;
+    
+    // Current component offset
+    uint component_offset;
+
   };
 
 }

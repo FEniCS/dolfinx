@@ -88,13 +88,18 @@ public:
       components[2] = 0;
     }
   
-    void vertexeval(real values[], unsigned int vertex, const Vector& x, const Mesh& mesh) const
+    void vertexeval(real values[], unsigned int vertex, const real x[], const Mesh& mesh) const
     {
       // FIXME: Temporary fix for Lagrange elements
-      values[0] = x(vertex);
+      values[0] = x[vertex];
     }
   
     const FiniteElement& operator[] (unsigned int i) const
+    {
+      return *this;
+    }
+  
+    FiniteElement& operator[] (unsigned int i)
     {
       return *this;
     }
@@ -171,13 +176,18 @@ public:
       components[2] = 0;
     }
   
-    void vertexeval(real values[], unsigned int vertex, const Vector& x, const Mesh& mesh) const
+    void vertexeval(real values[], unsigned int vertex, const real x[], const Mesh& mesh) const
     {
       // FIXME: Temporary fix for Lagrange elements
-      values[0] = x(vertex);
+      values[0] = x[vertex];
     }
   
     const FiniteElement& operator[] (unsigned int i) const
+    {
+      return *this;
+    }
+  
+    FiniteElement& operator[] (unsigned int i)
     {
       return *this;
     }

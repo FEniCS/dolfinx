@@ -204,7 +204,9 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                           dolfin/LoadVector.h \
                           dolfin/MassMatrix.h \
                           dolfin/P1Tet.h \
+                          dolfin/P1TetTemplate.h \
                           dolfin/P1Tri.h \
+                          dolfin/P1TriTemplate.h \
                           dolfin/StiffnessMatrix.h
 
 INCLUDES = @KERNEL_CFLAGS@

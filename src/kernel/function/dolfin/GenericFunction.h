@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -37,6 +37,9 @@ namespace dolfin
 
     /// Evaluate function at given node
     virtual real operator() (const Node& node, uint i) = 0;
+
+    // Restrict to sub function or component (if possible)
+    virtual void sub(uint i) = 0;
 
     /// Compute interpolation of function onto local finite element space
     virtual void interpolate(real coefficients[], AffineMap& map, FiniteElement& element) = 0;

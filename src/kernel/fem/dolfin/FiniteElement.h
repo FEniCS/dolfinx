@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-29
+// Last changed: 2005-11-30
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -11,7 +11,6 @@
 #include <dolfin/Cell.h>
 #include <dolfin/Node.h>
 #include <dolfin/Point.h>
-#include <dolfin/Vector.h>
 #include <dolfin/AffineMap.h>
 
 namespace dolfin
@@ -51,12 +50,14 @@ namespace dolfin
     virtual void pointmap(Point points[], unsigned int components[],
 			  const AffineMap& map) const = 0;
 
-    // FIXME: Should not have vector here!
-    /// Compute map from (vertex, component) to function value
-    virtual void vertexeval(real values[], unsigned int vertex, 
-			    const Vector& x, const Mesh& mesh) const = 0;
+    /// Compute map from vertex to function values at vertex
+    virtual void vertexeval(real values[], unsigned int vertex,
+			    const real x[], const Mesh& mesh) const = 0;
 
     /// Return given sub element of (mixed) element
+    virtual FiniteElement& operator[] (unsigned int i) = 0;
+    
+    // Return given sub element of (mixed) element
     virtual const FiniteElement& operator[] (unsigned int i) const = 0;
 
     /// Display finite element data

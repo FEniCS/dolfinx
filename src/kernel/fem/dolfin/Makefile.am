@@ -7,5 +7,7 @@ EXTRA_DIST = dolfin_fem.h \
              LoadVector.h \
              MassMatrix.h \
              P1Tet.h \
+             P1TetTemplate.h \
              P1Tri.h \
+             P1TriTemplate.h \
              StiffnessMatrix.h

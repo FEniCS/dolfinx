@@ -37,6 +37,9 @@ namespace dolfin
     /// Evaluate function at given node
     real operator() (const Node& node, uint i);
 
+    // Restrict to sub function or component (if possible)
+    void sub(uint i);
+
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
 
@@ -68,6 +71,9 @@ namespace dolfin
 
     // Number of vector dimensions
     uint _vectordim;
+
+    // Current component
+    uint component;
 
     // Pointer to mesh associated with function (null if none)
     Mesh* _mesh;

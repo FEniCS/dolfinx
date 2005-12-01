@@ -305,6 +305,10 @@ void FEM::lump(const Matrix& M, Vector& m)
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 {
+  // FIXME: This could be much more efficient. FFC could generate a
+  // FIXME: function that calculates the total number of degrees of
+  // FIXME: freedom in just a few operations.
+
   // Count the degrees of freedom (check maximum index)
   
   int* dofs = new int[element.spacedim()];
