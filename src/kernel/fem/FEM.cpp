@@ -274,7 +274,7 @@ void FEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element,
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC(Vector& b, Mesh& mesh,
+void FEM::applyBC(Vector& b, const Vector& x, Mesh& mesh,
 		  FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to vector.");
@@ -283,10 +283,10 @@ void FEM::applyBC(Vector& b, Mesh& mesh,
   switch ( mesh.type() )
   {
   case Mesh::triangles:
-    applyBC_2D(b, mesh, element, bc);
+    applyBC_2D(b, x, mesh, element, bc);
     break;
   case Mesh::tetrahedra:
-    applyBC_3D(b, mesh, element, bc);
+    applyBC_3D(b, x, mesh, element, bc);
     break;
   default:
     dolfin_error("Unknown mesh type.");
@@ -538,7 +538,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element, 
+void FEM::applyBC_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element, 
         BoundaryCondition& bc)
 {
   // Create boundary
@@ -600,7 +600,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
         if ( !row_set[dof] )
         {
           m++;
-          b(dof) = bv.value;
+          b(dof) = - bv.value + x(dof);
           row_set[dof] = true;
         }
       }
@@ -781,7 +781,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
   delete [] row_set;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_3D(Vector& b, Mesh& mesh,
+void FEM::applyBC_3D(Vector& b, const Vector& x, Mesh& mesh,
 		     FiniteElement& element, BoundaryCondition& bc)
 {  
   // Create boundary
@@ -843,7 +843,7 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh,
         if ( !row_set[dof] )
         {
           m++;
-          b(dof) = bv.value;
+          b(dof) = -bv.value + x(dof);
           row_set[dof] = true;
         }
       }

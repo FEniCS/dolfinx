@@ -55,9 +55,13 @@ namespace dolfin
     static void applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
 			BoundaryCondition& bc);
 
-    /// Apply boundary conditions to vector 
-    static void applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
+    /// Apply boundary conditions to vector. For Dirichlet BC, b = x - bc. 
+    static void applyBC(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
 			BoundaryCondition& bc);
+
+//    /// Apply boundary conditions to vector 
+//    static void applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
+//			BoundaryCondition& bc);
 
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
@@ -81,8 +85,12 @@ namespace dolfin
     static void applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
 
+//    /// Apply boundary conditions to vector on triangular mesh
+//    static void applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
+//			   BoundaryCondition& bc);
+
     /// Apply boundary conditions to vector on triangular mesh
-    static void applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
+    static void applyBC_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
 
     /// Apply boundary conditions on tetrahedral mesh
@@ -93,8 +101,12 @@ namespace dolfin
     static void applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
 
+//    /// Apply boundary conditions to vector on tetrahedral mesh
+//    static void applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
+//			   BoundaryCondition& bc);
+
     /// Apply boundary conditions to vector on tetrahedral mesh
-    static void applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
+    static void applyBC_3D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
 
     /// Check that dimension of the mesh matches the form
