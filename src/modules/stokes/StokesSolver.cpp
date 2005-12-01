@@ -39,8 +39,8 @@ void StokesSolver::solve()
   // Save the solutions to file
   u.rename("u", "velocity");
   p.rename("p", "pressure");
-  File ufile("velocity.m");
-  File pfile("pressure.m");
+  File ufile("velocity.pvd");
+  File pfile("pressure.pvd");
   ufile << u;
   pfile << p;
 }
