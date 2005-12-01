@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy Terrel 2005.
+// Modified by Garth N. Wells 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005-11-29
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>

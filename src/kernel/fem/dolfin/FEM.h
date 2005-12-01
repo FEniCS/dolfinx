@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2004-05-19
-// Last changed: 2005-11-29
+// Last changed: 2005-12-01
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -59,10 +59,6 @@ namespace dolfin
     static void applyBC(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
 			BoundaryCondition& bc);
 
-//    /// Apply boundary conditions to vector 
-//    static void applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
-//			BoundaryCondition& bc);
-
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
 
@@ -85,10 +81,6 @@ namespace dolfin
     static void applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
 
-//    /// Apply boundary conditions to vector on triangular mesh
-//    static void applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
-//			   BoundaryCondition& bc);
-
     /// Apply boundary conditions to vector on triangular mesh
     static void applyBC_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
@@ -100,10 +92,6 @@ namespace dolfin
     /// Apply boundary conditions to matrix on tetrahedral mesh
     static void applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
 			   BoundaryCondition& bc);
-
-//    /// Apply boundary conditions to vector on tetrahedral mesh
-//    static void applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
-//			   BoundaryCondition& bc);
 
     /// Apply boundary conditions to vector on tetrahedral mesh
     static void applyBC_3D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element,
