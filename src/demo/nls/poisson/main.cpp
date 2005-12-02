@@ -57,7 +57,7 @@ class MyBC : public BoundaryCondition
   {
     BoundaryValue value;
     if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
-      value = 1.0*time();
+      value = 0.0*time();
     return value;
   }
 };
@@ -80,7 +80,7 @@ class MyNonlinearFunction : public NonlinearFunction
     }
 
 */
-    // Compute F(u) 
+    // Compute the residual F(u) 
     void F(Vector& b, const Vector& x)
     {
       LinearForm& L   = *_L;
@@ -91,12 +91,12 @@ class MyNonlinearFunction : public NonlinearFunction
       Vector& x0 = _u0->vector();
       x0 = x;
 
-      // Assemble RHS vector 
+      // Assemble residual vector 
       dolfin_log(false);
       FEM::assemble(L, b, mesh);
 
-      // Assemble BC to RHS vector 
-      FEM::applyBC(b, x, mesh, L.test(), bc);
+      // Assemble BC to RHS vector
+      FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
       dolfin_log(true);
     }
 
@@ -139,10 +139,12 @@ class MyNonlinearFunction : public NonlinearFunction
 };
 
 
-int main()
+int main(int argc, char* argv[])
 {
+  dolfin_init(argc, argv);
+ 
   // Set up problem
-  UnitSquare mesh(4, 4);
+  UnitSquare mesh(128, 128);
   MyFunction f;
   MyBC bc;
   Matrix A;
@@ -171,44 +173,114 @@ int main()
 
   real dt = 1.0;  // time step
   real t  = 0.0;  // initial time
-  real T  = 3.0;  // final time
+  real T  = 1.0;  // final time
   f.sync(t);      // Associate time with source term
   bc.sync(t);     // Associate time with boundary conditions
 
-  // Associate matrix and vectors with solver
-  nonlinear_solver.init(A, b, x);
+//---------------------------------------------------
+  // Assemble and solve linear problem and time
+  dolfin_log(false);
+  GMRES solver;
+  solver.setRtol(1.e-10);
+  dolfin_log(true);
 
-  // Solve nonlinear problem
-  cout << "Starting nonlinear assemble and solve. " << endl;
+  t = 1.0;
+  cout << "Starting linear assemble and solve. " << endl;
+  dolfin_log(false);
+  tic();
+  FEM::assemble(a, L, A, b, mesh, bc);
+  dolfin_log(true);
+  solver.solve(A, y, b);  
+  cout << "**** Finished linear solve. Time = " << toc() << endl;
+
+//-------------------------------------------------------
+  // Homemade Netwon procedure
+  GMRES solver2;
+  solver2.setRtol(1.e-10);
+
+  x0.init(mesh.noVertices());
+  x0 = 0.0;
+  x = x0;
+  
+  t = 0.0;
+  int iteration;
+  Vector dx;
+  real residual0;
+  real residual;
+  real rel_residual;
+
+  cout << "Using homemade nonlinear assemble and solve. " << endl;
   while( t < T)
   {
     t += dt;
-    cout << "Starting Newton step. Time = " << t << endl;
-    nonlinear_solver.solve();
+    cout << "   Starting test Newton step. Time = " << t << endl;
+    iteration = 0;
+    rel_residual = 1.0;
+
+    tic();
+    while( rel_residual > 1e-10 && iteration < 30 )
+    {
+      x0 = x;
+
+      dolfin_log(false);
+      FEM::assemble(a_nl, L_nl, A, b, mesh);
+      FEM::applyBC(A, mesh, a_nl.test(), bc);
+      FEM::assembleBCresidual(b, x, mesh, L_nl.test(), bc);
+
+      if( iteration == 0 ) residual0 = b.norm();
+
+      b *= -1.0;
+      solver2.solve(A, dx, b);  
+      x += dx;
+      dx = 0.0;
+
+      rel_residual = b.norm()/residual0;
+
+      dolfin_log(true);
+      cout << "  Residual = " << rel_residual << " Iteration= " << iteration << endl;      
+      ++iteration;
+    }
+      dolfin_log(true);
+    cout << "   **** Newton test solve time = " << toc() << endl;
   }
-  cout << "Finished nonlinear solve. " << endl;
-
-
-  // Assemble and solve linear problem
-  cout << "Starting linear assemble and solve. " << endl;
-  dolfin_log(false);
-  FEM::assemble(a, L, A, b, mesh, bc);
-  GMRES solver;
-  solver.setRtol(1.e-15);
-  solver.solve(A, y, b);  
-  dolfin_log(true);
-  cout << "Finished linear solve. " << endl;
+  cout << "Finished homemade nonlinear solve. " << endl << endl;
   
+//-------------------------------------------------------
   // Verify nonlinear solver by comparing difference between linear solve
   // and nonlinear solve
   Vector e;
   e = x; e-=  y;
-  cout << " norm || u^nonlin - u^lin || =  " << e.norm() << endl; 
-  
-  // Save function to file
-  Function u(x, mesh, a.trial());
-  File file("poisson_nl.pvd");
-  file << u;
+  cout << " Relative error (homemade)  || u^nonlin - u^lin || / || u^lin ||=  " << e.norm()/y.norm() << endl; 
+//-------------------------------------------------------
+  // Using PETSc solvers
+  t = 0.0;
 
+  // Associate matrix and vectors with solver
+  nonlinear_solver.init(A, b, x);
+
+  x0 = 0.0;
+
+  // Solve nonlinear problem
+  cout << "Using PETSc nonlinear assemble and solve. " << endl;
+  while( t < T)
+  {
+    t += dt;
+    cout << "   Starting Newton step. Time = " << t << endl;
+    tic();
+    nonlinear_solver.solve();
+    cout << "   **** Newton solve time " << toc() << endl;
+  }
+  cout << "Finished nonlinear solve. " << endl;
+
+
+  
+//-------------------------------------------------------
+  // Verify nonlinear solver by comparing difference between linear solve
+  // and nonlinear solve
+//  Vector e;
+  e = x; e-=  y;
+  cout << " Relative error || u^nonlin - u^lin || / || u^lin ||=  " << e.norm()/y.norm() << endl; 
+//-------------------------------------------------------
+  
   return 0;
 }

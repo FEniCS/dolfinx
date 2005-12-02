@@ -89,7 +89,7 @@ class MyNonlinearFunction : public NonlinearFunction
       FEM::assemble(L, b, mesh);
 
       // Assemble BC to RHS vector 
-      FEM::applyBC(b, x, mesh, a.test(), bc);
+      FEM::assembleBCresidual(b, x, mesh, a.test(), bc);
       dolfin_log(true);
 
     }
@@ -133,10 +133,12 @@ class MyNonlinearFunction : public NonlinearFunction
 };
 
 
-int main()
+int main(int argc, char* argv[])
 {
+  dolfin_init(argc, argv);
+ 
   // Set up problem
-  UnitSquare mesh(4, 4);
+  UnitSquare mesh(32, 32);
   MyFunction f;
   MyBC bc;
   Matrix A;
@@ -164,7 +166,7 @@ int main()
 
   real dt = 1.0;
   real t  = 0.0;
-  real T  = 3.0;
+  real T  = 1.0;
   f.sync(t);
   bc.sync(t);
 
@@ -174,9 +176,67 @@ int main()
   {
     t += dt;
     cout << "Starting step " << t << endl;
+    tic();
     nonlinear_solver.solve();
+    cout << "Newton solve time = " << toc() << endl;
   }
   cout << "Finished nonlinear solve. " << endl;
+  
+//------------------------------------------------------------
+  // Homemade Netwon procedure
+  GMRES solver;
+  solver.setRtol(1.e-10);
+
+  x0.init(mesh.noVertices());
+  x0 = 0.0;
+  x = x0;
+  
+  t = 0.0;
+  int iteration;
+  Vector dx;
+  real residual0;
+  real residual;
+  real rel_residual;
+
+  cout << "Using homemade nonlinear assemble and solve. " << endl;
+  while( t < T)
+  {
+    t += dt;
+    cout << "   Starting test Newton step. Time = " << t << endl;
+    iteration = 0;
+    rel_residual = 1.0;
+
+    tic();
+    while( rel_residual > 1e-10 && iteration < 30 )
+    {
+      x0 = x;
+
+      dolfin_log(false);
+      FEM::assemble(a, L, A, b, mesh);
+      FEM::applyBC(A, mesh, a.test(), bc);
+      FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
+
+      if( iteration == 0 ) residual0 = b.norm();
+
+      b *= -1.0;
+      solver.solve(A, dx, b);  
+      x += dx;
+//      dx = 0.0;
+
+      rel_residual = b.norm()/residual0;
+
+      dolfin_log(true);
+      cout << "  Residual = " << rel_residual << " Iteration= " << iteration << endl;      
+      ++iteration;
+    }
+    dolfin_log(true);
+    cout << "   **** Newton test solve time = " << toc() << endl;
+  }
+  cout << "Finished homemade nonlinear solve. " << endl << endl;
+  
+
+
+//-----------------------------------------------------------
 
 
   // Save function to file
