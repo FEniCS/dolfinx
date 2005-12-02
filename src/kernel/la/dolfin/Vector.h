@@ -48,9 +48,6 @@ namespace dolfin
     /// Initialize vector data
     void init(uint size);
 
-    /// Extract a contiguous subvector from x
-    void extract(const Vector &x, uint start, uint size);
-    
     /// Clear vector data
     void clear();
 

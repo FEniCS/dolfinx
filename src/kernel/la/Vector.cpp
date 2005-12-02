@@ -85,28 +85,6 @@ void Vector::init(uint size)
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
-void Vector::extract(const Vector &x, uint start, uint size)
-{
-  if ( !x.x ) 
-  {
-    dolfin_error("Vector not allocated when attempting to extract subvector.");
-  } 
-  else
-  {
-    if ( x.size() < start + size ) 
-      dolfin_error("Vector too short when attempting to extract subvector.");
-    
-    // Clear sub-vector if already allocated 
-    if ( this->x ) 
-      this->clear();
-      
-    // Assumes uniprocessor case
-    const real* values = x.array();
-    VecCreateSeqWithArray(PETSC_COMM_SELF, size, values + start, &this->x);
-    x.restore(values);
-  }
-}
-//-----------------------------------------------------------------------------
 void Vector::axpy(const real a, const Vector& x) const
 {
   VecAXPY(this->x, a, x.vec());
