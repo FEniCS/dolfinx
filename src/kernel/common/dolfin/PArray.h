@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __P_ARRAY_H
 #define __P_ARRAY_H
@@ -13,7 +13,6 @@
 
 namespace dolfin
 {
-
   enum Range { all };
   enum Index { first, last };
   
@@ -33,14 +32,14 @@ namespace dolfin
   /// empty position. A position is empty if for that element the
   /// operator ! returns true. An example:
   ///
-  ///   PArray<Node*> nodes(5);             // Create array of length 5
-  ///   nodes.reset();                     // Assign 0 to all pointers
-  ///   while ( ... ) {                    //
-  ///     if ( nodes.add(node) != -1 ) {   // Add node and check if full
-  ///       nodes.resize(2*nodes.size());  // If full, resize ...
-  ///       nodes.add(node);               // ... and try again
-  ///     }                                //
-  ///   }                                  //
+  ///   PArray<Vertex*> vertices(5);            // Create array of length 5
+  ///   vertices.reset();                       // Assign 0 to all pointers
+  ///   while ( ... ) {                         //
+  ///     if ( vertices.add(vertex) != -1 ) {   // Add vertex and check if full
+  ///       vertices.resize(2*vertices.size()); // If full, resize ...
+  ///       vertices.add(vertex);               // ... and try again
+  ///     }                                     //
+  ///   }                                       //
   ///
   /// If you want a list to which you can dynamically add elements, you
   /// should probably use the List class (for reasonably small sets of

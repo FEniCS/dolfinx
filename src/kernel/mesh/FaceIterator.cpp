@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>

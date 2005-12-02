@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
 
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
 #include <dolfin/P1Tri.h>
 #include <dolfin/FiniteElement.h>
@@ -42,14 +42,14 @@ UserFunction::~UserFunction()
 //-----------------------------------------------------------------------------
 real UserFunction::operator()(const Point& p, uint i)
 {
-  // Call overloaded eval function at given node
+  // Call overloaded eval function at given vertex
   return f->eval(p, component + i);
 }
 //-----------------------------------------------------------------------------
-real UserFunction::operator() (const Node& node, uint i)
+real UserFunction::operator() (const Vertex& vertex, uint i)
 {
-  // Call overloaded eval function at given node
-  return f->eval(node.coord(), component + i);
+  // Call overloaded eval function at given vertex
+  return f->eval(vertex.coord(), component + i);
 }
 //-----------------------------------------------------------------------------
 void UserFunction::sub(uint i)

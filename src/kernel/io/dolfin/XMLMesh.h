@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005-10-02
+// Last changed: 2005-12-01
 
 #ifndef __XML_MESH_H
 #define __XML_MESH_H
@@ -11,7 +11,6 @@
 
 namespace dolfin
 {
-
   class Mesh;
   
   class XMLMesh : public XMLObject
@@ -28,12 +27,12 @@ namespace dolfin
     
   private:
     
-    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_NODES, INSIDE_NODE, INSIDE_CELLS, DONE };
+    enum ParserState { OUTSIDE, INSIDE_MESH, INSIDE_VERTICES, INSIDE_VERTEX, INSIDE_CELLS, DONE };
     
     void readMesh        (const xmlChar *name, const xmlChar **attrs);
-    void readNodes       (const xmlChar *name, const xmlChar **attrs);
+    void readVertices    (const xmlChar *name, const xmlChar **attrs);
     void readCells       (const xmlChar *name, const xmlChar **attrs);
-    void readNode        (const xmlChar *name, const xmlChar **attrs);
+    void readVertex      (const xmlChar *name, const xmlChar **attrs);
     void readBoundaryID  (const xmlChar *name, const xmlChar **attrs);
     void readTriangle    (const xmlChar *name, const xmlChar **attrs);
     void readTetrahedron (const xmlChar *name, const xmlChar **attrs);
@@ -41,9 +40,9 @@ namespace dolfin
     void initMesh();
 
     Mesh& mesh;
-    int nodes;
+    int vertices;
     int cells;
-    Node *node;
+    Vertex *vertex;
     
     bool _create_edges;
     

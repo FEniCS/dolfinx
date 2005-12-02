@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
 #include <dolfin/BoundaryData.h>
@@ -25,15 +25,15 @@ BoundaryData::~BoundaryData()
 //-----------------------------------------------------------------------------
 void BoundaryData::clear()
 {
-  nodes.clear();
+  vertices.clear();
   edges.clear();
   faces.clear();
 }
 //-----------------------------------------------------------------------------
-void BoundaryData::add(Node& node)
+void BoundaryData::add(Vertex& vertex)
 {
-  //cout << "Adding node to boundary: " << node << endl;
-  nodes.add(&node);
+  //cout << "Adding vertex to boundary: " << vertex << endl;
+  vertices.add(&vertex);
 }
 //-----------------------------------------------------------------------------
 void BoundaryData::add(Edge& edge)
@@ -50,12 +50,12 @@ void BoundaryData::add(Face& face)
 //-----------------------------------------------------------------------------
 bool BoundaryData::empty()
 {
-  return nodes.size() == 0 && edges.size() == 0 && faces.size() == 0;
+  return vertices.size() == 0 && edges.size() == 0 && faces.size() == 0;
 }
 //-----------------------------------------------------------------------------
-int BoundaryData::noNodes() const
+int BoundaryData::noVertices() const
 {
-  return nodes.size();
+  return vertices.size();
 }
 //-----------------------------------------------------------------------------
 int BoundaryData::noEdges() const

@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <cmath>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
 #include <dolfin/Cell.h>
@@ -27,21 +27,21 @@ MeshData::~MeshData()
 //-----------------------------------------------------------------------------
 void MeshData::clear()
 {
-  nodes.clear();
+  vertices.clear();
   cells.clear();
   edges.clear();
   faces.clear();
 }
 //-----------------------------------------------------------------------------
-Node& MeshData::createNode(Point p)
+Vertex& MeshData::createVertex(Point p)
 {
-  return createNode(p.x, p.y, p.z);
+  return createVertex(p.x, p.y, p.z);
 }
 //-----------------------------------------------------------------------------
-Node& MeshData::createNode(real x, real y, real z)
+Vertex& MeshData::createVertex(real x, real y, real z)
 {
   int id;
-  Node& n = nodes.create(id);
+  Vertex& n = vertices.create(id);
   n.set(x,y,z);  
   n.setID(id, *mesh);
   return n;
@@ -51,7 +51,7 @@ Cell& MeshData::createCell(int n0, int n1, int n2)
 {
   int id;
   Cell& c = cells.create(id);
-  c.set(node(n0), node(n1), node(n2));
+  c.set(vertex(n0), vertex(n1), vertex(n2));
   c.setID(id, *mesh);
   return c;
 }
@@ -60,12 +60,12 @@ Cell& MeshData::createCell(int n0, int n1, int n2, int n3)
 {
   int id;
   Cell& c = cells.create(id);
-  c.set(node(n0), node(n1), node(n2), node(n3));
+  c.set(vertex(n0), vertex(n1), vertex(n2), vertex(n3));
   c.setID(id, *mesh);
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell& MeshData::createCell(Node& n0, Node& n1, Node& n2)
+Cell& MeshData::createCell(Vertex& n0, Vertex& n1, Vertex& n2)
 {
   int id;
   Cell& c = cells.create(id);
@@ -74,7 +74,7 @@ Cell& MeshData::createCell(Node& n0, Node& n1, Node& n2)
   return c;
 }
 //-----------------------------------------------------------------------------
-Cell& MeshData::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
+Cell& MeshData::createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3)
 {
   int id;
   Cell& c = cells.create(id);
@@ -87,12 +87,12 @@ Edge& MeshData::createEdge(int n0, int n1)
 {
   int id;
   Edge& e = edges.create(id);
-  e.set(node(n0), node(n1));
+  e.set(vertex(n0), vertex(n1));
   e.setID(id, *mesh);
   return e;
 }
 //-----------------------------------------------------------------------------
-Edge& MeshData::createEdge(Node& n0, Node& n1)
+Edge& MeshData::createEdge(Vertex& n0, Vertex& n1)
 {
   int id;
   Edge& e = edges.create(id);
@@ -119,9 +119,9 @@ Face& MeshData::createFace(Edge& e0, Edge& e1, Edge& e2)
   return f;
 }
 //-----------------------------------------------------------------------------
-Node& MeshData::node(int id)
+Vertex& MeshData::vertex(int id)
 {
-  return nodes(id);
+  return vertices(id);
 }
 //-----------------------------------------------------------------------------
 Cell& MeshData::cell(int id)
@@ -139,10 +139,10 @@ Face& MeshData::face(int id)
   return faces(id);
 }
 //-----------------------------------------------------------------------------
-void MeshData::remove(Node& node)
+void MeshData::remove(Vertex& vertex)
 {
-  node.clear();
-  nodes.remove(node);
+  vertex.clear();
+  vertices.remove(vertex);
 }
 //-----------------------------------------------------------------------------
 void MeshData::remove(Cell& cell)
@@ -163,9 +163,9 @@ void MeshData::remove(Face& face)
   faces.remove(face);
 }
 //-----------------------------------------------------------------------------
-int MeshData::noNodes() const
+int MeshData::noVertices() const
 {
-  return nodes.size();
+  return vertices.size();
 }
 //-----------------------------------------------------------------------------
 int MeshData::noCells() const
@@ -186,7 +186,7 @@ int MeshData::noFaces() const
 void MeshData::setMesh(Mesh& mesh)
 {
   // Change the mesh pointer in all data
-  for (Table<Node>::Iterator n(nodes); !n.end(); ++n)
+  for (Table<Vertex>::Iterator n(vertices); !n.end(); ++n)
     n->setMesh(mesh);
 
   for (Table<Cell>::Iterator c(cells); !c.end(); ++c)

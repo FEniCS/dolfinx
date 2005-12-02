@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-11-29
+// Last changed: 2005-12-01
 
 //#include <iostream>
 #include <sstream>
@@ -190,15 +190,15 @@ void ElasticityUpdatedSolver::init()
   }
 
   // The mesh points are the initial values of u
-  int offset = mesh.noNodes();
-  for (NodeIterator n(&mesh); !n.end(); ++n)
+  int offset = mesh.noVertices();
+  for (VertexIterator n(&mesh); !n.end(); ++n)
   {
-    Node& node = *n;
-    int nid = node.id();
+    Vertex& vertex = *n;
+    int nid = vertex.id();
 
-    x1_1(0 * offset + nid) = node.coord().x;
-    x1_1(1 * offset + nid) = node.coord().y;
-    x1_1(2 * offset + nid) = node.coord().z;
+    x1_1(0 * offset + nid) = vertex.coord().x;
+    x1_1(1 * offset + nid) = vertex.coord().y;
+    x1_1(2 * offset + nid) = vertex.coord().z;
   }
 
   int dotu_x1offset = 0;
@@ -406,13 +406,13 @@ void ElasticityUpdatedSolver::fu()
   // Ultimately compute dotu = f(u, t)
 
   // Update the mesh
-  for (NodeIterator n(&mesh); !n.end(); ++n)
+  for (VertexIterator n(&mesh); !n.end(); ++n)
   {
-    Node& node = *n;
+    Vertex& vertex = *n;
     
-    node.coord().x = u1(node, 0);
-    node.coord().y = u1(node, 1);
-    node.coord().z = u1(node, 2);
+    vertex.coord().x = u1(vertex, 0);
+    vertex.coord().y = u1(vertex, 1);
+    vertex.coord().z = u1(vertex, 2);
   }
 
   // Compute norm of stress (sigmanorm)

@@ -2,13 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <cmath>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Point.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Cell.h>
@@ -17,16 +17,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Triangle::Triangle(Node& n0, Node& n1, Node& n2) : GenericCell()
+Triangle::Triangle(Vertex& n0, Vertex& n1, Vertex& n2) : GenericCell()
 {
-  cn.init(noNodes());
+  cn.init(noVertices());
 
   cn(0) = &n0;
   cn(1) = &n1;
   cn(2) = &n2;
 }
 //-----------------------------------------------------------------------------
-int Triangle::noNodes() const
+int Triangle::noVertices() const
 {
   return 3;
 }
@@ -123,20 +123,20 @@ void Triangle::sort()
 {
   // Sort local mesh entities according to ordering in FFC manual
 
-  // Sort the nodes counter-clockwise
+  // Sort the vertices counter-clockwise
   if ( orientation() == Cell::left )
   {
-    Node* tmp = cn(1);
+    Vertex* tmp = cn(1);
     cn(1) = cn(2);
     cn(2) = tmp;
   }
   
-  // Sort the edges to have edge i opposite to node i
+  // Sort the edges to have edge i opposite to vertex i
   Array<Edge*> edges(3);
   edges = 0;
   for (uint i = 0; i < 3; i++)
   {
-    Node* n = cn(i);
+    Vertex* n = cn(i);
     for (uint j = 0; j < 3; j++)
     {
       Edge* e = ce(j);

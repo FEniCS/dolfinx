@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __TET_MESH_REFINEMENT_H
 #define __TET_MESH_REFINEMENT_H
@@ -50,14 +50,14 @@ namespace dolfin
 
     static void refineIrregular31(Cell& cell, Mesh& mesh);
     static void refineIrregular32(Cell& cell, Mesh& mesh,
-				  PArray<Node*>& sorted_nodes);
+				  PArray<Vertex*>& sorted_vertices);
     static void refineIrregular33(Cell& cell, Mesh& mesh, 
-				  PArray<Node*>& sorted_nodes, Cell& face_neighbor);
+				  PArray<Vertex*>& sorted_vertices, Cell& face_neighbor);
 
     static bool  markedEdgesOnSameFace (Cell& cell);
     static Cell* findNeighbor          (Cell& cell, Face& face);
 
-    static Cell& createCell(Node& n0, Node& n1, Node& n2, Node& n3,
+    static Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3,
 			    Mesh& mesh, Cell& cell);
 
     static Cell& createChildCopy(Cell& cell, Mesh& mesh);

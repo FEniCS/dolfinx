@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #include <dolfin.h>
 
@@ -123,14 +123,14 @@ int main(int argc, char **argv)
   Mesh mesh("roterror01.xml.gz");
 //   UnitCube mesh(7, 7, 7);
 
-//   for (NodeIterator n(&mesh); !n.end();)
+//   for (VertexIterator n(&mesh); !n.end();)
 //   {
-//     Node &cnode = *n;
+//     Vertex &cvertex = *n;
 //     ++n;
 
-//     if(cnode.coord().y > 10.0)
+//     if(cvertex.coord().y > 10.0)
 //     {
-//       mesh.remove(cnode);
+//       mesh.remove(cvertex);
 //     }
 //   }
 

@@ -40,7 +40,6 @@ Assembly
 Mesh
 ----
 
-* Change "node" --> "vertex"
 * Speed up uniform mesh refinement
 * Optimize mesh refinement
 o [jj] Schema for mesh XML format
@@ -60,7 +59,6 @@ o [jj] Add wrapper for PETSc preconditioners
 Function
 --------
 
-* Subvectors/components of mixed Functions
 * Save Function to file
 * Load Function from file
 

@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/TriMeshRefinement.h>
 
 using namespace dolfin;
@@ -95,10 +95,10 @@ void TriMeshRefinement::refineNoRefine(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_no_ref);
   
-  // Create new nodes with the same coordinates as existing nodes
-  Node& n0 = createNode(cell.node(0), mesh, cell);
-  Node& n1 = createNode(cell.node(1), mesh, cell);
-  Node& n2 = createNode(cell.node(2), mesh, cell);
+  // Create new vertices with the same coordinates as existing vertices
+  Vertex& n0 = createVertex(cell.vertex(0), mesh, cell);
+  Vertex& n1 = createVertex(cell.vertex(1), mesh, cell);
+  Vertex& n2 = createVertex(cell.vertex(2), mesh, cell);
 
   // Create a new cell
   cell.initChildren(1);
@@ -113,7 +113,7 @@ void TriMeshRefinement::refineNoRefine(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TriMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
 {
-  // Refine one triangle into four new ones, introducing new nodes 
+  // Refine one triangle into four new ones, introducing new vertices 
   // at the midpoints of the edges. 
 
   // Check that cell's parent is not refined irregularly, 
@@ -123,15 +123,15 @@ void TriMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
 
-  // Create new nodes with the same coordinates as the previous nodes in cell  
-  Node& n0 = createNode(cell.node(0), mesh, cell);
-  Node& n1 = createNode(cell.node(1), mesh, cell);
-  Node& n2 = createNode(cell.node(2), mesh, cell);
+  // Create new vertices with the same coordinates as the previous vertices in cell  
+  Vertex& n0 = createVertex(cell.vertex(0), mesh, cell);
+  Vertex& n1 = createVertex(cell.vertex(1), mesh, cell);
+  Vertex& n2 = createVertex(cell.vertex(2), mesh, cell);
 
-  // Create new nodes with the new coordinates 
-  Node& n01 = createNode(cell.node(0).midpoint(cell.node(1)), mesh, cell);
-  Node& n02 = createNode(cell.node(0).midpoint(cell.node(2)), mesh, cell);
-  Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), mesh, cell);
+  // Create new vertices with the new coordinates 
+  Vertex& n01 = createVertex(cell.vertex(0).midpoint(cell.vertex(1)), mesh, cell);
+  Vertex& n02 = createVertex(cell.vertex(0).midpoint(cell.vertex(2)), mesh, cell);
+  Vertex& n12 = createVertex(cell.vertex(1).midpoint(cell.vertex(2)), mesh, cell);
 
   // Create new cells 
   cell.initChildren(4);
@@ -149,8 +149,8 @@ void TriMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TriMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
 {
-  // One edge is marked. Insert one new node at the midpoint of the
-  // marked edge, then connect this new node to the node not on
+  // One edge is marked. Insert one new vertex at the midpoint of the
+  // marked edge, then connect this new vertex to the vertex not on
   // the marked edge. This gives 2 new triangles.
 
   // Check that cell's parent is not refined irregularly, 
@@ -160,21 +160,21 @@ void TriMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
 
-  // Sort nodes by the number of marked edges
-  PArray<Node*> nodes;
-  sortNodes(cell, nodes);
+  // Sort vertices by the number of marked edges
+  PArray<Vertex*> vertices;
+  sortVertices(cell, vertices);
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n0 = createNode(*nodes(0), mesh, cell);
-  Node& n1 = createNode(*nodes(1), mesh, cell);
-  Node& nn = createNode(*nodes(2), mesh, cell); // Not marked
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n0 = createVertex(*vertices(0), mesh, cell);
+  Vertex& n1 = createVertex(*vertices(1), mesh, cell);
+  Vertex& nn = createVertex(*vertices(2), mesh, cell); // Not marked
 
   // Find edge
-  Edge* e = cell.findEdge(*nodes(0), *nodes(1));
+  Edge* e = cell.findEdge(*vertices(0), *vertices(1));
   dolfin_assert(e);
 
-  // Create new node on marked edge 
-  Node& ne = createNode(e->midpoint(), mesh, cell);
+  // Create new vertex on marked edge 
+  Vertex& ne = createVertex(e->midpoint(), mesh, cell);
   
   // Create new cells
   cell.initChildren(2); 
@@ -190,9 +190,9 @@ void TriMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TriMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
 {
-  // Two edges are marked. Insert two new nodes at the midpoints of the
-  // marked edges, then connect these new nodes to each other and one 
-  // of the nodes on the unmarked edge. This gives 3 new triangles.
+  // Two edges are marked. Insert two new vertices at the midpoints of the
+  // marked edges, then connect these new vertices to each other and one 
+  // of the vertices on the unmarked edge. This gives 3 new triangles.
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
@@ -201,24 +201,24 @@ void TriMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
-  // Sort nodes by the number of marked edges
-  PArray<Node*> nodes;
-  sortNodes(cell, nodes);
+  // Sort vertices by the number of marked edges
+  PArray<Vertex*> vertices;
+  sortVertices(cell, vertices);
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm = createNode(*nodes(0), mesh, cell);
-  Node& n_m0 = createNode(*nodes(1), mesh, cell);
-  Node& n_m1 = createNode(*nodes(2), mesh, cell);
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n_dm = createVertex(*vertices(0), mesh, cell);
+  Vertex& n_m0 = createVertex(*vertices(1), mesh, cell);
+  Vertex& n_m1 = createVertex(*vertices(2), mesh, cell);
 
   // Find the edges
-  Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
-  Edge* e1 = cell.findEdge(*nodes(0), *nodes(2));
+  Edge* e0 = cell.findEdge(*vertices(0), *vertices(1));
+  Edge* e1 = cell.findEdge(*vertices(0), *vertices(2));
   dolfin_assert(e0);
   dolfin_assert(e1);
 
-  // Create new nodes on marked edges 
-  Node& n_e0 = createNode(e0->midpoint(), mesh, cell);
-  Node& n_e1 = createNode(e1->midpoint(), mesh, cell);
+  // Create new vertices on marked edges 
+  Vertex& n_e0 = createVertex(e0->midpoint(), mesh, cell);
+  Vertex& n_e1 = createVertex(e1->midpoint(), mesh, cell);
 
   // Create new cells
   cell.initChildren(3); 
@@ -233,7 +233,7 @@ void TriMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
   cell.status() = Cell::ref_irr;
 }
 //-----------------------------------------------------------------------------
-Cell& TriMeshRefinement::createCell(Node& n0, Node& n1, Node& n2,
+Cell& TriMeshRefinement::createCell(Vertex& n0, Vertex& n1, Vertex& n2,
 				    Mesh& mesh, Cell& cell)
 {
   Cell& c = mesh.createCell(n0, n1, n2);

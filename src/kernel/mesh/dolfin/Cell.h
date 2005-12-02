@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 //
 // A couple of comments:
 //
@@ -16,7 +16,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PArray.h>
 #include <dolfin/CellIterator.h>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
 
@@ -24,7 +24,7 @@ namespace dolfin
 {
   
   class Point;
-  class Node;
+  class Vertex;
   class Edge;
   class Triangle;
   class Tetrahedron;
@@ -45,11 +45,11 @@ namespace dolfin
     /// Create an empty cell
     Cell();
 
-    /// Create cell (triangle) from three given nodes
-    Cell(Node& n0, Node& n1, Node& n2);
+    /// Create cell (triangle) from three given vertices
+    Cell(Vertex& n0, Vertex& n1, Vertex& n2);
 
-    /// Create cell (tetrahedron) from four given nodes
-    Cell(Node& n0, Node& n1, Node& n2, Node& n3);
+    /// Create cell (tetrahedron) from four given vertices
+    Cell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3);
 
     /// Destructor
     ~Cell();
@@ -68,8 +68,8 @@ namespace dolfin
     /// Return orientation of cell
     Orientation orientation() const;
     
-    /// Return number of nodes
-    int noNodes() const;
+    /// Return number of vertices
+    int noVertices() const;
 
     /// Return number of edges
     int noEdges() const;
@@ -83,14 +83,14 @@ namespace dolfin
     /// Return number of cell neighbors
     int noCellNeighbors() const;
 
-    /// Return number of node neighbors
-    int noNodeNeighbors() const;
+    /// Return number of vertex neighbors
+    int noVertexNeighbors() const;
 
     /// Return number of cell children
     int noChildren() const;
 
-    /// Return node number i
-    Node& node(int i) const;
+    /// Return vertex number i
+    Vertex& vertex(int i) const;
 
     /// Return edge number i
     Edge& edge(int i) const;
@@ -113,14 +113,14 @@ namespace dolfin
     /// Return the mesh containing the cell (const version)
     const Mesh& mesh() const;
 
-    /// Return coordinate for node i
+    /// Return coordinate for vertex i
     Point& coord(int i) const;
 
     /// Return midpoint of cell
     Point midpoint() const;
 
-    // Return ID for node number i
-    int nodeID(int i) const;
+    // Return ID for vertex number i
+    int vertexID(int i) const;
 
     // Return ID for edge number i
     int edgeID(int i) const;
@@ -166,7 +166,7 @@ namespace dolfin
     friend class TetMeshRefinement;
     friend class GenericCell;
     friend class CellRefData;
-    friend class NodeIterator::CellNodeIterator;
+    friend class VertexIterator::CellVertexIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
     friend class FaceIterator::CellFaceIterator;
@@ -208,16 +208,16 @@ namespace dolfin
     void removeChild(Cell& child);
 
     // Clear data and create a new triangle
-    void set(Node& n0, Node& n1, Node& n2);
+    void set(Vertex& n0, Vertex& n1, Vertex& n2);
 
     // Clear data and create a new tetrahedron
-    void set(Node& n0, Node& n1, Node& n2, Node& n3);
+    void set(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3);
 
     // Check if given cell is a neighbor
     bool neighbor(Cell& cell) const;
 
-    // Check if given node is contained in the cell
-    bool haveNode(Node& node) const;
+    // Check if given vertex is contained in the cell
+    bool haveVertex(Vertex& vertex) const;
 
     // Check if given edge is contained in the cell
     bool haveEdge(Edge& edge) const;
@@ -229,16 +229,16 @@ namespace dolfin
     void createFaces();
 
     // Create a given edge
-    void createEdge(Node& n0, Node& n1);
+    void createEdge(Vertex& n0, Vertex& n1);
 
     // Create a given face
     void createFace(Edge& e0, Edge& e1, Edge& e2);
 
-    // Find node with given coordinates (null if not found)
-    Node* findNode(const Point& p) const;
+    // Find vertex with given coordinates (null if not found)
+    Vertex* findVertex(const Point& p) const;
        
     // Find edge within cell (null if not found)
-    Edge* findEdge(Node& n0, Node& n1);
+    Edge* findEdge(Vertex& n0, Vertex& n1);
 
     // Find face within cell (null if not found)
     Face* findFace(Edge& e0, Edge& e1, Edge& e2);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -12,7 +12,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/PList.h>
 #include <dolfin/Point.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
@@ -24,10 +24,10 @@ namespace dolfin
 
   class MeshData;
 
-  /// A Mesh consists of Nodes, Cells, Edges, and Faces.
+  /// A Mesh consists of Vertices, Cells, Edges, and Faces.
   /// The data of a Mesh is accessed through iterators:
   ///
-  /// The Nodes of a Mesh is accessed through the class NodeIterator.
+  /// The Vertices of a Mesh is accessed through the class VertexIterator.
   /// The Cells of a Mesh is accessed through the class CellIterator.
   /// The Edges of a Mesh is accessed through the class EdgeIterator.
   /// The Faces of a Mesh is accessed through the class FaceIterator.
@@ -65,8 +65,8 @@ namespace dolfin
     /// Clear mesh
     void clear();
 
-    /// Return number of nodes in the mesh
-    int noNodes() const;
+    /// Return number of vertices in the mesh
+    int noVertices() const;
 
     /// Return number of cells in the mesh
     int noCells() const;
@@ -77,26 +77,26 @@ namespace dolfin
     /// Return number of faces in the mesh
     int noFaces() const;
 
-    // Create a new node at given position
-    Node& createNode(Point p);
-    Node& createNode(real x, real y, real z);
+    // Create a new vertex at given position
+    Vertex& createVertex(Point p);
+    Vertex& createVertex(real x, real y, real z);
 
-    // Create a new cell from the given nodes
+    // Create a new cell from the given vertices
     Cell& createCell(int n0, int n1, int n2);
     Cell& createCell(int n0, int n1, int n2, int n3);
-    Cell& createCell(Node& n0, Node& n1, Node& n2);
-    Cell& createCell(Node& n0, Node& n1, Node& n2, Node& n3);
+    Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2);
+    Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3);
 
-    // Create a new edge from the given nodes
+    // Create a new edge from the given vertices
     Edge& createEdge(int n0, int n1);
-    Edge& createEdge(Node& n0, Node& n1);
+    Edge& createEdge(Vertex& n0, Vertex& n1);
 
     // Create a new face from the given edges
     Face& createFace(int e0, int e1, int e2);
     Face& createFace(Edge& e0, Edge& e1, Edge& e2);
     
-    // Remove node, cell, edge, face (use with care)
-    void remove(Node& node);
+    // Remove vertex, cell, edge, face (use with care)
+    void remove(Vertex& vertex);
     void remove(Cell& cell);
     void remove(Edge& edge);
     void remove(Face& face);
@@ -104,8 +104,8 @@ namespace dolfin
     /// Return type of mesh
     Type type() const;
 
-    /// Return given node (can also use a node iterator)
-    Node& node(uint id);
+    /// Return given vertex (can also use a vertex iterator)
+    Vertex& vertex(uint id);
 
     /// Return given cell (can also use a cell iterator)
     Cell& cell(uint id);
@@ -159,8 +159,8 @@ namespace dolfin
     friend class MeshHierarchy;
     friend class Boundary;
     friend class BoundaryInit;
-    friend class NodeIterator::MeshNodeIterator;
-    friend class NodeIterator::BoundaryNodeIterator;
+    friend class VertexIterator::MeshVertexIterator;
+    friend class VertexIterator::BoundaryVertexIterator;
     friend class CellIterator::MeshCellIterator;
     friend class EdgeIterator::MeshEdgeIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;

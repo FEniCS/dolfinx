@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/Triangle.h>
@@ -20,12 +20,12 @@ Cell::Cell()
   c = 0;
 }
 //-----------------------------------------------------------------------------
-Cell::Cell(Node& n0, Node& n1, Node& n2)
+Cell::Cell(Vertex& n0, Vertex& n1, Vertex& n2)
 {
   c = new Triangle(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Cell::Cell(Node& n0, Node& n1, Node& n2, Node& n3)
+Cell::Cell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3)
 {
   c = new Tetrahedron(n0, n1, n2, n3);
 }
@@ -64,10 +64,10 @@ Cell::Orientation Cell::orientation() const
   return c->orientation();
 }
 //-----------------------------------------------------------------------------
-int Cell::noNodes() const
+int Cell::noVertices() const
 {
   if ( c )
-    return c->noNodes();
+    return c->noVertices();
 
   return 0;
 }
@@ -104,10 +104,10 @@ int Cell::noCellNeighbors() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noNodeNeighbors() const
+int Cell::noVertexNeighbors() const
 {
   if ( c )
-    return c->noNodeNeighbors();
+    return c->noVertexNeighbors();
 
   return 0;
 }
@@ -120,10 +120,10 @@ int Cell::noChildren() const
   return 0;
 }
 //-----------------------------------------------------------------------------
-Node& Cell::node(int i) const
+Vertex& Cell::vertex(int i) const
 {
   dolfin_assert(c);
-  return c->node(i);
+  return c->vertex(i);
 }
 //-----------------------------------------------------------------------------
 Edge& Cell::edge(int i) const
@@ -180,10 +180,10 @@ Point Cell::midpoint() const
   return c->midpoint();
 }
 //-----------------------------------------------------------------------------
-int Cell::nodeID(int i) const
+int Cell::vertexID(int i) const
 {
   dolfin_assert(c);
-  return c->nodeID(i);
+  return c->vertexID(i);
 }
 //-----------------------------------------------------------------------------
 int Cell::edgeID(int i) const
@@ -242,14 +242,14 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)
 {
   switch ( cell.type() ){
   case Cell::triangle:
-    stream << "[ Cell (triangle): id = " << cell.id() << " nodes = ( ";
-    for (NodeIterator n(cell); !n.end(); ++n)
+    stream << "[ Cell (triangle): id = " << cell.id() << " vertices = ( ";
+    for (VertexIterator n(cell); !n.end(); ++n)
       stream << n->id() << " ";
     stream << ") ]";
     break;
   case Cell::tetrahedron:
-    stream << "[ Cell (tetrahedron): id = " << cell.id() << " nodes = ( ";
-    for (NodeIterator n(cell); !n.end(); ++n)
+    stream << "[ Cell (tetrahedron): id = " << cell.id() << " vertices = ( ";
+    for (VertexIterator n(cell); !n.end(); ++n)
       stream << n->id() << " ";
     stream << ") ]";
     break;
@@ -302,7 +302,7 @@ void Cell::removeChild(Cell& child)
   c->removeChild(child);
 }
 //-----------------------------------------------------------------------------
-void Cell::set(Node& n0, Node& n1, Node& n2)
+void Cell::set(Vertex& n0, Vertex& n1, Vertex& n2)
 {
   if ( c )
     delete c;
@@ -310,7 +310,7 @@ void Cell::set(Node& n0, Node& n1, Node& n2)
   c = new Triangle(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-void Cell::set(Node& n0, Node& n1, Node& n2, Node& n3)
+void Cell::set(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3)
 {
   if ( c )
     delete c;
@@ -324,10 +324,10 @@ bool Cell::neighbor(Cell& cell) const
   return c->neighbor(*cell.c);
 }
 //-----------------------------------------------------------------------------
-bool Cell::haveNode(Node& node) const
+bool Cell::haveVertex(Vertex& vertex) const
 {
   dolfin_assert(c);
-  return c->haveNode(node);
+  return c->haveVertex(vertex);
 }
 //-----------------------------------------------------------------------------
 bool Cell::haveEdge(Edge& edge) const
@@ -348,7 +348,7 @@ void Cell::createFaces()
   c->createFaces();
 }
 //-----------------------------------------------------------------------------
-void Cell::createEdge(Node& n0, Node& n1)
+void Cell::createEdge(Vertex& n0, Vertex& n1)
 {
   dolfin_assert(c);
   c->createEdge(n0, n1);
@@ -360,13 +360,13 @@ void Cell::createFace(Edge& e0, Edge& e1, Edge& e2)
   c->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-Node* Cell::findNode(const Point& p) const
+Vertex* Cell::findVertex(const Point& p) const
 {
   dolfin_assert(c);
-  return c->findNode(p);
+  return c->findVertex(p);
 }
 //-----------------------------------------------------------------------------
-Edge* Cell::findEdge(Node& n0, Node& n1)
+Edge* Cell::findEdge(Vertex& n0, Vertex& n1)
 {
   dolfin_assert(c);
   return c->findEdge(n0, n1);

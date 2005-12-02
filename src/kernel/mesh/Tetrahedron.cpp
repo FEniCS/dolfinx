@@ -2,13 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <cmath>
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
 #include <dolfin/Point.h>
@@ -29,9 +29,9 @@ static int face_alignment_20[4] = {4, 5, 4, 2}; // Edge 0 for alignment 4
 static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (otherwise 5)
 
 //-----------------------------------------------------------------------------
-Tetrahedron::Tetrahedron(Node& n0, Node& n1, Node& n2, Node& n3) : GenericCell()
+Tetrahedron::Tetrahedron(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3) : GenericCell()
 {
-  cn.init(noNodes());
+  cn.init(noVertices());
 
   cn(0) = &n0;
   cn(1) = &n1;
@@ -39,7 +39,7 @@ Tetrahedron::Tetrahedron(Node& n0, Node& n1, Node& n2, Node& n3) : GenericCell()
   cn(3) = &n3;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::noNodes() const
+int Tetrahedron::noVertices() const
 {
   return 4;
 }
@@ -165,10 +165,10 @@ void Tetrahedron::sort()
 {
   // Sort local mesh entities according to ordering in FFC manual
 
-  // Soft the nodes to be right-oriented
+  // Soft the vertices to be right-oriented
   if ( orientation() == Cell::left )
   {
-    Node* tmp = cn(2);
+    Vertex* tmp = cn(2);
     cn(2) = cn(3);
     cn(3) = tmp;
   }
@@ -196,33 +196,33 @@ void Tetrahedron::sort()
 //-----------------------------------------------------------------------------
 Edge* Tetrahedron::findEdge(uint n0, uint n1) const
 {
-  // Find the edge containing both nodes n0 and n1
-  const Node* node0 = cn(n0);
-  const Node* node1 = cn(n1);
+  // Find the edge containing both vertices n0 and n1
+  const Vertex* vertex0 = cn(n0);
+  const Vertex* vertex1 = cn(n1);
   for (uint i = 0; i < 6; i++)
   {
     Edge* edge = ce(i);
-    if ( (edge->n0 == node0 && edge->n1 == node1) ||
-	 (edge->n0 == node1 && edge->n1 == node0) )
+    if ( (edge->n0 == vertex0 && edge->n1 == vertex1) ||
+	 (edge->n0 == vertex1 && edge->n1 == vertex0) )
       return edge;
   }
 
-  dolfin_error2("Unable to find edge between nodes %d and %d.\n", n0, n1);
+  dolfin_error2("Unable to find edge between vertices %d and %d.\n", n0, n1);
   return 0;
 }
 //-----------------------------------------------------------------------------
 Face* Tetrahedron::findFace(uint n) const
 {
-  // Find the face not containing node n
-  Node* node = cn(n);
+  // Find the face not containing vertex n
+  Vertex* vertex = cn(n);
   for (uint i = 0; i < 4; i++)
   {
     Face* face = cf(i);
-    if ( !(face->contains(*node)) )
+    if ( !(face->contains(*vertex)) )
       return face;
   }
 
-  dolfin_error1("Unable to find face opposite to node %d.", n);
+  dolfin_error1("Unable to find face opposite to vertex %d.", n);
   return 0;
 }
 //-----------------------------------------------------------------------------

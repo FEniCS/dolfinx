@@ -84,10 +84,10 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   // Open file
   FILE* fp = fopen(vtu_filename.c_str(), "a");
 
-  // Write node positions
+  // Write vertex positions
   fprintf(fp, "<Points>  \n");
   fprintf(fp, "<DataArray  type=\"Float32\"  NumberOfComponents=\"3\"  format=\"ascii\">  \n");
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Point   p = n->coord();
     fprintf(fp," %f %f %f \n", p.x, p.y, p.z);
@@ -100,7 +100,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"connectivity\"  format=\"ascii\">  \n");
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (NodeIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id());
+    for (VertexIterator n(c); !n.end(); ++n) fprintf(fp," %8d ",n->id());
     fprintf(fp," \n");
   }  
   fprintf(fp, "</DataArray> \n");
@@ -149,7 +149,7 @@ void VTKFile::ResultsWrite(Function& u) const
   if ( u.vectordim() > 3 )
     dolfin_warning("Cannot handle VTK file with number of components > 3. Writing first three components only");
 	
-  for (NodeIterator n(u.mesh()); !n.end(); ++n)
+  for (VertexIterator n(u.mesh()); !n.end(); ++n)
   {    
     if ( u.vectordim() == 1 ) 
     {
@@ -218,7 +218,7 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n", mesh.noNodes(), mesh.noCells());
+  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n", mesh.noVertices(), mesh.noCells());
   
   // Close file
   fclose(fp);

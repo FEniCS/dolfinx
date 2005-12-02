@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2004-02-29
-// Last changed: 2005-09-16
+// Last changed: 2005-12-01
 
 #include <dolfin.h>
 
@@ -14,7 +14,7 @@ class Bistable : public ODE
 {
 public:
 
-  Bistable(Mesh& mesh) : ODE(mesh.noNodes(), 20.0), mesh(mesh), A(mesh, 0.001),
+  Bistable(Mesh& mesh) : ODE(mesh.noVertices(), 20.0), mesh(mesh), A(mesh, 0.001),
 			 ufile("solution.dx"), kfile("timesteps.dx")
   {
     // Create lumped mass matrix

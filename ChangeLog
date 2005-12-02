@@ -1,3 +1,4 @@
+ - Name change: Node --> Vertex
  - Add nonlinear solver demos
  - Add support for picking sub functions and components of functions
  - Update interface for FiniteElement for latest FFC version

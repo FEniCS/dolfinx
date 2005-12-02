@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __UNIT_CUBE_H
 #define __UNIT_CUBE_H
@@ -16,7 +16,7 @@ namespace dolfin
   /// cube, i.e., (0,1) x (0,1) x (0,1). Given the number of
   /// cells (nx, ny, nz) in each direction, the total number
   /// of tetrahedra will be 6*nx*ny*nz and the total number
-  /// of nodes will be (nx + 1)*(ny + 1)*(nz + 1).
+  /// of vertices will be (nx + 1)*(ny + 1)*(nz + 1).
 
   class UnitCube : public Mesh
   {

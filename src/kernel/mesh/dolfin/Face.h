@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -60,8 +60,8 @@ namespace dolfin
     /// Check if face consists of the given edges
     bool equals(const Edge& e0, const Edge& e1) const;
 
-    /// Check if face contains the node
-    bool contains(const Node& n) const;
+    /// Check if face contains the vertex
+    bool contains(const Vertex& n) const;
 
     /// Check if face contains the point (point in the same plane)
     bool contains(const Point& point) const;

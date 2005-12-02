@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/FEM.h>
 #include <dolfin/Mesh.h>
@@ -13,7 +13,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-MassMatrix::MassMatrix(Mesh& mesh) : Matrix(mesh.noNodes(), mesh.noNodes())
+MassMatrix::MassMatrix(Mesh& mesh) : Matrix(mesh.noVertices(), mesh.noVertices())
 {
   if ( mesh.type() == Mesh::triangles )
   {

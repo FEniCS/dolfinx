@@ -2,33 +2,33 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/GenericCell.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Node::Node()
+Vertex::Vertex()
 {
   clear();
 }
 //-----------------------------------------------------------------------------
-Node::Node(real x)
+Vertex::Vertex(real x)
 {
   clear();
   p.x = x;
 }
 //-----------------------------------------------------------------------------
-Node::Node(real x, real y)
+Vertex::Vertex(real x, real y)
 {
   clear();
   p.x = x;
   p.y = y;
 }
 //-----------------------------------------------------------------------------
-Node::Node(real x, real y, real z)
+Vertex::Vertex(real x, real y, real z)
 {
   clear();
   p.x = x;
@@ -36,12 +36,12 @@ Node::Node(real x, real y, real z)
   p.z = z;
 }
 //-----------------------------------------------------------------------------
-Node::~Node()
+Vertex::~Vertex()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Node::clear()
+void Vertex::clear()
 {
   _mesh = 0;
   _id = -1;
@@ -58,209 +58,209 @@ void Node::clear()
   _child = 0;
 }
 //-----------------------------------------------------------------------------
-int Node::id() const
+int Vertex::id() const
 {
   return _id;
 }
 //-----------------------------------------------------------------------------
-int Node::noNodeNeighbors() const
+int Vertex::noVertexNeighbors() const
 {
   return nn.size();
 }
 //-----------------------------------------------------------------------------
-int Node::noCellNeighbors() const
+int Vertex::noCellNeighbors() const
 {
   return nc.size();
 }
 //-----------------------------------------------------------------------------
-int Node::noEdgeNeighbors() const
+int Vertex::noEdgeNeighbors() const
 {
   return ne.size();
 }
 //-----------------------------------------------------------------------------
-Node& Node::node(int i) const
+Vertex& Vertex::vertex(int i) const
 {
   return *nn(i);
 }
 //-----------------------------------------------------------------------------
-Cell& Node::cell(int i) const
+Cell& Vertex::cell(int i) const
 {
   return *nc(i);
 }
 //-----------------------------------------------------------------------------
-Edge& Node::edge(int i) const
+Edge& Vertex::edge(int i) const
 {
   return *ne(i);
 }
 //-----------------------------------------------------------------------------
-Node* Node::parent() const 
+Vertex* Vertex::parent() const 
 {
   return _parent;
 }
 //-----------------------------------------------------------------------------
-Node* Node::child() const
+Vertex* Vertex::child() const
 {
   return _child;
 }
 //-----------------------------------------------------------------------------
-Mesh& Node::mesh()
+Mesh& Vertex::mesh()
 {
   return *_mesh;
 }
 //-----------------------------------------------------------------------------
-const Mesh& Node::mesh() const
+const Mesh& Vertex::mesh() const
 {
   return *_mesh;
 }
 //-----------------------------------------------------------------------------
-Point& Node::coord()
+Point& Vertex::coord()
 {
   return p;
 }
 //-----------------------------------------------------------------------------
-Point Node::coord() const
+Point Vertex::coord() const
 {
   return p;
 }
 //-----------------------------------------------------------------------------
-Point Node::midpoint(const Node& n) const
+Point Vertex::midpoint(const Vertex& n) const
 {
   return p.midpoint(n.p);
 }
 //-----------------------------------------------------------------------------
-real Node::dist(const Node& n) const
+real Vertex::dist(const Vertex& n) const
 {
   return p.dist(n.p);
 }
 //-----------------------------------------------------------------------------
-real Node::dist(const Point& p) const
+real Vertex::dist(const Point& p) const
 {
   return this->p.dist(p);
 }
 //-----------------------------------------------------------------------------
-real Node::dist(real x, real y, real z) const
+real Vertex::dist(real x, real y, real z) const
 {
   return p.dist(x, y, z);
 }
 //-----------------------------------------------------------------------------
-bool Node::neighbor(const Node& n) const
+bool Vertex::neighbor(const Vertex& n) const
 {
-  for (NodeIterator neighbor(*this); !neighbor.end(); ++neighbor)
+  for (VertexIterator neighbor(*this); !neighbor.end(); ++neighbor)
     if ( &n == neighbor )
       return true;
   
   return false;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator==(const Node& node) const
+bool Vertex::operator==(const Vertex& vertex) const
 {
-  return this == &node;
+  return this == &vertex;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator!=(const Node& node) const
+bool Vertex::operator!=(const Vertex& vertex) const
 {
-  return this != &node;
+  return this != &vertex;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator== (int id) const
+bool Vertex::operator== (int id) const
 {
   return _id == id;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator< (int id) const
+bool Vertex::operator< (int id) const
 {
   return _id < id;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator<= (int id) const
+bool Vertex::operator<= (int id) const
 {
   return _id <= id;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator> (int id) const
+bool Vertex::operator> (int id) const
 {
   return _id > id;
 }
 //-----------------------------------------------------------------------------
-bool Node::operator>= (int id) const
+bool Vertex::operator>= (int id) const
 {
   return _id >= id;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::operator== (int id, const Node& node)
+bool dolfin::operator== (int id, const Vertex& vertex)
 {
-  return node == id;
+  return vertex == id;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::operator< (int id, const Node& node)
+bool dolfin::operator< (int id, const Vertex& vertex)
 {
-  return node > id;
+  return vertex > id;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::operator<= (int id, const Node& node)
+bool dolfin::operator<= (int id, const Vertex& vertex)
 {
-  return node >= id;
+  return vertex >= id;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::operator> (int id, const Node& node)
+bool dolfin::operator> (int id, const Vertex& vertex)
 {
-  return node < id;
+  return vertex < id;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::operator>= (int id, const Node& node)
+bool dolfin::operator>= (int id, const Vertex& vertex)
 {
-  return node <= id;
+  return vertex <= id;
 }
 //-----------------------------------------------------------------------------
-dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Node& node)
+dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Vertex& vertex)
 {
-  int id = node.id();
-  const Point p = node.coord();
+  int id = vertex.id();
+  const Point p = vertex.coord();
   
-  stream << "[ Node: id = " << id
+  stream << "[ Vertex: id = " << id
 	 << " x = (" << p.x << "," << p.y << "," << p.z << ") ]";
   
   return stream;
 }
 //-----------------------------------------------------------------------------
-int Node::setID(int id, Mesh& mesh)
+int Vertex::setID(int id, Mesh& mesh)
 {
   _mesh = &mesh;
   return _id = id;
 }
 //-----------------------------------------------------------------------------
-void Node::setMesh(Mesh& mesh)
+void Vertex::setMesh(Mesh& mesh)
 {
   _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
-void Node::setParent(Node& parent)
+void Vertex::setParent(Vertex& parent)
 {
-  // Set parent node: a node is parent to if it has the same coordinates 
+  // Set parent vertex: a vertex is parent to if it has the same coordinates 
   // and is contained in the next coarser mesh 
   this->_parent = &parent;
 }
 //-----------------------------------------------------------------------------
-void Node::setChild(Node& child)
+void Vertex::setChild(Vertex& child)
 {
-  // Set child node: a node is child to if it has the same coordinates 
+  // Set child vertex: a vertex is child to if it has the same coordinates 
   // and is contained in the next finer mesh 
   this->_child = &child;
 }
 //-----------------------------------------------------------------------------
-void Node::removeParent(Node& parent)
+void Vertex::removeParent(Vertex& parent)
 {
   // Remove parent
   this->_parent = 0;
 }
 //-----------------------------------------------------------------------------
-void Node::removeChild()
+void Vertex::removeChild()
 {
   // Remove child 
   this->_child = 0;
 }
 //-----------------------------------------------------------------------------
-void Node::set(real x, real y, real z)
+void Vertex::set(real x, real y, real z)
 {
   p.x = x;
   p.y = y;

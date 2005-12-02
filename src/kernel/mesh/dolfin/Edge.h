@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -10,7 +10,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PArray.h>
 #include <set>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
@@ -29,8 +29,8 @@ namespace dolfin
     /// Create empty edge
     Edge();
     
-    /// Create edge between two given nodes
-    Edge(Node& n0, Node& n1);
+    /// Create edge between two given vertices
+    Edge(Vertex& n0, Vertex& n1);
 
     /// Destructor
     ~Edge();
@@ -46,8 +46,8 @@ namespace dolfin
     /// Return number of cell neighbors
     unsigned int noCellNeighbors() const;
 
-    /// Get end node number i
-    Node& node(int i) const;
+    /// Get end vertex number i
+    Vertex& vertex(int i) const;
 
     /// Return cell neighbor number i
     Cell& cell(int i) const;
@@ -58,7 +58,7 @@ namespace dolfin
     /// Return the mesh containing the edge (const version)
     const Mesh& mesh() const;
 
-    /// Get coordinates of node number i
+    /// Get coordinates of vertex number i
     Point& coord(int i) const;
     
     /// Compute and return length of the edge
@@ -67,11 +67,11 @@ namespace dolfin
     /// Compute and return midpoint of the edge 
     Point midpoint() const;
     
-    /// Check if edge consists of the two nodes
-    bool equals(const Node& n0, const Node& n1) const;
+    /// Check if edge consists of the two vertices
+    bool equals(const Vertex& n0, const Vertex& n1) const;
 
-    /// Check if edge contains the node
-    bool contains(const Node& n) const;
+    /// Check if edge contains the vertex
+    bool contains(const Vertex& n) const;
 
     /// Check if edge contains the point (point one the same line)
     bool contains(const Point& point) const;
@@ -83,7 +83,7 @@ namespace dolfin
     
     // Friends
     friend class Mesh;
-    friend class Node;
+    friend class Vertex;
     friend class Face;
     friend class GenericCell;
     friend class MeshData;
@@ -91,7 +91,7 @@ namespace dolfin
     friend class MeshRefinement;
     friend class TriMeshRefinement;
     friend class TetMeshRefinement;
-    friend class NodeIterator::CellNodeIterator;
+    friend class VertexIterator::CellVertexIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
     friend class FaceIterator::CellFaceIterator;
@@ -110,8 +110,8 @@ namespace dolfin
     // Set the mesh pointer
     void setMesh(Mesh& mesh);
 
-    /// Specify nodes
-    void set(Node& n0, Node& n1);
+    /// Specify vertices
+    void set(Vertex& n0, Vertex& n1);
 
     // Initialize marker (if not already done)
     void initMarker();
@@ -136,9 +136,9 @@ namespace dolfin
     // Global edge number
     int _id;
     
-    // Nodes
-    Node* n0;
-    Node* n1;
+    // Vertices
+    Vertex* n0;
+    Vertex* n1;
 
     // Connectivity
     PArray<Cell*> ec;

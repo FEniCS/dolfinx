@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-11-29
+// Last changed: 2005-12-01
 
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion.h"
@@ -53,7 +53,7 @@ void ConvectionDiffusionSolver::solve()
   FEM::assemble(a, A, mesh);
 
   // FIXME: Temporary fix
-  x1.init(mesh.noNodes());
+  x1.init(mesh.noVertices());
   Function u1(x1, mesh, a.trial());
   
   // Synchronize function u1 with time t

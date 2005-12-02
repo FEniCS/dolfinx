@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -39,7 +39,7 @@ int GenericCell::noCellNeighbors() const
   return cc.size();
 }
 //-----------------------------------------------------------------------------
-int GenericCell::noNodeNeighbors() const
+int GenericCell::noVertexNeighbors() const
 {
   return cn.size();
 }
@@ -49,7 +49,7 @@ int GenericCell::noChildren() const
   return children.size();
 }
 //-----------------------------------------------------------------------------
-Node& GenericCell::node(int i) const
+Vertex& GenericCell::vertex(int i) const
 {
   return *cn(i);
 }
@@ -88,7 +88,7 @@ Point GenericCell::midpoint() const
 {
   Point p;
 
-  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
+  for (PArray<Vertex*>::Iterator n(cn); !n.end(); ++n)
     p += (*n)->coord();
 
   p /= real(cn.size());
@@ -96,7 +96,7 @@ Point GenericCell::midpoint() const
   return p;
 }
 //-----------------------------------------------------------------------------
-int GenericCell::nodeID(int i) const
+int GenericCell::vertexID(int i) const
 {
   return cn(i)->id();
 }
@@ -163,7 +163,7 @@ void GenericCell::removeChild(Cell& child)
 bool GenericCell::neighbor(GenericCell& cell) const
 {
   // Two cells are neighbors if they have a common edge or if they are
-  // the same cell, i.e. if they have 2 or 3 common nodes.
+  // the same cell, i.e. if they have 2 or 3 common vertices.
 
   int count = 0;
   for (int i = 0; i < cn.size(); i++)
@@ -174,10 +174,10 @@ bool GenericCell::neighbor(GenericCell& cell) const
   return count >= 2;
 }
 //-----------------------------------------------------------------------------
-bool GenericCell::haveNode(Node& node) const
+bool GenericCell::haveVertex(Vertex& vertex) const
 {
-  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
-    if ( *n == &node )
+  for (PArray<Vertex*>::Iterator n(cn); !n.end(); ++n)
+    if ( *n == &vertex )
       return true;
   return false;
 }
@@ -190,11 +190,11 @@ bool GenericCell::haveEdge(Edge& edge) const
   return false;
 }
 //-----------------------------------------------------------------------------
-void GenericCell::createEdge(Node& n0, Node& n1)
+void GenericCell::createEdge(Vertex& n0, Vertex& n1)
 {
   Edge* edge = 0;
 
-  // Check neighbor cells if an edge already exists between the two nodes
+  // Check neighbor cells if an edge already exists between the two vertices
   for (PArray<Cell*>::Iterator c(cc); !c.end(); ++c) {
     edge = (*c)->findEdge(n0, n1);
     if ( edge )
@@ -229,16 +229,16 @@ void GenericCell::createFace(Edge& e0, Edge& e1, Edge& e2)
   cf.add(face);
 }
 //-----------------------------------------------------------------------------
-Node* GenericCell::findNode(const Point& p) const
+Vertex* GenericCell::findVertex(const Point& p) const
 {
-  for (PArray<Node*>::Iterator n(cn); !n.end(); ++n)
+  for (PArray<Vertex*>::Iterator n(cn); !n.end(); ++n)
     if ( (*n)->dist(p) < DOLFIN_EPS )
       return *n;
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-Edge* GenericCell::findEdge(Node& n0, Node& n1)
+Edge* GenericCell::findEdge(Vertex& n0, Vertex& n1)
 {
   for (PArray<Edge*>::Iterator e(ce); !e.end(); ++e)
     if ( *e )

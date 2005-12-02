@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-11-28
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -78,12 +78,12 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp, "clear tmp\n\n");
   }
   
-  // Write nodes
+  // Write vertices
   if ( no_meshes == 0 )
     fprintf(fp,"points = [");
   else
     fprintf(fp,"points{%d} = [", no_meshes + 1);
-  for (NodeIterator n(mesh); !n.end(); ++n) {
+  for (VertexIterator n(mesh); !n.end(); ++n) {
     
     p = n->coord();
     
@@ -110,7 +110,7 @@ void MFile::operator<<(Mesh& mesh)
     fprintf(fp,"cells{%d} = [", no_meshes + 1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {
-    for (NodeIterator n(c); !n.end(); ++n)
+    for (VertexIterator n(c); !n.end(); ++n)
       fprintf(fp, "%d ", n->id() + 1);
     
     if ( c.last() )
@@ -166,7 +166,7 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s = [", u.name().c_str());
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (NodeIterator n(u.mesh()); !n.end(); ++n)
+      for (VertexIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));
       fprintf(fp, ";");
     }
@@ -177,7 +177,7 @@ void MFile::operator<<(Function& u)
     fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
-      for (NodeIterator n(u.mesh()); !n.end(); ++n)
+      for (VertexIterator n(u.mesh()); !n.end(); ++n)
 	fprintf(fp, " %.15f", u(*n, i));
       fprintf(fp, ";");
     }

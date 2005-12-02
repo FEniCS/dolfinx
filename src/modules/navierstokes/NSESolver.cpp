@@ -1,10 +1,11 @@
 // Copyright (C) 2005 Johan Hoffman.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells
+// Modified by Garth N. Wells 2005.
+// Modified by Anders Logg 2005.
 //
 // First added:  2005
-// Last changed: 2005-10-28
+// Last changed: 2005-12-01
 
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>
@@ -37,20 +38,20 @@ void NSESolver::solve()
   int nsd = 2;
 
   // Initialize velocity;
-  Vector x0vel(nsd*mesh.noNodes());
-  Vector xcvel(nsd*mesh.noNodes());
+  Vector x0vel(nsd*mesh.noVertices());
+  Vector xcvel(nsd*mesh.noVertices());
   Vector xmvel(nsd*mesh.noCells());
-  Vector xvel(nsd*mesh.noNodes());
+  Vector xvel(nsd*mesh.noVertices());
   x0vel = 0.0;
   xcvel = 0.0;
   xmvel = 0.0;
   xvel = 0.0;
 
-  Vector xpre(mesh.noNodes());
+  Vector xpre(mesh.noVertices());
   xpre = 0.0;
 
-  Vector residual_mom(nsd*mesh.noNodes());
-  Vector residual_con(mesh.noNodes());
+  Vector residual_mom(nsd*mesh.noVertices());
+  Vector residual_con(mesh.noVertices());
   residual_mom = 1.0e3;
   residual_con = 1.0e3;
 
@@ -286,20 +287,20 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
   real normw; 
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      //normw = sqrt(sqr(w((*cell).midpoint(),0)) + sqr(w((*cell).midpoint(),1)));
-      normw = 0.0;
-      for (NodeIterator n(cell); !n.end(); ++n)
-	normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
-      normw /= (*cell).noNodes();
-      if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
-	d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
-	d2vector((*cell).id()) = C2 * (*cell).diameter();
-      } else{
-	d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
-	d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
-      }	
-    }
+  {
+    //normw = sqrt(sqr(w((*cell).midpoint(),0)) + sqr(w((*cell).midpoint(),1)));
+    normw = 0.0;
+    for (VertexIterator n(cell); !n.end(); ++n)
+      normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
+    normw /= (*cell).noVertices();
+    if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
+      d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
+      d2vector((*cell).id()) = C2 * (*cell).diameter();
+    } else{
+      d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
+      d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
+    }	
+  }
 }
 //-----------------------------------------------------------------------------
 void NSESolver::ComputeMeanVelocity(Vector& xnodal, Vector& xcell)
@@ -307,11 +308,11 @@ void NSESolver::ComputeMeanVelocity(Vector& xnodal, Vector& xcell)
   // Compute cell mean 
   xcell.init(mesh.noCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
-    {
-      xcell((*cell).id()) = 0.0;
-      for (NodeIterator node(cell); !node.end(); ++node)
-	xcell((*cell).id()) += xnodal((*node).id());
-      xcell((*cell).id()) = xcell((*cell).id()) / real(cell->noNodes());
-    }
+  {
+    xcell((*cell).id()) = 0.0;
+    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+      xcell((*cell).id()) += xnodal((*vertex).id());
+    xcell((*cell).id()) = xcell((*cell).id()) / real(cell->noVertices());
+  }
 }
 //-----------------------------------------------------------------------------

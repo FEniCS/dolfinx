@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -13,7 +13,7 @@
 namespace dolfin
 {
   class Point;
-  class Node;
+  class Vertex;
   class Mesh;
   class Vector;
   class AffineMap;
@@ -35,8 +35,8 @@ namespace dolfin
     /// Evaluate function at given point
     virtual real operator() (const Point& point, uint i) = 0;
 
-    /// Evaluate function at given node
-    virtual real operator() (const Node& node, uint i) = 0;
+    /// Evaluate function at given vertex
+    virtual real operator() (const Vertex& vertex, uint i) = 0;
 
     // Restrict to sub function or component (if possible)
     virtual void sub(uint i) = 0;

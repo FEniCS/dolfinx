@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __TRI_MESH_REFINEMENT_H
 #define __TRI_MESH_REFINEMENT_H
@@ -43,7 +43,7 @@ namespace dolfin
     static void refineIrregular1(Cell& cell, Mesh& mesh);
     static void refineIrregular2(Cell& cell, Mesh& mesh);
 
-    static Cell& createCell(Node& n0, Node& n1, Node& n2, Mesh& mesh,
+    static Cell& createCell(Vertex& n0, Vertex& n1, Vertex& n2, Mesh& mesh,
 			    Cell& cell);
     
   };

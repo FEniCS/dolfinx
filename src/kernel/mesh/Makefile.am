@@ -18,15 +18,15 @@ nobase_include_HEADERS   = dolfin/dolfin_mesh.h \
                            dolfin/MeshInit.h \
                            dolfin/MeshIterator.h \
                            dolfin/MeshRefinement.h \
-                           dolfin/Node.h \
-                           dolfin/NodeIterator.h \
                            dolfin/Point.h \
                            dolfin/TetMeshRefinement.h \
                            dolfin/Tetrahedron.h \
                            dolfin/TriMeshRefinement.h \
                            dolfin/Triangle.h \
                            dolfin/UnitCube.h \
-                           dolfin/UnitSquare.h
+                           dolfin/UnitSquare.h \
+                           dolfin/Vertex.h \
+                           dolfin/VertexIterator.h
 INCLUDES                 = @KERNEL_CFLAGS@
 lib_LIBRARIES            = libdolfin-mesh.a
 libdolfin_mesh_a_SOURCES = Boundary.cpp \
@@ -46,12 +46,12 @@ libdolfin_mesh_a_SOURCES = Boundary.cpp \
                            MeshInit.cpp \
                            MeshIterator.cpp \
                            MeshRefinement.cpp \
-                           Node.cpp \
-                           NodeIterator.cpp \
                            Point.cpp \
                            TetMeshRefinement.cpp \
                            Tetrahedron.cpp \
                            TriMeshRefinement.cpp \
                            Triangle.cpp \
                            UnitCube.cpp \
-                           UnitSquare.cpp
+                           UnitSquare.cpp \
+                           Vertex.cpp \
+                           VertexIterator.cpp

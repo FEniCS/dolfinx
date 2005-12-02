@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -28,10 +28,10 @@ Boundary::~Boundary()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int Boundary::noNodes() const
+int Boundary::noVertices() const
 {
   dolfin_assert(mesh);
-  return mesh->bd->noNodes();
+  return mesh->bd->noVertices();
 }
 //-----------------------------------------------------------------------------
 int Boundary::noEdges() const

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
@@ -13,16 +13,16 @@
 namespace dolfin
 {
 
-  class Node;
+  class Vertex;
   class Cell;
   
   class Triangle : public GenericCell
   {
   public:
     
-    Triangle(Node& n0, Node& n1, Node& n2);
+    Triangle(Vertex& n0, Vertex& n1, Vertex& n2);
 
-    int noNodes() const;
+    int noVertices() const;
     int noEdges() const;
     int noFaces() const;
 

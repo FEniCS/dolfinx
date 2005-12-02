@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-09-15
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -15,7 +15,7 @@ void BoundaryInit::init(Mesh& mesh)
 {
   // It is important that the computation of boundary data is done in
   // the correct order: First compute faces, then use this information
-  // to compute edges, and finally compute the nodes from the edges.
+  // to compute edges, and finally compute the vertices from the edges.
 
   // Write a message
   dolfin_begin("Computing boundary:");
@@ -24,7 +24,7 @@ void BoundaryInit::init(Mesh& mesh)
 
   initFaces(mesh);
   initEdges(mesh);
-  initNodes(mesh);
+  initVertices(mesh);
   
   dolfin_end();
 }
@@ -62,28 +62,28 @@ void BoundaryInit::initEdges(Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void BoundaryInit::initNodes(Mesh& mesh)
+void BoundaryInit::initVertices(Mesh& mesh)
 {
-  // Compute nodes from edges. A node is on the boundary if it belongs to
+  // Compute vertices from edges. A vertex is on the boundary if it belongs to
   // an edge which is on the boundary. We need an extra list so that we don't
-  // add a node more than once.
+  // add a vertex more than once.
 
-  PArray<bool> marker(mesh.noNodes());
+  PArray<bool> marker(mesh.noVertices());
   marker = false;
 
-  // Mark all nodes which are on the boundary
+  // Mark all vertices which are on the boundary
   for (PList<Edge*>::Iterator e(mesh.bd->edges); !e.end(); ++e) {
-    marker((*e)->node(0).id()) = true;
-    marker((*e)->node(1).id()) = true;
+    marker((*e)->vertex(0).id()) = true;
+    marker((*e)->vertex(1).id()) = true;
   }
 
-  // Add all nodes on the boundary
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  // Add all vertices on the boundary
+  for (VertexIterator n(mesh); !n.end(); ++n)
     if ( marker(n->id()) )
       mesh.bd->add(*n);
   
   // Write a message
-  cout << "Found " << mesh.bd->noNodes() << " nodes on the boundary." << endl;
+  cout << "Found " << mesh.bd->noVertices() << " vertices on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initFacesTri(Mesh& mesh)

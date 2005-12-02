@@ -2,18 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __BOUNDARY_DATA_H
 #define __BOUNDARY_DATA_H
 
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/PList.h>
 
 namespace dolfin
 {
 
-  class Node;
+  class Vertex;
   class Edge;
   class Face;
   class Mesh;
@@ -31,8 +31,8 @@ namespace dolfin
     /// Clear all data
     void clear();
 
-    /// Add node to the boundary
-    void add(Node& node);
+    /// Add vertex to the boundary
+    void add(Vertex& vertex);
 
     /// Add edge to the boundary
     void add(Edge& edge);
@@ -43,8 +43,8 @@ namespace dolfin
     /// Check if the boundary is empty
     bool empty();
 
-    /// Return number of nodes on the boundary
-    int noNodes() const;
+    /// Return number of vertices on the boundary
+    int noVertices() const;
 
     /// Return number of edges on the boundary
     int noEdges() const;
@@ -55,7 +55,7 @@ namespace dolfin
     /// Friends
     friend class Mesh;
     friend class BoundaryInit;
-    friend class NodeIterator::BoundaryNodeIterator;
+    friend class VertexIterator::BoundaryVertexIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;
     friend class FaceIterator::BoundaryFaceIterator;
 
@@ -67,8 +67,8 @@ namespace dolfin
     // The mesh
     Mesh* mesh;
     
-    // A list of all nodes on the boundary
-    PList<Node*> nodes;
+    // A list of all vertices on the boundary
+    PList<Vertex*> vertices;
 
     // A list of all edges on the boundary
     PList<Edge*> edges;

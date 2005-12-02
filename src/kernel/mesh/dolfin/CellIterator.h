@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __CELL_ITERATOR_H
 #define __CELL_ITERATOR_H
@@ -16,8 +16,8 @@ namespace dolfin {
 
   class Mesh;
   class Cell;
-  class Node;
-  class NodeIterator;
+  class Vertex;
+  class VertexIterator;
   class Edge;
   class EdgeIterator;
   class Face;
@@ -31,8 +31,8 @@ namespace dolfin {
     CellIterator(const Mesh& mesh);
     CellIterator(const Mesh* mesh);
 
-    CellIterator(const Node& node);
-    CellIterator(const NodeIterator& nodeIterator);
+    CellIterator(const Vertex& vertex);
+    CellIterator(const VertexIterator& vertexIterator);
 
     CellIterator(const Cell& cell);
     CellIterator(const CellIterator& cellIterator);
@@ -96,11 +96,11 @@ namespace dolfin {
 		
     };
 
-    // Iterator for the cell neigbors of a node
-    class NodeCellIterator : public GenericCellIterator {
+    // Iterator for the cell neigbors of a vertex
+    class VertexCellIterator : public GenericCellIterator {
     public:
 
-      NodeCellIterator(const Node& node);
+      VertexCellIterator(const Vertex& vertex);
       void operator++();
       bool end();
       bool last();

@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/Point.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/Face.h>
 
@@ -97,7 +97,7 @@ bool Face::equals(const Edge& e0, const Edge& e1) const
   return false;
 }
 //-----------------------------------------------------------------------------
-bool Face::contains(const Node& n) const
+bool Face::contains(const Vertex& n) const
 {
   return fe(0)->contains(n) || fe(1)->contains(n) || fe(2)->contains(n);
 }

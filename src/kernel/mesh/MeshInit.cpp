@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-09-15
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/MeshInit.h>
@@ -17,7 +17,7 @@ void MeshInit::init(Mesh& mesh)
 {
   // Write a message
   dolfin_begin("Computing mesh connectivity:");
-  cout << "Found " << mesh.noNodes() << " nodes" << endl;
+  cout << "Found " << mesh.noVertices() << " vertices" << endl;
   cout << "Found " << mesh.noCells() << " cells" << endl;
   
   // Reset all previous connections
@@ -45,9 +45,9 @@ void MeshInit::sort(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void MeshInit::renumber(Mesh& mesh)
 {
-  // Renumber nodes
+  // Renumber vertices
   int i = 0;
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
     n->setID(i++, mesh);
 
   // Renumber cells
@@ -77,8 +77,8 @@ void MeshInit::clear(Mesh& mesh)
   // Clear boundary data for mesh
   mesh.bd->clear();
 
-  // Clear connectivity for nodes
-  for (NodeIterator n(mesh); !n.end(); ++n) {
+  // Clear connectivity for vertices
+  for (VertexIterator n(mesh); !n.end(); ++n) {
     n->nn.clear();
     n->nc.clear();
     n->ne.clear();
@@ -108,7 +108,7 @@ void MeshInit::initConnectivity(Mesh& mesh)
   // The data needs to be computed in the correct order, see MeshData.h.
 
   // Compute n-c connections [1]
-  initNodeCell(mesh);
+  initVertexCell(mesh);
 
   // Compute c-c connections [2]
   initCellCell(mesh);
@@ -117,10 +117,10 @@ void MeshInit::initConnectivity(Mesh& mesh)
   initEdges(mesh);
 
   // Compute n-e connections [4]
-  initNodeEdge(mesh);
+  initVertexEdge(mesh);
 
   // Compute n-n connections [5]
-  initNodeNode(mesh);
+  initVertexVertex(mesh);
 
   // Compute faces [6]
   initFaces(mesh);
@@ -163,27 +163,27 @@ void MeshInit::initFaces(Mesh& mesh)
   cout << "Created " << mesh.noFaces() << " faces" << endl;
 }
 //-----------------------------------------------------------------------------
-void MeshInit::initNodeCell(Mesh& mesh)
+void MeshInit::initVertexCell(Mesh& mesh)
 {
-  // Go through all cells and add each cell as a neighbour to all its nodes.
+  // Go through all cells and add each cell as a neighbour to all its vertices.
   // This is done in three steps:
   //
-  //   1. Count the number of cell neighbors for each node
-  //   2. Allocate memory for each node
+  //   1. Count the number of cell neighbors for each vertex
+  //   2. Allocate memory for each vertex
   //   3. Add the cell neighbors
 
-  // Count the number of cells the node appears in
+  // Count the number of cells the vertex appears in
   for (CellIterator c(mesh); !c.end(); ++c)
-    for (NodeIterator n(c); !n.end(); ++n)
+    for (VertexIterator n(c); !n.end(); ++n)
       n->nc.setsize(n->nc.size()+1);
 
   // Allocate memory for the cell lists
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
     n->nc.init();
 
   // Add the cells to the cell lists
   for (CellIterator c(mesh); !c.end(); ++c){
-    for (NodeIterator n(c); !n.end(); ++n)
+    for (VertexIterator n(c); !n.end(); ++n)
       n->nc.add(c);
   }
 }
@@ -201,7 +201,7 @@ void MeshInit::initCellCell(Mesh& mesh)
   for (CellIterator c1(mesh); !c1.end(); ++c1) {
 
     // Count the number of cell neighbors (overestimate)
-    for (NodeIterator n(c1); !n.end(); ++n)
+    for (VertexIterator n(c1); !n.end(); ++n)
       for (CellIterator c2(n); !c2.end(); ++c2)
 	if ( c1->neighbor(*c2) )
 	  c1->c->cc.setsize(c1->c->cc.size()+1);
@@ -210,7 +210,7 @@ void MeshInit::initCellCell(Mesh& mesh)
     c1->c->cc.init();
     
     // Add all *unique* cell neighbors
-    for (NodeIterator n(c1); !n.end(); ++n)
+    for (VertexIterator n(c1); !n.end(); ++n)
       for (CellIterator c2(n); !c2.end(); ++c2)
 	if ( c1->neighbor(*c2) )
 	  if ( !c1->c->cc.contains(c2) )
@@ -222,58 +222,58 @@ void MeshInit::initCellCell(Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void MeshInit::initNodeEdge(Mesh& mesh)
+void MeshInit::initVertexEdge(Mesh& mesh)
 {
-  // Go through all edges and add each edge as a neighbour to all its nodes.
+  // Go through all edges and add each edge as a neighbour to all its vertices.
   // This is done in three steps:
   //
-  //   1. Count the number of edge neighbors for each node
-  //   2. Allocate memory for each node
+  //   1. Count the number of edge neighbors for each vertex
+  //   2. Allocate memory for each vertex
   //   3. Add the edge neighbors
 
-  // Count the number of edges the node appears in
+  // Count the number of edges the vertex appears in
   for (EdgeIterator e(mesh); !e.end(); ++e) {
-    Node& n0 = e->node(0);
-    Node& n1 = e->node(1);
+    Vertex& n0 = e->vertex(0);
+    Vertex& n1 = e->vertex(1);
     n0.ne.setsize(n0.ne.size() + 1);
     n1.ne.setsize(n1.ne.size() + 1);
   }
   
   // Allocate memory for the edge lists
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
     n->ne.init();
   
   // Add the edges to the edge lists
   for (EdgeIterator e(mesh); !e.end(); ++e) {
-    Node& n0 = e->node(0);
-    Node& n1 = e->node(1);
+    Vertex& n0 = e->vertex(0);
+    Vertex& n1 = e->vertex(1);
     n0.ne.add(e);
     n1.ne.add(e);
   }
 }
 //-----------------------------------------------------------------------------
-void MeshInit::initNodeNode(Mesh& mesh)
+void MeshInit::initVertexVertex(Mesh& mesh)
 {
-  // Go through all nodes and compute the node neighbors of each node
+  // Go through all vertices and compute the vertex neighbors of each vertex
   // from the edge neighbors.
 
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
-    // Allocate the list of nodes
+    // Allocate the list of vertices
     n->nn.init(1 + n->ne.size());
 
-    // First add the node itself
+    // First add the vertex itself
     n->nn(0) = n;
     
-    // Then add the other nodes
+    // Then add the other vertices
     for (int i = 0; i < n->ne.size(); i++)
     {
       Edge* e = n->ne(i);
 
-      if ( &e->node(0) != n )
-	n->nn(i+1) = &e->node(0);
+      if ( &e->vertex(0) != n )
+	n->nn(i+1) = &e->vertex(0);
       else
-	n->nn(i+1) = &e->node(1);
+	n->nn(i+1) = &e->vertex(1);
     }
   }
 }
@@ -334,9 +334,9 @@ void MeshInit::initFaceCell(Mesh& mesh)
 void MeshInit::initEdgeBoundaryids(Mesh& mesh)
 {
   for (EdgeIterator e(mesh); !e.end(); ++e){
-    // Intersect boundaryids in node 0 and 1, put the result in e->ebids
-    set_intersection( e->node(0).nbids.begin(), e->node(0).nbids.end(),
-		      e->node(1).nbids.begin(), e->node(1).nbids.end(),
+    // Intersect boundaryids in vertex 0 and 1, put the result in e->ebids
+    set_intersection( e->vertex(0).nbids.begin(), e->vertex(0).nbids.end(),
+		      e->vertex(1).nbids.begin(), e->vertex(1).nbids.end(),
 		      inserter(e->ebids,e->ebids.begin()) );
   }
 }

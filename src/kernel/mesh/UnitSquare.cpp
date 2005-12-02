@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/UnitSquare.h>
 
@@ -13,7 +13,7 @@ UnitSquare::UnitSquare(uint nx, uint ny) : Mesh()
 {
   rename("mesh", "Mesh of the unit square (0,1) x (0,1)");
 
-  // Create nodes
+  // Create vertices
   for (uint iy = 0; iy <= ny; iy++)
   {
     const real y = static_cast<real>(iy) / static_cast<real>(ny);
@@ -21,7 +21,7 @@ UnitSquare::UnitSquare(uint nx, uint ny) : Mesh()
     {
       const real x = static_cast<real>(ix) / static_cast<real>(nx);
       const Point p(x, y);
-      createNode(p);
+      createVertex(p);
     }
   }
   

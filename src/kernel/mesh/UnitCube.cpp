@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/UnitCube.h>
 
@@ -13,7 +13,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz)
 {
   rename("mesh", "Mesh of the unit cube (0,1) x (0,1) x (0,1)");
 
-  // Create nodes
+  // Create vertices
   for (uint iz = 0; iz <= nz; iz++)
   {
     const real z = static_cast<real>(iz) / static_cast<real>(nz);
@@ -24,7 +24,7 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz)
       {
 	const real x = static_cast<real>(ix) / static_cast<real>(nx);
 	const Point p(x, y, z);
-	createNode(p);
+	createVertex(p);
       }
     }
   }

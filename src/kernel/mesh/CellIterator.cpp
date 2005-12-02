@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
@@ -35,14 +35,14 @@ CellIterator::CellIterator(const CellIterator& cellIterator)
   c = new CellCellIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(const Node& node)
+CellIterator::CellIterator(const Vertex& vertex)
 {
-  c = new NodeCellIterator(node);
+  c = new VertexCellIterator(vertex);
 }
 //-----------------------------------------------------------------------------
-CellIterator::CellIterator(const NodeIterator& nodeIterator)
+CellIterator::CellIterator(const VertexIterator& vertexIterator)
 {
-  c = new NodeCellIterator(*nodeIterator);
+  c = new VertexCellIterator(*vertexIterator);
 }
 //-----------------------------------------------------------------------------
 CellIterator::CellIterator(const Edge& edge)
@@ -170,44 +170,44 @@ Cell* CellIterator::MeshCellIterator::pointer() const
   return cell_iterator.pointer();
 }
 //-----------------------------------------------------------------------------
-// CellIterator::NodeCellIterator
+// CellIterator::VertexCellIterator
 //-----------------------------------------------------------------------------
-CellIterator::NodeCellIterator::NodeCellIterator(const Node& node)
+CellIterator::VertexCellIterator::VertexCellIterator(const Vertex& vertex)
 {
-  cell_iterator = node.nc.begin();
+  cell_iterator = vertex.nc.begin();
 }
 //-----------------------------------------------------------------------------
-void CellIterator::NodeCellIterator::operator++()
+void CellIterator::VertexCellIterator::operator++()
 {
   ++cell_iterator;
 }
 //-----------------------------------------------------------------------------
-bool CellIterator::NodeCellIterator::end()
+bool CellIterator::VertexCellIterator::end()
 {
   return cell_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool CellIterator::NodeCellIterator::last()
+bool CellIterator::VertexCellIterator::last()
 {
   return cell_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int CellIterator::NodeCellIterator::index()
+int CellIterator::VertexCellIterator::index()
 {
   return cell_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Cell& CellIterator::NodeCellIterator::operator*() const
+Cell& CellIterator::VertexCellIterator::operator*() const
 {
   return **cell_iterator;
 }
 //-----------------------------------------------------------------------------
-Cell* CellIterator::NodeCellIterator::operator->() const
+Cell* CellIterator::VertexCellIterator::operator->() const
 {
   return *cell_iterator;
 }
 //-----------------------------------------------------------------------------
-Cell* CellIterator::NodeCellIterator::pointer() const
+Cell* CellIterator::VertexCellIterator::pointer() const
 {
   return *cell_iterator;
 }

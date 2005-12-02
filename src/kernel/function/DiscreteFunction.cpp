@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Vector.h>
@@ -61,7 +61,7 @@ real DiscreteFunction::operator()(const Point& p, uint i)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-real DiscreteFunction::operator() (const Node& node, uint i)
+real DiscreteFunction::operator() (const Vertex& vertex, uint i)
 {
   dolfin_assert(_x && _mesh && _element);
 
@@ -72,7 +72,7 @@ real DiscreteFunction::operator() (const Node& node, uint i)
   real* xx = _x->array();
 
   // Evaluate all components at given vertex and pick given component
-  _element->vertexeval(local.values, node.id(), xx + mixed_offset, *_mesh);
+  _element->vertexeval(local.values, vertex.id(), xx + mixed_offset, *_mesh);
 
   // Restore array
   _x->restore(xx);

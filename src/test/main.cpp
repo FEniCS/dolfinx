@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
 
-  testOutput();
+  //testOutput();
 
   return 0;
 }

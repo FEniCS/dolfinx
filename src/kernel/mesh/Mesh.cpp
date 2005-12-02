@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <stdio.h>
 #include <math.h>
@@ -15,7 +15,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/Triangle.h>
 #include <dolfin/Tetrahedron.h>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/File.h>
 #include <dolfin/Boundary.h>
@@ -60,18 +60,18 @@ Mesh::Mesh(const Mesh& mesh)
   rename("mesh", "no description");
   clear();
 
-  // Specify nodes
-  for (NodeIterator n(mesh); !n.end(); ++n)
-    createNode(n->coord());
+  // Specify vertices
+  for (VertexIterator n(mesh); !n.end(); ++n)
+    createVertex(n->coord());
   
   // Specify cells
   for (CellIterator c(mesh); !c.end(); ++c)
     switch (c->type()) {
     case Cell::triangle:
-      createCell(c->node(0), c->node(1), c->node(2));
+      createCell(c->vertex(0), c->vertex(1), c->vertex(2));
       break;
     case Cell::tetrahedron:
-      createCell(c->node(0), c->node(1), c->node(2), c->node(3));
+      createCell(c->vertex(0), c->vertex(1), c->vertex(2), c->vertex(3));
       break;
     default:
       dolfin_error("Unknown cell type.");
@@ -108,9 +108,9 @@ void Mesh::clear()
   _parent = 0;
 }
 //-----------------------------------------------------------------------------
-int Mesh::noNodes() const
+int Mesh::noVertices() const
 {
-  return md->noNodes();
+  return md->noVertices();
 }
 //-----------------------------------------------------------------------------
 int Mesh::noCells() const
@@ -133,9 +133,9 @@ Mesh::Type Mesh::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-Node& Mesh::node(uint id)
+Vertex& Mesh::vertex(uint id)
 {
-  return md->node(id);
+  return md->vertex(id);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::cell(uint id)
@@ -250,14 +250,14 @@ void Mesh::disp() const
   cout << "Mesh data:" << endl;
   cout << "----------" << endl << endl;
 
-  cout << "  " << "Number of nodes: " << noNodes() << endl;
+  cout << "  " << "Number of vertices: " << noVertices() << endl;
   cout << "  " << "Number of edges: " << noEdges() << endl;
   if ( type() == tetrahedra )
     cout << "  " << "Number of faces: " << noFaces() << endl;
   cout << "  " << "Number of cells: " << noCells() << endl;
 
   cout << endl;
-  for (NodeIterator n(this); !n.end(); ++n)
+  for (VertexIterator n(this); !n.end(); ++n)
     cout << "  " << *n << endl;
 
   cout << endl;
@@ -294,14 +294,14 @@ Mesh& Mesh::createChild()
   return *new_mesh;
 }
 //-----------------------------------------------------------------------------
-Node& Mesh::createNode(Point p)
+Vertex& Mesh::createVertex(Point p)
 {
-  return md->createNode(p);
+  return md->createVertex(p);
 }
 //-----------------------------------------------------------------------------
-Node& Mesh::createNode(real x, real y, real z)
+Vertex& Mesh::createVertex(real x, real y, real z)
 {
-  return md->createNode(x, y, z);
+  return md->createVertex(x, y, z);
 }
 //-----------------------------------------------------------------------------
 Cell& Mesh::createCell(int n0, int n1, int n2)
@@ -320,7 +320,7 @@ Cell& Mesh::createCell(int n0, int n1, int n2, int n3)
   return md->createCell(n0, n1, n2, n3);
 }
 //-----------------------------------------------------------------------------
-Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2)
+Cell& Mesh::createCell(Vertex& n0, Vertex& n1, Vertex& n2)
 {
   // Warning: mesh type will be type of last added cell
   _type = triangles;
@@ -328,7 +328,7 @@ Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2)
   return md->createCell(n0, n1, n2);
 }
 //-----------------------------------------------------------------------------
-Cell& Mesh::createCell(Node& n0, Node& n1, Node& n2, Node& n3)
+Cell& Mesh::createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3)
 {
   // Warning: mesh type will be type of last added cell
   _type = tetrahedra;
@@ -341,7 +341,7 @@ Edge& Mesh::createEdge(int n0, int n1)
   return md->createEdge(n0, n1);
 }
 //-----------------------------------------------------------------------------
-Edge& Mesh::createEdge(Node& n0, Node& n1)
+Edge& Mesh::createEdge(Vertex& n0, Vertex& n1)
 {
   return md->createEdge(n0, n1);
 }
@@ -356,9 +356,9 @@ Face& Mesh::createFace(Edge& e0, Edge& e1, Edge& e2)
   return md->createFace(e0, e1, e2);
 }
 //-----------------------------------------------------------------------------
-void Mesh::remove(Node& node)
+void Mesh::remove(Vertex& vertex)
 {
-  md->remove(node);
+  md->remove(vertex);
 }
 //-----------------------------------------------------------------------------
 void Mesh::remove(Cell& cell)
@@ -383,17 +383,17 @@ void Mesh::init()
 //-----------------------------------------------------------------------------
 void Mesh::merge(Mesh& mesh2)
 {
-  std::map<int, int> nodemap;
+  std::map<int, int> vertexmap;
 
-  for (NodeIterator n(&mesh2); !n.end(); ++n)
+  for (VertexIterator n(&mesh2); !n.end(); ++n)
   {
-    Node& node = *n;
-    int nid = node.id();
+    Vertex& vertex = *n;
+    int nid = vertex.id();
 
-    Node& newnode = createNode(node.coord());
-    int newnid = newnode.id();
+    Vertex& newvertex = createVertex(vertex.coord());
+    int newnid = newvertex.id();
 
-    nodemap[nid] = newnid;
+    vertexmap[nid] = newnid;
   }
 
   for (CellIterator c(mesh2); !c.end(); ++c)
@@ -402,18 +402,18 @@ void Mesh::merge(Mesh& mesh2)
 
     if(cell.type() == Cell::tetrahedron)
     {
-      int nid0 = nodemap[cell.node(0).id()];
-      int nid1 = nodemap[cell.node(1).id()];
-      int nid2 = nodemap[cell.node(2).id()];
-      int nid3 = nodemap[cell.node(3).id()];
+      int nid0 = vertexmap[cell.vertex(0).id()];
+      int nid1 = vertexmap[cell.vertex(1).id()];
+      int nid2 = vertexmap[cell.vertex(2).id()];
+      int nid3 = vertexmap[cell.vertex(3).id()];
 
       createCell(nid0, nid1, nid2, nid3);
     }
     else
     {
-      int nid0 = nodemap[cell.nodeID(0)];
-      int nid1 = nodemap[cell.nodeID(1)];
-      int nid2 = nodemap[cell.nodeID(2)];
+      int nid0 = vertexmap[cell.vertexID(0)];
+      int nid1 = vertexmap[cell.vertexID(1)];
+      int nid2 = vertexmap[cell.vertexID(2)];
 
       createCell(nid0, nid1, nid2);
     }
@@ -455,7 +455,7 @@ void Mesh::swap(Mesh& mesh)
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
 {
-  stream << "[ Mesh with " << mesh.noNodes() << " nodes, "
+  stream << "[ Mesh with " << mesh.noVertices() << " vertices, "
 	 << mesh.noCells() << " cells ";
 
   switch ( mesh.type() ) {

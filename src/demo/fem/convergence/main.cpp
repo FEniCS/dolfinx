@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -103,7 +103,7 @@ real solve2D(int q, int n)
 
   // Compute maximum norm of error
   real emax = 0.0;
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     const Point& p = n->coord();
     const real U = x(n->id());
@@ -175,7 +175,7 @@ real solve3D(int q, int n)
 
   // Compute maximum norm of error
   real emax = 0.0;
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     const Point& p = n->coord();
     const real U = x(n->id());

@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-11-09
+// Last changed: 2005-12-01
 
 #include <dolfin.h>
 
@@ -20,7 +20,7 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(Mesh& mesh) : ODE(2*mesh.noNodes(), 1.0), mesh(mesh),
+  WaveEquation(Mesh& mesh) : ODE(2*mesh.noVertices(), 1.0), mesh(mesh),
 			     A(mesh), offset(N/2), h(N/2)
   {
     w = 0.25; // Width of initial wave
@@ -50,16 +50,16 @@ public:
 
     // Get local mesh size (check smallest neighboring triangle)
     hmin = 1.0;
-    for (NodeIterator n(mesh); !n.end(); ++n)
+    for (VertexIterator v(mesh); !v.end(); ++v)
     {
       real dmin = 1.0;
-      for (CellIterator c(n); !c.end(); ++c)
+      for (CellIterator c(v); !c.end(); ++c)
       {
 	const real d = c->diameter();
 	if ( d < dmin )
 	  dmin = d;
       }
-      h[n->id()] = dmin;
+      h[v->id()] = dmin;
       if ( dmin < hmin )
 	hmin = dmin;
     }
@@ -74,13 +74,13 @@ public:
     
     if ( i < offset )
     {
-      const Point& p = mesh.node(i).coord();
+      const Point& p = mesh.vertex(i).coord();
       if ( fabs(p.x - x0) < 0.5*w )
 	return 0.5*(cos(2.0*DOLFIN_PI*(p.x - x0)/w) + 1.0);
     }
     else
     {
-      const Point& p = mesh.node(i - offset).coord();
+      const Point& p = mesh.vertex(i - offset).coord();
       if ( fabs(p.x - x0) < 0.5*w )
       	return -(DOLFIN_PI/w)*sin(2.0*DOLFIN_PI*(p.x - x0)/w);
     }
@@ -186,7 +186,7 @@ private:
   Array<real> h;       // Local mesh size
   real hmin;           // Minimum mesh size
   real w;              // Width of initial wave
-  unsigned int offset; // N/2, number of nodes
+  unsigned int offset; // N/2, number of vertices
 
 };
 

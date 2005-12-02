@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003  
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Mesh.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/EdgeRefData.h>
 #include <dolfin/Edge.h>
 
@@ -20,7 +20,7 @@ Edge::Edge()
   clear();
 }
 //-----------------------------------------------------------------------------
-Edge::Edge(Node& n0, Node& n1)
+Edge::Edge(Vertex& n0, Vertex& n1)
 {
   rd = 0;
   clear();
@@ -53,7 +53,7 @@ unsigned int Edge::noCellNeighbors() const
   return ec.size();
 }
 //-----------------------------------------------------------------------------
-Node& Edge::node(int i) const
+Vertex& Edge::vertex(int i) const
 {
   if ( i == 0 )
     return *n0;
@@ -61,7 +61,7 @@ Node& Edge::node(int i) const
   if ( i == 1 )
     return *n1;
 
-  dolfin_error("Node number must 0 or 1.");
+  dolfin_error("Vertex number must 0 or 1.");
   return *n0;
 }
 //-----------------------------------------------------------------------------
@@ -88,7 +88,7 @@ Point& Edge::coord(int i) const
   if ( i == 1 )
     return n1->coord();
 
-  dolfin_error("Node number must 0 or 1.");
+  dolfin_error("Vertex number must 0 or 1.");
   return n0->coord();
 }
 //-----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ Point Edge::midpoint() const
   return p;
 }
 //-----------------------------------------------------------------------------
-bool Edge::equals(const Node& n0, const Node& n1) const
+bool Edge::equals(const Vertex& n0, const Vertex& n1) const
 {
   if ( this->n0 == &n0 && this->n1 == &n1 )
     return true;
@@ -117,7 +117,7 @@ bool Edge::equals(const Node& n0, const Node& n1) const
   return false;
 }
 //-----------------------------------------------------------------------------
-bool Edge::contains(const Node& n) const
+bool Edge::contains(const Vertex& n) const
 {
   if ( this->n0 == &n || this->n1 == &n )
     return true;
@@ -139,8 +139,8 @@ bool Edge::contains(const Point& point) const
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Edge& edge)
 {
   stream << "[ Edge: id = " << edge.id()
-	 << " n0 = " << edge.node(0).id()
-	 << " n1 = " << edge.node(1).id() << " ]";
+	 << " n0 = " << edge.vertex(0).id()
+	 << " n1 = " << edge.vertex(1).id() << " ]";
   
   return stream;
 }
@@ -156,7 +156,7 @@ void Edge::setMesh(Mesh& mesh)
   _mesh = &mesh;
 }
 //-----------------------------------------------------------------------------
-void Edge::set(Node& n0, Node& n1)
+void Edge::set(Vertex& n0, Vertex& n1)
 {
   this->n0 = &n0;
   this->n1 = &n1;

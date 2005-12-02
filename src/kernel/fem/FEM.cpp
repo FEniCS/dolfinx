@@ -865,8 +865,8 @@ dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
   // Estimate the number of nonzeros in each row
 
   uint nzmax = 0;
-  for (NodeIterator node(mesh); !node.end(); ++node)
-    nzmax = std::max(nzmax, node->noNodeNeighbors() * element.spacedim());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    nzmax = std::max(nzmax, vertex->noVertexNeighbors() * element.spacedim());
 
   return nzmax;
 }

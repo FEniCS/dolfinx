@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __GENERIC_CELL_H
 #define __GENERIC_CELL_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Cell.h>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>
@@ -19,7 +19,7 @@ namespace dolfin
 {
 
   class Point;
-  class Node;
+  class Vertex;
   class Cell;
   class Mesh;
   class CellRefData;
@@ -35,16 +35,16 @@ namespace dolfin
     virtual Cell::Type type() const = 0;
     virtual Cell::Orientation orientation() const = 0;
 
-    virtual int noNodes() const = 0;
+    virtual int noVertices() const = 0;
     virtual int noEdges() const = 0;
     virtual int noFaces() const = 0;
     virtual int noBoundaries() const = 0;
     
     int noCellNeighbors() const;
-    int noNodeNeighbors() const;
+    int noVertexNeighbors() const;
     int noChildren() const;
 
-    Node& node(int i) const;
+    Vertex& vertex(int i) const;
     Edge& edge(int i) const;
     Face& face(int i) const;
     Cell& neighbor(int i) const;
@@ -52,7 +52,7 @@ namespace dolfin
     Cell* child(int i) const;
     Point& coord(int i) const;
     Point midpoint() const;
-    int nodeID(int i) const;
+    int vertexID(int i) const;
     int edgeID(int i) const;
     int faceID(int i) const;
     virtual real volume() const = 0;
@@ -68,7 +68,7 @@ namespace dolfin
     friend class Triangle;
     friend class Tetrahedron;
     friend class MeshInit;
-    friend class NodeIterator::CellNodeIterator;
+    friend class VertexIterator::CellVertexIterator;
     friend class CellIterator::CellCellIterator;
     friend class EdgeIterator::CellEdgeIterator;
     friend class FaceIterator::CellFaceIterator;
@@ -99,8 +99,8 @@ namespace dolfin
     // Check if given cell is a neighbor
     bool neighbor(GenericCell& cell) const;
 
-    // Check if given node is contained in the cell
-    bool haveNode(Node& node) const;
+    // Check if given vertex is contained in the cell
+    bool haveVertex(Vertex& vertex) const;
 
     // Check if given edge is contained in the cell
     bool haveEdge(Edge& edge) const;
@@ -112,16 +112,16 @@ namespace dolfin
     virtual void createFaces() = 0;
 
     // Create a given edge
-    void createEdge(Node& n0, Node& n1);
+    void createEdge(Vertex& n0, Vertex& n1);
 
     // Create a given face
     void createFace(Edge& e0, Edge& e1, Edge& e2);
 
-    // Find node with given coordinates (null if not found)
-    Node* findNode(const Point& p) const;
+    // Find vertex with given coordinates (null if not found)
+    Vertex* findVertex(const Point& p) const;
 
     // Find edge within cell (null if not found)
-    Edge* findEdge(Node& n0, Node& n1);
+    Edge* findEdge(Vertex& n0, Vertex& n1);
 
     // Find face within cell (null if not found)
     Face* findFace(Edge& e0, Edge& e1, Edge& e2);
@@ -148,7 +148,7 @@ namespace dolfin
     int _id;
 
     // Connectivity
-    PArray<Node*> cn;
+    PArray<Vertex*> cn;
     PArray<Cell*> cc;
     PArray<Edge*> ce;
     PArray<Face*> cf;

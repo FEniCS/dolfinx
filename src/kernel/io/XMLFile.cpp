@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2005-10-03
+// Last changed: 2005-12-01
 
 #include <stdarg.h>
 
@@ -175,17 +175,17 @@ void XMLFile::operator<<(Mesh& mesh)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   fprintf(fp, "  <mesh> \n");
 
-  fprintf(fp, "    <nodes size=\" %i \"> \n", mesh.noNodes());
+  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.noVertices());
   
-  for(NodeIterator n(&mesh); !n.end(); ++n)
+  for(VertexIterator n(&mesh); !n.end(); ++n)
   {
-    Node &node = *n;
+    Vertex &vertex = *n;
 
-    fprintf(fp, "    <node name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
-	    node.id(), node.coord().x, node.coord().y, node.coord().z);
+    fprintf(fp, "    <vertex name=\"%i\" x=\"%f\" y=\"%f\" z=\"%f\" />\n",
+	    vertex.id(), vertex.coord().x, vertex.coord().y, vertex.coord().z);
   }
 
-  fprintf(fp, "    </nodes>\n");
+  fprintf(fp, "    </vertices>\n");
 
   fprintf(fp, "    <cells size=\" %i \"> \n", mesh.noCells());
 
@@ -196,13 +196,13 @@ void XMLFile::operator<<(Mesh& mesh)
     if ( mesh.type() == Mesh::tetrahedra )
     {
       fprintf(fp, "    <tetrahedron name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" n3=\"%i\" />\n",
-	      cell.id(), cell.node(0).id(), cell.node(1).id(), cell.node(2).id(), cell.node(3).id());
+	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(), cell.vertex(2).id(), cell.vertex(3).id());
     }
     else
     {
       fprintf(fp, "    <triangle name=\"%i\" n0=\"%i\" n1=\"%i\" n2=\"%i\" />\n",
-	      cell.id(), cell.node(0).id(), cell.node(1).id(),
-	      cell.node(2).id());
+	      cell.id(), cell.vertex(0).id(), cell.vertex(1).id(),
+	      cell.vertex(2).id());
     }
   }
 

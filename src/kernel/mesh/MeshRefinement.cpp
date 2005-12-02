@@ -4,7 +4,7 @@
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005-09-15
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_settings.h>
@@ -166,10 +166,10 @@ void MeshRefinement::checkNumbering(MeshHierarchy& meshes)
   // Check numbering (IDs) for all objects
   for (MeshIterator mesh(meshes); !mesh.end(); ++mesh) {
 
-    // Check nodes
-    for (NodeIterator n(mesh); !n.end(); ++n)
-      if ( n->id() < 0 || n->id() >= mesh->noNodes() )
-	dolfin_error1("Inconsistent node numbers at level %d.", mesh.index());
+    // Check vertices
+    for (VertexIterator n(mesh); !n.end(); ++n)
+      if ( n->id() < 0 || n->id() >= mesh->noVertices() )
+	dolfin_error1("Inconsistent vertex numbers at level %d.", mesh.index());
 
     // Check cells
     for (CellIterator c(mesh); !c.end(); ++c)
@@ -326,15 +326,15 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
   // of indices (IDs) to temporarily store data.
   MeshInit::renumber(*child);
 
-  // Mark all nodes in the child for not re-use
-  PArray<bool> reuse_node(child->noNodes());
-  reuse_node = false;
+  // Mark all vertices in the child for not re-use
+  PArray<bool> reuse_vertex(child->noVertices());
+  reuse_vertex = false;
 
   // Mark all cells in the child for not re-use
   PArray<bool> reuse_cell(child->noCells());
   reuse_cell = false;
 
-  // Mark nodes and cells for reuse
+  // Mark vertices and cells for reuse
   for (CellIterator c(mesh); !c.end(); ++c) {
 
     // To avoid removing the entire fine mesh
@@ -355,15 +355,15 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
     // Mark children of the cell for re-use
     for (int i = 0; i < c->noChildren(); i++) {
       reuse_cell(c->child(i)->id()) = true;
-      for (NodeIterator n(*c->child(i)); !n.end(); ++n)
-	reuse_node(n->id()) = true;
+      for (VertexIterator n(*c->child(i)); !n.end(); ++n)
+	reuse_vertex(n->id()) = true;
     }
   }
 
-  // Remove all nodes in the child not marked for re-use
-  for (NodeIterator n(*child); !n.end(); ++n)
-    if ( !reuse_node(n->id()) )
-      removeNode(*n, *child);
+  // Remove all vertices in the child not marked for re-use
+  for (VertexIterator n(*child); !n.end(); ++n)
+    if ( !reuse_vertex(n->id()) )
+      removeVertex(*n, *child);
   
   // Remove all cells in the child not marked for re-use
   for (CellIterator c(*child); !c.end(); ++c)
@@ -487,29 +487,29 @@ bool MeshRefinement::edgeMarkedByOther(Cell& cell)
   return false;
 }
 //-----------------------------------------------------------------------------
-void MeshRefinement::sortNodes(const Cell& cell, PArray<Node*>& nodes)
+void MeshRefinement::sortVertices(const Cell& cell, PArray<Vertex*>& vertices)
 {
   // Set the size of the list
-  nodes.init(cell.noNodes());
+  vertices.init(cell.noVertices());
 
-  // Count the number of marked edges for each node
-  PArray<int> no_marked_edges(nodes.size());
+  // Count the number of marked edges for each vertex
+  PArray<int> no_marked_edges(vertices.size());
   no_marked_edges = 0;
   for (EdgeIterator e(cell); !e.end(); ++e) {
     if ( e->marked() ) {
-      no_marked_edges(nodeNumber(e->node(0), cell))++;
-      no_marked_edges(nodeNumber(e->node(1), cell))++;
+      no_marked_edges(vertexNumber(e->vertex(0), cell))++;
+      no_marked_edges(vertexNumber(e->vertex(1), cell))++;
     }
   }
 
-  // Sort the nodes according to the number of marked edges, the node
+  // Sort the vertices according to the number of marked edges, the vertex
   // with the most number of edges is placed first.
   int max_edges = no_marked_edges.max();
   int pos = 0;
   for (int i = max_edges; i >= 0; i--) {
-    for (int j = 0; j < nodes.size(); j++) {
+    for (int j = 0; j < vertices.size(); j++) {
       if ( no_marked_edges(j) >= i ) {
-	nodes(pos++) = &cell.node(j);
+	vertices(pos++) = &cell.vertex(j);
 	no_marked_edges(j) = -1;
       }
     }
@@ -525,15 +525,15 @@ int MeshRefinement::noMarkedEdges(const Cell& cell)
   return count;
 }
 //-----------------------------------------------------------------------------
-int MeshRefinement::nodeNumber(const Node& node, const Cell& cell)
+int MeshRefinement::vertexNumber(const Vertex& vertex, const Cell& cell)
 {
-  // Find the local node number for a given node within a cell
-  for (NodeIterator n(cell); !n.end(); ++n)
-    if ( n == node )
+  // Find the local vertex number for a given vertex within a cell
+  for (VertexIterator n(cell); !n.end(); ++n)
+    if ( n == vertex )
       return n.index();
   
-  // Didn't find the node
-  dolfin_error("Unable to find node within cell.");
+  // Didn't find the vertex
+  dolfin_error("Unable to find vertex within cell.");
   return -1;
 }
 //-----------------------------------------------------------------------------
@@ -555,27 +555,27 @@ bool MeshRefinement::okToRefine(Cell& cell)
   return parent->status() != Cell::ref_irr;
 }
 //-----------------------------------------------------------------------------
-Node& MeshRefinement::createNode(Node& node, Mesh& mesh, const Cell& cell)
+Vertex& MeshRefinement::createVertex(Vertex& vertex, Mesh& mesh, const Cell& cell)
 {
-  // Create the node
-  Node& n = createNode(node.coord(), mesh, cell);
+  // Create the vertex
+  Vertex& n = createVertex(vertex.coord(), mesh, cell);
 
   // Set parent-child info
-  n.setParent(node);
-  node.setChild(n);
+  n.setParent(vertex);
+  vertex.setChild(n);
 
   return n;
 }
 //-----------------------------------------------------------------------------
-Node& MeshRefinement::createNode(const Point& p, Mesh& mesh, const Cell& cell)
+Vertex& MeshRefinement::createVertex(const Point& p, Mesh& mesh, const Cell& cell)
 {
   // First check with the children of the neighbors of the cell if the
-  // node already exists. Note that it is not enough to only check
+  // vertex already exists. Note that it is not enough to only check
   // neighbors of the cell, since neighbors are defined as having a
-  // common edge. We need to check all nodes within the cell and for
-  // each node check the cell neighbors of that node.
+  // common edge. We need to check all vertices within the cell and for
+  // each vertex check the cell neighbors of that vertex.
 
-  for (NodeIterator n(cell); !n.end(); ++n) {
+  for (VertexIterator n(cell); !n.end(); ++n) {
     for (CellIterator c(n); !c.end(); ++c) {
       for (int i = 0; i < c->noChildren(); i++) {
 
@@ -584,26 +584,26 @@ Node& MeshRefinement::createNode(const Point& p, Mesh& mesh, const Cell& cell)
 	if ( !child )
 	  continue;
 
-	Node* new_node = child->findNode(p);
-	if ( new_node )
-	  return *new_node;
+	Vertex* new_vertex = child->findVertex(p);
+	if ( new_vertex )
+	  return *new_vertex;
 	
       }
     }
   }
 
-  // Create node if it doesn't exist
-  return mesh.createNode(p);
+  // Create vertex if it doesn't exist
+  return mesh.createVertex(p);
 }
 //-----------------------------------------------------------------------------
-void MeshRefinement::removeNode(Node& node, Mesh& mesh)
+void MeshRefinement::removeVertex(Vertex& vertex, Mesh& mesh)
 {
   // Update parent-child info for parent
-  if ( node.parent() )
-    node.parent()->removeChild();
+  if ( vertex.parent() )
+    vertex.parent()->removeChild();
 
-  // Remove node
-  mesh.remove(node);
+  // Remove vertex
+  mesh.remove(vertex);
 }
 //-----------------------------------------------------------------------------
 void MeshRefinement::removeCell(Cell& cell, Mesh& mesh)

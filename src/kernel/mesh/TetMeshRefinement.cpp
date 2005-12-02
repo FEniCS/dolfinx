@@ -4,12 +4,12 @@
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/TetMeshRefinement.h>
 
 using namespace dolfin;
@@ -143,11 +143,11 @@ void TetMeshRefinement::refineNoRefine(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_no_ref);
   
-  // Create new nodes with the same coordinates as existing nodes
-  Node& n0 = createNode(cell.node(0), mesh, cell);
-  Node& n1 = createNode(cell.node(1), mesh, cell);
-  Node& n2 = createNode(cell.node(2), mesh, cell);
-  Node& n3 = createNode(cell.node(3), mesh, cell);
+  // Create new vertices with the same coordinates as existing vertices
+  Vertex& n0 = createVertex(cell.vertex(0), mesh, cell);
+  Vertex& n1 = createVertex(cell.vertex(1), mesh, cell);
+  Vertex& n2 = createVertex(cell.vertex(2), mesh, cell);
+  Vertex& n3 = createVertex(cell.vertex(3), mesh, cell);
 
   // Create a new cell
   cell.initChildren(1);
@@ -162,7 +162,7 @@ void TetMeshRefinement::refineNoRefine(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
 {
-  // Refine 1 tetrahedron into 8 new ones, introducing new nodes 
+  // Refine 1 tetrahedron into 8 new ones, introducing new vertices 
   // at the midpoints of the edges.
 
   // Check that cell's parent is not refined irregularly, 
@@ -172,19 +172,19 @@ void TetMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_reg_ref);
   
-  // Create new nodes with the same coordinates as existing nodes
-  Node& n0 = createNode(cell.node(0), mesh, cell);
-  Node& n1 = createNode(cell.node(1), mesh, cell);
-  Node& n2 = createNode(cell.node(2), mesh, cell);
-  Node& n3 = createNode(cell.node(3), mesh, cell);
+  // Create new vertices with the same coordinates as existing vertices
+  Vertex& n0 = createVertex(cell.vertex(0), mesh, cell);
+  Vertex& n1 = createVertex(cell.vertex(1), mesh, cell);
+  Vertex& n2 = createVertex(cell.vertex(2), mesh, cell);
+  Vertex& n3 = createVertex(cell.vertex(3), mesh, cell);
 
-  // Create new nodes with the new coordinates 
-  Node& n01 = createNode(cell.node(0).midpoint(cell.node(1)), mesh, cell);
-  Node& n02 = createNode(cell.node(0).midpoint(cell.node(2)), mesh, cell);
-  Node& n03 = createNode(cell.node(0).midpoint(cell.node(3)), mesh, cell);
-  Node& n12 = createNode(cell.node(1).midpoint(cell.node(2)), mesh, cell);
-  Node& n13 = createNode(cell.node(1).midpoint(cell.node(3)), mesh, cell);
-  Node& n23 = createNode(cell.node(2).midpoint(cell.node(3)), mesh, cell);
+  // Create new vertices with the new coordinates 
+  Vertex& n01 = createVertex(cell.vertex(0).midpoint(cell.vertex(1)), mesh, cell);
+  Vertex& n02 = createVertex(cell.vertex(0).midpoint(cell.vertex(2)), mesh, cell);
+  Vertex& n03 = createVertex(cell.vertex(0).midpoint(cell.vertex(3)), mesh, cell);
+  Vertex& n12 = createVertex(cell.vertex(1).midpoint(cell.vertex(2)), mesh, cell);
+  Vertex& n13 = createVertex(cell.vertex(1).midpoint(cell.vertex(3)), mesh, cell);
+  Vertex& n23 = createVertex(cell.vertex(2).midpoint(cell.vertex(3)), mesh, cell);
 
   // Create new cells 
   cell.initChildren(8);
@@ -206,9 +206,9 @@ void TetMeshRefinement::refineRegular(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
 {
-  // Three edges are marked on the same face. Insert three new nodes
-  // at the midpoints on the marked edges, connect the new nodes to
-  // each other, as well as to the node that is not on the marked
+  // Three edges are marked on the same face. Insert three new vertices
+  // at the midpoints on the marked edges, connect the new vertices to
+  // each other, as well as to the vertex that is not on the marked
   // face. This gives 4 new tetrahedra.
 
   // Check that cell's parent is not refined irregularly, 
@@ -218,28 +218,28 @@ void TetMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_1);
 
-  // Sort nodes by the number of marked edges
-  PArray<Node*> nodes;
-  sortNodes(cell,nodes);
+  // Sort vertices by the number of marked edges
+  PArray<Vertex*> vertices;
+  sortVertices(cell,vertices);
   
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n0 = createNode(*nodes(0), mesh, cell);
-  Node& n1 = createNode(*nodes(1), mesh, cell);
-  Node& n2 = createNode(*nodes(2), mesh, cell);
-  Node& nn = createNode(*nodes(3), mesh, cell); // Not marked
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n0 = createVertex(*vertices(0), mesh, cell);
+  Vertex& n1 = createVertex(*vertices(1), mesh, cell);
+  Vertex& n2 = createVertex(*vertices(2), mesh, cell);
+  Vertex& nn = createVertex(*vertices(3), mesh, cell); // Not marked
        
   // Find edges
-  Edge* e01 = cell.findEdge(*nodes(0), *nodes(1));
-  Edge* e02 = cell.findEdge(*nodes(0), *nodes(2));
-  Edge* e12 = cell.findEdge(*nodes(1), *nodes(2));
+  Edge* e01 = cell.findEdge(*vertices(0), *vertices(1));
+  Edge* e02 = cell.findEdge(*vertices(0), *vertices(2));
+  Edge* e12 = cell.findEdge(*vertices(1), *vertices(2));
   dolfin_assert(e01);
   dolfin_assert(e02);
   dolfin_assert(e12);
 
-  // Create new nodes on the edges of the marked face
-  Node& n01 = createNode(e01->midpoint(), mesh, cell);
-  Node& n02 = createNode(e02->midpoint(), mesh, cell);
-  Node& n12 = createNode(e12->midpoint(), mesh, cell);
+  // Create new vertices on the edges of the marked face
+  Vertex& n01 = createVertex(e01->midpoint(), mesh, cell);
+  Vertex& n02 = createVertex(e02->midpoint(), mesh, cell);
+  Vertex& n12 = createVertex(e12->midpoint(), mesh, cell);
   
   // Create new cells 
   cell.initChildren(4);
@@ -257,8 +257,8 @@ void TetMeshRefinement::refineIrregular1(Cell& cell, Mesh& mesh)
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
 {
-  // One edge is marked. Insert one new node at the midpoint of the
-  // marked edge, then connect this new node to the two nodes not on
+  // One edge is marked. Insert one new vertex at the midpoint of the
+  // marked edge, then connect this new vertex to the two vertices not on
   // the marked edge. This gives 2 new tetrahedra.
 
   // Check that cell's parent is not refined irregularly, 
@@ -268,22 +268,22 @@ void TetMeshRefinement::refineIrregular2(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_2);
 
-  // Sort nodes by the number of marked edges
-  PArray<Node*> nodes;
-  sortNodes(cell, nodes);
+  // Sort vertices by the number of marked edges
+  PArray<Vertex*> vertices;
+  sortVertices(cell, vertices);
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n0  = createNode(*nodes(0), mesh, cell);
-  Node& n1  = createNode(*nodes(1), mesh, cell);
-  Node& nn0 = createNode(*nodes(2), mesh, cell); // Not marked
-  Node& nn1 = createNode(*nodes(3), mesh, cell); // Not marked
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n0  = createVertex(*vertices(0), mesh, cell);
+  Vertex& n1  = createVertex(*vertices(1), mesh, cell);
+  Vertex& nn0 = createVertex(*vertices(2), mesh, cell); // Not marked
+  Vertex& nn1 = createVertex(*vertices(3), mesh, cell); // Not marked
 
   // Find the marked edge
-  Edge* e = cell.findEdge(*nodes(0), *nodes(1));
+  Edge* e = cell.findEdge(*vertices(0), *vertices(1));
   dolfin_assert(e);
 
-  // Create new node on marked edge 
-  Node& ne = createNode(e->midpoint(), mesh, cell);
+  // Create new vertex on marked edge 
+  Vertex& ne = createVertex(e->midpoint(), mesh, cell);
   
   // Create new cells
   cell.initChildren(2);
@@ -304,15 +304,15 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
   // corresponding face of the neighbor tetrahedron. If this neighbor 
   // is marked for regular refinement, so is this tetrahedron. 
   //   
-  // We insert two new nodes at the midpoints of the marked edges. 
-  // Three new edges are created by connecting the two new nodes to 
-  // each other and to the node opposite the face of the two marked 
+  // We insert two new vertices at the midpoints of the marked edges. 
+  // Three new edges are created by connecting the two new vertices to 
+  // each other and to the vertex opposite the face of the two marked 
   // edges. Finally, an edge is created by either
   // 
-  //   (1) connecting new node 1 with the endnode of marked edge 2,
+  //   (1) connecting new vertex 1 with the endvertex of marked edge 2,
   //       that is not common with marked edge 1, or
   //
-  //   (2) connecting new node 2 with the endnode of marked edge 1, 
+  //   (2) connecting new vertex 2 with the endvertex of marked edge 1, 
   //       that is not common with marked edge 2.
 
   // Check that cell's parent is not refined irregularly, 
@@ -322,13 +322,13 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
   // Check that the cell is marked correctly 
   dolfin_assert(cell.marker() == Cell::marked_for_irr_ref_3);
 
-  // Sort nodes by the number of marked edges
-  PArray<Node*> nodes;
-  sortNodes(cell, nodes);
+  // Sort vertices by the number of marked edges
+  PArray<Vertex*> vertices;
+  sortVertices(cell, vertices);
 
   // Find edges
-  Edge* e0 = cell.findEdge(*nodes(0), *nodes(1));
-  Edge* e1 = cell.findEdge(*nodes(0), *nodes(2));
+  Edge* e0 = cell.findEdge(*vertices(0), *vertices(1));
+  Edge* e1 = cell.findEdge(*vertices(0), *vertices(2));
   dolfin_assert(e0);
   dolfin_assert(e1);
 
@@ -348,12 +348,12 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
     // If neighbor is marked refinement by rule 3, 
     // just chose an orientation, and it will be up to 
     // the neighbor to make sure the common face match
-    refineIrregular32(cell,mesh,nodes);
+    refineIrregular32(cell,mesh,vertices);
   }
   else if ( neighbor->marker() == Cell::marked_according_to_ref ) {
     // If neighbor has been refined irregular according to 
     // refinement rule 3, make sure the common face matches
-    refineIrregular33(cell, mesh, nodes, *neighbor);
+    refineIrregular33(cell, mesh, vertices, *neighbor);
   }
   else {
     // This case shouldn't happen
@@ -364,9 +364,9 @@ void TetMeshRefinement::refineIrregular3(Cell& cell, Mesh& mesh)
 void TetMeshRefinement::refineIrregular4(Cell& cell, Mesh& mesh)
 {
   // Two edges are marked, opposite to each other. We insert two new
-  // nodes at the midpoints of the marked edges, insert a new edge
-  // between the two nodes, and insert four new edges by connecting
-  // the new nodes to the endpoints of the opposite edges.
+  // vertices at the midpoints of the marked edges, insert a new edge
+  // between the two vertices, and insert four new edges by connecting
+  // the new vertices to the endpoints of the opposite edges.
 
   // Check that cell's parent is not refined irregularly, 
   // since then it should be further refined
@@ -382,15 +382,15 @@ void TetMeshRefinement::refineIrregular4(Cell& cell, Mesh& mesh)
   for (EdgeIterator e(cell); !e.end(); ++e)
     if (e->marked()) marked_edges(cnt++) = e;
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n00 = createNode(marked_edges(0)->node(0), mesh, cell);
-  Node& n01 = createNode(marked_edges(0)->node(1), mesh, cell);
-  Node& n10 = createNode(marked_edges(1)->node(0), mesh, cell);
-  Node& n11 = createNode(marked_edges(1)->node(1), mesh, cell);
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n00 = createVertex(marked_edges(0)->vertex(0), mesh, cell);
+  Vertex& n01 = createVertex(marked_edges(0)->vertex(1), mesh, cell);
+  Vertex& n10 = createVertex(marked_edges(1)->vertex(0), mesh, cell);
+  Vertex& n11 = createVertex(marked_edges(1)->vertex(1), mesh, cell);
 
-  // Create new node on marked edge 
-  Node& n_e0 = createNode(marked_edges(0)->midpoint(), mesh, cell);
-  Node& n_e1 = createNode(marked_edges(1)->midpoint(), mesh, cell);
+  // Create new vertex on marked edge 
+  Vertex& n_e0 = createVertex(marked_edges(0)->midpoint(), mesh, cell);
+  Vertex& n_e1 = createVertex(marked_edges(1)->midpoint(), mesh, cell);
 
   // Create new cells 
   cell.initChildren(4);
@@ -415,21 +415,21 @@ void TetMeshRefinement::refineIrregular31(Cell& cell, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular32(Cell& cell, Mesh& mesh, 
-					  PArray<Node*>& sorted_nodes)
+					  PArray<Vertex*>& sorted_vertices)
 {
   // If neighbor is marked refinement by rule 3, 
   // just chose an orientation, and it will be up to 
   // the neighbor to make sure the common face match
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm  = createNode(*sorted_nodes(0), mesh, cell);
-  Node& n_m0  = createNode(*sorted_nodes(1), mesh, cell);
-  Node& n_m1  = createNode(*sorted_nodes(2), mesh, cell);
-  Node& n_nm  = createNode(*sorted_nodes(3), mesh, cell);
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n_dm  = createVertex(*sorted_vertices(0), mesh, cell);
+  Vertex& n_m0  = createVertex(*sorted_vertices(1), mesh, cell);
+  Vertex& n_m1  = createVertex(*sorted_vertices(2), mesh, cell);
+  Vertex& n_nm  = createVertex(*sorted_vertices(3), mesh, cell);
 
-  // Create new node on marked edge 
-  Node& n_e0 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(1)), mesh, cell);
-  Node& n_e1 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(2)), mesh, cell);
+  // Create new vertex on marked edge 
+  Vertex& n_e0 = createVertex(sorted_vertices(0)->midpoint(*sorted_vertices(1)), mesh, cell);
+  Vertex& n_e1 = createVertex(sorted_vertices(0)->midpoint(*sorted_vertices(2)), mesh, cell);
 
   // Create new cells 
   cell.initChildren(3);
@@ -445,19 +445,19 @@ void TetMeshRefinement::refineIrregular32(Cell& cell, Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh, 
-					  PArray<Node*>& sorted_nodes,
+					  PArray<Vertex*>& sorted_vertices,
 					  Cell& face_neighbor)
 {
 
-  // Create new nodes with the same coordinates as the old nodes
-  Node& n_dm  = createNode(*sorted_nodes(0), mesh, cell);
-  Node& n_m0  = createNode(*sorted_nodes(1), mesh, cell);
-  Node& n_m1  = createNode(*sorted_nodes(2), mesh, cell);
-  Node& n_nm  = createNode(*sorted_nodes(3), mesh, cell);
+  // Create new vertices with the same coordinates as the old vertices
+  Vertex& n_dm  = createVertex(*sorted_vertices(0), mesh, cell);
+  Vertex& n_m0  = createVertex(*sorted_vertices(1), mesh, cell);
+  Vertex& n_m1  = createVertex(*sorted_vertices(2), mesh, cell);
+  Vertex& n_nm  = createVertex(*sorted_vertices(3), mesh, cell);
 
-  // Create new node on marked edge 
-  Node& n_e0 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(1)), mesh, cell);
-  Node& n_e1 = createNode(sorted_nodes(0)->midpoint(*sorted_nodes(2)), mesh, cell);
+  // Create new vertex on marked edge 
+  Vertex& n_e0 = createVertex(sorted_vertices(0)->midpoint(*sorted_vertices(1)), mesh, cell);
+  Vertex& n_e1 = createVertex(sorted_vertices(0)->midpoint(*sorted_vertices(2)), mesh, cell);
 
   // Create new cells
   cell.initChildren(3);
@@ -468,9 +468,9 @@ void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh,
   Cell* c;
   for (int i = 0; i < face_neighbor.noChildren(); i++) {
     c = face_neighbor.child(i);
-    if ( !(c->haveNode(n_dm)) ){
-      if ( c->haveNode(n_e0) && c->haveNode(n_e1) ){
-	if ( c->haveNode(n_m0) ){
+    if ( !(c->haveVertex(n_dm)) ){
+      if ( c->haveVertex(n_e0) && c->haveVertex(n_e1) ){
+	if ( c->haveVertex(n_m0) ){
 	  createCell(n_e0, n_e1, n_m0, n_nm, mesh, cell);
 	  createCell(n_m0, n_m1, n_e1, n_nm, mesh, cell);
 	  break;
@@ -497,7 +497,7 @@ bool TetMeshRefinement::markedEdgesOnSameFace(Cell& cell)
   //
   //   0 marked edge  -> false 
   //   1 marked edge  -> true 
-  //   2 marked edges -> true if edges have any common nodes
+  //   2 marked edges -> true if edges have any common vertices
   //   3 marked edges -> true if there is a face with the marked edges 
   //   4 marked edges -> false 
   //   5 marked edges -> false 
@@ -526,8 +526,8 @@ bool TetMeshRefinement::markedEdgesOnSameFace(Cell& cell)
 
   // Case 2
   if (cnt == 2){
-    if (marked_edges(0)->contains(marked_edges(1)->node(0)) || 
-	marked_edges(0)->contains(marked_edges(1)->node(1)))
+    if (marked_edges(0)->contains(marked_edges(1)->vertex(0)) || 
+	marked_edges(0)->contains(marked_edges(1)->vertex(1)))
       return true;
     return false;
   }
@@ -566,7 +566,7 @@ Cell* TetMeshRefinement::findNeighbor(Cell& cell, Face& face)
   return &cell;
 }
 //-----------------------------------------------------------------------------
-Cell& TetMeshRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
+Cell& TetMeshRefinement::createCell(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3,
 				    Mesh& mesh, Cell& cell)
 {
   Cell& c = mesh.createCell(n0, n1, n2, n3);
@@ -578,7 +578,7 @@ Cell& TetMeshRefinement::createCell(Node& n0, Node& n1, Node& n2, Node& n3,
 //-----------------------------------------------------------------------------
 Cell& TetMeshRefinement::createChildCopy(Cell& cell, Mesh& mesh)
 {
-  return createCell(*cell.node(0).child(), *cell.node(1).child(),
-		    *cell.node(2).child(), *cell.node(3).child(), mesh, cell);
+  return createCell(*cell.vertex(0).child(), *cell.vertex(1).child(),
+		    *cell.vertex(2).child(), *cell.vertex(3).child(), mesh, cell);
 }
 //-----------------------------------------------------------------------------

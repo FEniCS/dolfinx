@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 XMLMesh::XMLMesh(Mesh& mesh_) : XMLObject(), mesh(mesh_)
 {
   state = OUTSIDE;
-  nodes = 0;
+  vertices = 0;
   cells = 0;
 }
 //-----------------------------------------------------------------------------
@@ -37,9 +37,9 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
 
   case INSIDE_MESH:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 ) {
-      readNodes(name,attrs);
-      state = INSIDE_NODES;
+    if ( xmlStrcasecmp(name,(xmlChar *) "vertices") == 0 ) {
+      readVertices(name,attrs);
+      state = INSIDE_VERTICES;
     }
     else if ( xmlStrcasecmp(name,(xmlChar *) "cells") == 0 ) {
       readCells(name,attrs);
@@ -48,17 +48,17 @@ void XMLMesh::startElement(const xmlChar *name, const xmlChar **attrs)
     
     break;
     
-  case INSIDE_NODES:
+  case INSIDE_VERTICES:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
+    if ( xmlStrcasecmp(name,(xmlChar *) "vertex") == 0 )
     {
-      readNode(name,attrs);
-      state = INSIDE_NODE;
+      readVertex(name,attrs);
+      state = INSIDE_VERTEX;
     }
 
     break;
 
-  case INSIDE_NODE:
+  case INSIDE_VERTEX:
     
     if ( xmlStrcasecmp(name,(xmlChar *) "boundaryid") == 0 )
       readBoundaryID(name,attrs);
@@ -95,17 +95,17 @@ void XMLMesh::endElement(const xmlChar *name)
     
     break;
     
-  case INSIDE_NODES:
+  case INSIDE_VERTICES:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "nodes") == 0 )
+    if ( xmlStrcasecmp(name,(xmlChar *) "vertices") == 0 )
       state = INSIDE_MESH;
     
     break;
 
-  case INSIDE_NODE:
+  case INSIDE_VERTEX:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "node") == 0 )
-      state = INSIDE_NODES;
+    if ( xmlStrcasecmp(name,(xmlChar *) "vertex") == 0 )
+      state = INSIDE_VERTICES;
     
     break;
     
@@ -137,7 +137,7 @@ void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
   mesh.clear();
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readNodes(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int size = 0;
@@ -146,7 +146,7 @@ void XMLMesh::readNodes(const xmlChar *name, const xmlChar **attrs)
   parseIntegerRequired(name, attrs, "size", size);
 
   // Set values
-  nodes = size;
+  vertices = size;
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
@@ -161,7 +161,7 @@ void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
   cells = size;
 }
 //-----------------------------------------------------------------------------
-void XMLMesh::readNode(const xmlChar *name, const xmlChar **attrs)
+void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int id = 0;
@@ -176,11 +176,11 @@ void XMLMesh::readNode(const xmlChar *name, const xmlChar **attrs)
   parseRealRequired(name, attrs, "z", z);
 
   // Set values
-  Node &newnode = mesh.createNode(x, y, z);
-  node = &newnode;
+  Vertex &newvertex = mesh.createVertex(x, y, z);
+  vertex = &newvertex;
 
-  // FIXME: id of node is completely ignored. We assume that the
-  // nodes are in correct order.
+  // FIXME: id of vertex is completely ignored. We assume that the
+  // vertices are in correct order.
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
@@ -191,11 +191,11 @@ void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
   // Parse values
   parseIntegerRequired(name, attrs, "name", id);
 
-  // Add Boundary ID to node
-  node->nbids.insert(id);
+  // Add Boundary ID to vertex
+  vertex->nbids.insert(id);
 
-  // FIXME: id of node is completely ignored. We assume that the
-  // nodes are in correct order.
+  // FIXME: id of vertex is completely ignored. We assume that the
+  // vertices are in correct order.
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)

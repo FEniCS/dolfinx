@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-10-01
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
@@ -36,14 +36,14 @@ EdgeIterator::EdgeIterator(const Boundary *boundary)
   e = new BoundaryEdgeIterator(*boundary);
 }
 //-----------------------------------------------------------------------------
-EdgeIterator::EdgeIterator(const Node& node)
+EdgeIterator::EdgeIterator(const Vertex& vertex)
 {
-  e = new NodeEdgeIterator(node);
+  e = new VertexEdgeIterator(vertex);
 }
 //-----------------------------------------------------------------------------
-EdgeIterator::EdgeIterator(const NodeIterator &nodeIterator)
+EdgeIterator::EdgeIterator(const VertexIterator &vertexIterator)
 {
-  e = new NodeEdgeIterator(*nodeIterator);
+  e = new VertexEdgeIterator(*vertexIterator);
 }
 //-----------------------------------------------------------------------------
 EdgeIterator::EdgeIterator(const Cell &cell)
@@ -206,44 +206,44 @@ Edge* EdgeIterator::BoundaryEdgeIterator::pointer() const
   return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
-// EdgeIterator::NodeEdgeIterator
+// EdgeIterator::VertexEdgeIterator
 //-----------------------------------------------------------------------------
-EdgeIterator::NodeEdgeIterator::NodeEdgeIterator(const Node &node)
+EdgeIterator::VertexEdgeIterator::VertexEdgeIterator(const Vertex &vertex)
 {
-  edge_iterator = node.ne.begin();
+  edge_iterator = vertex.ne.begin();
 }
 //-----------------------------------------------------------------------------
-void EdgeIterator::NodeEdgeIterator::operator++()
+void EdgeIterator::VertexEdgeIterator::operator++()
 {
   ++edge_iterator;
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::NodeEdgeIterator::end()
+bool EdgeIterator::VertexEdgeIterator::end()
 {
   return edge_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool EdgeIterator::NodeEdgeIterator::last()
+bool EdgeIterator::VertexEdgeIterator::last()
 {
   return edge_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int EdgeIterator::NodeEdgeIterator::index()
+int EdgeIterator::VertexEdgeIterator::index()
 {
   return edge_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Edge& EdgeIterator::NodeEdgeIterator::operator*() const
+Edge& EdgeIterator::VertexEdgeIterator::operator*() const
 {
   return **edge_iterator;
 }
 //-----------------------------------------------------------------------------
-Edge* EdgeIterator::NodeEdgeIterator::operator->() const
+Edge* EdgeIterator::VertexEdgeIterator::operator->() const
 {
   return *edge_iterator;
 }
 //-----------------------------------------------------------------------------
-Edge* EdgeIterator::NodeEdgeIterator::pointer() const
+Edge* EdgeIterator::VertexEdgeIterator::pointer() const
 {
   return *edge_iterator;
 }

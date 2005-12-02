@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
 #include <dolfin/P1Tri.h>
 #include <dolfin/FiniteElement.h>
@@ -43,10 +43,10 @@ real FunctionPointerFunction::operator()(const Point& p, uint i)
   return (*f)(p, component + i);
 }
 //-----------------------------------------------------------------------------
-real FunctionPointerFunction::operator() (const Node& node, uint i)
+real FunctionPointerFunction::operator() (const Vertex& vertex, uint i)
 {
-  // Call function at given node
-  return (*f)(node.coord(), component + i);
+  // Call function at given vertex
+  return (*f)(vertex.coord(), component + i);
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::sub(uint i)

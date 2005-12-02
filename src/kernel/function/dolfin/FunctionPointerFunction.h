@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #ifndef __FUNCTION_POINTER_FUNCTION_H
 #define __FUNCTION_POINTER_FUNCTION_H
@@ -31,8 +31,8 @@ namespace dolfin
     /// Evaluate function at given point
     real operator() (const Point& point, uint i);
 
-    /// Evaluate function at given node
-    real operator() (const Node& node, uint i);
+    /// Evaluate function at given vertex
+    real operator() (const Vertex& vertex, uint i);
 
     // Restrict to sub function or component (if possible)
     void sub(uint i);

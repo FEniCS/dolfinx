@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2004-2005.
 //
 // First added:  2004-02-26
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 //#include <iostream>
 #include <sstream>
@@ -68,7 +68,7 @@ void ElasticitySolver::solve()
   File         file("elasticity.m");
 
   // FIXME: Temporary fix
-  int N = 3 * mesh.noNodes();
+  int N = 3 * mesh.noVertices();
 
   x10.init(N);
   x11.init(N);
@@ -240,7 +240,7 @@ void ElasticitySolver::save(Mesh& mesh, Function& u, Function& v,
     
     // Deform the mesh
     
-    for (NodeIterator n(&mesh); !n.end(); ++n)
+    for (VertexIterator n(&mesh); !n.end(); ++n)
     {
       (*n).coord().x += u(*n, 0);
       (*n).coord().y += u(*n, 1);
@@ -252,7 +252,7 @@ void ElasticitySolver::save(Mesh& mesh, Function& u, Function& v,
     
     // Undo deformation
     
-    for (NodeIterator n(&mesh); !n.end(); ++n)
+    for (VertexIterator n(&mesh); !n.end(); ++n)
     {
       (*n).coord().x -= u(*n, 0);
       (*n).coord().y -= u(*n, 1);

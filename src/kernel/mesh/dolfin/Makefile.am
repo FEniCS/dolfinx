@@ -17,12 +17,12 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshInit.h \
              MeshIterator.h \
              MeshRefinement.h \
-             Node.h \
-             NodeIterator.h \
              Point. h\
              TetMeshRefinement.h \
              Tetrahedron.h \
              TriMeshRefinement.h \
              Triangle.h \
              UnitCube.h \
-             UnitSquare.h
+             UnitSquare.h \
+             Vertex.h \
+             VertexIterator.h

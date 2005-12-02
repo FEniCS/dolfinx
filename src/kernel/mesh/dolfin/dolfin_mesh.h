@@ -15,7 +15,7 @@
 #include <dolfin/EdgeRefData.h>
 
 #include <dolfin/Point.h>
-#include <dolfin/Node.h> 
+#include <dolfin/Vertex.h> 
 #include <dolfin/Cell.h>
 #include <dolfin/Edge.h>  
 #include <dolfin/Face.h>  
@@ -25,7 +25,7 @@
 #include <dolfin/Tetrahedron.h>
 
 #include <dolfin/MeshIterator.h>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 #include <dolfin/FaceIterator.h>

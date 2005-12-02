@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __BOUNDARY_H
 #define __BOUNDARY_H
@@ -25,8 +25,8 @@ namespace dolfin {
     /// Destructor
     ~Boundary();
 
-    /// Return number of nodes on the boundary
-    int noNodes() const;
+    /// Return number of vertices on the boundary
+    int noVertices() const;
 
     /// Return number of edges on the boundary
     int noEdges() const;
@@ -35,7 +35,7 @@ namespace dolfin {
     int noFaces() const;
 
     /// Friends
-    friend class NodeIterator::BoundaryNodeIterator;
+    friend class VertexIterator::BoundaryVertexIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;
     friend class FaceIterator::BoundaryFaceIterator;
 

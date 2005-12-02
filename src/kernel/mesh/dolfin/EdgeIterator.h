@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __EDGE_ITERATOR_H
 #define __EDGE_ITERATOR_H
@@ -17,12 +17,12 @@ namespace dolfin
 {
   
   class Mesh;
-  class Node;
+  class Vertex;
   class Cell;
   class Edge;
   class Face;
   class Boundary;
-  class NodeIterator;
+  class VertexIterator;
   class CellIterator;
   class FaceIterator;
   class GenericCell;
@@ -39,8 +39,8 @@ namespace dolfin
     EdgeIterator(const Boundary& boundary);
     EdgeIterator(const Boundary* boundary);
 
-    EdgeIterator(const Node& node);
-    EdgeIterator(const NodeIterator& nodeIterator);
+    EdgeIterator(const Vertex& vertex);
+    EdgeIterator(const VertexIterator& vertexIterator);
 
     EdgeIterator(const Cell& cell);
     EdgeIterator(const CellIterator& cellIterator);
@@ -119,11 +119,11 @@ namespace dolfin
       
     };
 
-    // Iterator for the edges at a node 
-    class NodeEdgeIterator : public GenericEdgeIterator {
+    // Iterator for the edges at a vertex 
+    class VertexEdgeIterator : public GenericEdgeIterator {
     public:
 
-      NodeEdgeIterator(const Node& node);
+      VertexEdgeIterator(const Vertex& vertex);
       void operator++();
       bool end();
       bool last();

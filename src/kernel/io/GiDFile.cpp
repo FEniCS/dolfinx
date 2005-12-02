@@ -1,10 +1,10 @@
 // Copyright (C) 2004 Harald Svensson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2004.
+// Modified by Anders Logg 2004, 2005.
 //
 // First added:  2004-03-30
-// Last changed: 2004
+// Last changed: 2005-12-01
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
@@ -31,12 +31,12 @@ void GiDFile::operator<<(Mesh& mesh)
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
 
-  // Write nodes
+  // Write vertices
   fprintf(fp, "# Mesh \n");
   fprintf(fp, "MESH dimension 3 ElemType Tetrahedra Nnode 4 \n");
   fprintf(fp, "Coordinates \n");
   fprintf(fp, "#  Node   Coord_X   Coord_Y   Coord_Z \n");
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
 
     Point   p = n->coord();
@@ -58,11 +58,11 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[4];
-    if ( c->noNodes() == 4 )
+    if ( c->noVertices() == 4 )
     {
       cid = c->id();
       int i = 0;
-      for (NodeIterator n(c); !n.end(); ++n)
+      for (VertexIterator n(c); !n.end(); ++n)
       {
         nid[i]  = n->id();
         i = i + 1;
@@ -82,11 +82,11 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[3];
-    if ( c->noNodes() == 3 )
+    if ( c->noVertices() == 3 )
     {
       cid = c->id();
       int i = 0;
-      for (NodeIterator n(c); !n.end(); ++n)
+      for (VertexIterator n(c); !n.end(); ++n)
       {
         nid[i]  = n->id();
         i = i + 1;
@@ -121,7 +121,7 @@ void GiDFile::operator<<(Function& u)
   fprintf(fp, "ComponentNames %s \n",u.name().c_str());
   // Write cells
   fprintf(fp, "Values \n");
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     int   nid = n->id();
     float value = (float)u(*n);
@@ -142,7 +142,7 @@ void GiDFile::operator<<(Function::Vector& u)
   Mesh* mesh = &(u(0).mesh());
 
   // FIXME: Why 3?
-  unsigned int noValues = 3; // u.size()/noNodes;
+  unsigned int noValues = 3; // u.size()/noVertices;
 
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");
@@ -154,7 +154,7 @@ void GiDFile::operator<<(Function::Vector& u)
 	  u(0).name().c_str(),u(1).name().c_str(),u(2).name().c_str());
   // Write cells
   fprintf(fp, "Values \n");
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     int   nid   = n->id();
     fprintf(fp,"%d",nid);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __MESH_INIT_H
 #define __MESH_INIT_H
@@ -41,10 +41,10 @@ namespace dolfin
     static void initEdges        (Mesh& mesh);
     static void initFaces        (Mesh& mesh);
     
-    static void initNodeCell     (Mesh& mesh);
+    static void initVertexCell   (Mesh& mesh);
     static void initCellCell     (Mesh& mesh);
-    static void initNodeEdge     (Mesh& mesh);
-    static void initNodeNode     (Mesh& mesh);
+    static void initVertexEdge   (Mesh& mesh);
+    static void initVertexVertex (Mesh& mesh);
     
     static void initEdgeCell     (Mesh& mesh);
     static void initFaceCell     (Mesh& mesh);

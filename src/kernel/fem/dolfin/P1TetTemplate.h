@@ -73,10 +73,10 @@ public:
   
     void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const
     {
-      dofs[0] = cell.nodeID(0);
-      dofs[1] = cell.nodeID(1);
-      dofs[2] = cell.nodeID(2);
-      dofs[3] = cell.nodeID(3);
+      dofs[0] = cell.vertexID(0);
+      dofs[1] = cell.vertexID(1);
+      dofs[2] = cell.vertexID(2);
+      dofs[3] = cell.vertexID(3);
     }
   
     void pointmap(Point points[], unsigned int components[], const AffineMap& map) const

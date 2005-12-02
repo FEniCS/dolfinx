@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2004
+// Last changed: 2005-12-01
 
 #include <dolfin.h>
 
@@ -42,8 +42,8 @@ void refine2D(int refinements)
     for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       // Mark cells close to y = x
-      for (NodeIterator node(cell); !node.end(); ++node)
-	if ( fabs(node->coord().x - node->coord().y) < DOLFIN_EPS )
+      for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
+	if ( fabs(vertex->coord().x - vertex->coord().y) < DOLFIN_EPS )
 	  cell->mark();
       
       // Mark cells at the corners

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #ifndef __TETRAHEDRON_H
 #define __TETRAHEDRON_H
@@ -13,16 +13,16 @@
 namespace dolfin
 {
 
-  class Node;
+  class Vertex;
   class Cell;
   
   class Tetrahedron : public GenericCell
   {
   public:
 
-    Tetrahedron(Node& n0, Node& n1, Node& n2, Node& n3);
+    Tetrahedron(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3);
 	 
-    int noNodes() const;
+    int noVertices() const;
     int noEdges() const;
     int noFaces() const;
 

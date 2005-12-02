@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -18,7 +18,7 @@
 namespace dolfin
 {
   class Point;
-  class Node;
+  class Vertex;
   class Cell;
   class Mesh;
   class Vector;
@@ -66,8 +66,8 @@ namespace dolfin
     /// Evaluate function at given point
     inline real operator() (const Point& p, uint i = 0) { return (*f)(p, i); }
 
-    /// Evaluate function at given node
-    inline real operator() (const Node& node, uint i = 0) { return (*f)(node, i); }
+    /// Evaluate function at given vertex
+    inline real operator() (const Vertex& vertex, uint i = 0) { return (*f)(vertex, i); }
 
     /// Pick sub function (of mixed function) or component of vector-valued function
     Function operator[] (const uint i);

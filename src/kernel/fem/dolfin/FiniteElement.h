@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-30
+// Last changed: 2005-12-01
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
-#include <dolfin/Node.h>
+#include <dolfin/Vertex.h>
 #include <dolfin/Point.h>
 #include <dolfin/AffineMap.h>
 

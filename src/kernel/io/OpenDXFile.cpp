@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <stdio.h>
 #include <dolfin/dolfin_settings.h>
@@ -98,12 +98,12 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   if ( mesh.type() != Mesh::tetrahedra )
     dolfin_error("Mesh must be a 3D tetrahedral mesh for OpenDX file format.");
 
-  // Write nodes
-  fprintf(fp, "# A list of all node positions\n");
-  fprintf(fp, "object \"nodes %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
-	  (int)frames.size(), mesh.noNodes());
+  // Write vertices
+  fprintf(fp, "# A list of all vertex positions\n");
+  fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
+	  (int)frames.size(), mesh.noVertices());
 
-  for (NodeIterator n(mesh); !n.end(); ++n)
+  for (VertexIterator n(mesh); !n.end(); ++n)
   {
     Point p = n->coord();
     
@@ -124,7 +124,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
-    for (NodeIterator n(c); !n.end(); ++n)
+    for (VertexIterator n(c); !n.end(); ++n)
     {
       int id  = n->id();
       fwrite(&id, sizeof(int), 1, fp);
@@ -164,7 +164,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
   // Write the mesh
   fprintf(fp, "# The mesh\n");
   fprintf(fp, "object \"Mesh\" class field\n");
-  fprintf(fp, "component \"positions\" value \"nodes 0\"\n");
+  fprintf(fp, "component \"positions\" value \"vertices 0\"\n");
   fprintf(fp, "component \"connections\" value \"cells 0\"\n");
   fprintf(fp, "component \"data\" value \"diameter\"\n");
 }
@@ -174,10 +174,10 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
   fprintf(fp,"object \"data %d\" class array type float rank 1 shape 1 items %d lsb binary data follows\n",
-	  (int)frames.size(), u.mesh().noNodes());
+	  (int)frames.size(), u.mesh().noVertices());
   
   // Write data
-  for (NodeIterator n(u.mesh()); !n.end(); ++n)
+  for (VertexIterator n(u.mesh()); !n.end(); ++n)
   {
     float value = static_cast<float>(u(*n));
     fwrite(&value, sizeof(float), 1, fp);
@@ -189,9 +189,9 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   fprintf(fp,"# Field for [%s], frame %d\n", u.label().c_str(), (int)frames.size());
   fprintf(fp,"object \"field %d\" class field\n", (int)frames.size());
   if ( save_each_mesh )
-    fprintf(fp,"component \"positions\" value \"nodes %d\"\n", (int)frames.size());
+    fprintf(fp,"component \"positions\" value \"vertices %d\"\n", (int)frames.size());
   else
-    fprintf(fp,"component \"positions\" value \"nodes 0\"\n");
+    fprintf(fp,"component \"positions\" value \"vertices 0\"\n");
   if ( save_each_mesh )
     fprintf(fp,"component \"connections\" value \"cells %d\"\n", (int)frames.size());
   else

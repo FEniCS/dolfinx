@@ -2,284 +2,284 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005
+// Last changed: 2005-12-01
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
-#include <dolfin/Node.h>
-#include <dolfin/NodeIterator.h>
+#include <dolfin/Vertex.h>
+#include <dolfin/VertexIterator.h>
 #include <dolfin/GenericCell.h>
 #include <dolfin/MeshData.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-// NodeIterator
+// VertexIterator
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const Mesh &mesh)
+VertexIterator::VertexIterator(const Mesh &mesh)
 {
-  n = new MeshNodeIterator(mesh);
+  n = new MeshVertexIterator(mesh);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const Mesh *mesh)
+VertexIterator::VertexIterator(const Mesh *mesh)
 {
-  n = new MeshNodeIterator(*mesh);
+  n = new MeshVertexIterator(*mesh);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const Boundary& boundary)
+VertexIterator::VertexIterator(const Boundary& boundary)
 {
-  n = new BoundaryNodeIterator(boundary);
+  n = new BoundaryVertexIterator(boundary);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const Node &node)
+VertexIterator::VertexIterator(const Vertex &vertex)
 {
-  n = new NodeNodeIterator(node);
+  n = new VertexVertexIterator(vertex);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const NodeIterator &nodeIterator)
+VertexIterator::VertexIterator(const VertexIterator &vertexIterator)
 {
-  n = new NodeNodeIterator(*nodeIterator);
+  n = new VertexVertexIterator(*vertexIterator);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const Cell &cell)
+VertexIterator::VertexIterator(const Cell &cell)
 {
-  n = new CellNodeIterator(cell);
+  n = new CellVertexIterator(cell);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::NodeIterator(const CellIterator &cellIterator)
+VertexIterator::VertexIterator(const CellIterator &cellIterator)
 {
-  n = new CellNodeIterator(*cellIterator);
+  n = new CellVertexIterator(*cellIterator);
 }
 //-----------------------------------------------------------------------------
-NodeIterator::operator NodePointer() const
+VertexIterator::operator VertexPointer() const
 {
   return n->pointer();
 }
 //-----------------------------------------------------------------------------
-NodeIterator::~NodeIterator()
+VertexIterator::~VertexIterator()
 {
   delete n;
 }
 //-----------------------------------------------------------------------------
-NodeIterator& NodeIterator::operator++()
+VertexIterator& VertexIterator::operator++()
 {
   ++(*n);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::end()
+bool VertexIterator::end()
 {
   return n->end();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::last()
+bool VertexIterator::last()
 {
   return n->last();
 }
 //-----------------------------------------------------------------------------
-int NodeIterator::index()
+int VertexIterator::index()
 {
   return n->index();
 }
 //-----------------------------------------------------------------------------
-Node& NodeIterator::operator*() const
+Vertex& VertexIterator::operator*() const
 {
   return *(*n);
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::operator->() const
+Vertex* VertexIterator::operator->() const
 {
   return n->pointer();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::operator==(const NodeIterator& n) const
+bool VertexIterator::operator==(const VertexIterator& n) const
 {
   return this->n->pointer() == n.n->pointer();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::operator!=(const NodeIterator& n) const
+bool VertexIterator::operator!=(const VertexIterator& n) const
 {
   return this->n->pointer() != n.n->pointer();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::operator==(const Node& n) const
+bool VertexIterator::operator==(const Vertex& n) const
 {
   return this->n->pointer() == &n;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::operator!=(const Node& n) const
+bool VertexIterator::operator!=(const Vertex& n) const
 {
   return this->n->pointer() != &n;
 }
 //-----------------------------------------------------------------------------
-// NodeIterator::MeshNodeIterator
+// VertexIterator::MeshVertexIterator
 //-----------------------------------------------------------------------------
-NodeIterator::MeshNodeIterator::MeshNodeIterator(const Mesh& mesh)
+VertexIterator::MeshVertexIterator::MeshVertexIterator(const Mesh& mesh)
 {
-  node_iterator = mesh.md->nodes.begin();
-  at_end = mesh.md->nodes.end();
+  vertex_iterator = mesh.md->vertices.begin();
+  at_end = mesh.md->vertices.end();
 }
 //-----------------------------------------------------------------------------
-void NodeIterator::MeshNodeIterator::operator++()
+void VertexIterator::MeshVertexIterator::operator++()
 {
-  ++node_iterator;
+  ++vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::MeshNodeIterator::end()
+bool VertexIterator::MeshVertexIterator::end()
 {
-  return node_iterator == at_end;
+  return vertex_iterator == at_end;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::MeshNodeIterator::last()
+bool VertexIterator::MeshVertexIterator::last()
 {
-  return node_iterator.last();
+  return vertex_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int NodeIterator::MeshNodeIterator::index()
+int VertexIterator::MeshVertexIterator::index()
 {
-  return node_iterator.index();
+  return vertex_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Node& NodeIterator::MeshNodeIterator::operator*() const
+Vertex& VertexIterator::MeshVertexIterator::operator*() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::MeshNodeIterator::operator->() const
+Vertex* VertexIterator::MeshVertexIterator::operator->() const
 {
-  return node_iterator.pointer();
+  return vertex_iterator.pointer();
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::MeshNodeIterator::pointer() const
+Vertex* VertexIterator::MeshVertexIterator::pointer() const
 {
-  return node_iterator.pointer();
+  return vertex_iterator.pointer();
 }
 //-----------------------------------------------------------------------------
-// NodeIterator::BoundaryNodeIterator
+// VertexIterator::BoundaryVertexIterator
 //-----------------------------------------------------------------------------
-NodeIterator::BoundaryNodeIterator::BoundaryNodeIterator
-(const Boundary& boundary) : node_iterator(boundary.mesh->bd->nodes)
+VertexIterator::BoundaryVertexIterator::BoundaryVertexIterator
+(const Boundary& boundary) : vertex_iterator(boundary.mesh->bd->vertices)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void NodeIterator::BoundaryNodeIterator::operator++()
+void VertexIterator::BoundaryVertexIterator::operator++()
 {
-  ++node_iterator;
+  ++vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::BoundaryNodeIterator::end()
+bool VertexIterator::BoundaryVertexIterator::end()
 {
-  return node_iterator.end();
+  return vertex_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::BoundaryNodeIterator::last()
+bool VertexIterator::BoundaryVertexIterator::last()
 {
-  return node_iterator.last();
+  return vertex_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int NodeIterator::BoundaryNodeIterator::index()
+int VertexIterator::BoundaryVertexIterator::index()
 {
-  return node_iterator.index();
+  return vertex_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Node& NodeIterator::BoundaryNodeIterator::operator*() const
+Vertex& VertexIterator::BoundaryVertexIterator::operator*() const
 {
-  return **node_iterator;
+  return **vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::BoundaryNodeIterator::operator->() const
+Vertex* VertexIterator::BoundaryVertexIterator::operator->() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::BoundaryNodeIterator::pointer() const
+Vertex* VertexIterator::BoundaryVertexIterator::pointer() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-// NodeIterator::CellNodeIterator
+// VertexIterator::CellVertexIterator
 //-----------------------------------------------------------------------------
-NodeIterator::CellNodeIterator::CellNodeIterator(const Cell &cell)
+VertexIterator::CellVertexIterator::CellVertexIterator(const Cell &cell)
 {
-  node_iterator = cell.c->cn.begin();
+  vertex_iterator = cell.c->cn.begin();
 }
 //-----------------------------------------------------------------------------
-void NodeIterator::CellNodeIterator::operator++()
+void VertexIterator::CellVertexIterator::operator++()
 {
-  ++node_iterator;
+  ++vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::CellNodeIterator::end()
+bool VertexIterator::CellVertexIterator::end()
 {
-  return node_iterator.end();
+  return vertex_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::CellNodeIterator::last()
+bool VertexIterator::CellVertexIterator::last()
 {
-  return node_iterator.last();
+  return vertex_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int NodeIterator::CellNodeIterator::index()
+int VertexIterator::CellVertexIterator::index()
 {
-  return node_iterator.index();
+  return vertex_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Node& NodeIterator::CellNodeIterator::operator*() const
+Vertex& VertexIterator::CellVertexIterator::operator*() const
 {
-  return **node_iterator;
+  return **vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::CellNodeIterator::operator->() const
+Vertex* VertexIterator::CellVertexIterator::operator->() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::CellNodeIterator::pointer() const
+Vertex* VertexIterator::CellVertexIterator::pointer() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-// NodeIterator::NodeNodeIterator
+// VertexIterator::VertexVertexIterator
 //-----------------------------------------------------------------------------
-NodeIterator::NodeNodeIterator::NodeNodeIterator(const Node &node)
+VertexIterator::VertexVertexIterator::VertexVertexIterator(const Vertex &vertex)
 {
-  node_iterator = node.nn.begin();
+  vertex_iterator = vertex.nn.begin();
 }
 //-----------------------------------------------------------------------------
-void NodeIterator::NodeNodeIterator::operator++()
+void VertexIterator::VertexVertexIterator::operator++()
 {
-  ++node_iterator;
+  ++vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::NodeNodeIterator::end()
+bool VertexIterator::VertexVertexIterator::end()
 {
-  return node_iterator.end();
+  return vertex_iterator.end();
 }
 //-----------------------------------------------------------------------------
-bool NodeIterator::NodeNodeIterator::last()
+bool VertexIterator::VertexVertexIterator::last()
 {
-  return node_iterator.last();
+  return vertex_iterator.last();
 }
 //-----------------------------------------------------------------------------
-int NodeIterator::NodeNodeIterator::index()
+int VertexIterator::VertexVertexIterator::index()
 {
-  return node_iterator.index();
+  return vertex_iterator.index();
 }
 //-----------------------------------------------------------------------------
-Node& NodeIterator::NodeNodeIterator::operator*() const
+Vertex& VertexIterator::VertexVertexIterator::operator*() const
 {
-  return **node_iterator;
+  return **vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::NodeNodeIterator::operator->() const
+Vertex* VertexIterator::VertexVertexIterator::operator->() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
-Node* NodeIterator::NodeNodeIterator::pointer() const
+Vertex* VertexIterator::VertexVertexIterator::pointer() const
 {
-  return *node_iterator;
+  return *vertex_iterator;
 }
 //-----------------------------------------------------------------------------
