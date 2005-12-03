@@ -35,7 +35,7 @@ void NSESolver::solve()
   //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
   Vector bmom, bcon;
 
-  int nsd = 2;
+  int nsd = 3;
 
   // Initialize velocity;
   Vector x0vel(nsd*mesh.noVertices());
@@ -101,7 +101,7 @@ void NSESolver::solve()
 
   // Define the bilinear and linear forms
   NSEMomentum::BilinearForm amom(um,uc,delta1,delta2,k,nu);
-  NSEMomentum::LinearForm Lmom(um,uc,u0,f,p,delta1,delta2,k,nu);
+  NSEMomentum::LinearForm Lmom(uc,um,u0,f,p,delta1,delta2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
 
@@ -175,8 +175,14 @@ void NSESolver::solve()
 
       cout << "Solve linear system" << endl;
 
+      time_t1 = time(NULL);
+
       // Solve the linear system
       solver_con.solve(Acon, xpre, bcon);
+
+      time_t2 = time(NULL);
+
+      cout << "Linear solve took: " << time_t2-time_t1 << " seconds" << endl; 
 
 
       time_t1 = time(NULL);
@@ -197,8 +203,14 @@ void NSESolver::solve()
 
       cout << "Solve linear system" << endl;
 
+      time_t1 = time(NULL);
+
       // Solve the linear system
       solver_mom.solve(Amom, xvel, bmom);
+
+      time_t2 = time(NULL);
+
+      cout << "Linear solve took: " << time_t2-time_t1 << " seconds" << endl; 
       
       xcvel = xvel;
       ComputeMeanVelocity(xcvel,xmvel);
@@ -306,7 +318,6 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 void NSESolver::ComputeMeanVelocity(Vector& xnodal, Vector& xcell)
 {
   // Compute cell mean 
-  xcell.init(mesh.noCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     xcell((*cell).id()) = 0.0;
