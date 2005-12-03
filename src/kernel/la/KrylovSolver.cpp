@@ -57,10 +57,6 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Reinitialize KSP solver if necessary
   init(M, N);
 
-  KSPType test;
-  KSPGetType(ksp, &test);
-  cout << "Testing solver type " << test << endl; 
-
   // Reinitialize solution vector if necessary
   x.init(M);
 
