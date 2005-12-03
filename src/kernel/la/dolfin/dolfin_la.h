@@ -5,6 +5,7 @@
 
 #include <dolfin/EigenvalueSolver.h>
 #include <dolfin/GMRES.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/LU.h>
 #include <dolfin/Matrix.h>

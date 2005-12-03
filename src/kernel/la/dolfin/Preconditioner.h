@@ -35,7 +35,8 @@ namespace dolfin
     virtual void solve(Vector& x, const Vector& b) = 0;
 
     /// Friends
-    friend class GMRES;
+    friend class KrylovSolver;
+//    friend class GMRES;
 
   protected:
 
