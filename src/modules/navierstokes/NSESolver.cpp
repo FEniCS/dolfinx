@@ -100,7 +100,7 @@ void NSESolver::solve()
   cout << "Create bilinear form: momentum" << endl;
 
   // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(um,uc,delta1,delta2,k,nu);
+  NSEMomentum::BilinearForm amom(uc,um,delta1,delta2,k,nu);
   NSEMomentum::LinearForm Lmom(uc,um,u0,f,p,delta1,delta2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
