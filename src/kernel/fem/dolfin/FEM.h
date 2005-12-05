@@ -65,6 +65,9 @@ namespace dolfin
     static void assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh, 
       FiniteElement& element, BoundaryCondition& bc);
 
+    /// Count the degrees of freedom
+    static uint size(const Mesh& mesh, const FiniteElement& element);
+
     /// Lump matrix
     static void lump(const Matrix& M, Vector& m);
 
@@ -104,9 +107,6 @@ namespace dolfin
     /// Assemble boundary conditions into residual vector on tetrahedral mesh. 
     static void assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh, 
         FiniteElement& element, BoundaryCondition& bc);
-
-    /// Count the degrees of freedom
-    static uint size(const Mesh& mesh, const FiniteElement& element);
 
     /// Estimate the maximum number of nonzeros in each row
     static uint nzsize(const Mesh& mesh, const FiniteElement& element);

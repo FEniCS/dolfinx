@@ -313,6 +313,30 @@ void FEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
+dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
+{
+  // FIXME: This could be much more efficient. FFC could generate a
+  // FIXME: function that calculates the total number of degrees of
+  // FIXME: freedom in just a few operations.
+
+  // Count the degrees of freedom (check maximum index)
+  
+  int* dofs = new int[element.spacedim()];
+  int dofmax = 0;
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    element.dofmap(dofs, *cell, mesh);
+    for (uint i = 0; i < element.spacedim(); i++)
+    {
+      if ( dofs[i] > dofmax )
+        dofmax = dofs[i];
+    }
+  }
+  delete [] dofs;
+
+  return static_cast<uint>(dofmax + 1);
+}
+//-----------------------------------------------------------------------------
 void FEM::lump(const Matrix& M, Vector& m)
 {
   m.init(M.size(0));
@@ -1009,30 +1033,6 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
   delete [] components;
   delete [] points;
   delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
-{
-  // FIXME: This could be much more efficient. FFC could generate a
-  // FIXME: function that calculates the total number of degrees of
-  // FIXME: freedom in just a few operations.
-
-  // Count the degrees of freedom (check maximum index)
-  
-  int* dofs = new int[element.spacedim()];
-  int dofmax = 0;
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    element.dofmap(dofs, *cell, mesh);
-    for (uint i = 0; i < element.spacedim(); i++)
-    {
-      if ( dofs[i] > dofmax )
-        dofmax = dofs[i];
-    }
-  }
-  delete [] dofs;
-
-  return static_cast<uint>(dofmax + 1);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
