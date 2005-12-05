@@ -31,7 +31,10 @@ namespace dolfin
     KrylovSolver();
 
     /// Create Krylov solver for a particular method
-    KrylovSolver(KSPType type);
+    KrylovSolver(KSPType ksptype);
+
+    /// Create Krylov solver for a particular method and preconditioner
+    KrylovSolver(KSPType ksptype, PCType pctype);
 
     /// Destructor
     ~KrylovSolver();
@@ -47,6 +50,9 @@ namespace dolfin
 
     /// Set Krylov method type
     void setType(KSPType type);
+
+    /// Set PETSc preconditioner 
+    void setPCType(PCType type);
 
     /// Change whether solver should report the number iterations
     void setReport(bool report);
@@ -90,6 +96,9 @@ namespace dolfin
 
     // Type of Krylov method
     KSPType ksptype;
+
+    // PETSc preconditioner
+    PCType pctype;
 
     // Diagonal matrix used for preconditioning with virtual matrix
     Mat B;

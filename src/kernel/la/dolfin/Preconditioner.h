@@ -36,7 +36,6 @@ namespace dolfin
 
     /// Friends
     friend class KrylovSolver;
-//    friend class GMRES;
 
   protected:
 

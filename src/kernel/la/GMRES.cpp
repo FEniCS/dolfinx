@@ -14,6 +14,11 @@ GMRES::GMRES() : KrylovSolver(KSPGMRES)
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
+GMRES::GMRES(PCType pctype) : KrylovSolver(KSPGMRES, pctype)
+{
+  // Do nothing.
+}
+//-----------------------------------------------------------------------------
 GMRES::~GMRES()
 {
   // Do nothing.
