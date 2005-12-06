@@ -14,4 +14,4 @@ u0= Function(element)
 f = Function(element)
 
 a = 1.1*v.dx(i)*u.dx(i)*dx
-L = v.dx(i)*u0.dx(i)*dx -v*f*dx
+L = v*f*dx - v.dx(i)*u0.dx(i)*dx

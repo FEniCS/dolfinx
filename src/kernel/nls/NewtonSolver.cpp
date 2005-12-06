@@ -5,279 +5,168 @@
 // Last changed: 2005
 
 
-#include <petscsnes.h>
-
-#include <dolfin/PETScManager.h>
 #include <dolfin/NewtonSolver.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/SettingsMacros.h>
+#include <dolfin/FEM.h>
 
 using namespace dolfin;
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver() : _nonlinear_function(0), _A(0), _b(0), _x(0)
+NewtonSolver::NewtonSolver() : KrylovSolver(), method(newton), report(true)
 {
-  // Initialize PETSc
-  PETScManager::init();
-
-  SNESCreate(PETSC_COMM_SELF, &snes);
-
-}
-//-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver(NonlinearFunction& nonlinear_function) 
-    : _A(0), _b(0), _x(0)
-{
-  // Initialize PETSc
-  PETScManager::init();
-
-  SNESCreate(PETSC_COMM_SELF, &snes);
-  _nonlinear_function = &nonlinear_function;
-
+  // Do nothing 
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
-  if( snes ) SNESDestroy(snes); 
+  // Do nothing 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinear_function, Vector& x)
-{
-  Matrix A;
-  Vector b;
+dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L, 
+      BoundaryCondition& bc, Mesh& mesh, Vector& x)
+{  
 
-  _nonlinear_function = &nonlinear_function;
+  uint maxit = dolfin_get("NLS Newton maximum iterations");
+  real rtol  = dolfin_get("NLS Newton relative convergence tolerance");
+  real atol  = dolfin_get("NLS Newton absolute convergence tolerance");
+    
+  dolfin_begin("Starting Newton solve.");
 
-  // Allocate matrix and vectors
-  init(A, b, x);
+  dolfin_log(false);
 
-  // Set nonlinear solver parameters
-  setParameters();
+  // Assemble Jacobian and residual
+  FEM::assemble(a, L, A, b, mesh);
+  FEM::applyBC(A, mesh, a.test(), bc);
+  FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
 
-  // Solve
-  solve();
+  real residual0 = b.norm();
+  residual  = residual0;
+  relative_residual = 1.0;
 
-  return 0;
-} 
-//-----------------------------------------------------------------------------
-SNES NewtonSolver::solver()
-{
-  return snes;
-} 
-//-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve()
-{
-  // Set solver type
-  std::string solver_form = dolfin_get("NLS form");
-  if(solver_form.c_str() == "concurrent")   // Compute F(u) and J at same time
-  {
-    SNESSetFunction(snes, _b->vec(), formSystem, _nonlinear_function);
-    SNESSetJacobian(snes, _A->mat(), _A->mat(), formDummy, _nonlinear_function);
+  kryloviterations = 0;
+  iteration = 0;
+
+  while( relative_residual > rtol && residual > atol && iteration <= maxit )
+  {         
+      ++iteration;
+
+      dolfin_log(false);
+
+      // Perform linear solve and update total number of Krylov iterations
+      kryloviterations += KrylovSolver::solve(A, dx, b);  
+
+      // Update solution
+      x += dx;
+      
+      // Assemble Jacobian and residual
+      FEM::assemble(a, L, A, b, mesh);
+      FEM::applyBC(A, mesh, a.test(), bc);
+      FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
+
+      dolfin_log(true);
+
+      residual = b.norm();
+      relative_residual = residual/residual0;
+
+      if(report) cout << "Iteration= " << iteration << ", Relative residual = " 
+          << relative_residual << endl;      
   }
-  else  // Compute F(u) and J separately
+
+  if ( relative_residual < rtol || residual < atol )
   {
-    SNESSetFunction(snes, _b->vec(), formRHS, _nonlinear_function);
-    SNESSetJacobian(snes, _A->mat(), _A->mat(), formJacobian, _nonlinear_function);
+    dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
+        iteration, kryloviterations);
   }
-  
-  SNESSetFromOptions(snes);
-
-  // Solve nonlinear problem
-  SNESSolve(snes, PETSC_NULL, _x->vec());
-
-  // Report number of Newton iterations and solver iterations
-  int iterations;
-  SNESGetIterationNumber(snes, &iterations);
-  int linear_iterations;
-  SNESGetNumberLinearIterations(snes, &linear_iterations);
-
-  dolfin_info("   Newton solver finished in %d iterations.", iterations);
-  dolfin_info("   Total number of linear solver iterations: %d.", linear_iterations);
-
-  return 0;
-} 
-//-----------------------------------------------------------------------------
-void NewtonSolver::setParameters()
-{
-
-  //FIXME: use options database for Krylov solver to set linear solver parameters
-
-  // Set options for linear solver and preconditioner
-  KSP ksp;   
-  SNESGetKSP(snes, &ksp);
-  KSPSetTolerances(ksp, 1.0e-15, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
-
-  PC  pc; 
-  KSPGetPC(ksp, &pc);
-//  PCSetType(pc, PCILU);
-
-  // Set monitor function for Newton iterations
-  SNESSetMonitor(snes, &monitor, PETSC_NULL, PETSC_NULL);  
-
-  // Get Newton parameters from DOLFIN settings
-  real rtol = dolfin_get("NLS Newton relative convergence tolerance");
-  real stol = dolfin_get("NLS Newton successive convergence tolerance");
-  real atol = dolfin_get("NLS Newton absolute convergence tolerance");
-  int maxit = dolfin_get("NLS Newton maximum iterations");
-  int maxf  = dolfin_get("NLS Newton maximum function evaluations");
-
-  dolfin_info("Newton solver tolerances (relative, successive, absolute) = (%.1e, %.1e, %.1e,).",
-      rtol, stol, atol);
-  dolfin_info("Newton solver maximum iterations = %d", maxit);
-  
-  // Set Newton solver tolerances
-  SNESSetTolerances(snes, atol, rtol, stol, maxit, maxf);
-
-  // Set solver type
-  std::string solver_type = dolfin_get("NLS type");
-  if(solver_type  == "line search") // line search
+  else
   {
-    SNESSetType(snes, SNESLS); 
+    dolfin_warning("Newton solver did not converge.");
   }
-  else if(solver_type == "trust region") // trust region 
+
+  dolfin_end();
+
+  return iteration;
+} 
+//-----------------------------------------------------------------------------
+dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x)
+{
+  uint maxit = dolfin_get("NLS Newton maximum iterations");
+  real rtol  = dolfin_get("NLS Newton relative convergence tolerance");
+  real atol  = dolfin_get("NLS Newton absolute convergence tolerance");
+  
+// FIXME: add option to compute F(u) anf J together or separately
+
+  dolfin_begin("Starting Newton solve.");
+
+  // Compute F(u) and J
+  nonlinearfunction.form(A, b, x);
+  
+  real residual0 = b.norm();
+  residual  = residual0;
+  relative_residual = 1.0;
+
+  kryloviterations = 0;
+  iteration = 0;
+  
+  while( relative_residual > rtol && residual > atol && iteration < maxit )
   {
-    SNESSetType(snes, SNESTR); 
-  }  
+      ++iteration;
 
+      dolfin_log(false);
+      
+      // Perform linear solve and update total number of Krylov iterations
+      kryloviterations += KrylovSolver::solve(A, dx, b);  
+
+      // Update solution
+      x += dx;
+
+      // Compute F(u) and J
+      nonlinearfunction.form(A, b, x);
+
+      dolfin_log(true);
+
+      // Compute residual norm
+      residual = b.norm();
+      relative_residual = residual/residual0;
+
+      if(report) cout << "Iteration= " << iteration << ", Relative residual = " 
+          << relative_residual << endl;      
+  }
+
+  if ( relative_residual < rtol || residual < atol )
+  {
+    dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
+        iteration, kryloviterations);
+  }
+  else
+  {
+    dolfin_warning("Newton solver did not converge.");
+  }
+
+  dolfin_end();
+
+  return iteration;
 } 
 //-----------------------------------------------------------------------------
-void NewtonSolver::init(Matrix& A, Vector& b, Vector& x)
-{
-  cout << "Initialising " << endl;
-
-  if( !_nonlinear_function )
-     dolfin_error("Newton solver has not been correctly initialised");
-
-  // Initialize global RHS vector, Jacobian matrix and solution vector if
-  // necessary
-  const uint M  = _nonlinear_function->size();
-  const uint nz = _nonlinear_function->nzsize();
-
-//  if(A.size(0) != M)
-    A.init(M, M, nz);
-
-//  if(b.size() != M)
-    b.init(M);
-
-//  if(x.size() != M)
-    x.init(M);
-  
-  A = 0.0; 
-  b = 0.0; 
-  
-  // Set intial guess to zero
-  x = 0.0;
-
-  // Set pointers to Jacobian matrix and RHS vector
-  _A = &A;
-  _b = &b;
-  _x = &x;
-
-  // Set pointers to Jacobian matrix and RHS vector
-  _nonlinear_function->setJ(A);
-  _nonlinear_function->setF(b);
-
-} 
-//-----------------------------------------------------------------------------
-int NewtonSolver::getIteration(SNES snes)
-{
-  int iteration;
-  SNESGetIterationNumber(snes, &iteration);
-  return iteration; 
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::setType(std::string solver_type)
-{
-  dolfin_set("NLS type", solver_type.c_str());
-  dolfin_info("Nonlinear solver type: %s.", solver_type.c_str());
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::setMaxiter(int maxiter)
+void NewtonSolver::setNewtonMaxiter(uint maxiter) const
 {
   dolfin_set("NLS Newton maximum iterations", maxiter);
   dolfin_info("Maximum number of Newton iterations: %d.",maxiter);
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::setRtol(double rtol)
+void NewtonSolver::setNewtonRtol(real rtol) const
 {
   dolfin_set("NLS Newton relative convergence tolerance", rtol);
   dolfin_info("Relative increment tolerance for Newton solver: %e.", rtol);
 }
 //-----------------------------------------------------------------------------
-void NewtonSolver::setStol(double stol)
-{
-  dolfin_set("NLS Newton successive convergence tolerance", stol);
-  dolfin_info("Successive increment tolerance for Newton solver: %e.", stol);
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::setAtol(double atol)
+void NewtonSolver::setNewtonAtol(real atol) const
 {
   dolfin_set("NLS Newton absolute convergence tolerance", atol);
   dolfin_info("Absolute increment tolerance for Newton solver: %e.", atol);
 }
 //-----------------------------------------------------------------------------
-int NewtonSolver::formRHS(SNES snes, Vec x, Vec f, void *nlProblem)
+dolfin::uint NewtonSolver::getIteration() const
 {
-  // Pointer to nonlinear function
-  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
-
-  // Vector for F(u)
-  Vector b(f);
-
-  // Vector containing latest solution
-  const Vector xsol(x);
-  
-  nonlinear_function->F(b, xsol);
-
-  return 0;
+  return iteration; 
 }
 //-----------------------------------------------------------------------------
-int NewtonSolver::formJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
-{
-  // Pointer to NonlinearFunction
-  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
-
-  Matrix& A  = nonlinear_function->J();
-
-  // Updated solution vector
-  const Vector xsol(x);
-
-  // Assemble Jacobian vector
-  nonlinear_function->J(A, xsol);
-
-  // Structure of returned matrix
-  *flag = SAME_NONZERO_PATTERN;
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
-int NewtonSolver::formSystem(SNES snes, Vec x, Vec f, void *nlProblem)
-{
-  // Pointer to nonlinear function
-  NonlinearFunction* nonlinear_function = (NonlinearFunction*)nlProblem;
-
-  Matrix& A  = nonlinear_function->J();
-
-  // Vector for F(u)
-  Vector b(f);
-
-  // Updated solution vector
-  const Vector xsol(x);
-  
-  nonlinear_function->form(A, b, xsol);
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
-int NewtonSolver::formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlProblem)
-{
-  // Dummy function for computing Jacobian to trick PETSc. Do nothing.
-  return 0;
-}
-//-----------------------------------------------------------------------------
-int NewtonSolver::monitor(SNES snes, int iter, real fnorm , void* dummy)
-{
-  dolfin_info("   Iteration number = %d, residual norm = %e.", iter, fnorm);
-  return 0;
-}
-//-----------------------------------------------------------------------------
-
-

@@ -2,102 +2,89 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-23
-// Last changed: 2005
+// Last changed: 2005-12-05
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
-
-#include <petscsnes.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/NonlinearFunction.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/KrylovSolver.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/BoundaryCondition.h>
 
 namespace dolfin
 {
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
-  class NewtonSolver 
+  class NewtonSolver : public KrylovSolver
   {
   public:
 
+    //FIXME: implement methods other than plain Newton
+    enum Method { newton };
+     
     /// Initialise nonlinear solver
     NewtonSolver();
-
-    /// Initialise nonlinear solver for a given nonlinear function
-    NewtonSolver(NonlinearFunction& nonlinear_function);
 
     /// Destructor
     ~NewtonSolver();
   
-    /// Solve nonlinear problem F(u) = 0. Necessary matrix and vectors will be
-    /// allocated
-    uint solve(NonlinearFunction& nonlinear_function, Vector& x);
+    /// Solve nonlinear problem F(u) = 0
+    uint solve(BilinearForm& a, LinearForm& L, BoundaryCondition& bc, Mesh& mesh,  
+        Vector& x);
 
-    /// Solve nonlinear problem F(u) = 0 when necessary matrix and vectors
-    /// have already been allocated
-    uint solve();
+    /// Solve nonlinear problem F(u) = 0 for given NonlinearFunction
+    uint solve(NonlinearFunction& nonlinearfunction, Vector& x);
 
-    /// Set Newton solver parameters
-    void setParameters();
-
-    /// Initialise Newton solver
-    void init(Matrix& A, Vector& b, Vector& x);
-
-    /// Return Newton iteration number
-    int getIteration(SNES snes);
-
+/*
     /// Set nonlinear solve type
     void setType(std::string solver_type);
 
+*/
+
     /// Set maximum number of Netwon iterations
-    void setMaxiter(int maxiter);
+    void setNewtonMaxiter(uint maxiter) const;
 
-    /// Set relative convergence tolerance: du_i / du_0 < rtol
-    void setRtol(real rtol);
+    /// Set relative convergence tolerance: ||F_i|| / ||F_0|| < rtol
+    void setNewtonRtol(real rtol) const;
 
-    /// Set successive convergence tolerance: du_i+1 / du_i < stol
-    void setStol(real stol);
+    /// Set absolute convergence tolerance: ||F_i|| < atol
+    void setNewtonAtol(real atol) const;
 
-    /// Set absolute convergence tolerance: du_i < atol
-    void setAtol(real atol);
-
-    /// Return pointer to PETSc nonlinear solver
-    SNES solver();
+    /// Return Newton iteration number
+    uint getIteration() const;
 
   private:
 
-    /// Function passed to PETSc to form RHS vector F(u)
-    static int formRHS(SNES snes, Vec x, Vec f, void* nlfunc);
+    // Type of Newton method
+    Method method;
 
-    /// Function passed to PETSc to form Jacobian (stiffness matrix) F'(u) = dF(u)/du
-    static int formJacobian(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
+    // Number of Newton iterations
+    uint iteration;
 
-    /// Function passed to PETSc to form RHS vector and Jacobian 
-    static int formSystem(SNES snes, Vec x, Vec f, void* nlfunc);
+    // Total number of Krylov iterations
+    uint kryloviterations;
 
-    /// Dummy function passed to PETSc for computing Jacobian 
-    static int formDummy(SNES snes, Vec x, Mat* AA, Mat* BB, MatStructure *flag, void* nlfunc);
+    // Residuals
+    real residual, relative_residual;
 
-    /// Monitor function for nonlinear solver 
-    static int monitor(SNES snes, int iter, real fnorm, void* dummy);
+    // True if information should be printed at each iteration
+    bool report;
 
-    // Pointer to nonlinear function
-    NonlinearFunction* _nonlinear_function;
+    // Jacobian matrix
+    Matrix A;
 
-    // Pointer to Jacobian matrix
-    Matrix* _A;
+    // Resdiual vector
+    Vector b;
 
-    // Pointer to RHS vector
-    Vector* _b;
-
-    // Pointer to solution vector
-    Vector* _x;
-
-    // PETSc nonlinear solver pointer
-    SNES snes;
+    // Solution vector
+    Vector dx;
 
   };
 
