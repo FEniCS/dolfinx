@@ -9,12 +9,12 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-GMRES::GMRES() : KrylovSolver(KSPGMRES)
+GMRES::GMRES() : KrylovSolver(gmres)
 {
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
-GMRES::GMRES(PCType pctype) : KrylovSolver(KSPGMRES, pctype)
+GMRES::GMRES(PreconditionerType pctype) : KrylovSolver(gmres, pctype)
 {
   // Do nothing.
 }

@@ -17,8 +17,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver() : LinearSolver(), report(true), ksp(0), ksptype(0), 
-      pctype(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver() : LinearSolver(), report(true), _solvertype(gmres), 
+      _preconditionertype(ilu), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -27,8 +27,9 @@ KrylovSolver::KrylovSolver() : LinearSolver(), report(true), ksp(0), ksptype(0),
   init(0, 0);
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(KSPType ksptype) : LinearSolver(), report(true), ksp(0), 
-      ksptype(ksptype), pctype(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver(SolverType solvertype) : LinearSolver(), report(true), 
+       _solvertype(solvertype), _preconditionertype(ilu), ksp(0), B(0), M(0), 
+       N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -37,9 +38,9 @@ KrylovSolver::KrylovSolver(KSPType ksptype) : LinearSolver(), report(true), ksp(
   init(0, 0);
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(KSPType ksptype, PCType pctype) : LinearSolver(), 
-      report(true), ksp(0), ksptype(ksptype), pctype(pctype), B(0), M(0), N(0), 
-      dolfin_pc(0)
+KrylovSolver::KrylovSolver(SolverType solvertype, PreconditionerType preconditionertype) : 
+      LinearSolver(), report(true), _solvertype(solvertype), 
+      _preconditionertype(preconditionertype), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -71,32 +72,33 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Reinitialize solution vector if necessary
   x.init(M);
 
-  // Set Krylov method
-  if( ksptype ) KSPSetType(ksp, ksptype);
+  // Set Krylov method and preconditioner
+  KSPType ksptype;
+  ksptype = getKSPType(_solvertype);
+  KSPSetType(ksp, ksptype);
+
+  PCType pctype;
+  pctype = getPCType(_preconditionertype);
 
   PC pc;
   KSPGetPC(ksp, &pc);
 
-  // Override with DOLFIN PC if available, else set the default PETSc PC
+  // Override with DOLFIN PC if available, else set PETSc PC
   if(dolfin_pc)
   {
     setPreconditioner(*dolfin_pc);
   }
   else
   {
-    if(pctype)
-    {
-      PCSetType(pc, pctype);
-    }
-    else
-    { 
-      PCSetFromOptions(pc);
-    }
+    PCSetType(pc, pctype);
   }
  
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
+
+  // Get preconditioner
+  PCGetType(pc, &pctype);
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -110,7 +112,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   
   // Report number of iterations
   if ( report )
-    dolfin_info("Krylov solver (%s) converged in %d iterations.", ksptype, num_iterations);
+    dolfin_info("Krylov solver (%s, %s) converged in %d iterations.", ksptype, pctype, num_iterations);
 
   return num_iterations;
 }
@@ -169,14 +171,14 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setType(KSPType type)
+void KrylovSolver::setType(const SolverType solvertype)
 {
-  ksptype = type;
+  _solvertype = solvertype;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setPCType(PCType type)
+void KrylovSolver::setPreconditioner(const PreconditionerType preconditionertype)
 {
-  pctype = type;
+  _preconditionertype = preconditionertype;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::setReport(bool report)
@@ -281,6 +283,9 @@ void KrylovSolver::init(uint M, uint N)
   PC pc;
   KSPGetPC(ksp, &pc);
 
+  PCType pctype;
+  pctype = getPCType(_preconditionertype);
+
   // Override with DOLFIN PC if available, else set PETSc PC
   if(dolfin_pc)
   {
@@ -288,14 +293,7 @@ void KrylovSolver::init(uint M, uint N)
   }
   else
   {
-    if(pctype)
-    {
-      PCSetType(pc, pctype);
-    }
-    else
-    { 
-      PCSetFromOptions(pc);
-    }
+    PCSetType(pc, pctype);
   }
 
   // Display tolerances
@@ -320,3 +318,40 @@ void KrylovSolver::createVirtualPreconditioner(const VirtualMatrix& A)
   //MatView(B, PETSC_VIEWER_STDOUT_SELF);
 }
 //-----------------------------------------------------------------------------
+KSPType KrylovSolver::getKSPType(const SolverType type) const
+{
+  switch (type)
+  {
+  case bicgstab:
+    return KSPBCGS;
+  case cg:
+    return KSPCG;
+  case gmres:
+    return KSPGMRES;
+  default:
+    dolfin_warning("Requested Krylov method unkown. Using GMRES.");
+    return KSPGMRES;
+  }
+}
+//-----------------------------------------------------------------------------
+PCType KrylovSolver::getPCType(const PreconditionerType type) const
+{
+  switch (type)
+  {
+  case icc:
+    return PCICC;
+  case ilu:
+    return PCILU;
+  case jacobi:
+    return PCJACOBI;
+  case none:
+    return PCNONE;
+  case sor:
+    return PCSOR;
+  default:
+    dolfin_warning("Requested preconditioner unkown. Using incomplete LU.");
+    return PCILU;    
+  }
+}
+//-----------------------------------------------------------------------------
+

@@ -5,7 +5,7 @@
 // Modified by Johan Hoffman 2005.
 // Modified by Andy R. Terrel 2005.
 // Modified by Garth N. Wells 2005.
-//
+//BiConjugate Gradient Squared
 // First added:  2005-12-02
 // Last changed:
 
@@ -27,14 +27,30 @@ namespace dolfin
   {
   public:
 
-    /// Create Krylov solver
+    // Krylov methods
+    enum SolverType { 
+        bicgstab,     // Stabilised biconjugate gradient squared method 
+        cg,           // Conjugate gradient method
+        gmres         // GMRES method
+     };
+
+    // Preconditioners
+    enum PreconditionerType { 
+        icc,          // Incomplete Cholesky  
+        ilu,          // Incomplete LU
+        jacobi,       // Jacobi
+        none,         // No preconditioning
+        sor           // SOR (successive over relaxation)
+       };
+
+    /// Create Krylov solver (GMRES with incomplete LU preconditioning)
     KrylovSolver();
 
-    /// Create Krylov solver for a particular method
-    KrylovSolver(KSPType ksptype);
+    /// Create Krylov solver for a particular method (with incomplete LU preconditioning)
+    KrylovSolver(SolverType solvertype);
 
     /// Create Krylov solver for a particular method and preconditioner
-    KrylovSolver(KSPType ksptype, PCType pctype);
+    KrylovSolver(SolverType solvertype, PreconditionerType preconditionertype);
 
     /// Destructor
     ~KrylovSolver();
@@ -49,10 +65,10 @@ namespace dolfin
     /// FIXME: not very nice to have a long list of setFoo() functions.
 
     /// Set Krylov method type
-    void setType(KSPType type);
+    void setType(const SolverType solvertype);
 
     /// Set PETSc preconditioner 
-    void setPCType(PCType type);
+    void setPreconditioner(const PreconditionerType preconditionertype);
 
     /// Change whether solver should report the number iterations
     void setReport(bool report);
@@ -88,17 +104,23 @@ namespace dolfin
     // Create preconditioner matrix for virtual matrix
     void createVirtualPreconditioner(const VirtualMatrix& A);
 
+    // Get PETSc method identifier 
+    KSPType getKSPType(const SolverType type) const;
+
+    // Get PETSc preconditioner identifier
+    PCType getPCType(const PreconditionerType type) const;
+
     // True if we should report the number of iterations
     bool report;
 
+    // Solver type
+    SolverType _solvertype;
+    
+    // Solver type
+    PreconditionerType _preconditionertype;
+
     // PETSc solver pointer
     KSP ksp;
-
-    // Type of Krylov method
-    KSPType ksptype;
-
-    // PETSc preconditioner
-    PCType pctype;
 
     // Diagonal matrix used for preconditioning with virtual matrix
     Mat B;
