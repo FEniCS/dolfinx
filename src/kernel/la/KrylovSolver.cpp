@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed:
+// Last changed: 2005-12-06
 
 #include <petscpc.h>
 
@@ -17,8 +17,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver() : LinearSolver(), report(true), _solvertype(gmres), 
-      _preconditionertype(ilu), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver() : LinearSolver(), report(true), _solvertype(default_solver), 
+      _preconditionertype(default_pc), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -28,7 +28,7 @@ KrylovSolver::KrylovSolver() : LinearSolver(), report(true), _solvertype(gmres),
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(SolverType solvertype) : LinearSolver(), report(true), 
-       _solvertype(solvertype), _preconditionertype(ilu), ksp(0), B(0), M(0), 
+       _solvertype(solvertype), _preconditionertype(default_pc), ksp(0), B(0), M(0), 
        N(0), dolfin_pc(0)
 {
   // Initialize PETSc
@@ -75,7 +75,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Set Krylov method and preconditioner
   KSPType ksptype;
   ksptype = getKSPType(_solvertype);
-  KSPSetType(ksp, ksptype);
+  if(ksptype != "default") KSPSetType(ksp, ksptype);
 
   PCType pctype;
   pctype = getPCType(_preconditionertype);
@@ -90,15 +90,12 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   }
   else
   {
-    PCSetType(pc, pctype);
+    if(pctype != "default") PCSetType(pc, pctype);
   }
  
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
-
-  // Get preconditioner
-  PCGetType(pc, &pctype);
 
   // Check if the solution converged
   KSPConvergedReason reason;
@@ -110,7 +107,11 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   int num_iterations = 0;
   KSPGetIterationNumber(ksp, &num_iterations);
   
-  // Report number of iterations
+  // Get solver and preconditioner type for output
+  KSPGetType(ksp, &ksptype);
+  PCGetType(pc, &pctype);
+
+  // Report number of iterations and solver type
   if ( report )
     dolfin_info("Krylov solver (%s, %s) converged in %d iterations.", ksptype, pctype, num_iterations);
 
@@ -293,7 +294,7 @@ void KrylovSolver::init(uint M, uint N)
   }
   else
   {
-    PCSetType(pc, pctype);
+    if(pctype != "default") PCSetType(pc, pctype);
   }
 
   // Display tolerances
@@ -326,6 +327,8 @@ KSPType KrylovSolver::getKSPType(const SolverType type) const
     return KSPBCGS;
   case cg:
     return KSPCG;
+  case default_solver:
+    return "default";
   case gmres:
     return KSPGMRES;
   default:
@@ -338,6 +341,8 @@ PCType KrylovSolver::getPCType(const PreconditionerType type) const
 {
   switch (type)
   {
+  case default_pc:
+    return "default";
   case icc:
     return PCICC;
   case ilu:

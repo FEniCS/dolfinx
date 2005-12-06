@@ -5,9 +5,9 @@
 // Modified by Johan Hoffman 2005.
 // Modified by Andy R. Terrel 2005.
 // Modified by Garth N. Wells 2005.
-//BiConjugate Gradient Squared
+//
 // First added:  2005-12-02
-// Last changed:
+// Last changed: 2005-12-06
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -20,7 +20,7 @@
 namespace dolfin
 {
   /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b. It is a wrapper for the GMRES solver
+  /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
   class KrylovSolver : public LinearSolver
@@ -29,13 +29,15 @@ namespace dolfin
 
     // Krylov methods
     enum SolverType { 
-        bicgstab,     // Stabilised biconjugate gradient squared method 
-        cg,           // Conjugate gradient method
-        gmres         // GMRES method
+        bicgstab,       // Stabilised biconjugate gradient squared method 
+        cg,             // Conjugate gradient method
+        default_solver, // Default PETSc solver (use when setting solver from command line)
+        gmres           // GMRES method
      };
 
     // Preconditioners
     enum PreconditionerType { 
+        default_pc,   // Deafault PETSc preconditioner (use when setting solver from command line)
         icc,          // Incomplete Cholesky  
         ilu,          // Incomplete LU
         jacobi,       // Jacobi
