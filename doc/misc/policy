@@ -17,9 +17,13 @@ keep sort of the same style when writing the code.
   Header files end with.h, implementation files with .cpp
   Large letter only for class files: utils.h
 
-- Naming of variables: undecided
+- Naming of variables:
 
-- Naming of functions: undecided
+    int my_variable;
+
+- Naming of functions
+
+    void myFunction()
 
 - DOLFIN constants start with DOLFIN and large letters:
 
@@ -37,15 +41,23 @@ keep sort of the same style when writing the code.
 - Applying the GPL should look something like this at the top
   of all source files:
 
-	// Copyright (c) 2003 Johan Hoffman and Anders Logg.
-	// Licensed under the GNU GPL Version 2.
-
+	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
+        // Licensed under the GNU GPL Version 2.
+	//
+        // First added:  2004-01-01
+        // Last changed: 2005-11-15
+  
   or
 
-	// Copyright (c) 2003 Johan Hoffman and Anders Logg.
-	// Licensed under the GNU GPL Version 2.
-	//
-	// Modifications by:
-	//
-	//   Johan Jansson
-	//   Erik Svensson
+	// Copyright (C) 2004-2005 Johan Hoffman and Anders Logg.
+        // Licensed under the GNU GPL Version 2.
+        //
+        // Modified by Andy R. Terrel, 2005.
+        //
+        // First added:  2004-01-01
+        // Last changed: 2005-11-15
+
+- enum types are lowercase
+
+- The only part of PETSc that is visible outside of src/kernel/la are the functions
+  Matrix::mat(), Vector::vec() etc.
