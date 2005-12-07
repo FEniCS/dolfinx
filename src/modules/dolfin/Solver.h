@@ -15,7 +15,9 @@
 #include <dolfin/UnitCube.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/KrylovSolver.h>
 #include <dolfin/GMRES.h>
+#include <dolfin/LU.h>
 #include <dolfin/Function.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/FEM.h>
