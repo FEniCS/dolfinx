@@ -22,7 +22,7 @@ namespace dolfin
     GMRES();
 
     /// Create GMRES solver with given PETSc preconditioner
-    GMRES(PreconditionerType preconditionertype);
+    GMRES(Preconditioner::Type preconditioner_type);
 
     /// Destructor
     ~GMRES();

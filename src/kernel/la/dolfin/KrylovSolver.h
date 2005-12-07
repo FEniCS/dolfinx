@@ -27,32 +27,22 @@ namespace dolfin
   {
   public:
 
-    // Krylov methods
-    enum SolverType { 
+    /// Krylov methods
+    enum Type { 
         bicgstab,       // Stabilised biconjugate gradient squared method 
         cg,             // Conjugate gradient method
         default_solver, // Default PETSc solver (use when setting solver from command line)
         gmres           // GMRES method
      };
 
-    // Preconditioners
-    enum PreconditionerType { 
-        default_pc,   // Deafault PETSc preconditioner (use when setting solver from command line)
-        icc,          // Incomplete Cholesky  
-        ilu,          // Incomplete LU
-        jacobi,       // Jacobi
-        none,         // No preconditioning
-        sor           // SOR (successive over relaxation)
-       };
-
     /// Create Krylov solver (GMRES with incomplete LU preconditioning)
     KrylovSolver();
 
     /// Create Krylov solver for a particular method (with incomplete LU preconditioning)
-    KrylovSolver(SolverType solvertype);
+    KrylovSolver(Type solvertype);
 
     /// Create Krylov solver for a particular method and preconditioner
-    KrylovSolver(SolverType solvertype, PreconditionerType preconditionertype);
+    KrylovSolver(Type solvertype, Preconditioner::Type preconditionertype);
 
     /// Destructor
     ~KrylovSolver();
@@ -67,10 +57,13 @@ namespace dolfin
     /// FIXME: not very nice to have a long list of setFoo() functions.
 
     /// Set Krylov method type
-    void setType(const SolverType solvertype);
+    void setType(const Type solvertype);
 
     /// Set PETSc preconditioner 
-    void setPreconditioner(const PreconditionerType preconditionertype);
+    void setPreconditioner(const Preconditioner::Type preconditionertype);
+
+    /// Set preconditioner
+    void setPreconditioner(Preconditioner &pc);
 
     /// Change whether solver should report the number iterations
     void setReport(bool report);
@@ -87,9 +80,6 @@ namespace dolfin
     /// Change maxiter
     void setMaxiter(int maxiter);
 
-    /// Set preconditioner
-    void setPreconditioner(Preconditioner &pc);
-
     /// Return PETSc solver pointer
     KSP solver(){
       return ksp;
@@ -100,34 +90,31 @@ namespace dolfin
      
   private:
 
-    // Initialize KSP solver
+    /// Initialize KSP solver
     void init(uint M, uint N);
 
-    // Create preconditioner matrix for virtual matrix
+    /// Create preconditioner matrix for virtual matrix
     void createVirtualPreconditioner(const VirtualMatrix& A);
 
-    // Get PETSc method identifier 
-    KSPType getKSPType(const SolverType type) const;
+    /// Get PETSc method identifier 
+    KSPType getType(const Type type) const;
 
-    // Get PETSc preconditioner identifier
-    PCType getPCType(const PreconditionerType type) const;
-
-    // True if we should report the number of iterations
+    /// True if we should report the number of iterations
     bool report;
 
     // Solver type
-    SolverType _solvertype;
+    Type solver_type;
     
-    // Solver type
-    PreconditionerType _preconditionertype;
+    // Preconditioner type
+    Preconditioner::Type preconditioner_type;
 
-    // PETSc solver pointer
+    /// PETSc solver pointer
     KSP ksp;
 
-    // Diagonal matrix used for preconditioning with virtual matrix
+    /// Diagonal matrix used for preconditioning with virtual matrix
     Mat B;
 
-    // Size of old system (need to reinitialize when changing)
+    /// Size of old system (need to reinitialize when changing)
     uint M;
     uint N;
 

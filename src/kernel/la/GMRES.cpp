@@ -14,7 +14,7 @@ GMRES::GMRES() : KrylovSolver(gmres)
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
-GMRES::GMRES(PreconditionerType pctype) : KrylovSolver(gmres, pctype)
+GMRES::GMRES(Preconditioner::Type preconditioner_type) : KrylovSolver(gmres, preconditioner_type)
 {
   // Do nothing.
 }
