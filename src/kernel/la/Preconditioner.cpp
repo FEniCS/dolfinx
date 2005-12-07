@@ -24,6 +24,8 @@ Preconditioner::~Preconditioner()
 //-----------------------------------------------------------------------------
 int Preconditioner::PCApply(PC pc, Vec x, Vec y)
 {
+  // Convert vectors to DOLFIN wrapper format and pass to DOLFIN preconditioner
+
   Preconditioner* newpc = (Preconditioner*)pc->data;
 
   Vector dolfinx(x), dolfiny(y);
@@ -35,26 +37,19 @@ int Preconditioner::PCApply(PC pc, Vec x, Vec y)
 //-----------------------------------------------------------------------------
 int Preconditioner::PCCreate(PC pc)
 {
-  pc->ops->setup               = (int (*)(PC)) 0;
-  pc->ops->apply               = (int (*)(PC,Vec,Vec)) 0;
-  pc->ops->applyrichardson     = (int (*)(PC,Vec,Vec,Vec,double,double,double,int)) 0;
-  pc->ops->applyBA             = (int (*)(PC,int,Vec,Vec,Vec)) 0;
-  pc->ops->applytranspose      = (int (*)(PC,Vec,Vec)) 0;
-  pc->ops->applyBAtranspose    = (int (*)(PC,int,Vec,Vec,Vec)) 0;
-  pc->ops->setfromoptions      = (int (*)(PC)) 0;
-  pc->ops->presolve            = (int (*)(PC,KSP,Vec,Vec)) 0;
-  pc->ops->postsolve           = (int (*)(PC,KSP,Vec,Vec)) 0;
-  pc->ops->getfactoredmatrix   = (int (*)(PC,Mat*)) 0;
-  pc->ops->applysymmetricleft  = (int (*)(PC,Vec,Vec)) 0;
-  pc->ops->applysymmetricright = (int (*)(PC,Vec,Vec)) 0;
-  pc->ops->setuponblocks       = (int (*)(PC)) 0;
-  pc->ops->destroy             = (int (*)(PC)) 0;
-  pc->ops->view                = (int (*)(PC,PetscViewer)) 0;
-  //pc->modifysubmatrices        = (int (*)(PC,int,const IS[],const IS[],Mat[],void*)) 0;
+  // Initialize function pointers to 0
 
-  pc->ops->destroy = 0;
-  pc->ops->setup = 0;
+  pc->ops->setup               = 0;
+  pc->ops->apply               = 0;
+  pc->ops->applyrichardson     = 0;
+  pc->ops->applytranspose      = 0;
+  pc->ops->applysymmetricleft  = 0;
+  pc->ops->applysymmetricright = 0;
+  pc->ops->setfromoptions      = 0;
+  pc->ops->view                = 0;
+  pc->ops->destroy             = 0;
 
+  // Set PETSc name of preconditioner
   PetscObjectChangeTypeName((PetscObject)pc, "DOLFIN");
 
   return 0;
