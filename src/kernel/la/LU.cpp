@@ -25,7 +25,10 @@ LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCLU);
 
-  // Do LU factorizatio in-place (saves memory)
+  // Allow matrices with zero diagonals to be solved
+  PCFactorSetShiftNonzero(pc, PETSC_DECIDE);
+
+  // Do LU factorization in-place (saves memory)
   PCASMSetUseInPlace(pc);
 }
 //-----------------------------------------------------------------------------
