@@ -163,7 +163,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = bench fem mesh ode nls poisson quadrature solvers
+SUBDIRS = fem mesh ode nls poisson quadrature solvers
 all: all-recursive
 
 .SUFFIXES:

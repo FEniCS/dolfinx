@@ -107,6 +107,7 @@ o Decide on proper namespace/class for parameters
 General
 -------
 
+* Add benchmark again, add old benchmark results and put bench in src/bench/
 * Write FAQ and put on web page:
 
   Q: When to use -DPETSC_USE_EXTERN_CXX?
