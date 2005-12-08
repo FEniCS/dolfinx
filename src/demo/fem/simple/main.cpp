@@ -1,4 +1,4 @@
-// Copyright (C) 2003 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Thanks to David Heintz for the reference matrices.
@@ -9,9 +9,7 @@ using namespace dolfin;
 
 int main()
 {
-  class hej { int a; };
-
-  // Load reference mesh and matrices
+  // Load reference mesh (just a simple tetrahedron)
   Mesh mesh("tetrahedron.xml.gz");
 
   // Create stiffness and mass matrices
@@ -32,7 +30,7 @@ int main()
   M0(2,0) =  1.0/120.0; M0(2,1) =  1.0/120.0; M0(2,2) =  1.0/60.0;  M0(2,3) =  1.0/120.0;
   M0(3,0) =  1.0/120.0; M0(3,1) =  1.0/120.0; M0(3,2) =  1.0/120.0; M0(3,3) =  1.0/60.0;
 
-  // Disp matrices
+  // Display matrices
   cout << endl;
   cout << "Assembled stiffness matrix:" << endl;
   A.disp();
