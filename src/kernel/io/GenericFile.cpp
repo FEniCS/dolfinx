@@ -20,7 +20,8 @@ GenericFile::GenericFile(const std::string filename) :
   opened_write(false),
   check_header(false),
   no_meshes(0),
-  no_frames(0)
+  no_frames(0),
+  counter(0)
 {
   // Do nothing
 }

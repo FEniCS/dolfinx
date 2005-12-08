@@ -1,6 +1,8 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005.
+//
 // First added:  2003-10-21
 // Last changed: 2005-12-08
 
@@ -33,7 +35,7 @@ void refine2D(int refinements)
   Mesh mesh("mesh2D.xml.gz");
   
   // Save first mesh
-  File file("meshes2D.m");
+  File file("meshes2D.pvd");
   file << mesh;
 
   // Refine a couple of times
@@ -43,15 +45,15 @@ void refine2D(int refinements)
     {
       // Mark cells close to y = x
       for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
-	if ( fabs(vertex->coord().x - vertex->coord().y) < DOLFIN_EPS )
-	  cell->mark();
+        if ( fabs(vertex->coord().x - vertex->coord().y) < DOLFIN_EPS )
+	         cell->mark();
       
       // Mark cells at the corners
       if ( cell->midpoint().dist(0.0, 0.0) < 0.25 ||
 	   cell->midpoint().dist(1.0, 0.0) < 0.25 ||
 	   cell->midpoint().dist(1.0, 1.0) < 0.25 ||
 	   cell->midpoint().dist(0.0, 1.0) < 0.25 )
-	cell->mark();
+      cell->mark();
     }
 
     // Refine mesh

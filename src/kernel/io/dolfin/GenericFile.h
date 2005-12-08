@@ -66,6 +66,9 @@ namespace dolfin
     int no_meshes;
     int no_frames;
     
+    // Number of times data has been written
+    uint counter;
+
   };
   
 }

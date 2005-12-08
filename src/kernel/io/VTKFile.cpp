@@ -29,10 +29,10 @@ void VTKFile::operator<<(Mesh& mesh)
   //dolfin_info("Saving mesh to VTK file.");
   
   // Update vtu file name and clear file
-  vtuNameUpdate(mesh.number());
+  vtuNameUpdate(counter);
 
   // Write pvd file
-  pvdFileWrite(mesh.number());
+  pvdFileWrite(counter);
 
   // Write headers
   VTKHeaderOpen(mesh);
@@ -40,8 +40,13 @@ void VTKFile::operator<<(Mesh& mesh)
   // Write mesh
   MeshWrite(mesh);
   
-  // Write headers
+  // Close headers
   VTKHeaderClose();
+
+  // Increase the number of times we have saved the mesh
+  counter++;
+
+  cout << "saved mesh " << mesh.number() << " times." << endl;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in VTK format." << endl;
@@ -52,10 +57,10 @@ void VTKFile::operator<<(Function& u)
   //dolfin_info("Writing Function to VTK file.");
 
   // Update vtu file name and clear file
-  vtuNameUpdate(u.number());
+  vtuNameUpdate(counter);
   
   // Write pvd file
-  pvdFileWrite(u.number());
+  pvdFileWrite(counter);
     
   const Mesh& mesh = u.mesh(); 
 
@@ -71,9 +76,8 @@ void VTKFile::operator<<(Function& u)
   // Close headers
   VTKHeaderClose();
   
-  
   // Increase the number of times we have saved the function
-  ++u;
+  counter++;
   
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
