@@ -5,7 +5,7 @@
 // Modified by Haiko Etzel 2005.
 //
 // First added:  2002-11-12
-// Last changed: 2005-10-24
+// Last changed: 2005-12-08
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -26,8 +26,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 File::File(const std::string& filename)
 {
-  // Choose file type base on suffix. Note that MATLAB is chosen as
-  // default instead of Octave. Should be changed.
+  // Choose file type base on suffix.
 
   // FIXME: Use correct funtion to find the suffix; using rfind() makes
   // FIXME: it essential that the suffixes are checked in the correct order.

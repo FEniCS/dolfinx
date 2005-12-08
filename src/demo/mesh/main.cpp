@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2004 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005-12-01
+// Last changed: 2005-12-08
 
 #include <dolfin.h>
 
@@ -61,7 +61,6 @@ void refine2D(int refinements)
     MeshHierarchy meshes(mesh);
     for (MeshIterator g(meshes); !g.end(); ++g)
       file << *g;
-
   }
 
   dolfin::cout << dolfin::endl;
@@ -75,8 +74,8 @@ void refine3D(int refinements)
   // Load mesh
   Mesh mesh("mesh3D.xml.gz");
   
-  // Save original mesh in OpenDX format
-  File unref("mesh3D_unrefined.dx");
+  // Save original mesh in VTK format
+  File unref("mesh3D_unrefined.pvd");
   unref << mesh;
 
   // Refine a couple of times
@@ -91,7 +90,7 @@ void refine3D(int refinements)
     mesh.refine();
   }
 
-  // Save refined mesh in OpenDX format
-  File ref("mesh3D_refined.dx");
+  // Save refined mesh in VTK format
+  File ref("mesh3D_refined.pvd");
   ref << mesh;
 }
