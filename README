@@ -42,6 +42,18 @@ followed by an optional
 Type ./configure --help for a list of available options.
 More information is availabel in the file INSTALL.
 
+Optionally, you may install DOLFIN locally in the current source
+tree, which is a convenient way of running the demos without needing
+to install DOLFIN on your system:
+
+    ./configure.local
+    make
+    make install
+    make demo
+
+Note that you need to add the directory `pwd`/local/bin/ to your
+path. (You will be reminded of this when running ./configure.local.)
+
 ------------------------------------------------------------------------------
 3. License
 
@@ -65,4 +77,4 @@ For more information about DOLFIN, visit
 
 -------------------------------------------------------------------------------
 Chicago
-July 2005
+December 2005
