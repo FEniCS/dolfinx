@@ -2,11 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005
+// Last changed: 2005-12-08
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
 
+#include <map>
 #include <stdarg.h>
 
 #include <dolfin/List.h>
@@ -42,10 +43,12 @@ namespace dolfin
     friend class XMLFile;
     
   private:
-    
-    Parameter* find(const char *identifier);
-    
-    List<Parameter> list;
+
+    // Parameters stored as an STL map
+    std::map<const char*, Parameter> parameters;
+
+    // Typedef of iterator for convenience
+    typedef std::map<const char*, Parameter>::iterator ParameterIterator;
     
   };
   

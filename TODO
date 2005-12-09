@@ -96,7 +96,6 @@ Parameters
 ----------
 
 o Add base class for local parameters
-o Use hash list to store parameters (use STL hash)
 o Make sure parameters work with type std::string
 o Does saving/loading parameters work?
 o Collect default parameters in an appropriate place (not Settings)

@@ -113,8 +113,8 @@ void testOutput()
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
-
-  //testOutput();
+  
+  dolfin_save("parameters.xml");
 
   return 0;
 }

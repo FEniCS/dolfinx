@@ -1,3 +1,4 @@
+ - Use std::map to store parameters
  - Implement class KrylovSolver 
  - Name change: Node --> Vertex
  - Add nonlinear solver demos

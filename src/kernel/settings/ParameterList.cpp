@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005
+// Last changed: 2005-12-08
 
 #include <stdarg.h>
 #include <string.h>
@@ -19,7 +19,7 @@ using namespace dolfin;
 //----------------------------------------------------------------------------
 ParameterList::ParameterList()
 {
-
+  // Do nothing
 }
 //----------------------------------------------------------------------------
 void ParameterList::add(Parameter::Type type, const char *identifier, ...)
@@ -39,7 +39,7 @@ void ParameterList::add_aptr(Parameter::Type type, const char *identifier,
   Parameter p(type, identifier, aptr);
   
   // Add the parameter to the list
-  list.push_back(p);
+  parameters[identifier] = p;
 }
 //----------------------------------------------------------------------------
 void ParameterList::set(const char *identifier, ...)
@@ -54,53 +54,36 @@ void ParameterList::set(const char *identifier, ...)
 //----------------------------------------------------------------------------
 void ParameterList::set_aptr(const char *identifier, va_list aptr)
 {
-  Parameter* p = find(identifier);
-  
-  if ( p ) {
-    p->set(identifier, aptr);
-    return;
-  }
+  ParameterIterator p = parameters.find(identifier);
 
-  // Couldn't find the parameter
-  dolfin_error1("Unknown parameter \"%s\".", identifier);
+  if ( p == parameters.end() )
+    dolfin_error1("Unknown parameter \"%s\".", identifier);
+
+  p->second.set(identifier, aptr);
 }
 //----------------------------------------------------------------------------
 Parameter ParameterList::get(const char *identifier)
 {
-  Parameter* p = find(identifier);
+  ParameterIterator p = parameters.find(identifier);
   
-  if ( p )
-    return *p;
+  if ( p == parameters.end() )
+    dolfin_error1("Unknown parameter \"%s\".", identifier);
   
-  // Couldn't find the parameter
-  dolfin_error1("Unknown parameter \"%s\".", identifier);
-
-  return *p;
+  return p->second;
 }
 //----------------------------------------------------------------------------
 bool ParameterList::changed(const char *identifier)
 {
-  Parameter* p = find(identifier);
+  ParameterIterator p = parameters.find(identifier);
 
-  if ( p )
-    return p->changed();
+  if ( p == parameters.end() )
+    dolfin_error1("Unknown parameter \"%s\".", identifier);
 
-  dolfin_error1("Unknown parameter \"%s\".", identifier);
-
-  return *p;
+  return p->second.changed();
 }
 //----------------------------------------------------------------------------
 bool ParameterList::empty()
 {
-  return list.empty();
-}
-//----------------------------------------------------------------------------
-Parameter* ParameterList::find(const char *identifier)
-{
-  for (List<Parameter>::iterator p = list.begin(); p != list.end(); ++p)
-    if ( p->matches(identifier) )
-      return &(*p);
-
-  return 0;
+  return parameters.empty();
 }
 //----------------------------------------------------------------------------

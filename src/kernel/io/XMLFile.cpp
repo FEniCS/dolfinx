@@ -228,29 +228,31 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
-  for (List<Parameter>::iterator p = parameters.list.begin(); p != parameters.list.end(); ++p)
+  for (ParameterList::ParameterIterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
   {
-    switch ( p->type )
+    const Parameter p = it->second;
+
+    switch ( p.type )
     {
     case Parameter::REAL:
       fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
-	      p->identifier.c_str(), p->val_real);
+	      p.identifier.c_str(), p.val_real);
       break;
     case Parameter::INT:
       fprintf(fp, "    <parameter name=\"%s\" type=\"int\" value=\"%d\"/>\n",
-	      p->identifier.c_str(), p->val_int);
+	      p.identifier.c_str(), p.val_int);
       break;
     case Parameter::BOOL:
-      if ( p->val_bool )
+      if ( p.val_bool )
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"true\"/>\n",
-		p->identifier.c_str());
+		p.identifier.c_str());
       else
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"false\"/>\n",
-		p->identifier.c_str());
+		p.identifier.c_str());
       break;
     case Parameter::STRING:
       fprintf(fp, "    <parameter name=\"%s\" type=\"string\" value=\"%s\"/>\n",
-	      p->identifier.c_str(), p->val_string.c_str());
+	      p.identifier.c_str(), p.val_string.c_str());
       break;
     default:
       ; // Do nothing
