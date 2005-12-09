@@ -34,10 +34,6 @@ void refine2D(int refinements)
   // Load mesh
   Mesh mesh("mesh2D.xml.gz");
   
-  // Save first mesh
-  File file("meshes2D.pvd");
-  file << mesh;
-
   // Refine a couple of times
   for (int i = 0; i < refinements; i++)
   {
@@ -58,12 +54,13 @@ void refine2D(int refinements)
 
     // Refine mesh
     mesh.refine();
-
-    // Save all meshes in the mesh hierarcy
-    MeshHierarchy meshes(mesh);
-    for (MeshIterator g(meshes); !g.end(); ++g)
-      file << *g;
   }
+
+  // Save all meshes in the mesh hierarchy in VTK format
+  File file("mesh2D.pvd");
+  MeshHierarchy meshes(mesh);
+  for (MeshIterator m(meshes); !m.end(); ++m)
+    file << *m;
 
   dolfin::cout << dolfin::endl;
 }
@@ -76,10 +73,6 @@ void refine3D(int refinements)
   // Load mesh
   Mesh mesh("mesh3D.xml.gz");
   
-  // Save original mesh in VTK format
-  File unref("mesh3D_unrefined.pvd");
-  unref << mesh;
-
   // Refine a couple of times
   for (int i = 0; i < refinements; i++)
   {
@@ -92,7 +85,9 @@ void refine3D(int refinements)
     mesh.refine();
   }
 
-  // Save refined mesh in VTK format
-  File ref("mesh3D_refined.pvd");
-  ref << mesh;
+  // Save all meshes in the mesh hierarchy in VTK format
+  File file("mesh3D.pvd");
+  MeshHierarchy meshes(mesh);
+  for (MeshIterator m(meshes); !m.end(); ++m)
+    file << *m;
 }

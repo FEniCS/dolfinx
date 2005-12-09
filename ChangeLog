@@ -1,3 +1,4 @@
+ - Update chapter on Functions in manual
  - Use std::map to store parameters
  - Implement class KrylovSolver 
  - Name change: Node --> Vertex
