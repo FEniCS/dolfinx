@@ -129,7 +129,6 @@ General
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
-* Automatically load parameters from dolfin.xml
 * Collect diagnostic and error messages into one file? Translations?
 
 Some suggestions for PETSc
