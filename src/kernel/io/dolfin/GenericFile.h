@@ -63,7 +63,6 @@ namespace dolfin
 
     bool check_header; // True if we have written a header
 
-    int no_meshes;
     int no_frames;
     
     // Number of times data has been written

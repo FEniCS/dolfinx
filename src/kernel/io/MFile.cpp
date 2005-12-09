@@ -60,7 +60,7 @@ void MFile::operator<<(Mesh& mesh)
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Create a list if we save the mesh a second time
-  if ( no_meshes == 1 )
+  if ( counter == 1 )
   {
     fprintf(fp, "tmp = points;\n");
     fprintf(fp, "clear points\n");
@@ -79,10 +79,10 @@ void MFile::operator<<(Mesh& mesh)
   }
   
   // Write vertices
-  if ( no_meshes == 0 )
+  if ( counter == 0 )
     fprintf(fp,"points = [");
   else
-    fprintf(fp,"points{%d} = [", no_meshes + 1);
+    fprintf(fp,"points{%d} = [", counter + 1);
   for (VertexIterator n(mesh); !n.end(); ++n) {
     
     p = n->coord();
@@ -104,10 +104,10 @@ void MFile::operator<<(Mesh& mesh)
   fprintf(fp,"\n");
   
   // Write cells
-  if ( no_meshes == 0 )
+  if ( counter == 0 )
     fprintf(fp,"cells = [");
   else
-    fprintf(fp,"cells{%d} = [", no_meshes + 1);
+    fprintf(fp,"cells{%d} = [", counter + 1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     for (VertexIterator n(c); !n.end(); ++n)
@@ -122,10 +122,10 @@ void MFile::operator<<(Mesh& mesh)
 
   // FIXME: Save all edges correctly
   // Write edges (to make the pdeplot routines happy)
-  if ( no_meshes == 0 )
+  if ( counter == 0 )
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
   else
-    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", no_meshes + 1);
+    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", counter + 1);
   
   // Close file
   fclose(fp);
@@ -135,8 +135,8 @@ void MFile::operator<<(Mesh& mesh)
   // than the number of times this specific mesh has been saved.
   ++mesh;
   
-  // Increase the number of meshes save to this file
-  no_meshes++;
+  // Increase the number of meshes saved to this file
+  counter++;
 
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
