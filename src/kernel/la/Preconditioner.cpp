@@ -82,10 +82,10 @@ PCType Preconditioner::getType(const Type type)
     return PCILU;
   case jacobi:
     return PCJACOBI;
-  case none:
-    return PCNONE;
   case sor:
     return PCSOR;
+  case none:
+    return PCNONE;
   default:
     dolfin_warning("Requested preconditioner unkown. Using incomplete LU.");
     return PCILU;    

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #ifndef __GAUSSIAN_QUADRATURE_H
 #define __GAUSSIAN_QUADRATURE_H
@@ -38,7 +38,7 @@ namespace dolfin {
     bool check(unsigned int q) const;
 
     /// Display quadrature data
-    virtual void show() const = 0;
+    virtual void disp() const = 0;
     
   };
   

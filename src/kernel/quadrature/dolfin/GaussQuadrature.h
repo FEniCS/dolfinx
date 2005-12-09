@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #ifndef __GAUSS_QUADRATURE_H
 #define __GAUSS_QUADRATURE_H
@@ -28,7 +28,7 @@ namespace dolfin
     
     GaussQuadrature(unsigned int n);
 
-    void show() const;
+    void disp() const;
 
   private:
 

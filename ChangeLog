@@ -1,3 +1,6 @@
+ - Change ::show() --> ::disp() everywhere
+ - Clean out old quadrature classes on triangles and tetrahedra
+ - Clean out old sparse matrix code
  - Update chapter on Functions in manual
  - Use std::map to store parameters
  - Implement class KrylovSolver 

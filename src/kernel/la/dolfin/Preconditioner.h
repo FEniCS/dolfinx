@@ -5,7 +5,7 @@
 // Modified Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-12-07
+// Last changed: 2005-12-09
 
 #ifndef __PRECONDITIONER_H
 #define __PRECONDITIONER_H
@@ -28,14 +28,15 @@ namespace dolfin
   public:
 
     // PETSC preconditioners
-    enum Type { 
-        default_pc,   // Deafault PETSc preconditioner (use when setting solver from command line)
-        icc,          // Incomplete Cholesky  
-        ilu,          // Incomplete LU
-        jacobi,       // Jacobi
-        none,         // No preconditioning
-        sor           // SOR (successive over relaxation)
-       };
+    enum Type
+    { 
+      default_pc, // Default PETSc preconditioner (use when setting solver from command line)
+      icc,        // Incomplete Cholesky
+      ilu,        // Incomplete LU
+      jacobi,     // Jacobi
+      sor,        // SOR (successive over relaxation)
+      none        // No preconditioning
+    };
 
     /// Constructor
     Preconditioner();

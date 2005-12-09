@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-04
-// Last changed: 2005-12-07
+// Last changed: 2005-12-09
 
 #include <stdlib.h>
 #include <dolfin.h>
@@ -23,19 +23,19 @@ int main(int argc, char** argv)
   if ( strcasecmp(argv[1], "gauss") == 0 ) {
     
     GaussQuadrature q(n);
-    q.show();
+    q.disp();
 
   }
   else if ( strcasecmp(argv[1], "radau") == 0 ) {
     
     RadauQuadrature q(n);
-    q.show();
+    q.disp();
     
   } 
   else if ( strcasecmp(argv[1], "lobatto") == 0 ) {
 
      LobattoQuadrature q(n);
-     q.show();
+     q.disp();
      
   }
   else {

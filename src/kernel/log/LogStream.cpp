@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #include <stdio.h>
 #include <cmath>
@@ -93,7 +93,7 @@ LogStream& LogStream::operator<<(complex z)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void LogStream::show() const
+void LogStream::disp() const
 {
   // This is used for debugging
 

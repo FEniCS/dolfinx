@@ -14,7 +14,7 @@ Dependencies
 
 * SciPy
 * ParaView
-* MayaVI
+* MayaVi
 * PETSc
 * FFC
 * FIAT
@@ -53,13 +53,11 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
-o [jj] Add wrapper for PETSc preconditioners
-* Cleanup and PETSc linear algebra wrappers
+* Cleanups and testing
 
 Function
 --------
 
-* Save Function to file
 * Load Function from file
 
 Input/Output
@@ -71,35 +69,32 @@ Input/Output
 Solvers
 -------
 
-* Implement Navier-Stokes solver
+* Fix bug in Navier-Stokes solver
 
 Multi-adaptive solver
 ---------------------
 
-o [jj, logg] Preconditioner for multi-adaptive solver
 o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver
-o [jj, logg] Implement preconditioner for multi-adaptive Newton
 o [jj, logg] Save dual solution backwards
 o [jj, logg] Error estimates
 o [jj, logg] Automatic computation of stability factors as function of time T
-o [jj, logg] Use two files for matlab format
+o [jj, logg] Use two files for MATLAB format
 
 Modules
 -------
 
+* Make modules handle both 2D and 3D based on given mesh
 o [hoffman] Navier-Stokes module
-o [harald] Euler module?
-o [foufas] Finance module?
 
 Parameters
 ----------
 
 o Add base class for local parameters
 o Make sure parameters work with type std::string
-o Does saving/loading parameters work?
+o Load default parameters from file
 o Collect default parameters in an appropriate place (not Settings)
-o Change from Parameter::REAL to Parameter::real etc
+o Change from Parameter::REAL to Parameter::real etc if possible
 o Add function to display all parameters
 o Decide on proper namespace/class for parameters
 
@@ -107,6 +102,7 @@ General
 -------
 
 * Add benchmark again, add old benchmark results and put bench in src/bench/
+
 * Write FAQ and put on web page:
 
   Q: When to use -DPETSC_USE_EXTERN_CXX?
@@ -126,7 +122,6 @@ General
 
 * New repository dolfin-contrib?
 * Don't use cut in src/config script
-* Replace ::show() with ::disp() for all classes
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere
 * Use libtool?

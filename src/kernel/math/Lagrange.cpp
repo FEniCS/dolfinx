@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-12
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -135,7 +135,7 @@ LogStream& dolfin::operator<<(LogStream& stream, const Lagrange& p)
   return stream;
 }
 //-----------------------------------------------------------------------------
-void Lagrange::show() const
+void Lagrange::disp() const
 {
   dolfin_info("Lagrange polynomial of degree %d with %d points.", q, n);
   dolfin_info("----------------------------------------------");

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #ifndef __QUADRATURE_H
 #define __QUADRATURE_H
@@ -32,7 +32,7 @@ namespace dolfin
     real measure() const;
     
     /// Display quadrature data
-    virtual void show() const = 0;
+    virtual void disp() const = 0;
 
   protected:
     

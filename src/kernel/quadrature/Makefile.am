@@ -4,11 +4,7 @@ nobase_include_HEADERS         = dolfin/dolfin_quadrature.h \
                                  dolfin/GaussQuadrature.h \
                                  dolfin/LobattoQuadrature.h \
                                  dolfin/Quadrature.h \
-                                 dolfin/RadauQuadrature.h \
-                                 dolfin/TetrahedronMidpointQuadrature.h \
-                                 dolfin/TetrahedronVertexQuadrature.h \
-                                 dolfin/TriangleMidpointQuadrature.h \
-                                 dolfin/TriangleVertexQuadrature.h
+                                 dolfin/RadauQuadrature.h
 INCLUDES                       = @KERNEL_CFLAGS@
 lib_LIBRARIES                  = libdolfin-quadrature.a
 libdolfin_quadrature_a_SOURCES = GaussianQuadrature.cpp \

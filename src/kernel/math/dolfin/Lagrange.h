@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-12
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #ifndef __LAGRANGE_H
 #define __LAGRANGE_H
@@ -10,8 +10,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
-namespace dolfin {
-
+namespace dolfin
+{
   /// Lagrange polynomial (basis) with given degree q determined by n = q + 1 nodal points.
   ///
   /// Example: q = 1 (n = 2)
@@ -25,7 +25,8 @@ namespace dolfin {
   ///   p(0,x) = 1 - x   (one at x = 0, zero at x = 1)
   ///   p(1,x) = x       (zero at x = 0, one at x = 1)
 
-  class Lagrange {
+  class Lagrange
+  {
   public:
  
     /// Constructor
@@ -63,7 +64,7 @@ namespace dolfin {
 
     /// Output
     friend LogStream& operator<<(LogStream& stream, const Lagrange& p);
-    void show() const;
+    void disp() const;
     
   private:
 

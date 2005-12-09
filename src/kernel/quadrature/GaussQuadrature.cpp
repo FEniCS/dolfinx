@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #include <stdio.h>
 #include <cmath>
@@ -23,7 +23,7 @@ GaussQuadrature::GaussQuadrature(unsigned int n) : GaussianQuadrature(n)
   //dolfin_info("Gauss quadrature computed for n = %d, check passed.", n);
 }
 //-----------------------------------------------------------------------------
-void GaussQuadrature::show() const
+void GaussQuadrature::disp() const
 {
   cout << "Gauss quadrature points and weights on [-1,1] for n = " 
        << n << ":" << endl;

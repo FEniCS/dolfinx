@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-03-13
-// Last changed: 2005
+// Last changed: 2005-12-09
 
 #ifndef __LOG_STREAM_H
 #define __LOG_STREAM_H
@@ -32,7 +32,7 @@ namespace dolfin
     LogStream& operator<<(complex z);
     LogStream& operator<<(const LogStream& stream);
 
-    void show() const;
+    void disp() const;
     
   private:
     
