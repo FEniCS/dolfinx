@@ -8,7 +8,7 @@
 
 The concept of a \emph{mesh} is central in the implementation of
 adaptive Galerkin finite element methods for partial differential equations.
-Other important concepts include \emph{nodes}, \emph{cells},
+Related important concepts include \emph{vertices}, \emph{cells},
 \emph{edges}, \emph{faces}, \emph{boundaries}, and \emph{mesh hierarchies}. These 
 concepts are all implemented as C++ classes in \dolfin{}, as shown in Figure \ref{fig:meshclasses}.
 
@@ -20,27 +20,25 @@ concepts are all implemented as C++ classes in \dolfin{}, as shown in Figure \re
   \end{center}
 \end{figure}
 
+\section{Mesh iterators}
+
 Algorithms operating on a mesh, including adaptive mesh refinement,
 can often be expressed in terms of
 \emph{iterators}, i.e., objects used for the traversal of aggregate
-structures, such as the list of nodes contained in a mesh. Iterators
-implemented in \dolfin{} include a \texttt{NodeIterator},
+structures, such as the list of vertices contained in a mesh. Iterators
+implemented in \dolfin{} include a \texttt{VertexIterator},
 \texttt{CellIterator}, \texttt{Edge}\-\texttt{Iterator}, \texttt{FaceIterator},
-and a \texttt{MeshIterator}. Table \ref{tab:iterators} provides an example of a code that
-displays all node neighbors of all nodes of all cells within a
-given mesh.
-
-\begin{table}[htbp]
+and a \texttt{MeshIterator}. The following code illustrates how to
+iterate over all vertex neighbors of all vertices of all cells within a
+given mesh:
 \begin{code}
   for (CellIterator c(m); !c.end(); ++c)
-    for (NodeIterator n1(c); !n1.end(); ++n1)
-      for (NodeIterator n2(n1); !n2.end(); ++n2)
-        cout << *n2 << endl;
+    for (VertexIterator v1(c); !v1.end(); ++v1)
+      for (VertexIterator v2(n1); !v2.end(); ++v2)
+        cout << *v2 << endl;
 \end{code}
-\caption{Iteration over all node neighbors \texttt{n2} of the nodes
-\texttt{n1} within all cells \texttt{c} of the mesh \texttt{m}.}
-\label{tab:iterators}
-\end{table}
+
+\section{Mesh refinement}
 
 Adaptive mesh refinement is implemented in \dolfin{} for triangular
 meshes (in 2D) and tetrahedral meshes (in 3D), see Figure
@@ -59,7 +57,9 @@ multigrid computation, is automatically created.
   \end{center}
 \end{figure}
 
-\begin{table}
+The following example illustrates how to iterate over the \texttt{Cell}s of
+a \texttt{Mesh} to mark some \texttt{Cell}s for refinement, before refining
+the \texttt{Mesh}:
 \begin{code}
   // Mark cells for refinement
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -69,6 +69,10 @@ multigrid computation, is automatically created.
   // Refine mesh
   mesh.refine();
 \end{code}
-\caption{Sketch of adaptive mesh refinement in \dolfin{}.}
-\label{tab:refinement}
-\end{table}
+
+It is also possible to directly mark all \texttt{Cell}s for refinement
+to refine the \texttt{Mesh} uniformly:
+\begin{code}
+  // Refine all cells
+  mesh.refineUniformly();
+\end{code}
