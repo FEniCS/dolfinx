@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2005-09-21
+// Last changed: 2005-12-08
 
 #include <dolfin/Poisson.h>
 #include <dolfin/PoissonSolver.h>
@@ -33,7 +33,7 @@ void PoissonSolver::solve()
 
   // Save function to file
   Function u(x, mesh, a.trial());
-  File file("poisson.m");
+  File file("poisson.pvd");
   file << u;
 }
 //-----------------------------------------------------------------------------
