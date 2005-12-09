@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2004-2005.
 //
 // First added:  2004
-// Last changed: 2005-12-01
+// Last changed: 2005-12-09
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -36,11 +36,13 @@ void TecplotFile::operator<<(Mesh& mesh)
   fprintf(fp, "VARIABLES = ");
   if ( mesh.type() == Mesh::tetrahedra ){
 	  fprintf(fp, " X1  X2  X3 \n");
-	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", mesh.noVertices(), mesh.noCells());
+	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
+	     mesh.noVertices(), mesh.noCells());
   }
 	if ( mesh.type() == Mesh::triangles ){    
 	  fprintf(fp, " X1  X2  X3 \n");
-    fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   mesh.noVertices(), mesh.noCells());
+    fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   
+        mesh.noVertices(), mesh.noCells());
    }
 
   // Write vertex locations
@@ -70,7 +72,7 @@ void TecplotFile::operator<<(Function& u)
   FILE *fp = fopen(filename.c_str(), "a");
 	
   // Write mesh the first time
-  if ( u.number() == 0 )
+  if ( counter == 0 )
   {
 	  // Write header
     fprintf(fp, "TITLE = \"Dolfin output\"  \n");
@@ -79,9 +81,11 @@ void TecplotFile::operator<<(Function& u)
     for (uint i=0; i<u.vectordim(); ++i)  fprintf(fp, " U%d  ", i+1);	  
     fprintf(fp, "\n");	  
     if ( u.mesh().type() == Mesh::tetrahedra )
-	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
+	         u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
     if ( u.mesh().type() == Mesh::triangles )
-       fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+       fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
+            u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
 
 
     // Write vertex locations and results
@@ -106,13 +110,15 @@ void TecplotFile::operator<<(Function& u)
    }
 
   // Write data for second and subsequent times
-  if ( u.number() != 0 )
+  if ( counter != 0 )
   {
       // Write header
 	  if ( u.mesh().type() == Mesh::tetrahedra )
-      	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+      	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
+      	     u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
      if ( u.mesh().type() == Mesh::triangles )
-           fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+           fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
+              u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
 
       // Write vertex locations and results
       for (VertexIterator n(u.mesh()); !n.end(); ++n)
@@ -126,7 +132,7 @@ void TecplotFile::operator<<(Function& u)
   fclose(fp);
   
   // Increase the number of times we have saved the function
-  ++u;
+  counter++;
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Tecplot format." << endl;

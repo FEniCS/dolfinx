@@ -63,10 +63,10 @@ namespace dolfin
 
     bool check_header; // True if we have written a header
 
-    int no_frames;
-    
-    // Number of times data has been written
+    // Counters for the number of times various data has been written
     uint counter;
+    uint counter1;
+    uint counter2;
 
   };
   

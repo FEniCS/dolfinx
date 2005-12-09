@@ -104,7 +104,7 @@ void XMLFile::operator<<(Vector& x)
   fclose(fp);
   
   // Increase the number of times we have saved the vector
-  ++x;
+  counter++;;
   
   cout << "Saved vector " << x.name() << " (" << x.label()
        << ") to file " << filename << " in XML format." << endl;

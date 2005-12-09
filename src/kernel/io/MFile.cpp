@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2003-05-06
-// Last changed: 2005-12-01
+// Last changed: 2005-12-09
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -130,10 +132,10 @@ void MFile::operator<<(Mesh& mesh)
   // Close file
   fclose(fp);
 
-  // Increase the number of times we have saved the mesh
-  // FIXME: Count number of meshes saved to this file, rather
-  // than the number of times this specific mesh has been saved.
-  ++mesh;
+//  // Increase the number of times we have saved the mesh
+//  // FIXME: Count number of meshes saved to this file, rather
+//  // than the number of times this specific mesh has been saved.
+//  ++mesh;
   
   // Increase the number of meshes saved to this file
   counter++;
@@ -145,14 +147,14 @@ void MFile::operator<<(Mesh& mesh)
 void MFile::operator<<(Function& u)
 {
   // Write mesh the first time
-  if ( u.number() == 0 )
+  if ( counter1 == 0 )
     *this << u.mesh();
   
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Move old vector into list if we are saving a new value
-  if ( u.number() == 1 )
+  if ( counter1 == 1 )
   {
     fprintf(fp, "tmp = %s;\n", u.name().c_str());
     fprintf(fp, "clear %s\n", u.name().c_str());
@@ -161,25 +163,25 @@ void MFile::operator<<(Function& u)
   }
 
   // Write vector
-  if ( u.number() == 0 )
+  if ( counter1 == 0 )
   {
     fprintf(fp, "%s = [", u.name().c_str());
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
       for (VertexIterator n(u.mesh()); !n.end(); ++n)
-	fprintf(fp, " %.15f", u(*n, i));
-      fprintf(fp, ";");
+        fprintf(fp, " %.15f", u(*n, i));
+        fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
   }
   else
   {
-    fprintf(fp, "%s{%d} = [", u.name().c_str(), u.number() + 1);
+    fprintf(fp, "%s{%d} = [", u.name().c_str(), counter1 + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
       for (VertexIterator n(u.mesh()); !n.end(); ++n)
-	fprintf(fp, " %.15f", u(*n, i));
-      fprintf(fp, ";");
+        fprintf(fp, " %.15f", u(*n, i));
+        fprintf(fp, ";");
     }
     fprintf(fp, " ]';\n\n");
   }
@@ -188,7 +190,7 @@ void MFile::operator<<(Function& u)
   fclose(fp);
   
   // Increase the number of times we have saved the function
-  ++u;
+  counter1++;
 
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in Octave/Matlab format." << endl;
@@ -200,7 +202,7 @@ void MFile::operator<<(Sample& sample)
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Initialize data structures first time
-  if ( no_frames == 0 )
+  if ( counter2 == 0 )
   {
     fprintf(fp, "t = [];\n");
     fprintf(fp, "%s = [];\n", sample.name().c_str());
@@ -238,7 +240,7 @@ void MFile::operator<<(Sample& sample)
   fprintf(fp, "clear tmp;\n");
 
   // Increase frame counter
-  no_frames++;
+  counter2++;
   
   // Close file
   fclose(fp);

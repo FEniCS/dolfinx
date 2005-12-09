@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells 2005
+//
 // First added:  2003-05-06
-// Last changed: 2005-09-20
+// Last changed: 2005-12-09
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -43,7 +45,7 @@ void PythonFile::operator<<(Sample& sample)
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Open sub-files
-  if ( no_frames == 0 )
+  if ( counter2 == 0 )
   {
     // Open files (first time)
     fp_t = fopen(filename_t.c_str(), "w");
@@ -61,7 +63,7 @@ void PythonFile::operator<<(Sample& sample)
   }
 
   // Python wrapper file
-  if ( no_frames == 0 )
+  if ( counter2 == 0 )
   {
     fprintf(fp, "from Numeric import *\n");
     fprintf(fp, "from Scientific.IO.ArrayIO import *\n");
@@ -98,7 +100,7 @@ void PythonFile::operator<<(Sample& sample)
 
 
   // Increase frame counter
-  no_frames++;
+  counter2++;
   
   // Close files
   fclose(fp_t);

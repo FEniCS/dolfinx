@@ -34,7 +34,7 @@ void XMLObject::parseIntegerRequired(const xmlChar* name, const xmlChar** attrs,
     if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 ){
       
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       
       value = atoi( (char *) attrs[i+1] );
       return;
@@ -59,7 +59,7 @@ void XMLObject::parseIntegerOptional(const xmlChar* name, const xmlChar** attrs,
     // Check for attribute
     if ( xmlStrcasecmp(attrs[i], (xmlChar *) attribute) == 0 ){
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       value = atoi( (char *) attrs[i+1] );
       return;
     }
@@ -81,7 +81,7 @@ void XMLObject::parseRealRequired(const xmlChar* name, const xmlChar** attrs,
     // Check for attribute
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       value = (real) atof( (char *) attrs[i+1] );
       return;
     }
@@ -104,7 +104,7 @@ void XMLObject::parseRealOptional(const xmlChar* name, const xmlChar** attrs,
     // Check for attribute
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       value = (real) atof( (char *) attrs[i+1] );
       return;
     }
@@ -125,7 +125,7 @@ void XMLObject::parseStringRequired(const xmlChar* name, const xmlChar** attrs,
     // Check for attribute
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       value = (char *) attrs[i+1];
       return;
     }
@@ -148,7 +148,7 @@ void XMLObject::parseStringOptional(const xmlChar* name, const xmlChar** attrs,
     // Check for attribute
     if ( xmlStrcasecmp(attrs[i],(xmlChar *) attribute) == 0 ){
       if ( !attrs[i+1] )
-	dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
+        dolfin_error2("Value for attribute \"%s\" in <%s> is missing in XML file.", attribute, name);
       value = (char *) attrs[i+1];
       return;
     }

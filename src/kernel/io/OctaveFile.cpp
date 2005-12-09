@@ -59,9 +59,9 @@ void OctaveFile::operator<<(Matrix& A)
     for (uint j = 0; j < N; j++)
     {
       if ( row[j] == 0.0 )
-	fprintf(fp, " 0");
+        fprintf(fp, " 0");
       else
-	fprintf(fp, " %.15e", row[j]);
+        fprintf(fp, " %.15e", row[j]);
     }
 
     // New line or end of matrix

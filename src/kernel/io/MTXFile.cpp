@@ -178,7 +178,7 @@ void MTXFile::operator<<(Matrix& A)
     {
       if (std::abs(A(i,j) - 0.0)> DOLFIN_EPS)
       {
-	nz++;
+        nz++;
       }
     }
   }
@@ -197,7 +197,7 @@ void MTXFile::operator<<(Matrix& A)
       aij = A(i,j);
       if (std::abs(aij - 0.0)> DOLFIN_EPS)
       {
-	fprintf(f, "   %4d   %4d   %- 20.19g\n", i+1, j+1, aij);
+        fprintf(f, "   %4d   %4d   %- 20.19g\n", i+1, j+1, aij);
       }
     }
   }
