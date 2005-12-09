@@ -14,16 +14,8 @@ Poisson.form which can be compiled using the command
 
 to create the file Poisson.h included in the main program.
 
-The simple test program saves the solution in Octave/MATLAB format to
-the file poisson.m, which can be loaded into Octave or MATLAB by typing
-'poisson'. The script plotsolution.m can be used to visualize the
-solution in either Octave or MATLAB. Note that during compilation of
-DOLFIN, symbolic links are created to the scripts pdemesh.m, pdesurf.m
-and pdeplot.m. These are Octave replacements for the corresponding
-scripts in MATLAB and only work with Octave, so if you want to visualize
-the solution in MATLAB, you need to remove these symbolic links (rm
-pde*.m). Also note that you need Open Inventor to run the scripts
-(Debian-package inventor-clients).
+The simple test program saves the solution in VTK format to the file
+poisson.pvd, which can be visualized in ParaView or MayaVi.
 
 Note that there is also a ready-made Poisson solver module in DOLFIN.
 A simple demo program for this solver is available in the subdirectory
