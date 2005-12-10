@@ -45,7 +45,7 @@ class MyBC : public BoundaryCondition
 
 int main()
 {
-// Set up problem
+  // Set up problem
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
