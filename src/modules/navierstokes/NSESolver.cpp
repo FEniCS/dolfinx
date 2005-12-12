@@ -24,6 +24,8 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
+  dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
+
   real T0 = 0.0;   // start time 
   real t  = 0.0;   // current time
   real k  = 0.01;   // time step
