@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-#include <sys/utsname.h>
 #include <stdlib.h>
 
 #include <dolfin/dolfin_log.h>
