@@ -1,4 +1,5 @@
- - Don't include unistd.h
+ - Remove sysinfo.h and class System (not portable)
+ - Don't include <unistd.h>, <sys/utsname.h>
  - Change ::show() --> ::disp() everywhere
  - Clean out old quadrature classes on triangles and tetrahedra
  - Clean out old sparse matrix code

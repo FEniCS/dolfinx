@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
-#include <dolfin/System.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
@@ -81,14 +80,9 @@ void OpenDXFile::operator<<(Function& u)
 //-­---------------------------------------------------------------------------
 void OpenDXFile::writeHeader(FILE* fp)
 {
-  System system;
-
   fprintf(fp,"# Output from DOLFIN version %s.\n", DOLFIN_VERSION);
   fprintf(fp,"# Format intended for use with OpenDX (Data Explorer).\n");
   fprintf(fp,"#\n");
-  fprintf(fp,"# Saved by %s at %s\n", system.user(), date());
-  fprintf(fp,"# on %s (%s) running %s version %s.\n",
-	  system.host(), system.mach(), system.name(), system.vers());
   fprintf(fp,"\n");
 }
 //-­---------------------------------------------------------------------------

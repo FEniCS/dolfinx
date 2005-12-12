@@ -58,9 +58,9 @@ AR = ar
 ARFLAGS = cru
 libdolfin_common_a_AR = $(AR) $(ARFLAGS)
 libdolfin_common_a_LIBADD =
-am_libdolfin_common_a_OBJECTS = System.$(OBJEXT) \
-	TimeDependent.$(OBJEXT) Variable.$(OBJEXT) meminfo.$(OBJEXT) \
-	sysinfo.$(OBJEXT) timeinfo.$(OBJEXT) utils.$(OBJEXT)
+am_libdolfin_common_a_OBJECTS = TimeDependent.$(OBJEXT) \
+	Variable.$(OBJEXT) meminfo.$(OBJEXT) timeinfo.$(OBJEXT) \
+	utils.$(OBJEXT)
 libdolfin_common_a_OBJECTS = $(am_libdolfin_common_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -199,23 +199,19 @@ nobase_include_HEADERS = dolfin/dolfin_common.h \
                          dolfin/List.h \
                          dolfin/PArray.h \
                          dolfin/PList.h \
-                         dolfin/System.h \
                          dolfin/Table.h \
                          dolfin/Tensor.h \
                          dolfin/TimeDependent.h \
                          dolfin/Variable.h \
                          dolfin/meminfo.h \
-                         dolfin/sysinfo.h \
                          dolfin/timeinfo.h \
                          dolfin/utils.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-common.a
-libdolfin_common_a_SOURCES = System.cpp \
-                             TimeDependent.cpp \
+libdolfin_common_a_SOURCES = TimeDependent.cpp \
 			     Variable.cpp \
                              meminfo.cpp \
-                             sysinfo.cpp \
                              timeinfo.cpp \
                              utils.cpp
 
@@ -292,11 +288,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/System.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeDependent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Variable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/meminfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
 

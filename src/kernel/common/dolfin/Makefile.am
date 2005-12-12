@@ -8,6 +8,5 @@ EXTRA_DIST = dolfin_common.h \
              TimeDependent.h \
              Variable.h \
              meminfo.h \
-             sysinfo.h \
              timeinfo.h \
              utils.h
