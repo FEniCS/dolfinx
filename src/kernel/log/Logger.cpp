@@ -5,7 +5,6 @@
 // Last changed: 2005-09-15
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <iostream>
 

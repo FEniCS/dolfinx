@@ -2,13 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-26
-// Last changed: 2005
+// Last changed: 2005-12-11
 
 #ifndef NO_CURSES
 
 #include <sys/types.h>
 #include <signal.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <iostream>
 

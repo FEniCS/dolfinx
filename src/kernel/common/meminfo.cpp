@@ -2,10 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2005-12-11
 
 #include <sys/types.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 
