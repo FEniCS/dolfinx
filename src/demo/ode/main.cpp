@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005
+// Last changed: 2005-12-12
 
 #include <stdlib.h>
 #include <dolfin.h>
@@ -21,13 +21,13 @@ int main(int argc, char** argv)
   
   int q = atoi(argv[2]);
 
-  if ( strcasecmp(argv[1], "cg") == 0 ) {
+  if ( strcmp(argv[1], "cg") == 0 ) {
     
     cGqMethod cGq(q);
     cGq.disp();
 
   }
-  else if ( strcasecmp(argv[1], "dg") == 0 ) {
+  else if ( strcmp(argv[1], "dg") == 0 ) {
     
     dGqMethod dGq(q);
     dGq.disp();

@@ -20,19 +20,19 @@ int main(int argc, char** argv)
   
   int n = atoi(argv[2]);
 
-  if ( strcasecmp(argv[1], "gauss") == 0 ) {
+  if ( strcmp(argv[1], "gauss") == 0 ) {
     
     GaussQuadrature q(n);
     q.disp();
 
   }
-  else if ( strcasecmp(argv[1], "radau") == 0 ) {
+  else if ( strcmp(argv[1], "radau") == 0 ) {
     
     RadauQuadrature q(n);
     q.disp();
     
   } 
-  else if ( strcasecmp(argv[1], "lobatto") == 0 ) {
+  else if ( strcmp(argv[1], "lobatto") == 0 ) {
 
      LobattoQuadrature q(n);
      q.disp();

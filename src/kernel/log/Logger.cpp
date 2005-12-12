@@ -4,6 +4,7 @@
 // First added:  2003-03-13
 // Last changed: 2005-09-15
 
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <iostream>
@@ -197,12 +198,12 @@ void Logger::init(const char* destination)
     delete log;
   
   // Choose output destination
-  if ( strcasecmp(destination, "plain text") == 0 )
+  if ( strcmp(destination, "plain text") == 0 )
   {
     log = new TerminalLogger();
     return;
   }
-  else if ( strcasecmp(destination, "curses") == 0 )
+  else if ( strcmp(destination, "curses") == 0 )
   {
 #ifdef NO_CURSES
     log = new TerminalLogger();
@@ -213,7 +214,7 @@ void Logger::init(const char* destination)
     return;
 #endif
   }
-  else if ( strcasecmp(destination, "silent") == 0 )
+  else if ( strcmp(destination, "silent") == 0 )
   {
     log = new SilentLogger();
     return;
