@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-12-01
+// Last changed: 2005-12-12
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -61,7 +61,7 @@ namespace dolfin
     virtual ~Function();
 
     /// Evaluate function at given point (must be implemented for user-defined function)
-    virtual real eval(const Point& p, uint i = 0) { return (*f)(p, i); }
+    virtual real eval(const Point& p, uint i = 0);
 
     /// Evaluate function at given point
     inline real operator() (const Point& p, uint i = 0) { return (*f)(p, i); }

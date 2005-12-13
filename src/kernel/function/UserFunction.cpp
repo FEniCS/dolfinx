@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-01
+// Last changed: 2005-12-12
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -79,12 +79,7 @@ void UserFunction::interpolate(real coefficients[], AffineMap& map,
 
   // Evaluate function at interpolation points
   for (uint i = 0; i < element.spacedim(); i++)
-  {
-    // FIXME: A user-defined function which doesn't implement eval()
-    // will go into an infinite loop
-
     coefficients[i] = f->eval(local.points[i], component + local.components[i]);
-  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint UserFunction::vectordim() const

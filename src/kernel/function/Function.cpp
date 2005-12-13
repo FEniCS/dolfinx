@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2005-12-01
+// Last changed: 2005-12-12
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -76,6 +76,14 @@ Function::Function(const Function& f)
 Function::~Function()
 {
   delete f;
+}
+//-----------------------------------------------------------------------------
+real Function::eval(const Point& p, uint i)
+{
+  dolfin_info("User-defined functions must overload real Function::eval(const Point& p, uint i).");
+  dolfin_error("Missing eval() for user-defined function.");
+
+  return 0.0;
 }
 //-----------------------------------------------------------------------------
 Function Function::operator[] (const uint i)
