@@ -124,7 +124,6 @@ void ElasticityUpdatedSolver::init()
   // Set initial velocities
 
   AffineMap map;
-  v0.attach(element1);
 
   {
   int *dofs = new int[element1.spacedim()];
@@ -399,7 +398,6 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::fu()
 {
-  cout << "fu()" << endl;
   fevals++;
 
   // Compute dotu_x1, dotu_x2 and dotu_xsigma based on x1_1, x2_1 and xsigma1
@@ -455,7 +453,9 @@ void ElasticityUpdatedSolver::fu()
 
 
   // xsigma1
+  dolfin_log(false);
   FEM::assemble(Lsigma, xsigmatmp1, mesh);
+  dolfin_log(true);
   VecPointwiseMult(dotu_xsigma.vec(), xsigmatmp1.vec(), msigma.vec());
     
   dotu_xsigma.apply();
@@ -463,6 +463,7 @@ void ElasticityUpdatedSolver::fu()
   // dotu_x2
 
   // Assemble v vector
+  dolfin_log(false);
   FEM::assemble(Lv, xtmp1, mesh);
   
   // Add contact forces
@@ -472,6 +473,7 @@ void ElasticityUpdatedSolver::fu()
   VecPointwiseDivide(dotu_x2.vec(), xtmp1.vec(), m.vec());
 
   dotu_x2.apply();
+  dolfin_log(true);
 
   // Gather values into dotu
   gather(dotu_x1, dotu, dotu_x1sc);

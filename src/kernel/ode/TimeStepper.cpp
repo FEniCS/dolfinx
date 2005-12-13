@@ -91,6 +91,9 @@ real TimeStepper::step()
   // Check if this is the first time step
   const bool first = t < DOLFIN_EPS;
 
+  // Reset stopped flag
+  stopped = false;
+
   // Iterate until solution is accepted
   const real a = t;
   while ( true )

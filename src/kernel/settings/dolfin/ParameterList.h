@@ -7,6 +7,8 @@
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
 
+#include <iostream>
+
 #include <map>
 #include <stdarg.h>
 
@@ -44,8 +46,16 @@ namespace dolfin
     
   private:
 
+    struct ltstr
+    {
+      bool operator()(const char* s1, const char* s2) const
+      {
+	return strcmp(s1, s2) < 0;
+      }
+    };
+
     // Parameters stored as an STL map
-    std::map<const char*, Parameter> parameters;
+    std::map<const char*, Parameter, ltstr> parameters;
 
     // Typedef of iterator for convenience
     typedef std::map<const char*, Parameter>::iterator ParameterIterator;

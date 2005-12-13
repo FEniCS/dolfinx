@@ -95,8 +95,6 @@ public:
 int main(int argc, char **argv)
 {
   dolfin_output("plain text");
-  dolfin_set("progress step", 1.0);
-//   dolfin_output("silent");
 
   real T = 10.0;  // final time
   real k = 1.0e-2; // time step
@@ -111,6 +109,7 @@ int main(int argc, char **argv)
   dolfin_set("fixed time step", true);
   dolfin_set("initial time step", k);
   dolfin_set("maximum time step", k);
+  dolfin_set("maximum iterations", 100);
 //   dolfin_set("solver", "newton");
 
 
