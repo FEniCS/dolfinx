@@ -69,8 +69,6 @@ Input/Output
 Solvers
 -------
 
-* Fix bug in Navier-Stokes solver
-
 Multi-adaptive solver
 ---------------------
 
