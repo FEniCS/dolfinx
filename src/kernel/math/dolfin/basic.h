@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2005-12-12
 
 #ifndef __BASIC_H
 #define __BASIC_H
@@ -19,7 +19,7 @@ namespace dolfin
   real rand();
 
   /// Seed random number generator
-  void seed(int s);
+  void seed(unsigned int s);
 }
 
 #endif

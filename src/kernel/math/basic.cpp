@@ -4,10 +4,10 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2005-12-12
 
 #include <time.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <cmath>
 #include <dolfin/basic.h>
 
@@ -27,18 +27,19 @@ real dolfin::sqr(real x)
 //-----------------------------------------------------------------------------
 real dolfin::rand()
 {
-  if ( !rand_seeded ) {
-    long int seed = static_cast<long int>(time(0));
-    srand48(seed);
+  if ( !rand_seeded )
+  {
+    unsigned int s = static_cast<long int>(time(0));
+    std::srand(s);
     rand_seeded = true;
   }
   
-  return static_cast<real>(drand48());
+  return static_cast<real>(std::rand()) / static_cast<real>(RAND_MAX);
 }
 //-----------------------------------------------------------------------------
-void dolfin::seed(int s)
+void dolfin::seed(unsigned int s)
 {
-  srand48(static_cast<long int>(s));
+  std::srand(s);
   rand_seeded = true;
 }
 //-----------------------------------------------------------------------------

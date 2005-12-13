@@ -110,11 +110,19 @@ void testOutput()
   file << mesh;
 }
 
+void testRandom()
+{
+  cout << "Random numbers: ";
+  cout << dolfin::rand() << " ";
+  cout << dolfin::rand() << " ";
+  cout << dolfin::rand() << endl;
+}
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
   
-  dolfin_save("parameters.xml");
+  testRandom();
 
   return 0;
 }
