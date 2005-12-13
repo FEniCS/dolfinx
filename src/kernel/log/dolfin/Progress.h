@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-14
-// Last changed: 2005
+// Last changed: 2005-12-12
 
 #ifndef __PROGRESS_H
 #define __PROGRESS_H
@@ -20,6 +20,8 @@ namespace dolfin
     Progress(const char* title, unsigned int n);
     Progress(const char* title);
     ~Progress();
+
+    void setStep(real step);
     
     void operator=(unsigned int i);
     void operator=(real p);
@@ -34,7 +36,7 @@ namespace dolfin
     real value();
     const char* title();
     const char* label();
-    
+
   private:
     
     real checkBounds(unsigned int i);

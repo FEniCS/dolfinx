@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-11-29
+// Last changed: 2005-12-12
 //
 // This file is used for testing out new features implemented
 // in the library, which means that the contents of this file
@@ -118,11 +118,19 @@ void testRandom()
   cout << dolfin::rand() << endl;
 }
 
+void testProgress()
+{
+  Progress p("Testing progress bar", 500);
+  for (unsigned int i = 0; i < 500; i++)
+    p++;
+}
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
   
   testRandom();
+  testProgress();
 
   return 0;
 }

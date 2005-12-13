@@ -4,11 +4,10 @@
 // Thanks to Jim Tilander for many helpful hints.
 //
 // First added:  2003-03-14
-// Last changed: 2005
+// Last changed: 2005-12-12
 
 #include <stdio.h>
 
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/utils.h>
 #include <dolfin/LogManager.h>
 #include <dolfin/LoggerMacros.h>
@@ -31,7 +30,7 @@ Progress::Progress(const char* title, unsigned int n)
   p0 = 0.0;
   p1 = 0.0;
 
-  progress_step = dolfin_get("progress step");
+  progress_step = 0.1;
 
   i = 0;
   this->n = n;
@@ -56,7 +55,7 @@ Progress::Progress(const char* title)
   p0 = 0.0;
   p1 = 0.0;
 
-  progress_step = dolfin_get("progress step");
+  progress_step = 0.1;
 
   i = 0;
   n = 0;
@@ -86,6 +85,15 @@ Progress::~Progress()
   _label = 0;
 }
 //-----------------------------------------------------------------------------
+void Progress::setStep(real step)
+{
+  // We can't go through the parameter system, since the parameter system
+  // depends on the log system and the log system should not depend on the
+  // parameter system.
+
+  progress_step = step;
+}
+//-----------------------------------------------------------------------------
 void Progress::operator=(unsigned int i)
 {
   if ( n == 0 )
@@ -108,7 +116,7 @@ void Progress::operator++()
 {
   if ( n == 0 )
     dolfin_error("Cannot step progress for session with unknown number of steps.");
-  
+
   if ( i < (n-1) )
     i++;
 

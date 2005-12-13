@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-11-10
+// Last changed: 2005-12-12
 
 #ifndef __SETTINGS_H
 #define __SETTINGS_H
@@ -13,7 +13,7 @@
 
 namespace dolfin
 {
-  
+
   /// Pre-defined global parameters within DOLFIN.
 
   class Settings : public ParameterList
@@ -26,7 +26,6 @@ namespace dolfin
 
       // General parameters
 
-      add(Parameter::REAL, "progress step", 0.1);
       add(Parameter::BOOL, "save each mesh", false);
 
       // Parameters for multi-adaptive solver

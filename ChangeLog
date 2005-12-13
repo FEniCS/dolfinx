@@ -1,3 +1,4 @@
+ - Remove dependence on parameter system in log system
  - Don't use drand48() (not portable)
  - Don't use strcasecmp() (not portable)
  - Remove sysinfo.h and class System (not portable)
