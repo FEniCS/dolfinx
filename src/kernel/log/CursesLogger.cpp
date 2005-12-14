@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <iostream>
+#include <unistd.h>
 
 #include <dolfin/constants.h>
 #include <dolfin/utils.h>

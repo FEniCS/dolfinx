@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h> 
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
@@ -19,7 +20,7 @@ using namespace dolfin;
 void dolfin::meminfo()
 {
   // Get process id
-  int pid = (int) getpid();
+  int pid = (int) getpid(); 
 
   // Write values from /proc to temporary file
   char command[DOLFIN_WORDLENGTH];

@@ -116,36 +116,51 @@ class BC_Continuity : public BoundaryCondition
 // Boundary condition for momentum equation 
 class BC_Momentum_3D : public BoundaryCondition
 {
+  
   const BoundaryValue operator() (const Point& p, unsigned int i)
   {
+    real bmarg = 1.0e-3;
+
     BoundaryValue value;
     if (i==0){
-      if (fabs(p.x - 0.0) < 1.0e-3 + DOLFIN_EPS){
+      if ( p.x < (bmarg + DOLFIN_EPS)){
 	value.set(1.0);
       }      
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
 	value.set(0.0);
       }       
+      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||  
+	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
+	value.set(1.0);
+      }      
     } else if (i==1){
-      if (fabs(p.x - 0.0) < 1.0e-3 + DOLFIN_EPS){
+      if ( p.x < (bmarg + DOLFIN_EPS)){
 	value.set(0.0);
       }
-      if ( (fabs(p.y - 0.0) < 2.0e-3 + DOLFIN_EPS) || (fabs(p.y - 1.4) < 1.0e-3 + DOLFIN_EPS) ){
+      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ){
 	value.set(0.0);
       }
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
 	value.set(0.0);
       }       
+      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||
+	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
+	value.set(0.0);
+      }      
     } else if (i==2){
-      if (fabs(p.x - 0.0) < 1.0e-3 + DOLFIN_EPS){
+      if (p.x < (bmarg + DOLFIN_EPS)){
 	value.set(0.0);
       }
-      if ( (fabs(p.z - 0.0) < 1.0e-3 + DOLFIN_EPS) || (fabs(p.z - 0.4) < 1.0e-3 + DOLFIN_EPS) ){
+      if ( (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
 	value.set(0.0);
       }
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < 0.051 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
 	value.set(0.0);
       }       
+      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||
+	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
+	value.set(0.0);
+      }      
     } else{
       dolfin_error("Wrong vector component index");
     }
@@ -157,10 +172,13 @@ class BC_Momentum_3D : public BoundaryCondition
 // Boundary condition for continuity equation 
 class BC_Continuity_3D : public BoundaryCondition
 {
+
   const BoundaryValue operator() (const Point& p)
   {
+    real bmarg = 1.0e-3;
+
     BoundaryValue value;
-    if (fabs(p.x - 2.1) < 1.0e-3 + DOLFIN_EPS)
+    if (p.x > (2.1 - (bmarg + DOLFIN_EPS)))
       value.set(0.0);
     
     return value;

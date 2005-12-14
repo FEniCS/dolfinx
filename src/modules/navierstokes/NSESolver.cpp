@@ -24,13 +24,18 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
+  //  dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
 
   real T0 = 0.0;   // start time 
   real t  = 0.0;   // current time
   real k  = 0.01;   // time step
   real T  = 8.0;   // final time
   real nu = 0.001; // viscosity 
+
+  // Set time step
+  real hmin;
+  GetMinimumCellSize(mesh, hmin);  
+  k = 0.5*hmin;
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
@@ -134,11 +139,6 @@ void NSESolver::solve()
 
   // Discretize Continuity equation 
   FEM::assemble(acon, Acon, mesh);
-
-  // Set time step
-  real hmin;
-  GetMinimumCellSize(mesh, hmin);  
-  k = hmin;
 
   int time_step = 0;
   int sample = 0;
@@ -293,7 +293,7 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 {
   // Stabilization parameters 
   real C1 = 2.0;   
-  real C2 = 2.0;   
+  real C2 = 1.0;   
 
   d1vector.init(mesh.noCells());	
   d2vector.init(mesh.noCells());	
