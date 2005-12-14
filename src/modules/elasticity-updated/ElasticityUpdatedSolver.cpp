@@ -128,6 +128,7 @@ void ElasticityUpdatedSolver::init()
   {
   int *dofs = new int[element1.spacedim()];
   real *coefficients = new real[element1.spacedim()];
+
   for(CellIterator c(&mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
@@ -139,8 +140,11 @@ void ElasticityUpdatedSolver::init()
     element1.dofmap(dofs, cell, mesh);
 
     for(uint i = 0; i < element1.spacedim(); i++)
+    {
       x2_1(dofs[i]) = coefficients[i];
+    }
   }
+
   delete [] dofs;
   delete [] coefficients;
   }
@@ -465,14 +469,15 @@ void ElasticityUpdatedSolver::fu()
   // Assemble v vector
   dolfin_log(false);
   FEM::assemble(Lv, xtmp1, mesh);
-  
-  // Add contact forces
-  xtmp1.axpy(1, fcontact);
-  
   FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
-  VecPointwiseDivide(dotu_x2.vec(), xtmp1.vec(), m.vec());
 
+  VecPointwiseDivide(dotu_x2.vec(), xtmp1.vec(), m.vec());
   dotu_x2.apply();
+
+  // Add contact forces
+//   xtmp1.axpy(1, fcontact);
+  dotu_x2.axpy(1, fcontact);
+
   dolfin_log(true);
 
   // Gather values into dotu
