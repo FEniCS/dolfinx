@@ -1,9 +1,10 @@
+ - Add script monitor for monitoring memory usage
  - Remove meminfo.h (not portable)
  - Remove dependence on parameter system in log system
  - Don't use drand48() (not portable)
  - Don't use strcasecmp() (not portable)
  - Remove sysinfo.h and class System (not portable)
- - Don't include <unistd.h>, <sys/utsname.h> (not portable)
+ - Don't include <sys/utsname.h> (not portable)
  - Change ::show() --> ::disp() everywhere
  - Clean out old quadrature classes on triangles and tetrahedra
  - Clean out old sparse matrix code
