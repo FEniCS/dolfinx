@@ -7,6 +7,5 @@ EXTRA_DIST = dolfin_common.h \
              Tensor.h \
              TimeDependent.h \
              Variable.h \
-             meminfo.h \
              timeinfo.h \
              utils.h

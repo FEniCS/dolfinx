@@ -14,7 +14,6 @@
 #include <dolfin/Tensor.h>
 
 #include <dolfin/utils.h>
-#include <dolfin/meminfo.h>
 #include <dolfin/timeinfo.h>
 
 #endif
