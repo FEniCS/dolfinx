@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Copyright (C) 2005 Anders Logg.                             
+# Licensed under the GNU GPL Version 2.                                                             
+#
+# First added:  2005-12-13
+# Last changed: 2005-12-13
+#            
+# Monitor memory usage for given command. This script
+# will probably only work on Linux.
+#
+# Note that this script runs the given command as a new
+# process, so killing the script (ctrl-c) won't kill the
+# running process.
+
+exec $* &
+pid="$!"
+
+echo "Monitoring memory usage for process with id $pid..."
+PIDFILE="/proc/$pid/status"
+while [ 1 ]; do
+    if [ -e $PIDFILE ]; then
+	cat $PIDFILE | grep VmSize | awk '{ print $2/1024" MB"}'
+    else
+	exit 0
+    fi
+    sleep 1
+done
