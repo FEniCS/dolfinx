@@ -82,10 +82,10 @@ if test x$enable_optimization = xyes; then
     CXXFLAGS='-O3 -Wall -Werror -ansi -std=c++98'
 fi
 
-# Add '-U__STRICT_ANSI__'  flag if building under cygwin
+# Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
 if test `uname -o` = Cygwin; then
     echo "adding compiler flags for cygwin"
-    CXXFLAGS=$CXXFLAGS' -U__STRICT_ANSI__ '
+    CXXFLAGS=$CXXFLAGS' -Wno-uninitialized '
 fi
 
 # Add '-fPIC' for AMD 64 bit system
@@ -296,9 +296,9 @@ echo 'in the DOLFIN source tree.'
 echo '---------------------------------------------------------'
 
 # Check that the installation directory is set up correctly
-__BINDIR=`echo $prefix/bin | sed -e 's/\//-/g' -e 's/ /_/g'`
-__PATH=`echo $PATH | sed -e 's/\//-/g' -e 's/ /_/g'`
-if test $__PATH = `echo $__PATH | sed s/$__BINDIR//`; then
+__BINDIR=`echo $prefix/bin | sed -e 's/\//-/g'`
+__PATH=`echo $PATH | sed -e 's/\//-/g'`
+if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo 'Warning: installation directory is not in PATH.'
    echo ''
    echo 'To compile a program against DOLFIN (including the demos)'
