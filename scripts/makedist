@@ -53,7 +53,7 @@ MAKELOG='../make-'$VERSION'.log'
 cd $DISTDIR
 rm -f $MAKELOG
 ./configure --enable-debug >> $MAKELOG
-make all demo >& $MAKELOG
+make all install demo >& $MAKELOG
 
 # Show log
 less $MAKELOG
