@@ -52,7 +52,7 @@ echo 'Compiling in directory '$DISTDIR' (see make-'$VERSION'.log)'
 MAKELOG='../make-'$VERSION'.log'
 cd $DISTDIR
 rm -f $MAKELOG
-./configure --enable-debug >> $MAKELOG
+./configure.local --enable-debug >> $MAKELOG
 make all install demo >& $MAKELOG
 
 # Show log
