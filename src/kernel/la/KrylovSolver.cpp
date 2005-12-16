@@ -75,7 +75,9 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Set Krylov method and preconditioner
   KSPType ksp_type;
   ksp_type = getType(solver_type);
-  if(ksp_type != "default") KSPSetType(ksp, ksp_type);
+
+  if(solver_type != KrylovSolver::default_solver) 
+    KSPSetType(ksp, ksp_type);
 
   PCType pc_type;
   pc_type = Preconditioner::getType(preconditioner_type);
@@ -90,7 +92,8 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   }
   else
   {
-    if(pc_type != "default") PCSetType(pc, pc_type);
+    if(preconditioner_type != Preconditioner::default_pc) 
+      PCSetType(pc, pc_type);
   }
  
   // Solve linear system
