@@ -296,8 +296,8 @@ echo 'in the DOLFIN source tree.'
 echo '---------------------------------------------------------'
 
 # Check that the installation directory is set up correctly
-__BINDIR=`echo $prefix/bin | sed 's/\//-/g'`
-__PATH=`echo $PATH | sed 's/\//-/g'`
+__BINDIR=`echo $prefix/bin | sed -e 's/\//-/g' -e 's/ /_/g'`
+__PATH=`echo $PATH | sed -e 's/\//-/g' -e 's/ /_/g'`
 if test $__PATH = `echo $__PATH | sed s/$__BINDIR//`; then
    echo 'Warning: installation directory is not in PATH.'
    echo ''
