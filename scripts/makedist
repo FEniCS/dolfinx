@@ -53,6 +53,7 @@ MAKELOG='../make-'$VERSION'.log'
 cd $DISTDIR
 rm -f $MAKELOG
 ./configure.local --enable-debug >> $MAKELOG
+export PATH=`pwd`"/local/bin:$PATH"
 make all install demo >& $MAKELOG
 
 # Show log
