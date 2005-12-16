@@ -13,23 +13,23 @@ fi
 
 echo '- Edit configure.ac with new version number'
 sleep 1
-/usr/bin/nano configure.ac
+emacs -nw configure.ac
 
 echo '- Edit ChangeLog'
 sleep 1
-/usr/bin/nano ChangeLog
+emacs -nw ChangeLog
 
-echo '- Recompiling to run benchmark problems'
-sleep 1
-scripts/preconfigure
-./configure --enable-optimization
-make clean
-make
-make demo
+#echo '- Recompiling to run benchmark problems'
+#sleep 1
+#scripts/preconfigure
+#./configure --enable-optimization
+#make clean
+#make
+#make demo
 
-echo '- Running DOLFIN benchmark problem'
-sleep 1
-src/demo/bench/la/dolfin-bench-la >> src/demo/bench/la/bench.log
+#echo '- Running DOLFIN benchmark problem'
+#sleep 1
+#src/demo/bench/la/dolfin-bench-la >> src/demo/bench/la/bench.log
 
 #echo '- Running benchmark problem for multi-adaptive solver'
 #sleep 1
