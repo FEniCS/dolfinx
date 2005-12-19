@@ -18,12 +18,12 @@ rdiff = pcg.r - pmcg.r
 uexact = zeros(shape(pcg.u), 'd')
 #uexact = sin(pcg.t)
 
-uexact[:, 0] = sin(pcg.t)
-uexact[:, 1] = cos(pcg.t)
+#uexact[:, 0] = sin(pcg.t)
+#uexact[:, 1] = cos(pcg.t)
 #uexact[:, 2] = 0.0
 
-#uexact[:, 0] = 0.5 * pow(pcg.t, 2)
-#uexact[:, 1] = pcg.t
+uexact[:, 0] = 0.25 * pow(pcg.t, 4)
+uexact[:, 1] = 0.0
 
 e_cg = uexact - pcg.u
 e_mcg = uexact - pmcg.u

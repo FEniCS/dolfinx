@@ -45,6 +45,16 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
       f0[i] = ode.f(u0, 0.0, i);
   }
 
+  // Initialize kmax, rmax
+  kmax = new real[N];
+  rmax = new real[N];
+  krmax = new real[N];
+
+  // Initialize local array for quadrature
+  ftmp = new real[method->qsize()];
+  for (unsigned int i = 0; i < method->qsize(); i++)
+    ftmp[i] = 0.0;
+
   // Initialize transpose of dependencies if necessary
   dolfin_info("Computing transpose (inverse) of dependency pattern.");
   if ( ode.dependencies.sparse() && !ode.transpose.sparse() )
@@ -281,54 +291,58 @@ real MultiAdaptiveTimeSlab::ksample(uint i, real t)
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 {
-  // Note that the residual is always sampled at the end-time
+//   // Note that the residual is always sampled at the end-time
 
-  // Cover end time
-  coverTime(_b);
+//   // Cover end time
+//   coverTime(_b);
   
-  // Update the solution vector at the end time for each dependent component
+//   // Update the solution vector at the end time for each dependent component
 
-  // Get list of dependencies for component
-  const Array<uint>& deps = ode.dependencies[i];
+//   // Get list of dependencies for component
+//   const Array<uint>& deps = ode.dependencies[i];
 
-  // Iterate over dependencies
-  for (uint pos = 0; pos < deps.size(); pos++)
-  {
-    // Get last element of component
-    const int e = elast[pos];
-    dolfin_assert(e != -1);
-    dolfin_assert(sb[es[e]] == _b);
+//   // Iterate over dependencies
+//   for (uint pos = 0; pos < deps.size(); pos++)
+//   {
+//     // Get last element of component
+//     const int e = elast[pos];
+//     dolfin_assert(e != -1);
+//     dolfin_assert(sb[es[e]] == _b);
     
-    // Get end-time value of component
-    const int j = e * method->nsize();
-    u[pos] = jx[j + method->nsize() - 1];
-  }
+//     // Get end-time value of component
+//     const int j = e * method->nsize();
+//     u[pos] = jx[j + method->nsize() - 1];
+//   }
 
-  // Compute residual
+//   // Compute residual
 
-  // Get last element of component
-  const int e = elast[i];
-  dolfin_assert(e != -1);
+//   // Get last element of component
+//   const int e = elast[i];
+//   dolfin_assert(e != -1);
     
-  // Get element data
-  const uint s = es[e];
-  const uint j = e * method->nsize();
-  const real a = sa[s];
-  const real b = sb[s];
-  const real k = b - a;
+//   // Get element data
+//   const uint s = es[e];
+//   const uint j = e * method->nsize();
+//   const real a = sa[s];
+//   const real b = sb[s];
+//   const real k = b - a;
     
-  // Get initial value for element (only necessary for cG)
-  const int ep = ee[e];
-  const uint jp = ep * method->nsize();
-  const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
+//   // Get initial value for element (only necessary for cG)
+//   const int ep = ee[e];
+//   const uint jp = ep * method->nsize();
+//   const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
-  // Evaluate right-hand side at end-point (u is already updated)
-  const real f = ode.f(u, b, i);
+//   // Evaluate right-hand side at end-point (u is already updated)
+//   const real f = ode.f(u, b, i);
 
-  // Compute residual
-  const real r = method->residual(x0, jx + j, f, k);
+//   // Compute residual
+//   const real r = method->residual(x0, jx + j, f, k);
 
-  return r;
+//   return r;
+
+  computeMaxResiduals();
+
+  return rmax[i];
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptiveTimeSlab::disp() const
@@ -1091,5 +1105,76 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   }
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptiveTimeSlab::computeMaxResiduals()
+{
+  // The time slab
+  MultiAdaptiveTimeSlab& ts = *this;
+
+  // Reset dof
+  uint j = 0;
+
+  // Reset elast
+  for (uint i = 0; i < ts.N; i++)
+    ts.elast[i] = -1;
+
+  // Reset kmax, rmax, krmax
+  for (uint i = 0; i < N; i++)
+  {
+    kmax[i] = 0.0;
+    rmax[i] = 0.0;
+    krmax[i] = 0.0;
+  }
+
+  // Iterate over all sub slabs
+  uint e0 = 0;
+  uint e1 = 0;
+  for (uint s = 0; s < ts.ns; s++)
+  {
+    // Cover all elements in current sub slab
+    e1 = ts.coverSlab(s, e0);
+    
+    // Get data for sub slab
+    const real a = ts.sa[s];
+    const real b = ts.sb[s];
+    const real k = b - a;
+
+    // Save current dof
+    uint j0 = j;
+
+    // Reset current dof
+    j = j0;
+
+    // Iterate over all elements in current sub slab
+    for (uint e = e0; e < e1; e++)
+    {
+      // Get element data
+      const uint i = ts.ei[e];
+
+      // Get initial value for element
+      const int ep = ts.ee[e];
+      const real x0 = ( ep != -1 ? ts.jx[ep*method->nsize() + method->nsize() - 1] : ts.u0[i] );
+      
+      // Evaluate right-hand side at quadrature points of element
+      if ( method->type() == Method::cG )
+	ts.cGfeval(ftmp, s, e, i, a, b, k);
+      else
+	ts.dGfeval(ftmp, s, e, i, a, b, k);
+
+      const real r = method->residual(x0, ts.jx + j, ftmp[method->nsize()], k);
+
+      rmax[i] = std::max(rmax[i], fabs(r));
+      kmax[i] = std::max(kmax[i], k);
+      krmax[i] = std::max(krmax[i], k * r);
+      
+      // Update dof
+      j += method->nsize();
+    }
+
+    // Step to next sub slab
+    e0 = e1;
+
+  }
 }
 //-----------------------------------------------------------------------------

@@ -48,11 +48,11 @@ public:
   {
     if(i == 0)
     {
-      return 5e-2;
+      return 4e-2;
     }
     else if(i == 1)
     {
-      return 5e-2;
+      return 1e-1;
     }
     else
     {
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   dolfin_set("solver", "fixed-point");
   dolfin_set("order", 1);
 
-  real tol = 1.0e-8;
+  real tol = 1.0e-4;
 
   if(method == "cg")
     dolfin_set("tolerance", tol);
@@ -88,16 +88,19 @@ int main(int argc, char* argv[])
     dolfin_set("tolerance", tol);
   //   dolfin_set("discrete tolerance factor", 1.0e-3);
 
-  dolfin_set("fixed time step", true);
+//   dolfin_set("fixed time step", true);
 //   dolfin_set("partitioning threshold", 1e-7);
-  dolfin_set("partitioning threshold", 1.0 - 1e-7);
-//   dolfin_set("partitioning threshold", 0.4);
+//   dolfin_set("partitioning threshold", 1.0 - 1e-7);
+  dolfin_set("partitioning threshold", 0.999);
+//   dolfin_set("interval threshold", 0.9);
+  dolfin_set("interval threshold", 0.9);
 
-  dolfin_set("initial time step", 1.0e-5);
-  dolfin_set("maximum time step", 1.0e-1);
+  dolfin_set("initial time step", 5.0e-1);
+  dolfin_set("maximum time step", 5.0e-1);
 
   dolfin_set("file name", filename.c_str());
   dolfin_set("save solution", true);
+  dolfin_set("number of samples", 100);
 
   Harmonic ode;
   ode.solve();

@@ -119,6 +119,9 @@ namespace dolfin
     // Cover given time for all components
     void coverTime(real t);
 
+    // Compute maximum of all element residuals
+    void computeMaxResiduals();
+
     // Evaluate right-hand side at quadrature points of given element (cG)
     void cGfeval(real* f, uint s0, uint e0, uint i0, real a0, real b0, real k0);
 
@@ -166,6 +169,13 @@ namespace dolfin
 
     // FIXME: Not needed, do propagation in shift(), fix later when working
     real* f0tmp;                // Temporary storage for f0 when copying
+
+    real* kmax;                 // Maximum time steps in the time slab
+    real* rmax;                 // Maximum residuals in the time slab
+    real* krmax;                // Maximum local error (k*r) in the time slab
+
+    // Values of right-hand side at quadrature points
+    real* ftmp; 
 
   };
 
