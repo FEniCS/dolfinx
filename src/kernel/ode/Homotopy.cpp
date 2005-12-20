@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <stdio.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/LU.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/ComplexODE.h>
@@ -27,40 +27,40 @@ Homotopy::Homotopy(uint n)
   dolfin_info("Creating homotopy for system of size %d.", n);
   
   // We should not solve the dual problem
-  dolfin_set("solve dual problem", false);
+  set("solve dual problem", false);
 
   // System is implicit
-  dolfin_set("implicit", true);
+  set("implicit", true);
 
   // Get divergence tolerance
-  divtol = dolfin_get("homotopy divergence tolerance");
+  divtol = get("homotopy divergence tolerance");
 
   // Check if we should monitor the homotopy
-  monitor = dolfin_get("homotopy monitoring");
+  monitor = get("homotopy monitoring");
 
   // Get type of initial data (random or morgan)
-  random = dolfin_get("homotopy randomize");
+  random = get("homotopy randomize");
   if ( random )
     dolfin_info("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
-  maxiter = dolfin_get("maximum iterations");
+  maxiter = get("maximum iterations");
 
   // Get maximum number of paths
-  maxpaths = dolfin_get("homotopy maximum size");
+  maxpaths = get("homotopy maximum size");
   dolfin_info("Maximum number of homotopy paths is %d.", maxpaths);
 
   // Get maximum degree for a single equation
-  maxdegree = dolfin_get("homotopy maximum degree");
+  maxdegree = get("homotopy maximum degree");
   dolfin_info("Maximum degree for a single equations is %d.", maxdegree);
 
   // Get filename
-  filename = static_cast<std::string>(dolfin_get("homotopy solution file"));
+  filename = static_cast<std::string>(get("homotopy solution file"));
   FILE* fp = fopen(filename.c_str(), "w");
   fclose(fp);
 
   // FIXME: Maybe this should be a parameter?
-  tol = dolfin_get("homotopy solution tolerance");
+  tol = get("homotopy solution tolerance");
   
   // Choose solver
   //solver = new GMRES();
@@ -110,7 +110,7 @@ void Homotopy::solve()
 
     // Change name of output file for each path
     sprintf(filename, "primal_%d.m", m);
-    dolfin_set("file name", filename);
+    set("file name", filename);
 
     // Compute the component paths from global path number
     computePath(m);

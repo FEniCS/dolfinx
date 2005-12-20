@@ -1,5 +1,8 @@
 // Copyright (C) 2005 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
+//
+// First added:  2005
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 #include "CES.h"
@@ -197,16 +200,16 @@ void test11()
 
 int main()
 {
-  dolfin_set("method", "cg");
-  dolfin_set("order", 1);
-  dolfin_set("tolerance", 0.01);
-  dolfin_set("discrete tolerance", 1e-10);
-  dolfin_set("initial time step", 0.001);
-  //dolfin_set("linear solver", "direct");
-  dolfin_set("adaptive samples", false);
-  dolfin_set("homotopy monitoring", false);
-  dolfin_set("homotopy divergence tolerance", 10.0);
-  dolfin_set("homotopy randomize", false);
+  set("method", "cg");
+  set("order", 1);
+  set("tolerance", 0.01);
+  set("discrete tolerance", 1e-10);
+  set("initial time step", 0.001);
+  //set("linear solver", "direct");
+  set("adaptive samples", false);
+  set("homotopy monitoring", false);
+  set("homotopy divergence tolerance", 10.0);
+  set("homotopy randomize", false);
 
   // Test  1: CES test problem from Eaves and Schmedders (rational-rational form).
   // Test  2: CES test problem from Eaves and Schmedders (polynomial-rational form)

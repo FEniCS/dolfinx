@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -133,15 +133,15 @@ int main()
 {
   dolfin_output("plain text");
 
-  dolfin_set("number of samples", 500);
-  dolfin_set("solve dual problem", false);
-  dolfin_set("initial time step", 0.01);
-  dolfin_set("fixed time step", true);
-  dolfin_set("solver", "newton");
-  dolfin_set("method", "cg");
-  dolfin_set("order", 5);
-  dolfin_set("discrete tolerance", 1e-12);
-  dolfin_set("save solution", true);
+  set("number of samples", 500);
+  set("solve dual problem", false);
+  set("initial time step", 0.01);
+  set("fixed time step", true);
+  set("solver", "newton");
+  set("method", "cg");
+  set("order", 5);
+  set("discrete tolerance", 1e-12);
+  set("save solution", true);
  
   Lorenz lorenz;
   lorenz.solve();

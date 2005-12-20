@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -192,14 +192,15 @@ private:
 
 int main()
 {
-  dolfin_set("method", "mcg");
-  dolfin_set("fixed time step", true);
-  dolfin_set("discrete tolerance", 0.01);
-  dolfin_set("partitioning threshold", 0.25);
-  dolfin_set("maximum local iterations", 2);
+  // Parameters
+  set("method", "mcg");
+  set("fixed time step", true);
+  set("discrete tolerance", 0.01);
+  set("partitioning threshold", 0.25);
+  set("maximum local iterations", 2);
   
   // Uncomment this to run benchmarks
-  //dolfin_set("save solution", false);
+  //set("save solution", false);
   
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);

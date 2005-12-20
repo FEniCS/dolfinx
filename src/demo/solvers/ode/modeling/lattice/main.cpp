@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-04-08
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -302,14 +302,14 @@ private:
 
 int main()
 {
-  dolfin_set("tolerance", 0.001);
-  dolfin_set("initial time step", 0.0000001);
-  dolfin_set("solve dual problem", false);
-  dolfin_set("number of samples", 500);
-  dolfin_set("automatic modeling", true);
-  dolfin_set("average length", 0.0001);
-  dolfin_set("average samples", 100);
-  //dolfin_set("element cache size", 128);
+  set("tolerance", 0.001);
+  set("initial time step", 0.0000001);
+  set("solve dual problem", false);
+  set("number of samples", 500);
+  set("automatic modeling", true);
+  set("average length", 0.0001);
+  set("average samples", 100);
+  //set("element cache size", 128);
 
   Lattice lattice(5);
   lattice.solve();

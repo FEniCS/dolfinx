@@ -2,15 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-13
-// Last changed: 2005-09-15
+// Last changed: 2005-12-19
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <iostream>
 
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/constants.h>
+#include <dolfin/LoggerMacros.h>
 #include <dolfin/TerminalLogger.h>
 #include <dolfin/CursesLogger.h>
 #include <dolfin/SilentLogger.h>

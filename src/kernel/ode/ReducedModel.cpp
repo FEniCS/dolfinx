@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-04-04
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <cmath>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ReducedModel.h>
 
 using namespace dolfin;
@@ -16,16 +16,16 @@ ReducedModel::ReducedModel(ODE& ode)
 {
   dolfin_warning("Automatic modeling is EXPERIMENTAL.");
 
-  tau     = dolfin_get("average length");
-  samples = dolfin_get("average samples");
-  tol     = dolfin_get("average tolerance");
+  tau     = get("average length");
+  samples = get("average samples");
+  tol     = get("average tolerance");
 
   // Copy the sparsity
   //sparsity = ode.sparsity;
 
   // Adjust the maximum allowed time step to the initial time step
-  real kmax = dolfin_get("initial time step");
-  dolfin_set("maximum time step", kmax);
+  real kmax = get("initial time step");
+  set("maximum time step", kmax);
 }
 //-----------------------------------------------------------------------------
 ReducedModel::~ReducedModel()

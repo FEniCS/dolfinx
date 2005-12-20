@@ -2,10 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/Homotopy.h>
 #include <dolfin/HomotopyODE.h>
 

@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-09-15
+// Last changed: 2005-12-19
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/ODESolver.h>
@@ -47,7 +47,7 @@ void ODESolver::solve(ODE& ode, Function& u)
 void ODESolver::solve(ODE& ode)
 {
   // Check if we should solve the dual problem
-  bool solve_dual = dolfin_get("solve dual problem");
+  bool solve_dual = get("solve dual problem");
 
   dolfin_begin("Solving ODE");  
 
@@ -94,7 +94,7 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   phi.rename("phi", "dual");
   
   // Solve dual problem
-  if ( dolfin_get("use new ode solver") )
+  if ( get("use new ode solver") )
     TimeStepper::solve(ode);
   else
     TimeStepper::solve(dual, phi);

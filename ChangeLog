@@ -1,3 +1,4 @@
+ - Redesign of parameter system
 0.5.11
  - Add script monitor for monitoring memory usage
  - Remove meminfo.h (not portable)

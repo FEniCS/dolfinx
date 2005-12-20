@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-11-11
+// Last changed: 2005-12-19
 
 #include <cmath>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/TimeSlab.h>
 #include <dolfin/TimeSlabSolver.h>
 
@@ -14,25 +14,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(dolfin_get("monitor convergence")),
+    monitor(get("monitor convergence")),
     num_timeslabs(0), num_global_iterations(0), num_local_iterations(0)
 {
   // Get tolerance
-  const real TOL = dolfin_get("tolerance");
-  if ( dolfin_parameter_changed("discrete tolerance") )
-  {
-    tol = dolfin_get("discrete tolerance");
-  }
-  else
-  {
-    const real alpha = dolfin_get("discrete tolerance factor");
-    tol = alpha * TOL;
-  }
-
+  const real TOL = get("tolerance");
+  const real alpha = get("discrete tolerance factor");
+  tol = get("discrete tolerance");
+  tol = std::min(tol, alpha*TOL);
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations
-  maxiter = dolfin_get("maximum iterations");
+  maxiter = get("maximum iterations");
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()

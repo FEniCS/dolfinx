@@ -8,7 +8,6 @@
 // Last changed: 2005-12-01
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>

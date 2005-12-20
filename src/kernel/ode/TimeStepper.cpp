@@ -2,13 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-10-29
+// Last changed: 2005-12-19
 
 #include <cmath>
 #include <string>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ReducedModel.h>
 #include <dolfin/Sample.h>
@@ -21,18 +21,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), timeslab(0), file(dolfin_get("file name")),
+  ode(ode), timeslab(0), file(get("file name")),
   p("Time-stepping"), stopped(false), _finished(false),
-  save_solution(dolfin_get("save solution")),
-  solve_dual(dolfin_get("solve dual problem")),
-  adaptive_samples(dolfin_get("adaptive samples")),
-  no_samples(dolfin_get("number of samples")),
-  sample_density(dolfin_get("sample density"))
+  save_solution(get("save solution")),
+  solve_dual(get("solve dual problem")),
+  adaptive_samples(get("adaptive samples")),
+  no_samples(get("number of samples")),
+  sample_density(get("sample density"))
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
   // Create time slab
-  std::string method = dolfin_get("method");
+  std::string method = get("method");
   if ( method == "mcg" || method == "mdg" )
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);
@@ -54,7 +54,7 @@ void TimeStepper::solve(ODE& ode)
   tic();  
   
   // Check if we should create a reduced model (automatic modeling)
-  if ( dolfin_get("automatic modeling") )
+  if ( get("automatic modeling") )
   {
     dolfin_info("Creating reduced model (automatic modeling).");
     dolfin_error("Automatic modeling temporarily broken.");

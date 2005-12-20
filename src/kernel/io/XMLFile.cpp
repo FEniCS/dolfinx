@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <stdarg.h>
 
@@ -228,31 +228,31 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
-  for (ParameterList::ParameterIterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
+  for (ParameterList::iterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
   {
-    const Parameter p = it->second;
+    const Parameter parameter = it->second;
 
-    switch ( p.type )
+    switch ( parameter.type() )
     {
-    case Parameter::REAL:
-      fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
-	      p.identifier.c_str(), p.val_real);
-      break;
-    case Parameter::INT:
+    case Parameter::type_int:
       fprintf(fp, "    <parameter name=\"%s\" type=\"int\" value=\"%d\"/>\n",
-	      p.identifier.c_str(), p.val_int);
+	      it->first.c_str(), static_cast<int>(parameter));
       break;
-    case Parameter::BOOL:
-      if ( p.val_bool )
+    case Parameter::type_real:
+      fprintf(fp, "    <parameter name=\"%s\" type=\"real\" value=\"%.16e\"/>\n",
+	      it->first.c_str(), static_cast<real>(parameter));
+      break;
+    case Parameter::type_bool:
+      if ( static_cast<bool>(parameter) )
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"true\"/>\n",
-		p.identifier.c_str());
+		it->first.c_str());
       else
 	fprintf(fp, "    <parameter name=\"%s\" type=\"bool\" value=\"false\"/>\n",
-		p.identifier.c_str());
+		it->first.c_str());
       break;
-    case Parameter::STRING:
+    case Parameter::type_string:
       fprintf(fp, "    <parameter name=\"%s\" type=\"string\" value=\"%s\"/>\n",
-	      p.identifier.c_str(), p.val_string.c_str());
+	      it->first.c_str(), static_cast<std::string>(parameter).c_str());
       break;
     default:
       ; // Do nothing

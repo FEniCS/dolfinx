@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-02
+// Last changed: 2005-12-19
 
 #include <stdio.h>
 #include <string>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/cGqMethod.h>
 #include <dolfin/dGqMethod.h>
@@ -17,11 +17,11 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
   N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
-  save_final(dolfin_get("save final solution"))
+  save_final(get("save final solution"))
 {
   // Choose method
-  std::string m = dolfin_get("method");
-  int q = dolfin_get("order");
+  std::string m = get("method");
+  int q = get("order");
   if ( m == "cg" || m == "mcg" )
   {
     if ( q < 1 )
@@ -87,7 +87,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
 void TimeSlab::write(const real u[])
 {
   // FIXME: Make this a parameter?
-  string filename = "solution.data";
+  std::string filename = "solution.data";
   dolfin_info("Saving solution at final time to file \"%s\".",
 	      filename.c_str());
 

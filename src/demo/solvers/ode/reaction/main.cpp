@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-11-14
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -138,40 +138,41 @@ int main(int argc, char* argv[])
   const char* params = argv[9];
   
   // Load parameters from file
-  dolfin_load(params);
+  File file(params);
+  file >> ParameterSystem::parameters;
 
   // Set solver parameters
-  dolfin_set("method", method);
-  dolfin_set("solver", solver);
-  dolfin_set("order", 1);
-  dolfin_set("tolerance", TOL);
-  dolfin_set("initial time step", k0);
-  dolfin_set("maximum time step", kmax);
-//   dolfin_set("save solution", false);
-  dolfin_set("save final solution", true);
-//   dolfin_set("partitioning threshold", 0.7);
-//   dolfin_set("partitioning threshold", 1e-5);
+  set("method", method);
+  set("solver", solver);
+  set("order", 1);
+  set("tolerance", TOL);
+  set("initial time step", k0);
+  set("maximum time step", kmax);
+//   set("save solution", false);
+  set("save final solution", true);
+//   set("partitioning threshold", 0.7);
+//   set("partitioning threshold", 1e-5);
   
   // Need to save in Python format for plot_reaction.py to work
-  //dolfin_set("file name", "primal.py");
-  //dolfin_set("save solution", true);
+  //set("file name", "primal.py");
+  //set("save solution", true);
 
-  //dolfin_set("adaptive samples", true);
-  //dolfin_set("monitor convergence", true);
-//   dolfin_set("fixed time step", true);
-  //dolfin_set("discrete tolerance", 1e-10);
-  //dolfin_set("diagonal newton damping", true);
-  //dolfin_set("updated jacobian", true);
+  //set("adaptive samples", true);
+  //set("monitor convergence", true);
+//   set("fixed time step", true);
+  //set("discrete tolerance", 1e-10);
+  //set("diagonal newton damping", true);
+  //set("updated jacobian", true);
   
   // Uncomment to compute reference solution
   /*
-    dolfin_set("save solution", false);
-    dolfin_set("save final solution", true);
-    dolfin_set("fixed time step", true);
-    dolfin_set("initial time step", 0.0001);
-    dolfin_set("discrete tolerance", 1e-14);
-    dolfin_set("method", "cg");
-    dolfin_set("order", 3);
+    set("save solution", false);
+    set("save final solution", true);
+    set("fixed time step", true);
+    set("initial time step", 0.0001);
+    set("discrete tolerance", 1e-14);
+    set("method", "cg");
+    set("order", 3);
   */
   
   //Reaction ode(10, 3.0, 5.0, 0.01, 100.0);

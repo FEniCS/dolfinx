@@ -1,16 +1,18 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg, 2005.
+//
 // First added:  2005-10-23
 // Last changed: 2005
 
 
-#include <dolfin/NewtonSolver.h>
-#include <dolfin/Parameter.h>
-#include <dolfin/SettingsMacros.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/FEM.h>
+#include <dolfin/NewtonSolver.h>
 
 using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : KrylovSolver(), method(newton), report(true)
 {
@@ -26,9 +28,9 @@ dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L,
       BoundaryCondition& bc, Mesh& mesh, Vector& x)
 {  
 
-  uint maxit = dolfin_get("NLS Newton maximum iterations");
-  real rtol  = dolfin_get("NLS Newton relative convergence tolerance");
-  real atol  = dolfin_get("NLS Newton absolute convergence tolerance");
+  uint maxit = get("NLS Newton maximum iterations");
+  real rtol  = get("NLS Newton relative convergence tolerance");
+  real atol  = get("NLS Newton absolute convergence tolerance");
     
   dolfin_begin("Starting Newton solve.");
 
@@ -89,11 +91,11 @@ dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L,
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x)
 {
-  uint maxit = dolfin_get("NLS Newton maximum iterations");
-  real rtol  = dolfin_get("NLS Newton relative convergence tolerance");
-  real atol  = dolfin_get("NLS Newton absolute convergence tolerance");
+  uint maxit = get("NLS Newton maximum iterations");
+  real rtol  = get("NLS Newton relative convergence tolerance");
+  real atol  = get("NLS Newton absolute convergence tolerance");
   
-// FIXME: add option to compute F(u) anf J together or separately
+  // FIXME: add option to compute F(u) anf J together or separately
 
   dolfin_begin("Starting Newton solve.");
 
@@ -149,19 +151,19 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonMaxiter(uint maxiter) const
 {
-  dolfin_set("NLS Newton maximum iterations", maxiter);
+  set("NLS Newton maximum iterations", maxiter);
   dolfin_info("Maximum number of Newton iterations: %d.",maxiter);
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonRtol(real rtol) const
 {
-  dolfin_set("NLS Newton relative convergence tolerance", rtol);
+  set("NLS Newton relative convergence tolerance", rtol);
   dolfin_info("Relative increment tolerance for Newton solver: %e.", rtol);
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonAtol(real atol) const
 {
-  dolfin_set("NLS Newton absolute convergence tolerance", atol);
+  set("NLS Newton absolute convergence tolerance", atol);
   dolfin_info("Absolute increment tolerance for Newton solver: %e.", atol);
 }
 //-----------------------------------------------------------------------------

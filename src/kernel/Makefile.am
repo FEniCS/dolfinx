@@ -1,1 +1,1 @@
-SUBDIRS = common fem form function io log la math main mesh nls ode quadrature settings     
+SUBDIRS = common fem form function io log la math main mesh nls ode parameter quadrature

@@ -5,7 +5,7 @@
 // Last changed: 2005-11-11
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -20,8 +20,8 @@ MultiAdaptiveFixedPointSolver::MultiAdaptiveFixedPointSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), f(0),
     num_elements(0), num_elements_mono(0), 
-    maxiter_local(dolfin_get("maximum local iterations")),
-    diagonal_newton_damping(dolfin_get("diagonal newton damping")), dfdu(0)
+    maxiter_local(get("maximum local iterations")),
+    diagonal_newton_damping(get("diagonal newton damping")), dfdu(0)
 {
   // Initialize local array for quadrature
   f = new real[method.qsize()];

@@ -5,8 +5,8 @@
 // Last changed: 2005-12-01
 
 #include <stdio.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/timeinfo.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
 #include <dolfin/dolfin_log.h>
@@ -17,7 +17,7 @@ using namespace dolfin;
 //-­---------------------------------------------------------------------------
 OpenDXFile::OpenDXFile(const std::string filename) : 
   GenericFile(filename),
-  save_each_mesh(dolfin_get("save each mesh")),
+  save_each_mesh(get("save each mesh")),
   event_saving_mesh("Saving mesh to OpenDX file."),
   event_saving_function("Saving function to OpenDX file.")
 {

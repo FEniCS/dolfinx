@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 //#include <iostream>
 #include <sstream>
@@ -30,8 +30,8 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     T(T), counter(0), lastsample(0),
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
-    t(0.0), rtol(dolfin_get("discrete tolerance")),
-    maxiters(dolfin_get("maximum iterations")), do_plasticity(false),
+    t(0.0), rtol(get("discrete tolerance")),
+    maxiters(get("maximum iterations")), do_plasticity(false),
     yield(0.0),
     savesamplefreq(33.0),
     fevals(0),

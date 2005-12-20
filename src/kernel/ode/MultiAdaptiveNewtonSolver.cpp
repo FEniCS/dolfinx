@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2005-12-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Matrix.h>
@@ -26,7 +26,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0), mpc(timeslab, method),
     f(0), num_elements(0), num_elements_mono(0),
-    updated_jacobian(dolfin_get("updated jacobian"))
+    updated_jacobian(get("updated jacobian"))
 {
   // Initialize local array
   f = new real[method.qsize()];

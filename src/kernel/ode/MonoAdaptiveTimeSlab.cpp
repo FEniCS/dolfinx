@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-11-11
+// Last changed: 2005-12-19
 
 #include <string>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveFixedPointSolver.h>
@@ -267,8 +267,8 @@ void MonoAdaptiveTimeSlab::feval(uint m)
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = dolfin_get("implicit");
-  std::string solver = dolfin_get("solver");
+  bool implicit = get("implicit");
+  std::string solver = get("solver");
 
   if ( solver == "fixed-point" )
   {

@@ -4,10 +4,9 @@
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/Edge.h>

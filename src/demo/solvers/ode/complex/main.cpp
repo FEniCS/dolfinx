@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-03
-// Last changed: 2005
+// Last changed: 2005-12-19
 //
 // This example demonstrates the solution of a complex-valued ODE:
 // 
@@ -40,9 +40,9 @@ public:
 
 int main()
 {
-  dolfin_set("solve dual problem", false);
-  dolfin_set("method", "cg");
-  dolfin_set("order", 1);
+  set("solve dual problem", false);
+  set("method", "cg");
+  set("order", 1);
 
   Exponential exponential;
   exponential.solve();

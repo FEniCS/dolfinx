@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(libdolfin_settings_a_SOURCES)
+SOURCES = $(libdolfin_parameter_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -37,7 +37,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-subdir = src/kernel/settings
+subdir = src/kernel/parameter
 DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -58,12 +58,12 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
-libdolfin_settings_a_AR = $(AR) $(ARFLAGS)
-libdolfin_settings_a_LIBADD =
-am_libdolfin_settings_a_OBJECTS = Parameter.$(OBJEXT) \
-	ParameterList.$(OBJEXT) SettingsMacros.$(OBJEXT) \
-	SettingsManager.$(OBJEXT)
-libdolfin_settings_a_OBJECTS = $(am_libdolfin_settings_a_OBJECTS)
+libdolfin_parameter_a_AR = $(AR) $(ARFLAGS)
+libdolfin_parameter_a_LIBADD =
+am_libdolfin_parameter_a_OBJECTS = Parameter.$(OBJEXT) \
+	ParameterList.$(OBJEXT) ParameterSystem.$(OBJEXT) \
+	ParameterValue.$(OBJEXT)
+libdolfin_parameter_a_OBJECTS = $(am_libdolfin_parameter_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -72,8 +72,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(libdolfin_settings_a_SOURCES)
-DIST_SOURCES = $(libdolfin_settings_a_SOURCES)
+SOURCES = $(libdolfin_parameter_a_SOURCES)
+DIST_SOURCES = $(libdolfin_parameter_a_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -196,19 +196,18 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
-nobase_include_HEADERS = dolfin/dolfin_settings.h \
-                               dolfin/Parameter.h \
-                               dolfin/ParameterList.h \
-                               dolfin/Settings.h \
-                               dolfin/SettingsMacros.h \
-                               dolfin/SettingsManager.h
+nobase_include_HEADERS = dolfin/dolfin_parameter.h \
+                                dolfin/Parameter.h \
+                                dolfin/ParameterList.h \
+                                dolfin/ParameterSystem.h \
+                                dolfin/ParameterValue.h
 
 INCLUDES = @KERNEL_CFLAGS@
-lib_LIBRARIES = libdolfin-settings.a
-libdolfin_settings_a_SOURCES = Parameter.cpp \
-                               ParameterList.cpp \
-                               SettingsMacros.cpp \
-                               SettingsManager.cpp
+lib_LIBRARIES = libdolfin-parameter.a
+libdolfin_parameter_a_SOURCES = Parameter.cpp \
+                                ParameterList.cpp \
+                                ParameterSystem.cpp \
+                                ParameterValue.cpp
 
 all: all-recursive
 
@@ -223,9 +222,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/kernel/settings/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/kernel/parameter/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/kernel/settings/Makefile
+	  $(AUTOMAKE) --gnu  src/kernel/parameter/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -272,10 +271,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libdolfin-settings.a: $(libdolfin_settings_a_OBJECTS) $(libdolfin_settings_a_DEPENDENCIES) 
-	-rm -f libdolfin-settings.a
-	$(libdolfin_settings_a_AR) libdolfin-settings.a $(libdolfin_settings_a_OBJECTS) $(libdolfin_settings_a_LIBADD)
-	$(RANLIB) libdolfin-settings.a
+libdolfin-parameter.a: $(libdolfin_parameter_a_OBJECTS) $(libdolfin_parameter_a_DEPENDENCIES) 
+	-rm -f libdolfin-parameter.a
+	$(libdolfin_parameter_a_AR) libdolfin-parameter.a $(libdolfin_parameter_a_OBJECTS) $(libdolfin_parameter_a_LIBADD)
+	$(RANLIB) libdolfin-parameter.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -285,8 +284,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Parameter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterList.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SettingsMacros.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SettingsManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterSystem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterValue.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

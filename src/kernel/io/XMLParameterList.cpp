@@ -2,11 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <stdlib.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/ParameterList.h>
 #include <dolfin/XMLParameterList.h>
 

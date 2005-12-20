@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Dependencies.h>
@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), increment(dolfin_get("sparsity check increment")), _sparse(false)
+  N(N), increment(get("sparsity check increment")), _sparse(false)
 {
   // Use dense dependency pattern by default
   ddep.reserve(N);

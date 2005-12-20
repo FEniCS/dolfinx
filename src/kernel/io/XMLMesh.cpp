@@ -2,13 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Cell.h>
 #include <dolfin/MeshData.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/XMLMesh.h>
 
 using namespace dolfin;

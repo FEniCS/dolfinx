@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-04
+// Last changed: 2005-12-19
 
 #include <string>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Method.h>
@@ -1078,8 +1078,8 @@ void MultiAdaptiveTimeSlab::dGfeval(real* f, uint s0, uint e0, uint i0,
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = dolfin_get("implicit");
-  std::string solver = dolfin_get("solver");
+  bool implicit = get("implicit");
+  std::string solver = get("solver");
 
   if ( implicit )
     dolfin_error("Multi-adaptive solver cannot solver implicit ODEs. Use cG(q) or dG(q) instead.");

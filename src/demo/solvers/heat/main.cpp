@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  ?
-// Last changed: 2005-11-30
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
   
@@ -38,18 +38,18 @@ int main()
   MyFunction f;
   MyBC bc;
 
-  dolfin_set("method", "dg");
-  dolfin_set("order", 0);
-  dolfin_set("solver", "newton");
-  dolfin_set("tolerance", 1e-3);
+  set("method", "dg");
+  set("order", 0);
+  set("solver", "newton");
+  set("tolerance", 1e-3);
 
-  dolfin_set("fixed time step", false);
-  dolfin_set("initial time step", 1e-1);
-  dolfin_set("maximum time step", 1e6);
+  set("fixed time step", false);
+  set("initial time step", 1e-1);
+  set("maximum time step", 1e6);
 
-  dolfin_set("save solution", true);
-  dolfin_set("file name", "primal.py");
-  dolfin_set("number of samples", 400);
+  set("save solution", true);
+  set("file name", "primal.py");
+  set("number of samples", 400);
 
   real T = 10.0;
 

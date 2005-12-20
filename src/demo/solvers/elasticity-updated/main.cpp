@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -99,18 +99,18 @@ int main(int argc, char **argv)
   real T = 10.0;  // final time
   real k = 1.0e-2; // time step
 
-  dolfin_set("method", "cg");
-  dolfin_set("order", 1);
+  set("method", "cg");
+  set("order", 1);
 
-  dolfin_set("save solution", true);
-  dolfin_set("file name", "primal.py");
-  dolfin_set("number of samples", 400);
+  set("save solution", true);
+  set("file name", "primal.py");
+  set("number of samples", 400);
 
-  dolfin_set("fixed time step", true);
-  dolfin_set("initial time step", k);
-  dolfin_set("maximum time step", k);
-  dolfin_set("maximum iterations", 100);
-//   dolfin_set("solver", "newton");
+  set("fixed time step", true);
+  set("initial time step", k);
+  set("maximum time step", k);
+  set("maximum iterations", 100);
+//   set("solver", "newton");
 
 
 

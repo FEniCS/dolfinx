@@ -2,9 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-04
-// Last changed: 2005-11-04
+// Last changed: 2005-12-09
 
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Adaptivity.h>
 
 using namespace dolfin;
@@ -13,11 +13,11 @@ using namespace dolfin;
 Adaptivity::Adaptivity(const ODE& ode, const Method& method)
   : ode(ode), method(method)
 {
-  tol    = dolfin_get("tolerance");
-  _kmax  = dolfin_get("maximum time step");
-  beta   = dolfin_get("interval threshold");
-  safety = dolfin_get("safety factor");
-  kfixed = dolfin_get("fixed time step");
+  tol    = get("tolerance");
+  _kmax  = get("maximum time step");
+  beta   = get("interval threshold");
+  safety = get("safety factor");
+  kfixed = get("fixed time step");
    
   safety_old = safety;
   safety_max = safety;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-03
-// Last changed: 2005
+// Last changed: 2005-12-19
 //
 // This example demonstrates the homotopy for finding
 // all solutions of a system of polynomial equations
@@ -68,11 +68,11 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  dolfin_set("method", "cg");
-  dolfin_set("order", 1);
-  dolfin_set("tolerance", 0.05);
-  dolfin_set("homotopy monitoring", true);
-  dolfin_set("homotopy randomize", false);
+  set("method", "cg");
+  set("order", 1);
+  set("tolerance", 0.05);
+  set("homotopy monitoring", true);
+  set("homotopy randomize", false);
 
   Quadratic quadratic;
   quadratic.solve();

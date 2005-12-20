@@ -6,7 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/GMRES.h>
@@ -22,7 +22,7 @@ using namespace dolfin;
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
-    piecewise(dolfin_get("matrix piecewise constant")),
+    piecewise(get("matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise), solver(0), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
@@ -227,7 +227,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 //-----------------------------------------------------------------------------
 LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
 {
-  std::string choice = dolfin_get("linear solver");
+  std::string choice = get("linear solver");
 
   if ( choice == "iterative" )
   {

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-04-04
-// Last changed: 2005
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -49,13 +49,13 @@ private:
 
 int main()
 {
-  dolfin_set("tolerance", 0.1);
-  dolfin_set("initial time step", 0.0000000001);
-  dolfin_set("solve dual problem", false);
-  dolfin_set("number of samples", 1000);
-  dolfin_set("automatic modeling", true);
-  dolfin_set("average length", 0.0000001);
-  dolfin_set("average samples", 1000);
+  set("tolerance", 0.1);
+  set("initial time step", 0.0000000001);
+  set("solve dual problem", false);
+  set("number of samples", 1000);
+  set("automatic modeling", true);
+  set("average length", 0.0000001);
+  set("average samples", 1000);
 
   Simple simple;
   simple.solve();

@@ -2,9 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-10-24
+// Last changed: 2005-12-19
 
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODESolver.h>
 #include <dolfin/ODE.h>

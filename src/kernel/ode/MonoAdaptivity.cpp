@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-11-11
+// Last changed: 2005-12-19
 
 #include <cmath>
-#include <dolfin/dolfin_settings.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptivity.h>
@@ -17,7 +17,7 @@ MonoAdaptivity::MonoAdaptivity(const ODE& ode, const Method& method)
   : Adaptivity(ode, method), k(0)
 {
   // Specify initial time step
-  real k0 = dolfin_get("initial time step");
+  real k0 = get("initial time step");
   if ( kfixed )
   {
     k = ode.timestep(0.0, k0);

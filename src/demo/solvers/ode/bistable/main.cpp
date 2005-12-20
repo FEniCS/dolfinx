@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2004-02-29
-// Last changed: 2005-12-01
+// Last changed: 2005-12-19
 
 #include <dolfin.h>
 
@@ -77,12 +77,12 @@ private:
 
 int main()
 {
-  // Settings
-  dolfin_set("solve dual problem", false);
-  dolfin_set("maximum time step", 1.0);
-  dolfin_set("tolerance", 0.001);
-  dolfin_set("number of samples", 100);
-  dolfin_set("solver", "newton");
+  // Parameters
+  set("solve dual problem", false);
+  set("maximum time step", 1.0);
+  set("tolerance", 0.001);
+  set("number of samples", 100);
+  set("solver", "newton");
   
   // Number of refinements
   unsigned int refinements = 4;

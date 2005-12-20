@@ -1,8 +1,10 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002
-// Last changed: 2005-11-03
+// Modified by Anders Logg 2005.
+//
+// First added:  2005
+// Last changed: 2005-12-19
 
 #include <string>
 
@@ -76,31 +78,31 @@ int main(int argc, char* argv[])
 
   cout << "filename: " << filename << endl;
 
-  dolfin_set("method", method.c_str());
-  dolfin_set("solver", "fixed-point");
-  dolfin_set("order", 1);
+  set("method", method.c_str());
+  set("solver", "fixed-point");
+  set("order", 1);
 
   real tol = 1.0e-4;
 
   if(method == "cg")
-    dolfin_set("tolerance", tol);
+    set("tolerance", tol);
   else
-    dolfin_set("tolerance", tol);
-  //   dolfin_set("discrete tolerance factor", 1.0e-3);
+    set("tolerance", tol);
+  //   set("discrete tolerance factor", 1.0e-3);
 
-//   dolfin_set("fixed time step", true);
-//   dolfin_set("partitioning threshold", 1e-7);
-//   dolfin_set("partitioning threshold", 1.0 - 1e-7);
-  dolfin_set("partitioning threshold", 0.999);
-//   dolfin_set("interval threshold", 0.9);
-  dolfin_set("interval threshold", 0.9);
+//   set("fixed time step", true);
+//   set("partitioning threshold", 1e-7);
+//   set("partitioning threshold", 1.0 - 1e-7);
+  set("partitioning threshold", 0.999);
+//   set("interval threshold", 0.9);
+  set("interval threshold", 0.9);
 
-  dolfin_set("initial time step", 5.0e-1);
-  dolfin_set("maximum time step", 5.0e-1);
+  set("initial time step", 5.0e-1);
+  set("maximum time step", 5.0e-1);
 
-  dolfin_set("file name", filename.c_str());
-  dolfin_set("save solution", true);
-  dolfin_set("number of samples", 100);
+  set("file name", filename.c_str());
+  set("save solution", true);
+  set("number of samples", 100);
 
   Harmonic ode;
   ode.solve();

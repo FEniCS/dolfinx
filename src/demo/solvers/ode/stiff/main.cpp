@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2005-12-19
 //
 // Stiff test problems for the ODE solver.
 
@@ -100,15 +100,15 @@ int main(int argc, char* argv[])
   // Get the number of the test problem
   int n = atoi(argv[1]);
 
-  // DOLFIN settings
-  dolfin_set("method", "dg");
-  dolfin_set("order", 1);
-  dolfin_set("maximum time step", 1.0);
-  dolfin_set("tolerance", 0.01);
-  dolfin_set("solver", "newton");
-  dolfin_set("linear solver", "direct");
-  dolfin_set("adaptive samples", true);
-  dolfin_set("solve dual problem", false);
+  // Parameters
+  set("method", "dg");
+  set("order", 1);
+  set("maximum time step", 1.0);
+  set("tolerance", 0.01);
+  set("solver", "newton");
+  set("linear solver", "direct");
+  set("adaptive samples", true);
+  set("solve dual problem", false);
 
   // Choose test problem
   switch (n) {

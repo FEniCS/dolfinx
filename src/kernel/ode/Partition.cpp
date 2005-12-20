@@ -2,14 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2005-11-04
+// Last changed: 2005-12-19
 
 #include <algorithm>
 #include <cmath>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/dolfin_settings.h>
 #include <dolfin/dolfin_math.h>
+#include <dolfin/ParameterSystem.h>
 #include <dolfin/MultiAdaptivity.h>
 #include <dolfin/Partition.h>
 
@@ -19,7 +19,7 @@ using namespace dolfin;
 Partition::Partition(uint N) : indices(N)
 {
   // Get parameter for threshold
-  threshold = dolfin_get("partitioning threshold");
+  threshold = get("partitioning threshold");
 
   // Reset all indices
   for (uint i = 0; i < N; i++)
