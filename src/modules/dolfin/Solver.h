@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #ifndef __SOLVER_H
 #define __SOLVER_H
@@ -10,6 +10,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/Parametrized.h>
 #include <dolfin/File.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/UnitSquare.h>
@@ -34,7 +35,7 @@ namespace dolfin
   /// including all the basic functionality that is often needed to
   /// implement a solver.
   
-  class Solver
+  class Solver : public Parametrized
   {
   public:
 

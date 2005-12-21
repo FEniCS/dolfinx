@@ -88,13 +88,8 @@ o [hoffman] Navier-Stokes module
 Parameters
 ----------
 
-o Add base class for local parameters
-o Make sure parameters work with type std::string
 o Load default parameters from file
-o Collect default parameters in an appropriate place (not Settings)
-o Change from Parameter::REAL to Parameter::real etc if possible
 o Add function to display all parameters
-o Decide on proper namespace/class for parameters
 
 General
 -------
