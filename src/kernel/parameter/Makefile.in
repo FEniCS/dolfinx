@@ -62,7 +62,7 @@ libdolfin_parameter_a_AR = $(AR) $(ARFLAGS)
 libdolfin_parameter_a_LIBADD =
 am_libdolfin_parameter_a_OBJECTS = Parameter.$(OBJEXT) \
 	ParameterList.$(OBJEXT) ParameterSystem.$(OBJEXT) \
-	ParameterValue.$(OBJEXT)
+	ParameterValue.$(OBJEXT) Parametrized.$(OBJEXT)
 libdolfin_parameter_a_OBJECTS = $(am_libdolfin_parameter_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -200,14 +200,16 @@ nobase_include_HEADERS = dolfin/dolfin_parameter.h \
                                 dolfin/Parameter.h \
                                 dolfin/ParameterList.h \
                                 dolfin/ParameterSystem.h \
-                                dolfin/ParameterValue.h
+                                dolfin/ParameterValue.h \
+                                dolfin/Parametrized.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LIBRARIES = libdolfin-parameter.a
 libdolfin_parameter_a_SOURCES = Parameter.cpp \
                                 ParameterList.cpp \
                                 ParameterSystem.cpp \
-                                ParameterValue.cpp
+                                ParameterValue.cpp \
+                                Parametrized.cpp
 
 all: all-recursive
 
@@ -286,6 +288,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterSystem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ParameterValue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Parametrized.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

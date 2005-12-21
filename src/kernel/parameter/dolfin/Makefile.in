@@ -34,7 +34,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = src/kernel/parameter/dolfin
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 $(top_srcdir)/configure.ac
@@ -158,7 +158,8 @@ EXTRA_DIST = dolfin_parameter.h \
              Parameter.h \
              ParameterList.h \
              ParameterSystem.h \
-             ParameterValue.h
+             ParameterValue.h \
+             Parametrized.h
 
 all: all-am
 

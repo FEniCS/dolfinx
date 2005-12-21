@@ -228,7 +228,7 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
-  for (ParameterList::iterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
+  for (ParameterList::const_iterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
   {
     const Parameter parameter = it->second;
 

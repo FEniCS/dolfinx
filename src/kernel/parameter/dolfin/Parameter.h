@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-18
+// Last changed: 2005-12-20
 
 #ifndef __PARAMETER_H
 #define __PARAMETER_H
@@ -22,10 +22,13 @@ namespace dolfin
   public:
 
     /// Supported parameter types
-    enum Type { type_real, type_int, type_bool, type_string, type_none };
+    enum Type { type_real, type_int, type_bool, type_string };
 
     /// Create int-valued parameter
     Parameter(int value);
+
+    /// Create int-valued parameter
+    Parameter(uint value);
 
     /// Create real-valued parameter
     Parameter(real value);
@@ -36,8 +39,8 @@ namespace dolfin
     /// Create string-valued parameter
     Parameter(std::string value);
 
-    /// Create int-valued parameter from uint)
-    Parameter(uint value);
+    /// Create string-valued parameter
+    Parameter(const char* value);
 
     /// Copy constructor
     Parameter(const Parameter& parameter);
@@ -48,6 +51,9 @@ namespace dolfin
     /// Assignment of int
     const Parameter& operator= (int value);
 
+    /// Assignment of uint
+    const Parameter& operator= (uint value);
+
     /// Assignment of real
     const Parameter& operator= (real value);
 
@@ -57,11 +63,14 @@ namespace dolfin
     /// Assignment of string
     const Parameter& operator= (std::string value);
 
-    /// Assignment of uint
-    const Parameter& operator= (uint value);
+    /// Assignment of Parameter
+    const Parameter& operator= (const Parameter& parameter);
 
     /// Cast parameter to int
     operator int() const;
+
+    /// Cast parameter to uint
+    operator uint() const;
 
     /// Cast parameter to real
     operator real() const;
@@ -72,11 +81,11 @@ namespace dolfin
     /// Cast parameter to string
     operator std::string() const;
 
-    /// Cast parameter to uint
-    operator uint() const;
-
     /// Return type of parameter
     Type type() const;
+
+    /// Output
+    friend LogStream& dolfin::operator<<(LogStream& stream, const Parameter& parameter);
 
     /// Friends
     friend class XMLFile;

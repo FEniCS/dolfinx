@@ -1,3 +1,4 @@
+ - Add support for localization of parameters
  - Redesign of parameter system
 0.5.11
  - Add script monitor for monitoring memory usage

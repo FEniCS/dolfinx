@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-18
+// Last changed: 2005-12-20
 
 #ifndef __PARAMETER_LIST_H
 #define __PARAMETER_LIST_H
@@ -33,10 +33,10 @@ namespace dolfin
     void set(std::string key, Parameter value);
 
     /// Get value of parameter with given key
-    Parameter get(std::string key);
+    Parameter get(std::string key) const;
 
     /// Check if parameter with given key has been defined
-    bool defined(std::string key);
+    bool defined(std::string key) const;
 
     /// Friends
     friend class XMLFile;
@@ -44,13 +44,14 @@ namespace dolfin
   private:
 
     // Parameters stored as an STL map
-    std::map<std::string, Parameter> parameters;
+    std::map<const std::string, Parameter> parameters;
 
-    // Typedef of iterator for convenience
-    typedef std::map<std::string, Parameter>::iterator iterator;
+    // Typedef of iterators for convenience
+    typedef std::map<const std::string, Parameter>::iterator iterator;
+    typedef std::map<const std::string, Parameter>::const_iterator const_iterator;
     
     // Typedef of pair for convenience
-    typedef std::pair<std::string, Parameter> pair;
+    typedef std::pair<const std::string, Parameter> pair;
     
   };
   

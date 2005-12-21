@@ -1,4 +1,7 @@
 // Default values for the DOLFIN parameter system.
+//
+// First added:  2005-12-19
+// Last changed: 2005-12-19
 
 //--- General parameters ---
 
@@ -46,6 +49,7 @@ add("linear solver", "default");
 add("file name", "primal.m");
 
 //--- Parameters for homotopy solver ---
+
 add("homotopy maximum size", std::numeric_limits<int>::max());
 add("homotopy maximum degree", std::numeric_limits<int>::max());
 add("homotopy solution tolerance", 1e-12);
@@ -55,6 +59,7 @@ add("homotopy monitoring", false);
 add("homotopy solution file", "solution.data");
 
 //--- Parameters for nonlinear Newton solver ---
+
 add("NLS Newton absolute convergence tolerance", 1e-50);
 add("NLS Newton relative convergence tolerance", 1e-9);
 add("NLS Newton successive convergence tolerance", 1e-50);

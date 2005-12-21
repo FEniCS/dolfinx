@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -40,17 +40,17 @@ void ParameterList::set(std::string key, Parameter value)
   p->second = value;
 }
 //-----------------------------------------------------------------------------
-Parameter ParameterList::get(std::string key)
+Parameter ParameterList::get(std::string key) const
 {
-  iterator p = parameters.find(key);
-  
+  const_iterator p = parameters.find(key);
+
   if ( p == parameters.end() )
     dolfin_error1("Unknown parameter \"%s\".", key.c_str());
   
   return p->second;
 }
 //-----------------------------------------------------------------------------
-bool ParameterList::defined(std::string key)
+bool ParameterList::defined(std::string key) const
 {
   return parameters.find(key) != parameters.end();
 }

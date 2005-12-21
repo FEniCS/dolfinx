@@ -27,6 +27,9 @@ namespace dolfin
     /// Assignment of int
     virtual const ParameterValue& operator= (int value);
 
+    /// Assignment of uint
+    virtual const ParameterValue& operator= (uint value);
+
     /// Assignment of real
     virtual const ParameterValue& operator= (real value);
 
@@ -35,12 +38,12 @@ namespace dolfin
 
     /// Assignment of string
     virtual const ParameterValue& operator= (std::string value);
-
-    /// Assignment of uint
-    virtual const ParameterValue& operator= (uint value);
     
     /// Cast to int
     virtual operator int() const;
+
+    /// Cast to uint
+    virtual operator uint() const;
 
     /// Cast to real
     virtual operator real() const;
@@ -50,9 +53,6 @@ namespace dolfin
 
     /// Cast to string
     virtual operator std::string() const;
-
-    /// Cast to uint
-    virtual operator uint() const;
 
     /// Name of value type
     virtual std::string type() const = 0;

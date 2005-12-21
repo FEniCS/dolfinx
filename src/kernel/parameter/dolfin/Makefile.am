@@ -2,4 +2,5 @@ EXTRA_DIST = dolfin_parameter.h \
              Parameter.h \
              ParameterList.h \
              ParameterSystem.h \
-             ParameterValue.h
+             ParameterValue.h \
+             Parametrized.h

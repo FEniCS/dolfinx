@@ -77,10 +77,13 @@ LogStream& LogStream::operator<<(unsigned int a)
 LogStream& LogStream::operator<<(real a)
 {
   char tmp[DOLFIN_WORDLENGTH];
-  if ( fabs(a) < 1e-5 || fabs(a) > 1e5 )
+  /*
+    if ( fabs(a) < 1e-5 || fabs(a) > 1e5 )
     sprintf(tmp, "%e", a);
-  else
+    else
     sprintf(tmp, "%f", a);
+  */
+  sprintf(tmp, "%.3g", a);
   add(tmp);
   return *this;
 }
