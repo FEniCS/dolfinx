@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2005-11-01
-// Last changed: 2005-11-02
+// Last changed: 2005-12-20
 
 #include <dolfin/Heat.h>
 #include <dolfin/HeatSolver.h>
@@ -44,7 +44,7 @@ HeatSolver::HeatSolver(Mesh& mesh, Function& f, BoundaryCondition& bc, real& T)
 //-----------------------------------------------------------------------------
 void HeatSolver::solve()
 {
-  File file("heat.pvd");
+  File file(get("solution file name"));
   // Save function to file
   file << u;
 

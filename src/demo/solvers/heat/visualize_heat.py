@@ -3,7 +3,7 @@
 import mayavi
 #v = mayavi.mayavi(geometry="743x504") # create a MayaVi window.
 v = mayavi.mayavi() # create a MayaVi window.
-d = v.open_vtk_xml("heat000001.vtu", config=0) # open the data file.
+d = v.open_vtk_xml("solution000001.vtu", config=0) # open the data file.
 d.set_timestep(0)
 # The config option turns on/off showing a GUI control for the
 # data/filter/module.
@@ -32,7 +32,7 @@ v.Render()
 # Is there a cleaner way to perform sweeping through a time series?
 
 def myanim(v, d, f):
-    v.renwin.save_png('heat%4.4d.png' % d.get_timestep())
+    v.renwin.save_png('solution%4.4d.png' % d.get_timestep())
     N = len(d.get_file_list())
     i = d.get_timestep() + 1
     d.set_timestep(i % N)

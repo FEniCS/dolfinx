@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2005-12-20
 
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion.h"
@@ -25,19 +25,22 @@ void ConvectionDiffusionSolver::solve()
 {
   real t   = 0.0;  // current time
   real T   = 0.3;  // final time
-  real k   = 0.01;  // time step
-  real c   = 0.05;  // diffusion
+  real k   = 0.01; // time step
+  real c   = 0.05; // diffusion
   real tau = 1.0;  // stabilisation parameter
 
-  Matrix A;                   // matrix defining linear system
-  Vector x0, x1, b;           // vectors 
-  GMRES solver;               // linear system solver
-  Function u0(x0, mesh);      // function at left end-point
-  File file("convdiff.pvd");  // file for saving solution
+  Matrix A;              // matrix defining linear system
+  Vector x0, x1, b;      // vectors 
+  GMRES solver;          // linear system solver
+  Function u0(x0, mesh); // function at left end-point
 
-  // vectors for functions for element size and inverse of velocity norm
+  // File for saving solution
+  File file(get("solution file name"));
+  
+  // Vectors for functions for element size and inverse of velocity norm
   Vector hvector, wnorm_vector; 
-  // functions for element size and inverse of velocity norm
+
+  // Functions for element size and inverse of velocity norm
   Function h(hvector), wnorm(wnorm_vector);
 
   // Create variational forms

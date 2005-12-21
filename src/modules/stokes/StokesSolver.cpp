@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-11-30
+// Last changed: 2005-12-20
 
 #include <dolfin/Stokes.h>
 #include <dolfin/StokesSolver.h>
@@ -13,7 +13,9 @@ using namespace dolfin;
 StokesSolver::StokesSolver(Mesh& mesh, Function& f, BoundaryCondition& bc)
   : Solver(), mesh(mesh), f(f), bc(bc)
 {
-  // Do nothing
+  // Declare parameters
+  add("velocity file name", "velocity.pvd");
+  add("pressure file name", "pressure.pvd");
 }
 //-----------------------------------------------------------------------------
 void StokesSolver::solve()
@@ -39,8 +41,8 @@ void StokesSolver::solve()
   // Save the solutions to file
   u.rename("u", "velocity");
   p.rename("p", "pressure");
-  File ufile("velocity.pvd");
-  File pfile("pressure.pvd");
+  File ufile(get("velocity file name"));
+  File pfile(get("pressure file name"));
   ufile << u;
   pfile << p;
 }
