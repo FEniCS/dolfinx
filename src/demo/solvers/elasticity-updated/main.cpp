@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <dolfin.h>
 
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   set("order", 1);
 
   set("save solution", true);
-  set("file name", "primal.py");
+  set("ode solution file name", "primal.py");
   set("number of samples", 400);
 
   set("fixed time step", true);

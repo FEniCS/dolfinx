@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <dolfin.h>
 
@@ -154,7 +154,7 @@ int main(int argc, char* argv[])
 //   set("partitioning threshold", 1e-5);
   
   // Need to save in Python format for plot_reaction.py to work
-  //set("file name", "primal.py");
+  //set("ode solution file name", "primal.py");
   //set("save solution", true);
 
   //set("adaptive samples", true);

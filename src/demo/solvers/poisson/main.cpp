@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-12-15
+// Last changed: 2005-12-20
 //
 // A simple test program for the Poisson solver, solving
 //
@@ -48,10 +48,11 @@ class MyBC : public BoundaryCondition
 int main()
 {
   Mesh mesh("mesh.xml.gz");
+  mesh.refineUniformly(2);
+  
   MyFunction f;
   MyBC bc;
-  
-  mesh.refineUniformly(2);
+
   PoissonSolver::solve(mesh, f, bc);
   
   return 0;

@@ -4,7 +4,7 @@
 // Modified by Johan Jansson 2005.
 //
 // First added:  2002
-// Last changed: 2005-09-21
+// Last changed: 2005-12-20
 
 #ifndef __POISSON_SOLVER_H
 #define __POISSON_SOLVER_H

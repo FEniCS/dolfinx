@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <cmath>
 #include <string>
@@ -21,7 +21,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), timeslab(0), file(get("file name")),
+  ode(ode), timeslab(0), file(get("ode solution file name")),
   p("Time-stepping"), stopped(false), _finished(false),
   save_solution(get("save solution")),
   solve_dual(get("solve dual problem")),

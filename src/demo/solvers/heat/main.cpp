@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  ?
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <dolfin.h>
   
@@ -48,7 +48,7 @@ int main()
   set("maximum time step", 1e6);
 
   set("save solution", true);
-  set("file name", "primal.py");
+  set("ode solution file name", "primal.py");
   set("number of samples", 400);
 
   real T = 10.0;

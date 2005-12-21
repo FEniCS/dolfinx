@@ -33,7 +33,7 @@ void PoissonSolver::solve()
 
   // Save function to file
   Function u(x, mesh, a.trial());
-  File file("poisson.pvd");
+  File file(get("solution file name"));
   file << u;
 }
 //-----------------------------------------------------------------------------

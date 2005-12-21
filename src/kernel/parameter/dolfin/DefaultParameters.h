@@ -5,6 +5,10 @@
 
 //--- General parameters ---
 
+add("solution file name", "solution.pvd");
+
+//--- Parameters for input/output ---
+
 add("save each mesh", false);
 
 //--- Parameters for ODE solvers ---
@@ -46,7 +50,7 @@ add("average tolerance", 0.1);
 add("method", "cg");
 add("solver", "default");
 add("linear solver", "default");
-add("file name", "primal.m");
+add("ode solution file name", "primal.m");
 
 //--- Parameters for homotopy solver ---
 
@@ -56,7 +60,7 @@ add("homotopy solution tolerance", 1e-12);
 add("homotopy divergence tolerance", 10.0);
 add("homotopy randomize", true);
 add("homotopy monitoring", false);
-add("homotopy solution file", "solution.data");
+add("homotopy solution file name", "solution.data");
 
 //--- Parameters for nonlinear Newton solver ---
 

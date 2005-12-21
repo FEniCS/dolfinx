@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <stdio.h>
 #include <dolfin/dolfin_log.h>
@@ -55,7 +55,7 @@ Homotopy::Homotopy(uint n)
   dolfin_info("Maximum degree for a single equations is %d.", maxdegree);
 
   // Get filename
-  filename = static_cast<std::string>(get("homotopy solution file"));
+  filename = static_cast<std::string>(get("homotopy solution file name"));
   FILE* fp = fopen(filename.c_str(), "w");
   fclose(fp);
 
@@ -110,7 +110,7 @@ void Homotopy::solve()
 
     // Change name of output file for each path
     sprintf(filename, "primal_%d.m", m);
-    set("file name", filename);
+    set("ode solution file name", filename);
 
     // Compute the component paths from global path number
     computePath(m);

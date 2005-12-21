@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2005-12-20
 
 #include <string>
 
@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
   set("initial time step", 5.0e-1);
   set("maximum time step", 5.0e-1);
 
-  set("file name", filename.c_str());
+  set("ode solution file name", filename.c_str());
   set("save solution", true);
   set("number of samples", 100);
 

@@ -135,25 +135,25 @@ void testParameters()
   bar.set("parent", foo);
 
   foo.set("tolerance", 0.00007);
-  foo.set("file name", "foo.tmp");
+  foo.set("solution file name", "foo.tmp");
 
-  bar.set("file name", "bar.tmp");
+  bar.set("solution file name", "bar.tmp");
   bar.set("my parameter", "bar");
 
   cout << "global parameters:" << endl;
   cout << "  " << get("method")    << endl;
   cout << "  " << get("tolerance") << endl;
-  cout << "  " << get("file name") << endl;
+  cout << "  " << get("solution file name") << endl;
 
   cout << "parameters for foo: "       << endl;
   cout << "  " << foo.get("method")    << endl;
   cout << "  " << foo.get("tolerance") << endl;
-  cout << "  " << foo.get("file name") << endl;
+  cout << "  " << foo.get("solution file name") << endl;
 
   cout << "parameters for bar: "          << endl;
   cout << "  " << bar.get("method")       << endl;
   cout << "  " << bar.get("tolerance")    << endl;
-  cout << "  " << bar.get("file name")    << endl;
+  cout << "  " << bar.get("solution file name")    << endl;
   cout << "  " << bar.get("my parameter") << endl;
 }
 
