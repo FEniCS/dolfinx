@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-18
-// Last changed: 2005-12-19
+// Last changed: 2005-12-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterValue.h>
@@ -84,7 +84,7 @@ ParameterValue::operator std::string() const
   return "";
 }
 //-----------------------------------------------------------------------------
-ParameterValue::operator uint() const
+ParameterValue::operator dolfin::uint() const
 {
   dolfin_error1("Unable to convert parameter of type %s to uint.",
 		type().c_str());

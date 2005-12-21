@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-20
+// Last changed: 2005-12-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterValue.h>
@@ -131,7 +131,7 @@ Parameter::operator int() const
   return *value;
 }
 //-----------------------------------------------------------------------------
-Parameter::operator uint() const
+Parameter::operator dolfin::uint() const
 {
   return *value;
 }
