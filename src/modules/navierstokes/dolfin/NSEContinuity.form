@@ -24,13 +24,14 @@ f            = Function(vector)
 
 delta1       = Function(constant_scalar)        # stabilization
 
+um = mean(uc);
+
 i0 = Index()
 i1 = Index()
 i2 = Index()
 
 a = delta1*dot(grad(q), grad(p))*dx;
-L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*mean(uc[i1])*uc[i0].dx(i1)*dx 
-#L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
+L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
 
 #a = delta1*q.dx(i0)*p.dx(i0)*dx 
 #L = delta1*q.dx(i0)*f[i0]*dx - delta1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 

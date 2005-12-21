@@ -70,7 +70,7 @@ const Parameter& Parameter::operator= (int value)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Parameter& Parameter::operator= (uint value)
+const Parameter& Parameter::operator= (dolfin::uint value)
 {
   *(this->value) = value;
   return *this;

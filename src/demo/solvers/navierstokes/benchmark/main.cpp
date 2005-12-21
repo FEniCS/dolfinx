@@ -16,7 +16,19 @@
 using namespace dolfin;
 
 // Force term
-class ForceFunction : public Function
+class ForceFunction_2D : public Function
+{
+  real eval(const Point& p, unsigned int i)
+  {
+    if (i==0) return 0.0;
+    if (i==1) return 0.0;
+    dolfin_error("Wrong vector component index");
+    return 0.0;
+  }
+};
+
+// Force term
+class ForceFunction_3D : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
@@ -28,95 +40,20 @@ class ForceFunction : public Function
   }
 };
 
-// Initial solution 
-class InitialSolution : public Function
-{
-  real eval(const Point& p, unsigned int i)
-  {
-    if (i==0){
-      if (p.y < 0.2) 
-	return 5.0*p.y;
-      else           
-	return 1.0;
-    }
-    if (i==1){
-      if ( (p.y < 0.2) && (fabs(p.z-0.5) < 0.25) )
-	return - 0.05 * ( - cos(2.0*2.0*DOLFIN_PI*p.z) * sin(5.0*DOLFIN_PI*p.y) );
-      else 
-	return 0.0;
-    }  
-    if (i==2){
-      if ( (p.y < 0.2) && (fabs(p.z-0.5) < 0.25) )
-	return - 0.05 * ( - sin(2.0*2.0*DOLFIN_PI*p.z) * cos(5.0*DOLFIN_PI*p.y) );
-      else 
-	return 0.0;
-    }
-    dolfin_error("Wrong vector component index");
-    return 0.0;
-  }
-};
-
-
-/*
-// Boundary condition for momentum equation 
-class BC_Momentum : public BoundaryCondition
-{
-  const BoundaryValue operator() (const Point& p, unsigned int i)
-  {
-    BoundaryValue value;
-    if (i==0){
-      if (fabs(p.x - 0.0) < DOLFIN_EPS){
-	if (p.y < 0.2)
-	  value.set(5.0*p.y);
-	else 
-	  value.set(1.0);
-      }
-      if (fabs(p.y - 0.0) < DOLFIN_EPS)  
-	value.set(0.0);
-    } else if (i==1){
-      if (fabs(p.x - 0.0) < DOLFIN_EPS){
-	if ( (p.y < 0.2) && (fabs(p.z-0.5) < 0.25) )
-	  value.set(- 0.05 * ( - cos(2.0*2.0*DOLFIN_PI*p.z) * sin(5.0*DOLFIN_PI*p.y) ));
-	else 
-	  value.set(0.0);
-      }
-      if ( (fabs(p.y - 0.0) < DOLFIN_EPS) || (fabs(p.y - 1.0) < DOLFIN_EPS) ) 
-	value.set(0.0);
-    } else if (i==2){
-      if (fabs(p.x - 0.0) < DOLFIN_EPS){
-	if ( (p.y < 0.2) && (fabs(p.z-0.5) < 0.25) )
-	  value.set(- 0.05 * ( - sin(2.0*2.0*DOLFIN_PI*p.z) * cos(5.0*DOLFIN_PI*p.y) ));
-	else 
-	  value.set(0.0);
-      }
-      if ( (fabs(p.z - 0.0) < DOLFIN_EPS) || (fabs(p.z - 1.0) < DOLFIN_EPS) ) 
-	value.set(0.0);
-    } else{
-      dolfin_error("Wrong vector component index");
-    }
-  
-    return value;
-  }
-};
-
-// Boundary condition for continuity equation 
-class BC_Continuity : public BoundaryCondition
-{
-  const BoundaryValue operator() (const Point& p)
-  {
-    BoundaryValue value;
-    if (fabs(p.x - 12.0) < DOLFIN_EPS)
-      value.set(0.0);
-    
-    return value;
-  }
-};
-*/
-
 // Boundary condition for momentum equation 
 class BC_Momentum_3D : public BoundaryCondition
 {
-  
+  // These are boundary conditions for the flow past a 
+  // circular cylinder in 3d. We use a uniform unit inflow 
+  // velocity, no slip bc on the cylinder, and slip bc 
+  // at the lateral boundaries: 
+  // 
+  // u = (u_1,u_2,u_3) = (1,0,0) at x = 0
+  // u_2 = 0 for y = 0 and y = 1.4
+  // u_3 = 0 for z = 0 and z = 0.4 
+  // u = 0 on the cylinder with radie 0.05 and center at (0.5,0.7,z)
+  // 
+
   const BoundaryValue operator() (const Point& p, unsigned int i)
   {
     real bmarg = 1.0e-3;
@@ -129,38 +66,26 @@ class BC_Momentum_3D : public BoundaryCondition
       if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
 	value.set(0.0);
       }       
-      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||  
-	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
-	value.set(1.0);
-      }      
     } else if (i==1){
-      if ( p.x < (bmarg + DOLFIN_EPS)){
+      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ){
 	value.set(0.0);
       }
-      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ){
+      if ( p.x < (bmarg + DOLFIN_EPS)){
 	value.set(0.0);
       }
       if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
 	value.set(0.0);
       }       
-      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||
-	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
-	value.set(0.0);
-      }      
     } else if (i==2){
+      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
+	value.set(0.0);
+      } 
       if (p.x < (bmarg + DOLFIN_EPS)){
 	value.set(0.0);
       }
       if ( (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
 	value.set(0.0);
       }
-      if ( sqrt(sqr(p.x - 0.5) + sqr(p.y - 0.7)) < (0.05 + (bmarg + DOLFIN_EPS))){
-	value.set(0.0);
-      }       
-      if ( (p.y < (bmarg + DOLFIN_EPS)) || (p.y > (1.4 - (bmarg + DOLFIN_EPS))) ||
-	   (p.z < (bmarg + DOLFIN_EPS)) || (p.z > (0.4 - (bmarg + DOLFIN_EPS))) ){
-	value.set(0.0);
-      }      
     } else{
       dolfin_error("Wrong vector component index");
     }
@@ -172,7 +97,13 @@ class BC_Momentum_3D : public BoundaryCondition
 // Boundary condition for continuity equation 
 class BC_Continuity_3D : public BoundaryCondition
 {
-
+  // This is an approximation of the outflow boundary condition: 
+  // 
+  // nu * du/dn - np = 0 
+  // 
+  // Assuming the viscosity nu is small, we may approximate 
+  // this boundary condition with zero pressure at outflow. 
+  
   const BoundaryValue operator() (const Point& p)
   {
     real bmarg = 1.0e-3;
@@ -188,36 +119,43 @@ class BC_Continuity_3D : public BoundaryCondition
 // Boundary condition for momentum equation 
 class BC_Momentum_2D : public BoundaryCondition
 {
-
-public:
-  BC_Momentum_2D::BC_Momentum_2D() : BoundaryCondition()
-  {
-  }
+  // These are boundary conditions for the flow past a 
+  // circular cylinder in 3d. We use a uniform unit inflow 
+  // velocity, no slip bc on the cylinder, and slip bc 
+  // at the lateral boundaries: 
+  // 
+  // u = (u_1,u_2,u_3) = (1,0,0) at x = 0
+  // u_2 = 0 for y = 0 and y = 1.4
+  // u_3 = 0 for z = 0 and z = 0.4 
+  // u = 0 on the cylinder with radie 0.05 and center at (0.5,0.7,z)
+  // 
 
   const BoundaryValue operator() (const Point& p, unsigned int i)
   {
+    real bmarg = 1.0e-3;
+
     BoundaryValue value;
     if (i==0){
-      if ( p.x < 0.0 + 0.01 + DOLFIN_EPS){
+      if ( p.x < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time()*0.125) * 6.0*p.y*(0.41-p.y) );
       } 
-      if ( p.y < 0.0 + 0.01 + DOLFIN_EPS){
+      if ( p.y < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       } 
-      if ( p.y > 0.41 - 0.01 - DOLFIN_EPS){
+      if ( p.y > 0.41 - DOLFIN_EPS - bmarg){
 	value.set(0.0);
       } 
-      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < 0.051 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < (0.05 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       }       
     } else if (i==1){
-      if ( p.y < 0.0 + 0.01 + DOLFIN_EPS){
+      if ( p.x < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       } 
-      if ( p.y > 0.41 - 0.01 - DOLFIN_EPS){
+      if ( p.y < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       } 
-      if (sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < 0.051 + DOLFIN_EPS){
+      if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < (0.05 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       }       
     } else{
@@ -231,10 +169,19 @@ public:
 // Boundary condition for continuity equation 
 class BC_Continuity_2D : public BoundaryCondition
 {
+  // This is an approximation of the outflow boundary condition: 
+  // 
+  // nu * du/dn - np = 0 
+  // 
+  // Assuming the viscosity nu is small, we may approximate 
+  // this boundary condition with zero pressure at outflow. 
+    
   const BoundaryValue operator() (const Point& p)
   {
+    real bmarg = 1.0e-3;
+
     BoundaryValue value;
-    if (fabs(p.x - 2.2) < DOLFIN_EPS){
+    if (p.x > (2.2 - DOLFIN_EPS - bmarg)){
       value.set(0.0);
     }
     
@@ -246,18 +193,18 @@ int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
 
-  //Mesh mesh("cylinder_2d_bmk.xml.gz");
-  Mesh mesh("cylinder_3d_bmk.xml.gz");
-  ForceFunction f;
-
   /*
+  Mesh mesh("cylinder_2d_bmk.xml.gz");
   BC_Momentum_2D bc_mom;
   BC_Continuity_2D bc_con;
+  ForceFunction_2D f;
   */
 
+  Mesh mesh("cylinder_3d_bmk.xml.gz");
   BC_Momentum_3D bc_mom;
   BC_Continuity_3D bc_con;
-  
+  ForceFunction_3D f;
+
   NSESolver::solve(mesh, f, bc_mom, bc_con); 
   
   return 0;

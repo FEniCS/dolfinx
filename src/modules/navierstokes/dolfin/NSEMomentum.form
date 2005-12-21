@@ -13,13 +13,13 @@ name = "NSEMomentum"
 #constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 scalar = FiniteElement("Lagrange", "tetrahedron", 1)
 vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-constant_vector = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
+#constant_vector = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 v            = BasisFunction(vector)
 u            = BasisFunction(vector)
+#um           = Function(constant_vector)
 uc           = Function(vector)
-um           = Function(constant_vector)
 u0           = Function(vector)
 f            = Function(vector)
 p            = Function(scalar)
@@ -28,6 +28,8 @@ delta2       = Function(constant_scalar)       # stabilization
 
 k            = Constant()
 nu           = Constant()
+
+um = mean(uc);
 
 i0 = Index()
 i1 = Index()

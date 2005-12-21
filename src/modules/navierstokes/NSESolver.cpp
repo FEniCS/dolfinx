@@ -21,7 +21,7 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 {
   // Do nothing
 
-  dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
+  //dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
@@ -35,7 +35,7 @@ void NSESolver::solve()
   // Set time step
   real hmin;
   GetMinimumCellSize(mesh, hmin);  
-  k = 0.5*hmin;
+  k = 0.25*hmin;
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
@@ -47,11 +47,11 @@ void NSESolver::solve()
   // Initialize velocity;
   Vector x0vel(nsd*mesh.noVertices());
   Vector xcvel(nsd*mesh.noVertices());
-  Vector xmvel(nsd*mesh.noCells());
+  //Vector xmvel(nsd*mesh.noCells());
   Vector xvel(nsd*mesh.noVertices());
   x0vel = 0.0;
   xcvel = 0.0;
-  xmvel = 0.0;
+  //xmvel = 0.0;
   xvel = 0.0;
 
   Vector xpre(mesh.noVertices());
@@ -95,7 +95,7 @@ void NSESolver::solve()
   //  Function u(xvel, mesh);   // Velocity
   Function u0(x0vel, mesh); // Velocity from previous time step 
   Function uc(xcvel, mesh); // Velocity linearized convection 
-  Function um(xmvel, mesh); // Cell mean velocity  
+  //  Function um(xmvel, mesh); // Cell mean velocity  
   Function p(xpre, mesh);   // Pressure
 
   
@@ -107,13 +107,13 @@ void NSESolver::solve()
   cout << "Create bilinear form: momentum" << endl;
 
   // Define the bilinear and linear forms
-  NSEMomentum::BilinearForm amom(uc,um,delta1,delta2,k,nu);
-  NSEMomentum::LinearForm Lmom(uc,um,u0,f,p,delta1,delta2,k,nu);
+  NSEMomentum::BilinearForm amom(uc,delta1,delta2,k,nu);
+  NSEMomentum::LinearForm Lmom(uc,u0,f,p,delta1,delta2,k,nu);
 
   cout << "Create bilinear form: continuity" << endl;
 
   NSEContinuity::BilinearForm acon(delta1);
-  NSEContinuity::LinearForm Lcon(um,uc,f,delta1);
+  NSEContinuity::LinearForm Lcon(uc,f,delta1);
 
   cout << "Create file" << endl;
 
@@ -215,7 +215,7 @@ void NSESolver::solve()
       cout << "Linear solve took: " << time_t2-time_t1 << " seconds" << endl; 
       
       xcvel = xvel;
-      ComputeMeanVelocity(xcvel,xmvel);
+      //ComputeMeanVelocity(xcvel,xmvel);
     
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
@@ -292,8 +292,8 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 				     Vector& d1vector, Vector& d2vector)
 {
   // Stabilization parameters 
-  real C1 = 2.0;   
-  real C2 = 1.0;   
+  real C1 = 4.0;   
+  real C2 = 2.0;   
 
   d1vector.init(mesh.noCells());	
   d2vector.init(mesh.noCells());	
