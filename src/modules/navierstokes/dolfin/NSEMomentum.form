@@ -7,46 +7,39 @@
 # Compile this form with FFC: ffc NSEMomentum.form.
 
 name = "NSEMomentum"
-#scalar = FiniteElement("Lagrange", "triangle", 1)
-#vector = FiniteElement("Vector Lagrange", "triangle", 1)
-#constant_vector = FiniteElement("Discontinuous vector Lagrange", "triangle", 0)
-#constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 scalar = FiniteElement("Lagrange", "tetrahedron", 1)
 vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-#constant_vector = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
-v            = BasisFunction(vector)
-u            = BasisFunction(vector)
-#um           = Function(constant_vector)
-uc           = Function(vector)
-u0           = Function(vector)
-f            = Function(vector)
-p            = Function(scalar)
-delta1       = Function(constant_scalar)       # stabilization 
-delta2       = Function(constant_scalar)       # stabilization
+v            = BasisFunction(vector)		# test basis function 
+u            = BasisFunction(vector)		# trial basis function 
+uc           = Function(vector)			# linearized velocity 
+u0           = Function(vector)			# velocity from previous time step	
+f            = Function(vector)			# force term
+p            = Function(scalar)			# pressure 
+delta1       = Function(constant_scalar)        # stabilization parameter
+delta2       = Function(constant_scalar)        # stabilization parameter 
 
-k            = Constant()
-nu           = Constant()
+k            = Constant()			# time step 
+nu           = Constant()			# viscosity 
 
-um = mean(uc);
+um = mean(uc);					# cell mean value of linearized velocity
 
-i0 = Index()
-i1 = Index()
-i2 = Index()
+i0 = Index()					# index for tensor notation 
+i1 = Index()					# index for tensor notation 
+i2 = Index()					# index for tensor notation 
 
-#G_a  = v[i0]*u[i0]*dx + k*nu*0.5*v[i0].dx(i1)*u[i0].dx(i1)*dx + 0.5*k*v[i0]*uc[i1]*u[i0].dx(i1)*dx 	
-#SD_a = delta1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u[i0].dx(i2)*dx + delta2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx  
-
-#G_L  = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx - k*nu*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - 0.5*k*v[i0]*uc[i1]*u0[i0].dx(i1)*dx 
-#SD_L = delta1*k*uc[i1]*v[i0].dx(i1)*f[i0]*dx - delta1*k*0.5*uc[i1]*v[i0].dx(i1)*uc[i2]*u0[i0].dx(i2)*dx - delta1*k*uc[i1]*v[i0].dx(i1)*p.dx(i0)*dx - delta2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
-
+# Galerkin discretization of bilinear form  
 G_a  = v[i0]*u[i0]*dx + k*nu*0.5*v[i0].dx(i1)*u[i0].dx(i1)*dx + 0.5*k*v[i0]*uc[i1]*u[i0].dx(i1)*dx 	
+# Galerkin discretization of linear form  
 SD_a = delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*u[i0].dx(i2)*dx + delta2*k*0.5*v[i0].dx(i0)*u[i1].dx(i1)*dx  
 
+# Least squares stabilization of bilinear form  
 G_L  = v[i0]*u0[i0]*dx + k*v[i0]*f[i0]*dx + k*v[i0].dx(i0)*p*dx - k*nu*0.5*v[i0].dx(i1)*u0[i0].dx(i1)*dx - 0.5*k*v[i0]*uc[i1]*u0[i0].dx(i1)*dx 
+# Least squares stabilization of linear form  
 SD_L = delta1*k*um[i1]*v[i0].dx(i1)*f[i0]*dx - delta1*k*0.5*um[i1]*v[i0].dx(i1)*um[i2]*u0[i0].dx(i2)*dx - delta1*k*um[i1]*v[i0].dx(i1)*p.dx(i0)*dx - delta2*k*0.5*v[i0].dx(i0)*u0[i1].dx(i1)*dx
 
+# Bilinear and linear forms
 a = G_a + SD_a  
 L = G_L + SD_L
 

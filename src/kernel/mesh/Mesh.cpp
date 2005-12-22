@@ -108,6 +108,21 @@ void Mesh::clear()
   _parent = 0;
 }
 //-----------------------------------------------------------------------------
+int Mesh::noSpaceDim() const
+{
+  switch ( _type ) {
+  case Mesh::triangles:
+    return 2; 
+    break;
+  case Mesh::tetrahedra:
+    return 3;
+    break;
+  default:
+    dolfin_error("Unknown mesh type");
+    return -1;
+  }
+}
+//-----------------------------------------------------------------------------
 int Mesh::noVertices() const
 {
   return md->noVertices();

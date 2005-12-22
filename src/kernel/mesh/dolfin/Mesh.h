@@ -65,6 +65,9 @@ namespace dolfin
     /// Clear mesh
     void clear();
 
+    /// Return number of space dimensions of the mesh 
+    int noSpaceDim() const;
+
     /// Return number of vertices in the mesh
     int noVertices() const;
 

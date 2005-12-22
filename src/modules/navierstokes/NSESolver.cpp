@@ -3,9 +3,10 @@
 //
 // Modified by Garth N. Wells 2005.
 // Modified by Anders Logg 2005.
+// Modified by Johan Hoffman 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-21
+// Last changed: 2005-12-22
 
 #include <dolfin/timing.h>
 #include <dolfin/NSEMomentum.h>
@@ -26,98 +27,86 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
 {
-  real T0 = 0.0;   // start time 
-  real t  = 0.0;   // current time
-  real k  = 0.01;   // time step
-  real T  = 8.0;   // final time
-  real nu = 0.001; // viscosity 
+  real T0 = 0.0;        // start time 
+  real t  = 0.0;        // current time
+  real T  = 8.0;        // final time
+  real nu = 1.0/3900.0; // viscosity 
 
-  // Set time step
+  // Set time step (proportional to the minimum cell diameter) 
   real hmin;
   GetMinimumCellSize(mesh, hmin);  
-  k = 0.25*hmin;
+  real k = 0.25*hmin; 
 
   // Create matrices and vectors 
   Matrix Amom, Acon;
-  //  Vector x0vel, xvel, xcvel, xpre, bmom, bcon;
   Vector bmom, bcon;
 
-  int nsd = 3;
+  // Get the number of space dimensions of the problem 
+  int nsd = mesh.noSpaceDim();
 
-  // Initialize velocity;
+  dolfin_info("Number of space dimensions: %d",nsd);
+
+  // Initialize vectors for velocity and pressure 
+  // x0vel: velocity from previous time step 
+  // xcvel: linearized velocity 
+  // xvel:  current velocity 
+  // pvel:  current pressure 
   Vector x0vel(nsd*mesh.noVertices());
   Vector xcvel(nsd*mesh.noVertices());
-  //Vector xmvel(nsd*mesh.noCells());
   Vector xvel(nsd*mesh.noVertices());
+  Vector xpre(mesh.noVertices());
   x0vel = 0.0;
   xcvel = 0.0;
-  //xmvel = 0.0;
   xvel = 0.0;
-
-  Vector xpre(mesh.noVertices());
   xpre = 0.0;
 
+  // Initialize vectors for the residuals of 
+  // the momentum and continuity equations  
   Vector residual_mom(nsd*mesh.noVertices());
   Vector residual_con(mesh.noVertices());
   residual_mom = 1.0e3;
   residual_con = 1.0e3;
 
+  // Initialize algebraic solvers 
   GMRES solver_con;
   GMRES solver_mom;
 
+  // Get PETSc PC (preconditioner) object 
   KSP ksp_con = solver_con.solver();
   PC pc;
   KSPGetPC(ksp_con,&pc);
 
-  // Check that PETSc was compiled with HYPRE
+  // Check if PETSc was compiled with HYPRE
   #ifdef PETSC_HAVE_HYPRE
     PCSetType(pc,PCHYPRE);
     PCHYPRESetType(pc,"boomeramg");
   #else
     dolfin_warning("PETSc has not been compiled with the HYPRE library for "
-                   "algerbraic multigrid. Navier Stokes module will use the "
-                   "GMRES solver for the continuity equation. For performance " 
-                   "installation of HYPRE is recommended. See the DOLFIN user " 
-                   "manual. ");
+		   "algerbraic multigrid. Navier Stokes module will use the "
+		   "GMRES solver for the continuity equation. For performance " 
+	  	   "installation of HYPRE is recommended. See the DOLFIN user " 
+		   "manual. ");
   #endif
-    
-  /*
-  solver_con.setRtol(1.0e-10);
-  solver_con.setAtol(1.0e-10);
-
-  solver_mom.setRtol(1.0e-10);
-  solver_mom.setAtol(1.0e-10);
-  */
-
-  cout << "Create functions" << endl;
   
-  // Create functions
-  //  Function u(xvel, mesh);   // Velocity
-  Function u0(x0vel, mesh); // Velocity from previous time step 
-  Function uc(xcvel, mesh); // Velocity linearized convection 
-  //  Function um(xmvel, mesh); // Cell mean velocity  
-  Function p(xpre, mesh);   // Pressure
+  // Create functions for the velocity and pressure 
+  // (needed for the initialization of the forms)
+  Function u0(x0vel, mesh); // velocity from previous time step 
+  Function uc(xcvel, mesh); // velocity linearized convection 
+  Function p(xpre, mesh);   // current pressure
 
-  
-  
-  // vectors for functions for stabilization 
+  // Initialize stabilization parameters 
   Vector d1vector, d2vector;
   Function delta1(d1vector), delta2(d2vector);
 
-  cout << "Create bilinear form: momentum" << endl;
-
-  // Define the bilinear and linear forms
+  // Initialize the bilinear and linear forms
   NSEMomentum::BilinearForm amom(uc,delta1,delta2,k,nu);
   NSEMomentum::LinearForm Lmom(uc,u0,f,p,delta1,delta2,k,nu);
-
-  cout << "Create bilinear form: continuity" << endl;
-
   NSEContinuity::BilinearForm acon(delta1);
   NSEContinuity::LinearForm Lcon(uc,f,delta1);
 
-  cout << "Create file" << endl;
-
-  Function u(xvel, mesh, uc.element());   // Velocity
+  // Create function for velocity 
+  // (must be done after initialization of forms)
+  Function u(xvel, mesh, uc.element());   // current velocity
 
   // Synchronise functions and boundary conditions with time
   u.sync(t);
@@ -125,16 +114,20 @@ void NSESolver::solve()
   bc_con.sync(t);
   bc_mom.sync(t);
     
-  File file_u(get("velocity file name")); // file for saving velocity 
+  // Initialize output files 
+  File file_u(get("velocity file name"));  // file for saving velocity 
   File file_p(get("pressure file name"));  // file for saving pressure
 
-  cout << "Assemble form: continuity" << endl;
-
+  // Compute stabilization parameters
   ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
 
-  // Discretize Continuity equation 
-  FEM::assemble(acon, Acon, mesh);
+  dolfin_info("Assembling matrix: continuity");
 
+  // Assembling matrices 
+  FEM::assemble(acon, Acon, mesh);
+  FEM::assemble(amom, Amom, mesh);
+
+  // Initialize time-stepping parameters
   int time_step = 0;
   int sample = 0;
   int no_samples = 10;
@@ -145,99 +138,95 @@ void NSESolver::solve()
   {
 
     time_step++;
-    cout << "Starting time step " << time_step << endl;
-    
+    dolfin_info("Time step %d",time_step);
+
+    // Set current velocity to velocity at previous time step 
     x0vel = xvel;
 
+    // Compute stabilization parameters
     ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
 
+    // Initialize residuals 
     residual_mom = 1.0e3;
     residual_con = 1.0e3;
 
-    //for (int i=0;i<10;i++){
+    // Fix-point iteration for non-linear problem 
     while (sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) > 1.0e-2){
+      
+      dolfin_info("Assemble vector: continuity");
 
-      cout << "Assemble form: continuity" << endl;
-
-      // Discretize Continuity equation 
+      // Assemble continuity vector 
       FEM::assemble(Lcon, bcon, mesh);
 
-      cout << "Set boundary conditions: continuity" << endl;
-
-      // Set boundary conditions
+      // Set boundary conditions for continuity equation 
       FEM::applyBC(Acon, bcon, mesh, acon.trial(), bc_con);
 
-      cout << "Solve linear system" << endl;
+      dolfin_info("Solve linear system: continuity");
 
-      // Solve the linear system
+      // Solve the linear system for the continuity equation 
       tic();
       solver_con.solve(Acon, xpre, bcon);
-      cout << "Linear solve took: " << toc() << " seconds" << endl; 
 
-      cout << "Assemble form: momentum" << endl;      
+      dolfin_info("Linear solve took %d seconds",toc());
 
-      // Discretize Momentum equations
+      dolfin_info("Assemble vector: momentum");
+
+      // Assemble momentum vector 
       tic();
-      FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
-      cout << "Assembly took: " << toc() << " seconds" << endl; 
+      FEM::assemble(Lmom, bmom, mesh);
+      dolfin_info("Assemble took %d seconds",toc());
 
-      cout << "Set boundary conditions: momentum" << endl;
-
-      // Set boundary conditions
+      // Set boundary conditions for the momentum equation 
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
 
-      cout << "Solve linear system" << endl;
+      dolfin_info("Solve linear system: momentum");
 
-      // Solve the linear system
+      // Solve the linear system for the momentum equation 
       tic();
       solver_mom.solve(Amom, xvel, bmom);
-      cout << "Linear solve took: " << toc() << " seconds" << endl; 
+      dolfin_info("Linear solve took %d seconds",toc());
       
+      // Set linearized velocity to current velocity 
       xcvel = xvel;
-      //ComputeMeanVelocity(xcvel,xmvel);
     
+      dolfin_info("Assemble matrix and vector: momentum");
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
+
+      // Compute residual for momentum equation 
       Amom.mult(xvel,residual_mom);
       residual_mom -= bmom;
       
+      dolfin_info("Assemble vector: continuity");
       FEM::assemble(Lcon, bcon, mesh);
       FEM::applyBC(Acon, bcon, mesh, acon.trial(),bc_con);
+
+      // Compute residual for continuity equation 
       Acon.mult(xpre,residual_con);
       residual_con -= bcon;
       
-      cout << "Momentum residual  : l2 norm = " << residual_mom.norm() << endl;
-      cout << "Continuity residual: l2 norm = " << residual_con.norm() << endl;
-      cout << "Total NSE residual : l2 norm = " << sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) << endl;
-
-      file_p << p;
-      file_u << u;
-
+      dolfin_info("Momentum residual  : l2 norm = %f",residual_mom.norm());
+      dolfin_info("continuity residual: l2 norm = %f",residual_con.norm());
+      dolfin_info("Total NSE residual : l2 norm = %f",sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())));
     }
 
-    //cout << "Save solution" << endl;
-
-    // Save the solution
+    dolfin_info("save solution to file");
     if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ){
       file_p << p;
       file_u << u;
       sample++;
     }
 
+    // Increase time with timestep
     t = t + k;
 
     // Update progress
     prog = t / T;
   }
 
-    cout << "Save solution" << endl;
-
-    /*
-    // Save the solution
+    dolfin_info("save solution to file");
     file_p << p;
     file_u << u;
-    */
-
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
@@ -270,7 +259,15 @@ void NSESolver::GetMinimumCellSize(Mesh& mesh, real& hmin)
 void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
 				     Vector& d1vector, Vector& d2vector)
 {
-  // Stabilization parameters 
+  // Compute least-squares stabilizing terms: 
+  //
+  // if  h/nu > 1 or ny < 10^-10
+  //   d1 = C1 * ( 0.5 / sqrt( 1/k^2 + |U|^2/h^2 ) )   
+  //   d2 = C2 * h 
+  // else 
+  //   d1 = C1 * h^2  
+  //   d2 = C2 * h^2  
+
   real C1 = 4.0;   
   real C2 = 2.0;   
 
@@ -281,7 +278,6 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
 
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    //normw = sqrt(sqr(w((*cell).midpoint(),0)) + sqr(w((*cell).midpoint(),1)));
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
       normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
@@ -293,18 +289,6 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
       d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
       d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
     }	
-  }
-}
-//-----------------------------------------------------------------------------
-void NSESolver::ComputeMeanVelocity(Vector& xnodal, Vector& xcell)
-{
-  // Compute cell mean 
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    xcell((*cell).id()) = 0.0;
-    for (VertexIterator vertex(cell); !vertex.end(); ++vertex)
-      xcell((*cell).id()) += xnodal((*vertex).id());
-    xcell((*cell).id()) = xcell((*cell).id()) / real(cell->noVertices());
   }
 }
 //-----------------------------------------------------------------------------

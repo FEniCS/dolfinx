@@ -7,34 +7,27 @@
 # Compile this form with FFC: ffc NSEContinuity.form.
 
 name = "NSEContinuity"
-#scalar = FiniteElement("Lagrange", "triangle", 1)
-#vector = FiniteElement("Vector Lagrange", "triangle", 1)
-#constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
-#constant_vector = FiniteElement("Discontinuous vector Lagrange", "triangle", 0)
 scalar = FiniteElement("Lagrange", "tetrahedron", 1)
 vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-#constant_vector = FiniteElement("Discontinuous vector Lagrange", "tetrahedron", 0)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
-q            = BasisFunction(scalar)
-p            = BasisFunction(scalar)
-#um           = Function(constant_vector)
-uc           = Function(vector)
-f            = Function(vector)
+q            = BasisFunction(scalar)		# test basis function 
+p            = BasisFunction(scalar)		# trial basis function 
+uc           = Function(vector)			# linearized velocity 
+f            = Function(vector)			# force term 
 
-delta1       = Function(constant_scalar)        # stabilization
+delta1       = Function(constant_scalar)        # stabilization parameter 
 
-um = mean(uc);
+um = mean(uc);					# cell mean value of linearized velocity 
 
-i0 = Index()
-i1 = Index()
-i2 = Index()
+i0 = Index()					# index for tensor notation 
+i1 = Index()					# index for tensor notation 
 
+# Bilinear and linear forms
 a = delta1*dot(grad(q), grad(p))*dx;
 L = delta1*dot(grad(q), f)*dx - q*uc[i0].dx(i0)*dx - delta1*q.dx(i0)*um[i1]*uc[i0].dx(i1)*dx 
 
-#a = delta1*q.dx(i0)*p.dx(i0)*dx 
-#L = delta1*q.dx(i0)*f[i0]*dx - delta1*q.dx(i0)*uc[i1]*uc[i0].dx(i1)*dx - q*uc[i0].dx(i0)*dx 
+
 
 
 

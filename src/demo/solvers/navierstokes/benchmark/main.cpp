@@ -120,15 +120,9 @@ class BC_Continuity_3D : public BoundaryCondition
 class BC_Momentum_2D : public BoundaryCondition
 {
   // These are boundary conditions for the flow past a 
-  // circular cylinder in 3d. We use a uniform unit inflow 
-  // velocity, no slip bc on the cylinder, and slip bc 
-  // at the lateral boundaries: 
-  // 
-  // u = (u_1,u_2,u_3) = (1,0,0) at x = 0
-  // u_2 = 0 for y = 0 and y = 1.4
-  // u_3 = 0 for z = 0 and z = 0.4 
-  // u = 0 on the cylinder with radie 0.05 and center at (0.5,0.7,z)
-  // 
+  // circular cylinder in 2d. 
+  // This is the  benchmark problem: 2D-3, defined in  
+  // http://www.mathematik.uni-dortmund.de/~featflow/ture/paper/benchmark_results.ps.gz
 
   const BoundaryValue operator() (const Point& p, unsigned int i)
   {
@@ -194,12 +188,16 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
 
   /*
+  // This is the 2d benchmark problem: 2D-3, defined in  
+  // http://www.mathematik.uni-dortmund.de/~featflow/ture/paper/benchmark_results.ps.gz
   Mesh mesh("cylinder_2d_bmk.xml.gz");
   BC_Momentum_2D bc_mom;
   BC_Continuity_2D bc_con;
   ForceFunction_2D f;
   */
 
+  // This is a 3d benchmark problem with Re = 3900, described in 
+  // http://www.nada.kth.se/~jhoffman/archive/papers/cc.pdf
   Mesh mesh("cylinder_3d_bmk.xml.gz");
   BC_Momentum_3D bc_mom;
   BC_Continuity_3D bc_con;

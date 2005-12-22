@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2005-12-22
 
 #ifndef __NSE_SOLVER_H
 #define __NSE_SOLVER_H
@@ -11,12 +11,14 @@
 
 namespace dolfin
 {
+  // This is a solver for the time dependent incompressible 
+  // Navier-Stokes equations. 
 
   class NSESolver 
   {
   public:
     
-    // Create Navier-Stokes solver
+    // Create the Navier-Stokes solver
     NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 
 	      BoundaryCondition& bc_con);
     
@@ -37,8 +39,6 @@ namespace dolfin
     void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
 			      Vector& d1vector, Vector& d2vector);
     
-    // Compute cell mean velocity
-    void ComputeMeanVelocity(Vector& xnodal, Vector& xcell);
 
   private:
 
