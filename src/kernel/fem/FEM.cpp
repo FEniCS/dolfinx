@@ -5,10 +5,10 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005-12-01
+// Last changed: 2005-12-21
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/timeinfo.h>
+#include <dolfin/timing.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 #include <dolfin/AffineMap.h>

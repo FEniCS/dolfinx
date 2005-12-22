@@ -9,7 +9,7 @@ nobase_include_HEADERS = dolfin/dolfin_common.h \
                          dolfin/Tensor.h \
                          dolfin/TimeDependent.h \
                          dolfin/Variable.h \
-                         dolfin/timeinfo.h \
+                         dolfin/timing.h \
                          dolfin/utils.h
 
 INCLUDES = @KERNEL_CFLAGS@
@@ -18,5 +18,5 @@ lib_LIBRARIES = libdolfin-common.a
 
 libdolfin_common_a_SOURCES = TimeDependent.cpp \
 			     Variable.cpp \
-                             timeinfo.cpp \
+                             timing.cpp \
                              utils.cpp

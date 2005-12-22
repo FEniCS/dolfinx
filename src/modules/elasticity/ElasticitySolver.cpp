@@ -4,13 +4,13 @@
 // Modified by Anders Logg 2004-2005.
 //
 // First added:  2004-02-26
-// Last changed: 2005-12-01
+// Last changed: 2005-12-21
 
 //#include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#include "dolfin/timeinfo.h"
+#include "dolfin/timing.h"
 #include "dolfin/ElasticitySolver.h"
 #include "dolfin/Elasticity.h"
 #include "dolfin/ElasticityMass.h"

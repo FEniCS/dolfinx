@@ -1,19 +1,16 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2003-02-06
-// Last changed: 2005-09-22
+// First added:  2005-12-21
+// Last changed: 2005-12-21
 
-#ifndef __TIMEINFO_H
-#define __TIMEINFO_H
+#ifndef __TIMING_H
+#define __TIMING_H
 
 #include <dolfin/constants.h>
 
 namespace dolfin
 {
-
-  /// Return a string containing current date and time
-  const char* date();
 
   /// Start timing
   void tic();

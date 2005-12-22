@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-03-26
-// Last changed: 2005-12-11
+// Last changed: 2005-12-21
 
 #ifndef NO_CURSES
 
@@ -14,7 +14,6 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/utils.h>
-#include <dolfin/timeinfo.h>
 #include <dolfin/LoggerMacros.h>
 #include <dolfin/CursesLogger.h>
 

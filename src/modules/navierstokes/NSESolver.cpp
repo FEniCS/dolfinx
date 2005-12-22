@@ -5,12 +5,12 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-01
+// Last changed: 2005-12-21
 
+#include <dolfin/timing.h>
 #include <dolfin/NSEMomentum.h>
 #include <dolfin/NSEContinuity.h>
 #include <dolfin/NSESolver.h>
-#include <ctime>
 
 using namespace dolfin;
 
@@ -126,7 +126,7 @@ void NSESolver::solve()
   bc_mom.sync(t);
     
   File file_u(get("velocity file name")); // file for saving velocity 
-  File file_p(get("pressure file name");  // file for saving pressure
+  File file_p(get("pressure file name"));  // file for saving pressure
 
   cout << "Assemble form: continuity" << endl;
 
@@ -138,9 +138,6 @@ void NSESolver::solve()
   int time_step = 0;
   int sample = 0;
   int no_samples = 10;
-
-  int time_t1 = 0;
-  int time_t2 = 0;
 
   // Start time-stepping
   Progress prog("Time-stepping");
@@ -172,26 +169,17 @@ void NSESolver::solve()
 
       cout << "Solve linear system" << endl;
 
-      time_t1 = time(NULL);
-
       // Solve the linear system
+      tic();
       solver_con.solve(Acon, xpre, bcon);
-
-      time_t2 = time(NULL);
-
-      cout << "Linear solve took: " << time_t2-time_t1 << " seconds" << endl; 
-
-
-      time_t1 = time(NULL);
+      cout << "Linear solve took: " << toc() << " seconds" << endl; 
 
       cout << "Assemble form: momentum" << endl;      
 
       // Discretize Momentum equations
+      tic();
       FEM::assemble(amom, Lmom, Amom, bmom, mesh, bc_mom);
-
-      time_t2 = time(NULL);
-
-      cout << "Assembly took: " << time_t2-time_t1 << " seconds" << endl; 
+      cout << "Assembly took: " << toc() << " seconds" << endl; 
 
       cout << "Set boundary conditions: momentum" << endl;
 
@@ -200,14 +188,10 @@ void NSESolver::solve()
 
       cout << "Solve linear system" << endl;
 
-      time_t1 = time(NULL);
-
       // Solve the linear system
+      tic();
       solver_mom.solve(Amom, xvel, bmom);
-
-      time_t2 = time(NULL);
-
-      cout << "Linear solve took: " << time_t2-time_t1 << " seconds" << endl; 
+      cout << "Linear solve took: " << toc() << " seconds" << endl; 
       
       xcvel = xvel;
       //ComputeMeanVelocity(xcvel,xmvel);

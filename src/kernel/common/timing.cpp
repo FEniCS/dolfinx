@@ -1,31 +1,22 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2003-02-06
-// Last changed: 2005
+// First added:  2003-12-21
+// Last changed: 2005-12-21
 
-#include <time.h>
-
+#include <ctime>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/utils.h>
-#include <dolfin/timeinfo.h>
+#include <dolfin/timing.h>
 
-using namespace dolfin;
+#include <dolfin/utils.h>
 
 namespace dolfin
 {
   clock_t __tic_time;
-  char datestring[DOLFIN_WORDLENGTH];
 }
 
-//-----------------------------------------------------------------------------
-const char* dolfin::date()
-{
-  time_t t = time(0);
-  sprintf(datestring, "%s", ctime(&t));
-  remove_newline(datestring);
-  return datestring;
-}
+using namespace dolfin;
+
 //-----------------------------------------------------------------------------
 void dolfin::tic()
 {
@@ -44,6 +35,8 @@ real dolfin::toc()
 real dolfin::tocd()
 {
   real elapsed_time = toc();
+  
+  cout << "Current date: " << date() << endl;
 
   cout << "Elapsed time: " << elapsed_time << " seconds" << endl;
 

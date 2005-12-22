@@ -5,7 +5,6 @@
 // Last changed: 2005-12-01
 
 #include <stdio.h>
-#include <dolfin/timeinfo.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>

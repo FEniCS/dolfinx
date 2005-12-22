@@ -5,13 +5,13 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2005-12-21
 
 //#include <iostream>
 #include <sstream>
 #include <iomanip>
 
-#include "dolfin/timeinfo.h"
+#include "dolfin/timing.h"
 #include "dolfin/ElasticityUpdatedSolver.h"
 
 using namespace dolfin;

@@ -2,10 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005
+// Last changed: 2005-12-21
 
 #include <ctime>
-#include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/utils.h>
 
@@ -63,5 +62,18 @@ void dolfin::delay(real seconds)
   req.tv_nsec = (int) (1000000000.0 * (seconds - floor(seconds)));
   
   nanosleep(&req, 0);
+}
+//-----------------------------------------------------------------------------
+std::string dolfin::date()
+{
+  // Get current date
+  time_t t = time(0);
+  std::string current_date(ctime(&t));
+
+  // Remove trailing newline
+  if ( current_date[current_date.length() - 1] == '\n' )
+    current_date.erase(current_date.length() - 1);
+  
+  return current_date;
 }
 //-----------------------------------------------------------------------------

@@ -2,12 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-20
+// Last changed: 2005-12-21
 
 #include <cmath>
 #include <string>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/timeinfo.h>
+#include <dolfin/timing.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/ReducedModel.h>

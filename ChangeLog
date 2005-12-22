@@ -1,3 +1,5 @@
+ - Move tic()/toc() to timing.h
+ - Navier-Stokes solver back online
  - Make Solver a subclass of Parametrized
  - Add support for localization of parameters
  - Redesign of parameter system
