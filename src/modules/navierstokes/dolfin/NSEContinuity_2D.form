@@ -6,10 +6,10 @@
 #
 # Compile this form with FFC: ffc NSEContinuity.form.
 
-name = "NSEContinuity"
-scalar = FiniteElement("Lagrange", "tetrahedron", 1)
-vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
-constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+name = "NSEContinuity_2D"
+scalar = FiniteElement("Lagrange", "triangle", 1)
+vector = FiniteElement("Vector Lagrange", "triangle", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
 
 q            = BasisFunction(scalar)		# test basis function 
 p            = BasisFunction(scalar)		# trial basis function 

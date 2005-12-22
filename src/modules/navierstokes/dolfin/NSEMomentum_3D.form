@@ -6,7 +6,7 @@
 #
 # Compile this form with FFC: ffc NSEMomentum.form.
 
-name = "NSEMomentum"
+name = "NSEMomentum_3D"
 scalar = FiniteElement("Lagrange", "tetrahedron", 1)
 vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)

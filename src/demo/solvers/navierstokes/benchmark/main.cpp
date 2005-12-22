@@ -149,6 +149,9 @@ class BC_Momentum_2D : public BoundaryCondition
       if ( p.y < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       } 
+      if ( p.y > 0.41 - DOLFIN_EPS - bmarg){
+	value.set(0.0);
+      } 
       if ( sqrt(sqr(p.x - 0.2) + sqr(p.y - 0.2)) < (0.05 + DOLFIN_EPS + bmarg)){
 	value.set(0.0);
       }       
@@ -186,6 +189,7 @@ class BC_Continuity_2D : public BoundaryCondition
 int main(int argc, char* argv[])
 {
   dolfin_init(argc, argv);
+
 
   /*
   // This is the 2d benchmark problem: 2D-3, defined in  
