@@ -35,11 +35,14 @@ namespace dolfin
         gmres           // GMRES method
      };
 
-    /// Create Krylov solver (GMRES with incomplete LU preconditioning)
+    /// Create Krylov solver with PETSc default method and preconditioner
     KrylovSolver();
 
-    /// Create Krylov solver for a particular method (with incomplete LU preconditioning)
+    /// Create Krylov solver for a particular method with default PETSc preconditioner
     KrylovSolver(Type solvertype);
+
+    /// Create Krylov solver with PETSc default method and a particular preconditioner
+    KrylovSolver(Preconditioner::Type preconditionertype);
 
     /// Create Krylov solver for a particular method and preconditioner
     KrylovSolver(Type solvertype, Preconditioner::Type preconditionertype);
@@ -59,7 +62,7 @@ namespace dolfin
     /// Set Krylov method type
     void setType(const Type solvertype);
 
-    /// Set PETSc preconditioner 
+    /// Set PETSc preconditioner type
     void setPreconditioner(const Preconditioner::Type preconditionertype);
 
     /// Set preconditioner
@@ -99,13 +102,22 @@ namespace dolfin
     /// Get PETSc method identifier 
     KSPType getType(const Type type) const;
 
+    /// Set PETSC preconditioner
+    void setPreconditioner(PC& pc);
+
+    /// Set PETSC Hypre preconditioner
+    void setPreconditionerHypre(PC& pc);
+
+    /// True if PETSc preconditioner needs to be set or re-set.
+    bool set_pc;
+
     /// True if we should report the number of iterations
     bool report;
 
-    // Solver type
+    /// Solver type
     Type solver_type;
-    
-    // Preconditioner type
+
+    /// Preconditioner type
     Preconditioner::Type preconditioner_type;
 
     /// PETSc solver pointer

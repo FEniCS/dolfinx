@@ -68,8 +68,8 @@ class MyNonlinearFunction : public NonlinearFunction
   public:
 
     // Constructor 
-    MyNonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh,  
-      BoundaryCondition& bc) : NonlinearFunction(), 
+    MyNonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh,
+      BoundaryCondition& bc) : NonlinearFunction(),
       _a(&a), _L(&L), _mesh(&mesh), _bc(&bc) {}
  
 
@@ -91,7 +91,7 @@ class MyNonlinearFunction : public NonlinearFunction
     
   private:
 
-    // Pointer to forms, mesh data and boundary conditions
+    // Pointers to forms, mesh data and boundary conditions
     BilinearForm* _a;
     LinearForm* _L;
     Mesh* _mesh;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
  
   // Set up problem
-  UnitSquare mesh(256, 256);
+  UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
   Matrix A;
@@ -127,9 +127,11 @@ int main(int argc, char* argv[])
   nonlinear_solver.setNewtonMaxiter(50);
   nonlinear_solver.setNewtonRtol(1e-10);
   nonlinear_solver.setNewtonAtol(1e-10);
+
+  // Set Krylov solver
   nonlinear_solver.setType(KrylovSolver::bicgstab);
 
-  // Solve nonlinear problem
+  // Solve nonlinear problem in a series of steps
   real dt = 1.0;
   real t  = 0.0;
   real T  = 3.0;

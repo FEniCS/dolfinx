@@ -76,6 +76,8 @@ PCType Preconditioner::getType(const Type type)
   {
   case default_pc:
     return "default";
+  case hypre_amg:
+    return PCHYPRE;
   case icc:
     return PCICC;
   case ilu:
@@ -88,7 +90,7 @@ PCType Preconditioner::getType(const Type type)
     return PCNONE;
   default:
     dolfin_warning("Requested preconditioner unkown. Using incomplete LU.");
-    return PCILU;    
+    return PCILU;
   }
 }
 //-----------------------------------------------------------------------------

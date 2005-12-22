@@ -17,8 +17,9 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver() : LinearSolver(), report(true), solver_type(default_solver), 
-      preconditioner_type(Preconditioner::default_pc), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver() : LinearSolver(), set_pc(true), report(true), 
+      solver_type(default_solver), preconditioner_type(Preconditioner::default_pc), 
+      ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -27,8 +28,20 @@ KrylovSolver::KrylovSolver() : LinearSolver(), report(true), solver_type(default
   init(0, 0);
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), report(true), 
+KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), set_pc(true), report(true), 
        solver_type(solver_type), preconditioner_type(Preconditioner::default_pc), 
+       ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+
+{
+  // Initialize PETSc
+  PETScManager::init();
+  
+  // Initialize KSP solver
+  init(0, 0);
+}
+//-----------------------------------------------------------------------------
+KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type) : LinearSolver(), 
+       set_pc(true), report(true), solver_type(default_solver), preconditioner_type(preconditioner_type), 
        ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
@@ -39,7 +52,7 @@ KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), report(true),
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner_type) : 
-      LinearSolver(), report(true), solver_type(solver_type), 
+      LinearSolver(), set_pc(true), report(true), solver_type(solver_type), 
       preconditioner_type(preconditioner_type), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
@@ -79,9 +92,6 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   if(solver_type != KrylovSolver::default_solver) 
     KSPSetType(ksp, ksp_type);
 
-  PCType pc_type;
-  pc_type = Preconditioner::getType(preconditioner_type);
-
   PC pc;
   KSPGetPC(ksp, &pc);
 
@@ -92,8 +102,9 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   }
   else
   {
-    if(preconditioner_type != Preconditioner::default_pc) 
-      PCSetType(pc, pc_type);
+    setPreconditioner(pc);
+//    if(preconditioner_type != Preconditioner::default_pc) 
+//      PCSetType(pc, pc_type);
   }
  
   // Solve linear system
@@ -111,6 +122,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   KSPGetIterationNumber(ksp, &num_iterations);
   
   // Get solver and preconditioner type for output
+  PCType pc_type;
   KSPGetType(ksp, &ksp_type);
   PCGetType(pc, &pc_type);
 
@@ -182,6 +194,9 @@ void KrylovSolver::setType(const Type type)
 //-----------------------------------------------------------------------------
 void KrylovSolver::setPreconditioner(const Preconditioner::Type type)
 {
+  if(type != preconditioner_type)
+    set_pc = true; 
+
   preconditioner_type = type;
 }
 //-----------------------------------------------------------------------------
@@ -306,6 +321,42 @@ KSPType KrylovSolver::getType(const Type type) const
     dolfin_warning("Requested Krylov method unkown. Using GMRES.");
     return KSPGMRES;
   }
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::setPreconditioner(PC &pc)
+{
+  PCType pc_type;
+  pc_type = Preconditioner::getType(preconditioner_type);
+
+  if(preconditioner_type != Preconditioner::default_pc)
+  {
+    if(preconditioner_type == Preconditioner::hypre_amg) 
+    {  
+      setPreconditionerHypre(pc);
+    }
+    else
+    {
+      PCSetType(pc, pc_type);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::setPreconditionerHypre(PC &pc)
+{
+  // Check that PETSc was compiled with HYPRE
+  #ifdef PETSC_HAVE_HYPRE
+    if(set_pc)
+    {
+      PCSetType(pc, PCHYPRE);
+      PCHYPRESetType(pc, "boomeramg");
+    } 
+    set_pc = false; 
+ #else
+    dolfin_warning("PETSc has not been compiled with the HYPRE library for   "
+                   "algerbraic multigrid. Default PETSc solver will be used. "
+                   "For performance, installation of HYPRE is recommended.   "
+                   "See the DOLFIN user manual. ");
+  #endif
 }
 //-----------------------------------------------------------------------------
 

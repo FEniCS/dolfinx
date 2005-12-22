@@ -68,26 +68,9 @@ void NSESolver::solve()
   residual_con = 1.0e3;
 
   // Initialize algebraic solvers 
-  GMRES solver_con;
+  GMRES solver_con(Preconditioner::hypre_amg);
   GMRES solver_mom;
-
-  // Get PETSc PC (preconditioner) object 
-  KSP ksp_con = solver_con.solver();
-  PC pc;
-  KSPGetPC(ksp_con,&pc);
-
-  // Check if PETSc was compiled with HYPRE
-  #ifdef PETSC_HAVE_HYPRE
-    PCSetType(pc,PCHYPRE);
-    PCHYPRESetType(pc,"boomeramg");
-  #else
-    dolfin_warning("PETSc has not been compiled with the HYPRE library for "
-		   "algerbraic multigrid. Navier Stokes module will use the "
-		   "GMRES solver for the continuity equation. For performance " 
-	  	   "installation of HYPRE is recommended. See the DOLFIN user " 
-		   "manual. ");
-  #endif
-  
+ 
   // Create functions for the velocity and pressure 
   // (needed for the initialization of the forms)
   Function u0(x0vel, mesh); // velocity from previous time step 

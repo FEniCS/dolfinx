@@ -31,6 +31,7 @@ namespace dolfin
     enum Type
     { 
       default_pc, // Default PETSc preconditioner (use when setting solver from command line)
+      hypre_amg,  // Hypre algerbraic multigrid
       icc,        // Incomplete Cholesky
       ilu,        // Incomplete LU
       jacobi,     // Jacobi
