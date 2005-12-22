@@ -3,7 +3,7 @@
  - Make Solver a subclass of Parametrized
  - Add support for localization of parameters
  - Redesign of parameter system
-0.5.11
+0.5.11 [2005-12-15]
  - Add script monitor for monitoring memory usage
  - Remove meminfo.h (not portable)
  - Remove dependence on parameter system in log system
