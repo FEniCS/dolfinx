@@ -150,14 +150,14 @@ void NSESolver::solve()
       tic();
       solver_con.solve(Acon, xpre, bcon);
 
-      dolfin_info("Linear solve took %d seconds",toc());
+      dolfin_info("Linear solve took %g seconds",toc());
 
       dolfin_info("Assemble vector: momentum");
 
       // Assemble momentum vector 
       tic();
       FEM::assemble(Lmom, bmom, mesh);
-      dolfin_info("Assemble took %d seconds",toc());
+      dolfin_info("Assemble took %g seconds",toc());
 
       // Set boundary conditions for the momentum equation 
       FEM::applyBC(Amom, bmom, mesh, amom.trial(),bc_mom);
@@ -167,7 +167,7 @@ void NSESolver::solve()
       // Solve the linear system for the momentum equation 
       tic();
       solver_mom.solve(Amom, xvel, bmom);
-      dolfin_info("Linear solve took %d seconds",toc());
+      dolfin_info("Linear solve took %g seconds",toc());
       
       // Set linearized velocity to current velocity 
       xcvel = xvel;
