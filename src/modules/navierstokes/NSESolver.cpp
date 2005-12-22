@@ -19,9 +19,9 @@ NSESolver::NSESolver(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 		     BoundaryCondition& bc_con)
   : mesh(mesh), f(f), bc_mom(bc_mom), bc_con(bc_con) 
 {
-  // Do nothing
-
-  //dolfin_error("Sorry, Navier-Stokes is temporarily down for maintenance. Please try again later.");
+  // Declare parameters
+  add("velocity file name", "velocity.pvd");
+  add("pressure file name", "pressure.pvd");
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve()
@@ -125,13 +125,8 @@ void NSESolver::solve()
   bc_con.sync(t);
   bc_mom.sync(t);
     
-  /*
-  File file_p("pressure.m");  // file for saving pressure
-  File file_u("velocity.m");  // file for saving velocity 
-  */
-
-  File file_p("pressure.pvd");  // file for saving pressure
-  File file_u("velocity.pvd");  // file for saving velocity 
+  File file_u(get("velocity file name")); // file for saving velocity 
+  File file_p(get("pressure file name");  // file for saving pressure
 
   cout << "Assemble form: continuity" << endl;
 
