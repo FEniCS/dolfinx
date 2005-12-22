@@ -1,3 +1,6 @@
+0.5.12 [2005-12-22]
+ - Added 2 benchmark problems for the Navier-Stokes solver 	
+ - Added support for 2D/3D selection in Navier-Stokes solver 
  - Move tic()/toc() to timing.h
  - Navier-Stokes solver back online
  - Make Solver a subclass of Parametrized
