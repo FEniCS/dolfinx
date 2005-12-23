@@ -74,9 +74,10 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r, real error,
   // Conservative modification for "mid-components"
   // Parameters should be automatically chosen, needs to be fixed in the
   // future.
+
   if((k0 * r) > (0.001 * used_tol) && r < 0.01)
   {
-    used_tol = 0.05 * used_tol;
+    used_tol = 0.1 * used_tol * pow(r / 0.01, 0.5);
   }
 
   // Compute new time step

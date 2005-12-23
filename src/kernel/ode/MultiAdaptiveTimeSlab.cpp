@@ -180,6 +180,7 @@ bool MultiAdaptiveTimeSlab::check(bool first)
     // Compute residual
     real r = method->residual(x0, jx + j, f, k);
     
+    // FIXME: r is not needed anymore
     r = rmax[i];
 
     // Update adaptivity
