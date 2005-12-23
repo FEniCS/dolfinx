@@ -133,6 +133,9 @@ bool MultiAdaptiveTimeSlab::solve()
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::check(bool first)
 {
+  // Pre-compute maximum of residuals
+  computeMaxResiduals();
+
   // Cover end time
   coverTime(_b);
 
@@ -175,10 +178,12 @@ bool MultiAdaptiveTimeSlab::check(bool first)
     const real f = ode.f(u, b, i);
 
     // Compute residual
-    const real r = method->residual(x0, jx + j, f, k);
+    real r = method->residual(x0, jx + j, f, k);
     
+    r = rmax[i];
+
     // Update adaptivity
-    adaptivity.updateComponent(i, k, r, *method, _b);
+    adaptivity.updateComponent(i, kmax[i], rmax[i], krmax[i], *method, _b);
 
     // Save right-hand side at end-point for cG
     // We don't know if slab is acceptable, so don't overwrite f0
@@ -339,8 +344,6 @@ real MultiAdaptiveTimeSlab::rsample(uint i, real t)
 //   const real r = method->residual(x0, jx + j, f, k);
 
 //   return r;
-
-  computeMaxResiduals();
 
   return rmax[i];
 }
@@ -1164,9 +1167,11 @@ void MultiAdaptiveTimeSlab::computeMaxResiduals()
 
       const real r = method->residual(x0, ts.jx + j, ftmp[method->nsize()], k);
 
+      real rmaxprev = rmax[i];
       rmax[i] = std::max(rmax[i], fabs(r));
-      kmax[i] = std::max(kmax[i], k);
-      krmax[i] = std::max(krmax[i], k * r);
+      if(rmaxprev != rmax[i])
+        kmax[i] = std::max(kmax[i], k);
+      krmax[i] = std::max(krmax[i], method->error(k, r));
       
       // Update dof
       j += method->nsize();

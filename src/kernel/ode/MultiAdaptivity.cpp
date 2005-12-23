@@ -53,7 +53,7 @@ void MultiAdaptivity::updateStart()
   _accept = true;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::updateComponent(uint i, real k0, real r,
+void MultiAdaptivity::updateComponent(uint i, real k0, real r, real error,
 				      const Method& method, real t)
 {
   // Check if time step is fixed
@@ -64,11 +64,23 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real r,
     return;
   }
 
+  // Note: We use the maximum error, don't need to compute error here
   // Compute local error estimate
-  const real error = method.error(k0, r);
+//   const real error = method.error(k0, r);
   
+  real used_tol = safety * tol;
+
+
+  // Conservative modification for "mid-components"
+  // Parameters should be automatically chosen, needs to be fixed in the
+  // future.
+  if((k0 * r) > (0.001 * used_tol) && r < 0.01)
+  {
+    used_tol = 0.05 * used_tol;
+  }
+
   // Compute new time step
-  real k = method.timestep(r, safety*tol, k0, _kmax);
+  real k = method.timestep(r, used_tol, k0, _kmax);
   k = Controller::updateHarmonic(k, timesteps[i], _kmax);
   
   // Check if time step can be accepted

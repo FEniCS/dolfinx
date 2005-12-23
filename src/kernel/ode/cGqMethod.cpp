@@ -52,8 +52,6 @@ real cGqMethod::timestep(real r, real tol, real k0, real kmax) const
   if ( fabs(r) < DOLFIN_EPS )
     return kmax;
 
-  //return pow(tol / fabs(r), 1.0 / static_cast<real>(q));
-  
   const real qq = static_cast<real>(q);
   return pow(tol * pow(k0, qq) / fabs(r), 0.5 / qq);
 }

@@ -2,10 +2,10 @@
 
 <dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
   <parameters>
-    <parameter name="partitioning threshold" type="real" value="0.7"/>
+    <parameter name="partitioning threshold" type="real" value="0.2"/>
     <parameter name="fixed time step" type="bool" value="false"/>
     <parameter name="save solution" type="bool" value="false"/>
-    <parameter name="file name" type="string" value="primal.py"/>
+    <parameter name="ode solution file name" type="string" value="primal.py"/>
     <parameter name="number of samples" type="int" value="100"/>
   </parameters>
 </dolfin>

@@ -22,6 +22,7 @@ def run_set(method, solver, tolmax, k0, kmax, T, gamma, N):
     file.write("--------------------------------------------------------------------------------------\n")
     
     for tol in [tolmax, 0.5*tolmax, 0.1*tolmax, 0.05*tolmax]:
+#    for tol in [tolmax]:
     
         # Run program
         print "Running %s/%s at tolerance %.1e" % (method, solver, tol)
