@@ -129,7 +129,13 @@ void NSESolver::solve()
   // Initialize time-stepping parameters
   int time_step = 0;
   int sample = 0;
-  int no_samples = 10;
+  int no_samples = 100;
+
+  // Residual, tolerance and maxmimum number of fixed point iterations
+  real residual;
+  real rtol = 1.0e-2;
+  int iteration;
+  int max_iteration = 50;
 
   // Start time-stepping
   Progress prog("Time-stepping");
@@ -145,12 +151,12 @@ void NSESolver::solve()
     // Compute stabilization parameters
     ComputeStabilization(mesh,u0,nu,k,d1vector,d2vector);
 
-    // Initialize residuals 
-    residual_mom = 1.0e3;
-    residual_con = 1.0e3;
+    // Initialize residual 
+    residual = 2*rtol;
+    iteration = 0;
 
     // Fix-point iteration for non-linear problem 
-    while (sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())) > 1.0e-2){
+    while (residual > 1.0e-6 && iteration < max_iteration){
       
       dolfin_info("Assemble vector: continuity");
 
@@ -203,17 +209,19 @@ void NSESolver::solve()
       Acon.mult(xpre,residual_con);
       residual_con -= bcon;
       
-      dolfin_info("Momentum residual  : l2 norm = %f",residual_mom.norm());
-      dolfin_info("continuity residual: l2 norm = %f",residual_con.norm());
-      dolfin_info("Total NSE residual : l2 norm = %f",sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())));
+      dolfin_info("Momentum residual  : l2 norm = %e",residual_mom.norm());
+      dolfin_info("continuity residual: l2 norm = %e",residual_con.norm());
+      dolfin_info("Total NSE residual : l2 norm = %e",sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm())));
 
-    dolfin_info("save solution to file");
-    file_p << p;
-    file_u << u;
+      residual = sqrt(sqr(residual_mom.norm()) + sqr(residual_con.norm()));
+      iteration++;
     }
 
-    dolfin_info("save solution to file");
+    if(residual > rtol)
+      dolfin_warning("NSE fixed point iteration did not converge"); 
+
     if ( (time_step == 1) || (t > (T-T0)*(real(sample)/real(no_samples))) ){
+      dolfin_info("save solution to file");
       file_p << p;
       file_u << u;
       sample++;
