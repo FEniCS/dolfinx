@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2002-11-29
-// Last changed: 2005-11-29
+// Last changed: 2005-12-28
 //
 // A solver for the Navier-Stokes equations 
 //
@@ -54,11 +54,10 @@ class BC_Momentum_3D : public BoundaryCondition
   // u = 0 on the cylinder with radie 0.05 and center at (0.5,0.7,z)
   // 
 
-  const BoundaryValue operator() (const Point& p, unsigned int i)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
     real bmarg = 1.0e-3;
 
-    BoundaryValue value;
     if (i==0){
       if ( p.x < (bmarg + DOLFIN_EPS)){
 	value.set(1.0);
@@ -89,8 +88,6 @@ class BC_Momentum_3D : public BoundaryCondition
     } else{
       dolfin_error("Wrong vector component index");
     }
-  
-    return value;
   }
 };
 
@@ -104,15 +101,12 @@ class BC_Continuity_3D : public BoundaryCondition
   // Assuming the viscosity nu is small, we may approximate 
   // this boundary condition with zero pressure at outflow. 
   
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
     real bmarg = 1.0e-3;
 
-    BoundaryValue value;
     if (p.x > (2.1 - (bmarg + DOLFIN_EPS)))
-      value.set(0.0);
-    
-    return value;
+      value = 0.0;
   }
 };
 
@@ -124,11 +118,10 @@ class BC_Momentum_2D : public BoundaryCondition
   // This is the  benchmark problem: 2D-3, defined in  
   // http://www.mathematik.uni-dortmund.de/~featflow/ture/paper/benchmark_results.ps.gz
 
-  const BoundaryValue operator() (const Point& p, unsigned int i)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
     real bmarg = 1.0e-3;
 
-    BoundaryValue value;
     if (i==0){
       if ( p.x < (0.0 + DOLFIN_EPS + bmarg)){
 	value.set( (1.0/sqr(0.41)) * sin(DOLFIN_PI*time()*0.125) * 6.0*p.y*(0.41-p.y) );
@@ -158,8 +151,6 @@ class BC_Momentum_2D : public BoundaryCondition
     } else{
       dolfin_error("Wrong vector component index");
     }
-  
-    return value;
   }
 };
 
@@ -173,16 +164,12 @@ class BC_Continuity_2D : public BoundaryCondition
   // Assuming the viscosity nu is small, we may approximate 
   // this boundary condition with zero pressure at outflow. 
     
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
     real bmarg = 1.0e-3;
 
-    BoundaryValue value;
-    if (p.x > (2.2 - DOLFIN_EPS - bmarg)){
-      value.set(0.0);
-    }
-    
-    return value;
+    if (p.x > (2.2 - DOLFIN_EPS - bmarg))
+      value = 0.0;
   }
 };
 

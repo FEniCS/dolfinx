@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-12-20
+// Last changed: 2005-12-28
 //
 // A simple test program for the Poisson solver, solving
 //
@@ -35,13 +35,10 @@ class MyFunction : public Function
 // Boundary condition
 class MyBC : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    BoundaryValue value;
-    if ( (fabs(p.x - 0.0) < DOLFIN_EPS) || (fabs(p.x - 1.0) < DOLFIN_EPS ) )
-      value.set(0.0);
-    
-    return value;
+    if ( (std::abs(p.x - 0.0) < DOLFIN_EPS) || (std::abs(p.x - 1.0) < DOLFIN_EPS ) )
+      value = 0.0;
   }
 };
 

@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2005.
 //
 // First added:  2004
-// Last changed: 2005-12-20
+// Last changed: 2005-12-28
 
 #include <dolfin.h>
 
@@ -74,22 +74,13 @@ class InitialVelocity : public Function
 // Boundary condition
 class MyBC : public BoundaryCondition
 {
-public:
-  MyBC::MyBC() : BoundaryCondition()
-  {
-  }
+  //  void eval(BoundaryValue& value, const Point& p, unsigned int i)
+  //   {
+  //     if(p.x == 0.0 && p.y == 0.0)
+  //       value = 0.0;
+  //   }
 
-//   const BoundaryValue operator() (const Point& p, int i)
-//   {
-//     BoundaryValue value;
-
-//     if(p.x == 0.0 && p.y == 0.0)
-//     {
-//       value.set(0.0);
-//     }    
-
-//     return value;
-//   }
+  void eval(BoundaryValue& value, const Point& p, unsigned int i) {}
 };
 
 int main(int argc, char **argv)

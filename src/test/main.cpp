@@ -169,5 +169,15 @@ int main(int argc, char* argv[])
   testProgress();
   testParameters();
 
+  Matrix A(3,3);
+  for (unsigned int i = 0; i < 3; i++)
+    for (unsigned int j = 0; j < 3; j++)
+      A(i,j) = 1.0;
+  Vector b(3);
+  Vector x;
+  GMRES solver;
+  solver.setAtol(1e-14);
+  solver.solve(A, x, b);
+
   return 0;
 }

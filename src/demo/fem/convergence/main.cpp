@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-01
+// Last changed: 2005-12-28
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -22,11 +22,9 @@ using namespace dolfin;
 // Boundary condition
 class BC : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    BoundaryValue value;
-    value.set(0.0);
-    return value;
+    value = 0.0;
   }
 };
 

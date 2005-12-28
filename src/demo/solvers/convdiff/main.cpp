@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-11-30
+// Last changed: 2005-12-28
 //
 // A simple test program for convection-diffusion, solving
 //
@@ -49,16 +49,12 @@ class Source : public Function
 // Boundary condition
 class MyBC : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    BoundaryValue value;
-
     if ( p.x == 1.0 )
       value.set(0.0);
     else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
       value.set(1.0);
-    
-    return value;
   }
 };
 

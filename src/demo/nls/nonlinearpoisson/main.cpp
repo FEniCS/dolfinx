@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005
 //
 // First added:  2005
-// Last changed: 2005-11-30
+// Last changed: 2005-12-28
 //
 // This program illustrates the use of the DOLFIN nonlinear solver for solving 
 // problems of the form F(u) = 0. The user must provide functions for the 
@@ -52,15 +52,12 @@ class MyFunction : public Function
 // Boundary condition
 class MyBC : public BoundaryCondition
 {
-  const BoundaryValue operator() (const Point& p)
+  void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    BoundaryValue value;
     if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
       value = 1.0*time();
-    return value;
   }
 };
-
 
 // User defined nonlinear update class
 class MyNonlinearFunction : public NonlinearFunction
