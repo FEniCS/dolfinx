@@ -1,3 +1,4 @@
+ - Modify demo problem for Stokes, add exact solution and compute error
  - Change interface for boundary conditions: operator() --> eval()
  - Added 2 benchmark problems for the Navier-Stokes solver 	
  - Added support for 2D/3D selection in Navier-Stokes solver 

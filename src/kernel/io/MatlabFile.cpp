@@ -37,24 +37,18 @@ void MatlabFile::operator<<(Matrix& A)
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
-  switch ( A.type() ) {
-  case Matrix::dense:
-
-    for (unsigned int i = 0; i < A.size(0); i++) {
-      for (unsigned int j = 0; j< A.size(1); j++) {
-        fprintf(fp, "%.16e ", A[i][j]);
-        if ( j < (A.size(1) - 1) && i <= (A.size(0) - 1))
-          fprintf(fp, ", ");
-        else if ( j == (A.size(1) - 1) && i < (A.size(0) - 1))
-          fprintf(fp, ";\n");
-        else
-          fprintf(fp, "];\n");
-      }
-    }
-
-    break;
-
   case Matrix::sparse:
+  
+  Usage:
+
+  File file("matrix.m");
+  file << A;
+  
+  Fix this Andy... :-)
+  
+  Call A.mat()
+  Use MatGetRow(A, i, &ncols, &cols, &vals);
+  Look in Matrix::disp()
 
     // Write matrix in sparse format
     fprintf(fp, "%s = [", A.name().c_str());
@@ -72,17 +66,10 @@ void MatlabFile::operator<<(Matrix& A)
     fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
     
     break;
-  
-  default:
-    dolfin_error("Unknown matrix format.");
-  }
 
   // Close file
   fclose(fp);
 
-  // Increase the number of times we have saved the matrix
-  ++A;
-  
   cout << "Saved matrix " << A.name() << " (" << A.label()
        << ") to file " << filename << " in Matlab format." << endl;
   */

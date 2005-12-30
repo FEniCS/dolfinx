@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-09-20
+// Last changed: 2005-12-30
 
 #ifndef __STOKES_SOLVER_H
 #define __STOKES_SOLVER_H
@@ -30,6 +30,9 @@ namespace dolfin
     // Solve Stokes equations (static version)
     static void solve(Mesh& mesh, Function& f, BoundaryCondition& bc);
   
+    // Temporary for testing
+    void checkError(Mesh& mesh, Function& u);
+
   private:
 
     Mesh& mesh;
