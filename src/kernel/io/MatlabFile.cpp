@@ -56,9 +56,6 @@ void MatlabFile::operator<<(Matrix& A)
   }
   fprintf(fp, "%s = spconvert(%s);\n", A.name().c_str(), A.name().c_str());
   
-  delete[] cols;
-  delete[] vals;
-      
   // Close file
   fclose(fp);
 
