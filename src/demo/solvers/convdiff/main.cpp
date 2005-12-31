@@ -2,7 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-29
-// Last changed: 2005-12-28
+// Last changed: 2005-12-31
+//
+// FIXME 
+// Solver has been stabilised. Need to update description to reflect this.
 //
 // A simple test program for convection-diffusion, solving
 //
@@ -10,11 +13,11 @@
 //
 // around a hot dolphin in 2D, with diffusivity given by
 //
-//     a(x,y,t) = 0.1
+//     a(x,y,t) = 0.05
 //
 // and convection given by
 //
-//     b(x,y,t) = (-5,0).
+//     b(x,y,t) = (-15,0).
 //
 // This program illustrates the need for stabilisation, for
 // instance streamline-diffusion, for large values of b. For
@@ -31,7 +34,7 @@ class Convection : public Function
   real eval(const Point& p, unsigned int i)
   {
     if ( i == 0 )
-      return -5.0;
+      return -15.0;
     else
       return 0.0;
   }
@@ -67,7 +70,11 @@ int main()
   Source f;
   MyBC bc;
 
-  ConvectionDiffusionSolver::solve(mesh, w, f, bc);
+  real diffusion = 0.05;
+  real dt = 0.01;
+  real T = 0.3;
+
+  ConvectionDiffusionSolver::solve(mesh, w, f, bc, diffusion, dt, T);
   
   return 0;
 }

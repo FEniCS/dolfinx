@@ -154,7 +154,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = dolfin_convdiff.h ConvectionDiffusion.h ConvectionDiffusionSolver.h
+EXTRA_DIST = dolfin_convdiff.h ConvectionDiffusion2D.h ConvectionDiffusion3D.h ConvectionDiffusionSolver.h
 all: all-am
 
 .SUFFIXES:

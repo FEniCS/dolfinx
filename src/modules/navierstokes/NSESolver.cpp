@@ -37,7 +37,6 @@ void NSESolver::solve()
   real hmin;
   GetMinimumCellSize(mesh, hmin);  
   real k = 0.25*hmin; 
-
   // Create matrices and vectors 
   Matrix Amom, Acon;
   Vector bmom, bcon;
@@ -160,7 +159,7 @@ void NSESolver::solve()
     iteration = 0;
 
     // Fix-point iteration for non-linear problem 
-    while (residual > 1.0e-6 && iteration < max_iteration){
+    while (residual > rtol && iteration < max_iteration){
       
       dolfin_info("Assemble vector: continuity");
 
@@ -243,10 +242,10 @@ void NSESolver::solve()
     file_u << u;
 
 
-  delete [] amom;;
-  delete [] Lmom;;
-  delete [] acon;;
-  delete [] Lcon;;
+  delete amom;
+  delete Lmom;
+  delete acon;
+  delete Lcon;
 }
 //-----------------------------------------------------------------------------
 void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom, 

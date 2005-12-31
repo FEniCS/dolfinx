@@ -4,7 +4,7 @@
 //  Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-07-12
+// Last changed: 2005-12-31
 
 #ifndef __CONVECTION_DIFFUSION_SOLVER_H
 #define __CONVECTION_DIFFUSION_SOLVER_H
@@ -19,17 +19,19 @@ namespace dolfin
   public:
     
     // Create convection-diffusion solver
-    ConvectionDiffusionSolver(Mesh& mesh, Function& w, Function& f, BoundaryCondition& bc);
+    ConvectionDiffusionSolver(Mesh& mesh, Function& w, Function& f, BoundaryCondition& bc,
+                              real c, real k, real T);
     
     // Solve convection-diffusion
     void solve();
     
     // Solve convection-diffusion (static version)
-    static void solve(Mesh& mesh, Function& w, Function& f, BoundaryCondition& bc);
+    static void solve(Mesh& mesh, Function& w, Function& f, BoundaryCondition& bc,
+                      real c, real k, real T);
   
     void ComputeElementSize(Mesh& mesh, Vector& h);
 
-    void ConvectionNormInv(Function& w, Function& wnorm, Vector& wnorm_vector);
+    void ConvectionNormInv(Function& w, Vector& wnorm_vector, uint nsd);
 
   private:
 
@@ -38,6 +40,12 @@ namespace dolfin
     Function& w;
     Function& f;
     BoundaryCondition& bc;
+    
+    // diffusion
+    real c;
+    
+    // dt and final time
+    real k, T;
 
   };
 

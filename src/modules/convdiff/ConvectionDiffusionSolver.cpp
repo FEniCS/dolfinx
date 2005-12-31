@@ -4,19 +4,19 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-12-20
+// Last changed: 2005-12-31
 
 #include "dolfin/ConvectionDiffusionSolver.h"
-#include "dolfin/ConvectionDiffusion.h"
+#include "dolfin/ConvectionDiffusion2D.h"
+//#include "dolfin/ConvectionDiffusion3D.h"
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ConvectionDiffusionSolver::ConvectionDiffusionSolver(Mesh& mesh, 
-						     Function& w,
-						     Function& f,
-						     BoundaryCondition& bc)
-  : mesh(mesh), w(w), f(f), bc(bc)
+						     Function& w, Function& f, BoundaryCondition& bc,
+                  real c, real k, real T)
+  : mesh(mesh), w(w), f(f), bc(bc), c(c), k(k), T(T)
 {
   // Do nothing
 }
@@ -24,19 +24,19 @@ ConvectionDiffusionSolver::ConvectionDiffusionSolver(Mesh& mesh,
 void ConvectionDiffusionSolver::solve()
 {
   real t   = 0.0;  // current time
-  real T   = 0.3;  // final time
-  real k   = 0.01; // time step
-  real c   = 0.05; // diffusion
-  real tau = 1.0;  // stabilisation parameter
 
   Matrix A;              // matrix defining linear system
   Vector x0, x1, b;      // vectors 
-  GMRES solver;          // linear system solver
-  Function u0(x0, mesh); // function at left end-point
+  KrylovSolver solver(KrylovSolver::bicgstab); // linear solver
+  Function u0(x0, mesh); // function at previous time step
 
   // File for saving solution
   File file(get("solution file name"));
   
+  // Get the number of space dimensions of the problem 
+  uint nsd = mesh.noSpaceDim();
+  dolfin_info("Number of space dimensions: %d",nsd);
+
   // Vectors for functions for element size and inverse of velocity norm
   Vector hvector, wnorm_vector; 
 
@@ -44,20 +44,37 @@ void ConvectionDiffusionSolver::solve()
   Function h(hvector), wnorm(wnorm_vector);
 
   // Create variational forms
-  ConvectionDiffusion::BilinearForm a(w, wnorm, h, k, c, tau);
-  ConvectionDiffusion::LinearForm L(u0, w, wnorm, f, h, k, c, tau);
+  BilinearForm* a =0;
+  LinearForm* L =0;
+  if( nsd == 2 )
+  {  
+    a = new ConvectionDiffusion2D::BilinearForm(w, wnorm, h, k, c);
+    L = new ConvectionDiffusion2D::LinearForm(u0, w, wnorm, f, h, k, c);
+  } 
+  else if ( nsd == 3 )
+  {
+    dolfin_error("3D convection-diffusion is currently disabled to limit compile time.");
+//    a = new ConvectionDiffusion3D::BilinearForm(w, wnorm, h, k, c);
+//    L = new ConvectionDiffusion3D::LinearForm(u0, w, wnorm, f, h, k, c);
+  }
+  else
+  {
+    dolfin_error("Convection-diffusion solver only implemented for 2 and 3 space dimensions.");
+  }
 
   // Compute local element size h
   ComputeElementSize(mesh, hvector);  
-  // Compute inverse of advective velocity norm 1/|a|
-  ConvectionNormInv(w, wnorm, wnorm_vector);
+
+  // Compute stabiliation term  tau/2|a|
+  // It is assumed that the advective velocity can be prepresnted using a linear basis
+  ConvectionNormInv(w, wnorm_vector, nsd);
 
   // Assemble stiffness matrix
-  FEM::assemble(a, A, mesh);
+  FEM::assemble(*a, A, mesh);
 
-  // FIXME: Temporary fix
-  x1.init(mesh.noVertices());
-  Function u1(x1, mesh, a.trial());
+  uint N = FEM::size(mesh, a->trial());
+  x1.init(N);
+  Function u1(x1, mesh, a->trial());
   
   // Synchronize function u1 with time t
   u1.sync(t);
@@ -71,24 +88,27 @@ void ConvectionDiffusionSolver::solve()
     x0 = x1;
     
     // Assemble load vector and set boundary conditions
-    FEM::assemble(L, b, mesh);
-    FEM::applyBC(A, b, mesh, a.trial(), bc);
+    FEM::assemble(*L, b, mesh);
+    FEM::applyBC(A, b, mesh, a->trial(), bc);
     
     // Solve the linear system
     solver.solve(A, x1, b);
     
-    // Save the solution
+    // Save the solution to file
     file << u1;
 
     // Update progress
     p = t / T;
   }
+  
+  delete a;
+  delete L;
 }
 //-----------------------------------------------------------------------------
 void ConvectionDiffusionSolver::solve(Mesh& mesh, Function& w, Function& f, 
-                            BoundaryCondition& bc)
+                            BoundaryCondition& bc, real c, real k, real T)
 {
-  ConvectionDiffusionSolver solver(mesh, w, f, bc);
+  ConvectionDiffusionSolver solver(mesh, w, f, bc, c, k, T);
   solver.solve();
 }
 //-----------------------------------------------------------------------------
@@ -102,37 +122,21 @@ void ConvectionDiffusionSolver::ComputeElementSize(Mesh& mesh, Vector& h)
   }
 }
 //-----------------------------------------------------------------------------
-void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Function& wnorm,
-						  Vector& wnorm_vector)
+void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Vector& wnorm_vector, uint nsd)
 {
-  // Compute inverse norm of w
-  const FiniteElement& wn_element = wnorm.element();
-  uint n = wn_element.spacedim();
-  uint m = w.vectordim();
-  int* dofs = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-  AffineMap map;
-  real convection_norm;
-	
-  wnorm_vector.init(mesh.noCells()*wn_element.spacedim());	
-  
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  real tau = 1.0;  // stabilisation parameter
+
+  real norm;
+  wnorm_vector.init(mesh.noVertices());
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
-    map.update(*cell);
-    wn_element.dofmap(dofs, *cell, mesh);
-    wn_element.pointmap(points, components, map);
-    for (uint i = 0; i < n; i++)
-    {
-      convection_norm = 0.0;
-      for(uint j=0; j < m; ++j) convection_norm += pow(w(points[i], j), 2);		  
-      wnorm_vector(dofs[i]) = 1.0 / sqrt(convection_norm);
-    }
+    norm = 0.0;
+    for (uint i =0; i < nsd; ++i)
+      norm += w(*vertex, i)*w(*vertex, i);
+
+    norm = 0.5*tau/sqrt(norm);
+    wnorm_vector((*vertex).id()) = norm;  
   }
-  
-  // Delete data
-  delete [] dofs;
-  delete [] components;
-  delete [] points;
+
 }
 //-----------------------------------------------------------------------------
