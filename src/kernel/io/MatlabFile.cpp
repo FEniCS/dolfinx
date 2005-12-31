@@ -28,23 +28,22 @@ MatlabFile::~MatlabFile()
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(Matrix& A)
 {
-  //   Usage:
-
-  //   File file("matrix.m");
-  //   file << A;
-  
+  // Get PETSc Mat pointer
   Mat A_mat = A.mat();
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
-  int ncols = 0;
-  const int *cols = 0;
-  const double *vals = 0;
 
   // Write matrix in sparse format
   fprintf(fp, "%s = [", A.name().c_str());
-  for (unsigned int i = 0; i < A.size(0); i++) {
+  int ncols = 0;
+  const int *cols = 0;
+  const double *vals = 0;
+  for (uint i = 0; i < A.size(0); i++)
+  {
     MatGetRow(A_mat, i, &ncols, &cols, &vals);
-    for (int pos = 0; pos < ncols; pos++) {
+    for (int pos = 0; pos < ncols; pos++)
+    {
       fprintf(fp, " %i %i %.16e", i + 1, cols[pos] + 1, vals[pos]);		
       if ( i == (A.size(0) - 1) && (pos + 1 == ncols) )
 	fprintf(fp, "];\n");
@@ -60,7 +59,6 @@ void MatlabFile::operator<<(Matrix& A)
   fclose(fp);
 
   cout << "Saved matrix " << A.name() << " (" << A.label()
-       << ") to file " << filename << " in Matlab format." << endl;
-  
+       << ") to file " << filename << " in sparse MATLAB format." << endl;
 }
 //-----------------------------------------------------------------------------

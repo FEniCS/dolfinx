@@ -1,7 +1,8 @@
+ - Fix sparse matrix output format for MATLAB
  - Modify demo problem for Stokes, add exact solution and compute error
  - Change interface for boundary conditions: operator() --> eval()
- - Added 2 benchmark problems for the Navier-Stokes solver 	
- - Added support for 2D/3D selection in Navier-Stokes solver 
+ - Add two benchmark problems for the Navier-Stokes solver 	
+ - Add support for 2D/3D selection in Navier-Stokes solver 
  - Move tic()/toc() to timing.h
  - Navier-Stokes solver back online
  - Make Solver a subclass of Parametrized
