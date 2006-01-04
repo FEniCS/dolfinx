@@ -6,10 +6,10 @@
 #
 # Compile this form with FFC: ffc NSEMomentum.form.
 
-name = "NSEMomentum_2D"
-scalar = FiniteElement("Lagrange", "triangle", 1)
-vector = FiniteElement("Vector Lagrange", "triangle", 1)
-constant_scalar = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+name = "NSEMomentum3D"
+scalar = FiniteElement("Lagrange", "tetrahedron", 1)
+vector = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+constant_scalar = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
 
 v            = BasisFunction(vector)		# test basis function 
 u            = BasisFunction(vector)		# trial basis function 

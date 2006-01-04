@@ -1,9 +1,9 @@
 SUBDIRS                          = dolfin
 nobase_include_HEADERS           = dolfin/dolfin_navierstokes.h \
-                                   dolfin/NSEMomentum_2D.h \
-                                   dolfin/NSEContinuity_2D.h \
-                                   dolfin/NSEMomentum_3D.h \
-                                   dolfin/NSEContinuity_3D.h \
+                                   dolfin/NSEMomentum2D.h \
+                                   dolfin/NSEContinuity2D.h \
+                                   dolfin/NSEMomentum3D.h \
+                                   dolfin/NSEContinuity3D.h \
                                    dolfin/NSESolver.h
 INCLUDES                         = @MODULE_CFLAGS@
 lib_LIBRARIES                    = libdolfin-navierstokes.a

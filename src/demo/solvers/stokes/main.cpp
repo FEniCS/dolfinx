@@ -13,7 +13,8 @@
 // with corresponding right-hand side given by f(x, y) = 2*pi^2*u(x, y).
 
 #include <dolfin/StokesSolver.h>
-#include "L2Norm.h"
+// FIXME: commented out to compile
+// #include "L2Norm.h"
 
 using namespace dolfin;
 
