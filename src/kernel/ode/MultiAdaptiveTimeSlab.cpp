@@ -184,7 +184,8 @@ bool MultiAdaptiveTimeSlab::check(bool first)
     r = rmax[i];
 
     // Update adaptivity
-    adaptivity.updateComponent(i, kmax[i], rmax[i], krmax[i], *method, _b);
+    adaptivity.updateComponent(i, kmax[i], kmin, rmax[i], krmax[i], *method,
+			       _b);
 
     // Save right-hand side at end-point for cG
     // We don't know if slab is acceptable, so don't overwrite f0

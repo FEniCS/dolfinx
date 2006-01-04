@@ -35,7 +35,7 @@ namespace dolfin
     void updateStart();
 
     /// Update time step for given component
-    void updateComponent(uint i, real k0, real r, real error,
+    void updateComponent(uint i, real k0, real kmin, real r, real error,
 			 const Method& method, real t);
     
     /// End time step update for system
