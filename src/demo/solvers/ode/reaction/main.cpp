@@ -112,7 +112,7 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 10 )
+  if ( argc != 11 )
   {
     dolfin_info("Usage: dolfin-reaction method solver TOL k0 kmax T gamma");
     dolfin_info("");
@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
     dolfin_info("T      - final time");
     dolfin_info("gamma  - reaction rate, something like 100.0 or 1000.0");
     dolfin_info("N      - number of components");
+    dolfin_info("L      - length of domain");
     dolfin_info("params - a DOLFIN parameter file for other parameters");
     return 1;
   }
@@ -135,7 +136,8 @@ int main(int argc, char* argv[])
   const real T = static_cast<real>(atof(argv[6]));
   const real gamma = static_cast<real>(atof(argv[7]));
   const unsigned int N = static_cast<unsigned int>(atoi(argv[8]));
-  const char* params = argv[9];
+  const real L = static_cast<unsigned int>(atof(argv[9]));
+  const char* params = argv[10];
   
   // Load parameters from file
   File file(params);
@@ -179,7 +181,7 @@ int main(int argc, char* argv[])
   //Reaction ode(100, 3.0, 5.0, 0.01, 100.0);
   //Reaction ode(1000, 0.5, 5.0, 0.01, 100.0);
 
-  Reaction ode(N, T, 5.0, 0.01, gamma);
+  Reaction ode(N, T, L, 0.01, gamma);
   ode.solve();
 
   return 0;
