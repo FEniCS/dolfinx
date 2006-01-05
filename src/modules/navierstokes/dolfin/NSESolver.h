@@ -39,6 +39,8 @@ namespace dolfin
     void ComputeStabilization(Mesh& mesh, Function& w, real nu, real k, 
 			      Vector& d1vector, Vector& d2vector);
     
+    // Set initial velocity 
+    void SetInitialVelocity(Vector& xvel);
 
   private:
 

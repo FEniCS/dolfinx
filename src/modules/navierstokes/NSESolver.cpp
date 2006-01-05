@@ -60,6 +60,9 @@ void NSESolver::solve()
   xvel = 0.0;
   xpre = 0.0;
 
+  // Set initial velocity
+  SetInitialVelocity(xvel);
+
   // Initialize vectors for the residuals of 
   // the momentum and continuity equations  
   Vector residual_mom(nsd*mesh.noVertices());
@@ -308,6 +311,33 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
       d1vector((*cell).id()) = C1 * sqr((*cell).diameter());
       d2vector((*cell).id()) = C2 * sqr((*cell).diameter());
     }	
+  }
+}
+//-----------------------------------------------------------------------------
+void NSESolver::SetInitialVelocity(Vector& xvel)
+{
+  // Function for setting initial velocity, 
+  // given as a function of the coordinates (x,y,z).
+  //
+  // This function is only temporary: initial velocity 
+  // should be possible to set in the main-file. 
+
+  real x,y,z;
+
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+  {
+    // Get coordinates of the vertex 
+    x = (*vertex).coord().x;
+    y = (*vertex).coord().y;
+    z = (*vertex).coord().z;
+    
+    // Specify the initial velocity using (x,y,z) 
+    //
+    // Example: 
+    // 
+    // xvel((*vertex).id()) = sin(x)*cos(y)*sqrt(z);
+    
+    xvel((*vertex).id()) = 0.0;
   }
 }
 //-----------------------------------------------------------------------------
