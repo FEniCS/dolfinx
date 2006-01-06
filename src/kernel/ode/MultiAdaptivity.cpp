@@ -71,13 +71,15 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
   real used_tol = safety * tol;
 
   real rmax = tol / kmin;
-  real cons = 0.01 * 3.0;
+  real cons = 0.03;
 
   // Conservative modification for "mid-components"
-  if((k0 * r) > (0.1 * cons * used_tol) && r < cons * rmax)
+  if(r < cons * rmax)
   {
-    used_tol = 0.1 * used_tol * pow(r / (cons * rmax), 0.5);
+    used_tol = cons * used_tol;
   }
+
+
 
   // Compute new time step
   real k = method.timestep(r, used_tol, k0, _kmax);

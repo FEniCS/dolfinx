@@ -24,11 +24,13 @@ def run_set(method, solver, tolmax, k0, kmax, T, gamma, N):
     for tol in [tolmax, 0.5*tolmax, 0.1*tolmax, 0.05*tolmax]:
 #    for tol in [0.5*tolmax]:
     
+        L = 5.0;
+
         # Run program
         print "Running %s/%s at tolerance %.1e" % (method, solver, tol)
         output = \
-            getoutput("./dolfin-ode-reaction %s %s %e %e %e %e %e %d %s" % \
-                (method, solver, tol, k0, kmax, T, gamma, N, \
+            getoutput("./dolfin-ode-reaction %s %s %e %e %e %e %e %d %e %s" % \
+                (method, solver, tol, k0, kmax, T, gamma, N, L, \
                  "bench-parameters.xml"))
 
         # Check if we got any solution
