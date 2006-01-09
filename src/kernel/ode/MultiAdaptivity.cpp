@@ -54,7 +54,8 @@ void MultiAdaptivity::updateStart()
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
-				      real error, const Method& method, real t)
+				      real rmax, real error,
+				      const Method& method, real t)
 {
   // Check if time step is fixed
   if ( kfixed )
@@ -70,15 +71,16 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
   
   real used_tol = safety * tol;
 
-  real rmax = tol / kmin;
-  real cons = 0.03;
-
   // Conservative modification for "mid-components"
-  if(r < cons * rmax)
+  // The parameters can likely be computed from existing parameters, such as
+  // the partitioning threshold.
+
+  real cons = 0.01;
+
+  if(r < 0.1 * rmax)
   {
     used_tol = cons * used_tol;
   }
-
 
 
   // Compute new time step

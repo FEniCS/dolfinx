@@ -62,6 +62,8 @@ def run_set(method, solver, tolmax, k0, kmax, T, gamma, N):
         file.write("%.1e\t%.3e\t%s\t\t%s (%s)\t%s (%s)\t%s\n" % \
                    (tol, error, cputime, steps, rejected, global_iter, local_iter, index))
 
+        file.flush()
+
     # Close file
     file.close()
 
