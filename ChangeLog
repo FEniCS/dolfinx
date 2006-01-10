@@ -1,3 +1,4 @@
+ - Make Poisson solver dimension independent (2D/3D)
  - Fix sparse matrix output format for MATLAB
  - Modify demo problem for Stokes, add exact solution and compute error
  - Change interface for boundary conditions: operator() --> eval()

@@ -1,1 +1,1 @@
-EXTRA_DIST = dolfin_poisson.h Poisson.h PoissonSolver.h
+EXTRA_DIST = dolfin_poisson.h Poisson2D.h Poisson3D.h PoissonSolver.h
