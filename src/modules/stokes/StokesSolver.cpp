@@ -1,11 +1,12 @@
-// Copyright (C) 2005 Anders Logg and Andy R. Terrel.
+// Copyright (C) 2005-2006 Anders Logg and Andy R. Terrel.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-12-30
+// Last changed: 2006-01-09
 
 #include <dolfin/L2Error.h>
-#include <dolfin/Stokes.h>
+#include <dolfin/Stokes2D.h>
+#include <dolfin/Stokes3D.h>
 #include <dolfin/StokesSolver.h>
 
 using namespace dolfin;
@@ -33,19 +34,35 @@ StokesSolver::StokesSolver(Mesh& mesh, Function& f, BoundaryCondition& bc)
 void StokesSolver::solve()
 {
   // Define the bilinear and linear forms
-  Stokes::BilinearForm a;
-  Stokes::LinearForm L(f);
+  BilinearForm* a = 0;
+  LinearForm* L = 0;
+  if ( mesh.type() == Mesh::triangles )
+  {
+    dolfin_info("Solving the Stokes equations (2D).");
+    a = new Stokes2D::BilinearForm();
+    L = new Stokes2D::LinearForm(f);
+  } 
+  else if ( mesh.type() == Mesh::tetrahedra )
+  {
+    dolfin_info("Solving the Stokes equations (3D).");
+    a = new Stokes3D::BilinearForm();
+    L = new Stokes3D::LinearForm(f);
+  }
+  else
+  {
+    dolfin_error("Stokes solver only implemented for 2 and 3 space dimensions.");
+  }
 
   // Discretize equation
   Matrix A;
   Vector x, b;
-  FEM::assemble(a, L, A, b, mesh, bc);
+  FEM::assemble(*a, *L, A, b, mesh, bc);
 
   // Solve the linear system
   GMRES solver;
   solver.setRtol(1.0e-15);
   solver.solve(A, x, b);
-  Function w(x, mesh, a.trial());
+  Function w(x, mesh, a->trial());
 
   // Pick the two sub functions of the solution
   Function u = w[0];
@@ -60,7 +77,12 @@ void StokesSolver::solve()
   pfile << p;
 
   // Temporary for testing
-  checkError(mesh, u);
+  if ( mesh.type() == Mesh::triangles )
+    checkError(mesh, u);
+
+  // Delete forms
+  delete a;
+  delete L;
 }
 //-----------------------------------------------------------------------------
 void StokesSolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc)

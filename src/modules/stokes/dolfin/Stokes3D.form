@@ -1,13 +1,14 @@
-# Copyright (c) 2005 Anders Logg (logg@tti-c.org)
+# Copyright (c) 2005-2006 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
 # The bilinear form a(v, u) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (Taylor-Hood elements).
+# This is the 3D version.
 
-# Compile this form with FFC: ffc Stokes.form
+# Compile this form with FFC: ffc Stokes3D.form
 
-P1 = FiniteElement("Lagrange", "triangle", 1)
-P2 = FiniteElement("Vector Lagrange", "triangle", 2)
+P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P2 = FiniteElement("Vector Lagrange", "tetrahedron", 2)
 TH = P2 + P1
 
 (v, q) = BasisFunctions(TH)
