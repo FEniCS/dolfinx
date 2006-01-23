@@ -2,13 +2,13 @@ from dolfin import *
 from math import *
 
 class Source(Function):
-    def __call__(self, point):
+    def eval(self, point, i):
 #        return pi * pi * sin(pi * point.x)
         return point.y + 1.0
 
 class SimpleBC(BoundaryCondition):
-    def __call__(self, point):
-        value = BoundaryValue()
+    def eval(self, value, point, i):
+#        value = BoundaryValue()
         if point.x == 0.0 or point.x == 1.0:
             value.set(0.0)
         return value
@@ -35,7 +35,7 @@ b.disp()
 # Linear algebra could in certain cases be handled by Python modules,
 # Numeric for example.
 
-linearsolver = GMRES()
+linearsolver = KrylovSolver()
 linearsolver.solve(A, x, b)
 
 print "x:"
@@ -56,7 +56,7 @@ vtkfile << u
 import mayavi
 #v = mayavi.mayavi(geometry="743x504") # create a MayaVi window.
 v = mayavi.mayavi() # create a MayaVi window.
-d = v.open_vtk_xml("poisson000001.vtu", config=0) # open the data file.
+d = v.open_vtk_xml("poisson000000.vtu", config=0) # open the data file.
 # The config option turns on/off showing a GUI control for the
 # data/filter/module.
 
@@ -79,13 +79,13 @@ camera.Zoom(0.7)
 v.Render()
 
 
-def myanim(t, v, f):
-    t[0] += 0.01
-    f.fil.SetScaleFactor(1.5 * (sin(t[0]) + 1.2))
-    v.Render()
+#def myanim(t, v, f):
+#    t[0] += 0.01
+#    f.fil.SetScaleFactor(1.5 * (sin(t[0]) + 1.2))
+#    v.Render()
 #    v.renwin.save_png('/tmp/anim%f.png' % t[0])
 #    v.renwin.save_png('anim%4.4f.png' % t[0])
 
-t = [0.0] # wrap the float in a mutable object
-v.start_animation(10, myanim, t, v, f)
+#t = [0.0] # wrap the float in a mutable object
+#v.start_animation(10, myanim, t, v, f)
 
