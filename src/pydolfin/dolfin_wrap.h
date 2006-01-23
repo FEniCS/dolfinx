@@ -328,13 +328,14 @@ namespace Swig {
 class SwigDirector_Function : public dolfin::Function, public Swig::Director {
 
 public:
-    SwigDirector_Function(PyObject *self);
+    SwigDirector_Function(PyObject *self, dolfin::uint vectordim = 1);
+    SwigDirector_Function(PyObject *self, FunctionPointer fp, dolfin::uint vectordim = 1);
     SwigDirector_Function(PyObject *self, dolfin::Vector &x);
     SwigDirector_Function(PyObject *self, dolfin::Vector &x, dolfin::Mesh &mesh);
-    SwigDirector_Function(PyObject *self, dolfin::Vector &x, dolfin::Mesh &mesh, dolfin::FiniteElement const &element);
+    SwigDirector_Function(PyObject *self, dolfin::Vector &x, dolfin::Mesh &mesh, dolfin::FiniteElement &element);
+    SwigDirector_Function(PyObject *self, dolfin::Function const &f);
+    virtual dolfin::real eval(dolfin::Point const &p, dolfin::uint i = 0);
     virtual ~SwigDirector_Function();
-    virtual dolfin::real operator ()(dolfin::Point const &point, dolfin::uint i) const;
-    virtual dolfin::real operator ()(dolfin::Point const &point) const;
 
 
 /* Internal Director utilities */
@@ -357,8 +358,7 @@ class SwigDirector_BoundaryCondition : public dolfin::BoundaryCondition, public 
 public:
     SwigDirector_BoundaryCondition(PyObject *self);
     virtual ~SwigDirector_BoundaryCondition();
-    virtual dolfin::BoundaryValue const operator ()(dolfin::Point const &p);
-    virtual dolfin::BoundaryValue const operator ()(dolfin::Point const &p, dolfin::uint i);
+    virtual void eval(dolfin::BoundaryValue &value, dolfin::Point const &p, dolfin::uint i);
 
 
 /* Internal Director utilities */
@@ -382,12 +382,12 @@ public:
     SwigDirector_ODE(PyObject *self, dolfin::uint N, dolfin::real T);
     virtual dolfin::real u0(dolfin::uint i);
     virtual dolfin::real f(dolfin::real const u[], dolfin::real t, dolfin::uint i);
-    virtual dolfin::real timestep(dolfin::uint i);
     virtual void save(dolfin::Sample &sample);
     virtual ~SwigDirector_ODE();
     virtual void f(dolfin::real const u[], dolfin::real t, dolfin::real y[]);
     virtual dolfin::real dfdu(dolfin::real const u[], dolfin::real t, dolfin::uint i, dolfin::uint j);
-    virtual dolfin::real timestep();
+    virtual dolfin::real timestep(dolfin::real t, dolfin::real k0) const;
+    virtual dolfin::real timestep(dolfin::real t, dolfin::uint i, dolfin::real k0) const;
     virtual void M(dolfin::real const x[], dolfin::real y[], dolfin::real const u[], dolfin::real t);
     virtual void J(dolfin::real const x[], dolfin::real y[], dolfin::real const u[], dolfin::real t);
     virtual bool update(dolfin::real const u[], dolfin::real t, bool end);

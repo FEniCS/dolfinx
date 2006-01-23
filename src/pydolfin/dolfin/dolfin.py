@@ -100,49 +100,15 @@ class VariablePtr(Variable):
 _dolfin.Variable_swigregister(VariablePtr)
 
 
-meminfo = _dolfin.meminfo
-
-sysinfo = _dolfin.sysinfo
-
-sysinfo_user = _dolfin.sysinfo_user
-
-sysinfo_date = _dolfin.sysinfo_date
-
-sysinfo_host = _dolfin.sysinfo_host
-
-sysinfo_mach = _dolfin.sysinfo_mach
-
-sysinfo_name = _dolfin.sysinfo_name
-
-sysinfo_vers = _dolfin.sysinfo_vers
-
-sysinfo_dolfin = _dolfin.sysinfo_dolfin
-
-date = _dolfin.date
-
-tic = _dolfin.tic
-
-toc = _dolfin.toc
-
-tocd = _dolfin.tocd
-
 suffix = _dolfin.suffix
 
 remove_newline = _dolfin.remove_newline
 
 length = _dolfin.length
 
+date = _dolfin.date
+
 delay = _dolfin.delay
-
-dolfin_parameter = _dolfin.dolfin_parameter
-
-dolfin_get = _dolfin.dolfin_get
-
-dolfin_parameter_changed = _dolfin.dolfin_parameter_changed
-
-dolfin_load = _dolfin.dolfin_load
-
-dolfin_save = _dolfin.dolfin_save
 class File(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, File, name, value)
@@ -193,7 +159,6 @@ class Vector(_object):
         except: pass
 
     def init(*args): return _dolfin.Vector_init(*args)
-    def extract(*args): return _dolfin.Vector_extract(*args)
     def clear(*args): return _dolfin.Vector_clear(*args)
     def size(*args): return _dolfin.Vector_size(*args)
     def vec(*args): return _dolfin.Vector_vec(*args)
@@ -248,10 +213,12 @@ class VectorElementPtr(VectorElement):
         _swig_setattr(self, VectorElement,self.__class__,VectorElement)
 _dolfin.VectorElement_swigregister(VectorElementPtr)
 
-class Matrix(_object):
+class Matrix(Variable):
     __swig_setmethods__ = {}
+    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
     __setattr__ = lambda self, name, value: _swig_setattr(self, Matrix, name, value)
     __swig_getmethods__ = {}
+    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, Matrix, name)
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::Matrix instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
@@ -352,15 +319,6 @@ class GMRES(_object):
             if self.thisown: destroy(self)
         except: pass
 
-    def solve(*args): return _dolfin.GMRES_solve(*args)
-    def setReport(*args): return _dolfin.GMRES_setReport(*args)
-    def setRtol(*args): return _dolfin.GMRES_setRtol(*args)
-    def setAtol(*args): return _dolfin.GMRES_setAtol(*args)
-    def setDtol(*args): return _dolfin.GMRES_setDtol(*args)
-    def setMaxiter(*args): return _dolfin.GMRES_setMaxiter(*args)
-    def setPreconditioner(*args): return _dolfin.GMRES_setPreconditioner(*args)
-    def solver(*args): return _dolfin.GMRES_solver(*args)
-    def disp(*args): return _dolfin.GMRES_disp(*args)
 
 class GMRESPtr(GMRES):
     def __init__(self, this):
@@ -390,6 +348,45 @@ class LinearSolverPtr(LinearSolver):
         if not hasattr(self,"thisown"): _swig_setattr(self, LinearSolver, 'thisown', 0)
         _swig_setattr(self, LinearSolver,self.__class__,LinearSolver)
 _dolfin.LinearSolver_swigregister(LinearSolverPtr)
+
+class KrylovSolver(LinearSolver):
+    __swig_setmethods__ = {}
+    for _s in [LinearSolver]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, KrylovSolver, name, value)
+    __swig_getmethods__ = {}
+    for _s in [LinearSolver]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, KrylovSolver, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::KrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    bicgstab = _dolfin.KrylovSolver_bicgstab
+    cg = _dolfin.KrylovSolver_cg
+    default_solver = _dolfin.KrylovSolver_default_solver
+    gmres = _dolfin.KrylovSolver_gmres
+    def __init__(self, *args):
+        _swig_setattr(self, KrylovSolver, 'this', _dolfin.new_KrylovSolver(*args))
+        _swig_setattr(self, KrylovSolver, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_KrylovSolver):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def solve(*args): return _dolfin.KrylovSolver_solve(*args)
+    def setType(*args): return _dolfin.KrylovSolver_setType(*args)
+    def setPreconditioner(*args): return _dolfin.KrylovSolver_setPreconditioner(*args)
+    def setReport(*args): return _dolfin.KrylovSolver_setReport(*args)
+    def setRtol(*args): return _dolfin.KrylovSolver_setRtol(*args)
+    def setAtol(*args): return _dolfin.KrylovSolver_setAtol(*args)
+    def setDtol(*args): return _dolfin.KrylovSolver_setDtol(*args)
+    def setMaxiter(*args): return _dolfin.KrylovSolver_setMaxiter(*args)
+    def solver(*args): return _dolfin.KrylovSolver_solver(*args)
+    def disp(*args): return _dolfin.KrylovSolver_disp(*args)
+
+class KrylovSolverPtr(KrylovSolver):
+    def __init__(self, this):
+        _swig_setattr(self, KrylovSolver, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, KrylovSolver, 'thisown', 0)
+        _swig_setattr(self, KrylovSolver,self.__class__,KrylovSolver)
+_dolfin.KrylovSolver_swigregister(KrylovSolverPtr)
 
 class EigenvalueSolver(_object):
     __swig_setmethods__ = {}
@@ -423,16 +420,21 @@ class Preconditioner(_object):
     def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::Preconditioner instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    default_pc = _dolfin.Preconditioner_default_pc
+    hypre_amg = _dolfin.Preconditioner_hypre_amg
+    icc = _dolfin.Preconditioner_icc
+    ilu = _dolfin.Preconditioner_ilu
+    jacobi = _dolfin.Preconditioner_jacobi
+    sor = _dolfin.Preconditioner_sor
+    none = _dolfin.Preconditioner_none
     def __del__(self, destroy=_dolfin.delete_Preconditioner):
         try:
             if self.thisown: destroy(self)
         except: pass
 
+    __swig_getmethods__["setup"] = lambda x: _dolfin.Preconditioner_setup
+    if _newclass:setup = staticmethod(_dolfin.Preconditioner_setup)
     def solve(*args): return _dolfin.Preconditioner_solve(*args)
-    __swig_getmethods__["PCApply"] = lambda x: _dolfin.Preconditioner_PCApply
-    if _newclass:PCApply = staticmethod(_dolfin.Preconditioner_PCApply)
-    __swig_getmethods__["PCCreate"] = lambda x: _dolfin.Preconditioner_PCCreate
-    if _newclass:PCCreate = staticmethod(_dolfin.Preconditioner_PCCreate)
 
 class PreconditionerPtr(Preconditioner):
     def __init__(self, this):
@@ -441,9 +443,7 @@ class PreconditionerPtr(Preconditioner):
         _swig_setattr(self, Preconditioner,self.__class__,Preconditioner)
 _dolfin.Preconditioner_swigregister(PreconditionerPtr)
 
-Preconditioner_PCApply = _dolfin.Preconditioner_PCApply
-
-Preconditioner_PCCreate = _dolfin.Preconditioner_PCCreate
+Preconditioner_setup = _dolfin.Preconditioner_setup
 
 class PETScManager(_object):
     __swig_setmethods__ = {}
@@ -486,12 +486,18 @@ class Function(Variable,TimeDependent):
             if self.thisown: destroy(self)
         except: pass
 
-    def interpolate(*args): return _dolfin.Function_interpolate(*args)
+    def eval(*args): return _dolfin.Function_eval(*args)
     def __call__(*args): return _dolfin.Function___call__(*args)
+    def interpolate(*args): return _dolfin.Function_interpolate(*args)
+    def vectordim(*args): return _dolfin.Function_vectordim(*args)
     def vector(*args): return _dolfin.Function_vector(*args)
     def mesh(*args): return _dolfin.Function_mesh(*args)
     def element(*args): return _dolfin.Function_element(*args)
-    def set(*args): return _dolfin.Function_set(*args)
+    def attach(*args): return _dolfin.Function_attach(*args)
+    user = _dolfin.Function_user
+    functionpointer = _dolfin.Function_functionpointer
+    discrete = _dolfin.Function_discrete
+    def type(*args): return _dolfin.Function_type(*args)
     def __disown__(self):
         self.thisown = 0
         _dolfin.disown_Function(self)
@@ -516,12 +522,12 @@ class FEM(_object):
     if _newclass:assemble = staticmethod(_dolfin.FEM_assemble)
     __swig_getmethods__["applyBC"] = lambda x: _dolfin.FEM_applyBC
     if _newclass:applyBC = staticmethod(_dolfin.FEM_applyBC)
-    __swig_getmethods__["lump"] = lambda x: _dolfin.FEM_lump
-    if _newclass:lump = staticmethod(_dolfin.FEM_lump)
+    __swig_getmethods__["assembleBCresidual"] = lambda x: _dolfin.FEM_assembleBCresidual
+    if _newclass:assembleBCresidual = staticmethod(_dolfin.FEM_assembleBCresidual)
     __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
     if _newclass:size = staticmethod(_dolfin.FEM_size)
-    __swig_getmethods__["nzsize"] = lambda x: _dolfin.FEM_nzsize
-    if _newclass:nzsize = staticmethod(_dolfin.FEM_nzsize)
+    __swig_getmethods__["lump"] = lambda x: _dolfin.FEM_lump
+    if _newclass:lump = staticmethod(_dolfin.FEM_lump)
     __swig_getmethods__["disp"] = lambda x: _dolfin.FEM_disp
     if _newclass:disp = staticmethod(_dolfin.FEM_disp)
 
@@ -536,11 +542,11 @@ FEM_assemble = _dolfin.FEM_assemble
 
 FEM_applyBC = _dolfin.FEM_applyBC
 
-FEM_lump = _dolfin.FEM_lump
+FEM_assembleBCresidual = _dolfin.FEM_assembleBCresidual
 
 FEM_size = _dolfin.FEM_size
 
-FEM_nzsize = _dolfin.FEM_nzsize
+FEM_lump = _dolfin.FEM_lump
 
 FEM_disp = _dolfin.FEM_disp
 
@@ -702,7 +708,7 @@ class BoundaryCondition(TimeDependent):
             if self.thisown: destroy(self)
         except: pass
 
-    def __call__(*args): return _dolfin.BoundaryCondition___call__(*args)
+    def eval(*args): return _dolfin.BoundaryCondition_eval(*args)
     def __disown__(self):
         self.thisown = 0
         _dolfin.disown_BoundaryCondition(self)
@@ -816,17 +822,18 @@ class Mesh(Variable):
     def merge(*args): return _dolfin.Mesh_merge(*args)
     def init(*args): return _dolfin.Mesh_init(*args)
     def clear(*args): return _dolfin.Mesh_clear(*args)
-    def noNodes(*args): return _dolfin.Mesh_noNodes(*args)
+    def noSpaceDim(*args): return _dolfin.Mesh_noSpaceDim(*args)
+    def noVertices(*args): return _dolfin.Mesh_noVertices(*args)
     def noCells(*args): return _dolfin.Mesh_noCells(*args)
     def noEdges(*args): return _dolfin.Mesh_noEdges(*args)
     def noFaces(*args): return _dolfin.Mesh_noFaces(*args)
-    def createNode(*args): return _dolfin.Mesh_createNode(*args)
+    def createVertex(*args): return _dolfin.Mesh_createVertex(*args)
     def createCell(*args): return _dolfin.Mesh_createCell(*args)
     def createEdge(*args): return _dolfin.Mesh_createEdge(*args)
     def createFace(*args): return _dolfin.Mesh_createFace(*args)
     def remove(*args): return _dolfin.Mesh_remove(*args)
     def type(*args): return _dolfin.Mesh_type(*args)
-    def node(*args): return _dolfin.Mesh_node(*args)
+    def vertex(*args): return _dolfin.Mesh_vertex(*args)
     def cell(*args): return _dolfin.Mesh_cell(*args)
     def edge(*args): return _dolfin.Mesh_edge(*args)
     def face(*args): return _dolfin.Mesh_face(*args)
@@ -861,7 +868,7 @@ class Boundary(_object):
             if self.thisown: destroy(self)
         except: pass
 
-    def noNodes(*args): return _dolfin.Boundary_noNodes(*args)
+    def noVertices(*args): return _dolfin.Boundary_noVertices(*args)
     def noEdges(*args): return _dolfin.Boundary_noEdges(*args)
     def noFaces(*args): return _dolfin.Boundary_noFaces(*args)
 
@@ -910,52 +917,52 @@ class PointPtr(Point):
         _swig_setattr(self, Point,self.__class__,Point)
 _dolfin.Point_swigregister(PointPtr)
 
-class Node(_object):
+class Vertex(_object):
     __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, Node, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Vertex, name, value)
     __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, Node, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, Vertex, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Node instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Vertex instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
-        _swig_setattr(self, Node, 'this', _dolfin.new_Node(*args))
-        _swig_setattr(self, Node, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_Node):
+        _swig_setattr(self, Vertex, 'this', _dolfin.new_Vertex(*args))
+        _swig_setattr(self, Vertex, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_Vertex):
         try:
             if self.thisown: destroy(self)
         except: pass
 
-    def clear(*args): return _dolfin.Node_clear(*args)
-    def id(*args): return _dolfin.Node_id(*args)
-    def noNodeNeighbors(*args): return _dolfin.Node_noNodeNeighbors(*args)
-    def noCellNeighbors(*args): return _dolfin.Node_noCellNeighbors(*args)
-    def noEdgeNeighbors(*args): return _dolfin.Node_noEdgeNeighbors(*args)
-    def node(*args): return _dolfin.Node_node(*args)
-    def cell(*args): return _dolfin.Node_cell(*args)
-    def edge(*args): return _dolfin.Node_edge(*args)
-    def parent(*args): return _dolfin.Node_parent(*args)
-    def child(*args): return _dolfin.Node_child(*args)
-    def mesh(*args): return _dolfin.Node_mesh(*args)
-    def coord(*args): return _dolfin.Node_coord(*args)
-    def midpoint(*args): return _dolfin.Node_midpoint(*args)
-    def dist(*args): return _dolfin.Node_dist(*args)
-    def neighbor(*args): return _dolfin.Node_neighbor(*args)
-    def __ne__(*args): return _dolfin.Node___ne__(*args)
-    def __eq__(*args): return _dolfin.Node___eq__(*args)
-    def __lt__(*args): return _dolfin.Node___lt__(*args)
-    def __le__(*args): return _dolfin.Node___le__(*args)
-    def __gt__(*args): return _dolfin.Node___gt__(*args)
-    def __ge__(*args): return _dolfin.Node___ge__(*args)
-    __swig_setmethods__["nbids"] = _dolfin.Node_nbids_set
-    __swig_getmethods__["nbids"] = _dolfin.Node_nbids_get
-    if _newclass:nbids = property(_dolfin.Node_nbids_get, _dolfin.Node_nbids_set)
+    def clear(*args): return _dolfin.Vertex_clear(*args)
+    def id(*args): return _dolfin.Vertex_id(*args)
+    def noVertexNeighbors(*args): return _dolfin.Vertex_noVertexNeighbors(*args)
+    def noCellNeighbors(*args): return _dolfin.Vertex_noCellNeighbors(*args)
+    def noEdgeNeighbors(*args): return _dolfin.Vertex_noEdgeNeighbors(*args)
+    def vertex(*args): return _dolfin.Vertex_vertex(*args)
+    def cell(*args): return _dolfin.Vertex_cell(*args)
+    def edge(*args): return _dolfin.Vertex_edge(*args)
+    def parent(*args): return _dolfin.Vertex_parent(*args)
+    def child(*args): return _dolfin.Vertex_child(*args)
+    def mesh(*args): return _dolfin.Vertex_mesh(*args)
+    def coord(*args): return _dolfin.Vertex_coord(*args)
+    def midpoint(*args): return _dolfin.Vertex_midpoint(*args)
+    def dist(*args): return _dolfin.Vertex_dist(*args)
+    def neighbor(*args): return _dolfin.Vertex_neighbor(*args)
+    def __ne__(*args): return _dolfin.Vertex___ne__(*args)
+    def __eq__(*args): return _dolfin.Vertex___eq__(*args)
+    def __lt__(*args): return _dolfin.Vertex___lt__(*args)
+    def __le__(*args): return _dolfin.Vertex___le__(*args)
+    def __gt__(*args): return _dolfin.Vertex___gt__(*args)
+    def __ge__(*args): return _dolfin.Vertex___ge__(*args)
+    __swig_setmethods__["nbids"] = _dolfin.Vertex_nbids_set
+    __swig_getmethods__["nbids"] = _dolfin.Vertex_nbids_get
+    if _newclass:nbids = property(_dolfin.Vertex_nbids_get, _dolfin.Vertex_nbids_set)
 
-class NodePtr(Node):
+class VertexPtr(Vertex):
     def __init__(self, this):
-        _swig_setattr(self, Node, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, Node, 'thisown', 0)
-        _swig_setattr(self, Node,self.__class__,Node)
-_dolfin.Node_swigregister(NodePtr)
+        _swig_setattr(self, Vertex, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, Vertex, 'thisown', 0)
+        _swig_setattr(self, Vertex,self.__class__,Vertex)
+_dolfin.Vertex_swigregister(VertexPtr)
 
 class Edge(_object):
     __swig_setmethods__ = {}
@@ -975,7 +982,7 @@ class Edge(_object):
     def clear(*args): return _dolfin.Edge_clear(*args)
     def id(*args): return _dolfin.Edge_id(*args)
     def noCellNeighbors(*args): return _dolfin.Edge_noCellNeighbors(*args)
-    def node(*args): return _dolfin.Edge_node(*args)
+    def vertex(*args): return _dolfin.Edge_vertex(*args)
     def cell(*args): return _dolfin.Edge_cell(*args)
     def mesh(*args): return _dolfin.Edge_mesh(*args)
     def coord(*args): return _dolfin.Edge_coord(*args)
@@ -1004,7 +1011,7 @@ class Triangle(_object):
     def __init__(self, *args):
         _swig_setattr(self, Triangle, 'this', _dolfin.new_Triangle(*args))
         _swig_setattr(self, Triangle, 'thisown', 1)
-    def noNodes(*args): return _dolfin.Triangle_noNodes(*args)
+    def noVertices(*args): return _dolfin.Triangle_noVertices(*args)
     def noEdges(*args): return _dolfin.Triangle_noEdges(*args)
     def noFaces(*args): return _dolfin.Triangle_noFaces(*args)
     def noBoundaries(*args): return _dolfin.Triangle_noBoundaries(*args)
@@ -1032,7 +1039,7 @@ class Tetrahedron(_object):
     def __init__(self, *args):
         _swig_setattr(self, Tetrahedron, 'this', _dolfin.new_Tetrahedron(*args))
         _swig_setattr(self, Tetrahedron, 'thisown', 1)
-    def noNodes(*args): return _dolfin.Tetrahedron_noNodes(*args)
+    def noVertices(*args): return _dolfin.Tetrahedron_noVertices(*args)
     def noEdges(*args): return _dolfin.Tetrahedron_noEdges(*args)
     def noFaces(*args): return _dolfin.Tetrahedron_noFaces(*args)
     def noBoundaries(*args): return _dolfin.Tetrahedron_noBoundaries(*args)
@@ -1074,14 +1081,14 @@ class Cell(_object):
     def id(*args): return _dolfin.Cell_id(*args)
     def type(*args): return _dolfin.Cell_type(*args)
     def orientation(*args): return _dolfin.Cell_orientation(*args)
-    def noNodes(*args): return _dolfin.Cell_noNodes(*args)
+    def noVertices(*args): return _dolfin.Cell_noVertices(*args)
     def noEdges(*args): return _dolfin.Cell_noEdges(*args)
     def noFaces(*args): return _dolfin.Cell_noFaces(*args)
     def noBoundaries(*args): return _dolfin.Cell_noBoundaries(*args)
     def noCellNeighbors(*args): return _dolfin.Cell_noCellNeighbors(*args)
-    def noNodeNeighbors(*args): return _dolfin.Cell_noNodeNeighbors(*args)
+    def noVertexNeighbors(*args): return _dolfin.Cell_noVertexNeighbors(*args)
     def noChildren(*args): return _dolfin.Cell_noChildren(*args)
-    def node(*args): return _dolfin.Cell_node(*args)
+    def vertex(*args): return _dolfin.Cell_vertex(*args)
     def edge(*args): return _dolfin.Cell_edge(*args)
     def face(*args): return _dolfin.Cell_face(*args)
     def neighbor(*args): return _dolfin.Cell_neighbor(*args)
@@ -1090,7 +1097,7 @@ class Cell(_object):
     def mesh(*args): return _dolfin.Cell_mesh(*args)
     def coord(*args): return _dolfin.Cell_coord(*args)
     def midpoint(*args): return _dolfin.Cell_midpoint(*args)
-    def nodeID(*args): return _dolfin.Cell_nodeID(*args)
+    def vertexID(*args): return _dolfin.Cell_vertexID(*args)
     def edgeID(*args): return _dolfin.Cell_edgeID(*args)
     def faceID(*args): return _dolfin.Cell_faceID(*args)
     def volume(*args): return _dolfin.Cell_volume(*args)
@@ -1143,58 +1150,58 @@ class FacePtr(Face):
         _swig_setattr(self, Face,self.__class__,Face)
 _dolfin.Face_swigregister(FacePtr)
 
-class NodeIterator(_object):
+class VertexIterator(_object):
     __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, NodeIterator, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, VertexIterator, name, value)
     __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, NodeIterator, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, VertexIterator, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::NodeIterator instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::VertexIterator instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
-        _swig_setattr(self, NodeIterator, 'this', _dolfin.new_NodeIterator(*args))
-        _swig_setattr(self, NodeIterator, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_NodeIterator):
+        _swig_setattr(self, VertexIterator, 'this', _dolfin.new_VertexIterator(*args))
+        _swig_setattr(self, VertexIterator, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_VertexIterator):
         try:
             if self.thisown: destroy(self)
         except: pass
 
-    def increment(*args): return _dolfin.NodeIterator_increment(*args)
-    def end(*args): return _dolfin.NodeIterator_end(*args)
-    def last(*args): return _dolfin.NodeIterator_last(*args)
-    def index(*args): return _dolfin.NodeIterator_index(*args)
-    def __ref__(*args): return _dolfin.NodeIterator___ref__(*args)
-    def __deref__(*args): return _dolfin.NodeIterator___deref__(*args)
-    def __eq__(*args): return _dolfin.NodeIterator___eq__(*args)
-    def __ne__(*args): return _dolfin.NodeIterator___ne__(*args)
-    def clear(*args): return _dolfin.NodeIterator_clear(*args)
-    def id(*args): return _dolfin.NodeIterator_id(*args)
-    def noNodeNeighbors(*args): return _dolfin.NodeIterator_noNodeNeighbors(*args)
-    def noCellNeighbors(*args): return _dolfin.NodeIterator_noCellNeighbors(*args)
-    def noEdgeNeighbors(*args): return _dolfin.NodeIterator_noEdgeNeighbors(*args)
-    def node(*args): return _dolfin.NodeIterator_node(*args)
-    def cell(*args): return _dolfin.NodeIterator_cell(*args)
-    def edge(*args): return _dolfin.NodeIterator_edge(*args)
-    def parent(*args): return _dolfin.NodeIterator_parent(*args)
-    def child(*args): return _dolfin.NodeIterator_child(*args)
-    def mesh(*args): return _dolfin.NodeIterator_mesh(*args)
-    def coord(*args): return _dolfin.NodeIterator_coord(*args)
-    def midpoint(*args): return _dolfin.NodeIterator_midpoint(*args)
-    def dist(*args): return _dolfin.NodeIterator_dist(*args)
-    def neighbor(*args): return _dolfin.NodeIterator_neighbor(*args)
-    def __lt__(*args): return _dolfin.NodeIterator___lt__(*args)
-    def __le__(*args): return _dolfin.NodeIterator___le__(*args)
-    def __gt__(*args): return _dolfin.NodeIterator___gt__(*args)
-    def __ge__(*args): return _dolfin.NodeIterator___ge__(*args)
-    __swig_setmethods__["nbids"] = _dolfin.NodeIterator_nbids_set
-    __swig_getmethods__["nbids"] = _dolfin.NodeIterator_nbids_get
-    if _newclass:nbids = property(_dolfin.NodeIterator_nbids_get, _dolfin.NodeIterator_nbids_set)
+    def increment(*args): return _dolfin.VertexIterator_increment(*args)
+    def end(*args): return _dolfin.VertexIterator_end(*args)
+    def last(*args): return _dolfin.VertexIterator_last(*args)
+    def index(*args): return _dolfin.VertexIterator_index(*args)
+    def __ref__(*args): return _dolfin.VertexIterator___ref__(*args)
+    def __deref__(*args): return _dolfin.VertexIterator___deref__(*args)
+    def __eq__(*args): return _dolfin.VertexIterator___eq__(*args)
+    def __ne__(*args): return _dolfin.VertexIterator___ne__(*args)
+    def clear(*args): return _dolfin.VertexIterator_clear(*args)
+    def id(*args): return _dolfin.VertexIterator_id(*args)
+    def noVertexNeighbors(*args): return _dolfin.VertexIterator_noVertexNeighbors(*args)
+    def noCellNeighbors(*args): return _dolfin.VertexIterator_noCellNeighbors(*args)
+    def noEdgeNeighbors(*args): return _dolfin.VertexIterator_noEdgeNeighbors(*args)
+    def vertex(*args): return _dolfin.VertexIterator_vertex(*args)
+    def cell(*args): return _dolfin.VertexIterator_cell(*args)
+    def edge(*args): return _dolfin.VertexIterator_edge(*args)
+    def parent(*args): return _dolfin.VertexIterator_parent(*args)
+    def child(*args): return _dolfin.VertexIterator_child(*args)
+    def mesh(*args): return _dolfin.VertexIterator_mesh(*args)
+    def coord(*args): return _dolfin.VertexIterator_coord(*args)
+    def midpoint(*args): return _dolfin.VertexIterator_midpoint(*args)
+    def dist(*args): return _dolfin.VertexIterator_dist(*args)
+    def neighbor(*args): return _dolfin.VertexIterator_neighbor(*args)
+    def __lt__(*args): return _dolfin.VertexIterator___lt__(*args)
+    def __le__(*args): return _dolfin.VertexIterator___le__(*args)
+    def __gt__(*args): return _dolfin.VertexIterator___gt__(*args)
+    def __ge__(*args): return _dolfin.VertexIterator___ge__(*args)
+    __swig_setmethods__["nbids"] = _dolfin.VertexIterator_nbids_set
+    __swig_getmethods__["nbids"] = _dolfin.VertexIterator_nbids_get
+    if _newclass:nbids = property(_dolfin.VertexIterator_nbids_get, _dolfin.VertexIterator_nbids_set)
 
-class NodeIteratorPtr(NodeIterator):
+class VertexIteratorPtr(VertexIterator):
     def __init__(self, this):
-        _swig_setattr(self, NodeIterator, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, NodeIterator, 'thisown', 0)
-        _swig_setattr(self, NodeIterator,self.__class__,NodeIterator)
-_dolfin.NodeIterator_swigregister(NodeIteratorPtr)
+        _swig_setattr(self, VertexIterator, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, VertexIterator, 'thisown', 0)
+        _swig_setattr(self, VertexIterator,self.__class__,VertexIterator)
+_dolfin.VertexIterator_swigregister(VertexIteratorPtr)
 
 class CellIterator(_object):
     __swig_setmethods__ = {}
@@ -1223,14 +1230,14 @@ class CellIterator(_object):
     def id(*args): return _dolfin.CellIterator_id(*args)
     def type(*args): return _dolfin.CellIterator_type(*args)
     def orientation(*args): return _dolfin.CellIterator_orientation(*args)
-    def noNodes(*args): return _dolfin.CellIterator_noNodes(*args)
+    def noVertices(*args): return _dolfin.CellIterator_noVertices(*args)
     def noEdges(*args): return _dolfin.CellIterator_noEdges(*args)
     def noFaces(*args): return _dolfin.CellIterator_noFaces(*args)
     def noBoundaries(*args): return _dolfin.CellIterator_noBoundaries(*args)
     def noCellNeighbors(*args): return _dolfin.CellIterator_noCellNeighbors(*args)
-    def noNodeNeighbors(*args): return _dolfin.CellIterator_noNodeNeighbors(*args)
+    def noVertexNeighbors(*args): return _dolfin.CellIterator_noVertexNeighbors(*args)
     def noChildren(*args): return _dolfin.CellIterator_noChildren(*args)
-    def node(*args): return _dolfin.CellIterator_node(*args)
+    def vertex(*args): return _dolfin.CellIterator_vertex(*args)
     def edge(*args): return _dolfin.CellIterator_edge(*args)
     def face(*args): return _dolfin.CellIterator_face(*args)
     def neighbor(*args): return _dolfin.CellIterator_neighbor(*args)
@@ -1239,7 +1246,7 @@ class CellIterator(_object):
     def mesh(*args): return _dolfin.CellIterator_mesh(*args)
     def coord(*args): return _dolfin.CellIterator_coord(*args)
     def midpoint(*args): return _dolfin.CellIterator_midpoint(*args)
-    def nodeID(*args): return _dolfin.CellIterator_nodeID(*args)
+    def vertexID(*args): return _dolfin.CellIterator_vertexID(*args)
     def edgeID(*args): return _dolfin.CellIterator_edgeID(*args)
     def faceID(*args): return _dolfin.CellIterator_faceID(*args)
     def volume(*args): return _dolfin.CellIterator_volume(*args)
@@ -1281,7 +1288,7 @@ class EdgeIterator(_object):
     def clear(*args): return _dolfin.EdgeIterator_clear(*args)
     def id(*args): return _dolfin.EdgeIterator_id(*args)
     def noCellNeighbors(*args): return _dolfin.EdgeIterator_noCellNeighbors(*args)
-    def node(*args): return _dolfin.EdgeIterator_node(*args)
+    def vertex(*args): return _dolfin.EdgeIterator_vertex(*args)
     def cell(*args): return _dolfin.EdgeIterator_cell(*args)
     def mesh(*args): return _dolfin.EdgeIterator_mesh(*args)
     def coord(*args): return _dolfin.EdgeIterator_coord(*args)
@@ -1364,17 +1371,18 @@ class MeshIterator(_object):
     def merge(*args): return _dolfin.MeshIterator_merge(*args)
     def init(*args): return _dolfin.MeshIterator_init(*args)
     def clear(*args): return _dolfin.MeshIterator_clear(*args)
-    def noNodes(*args): return _dolfin.MeshIterator_noNodes(*args)
+    def noSpaceDim(*args): return _dolfin.MeshIterator_noSpaceDim(*args)
+    def noVertices(*args): return _dolfin.MeshIterator_noVertices(*args)
     def noCells(*args): return _dolfin.MeshIterator_noCells(*args)
     def noEdges(*args): return _dolfin.MeshIterator_noEdges(*args)
     def noFaces(*args): return _dolfin.MeshIterator_noFaces(*args)
-    def createNode(*args): return _dolfin.MeshIterator_createNode(*args)
+    def createVertex(*args): return _dolfin.MeshIterator_createVertex(*args)
     def createCell(*args): return _dolfin.MeshIterator_createCell(*args)
     def createEdge(*args): return _dolfin.MeshIterator_createEdge(*args)
     def createFace(*args): return _dolfin.MeshIterator_createFace(*args)
     def remove(*args): return _dolfin.MeshIterator_remove(*args)
     def type(*args): return _dolfin.MeshIterator_type(*args)
-    def node(*args): return _dolfin.MeshIterator_node(*args)
+    def vertex(*args): return _dolfin.MeshIterator_vertex(*args)
     def cell(*args): return _dolfin.MeshIterator_cell(*args)
     def edge(*args): return _dolfin.MeshIterator_edge(*args)
     def face(*args): return _dolfin.MeshIterator_face(*args)
@@ -1573,6 +1581,7 @@ class Method(_object):
 
     def type(*args): return _dolfin.Method_type(*args)
     def degree(*args): return _dolfin.Method_degree(*args)
+    def order(*args): return _dolfin.Method_order(*args)
     def nsize(*args): return _dolfin.Method_nsize(*args)
     def qsize(*args): return _dolfin.Method_qsize(*args)
     def npoint(*args): return _dolfin.Method_npoint(*args)
@@ -1714,8 +1723,6 @@ class MonoAdaptivity(_object):
 
     def timestep(*args): return _dolfin.MonoAdaptivity_timestep(*args)
     def update(*args): return _dolfin.MonoAdaptivity_update(*args)
-    def accept(*args): return _dolfin.MonoAdaptivity_accept(*args)
-    def threshold(*args): return _dolfin.MonoAdaptivity_threshold(*args)
 
 class MonoAdaptivityPtr(MonoAdaptivity):
     def __init__(self, this):
@@ -1815,6 +1822,7 @@ class MultiAdaptiveTimeSlab(_object):
     def solve(*args): return _dolfin.MultiAdaptiveTimeSlab_solve(*args)
     def check(*args): return _dolfin.MultiAdaptiveTimeSlab_check(*args)
     def shift(*args): return _dolfin.MultiAdaptiveTimeSlab_shift(*args)
+    def reset(*args): return _dolfin.MultiAdaptiveTimeSlab_reset(*args)
     def sample(*args): return _dolfin.MultiAdaptiveTimeSlab_sample(*args)
     def usample(*args): return _dolfin.MultiAdaptiveTimeSlab_usample(*args)
     def ksample(*args): return _dolfin.MultiAdaptiveTimeSlab_ksample(*args)
@@ -1844,10 +1852,9 @@ class MultiAdaptivity(_object):
         except: pass
 
     def timestep(*args): return _dolfin.MultiAdaptivity_timestep(*args)
-    def updateInit(*args): return _dolfin.MultiAdaptivity_updateInit(*args)
+    def updateStart(*args): return _dolfin.MultiAdaptivity_updateStart(*args)
     def updateComponent(*args): return _dolfin.MultiAdaptivity_updateComponent(*args)
-    def accept(*args): return _dolfin.MultiAdaptivity_accept(*args)
-    def threshold(*args): return _dolfin.MultiAdaptivity_threshold(*args)
+    def updateEnd(*args): return _dolfin.MultiAdaptivity_updateEnd(*args)
 
 class MultiAdaptivityPtr(MultiAdaptivity):
     def __init__(self, this):
@@ -2013,30 +2020,6 @@ class ReducedModelPtr(ReducedModel):
         _swig_setattr(self, ReducedModel,self.__class__,ReducedModel)
 _dolfin.ReducedModel_swigregister(ReducedModelPtr)
 
-class Regulator(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, Regulator, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, Regulator, name)
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Regulator instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        _swig_setattr(self, Regulator, 'this', _dolfin.new_Regulator(*args))
-        _swig_setattr(self, Regulator, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_Regulator):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def regulate(*args): return _dolfin.Regulator_regulate(*args)
-
-class RegulatorPtr(Regulator):
-    def __init__(self, this):
-        _swig_setattr(self, Regulator, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, Regulator, 'thisown', 0)
-        _swig_setattr(self, Regulator,self.__class__,Regulator)
-_dolfin.Regulator_swigregister(RegulatorPtr)
-
 class Sample(Variable):
     __swig_setmethods__ = {}
     for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
@@ -2139,7 +2122,6 @@ class TimeSlabSolver(_object):
             if self.thisown: destroy(self)
         except: pass
 
-    def solve(*args): return _dolfin.TimeSlabSolver_solve(*args)
 
 class TimeSlabSolverPtr(TimeSlabSolver):
     def __init__(self, this):
@@ -2249,37 +2231,38 @@ _dolfin.PoissonSolver_swigregister(PoissonSolverPtr)
 
 PoissonSolver_solve = _dolfin.PoissonSolver_solve
 
-class PoissonBilinearFormTestElement(FiniteElement):
+class BilinearFormTestElement(FiniteElement):
     __swig_setmethods__ = {}
     for _s in [FiniteElement]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, PoissonBilinearFormTestElement, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, BilinearFormTestElement, name, value)
     __swig_getmethods__ = {}
     for _s in [FiniteElement]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, PoissonBilinearFormTestElement, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, BilinearFormTestElement, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::BilinearFormTestElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::BilinearFormTestElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
-        _swig_setattr(self, PoissonBilinearFormTestElement, 'this', _dolfin.new_PoissonBilinearFormTestElement(*args))
-        _swig_setattr(self, PoissonBilinearFormTestElement, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_PoissonBilinearFormTestElement):
+        _swig_setattr(self, BilinearFormTestElement, 'this', _dolfin.new_BilinearFormTestElement(*args))
+        _swig_setattr(self, BilinearFormTestElement, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_BilinearFormTestElement):
         try:
             if self.thisown: destroy(self)
         except: pass
 
-    def spacedim(*args): return _dolfin.PoissonBilinearFormTestElement_spacedim(*args)
-    def shapedim(*args): return _dolfin.PoissonBilinearFormTestElement_shapedim(*args)
-    def tensordim(*args): return _dolfin.PoissonBilinearFormTestElement_tensordim(*args)
-    def rank(*args): return _dolfin.PoissonBilinearFormTestElement_rank(*args)
-    def dofmap(*args): return _dolfin.PoissonBilinearFormTestElement_dofmap(*args)
-    def pointmap(*args): return _dolfin.PoissonBilinearFormTestElement_pointmap(*args)
-    def vertexeval(*args): return _dolfin.PoissonBilinearFormTestElement_vertexeval(*args)
+    def spacedim(*args): return _dolfin.BilinearFormTestElement_spacedim(*args)
+    def shapedim(*args): return _dolfin.BilinearFormTestElement_shapedim(*args)
+    def tensordim(*args): return _dolfin.BilinearFormTestElement_tensordim(*args)
+    def elementdim(*args): return _dolfin.BilinearFormTestElement_elementdim(*args)
+    def rank(*args): return _dolfin.BilinearFormTestElement_rank(*args)
+    def dofmap(*args): return _dolfin.BilinearFormTestElement_dofmap(*args)
+    def pointmap(*args): return _dolfin.BilinearFormTestElement_pointmap(*args)
+    def vertexeval(*args): return _dolfin.BilinearFormTestElement_vertexeval(*args)
 
-class PoissonBilinearFormTestElementPtr(PoissonBilinearFormTestElement):
+class BilinearFormTestElementPtr(BilinearFormTestElement):
     def __init__(self, this):
-        _swig_setattr(self, PoissonBilinearFormTestElement, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, PoissonBilinearFormTestElement, 'thisown', 0)
-        _swig_setattr(self, PoissonBilinearFormTestElement,self.__class__,PoissonBilinearFormTestElement)
-_dolfin.PoissonBilinearFormTestElement_swigregister(PoissonBilinearFormTestElementPtr)
+        _swig_setattr(self, BilinearFormTestElement, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, BilinearFormTestElement, 'thisown', 0)
+        _swig_setattr(self, BilinearFormTestElement,self.__class__,BilinearFormTestElement)
+_dolfin.BilinearFormTestElement_swigregister(BilinearFormTestElementPtr)
 
 class PoissonBilinearFormTrialElement(FiniteElement):
     __swig_setmethods__ = {}
@@ -2289,7 +2272,7 @@ class PoissonBilinearFormTrialElement(FiniteElement):
     for _s in [FiniteElement]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, PoissonBilinearFormTrialElement, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::BilinearFormTrialElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::BilinearFormTrialElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         _swig_setattr(self, PoissonBilinearFormTrialElement, 'this', _dolfin.new_PoissonBilinearFormTrialElement(*args))
         _swig_setattr(self, PoissonBilinearFormTrialElement, 'thisown', 1)
@@ -2301,6 +2284,7 @@ class PoissonBilinearFormTrialElement(FiniteElement):
     def spacedim(*args): return _dolfin.PoissonBilinearFormTrialElement_spacedim(*args)
     def shapedim(*args): return _dolfin.PoissonBilinearFormTrialElement_shapedim(*args)
     def tensordim(*args): return _dolfin.PoissonBilinearFormTrialElement_tensordim(*args)
+    def elementdim(*args): return _dolfin.PoissonBilinearFormTrialElement_elementdim(*args)
     def rank(*args): return _dolfin.PoissonBilinearFormTrialElement_rank(*args)
     def dofmap(*args): return _dolfin.PoissonBilinearFormTrialElement_dofmap(*args)
     def pointmap(*args): return _dolfin.PoissonBilinearFormTrialElement_pointmap(*args)
@@ -2321,7 +2305,7 @@ class PoissonBilinearForm(BilinearForm):
     for _s in [BilinearForm]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, PoissonBilinearForm, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::BilinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::BilinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         _swig_setattr(self, PoissonBilinearForm, 'this', _dolfin.new_PoissonBilinearForm(*args))
         _swig_setattr(self, PoissonBilinearForm, 'thisown', 1)
@@ -2342,7 +2326,7 @@ class LinearFormTestElement(FiniteElement):
     for _s in [FiniteElement]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, LinearFormTestElement, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::LinearFormTestElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::LinearFormTestElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         _swig_setattr(self, LinearFormTestElement, 'this', _dolfin.new_LinearFormTestElement(*args))
         _swig_setattr(self, LinearFormTestElement, 'thisown', 1)
@@ -2354,6 +2338,7 @@ class LinearFormTestElement(FiniteElement):
     def spacedim(*args): return _dolfin.LinearFormTestElement_spacedim(*args)
     def shapedim(*args): return _dolfin.LinearFormTestElement_shapedim(*args)
     def tensordim(*args): return _dolfin.LinearFormTestElement_tensordim(*args)
+    def elementdim(*args): return _dolfin.LinearFormTestElement_elementdim(*args)
     def rank(*args): return _dolfin.LinearFormTestElement_rank(*args)
     def dofmap(*args): return _dolfin.LinearFormTestElement_dofmap(*args)
     def pointmap(*args): return _dolfin.LinearFormTestElement_pointmap(*args)
@@ -2374,7 +2359,7 @@ class LinearFormFunctionElement_0(FiniteElement):
     for _s in [FiniteElement]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, LinearFormFunctionElement_0, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::LinearFormFunctionElement_0 instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::LinearFormFunctionElement_0 instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         _swig_setattr(self, LinearFormFunctionElement_0, 'this', _dolfin.new_LinearFormFunctionElement_0(*args))
         _swig_setattr(self, LinearFormFunctionElement_0, 'thisown', 1)
@@ -2386,6 +2371,7 @@ class LinearFormFunctionElement_0(FiniteElement):
     def spacedim(*args): return _dolfin.LinearFormFunctionElement_0_spacedim(*args)
     def shapedim(*args): return _dolfin.LinearFormFunctionElement_0_shapedim(*args)
     def tensordim(*args): return _dolfin.LinearFormFunctionElement_0_tensordim(*args)
+    def elementdim(*args): return _dolfin.LinearFormFunctionElement_0_elementdim(*args)
     def rank(*args): return _dolfin.LinearFormFunctionElement_0_rank(*args)
     def dofmap(*args): return _dolfin.LinearFormFunctionElement_0_dofmap(*args)
     def pointmap(*args): return _dolfin.LinearFormFunctionElement_0_pointmap(*args)
@@ -2406,7 +2392,7 @@ class PoissonLinearForm(LinearForm):
     for _s in [LinearForm]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, PoissonLinearForm, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::Poisson::LinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<%s.%s; proxy of C++ dolfin::Poisson2D::LinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
     def __init__(self, *args):
         _swig_setattr(self, PoissonLinearForm, 'this', _dolfin.new_PoissonLinearForm(*args))
         _swig_setattr(self, PoissonLinearForm, 'thisown', 1)
