@@ -8,6 +8,8 @@ Usage: dolfin-config [options]
        --libs     (get libraries for linking)
        --compiler (get compiler)
 
+       --swigcflags   (get compiler flags for SWIG)
+
 EOF
    exit $1
 }
@@ -28,6 +30,9 @@ case $1 in
       ;;
 	--compiler)
 		echo $COMPILER
+      ;;
+	--swigcflags)
+		echo $SWIGCFLAGS
       ;;
 	*)
       usage 1 1>&2

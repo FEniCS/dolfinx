@@ -1,10 +1,10 @@
-bin_SCRIPTS = dolfin-config
+bin_SCRIPTS = dolfin-config dolfin-swig
 CLEANFILES  = $(bin_SCRIPTS)
 EXTRA_DIST  = $(bin_SCRIPTS) 
 
 TMPFILE="var.tmp"
 
-all: dolfin-config
+all: dolfin-config dolfin-swig
 
 dolfin-config:
 	rm -f $(TMPFILE)
@@ -14,4 +14,8 @@ dolfin-config:
 	echo "PACKAGE=\"$(PACKAGE_NAME)\"" >> $(TMPFILE)
 	echo "VERSION=\"$(PACKAGE_VERSION)\"" >> $(TMPFILE)
 	echo "PREFIX=\"$(prefix)\"" >> $(TMPFILE)
+	echo "PYTHON_CPPFLAGS=\"@PYTHON_CPPFLAGS@\"" >> $(TMPFILE)
 	sh config.sh
+
+dolfin-swig:
+	sh swig.sh
