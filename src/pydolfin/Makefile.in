@@ -23,7 +23,7 @@ dolfin/_dolfin.so: dolfin_wrap.o PoissonTest.o SettingsGlue.o
 dolfin_wrap.o: dolfin_wrap.cpp
 
 install:
-	python setup.py install
+	python setup.py install --prefix=@prefix@
 
 clean:
 	rm -f dolfin/dolfin.py dolfin.pyc dolfin/_dolfin.so dolfin_wrap.o dolfin_wrap.cpp SettingsGlue.o PoissonTest.o *~
