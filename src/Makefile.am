@@ -1,7 +1,1 @@
-if COMPILE_PYDOLFIN
-PYDOLFIN = pydolfin
-else
-PYDOLFIN =
-endif
-
-SUBDIRS = pre kernel modules config $(PYDOLFIN) post utils greeting
+SUBDIRS = pre kernel modules config post utils greeting
