@@ -1,5 +1,7 @@
 # Swig test
 
+# FIXME: Need to make PyDOLFIN build system refer to the DOLFIN source tree
+
 DOLFIN_CFLAGS = `dolfin-config --cflags`
 DOLFIN_LFLAGS = `dolfin-config --libs`
 CXX = `dolfin-config --compiler`
