@@ -50,7 +50,6 @@ cat > $swigfile <<EOF
 using namespace dolfin;
 %}
 
-
 %typemap(python,in) real = double; 
 %typemap(python,out) real = double; 
 %typemap(python,in) uint = int; 
@@ -82,15 +81,23 @@ using namespace dolfin;
 
 %array_functions(dolfin::real, realArray);
 
+%feature("director") Function;
+%feature("director") BoundaryCondition;
+%feature("director") ODE;
+
 %ignore dolfin::dolfin_set;
 %ignore dolfin::dolfin_set_aptr;
 
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
+/* function imports */
+
+%import "dolfin/Function.h"
+
 /* fem imports */
 
-%import "dolfin/FiniteElement.h"
+%include "dolfin/FiniteElement.h"
 
 /* form imports */
 
