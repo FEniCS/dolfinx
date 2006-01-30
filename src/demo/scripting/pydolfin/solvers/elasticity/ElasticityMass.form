@@ -1,0 +1,17 @@
+# Copyright (C) 2005 Johan Jansson.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2005
+#
+# The bilinear form for standard mass term
+# Compile this form with FFC: ffc ElasticityMass.form.
+
+element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+u = BasisFunction(element)
+v = BasisFunction(element)
+
+i = Index()
+
+a = u[i] * v[i] * dx

@@ -62,6 +62,9 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
+%rename(copy) dolfin::Vector::operator=;
+%rename(__call__) dolfin::Function::operator();
+
 %rename(PoissonBilinearForm) dolfin::Poisson2D::BilinearForm;
 %rename(PoissonLinearForm) dolfin::Poisson2D::LinearForm;
 %rename(PoissonBilinearFormTestElement) dolfin2D::Poisson::BilinearFormTestElement;
@@ -85,6 +88,12 @@ using namespace dolfin;
 %include "dolfin/TimeDependent.h"
 %include "dolfin/Variable.h"
 %include "dolfin/utils.h"
+%include "dolfin/timing.h"
+
+/* log includes */
+
+%include "dolfin/LoggerMacros.h"
+
 
 /* settings includes */
 
