@@ -29,7 +29,6 @@ namespace dolfin
   {
   public:
 
-
     /// Empty vector
     Vector();
 
@@ -76,6 +75,12 @@ namespace dolfin
 
     /// Addition (AXPY)
     void axpy(const real a, const Vector& x) const;
+
+    /// Element-wise division
+    void div(const Vector& x, Vector& y) const;
+
+    /// Element-wise multiplication
+    void mult(const Vector& x, Vector& y) const;
 
     /// Add block of values to vector
     void add(const real block[], const int cols[], int n); 
