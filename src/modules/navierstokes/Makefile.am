@@ -11,5 +11,5 @@ libdolfin_navierstokes_la_SOURCES = NSESolver.cpp
 libdolfin_navierstokes_la_LDFLAGS = -static
 
 # Temporary fix to speed up compilation of form
-CXXFLAGS = '-DDEBUG=1 -g -O0 -Wall -Werror -ansi -std=c++98'
+#CXXFLAGS = '-DDEBUG=1 -g -O0 -Wall -Werror -ansi -std=c++98 -fPIC'
 
