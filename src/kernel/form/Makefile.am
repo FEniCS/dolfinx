@@ -7,10 +7,11 @@ nobase_include_HEADERS   = dolfin/dolfin_form.h \
                            dolfin/Functional.h \
                            dolfin/PDE.h
 INCLUDES                 = @KERNEL_CFLAGS@
-lib_LIBRARIES            = libdolfin-form.a
-libdolfin_form_a_SOURCES = BLASFormData.cpp \
+lib_LTLIBRARIES            = libdolfin-form.la
+libdolfin_form_la_SOURCES = BLASFormData.cpp \
                            BilinearForm.cpp \
                            Form.cpp \
                            LinearForm.cpp \
                            Functional.cpp \
                            PDE.cpp
+libdolfin_form_la_LDFLAGS = -static

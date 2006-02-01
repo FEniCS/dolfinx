@@ -13,8 +13,8 @@ nobase_include_HEADERS  = dolfin/dolfin_fem.h \
                           dolfin/P1TriTemplate.h \
                           dolfin/StiffnessMatrix.h
 INCLUDES                = @KERNEL_CFLAGS@
-lib_LIBRARIES           = libdolfin-fem.a
-libdolfin_fem_a_SOURCES = AffineMap.cpp \
+lib_LTLIBRARIES           = libdolfin-fem.la
+libdolfin_fem_la_SOURCES = AffineMap.cpp \
                           BoundaryCondition.cpp \
                           BoundaryValue.cpp \
                           FEM.cpp \
@@ -22,3 +22,4 @@ libdolfin_fem_a_SOURCES = AffineMap.cpp \
                           LoadVector.cpp \
                           MassMatrix.cpp \
                           StiffnessMatrix.cpp
+libdolfin_fem_la_LDFLAGS = -static

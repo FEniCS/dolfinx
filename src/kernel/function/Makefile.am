@@ -8,10 +8,11 @@ nobase_include_HEADERS       = dolfin/dolfin_function.h \
                                dolfin/LocalFunctionData.h \
                                dolfin/UserFunction.h
 INCLUDES                     = @KERNEL_CFLAGS@
-lib_LIBRARIES                = libdolfin-function.a
-libdolfin_function_a_SOURCES = DiscreteFunction.cpp \
+lib_LTLIBRARIES                = libdolfin-function.la
+libdolfin_function_la_SOURCES = DiscreteFunction.cpp \
                                Function.cpp \
                                FunctionPointerFunction.cpp \
                                GenericFunction.cpp \
                                LocalFunctionData.cpp \
                                UserFunction.cpp
+libdolfin_function_la_LDFLAGS = -static

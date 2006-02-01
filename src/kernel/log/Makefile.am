@@ -12,8 +12,8 @@ nobase_include_HEADERS  = dolfin/dolfin_log.h \
                           dolfin/SilentLogger.h \
                           dolfin/TerminalLogger.h
 INCLUDES                = @KERNEL_CFLAGS@
-lib_LIBRARIES           = libdolfin-log.a
-libdolfin_log_a_SOURCES = Buffer.cpp \
+lib_LTLIBRARIES           = libdolfin-log.la
+libdolfin_log_la_SOURCES = Buffer.cpp \
                           GenericLogger.cpp \
                           CursesLogger.cpp \
                           Event.cpp \
@@ -24,3 +24,4 @@ libdolfin_log_a_SOURCES = Buffer.cpp \
                           Progress.cpp \
                           SilentLogger.cpp \
                           TerminalLogger.cpp
+libdolfin_log_la_LDFLAGS = -static

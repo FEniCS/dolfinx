@@ -28,8 +28,8 @@ nobase_include_HEADERS   = dolfin/dolfin_mesh.h \
                            dolfin/Vertex.h \
                            dolfin/VertexIterator.h
 INCLUDES                 = @KERNEL_CFLAGS@
-lib_LIBRARIES            = libdolfin-mesh.a
-libdolfin_mesh_a_SOURCES = Boundary.cpp \
+lib_LTLIBRARIES            = libdolfin-mesh.la
+libdolfin_mesh_la_SOURCES = Boundary.cpp \
                            BoundaryData.cpp \
                            BoundaryInit.cpp \
                            Cell.cpp \
@@ -55,3 +55,4 @@ libdolfin_mesh_a_SOURCES = Boundary.cpp \
                            UnitSquare.cpp \
                            Vertex.cpp \
                            VertexIterator.cpp
+libdolfin_mesh_la_LDFLAGS = -static

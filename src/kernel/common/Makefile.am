@@ -14,9 +14,10 @@ nobase_include_HEADERS = dolfin/dolfin_common.h \
 
 INCLUDES = @KERNEL_CFLAGS@
 
-lib_LIBRARIES = libdolfin-common.a
+lib_LTLIBRARIES = libdolfin-common.la
 
-libdolfin_common_a_SOURCES = TimeDependent.cpp \
+libdolfin_common_la_SOURCES = TimeDependent.cpp \
 			     Variable.cpp \
                              timing.cpp \
                              utils.cpp
+libdolfin_common_la_LDFLAGS = -static

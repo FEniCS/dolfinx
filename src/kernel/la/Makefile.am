@@ -11,8 +11,8 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                          dolfin/Vector.h \
                          dolfin/VirtualMatrix.h 
 INCLUDES               = @KERNEL_CFLAGS@
-lib_LIBRARIES          = libdolfin-la.a
-libdolfin_la_a_SOURCES = EigenvalueSolver.cpp \
+lib_LTLIBRARIES          = libdolfin-la.la
+libdolfin_la_la_SOURCES = EigenvalueSolver.cpp \
                          KrylovSolver.cpp \
                          GMRES.cpp \
                          LinearSolver.cpp \
@@ -22,3 +22,4 @@ libdolfin_la_a_SOURCES = EigenvalueSolver.cpp \
                          Preconditioner.cpp \
                          Vector.cpp \
                          VirtualMatrix.cpp 
+libdolfin_la_la_LDFLAGS = -static

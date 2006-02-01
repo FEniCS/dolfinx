@@ -5,5 +5,6 @@ nobase_include_HEADERS         = dolfin/dolfin_elasticityupdated.h \
                                  dolfin/ElasticityUpdatedSigma.h \
                                  dolfin/ElasticityUpdatedSolver.h
 INCLUDES                       = @MODULE_CFLAGS@
-lib_LIBRARIES                  = libdolfin-elasticity-updated.a
-libdolfin_elasticity_updated_a_SOURCES = ElasticityUpdatedSolver.cpp
+lib_LTLIBRARIES                  = libdolfin-elasticity-updated.la
+libdolfin_elasticity_updated_la_SOURCES = ElasticityUpdatedSolver.cpp
+libdolfin_elasticity_updated_la_LDFLAGS = -static

@@ -55,6 +55,9 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
+# libtool
+AC_PROG_LIBTOOL
+
 # Test for PyDOLFIN
 if test x$enable_pydolfin = xyes; then
     AM_PATH_PYTHON(2.3)
@@ -195,14 +198,20 @@ DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # Generate library list for linking in the correct order.
-# FIXME: Not very pretty to list the libraries multiple times
-DOLFIN_LIBS=""
-DIRS="$DOLFIN_MODULES $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL $DOLFIN_KERNEL"
-for f in $DIRS; do
-    DOLFIN_LIBS="$DOLFIN_LIBS -ldolfin-$f"
-done
+DOLFIN_LIBS="-ldolfin"
 DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
 AC_SUBST(DOLFIN_LIBS)
+
+# Generate libtool library paths (including also module code)
+DOLFIN_LTLIBS=""
+for f in $DOLFIN_MODULES; do
+    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/modules/$f/libdolfin-$f.la "
+done
+for f in $DOLFIN_KERNEL; do
+    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/kernel/$f/libdolfin-$f.la "
+done
+AC_SUBST(DOLFIN_LTLIBS)
+
 
 # Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
@@ -273,7 +282,8 @@ AC_OUTPUT( Makefile \
            src/demo/scripting/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
-           src/greeting/Makefile )
+           src/greeting/Makefile \
+           lib/Makefile )
 
 # Display some configuration options
 echo '---------------------------------------------------------'

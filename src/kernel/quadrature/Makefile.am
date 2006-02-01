@@ -6,9 +6,10 @@ nobase_include_HEADERS         = dolfin/dolfin_quadrature.h \
                                  dolfin/Quadrature.h \
                                  dolfin/RadauQuadrature.h
 INCLUDES                       = @KERNEL_CFLAGS@
-lib_LIBRARIES                  = libdolfin-quadrature.a
-libdolfin_quadrature_a_SOURCES = GaussianQuadrature.cpp \
+lib_LTLIBRARIES                  = libdolfin-quadrature.la
+libdolfin_quadrature_la_SOURCES = GaussianQuadrature.cpp \
                                  GaussQuadrature.cpp \
                                  LobattoQuadrature.cpp \
                                  Quadrature.cpp \
                                  RadauQuadrature.cpp
+libdolfin_quadrature_la_LDFLAGS = -static

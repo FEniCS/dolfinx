@@ -35,8 +35,8 @@ nobase_include_HEADERS  = dolfin/dolfin_ode.h \
                           dolfin/cGqMethod.h \
                           dolfin/dGqMethod.h
 INCLUDES                = @KERNEL_CFLAGS@
-lib_LIBRARIES           = libdolfin-ode.a
-libdolfin_ode_a_SOURCES = Adaptivity.cpp \
+lib_LTLIBRARIES           = libdolfin-ode.la
+libdolfin_ode_la_SOURCES = Adaptivity.cpp \
                           Alloc.cpp \
                           ComplexODE.cpp \
                           Controller.cpp \
@@ -70,3 +70,4 @@ libdolfin_ode_a_SOURCES = Adaptivity.cpp \
                           UpdatedMultiAdaptiveJacobian.cpp \
                           cGqMethod.cpp \
                           dGqMethod.cpp
+libdolfin_ode_la_LDFLAGS = -static

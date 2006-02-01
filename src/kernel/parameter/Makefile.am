@@ -6,9 +6,10 @@ nobase_include_HEADERS        = dolfin/dolfin_parameter.h \
                                 dolfin/ParameterValue.h \
                                 dolfin/Parametrized.h
 INCLUDES                      = @KERNEL_CFLAGS@
-lib_LIBRARIES                 = libdolfin-parameter.a
-libdolfin_parameter_a_SOURCES = Parameter.cpp \
+lib_LTLIBRARIES                 = libdolfin-parameter.la
+libdolfin_parameter_la_SOURCES = Parameter.cpp \
                                 ParameterList.cpp \
                                 ParameterSystem.cpp \
                                 ParameterValue.cpp \
                                 Parametrized.cpp
+libdolfin_parameter_la_LDFLAGS = -static

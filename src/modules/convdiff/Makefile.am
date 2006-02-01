@@ -4,5 +4,6 @@ nobase_include_HEADERS       = dolfin/dolfin_convdiff.h \
                                dolfin/ConvectionDiffusion3D.h \
                                dolfin/ConvectionDiffusionSolver.h
 INCLUDES                     = @MODULE_CFLAGS@
-lib_LIBRARIES                = libdolfin-convdiff.a
-libdolfin_convdiff_a_SOURCES = ConvectionDiffusionSolver.cpp
+lib_LTLIBRARIES                = libdolfin-convdiff.la
+libdolfin_convdiff_la_SOURCES = ConvectionDiffusionSolver.cpp
+libdolfin_convdiff_la_LDFLAGS = -static
