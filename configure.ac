@@ -197,12 +197,16 @@ done
 DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
-# Generate library list for linking in the correct order.
+# External libraries which DOLFIN depends on
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
+AC_SUBST(DOLFIN_EXT_LIBS)
+
+# Library list which DOLFIN applications need to link against
 DOLFIN_LIBS="-ldolfin"
-DOLFIN_LIBS="$DOLFIN_LIBS $CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
+DOLFIN_LIBS="$DOLFIN_LIBS $DOLFIN_EXT_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
-# Generate libtool library paths (including also module code)
+# Generate libtool library list (including also module code)
 DOLFIN_LTLIBS=""
 for f in $DOLFIN_MODULES; do
     DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/modules/$f/libdolfin-$f.la "
@@ -268,6 +272,7 @@ AC_OUTPUT( Makefile \
            src/modules/heat/dolfin/Makefile \
            src/modules/stokes/Makefile \
            src/modules/stokes/dolfin/Makefile \
+           src/lib/Makefile \
            src/pydolfin/Makefile \
            src/config/Makefile \
            src/post/Makefile \
@@ -282,8 +287,7 @@ AC_OUTPUT( Makefile \
            src/demo/scripting/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
-           src/greeting/Makefile \
-           lib/Makefile )
+           src/greeting/Makefile )
 
 # Display some configuration options
 echo '---------------------------------------------------------'

@@ -79,6 +79,10 @@ using namespace dolfin;
 %include "dolfin/constants.h"
 %include "dolfin/init.h"
 
+/* math includes */
+
+%include "dolfin/basic.h"
+
 /* common includes */
 
 /* System.h seems to be obsolete? */
@@ -184,7 +188,7 @@ using namespace dolfin;
 %include "dolfin/Sample.h"
 %include "dolfin/TimeSlab.h"
 %include "dolfin/TimeSlabJacobian.h"
-%include "dolfin/TimeSlabSolver.h"
+//%include "dolfin/TimeSlabSolver.h"
 %include "dolfin/TimeStepper.h"
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"

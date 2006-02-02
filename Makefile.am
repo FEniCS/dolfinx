@@ -1,4 +1,4 @@
-SUBDIRS = src lib
+SUBDIRS = src
 
 test:
 	make -C src/test

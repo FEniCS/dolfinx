@@ -4,3 +4,5 @@
 
 echo "Building dolfin-swig tool"
 
+# Dummy build for now, don't need to do anything
+cp dolfin-swig.template dolfin-swig
