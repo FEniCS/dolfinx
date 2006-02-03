@@ -117,7 +117,6 @@ General
 * Don't use cut in src/config script
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere
-* Use libtool?
 * Cleanup Parameter and ParameterList
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
