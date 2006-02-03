@@ -138,7 +138,7 @@ void VTKFile::ResultsWrite(Function& u) const
   // Open file
   FILE *fp = fopen(vtu_filename.c_str(), "a");
   
-  //Write PointData displacement	
+  //Write PointData
   if ( u.vectordim() == 1 )
   {
     fprintf(fp, "<PointData  Scalars=\"U\"> \n");
