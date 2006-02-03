@@ -51,6 +51,9 @@ using namespace dolfin;
 
 %ignore dolfin::dolfin_set;
 %ignore dolfin::dolfin_set_aptr;
+%ignore dolfin::dolfin_info;
+%ignore dolfin::dolfin_info_aptr;
+
 
 %import "dolfin.h"
 %import "dolfin/constants.h"

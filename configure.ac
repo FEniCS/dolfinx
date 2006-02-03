@@ -194,7 +194,7 @@ MAIN_CFLAGS=""
 for f in $DOLFIN_MODULES; do
     MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
 done
-DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
+DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # External libraries which DOLFIN depends on
