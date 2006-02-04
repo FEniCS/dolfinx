@@ -12,3 +12,5 @@ _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
 
 dolfin_wrap.cpp : $(SWIG_SOURCES)
 	$(SWIG) $(SWIG_PYTHON_OPT) -nodefault -dirprot @DOLFIN_CFLAGS@ -o $@ $<
+
+dolfin.py: $(SWIG_SOURCES)
