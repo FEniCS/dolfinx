@@ -24,14 +24,14 @@ class Harmonic(ODE):
         else:
             return -realArray_getitem(u, 0)
 
-dolfin_set("method", "mcg")
-dolfin_set("order", 1)
+set("method", "mcg")
+set("order", 1)
 
-dolfin_set("file name", "primal.py")
-dolfin_set("number of samples", 1000)
+set("ode solution file name", "primal.py")
+set("number of samples", 1000)
 
-dolfin_set("tolerance", 1e-4)
-#dolfin_set("tolerance", 1e-8)
+set("tolerance", 1e-4)
+#set("tolerance", 1e-8)
 
 ode = Harmonic()
 ode.solve()
