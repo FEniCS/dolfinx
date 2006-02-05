@@ -2,7 +2,6 @@
 
 %{
 #include <dolfin.h>
-#include "PoissonTest.h"
 #include "SettingsGlue.h"
 
 #include <string>
@@ -101,13 +100,6 @@ using namespace dolfin;
 
 %rename(copy) dolfin::Vector::operator=;
 %rename(__call__) dolfin::Function::operator();
-
-%rename(PoissonBilinearForm) dolfin::Poisson2D::BilinearForm;
-%rename(PoissonLinearForm) dolfin::Poisson2D::LinearForm;
-%rename(PoissonBilinearFormTestElement) dolfin2D::Poisson::BilinearFormTestElement;
-%rename(PoissonBilinearFormTrialElement) dolfin::Poisson2D::BilinearFormTrialElement;
-
-
 
 /* DOLFIN public interface */
 
@@ -234,10 +226,6 @@ using namespace dolfin;
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
 
-/* modules */
+/* glue */
 
-/* poisson */
-
-%include "dolfin/PoissonSolver.h"
-%include "PoissonTest.h"
 %include "SettingsGlue.h"

@@ -59,8 +59,7 @@ LTLIBRARIES = $(pkgpyexec_LTLIBRARIES)
 _dolfin_la_DEPENDENCIES = $(top_builddir)/src/lib/libdolfin.la
 am__objects_1 =
 am__dolfin_la_OBJECTS = _dolfin_la-dolfin_wrap.lo \
-	_dolfin_la-SettingsGlue.lo _dolfin_la-PoissonTest.lo \
-	$(am__objects_1)
+	_dolfin_la-SettingsGlue.lo $(am__objects_1)
 _dolfin_la_OBJECTS = $(am__dolfin_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -211,7 +210,7 @@ BUILT_SOURCES = dolfin_wrap.cpp
 SWIG_SOURCES = dolfin.i
 pkgpython_PYTHON = dolfin.py import_form.py __init__.py
 pkgpyexec_LTLIBRARIES = _dolfin.la
-_dolfin_la_SOURCES = dolfin_wrap.cpp SettingsGlue.cpp PoissonTest.cpp $(SWIG_SOURCES)
+_dolfin_la_SOURCES = dolfin_wrap.cpp SettingsGlue.cpp $(SWIG_SOURCES)
 _dolfin_la_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@ @DOLFIN_CFLAGS@ -I$(top_builddir)/src/pydolfin
 _dolfin_la_LDFLAGS = -module @DOLFIN_EXT_LIBS@
 _dolfin_la_LIBADD = $(top_builddir)/src/lib/libdolfin.la
@@ -285,7 +284,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_dolfin_la-PoissonTest.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_dolfin_la-SettingsGlue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/_dolfin_la-dolfin_wrap.Plo@am__quote@
 
@@ -323,13 +321,6 @@ _dolfin_la-SettingsGlue.lo: SettingsGlue.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='SettingsGlue.cpp' object='_dolfin_la-SettingsGlue.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_dolfin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o _dolfin_la-SettingsGlue.lo `test -f 'SettingsGlue.cpp' || echo '$(srcdir)/'`SettingsGlue.cpp
-
-_dolfin_la-PoissonTest.lo: PoissonTest.cpp
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_dolfin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT _dolfin_la-PoissonTest.lo -MD -MP -MF "$(DEPDIR)/_dolfin_la-PoissonTest.Tpo" -c -o _dolfin_la-PoissonTest.lo `test -f 'PoissonTest.cpp' || echo '$(srcdir)/'`PoissonTest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_dolfin_la-PoissonTest.Tpo" "$(DEPDIR)/_dolfin_la-PoissonTest.Plo"; else rm -f "$(DEPDIR)/_dolfin_la-PoissonTest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='PoissonTest.cpp' object='_dolfin_la-PoissonTest.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(_dolfin_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o _dolfin_la-PoissonTest.lo `test -f 'PoissonTest.cpp' || echo '$(srcdir)/'`PoissonTest.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo
