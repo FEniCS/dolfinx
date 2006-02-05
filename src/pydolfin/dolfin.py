@@ -133,6 +133,59 @@ dolfin_segfault = _dolfin.dolfin_segfault
 dolfin_output = _dolfin.dolfin_output
 
 dolfin_log = _dolfin.dolfin_log
+class Parameter(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Parameter, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, Parameter, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::Parameter instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    type_real = _dolfin.Parameter_type_real
+    type_int = _dolfin.Parameter_type_int
+    type_bool = _dolfin.Parameter_type_bool
+    type_string = _dolfin.Parameter_type_string
+    def __init__(self, *args):
+        _swig_setattr(self, Parameter, 'this', _dolfin.new_Parameter(*args))
+        _swig_setattr(self, Parameter, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_Parameter):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def type(*args): return _dolfin.Parameter_type(*args)
+
+class ParameterPtr(Parameter):
+    def __init__(self, this):
+        _swig_setattr(self, Parameter, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, Parameter, 'thisown', 0)
+        _swig_setattr(self, Parameter,self.__class__,Parameter)
+_dolfin.Parameter_swigregister(ParameterPtr)
+
+dolfin_begin = _dolfin.dolfin_begin
+
+dolfin_end = _dolfin.dolfin_end
+
+class ParameterSystem(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, ParameterSystem, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, ParameterSystem, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::ParameterSystem instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+
+class ParameterSystemPtr(ParameterSystem):
+    def __init__(self, this):
+        _swig_setattr(self, ParameterSystem, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, ParameterSystem, 'thisown', 0)
+        _swig_setattr(self, ParameterSystem,self.__class__,ParameterSystem)
+_dolfin.ParameterSystem_swigregister(ParameterSystemPtr)
+cvar = _dolfin.cvar
+
+add = _dolfin.add
+
+get = _dolfin.get
+
 class File(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, File, name, value)
@@ -166,10 +219,6 @@ class FilePtr(File):
         if not hasattr(self,"thisown"): _swig_setattr(self, File, 'thisown', 0)
         _swig_setattr(self, File,self.__class__,File)
 _dolfin.File_swigregister(FilePtr)
-
-dolfin_begin = _dolfin.dolfin_begin
-
-dolfin_end = _dolfin.dolfin_end
 
 class Vector(_object):
     __swig_setmethods__ = {}
@@ -709,7 +758,6 @@ class BoundaryValue(_object):
             if self.thisown: destroy(self)
         except: pass
 
-    def set(*args): return _dolfin.BoundaryValue_set(*args)
 
 class BoundaryValuePtr(BoundaryValue):
     def __init__(self, this):
@@ -1493,7 +1541,6 @@ class Dependencies(_object):
         except: pass
 
     def setsize(*args): return _dolfin.Dependencies_setsize(*args)
-    def set(*args): return _dolfin.Dependencies_set(*args)
     def transp(*args): return _dolfin.Dependencies_transp(*args)
     def detect(*args): return _dolfin.Dependencies_detect(*args)
     def sparse(*args): return _dolfin.Dependencies_sparse(*args)
@@ -2416,5 +2463,5 @@ class PoissonLinearFormPtr(PoissonLinearForm):
 _dolfin.PoissonLinearForm_swigregister(PoissonLinearFormPtr)
 
 
-dolfin_set = _dolfin.dolfin_set
+set = _dolfin.set
 

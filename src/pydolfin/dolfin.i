@@ -16,6 +16,39 @@ using namespace dolfin;
 %typemap(python,in) uint = int; 
 %typemap(python,out) uint = int; 
 
+%typemap(out) dolfin::Parameter {
+  {
+    // Custom typemap
+
+    switch ( $1.type() )
+    {
+    case Parameter::type_real:
+      
+      $result = SWIG_From_double(*&($1));
+      break;
+
+    case Parameter::type_int:
+      
+      $result = SWIG_From_int((int)*&($1));
+      break;
+      
+    case Parameter::type_bool:
+      
+      $result = SWIG_From_bool(*&($1));
+      break;
+      
+    case Parameter::type_string:
+      
+      $result = SWIG_From_std_string(*&($1));
+      break;
+      
+    default:
+      dolfin_error("Unknown type for parameter.");
+    }
+  }
+}
+
+
 // Typemaps for dolfin::real array arguments in virtual methods
 // probably not very safe
 %typemap(directorin) dolfin::real [] {
@@ -49,8 +82,9 @@ using namespace dolfin;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
 
-%ignore dolfin::dolfin_set;
-%ignore dolfin::dolfin_set_aptr;
+%ignore set;
+%ignore dolfin::set;
+%ignore dolfin::set_aptr;
 %ignore dolfin::dolfin_info;
 %ignore dolfin::dolfin_info_aptr;
 
@@ -58,7 +92,7 @@ using namespace dolfin;
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
-%rename(dolfin_set) glueset;
+%rename(set) glueset;
 %rename(increment) dolfin::VertexIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
@@ -103,6 +137,10 @@ using namespace dolfin;
 
 
 /* settings includes */
+
+%include "dolfin/Parameter.h"
+%include "dolfin/ParameterSystem.h"
+
 
 //%include "dolfin/Parameter.h"
 //%include "dolfin/Settings.h"
