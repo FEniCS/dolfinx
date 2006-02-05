@@ -9,7 +9,6 @@
 using namespace dolfin;
 %}
 
-
 %typemap(python,in) real = double; 
 %typemap(python,out) real = double; 
 %typemap(python,in) uint = int; 
@@ -46,6 +45,7 @@ using namespace dolfin;
     }
   }
 }
+
 
 
 // Typemaps for dolfin::real array arguments in virtual methods
@@ -99,6 +99,9 @@ using namespace dolfin;
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
 %rename(copy) dolfin::Vector::operator=;
+%rename(__getitem__) dolfin::Vector::getval;
+%rename(__setitem__) dolfin::Vector::setval;
+
 %rename(__call__) dolfin::Function::operator();
 
 /* DOLFIN public interface */

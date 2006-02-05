@@ -1,4 +1,4 @@
-BUILT_SOURCES = dolfin_wrap.cpp
+BUILT_SOURCES = dolfin_wrap.cpp dolfin.py
 SWIG_SOURCES = dolfin.i
 
 pkgpyexecdir = $(pyexecdir)/dolfin

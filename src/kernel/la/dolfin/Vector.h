@@ -77,10 +77,10 @@ namespace dolfin
     void axpy(const real a, const Vector& x) const;
 
     /// Element-wise division
-    void div(const Vector& x, Vector& y) const;
+    void div(const Vector& x);
 
     /// Element-wise multiplication
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const Vector& x);
 
     /// Add block of values to vector
     void add(const real block[], const int cols[], int n); 

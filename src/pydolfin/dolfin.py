@@ -261,8 +261,8 @@ class Vector(_object):
     def max(*args): return _dolfin.Vector_max(*args)
     def min(*args): return _dolfin.Vector_min(*args)
     def disp(*args): return _dolfin.Vector_disp(*args)
-    def getval(*args): return _dolfin.Vector_getval(*args)
-    def setval(*args): return _dolfin.Vector_setval(*args)
+    def __getitem__(*args): return _dolfin.Vector___getitem__(*args)
+    def __setitem__(*args): return _dolfin.Vector___setitem__(*args)
     def addval(*args): return _dolfin.Vector_addval(*args)
 
 class VectorPtr(Vector):
