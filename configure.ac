@@ -47,7 +47,6 @@ AC_ARG_ENABLE(pydolfin,
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
-AC_PROG_RANLIB
 AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -318,9 +317,14 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo ''
    echo 'To compile a program against DOLFIN (including the demos)'
    echo 'you need to add the bin subdirectory of the installation'
-   echo 'diretory to your PATH which you can do with the command'
+   echo 'diretory to your PATH which you can do with the commands'
    echo ''
-   echo "    export PATH=\"$prefix/bin:\$PATH\"        (bash)"
-   echo "    setenv PATH $prefix/bin:\${PATH}        (tcsh)"
+   echo "    export PATH=\"$prefix/bin:\$PATH\""
+   echo "    export LD_LIBRARY_PATH=\"$prefix/lib:\$LD_LIBRARY_PATH\""
+   echo ''
+   echo 'for bash or, alternatively,'
+   echo ''
+   echo "    setenv PATH $prefix/bin:\${PATH}"
+   echo "    setenv LD_LIBRARY_PATH $prefix/bin:\${LD_LIBRARY_PATH}"
    echo ''
 fi
