@@ -1,12 +1,13 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2005
-// Last changed: 2005-12-28
+// First added:  2006-02-07
+// Last changed: 2006-02-07
 //
-// This demo program solves Poisson's equation
+// This demo program solves the equations of static
+// linear elasticity
 //
-//     - div grad u(x, y) = f(x, y)
+//     - div sigma(u) = f
 //
 // on the unit square with source f given by
 //
@@ -18,8 +19,8 @@
 //     du/dn(x, y) = 0  otherwise
 
 #include <dolfin.h>
-#include "Poisson.h"
-  
+#include "Elasticity.h"
+
 using namespace dolfin;
 
 // Right-hand side
@@ -27,7 +28,10 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    return p.x*sin(p.y);
+    if ( p.x > (1.0 - DOLFIN_EPS) && i == 2 )
+      return -10.0;
+    else
+      return 0.0;
   }
 };
 
@@ -36,7 +40,7 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+    if ( p.x < DOLFIN_EPS )
       value = 0.0;
   }
 };
@@ -44,11 +48,11 @@ class MyBC : public BoundaryCondition
 int main()
 {
   // Set up problem
-  UnitSquare mesh(16, 16);
+  UnitCube mesh(16, 16, 16);
   MyFunction f;
   MyBC bc;
-  Poisson::BilinearForm a;
-  Poisson::LinearForm L(f);
+  Elasticity::BilinearForm a;
+  Elasticity::LinearForm L(f);
 
   // Assemble linear system
   Matrix A;
@@ -61,7 +65,7 @@ int main()
   
   // Save function to file
   Function u(x, mesh, a.trial());
-  File file("poisson.pvd");
+  File file("elasticity.pvd");
   file << u;
   
   return 0;
