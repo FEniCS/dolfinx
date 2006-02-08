@@ -40,13 +40,13 @@ namespace dolfin
   /// add(), set() and get().
   
   /// Add parameter
-  void dolfin_add(std::string key, Parameter value);
+  void add(std::string key, Parameter value);
   
   /// Set value of parameter
-  void dolfin_set(std::string key, Parameter value);
+  void set(std::string key, Parameter value);
   
   /// Get value of parameter with given key
-  Parameter dolfin_get(std::string key);
+  Parameter get(std::string key);
   
 }
 

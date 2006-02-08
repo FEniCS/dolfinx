@@ -21,17 +21,17 @@ ParameterSystem::ParameterSystem() : ParameterList()
 #include <dolfin/DefaultParameters.h>
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_add(std::string key, Parameter value)
+void dolfin::add(std::string key, Parameter value)
 {
   ParameterSystem::parameters.add(key, value);
 }
 //-----------------------------------------------------------------------------
-void dolfin::dolfin_set(std::string key, Parameter value)
+void dolfin::set(std::string key, Parameter value)
 {
   ParameterSystem::parameters.set(key, value);
 }
 //-----------------------------------------------------------------------------
-dolfin::Parameter dolfin::dolfin_get(std::string key)
+dolfin::Parameter dolfin::get(std::string key)
 {
   return ParameterSystem::parameters.get(key);
 }
