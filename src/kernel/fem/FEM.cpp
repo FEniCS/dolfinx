@@ -233,6 +233,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
 		   Matrix& A, Vector& b, Mesh& mesh,
 		   BoundaryCondition& bc)
 {
+  cout << "assembling with boundary conditions" << endl;
+
   assemble(a, L, A, b, mesh);
   applyBC(A, b, mesh, a.trial(), bc);
 }

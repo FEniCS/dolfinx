@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-19
-// Last changed: 2005-12-19
+// Last changed: 2006-02-08
 
 #ifndef __PARAMETER_SYSTEM_H
 #define __PARAMETER_SYSTEM_H
@@ -24,9 +24,9 @@ namespace dolfin
     static ParameterSystem parameters;
     
     /// Friends
-    friend void add(std::string key, Parameter value);
-    friend void set(std::string key, Parameter value);
-    friend Parameter get(std::string key);
+    friend void dolfin_add(std::string key, Parameter value);
+    friend void dolfin_set(std::string key, Parameter value);
+    friend Parameter dolfin_get(std::string key);
 
   private:
 
@@ -40,13 +40,13 @@ namespace dolfin
   /// add(), set() and get().
   
   /// Add parameter
-  void add(std::string key, Parameter value);
+  void dolfin_add(std::string key, Parameter value);
   
   /// Set value of parameter
-  void set(std::string key, Parameter value);
+  void dolfin_set(std::string key, Parameter value);
   
   /// Get value of parameter with given key
-  Parameter get(std::string key);
+  Parameter dolfin_get(std::string key);
   
 }
 

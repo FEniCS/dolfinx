@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-12-19
-// Last changed: 2005-12-19
+// Last changed: 2006-02-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -21,17 +21,17 @@ ParameterSystem::ParameterSystem() : ParameterList()
 #include <dolfin/DefaultParameters.h>
 }
 //-----------------------------------------------------------------------------
-void dolfin::add(std::string key, Parameter value)
+void dolfin::dolfin_add(std::string key, Parameter value)
 {
   ParameterSystem::parameters.add(key, value);
 }
 //-----------------------------------------------------------------------------
-void dolfin::set(std::string key, Parameter value)
+void dolfin::dolfin_set(std::string key, Parameter value)
 {
   ParameterSystem::parameters.set(key, value);
 }
 //-----------------------------------------------------------------------------
-dolfin::Parameter dolfin::get(std::string key)
+dolfin::Parameter dolfin::dolfin_get(std::string key)
 {
   return ParameterSystem::parameters.get(key);
 }

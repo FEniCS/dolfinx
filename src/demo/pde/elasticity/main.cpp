@@ -28,10 +28,7 @@ class MyFunction : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    if ( p.x > (1.0 - DOLFIN_EPS) && i == 2 )
-      return -10.0;
-    else
-      return 0.0;
+    return 0.0;
   }
 };
 
@@ -40,16 +37,40 @@ class MyBC : public BoundaryCondition
 {
   void eval(BoundaryValue& value, const Point& p, unsigned int i)
   {
-    if ( p.x < DOLFIN_EPS )
+    // Width of clamp
+    real w = 0.1;
+
+    // Center of rotation
+    real y0 = 0.5;
+    real z0 = 0.219;
+
+    // Angle of rotation
+    real theta = 0.1;
+
+    // New coordinates
+    real y = y0 + (p.y - y0)*cos(theta) - (p.z - z0)*sin(theta);
+    real z = z0 + (p.y - y0)*sin(theta) + (p.z - z0)*cos(theta);
+    
+    // Clamp at left end
+    if ( p.x < w )
       value = 0.0;
+
+    // Clamp at right end
+    if ( p.x > (1.0 - w) )
+    {
+      if ( i == 1 )
+	value = y;
+      else if ( i == 2 )
+	value = z;
+    }
   }
 };
 
 int main()
 {
   // Set up problem
-  UnitCube mesh(16, 16, 16);
-  //Mesh mesh("gear.xml.gz");
+  //UnitCube mesh(16, 16, 16);
+  Mesh mesh("gear.xml.gz");
   MyFunction f;
   MyBC bc;
   Elasticity::BilinearForm a;
@@ -62,6 +83,7 @@ int main()
   
   // Solve the linear system
   GMRES solver;
+  solver.disp();
   solver.solve(A, x, b);
   
   // Save function to file
