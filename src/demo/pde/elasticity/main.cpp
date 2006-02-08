@@ -49,6 +49,7 @@ int main()
 {
   // Set up problem
   UnitCube mesh(16, 16, 16);
+  //Mesh mesh("gear.xml.gz");
   MyFunction f;
   MyBC bc;
   Elasticity::BilinearForm a;
