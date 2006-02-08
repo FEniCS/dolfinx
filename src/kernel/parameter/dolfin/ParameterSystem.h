@@ -24,9 +24,9 @@ namespace dolfin
     static ParameterSystem parameters;
     
     /// Friends
-    friend void dolfin_add(std::string key, Parameter value);
-    friend void dolfin_set(std::string key, Parameter value);
-    friend Parameter dolfin_get(std::string key);
+    friend void add(std::string key, Parameter value);
+    friend void set(std::string key, Parameter value);
+    friend Parameter get(std::string key);
 
   private:
 

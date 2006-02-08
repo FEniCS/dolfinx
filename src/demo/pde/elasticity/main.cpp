@@ -83,6 +83,7 @@ int main()
   
   // Solve the linear system
   GMRES solver;
+  solver.set("monitor convergence", true);
   solver.disp();
   solver.solve(A, x, b);
   
