@@ -78,6 +78,6 @@ int main()
   Function u(x, mesh, a.trial());
   File file("elasticity.pvd");
   file << u;
-  
+
   return 0;
 }

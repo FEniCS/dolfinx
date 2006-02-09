@@ -29,4 +29,6 @@ link_octave src/demo/solvers/ode/wave/
 link_dx src/demo/solvers/ode/bistable/
 
 # Create links to meshes
-ln -sf $TOPLEVEL/data/meshes/gear.xml.gz src/demo/pde/elasticity/
+ln -sf $TOPLEVEL/data/meshes/gear.xml.gz     src/demo/pde/elasticity/
+ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/convection-diffusion/taylor-hood
+ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/convection-diffusion/stabilized
