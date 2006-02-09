@@ -5,18 +5,8 @@
 // Last changed: 2006-02-07
 //
 // This demo program solves the equations of static
-// linear elasticity
-//
-//     - div sigma(u) = f
-//
-// on the unit square with source f given by
-//
-//     f(x, y) = x * sin(y)
-//
-// and boundary conditions given by
-//
-//     u(x, y)     = 0  for x = 0
-//     du/dn(x, y) = 0  otherwise
+// linear elasticity for a gear clamped at two of its
+// ends and twisted 30 degrees.
 
 #include <dolfin.h>
 #include "Elasticity.h"
