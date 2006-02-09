@@ -1,3 +1,4 @@
+ - Add new demo Stokes + convection-diffusion
  - Add new demo Stokes (equal-order stabilized)
  - Add new demo Stokes (Taylor-Hood)
  - Add new parameter for KrylovSolvers: "monitor convergence"
