@@ -2,7 +2,7 @@ CFLAGS  = `dolfin-config --cflags`
 LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
 
-DEST    = dolfin-elasticity
+DEST    = dolfin-stokes
 OBJECTS = main.o
 
 all: $(DEST)
