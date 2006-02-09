@@ -1,1 +1,1 @@
-SUBDIRS = elasticity poisson
+SUBDIRS = elasticity poisson stokes
