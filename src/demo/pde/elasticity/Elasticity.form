@@ -1,0 +1,28 @@
+# Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
+# Licensed under the GNU GPL Version 2
+#
+# Modified by Anders Logg, 2006
+#
+# The bilinear form for classical linear elasticity (Navier).
+# Compile this form with FFC: ffc Elasticity.form.
+
+element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+v = BasisFunction(element)
+u = BasisFunction(element)
+f = Function(element)
+
+E  = 10.0
+nu = 0.3
+
+mu    = E / (2*(1 + nu))
+lmbda = E*nu / ((1 + nu) * (1 - 2*nu))
+
+def epsilon(v):
+    return 0.5 * (grad(u) + transp(grad(u)))
+
+def sigma(v):
+    return 2*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
+
+a = dot(grad(v), sigma(u)) * dx
+L = dot(v, f) * dx

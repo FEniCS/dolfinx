@@ -4,7 +4,7 @@
 // First added:  2005
 // Last changed: 2005-12-28
 //
-// This simple program solves Poisson's equation
+// This demo program solves Poisson's equation
 //
 //     - div grad u(x, y) = f(x, y)
 //

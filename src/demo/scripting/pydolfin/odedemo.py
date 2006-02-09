@@ -22,9 +22,9 @@ class Simple(ODE):
         return 1.0
         
         
-dolfin_set("method", "dg")
-dolfin_set("order", 0)
-dolfin_set("file name", "primal.py")
+set("method", "dg")
+set("order", 0)
+set("ode solution file name", "primal.py")
 
 ode = Simple()
 print "ODE size: " + str(ode.size())

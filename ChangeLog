@@ -1,3 +1,9 @@
+ - Add new parameter for KrylovSolvers: "monitor convergence"
+ - Add conversion script dolfin-convert for various mesh formats
+ - Add new demo elasticity
+ - Move poisson demo to src/demo/pde/poisson
+ - Move to Mercurial (hg) from CVS
+ - Use libtool to build libraries (including shared)
 0.5.12 [2006-01-12]
  - Make Stokes solver dimension independent (2D/3D)
  - Make Poisson solver dimension independent (2D/3D)

@@ -90,16 +90,16 @@ void Vector::axpy(const real a, const Vector& x) const
   VecAXPY(this->x, a, x.vec());
 }
 //-----------------------------------------------------------------------------
-void Vector::div(const Vector& x, Vector& y) const
+void Vector::div(const Vector& x)
 {
-  VecPointwiseDivide(this->x, y.vec(), x.vec());
-  y.apply();
+  VecPointwiseDivide(this->x, this->x, x.vec());
+  apply();
 }
 //-----------------------------------------------------------------------------
-void Vector::mult(const Vector& x, Vector& y) const
+void Vector::mult(const Vector& x)
 {
-  VecPointwiseMult(this->x, y.vec(), x.vec());
-  y.apply();
+  VecPointwiseMult(this->x, this->x, x.vec());
+  apply();
 }
 //-----------------------------------------------------------------------------
 void Vector::add(const real block[], const int cols[], int n)

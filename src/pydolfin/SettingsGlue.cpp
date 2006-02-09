@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <dolfin.h>
 #include "SettingsGlue.h"
 

@@ -47,7 +47,6 @@ AC_ARG_ENABLE(pydolfin,
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
-AC_PROG_RANLIB
 AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -194,7 +193,7 @@ MAIN_CFLAGS=""
 for f in $DOLFIN_MODULES; do
     MAIN_CFLAGS="$MAIN_CFLAGS -I\$(top_builddir)/src/modules/$f "
 done
-DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS"
+DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # External libraries which DOLFIN depends on
@@ -279,11 +278,12 @@ AC_OUTPUT( Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \
            src/demo/nls/Makefile \
+           src/demo/ode/Makefile \
+           src/demo/ode/modeling/Makefile \
+           src/demo/ode/homotopy/Makefile \
+           src/demo/pde/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
-           src/demo/solvers/ode/Makefile \
-           src/demo/solvers/ode/modeling/Makefile \
-           src/demo/solvers/ode/homotopy/Makefile \
            src/demo/scripting/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
@@ -317,9 +317,14 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo ''
    echo 'To compile a program against DOLFIN (including the demos)'
    echo 'you need to add the bin subdirectory of the installation'
-   echo 'diretory to your PATH which you can do with the command'
+   echo 'diretory to your PATH which you can do with the commands'
    echo ''
-   echo "    export PATH=\"$prefix/bin:\$PATH\"        (bash)"
-   echo "    setenv PATH $prefix/bin:\${PATH}        (tcsh)"
+   echo "    export PATH=\"$prefix/bin:\$PATH\""
+   echo "    export LD_LIBRARY_PATH=\"$prefix/lib:\$LD_LIBRARY_PATH\""
+   echo ''
+   echo 'for bash or, alternatively,'
+   echo ''
+   echo "    setenv PATH $prefix/bin:\${PATH}"
+   echo "    setenv LD_LIBRARY_PATH $prefix/bin:\${LD_LIBRARY_PATH}"
    echo ''
 fi

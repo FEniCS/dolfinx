@@ -1,0 +1,126 @@
+#/bin/bash
+
+# Simple tool to automatically convert a compiled FFC form (in DOLFIN-SWIG
+# format) into a Python module.
+
+name=${1%.h}
+lowername=`echo $name | tr 'A-Z' 'a-z'`
+modulename=$lowername"form"
+
+
+swigfile=$modulename.i
+
+#echo $name
+#echo $lowername
+#echo $modulename
+#echo $swigfile
+
+usage()
+{
+   cat << EOF
+Usage: dolfin-swig [form source file]
+
+Example: dolfin-swig Poisson3D.h
+
+EOF
+   exit $1
+}
+
+if test $# -eq 0; then
+    usage 1 1>&2
+fi
+
+if ! test -e $1; then
+    echo "Cannot find $1."
+    exit 1
+fi
+
+
+echo Generating the SWIG interface file for the $name form
+
+cat > $swigfile <<EOF
+%module $modulename
+
+%{
+#include "$name.h"
+
+#include <dolfin.h>
+#include <string>
+  
+using namespace dolfin;
+%}
+
+%typemap(python,in) real = double; 
+%typemap(python,out) real = double; 
+%typemap(python,in) uint = int; 
+%typemap(python,out) uint = int; 
+
+// Typemaps for dolfin::real array arguments in virtual methods
+// probably not very safe
+%typemap(directorin) dolfin::real [] {
+  {
+    // Custom typemap
+    \$input = SWIG_NewPointerObj((void *) \$1_name, \$1_descriptor, \$owner);
+  }
+}
+
+%typemap(directorin) dolfin::real const [] {
+  {
+    // Custom typemap
+    \$input = SWIG_NewPointerObj((void *) \$1_name, \$1_descriptor, \$owner);
+  }
+}
+
+
+
+
+%include "typemaps.i"
+%include "std_string.i"
+
+%include "carrays.i"
+
+%array_functions(dolfin::real, realArray);
+
+%feature("director") Function;
+%feature("director") BoundaryCondition;
+%feature("director") ODE;
+
+%ignore dolfin::dolfin_set;
+%ignore dolfin::dolfin_set_aptr;
+
+%import "dolfin.h"
+%import "dolfin/constants.h"
+
+/* function imports */
+
+%import "dolfin/Function.h"
+
+/* fem imports */
+
+%include "dolfin/FiniteElement.h"
+
+/* form imports */
+
+%import "dolfin/Form.h"
+%import "dolfin/BilinearForm.h"
+%import "dolfin/LinearForm.h"
+
+/* form include */
+
+%include "$name.h"
+EOF
+
+echo Building the Python module
+
+swig -python -c++ -nodefault -dirprot `dolfin-config --cflags` -o ${modulename}_wrap.cpp $swigfile
+
+# FIXME:
+# Compilation still not compiler-independent
+
+`dolfin-config --compiler` `dolfin-config --swigcflags` `dolfin-config --cflags` -I. -g -fPIC  -c -o ${modulename}_wrap.o ${modulename}_wrap.cpp
+
+# FIXME:
+# Generating shared library still not compiler-independent (syntax likely
+# only works for GCC)
+
+`dolfin-config --compiler` -g -shared ${modulename}_wrap.o -o _${modulename}.so `dolfin-config --libs`

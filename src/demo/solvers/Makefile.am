@@ -1,5 +1,4 @@
-SUBDIRS = ode \
-          convdiff \
+SUBDIRS = convdiff \
           elasticity \
           elasticity-updated \
           heat \

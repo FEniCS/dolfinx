@@ -1,0 +1,86 @@
+This directory contains a number of example meshes DOLFIN XML format.
+Descriptions of (some of) the meshes follow below.
+
+cylinder.xml.gz
+---------------
+
+dolfin-1.xml.gz
+---------------
+
+  Mesh of a two-dimensional dolphin in a box, generated with
+  MATLABs PDE toolbox.
+
+dolfin-2.xml.gz
+---------------
+
+  Same as dolfin-1.xml.gz, but finer mesh.
+
+gear.xml.gz
+-----------
+
+  Mesh of a gear, generated with tetgen from example m744 of
+  the Princeton Shape Benchmark. Original data source is
+  http://www.mt.luth.se/~petert/distributed/distributed.html
+
+  The gear is centered at (x, y, z) = (0.5, 0.5, 0.219) and is
+  bounded by [0.025, 0.975] x [0.025, 0.975] x [0.025, 0.413].
+
+slit.xml.gz
+-----------
+
+tetmesh-16.xml.gz
+-----------------
+
+tetmesh-1.xml.gz
+----------------
+
+tetmesh_24_8_8.xml.gz
+---------------------
+
+tetmesh-4.xml.gz
+----------------
+
+tetmesh-8.xml.gz
+----------------
+
+tetmesh_backward_facing_step_32_8_8.xml.gz
+------------------------------------------
+
+tetmesh_bluff_body_32_8_8.xml.gz
+--------------------------------
+
+tetmesh_LES_10_2_7.xml.gz
+-------------------------
+
+tetrahedron.xml.gz
+------------------
+
+triangle.xml.gz
+---------------
+
+trimesh-128.xml.gz
+------------------
+
+trimesh-16.xml.gz
+-----------------
+
+trimesh-1.xml.gz
+----------------
+
+trimesh-2.xml.gz
+----------------
+
+trimesh-32.xml.gz
+-----------------
+
+trimesh-4.xml.gz
+----------------
+
+trimesh-64.xml.gz
+-----------------
+
+trimesh-8.xml.gz
+----------------
+
+two_particles.xml.gz
+--------------------

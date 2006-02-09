@@ -27,3 +27,6 @@ link_octave src/demo/solvers/ode/wave/
 
 # Create links to OpenDX programs
 link_dx src/demo/solvers/ode/bistable/
+
+# Create links to meshes
+ln -sf $TOPLEVEL/data/meshes/gear.xml.gz src/demo/pde/elasticity/
