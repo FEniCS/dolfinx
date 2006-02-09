@@ -2,6 +2,9 @@
 
 %{
 #include <dolfin.h>
+
+// SWIG seems to pollute the global namespace with "set", so we need to work
+// around that.
 #include "SettingsGlue.h"
 
 #include <string>
@@ -81,9 +84,6 @@ using namespace dolfin;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
 
-%ignore set;
-%ignore dolfin::set;
-%ignore dolfin::set_aptr;
 %ignore dolfin::dolfin_info;
 %ignore dolfin::dolfin_info_aptr;
 
@@ -92,6 +92,7 @@ using namespace dolfin;
 %import "dolfin/constants.h"
 
 %rename(set) glueset;
+%rename(get) glueget;
 %rename(increment) dolfin::VertexIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
@@ -134,7 +135,7 @@ using namespace dolfin;
 /* settings includes */
 
 %include "dolfin/Parameter.h"
-%include "dolfin/ParameterSystem.h"
+//%include "dolfin/ParameterSystem.h"
 
 
 //%include "dolfin/Parameter.h"
