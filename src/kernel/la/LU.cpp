@@ -65,7 +65,7 @@ dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   x.init(A.size(1));
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (LU).", A.size(0), A.size(1))l
+  dolfin_info("Solving linear system of size %d x %d (LU).", A.size(0), A.size(1));
 
   // Solve linear system
   KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
