@@ -21,7 +21,7 @@ namespace dolfin
 {
   int monitor(KSP ksp, int iteration, real rnorm, void *mctx)
   {
-    dolfin_info("residual = %g", rnorm);
+    dolfin_info("Iteration %d: residual = %g", iteration, rnorm);
     return 0;
   }
 }
@@ -102,8 +102,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( report )
-    dolfin_info("Solving linear system of size %d x %d.", M, N);
+  dolfin_info("Solving linear system of size %d x %d (Krylov method).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -115,7 +114,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   KSPType ksp_type;
   ksp_type = getType(solver_type);
 
-  if(solver_type != KrylovSolver::default_solver) 
+  if (solver_type != KrylovSolver::default_solver) 
     KSPSetType(ksp, ksp_type);
 
   PC pc;
@@ -176,8 +175,7 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( report )
-    dolfin_info("Solving linear system of size %d x %d.", M, N);
+  dolfin_info("Solving linear system of size %d x %d (Krylov).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);

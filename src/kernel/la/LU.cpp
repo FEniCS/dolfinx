@@ -64,6 +64,9 @@ dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
 
+  // Write a message
+  dolfin_info("Solving linear system of size %d x %d (LU).", A.size(0), A.size(1))l
+
   // Solve linear system
   KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());

@@ -44,8 +44,8 @@ class MyBC : public BoundaryCondition
     real y0 = 0.5;
     real z0 = 0.219;
 
-    // Angle of rotation
-    real theta = 0.1;
+    // Angle of rotation (30 degrees)
+    real theta = 0.5236;
 
     // New coordinates
     real y = y0 + (p.y - y0)*cos(theta) - (p.z - z0)*sin(theta);
@@ -59,9 +59,9 @@ class MyBC : public BoundaryCondition
     if ( p.x > (1.0 - w) )
     {
       if ( i == 1 )
-	value = y;
+	value = y - p.y;
       else if ( i == 2 )
-	value = z;
+	value = z - p.z;
     }
   }
 };
@@ -69,7 +69,6 @@ class MyBC : public BoundaryCondition
 int main()
 {
   // Set up problem
-  //UnitCube mesh(16, 16, 16);
   Mesh mesh("gear.xml.gz");
   MyFunction f;
   MyBC bc;
@@ -82,9 +81,7 @@ int main()
   FEM::assemble(a, L, A, b, mesh, bc);
   
   // Solve the linear system
-  GMRES solver;
-  solver.set("monitor convergence", true);
-  solver.disp();
+  LU solver;
   solver.solve(A, x, b);
   
   // Save function to file
