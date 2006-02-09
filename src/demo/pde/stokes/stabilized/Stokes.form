@@ -16,7 +16,7 @@ system = vector + scalar
 f = Function(vector)
 h = Function(scalar)
 
-beta  = 0.1
+beta  = 0.2
 delta = beta*h*h
 
 a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
