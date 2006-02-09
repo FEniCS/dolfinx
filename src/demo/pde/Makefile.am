@@ -1,1 +1,1 @@
-SUBDIRS = elasticity poisson stokes
+SUBDIRS = convection-diffusion elasticity poisson stokes
