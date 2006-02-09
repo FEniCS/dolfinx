@@ -1,3 +1,4 @@
+ - Add new demo stokes (Taylor-Hood)
  - Add new parameter for KrylovSolvers: "monitor convergence"
  - Add conversion script dolfin-convert for various mesh formats
  - Add new demo elasticity
