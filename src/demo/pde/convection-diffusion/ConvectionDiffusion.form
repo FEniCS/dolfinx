@@ -21,8 +21,8 @@ f  = Function(scalar)
 
 delta = Function(scalar)
 
-c = 0.01
-k = 0.1
+c = 0.001
+k = 0.01
 
 v = v + delta*dot(b, grad(v))
 

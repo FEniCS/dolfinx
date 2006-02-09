@@ -16,122 +16,54 @@
 
 using namespace dolfin;
 
-// Right-hand side for Stokes
-class StokesForce : public Function
-{
-  real eval(const Point& p, unsigned int i)
-  {
-    return 0.0;
-  }
-};
-
-// Boundary condition for Stokes
-class StokesBC : public BoundaryCondition
-{
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
-  {
-    // Pressure boundary condition, zero pressure at one point
-    if ( i == 2 && p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
-    {
-      value = 0.0;
-      return;
-    }
-
-    // Velocity boundary condition at inflow
-    if ( p.x > (1.0 - DOLFIN_EPS) )
-    {
-      if ( i == 0 )
-	value = -1.0;
-      else
-	value = 0.0;
-      return;
-    }
-    
-    // Velocity boundary condition at remaining boundary (excluding outflow)
-    if ( p.x > DOLFIN_EPS )
-      value = 0.0;
-  }
-};
-
-// Boundary condition for convection-diffusion
-class ConvDiffBC : public BoundaryCondition
-{
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
-  {
-    
-
-  }
-};
-
 void solveConvDiff(Mesh& mesh, Function& b)
 {
-  /*
+  // Boundary condition
+  class BC : public BoundaryCondition
+  {
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+      if ( p.x == 1.0 )
+	value = 0.0;
+      else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
+	value = 1.0;
+    }
+  };
 
-  // Right-hand side for convection-diffusion
-  class ConvDiffSource : public Function
+  // Stabilization
+  class Stabilization : public Function
   {
     real eval(const Point& p, unsigned int i)
     {
       return 0.0;
     }
   };
+
+  // Setup
+  File file("temperature.pvd");
+  GMRES solver;
+  Stabilization delta;
+  Zero f;
+  BC bc;
+  Vector x0, x1, r;
+  Function u0(x0, mesh);
+
+  // Create forms
+  ConvectionDiffusion::BilinearForm a(b, delta);
+  ConvectionDiffusion::LinearForm L(u0, b, f, delta);
   
+  // Initialize x1
+  x1.init(FEM::size(mesh, a.trial()));
+  Function u1(x1, mesh, a.trial());
+
+  // Assemble left-hand side
+  Matrix A;
+  FEM::assemble(a, A, mesh);
   
-
-   // Set up problem
-  Mesh mesh("dolfin-2.xml.gz");
-  ConvectionDiffusionSource f;
-  ConvectionDiffusionBC bc;
-  ConvectionDiffusionStabilization delta(b);
-  ConvectionDiffusion::BilinearForm a;
-  ConvectionDiffusion::LinearForm L(f);
-
-  real t   = 0.0;  // current time
-
-  Matrix A;              // matrix defining linear system
-  Vector x0, x1, b;      // vectors 
-  KrylovSolver solver(KrylovSolver::bicgstab); // linear solver
-  Function u0(x0, mesh); // function at previous time step
-
-
-  // Vectors for functions for element size and inverse of velocity norm
-  Vector hvector, wnorm_vector; 
-
-  // Functions for element size and inverse of velocity norm
-  Function h(hvector), wnorm(wnorm_vector);
-
-  // Create variational forms
-  BilinearForm* a =0;
-  LinearForm* L =0;
-  if( nsd == 2 )
-  {  
-    a = new ConvectionDiffusion2D::BilinearForm(w, wnorm, h, k, c);
-    L = new ConvectionDiffusion2D::LinearForm(u0, w, wnorm, f, h, k, c);
-  } 
-  else if ( nsd == 3 )
-  {
-    dolfin_error("3D convection-diffusion is currently disabled to limit compile time.");
-//    a = new ConvectionDiffusion3D::BilinearForm(w, wnorm, h, k, c);
-//    L = new ConvectionDiffusion3D::LinearForm(u0, w, wnorm, f, h, k, c);
-  }
-  else
-  {
-    dolfin_error("Convection-diffusion solver only implemented for 2 and 3 space dimensions.");
-  }
-
-  // Compute stabiliation term  tau/2|a|
-  // It is assumed that the advective velocity can be prepresnted using a linear basis
-  ConvectionNormInv(w, wnorm_vector, nsd);
-
-  // Assemble stiffness matrix
-  FEM::assemble(*a, A, mesh);
-
-  uint N = FEM::size(mesh, a->trial());
-  x1.init(N);
-  Function u1(x1, mesh, a->trial());
-  
-  // Synchronize function u1 with time t
-  u1.sync(t);
+  // Parameters for time-stepping
+  real t = 0.0;
+  real T = 0.3;
+  real k = 0.01;
 
   // Start time-stepping
   Progress p("Time-stepping");
@@ -142,11 +74,11 @@ void solveConvDiff(Mesh& mesh, Function& b)
     x0 = x1;
     
     // Assemble load vector and set boundary conditions
-    FEM::assemble(*L, b, mesh);
-    FEM::applyBC(A, b, mesh, a->trial(), bc);
+    FEM::assemble(L, r, mesh);
+    FEM::applyBC(A, r, mesh, a.trial(), bc);
     
     // Solve the linear system
-    solver.solve(A, x1, b);
+    solver.solve(A, x1, r);
     
     // Save the solution to file
     file << u1;
@@ -154,15 +86,44 @@ void solveConvDiff(Mesh& mesh, Function& b)
     // Update progress
     p = t / T;
   }
-  */
 }
 
 int main()
 {
-  // Set up problem
+  // Boundary condition
+  class BC : public BoundaryCondition
+  {
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+      // Pressure boundary condition, zero pressure at one point
+      if ( i == 2 && p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+      {
+	value = 0.0;
+	return;
+      }
+      
+      // Velocity boundary condition at inflow
+      if ( p.x > (1.0 - DOLFIN_EPS) )
+      {
+	if ( i == 0 )
+	  value = -1.0;
+	else
+	  value = 0.0;
+	return;
+      }
+      
+      // Velocity boundary condition at remaining boundary (excluding outflow)
+      if ( p.x > DOLFIN_EPS )
+	value = 0.0;
+    }
+  };
+  
+  // Setup
   Mesh mesh("dolfin-2.xml.gz");
-  StokesForce f;
-  StokesBC bc;
+  Zero f;
+  BC bc;
+
+  // Create forms
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
 
@@ -191,42 +152,8 @@ int main()
 }
 
 
+
 /*
-
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
-//
-// Modified by Garth N. Wells, 2005
-//
-// First added:  2003
-// Last changed: 2005-12-31
-
-#include "dolfin/ConvectionDiffusionSolver.h"
-#include "dolfin/ConvectionDiffusion2D.h"
-//#include "dolfin/ConvectionDiffusion3D.h"
-
-using namespace dolfin;
-
-void ConvectionDiffusionSolver::solve()
-{
-}
-//-----------------------------------------------------------------------------
-void ConvectionDiffusionSolver::solve(Mesh& mesh, Function& w, Function& f, 
-                            BoundaryCondition& bc, real c, real k, real T)
-{
-  ConvectionDiffusionSolver solver(mesh, w, f, bc, c, k, T);
-  solver.solve();
-}
-//-----------------------------------------------------------------------------
-void ConvectionDiffusionSolver::ComputeElementSize(Mesh& mesh, Vector& h)
-{
-  // Compute element size h
-  h.init(mesh.noCells());	
-	for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    h((*cell).id()) = (*cell).diameter();
-  }
-}
 //-----------------------------------------------------------------------------
 void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Vector& wnorm_vector, uint nsd)
 {

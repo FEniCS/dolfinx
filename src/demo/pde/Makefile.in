@@ -183,7 +183,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = elasticity poisson stokes
+SUBDIRS = convection-diffusion elasticity poisson stokes
 all: all-recursive
 
 .SUFFIXES:
