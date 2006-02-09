@@ -1,1 +1,1 @@
-SUBDIRS = poisson
+SUBDIRS = elasticity poisson
