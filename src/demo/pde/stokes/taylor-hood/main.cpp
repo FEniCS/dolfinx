@@ -65,12 +65,12 @@ int main()
   solver.solve(A, x, b);
 
   // Pick the two sub functions of the solution
-  Function w(x, mesh, a->trial());
+  Function w(x, mesh, a.trial());
   Function u = w[0];
   Function p = w[1];
 
   // Save the solutions to file
-  File ufile("velocity.pdv");
+  File ufile("velocity.pvd");
   File pfile("pressure.pvd");
   ufile << u;
   pfile << p;

@@ -282,7 +282,7 @@ AC_OUTPUT( Makefile \
            src/demo/ode/modeling/Makefile \
            src/demo/ode/homotopy/Makefile \
            src/demo/pde/Makefile \
-           src/demo/pde/stotkes/Makefile \
+           src/demo/pde/stokes/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/scripting/Makefile \
