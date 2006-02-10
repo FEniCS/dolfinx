@@ -109,12 +109,53 @@ void PDE::solve(Function& u0, Function& u1)
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u0, Function& u1, Function& u2)
 {
+  dolfin_assert(_a);
+  dolfin_assert(_L);
+  dolfin_assert(_mesh);
 
+  // Check size of mixed system
+  uint elementdim = _a->trial().elementdim();
+  if ( elementdim != 3 )
+  {
+    dolfin_error1("Size of mixed system (%d) does not match number of functions (3).",
+		  elementdim);
+  }
+
+  // Solve mixed system
+  Function u;
+  solve(u);
+
+  /// Extract sub functions
+  dolfin_info("Extracting sub functions from mixed system.");
+  u0 = u[0];
+  u1 = u[1];
+  u2 = u[2];
 }
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
 {
+  dolfin_assert(_a);
+  dolfin_assert(_L);
+  dolfin_assert(_mesh);
 
+  // Check size of mixed system
+  uint elementdim = _a->trial().elementdim();
+  if ( elementdim != 4 )
+  {
+    dolfin_error1("Size of mixed system (%d) does not match number of functions (4).",
+		  elementdim);
+  }
+
+  // Solve mixed system
+  Function u;
+  solve(u);
+
+  /// Extract sub functions
+  dolfin_info("Extracting sub functions from mixed system.");
+  u0 = u[0];
+  u1 = u[1];
+  u2 = u[2];
+  u3 = u[3];
 }
 //-----------------------------------------------------------------------------
 BilinearForm& PDE::a()
