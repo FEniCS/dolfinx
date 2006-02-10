@@ -4,25 +4,24 @@
 // First added:  2006-02-09
 // Last changed: 2006-02-09
 
-#include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
 #include <dolfin/P1Tri.h>
 #include <dolfin/FiniteElement.h>
-#include <dolfin/FunctionPointerFunction.h>
+#include <dolfin/ConstantFunction.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(real value)
   : GenericFunction(),
-    value(value), _vectordim(vectordim), component(0), _mesh(0)
+    value(value), _mesh(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
   : GenericFunction(),
-    value(f.value), _vectordim(f._vectordim), component(0), _mesh(f._mesh)
+    value(f.value), _mesh(f._mesh)
 {
   // Do nothing
 }

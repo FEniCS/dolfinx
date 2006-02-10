@@ -19,7 +19,7 @@ using namespace dolfin;
 void solveConvDiff(Mesh& mesh, Function& velocity)
 {
   // Boundary condition
-  class BC : public BoundaryCondition
+  class : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -28,63 +28,71 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
       else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
 	value = 1.0;
     }
-  };
+  } bc;
 
   // Stabilization
-  class Stabilization : public Function
+  class : public Function
   {
     real eval(const Point& p, unsigned int i)
     {
       return 0.0;
     }
-  };
+  } delta;
 
-  // Setup
-  File file("temperature.pvd");
+  // Source term
+  class : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return 0.0;
+    }
+  } f;
+
+  // Linear system and solver
+  Matrix A;
+  Vector x, b;
   GMRES solver;
-  Stabilization delta;
-  Zero f;
-  BC bc;
-  Vector x0, x1, b;
-  Function u0(x0); //(x0, mesh);
+  
+  // Create functions
+  ConvectionDiffusion::BilinearForm::TrialElement element;
+  Function u0 = 0.0;
+  Function u1(x, mesh, element);
 
   // Create forms
   ConvectionDiffusion::BilinearForm a(velocity, delta);
   ConvectionDiffusion::LinearForm L(u0, velocity, f, delta);
-  
-  // Initialize x1
-  x1.init(FEM::size(mesh, a.trial()));
-  Function u1(x1, mesh, a.trial());
 
   // Assemble left-hand side
-  Matrix A;
   FEM::assemble(a, A, mesh);
   
   // Parameters for time-stepping
-  real t = 0.0;
   real T = 0.3;
   real k = 0.01;
+  real t = k;
+  
+  // Output file
+  File file("temperature.pvd");
 
   // Start time-stepping
   Progress p("Time-stepping");
   while ( t < T )
   {
-    // Make time step
-    t += k;
-    x0 = x1;
-    
     // Assemble load vector and set boundary conditions
     FEM::assemble(L, b, mesh);
-    FEM::applyBC(A, b, mesh, a.trial(), bc);
+    FEM::applyBC(A, b, mesh, element, bc);
     
     // Solve the linear system
-    solver.solve(A, x1, b);
+    solver.solve(A, x, b);
     
     // Save the solution to file
     file << u1;
 
     // Update progress
     p = t / T;
+
+    // Move to next interval
+    t += k;
+    u0 = u1;
   }
 }
 
