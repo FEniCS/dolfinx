@@ -1,4 +1,4 @@
-# Copyright (C) 2005 Anders Logg.
+# Copyright (C) 2005-2006 Anders Logg.
 # Licensed under the GNU GPL Version 2.
 #
 # The bilinear form a(u,v) and linear form L(v) for
@@ -12,5 +12,5 @@ v = BasisFunction(element)
 u = BasisFunction(element)
 f = Function(element)
 
-a = v.dx(i)*u.dx(i)*dx
+a = dot(grad(v), grad(u))*dx
 L = v*f*dx

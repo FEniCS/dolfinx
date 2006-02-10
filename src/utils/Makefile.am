@@ -1,1 +1,1 @@
-SUBDIRS = inp2dx
+SUBDIRS = inp2dx convert

@@ -288,6 +288,7 @@ AC_OUTPUT( Makefile \
            src/demo/scripting/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
+           src/utils/convert/Makefile \
            src/greeting/Makefile )
 
 # Display some configuration options
