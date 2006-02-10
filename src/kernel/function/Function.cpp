@@ -1,15 +1,16 @@
-// Copyright (C) 2003-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2005-12-12
+// Last changed: 2006-02-09
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
 // functionality is handled by the specific implementation (subclass).
 
+#include <dolfin/ConstantFunction.h>
 #include <dolfin/UserFunction.h>
 #include <dolfin/FunctionPointerFunction.h>
 #include <dolfin/DiscreteFunction.h>
@@ -17,6 +18,13 @@
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+Function::Function(real value)
+  : Variable("u", "no description"), TimeDependent(),
+    f(0), _type(constant), _cell(0)
+{
+  f = new ConstantFunction(value);
+}
 //-----------------------------------------------------------------------------
 Function::Function(uint vectordim)
   : Variable("u", "no description"), TimeDependent(),
@@ -59,6 +67,9 @@ Function::Function(const Function& f)
 {
   switch ( f.type() )
   {
+  case constant:
+    this->f = new ConstantFunction(*((ConstantFunction *) f.f));
+    break;
   case user:
     this->f = new UserFunction(*((UserFunction *) f.f));
     break;
@@ -101,6 +112,10 @@ const Function& Function::operator= (const Function& f)
 {
   switch ( f._type )
   {
+  case constant:
+    delete this->f;
+    this->f = new ConstantFunction(*((ConstantFunction *) f.f));
+    break;
   case user:
     delete this->f;
     this->f = new UserFunction(*((UserFunction *) f.f));

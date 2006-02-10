@@ -1,5 +1,6 @@
 SUBDIRS                       = dolfin
 nobase_include_HEADERS        = dolfin/dolfin_function.h \
+                                dolfin/ConstantFunction.h \
                                 dolfin/DiscreteFunction.h \
                                 dolfin/Function.h \
                                 dolfin/FunctionPointer.h \
@@ -10,7 +11,8 @@ nobase_include_HEADERS        = dolfin/dolfin_function.h \
                                 dolfin/UserFunction.h
 INCLUDES                      = @KERNEL_CFLAGS@
 lib_LTLIBRARIES               = libdolfin-function.la
-libdolfin_function_la_SOURCES = DiscreteFunction.cpp \
+libdolfin_function_la_SOURCES = ConstantFunction.h \
+                                DiscreteFunction.cpp \
                                 Function.cpp \
                                 FunctionPointerFunction.cpp \
                                 GenericFunction.cpp \
