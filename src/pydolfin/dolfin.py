@@ -408,6 +408,33 @@ class LinearSolverPtr(LinearSolver):
         _swig_setattr(self, LinearSolver,self.__class__,LinearSolver)
 _dolfin.LinearSolver_swigregister(LinearSolverPtr)
 
+class LU(LinearSolver):
+    __swig_setmethods__ = {}
+    for _s in [LinearSolver]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, LU, name, value)
+    __swig_getmethods__ = {}
+    for _s in [LinearSolver]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, LU, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::LU instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __init__(self, *args):
+        _swig_setattr(self, LU, 'this', _dolfin.new_LU(*args))
+        _swig_setattr(self, LU, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_LU):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def solve(*args): return _dolfin.LU_solve(*args)
+    def disp(*args): return _dolfin.LU_disp(*args)
+
+class LUPtr(LU):
+    def __init__(self, this):
+        _swig_setattr(self, LU, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, LU, 'thisown', 0)
+        _swig_setattr(self, LU,self.__class__,LU)
+_dolfin.LU_swigregister(LUPtr)
+
 class KrylovSolver(LinearSolver):
     __swig_setmethods__ = {}
     for _s in [LinearSolver]: __swig_setmethods__.update(_s.__swig_setmethods__)
@@ -547,6 +574,7 @@ class Function(Variable,TimeDependent):
 
     def eval(*args): return _dolfin.Function_eval(*args)
     def __call__(*args): return _dolfin.Function___call__(*args)
+    def __getitem__(*args): return _dolfin.Function___getitem__(*args)
     def interpolate(*args): return _dolfin.Function_interpolate(*args)
     def vectordim(*args): return _dolfin.Function_vectordim(*args)
     def vector(*args): return _dolfin.Function_vector(*args)

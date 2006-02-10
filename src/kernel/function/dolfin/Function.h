@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-09
+// Last changed: 2006-02-10
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -57,6 +57,9 @@ namespace dolfin
     /// Create discrete function
     Function(Vector& x, Mesh& mesh, FiniteElement& element);
 
+    /// Create discrete function (vector created automatically)
+    Function(Mesh& mesh, FiniteElement& element);
+
     /// Copy constructor
     Function(const Function& f);
 
@@ -101,6 +104,11 @@ namespace dolfin
 
     /// Attach finite element to function
     inline void attach(FiniteElement& element) { f->attach(element); }
+
+    // FIXME: Maybe all constructors should have a corresponding init function?
+
+    /// Reinitialize to discrete function (vector created automatically)
+    void init(Mesh& mesh, FiniteElement& element);
 
     /// Return current type of function
     enum Type { constant, user, functionpointer, discrete };

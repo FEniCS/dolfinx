@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-09
+// Last changed: 2006-02-10
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -59,6 +59,13 @@ Function::Function(Vector& x, Mesh& mesh, FiniteElement& element)
     f(0), _type(discrete), _cell(0)
 {
   f = new DiscreteFunction(x, mesh, element);
+}
+//-----------------------------------------------------------------------------
+Function::Function(Mesh& mesh, FiniteElement& element)
+  : Variable("u", "no description"), TimeDependent(),
+    f(0), _type(discrete), _cell(0)
+{
+  f = new DiscreteFunction(mesh, element);
 }
 //-----------------------------------------------------------------------------
 Function::Function(const Function& f)
@@ -156,6 +163,19 @@ void Function::interpolate(real coefficients[], AffineMap& map,
 
   // Reset cell since it is no longer current
   _cell = 0;
+}
+//-----------------------------------------------------------------------------
+void Function::init(Mesh& mesh, FiniteElement& element)
+{
+  if ( _type != discrete )
+  {
+    delete f;
+    f = new DiscreteFunction(mesh, element);
+  }
+  else
+  {
+    ((DiscreteFunction*) f)->init(mesh, element);
+  }
 }
 //-----------------------------------------------------------------------------
 Cell& Function::cell()

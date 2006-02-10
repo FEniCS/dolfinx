@@ -38,8 +38,31 @@ Function PDE::solve()
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u)
 {
+  // Make sure u is a discrete function associated with the trial space
+  /*
+  Function tmp(
   
+  // Set up problem
+  UnitSquare mesh(16, 16);
+  MyFunction f;
+  MyBC bc;
+  Poisson::BilinearForm a;
+  Poisson::LinearForm L(f);
 
+  // Assemble linear system
+  Matrix A;
+  Vector x, b;
+  FEM::assemble(a, L, A, b, mesh, bc);
+  
+  // Solve the linear system
+  GMRES solver;
+  solver.solve(A, x, b);
+  
+  // Save function to file
+  Function u(x, mesh, a.trial());
+  File file("poisson.pvd");
+  file << u; 
+  */
 }
 //-----------------------------------------------------------------------------
 BilinearForm& PDE::a()

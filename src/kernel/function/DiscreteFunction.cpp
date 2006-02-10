@@ -45,6 +45,20 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
   updateVectorDimension();
 }
 //-----------------------------------------------------------------------------
+DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
+  : GenericFunction(), _x(0), _mesh(&mesh), _element(&element),
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
+    vector_local(false)
+{
+  // Update vector dimension from element
+  updateVectorDimension();
+
+  // Allocate local storage
+  uint size = FEM::size(mesh, element);
+  _x = new Vector(size);
+  vector_local = true;
+}
+//-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(), _x(0), _mesh(f._mesh), _element(f._element),
     _vectordim(f._vectordim), component(f.component),
@@ -229,6 +243,34 @@ void DiscreteFunction::attach(FiniteElement& element)
 {
   _element = &element;
   updateVectorDimension();
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)
+{
+  cout << "Reinitializing discrete function" << endl;
+
+  // Reset data
+  _mesh = &mesh;
+  _element = &element;
+  component = 0;
+  mixed_offset = 0;
+  component_offset = 0;
+  
+  // Update vector dimension from element
+  updateVectorDimension();
+
+  // Reinitialize local storage
+  uint size = FEM::size(mesh, element);
+  if ( !vector_local )
+  {
+    _x = new Vector(size);
+    vector_local = true;
+  }
+  else
+  {
+    _x->init(size);
+    *_x = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::updateVectorDimension()
