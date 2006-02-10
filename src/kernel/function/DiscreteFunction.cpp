@@ -20,7 +20,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x)
   : GenericFunction(), _x(&x), _mesh(0), _element(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
+    vector_local(false)
 {
   // Mesh and element need to be specified later or are automatically
   // chosen during assembly.
@@ -28,7 +29,8 @@ DiscreteFunction::DiscreteFunction(Vector& x)
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
   : GenericFunction(), _x(&x), _mesh(&mesh), _element(0),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
+    vector_local(false)
 {
   // Element needs to be specified later or are automatically
   // chosen during assembly.
@@ -36,23 +38,31 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element)
   : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element),
-    _vectordim(1), component(0), mixed_offset(0), component_offset(0)
+    _vectordim(1), component(0), mixed_offset(0), component_offset(0),
+    vector_local(false)
 {
   // Update vector dimension from element
   updateVectorDimension();
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
-  : GenericFunction(), _x(f._x), _mesh(f._mesh), _element(f._element),
+  : GenericFunction(), _x(0), _mesh(f._mesh), _element(f._element),
     _vectordim(f._vectordim), component(f.component),
-    mixed_offset(f.mixed_offset), component_offset(f.component_offset)
+    mixed_offset(f.mixed_offset), component_offset(f.component_offset),
+    vector_local(false)
 {
-  // Do nothing, just copy the values
+  // Create a new vector and copy the values
+  dolfin_assert(f._x);
+  _x = new Vector();
+  *_x =* f._x;
+  vector_local = true;
 }
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
 {
-  // Do nothing
+  // Delete vector if local copy
+  if ( vector_local )
+    delete _x;
 }
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
@@ -134,7 +144,7 @@ void DiscreteFunction::sub(uint i)
 void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
 				   FiniteElement& element)
 {
-  // Save mesh and element
+  // Save mesh and element (overwriting any previously attached values)
   _mesh = &map.cell().mesh();
   _element = &element;
   
@@ -180,7 +190,13 @@ FiniteElement& DiscreteFunction::element()
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(Vector& x)
 {
+  // Delete old vector if local
+  if ( vector_local )
+    delete _x;
+
+  // Attach new vector
   _x = &x;
+  vector_local = false;
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::attach(Mesh& mesh)

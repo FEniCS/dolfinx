@@ -16,7 +16,7 @@
 
 using namespace dolfin;
 
-void solveConvDiff(Mesh& mesh, Function& b)
+void solveConvDiff(Mesh& mesh, Function& velocity)
 {
   // Boundary condition
   class BC : public BoundaryCondition
@@ -45,12 +45,12 @@ void solveConvDiff(Mesh& mesh, Function& b)
   Stabilization delta;
   Zero f;
   BC bc;
-  Vector x0, x1, r;
-  Function u0(x0, mesh);
+  Vector x0, x1, b;
+  Function u0(x0); //(x0, mesh);
 
   // Create forms
-  ConvectionDiffusion::BilinearForm a(b, delta);
-  ConvectionDiffusion::LinearForm L(u0, b, f, delta);
+  ConvectionDiffusion::BilinearForm a(velocity, delta);
+  ConvectionDiffusion::LinearForm L(u0, velocity, f, delta);
   
   // Initialize x1
   x1.init(FEM::size(mesh, a.trial()));
@@ -74,11 +74,11 @@ void solveConvDiff(Mesh& mesh, Function& b)
     x0 = x1;
     
     // Assemble load vector and set boundary conditions
-    FEM::assemble(L, r, mesh);
-    FEM::applyBC(A, r, mesh, a.trial(), bc);
+    FEM::assemble(L, b, mesh);
+    FEM::applyBC(A, b, mesh, a.trial(), bc);
     
     // Solve the linear system
-    solver.solve(A, x1, r);
+    solver.solve(A, x1, b);
     
     // Save the solution to file
     file << u1;

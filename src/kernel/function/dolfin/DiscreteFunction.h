@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-01
+// Last changed: 2006-02-09
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -95,6 +95,9 @@ namespace dolfin
     
     // Current component offset
     uint component_offset;
+
+    // True if vector is local (not a reference to another vector)
+    bool vector_local;
 
   };
 
