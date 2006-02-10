@@ -24,20 +24,11 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
       if ( p.x == 1.0 )
-	value = 0.0;
+	value = 1.0;
       else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
 	value = 1.0;
     }
   } bc;
-
-  // Stabilization
-  class : public Function
-  {
-    real eval(const Point& p, unsigned int i)
-    {
-      return 0.0;
-    }
-  } delta;
 
   // Source term
   class : public Function
@@ -51,7 +42,7 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
   // Linear system and solver
   Matrix A;
   Vector x, b;
-  GMRES solver;
+  LU solver;
   
   // Create functions
   ConvectionDiffusion::BilinearForm::TrialElement element;
@@ -59,15 +50,15 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
   Function u1(x, mesh, element);
 
   // Create forms
-  ConvectionDiffusion::BilinearForm a(velocity, delta);
-  ConvectionDiffusion::LinearForm L(u0, velocity, f, delta);
+  ConvectionDiffusion::BilinearForm a(velocity);
+  ConvectionDiffusion::LinearForm L(u0, velocity, f);
 
   // Assemble left-hand side
   FEM::assemble(a, A, mesh);
   
   // Parameters for time-stepping
-  real T = 0.3;
-  real k = 0.01;
+  real T = 2.0;
+  real k = 0.05;
   real t = k;
   
   // Output file
@@ -155,7 +146,7 @@ int main()
   ufile << u;
   pfile << p;
 
-  // Solve convection-diffusion with compute velocity field
+  // Solve convection-diffusion with computed velocity field
   solveConvDiff(mesh, u);
 }
 

@@ -2,7 +2,7 @@ CFLAGS  = `dolfin-config --cflags`
 LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
 
-DEST    = dolfin-stokes
+DEST    = dolfin-convection-diffusion
 OBJECTS = main.o
 
 all: $(DEST)
