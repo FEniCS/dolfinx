@@ -5,6 +5,15 @@
 // Last changed: 2006-02-10
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
+#include <dolfin/FEM.h>
+#include <dolfin/GMRES.h>
+#include <dolfin/LU.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
+#include <dolfin/Mesh.h>
+#include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
 #include <dolfin/PDE.h>
 
@@ -33,36 +42,44 @@ PDE::~PDE()
 Function PDE::solve()
 {
   Function u;
+  solve(u);
   return u;
 }
 //-----------------------------------------------------------------------------
 void PDE::solve(Function& u)
 {
+  dolfin_assert(_a);
+  dolfin_assert(_L);
+  dolfin_assert(_mesh);
+
+  dolfin_info("Solving static linear PDE.");
+
   // Make sure u is a discrete function associated with the trial space
-  /*
-  Function tmp(
-  
-  // Set up problem
-  UnitSquare mesh(16, 16);
-  MyFunction f;
-  MyBC bc;
-  Poisson::BilinearForm a;
-  Poisson::LinearForm L(f);
+  u.init(*_mesh, _a->trial());
+  Vector& x = u.vector();
 
   // Assemble linear system
   Matrix A;
-  Vector x, b;
-  FEM::assemble(a, L, A, b, mesh, bc);
+  Vector b;
+  if ( _bc )
+    FEM::assemble(*_a, *_L, A, b, *_mesh, *_bc);
+  else
+    FEM::assemble(*_a, *_L, A, b, *_mesh);
   
   // Solve the linear system
-  GMRES solver;
-  solver.solve(A, x, b);
-  
-  // Save function to file
-  Function u(x, mesh, a.trial());
-  File file("poisson.pvd");
-  file << u; 
-  */
+  const std::string solver_type = get("solver");
+  if ( solver_type == "direct" )
+  {
+    LU solver;
+    solver.solve(A, x, b);
+  }
+  else if ( solver_type == "iterative" )
+  {
+    GMRES solver;
+    solver.solve(A, x, b);
+  }
+  else
+    dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
 }
 //-----------------------------------------------------------------------------
 BilinearForm& PDE::a()

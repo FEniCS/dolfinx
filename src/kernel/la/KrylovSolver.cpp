@@ -102,7 +102,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (Krylov method).", M, N);
+  dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -175,7 +175,7 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (Krylov).", M, N);
+  dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);

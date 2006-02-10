@@ -16,6 +16,7 @@ namespace dolfin
   class LinearForm;
   class Mesh;
   class BoundaryCondition;
+  class Function;
 
   /// A PDE represents a (linearized) partial differential equation,
   /// given by a variation problem of the form: Find u in V such that

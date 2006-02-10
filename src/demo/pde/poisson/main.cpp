@@ -22,45 +22,37 @@
   
 using namespace dolfin;
 
-// Right-hand side
-class MyFunction : public Function
-{
-  real eval(const Point& p, unsigned int i)
-  {
-    return p.x*sin(p.y);
-  }
-};
-
-// Boundary condition
-class MyBC : public BoundaryCondition
-{
-  void eval(BoundaryValue& value, const Point& p, unsigned int i)
-  {
-    if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
-      value = 0.0;
-  }
-};
-
 int main()
 {
+  // Right-hand side
+  class : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return p.x*sin(p.y);
+    }
+  } f;
+  
+  // Boundary condition
+  class : public BoundaryCondition
+  {
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+	value = 0.0;
+    }
+  } bc;
+  
   // Set up problem
   UnitSquare mesh(16, 16);
-  MyFunction f;
-  MyBC bc;
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
+  PDE pde(a, L, mesh, bc);
 
-  // Assemble linear system
-  Matrix A;
-  Vector x, b;
-  FEM::assemble(a, L, A, b, mesh, bc);
-  
-  // Solve the linear system
-  GMRES solver;
-  solver.solve(A, x, b);
-  
+  // Solve
+  Function u = pde.solve();
+
   // Save function to file
-  Function u(x, mesh, a.trial());
   File file("poisson.pvd");
   file << u;
   
