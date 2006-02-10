@@ -3,8 +3,6 @@
 %{
 #include <dolfin.h>
 
-// SWIG seems to pollute the global namespace with "set", so we need to work
-// around that.
 #include "SettingsGlue.h"
 
 #include <string>
@@ -104,6 +102,7 @@ using namespace dolfin;
 %rename(__setitem__) dolfin::Vector::setval;
 
 %rename(__call__) dolfin::Function::operator();
+%rename(__getitem__) dolfin::Function::operator[];
 
 /* DOLFIN public interface */
 
@@ -156,6 +155,7 @@ using namespace dolfin;
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
 %include "dolfin/LinearSolver.h"
+%include "dolfin/LU.h"
 %include "dolfin/KrylovSolver.h"
 %include "dolfin/EigenvalueSolver.h"
 %include "dolfin/Preconditioner.h"
