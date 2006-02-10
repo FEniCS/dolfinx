@@ -46,6 +46,9 @@ namespace dolfin
     // Restrict to sub function or component (if possible)
     void sub(uint i);
 
+    // Copy data from given function
+    void copy(const DiscreteFunction& f);
+
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
 

@@ -99,22 +99,33 @@ Function Function::operator[] (const uint i)
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& f)
 {
-  delete this->f;
-
-  switch ( f.type() )
+  switch ( f._type )
   {
   case user:
+    delete this->f;
     this->f = new UserFunction(*((UserFunction *) f.f));
     break;
   case functionpointer:
+    delete this->f;
     this->f = new FunctionPointerFunction(*((FunctionPointerFunction *) f.f));
     break;
   case discrete:
-    this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
+    // Don't delete data if not necessary (don't want to recreate vector)
+    if ( _type == discrete )
+    {
+      ((DiscreteFunction *) this->f)->copy(*((DiscreteFunction *) f.f));
+    }
+    else
+    {
+      delete this->f;
+      this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
+    }
     break;
   default:
     dolfin_error("Unknown function type.");
   }
+
+  _type = f._type;
 
   return *this;
 }

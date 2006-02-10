@@ -141,6 +141,27 @@ void DiscreteFunction::sub(uint i)
   }
 }
 //-----------------------------------------------------------------------------
+void DiscreteFunction::copy(const DiscreteFunction& f)
+{
+  dolfin_info("Making copy of function");
+
+  dolfin_assert(f._x);
+
+  // Initialize local data if not already done
+  if ( !vector_local )
+  {
+    _x = new Vector();
+    vector_local = true;
+  }
+  
+  // Copy values to vector
+  *_x = *f._x;
+  
+  // Copy pointers to mesh and element
+  _mesh = f._mesh;
+  _element = f._element;
+}
+//-----------------------------------------------------------------------------
 void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
 				   FiniteElement& element)
 {
