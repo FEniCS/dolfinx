@@ -98,8 +98,6 @@ pfile << p
 u = ExactSolution()
 l2errorform = import_formfile("L2Error.form")
 
-#print "foo"
-
 l2errorL = l2errorform.L2ErrorLinearForm(v, u)
 
 l2error = Vector()

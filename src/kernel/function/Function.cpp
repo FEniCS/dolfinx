@@ -110,10 +110,6 @@ Function Function::operator[] (const uint i)
 //-----------------------------------------------------------------------------
 const Function& Function::operator= (const Function& f)
 {
-  delete this->f;
-
-  _type = f._type;
-
   switch ( f._type )
   {
   case constant:
