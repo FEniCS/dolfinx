@@ -90,7 +90,7 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
 int main()
 {
   // Boundary condition
-  class BC : public BoundaryCondition
+  class : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -115,32 +115,21 @@ int main()
       if ( p.x > DOLFIN_EPS )
 	value = 0.0;
     }
-  };
-  
-  // Setup
-  Mesh mesh("dolfin-2.xml.gz");
-  Zero f;
-  BC bc;
+  } bc;
 
-  // Create forms
+  // Set up problem
+  Mesh mesh("dolfin-2.xml.gz");
+  Function f = 0.0;
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
+  PDE pde(a, L, mesh, bc);
 
-  // Assemble linear system
-  Matrix A;
-  Vector x, b;
-  FEM::assemble(a, L, A, b, mesh, bc);
+  // Compute solution
+  Function u;
+  Function p;
+  pde.solve(u, p);
 
-  // Solve the linear system
-  GMRES solver;
-  solver.solve(A, x, b);
-
-  // Pick the two sub functions of the solution
-  Function w(x, mesh, a.trial());
-  Function u = w[0];
-  Function p = w[1];
-
-  // Save the solutions to file
+  // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
   ufile << u;
@@ -149,28 +138,3 @@ int main()
   // Solve convection-diffusion with computed velocity field
   solveConvDiff(mesh, u);
 }
-
-
-
-/*
-//-----------------------------------------------------------------------------
-void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Vector& wnorm_vector, uint nsd)
-{
-  real tau = 1.0;  // stabilisation parameter
-
-  real norm;
-  wnorm_vector.init(mesh.noVertices());
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-  {
-    norm = 0.0;
-    for (uint i =0; i < nsd; ++i)
-      norm += w(*vertex, i)*w(*vertex, i);
-
-    norm = 0.5*tau/sqrt(norm);
-    wnorm_vector((*vertex).id()) = norm;  
-  }
-
-}
-//-----------------------------------------------------------------------------
-
-*/
