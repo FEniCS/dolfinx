@@ -49,10 +49,10 @@ int main()
   Poisson::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
 
-  // Solve
+  // Compute solution
   Function u = pde.solve();
 
-  // Save function to file
+  // Save solution to file
   File file("poisson.pvd");
   file << u;
   

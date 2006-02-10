@@ -157,8 +157,6 @@ void DiscreteFunction::sub(uint i)
 //-----------------------------------------------------------------------------
 void DiscreteFunction::copy(const DiscreteFunction& f)
 {
-  dolfin_info("Making copy of function");
-
   dolfin_assert(f._x);
 
   // Initialize local data if not already done

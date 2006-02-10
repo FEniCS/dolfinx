@@ -72,7 +72,7 @@ Function::Function(const Function& f)
   : Variable("u", "no description"), TimeDependent(),
     f(0), _type(f._type), _cell(0)
 {
-  switch ( f.type() )
+  switch ( f._type )
   {
   case constant:
     this->f = new ConstantFunction(*((ConstantFunction *) f.f));
@@ -176,6 +176,9 @@ void Function::init(Mesh& mesh, FiniteElement& element)
   {
     ((DiscreteFunction*) f)->init(mesh, element);
   }
+
+  _type = discrete;
+  _cell = 0;
 }
 //-----------------------------------------------------------------------------
 Cell& Function::cell()

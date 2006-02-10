@@ -52,6 +52,7 @@ void PDE::solve(Function& u)
   dolfin_assert(_L);
   dolfin_assert(_mesh);
 
+  // Write a message
   dolfin_info("Solving static linear PDE.");
 
   // Make sure u is a discrete function associated with the trial space
@@ -80,6 +81,40 @@ void PDE::solve(Function& u)
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
+}
+//-----------------------------------------------------------------------------
+void PDE::solve(Function& u0, Function& u1)
+{
+  dolfin_assert(_a);
+  dolfin_assert(_L);
+  dolfin_assert(_mesh);
+
+  // Check size of mixed system
+  uint elementdim = _a->trial().elementdim();
+  if ( elementdim != 2 )
+  {
+    dolfin_error1("Size of mixed system (%d) does not match number of functions (2).",
+		  elementdim);
+  }
+
+  // Solve mixed system
+  Function u;
+  solve(u);
+
+  /// Extract sub functions
+  dolfin_info("Extracting sub functions from mixed system.");
+  u0 = u[0];
+  u1 = u[1];
+}
+//-----------------------------------------------------------------------------
+void PDE::solve(Function& u0, Function& u1, Function& u2)
+{
+
+}
+//-----------------------------------------------------------------------------
+void PDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
+{
+
 }
 //-----------------------------------------------------------------------------
 BilinearForm& PDE::a()

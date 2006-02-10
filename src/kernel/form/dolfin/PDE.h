@@ -38,11 +38,20 @@ namespace dolfin
     /// Destructor
     ~PDE();
 
-    /// Solve PDE
+    /// Solve PDE (in general a mixed system)
     Function solve();
 
-    /// Solve PDE
+    /// Solve PDE (in general a mixed system)
     void solve(Function& u);
+
+    /// Solve PDE for sub functions of mixed system
+    void solve(Function& u0, Function& u1);
+
+    /// Solve PDE for sub functions of mixed system
+    void solve(Function& u0, Function& u1, Function& u2);
+
+    /// Solve PDE for sub functions of mixed system
+    void solve(Function& u0, Function& u1, Function& u2, Function& u3);
     
     /// Return the bilinear form a(.,.)
     BilinearForm& a();
