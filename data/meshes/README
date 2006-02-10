@@ -22,6 +22,9 @@ gear.xml.gz
   the Princeton Shape Benchmark. Original data source is
   http://www.mt.luth.se/~petert/distributed/distributed.html
 
+  The gear is centered at (x, y, z) = (0.5, 0.5, 0.219) and is
+  bounded by [0.025, 0.975] x [0.025, 0.975] x [0.025, 0.413].
+
 slit.xml.gz
 -----------
 

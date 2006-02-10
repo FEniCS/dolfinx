@@ -278,12 +278,13 @@ AC_OUTPUT( Makefile \
            src/demo/Makefile \
            src/demo/fem/Makefile \
            src/demo/nls/Makefile \
+           src/demo/ode/Makefile \
+           src/demo/ode/modeling/Makefile \
+           src/demo/ode/homotopy/Makefile \
            src/demo/pde/Makefile \
+           src/demo/pde/stokes/Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
-           src/demo/solvers/ode/Makefile \
-           src/demo/solvers/ode/modeling/Makefile \
-           src/demo/solvers/ode/homotopy/Makefile \
            src/demo/scripting/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \

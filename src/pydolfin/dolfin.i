@@ -2,6 +2,7 @@
 
 %{
 #include <dolfin.h>
+
 #include "SettingsGlue.h"
 
 #include <string>
@@ -81,9 +82,6 @@ using namespace dolfin;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
 
-%ignore set;
-%ignore dolfin::set;
-%ignore dolfin::set_aptr;
 %ignore dolfin::dolfin_info;
 %ignore dolfin::dolfin_info_aptr;
 
@@ -92,6 +90,7 @@ using namespace dolfin;
 %import "dolfin/constants.h"
 
 %rename(set) glueset;
+%rename(get) glueget;
 %rename(increment) dolfin::VertexIterator::operator++;
 %rename(increment) dolfin::CellIterator::operator++;
 %rename(increment) dolfin::EdgeIterator::operator++;
@@ -103,6 +102,7 @@ using namespace dolfin;
 %rename(__setitem__) dolfin::Vector::setval;
 
 %rename(__call__) dolfin::Function::operator();
+%rename(__getitem__) dolfin::Function::operator[];
 
 /* DOLFIN public interface */
 
@@ -134,7 +134,7 @@ using namespace dolfin;
 /* settings includes */
 
 %include "dolfin/Parameter.h"
-%include "dolfin/ParameterSystem.h"
+//%include "dolfin/ParameterSystem.h"
 
 
 //%include "dolfin/Parameter.h"
@@ -155,6 +155,7 @@ using namespace dolfin;
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
 %include "dolfin/LinearSolver.h"
+%include "dolfin/LU.h"
 %include "dolfin/KrylovSolver.h"
 %include "dolfin/EigenvalueSolver.h"
 %include "dolfin/Preconditioner.h"

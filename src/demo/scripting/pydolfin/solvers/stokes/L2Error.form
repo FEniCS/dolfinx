@@ -1,0 +1,16 @@
+# Copyright (c) 2005 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# Computing the squared L2 norm of the difference of
+# two given functions f and g.
+
+P0 = FiniteElement("Discontinuous Lagrange", "triangle", 0)
+P1 = FiniteElement("Vector Lagrange", "triangle", 2)
+
+v = BasisFunction(P0)
+f = Function(P1)
+g = Function(P1)
+
+e = f - g
+
+L = v*dot(e, e)*dx

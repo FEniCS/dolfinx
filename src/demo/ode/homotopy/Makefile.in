@@ -19,7 +19,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../../../../..
+top_builddir = ../../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -35,7 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = src/demo/solvers/ode/modeling
+subdir = src/demo/ode/homotopy
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
@@ -183,7 +183,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = simple lattice
+SUBDIRS = economy simple
 all: all-recursive
 
 .SUFFIXES:
@@ -196,9 +196,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/demo/solvers/ode/modeling/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/demo/ode/homotopy/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/demo/solvers/ode/modeling/Makefile
+	  $(AUTOMAKE) --gnu  src/demo/ode/homotopy/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

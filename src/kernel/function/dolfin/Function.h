@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2005-12-12
+// Last changed: 2006-02-09
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -38,6 +38,9 @@ namespace dolfin
   class Function : public Variable, public TimeDependent
   {
   public:
+
+    /// Create function with given constant value
+    Function(real value);
     
     /// Create user-defined function (evaluation operator must be overloaded)
     Function(uint vectordim = 1);
@@ -100,7 +103,7 @@ namespace dolfin
     inline void attach(FiniteElement& element) { f->attach(element); }
 
     /// Return current type of function
-    enum Type { user, functionpointer, discrete };
+    enum Type { constant, user, functionpointer, discrete };
     inline Type type() const { return _type; } 
 
   protected:
@@ -120,7 +123,6 @@ namespace dolfin
     Cell* _cell;
 
   };
-
 
 }
 

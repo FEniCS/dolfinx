@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005, 2006.
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2005-12-06
+// Last changed: 2006-02-08
 
 #include <petscpc.h>
 
@@ -15,6 +15,16 @@
 #include <dolfin/KrylovSolver.h>
 
 using namespace dolfin;
+
+// Monitor function
+namespace dolfin
+{
+  int monitor(KSP ksp, int iteration, real rnorm, void *mctx)
+  {
+    dolfin_info("Iteration %d: residual = %g", iteration, rnorm);
+    return 0;
+  }
+}
 
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver() : LinearSolver(), set_pc(true), report(true), 
@@ -26,6 +36,9 @@ KrylovSolver::KrylovSolver() : LinearSolver(), set_pc(true), report(true),
   
   // Initialize KSP solver
   init(0, 0);
+
+  // Add parameters
+  add("monitor convergence", false);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), set_pc(true), report(true), 
@@ -38,6 +51,9 @@ KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), set_pc(true), rep
   
   // Initialize KSP solver
   init(0, 0);
+
+  // Add parameters
+  add("monitor convergence", false);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type) : LinearSolver(), 
@@ -49,6 +65,9 @@ KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type) : LinearSol
   
   // Initialize KSP solver
   init(0, 0);
+
+  // Add parameters
+  add("monitor convergence", false);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner_type) : 
@@ -60,6 +79,9 @@ KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner
   
   // Initialize KSP solver
   init(0, 0);
+
+  // Add parameters
+  add("monitor convergence", false);
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
@@ -79,6 +101,9 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   if ( N != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
 
+  // Write a message
+  dolfin_info("Solving linear system of size %d x %d (Krylov method).", M, N);
+
   // Reinitialize KSP solver if necessary
   init(M, N);
 
@@ -89,7 +114,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   KSPType ksp_type;
   ksp_type = getType(solver_type);
 
-  if(solver_type != KrylovSolver::default_solver) 
+  if (solver_type != KrylovSolver::default_solver) 
     KSPSetType(ksp, ksp_type);
 
   PC pc;
@@ -106,6 +131,10 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
 //    if(preconditioner_type != Preconditioner::default_pc) 
 //      PCSetType(pc, pc_type);
   }
+
+  // Set monitor
+  if ( get("monitor convergence") )
+    KSPSetMonitor(ksp, monitor, 0, 0);
  
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
@@ -138,12 +167,15 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   // Create preconditioner for virtual system the first time
   //if ( !B )
   // createVirtualPreconditioner(A);
-
+  
   // Check dimensions
   uint M = A.size(0);
   uint N = A.size(1);
   if ( N != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
+
+  // Write a message
+  dolfin_info("Solving linear system of size %d x %d (Krylov).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);

@@ -1,0 +1,30 @@
+# Copyright (C) 2006 Anders Logg.
+# Licensed under the GNU GPL Version 2.
+#
+# First added:  2006-02-09
+# Last changed: 2006-02-09
+#
+# The bilinear form a(v, u) and linear form L(v) for
+# convection-diffusion using cG(1)cG(1) with least-squares
+# stabilization (but wihtout artificial viscosity).
+#
+# Compile this form with FFC: ffc ConvectionDiffusion.form.
+
+scalar   = FiniteElement("Lagrange", "triangle", 1)
+vector   = FiniteElement("Vector Lagrange", "triangle", 1)
+
+v  = BasisFunction(scalar)
+u1 = BasisFunction(scalar)
+u0 = Function(scalar)
+b  = Function(vector)
+f  = Function(scalar)
+
+delta = Function(scalar)
+
+c = 0.001
+k = 0.01
+
+v = v + delta*dot(b, grad(v))
+
+a = v*u1*dx + 0.5*k*(v*dot(b, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
+L = v*u0*dx - 0.5*k*(v*dot(b, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + v*f*dx

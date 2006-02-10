@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-01
+// Last changed: 2006-02-09
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -45,6 +45,9 @@ namespace dolfin
 
     // Restrict to sub function or component (if possible)
     void sub(uint i);
+
+    // Copy data from given function
+    void copy(const DiscreteFunction& f);
 
     /// Compute interpolation of function onto local finite element space
     void interpolate(real coefficients[], AffineMap& map, FiniteElement& element);
@@ -95,6 +98,9 @@ namespace dolfin
     
     // Current component offset
     uint component_offset;
+
+    // True if vector is local (not a reference to another vector)
+    bool vector_local;
 
   };
 

@@ -170,7 +170,7 @@ def mesh2xml(ifilename, ofilename):
                 n1 = int(n1) - 1
                 n2 = int(n2) - 1
                 n3 = int(n3) - 1
-                ofile.write("      <triangle name=\"%d\" n0=\"%d\" n1=\"%d\" n2=\"%d\" n3=\"%d\"/>\n" % \
+                ofile.write("      <tetrahedron name=\"%d\" n0=\"%d\" n1=\"%d\" n2=\"%d\" n3=\"%d\"/>\n" % \
                             (num_cells_read, n0, n1, n2, n3))
             num_cells_read +=1
             if num_cells == num_cells_read:

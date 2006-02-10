@@ -3,6 +3,7 @@ SUBDIRS = bistable \
           homotopy \
           lorenz \
           mechanical \
+          method-weights \
           modeling \
           reaction \
           stiff \

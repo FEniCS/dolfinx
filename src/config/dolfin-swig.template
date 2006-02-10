@@ -101,9 +101,9 @@ using namespace dolfin;
 
 /* form imports */
 
-%import "dolfin/Form.h"
-%import "dolfin/BilinearForm.h"
-%import "dolfin/LinearForm.h"
+%include "dolfin/Form.h"
+%include "dolfin/BilinearForm.h"
+%include "dolfin/LinearForm.h"
 
 /* form include */
 

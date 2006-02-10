@@ -1,11 +1,10 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg, 2005.
+// Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2005
-
+// Last changed: 2006-02-08
 
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/FEM.h>
@@ -151,19 +150,19 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonMaxiter(uint maxiter) const
 {
-  set("NLS Newton maximum iterations", maxiter);
+  dolfin::set("NLS Newton maximum iterations", maxiter);
   dolfin_info("Maximum number of Newton iterations: %d.",maxiter);
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonRtol(real rtol) const
 {
-  set("NLS Newton relative convergence tolerance", rtol);
+  dolfin::set("NLS Newton relative convergence tolerance", rtol);
   dolfin_info("Relative increment tolerance for Newton solver: %e.", rtol);
 }
 //-----------------------------------------------------------------------------
 void NewtonSolver::setNewtonAtol(real atol) const
 {
-  set("NLS Newton absolute convergence tolerance", atol);
+  dolfin::set("NLS Newton absolute convergence tolerance", atol);
   dolfin_info("Absolute increment tolerance for Newton solver: %e.", atol);
 }
 //-----------------------------------------------------------------------------
