@@ -17,6 +17,8 @@ using namespace dolfin;
 
 void testPreconditioner()
 {
+  dolfin_info("--- Testing preconditioner ---");
+
   class MyPreconditioner : public Preconditioner
   {
   public:
@@ -55,17 +57,48 @@ void testPreconditioner()
   x.disp();
 }
 
-void testMatrixOutput()
+void testOutputVector()
 {
+  dolfin_info("--- Testing output of vector ---");
+
+  Vector x(10);
+  for (unsigned int i = 0; i < 10; i++)
+    x(i) = 1.0 / static_cast<real>(i + 1);
+
+  File mfile("vector.m");
+  mfile << x;
+
+  File xmlfile("vector.xml");
+  xmlfile << x;
+}
+
+void testOutputMatrix()
+{
+  dolfin_info("--- Testing output of matrix ---");
+
   UnitSquare mesh(2, 2);
   MassMatrix M(mesh);
 
-  File file("matrix.m");
-  file << M;
+  File mfile("matrix.m");
+  mfile << M;
+
+  File xmlfile("matrix.xml");
+  xmlfile << M;
+}
+
+void testOutputMesh()
+{
+  dolfin_info("--- Testing output of mesh ---");
+
+  Mesh mesh("dolfin-1.xml.gz");
+  File file("mesh.m");
+  file << mesh;
 }
 
 void testFunctional()
 {
+  dolfin_info("--- Testing functional ---");
+
   class MyFunction0 : public Function
   {
   public:
@@ -102,15 +135,10 @@ void testFunctional()
   dolfin_info("Analytic: 0.408248290463863");
 }
 
-void testOutput()
-{
-  Mesh mesh("dolfin-1.xml.gz");
-  File file("mesh.m");
-  file << mesh;
-}
-
 void testRandom()
 {
+  dolfin_info("--- Testing random ---");
+
   cout << "Random numbers: ";
   cout << dolfin::rand() << " ";
   cout << dolfin::rand() << " ";
@@ -119,6 +147,8 @@ void testRandom()
 
 void testProgress()
 {
+  dolfin_info("--- Testing progress ---");
+
   Progress p("Testing progress bar", 500);
   for (unsigned int i = 0; i < 500; i++)
     p++;
@@ -126,6 +156,8 @@ void testProgress()
 
 void testParameters()
 {
+  dolfin_info("--- Testing parameters ---");
+
   class Foo : public Parametrized {};
   class Bar : public Parametrized {};
 
@@ -162,9 +194,10 @@ int main(int argc, char* argv[])
   dolfin_info("Testing DOLFIN...");
 
   testPreconditioner();
-  testMatrixOutput();
+  testOutputVector();
+  testOutputMatrix();
+  testOutputMesh();
   testFunctional();
-  testOutput();
   testRandom();
   testProgress();
   testParameters();

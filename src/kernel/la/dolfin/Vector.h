@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2005-11-01
+// Last changed: 2006-02-13
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -12,7 +12,7 @@
 #include <petscvec.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Vector.h>
+#include <dolfin/Variable.h>
 
 namespace dolfin
 {
@@ -25,7 +25,7 @@ namespace dolfin
 
   class VectorElement;
 
-  class Vector
+  class Vector : public Variable
   {
   public:
 

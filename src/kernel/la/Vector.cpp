@@ -1,10 +1,10 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2005-11-01
+// Last changed: 2006-02-13
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -15,15 +15,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Vector::Vector() : x(0), copy(false)
+Vector::Vector() : Variable("x", "a vector"), x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(uint size) : x(0), copy(false)
+Vector::Vector(uint size) : Variable("x", "a vector"), x(0), copy(false)
 {
-  if(size < 0)
+  if (size < 0)
     dolfin_error("Size of vector must be non-negative.");
 
   // Initialize PETSc
@@ -33,13 +33,13 @@ Vector::Vector(uint size) : x(0), copy(false)
   init(size);
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(Vec x) : x(x), copy(true)
+Vector::Vector(Vec x) : Variable("x", "a vector"), x(x), copy(true)
 {
   // Initialize PETSc 
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector& v) : x(0), copy(false)
+Vector::Vector(const Vector& v) : Variable("x", "a vector"), x(0), copy(false)
 {
   // Initialize PETSc 
   PETScManager::init();
