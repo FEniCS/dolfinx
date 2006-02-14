@@ -1,6 +1,7 @@
 CFLAGS  = `dolfin-config --cflags`
 LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
+LINK    = `dolfin-config --linker`
 
 DEST1    = dolfin-ode-homotopy-test
 OBJECTS1 = test.o
@@ -16,10 +17,10 @@ clean:
 	-rm -f *.o core *.core $(OBJECTS1) $(OBJECTS2) $(DEST1) $(DEST2)
 
 $(DEST1): $(OBJECTS1)
-	 $(CXX) -o $@ $(OBJECTS1) $(CFLAGS) $(LIBS)
+	 $(LINK) -o $@ $(OBJECTS1) $(CFLAGS) $(LIBS)
 
 $(DEST2): $(OBJECTS2)
-	 $(CXX) -o $@ $(OBJECTS2) $(CFLAGS) $(LIBS)
+	 $(LINK) -o $@ $(OBJECTS2) $(CFLAGS) $(LIBS)
 
 .cpp.o:
 	$(CXX) $(CFLAGS) -c $<

@@ -1,6 +1,7 @@
 CFLAGS  = `dolfin-config --cflags`
 LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
+LINK    = `dolfin-config --linker`
 
 DEST    = dolfin-mesh
 OBJECTS = main.o
@@ -13,7 +14,7 @@ clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
 $(DEST): $(OBJECTS)
-	 $(CXX) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+	 $(LINK) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
 
 .cpp.o:
 	$(CXX) $(CFLAGS) -c $<
