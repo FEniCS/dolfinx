@@ -19,6 +19,8 @@ namespace dolfin
   class Sample;
   class ParameterList;
   class BLASFormData;
+
+  class FiniteElement;
   
   class GenericFile
   {
@@ -32,10 +34,10 @@ namespace dolfin
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
-    virtual void operator>> (Function& u);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (ParameterList& parameters);
     virtual void operator>> (BLASFormData& blas);
+    virtual void parse(Function& u, FiniteElement& element);
     
     // Output
     

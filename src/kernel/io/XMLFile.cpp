@@ -12,6 +12,8 @@
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
+#include <dolfin/Function.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
@@ -21,6 +23,7 @@
 #include <dolfin/XMLMesh.h>
 #include <dolfin/XMLParameterList.h>
 #include <dolfin/XMLBLASFormData.h>
+#include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFile.h>
 
 using namespace dolfin;
@@ -75,6 +78,23 @@ void XMLFile::operator>>(BLASFormData& blas)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLBLASFormData(blas);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::parse(Function& f, FiniteElement& element)
+{
+  Mesh* mesh = new Mesh();
+  Vector* x = new Vector();
+
+  *this >> *mesh;
+  *this >> *x;
+
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLFunction(f);
+
+  f = Function(*x, *mesh, element);
+
   parseFile();
 }
 //-----------------------------------------------------------------------------

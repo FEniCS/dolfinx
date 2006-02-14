@@ -190,6 +190,7 @@ class File(_object):
         except: pass
 
     def __rshift__(*args): return _dolfin.File___rshift__(*args)
+    def parse(*args): return _dolfin.File_parse(*args)
     def __lshift__(*args): return _dolfin.File___lshift__(*args)
 
 class FilePtr(File):
@@ -199,10 +200,12 @@ class FilePtr(File):
         _swig_setattr(self, File,self.__class__,File)
 _dolfin.File_swigregister(FilePtr)
 
-class Vector(_object):
+class Vector(Variable):
     __swig_setmethods__ = {}
+    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
     __setattr__ = lambda self, name, value: _swig_setattr(self, Vector, name, value)
     __swig_getmethods__ = {}
+    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, Vector, name)
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::Vector instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
@@ -581,6 +584,8 @@ class Function(Variable,TimeDependent):
     def mesh(*args): return _dolfin.Function_mesh(*args)
     def element(*args): return _dolfin.Function_element(*args)
     def attach(*args): return _dolfin.Function_attach(*args)
+    def init(*args): return _dolfin.Function_init(*args)
+    constant = _dolfin.Function_constant
     user = _dolfin.Function_user
     functionpointer = _dolfin.Function_functionpointer
     discrete = _dolfin.Function_discrete

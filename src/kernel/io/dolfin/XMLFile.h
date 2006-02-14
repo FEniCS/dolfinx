@@ -36,6 +36,7 @@ namespace dolfin
     void operator>> (Mesh& mesh);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
+    void parse(Function& f, FiniteElement& element);
     
     // Output
     

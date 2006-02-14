@@ -328,11 +328,13 @@ namespace Swig {
 class SwigDirector_Function : public dolfin::Function, public Swig::Director {
 
 public:
+    SwigDirector_Function(PyObject *self, dolfin::real value);
     SwigDirector_Function(PyObject *self, dolfin::uint vectordim = 1);
     SwigDirector_Function(PyObject *self, FunctionPointer fp, dolfin::uint vectordim = 1);
     SwigDirector_Function(PyObject *self, dolfin::Vector &x);
     SwigDirector_Function(PyObject *self, dolfin::Vector &x, dolfin::Mesh &mesh);
     SwigDirector_Function(PyObject *self, dolfin::Vector &x, dolfin::Mesh &mesh, dolfin::FiniteElement &element);
+    SwigDirector_Function(PyObject *self, dolfin::Mesh &mesh, dolfin::FiniteElement &element);
     SwigDirector_Function(PyObject *self, dolfin::Function const &f);
     virtual dolfin::real eval(dolfin::Point const &p, dolfin::uint i = 0);
     virtual ~SwigDirector_Function();

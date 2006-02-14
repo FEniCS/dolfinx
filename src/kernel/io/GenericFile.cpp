@@ -46,11 +46,6 @@ void GenericFile::operator>>(Mesh& mesh)
   read_not_impl("Mesh");
 }
 //-­---------------------------------------------------------------------------
-void GenericFile::operator>>(Function& u)
-{
-  read_not_impl("Function");
-}
-//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(Sample& sample)
 {
   read_not_impl("Sample");
@@ -64,6 +59,11 @@ void GenericFile::operator>>(ParameterList& parameters)
 void GenericFile::operator>>(BLASFormData& blas)
 {
   read_not_impl("BLASFormData");
+}
+//-­---------------------------------------------------------------------------
+void GenericFile::parse(Function& u, FiniteElement& element)
+{
+  read_not_impl("Function");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Vector& x)
