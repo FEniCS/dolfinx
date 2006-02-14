@@ -1,3 +1,4 @@
+ - Updates for PETSc 2.3.1
  - Add new type of Function (constant)
  - Simplify use of Function class
  - Add new demo Stokes + convection-diffusion
