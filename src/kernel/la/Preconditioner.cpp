@@ -6,7 +6,13 @@
 // First added:  2005
 // Last changed: 2005-12-07
 
-#include <src/ksp/pc/pcimpl.h>
+#include <petsc.h>
+#if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
+  #include <src/ksp/pc/pcimpl.h>
+#else
+  #include <private/pcimpl.h>
+#endif
+
 #include <dolfin/Preconditioner.h>
 #include <dolfin/Vector.h>
 
