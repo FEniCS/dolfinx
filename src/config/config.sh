@@ -5,6 +5,7 @@
 # Include variables saved by make
 TMPFILE="var.tmp"
 COMPILER=`cat $TMPFILE | grep COMPILER | cut -d'"' -f2`
+LINKER=`cat $TMPFILE | grep LINKER | cut -d'"' -f2`
 CFLAGS=`cat $TMPFILE | grep CFLAGS | cut -d'"' -f2`
 LIBS=`cat $TMPFILE | grep LIBS | cut -d'"' -f2`
 PYTHON_CPPFLAGS=`cat $TMPFILE | grep PYTHON_CPPFLAGS | cut -d'"' -f2`
@@ -30,6 +31,7 @@ echo \#!/bin/sh >> $FILE
 echo \# config-script for $PACKAGE version $VERSION >> $FILE
 echo >> $FILE
 echo COMPILER=\"$COMPILER\" >> $FILE
+echo LINKER=\"$LINKER\" >> $FILE
 echo CFLAGS=\"$CFLAGS_SYSTEM\" >> $FILE
 echo LIBS=\"$LIBS_SYSTEM\" >> $FILE
 echo SWIGCFLAGS=\"$PYTHON_CPPFLAGS\" >> $FILE
