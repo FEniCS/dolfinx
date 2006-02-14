@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-17
-// Last changed: 2005
+// Last changed: 2006-02-13
 
 #include <dolfin/Matrix.h>
 #include <dolfin/XMLMatrix.h>
@@ -18,11 +18,13 @@ XMLMatrix::XMLMatrix(Matrix& matrix) : XMLObject(), A(matrix)
 //-----------------------------------------------------------------------------
 void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state ){
+  switch ( state )
+  {
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 ) {
-      readMatrix(name,attrs);
+    if ( xmlStrcasecmp(name, (xmlChar *) "sparsematrix") == 0 )
+    {
+      readMatrix(name, attrs);
       state = INSIDE_MATRIX;
     }
     
@@ -30,8 +32,9 @@ void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_MATRIX:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "row") == 0 ) {
-      readRow(name,attrs);
+    if ( xmlStrcasecmp(name, (xmlChar *) "row") == 0 )
+    {
+      readRow(name, attrs);
       state = INSIDE_ROW;
     }
     
@@ -39,8 +42,8 @@ void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_ROW:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "element") == 0 )
-      readElement(name,attrs);
+    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+      readEntry(name, attrs);
     
     break;
     
@@ -109,7 +112,7 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
   */
 }
 //-----------------------------------------------------------------------------
-void XMLMatrix::readElement(const xmlChar *name, const xmlChar **attrs)
+void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int column = 0;

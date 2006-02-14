@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2005-12-09
+// Last changed: 2006-02-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -31,27 +31,26 @@ MFile::~MFile()
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Vector& x)
 {
-  // FIXME: BROKEN
-  dolfin_error("This function needs to be updated to the new format.");
-  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
+  // Get array (assumes uniprocessor case)
+  real* xx = x.array();
+
   // Write vector
   fprintf(fp, "%s = [", x.name().c_str());
   for (unsigned int i = 0; i < x.size(); i++)
-    fprintf(fp, " %.15e", x(i));
+    fprintf(fp, " %.15g", xx[i]);
   fprintf(fp, " ];\n");
   
+  // Restore array
+  x.restore(xx);
+
   // Close file
   fclose(fp);
 
-  // Increase the number of times we have saved the vector
-  ++x;
-
-  cout << "Saved vector " << x.name() << " (" << x.label()
-       << ") to file " << filename << " in Octave/Matlab format." << endl;
-  */
+  dolfin_info("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
+	      x.name().c_str(), x.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)

@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Anders Logg.
+// Copyright (C) 2002-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-12-06
-// Last changed: 2005
+// Last changed: 2006-02-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -18,11 +18,13 @@ XMLVector::XMLVector(Vector& vector) : XMLObject(), x(vector)
 //-----------------------------------------------------------------------------
 void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
-      readVector(name,attrs);
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
+      readVector(name, attrs);
       state = INSIDE_VECTOR;
     }
     
@@ -30,23 +32,24 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_VECTOR:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "element") == 0 )
-      readElement(name,attrs);
+    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+      readEntry(name, attrs);
     
     break;
     
   default:
     ;
   }
-  
 }
 //-----------------------------------------------------------------------------
 void XMLVector::endElement(const xmlChar *name)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case INSIDE_VECTOR:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "vector") == 0 ) {
+    if ( xmlStrcasecmp(name, (xmlChar *) "vector") == 0 )
+    {
       ok = true;
       state = DONE;
     }
@@ -56,7 +59,6 @@ void XMLVector::endElement(const xmlChar *name)
   default:
     ;
   }
-  
 }
 //-----------------------------------------------------------------------------
 void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
@@ -75,7 +77,7 @@ void XMLVector::readVector(const xmlChar *name, const xmlChar **attrs)
   x.init(size);	 
 }
 //-----------------------------------------------------------------------------
-void XMLVector::readElement(const xmlChar *name, const xmlChar **attrs)
+void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
   // Set default values
   int row = 0;

@@ -1,10 +1,10 @@
-// Copyright (C) 2002-2005 Anders Logg.
+// Copyright (C) 2002-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2005-12-19
+// Last changed: 2006-02-13
 
 #include <stdarg.h>
 
@@ -80,89 +80,75 @@ void XMLFile::operator>>(BLASFormData& blas)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-  // FIXME: update to new format
-  dolfin_error("This function needs to be updated to the new format.");
-
-  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
+  // Get array (assumes uniprocessor case)
+  real* xx = x.array();
+
   // Write vector in XML format
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <vector size=\" %i \"> \n", x.size() );
   
   for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "    <element row=\"%i\" value=\"%f\"/>\n", i, x(i) );
+    fprintf(fp, "    <entry row=\"%i\" value=\"%.15g\"/>\n", i, xx[i]);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
   
   fprintf(fp, "</dolfin>\n");
+
+  // Restore array
+  x.restore(xx);
   
   // Close file
   fclose(fp);
   
-  // Increase the number of times we have saved the vector
-  counter++;;
-  
-  cout << "Saved vector " << x.name() << " (" << x.label()
-       << ") to file " << filename << " in XML format." << endl;
-  */
+  dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
+	      x.name().c_str(), x.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
-  // FIXME: update to new format
-  dolfin_error("This function needs to be updated to the new format.");
-
-  /*
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
-  // Write matrix in sparse XML format
+  // Write matrix in XML format
   fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
-  
-  switch( A.type() ) {
-  case Matrix::sparse:
-
-    fprintf(fp, "  <sparsematrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1) );
-                                                                                                                             
-    for (unsigned int i = 0; i < A.size(0); i++) {
-      fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, A.rowsize(i));
-      for (unsigned int pos = 0; !A.endrow(i, pos); pos++) {
-	unsigned int j = 0;
-	real aij = A(i, j, pos);
-        fprintf(fp, "      <element column=\"%i\" value=\"%f\"/>\n", j, aij);
-        if ( i == (A.size(0) - 1) && pos == (A.rowsize(i)-1)){
-           fprintf(fp, "    </row>\n");
-           fprintf(fp, "  </sparsematrix>\n");
-        }
-        else if ( pos == (A.rowsize(i)-1))
-          fprintf(fp, "    </row>\n");
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
+  fprintf(fp, "  <matrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1));
+        
+  // Get PETSc Mat pointer
+  Mat A_mat = A.mat();
+  int ncols = 0;
+  const int *cols = 0;
+  const double *vals = 0;                                                                                                                     
+  for (unsigned int i = 0; i < A.size(0); i++)
+  {
+    MatGetRow(A_mat, i, &ncols, &cols, &vals);
+    fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, ncols);
+    for (int pos = 0; pos < ncols; pos++)
+    {
+      unsigned int j = cols[pos];
+      real aij = vals[pos];
+      fprintf(fp, "      <entry column=\"%i\" value=\"%.15g\"/>\n", j, aij);
+      if ( i == (A.size(0) - 1) && pos == (ncols - 1) )
+      {
+	fprintf(fp, "    </row>\n");
+	fprintf(fp, "  </matrix>\n");
       }
+      else if ( pos == (ncols - 1) )
+	fprintf(fp, "    </row>\n");
     }
-    break;
-
-  case Matrix::dense:
-    dolfin_error("Cannot write dense matrices to XML files.");
-    break;
-  default:
-    dolfin_error("Unknown matrix type.");
   }
-  
   fprintf(fp, "</dolfin>\n");
                                                                                                                              
   // Close file
   fclose(fp);
-                                                                                                                             
-  // Increase the number of times we have saved the matrix
-  ++A;
-                                                                                                                             
-  cout << "Saved matrix " << A.name() << " (" << A.label()
-       << ") to file " << filename << " in XML format." << endl;
-  */
+
+  dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
+	      A.name().c_str(), A.label().c_str(), filename.c_str());
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)

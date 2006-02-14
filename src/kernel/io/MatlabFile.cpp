@@ -28,11 +28,11 @@ MatlabFile::~MatlabFile()
 //-----------------------------------------------------------------------------
 void MatlabFile::operator<<(Matrix& A)
 {
-  // Get PETSc Mat pointer
-  Mat A_mat = A.mat();
-
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
+
+  // Get PETSc Mat pointer
+  Mat A_mat = A.mat();
 
   // Write matrix in sparse format
   fprintf(fp, "%s = [", A.name().c_str());
@@ -44,7 +44,7 @@ void MatlabFile::operator<<(Matrix& A)
     MatGetRow(A_mat, i, &ncols, &cols, &vals);
     for (int pos = 0; pos < ncols; pos++)
     {
-      fprintf(fp, " %i %i %.16e", i + 1, cols[pos] + 1, vals[pos]);		
+      fprintf(fp, " %i %i %.15g", i + 1, cols[pos] + 1, vals[pos]);
       if ( i == (A.size(0) - 1) && (pos + 1 == ncols) )
 	fprintf(fp, "];\n");
       else {
