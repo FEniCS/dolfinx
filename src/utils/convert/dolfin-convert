@@ -253,9 +253,11 @@ def gmsh2xml(ifilename, ofilename):
             if num_vertices == num_vertices_read:
                 write_footer_vertices(ofile)                
                 state += 1
-        elif line == "$ENDNOD":
+        elif state == 2:
+            line == "$ENDNOD"
             state += 1
-        elif line == "$ELM":
+        elif state == 3:
+            line == "$ELM"
             state += 1
         elif state == 4:
             num_cells = int(line)
