@@ -43,6 +43,7 @@ namespace dolfin
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
+    void operator<< (Function& f);
     void operator<< (ParameterList& parameters);
     
     // Friends
@@ -54,9 +55,12 @@ namespace dolfin
     
     void parseFile();
     void parseSAX();
+    void writeHeader();
+    void writeFooter();
     
     // Data
     XMLObject* xmlObject;
+    bool header_written;
     
   };
   

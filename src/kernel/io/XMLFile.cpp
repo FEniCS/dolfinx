@@ -29,7 +29,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
+XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
+					       header_written(false)
 {
   type = "XML";
   xmlObject = 0;
@@ -37,6 +38,8 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename)
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
+  writeFooter();
+
   if ( xmlObject )
     delete xmlObject;
 }
@@ -100,6 +103,8 @@ void XMLFile::parse(Function& f, FiniteElement& element)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
+  writeHeader();
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
@@ -107,8 +112,6 @@ void XMLFile::operator<<(Vector& x)
   real* xx = x.array();
 
   // Write vector in XML format
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <vector size=\" %i \"> \n", x.size() );
   
   for (unsigned int i = 0; i < x.size(); i++) {
@@ -117,8 +120,6 @@ void XMLFile::operator<<(Vector& x)
       fprintf(fp, "  </vector>\n");
   }
   
-  fprintf(fp, "</dolfin>\n");
-
   // Restore array
   x.restore(xx);
   
@@ -131,12 +132,12 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
+  writeHeader();
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Write matrix in XML format
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <matrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1));
         
   // Get PETSc Mat pointer
@@ -162,8 +163,7 @@ void XMLFile::operator<<(Matrix& A)
 	fprintf(fp, "    </row>\n");
     }
   }
-  fprintf(fp, "</dolfin>\n");
-                                                                                                                             
+
   // Close file
   fclose(fp);
 
@@ -173,12 +173,12 @@ void XMLFile::operator<<(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
+  writeHeader();
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Write mesh in XML format
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );  
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.phi.chalmers.se/dolfin/\"> \n" );
   fprintf(fp, "  <mesh> \n");
 
   fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.noVertices());
@@ -215,7 +215,6 @@ void XMLFile::operator<<(Mesh& mesh)
   fprintf(fp, "    </cells>\n");
   
   fprintf(fp, "  </mesh>\n");
-  fprintf(fp, "</dolfin>\n");
   
   // Close file
   fclose(fp);
@@ -224,14 +223,45 @@ void XMLFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
+void XMLFile::operator<<(Function& f)
+{
+  writeHeader();
+
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write function in XML format
+
+  // FIXME: If FiniteElement provides an element name, then we could also
+  // output that.
+  fprintf(fp, "  <function> \n");
+
+  // Close file
+  fclose(fp);
+
+  *this << f.mesh();
+  *this << f.vector();
+
+  // Open file
+  fp = fopen(filename.c_str(), "a");
+
+  fprintf(fp, "  </function> \n");
+  
+  // Close file
+  fclose(fp);
+  
+  cout << "Saved function " << f.name() << " (" << f.label()
+       << ") to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
 {
+  writeHeader();
+
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
 
   // Write parameter list in XML format
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
   fprintf(fp, "  <parameters>\n" );
 
   for (ParameterList::const_iterator it = parameters.parameters.begin(); it != parameters.parameters.end(); ++it)
@@ -267,12 +297,48 @@ void XMLFile::operator<<(ParameterList& parameters)
   }
   
   fprintf(fp, "  </parameters>\n" );
-  fprintf(fp, "</dolfin>\n");
 
   // Close file
   fclose(fp);
 
   cout << "Saved parameters to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::writeHeader()
+{
+  if(header_written)
+  {
+    return;
+  }
+
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write DOLFIN XML format header
+  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
+  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
+  
+  // Close file
+  fclose(fp);
+
+  header_written = true;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::writeFooter()
+{
+  if(!header_written)
+  {
+    return;
+  }
+
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+
+  // Write DOLFIN XML format footer
+  fprintf(fp, "</dolfin>\n");
+
+  // Close file
+  fclose(fp);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::parseFile()

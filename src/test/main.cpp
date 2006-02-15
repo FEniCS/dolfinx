@@ -11,7 +11,7 @@
 // demos in src/demo.
 
 #include <dolfin.h>
-#include <dolfin/Poisson.h>
+#include <dolfin/Poisson2D.h>
 #include "L2Norm.h"
 
 
@@ -101,7 +101,7 @@ void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
 
-  Poisson::BilinearForm a;
+  Poisson2D::BilinearForm a;
   FiniteElement& element = a.trial();
   
   File functionfile("function.xml");
@@ -117,6 +117,25 @@ void testInputFunction()
     cout << v << endl;
     cout << "value of f: " << f(v) << endl;
   }
+}
+
+void testOutputFunction()
+{
+  dolfin_info("--- Testing input of function ---");
+
+  Poisson2D::BilinearForm a;
+  FiniteElement& element = a.trial();
+  
+  Mesh mesh("reftri.xml.gz");
+
+  Vector x(3);
+  for (unsigned int i = 0; i < x.size(); i++)
+    x(i) = 1.0 / static_cast<real>(i + 1);
+
+  Function f(x, mesh, element);
+
+  File file("functionout.xml");
+  file << f;
 }
 
 void testFunctional()
@@ -227,6 +246,7 @@ int main(int argc, char* argv[])
   testParameters();
 
   testInputFunction();
+  testOutputFunction();
 
   return 0;
 }
