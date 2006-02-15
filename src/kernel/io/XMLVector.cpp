@@ -32,7 +32,7 @@ void XMLVector::startElement(const xmlChar *name, const xmlChar **attrs)
     
   case INSIDE_VECTOR:
     
-    if ( xmlStrcasecmp(name, (xmlChar *) "element") == 0 )
+    if ( xmlStrcasecmp(name, (xmlChar *) "entry") == 0 )
       readEntry(name, attrs);
     
     break;
