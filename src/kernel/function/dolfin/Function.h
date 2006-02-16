@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-10
+// Last changed: 2006-02-16
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -104,6 +104,9 @@ namespace dolfin
 
     /// Attach finite element to function
     inline void attach(FiniteElement& element) { f->attach(element); }
+
+    /// Attach finite element given by name to function
+    inline void attach(std::string element) { f->attach(element); }
 
     // FIXME: Maybe all constructors should have a corresponding init function?
 

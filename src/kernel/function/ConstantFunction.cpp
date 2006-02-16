@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-02-09
+// Last changed: 2006-02-16
 
 #include <dolfin/Vector.h>
 #include <dolfin/P1Tri.h>
@@ -91,6 +91,11 @@ void ConstantFunction::attach(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void ConstantFunction::attach(FiniteElement& element)
+{
+  dolfin_error("Cannot attach finite elements to constant functions.");
+}
+//-----------------------------------------------------------------------------
+void ConstantFunction::attach(std::string element)
 {
   dolfin_error("Cannot attach finite elements to constant functions.");
 }

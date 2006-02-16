@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-01
+// Last changed: 2006-02-16
 
 #ifndef __USER_FUNCTION_H
 #define __USER_FUNCTION_H
@@ -63,6 +63,9 @@ namespace dolfin
 
     /// Calling this function generates an error (no element can be attached)
     void attach(FiniteElement& element);
+
+    /// Attach finite element given by name to function (no element can be attached)
+    virtual void attach(std::string element);
 
   private:
 

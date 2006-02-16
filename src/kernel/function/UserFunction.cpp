@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-12
+// Last changed: 2006-02-16
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -118,6 +118,11 @@ void UserFunction::attach(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void UserFunction::attach(FiniteElement& element)
+{
+  dolfin_error("Cannot attach finite elements to user-defined functions.");
+}
+//-----------------------------------------------------------------------------
+void UserFunction::attach(std::string element)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
 }

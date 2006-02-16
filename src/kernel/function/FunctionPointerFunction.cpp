@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-12-01
+// Last changed: 2006-02-16
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -116,6 +116,11 @@ void FunctionPointerFunction::attach(Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::attach(FiniteElement& element)
+{
+  dolfin_error("Cannot attach finite elements to user-defined functions.");
+}
+//-----------------------------------------------------------------------------
+void FunctionPointerFunction::attach(std::string element)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
 }

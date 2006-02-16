@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2005-12-01
+// Last changed: 2006-02-16
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -12,6 +12,7 @@
 
 namespace dolfin
 {
+  
   class Point;
   class Vertex;
   class Mesh;
@@ -64,6 +65,9 @@ namespace dolfin
 
     /// Attach finite element to function
     virtual void attach(FiniteElement& element) = 0;
+
+    /// Attach finite element given by name to function
+    virtual void attach(std::string element) = 0;
 
   protected:
 

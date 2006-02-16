@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2005-12-01
+// Last changed: 2006-02-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -241,6 +241,11 @@ void DiscreteFunction::attach(FiniteElement& element)
 {
   _element = &element;
   updateVectorDimension();
+}
+//-----------------------------------------------------------------------------
+void DiscreteFunction::attach(std::string element)
+{
+  dolfin_error("Not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)

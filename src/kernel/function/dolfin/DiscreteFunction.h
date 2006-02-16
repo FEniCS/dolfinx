@@ -1,4 +1,4 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
@@ -75,6 +75,9 @@ namespace dolfin
 
     /// Attach finite element to function
     void attach(FiniteElement& element);
+
+    /// Attach finite element given by name to function
+    virtual void attach(std::string element);
     
     /// Reinitialize to given data (automatically create vector)
     void init(Mesh& mesh, FiniteElement& element);

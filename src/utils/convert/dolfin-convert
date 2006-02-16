@@ -222,7 +222,7 @@ def gmsh2xml(ifilename, ofilename):
     
     while 1:
 
-#        # Read next line
+        # Read next line
         line = ifile.readline()
         if not line: break
 
