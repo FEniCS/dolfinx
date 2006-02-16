@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-12-01
+// Last changed: 2006-02-16
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -27,7 +27,11 @@ namespace dolfin
 
     /// Destructor
     virtual ~FiniteElement();
-    
+
+    /// Factory function for creating new element (matches FFC interface)
+    static FiniteElement* makeElement(std::string type, std::string shape, 
+				      uint degree, uint vectordim = 1);
+
     /// Return dimension of the finite element space
     virtual unsigned int spacedim() const = 0;
 
@@ -62,6 +66,13 @@ namespace dolfin
 
     /// Display finite element data
     void disp() const;
+
+  private:
+
+    /// Generate string representation matching FFC interface
+    static std::string FiniteElement::repr(std::string type, std::string shape,
+					   uint degree, uint vectordim);
+
 
   };
 

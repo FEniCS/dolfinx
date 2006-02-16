@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-13
+// Last changed: 2006-02-16
 
 #include <stdarg.h>
 
@@ -21,9 +21,10 @@
 #include <dolfin/XMLVector.h>
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
+#include <dolfin/XMLFunction.h>
+#include <dolfin/XMLFiniteElement.h>
 #include <dolfin/XMLParameterList.h>
 #include <dolfin/XMLBLASFormData.h>
-#include <dolfin/XMLFunction.h>
 #include <dolfin/XMLFile.h>
 
 using namespace dolfin;
@@ -65,6 +66,22 @@ void XMLFile::operator>>(Mesh& mesh)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLMesh(mesh);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(Function& f)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLFunction(f);
+  parseFile();
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator>>(FiniteElement& element)
+{
+  if ( xmlObject )
+    delete xmlObject;
+  xmlObject = new XMLFiniteElement(element);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -252,6 +269,28 @@ void XMLFile::operator<<(Function& f)
   
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::operator<<(FiniteElement& element)
+{
+  dolfin_error("Not implemented, in preparation...");
+
+  writeHeader();
+
+  // Open file
+  FILE *fp = fopen(filename.c_str(), "a");
+  
+  // Write element in XML format
+  // FIXME: Add type() etc to FiniteElement interface
+  //fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
+  //	  element.type().c_str(), element.shape.c_str(), element.degree(), element.vectordim());
+  
+  // Close file
+  fclose(fp);
+  
+  // FIXME: Add << to FiniteElement interface
+  // cout << "Saved finite element " << element
+  //    << " to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)

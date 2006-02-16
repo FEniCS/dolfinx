@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Anders Logg.
+// Copyright (C) 2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2002-12-06
-// Last changed: 2005
+// First added:  2006-02-15
+// Last changed: 2006-02-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>
@@ -16,12 +16,14 @@ XMLFunction::XMLFunction(Function& f) : XMLObject(), f(f)
   state = OUTSIDE;
 }
 //-----------------------------------------------------------------------------
-void XMLFunction::startElement(const xmlChar *name, const xmlChar **attrs)
+void XMLFunction::startElement(const xmlChar* name, const xmlChar** attrs)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case OUTSIDE:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "function") == 0 ) {
+    if ( xmlStrcasecmp(name, (xmlChar *) "function") == 0 )
+    {
       readFunction(name,attrs);
       state = INSIDE_FUNCTION;
     }
@@ -31,15 +33,16 @@ void XMLFunction::startElement(const xmlChar *name, const xmlChar **attrs)
   default:
     ;
   }
-  
 }
 //-----------------------------------------------------------------------------
-void XMLFunction::endElement(const xmlChar *name)
+void XMLFunction::endElement(const xmlChar* name)
 {
-  switch ( state ) {
+  switch ( state )
+  {
   case INSIDE_FUNCTION:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "function") == 0 ) {
+    if ( xmlStrcasecmp(name, (xmlChar *) "function") == 0 )
+    {
       ok = true;
       state = DONE;
     }
@@ -49,16 +52,14 @@ void XMLFunction::endElement(const xmlChar *name)
   default:
     ;
   }
-  
 }
 //-----------------------------------------------------------------------------
-void XMLFunction::readFunction(const xmlChar *name, const xmlChar **attrs)
+void XMLFunction::readFunction(const xmlChar* name, const xmlChar** attrs)
 {
   // Set default values
   std::string element;
 
   // Parse values
   parseStringRequired(name, attrs, "element", element);
-  
 }
 //-----------------------------------------------------------------------------

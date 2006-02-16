@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005-10-02
+// Last changed: 2006-02-16
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -34,8 +34,11 @@ namespace dolfin
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
+    void operator>> (Function& f);
+    void operator>> (FiniteElement& element);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
+    
     void parse(Function& f, FiniteElement& element);
     
     // Output
@@ -44,6 +47,7 @@ namespace dolfin
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& f);
+    void operator<< (FiniteElement& element);
     void operator<< (ParameterList& parameters);
     
     // Friends
