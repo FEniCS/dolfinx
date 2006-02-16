@@ -206,15 +206,24 @@ DOLFIN_LIBS="$DOLFIN_LIBS $DOLFIN_EXT_LIBS"
 AC_SUBST(DOLFIN_LIBS)
 
 # Generate libtool library list (including also module code)
-DOLFIN_LTLIBS=""
+DOLFIN_LTLIBOBJS=""
 for f in $DOLFIN_MODULES; do
-    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/modules/$f/libdolfin-$f.la "
+    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/modules/$f/*.lo "
 done
 for f in $DOLFIN_KERNEL; do
-    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/kernel/$f/libdolfin-$f.la "
+    DOLFIN_LTLIBOBJS="$DOLFIN_LTLIBOBJS \$(top_builddir)/src/kernel/$f/*.lo "
 done
-AC_SUBST(DOLFIN_LTLIBS)
+AC_SUBST(DOLFIN_LTLIBOBJS)
 
+# Generate libtool library list (including also module code)
+DOLFIN_LTLIBS=""
+for f in $DOLFIN_MODULES; do
+    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/modules/$f/*.lo "
+done
+for f in $DOLFIN_KERNEL; do
+    DOLFIN_LTLIBS="$DOLFIN_LTLIBS \$(top_builddir)/src/kernel/$f/*.lo "
+done
+AC_SUBST(DOLFIN_LTLIBOBJS)
 
 # Export variables to makefiles
 AC_SUBST(PACKAGE_VERSION)
