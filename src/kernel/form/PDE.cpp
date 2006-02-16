@@ -21,14 +21,14 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
-  : Parametrized(), _a(&a), _L(&L), _mesh(&mesh), _bc(0)
+  : Parametrized(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(0)
 {
   // Add parameters
   add("solver", "direct");
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc)
-  : Parametrized(), _a(&a), _L(&L), _mesh(&mesh), _bc(&bc)
+  : Parametrized(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc)
 {
   // Add parameters
   add("solver", "direct");
@@ -49,7 +49,7 @@ Function PDE::solve()
 void PDE::solve(Function& u)
 {
   dolfin_assert(_a);
-  dolfin_assert(_L);
+  dolfin_assert(_Lf);
   dolfin_assert(_mesh);
 
   // Write a message
@@ -63,9 +63,9 @@ void PDE::solve(Function& u)
   Matrix A;
   Vector b;
   if ( _bc )
-    FEM::assemble(*_a, *_L, A, b, *_mesh, *_bc);
+    FEM::assemble(*_a, *_Lf, A, b, *_mesh, *_bc);
   else
-    FEM::assemble(*_a, *_L, A, b, *_mesh);
+    FEM::assemble(*_a, *_Lf, A, b, *_mesh);
   
   // Solve the linear system
   const std::string solver_type = get("solver");
@@ -86,7 +86,7 @@ void PDE::solve(Function& u)
 void PDE::solve(Function& u0, Function& u1)
 {
   dolfin_assert(_a);
-  dolfin_assert(_L);
+  dolfin_assert(_Lf);
   dolfin_assert(_mesh);
 
   // Check size of mixed system
@@ -110,7 +110,7 @@ void PDE::solve(Function& u0, Function& u1)
 void PDE::solve(Function& u0, Function& u1, Function& u2)
 {
   dolfin_assert(_a);
-  dolfin_assert(_L);
+  dolfin_assert(_Lf);
   dolfin_assert(_mesh);
 
   // Check size of mixed system
@@ -135,7 +135,7 @@ void PDE::solve(Function& u0, Function& u1, Function& u2)
 void PDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
 {
   dolfin_assert(_a);
-  dolfin_assert(_L);
+  dolfin_assert(_Lf);
   dolfin_assert(_mesh);
 
   // Check size of mixed system
@@ -166,8 +166,8 @@ BilinearForm& PDE::a()
 //-----------------------------------------------------------------------------
 LinearForm& PDE::L()
 {
-  dolfin_assert(_L);
-  return *_L;
+  dolfin_assert(_Lf);
+  return *_Lf;
 }
 //-----------------------------------------------------------------------------
 Mesh& PDE::mesh()

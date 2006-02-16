@@ -65,7 +65,8 @@ namespace dolfin
   protected:
 
     BilinearForm* _a;
-    LinearForm* _L;
+    // FIXME: _L for the LinearForm is consistent, but breaks under Cygwin (as does _C, _X, etc)
+    LinearForm* _Lf;
     Mesh* _mesh;
     BoundaryCondition* _bc;
 
