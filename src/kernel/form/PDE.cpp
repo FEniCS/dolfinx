@@ -1,8 +1,10 @@
 // Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006
+//
 // First added:  2004
-// Last changed: 2006-02-10
+// Last changed: 2006-02-17
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Matrix.h>
@@ -23,15 +25,13 @@ using namespace dolfin;
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
   : Parametrized(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(0)
 {
-  // Add parameters
-  add("solver", "direct");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc)
   : Parametrized(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc)
 {
-  // Add parameters
-  add("solver", "direct");
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PDE::~PDE()
@@ -74,7 +74,7 @@ void PDE::solve(Function& u)
     LU solver;
     solver.solve(A, x, b);
   }
-  else if ( solver_type == "iterative" )
+  else if ( solver_type == "iterative" || solver_type == "default" )
   {
     GMRES solver;
     solver.solve(A, x, b);

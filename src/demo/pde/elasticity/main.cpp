@@ -57,7 +57,8 @@ int main()
   Elasticity::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
 
-  // Compute solution
+  // Compute solution (using direct solver)
+  set("solver", "direct");
   Function u = pde.solve();
 
   // Save solution (displacement) to file
@@ -70,8 +71,9 @@ int main()
   PDE pde_strain(a_strain, L_strain, mesh);
   Function normal_strain, shear_strain;
 
-  // Compute solution
-   pde_strain.solve(normal_strain, shear_strain);
+  // Compute solution (using direct solver)
+  set("solver", "iterative");
+  pde_strain.solve(normal_strain, shear_strain);
 
   // Save solution (strain) to files
   File file_normal_strain("normal_strain.pvd");
