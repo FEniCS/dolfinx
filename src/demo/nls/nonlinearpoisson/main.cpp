@@ -12,7 +12,7 @@
 //
 // This simple program solves a nonlinear variant of Poisson's equation
 //
-//     - div (1+u) grad u(x, y) = f(x, y)
+//     - div (1+u^2) grad u(x, y) = f(x, y)
 //
 // on the unit square with source f given by
 //
@@ -26,13 +26,7 @@
 // where t is pseudo time.
 //
 // This is equivalent to solving: 
-// F(u) = (grad(v), (1-u)*grad(u)) - f(x,y) = 0
-//
-// The nonlinear solver is forced to iterate by perturbing the Jacobian matrix
-// J = DF(u)/Du = 1.1*(grad(v), D(grad(u))) 
-//
-// To verify the output from the nonlinear solver, the result is compared to a
-// linear solution. 
+// F(u) = (grad(v), (1-u^2)*grad(u)) - f(x,y) = 0
 //
 
 #include <dolfin.h>

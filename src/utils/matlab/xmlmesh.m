@@ -29,14 +29,14 @@ fprintf(fp,'<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">\n');
 if (size(p,1) == 2)
 
   % Write nodes
-  disp('Writing nodes...')
+  disp('Writing vertices...')
   fprintf(fp,'  <mesh>\n');
-  fprintf(fp,'    <nodes size="%d">\n',np);  
+  fprintf(fp,'    <vertices size="%d">\n',np);  
   for n=1:np
-    fprintf(fp,'      <node name="%d" x="%f" y="%f" z="0.0"/>\n', ...
+    fprintf(fp,'      <vertex name="%d" x="%f" y="%f" z="0.0"/>\n', ...
 	    n-1, p(1,n), p(2,n));
   end
-  fprintf(fp,'    </nodes>\n');
+  fprintf(fp,'    </vertices>\n');
   
   % Write cells
   disp('Writing cells...')
@@ -55,12 +55,12 @@ elseif (size(p,1) == 3)
   % Write nodes
   disp('Writing nodes...')
   fprintf(fp,'  <mesh>\n');
-  fprintf(fp,'    <nodes size="%d">\n',np);  
+  fprintf(fp,'    <vertices size="%d">\n',np);  
   for n=1:np
-    fprintf(fp,'      <node name="%d" x="%f" y="%f" z="%f"/>\n', ...
+    fprintf(fp,'      <vertex name="%d" x="%f" y="%f" z="%f"/>\n', ...
             n-1,p(1,n),p(2,n),p(3,n));
   end
-  fprintf(fp,'    </nodes>\n');
+  fprintf(fp,'    </vertices>\n');
   
   % Write cells
   disp('Writing cells...')
