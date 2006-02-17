@@ -5,6 +5,7 @@ TOPLEVEL=`pwd`
 
 # Function for creating symbolic links to Octave scripts
 link_octave() {
+    echo $1
     ln -sf $TOPLEVEL/src/utils/octave/pdeplot.m $1
     ln -sf $TOPLEVEL/src/utils/octave/pdemesh.m $1
     ln -sf $TOPLEVEL/src/utils/octave/pdesurf.m $1
@@ -22,14 +23,14 @@ link_plotslab() {
 }
 
 # Create links to Octave scripts
-link_octave src/demo/solvers/elasticity/
-link_octave src/demo/solvers/wave/
+link_octave src/demo/solvers/elasticity
+link_octave src/demo/solvers/wave
 
 # Create links to OpenDX programs
-link_dx src/demo/ode/bistable/
+link_dx src/demo/ode/bistable
 
 # Create links to meshes
-ln -sf $TOPLEVEL/data/meshes/gear.xml.gz     src/demo/pde/elasticity/
+ln -sf $TOPLEVEL/data/meshes/gear.xml.gz     src/demo/pde/elasticity
 ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/stokes/taylor-hood
 ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/stokes/stabilized
 ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/convection-diffusion
