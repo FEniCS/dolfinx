@@ -1,0 +1,24 @@
+# Copyright (c) 2006 Garth N. Wells (g.n.wells@tudelft.nl) and Kristian Oelgaard
+# Licensed under the GNU GPL Version 2
+#
+# The bilinear form for postprocessing the strain for classical linear elasticity.
+# Compile this form with FFC: ffc Elasticity.form.
+
+elementU = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+elementE = FiniteElement("Vector Lagrange", "tetrahedron", 1)
+
+strain_element = elementE + elementE 
+
+(vn, vs) = BasisFunctions(strain_element) # test function
+(en, es) = BasisFunctions(strain_element) # trial function
+
+u = Function(elementU)                    # displacemnt
+
+def normal_strain(u):
+  return [u[0].dx(0), u[1].dx(1), u[2].dx(2)]
+
+def shear_strain(u):
+  return [u[0].dx(1) + u[1].dx(0), u[0].dx(2) + u[2].dx(0), u[1].dx(2) + u[2].dx(1)]
+
+a = dot(vn, en)*dx + dot(vs, es)*dx
+L = dot(vn, normal_strain(u))*dx + dot(vs, shear_strain(u))*dx
