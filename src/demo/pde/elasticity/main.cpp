@@ -58,7 +58,7 @@ int main()
   PDE pde(a, L, mesh, bc);
 
   // Compute solution (using direct solver)
-  set("solver", "direct");
+  pde.set("solver", "direct");
   Function u = pde.solve();
 
   // Save solution (displacement) to file
@@ -71,8 +71,8 @@ int main()
   PDE pde_strain(a_strain, L_strain, mesh);
   Function normal_strain, shear_strain;
 
-  // Compute solution (using direct solver)
-  set("solver", "iterative");
+  // Compute solution (using GMRES solver)
+  pde_strain.set("solver", "iterative");
   pde_strain.solve(normal_strain, shear_strain);
 
   // Save solution (strain) to files
