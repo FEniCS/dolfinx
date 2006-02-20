@@ -69,8 +69,8 @@ int main(int argc, char* argv[])
   MyFunction f;
   MyBC bc;
   Matrix A;
-  Vector b, e;
-  Function u;
+  Vector xx, b, e;
+  Function u(xx);
 
   // Forms for linear problem and create PDE
   Poisson::BilinearForm a;
@@ -80,10 +80,11 @@ int main(int argc, char* argv[])
   // Forms for nonlinear problem
   PoissonNl::BilinearForm a_nl;
   PoissonNl::LinearForm L_nl(u, f);
+  NonlinearPDE nonlinear_pde(a, L, mesh, bc);
 
   real dt = 1.0;  // time step
   real t  = 0.0;  // initial time
-  real T  = 3.0;  // final time
+  real T  = 1.0;  // final time
   f.sync(t);      // Associate time with source term
   bc.sync(t);     // Associate time with boundary conditions
 
@@ -105,12 +106,14 @@ int main(int argc, char* argv[])
   newtonsolver.setRtol(1.e-5);
   newtonsolver.setType(KrylovSolver::bicgstab);
 
+  
   t = 0.0;
   while( t < T)
   {
     t += dt;
     dolfin_log(true);
-    newtonsolver.solve(a_nl, L_nl, bc, mesh, u);  
+//    newtonsolver.solve(a_nl, L_nl, bc, mesh, u);  
+    nonlinear_pde.solve(u);  
   }
   cout << "Finished nonlinear solve. " << endl;
   

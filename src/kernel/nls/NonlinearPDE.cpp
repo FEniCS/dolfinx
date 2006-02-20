@@ -8,6 +8,7 @@
 #include <dolfin/NonlinearPDE.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
+#include <dolfin/NewtonSolver.h>
 
 using namespace dolfin;
 NonlinearPDE::NonlinearPDE()
@@ -65,5 +66,26 @@ void NonlinearPDE::F(Vector& b, const Vector& x)
 void NonlinearPDE::J(Matrix& A, const Vector& x)
 {
   dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by user.");
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NonlinearPDE::solve(Function& u)
+{
+  // Create solver
+  NewtonSolver newton_solver;
+
+  // Solution vector
+  Vector& x = u.vector();
+
+  // Solver nonlinear problem
+  uint iterations = newton_solver.solve(*this, x);
+  
+  return iterations;
+}
+//-----------------------------------------------------------------------------
+Function NonlinearPDE::solve()
+{
+  Function u;
+  solve(u);
+  return u;
 }
 //-----------------------------------------------------------------------------
