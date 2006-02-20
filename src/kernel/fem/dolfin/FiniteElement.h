@@ -61,6 +61,9 @@ namespace dolfin
     /// Return given sub element of (mixed) element
     virtual const FiniteElement& operator[] (unsigned int i) const = 0;
 
+    /// Return specification for element
+    virtual FiniteElementSpec spec() const = 0;
+
     /// Factory function for creating new element (matches FFC interface)
     static FiniteElement* makeElement(const FiniteElementSpec& spec);
 

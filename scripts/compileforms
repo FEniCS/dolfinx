@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2005 Anders Logg.                                                                                                                     
+# Copyright (C) 2005-2006 Anders Logg.                                                                                                                     
 # Licensed under the GNU GPL Version 2.       
 #
 # Recompile all ffc forms (use when FFC has been updated)
@@ -14,24 +14,20 @@ if [ "$CHECK" != "scripts" ]; then
         exit 1
 fi
 
-TOPLEVEL=`pwd`
+FORMFILES=`find . -name '*.form'`
 
-DIRS='src/modules/poisson/dolfin
-      src/modules/convdiff/dolfin
-      src/modules/elasticity/dolfin
-      src/modules/elasticity-updated/dolfin
-      src/modules/navierstokes/dolfin
-      src/modules/stokes/dolfin
-      src/modules/heat/dolfin
-      src/kernel/fem/dolfin
-      src/demo/poisson
-      src/demo/fem/convergence
-      src/demo/nls'
+TOPDIR=`pwd`
 
-for DIR in $DIRS; do
-    cd $TOPLEVEL/$DIR
-    for f in *.form; do
-	echo $DIR
-	ffc $f
-    done
+for FORMFILE in $FORMFILES; do
+
+    echo "--- Compiling $FORMFILE ---"
+
+    DIRNAME=`dirname $FORMFILE`
+    FILENAME=`echo $FORMFILE | sed s#$DIRNAME/##`
+
+    cd $DIRNAME
+    ffc $FILENAME
+    cd $TOPDIR
+    echo ""
+
 done

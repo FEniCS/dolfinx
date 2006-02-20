@@ -13,9 +13,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 FiniteElementSpec::FiniteElementSpec()
-  : _type("unspecified"), _shape("unspeficied"), _degree(0), _vectordim(0)
 {
-  // Do nothing
+  init("unspecified", "unspecified", 0, 0);
+}
+//-----------------------------------------------------------------------------
+FiniteElementSpec::FiniteElementSpec(std::string type)
+{
+  init("type", "unspecified", 0, 0);
 }
 //-----------------------------------------------------------------------------
 FiniteElementSpec::FiniteElementSpec(std::string type, std::string shape,

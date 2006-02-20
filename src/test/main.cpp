@@ -99,7 +99,7 @@ void testOutputMesh()
 
 void testOutputFiniteElementSpec()
 {
-  dolfin_info("--- Testing output of finite element ---");
+  dolfin_info("--- Testing output of finite element specification ---");
 
   FiniteElementSpec spec("Lagrange", "triangle", 1, 1);
   File file("finiteelement.xml");

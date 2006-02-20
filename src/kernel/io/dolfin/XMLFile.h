@@ -47,7 +47,7 @@ namespace dolfin
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& f);
-    void operator<< (FiniteElementSpec& element);
+    void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);
     
     // Friends

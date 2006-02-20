@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-19
+// Last changed: 2006-02-20
 
 #include <stdarg.h>
 
@@ -13,6 +13,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
+#include <dolfin/FiniteElement.h>
 #include <dolfin/FiniteElementSpec.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
@@ -120,6 +121,7 @@ void XMLFile::parse(Function& f, FiniteElement& element)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
+  // Write header if not already written
   writeHeader();
 
   // Open file
@@ -149,6 +151,7 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
+  // Write header if not already written
   writeHeader();
 
   // Open file
@@ -190,6 +193,7 @@ void XMLFile::operator<<(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
+  // Write header if not already written
   writeHeader();
 
   // Open file
@@ -242,26 +246,36 @@ void XMLFile::operator<<(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Function& f)
 {
+  // Can only write discrete functions
+  if ( f.type() != Function::discrete )
+    dolfin_error("Only discrete functions can be saved to file.");
+
+  // Write header if not already written
   writeHeader();
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
-  // Write function in XML format
-
-  // FIXME: If FiniteElement provides an element name, then we could also
-  // output that.
+  // Begin function
   fprintf(fp, "  <function> \n");
 
   // Close file
   fclose(fp);
-
-  *this << f.mesh();
+  
+  // Write the vector
   *this << f.vector();
+
+  // Write the mesh
+  *this << f.mesh();
+
+  // Write the finite element specification
+  FiniteElementSpec spec = f.element().spec();
+  *this << spec;
 
   // Open file
   fp = fopen(filename.c_str(), "a");
 
+  // End function
   fprintf(fp, "  </function> \n");
   
   // Close file
@@ -273,6 +287,7 @@ void XMLFile::operator<<(Function& f)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {
+  // Write header if not already written
   writeHeader();
 
   // Open file
@@ -291,6 +306,7 @@ void XMLFile::operator<<(FiniteElementSpec& spec)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
 {
+  // Write header if not already written
   writeHeader();
 
   // Open file
@@ -341,7 +357,7 @@ void XMLFile::operator<<(ParameterList& parameters)
 //-----------------------------------------------------------------------------
 void XMLFile::writeHeader()
 {
-  if(header_written)
+  if ( header_written )
   {
     return;
   }
@@ -361,7 +377,7 @@ void XMLFile::writeHeader()
 //-----------------------------------------------------------------------------
 void XMLFile::writeFooter()
 {
-  if(!header_written)
+  if ( !header_written )
   {
     return;
   }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-19
-// Last changed: 2006-02-19
+// Last changed: 2006-02-20
 
 #ifndef __FINITE_ELEMENT_SPEC_H
 #define __FINITE_ELEMENT_SPEC_H
@@ -20,6 +20,9 @@ namespace dolfin
     
     /// Empty constructor
     FiniteElementSpec();
+
+    /// Create given finite element specification
+    FiniteElementSpec(std::string type);
 
     /// Create given finite element specification
     FiniteElementSpec(std::string type, std::string shape, uint degree, uint vectordim = 0);
