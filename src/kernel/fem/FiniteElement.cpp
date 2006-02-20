@@ -4,7 +4,11 @@
 // First added:  2005-05-02
 // Last changed: 2006-02-20
 
+#include <string>
+
 #include <dolfin/dolfin_log.h>
+#include <dolfin/P1Tri.h>
+#include <dolfin/P1Tet.h>
 #include <dolfin/FiniteElement.h>
 
 using namespace dolfin;
@@ -22,21 +26,20 @@ FiniteElement::~FiniteElement()
 //-----------------------------------------------------------------------------
 FiniteElement* FiniteElement::makeElement(const FiniteElementSpec& spec)
 {
-  /*
-  if ( type == "Lagrange" )
+  // Find the correct element from the string representation
+  std::string repr = spec.repr();
+  if ( repr == "[ Lagrange finite element of degree 1 on a triangle ]" )
   {
-    
-
-
-
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P1Tri();
   }
-  else
+  else if ( repr == "[ Lagrange finite element of degree 1 on a tetrahedron ]" )
   {
-
+    return new P1Tet();
+    dolfin_info("Creating finite element: %s.", repr.c_str());
   }
-  */
 
-  //dolfin_warning1("%s", repr(type, shape, degree, vectordim).c_str());
+  dolfin_warning1("%s", repr.c_str());
   dolfin_warning("Unable to create specified finite element, no matching precompiled element found.");
 
   return 0;
@@ -58,24 +61,5 @@ void FiniteElement::disp() const
   dolfin_info("  shape dimension = %d", shapedim());
   dolfin_info("      tensor rank = %d", rank());
   dolfin_info("");
-}
-//-----------------------------------------------------------------------------
-std::string FiniteElement::repr(std::string type, std::string shape,
-				uint degree, uint vectordim)
-{
-  std::ostringstream stream;
-  
-  if ( vectordim > 1 )
-  {
-    stream << "[ " << type << " finite element of degree " << degree
-	   << " on a " << shape << " with " << vectordim << " ]";
-  }
-  else
-  {
-    stream << type << " finite element of degree " << degree
-	   << " on a " << shape;
-  }
-
-  return stream.str();
 }
 //-----------------------------------------------------------------------------

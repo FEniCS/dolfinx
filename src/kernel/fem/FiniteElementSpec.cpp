@@ -57,8 +57,16 @@ std::string FiniteElementSpec::repr() const
 {
   std::ostringstream stream;
   
-  stream << "[ " << _type << " finite element of degree " << _degree
-	 << " on a " << _shape << " with " << _vectordim << " ]";
+  if ( _vectordim > 0 )
+  {
+    stream << "[ " << _type << " finite element of degree " << _degree
+	   << " on a " << _shape << " with " << _vectordim << " ]";
+  }
+  else
+  {
+    stream << "[ " << _type << " finite element of degree " << _degree
+	   << " on a " << _shape << " ]";
+  }
 
   return stream.str();
 }

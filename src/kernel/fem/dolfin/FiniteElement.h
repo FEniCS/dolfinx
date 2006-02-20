@@ -66,7 +66,7 @@ namespace dolfin
 
     /// Factory function for creating new element (matches FFC interface)
     static FiniteElement* makeElement(std::string type, std::string shape, 
-				      uint degree, uint vectordim = 1);
+				      uint degree, uint vectordim = 0);
 
     /// Display finite element data
     void disp() const;

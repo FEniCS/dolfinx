@@ -241,6 +241,17 @@ void testParameters()
   cout << "  " << bar.get("my parameter") << endl;
 }
 
+void testMakeElement()
+{
+  dolfin_info("--- Testing creation of element from spec ---");
+  
+  FiniteElement* P1 = FiniteElement::makeElement("Lagrange", "triangle", 1);
+  FiniteElement* P2 = FiniteElement::makeElement("Lagrange", "triangle", 2);
+
+  if ( P1 ) delete P1;
+  if ( P2 ) delete P2;
+}
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
@@ -254,6 +265,7 @@ int main(int argc, char* argv[])
   testRandom();
   testProgress();
   testParameters();
+  testMakeElement();
 
   testInputFunction();
   testOutputFunction();

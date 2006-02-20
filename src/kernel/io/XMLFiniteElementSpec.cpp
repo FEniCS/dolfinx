@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-19
-// Last changed: 2006-02-19
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FiniteElementSpec.h>
@@ -73,7 +73,7 @@ void XMLFiniteElementSpec::readFiniteElementSpec(const xmlChar* name,
   // Check data
   if ( degree < 0 )
     dolfin_error1("Illegal degree (%d) for finite element.", degree);
-  if ( vectordim < 1 )
+  if ( vectordim < 0 )
     dolfin_error1("Illegal vector dimension (%d) for finite element.", vectordim);
   uint degree_uint = static_cast<uint>(degree);
   uint vectordim_uint = static_cast<uint>(vectordim);

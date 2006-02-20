@@ -22,10 +22,10 @@ namespace dolfin
     FiniteElementSpec();
 
     /// Create given finite element specification
-    FiniteElementSpec(std::string type, std::string shape, uint degree, uint vectordim);
+    FiniteElementSpec(std::string type, std::string shape, uint degree, uint vectordim = 0);
 
     /// Initialize given finite element specification
-    void init(std::string type, std::string shape, uint degree, uint vectordim);
+    void init(std::string type, std::string shape, uint degree, uint vectordim = 0);
 
     /// Return type of finite element
     std::string type() const;
