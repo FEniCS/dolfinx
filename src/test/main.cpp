@@ -97,6 +97,15 @@ void testOutputMesh()
   file << mesh;
 }
 
+void testOutputFiniteElementSpec()
+{
+  dolfin_info("--- Testing output of finite element ---");
+
+  FiniteElementSpec spec("Lagrange", "triangle", 1, 1);
+  File file("finiteelement.xml");
+  file << spec;
+}
+
 void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
@@ -240,6 +249,7 @@ int main(int argc, char* argv[])
   testOutputVector();
   testOutputMatrix();
   testOutputMesh();
+  testOutputFiniteElementSpec();
   testFunctional();
   testRandom();
   testProgress();

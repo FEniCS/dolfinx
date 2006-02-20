@@ -2,9 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-02-16
-
-#include <sstream>
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FiniteElement.h>
@@ -22,8 +20,7 @@ FiniteElement::~FiniteElement()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FiniteElement* FiniteElement::makeElement(std::string type, std::string shape,
-					  uint degree, uint vectordim)
+FiniteElement* FiniteElement::makeElement(const FiniteElementSpec& spec)
 {
   /*
   if ( type == "Lagrange" )
@@ -39,10 +36,17 @@ FiniteElement* FiniteElement::makeElement(std::string type, std::string shape,
   }
   */
 
-  dolfin_warning1("%s", repr(type, shape, degree, vectordim).c_str());
+  //dolfin_warning1("%s", repr(type, shape, degree, vectordim).c_str());
   dolfin_warning("Unable to create specified finite element, no matching precompiled element found.");
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+FiniteElement* FiniteElement::makeElement(std::string type, std::string shape,
+					  uint degree, uint vectordim)
+{
+  FiniteElementSpec spec(type, shape, degree, vectordim);
+  return makeElement(spec);
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::disp() const

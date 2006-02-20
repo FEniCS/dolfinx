@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-16
+// Last changed: 2006-02-19
 
 #include <stdarg.h>
 
@@ -13,7 +13,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
-#include <dolfin/FiniteElement.h>
+#include <dolfin/FiniteElementSpec.h>
 #include <dolfin/Parameter.h>
 #include <dolfin/ParameterList.h>
 
@@ -22,7 +22,7 @@
 #include <dolfin/XMLMatrix.h>
 #include <dolfin/XMLMesh.h>
 #include <dolfin/XMLFunction.h>
-#include <dolfin/XMLFiniteElement.h>
+#include <dolfin/XMLFiniteElementSpec.h>
 #include <dolfin/XMLParameterList.h>
 #include <dolfin/XMLBLASFormData.h>
 #include <dolfin/XMLFile.h>
@@ -77,11 +77,11 @@ void XMLFile::operator>>(Function& f)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator>>(FiniteElement& element)
+void XMLFile::operator>>(FiniteElementSpec& spec)
 {
   if ( xmlObject )
     delete xmlObject;
-  xmlObject = new XMLFiniteElement(element);
+  xmlObject = new XMLFiniteElementSpec(spec);
   parseFile();
 }
 //-----------------------------------------------------------------------------
@@ -271,26 +271,22 @@ void XMLFile::operator<<(Function& f)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::operator<<(FiniteElement& element)
+void XMLFile::operator<<(FiniteElementSpec& spec)
 {
-  dolfin_error("Not implemented, in preparation...");
-
   writeHeader();
 
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
   // Write element in XML format
-  // FIXME: Add type() etc to FiniteElement interface
-  //fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
-  //	  element.type().c_str(), element.shape.c_str(), element.degree(), element.vectordim());
+  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
+  	  spec.type().c_str(), spec.shape().c_str(), spec.degree(), spec.vectordim());
   
   // Close file
   fclose(fp);
   
-  // FIXME: Add << to FiniteElement interface
-  // cout << "Saved finite element " << element
-  //    << " to file " << filename << " in XML format." << endl;
+  cout << "Saved finite element specification" << spec
+       << " to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)

@@ -1,23 +1,23 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2006-02-16
-// Last changed: 2006-02-16
+// First added:  2006-02-19
+// Last changed: 2006-02-19
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/FiniteElement.h>
-#include <dolfin/XMLFiniteElement.h>
+#include <dolfin/FiniteElementSpec.h>
+#include <dolfin/XMLFiniteElementSpec.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-XMLFiniteElement::XMLFiniteElement(FiniteElement& element)
-  : XMLObject(), element(element)
+XMLFiniteElementSpec::XMLFiniteElementSpec(FiniteElementSpec& spec)
+  : XMLObject(), spec(spec)
 {
   state = OUTSIDE;
 }
 //-----------------------------------------------------------------------------
-void XMLFiniteElement::startElement(const xmlChar* name, const xmlChar** attrs)
+void XMLFiniteElementSpec::startElement(const xmlChar* name, const xmlChar** attrs)
 {
   switch ( state )
   {
@@ -25,7 +25,7 @@ void XMLFiniteElement::startElement(const xmlChar* name, const xmlChar** attrs)
     
     if ( xmlStrcasecmp(name, (xmlChar *) "finiteelement") == 0 )
     {
-      readFiniteElement(name, attrs);
+      readFiniteElementSpec(name, attrs);
       state = INSIDE_FINITE_ELEMENT;
     }
     
@@ -36,7 +36,7 @@ void XMLFiniteElement::startElement(const xmlChar* name, const xmlChar** attrs)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFiniteElement::endElement(const xmlChar* name)
+void XMLFiniteElementSpec::endElement(const xmlChar* name)
 {
   switch ( state )
   {
@@ -55,7 +55,8 @@ void XMLFiniteElement::endElement(const xmlChar* name)
   }
 }
 //-----------------------------------------------------------------------------
-void XMLFiniteElement::readFiniteElement(const xmlChar* name, const xmlChar** attrs)
+void XMLFiniteElementSpec::readFiniteElementSpec(const xmlChar* name,
+						 const xmlChar** attrs)
 {
   // Set default values
   std::string type;
@@ -69,7 +70,15 @@ void XMLFiniteElement::readFiniteElement(const xmlChar* name, const xmlChar** at
   parseIntegerRequired(name, attrs, "degree",    degree);
   parseIntegerRequired(name, attrs, "vectordim", vectordim);
   
+  // Check data
+  if ( degree < 0 )
+    dolfin_error1("Illegal degree (%d) for finite element.", degree);
+  if ( vectordim < 1 )
+    dolfin_error1("Illegal vector dimension (%d) for finite element.", vectordim);
+  uint degree_uint = static_cast<uint>(degree);
+  uint vectordim_uint = static_cast<uint>(vectordim);
+
   // Don't know what to do here, maybe we need to make an envelope-letter
-  // interface for finite element as well?
+  spec.init(type, shape, degree_uint, vectordim_uint);
 }
 //-----------------------------------------------------------------------------

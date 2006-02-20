@@ -1,11 +1,11 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
 // Modified by Haiko Etzel 2005.
 //
 // First added:  2002-11-12
-// Last changed: 2005-12-08
+// Last changed: 2006-02-20
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -131,6 +131,13 @@ void File::operator>>(Sample& sample)
   *file >> sample;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(FiniteElementSpec& spec)
+{
+  file->read();
+  
+  *file >> spec;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(ParameterList& parameters)
 {
   file->read();
@@ -185,6 +192,13 @@ void File::operator<<(Sample& sample)
   file->write();
   
   *file << sample;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(FiniteElementSpec& spec)
+{
+  file->write();
+  
+  *file << spec;
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(ParameterList& parameters)

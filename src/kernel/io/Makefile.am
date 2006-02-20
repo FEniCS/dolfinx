@@ -13,7 +13,7 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
                           dolfin/XMLFile.h \
-                          dolfin/XMLFiniteElement.h \
+                          dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
@@ -35,7 +35,7 @@ libdolfin_io_la_SOURCES = File.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
                           XMLFile.cpp \
-                          XMLFiniteElement.cpp \
+                          XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
