@@ -70,18 +70,19 @@ int main(int argc, char* argv[])
   MyBC bc;
   Matrix A;
   Vector xx, b, e;
-  Function u(xx);
+  Function u(xx, mesh);
 
   // Forms for linear problem and create PDE
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
   PDE linear_pde(a, L, mesh, bc);
 
-  // Forms for nonlinear problem
+  // Forms for nonlinear problem and create PDE
   PoissonNl::BilinearForm a_nl;
   PoissonNl::LinearForm L_nl(u, f);
-  NonlinearPDE nonlinear_pde(a, L, mesh, bc);
-
+  NonlinearPDE nonlinear_pde(a_nl, L_nl, mesh, bc);
+  u.init(mesh, a.trial());
+ 
   real dt = 1.0;  // time step
   real t  = 0.0;  // initial time
   real T  = 1.0;  // final time
