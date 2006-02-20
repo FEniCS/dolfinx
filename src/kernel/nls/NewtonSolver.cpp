@@ -4,9 +4,8 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-02-08
+// Last changed: 2006-02-20
 
-#include <dolfin/ParameterSystem.h>
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
 
@@ -15,7 +14,10 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : KrylovSolver(), method(newton), report(true)
 {
-  // Do nothing 
+  // Set default parameters
+  add("Newton maximum iterations", 50);
+  add("Newton relative tolerance", 1e-9);
+  add("Newton absolute tolerance", 1e-20);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -24,76 +26,41 @@ NewtonSolver::~NewtonSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L, 
-      BoundaryCondition& bc, Mesh& mesh, Vector& x)
+      BoundaryCondition& bc, Mesh& mesh, Function& u)
+{  
+  // Create nonlinear function
+  NonlinearPDE nonlinear_pde(a, L, mesh, bc);
+
+  // Inintialise function and associate vector u with function
+  u.init(mesh, a.trial());
+  Vector& x = u.vector();
+
+  // Solve nonlinear problem and return number of iterations
+  return solve(nonlinear_pde, x);
+
+} 
+//-----------------------------------------------------------------------------
+dolfin::uint NewtonSolver::solve(NonlinearPDE& nonlinear_pde, Function& u)
 {  
 
-  uint maxit = get("NLS Newton maximum iterations");
-  real rtol  = get("NLS Newton relative convergence tolerance");
-  real atol  = get("NLS Newton absolute convergence tolerance");
-    
-  dolfin_begin("Starting Newton solve.");
+  Mesh& mesh = *(nonlinear_pde._mesh);
+  FiniteElement& element = (nonlinear_pde._a)->trial();
 
-  dolfin_log(false);
+  // Inintialise function and associate vector u with function
+  u.init(mesh, element);
+  Vector& x = u.vector();
 
-  // Assemble Jacobian and residual
-  FEM::assemble(a, L, A, b, mesh);
-  FEM::applyBC(A, mesh, a.test(), bc);
-  FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
+  // Solve nonlinear problem and return number of iterations
+  return solve(nonlinear_pde, x);
 
-  real residual0 = b.norm();
-  residual  = residual0;
-  relative_residual = 1.0;
-
-  kryloviterations = 0;
-  iteration = 0;
-
-  while( relative_residual > rtol && residual > atol && iteration <= maxit )
-  {         
-      ++iteration;
-
-      dolfin_log(false);
-
-      // Perform linear solve and update total number of Krylov iterations
-      kryloviterations += KrylovSolver::solve(A, dx, b);  
-
-      // Update solution
-      x += dx;
-      
-      // Assemble Jacobian and residual
-      FEM::assemble(a, L, A, b, mesh);
-      FEM::applyBC(A, mesh, a.test(), bc);
-      FEM::assembleBCresidual(b, x, mesh, L.test(), bc);
-
-      dolfin_log(true);
-
-      residual = b.norm();
-      relative_residual = residual/residual0;
-
-      if(report) cout << "Iteration= " << iteration << ", Relative residual = " 
-          << relative_residual << endl;      
-  }
-
-  if ( relative_residual < rtol || residual < atol )
-  {
-    dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
-        iteration, kryloviterations);
-  }
-  else
-  {
-    dolfin_warning("Newton solver did not converge.");
-  }
-
-  dolfin_end();
-
-  return iteration;
 } 
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x)
 {
-  uint maxit = get("NLS Newton maximum iterations");
-  real rtol  = get("NLS Newton relative convergence tolerance");
-  real atol  = get("NLS Newton absolute convergence tolerance");
-  
+  const uint maxit= get("Newton maximum iterations");
+  const real rtol = get("Newton relative tolerance");
+  const real atol = get("Newton absolute tolerance");
+
   // FIXME: add option to compute F(u) anf J together or separately
 
   dolfin_begin("Starting Newton solve.");
@@ -105,7 +72,7 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
   residual  = residual0;
   relative_residual = 1.0;
 
-  kryloviterations = 0;
+  uint krylov_iterations = 0;
   iteration = 0;
   
   while( relative_residual > rtol && residual > atol && iteration < maxit )
@@ -113,9 +80,9 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
       ++iteration;
 
       dolfin_log(false);
-      
+ 
       // Perform linear solve and update total number of Krylov iterations
-      kryloviterations += KrylovSolver::solve(A, dx, b);  
+      krylov_iterations += KrylovSolver::solve(A, dx, b);  
 
       // Update solution
       x += dx;
@@ -136,7 +103,7 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
   if ( relative_residual < rtol || residual < atol )
   {
     dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
-        iteration, kryloviterations);
+        iteration, krylov_iterations);
   }
   else
   {
@@ -147,24 +114,6 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
 
   return iteration;
 } 
-//-----------------------------------------------------------------------------
-void NewtonSolver::setNewtonMaxiter(uint maxiter) const
-{
-  dolfin::set("NLS Newton maximum iterations", maxiter);
-  dolfin_info("Maximum number of Newton iterations: %d.",maxiter);
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::setNewtonRtol(real rtol) const
-{
-  dolfin::set("NLS Newton relative convergence tolerance", rtol);
-  dolfin_info("Relative increment tolerance for Newton solver: %e.", rtol);
-}
-//-----------------------------------------------------------------------------
-void NewtonSolver::setNewtonAtol(real atol) const
-{
-  dolfin::set("NLS Newton absolute convergence tolerance", atol);
-  dolfin_info("Absolute increment tolerance for Newton solver: %e.", atol);
-}
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::getIteration() const
 {

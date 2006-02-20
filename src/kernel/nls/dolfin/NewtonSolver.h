@@ -2,23 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-23
-// Last changed: 2005-12-05
+// Last changed: 2006-02-20
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <dolfin/constants.h>
 #include <dolfin/NonlinearFunction.h>
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/NonlinearPDE.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/BoundaryCondition.h>
 
 namespace dolfin
 {
+  class BoundaryCondition;
+  class LinearForm;
+  class Matrix;
+  class Mesh;
+  class Vector;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
@@ -26,7 +26,7 @@ namespace dolfin
   {
   public:
 
-    //FIXME: implement methods other than plain Newton
+    //FIXME: implement methods other than plain Newton (modified, line search, etc.)
     enum Method { newton };
      
     /// Initialise nonlinear solver
@@ -35,27 +35,16 @@ namespace dolfin
     /// Destructor
     ~NewtonSolver();
   
-    /// Solve nonlinear problem F(u) = 0
-    uint solve(BilinearForm& a, LinearForm& L, BoundaryCondition& bc, Mesh& mesh,  
-        Vector& x);
+    /// Solve nonlinear PDE
+    uint solve(BilinearForm& a, LinearForm& L, BoundaryCondition& bc, Mesh& mesh,
+        Function& u);
 
-    /// Solve nonlinear problem F(u) = 0 for given NonlinearFunction
+    /// Solve nonlinear PDE
+    uint solve(NonlinearPDE& nonlinearfunction, Function& u);
+
+    /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
+    /// Jacobian dF/dx
     uint solve(NonlinearFunction& nonlinearfunction, Vector& x);
-
-/*
-    /// Set nonlinear solve type
-    void setType(std::string solver_type);
-
-*/
-
-    /// Set maximum number of Netwon iterations
-    void setNewtonMaxiter(uint maxiter) const;
-
-    /// Set relative convergence tolerance: ||F_i|| / ||F_0|| < rtol
-    void setNewtonRtol(real rtol) const;
-
-    /// Set absolute convergence tolerance: ||F_i|| < atol
-    void setNewtonAtol(real atol) const;
 
     /// Return Newton iteration number
     uint getIteration() const;
@@ -67,9 +56,6 @@ namespace dolfin
 
     // Number of Newton iterations
     uint iteration;
-
-    // Total number of Krylov iterations
-    uint kryloviterations;
 
     // Residuals
     real residual, relative_residual;

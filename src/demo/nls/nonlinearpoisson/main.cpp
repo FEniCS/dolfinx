@@ -53,40 +53,24 @@ class MyBC : public BoundaryCondition
   }
 };
 
-// User defined nonlinear update class
-class MyNonlinearFunction : public NonlinearFunction
+// User defined nonlinear function 
+class MyNonlinearPDE : public NonlinearPDE
 {
   public:
-
+  
     // Constructor 
-    MyNonlinearFunction(BilinearForm& a, LinearForm& L, Mesh& mesh,
-      BoundaryCondition& bc) : NonlinearFunction(),
-      _a(&a), _L(&L), _mesh(&mesh), _bc(&bc) {}
- 
+    MyNonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh,
+      BoundaryCondition& bc) : NonlinearPDE(a, L, mesh, bc) {}
 
-    // Assemble Jacobian and residual vector 
-    void form(Matrix&A, Vector& b, const Vector& x)
+    // User defined assemble of Jacobian and residual vector 
+    void form(Matrix& A, Vector& b, const Vector& x)
     {
-      BilinearForm& a = *_a;
-      LinearForm& L   = *_L;
-      BoundaryCondition& bc = *_bc;
-      Mesh& mesh = *_mesh;
- 
       dolfin_log(false);
-      FEM::assemble(a, L, A, b, mesh);
-      FEM::applyBC(A, mesh, a.test(), bc);
-      FEM::assembleBCresidual(b, x, mesh, a.test(), bc);
+      FEM::assemble(*_a, *_Lf, A, b, *_mesh);
+      FEM::applyBC(A, *_mesh, _a->test(), *_bc);
+      FEM::assembleBCresidual(b, x, *_mesh, _a->test(), *_bc);
       dolfin_log(true);
-
     }
-    
-  private:
-
-    // Pointers to forms, mesh data and boundary conditions
-    BilinearForm* _a;
-    LinearForm* _L;
-    Mesh* _mesh;
-    BoundaryCondition* _bc;
 };
 
 
@@ -98,28 +82,22 @@ int main(int argc, char* argv[])
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
-  Matrix A;
-  Vector x, b;
-  Function u(x);
+  Function u;
 
-  // Forms
+  // Create forms and nonlinear PDE
   NonlinearPoisson::BilinearForm a(u);
   NonlinearPoisson::LinearForm L(u, f);
-
-  x.init(FEM::size(mesh, a.test()));
-
-  // Create nonlinear function
-  MyNonlinearFunction nonlinear_function(a, L, mesh, bc);  
+  MyNonlinearPDE nonlinear_pde(a, L, mesh, bc);  
 
   // Create nonlinear solver
   NewtonSolver nonlinear_solver;
 
   // Set Newton parameters
-  nonlinear_solver.setNewtonMaxiter(50);
-  nonlinear_solver.setNewtonRtol(1e-10);
-  nonlinear_solver.setNewtonAtol(1e-10);
+  nonlinear_solver.set("Newton maximum iterations", 50);
+  nonlinear_solver.set("Newton relative tolerance", 1e-10);
+  nonlinear_solver.set("Newton absolute tolerance", 1e-10);
 
-  // Set Krylov solver
+  // Set Krylov solver type
   nonlinear_solver.setType(KrylovSolver::bicgstab);
 
   // Solve nonlinear problem in a series of steps
@@ -132,7 +110,7 @@ int main(int argc, char* argv[])
   while( t < T)
   {
     t += dt;
-    nonlinear_solver.solve(nonlinear_function, x);
+    nonlinear_solver.solve(nonlinear_pde, u);
   }
 
   // Save function to file

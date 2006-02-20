@@ -69,18 +69,17 @@ int main(int argc, char* argv[])
   MyFunction f;
   MyBC bc;
   Matrix A;
-  Vector x, y, b, e;
-  Function u(x);
+  Vector b, e;
+  Function u;
 
-  // Forms for linear problem
+  // Forms for linear problem and create PDE
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
+  PDE linear_pde(a, L, mesh, bc);
 
   // Forms for nonlinear problem
   PoissonNl::BilinearForm a_nl;
   PoissonNl::LinearForm L_nl(u, f);
-
-  x.init(FEM::size(mesh, a.test()));
 
   real dt = 1.0;  // time step
   real t  = 0.0;  // initial time
@@ -90,44 +89,42 @@ int main(int argc, char* argv[])
 
 //---------------------------------------------------
 
-  // Assemble and solve linear problem
+  // Solve linear PDE
   dolfin_log(false);
 
-  KrylovSolver solver(KrylovSolver::bicgstab);
-  solver.setRtol(1.e-10);
-
   t = T;
-  FEM::assemble(a, L, A, b, mesh, bc);
-  dolfin_log(true);
-  solver.solve(A, y, b);  
+  linear_pde.set("solver", "direct");  
+  Function v = linear_pde.solve();
 
 //---------------------------------------------------
 
-  // Solve using NewtonSolver
+  // Solve nonlinear PDE using using NewtonSolver
 
   NewtonSolver newtonsolver;
+  newtonsolver.set("Newton relative tolerance", 1.e-10);
   newtonsolver.setRtol(1.e-5);
-  newtonsolver.setNewtonRtol(1.e-10);
   newtonsolver.setType(KrylovSolver::bicgstab);
 
   t = 0.0;
-  x = 0.0;
-  
   while( t < T)
   {
     t += dt;
     dolfin_log(true);
-    newtonsolver.solve(a_nl, L_nl, bc, mesh, x);  
+    newtonsolver.solve(a_nl, L_nl, bc, mesh, u);  
   }
   cout << "Finished nonlinear solve. " << endl;
   
 //-------------------------------------------------------
 
-  // Verify nonlinear solver by comparing difference between linear solve
-  // and nonlinear solve
+  // Verify nonlinear solver by comparing difference 
+  // between linear solve and nonlinear solve
+
+  Vector& x = u.vector();
+  Vector& y = v.vector();
 
   e = x; e-=  y;
-  cout << "Relative error || u^nonlin - u^lin || / || u^lin ||=  " << e.norm()/y.norm() << endl; 
+  cout << "Relative error: ||u^nonlin-u^lin|| / ||u^lin||= " 
+      << e.norm()/y.norm() << endl; 
 
 //-------------------------------------------------------
   

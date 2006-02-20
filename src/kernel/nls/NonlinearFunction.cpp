@@ -4,7 +4,10 @@
 // First added:  2005-10-24
 // Last changed: 2005-12-05
 
-#include <dolfin/NonlinearFunction.h>
+#include <dolfin/FEM.h>
+#include <dolfin/NonlinearPDE.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 
 using namespace dolfin;
 NonlinearFunction::NonlinearFunction()
@@ -19,7 +22,7 @@ NonlinearFunction::~NonlinearFunction()
 //-----------------------------------------------------------------------------
 void NonlinearFunction::form(Matrix& A, Vector& b, const Vector& x)
 {
-  dolfin_error("Nonlinear function update for F(u) and Jacobian has not been supplied by user.");
+  dolfin_error("Nonlinear function update for F(u) and J  has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
 void NonlinearFunction::F(Vector& b, const Vector& x)

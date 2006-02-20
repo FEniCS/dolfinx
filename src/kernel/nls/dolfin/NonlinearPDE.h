@@ -4,8 +4,11 @@
 // First added:  2005-10-24
 // Last changed: 2005-12-05
 
-#ifndef __NONLINEAR_FUNCTION_H
-#define __NONLINEAR_FUNCTION_H
+#ifndef __NONLINEAR_PDE_H
+#define __NONLINEAR_PDE_H
+
+
+#include <dolfin/NonlinearFunction.h>
 
 namespace dolfin
 {
@@ -16,18 +19,25 @@ namespace dolfin
   class Mesh;
   class Vector;
 
-  /// This class acts as a base class for nonlinear functions which can return 
+  /// This class acts as a base class for nonlinear PDE's and 
   /// the nonlinear function F(u) and its Jacobian J = dF(u)/du.
   
-  class NonlinearFunction
+  class NonlinearPDE : public NonlinearFunction
   {
   public:
 
     /// Create nonlinear function
-    NonlinearFunction();
+    NonlinearPDE();
+
+    /// Create nonlinear PDE with natural  boundary conditions
+    NonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh);
+
+    /// Create nonlinear PDE with Dirichlet boundary conditions
+    NonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh,
+              BoundaryCondition& bc);
 
     /// Destructor
-    virtual ~NonlinearFunction();
+    virtual ~NonlinearPDE();
 
      /// User-defined function to compute F(u) its Jacobian
     virtual void form(Matrix& A, Vector& b, const Vector& x);
@@ -37,6 +47,17 @@ namespace dolfin
 
      /// User-defined function to compute Jacobian matrix
     virtual void J(Matrix& A, const Vector& x);
+
+    /// Friends
+    friend class NewtonSolver;
+
+
+  protected:
+
+    BilinearForm* _a;
+    LinearForm* _Lf;
+    Mesh* _mesh;
+    BoundaryCondition* _bc;
 
   };
 }
