@@ -22,4 +22,4 @@ c = 0.005
 k = 0.05
 
 a = v*u1*dx + 0.5*k*(v*dot(b, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
-L = v*u0*dx - 0.5*k*(v*dot(b, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + v*f*dx
+L = v*u0*dx - 0.5*k*(v*dot(b, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx

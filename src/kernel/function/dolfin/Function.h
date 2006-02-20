@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #ifndef __FUNCTION_H
 #define __FUNCTION_H
@@ -96,17 +96,14 @@ namespace dolfin
     /// Return element associated with function (if any)
     inline FiniteElement& element() { return f->element(); }
 
-    /// Attach vector to function
-    inline void attach(Vector& x) { f->attach(x); }
+    /// Attach vector to function (data local if set, use with caution)
+    inline void attach(Vector& x, bool local = false) { f->attach(x, local); }
 
-    /// Attach mesh to function
-    inline void attach(Mesh& mesh) { f->attach(mesh); }
+    /// Attach mesh to function (data local if set, use with caution)
+    inline void attach(Mesh& mesh, bool local = false) { f->attach(mesh, local); }
 
-    /// Attach finite element to function
-    inline void attach(FiniteElement& element) { f->attach(element); }
-
-    /// Attach finite element given by name to function
-    inline void attach(std::string element) { f->attach(element); }
+    /// Attach finite element to function (data local if set, use with caution)
+    inline void attach(FiniteElement& element, bool local = false) { f->attach(element, local); }
 
     // FIXME: Maybe all constructors should have a corresponding init function?
 

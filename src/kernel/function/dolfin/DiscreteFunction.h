@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-10
+// Last changed: 2006-02-20
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
@@ -68,17 +68,14 @@ namespace dolfin
     FiniteElement& element();
 
     /// Attach vector to function
-    void attach(Vector& x);
+    void attach(Vector& x, bool local);
 
     /// Attach mesh to function
-    void attach(Mesh& mesh);
+    void attach(Mesh& mesh, bool local);
 
     /// Attach finite element to function
-    void attach(FiniteElement& element);
+    void attach(FiniteElement& element, bool local);
 
-    /// Attach finite element given by name to function
-    virtual void attach(std::string element);
-    
     /// Reinitialize to given data (automatically create vector)
     void init(Mesh& mesh, FiniteElement& element);
 
@@ -110,6 +107,12 @@ namespace dolfin
 
     // True if vector is local (not a reference to another vector)
     bool vector_local;
+
+    // True if mesh is local (not a reference to another mesh)
+    bool mesh_local;
+
+    // True if element is local (not a reference to another element)
+    bool element_local;
 
   };
 

@@ -11,7 +11,7 @@ EXTRA_DIST = dolfin_io.h \
              VTKFile.h \
              XMLBLASFormData.h \
              XMLFile.h \
-             XMLFiniteElement.h \
+             XMLFiniteElementSpec.h \
              XMLMatrix.h \
              XMLMesh.h \
              XMLObject.h \

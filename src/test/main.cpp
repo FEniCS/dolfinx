@@ -97,6 +97,15 @@ void testOutputMesh()
   file << mesh;
 }
 
+void testOutputFiniteElementSpec()
+{
+  dolfin_info("--- Testing output of finite element ---");
+
+  FiniteElementSpec spec("Lagrange", "triangle", 1, 1);
+  File file("finiteelement.xml");
+  file << spec;
+}
+
 void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
@@ -232,6 +241,17 @@ void testParameters()
   cout << "  " << bar.get("my parameter") << endl;
 }
 
+void testMakeElement()
+{
+  dolfin_info("--- Testing creation of element from spec ---");
+  
+  FiniteElement* P1 = FiniteElement::makeElement("Lagrange", "triangle", 1);
+  FiniteElement* P2 = FiniteElement::makeElement("Lagrange", "triangle", 2);
+
+  if ( P1 ) delete P1;
+  if ( P2 ) delete P2;
+}
+
 int main(int argc, char* argv[])
 {
   dolfin_info("Testing DOLFIN...");
@@ -240,10 +260,12 @@ int main(int argc, char* argv[])
   testOutputVector();
   testOutputMatrix();
   testOutputMesh();
+  testOutputFiniteElementSpec();
   testFunctional();
   testRandom();
   testProgress();
   testParameters();
+  testMakeElement();
 
   testInputFunction();
   testOutputFunction();

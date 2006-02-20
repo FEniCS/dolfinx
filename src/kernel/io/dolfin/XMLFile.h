@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-16
+// Last changed: 2006-02-19
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -35,7 +35,7 @@ namespace dolfin
     void operator>> (Matrix& A);
     void operator>> (Mesh& mesh);
     void operator>> (Function& f);
-    void operator>> (FiniteElement& element);
+    void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
     
@@ -47,7 +47,7 @@ namespace dolfin
     void operator<< (Matrix& A);
     void operator<< (Mesh& mesh);
     void operator<< (Function& f);
-    void operator<< (FiniteElement& element);
+    void operator<< (FiniteElementSpec& element);
     void operator<< (ParameterList& parameters);
     
     // Friends

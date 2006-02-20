@@ -21,7 +21,7 @@ using namespace dolfin;
 DiscreteFunction::DiscreteFunction(Vector& x)
   : GenericFunction(), _x(&x), _mesh(0), _element(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false)
+    vector_local(false), mesh_local(false), element_local(false)
 {
   // Mesh and element need to be specified later or are automatically
   // chosen during assembly.
@@ -30,7 +30,7 @@ DiscreteFunction::DiscreteFunction(Vector& x)
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
   : GenericFunction(), _x(&x), _mesh(&mesh), _element(0),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false)
+    vector_local(false), mesh_local(false), element_local(false)
 {
   // Element needs to be specified later or are automatically
   // chosen during assembly.
@@ -39,7 +39,7 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh)
 DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element)
   : GenericFunction(), _x(&x), _mesh(&mesh), _element(&element),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false)
+    vector_local(false), mesh_local(false), element_local(false)
 {
   // Update vector dimension from element
   updateVectorDimension();
@@ -48,7 +48,7 @@ DiscreteFunction::DiscreteFunction(Vector& x, Mesh& mesh, FiniteElement& element
 DiscreteFunction::DiscreteFunction(Mesh& mesh, FiniteElement& element)
   : GenericFunction(), _x(0), _mesh(&mesh), _element(&element),
     _vectordim(1), component(0), mixed_offset(0), component_offset(0),
-    vector_local(false)
+    vector_local(false), mesh_local(false), element_local(false)
 {
   // Update vector dimension from element
   updateVectorDimension();
@@ -63,7 +63,7 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
   : GenericFunction(), _x(0), _mesh(f._mesh), _element(f._element),
     _vectordim(f._vectordim), component(f.component),
     mixed_offset(f.mixed_offset), component_offset(f.component_offset),
-    vector_local(false)
+    vector_local(false), mesh_local(false), element_local(false)
 {
   // Create a new vector and copy the values
   dolfin_assert(f._x);
@@ -74,9 +74,17 @@ DiscreteFunction::DiscreteFunction(const DiscreteFunction& f)
 //-----------------------------------------------------------------------------
 DiscreteFunction::~DiscreteFunction()
 {
-  // Delete vector if local copy
+  // Delete vector if local
   if ( vector_local )
     delete _x;
+
+  // Delete mesh if local
+  if ( mesh_local )
+    delete _mesh;
+
+  // Delete element if local
+  if ( element_local )
+    delete _element;
 }
 //-----------------------------------------------------------------------------
 real DiscreteFunction::operator()(const Point& p, uint i)
@@ -221,7 +229,7 @@ FiniteElement& DiscreteFunction::element()
   return *_element;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::attach(Vector& x)
+void DiscreteFunction::attach(Vector& x, bool local)
 {
   // Delete old vector if local
   if ( vector_local )
@@ -229,23 +237,32 @@ void DiscreteFunction::attach(Vector& x)
 
   // Attach new vector
   _x = &x;
-  vector_local = false;
+  vector_local = local;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::attach(Mesh& mesh)
+void DiscreteFunction::attach(Mesh& mesh, bool local)
 {
+  // Delete old mesh if local
+  if ( mesh_local )
+    delete _mesh;
+
+  // Attach new mesh
   _mesh = &mesh;
+  mesh_local = local;
 }
 //-----------------------------------------------------------------------------
-void DiscreteFunction::attach(FiniteElement& element)
+void DiscreteFunction::attach(FiniteElement& element, bool local)
 {
+  // Delete old mesh if local
+  if ( element_local )
+    delete _element;
+
+  // Attach new mesh
   _element = &element;
+  element_local = local;
+
+  // Recompute vector dimension
   updateVectorDimension();
-}
-//-----------------------------------------------------------------------------
-void DiscreteFunction::attach(std::string element)
-{
-  dolfin_error("Not yet implemented.");
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::init(Mesh& mesh, FiniteElement& element)

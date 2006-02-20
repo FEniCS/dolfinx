@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-12
-// Last changed: 2005-10-03
+// Last changed: 2006-02-20
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -51,6 +51,11 @@ void GenericFile::operator>>(Sample& sample)
   read_not_impl("Sample");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator>>(FiniteElementSpec& spec)
+{
+  read_not_impl("FiniteElementSpec");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(ParameterList& parameters)
 {
   read_not_impl("ParameterList");
@@ -89,6 +94,11 @@ void GenericFile::operator<<(Function& u)
 void GenericFile::operator<<(Sample& sample)
 {
   write_not_impl("Sample");
+}
+//-­---------------------------------------------------------------------------
+void GenericFile::operator<<(FiniteElementSpec& spec)
+{
+  write_not_impl("FiniteElementSpec");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(ParameterList& parameters)

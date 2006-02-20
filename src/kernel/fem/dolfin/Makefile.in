@@ -180,6 +180,7 @@ EXTRA_DIST = dolfin_fem.h \
              BoundaryValue.h \
              FEM.h \
              FiniteElement.h \
+             FiniteElementSpec.h \
              LoadVector.h \
              MassMatrix.h \
              P1Tet.h \

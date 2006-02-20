@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005-10-03
+// Last changed: 2006-20-20
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -17,6 +17,7 @@ namespace dolfin
   class Mesh;
   class Function;
   class Sample;
+  class FiniteElementSpec;
   class ParameterList;
   class BLASFormData;
 
@@ -35,6 +36,7 @@ namespace dolfin
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Sample& sample);
+    virtual void operator>> (FiniteElementSpec& spec);
     virtual void operator>> (ParameterList& parameters);
     virtual void operator>> (BLASFormData& blas);
     virtual void parse(Function& u, FiniteElement& element);
@@ -46,6 +48,7 @@ namespace dolfin
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
+    virtual void operator<< (FiniteElementSpec& spec);
     virtual void operator<< (ParameterList& parameters);
     virtual void operator<< (BLASFormData& blas);
     

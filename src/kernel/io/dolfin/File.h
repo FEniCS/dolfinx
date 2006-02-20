@@ -1,10 +1,10 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2005-12-08
+// Last changed: 2006-02-20
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -18,6 +18,7 @@ namespace dolfin
   class Mesh;
   class Function;
   class Sample;
+  class FiniteElementSpec;
   class ParameterList;
   class BLASFormData;
   class GenericFile;
@@ -58,6 +59,9 @@ namespace dolfin
     /// Read ODE sample from file
     void operator>> (Sample& sample);
     
+    /// Read finite element specification from file
+    void operator>> (FiniteElementSpec& spec);
+
     /// Read parameter list from file
     void operator>> (ParameterList& parameters);
 
@@ -83,6 +87,9 @@ namespace dolfin
 
     /// Write ODE sample to file
     void operator<< (Sample& sample);
+
+    /// Write finite element specification to file
+    void operator<< (FiniteElementSpec& spec);
 
     /// Write parameter list to file
     void operator<< (ParameterList& parameters);

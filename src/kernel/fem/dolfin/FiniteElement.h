@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #ifndef __FINITE_ELEMENT_H
 #define __FINITE_ELEMENT_H
@@ -12,6 +12,7 @@
 #include <dolfin/Vertex.h>
 #include <dolfin/Point.h>
 #include <dolfin/AffineMap.h>
+#include <dolfin/FiniteElementSpec.h>
 
 namespace dolfin
 {
@@ -27,10 +28,6 @@ namespace dolfin
 
     /// Destructor
     virtual ~FiniteElement();
-
-    /// Factory function for creating new element (matches FFC interface)
-    static FiniteElement* makeElement(std::string type, std::string shape, 
-				      uint degree, uint vectordim = 1);
 
     /// Return dimension of the finite element space
     virtual unsigned int spacedim() const = 0;
@@ -61,8 +58,15 @@ namespace dolfin
     /// Return given sub element of (mixed) element
     virtual FiniteElement& operator[] (unsigned int i) = 0;
     
-    // Return given sub element of (mixed) element
+    /// Return given sub element of (mixed) element
     virtual const FiniteElement& operator[] (unsigned int i) const = 0;
+
+    /// Factory function for creating new element (matches FFC interface)
+    static FiniteElement* makeElement(const FiniteElementSpec& spec);
+
+    /// Factory function for creating new element (matches FFC interface)
+    static FiniteElement* makeElement(std::string type, std::string shape, 
+				      uint degree, uint vectordim = 0);
 
     /// Display finite element data
     void disp() const;

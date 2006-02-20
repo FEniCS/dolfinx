@@ -62,7 +62,7 @@ libdolfin_io_la_LIBADD =
 am_libdolfin_io_la_OBJECTS = File.lo GenericFile.lo GiDFile.lo \
 	MatlabFile.lo MFile.lo MTXFile.lo OctaveFile.lo OpenDXFile.lo \
 	PythonFile.lo TecplotFile.lo VTKFile.lo XMLBLASFormData.lo \
-	XMLFile.lo XMLFiniteElement.lo XMLMesh.lo XMLMatrix.lo \
+	XMLFile.lo XMLFiniteElementSpec.lo XMLMesh.lo XMLMatrix.lo \
 	XMLObject.lo XMLParameterList.lo XMLFunction.lo XMLVector.lo
 libdolfin_io_la_OBJECTS = $(am_libdolfin_io_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -232,7 +232,7 @@ nobase_include_HEADERS = dolfin/dolfin_io.h \
                           dolfin/VTKFile.h \
                           dolfin/XMLBLASFormData.h \
                           dolfin/XMLFile.h \
-                          dolfin/XMLFiniteElement.h \
+                          dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
@@ -255,7 +255,7 @@ libdolfin_io_la_SOURCES = File.cpp \
                           VTKFile.cpp \
                           XMLBLASFormData.cpp \
                           XMLFile.cpp \
-                          XMLFiniteElement.cpp \
+                          XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
@@ -346,7 +346,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VTKFile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLBLASFormData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFiniteElement.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFiniteElementSpec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLFunction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLMesh.Plo@am__quote@
