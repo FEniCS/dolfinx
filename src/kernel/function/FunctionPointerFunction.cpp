@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -16,7 +16,8 @@ using namespace dolfin;
 FunctionPointerFunction::FunctionPointerFunction(FunctionPointer f,
 						 uint vectordim)
   : GenericFunction(),
-    f(f), _vectordim(vectordim), component(0), _mesh(0)
+    f(f), _vectordim(vectordim), component(0), _mesh(0),
+    mesh_local(false)
 {
   // Check vector dimension
   if ( _vectordim == 0 )
@@ -25,7 +26,8 @@ FunctionPointerFunction::FunctionPointerFunction(FunctionPointer f,
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::FunctionPointerFunction(const FunctionPointerFunction& f)
   : GenericFunction(),
-    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh)
+    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh),
+    mesh_local(false)
 {
   // Check vector dimension
   if ( _vectordim == 0 )
@@ -34,7 +36,9 @@ FunctionPointerFunction::FunctionPointerFunction(const FunctionPointerFunction& 
 //-----------------------------------------------------------------------------
 FunctionPointerFunction::~FunctionPointerFunction()
 {
-  // Do nothing
+  // Delete mesh if local
+  if ( mesh_local )
+    delete _mesh;
 }
 //-----------------------------------------------------------------------------
 real FunctionPointerFunction::operator()(const Point& p, uint i)
@@ -105,22 +109,23 @@ FiniteElement& FunctionPointerFunction::element()
   return *(new P1Tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
-void FunctionPointerFunction::attach(Vector& x)
+void FunctionPointerFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to user-defined functions.");
 }
 //-----------------------------------------------------------------------------
-void FunctionPointerFunction::attach(Mesh& mesh)
+void FunctionPointerFunction::attach(Mesh& mesh, bool local)
 {
+  // Delete old mesh if local
+  if ( mesh_local )
+    delete _mesh;
+
+  // Attach new mesh
   _mesh = &mesh;
+  mesh_local = local;
 }
 //-----------------------------------------------------------------------------
-void FunctionPointerFunction::attach(FiniteElement& element)
-{
-  dolfin_error("Cannot attach finite elements to user-defined functions.");
-}
-//-----------------------------------------------------------------------------
-void FunctionPointerFunction::attach(std::string element)
+void FunctionPointerFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
 }

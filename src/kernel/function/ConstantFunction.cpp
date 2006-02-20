@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #include <dolfin/Vector.h>
 #include <dolfin/P1Tri.h>
@@ -14,21 +14,23 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(real value)
   : GenericFunction(),
-    value(value), _mesh(0)
+    value(value), _mesh(0), mesh_local(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::ConstantFunction(const ConstantFunction& f)
   : GenericFunction(),
-    value(f.value), _mesh(f._mesh)
+    value(f.value), _mesh(f._mesh), mesh_local(false)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 ConstantFunction::~ConstantFunction()
 {
-  // Do nothing
+  // Delete mesh if local
+  if ( mesh_local )
+    delete _mesh;
 }
 //-----------------------------------------------------------------------------
 real ConstantFunction::operator()(const Point& p, uint i)
@@ -80,22 +82,23 @@ FiniteElement& ConstantFunction::element()
   return *(new P1Tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::attach(Vector& x)
+void ConstantFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to constant functions.");
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::attach(Mesh& mesh)
+void ConstantFunction::attach(Mesh& mesh, bool local)
 {
+  // Delete old mesh if local
+  if ( mesh_local )
+    delete _mesh;
+
+  // Attach new mesh
   _mesh = &mesh;
+  mesh_local = local;
 }
 //-----------------------------------------------------------------------------
-void ConstantFunction::attach(FiniteElement& element)
-{
-  dolfin_error("Cannot attach finite elements to constant functions.");
-}
-//-----------------------------------------------------------------------------
-void ConstantFunction::attach(std::string element)
+void ConstantFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to constant functions.");
 }

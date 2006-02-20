@@ -1,8 +1,8 @@
 // Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  200b5-11-26
-// Last changed: 2006-02-16
+// First added:  2005-11-26
+// Last changed: 2006-02-20
 
 #ifndef __FUNCTION_POINTER_FUNCTION_H
 #define __FUNCTION_POINTER_FUNCTION_H
@@ -53,16 +53,13 @@ namespace dolfin
     FiniteElement& element();
 
     /// Calling this function generates an error (no vector can be attached)
-    void attach(Vector& x);
+    void attach(Vector& x, bool local);
 
     /// Attach mesh to function
-    void attach(Mesh& mesh);
+    void attach(Mesh& mesh, bool local);
 
     /// Calling this function generates an error (no element can be attached)
-    void attach(FiniteElement& element);
-
-    /// Attach finite element given by name to function (no element can be attached)
-    virtual void attach(std::string element);
+    void attach(FiniteElement& element, bool local);
 
   private:
     
@@ -77,6 +74,9 @@ namespace dolfin
 
     // Pointer to mesh associated with function (null if none)
     Mesh* _mesh;
+
+    // True if mesh is local (not a reference to another mesh)
+    bool mesh_local;
     
   };
 

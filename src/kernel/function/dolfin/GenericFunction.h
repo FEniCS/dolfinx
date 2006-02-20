@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -58,16 +58,13 @@ namespace dolfin
     virtual FiniteElement& element() = 0;
 
     /// Attach vector to function
-    virtual void attach(Vector& x) = 0;
+    virtual void attach(Vector& x, bool local) = 0;
 
     /// Attach mesh to function
-    virtual void attach(Mesh& mesh) = 0;
+    virtual void attach(Mesh& mesh, bool local) = 0;
 
     /// Attach finite element to function
-    virtual void attach(FiniteElement& element) = 0;
-
-    /// Attach finite element given by name to function
-    virtual void attach(std::string element) = 0;
+    virtual void attach(FiniteElement& element, bool local) = 0;
 
   protected:
 

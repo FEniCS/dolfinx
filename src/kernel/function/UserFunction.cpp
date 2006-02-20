@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 //
 // Note: this breaks the standard envelope-letter idiom slightly,
 // since we call the envelope class from one of the letter classes.
@@ -19,7 +19,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 UserFunction::UserFunction(Function* f, uint vectordim)
   : GenericFunction(),
-    f(f), _vectordim(vectordim), component(0), _mesh(0)
+    f(f), _vectordim(vectordim), component(0), _mesh(0),
+    mesh_local(false)
 {
   // Check vector dimension
   if ( _vectordim == 0 )
@@ -28,7 +29,8 @@ UserFunction::UserFunction(Function* f, uint vectordim)
 //-----------------------------------------------------------------------------
 UserFunction::UserFunction(const UserFunction& f)
   : GenericFunction(),
-    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh)
+    f(f.f), _vectordim(f._vectordim), component(0), _mesh(f._mesh),
+    mesh_local(false)
 {
   // Check vector dimension
   if ( _vectordim == 0 )
@@ -37,7 +39,9 @@ UserFunction::UserFunction(const UserFunction& f)
 //-----------------------------------------------------------------------------
 UserFunction::~UserFunction()
 {
-  // Do nothing
+  // Delete mesh if local
+  if ( mesh_local )
+    delete _mesh;
 }
 //-----------------------------------------------------------------------------
 real UserFunction::operator()(const Point& p, uint i)
@@ -107,22 +111,23 @@ FiniteElement& UserFunction::element()
   return *(new P1Tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
-void UserFunction::attach(Vector& x)
+void UserFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to user-defined functions.");
 }
 //-----------------------------------------------------------------------------
-void UserFunction::attach(Mesh& mesh)
+void UserFunction::attach(Mesh& mesh, bool local)
 {
+  // Delete old mesh if local
+  if ( mesh_local )
+    delete _mesh;
+
+  // Attach new mesh
   _mesh = &mesh;
+  mesh_local = local;
 }
 //-----------------------------------------------------------------------------
-void UserFunction::attach(FiniteElement& element)
-{
-  dolfin_error("Cannot attach finite elements to user-defined functions.");
-}
-//-----------------------------------------------------------------------------
-void UserFunction::attach(std::string element)
+void UserFunction::attach(FiniteElement& element, bool local)
 {
   dolfin_error("Cannot attach finite elements to user-defined functions.");
 }
