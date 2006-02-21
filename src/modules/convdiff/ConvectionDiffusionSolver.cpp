@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2003
-// Last changed: 2005-12-31
+// Last changed: 2006-02-20
 
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion2D.h"
@@ -34,7 +34,7 @@ void ConvectionDiffusionSolver::solve()
   File file(get("solution file name"));
   
   // Get the number of space dimensions of the problem 
-  uint nsd = mesh.noSpaceDim();
+  uint nsd = mesh.numSpaceDim();
   dolfin_info("Number of space dimensions: %d",nsd);
 
   // Vectors for functions for element size and inverse of velocity norm
@@ -115,7 +115,7 @@ void ConvectionDiffusionSolver::solve(Mesh& mesh, Function& w, Function& f,
 void ConvectionDiffusionSolver::ComputeElementSize(Mesh& mesh, Vector& h)
 {
   // Compute element size h
-  h.init(mesh.noCells());	
+  h.init(mesh.numCells());	
 	for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     h((*cell).id()) = (*cell).diameter();
@@ -127,7 +127,7 @@ void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Vector& wnorm_vec
   real tau = 1.0;  // stabilisation parameter
 
   real norm;
-  wnorm_vector.init(mesh.noVertices());
+  wnorm_vector.init(mesh.numVertices());
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     norm = 0.0;

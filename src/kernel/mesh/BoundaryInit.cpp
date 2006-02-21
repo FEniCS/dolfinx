@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -68,7 +68,7 @@ void BoundaryInit::initVertices(Mesh& mesh)
   // an edge which is on the boundary. We need an extra list so that we don't
   // add a vertex more than once.
 
-  PArray<bool> marker(mesh.noVertices());
+  PArray<bool> marker(mesh.numVertices());
   marker = false;
 
   // Mark all vertices which are on the boundary
@@ -99,7 +99,7 @@ void BoundaryInit::initFacesTet(Mesh& mesh)
   // for all faces. Warning: may not work if some faces have been
   // removed
 
-  PArray<int> cellcount(mesh.noFaces());
+  PArray<int> cellcount(mesh.numFaces());
   cellcount = 0;
 
   // Count the number of cell neighbors for each face
@@ -132,7 +132,7 @@ void BoundaryInit::initEdgesTri(Mesh& mesh)
   // neighbors for all edges.  Warning: may not work if some edges
   // have been removed
 
-  PArray<int> cellcount(mesh.noEdges());
+  PArray<int> cellcount(mesh.numEdges());
   cellcount = 0;
 
   // Count the number of cell neighbors for each edge
@@ -162,7 +162,7 @@ void BoundaryInit::initEdgesTet(Mesh& mesh)
   // a face which is on the boundary. We need an extra list so that we don't
   // add an edge more than once.
 
-  PArray<bool> marker(mesh.noEdges());
+  PArray<bool> marker(mesh.numEdges());
   marker = false;
 
   // Mark all edges which are on the boundary

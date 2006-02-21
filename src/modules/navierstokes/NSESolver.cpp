@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005.
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2005-12-22
+// Last changed: 2006-02-20
 
 #include <dolfin/timing.h>
 #include <dolfin/NSEMomentum3D.h>
@@ -42,7 +42,7 @@ void NSESolver::solve()
   Vector bmom, bcon;
 
   // Get the number of space dimensions of the problem 
-  int nsd = mesh.noSpaceDim();
+  int nsd = mesh.numSpaceDim();
 
   dolfin_info("Number of space dimensions: %d",nsd);
 
@@ -51,10 +51,10 @@ void NSESolver::solve()
   // xcvel: linearized velocity 
   // xvel:  current velocity 
   // pvel:  current pressure 
-  Vector x0vel(nsd*mesh.noVertices());
-  Vector xcvel(nsd*mesh.noVertices());
-  Vector xvel(nsd*mesh.noVertices());
-  Vector xpre(mesh.noVertices());
+  Vector x0vel(nsd*mesh.numVertices());
+  Vector xcvel(nsd*mesh.numVertices());
+  Vector xvel(nsd*mesh.numVertices());
+  Vector xpre(mesh.numVertices());
   x0vel = 0.0;
   xcvel = 0.0;
   xvel = 0.0;
@@ -65,8 +65,8 @@ void NSESolver::solve()
 
   // Initialize vectors for the residuals of 
   // the momentum and continuity equations  
-  Vector residual_mom(nsd*mesh.noVertices());
-  Vector residual_con(mesh.noVertices());
+  Vector residual_mom(nsd*mesh.numVertices());
+  Vector residual_con(mesh.numVertices());
   residual_mom = 1.0e3;
   residual_con = 1.0e3;
 
@@ -261,7 +261,7 @@ void NSESolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc_mom,
 void NSESolver::ComputeCellSize(Mesh& mesh, Vector& hvector)
 {
   // Compute cell size h
-  hvector.init(mesh.noCells());	
+  hvector.init(mesh.numCells());	
   for (CellIterator cell(mesh); !cell.end(); ++cell)
     {
       hvector((*cell).id()) = (*cell).diameter();
@@ -293,8 +293,8 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
   real C1 = 4.0;   
   real C2 = 2.0;   
 
-  d1vector.init(mesh.noCells());	
-  d2vector.init(mesh.noCells());	
+  d1vector.init(mesh.numCells());	
+  d2vector.init(mesh.numCells());	
 
   real normw; 
 
@@ -303,7 +303,7 @@ void NSESolver::ComputeStabilization(Mesh& mesh, Function& w, real nu, real k,
     normw = 0.0;
     for (VertexIterator n(cell); !n.end(); ++n)
       normw += sqrt( sqr((w.vector())((*n).id()*2)) + sqr((w.vector())((*n).id()*2+1)) );
-    normw /= (*cell).noVertices();
+    normw /= (*cell).numVertices();
     if ( (((*cell).diameter()/nu) > 1.0) || (nu < 1.0e-10) ){
       d1vector((*cell).id()) = C1 * (0.5 / sqrt( 1.0/sqr(k) + sqr(normw/(*cell).diameter()) ) );
       d2vector((*cell).id()) = C2 * (*cell).diameter();

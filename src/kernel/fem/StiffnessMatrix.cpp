@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/FEM.h>
 #include <dolfin/Mesh.h>
@@ -14,7 +14,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 StiffnessMatrix::StiffnessMatrix(Mesh& mesh, real epsilon)
-  : Matrix(mesh.noVertices(), mesh.noVertices())
+  : Matrix(mesh.numVertices(), mesh.numVertices())
 {
   if ( mesh.type() == Mesh::triangles )
   {

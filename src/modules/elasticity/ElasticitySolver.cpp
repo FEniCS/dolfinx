@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2004-2005.
+// Modified by Anders Logg 2004-2006.
 //
 // First added:  2004-02-26
-// Last changed: 2005-12-21
+// Last changed: 2006-02-20
 
 //#include <iostream>
 #include <sstream>
@@ -68,7 +68,7 @@ void ElasticitySolver::solve()
   File         file("elasticity.m");
 
   // FIXME: Temporary fix
-  int N = 3 * mesh.noVertices();
+  int N = 3 * mesh.numVertices();
 
   x10.init(N);
   x11.init(N);

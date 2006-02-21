@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <stdio.h>
 #include <math.h>
@@ -108,7 +108,7 @@ void Mesh::clear()
   _parent = 0;
 }
 //-----------------------------------------------------------------------------
-int Mesh::noSpaceDim() const
+int Mesh::numSpaceDim() const
 {
   switch ( _type ) {
   case Mesh::triangles:
@@ -123,24 +123,24 @@ int Mesh::noSpaceDim() const
   }
 }
 //-----------------------------------------------------------------------------
-int Mesh::noVertices() const
+int Mesh::numVertices() const
 {
-  return md->noVertices();
+  return md->numVertices();
 }
 //-----------------------------------------------------------------------------
-int Mesh::noCells() const
+int Mesh::numCells() const
 {
-  return md->noCells();
+  return md->numCells();
 }
 //-----------------------------------------------------------------------------
-int Mesh::noEdges() const
+int Mesh::numEdges() const
 {
-  return md->noEdges();
+  return md->numEdges();
 }
 //-----------------------------------------------------------------------------
-int Mesh::noFaces() const
+int Mesh::numFaces() const
 {
-  return md->noFaces();
+  return md->numFaces();
 }
 //-----------------------------------------------------------------------------
 Mesh::Type Mesh::type() const
@@ -265,11 +265,11 @@ void Mesh::disp() const
   cout << "Mesh data:" << endl;
   cout << "----------" << endl << endl;
 
-  cout << "  " << "Number of vertices: " << noVertices() << endl;
-  cout << "  " << "Number of edges: " << noEdges() << endl;
+  cout << "  " << "Number of vertices: " << numVertices() << endl;
+  cout << "  " << "Number of edges: " << numEdges() << endl;
   if ( type() == tetrahedra )
-    cout << "  " << "Number of faces: " << noFaces() << endl;
-  cout << "  " << "Number of cells: " << noCells() << endl;
+    cout << "  " << "Number of faces: " << numFaces() << endl;
+  cout << "  " << "Number of cells: " << numCells() << endl;
 
   cout << endl;
   for (VertexIterator n(this); !n.end(); ++n)
@@ -470,8 +470,8 @@ void Mesh::swap(Mesh& mesh)
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
 {
-  stream << "[ Mesh with " << mesh.noVertices() << " vertices, "
-	 << mesh.noCells() << " cells ";
+  stream << "[ Mesh with " << mesh.numVertices() << " vertices, "
+	 << mesh.numCells() << " cells ";
 
   switch ( mesh.type() ) {
   case Mesh::triangles:
@@ -484,7 +484,7 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const Mesh& mesh)
     stream << "(unknown type)";
   }
 
-  stream << ", and " << mesh.noEdges() << " edges ]";
+  stream << ", and " << mesh.numEdges() << " edges ]";
 
   return stream;
 }

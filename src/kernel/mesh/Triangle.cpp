@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <cmath>
 
@@ -19,31 +19,31 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Triangle::Triangle(Vertex& n0, Vertex& n1, Vertex& n2) : GenericCell()
 {
-  cn.init(noVertices());
+  cn.init(numVertices());
 
   cn(0) = &n0;
   cn(1) = &n1;
   cn(2) = &n2;
 }
 //-----------------------------------------------------------------------------
-int Triangle::noVertices() const
+int Triangle::numVertices() const
 {
   return 3;
 }
 //-----------------------------------------------------------------------------
-int Triangle::noEdges() const
+int Triangle::numEdges() const
 {
   return 3;
 }
 //-----------------------------------------------------------------------------
-int Triangle::noFaces() const
+int Triangle::numFaces() const
 {
   return 1;
 }
 //-----------------------------------------------------------------------------
-int Triangle::noBoundaries() const
+int Triangle::numBoundaries() const
 {
-  return noEdges();
+  return numEdges();
 }
 //-----------------------------------------------------------------------------
 Cell::Type Triangle::type() const

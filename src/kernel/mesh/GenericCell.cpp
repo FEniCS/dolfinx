@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -34,17 +34,17 @@ int GenericCell::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-int GenericCell::noCellNeighbors() const
+int GenericCell::numCellNeighbors() const
 {
   return cc.size();
 }
 //-----------------------------------------------------------------------------
-int GenericCell::noVertexNeighbors() const
+int GenericCell::numVertexNeighbors() const
 {
   return cn.size();
 }
 //-----------------------------------------------------------------------------
-int GenericCell::noChildren() const
+int GenericCell::numChildren() const
 {
   return children.size();
 }

@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <cmath>
 
@@ -31,7 +31,7 @@ static int face_alignment_21[4] = {5, 3, 2, 0}; // Edge 1 for alignment 4 (other
 //-----------------------------------------------------------------------------
 Tetrahedron::Tetrahedron(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3) : GenericCell()
 {
-  cn.init(noVertices());
+  cn.init(numVertices());
 
   cn(0) = &n0;
   cn(1) = &n1;
@@ -39,24 +39,24 @@ Tetrahedron::Tetrahedron(Vertex& n0, Vertex& n1, Vertex& n2, Vertex& n3) : Gener
   cn(3) = &n3;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::noVertices() const
+int Tetrahedron::numVertices() const
 {
   return 4;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::noEdges() const
+int Tetrahedron::numEdges() const
 {
   return 6;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::noFaces() const
+int Tetrahedron::numFaces() const
 {
   return 4;
 }
 //-----------------------------------------------------------------------------
-int Tetrahedron::noBoundaries() const
+int Tetrahedron::numBoundaries() const
 {
-  return noFaces();
+  return numFaces();
 }
 //-----------------------------------------------------------------------------
 Cell::Type Tetrahedron::type() const

@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <cmath>
 #include <dolfin/Vertex.h>
@@ -163,22 +163,22 @@ void MeshData::remove(Face& face)
   faces.remove(face);
 }
 //-----------------------------------------------------------------------------
-int MeshData::noVertices() const
+int MeshData::numVertices() const
 {
   return vertices.size();
 }
 //-----------------------------------------------------------------------------
-int MeshData::noCells() const
+int MeshData::numCells() const
 {
   return cells.size();
 }
 //-----------------------------------------------------------------------------
-int MeshData::noEdges() const
+int MeshData::numEdges() const
 {
   return edges.size();
 }
 //-----------------------------------------------------------------------------
-int MeshData::noFaces() const
+int MeshData::numFaces() const
 {
   return faces.size();
 }

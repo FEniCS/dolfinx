@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2004-2005.
+// Modified by Anders Logg 2004-2006.
 //
 // First added:  2004
-// Last changed: 2005-12-09
+// Last changed: 2006-02-20
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -37,12 +37,12 @@ void TecplotFile::operator<<(Mesh& mesh)
   if ( mesh.type() == Mesh::tetrahedra ){
 	  fprintf(fp, " X1  X2  X3 \n");
 	  fprintf(fp, "ZONE T = \" - \" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
-	     mesh.noVertices(), mesh.noCells());
+	     mesh.numVertices(), mesh.numCells());
   }
 	if ( mesh.type() == Mesh::triangles ){    
 	  fprintf(fp, " X1  X2  X3 \n");
     fprintf(fp, "ZONE T = \" - \"  N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",   
-        mesh.noVertices(), mesh.noCells());
+        mesh.numVertices(), mesh.numCells());
    }
 
   // Write vertex locations
@@ -82,10 +82,10 @@ void TecplotFile::operator<<(Function& u)
     fprintf(fp, "\n");	  
     if ( u.mesh().type() == Mesh::tetrahedra )
 	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 
-	         u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+	         u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
     if ( u.mesh().type() == Mesh::triangles )
        fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE \n",
-            u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+            u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
 
 
     // Write vertex locations and results
@@ -115,10 +115,10 @@ void TecplotFile::operator<<(Function& u)
       // Write header
 	  if ( u.mesh().type() == Mesh::tetrahedra )
       	   fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d,  DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON, VARSHARELIST = ([1-3]=1) CONNECTIVITYSHAREZONE=1 \n", 
-      	     u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+      	     u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
      if ( u.mesh().type() == Mesh::triangles )
            fprintf(fp, "ZONE T = \"%6d\"  N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETRIANGLE, VARSHARELIST = ([1,2]=1) CONNECTIVITYSHAREZONE=1 \n", 
-              u.number()+1, u.mesh().noVertices(), u.mesh().noCells());
+              u.number()+1, u.mesh().numVertices(), u.mesh().numCells());
 
       // Write vertex locations and results
       for (VertexIterator n(u.mesh()); !n.end(); ++n)

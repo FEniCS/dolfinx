@@ -1,8 +1,8 @@
 // Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
-// Licensed under the GNU GPL Version 2.
+// Licensed under the GNU6GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 //
 // A couple of comments:
 //
@@ -100,10 +100,10 @@ namespace dolfin {
     void remove(Edge& edge);
     void remove(Face& face);
     
-    int noVertices() const;
-    int noCells() const;
-    int noEdges() const;
-    int noFaces() const;
+    int numVertices() const;
+    int numCells() const;
+    int numEdges() const;
+    int numFaces() const;
 
     // Friends
     friend class Mesh;

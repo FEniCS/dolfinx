@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #ifndef __TRIANGLE_H
 #define __TRIANGLE_H
@@ -22,11 +22,11 @@ namespace dolfin
     
     Triangle(Vertex& n0, Vertex& n1, Vertex& n2);
 
-    int noVertices() const;
-    int noEdges() const;
-    int noFaces() const;
+    int numVertices() const;
+    int numEdges() const;
+    int numFaces() const;
 
-    int noBoundaries() const;
+    int numBoundaries() const;
     
     Cell::Type type() const;
     Cell::Orientation orientation() const;

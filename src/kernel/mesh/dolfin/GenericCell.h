@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #ifndef __GENERIC_CELL_H
 #define __GENERIC_CELL_H
@@ -35,14 +35,14 @@ namespace dolfin
     virtual Cell::Type type() const = 0;
     virtual Cell::Orientation orientation() const = 0;
 
-    virtual int noVertices() const = 0;
-    virtual int noEdges() const = 0;
-    virtual int noFaces() const = 0;
-    virtual int noBoundaries() const = 0;
+    virtual int numVertices() const = 0;
+    virtual int numEdges() const = 0;
+    virtual int numFaces() const = 0;
+    virtual int numBoundaries() const = 0;
     
-    int noCellNeighbors() const;
-    int noVertexNeighbors() const;
-    int noChildren() const;
+    int numCellNeighbors() const;
+    int numVertexNeighbors() const;
+    int numChildren() const;
 
     Vertex& vertex(int i) const;
     Edge& edge(int i) const;

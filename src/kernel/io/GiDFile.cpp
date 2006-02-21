@@ -1,10 +1,10 @@
 // Copyright (C) 2004 Harald Svensson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2004, 2005.
+// Modified by Anders Logg 2004-2006.
 //
 // First added:  2004-03-30
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <stdio.h>
 #include <dolfin/Mesh.h>
@@ -58,7 +58,7 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[4];
-    if ( c->noVertices() == 4 )
+    if ( c->numVertices() == 4 )
     {
       cid = c->id();
       int i = 0;
@@ -82,7 +82,7 @@ void GiDFile::operator<<(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     int cid,nid[3];
-    if ( c->noVertices() == 3 )
+    if ( c->numVertices() == 3 )
     {
       cid = c->id();
       int i = 0;
@@ -142,7 +142,7 @@ void GiDFile::operator<<(Function::Vector& u)
   Mesh* mesh = &(u(0).mesh());
 
   // FIXME: Why 3?
-  unsigned int noValues = 3; // u.size()/noVertices;
+  unsigned int noValues = 3; // u.size()/numVertices;
 
   // Open file
   FILE* fp = fopen(filename.c_str(), "a");

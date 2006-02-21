@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 //
 // A couple of comments:
 //
@@ -69,25 +69,25 @@ namespace dolfin
     Orientation orientation() const;
     
     /// Return number of vertices
-    int noVertices() const;
+    int numVertices() const;
 
     /// Return number of edges
-    int noEdges() const;
+    int numEdges() const;
 
     /// Return number of faces
-    int noFaces() const;
+    int numFaces() const;
 
     /// Return number of boundaries
-    int noBoundaries() const;
+    int numBoundaries() const;
 
     /// Return number of cell neighbors
-    int noCellNeighbors() const;
+    int numCellNeighbors() const;
 
     /// Return number of vertex neighbors
-    int noVertexNeighbors() const;
+    int numVertexNeighbors() const;
 
     /// Return number of cell children
-    int noChildren() const;
+    int numChildren() const;
 
     /// Return vertex number i
     Vertex& vertex(int i) const;

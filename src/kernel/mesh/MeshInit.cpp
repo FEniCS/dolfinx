@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
@@ -17,8 +17,8 @@ void MeshInit::init(Mesh& mesh)
 {
   // Write a message
   dolfin_begin("Computing mesh connectivity:");
-  cout << "Found " << mesh.noVertices() << " vertices" << endl;
-  cout << "Found " << mesh.noCells() << " cells" << endl;
+  cout << "Found " << mesh.numVertices() << " vertices" << endl;
+  cout << "Found " << mesh.numCells() << " cells" << endl;
   
   // Reset all previous connections
   clear(mesh);
@@ -148,7 +148,7 @@ void MeshInit::initEdges(Mesh& mesh)
     c->createEdges();
   
   // Write a message
-  cout << "Created " << mesh.noEdges() << " edges" << endl;
+  cout << "Created " << mesh.numEdges() << " edges" << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initFaces(Mesh& mesh)
@@ -160,7 +160,7 @@ void MeshInit::initFaces(Mesh& mesh)
     c->createFaces();
 
   // Write a message
-  cout << "Created " << mesh.noFaces() << " faces" << endl;
+  cout << "Created " << mesh.numFaces() << " faces" << endl;
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initVertexCell(Mesh& mesh)

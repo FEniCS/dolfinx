@@ -1,10 +1,10 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005-2006.
 //
 // First added:  2005-07-05
-// Last changed: 2005-12-09
+// Last changed: 2005-12-20
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -111,7 +111,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
 
   // Write offset into connectivity array for the end of each cell
   fprintf(fp, "<DataArray  type=\"Int32\"  Name=\"offsets\"  format=\"ascii\">  \n");
-  for (int offsets = 1; offsets <= mesh.noCells(); offsets++)
+  for (int offsets = 1; offsets <= mesh.numCells(); offsets++)
   {
     if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " %8d \n",  offsets*4);
     if (mesh.type() == Mesh::triangles )    fprintf(fp, " %8d \n", offsets*3);
@@ -120,7 +120,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
   
   //Write cell type
   fprintf(fp, "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\"ascii\">  \n");
-  for (int types = 1; types <= mesh.noCells(); types++)
+  for (int types = 1; types <= mesh.numCells(); types++)
   {
     if (mesh.type() == Mesh::tetrahedra )   fprintf(fp, " 10 \n");
     if (mesh.type() == Mesh::triangles )    fprintf(fp, " 5 \n");
@@ -222,7 +222,8 @@ void VTKFile::VTKHeaderOpen(const Mesh& mesh) const
   // Write headers
   fprintf(fp, "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\"   >\n");
   fprintf(fp, "<UnstructuredGrid>  \n");
-  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n", mesh.noVertices(), mesh.noCells());
+  fprintf(fp, "<Piece  NumberOfPoints=\" %8d\"  NumberOfCells=\" %8d\">  \n",
+	  mesh.numVertices(), mesh.numCells());
   
   // Close file
   fclose(fp);

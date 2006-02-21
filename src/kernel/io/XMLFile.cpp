@@ -202,7 +202,7 @@ void XMLFile::operator<<(Mesh& mesh)
   // Write mesh in XML format
   fprintf(fp, "  <mesh> \n");
 
-  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.noVertices());
+  fprintf(fp, "    <vertices size=\" %i \"> \n", mesh.numVertices());
   
   for(VertexIterator n(&mesh); !n.end(); ++n)
   {
@@ -214,7 +214,7 @@ void XMLFile::operator<<(Mesh& mesh)
 
   fprintf(fp, "    </vertices>\n");
 
-  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.noCells());
+  fprintf(fp, "    <cells size=\" %i \"> \n", mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {

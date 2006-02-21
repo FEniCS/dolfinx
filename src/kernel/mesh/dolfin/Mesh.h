@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #ifndef __MESH_H
 #define __MESH_H
@@ -66,19 +66,19 @@ namespace dolfin
     void clear();
 
     /// Return number of space dimensions of the mesh 
-    int noSpaceDim() const;
+    int numSpaceDim() const;
 
     /// Return number of vertices in the mesh
-    int noVertices() const;
+    int numVertices() const;
 
     /// Return number of cells in the mesh
-    int noCells() const;
+    int numCells() const;
 
     /// Return number of edges in the mesh
-    int noEdges() const;
+    int numEdges() const;
 
     /// Return number of faces in the mesh
-    int noFaces() const;
+    int numFaces() const;
 
     // Create a new vertex at given position
     Vertex& createVertex(Point p);

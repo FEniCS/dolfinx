@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2004-2005.
+// Modified by Anders Logg 2004-2006.
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2005-12-21
+// Last changed: 2006-02-20
 
 //#include <iostream>
 #include <sstream>
@@ -193,7 +193,7 @@ void ElasticityUpdatedSolver::init()
   }
 
   // The mesh points are the initial values of u
-  int offset = mesh.noVertices();
+  int offset = mesh.numVertices();
   for (VertexIterator n(&mesh); !n.end(); ++n)
   {
     Vertex& vertex = *n;

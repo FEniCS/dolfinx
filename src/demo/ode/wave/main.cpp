@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2006-02-20
 
 #include <dolfin.h>
 
@@ -20,7 +20,7 @@ class WaveEquation : public ODE
 {
 public:
 
-  WaveEquation(Mesh& mesh) : ODE(2*mesh.noVertices(), 1.0), mesh(mesh),
+  WaveEquation(Mesh& mesh) : ODE(2*mesh.numVertices(), 1.0), mesh(mesh),
 			     A(mesh), offset(N/2), h(N/2)
   {
     w = 0.25; // Width of initial wave

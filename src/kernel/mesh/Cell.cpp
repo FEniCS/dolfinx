@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vertex.h>
@@ -64,58 +64,58 @@ Cell::Orientation Cell::orientation() const
   return c->orientation();
 }
 //-----------------------------------------------------------------------------
-int Cell::noVertices() const
+int Cell::numVertices() const
 {
   if ( c )
-    return c->noVertices();
+    return c->numVertices();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noEdges() const
+int Cell::numEdges() const
 {
   if ( c )
-    return c->noEdges();
+    return c->numEdges();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noFaces() const
+int Cell::numFaces() const
 {
   if ( c )
-    return c->noFaces();
+    return c->numFaces();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noBoundaries() const
+int Cell::numBoundaries() const
 {
   if ( c )
-    return c->noBoundaries();
+    return c->numBoundaries();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noCellNeighbors() const
+int Cell::numCellNeighbors() const
 {
   if ( c )
-    return c->noCellNeighbors();
+    return c->numCellNeighbors();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noVertexNeighbors() const
+int Cell::numVertexNeighbors() const
 {
   if ( c )
-    return c->noVertexNeighbors();
+    return c->numVertexNeighbors();
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Cell::noChildren() const
+int Cell::numChildren() const
 {
   if ( c )
-    return c->noChildren();
+    return c->numChildren();
 
   return 0;
 }

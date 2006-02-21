@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-08
+// Last changed: 2006-02-20
 
 #include <stdio.h>
 #include <dolfin/ParameterSystem.h>
@@ -94,7 +94,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write vertices
   fprintf(fp, "# A list of all vertex positions\n");
   fprintf(fp, "object \"vertices %d\" class array type float rank 1 shape 3 items %d lsb binary data follows\n", 
-	  (int)frames.size(), mesh.noVertices());
+	  (int)frames.size(), mesh.numVertices());
 
   for (VertexIterator n(mesh); !n.end(); ++n)
   {
@@ -113,7 +113,7 @@ void OpenDXFile::writeMesh(FILE* fp, Mesh& mesh)
   // Write cells
   fprintf(fp, "# A list of all cells (connections)\n");
   fprintf(fp, "object \"cells %d\" class array type int rank 1 shape 4 items %d lsb binary data follows\n",
-	  (int)frames.size(), mesh.noCells());
+	  (int)frames.size(), mesh.numCells());
 
   for (CellIterator c(mesh); !c.end(); ++c)
   {  
@@ -143,7 +143,7 @@ void OpenDXFile::writeMeshData(FILE* fp, Mesh& mesh)
   // Write data (cell diameter)
   fprintf(fp,"# Cell diameter\n");
   fprintf(fp,"object \"diameter\" class array type float rank 0 items %d lsb binary data follows\n",
-	  mesh.noCells());
+	  mesh.numCells());
   
   for (CellIterator c(mesh); !c.end(); ++c)
   {
@@ -167,7 +167,7 @@ void OpenDXFile::writeFunction(FILE* fp, Function& u)
   // Write header for object
   fprintf(fp,"# Values for [%s] at nodal points, frame %d\n", u.label().c_str(), (int)frames.size());
   fprintf(fp,"object \"data %d\" class array type float rank 1 shape 1 items %d lsb binary data follows\n",
-	  (int)frames.size(), u.mesh().noVertices());
+	  (int)frames.size(), u.mesh().numVertices());
   
   // Write data
   for (VertexIterator n(u.mesh()); !n.end(); ++n)

@@ -1,11 +1,11 @@
-// Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy Terrel 2005.
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2005-12-28
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/timing.h>
@@ -52,7 +52,7 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 
   // Start a progress session
   dolfin_info("Assembling matrix of size %d x %d.", M, N);
-  Progress p("Assembling matrix (interior contribution)", mesh.noCells());
+  Progress p("Assembling matrix (interior contribution)", mesh.numCells());
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -120,7 +120,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 
   // Start a progress session
   dolfin_info("Assembling vector of size %d.", M);
-  Progress p("Assembling vector (interior contribution)", mesh.noCells());
+  Progress p("Assembling vector (interior contribution)", mesh.numCells());
 
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -185,7 +185,7 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
  
   // Start a progress session
   dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-  Progress p("Assembling matrix and vector (interior contributions)", mesh.noCells());
+  Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
  
   // Iterate over all cells in the mesh
   for (CellIterator cell(mesh); !cell.end(); ++cell)

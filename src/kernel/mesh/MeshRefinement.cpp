@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005-12-19
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -66,7 +66,7 @@ void MeshRefinement::propagateLeafMarks(MeshHierarchy& meshes)
       if ( !leaf(*parent) )
 	break;
 
-      dolfin_assert(parent->noChildren() == 1);      
+      dolfin_assert(parent->numChildren() == 1);      
       parent->marker() = parent->child(0)->marker();
 
     }
@@ -98,7 +98,7 @@ void MeshRefinement::globalRefinement(MeshHierarchy& meshes)
 
   // Info message
   dolfin_info("Level 0: Initial mesh has %d cells",
-	      meshes.coarse().noCells());
+	      meshes.coarse().numCells());
 
   // Phase II: Visit all meshes bottom-up
   for (MeshIterator mesh(meshes); !mesh.end(); ++mesh) {
@@ -117,7 +117,7 @@ void MeshRefinement::globalRefinement(MeshHierarchy& meshes)
 
     // Info message
     dolfin_info("Level %d: Refined mesh has %d cells",
-		mesh.index() + 1, mesh->child().noCells());
+		mesh.index() + 1, mesh->child().numCells());
   }
 
   // Update mesh hierarchy
@@ -167,22 +167,22 @@ void MeshRefinement::checkNumbering(MeshHierarchy& meshes)
 
     // Check vertices
     for (VertexIterator n(mesh); !n.end(); ++n)
-      if ( n->id() < 0 || n->id() >= mesh->noVertices() )
+      if ( n->id() < 0 || n->id() >= mesh->numVertices() )
 	dolfin_error1("Inconsistent vertex numbers at level %d.", mesh.index());
 
     // Check cells
     for (CellIterator c(mesh); !c.end(); ++c)
-      if ( c->id() < 0 || c->id() >= mesh->noCells() )
+      if ( c->id() < 0 || c->id() >= mesh->numCells() )
 	dolfin_error1("Inconsistent cell numbers at level %d.", mesh.index());
 
     // Check edges
     for (EdgeIterator e(mesh); !e.end(); ++e)
-      if ( e->id() < 0 || e->id() >= mesh->noEdges() )
+      if ( e->id() < 0 || e->id() >= mesh->numEdges() )
 	dolfin_error1("Inconsistent edge numbers at level %d.", mesh.index());
 
     // Check faces
     for (FaceIterator f(mesh); !f.end(); ++f)
-      if ( f->id() < 0 || f->id() >= mesh->noFaces() )
+      if ( f->id() < 0 || f->id() >= mesh->numFaces() )
 	dolfin_error1("Inconsistent face numbers at level %d.", mesh.index());
 
   }
@@ -244,7 +244,7 @@ void MeshRefinement::closeMesh(Mesh& mesh)
   MeshInit::renumber(mesh);
 
   // Keep track of which cells are in the list
-  PArray<bool> closed(mesh.noCells());
+  PArray<bool> closed(mesh.numCells());
   closed = true;
   
   // Create a list of all elements that need to be closed
@@ -326,11 +326,11 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
   MeshInit::renumber(*child);
 
   // Mark all vertices in the child for not re-use
-  PArray<bool> reuse_vertex(child->noVertices());
+  PArray<bool> reuse_vertex(child->numVertices());
   reuse_vertex = false;
 
   // Mark all cells in the child for not re-use
-  PArray<bool> reuse_cell(child->noCells());
+  PArray<bool> reuse_cell(child->numCells());
   reuse_cell = false;
 
   // Mark vertices and cells for reuse
@@ -339,12 +339,12 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
     // To avoid removing the entire fine mesh
     if ( (c->marker() == Cell::marked_for_no_ref) &&
 	 ( c->status() == Cell::unref ) &&
-	 ( c->noChildren() == 1) )
+	 ( c->numChildren() == 1) )
       c->marker() = Cell::marked_according_to_ref;
 
     if ( (c->marker() == Cell::marked_for_reg_ref) &&
 	 ( c->status() == Cell::ref_reg ) &&
-	 ( c->noChildren() == 8 ) )
+	 ( c->numChildren() == 8 ) )
       c->marker() = Cell::marked_according_to_ref;
 
     // Skip cells which are not marked according to refinement
@@ -352,7 +352,7 @@ void MeshRefinement::unrefineMesh(Mesh& mesh, const MeshHierarchy& meshes)
       continue;
 
     // Mark children of the cell for re-use
-    for (int i = 0; i < c->noChildren(); i++) {
+    for (int i = 0; i < c->numChildren(); i++) {
       reuse_cell(c->child(i)->id()) = true;
       for (VertexIterator n(*c->child(i)); !n.end(); ++n)
 	reuse_vertex(n->id()) = true;
@@ -459,7 +459,7 @@ void MeshRefinement::updateEdgeMarks(Cell& cell)
 //-----------------------------------------------------------------------------
 bool MeshRefinement::childrenMarkedForCoarsening(Cell& cell)
 {
-  for (int i = 0; i < cell.noChildren(); i++)
+  for (int i = 0; i < cell.numChildren(); i++)
     if ( cell.child(i)->marker() != Cell::marked_for_coarsening )
       return false;
     
@@ -468,7 +468,7 @@ bool MeshRefinement::childrenMarkedForCoarsening(Cell& cell)
 //-----------------------------------------------------------------------------
 bool MeshRefinement::edgeOfChildMarkedForRefinement(Cell& cell)
 {
-  for (int i = 0; i < cell.noChildren(); i++)
+  for (int i = 0; i < cell.numChildren(); i++)
     for (EdgeIterator e(*cell.child(i)); !e.end(); ++e)
       if ( e->marked() )
 	return true;
@@ -489,7 +489,7 @@ bool MeshRefinement::edgeMarkedByOther(Cell& cell)
 void MeshRefinement::sortVertices(const Cell& cell, PArray<Vertex*>& vertices)
 {
   // Set the size of the list
-  vertices.init(cell.noVertices());
+  vertices.init(cell.numVertices());
 
   // Count the number of marked edges for each vertex
   PArray<int> no_marked_edges(vertices.size());
@@ -576,7 +576,7 @@ Vertex& MeshRefinement::createVertex(const Point& p, Mesh& mesh, const Cell& cel
 
   for (VertexIterator n(cell); !n.end(); ++n) {
     for (CellIterator c(n); !c.end(); ++c) {
-      for (int i = 0; i < c->noChildren(); i++) {
+      for (int i = 0; i < c->numChildren(); i++) {
 
 	// FIXME: No children should be null!
 	Cell* child = c->child(i);
@@ -615,11 +615,11 @@ void MeshRefinement::removeCell(Cell& cell, Mesh& mesh)
     cell.parent()->removeChild(cell);
 
   // Remove children
-  for (int i = 0; i < cell.noChildren(); i++)
+  for (int i = 0; i < cell.numChildren(); i++)
     removeCell(*cell.child(i), mesh.child());
   
   // Update status 
-  if ( cell.parent()->noChildren() == 0 )
+  if ( cell.parent()->numChildren() == 0 )
     cell.parent()->status() = Cell::unref; 
   
   // Remove cell

@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -466,7 +466,7 @@ void TetMeshRefinement::refineIrregular33(Cell& cell, Mesh& mesh,
   // If neighbor has been refined irregular according to 
   // refinement rule 3, make sure the common face matches
   Cell* c;
-  for (int i = 0; i < face_neighbor.noChildren(); i++) {
+  for (int i = 0; i < face_neighbor.numChildren(); i++) {
     c = face_neighbor.child(i);
     if ( !(c->haveVertex(n_dm)) ){
       if ( c->haveVertex(n_e0) && c->haveVertex(n_e1) ){
