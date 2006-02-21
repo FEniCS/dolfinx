@@ -1,0 +1,8 @@
+# Copyright (c) 2006 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# A first degree Lagrange finite element on a tetrahedron
+#
+# Compile this form with FFC: ffc P1tet.form
+
+element = FiniteElement("Lagrange", "tetrahedron", 1)
