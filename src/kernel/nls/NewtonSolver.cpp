@@ -31,8 +31,8 @@ dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L,
   // Create nonlinear function
   NonlinearPDE nonlinear_pde(a, L, mesh, bc);
 
+  // FIXME: re-initialise when necessary, otherwise u is destroyed
   // Inintialise function and associate vector u with function
-  u.init(mesh, a.trial());
   Vector& x = u.vector();
 
   // Solve nonlinear problem and return number of iterations
@@ -43,13 +43,12 @@ dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L,
 dolfin::uint NewtonSolver::solve(NonlinearPDE& nonlinear_pde, Function& u)
 {  
 
-  Mesh& mesh = *(nonlinear_pde._mesh);
-  FiniteElement& element = (nonlinear_pde._a)->trial();
-
   // Inintialise function and associate vector u with function
-  u.init(mesh, element);
   Vector& x = u.vector();
 
+//  Vector& x = u.vector();
+  cout << "size of vector " << x.size() << endl;
+  x.disp();
   // Solve nonlinear problem and return number of iterations
   return solve(nonlinear_pde, x);
 

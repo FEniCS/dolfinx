@@ -14,6 +14,7 @@ namespace dolfin
 {
   class BilinearForm; 
   class BoundaryCondition;
+  class Function;
   class LinearForm;
   class Matrix;
   class Mesh;
@@ -47,6 +48,12 @@ namespace dolfin
 
      /// User-defined function to compute Jacobian matrix
     virtual void J(Matrix& A, const Vector& x);
+
+     /// Solve nonlinear PDE
+    uint solve(Function& u);
+
+     /// Solve nonlinear PDE
+    Function solve();
 
     /// Friends
     friend class NewtonSolver;

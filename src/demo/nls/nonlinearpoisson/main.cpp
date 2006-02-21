@@ -82,12 +82,15 @@ int main(int argc, char* argv[])
   UnitSquare mesh(16, 16);
   MyFunction f;
   MyBC bc;
-  Function u;
+  Vector x;
+  Function u(x, mesh);
 
   // Create forms and nonlinear PDE
   NonlinearPoisson::BilinearForm a(u);
   NonlinearPoisson::LinearForm L(u, f);
   MyNonlinearPDE nonlinear_pde(a, L, mesh, bc);  
+
+  u.init(mesh, a.trial());
 
   // Create nonlinear solver
   NewtonSolver nonlinear_solver;
@@ -107,10 +110,17 @@ int main(int argc, char* argv[])
   f.sync(t);
   bc.sync(t);
 
+//  while( t < T)
+//  {
+//    t += dt;
+//    nonlinear_solver.solve(nonlinear_pde, u);
+//  }
+
+
   while( t < T)
   {
     t += dt;
-    nonlinear_solver.solve(nonlinear_pde, u);
+    nonlinear_pde.solve(u);
   }
 
   // Save function to file
