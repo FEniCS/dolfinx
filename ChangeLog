@@ -1,3 +1,4 @@
+ - Add precompiled finite elements for q <= 5
  - Add FiniteElementSpec and factor function for FiniteElement
  - Add input/output of Function to DOLFIN XML
  - Name change: dof --> node
