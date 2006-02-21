@@ -14,7 +14,6 @@
 #include <dolfin/Poisson2D.h>
 #include "L2Norm.h"
 
-
 using namespace dolfin;
 
 void testPreconditioner()
@@ -112,7 +111,7 @@ void testOutputFunction()
 
   UnitSquare mesh(4, 4);
   Vector x(mesh.numVertices());
-  P1Tri element;
+  P1tri element;
 
   Function f(x, mesh, element);
 

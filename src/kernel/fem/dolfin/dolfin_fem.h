@@ -16,8 +16,16 @@
 #include <dolfin/FiniteElementSpec.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
-#include <dolfin/P1Tet.h>
-#include <dolfin/P1Tri.h>
+#include <dolfin/P1tet.h>
+#include <dolfin/P1tri.h>
+#include <dolfin/P2tet.h>
+#include <dolfin/P2tri.h>
+#include <dolfin/P3tet.h>
+#include <dolfin/P3tri.h>
+#include <dolfin/P4tet.h>
+#include <dolfin/P4tri.h>
+#include <dolfin/P5tet.h>
+#include <dolfin/P5tri.h>
 #include <dolfin/StiffnessMatrix.h>
 
 #endif

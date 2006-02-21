@@ -5,7 +5,7 @@
 // Last changed: 2006-02-20
 
 #include <dolfin/Vector.h>
-#include <dolfin/P1Tri.h>
+#include <dolfin/P1tri.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/ConstantFunction.h>
 
@@ -79,7 +79,7 @@ Mesh& ConstantFunction::mesh()
 FiniteElement& ConstantFunction::element()
 {
   dolfin_error("No finite element associated with function (an none can be attached).");
-  return *(new P1Tri()); // Code will not be reached, make compiler happy
+  return *(new P1tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
 void ConstantFunction::attach(Vector& x, bool local)

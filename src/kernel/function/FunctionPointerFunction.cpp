@@ -6,7 +6,7 @@
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
-#include <dolfin/P1Tri.h>
+#include <dolfin/P1tri.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/FunctionPointerFunction.h>
 
@@ -106,7 +106,7 @@ Mesh& FunctionPointerFunction::mesh()
 FiniteElement& FunctionPointerFunction::element()
 {
   dolfin_error("No finite element associated with function (an none can be attached).");
-  return *(new P1Tri()); // Code will not be reached, make compiler happy
+  return *(new P1tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::attach(Vector& x, bool local)

@@ -42,7 +42,7 @@ public:
     // Create a mesh-dependent function from the sample
     static Vector ux(N);
     static Vector kx(N);
-    static P1Tri element;
+    static P1tri element;
     static Function u(ux, mesh, element);
     static Function k(kx, mesh, element);
     u.rename("u", "Solution of the bistable equation");

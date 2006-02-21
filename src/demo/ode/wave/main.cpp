@@ -141,7 +141,7 @@ public:
     static Vector vx(N/2);
     static Vector kx(N/2);
     static Vector rx(N/2);
-    static P1Tri element;
+    static P1tri element;
     static Function u(ux, mesh, element);
     static Function v(vx, mesh, element);
     static Function k(kx, mesh, element);

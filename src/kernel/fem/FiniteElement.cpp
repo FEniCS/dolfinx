@@ -7,8 +7,16 @@
 #include <string>
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/P1Tri.h>
-#include <dolfin/P1Tet.h>
+#include <dolfin/P1tri.h>
+#include <dolfin/P2tri.h>
+#include <dolfin/P3tri.h>
+#include <dolfin/P4tri.h>
+#include <dolfin/P5tri.h>
+#include <dolfin/P1tet.h>
+#include <dolfin/P2tet.h>
+#include <dolfin/P3tet.h>
+#include <dolfin/P4tet.h>
+#include <dolfin/P5tet.h>
 #include <dolfin/FiniteElement.h>
 
 using namespace dolfin;
@@ -31,11 +39,51 @@ FiniteElement* FiniteElement::makeElement(const FiniteElementSpec& spec)
   if ( repr == "[ Lagrange finite element of degree 1 on a triangle ]" )
   {
     dolfin_info("Creating finite element: %s.", repr.c_str());
-    return new P1Tri();
+    return new P1tri();
+  }
+  else if ( repr == "[ Lagrange finite element of degree 2 on a triangle ]" )
+  {
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P2tri();
+  }
+  else if ( repr == "[ Lagrange finite element of degree 3 on a triangle ]" )
+  {
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P3tri();
+  }
+  else if ( repr == "[ Lagrange finite element of degree 4 on a triangle ]" )
+  {
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P4tri();
+  }
+  else if ( repr == "[ Lagrange finite element of degree 5 on a triangle ]" )
+  {
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P5tri();
   }
   else if ( repr == "[ Lagrange finite element of degree 1 on a tetrahedron ]" )
   {
-    return new P1Tet();
+    return new P1tet();
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+  }
+  else if ( repr == "[ Lagrange finite element of degree 2 on a tetrahedron ]" )
+  {
+    return new P2tet();
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+  }
+  else if ( repr == "[ Lagrange finite element of degree 3 on a tetrahedron ]" )
+  {
+    return new P3tet();
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+  }
+  else if ( repr == "[ Lagrange finite element of degree 4 on a tetrahedron ]" )
+  {
+    return new P4tet();
+    dolfin_info("Creating finite element: %s.", repr.c_str());
+  }
+  else if ( repr == "[ Lagrange finite element of degree 5 on a tetrahedron ]" )
+  {
+    return new P5tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
   }
 
