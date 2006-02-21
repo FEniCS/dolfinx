@@ -106,6 +106,26 @@ void testOutputFiniteElementSpec()
   file << spec;
 }
 
+void testOutputFunction()
+{
+  dolfin_info("--- Testing output of function ---");
+
+  UnitSquare mesh(16, 16);
+  Vector x(mesh.noVertices());
+  P1Tri element;
+
+  Function f(x, mesh, element);
+
+  for (VertexIterator v(mesh); !v.end(); ++v)
+  {
+    Point & p = v->coord();
+    x(v->id()) = sin(2.0*p.x) * cos(3.0*p.y);
+  }
+
+  File file("function.xml");
+  file << f;
+}
+
 void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
@@ -126,25 +146,6 @@ void testInputFunction()
     cout << v << endl;
     cout << "value of f: " << f(v) << endl;
   }
-}
-
-void testOutputFunction()
-{
-  dolfin_info("--- Testing input of function ---");
-
-  Poisson2D::BilinearForm a;
-  FiniteElement& element = a.trial();
-  
-  Mesh mesh("reftri.xml.gz");
-
-  Vector x(3);
-  for (unsigned int i = 0; i < x.size(); i++)
-    x(i) = 1.0 / static_cast<real>(i + 1);
-
-  Function f(x, mesh, element);
-
-  File file("functionout.xml");
-  file << f;
 }
 
 void testFunctional()
