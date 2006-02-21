@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-16
+// Last changed: 2006-02-20
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -196,7 +196,7 @@ void DiscreteFunction::interpolate(real coefficients[], AffineMap& map,
   real* xx = _x->array();
   
   // Compute mapping to global degrees of freedom
-  _element->dofmap(local.dofs, map.cell(), *_mesh);
+  _element->nodemap(local.dofs, map.cell(), *_mesh);
 
   // Pick values
   for (uint i = 0; i < _element->spacedim(); i++)

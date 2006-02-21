@@ -126,7 +126,7 @@ void ElasticityUpdatedSolver::init()
   AffineMap map;
 
   {
-  int *dofs = new int[element1.spacedim()];
+  int *nodes = new int[element1.spacedim()];
   real *coefficients = new real[element1.spacedim()];
 
   for(CellIterator c(&mesh); !c.end(); ++c)
@@ -137,15 +137,15 @@ void ElasticityUpdatedSolver::init()
 
     map.update(cell);
     v0.interpolate(coefficients, map, element1);
-    element1.dofmap(dofs, cell, mesh);
+    element1.nodemap(nodes, cell, mesh);
 
     for(uint i = 0; i < element1.spacedim(); i++)
     {
-      x2_1(dofs[i]) = coefficients[i];
+      x2_1(nodes[i]) = coefficients[i];
     }
   }
 
-  delete [] dofs;
+  delete [] nodes;
   delete [] coefficients;
   }
 
@@ -177,19 +177,19 @@ void ElasticityUpdatedSolver::init()
 
   // Compute mass vector (sigma)
   {
-  int *dofs = new int[element2.spacedim()];
+  int *nodes = new int[element2.spacedim()];
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
-    element2.dofmap(dofs, cell, mesh);
+    element2.nodemap(nodes, cell, mesh);
 
     real factor = 1.0 / cell.volume(); 
 
     for(uint i = 0; i < element2.spacedim(); i++)
-      msigma(dofs[i]) = factor;
+      msigma(nodes[i]) = factor;
   }
-  delete [] dofs;
+  delete [] nodes;
   }
 
   // The mesh points are the initial values of u
@@ -421,18 +421,18 @@ void ElasticityUpdatedSolver::fu()
   if(do_plasticity)
   {
     {
-      int *dofs = new int[element2.spacedim()];
+      int *nodes = new int[element2.spacedim()];
       for (CellIterator c(mesh); !c.end(); ++c)
       {
 	Cell& cell = *c;
 	
-	element2.dofmap(dofs, cell, mesh);
+	element2.nodemap(nodes, cell, mesh);
 	
 	real proj = 1;
 	real norm = 0;
 	for(uint i = 0; i < element2.spacedim(); i++)
 	{
-	  norm = std::max(norm, fabs(dotu_xsigma(dofs[i])));
+	  norm = std::max(norm, fabs(dotu_xsigma(nodes[i])));
 	}
 	
 	if(norm > yield)
@@ -441,9 +441,9 @@ void ElasticityUpdatedSolver::fu()
 	  proj = 1.0 / norm;
 	}
 	
-	xsigmanorm(dofs[0]) = proj;
+	xsigmanorm(nodes[0]) = proj;
       }
-      delete [] dofs;
+      delete [] nodes;
     }
   }
   

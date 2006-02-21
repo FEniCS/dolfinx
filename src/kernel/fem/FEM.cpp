@@ -40,8 +40,8 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
   const uint m = test_element.spacedim();
   const uint n = trial_element.spacedim();
   real* block = new real[m*n];
-  int* test_dofs = new int[m];
-  int* trial_dofs = new int[n];
+  int* test_nodes = new int[m];
+  int* trial_nodes = new int[n];
 
   // Initialize global matrix
   const uint M = size(mesh, test_element);
@@ -64,8 +64,8 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     a.update(map);
     
     // Compute maps from local to global degrees of freedom
-    test_element.dofmap(test_dofs, *cell, mesh);
-    trial_element.dofmap(trial_dofs, *cell, mesh);
+    test_element.nodemap(test_nodes, *cell, mesh);
+    trial_element.nodemap(trial_nodes, *cell, mesh);
 
 
     //tic();
@@ -79,7 +79,7 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
     //cout << "Time to assemble: " << toc() << endl;
 
     // Add element matrix to global matrix
-    A.add(block, test_dofs, m, trial_dofs, n);
+    A.add(block, test_nodes, m, trial_nodes, n);
 
     // Update progress
     p++;
@@ -93,8 +93,8 @@ void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 
   // Delete data
   delete [] block;
-  delete [] test_dofs;
-  delete [] trial_dofs;
+  delete [] test_nodes;
+  delete [] trial_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
@@ -111,7 +111,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
   // Initialize local data
   const uint m = test_element.spacedim();
   real* block = new real[m];
-  int* test_dofs = new int[m];
+  int* test_nodes = new int[m];
 
   // Initialize global vector 
   const uint M = size(mesh, test_element);
@@ -132,13 +132,13 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
     L.update(map);
 
     // Compute map from local to global degrees of freedom
-    test_element.dofmap(test_dofs, *cell, mesh);
+    test_element.nodemap(test_nodes, *cell, mesh);
     
     // Compute element matrix
     L.eval(block, map);
     
     // Add element matrix to global matrix
-    b.add(block, test_dofs, m);
+    b.add(block, test_nodes, m);
 
     // Update progress
     p++;
@@ -149,7 +149,7 @@ void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 
   // Delete data
   delete [] block;
-  delete [] test_dofs;
+  delete [] test_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, LinearForm& L,
@@ -171,8 +171,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   const uint n = trial_element.spacedim();
   real* block_A = new real[m*n];
   real* block_b = new real[m];
-  int* test_dofs = new int[m];
-  int* trial_dofs = new int[n];
+  int* test_nodes = new int[m];
+  int* trial_nodes = new int[n];
 
   // Initialize global matrix
   const uint M = size(mesh, test_element);
@@ -198,18 +198,18 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
     L.update(map);
 
     // Compute maps from local to global degrees of freedom
-    test_element.dofmap(test_dofs, *cell, mesh);
-    trial_element.dofmap(trial_dofs, *cell, mesh);
+    test_element.nodemap(test_nodes, *cell, mesh);
+    trial_element.nodemap(trial_nodes, *cell, mesh);
    
     // Compute element matrix and vector 
     a.eval(block_A, map);
     L.eval(block_b, map);
     
     // Add element matrix to global matrix
-    A.add(block_A, test_dofs, m, trial_dofs, n);
+    A.add(block_A, test_nodes, m, trial_nodes, n);
     
     // Add element vector to global vector
-    b.add(block_b, test_dofs, m);
+    b.add(block_b, test_nodes, m);
 
     // Update progress
     p++;
@@ -225,8 +225,8 @@ void FEM::assemble(BilinearForm& a, LinearForm& L,
   // Delete data
   delete [] block_A;
   delete [] block_b;
-  delete [] test_dofs;
-  delete [] trial_dofs;
+  delete [] test_nodes;
+  delete [] trial_nodes;
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, LinearForm& L,
@@ -321,20 +321,20 @@ dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 
   // Count the degrees of freedom (check maximum index)
   
-  int* dofs = new int[element.spacedim()];
-  int dofmax = 0;
+  int* nodes = new int[element.spacedim()];
+  int nodemax = 0;
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
-    element.dofmap(dofs, *cell, mesh);
+    element.nodemap(nodes, *cell, mesh);
     for (uint i = 0; i < element.spacedim(); i++)
     {
-      if ( dofs[i] > dofmax )
-        dofmax = dofs[i];
+      if ( nodes[i] > nodemax )
+        nodemax = nodes[i];
     }
   }
-  delete [] dofs;
+  delete [] nodes;
 
-  return static_cast<uint>(dofmax + 1);
+  return static_cast<uint>(nodemax + 1);
 }
 //-----------------------------------------------------------------------------
 void FEM::lump(const Matrix& M, Vector& m)
@@ -353,7 +353,7 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   dolfin_info("--------------");
   dolfin_info("");
 
-  // Total number of dofs
+  // Total number of nodes
   uint N = size(mesh, element);
   dolfin_info("  Total number of degrees of freedom: %d.", N);
   dolfin_info("");
@@ -366,7 +366,7 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
 
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
   AffineMap map;
@@ -375,20 +375,20 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   for (CellIterator cell(mesh); !cell.end(); ++cell)
   {
     map.update(*cell);
-    element.dofmap(dofs, *cell, mesh);
+    element.nodemap(nodes, *cell, mesh);
     element.pointmap(points, components, map);
 
     cout << "  " << *cell << endl;
     
     for (uint i = 0; i < n; i++)
     {
-      cout << "    i = " << i << ": x = " << points[i] << " mapped to global dof "
-	   << dofs[i] << " (component = " << components[i] << ")" << endl;
+      cout << "    i = " << i << ": x = " << points[i] << " mapped to global node "
+	   << nodes[i] << " (component = " << components[i] << ")" << endl;
     }
   }
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
 }
@@ -414,7 +414,7 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -429,12 +429,12 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in edge
@@ -449,13 +449,13 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
-          rows[m++] = dof;
-          b(dof) = bv.value;
-          row_set[dof] = true;
+          rows[m++] = node;
+          b(node) = bv.value;
+          row_set[node] = true;
         }
       }
     }
@@ -467,7 +467,7 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   A.ident(rows, m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] rows;
@@ -495,7 +495,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -510,12 +510,12 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in edge
@@ -530,12 +530,12 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
-          rows[m++] = dof;
-          row_set[dof] = true;
+          rows[m++] = node;
+          row_set[node] = true;
         }
       }
     }
@@ -547,7 +547,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
   A.ident(rows, m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] rows;
@@ -574,7 +574,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -589,12 +589,12 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in edge
@@ -609,13 +609,13 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
           m++;
-          b(dof) = bv.value;
-          row_set[dof] = true;
+          b(node) = bv.value;
+          row_set[node] = true;
         }
       }
     }
@@ -624,7 +624,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
   dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] row_set;
@@ -651,7 +651,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -666,12 +666,12 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in face
@@ -686,13 +686,13 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
-          rows[m++] = dof;
-          b(dof) = bv.value;
-          row_set[dof] = true;
+          rows[m++] = node;
+          b(node) = bv.value;
+          row_set[node] = true;
         }
       }
     }
@@ -704,7 +704,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   A.ident(rows, m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] rows;
@@ -732,7 +732,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -747,12 +747,12 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in face
@@ -767,12 +767,12 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
-          rows[m++] = dof;
-          row_set[dof] = true;
+          rows[m++] = node;
+          row_set[node] = true;
         }
       }
     }
@@ -784,7 +784,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
   A.ident(rows, m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] rows;
@@ -811,7 +811,7 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -826,12 +826,12 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in face
@@ -846,13 +846,13 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
           m++;
-          b(dof) = bv.value;
-          row_set[dof] = true;
+          b(node) = bv.value;
+          row_set[node] = true;
         }
       }
     }
@@ -861,7 +861,7 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
   dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] row_set;
@@ -887,7 +887,7 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -902,12 +902,12 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in edge
@@ -922,13 +922,13 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
           m++;
-          b(dof) = bv.value - x(dof);
-          row_set[dof] = true;
+          b(node) = bv.value - x(node);
+          row_set[node] = true;
         }
       }
     }
@@ -937,7 +937,7 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
   dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] row_set;
@@ -963,7 +963,7 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
   
   // Allocate local data
   uint n = element.spacedim();
-  int* dofs = new int[n];
+  int* nodes = new int[n];
   uint* components = new uint[n];
   Point* points = new Point[n];
 
@@ -978,12 +978,12 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
     map.update(cell);
 
     // Compute map from local to global degrees of freedom
-    element.dofmap(dofs, cell, mesh);
+    element.nodemap(nodes, cell, mesh);
 
     // Compute map from local to global coordinates
     element.pointmap(points, components, map);
 
-    // Set boundary conditions for dofs on the boundary
+    // Set boundary conditions for nodes on the boundary
     for (uint i = 0; i < n; i++)
     {
       // Skip points that are not contained in face
@@ -998,13 +998,13 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
       // Set boundary condition if Dirichlet
       if ( bv.fixed )
       {
-        int dof = dofs[i];
+        int node = nodes[i];
 
-        if ( !row_set[dof] )
+        if ( !row_set[node] )
         {
           m++;
-          b(dof) = bv.value - x(dof);
-          row_set[dof] = true;
+          b(node) = bv.value - x(node);
+          row_set[node] = true;
         }
       }
     }
@@ -1013,7 +1013,7 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
   dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
 
   // Delete data
-  delete [] dofs;
+  delete [] nodes;
   delete [] components;
   delete [] points;
   delete [] row_set;

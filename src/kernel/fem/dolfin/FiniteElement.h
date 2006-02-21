@@ -45,7 +45,7 @@ namespace dolfin
     virtual unsigned int rank() const = 0;
     
     /// Compute map from local to global degrees of freedom
-    virtual void dofmap(int dofs[], const Cell& cell, const Mesh& mesh) const = 0;
+    virtual void nodemap(int nodes[], const Cell& cell, const Mesh& mesh) const = 0;
 
     /// Compute map from local to global coordinates
     virtual void pointmap(Point points[], unsigned int components[],
