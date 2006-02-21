@@ -56,6 +56,9 @@ namespace dolfin
     /// Read mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read function from file
+    void operator>> (Function& u);
+
     /// Read ODE sample from file
     void operator>> (Sample& sample);
     
@@ -67,9 +70,6 @@ namespace dolfin
 
     /// Read FFC BLAS data from file
     void operator>> (BLASFormData& blas);
-
-    /// Read function from file
-    void parse(Function& u, FiniteElement& element);
 
     //--- Output ---
 

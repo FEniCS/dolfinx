@@ -124,6 +124,13 @@ void File::operator>>(Mesh& mesh)
   *file >> mesh;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(Function& f)
+{
+  file->read();
+  
+  *file >> f;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(Sample& sample)
 {
   file->read();
@@ -150,13 +157,6 @@ void File::operator>>(BLASFormData& blas)
   file->read();
   
   *file >> blas;
-}
-//-----------------------------------------------------------------------------
-void File::parse(Function& u, FiniteElement& element)
-{
-  file->read();
-  
-  (*file).parse(u, element);
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Vector& x)

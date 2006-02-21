@@ -56,10 +56,6 @@ void XMLFunction::endElement(const xmlChar* name)
 //-----------------------------------------------------------------------------
 void XMLFunction::readFunction(const xmlChar* name, const xmlChar** attrs)
 {
-  // Set default values
-  std::string element;
-
-  // Parse values
-  parseStringRequired(name, attrs, "element", element);
+  // Nothing to do here, since we are cheating, see XMLFile.cpp
 }
 //-----------------------------------------------------------------------------

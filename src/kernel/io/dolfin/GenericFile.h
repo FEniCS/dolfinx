@@ -35,11 +35,11 @@ namespace dolfin
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (FiniteElementSpec& spec);
     virtual void operator>> (ParameterList& parameters);
     virtual void operator>> (BLASFormData& blas);
-    virtual void parse(Function& u, FiniteElement& element);
     
     // Output
     

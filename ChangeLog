@@ -1,3 +1,7 @@
+ - Add FiniteElementSpec and factor function for FiniteElement
+ - Add input/output of Function to DOLFIN XML
+ - Name change: dof --> node
+ - Name change: noFoo() --> numFoo()
  - Add conversion from gmsh format in dolfin-convert script
  - Updates for PETSc 2.3.1
  - Add new type of Function (constant)

@@ -72,10 +72,37 @@ void XMLFile::operator>>(Mesh& mesh)
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Function& f)
 {
+  // We are cheating here. Instead of actually parsing the XML for
+  // Function data nested inside <function></function>, we just ignore
+  // the nesting and look for the first occurence of the data which
+  // might be outide of <function></function>
+
+  // Read the vector
+  Vector* x = new Vector();
+  *this >> *x;
+
+  // Read the mesh
+  Mesh* mesh = new Mesh();
+  *this >> *mesh;
+
+  // Read the finite element specification
+  FiniteElementSpec spec;
+  *this >> spec;
+
+  // Create a finite element
+  FiniteElement* element = FiniteElement::makeElement(spec);
+
+  // Read the function
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLFunction(f);
   parseFile();
+  
+  // Attach the data
+  f.init(*mesh, *element);
+  f.attach(*x, true);
+  f.attach(*mesh, true);
+  f.attach(*element, true);
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(FiniteElementSpec& spec)
@@ -99,23 +126,6 @@ void XMLFile::operator>>(BLASFormData& blas)
   if ( xmlObject )
     delete xmlObject;
   xmlObject = new XMLBLASFormData(blas);
-  parseFile();
-}
-//-----------------------------------------------------------------------------
-void XMLFile::parse(Function& f, FiniteElement& element)
-{
-  Mesh* mesh = new Mesh();
-  Vector* x = new Vector();
-
-  *this >> *mesh;
-  *this >> *x;
-
-  if ( xmlObject )
-    delete xmlObject;
-  xmlObject = new XMLFunction(f);
-
-  f = Function(*x, *mesh, element);
-
   parseFile();
 }
 //-----------------------------------------------------------------------------

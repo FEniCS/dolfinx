@@ -110,8 +110,8 @@ void testOutputFunction()
 {
   dolfin_info("--- Testing output of function ---");
 
-  UnitSquare mesh(16, 16);
-  Vector x(mesh.noVertices());
+  UnitSquare mesh(4, 4);
+  Vector x(mesh.numVertices());
   P1Tri element;
 
   Function f(x, mesh, element);
@@ -130,22 +130,12 @@ void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
 
-  Poisson2D::BilinearForm a;
-  FiniteElement& element = a.trial();
-  
-  File functionfile("function.xml");
   Function f;
-  functionfile.parse(f, element);
+  File file("function.xml");
+  file >> f;
 
-  Mesh& mesh = f.mesh();
-
-  for (VertexIterator n(&mesh); !n.end(); ++n)
-  {
-    Vertex& v = *n;
-
-    cout << v << endl;
-    cout << "value of f: " << f(v) << endl;
-  }
+  for (VertexIterator v(f.mesh()); !v.end(); ++v)
+    cout << v->coord() << ": f = " << f(*v) << endl;
 }
 
 void testFunctional()
