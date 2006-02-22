@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells, 2006
+// Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2006-02-21
+// Last changed: 2006-02-22
 
 #ifndef __PDE_H
 #define __PDE_H
@@ -57,17 +57,17 @@ namespace dolfin
     void solve(Function& u0, Function& u1, Function& u2, Function& u3);
     
     /// Return the bilinear form a(.,.)
-    BilinearForm& a() { return pde->a(); };
+    BilinearForm& a();
 
     /// Return the linear form L(.,.)
-    LinearForm& L() { return pde->L(); };
+    LinearForm& L();
 
     /// Return the mesh
-    Mesh& mesh() { return pde->mesh(); };;
+    Mesh& mesh();
 
     /// Return type of PDE
     enum Type { linear, nonlinear };
-    inline Type type() const { return _type; } 
+    inline Type type() const;
 
   private:
 
