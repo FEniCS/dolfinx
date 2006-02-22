@@ -4,13 +4,13 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2006-02-21
+// Last changed: 2006-02-22
 
-#ifndef __PDE_H
-#define __PDE_H
+#ifndef __LINEAR_PDE_H
+#define __LINEAR_PDE_H
 
-#include <dolfin/Parametrized.h>
 #include <dolfin/GenericPDE.h>
+#include <dolfin/Parametrized.h>
 
 namespace dolfin
 {
@@ -21,25 +21,20 @@ namespace dolfin
   class BoundaryCondition;
   class Function;
 
-  /// A PDE represents a (linearized) partial differential equation,
-  /// given by a variation problem of the form: Find u in V such that
-  ///
-  ///     a(v, u) = L(v) for all v in V,
-  ///
-  /// where a(.,.) is a given bilinear form and L(.) is a given linear form.
+  /// This class implements the solution functionality for linear PDEs.
 
-  class PDE : public Parametrized
+  class LinearPDE : public GenericPDE
   {
   public:
 
     /// Define a static linear PDE with natural boundary conditions
-    PDE(BilinearForm& a, LinearForm& L, Mesh& mesh);
+    LinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh);
 
     /// Define a static linear PDE with Dirichlet boundary conditions
-    PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc);
+    LinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc);
 
     /// Destructor
-    ~PDE();
+    ~LinearPDE();
 
     /// Solve PDE (in general a mixed system)
     Function solve();
@@ -57,25 +52,30 @@ namespace dolfin
     void solve(Function& u0, Function& u1, Function& u2, Function& u3);
     
     /// Return the bilinear form a(.,.)
-    BilinearForm& a() { return pde->a(); };
+    BilinearForm& a();
 
     /// Return the linear form L(.,.)
-    LinearForm& L() { return pde->L(); };
+    LinearForm& L();
 
     /// Return the mesh
-    Mesh& mesh() { return pde->mesh(); };;
+    Mesh& mesh();
 
-    /// Return type of PDE
-    enum Type { linear, nonlinear };
-    inline Type type() const { return _type; } 
+    /// Return the boundary condition
+    BoundaryCondition& bc();
+
+  protected:
+
+    BilinearForm* _a;
+    // FIXME: _L for the LinearForm is consistent, but breaks under Cygwin (as does _C, _X, etc)
+    LinearForm* _Lf;
+    Mesh* _mesh;
+    BoundaryCondition* _bc;
 
   private:
 
-    // Pointer to current implementation (letter base class)
-    GenericPDE* pde;
-
-    // PDE type (linear, nonlinear, . . .)
-    Type _type;
+    //FIXME: Add functions to assemble RHS vector and stiffness matrix
+//    // Form RHS vector and Jacobian matrix
+//    void form(Matrix& A, Vector& b)
 
   };
 

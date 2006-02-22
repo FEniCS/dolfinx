@@ -60,7 +60,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_form_la_LIBADD =
 am_libdolfin_form_la_OBJECTS = BLASFormData.lo BilinearForm.lo Form.lo \
-	LinearForm.lo Functional.lo PDE.lo
+	GenericPDE.lo LinearForm.lo LinearPDE.lo Functional.lo PDE.lo
 libdolfin_form_la_OBJECTS = $(am_libdolfin_form_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -219,7 +219,9 @@ nobase_include_HEADERS = dolfin/dolfin_form.h \
                            dolfin/BLASFormData.h \
                            dolfin/BilinearForm.h \
                            dolfin/Form.h \
+                           dolfin/GenericPDE.h \
                            dolfin/LinearForm.h \
+                           dolfin/LinearPDE.h \
                            dolfin/Functional.h \
                            dolfin/PDE.h
 
@@ -228,7 +230,9 @@ lib_LTLIBRARIES = libdolfin-form.la
 libdolfin_form_la_SOURCES = BLASFormData.cpp \
                            BilinearForm.cpp \
                            Form.cpp \
+                           GenericPDE.cpp \
                            LinearForm.cpp \
+                           LinearPDE.cpp \
                            Functional.cpp \
                            PDE.cpp
 
@@ -306,7 +310,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BilinearForm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Form.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Functional.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearForm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PDE.Plo@am__quote@
 
 .cpp.o:
