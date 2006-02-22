@@ -320,12 +320,10 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo 'you need to add the bin subdirectory of the installation'
    echo 'diretory to your PATH which you can do with the commands'
    echo ''
-   echo "    export PATH=\"$prefix/bin:\$PATH\""
-   echo "    export LD_LIBRARY_PATH=\"$prefix/lib:\$LD_LIBRARY_PATH\""
+   echo "  export PATH=\"$prefix/bin:\$PATH\""
    echo ''
    echo 'for bash or, alternatively,'
    echo ''
-   echo "    setenv PATH $prefix/bin:\${PATH}"
-   echo "    setenv LD_LIBRARY_PATH $prefix/bin:\${LD_LIBRARY_PATH}"
+   echo "  setenv PATH $prefix/bin:\${PATH}"
    echo ''
 fi
