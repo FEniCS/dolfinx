@@ -183,7 +183,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = common fem form function io log la math main mesh nls ode parameter quadrature
+SUBDIRS = common fem form function io log la math main mesh nls ode parameter pde quadrature
 all: all-recursive
 
 .SUFFIXES:

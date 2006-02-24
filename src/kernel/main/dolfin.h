@@ -21,6 +21,7 @@
 #include <dolfin/dolfin_mesh.h>
 #include <dolfin/dolfin_nls.h>
 #include <dolfin/dolfin_ode.h>
+#include <dolfin/dolfin_pde.h>
 #include <dolfin/dolfin_quadrature.h>
 #include <dolfin/dolfin_parameter.h>
 #include <dolfin/dolfin_modules.h>

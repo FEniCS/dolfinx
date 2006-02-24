@@ -11,10 +11,6 @@
 
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
-#include <dolfin/GenericPDE.h>
 #include <dolfin/Form.h>
-#include <dolfin/LinearPDE.h>
-#include <dolfin/NonlinearPDE.h>
-#include <dolfin/PDE.h>
 
 #endif
