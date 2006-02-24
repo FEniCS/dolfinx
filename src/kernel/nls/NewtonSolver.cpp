@@ -12,7 +12,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver() : KrylovSolver() 
+NewtonSolver::NewtonSolver() : Parametrized()
 {
 }
 //-----------------------------------------------------------------------------
@@ -20,15 +20,6 @@ NewtonSolver::~NewtonSolver()
 {
   // Do nothing 
 }
-//-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Function& u)
-{
-  // Associate vector u with function
-  Vector& x = u.vector();
-
-  // Solve nonlinear problem and return number of iterations
-  return solve(nonlinear_problem, x);
-} 
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 {
@@ -59,7 +50,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
       dolfin_log(false);
  
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += KrylovSolver::solve(A, dx, b);  
+      krylov_iterations += solver.solve(A, dx, b);  
 
       // Update solution
       x += dx;

@@ -183,9 +183,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = nonlinearpoisson \
-          poisson
-
+SUBDIRS = nonlinearpoisson 
 all: all-recursive
 
 .SUFFIXES:

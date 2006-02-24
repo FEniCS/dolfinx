@@ -71,8 +71,10 @@ dolfin::uint NonlinearPDE::solve(Function& u)
   if (u.type() != Function::discrete)
     u.init(*_mesh, _a->trial());
 
+  Vector& x = u.vector();  
+
   // Solve nonlinear problem using u as start value
-  return newton_solver.solve(*this, u);
+  return newton_solver.solve(*this, x);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NonlinearPDE::elementdim()
