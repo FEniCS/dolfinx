@@ -59,8 +59,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_nls_la_LIBADD =
-am_libdolfin_nls_la_OBJECTS = NewtonSolver.lo NonlinearFunction.lo \
-	NonlinearPDE.lo
+am_libdolfin_nls_la_OBJECTS = NewtonSolver.lo NonlinearProblem.lo
 libdolfin_nls_la_OBJECTS = $(am_libdolfin_nls_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -217,14 +216,12 @@ target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_nls.h \
                           dolfin/NewtonSolver.h \
-                          dolfin/NonlinearFunction.h \
-                          dolfin/NonlinearPDE.h 
+                          dolfin/NonlinearProblem.h 
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-nls.la
 libdolfin_nls_la_SOURCES = NewtonSolver.cpp \
-                          NonlinearFunction.cpp \
-                          NonlinearPDE.cpp 
+                          NonlinearProblem.cpp
 
 libdolfin_nls_la_LDFLAGS = -static
 all: all-recursive
@@ -297,8 +294,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewtonSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearFunction.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearPDE.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearProblem.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

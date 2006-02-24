@@ -7,8 +7,7 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#include <dolfin/NonlinearFunction.h>
-#include <dolfin/NonlinearPDE.h>
+#include <dolfin/NonlinearProblem.h>
 #include <dolfin/KrylovSolver.h>
 #include <dolfin/BilinearForm.h>
 
@@ -19,6 +18,7 @@ namespace dolfin
   class Matrix;
   class Mesh;
   class Vector;
+  class NonlinearPDE;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
@@ -26,42 +26,29 @@ namespace dolfin
   {
   public:
 
-    //FIXME: implement methods other than plain Newton (modified, line search, etc.)
-    enum Method { newton };
-     
     /// Initialise nonlinear solver
     NewtonSolver();
 
     /// Destructor
     ~NewtonSolver();
-  
-    /// Solve nonlinear PDE
-    uint solve(BilinearForm& a, LinearForm& L, BoundaryCondition& bc, Mesh& mesh,
-        Function& u);
 
     /// Solve nonlinear PDE
-    uint solve(NonlinearPDE& nonlinearfunction, Function& u);
+    uint solve(NonlinearProblem& nonlinear_function, Function& u);
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
     /// Jacobian dF/dx
-    uint solve(NonlinearFunction& nonlinearfunction, Vector& x);
+    uint solve(NonlinearProblem& nonlinear_function, Vector& x);
 
     /// Return Newton iteration number
     uint getIteration() const;
 
   private:
 
-    // Type of Newton method
-    Method method;
-
-    // Number of Newton iterations
-    uint iteration;
+    // Current number of Newton iterations
+    uint newton_iteration;
 
     // Residuals
     real residual, relative_residual;
-
-    // True if information should be printed at each iteration
-    bool report;
 
     // Jacobian matrix
     Matrix A;

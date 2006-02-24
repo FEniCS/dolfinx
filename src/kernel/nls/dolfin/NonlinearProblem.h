@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2005-12-05
+// Last changed: 2006-02-24
 
-#ifndef __NONLINEAR_FUNCTION_H
-#define __NONLINEAR_FUNCTION_H
+#ifndef __NONLINEAR_PROBLEM_H
+#define __NONLINEAR_PROBLEM_H
 
 namespace dolfin
 {
@@ -16,18 +16,18 @@ namespace dolfin
   class Mesh;
   class Vector;
 
-  /// This class acts as a base class for nonlinear functions which can return 
+  /// This class acts as a base class for nonlinear problems which can return 
   /// the nonlinear function F(u) and its Jacobian J = dF(u)/du.
   
-  class NonlinearFunction
+  class NonlinearProblem
   {
   public:
 
-    /// Create nonlinear function
-    NonlinearFunction();
+    /// Create nonlinear problem
+    NonlinearProblem();
 
     /// Destructor
-    virtual ~NonlinearFunction();
+    virtual ~NonlinearProblem();
 
      /// User-defined function to compute F(u) its Jacobian
     virtual void form(Matrix& A, Vector& b, const Vector& x);

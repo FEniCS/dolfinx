@@ -2,13 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2005-12-05
+// Last changed: 2005-02-24
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
 
 
-#include <dolfin/NonlinearFunction.h>
+#include <dolfin/GenericPDE.h>
+#include <dolfin/NonlinearProblem.h>
+#include <dolfin/NewtonSolver.h>
 
 namespace dolfin
 {
@@ -23,12 +25,9 @@ namespace dolfin
   /// This class acts as a base class for nonlinear PDE's and 
   /// the nonlinear function F(u) and its Jacobian J = dF(u)/du.
   
-  class NonlinearPDE : public NonlinearFunction
+  class NonlinearPDE : public GenericPDE, public NonlinearProblem
   {
   public:
-
-    /// Create nonlinear function
-    NonlinearPDE();
 
     /// Create nonlinear PDE with natural  boundary conditions
     NonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh);
@@ -43,21 +42,30 @@ namespace dolfin
      /// User-defined function to compute F(u) its Jacobian
     virtual void form(Matrix& A, Vector& b, const Vector& x);
 
-     /// User-defined function to compute F(u)
-    virtual void F(Vector& b, const Vector& x);
-
-     /// User-defined function to compute Jacobian matrix
-    virtual void J(Matrix& A, const Vector& x);
-
-     /// Solve nonlinear PDE
+    /// Solve PDE (in general a mixed system). If the function u has been 
+    /// initialised, it is used as a starting value.
     uint solve(Function& u);
 
-     /// Solve nonlinear PDE
-    Function solve();
+//     /// User-defined function to compute F(u)
+//    virtual void F(Vector& b, const Vector& x);
 
-    /// Friends
-    friend class NewtonSolver;
+//     /// User-defined function to compute Jacobian matrix
+//    virtual void J(Matrix& A, const Vector& x);
 
+    /// Return the element dimension
+    uint elementdim();
+
+    /// Return the bilinear form a(.,.)
+    BilinearForm& a();
+
+    /// Return the linear form L(.,.)
+    LinearForm& L();
+
+    /// Return the mesh
+    Mesh& mesh();
+
+    /// Return the boundary condition
+    BoundaryCondition& bc();
 
   protected:
 
@@ -65,6 +73,10 @@ namespace dolfin
     LinearForm* _Lf;
     Mesh* _mesh;
     BoundaryCondition* _bc;
+
+  private:
+
+    NewtonSolver newton_solver;
 
   };
 }

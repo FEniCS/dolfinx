@@ -4,13 +4,12 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2006-02-22
+// Last changed: 2006-02-24
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
 
 #include <dolfin/GenericPDE.h>
-#include <dolfin/Parametrized.h>
 
 namespace dolfin
 {
@@ -20,6 +19,8 @@ namespace dolfin
   class Mesh;
   class BoundaryCondition;
   class Function;
+  class Matrix;
+  class Vector;
 
   /// This class implements the solution functionality for linear PDEs.
 
@@ -37,20 +38,11 @@ namespace dolfin
     ~LinearPDE();
 
     /// Solve PDE (in general a mixed system)
-    Function solve();
+    uint solve(Function& u);
 
-    /// Solve PDE (in general a mixed system)
-    void solve(Function& u);
+    /// Return the element dimension
+    uint elementdim();
 
-    /// Solve PDE for sub functions of mixed system
-    void solve(Function& u0, Function& u1);
-
-    /// Solve PDE for sub functions of mixed system
-    void solve(Function& u0, Function& u1, Function& u2);
-
-    /// Solve PDE for sub functions of mixed system
-    void solve(Function& u0, Function& u1, Function& u2, Function& u3);
-    
     /// Return the bilinear form a(.,.)
     BilinearForm& a();
 
@@ -70,12 +62,6 @@ namespace dolfin
     LinearForm* _Lf;
     Mesh* _mesh;
     BoundaryCondition* _bc;
-
-  private:
-
-    //FIXME: Add functions to assemble RHS vector and stiffness matrix
-//    // Form RHS vector and Jacobian matrix
-//    void form(Matrix& A, Vector& b)
 
   };
 

@@ -2,31 +2,26 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2005-12-05
+// Last changed: 2006-02-24
 
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
-#include <dolfin/NewtonSolver.h>
 
 using namespace dolfin;
-NonlinearPDE::NonlinearPDE()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
+
 NonlinearPDE::NonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh) : 
-      NonlinearFunction(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(0)
+      GenericPDE(), _a(&a), _Lf(&L), _mesh(&mesh), _bc(0)
 {
-  // Do nothing
+  newton_solver.set("parent", *this);
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::NonlinearPDE(BilinearForm& a, LinearForm& L, Mesh& mesh, 
-      BoundaryCondition& bc) : NonlinearFunction(), _a(&a), _Lf(&L), 
+      BoundaryCondition& bc) : GenericPDE(), _a(&a), _Lf(&L), 
       _mesh(&mesh), _bc(&bc)
 {
-  // Do nothing
+  newton_solver.set("parent", *this);
 }
 //-----------------------------------------------------------------------------
 NonlinearPDE::~NonlinearPDE()
@@ -52,40 +47,61 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
     {
       //FIXME: Deal with zero Neumann condition on entire boundary her. Need to fix FEM::assembleBCresidual 
       // FEM::assembleBCresidual(b, x, *_mesh, _Lf->test());
-      dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear functions.");
+      dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear PDE.");
     }
   }
   
 }
 //-----------------------------------------------------------------------------
-void NonlinearPDE::F(Vector& b, const Vector& x)
-{
-  dolfin_error("Nonlinear PDE update for F(u)  has not been supplied by user.");
-}
+//void NonlinearPDE::F(Vector& b, const Vector& x)
+//{
+//  dolfin_error("Nonlinear PDE update for F(u)  has not been supplied by
+//user.");
+//}
 //-----------------------------------------------------------------------------
-void NonlinearPDE::J(Matrix& A, const Vector& x)
-{
-  dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by user.");
-}
+//void NonlinearPDE::J(Matrix& A, const Vector& x)
+//{
+//  dolfin_error("Nonlinear PDE update for Jacobian has not been supplied by
+//user.");
+//}
 //-----------------------------------------------------------------------------
 dolfin::uint NonlinearPDE::solve(Function& u)
 {
-  // Create solver
-  NewtonSolver newton_solver;
+  // Initialise function if necessary
+  if (u.type() != Function::discrete)
+    u.init(*_mesh, _a->trial());
 
-  // Solution vector
-  Vector& x = u.vector();
-
-  // Solver nonlinear problem
-  uint iterations = newton_solver.solve(*this, x);
-  
-  return iterations;
+  // Solve nonlinear problem using u as start value
+  return newton_solver.solve(*this, u);
 }
 //-----------------------------------------------------------------------------
-Function NonlinearPDE::solve()
+dolfin::uint NonlinearPDE::elementdim()
 {
-  Function u;
-  solve(u);
-  return u;
+  dolfin_assert(_a);
+  return _a->trial().elementdim();
+}
+//-----------------------------------------------------------------------------
+BilinearForm& NonlinearPDE::a()
+{
+  dolfin_assert(_a);
+  return *_a;
+}
+//-----------------------------------------------------------------------------
+LinearForm& NonlinearPDE::L()
+{
+  dolfin_assert(_Lf);
+  return *_Lf;
+}
+//-----------------------------------------------------------------------------
+Mesh& NonlinearPDE::mesh()
+{
+  dolfin_assert(_mesh);
+  return *_mesh;
+}
+//-----------------------------------------------------------------------------
+BoundaryCondition& NonlinearPDE::bc()
+{
+  dolfin_assert(_bc);
+  return *_bc;
 }
 //-----------------------------------------------------------------------------

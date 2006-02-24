@@ -32,11 +32,20 @@ namespace dolfin
   {
   public:
 
+    /// PDE types
+    enum Type { linear, nonlinear };
+
     /// Define a static linear PDE with natural boundary conditions
     PDE(BilinearForm& a, LinearForm& L, Mesh& mesh);
 
     /// Define a static linear PDE with Dirichlet boundary conditions
     PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc);
+
+    /// Define a PDE with Natural boundary conditions
+    PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type);
+
+    /// Define a PDE with Dirichlet boundary conditions
+    PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc, Type pde_type);
 
     /// Destructor
     ~PDE();
@@ -66,7 +75,6 @@ namespace dolfin
     Mesh& mesh();
 
     /// Return type of PDE
-    enum Type { linear, nonlinear };
     inline Type type() const;
 
   private:

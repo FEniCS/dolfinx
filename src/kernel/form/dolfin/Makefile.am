@@ -5,4 +5,5 @@ EXTRA_DIST = dolfin_form.h \
              GenericPDE.h \
              LinearForm.h \
              LinearPDE.h \
+             NonlinearPDE.h \
              PDE.h

@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-02-20
+// Last changed: 2006-02-24
 
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
@@ -12,12 +12,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewtonSolver::NewtonSolver() : KrylovSolver(), method(newton), report(true)
+NewtonSolver::NewtonSolver() : KrylovSolver() 
 {
-  // Set default parameters
-  add("Newton maximum iterations", 50);
-  add("Newton relative tolerance", 1e-9);
-  add("Newton absolute tolerance", 1e-20);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
@@ -25,36 +21,16 @@ NewtonSolver::~NewtonSolver()
   // Do nothing 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(BilinearForm& a, LinearForm& L, 
-      BoundaryCondition& bc, Mesh& mesh, Function& u)
-{  
-  // Create nonlinear function
-  NonlinearPDE nonlinear_pde(a, L, mesh, bc);
-
-  // FIXME: re-initialise when necessary, otherwise u is destroyed
-  // Inintialise function and associate vector u with function
+dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Function& u)
+{
+  // Associate vector u with function
   Vector& x = u.vector();
 
   // Solve nonlinear problem and return number of iterations
-  return solve(nonlinear_pde, x);
-
+  return solve(nonlinear_problem, x);
 } 
 //-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearPDE& nonlinear_pde, Function& u)
-{  
-
-  // Inintialise function and associate vector u with function
-  Vector& x = u.vector();
-
-//  Vector& x = u.vector();
-  cout << "size of vector " << x.size() << endl;
-  x.disp();
-  // Solve nonlinear problem and return number of iterations
-  return solve(nonlinear_pde, x);
-
-} 
-//-----------------------------------------------------------------------------
-dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x)
+dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 {
   const uint maxit= get("Newton maximum iterations");
   const real rtol = get("Newton relative tolerance");
@@ -64,19 +40,21 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
 
   dolfin_begin("Starting Newton solve.");
 
+  bool report = get("Newton report");
+
   // Compute F(u) and J
-  nonlinearfunction.form(A, b, x);
+  nonlinear_problem.form(A, b, x);
   
-  real residual0 = b.norm();
-  residual  = residual0;
+  real residual0    = b.norm();
+  residual          = residual0;
   relative_residual = 1.0;
 
   uint krylov_iterations = 0;
-  iteration = 0;
+  newton_iteration = 0;
   
-  while( relative_residual > rtol && residual > atol && iteration < maxit )
+  while( relative_residual > rtol && residual > atol && newton_iteration < maxit )
   {
-      ++iteration;
+      ++newton_iteration;
 
       dolfin_log(false);
  
@@ -87,7 +65,7 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
       x += dx;
 
       // Compute F(u) and J
-      nonlinearfunction.form(A, b, x);
+      nonlinear_problem.form(A, b, x);
 
       dolfin_log(true);
 
@@ -95,14 +73,14 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
       residual = b.norm();
       relative_residual = residual/residual0;
 
-      if(report) cout << "Iteration= " << iteration << ", Relative residual = " 
+      if(report) cout << "Iteration= " << newton_iteration << ", Relative residual = " 
           << relative_residual << endl;      
   }
 
   if ( relative_residual < rtol || residual < atol )
   {
     dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
-        iteration, krylov_iterations);
+        newton_iteration, krylov_iterations);
   }
   else
   {
@@ -111,11 +89,11 @@ dolfin::uint NewtonSolver::solve(NonlinearFunction& nonlinearfunction, Vector& x
 
   dolfin_end();
 
-  return iteration;
+   return newton_iteration;
 } 
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::getIteration() const
 {
-  return iteration; 
+  return newton_iteration; 
 }
 //-----------------------------------------------------------------------------

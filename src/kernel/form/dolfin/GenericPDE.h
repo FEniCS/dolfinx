@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-21
-// Last changed: 
+// Last changed: 2006-02-24
 
 #ifndef __GENERIC_PDE_H
 #define __GENERIC_PDE_H
@@ -32,29 +32,11 @@ namespace dolfin
     /// Destructor
     virtual ~GenericPDE();
 
-//     /// Compute RHS vector and (approximate) Jacobian matrix for PDE
-//    virtual void form(Matrix& A, Vector& b, const Vector& x) = 0;
-
-//     /// Compute RHS vector for PDE
-//    virtual void F(Vector& b, const Vector& x) = 0;
-
-//     /// Compute (approximate) Jacobian/stiffness matrix for PDE
-//    virtual void J(Matrix& A, const Vector& x) = 0;
-
      /// Solve
-    virtual Function solve() = 0;
+    virtual uint solve(Function& u) = 0;
 
-     /// Solve
-    virtual void solve(Function& u) = 0;
-
-     /// Solve
-    virtual void solve(Function& u0, Function& u1) = 0;
-
-     /// Solve
-    virtual void solve(Function& u0, Function& u1, Function& u2) = 0;
-
-     /// Solve
-    virtual void solve(Function& u0, Function& u1, Function& u2, Function& u3) = 0;
+     /// Return element dimension
+    virtual uint elementdim() = 0;
 
     /// Return the bilinear form mesh associated with PDE (if any)
     virtual BilinearForm& a() = 0;

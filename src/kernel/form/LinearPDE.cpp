@@ -18,6 +18,7 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/Function.h>
 #include <dolfin/LinearPDE.h>
+#include <dolfin/Parametrized.h>
 
 using namespace dolfin;
 
@@ -39,14 +40,7 @@ LinearPDE::~LinearPDE()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Function LinearPDE::solve()
-{
-  Function u;
-  solve(u);
-  return u;
-}
-//-----------------------------------------------------------------------------
-void LinearPDE::solve(Function& u)
+dolfin::uint LinearPDE::solve(Function& u)
 {
   dolfin_assert(_a);
   dolfin_assert(_Lf);
@@ -81,81 +75,14 @@ void LinearPDE::solve(Function& u)
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
+
+  return 0;
 }
 //-----------------------------------------------------------------------------
-void LinearPDE::solve(Function& u0, Function& u1)
+dolfin::uint LinearPDE::elementdim()
 {
   dolfin_assert(_a);
-  dolfin_assert(_Lf);
-  dolfin_assert(_mesh);
-
-  // Check size of mixed system
-  uint elementdim = _a->trial().elementdim();
-  if ( elementdim != 2 )
-  {
-    dolfin_error1("Size of mixed system (%d) does not match number of functions (2).",
-		  elementdim);
-  }
-
-  // Solve mixed system
-  Function u;
-  solve(u);
-
-  /// Extract sub functions
-  dolfin_info("Extracting sub functions from mixed system.");
-  u0 = u[0];
-  u1 = u[1];
-}
-//-----------------------------------------------------------------------------
-void LinearPDE::solve(Function& u0, Function& u1, Function& u2)
-{
-  dolfin_assert(_a);
-  dolfin_assert(_Lf);
-  dolfin_assert(_mesh);
-
-  // Check size of mixed system
-  uint elementdim = _a->trial().elementdim();
-  if ( elementdim != 3 )
-  {
-    dolfin_error1("Size of mixed system (%d) does not match number of functions (3).",
-		  elementdim);
-  }
-
-  // Solve mixed system
-  Function u;
-  solve(u);
-
-  /// Extract sub functions
-  dolfin_info("Extracting sub functions from mixed system.");
-  u0 = u[0];
-  u1 = u[1];
-  u2 = u[2];
-}
-//-----------------------------------------------------------------------------
-void LinearPDE::solve(Function& u0, Function& u1, Function& u2, Function& u3)
-{
-  dolfin_assert(_a);
-  dolfin_assert(_Lf);
-  dolfin_assert(_mesh);
-
-  // Check size of mixed system
-  uint elementdim = _a->trial().elementdim();
-  if ( elementdim != 4 )
-  {
-    dolfin_error1("Size of mixed system (%d) does not match number of functions (4).",
-		  elementdim);
-  }
-
-  // Solve mixed system
-  Function u;
-  solve(u);
-
-  /// Extract sub functions
-  dolfin_info("Extracting sub functions from mixed system.");
-  u0 = u[0];
-  u1 = u[1];
-  u2 = u[2];
-  u3 = u[3];
+  return _a->trial().elementdim();
 }
 //-----------------------------------------------------------------------------
 BilinearForm& LinearPDE::a()

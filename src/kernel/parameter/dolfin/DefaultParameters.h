@@ -61,3 +61,11 @@ add("homotopy divergence tolerance", 10.0);
 add("homotopy randomize", true);
 add("homotopy monitoring", false);
 add("homotopy solution file name", "solution.data");
+
+//--- Parameters for Newton solver ---
+
+  add("Newton maximum iterations", 50);
+  add("Newton relative tolerance", 1e-9);
+  add("Newton absolute tolerance", 1e-20);
+  add("Newton method", "full");
+  add("Newton report", true);

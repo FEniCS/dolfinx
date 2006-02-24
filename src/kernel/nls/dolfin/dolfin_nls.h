@@ -4,7 +4,6 @@
 // DOLFIN nonlinear solver
 
 #include <dolfin/NewtonSolver.h>
-#include <dolfin/NonlinearFunction.h>
-#include <dolfin/NonlinearPDE.h>
+#include <dolfin/NonlinearProblem.h>
 
 #endif
