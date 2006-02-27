@@ -9,22 +9,10 @@ estimate of when the task should be ready.
 
 Send suggestions, comments, and corrections to dolfin@fenics.org.
 
-Dependencies
-------------
-
-* SciPy
-* ParaView
-* MayaVi
-* PETSc
-* FFC
-* FIAT
-* libxml2
-* Hypre?
-
 Manual
 ------
 
-* Write tutorial on converting meshes (mesh utilities)
+* Fix incomplete sections
 * Write section on coding style
 * Put programmer's reference online again
 
@@ -41,6 +29,7 @@ Assembly
 Mesh
 ----
 
+* Move to Sieve
 * Speed up uniform mesh refinement
 * Optimize mesh refinement
 o [jj] Schema for mesh XML format
@@ -59,12 +48,12 @@ Linear Algebra
 Function
 --------
 
-* Load Function from file
+* Input/output for time-series
 
 Input/Output
 ------------
 
-* Add script/program dolfin-convert for converting between file formats
+* Improve script dolfin-convert
 * Save edges in MATLAB format
 
 Solvers
@@ -83,8 +72,7 @@ o [jj, logg] Use two files for MATLAB format
 Modules
 -------
 
-* Make modules handle both 2D and 3D based on given mesh
-o [hoffman] Navier-Stokes module
+* Adaptivity
 
 Parameters
 ----------
@@ -118,7 +106,6 @@ General
 * Don't use cut in src/config script
 * Replace unsigned int and int with uint when possible
 * Replace Array and List with NewArray and NewList everywhere
-* Cleanup Parameter and ParameterList
 * Replace stdio with iostream and fstream
 * Fix setprecision() for cout
 * Use symbolic links for meshes, see example src/demo/fem
@@ -129,3 +116,15 @@ Some suggestions for PETSc
 
 Use namespaces, don't define macros like restrict which prevents
 users of PETSc to declare functions with that name.
+
+Dependencies
+------------
+
+* SciPy
+* ParaView
+* MayaVi
+* PETSc
+* FFC
+* FIAT
+* libxml2
+* Hypre?
