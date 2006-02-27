@@ -1,5 +1,5 @@
 SUBDIRS                  = dolfin
-nobase_include_HEADERS   = dolfin/dolfin_form.h \
+nobase_include_HEADERS   = dolfin/dolfin_pde.h \
                            dolfin/GenericPDE.h \
                            dolfin/LinearPDE.h \
                            dolfin/NonlinearPDE.h \

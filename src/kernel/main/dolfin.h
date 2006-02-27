@@ -1,10 +1,10 @@
-// Copyright (C) 2002-2005 Johan Hoffman, Johan Jansson and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2002-11-05
-// Last changed: 2005-12-19
+// Last changed: 2006-02-27
 
 #ifndef __DOLFIN_H
 #define __DOLFIN_H
