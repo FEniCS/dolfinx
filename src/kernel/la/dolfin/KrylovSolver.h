@@ -1,13 +1,13 @@
 // Copyright (C) 2004-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005, 2006.
+// Modified by Anders Logg 2005-2006.
 // Modified by Johan Hoffman 2005.
 // Modified by Andy R. Terrel 2005.
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-02-08
+// Last changed: 2006-02-27
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -83,6 +83,9 @@ namespace dolfin
       
     /// Change maxiter
     void setMaxiter(int maxiter);
+
+    /// Set zero pivot threshold
+    void setZeroPivot(real zeropivot);
 
     /// Return PETSc solver pointer
     KSP solver(){

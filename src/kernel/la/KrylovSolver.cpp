@@ -1,11 +1,11 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005, 2006.
+// Modified by Anders Logg 2005-2006.
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-02-08
+// Last changed: 2006-02-27
 
 #include <petscpc.h>
 
@@ -284,6 +284,16 @@ void KrylovSolver::setMaxiter(int maxiter)
   dolfin_info("Changing maxiter for Krylov solver from %d to %d.", _maxiter, maxiter);
   _maxiter = maxiter;
   KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
+}
+//-----------------------------------------------------------------------------
+void KrylovSolver::setZeroPivot(real zeropivot)
+{
+  // Choose preconditioner
+  PC pc;
+  KSPGetPC(ksp, &pc);
+
+  PCFactorSetZeroPivot(pc, zeropivot);
+  dolfin_info("Changing zero pivot for Krylov solver to %g.", zeropivot);
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::setPreconditioner(Preconditioner &pc)
