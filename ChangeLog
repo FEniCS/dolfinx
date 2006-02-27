@@ -1,3 +1,4 @@
+ - Add new nonlinear PDE demo 
  - Restructure PDE class to use envelope-letter design
  - Add precompiled finite elements for q <= 5
  - Add FiniteElementSpec and factor function for FiniteElement
