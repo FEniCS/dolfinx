@@ -61,14 +61,14 @@ class MyNonlinearProblem : public NonlinearProblem
     // Constructor 
     MyNonlinearProblem(BilinearForm& a, LinearForm& L, Mesh& mesh,
       BoundaryCondition& bc) : NonlinearProblem(),
-      _a(&a), _L(&L), _mesh(&mesh), _bc(&bc) {}
+      _a(&a), _Lf(&L), _mesh(&mesh), _bc(&bc) {}
  
 
     // User defined assemble of Jacobian and residual vector 
     void form(Matrix&A, Vector& b, const Vector& x)
     {
       BilinearForm& a = *_a;
-      LinearForm& L   = *_L;
+      LinearForm& L   = *_Lf;
       BoundaryCondition& bc = *_bc;
       Mesh& mesh = *_mesh;
 
@@ -83,7 +83,7 @@ class MyNonlinearProblem : public NonlinearProblem
 
     // Pointers to forms, mesh data and boundary conditions
     BilinearForm* _a;
-    LinearForm* _L;
+    LinearForm* _Lf;
     Mesh* _mesh;
     BoundaryCondition* _bc;
 };
