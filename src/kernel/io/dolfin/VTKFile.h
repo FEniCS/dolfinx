@@ -7,9 +7,10 @@
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
 
-#include <dolfin/GenericFile.h>
 #include <fstream>
 #include <iostream>
+
+#include <dolfin/GenericFile.h>
 
 namespace dolfin
 {

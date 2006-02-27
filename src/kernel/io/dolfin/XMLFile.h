@@ -2,12 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-19
+// Last changed: 2006-02-27
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
 
 #include <libxml/parser.h>
+
 #include <dolfin/constants.h>
 #include <dolfin/GenericFile.h>
 
@@ -59,13 +60,19 @@ namespace dolfin
     
     void parseFile();
     void parseSAX();
-    void writeHeader();
-    void writeFooter();
+
+    FILE* openFile();
+    void  closeFile(FILE* fp);
     
-    // Data
+    // Implementation for specific class (output)
     XMLObject* xmlObject;
+
+    // True if header is written (need to close)
     bool header_written;
-    
+
+    // Most recent position in file
+    long mark;
+
   };
   
   // Callback functions for the SAX interface

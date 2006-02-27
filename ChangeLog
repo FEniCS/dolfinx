@@ -1,3 +1,5 @@
+ - Fix bug in XML output format (writing multiple objects)
+ - Fix bug in XML matrix output format (handle zero rows)
  - Add new nonlinear PDE demo 
  - Restructure PDE class to use envelope-letter design
  - Add precompiled finite elements for q <= 5

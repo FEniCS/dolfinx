@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-20
+// Last changed: 2006-02-27
 
 #include <stdarg.h>
 
@@ -32,7 +32,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
-					       header_written(false)
+					       header_written(false),
+					       mark(0)
 {
   type = "XML";
   xmlObject = 0;
@@ -40,8 +41,6 @@ XMLFile::XMLFile(const std::string filename) : GenericFile(filename),
 //-----------------------------------------------------------------------------
 XMLFile::~XMLFile()
 {
-  writeFooter();
-
   if ( xmlObject )
     delete xmlObject;
 }
@@ -131,11 +130,8 @@ void XMLFile::operator>>(BLASFormData& blas)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Vector& x)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE* fp = openFile();
   
   // Get array (assumes uniprocessor case)
   real* xx = x.array();
@@ -153,7 +149,7 @@ void XMLFile::operator<<(Vector& x)
   x.restore(xx);
   
   // Close file
-  fclose(fp);
+  closeFile(fp);
   
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
@@ -161,11 +157,8 @@ void XMLFile::operator<<(Vector& x)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Matrix& A)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1));
@@ -178,24 +171,21 @@ void XMLFile::operator<<(Matrix& A)
   for (unsigned int i = 0; i < A.size(0); i++)
   {
     MatGetRow(A_mat, i, &ncols, &cols, &vals);
-    fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, ncols);
+    if ( ncols > 0 )
+      fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)
     {
       unsigned int j = cols[pos];
       real aij = vals[pos];
       fprintf(fp, "      <entry column=\"%i\" value=\"%.15g\"/>\n", j, aij);
-      if ( i == (A.size(0) - 1) && pos == (ncols - 1) )
-      {
-	fprintf(fp, "    </row>\n");
-	fprintf(fp, "  </matrix>\n");
-      }
-      else if ( pos == (ncols - 1) )
-	fprintf(fp, "    </row>\n");
     }
+    if ( ncols > 0 )
+      fprintf(fp, "    </row>\n");
   }
+  fprintf(fp, "  </matrix>\n");
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
 
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
@@ -203,11 +193,8 @@ void XMLFile::operator<<(Matrix& A)
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Write mesh in XML format
   fprintf(fp, "  <mesh> \n");
@@ -246,10 +233,10 @@ void XMLFile::operator<<(Mesh& mesh)
   fprintf(fp, "    </cells>\n");
   
   fprintf(fp, "  </mesh>\n");
-  
+ 
   // Close file
-  fclose(fp);
-  
+  closeFile(fp);
+
   cout << "Saved mesh " << mesh.name() << " (" << mesh.label()
        << ") to file " << filename << " in XML format." << endl;
 }
@@ -260,17 +247,14 @@ void XMLFile::operator<<(Function& f)
   if ( f.type() != Function::discrete )
     dolfin_error("Only discrete functions can be saved to file.");
 
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Begin function
   fprintf(fp, "  <function> \n");
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
   
   // Write the vector
   *this << f.vector();
@@ -283,44 +267,38 @@ void XMLFile::operator<<(Function& f)
   *this << spec;
 
   // Open file
-  fp = fopen(filename.c_str(), "a");
+  fp = openFile();
 
   // End function
   fprintf(fp, "  </function> \n");
-  
+
   // Close file
-  fclose(fp);
-  
+  closeFile(fp);
+
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
   
   // Write element in XML format
   fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
   	  spec.type().c_str(), spec.shape().c_str(), spec.degree(), spec.vectordim());
   
   // Close file
-  fclose(fp);
-  
+  closeFile(fp);
+
   cout << "Saved finite element specification" << spec
        << " to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(ParameterList& parameters)
 {
-  // Write header if not already written
-  writeHeader();
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = openFile();
 
   // Write parameter list in XML format
   fprintf(fp, "  <parameters>\n" );
@@ -360,43 +338,42 @@ void XMLFile::operator<<(ParameterList& parameters)
   fprintf(fp, "  </parameters>\n" );
 
   // Close file
-  fclose(fp);
+  closeFile(fp);
 
   cout << "Saved parameters to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-void XMLFile::writeHeader()
+FILE* XMLFile::openFile()
 {
-  if ( header_written )
-  {
-    return;
-  }
-
   // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  FILE *fp = fopen(filename.c_str(), "r+");
+
+  // Step to position before previously written footer
+  printf("Stepping to position: %ld\n", mark);
+  fseek(fp, mark, SEEK_SET);
+  fflush(fp);
   
   // Write DOLFIN XML format header
-  fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
-  fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
-  
-  // Close file
-  fclose(fp);
-
-  header_written = true;
-}
-//-----------------------------------------------------------------------------
-void XMLFile::writeFooter()
-{
   if ( !header_written )
   {
-    return;
+    fprintf(fp, "<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n\n" );
+    fprintf(fp, "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\"> \n" );
+    
+    header_written = true;
   }
 
-  // Open file
-  FILE *fp = fopen(filename.c_str(), "a");
+  return fp;
+}
+//-----------------------------------------------------------------------------
+void XMLFile::closeFile(FILE* fp)
+{
+  // Get position in file before writing footer
+  mark = ftell(fp);
+  printf("Position in file before writing footer: %ld\n", mark);
 
   // Write DOLFIN XML format footer
-  fprintf(fp, "</dolfin>\n");
+  if ( header_written )
+    fprintf(fp, "</dolfin>\n");
 
   // Close file
   fclose(fp);

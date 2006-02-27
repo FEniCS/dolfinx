@@ -125,6 +125,20 @@ void testOutputFunction()
   file << f;
 }
 
+void testOutputMultiple()
+{
+  dolfin_info("--- Testing input of multiple XML objects ---");
+
+  Vector x(3);
+  Matrix A(3, 3);
+  A(1, 1) = 1.0;
+
+  File file("multiple.xml");
+  file << x;
+  file << A;
+  file << A;
+}
+
 void testInputFunction()
 {
   dolfin_info("--- Testing input of function ---");
@@ -244,21 +258,20 @@ void testMakeElement()
 
 int main(int argc, char* argv[])
 {
-  dolfin_info("Testing DOLFIN...");
+  //testPreconditioner();
+  //testOutputVector();
+  //testOutputMatrix();
+  //testOutputMesh();
+  //testOutputFiniteElementSpec();
+  testOutputMultiple();
+  //testFunctional();
+  //testRandom();
+  //testProgress();
+  //testParameters();
+  //testMakeElement();
 
-  testPreconditioner();
-  testOutputVector();
-  testOutputMatrix();
-  testOutputMesh();
-  testOutputFiniteElementSpec();
-  testFunctional();
-  testRandom();
-  testProgress();
-  testParameters();
-  testMakeElement();
-
-  testInputFunction();
-  testOutputFunction();
+  //testInputFunction();
+  //testOutputFunction();
 
   return 0;
 }
