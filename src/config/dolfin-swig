@@ -119,8 +119,6 @@ swig -python -c++ -nodefault -dirprot `dolfin-config --cflags` -o ${modulename}_
 
 `dolfin-config --compiler` `dolfin-config --swigcflags` `dolfin-config --cflags` -I. -g -fPIC  -c -o ${modulename}_wrap.o ${modulename}_wrap.cpp
 
-# FIXME:
-# Generating shared library still not compiler-independent (syntax likely
-# only works for GCC)
+# Linking should be platform-independent now (only tested on Linux/GCC)
 
-`dolfin-config --compiler` -g -shared ${modulename}_wrap.o -o _${modulename}.so `dolfin-config --libs`
+`dolfin-config --linker` -g -shared ${modulename}_wrap.o -o _${modulename}.so `dolfin-config --libs`
