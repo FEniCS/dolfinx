@@ -24,14 +24,14 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc)
-  : Parametrized(),pde(0),  _type(linear)
+  : Parametrized(), pde(0), _type(linear)
 {
   pde = new LinearPDE(a, L, mesh, bc);
   pde->set("parent", *this);
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type) 
-  : Parametrized(),pde(0),  _type(pde_type)
+  : Parametrized(), pde(0), _type(pde_type)
 {
   switch(pde_type)
   {
@@ -49,7 +49,7 @@ PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, Type pde_type)
 }
 //-----------------------------------------------------------------------------
 PDE::PDE(BilinearForm& a, LinearForm& L, Mesh& mesh, BoundaryCondition& bc, 
-    Type pde_type) : Parametrized(),pde(0),  _type(pde_type)
+    Type pde_type) : Parametrized(), pde(0), _type(pde_type)
 {
   switch(pde_type)
   {
