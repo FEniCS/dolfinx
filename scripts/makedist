@@ -8,10 +8,10 @@
 # Make sure we have the current version
 echo '--- Synchronizing repository'
 sleep 1
-hg pull
-hg update
-hg commit
-hg push default
+#--hg pull
+#--hg update
+#--hg commit
+#--hg push default
 echo '--- Repository synchronized, press return to continue'
 read
 
