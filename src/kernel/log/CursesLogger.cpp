@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006
+//
 // First added:  2003-03-26
-// Last changed: 2005-12-21
+// Last changed: 2006-02-27
 
 #ifndef NO_CURSES
 
@@ -159,22 +161,34 @@ void CursesLogger::info(const char* msg)
 //-----------------------------------------------------------------------------
 void CursesLogger::debug(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "Debug at %s: %s", location, msg);
-  buffer.add(tmp, Buffer::debug, level);
+  std::ostringstream sstream;
+  std::string tmp;
+	sstream << "Debug at " << location << " " << msg;
+	tmp = sstream.str();
+
+	buffer.add(tmp.c_str(), Buffer::debug, level);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::warning(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "Warning: %s", msg);
-  buffer.add(tmp, Buffer::warning, level);
+  std::ostringstream sstream;
+  std::string tmp;
+  sstream <<  "Warning: " << msg;
+  tmp = sstream.str();
+
+  buffer.add(tmp.c_str(), Buffer::warning, level);
   redraw();
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::error(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "*** Error at %s: %s", location, msg);
-  buffer.add(tmp, Buffer::error, level);
+  std::ostringstream sstream;
+  std::string tmp;
+  sstream << "*** Error at " << location << "  "  << msg;
+  tmp = sstream.str();
+
+  buffer.add(tmp.c_str(), Buffer::error, level);
   setInfo("Press any key to quit.");
   state = ERROR;
   updateInternal();
@@ -182,8 +196,12 @@ void CursesLogger::error(const char* msg, const char* location)
 //-----------------------------------------------------------------------------
 void CursesLogger::dassert(const char* msg, const char* location)
 {
-  snprintf(tmp, DOLFIN_WORDLENGTH, "Assertion %s failed at %s", msg, location);
-  buffer.add(tmp, Buffer::error, level);
+  std::ostringstream sstream;
+  std::string tmp;
+  sstream << "Assertion " << msg <<  " failed at " << location;  
+  tmp = sstream.str();
+	
+  buffer.add(tmp.c_str(), Buffer::error, level);
   setInfo("Press any key to quit.");
   state = ERROR;
   updateInternal();
