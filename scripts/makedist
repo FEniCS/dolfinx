@@ -1,19 +1,39 @@
 #!/bin/sh
+#
+# Copyright (c) Anders Logg 2002-2006
+# Licensed under the GNU GPL Version 2
+#
+# This script creates a new release of DOLFIN
 
-# This script prepares and creates a .tar.gz package of
-# the source tree. This should really be done with 'make dist'
-# but until we get that working, this script does the job.
+# Make sure we have the current version
+echo '--- Synchronizing repository'
+sleep 1
+hg pull
+hg update
+hg commit
+hg push default
+echo '--- Repository synchronized, press return to continue'
+read
 
-# Simple test to see where we are
-# FIXME: Does not work when typing ./scripts/...
-CHECK=`echo $0 | cut -d'/' -f1`
-if [ "$CHECK" != "scripts" ]; then
-    echo "This script must be run from the top level directory."
-    exit 1
-fi
+# Update version number in ChangeLog
+echo '--- Update version number in ChangeLog'
+sleep 1
+emacs -nw ChangeLog
+
+# Update version number in configure.ac
+echo '--- Update version number in configure.ac'
+sleep 1
+emacs -nw configure.ac
 
 # Get the version number
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
+echo "--- Version number is $VERSION"
+sleep 1
+
+exit 0
+
+# Get the version number
+
 
 # Write a message
 echo Creating release $VERSION of DOLFIN, assuming this is a clean CVS version
