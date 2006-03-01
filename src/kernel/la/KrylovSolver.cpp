@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-02-27
+// Last changed: 2006-03-01
 
 #include <petscpc.h>
 
@@ -107,7 +107,8 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
+  if ( report )
+    dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
@@ -180,7 +181,8 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
+  if ( report )
+    dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
   init(M, N);
