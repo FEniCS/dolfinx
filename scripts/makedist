@@ -45,9 +45,10 @@ DISTDIR=dolfin-$VERSION
 echo "--- Creating directory release/$DISTDIR"
 mkdir -p release
 cd release
+rm -rf $DISTDIR
 hg clone .. $DISTDIR
-rm -r $DISTDIR/.hg
-rm $DISTDIR/.hgignore
+rm -rf $DISTDIR/.hg
+rm -f $DISTDIR/.hgignore
 
 # Create the archive
 TARBALL="dolfin-$VERSION.tar.gz"

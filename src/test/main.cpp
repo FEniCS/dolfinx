@@ -91,7 +91,7 @@ void testOutputMesh()
 {
   dolfin_info("--- Testing output of mesh ---");
 
-  Mesh mesh("dolfin-1.xml.gz");
+  UnitCube mesh(16, 16, 16);
   File file("mesh.m");
   file << mesh;
 }
