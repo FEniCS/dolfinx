@@ -1,3 +1,4 @@
+0.6.0 [2006-03-01]
  - Fix bug in XML output format (writing multiple objects)
  - Fix bug in XML matrix output format (handle zero rows)
  - Add new nonlinear PDE demo 
