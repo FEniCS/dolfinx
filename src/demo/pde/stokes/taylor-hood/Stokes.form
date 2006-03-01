@@ -1,7 +1,7 @@
 # Copyright (c) 2005-2006 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
-# The bilinear form a(v, u) and Linear form L(v) for the Stokes
+# The bilinear form a(v, U) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (Taylor-Hood elements).
 #
 # Compile this form with FFC: ffc Stokes.form
@@ -11,9 +11,9 @@ P2 = FiniteElement("Vector Lagrange", "triangle", 2)
 TH = P2 + P1
 
 (v, q) = BasisFunctions(TH)
-(u, p) = BasisFunctions(TH)
+(U, P) = BasisFunctions(TH)
 
 f = Function(P2)
 
-a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u))*dx
+a = (dot(grad(v), grad(U)) - div(v)*P + q*div(U))*dx
 L = dot(v, f)*dx

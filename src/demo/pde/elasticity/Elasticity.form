@@ -9,7 +9,7 @@
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 v = BasisFunction(element) # test function
-u = BasisFunction(element) # trial function
+U = BasisFunction(element) # trial function
 f = Function(element)      # external force
 
 E  = 10.0
@@ -24,5 +24,5 @@ def epsilon(v):
 def sigma(v):
     return 2*mu*epsilon(v) + lmbda*mult(trace(epsilon(v)), Identity(len(v)))
 
-a = dot(grad(v), sigma(u)) * dx
-L = dot(v, f) * dx
+a = dot(grad(v), sigma(U))*dx
+L = dot(v, f)*dx

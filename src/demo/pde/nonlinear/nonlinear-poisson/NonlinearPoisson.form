@@ -1,17 +1,17 @@
 # Copyright (C) 2005 Garth N. Wells.
 # Licensed under the GNU GPL Version 2.
 #
-# The linearised bilinear form a(u,v) and linear form L(v) for
-# the nonlinear equation - div (1+u) grad u = f
+# The linearised bilinear form a(v, U) and linear form L(v) for
+# the nonlinear equation - div (1+u^2) grad u = f
 #
 # Compile this form with FFC: ffc NonlinearPoisson.form.
 
 element = FiniteElement("Lagrange", "triangle", 1)
 
 v = BasisFunction(element)
-u = BasisFunction(element)
-u0= Function(element)
+U = BasisFunction(element)
+U0= Function(element)
 f = Function(element)
 
-a = v.dx(i)*(1+u0*u0)*u.dx(i)*dx + v.dx(i)*2*u0*u*u0.dx(i)*dx
-L = v*f*dx - v.dx(i)*(1+u0*u0)*u0.dx(i)*dx
+a = v.dx(i)*(1+U0*U0)*U.dx(i)*dx + v.dx(i)*2*U0*U*U0.dx(i)*dx
+L = v*f*dx - v.dx(i)*(1+U0*U0)*U0.dx(i)*dx

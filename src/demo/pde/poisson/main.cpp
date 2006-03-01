@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-02-10
+// Last changed: 2006-03-01
 //
 // This demo program solves Poisson's equation
 //
@@ -50,11 +50,11 @@ int main()
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
-  Function u = pde.solve();
+  Function U = pde.solve();
 
   // Save solution to file
   File file("poisson.pvd");
-  file << u;
+  file << U;
   
   return 0;
 }

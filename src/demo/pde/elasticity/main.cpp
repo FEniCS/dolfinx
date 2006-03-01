@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-02-07
+// Last changed: 2006-03-01
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -59,15 +59,15 @@ int main()
 
   // Compute solution (using direct solver)
   pde.set("solver", "direct");
-  Function u = pde.solve();
+  Function U = pde.solve();
 
   // Save solution (displacement) to file
   File file("elasticity.pvd");
-  file << u;
+  file << U;
 
   // Set up post-processing problem to compute strain
   ElasticityStrain::BilinearForm a_strain;
-  ElasticityStrain::LinearForm L_strain(u);
+  ElasticityStrain::LinearForm L_strain(U);
   PDE pde_strain(a_strain, L_strain, mesh);
   Function normal_strain, shear_strain;
 

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-02-10
+// Last changed: 2006-03-01
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -48,13 +48,13 @@ int main()
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
-  Function u;
-  Function p;
-  pde.solve(u, p);
+  Function U;
+  Function P;
+  pde.solve(U, P);
 
   // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
-  ufile << u;
-  pfile << p;
+  ufile << U;
+  pfile << P;
 }

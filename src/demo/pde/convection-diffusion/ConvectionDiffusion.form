@@ -2,9 +2,9 @@
 # Licensed under the GNU GPL Version 2.
 #
 # First added:  2006-02-09
-# Last changed: 2006-02-10
+# Last changed: 2006-03-01
 #
-# The bilinear form a(v, u) and linear form L(v) for
+# The bilinear form a(v, U) and linear form L(v) for
 # convection-diffusion using cG(1)cG(1).
 #
 # Compile this form with FFC: ffc ConvectionDiffusion.form.
@@ -13,13 +13,13 @@ scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = FiniteElement("Vector Lagrange", "triangle", 2)
 
 v  = BasisFunction(scalar)
-u1 = BasisFunction(scalar)
-u0 = Function(scalar)
+U1 = BasisFunction(scalar)
+U0 = Function(scalar)
 b  = Function(vector)
 f  = Function(scalar)
 
 c = 0.005
 k = 0.05
 
-a = v*u1*dx + 0.5*k*(v*dot(b, grad(u1))*dx + c*dot(grad(v), grad(u1))*dx)
-L = v*u0*dx - 0.5*k*(v*dot(b, grad(u0))*dx + c*dot(grad(v), grad(u0))*dx) + k*v*f*dx
+a = v*U1*dx + 0.5*k*(v*dot(b, grad(U1))*dx + c*dot(grad(v), grad(U1))*dx)
+L = v*U0*dx - 0.5*k*(v*dot(b, grad(U0))*dx + c*dot(grad(v), grad(U0))*dx) + k*v*f*dx

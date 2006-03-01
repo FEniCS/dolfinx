@@ -1,7 +1,7 @@
 # Copyright (c) 2005-2006 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
-# The bilinear form a(v, u) and Linear form L(v) for the Stokes
+# The bilinear form a(v, U) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (equal-order stabilized).
 #
 # Compile this form with FFC: ffc Stokes.form
@@ -11,7 +11,7 @@ vector = FiniteElement("Vector Lagrange", "triangle", 1)
 system = vector + scalar
 
 (v, q) = BasisFunctions(system)
-(u, p) = BasisFunctions(system)
+(U, P) = BasisFunctions(system)
 
 f = Function(vector)
 h = Function(scalar)
@@ -19,5 +19,5 @@ h = Function(scalar)
 beta  = 0.2
 delta = beta*h*h
 
-a = (dot(grad(v), grad(u)) - div(v)*p + q*div(u) + delta*dot(grad(q), grad(p)))*dx
+a = (dot(grad(v), grad(U)) - div(v)*P + q*div(U) + delta*dot(grad(q), grad(P)))*dx
 L = dot(v + mult(delta, grad(q)), f)*dx

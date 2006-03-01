@@ -1,14 +1,14 @@
 // Copyright (C) 2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// First added:  2006-02-09
+// Last changed: 2006-03-01
+//
 // This demo first computes the flow around a dolphin by solving
 // the Stokes equations using a mixed formulation with Taylor-Hood
 // elements. The temperature around the dolphin is then computed
 // by solving the time-dependent convection-diffusion equation by
 // a least-squares stabilized cG(1)cG(1) method.
-
-// First added:  2006-02-09
-// Last changed: 2006-02-09
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -16,7 +16,7 @@
 
 using namespace dolfin;
 
-void solveConvDiff(Mesh& mesh, Function& velocity)
+void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
 {
   // Boundary condition
   class : public BoundaryCondition
@@ -46,12 +46,12 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
   
   // Create functions
   ConvectionDiffusion::BilinearForm::TrialElement element;
-  Function u0 = 0.0;
-  Function u1(x, mesh, element);
+  Function U0 = 0.0;
+  Function U1(x, mesh, element);
 
   // Create forms
   ConvectionDiffusion::BilinearForm a(velocity);
-  ConvectionDiffusion::LinearForm L(u0, velocity, f);
+  ConvectionDiffusion::LinearForm L(U0, velocity, f);
 
   // Assemble left-hand side
   FEM::assemble(a, A, mesh);
@@ -76,14 +76,14 @@ void solveConvDiff(Mesh& mesh, Function& velocity)
     solver.solve(A, x, b);
     
     // Save the solution to file
-    file << u1;
+    file << U1;
 
     // Update progress
     p = t / T;
 
     // Move to next interval
     t += k;
-    u0 = u1;
+    U0 = U1;
   }
 }
 
@@ -125,16 +125,16 @@ int main()
   PDE pde(a, L, mesh, bc);
 
   // Compute solution
-  Function u;
-  Function p;
-  pde.solve(u, p);
+  Function U;
+  Function P;
+  pde.solve(U, P);
 
   // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
-  ufile << u;
-  pfile << p;
+  ufile << U;
+  pfile << P;
 
   // Solve convection-diffusion with computed velocity field
-  solveConvDiff(mesh, u);
+  solveConvectionDiffusion(mesh, U);
 }
