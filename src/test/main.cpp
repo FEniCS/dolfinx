@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-20
+// Last changed: 2006-03-01
 //
 // This file is used for testing out new features implemented in the
 // library, which means that the contents of this file is constantly
@@ -258,20 +258,19 @@ void testMakeElement()
 
 int main(int argc, char* argv[])
 {
-  //testPreconditioner();
-  //testOutputVector();
-  //testOutputMatrix();
-  //testOutputMesh();
-  //testOutputFiniteElementSpec();
+  testPreconditioner();
+  testOutputVector();
+  testOutputMatrix();
+  testOutputMesh();
+  testOutputFiniteElementSpec();
+  testOutputFunction();
   testOutputMultiple();
-  //testFunctional();
-  //testRandom();
-  //testProgress();
-  //testParameters();
-  //testMakeElement();
-
-  //testInputFunction();
-  //testOutputFunction();
+  testInputFunction();
+  testFunctional();
+  testRandom();
+  testProgress();
+  testParameters();
+  testMakeElement();
 
   return 0;
 }

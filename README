@@ -9,7 +9,7 @@ Contents
 -------------------------------------------------------------------------------
 1. Dependencies
 
-DOLFIN depends on PETSc, version 2.3.0. PETSc can be downloaded from
+DOLFIN depends on PETSc, version 2.3.1. PETSc can be downloaded from
 
     http://www-unix.mcs.anl.gov/petsc/petsc-2/
 
@@ -77,4 +77,4 @@ For more information about DOLFIN, visit
 
 -------------------------------------------------------------------------------
 Chicago
-December 2005
+March 2006
