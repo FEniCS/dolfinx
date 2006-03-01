@@ -30,13 +30,37 @@ VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
 echo "--- Version number is $VERSION"
 sleep 1
 
-exit 0
-
-# Get the version number
-
+# Commit changes to hg
+echo '--- Pushing changes to parent repository'
+hg commit
+hg push default
+echo '--- Changes pushed, press return to continue'
+read
 
 # Write a message
-echo Creating release $VERSION of DOLFIN, assuming this is a clean CVS version
+echo "--- Creating release $VERSION of DOLFIN"
+
+# Create the directory
+DISTDIR=dolfin-$VERSION
+echo "--- Creating directory release/$DISTDIR"
+mkdir -p release
+cd release
+hg clone .. $DISTDIR
+rm -r $DISTDIR/.hg
+rm $DISTDIR/.hgignore
+
+# Create the archive
+TARBALL="dolfin-$VERSION.tar.gz"
+echo "--- Creating arhive $TARBALL"
+tar zcf $TARBALL $DISTDIR
+cd ..
+
+exit 0
+
+
+
+
+
 
 # Create the directory
 DISTDIR=dolfin-$VERSION
