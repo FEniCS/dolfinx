@@ -8,10 +8,10 @@
 # Make sure we have the current version
 echo '--- Synchronizing repository'
 sleep 1
-#--hg pull
-#--hg update
-#--hg commit
-#--hg push default
+hg pull
+hg update
+hg commit
+hg push default
 echo '--- Repository synchronized, press return to continue'
 read
 
@@ -58,42 +58,40 @@ tar zcf $TARBALL $DISTDIR
 echo '--- Removing directory'
 rm -rf $DISTDIR
 
-exit 0
-
 # Unpack the tarball
 echo '--- Unpacking tarball to check if it compiles'
 tar zxf $TARBALL
 
-
 # Compile
-echo 'Compiling in directory '$DISTDIR' (see make-'$VERSION'.log)'
-MAKELOG='../make-'$VERSION'.log'
+echo "--- Compiling in directory release/$DISTDIR (see make-'$VERSION'.log)"
 cd $DISTDIR
+MAKELOG="../make-$VERSION.log"
 rm -f $MAKELOG
 ./configure.local --enable-debug >> $MAKELOG
 export PATH=`pwd`"/local/bin:$PATH"
 make all install demo >& $MAKELOG
 
 # Show log
+echo '--- Compilation finished, check log'
 less $MAKELOG
+cd ../../
 
 # Copy files to web server
-cd ..
-echo 'Copying ChangeLog to web server'
+echo '--- Copying files to web server'
+scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
-echo 'Copying TODO list to web server'
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
-echo 'Copying tarball to web server'
-scp $TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
 
 # Update on web server
+echo '--- Update web pages'
 ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
 ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
+echo '--- Notifying mailing list'
 SUBJECT="Version "$VERSION" of DOLFIN released"
 cat ChangeLog | mail -s "$SUBJECT" dolfin-dev@fenics.org
 
 # Write a message
 echo ' '
-echo 'Now update at freshmeat.'
+echo '--- Now update at freshmeat'
