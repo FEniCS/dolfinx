@@ -79,13 +79,14 @@ cd ../../
 
 # Copy files to web server
 echo '--- Copying files to web server'
-scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.5
+scp release/$TARBALL fenics@fenics.org:www.fenics.org/pub/software/dolfin/v0.6
 scp ChangeLog fenics@fenics.org:www.fenics.org/pub/software/dolfin
 scp TODO fenics@fenics.org:www.fenics.org/pub/software/dolfin
 
 # Update on web server
 echo '--- Update web pages'
 ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/dolfin/index.cpp'
+ssh fenics@fenics.org 'xterm -e emacs -nw www.fenics.org/download/index.cpp'
 ssh fenics@fenics.org 'xterm -e /home/fenics/local/bin/news'
 
 # Notify dolfin-dev of the new version
