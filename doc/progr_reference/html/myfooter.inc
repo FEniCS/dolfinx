@@ -1,4 +1,9 @@
-<p><img src="mydot.png" width="100%" height="2"><br>
-Documentation automatically generated with <a href="http://www.doxygen.org/">Doxygen</a> on $date.
+<p>
+<hr size="1"><address style="align: right;"><small>
+Generated on $datetime for $projectname by&nbsp;<a href="http://www.doxygen.org/index.html">Doxygen</a> $doxygenversion</small></address>
+
+</table>
+</div>
+
 </body>
 </html>
