@@ -50,7 +50,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
       dolfin_log(false);
  
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += solver.solve(A, dx, b);  
+      krylov_iterations += solver.solve(A, dx, b);
 
       // Update solution
       x += dx;
