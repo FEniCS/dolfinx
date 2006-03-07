@@ -100,9 +100,6 @@ void Logger::warning(const char* file, unsigned long line,
 void Logger::error(const char* file, unsigned long line,
 		   const char* function, const char* format, ...)
 {
-  if ( !state )
-    return;
-
   init();
 
   sprintf(location, "%s:%d: %s()", file, (int) line, function);
