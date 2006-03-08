@@ -36,10 +36,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
   uint krylov_iterations = 0;
   newton_iteration = 0;
-  bool converged = false;
+  bool newton_converged = false;
 
   // Start iterations
-  while( !converged && newton_iteration < maxit )
+  while( !newton_converged && newton_iteration < maxit )
   {
 
       dolfin_log(false);
@@ -49,7 +49,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       // Compute initial residual
       if(newton_iteration == 0)
-        converged = convergenceTest(b, dx, nonlinear_problem);
+        newton_converged = converged(b, dx, nonlinear_problem);
 
       // Update solution
       x += dx;
@@ -64,11 +64,10 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
       dolfin_log(true);
 
       // Test for convergence 
-      converged = convergenceTest(b, dx, nonlinear_problem);
-
+      newton_converged = converged(b, dx, nonlinear_problem);
   }
 
-  if(converged)
+  if(newton_converged)
     dolfin_info("Newton solver finished in %d iterations and %d linear solver iterations.", 
         newton_iteration, krylov_iterations);
   else
@@ -84,7 +83,7 @@ dolfin::uint NewtonSolver::getIteration() const
   return newton_iteration; 
 }
 //-----------------------------------------------------------------------------
-bool NewtonSolver::convergenceTest(const Vector& b, const Vector& dx, 
+bool NewtonSolver::converged(const Vector& b, const Vector& dx, 
       const NonlinearProblem& nonlinear_problem)
 {
   const std::string convergence_criterion = get("Newton convergence criterion");
