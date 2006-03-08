@@ -71,6 +71,8 @@ int main(int argc, char* argv[])
   bc.sync(t);
 
   pde.set("Newton relative tolerance", 1e-6); 
+  pde.set("Newton convergence criterion", "incremental"); 
+//  pde.set("Newton convergence criterion", "residual"); 
   while( t < T)
   {
     t += dt;
