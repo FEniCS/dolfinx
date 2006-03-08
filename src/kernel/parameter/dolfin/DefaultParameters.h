@@ -64,8 +64,9 @@ add("homotopy solution file name", "solution.data");
 
 //--- Parameters for Newton solver ---
 
-  add("Newton maximum iterations", 50);
-  add("Newton relative tolerance", 1e-9);
-  add("Newton absolute tolerance", 1e-20);
-  add("Newton method", "full");
-  add("Newton report", true);
+add("Newton maximum iterations", 50);
+add("Newton relative tolerance", 1e-9);
+add("Newton absolute tolerance", 1e-20);
+add("Newton convergence criterion", "residual");
+add("Newton method", "full");
+add("Newton report", true);
