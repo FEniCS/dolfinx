@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2006-02-20
+// Last changed: 2006-03-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -83,7 +83,7 @@ void BoundaryInit::initVertices(Mesh& mesh)
       mesh.bd->add(*n);
   
   // Write a message
-  cout << "Found " << mesh.bd->noVertices() << " vertices on the boundary." << endl;
+  cout << "Found " << mesh.bd->numVertices() << " vertices on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initFacesTri(Mesh& mesh)
@@ -116,11 +116,11 @@ void BoundaryInit::initFacesTet(Mesh& mesh)
   }
   
   // Check that we found a boundary
-  if ( mesh.bd->noFaces() == 0 )
+  if ( mesh.bd->numFaces() == 0 )
     dolfin_error("Found no faces on the boundary.");
   
   // Write a message
-  cout << "Found " << mesh.bd->noFaces() << " faces on the boundary." << endl;
+  cout << "Found " << mesh.bd->numFaces() << " faces on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initEdgesTri(Mesh& mesh)
@@ -149,11 +149,11 @@ void BoundaryInit::initEdgesTri(Mesh& mesh)
   }
   
   // Check that we found a boundary
-  if ( mesh.bd->noEdges() == 0 )
+  if ( mesh.bd->numEdges() == 0 )
     dolfin_error("Found no edges on the boundary.");
   
   // Write a message
-  cout << "Found " << mesh.bd->noEdges() << " edges on the boundary." << endl;
+  cout << "Found " << mesh.bd->numEdges() << " edges on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------
 void BoundaryInit::initEdgesTet(Mesh& mesh)
@@ -176,6 +176,6 @@ void BoundaryInit::initEdgesTet(Mesh& mesh)
       mesh.bd->add(*e);
 
   // Write a message
-  cout << "Found " << mesh.bd->noEdges() << " edges on the boundary." << endl;
+  cout << "Found " << mesh.bd->numEdges() << " edges on the boundary." << endl;
 }
 //-----------------------------------------------------------------------------

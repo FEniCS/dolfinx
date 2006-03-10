@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #include <dolfin/Vertex.h>
 #include <dolfin/GenericCell.h>
@@ -63,17 +63,17 @@ int Vertex::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-int Vertex::noVertexNeighbors() const
+int Vertex::numVertexNeighbors() const
 {
   return nn.size();
 }
 //-----------------------------------------------------------------------------
-int Vertex::noCellNeighbors() const
+int Vertex::numCellNeighbors() const
 {
   return nc.size();
 }
 //-----------------------------------------------------------------------------
-int Vertex::noEdgeNeighbors() const
+int Vertex::numEdgeNeighbors() const
 {
   return ne.size();
 }

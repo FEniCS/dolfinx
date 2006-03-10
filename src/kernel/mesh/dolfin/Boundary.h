@@ -1,19 +1,21 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #ifndef __BOUNDARY_H
 #define __BOUNDARY_H
 
 #include <dolfin/BoundaryData.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class Mesh;
 
-  class Boundary {
+  class Boundary
+  {
   public:
     
     /// Create an empty boundary
@@ -26,13 +28,13 @@ namespace dolfin {
     ~Boundary();
 
     /// Return number of vertices on the boundary
-    int noVertices() const;
+    int numVertices() const;
 
     /// Return number of edges on the boundary
-    int noEdges() const;
+    int numEdges() const;
 
     /// Return number of faces on the boundary
-    int noFaces() const;
+    int numFaces() const;
 
     /// Friends
     friend class VertexIterator::BoundaryVertexIterator;

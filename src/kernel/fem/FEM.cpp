@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004-05-19
-// Last changed: 2006-02-20
+// Last changed: 2006-03-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/timing.h>
@@ -422,7 +422,7 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->noCellNeighbors() == 1);
+    dolfin_assert(edge->numCellNeighbors() == 1);
     Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -503,7 +503,7 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->noCellNeighbors() == 1);
+    dolfin_assert(edge->numCellNeighbors() == 1);
     Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -582,7 +582,7 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->noCellNeighbors() == 1);
+    dolfin_assert(edge->numCellNeighbors() == 1);
     Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -659,7 +659,7 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
     // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->noCellNeighbors() == 1);
+    dolfin_assert(face->numCellNeighbors() == 1);
     Cell& cell = face->cell(0);
 
     // Update affine map
@@ -740,7 +740,7 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
     // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->noCellNeighbors() == 1);
+    dolfin_assert(face->numCellNeighbors() == 1);
     Cell& cell = face->cell(0);
 
     // Update affine map
@@ -819,7 +819,7 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
     // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->noCellNeighbors() == 1);
+    dolfin_assert(face->numCellNeighbors() == 1);
     Cell& cell = face->cell(0);
 
     // Update affine map
@@ -895,7 +895,7 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
   for (EdgeIterator edge(boundary); !edge.end(); ++edge)
   {
     // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->noCellNeighbors() == 1);
+    dolfin_assert(edge->numCellNeighbors() == 1);
     Cell& cell = edge->cell(0);
 
     // Update affine map
@@ -971,7 +971,7 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
   for (FaceIterator face(boundary); !face.end(); ++face)
   {
     // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->noCellNeighbors() == 1);
+    dolfin_assert(face->numCellNeighbors() == 1);
     Cell& cell = face->cell(0);
 
     // Update affine map
@@ -1025,7 +1025,7 @@ dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
 
   uint nzmax = 0;
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    nzmax = std::max(nzmax, vertex->noVertexNeighbors() * element.spacedim());
+    nzmax = std::max(nzmax, vertex->numVertexNeighbors() * element.spacedim());
 
   return nzmax;
 }

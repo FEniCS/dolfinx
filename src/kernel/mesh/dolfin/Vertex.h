@@ -1,8 +1,8 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #ifndef __VERTEX_HH
 #define __VERTEX_HH
@@ -16,14 +16,16 @@
 #include <dolfin/CellIterator.h>
 #include <dolfin/EdgeIterator.h>
 
-namespace dolfin{
+namespace dolfin
+{
 
   class GenericCell;
   class Cell;
   class Edge;
   class MeshInit;
   
-  class Vertex{
+  class Vertex
+  {
   public:
 
     /// Create an unconnected vertex at (0,0,0)
@@ -50,13 +52,13 @@ namespace dolfin{
     int id() const;
 
     /// Return number of vertex neighbors
-    int noVertexNeighbors() const;
+    int numVertexNeighbors() const;
 
     /// Return number of cell neighbors
-    int noCellNeighbors() const;
+    int numCellNeighbors() const;
 
     /// Return number of edge neighbors
-    int noEdgeNeighbors() const;
+    int numEdgeNeighbors() const;
 
     /// Return vertex neighbor number i
     Vertex& vertex(int i) const;

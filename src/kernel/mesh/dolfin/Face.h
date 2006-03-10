@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -37,10 +37,10 @@ namespace dolfin
     int id() const;
 
     /// Return number of edges
-    unsigned int noEdges() const;
+    unsigned int numEdges() const;
 
     /// Return number of cell neighbors
-    unsigned int noCellNeighbors() const;
+    unsigned int numCellNeighbors() const;
 
     /// Return edge number i
     Edge& edge(int i) const;

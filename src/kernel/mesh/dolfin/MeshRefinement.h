@@ -96,7 +96,7 @@ namespace dolfin
     static void sortVertices(const Cell& cell, PArray<Vertex*>& vertices);
     
     /// Count the number of marked edges within a cell
-    static int noMarkedEdges(const Cell& cell);
+    static int numMarkedEdges(const Cell& cell);
 
     /// Mapping from global vertex number to local number within cell
     static int vertexNumber(const Vertex& vertex, const Cell& cell);

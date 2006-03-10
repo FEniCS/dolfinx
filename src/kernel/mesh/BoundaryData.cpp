@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vertex.h>
@@ -53,17 +53,17 @@ bool BoundaryData::empty()
   return vertices.size() == 0 && edges.size() == 0 && faces.size() == 0;
 }
 //-----------------------------------------------------------------------------
-int BoundaryData::noVertices() const
+int BoundaryData::numVertices() const
 {
   return vertices.size();
 }
 //-----------------------------------------------------------------------------
-int BoundaryData::noEdges() const
+int BoundaryData::numEdges() const
 {
   return edges.size();
 }
 //-----------------------------------------------------------------------------
-int BoundaryData::noFaces() const
+int BoundaryData::numFaces() const
 {
   return faces.size();
 }

@@ -4,7 +4,7 @@
 // Modified by Par Ingelstrom 2004.
 //
 // First added:  2003
-// Last changed: 2006-02-20
+// Last changed: 2006-03-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -379,7 +379,7 @@ void MeshRefinement::closeCell(Cell& cell,
   // This is algorithm CloseElement() in Bey's paper.
   
   // First count the number of marked edges in the cell
-  int no_marked_edges = noMarkedEdges(cell);
+  int no_marked_edges = numMarkedEdges(cell);
 
   // Check which rule should be applied
   if ( checkRule(cell, no_marked_edges) )
@@ -515,7 +515,7 @@ void MeshRefinement::sortVertices(const Cell& cell, PArray<Vertex*>& vertices)
   }
 }
 //-----------------------------------------------------------------------------
-int MeshRefinement::noMarkedEdges(const Cell& cell)
+int MeshRefinement::numMarkedEdges(const Cell& cell)
 {
   int count = 0;
   for (EdgeIterator e(cell); !e.end(); ++e)

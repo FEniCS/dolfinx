@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -28,22 +28,22 @@ Boundary::~Boundary()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int Boundary::noVertices() const
+int Boundary::numVertices() const
 {
   dolfin_assert(mesh);
-  return mesh->bd->noVertices();
+  return mesh->bd->numVertices();
 }
 //-----------------------------------------------------------------------------
-int Boundary::noEdges() const
+int Boundary::numEdges() const
 {
   dolfin_assert(mesh);
-  return mesh->bd->noEdges();
+  return mesh->bd->numEdges();
 }
 //-----------------------------------------------------------------------------
-int Boundary::noFaces() const
+int Boundary::numFaces() const
 {
   dolfin_assert(mesh);
-  return mesh->bd->noFaces();
+  return mesh->bd->numFaces();
 }
 //-----------------------------------------------------------------------------
 void Boundary::init()

@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-01
+// Last changed: 2006-03-10
 
 #include <dolfin/Point.h>
 #include <dolfin/Vertex.h>
@@ -34,12 +34,12 @@ int Face::id() const
   return _id;
 }
 //-----------------------------------------------------------------------------
-unsigned int Face::noEdges() const
+unsigned int Face::numEdges() const
 {
   return fe.size();
 }
 //-----------------------------------------------------------------------------
-unsigned int Face::noCellNeighbors() const
+unsigned int Face::numCellNeighbors() const
 {
   return fc.size();
 }
