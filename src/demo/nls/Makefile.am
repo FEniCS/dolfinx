@@ -1,1 +1,1 @@
-SUBDIRS = nonlinearpoisson 
+SUBDIRS = cahn-hilliard nonlinearpoisson 

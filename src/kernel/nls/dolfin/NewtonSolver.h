@@ -13,6 +13,7 @@
 #include <dolfin/BilinearForm.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/LU.h>
 
 namespace dolfin
 {
@@ -54,7 +55,8 @@ namespace dolfin
     real residual0;
 
     // Solver
-    KrylovSolver solver;
+//    KrylovSolver solver;
+    LU solver;
 
     // Jacobian matrix
     Matrix A;
