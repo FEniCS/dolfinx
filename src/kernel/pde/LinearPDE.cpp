@@ -66,11 +66,13 @@ dolfin::uint LinearPDE::solve(Function& u)
   if ( solver_type == "direct" )
   {
     LU solver;
+    solver.set("parent", *this);
     solver.solve(A, x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
     GMRES solver;
+    solver.set("parent", *this);
     solver.solve(A, x, b);
   }
   else

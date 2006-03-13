@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-10-24
+// Last changed: 2006-03-13
 
 #ifndef __LU_H
 #define __LU_H
@@ -11,6 +11,7 @@
 #include <petscmat.h>
 
 #include <dolfin/LinearSolver.h>
+#include <dolfin/Parametrized.h>
 
 namespace dolfin
 {
@@ -18,7 +19,7 @@ namespace dolfin
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
   
-  class LU : public LinearSolver
+  class LU : public LinearSolver, public Parametrized
   {
   public:
     

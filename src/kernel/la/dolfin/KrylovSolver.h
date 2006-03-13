@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-02-27
+// Last changed: 2006-03-13
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -100,6 +100,9 @@ namespace dolfin
     /// Initialize KSP solver
     void init(uint M, uint N);
 
+    /// Read parameters from database
+    void readParameters();
+
     /// Create preconditioner matrix for virtual matrix
     void createVirtualPreconditioner(const VirtualMatrix& A);
 
@@ -112,7 +115,7 @@ namespace dolfin
     /// Set PETSC Hypre preconditioner
     void setPreconditionerHypre(PC& pc);
 
-    /// True if PETSc preconditioner needs to be set or re-set.
+    /// True if PETSc preconditioner needs to be set or re-set
     bool set_pc;
 
     /// True if we should report the number of iterations
@@ -127,16 +130,13 @@ namespace dolfin
     /// PETSc solver pointer
     KSP ksp;
 
-    /// Diagonal matrix used for preconditioning with virtual matrix
-    Mat B;
-
     /// Size of old system (need to reinitialize when changing)
     uint M;
     uint N;
 
     // Optional DOLFIN preconditioner (can't be set with PCSetType yet)
-    Preconditioner *dolfin_pc;
-
+    Preconditioner* dolfin_pc;
+    
   };
 
 }

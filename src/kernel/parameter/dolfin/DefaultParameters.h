@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2005-12-19
+// Last changed: 2006-03-13
 
 //--- General parameters ---
 
@@ -70,3 +70,11 @@ add("Newton absolute tolerance", 1e-20);
 add("Newton convergence criterion", "residual");
 add("Newton method", "full");
 add("Newton report", true);
+
+//--- Parameters for Krylov solvers ---
+add("Krylov relative tolerance", 1e-9);
+add("Krylov absolute tolerance", 1e-20);
+add("Krylov divergence limit",   1e4);
+add("Krylov maximum iterations", 10000);
+add("Krylov report iterations", true);
+add("Krylov monitor convergence", false);

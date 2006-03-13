@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-01
+// Last changed: 2006-03-13
 
 #include <petscpc.h>
 
@@ -32,9 +32,12 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver() : LinearSolver(), set_pc(true), report(true), 
-      solver_type(default_solver), preconditioner_type(Preconditioner::default_pc), 
-      ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver()
+  : LinearSolver(),
+    set_pc(true), report(true), 
+    solver_type(default_solver),
+    preconditioner_type(Preconditioner::default_pc), 
+    ksp(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -42,14 +45,16 @@ KrylovSolver::KrylovSolver() : LinearSolver(), set_pc(true), report(true),
   // Initialize KSP solver
   init(0, 0);
 
-  // Add parameters
-  add("monitor convergence", false);
+  // Read parameters
+  readParameters();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), set_pc(true), report(true), 
-       solver_type(solver_type), preconditioner_type(Preconditioner::default_pc), 
-       ksp(0), B(0), M(0), N(0), dolfin_pc(0)
-
+KrylovSolver::KrylovSolver(Type solver_type)
+  : LinearSolver(),
+    set_pc(true), report(true), 
+    solver_type(solver_type),
+    preconditioner_type(Preconditioner::default_pc), 
+    ksp(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -57,13 +62,16 @@ KrylovSolver::KrylovSolver(Type solver_type) : LinearSolver(), set_pc(true), rep
   // Initialize KSP solver
   init(0, 0);
 
-  // Add parameters
-  add("monitor convergence", false);
+  // Read parameters
+  readParameters();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type) : LinearSolver(), 
-       set_pc(true), report(true), solver_type(default_solver), preconditioner_type(preconditioner_type), 
-       ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type)
+  : LinearSolver(), 
+    set_pc(true), report(true),
+    solver_type(default_solver),
+    preconditioner_type(preconditioner_type), 
+    ksp(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -71,13 +79,16 @@ KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type) : LinearSol
   // Initialize KSP solver
   init(0, 0);
 
-  // Add parameters
-  add("monitor convergence", false);
+  // Read parameters
+  readParameters();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner_type) : 
-      LinearSolver(), set_pc(true), report(true), solver_type(solver_type), 
-      preconditioner_type(preconditioner_type), ksp(0), B(0), M(0), N(0), dolfin_pc(0)
+KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner_type)
+  : LinearSolver(),
+    set_pc(true), report(true),
+    solver_type(solver_type), 
+    preconditioner_type(preconditioner_type),
+    ksp(0), M(0), N(0), dolfin_pc(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -85,17 +96,14 @@ KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner
   // Initialize KSP solver
   init(0, 0);
 
-  // Add parameters
-  add("monitor convergence", false);
+  // Read parameters
+  readParameters();
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
 {
   // Destroy solver environment.
   if ( ksp ) KSPDestroy(ksp);
-
-  // Destroy matrix B if used
-  if ( B ) MatDestroy(B);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
@@ -116,6 +124,9 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Reinitialize solution vector if necessary
   x.init(M);
 
+  // Read parameters
+  readParameters();
+
   // Set Krylov method and preconditioner
   KSPType ksp_type;
   ksp_type = getType(solver_type);
@@ -127,21 +138,17 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   KSPGetPC(ksp, &pc);
 
   // Use DOLFIN PC if available, else set PETSc PC
-  if(dolfin_pc)
+  if (dolfin_pc)
   {
     setPreconditioner(*dolfin_pc);
   }
   else
   {
     setPreconditioner(pc);
-//    if(preconditioner_type != Preconditioner::default_pc) 
-//      PCSetType(pc, pc_type);
+    //    if(preconditioner_type != Preconditioner::default_pc) 
+    //      PCSetType(pc, pc_type);
   }
 
-  // Set monitor
-  if ( get("monitor convergence") )
-    KSPSetMonitor(ksp, monitor, 0, 0);
- 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
@@ -170,10 +177,6 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
 {
-  // Create preconditioner for virtual system the first time
-  //if ( !B )
-  // createVirtualPreconditioner(A);
-  
   // Check dimensions
   uint M = A.size(0);
   uint N = A.size(1);
@@ -189,6 +192,9 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
 
   // Reinitialize solution vector if necessary
   x.init(M);
+
+  // Read parameters
+  readParameters();
 
   PC pc;
   KSPGetPC(ksp, &pc);
@@ -250,7 +256,7 @@ void KrylovSolver::setRtol(real rtol)
   int _maxiter(0);
   
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing rtol for Krylov solver from %e to %e.", _rtol, rtol);
+  dolfin_info("Changing relative tolerance for Krylov solver from %e to %e.", _rtol, rtol);
   _rtol = rtol;
   KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
@@ -261,7 +267,7 @@ void KrylovSolver::setAtol(real atol)
   int _maxiter(0);
 
   KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing atol for Krylov solver from %e to %e.", _atol, atol);
+  dolfin_info("Changing absolute tolerance for Krylov solver from %e to %e.", _atol, atol);
   _atol = atol;
   KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
 }
@@ -338,20 +344,20 @@ void KrylovSolver::init(uint M, uint N)
   KSPCreate(PETSC_COMM_SELF, &ksp);
   KSPSetFromOptions(ksp);  
   //KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
-
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::createVirtualPreconditioner(const VirtualMatrix& A)
+void KrylovSolver::readParameters()
 {
-  // It's probably not a good idea to use a virtual matrix (shell) matrix
-  // for the preconditioner matrix
-
-  dolfin_assert(!B);
-  MatCreateSeqBAIJ(PETSC_COMM_SELF, 1, A.size(0), A.size(1), 1, PETSC_NULL, &B);
-  Vector d(A.size(0));
-  d = 1.0;
-  MatDiagonalSet(B, d.vec(), INSERT_VALUES);
-  //MatView(B, PETSC_VIEWER_STDOUT_SELF);
+  // Set monitor
+  if ( get("Krylov monitor convergence") )
+    KSPSetMonitor(ksp, monitor, 0, 0);
+  
+  // Set tolerances
+  KSPSetTolerances(ksp,
+		   get("Krylov relative tolerance"),
+		   get("Krylov absolute tolerance"),
+		   get("Krylov divergence limit"),
+		   get("Krylov maximum iterations"));
 }
 //-----------------------------------------------------------------------------
 KSPType KrylovSolver::getType(const Type type) const
