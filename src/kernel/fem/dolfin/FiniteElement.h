@@ -74,13 +74,6 @@ namespace dolfin
     /// Display finite element data
     void disp() const;
 
-  private:
-
-    /// Generate string representation matching FFC interface
-    static std::string FiniteElement::repr(std::string type, std::string shape,
-					   uint degree, uint vectordim);
-
-
   };
 
 }
