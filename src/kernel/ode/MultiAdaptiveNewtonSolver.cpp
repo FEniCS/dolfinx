@@ -36,11 +36,9 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   f = new real[method.qsize()];
   
   // Don't report number of GMRES iteration if not asked to
-  if ( !monitor )
-    solver.setReport(false);
-
-  solver.setRtol(0.01);
-  solver.setAtol(0.01*tol);
+  solver.set("Krylov report", monitor);
+  solver.set("Krylov absolute tolerance", 0.01);
+  solver.set("Krylov relative tolerance", 0.01*tol);
   
   // Set preconditioner
   solver.setPreconditioner(mpc);

@@ -462,12 +462,6 @@ class KrylovSolver(LinearSolver):
     def solve(*args): return _dolfin.KrylovSolver_solve(*args)
     def setType(*args): return _dolfin.KrylovSolver_setType(*args)
     def setPreconditioner(*args): return _dolfin.KrylovSolver_setPreconditioner(*args)
-    def setReport(*args): return _dolfin.KrylovSolver_setReport(*args)
-    def setRtol(*args): return _dolfin.KrylovSolver_setRtol(*args)
-    def setAtol(*args): return _dolfin.KrylovSolver_setAtol(*args)
-    def setDtol(*args): return _dolfin.KrylovSolver_setDtol(*args)
-    def setMaxiter(*args): return _dolfin.KrylovSolver_setMaxiter(*args)
-    def setZeroPivot(*args): return _dolfin.KrylovSolver_setZeroPivot(*args)
     def solver(*args): return _dolfin.KrylovSolver_solver(*args)
     def disp(*args): return _dolfin.KrylovSolver_disp(*args)
 

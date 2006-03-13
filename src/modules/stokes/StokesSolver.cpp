@@ -60,7 +60,6 @@ void StokesSolver::solve()
 
   // Solve the linear system
   GMRES solver;
-  solver.setRtol(1.0e-15);
   solver.solve(A, x, b);
   Function w(x, mesh, a->trial());
 

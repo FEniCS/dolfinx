@@ -34,7 +34,7 @@ namespace dolfin
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver()
   : LinearSolver(),
-    set_pc(true), report(true), 
+    set_pc(true),
     solver_type(default_solver),
     preconditioner_type(Preconditioner::default_pc), 
     ksp(0), M(0), N(0), dolfin_pc(0)
@@ -51,7 +51,7 @@ KrylovSolver::KrylovSolver()
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver_type)
   : LinearSolver(),
-    set_pc(true), report(true), 
+    set_pc(true),
     solver_type(solver_type),
     preconditioner_type(Preconditioner::default_pc), 
     ksp(0), M(0), N(0), dolfin_pc(0)
@@ -68,7 +68,7 @@ KrylovSolver::KrylovSolver(Type solver_type)
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type)
   : LinearSolver(), 
-    set_pc(true), report(true),
+    set_pc(true),
     solver_type(default_solver),
     preconditioner_type(preconditioner_type), 
     ksp(0), M(0), N(0), dolfin_pc(0)
@@ -85,7 +85,7 @@ KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner_type)
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver_type, Preconditioner::Type preconditioner_type)
   : LinearSolver(),
-    set_pc(true), report(true),
+    set_pc(true),
     solver_type(solver_type), 
     preconditioner_type(preconditioner_type),
     ksp(0), M(0), N(0), dolfin_pc(0)
@@ -115,7 +115,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( report )
+  if ( get("Krylov report") )
     dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
@@ -169,7 +169,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   PCGetType(pc, &pc_type);
 
   // Report number of iterations and solver type
-  if ( report )
+  if ( get("Krylov report") )
     dolfin_info("Krylov solver (%s, %s) converged in %d iterations.", ksp_type, pc_type, num_iterations);
 
   return num_iterations;
@@ -184,7 +184,7 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Write a message
-  if ( report )
+  if ( get("Krylov report") )
     dolfin_info("Solving linear system of size %d x %d (Krylov solver).", M, N);
 
   // Reinitialize KSP solver if necessary
@@ -226,7 +226,7 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   KSPGetIterationNumber(ksp, &num_iterations);
   
   // Report number of iterations
-  if ( report )
+  if ( get("Krylov report") )
     dolfin_info("Krylov converged in %d iterations.", num_iterations);
 
   return num_iterations;
@@ -245,65 +245,6 @@ void KrylovSolver::setPreconditioner(const Preconditioner::Type type)
   preconditioner_type = type;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setReport(bool report)
-{
-  this->report = report;
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::setRtol(real rtol)
-{
-  real _rtol(0.0), _atol(0.0), _dtol(0.0);
-  int _maxiter(0);
-  
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing relative tolerance for Krylov solver from %e to %e.", _rtol, rtol);
-  _rtol = rtol;
-  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::setAtol(real atol)
-{
-  real _rtol(0.0), _atol(0.0), _dtol(0.0);
-  int _maxiter(0);
-
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing absolute tolerance for Krylov solver from %e to %e.", _atol, atol);
-  _atol = atol;
-  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::setDtol(real dtol)
-{
-  real _rtol(0.0), _atol(0.0), _dtol(0.0);
-  int _maxiter(0);
-
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing dtol for Krylov solver from %e to %e.", _dtol, dtol);
-  _dtol = dtol;
-  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::setMaxiter(int maxiter)
-{
-  real _rtol(0.0), _atol(0.0), _dtol(0.0);
-  int _maxiter(0);
-
-  KSPGetTolerances(ksp, &_rtol, &_atol, &_dtol, &_maxiter);
-  dolfin_info("Changing maxiter for Krylov solver from %d to %d.", _maxiter, maxiter);
-  _maxiter = maxiter;
-  KSPSetTolerances(ksp, _rtol, _atol, _dtol, _maxiter);
-}
-//-----------------------------------------------------------------------------
-void KrylovSolver::setZeroPivot(real zeropivot)
-{
-  // Choose preconditioner
-  PC pc;
-  KSPGetPC(ksp, &pc);
-
-  PCFactorSetZeroPivot(pc, zeropivot);
-  dolfin_info("Changing zero pivot for Krylov solver to %g.", zeropivot);
-}
-//-----------------------------------------------------------------------------
 void KrylovSolver::setPreconditioner(Preconditioner &pc)
 {
   // Store pc, to be able to set it again
@@ -311,6 +252,12 @@ void KrylovSolver::setPreconditioner(Preconditioner &pc)
 
   // Setup DOLFIN preconditioner
   Preconditioner::setup(ksp, pc);
+}
+//-----------------------------------------------------------------------------
+KSP KrylovSolver::solver()
+{
+  dolfin_assert(ksp);
+  return ksp;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::disp() const

@@ -29,12 +29,13 @@ namespace dolfin
   public:
 
     /// Krylov methods
-    enum Type { 
-        bicgstab,       // Stabilised biconjugate gradient squared method 
-        cg,             // Conjugate gradient method
-        default_solver, // Default PETSc solver (use when setting solver from command line)
-        gmres           // GMRES method
-     };
+    enum Type
+    { 
+      bicgstab,       // Stabilised biconjugate gradient squared method 
+      cg,             // Conjugate gradient method
+      default_solver, // Default PETSc solver (use when setting solver from command line)
+      gmres           // GMRES method
+    };
 
     /// Create Krylov solver with PETSc default method and preconditioner
     KrylovSolver();
@@ -57,9 +58,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
     
-    /// FIXME: Options below should be moved to some parameter system,
-    /// FIXME: not very nice to have a long list of setFoo() functions.
-
     /// Set Krylov method type
     void setType(const Type solvertype);
 
@@ -69,28 +67,8 @@ namespace dolfin
     /// Set preconditioner
     void setPreconditioner(Preconditioner &pc);
 
-    /// Change whether solver should report the number iterations
-    void setReport(bool report);
-
-    /// Change rtol
-    void setRtol(real rtol);
-      
-    /// Change abstol
-    void setAtol(real atol);
-      
-    /// Change dtol
-    void setDtol(real dtol);
-      
-    /// Change maxiter
-    void setMaxiter(int maxiter);
-
-    /// Set zero pivot threshold
-    void setZeroPivot(real zeropivot);
-
     /// Return PETSc solver pointer
-    KSP solver(){
-      return ksp;
-    }
+    KSP solver();
 
     /// Display solver data
     void disp() const;
@@ -117,10 +95,7 @@ namespace dolfin
 
     /// True if PETSc preconditioner needs to be set or re-set
     bool set_pc;
-
-    /// True if we should report the number of iterations
-    bool report;
-
+    
     /// Solver type
     Type solver_type;
 

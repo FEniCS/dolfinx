@@ -1,3 +1,4 @@
+ - Remove KrylovSolver::setRtol() etc. and replace with parameters
  - Fix remaining name changes: noFoo() --> numFoo()
  - Add Cahn-Hilliard equation demo
  - NewtonSolver otion to use residual or incremnetal convergence criterion

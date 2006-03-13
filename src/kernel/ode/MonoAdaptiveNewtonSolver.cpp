@@ -233,9 +233,8 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   {
     dolfin_info("Using iterative linear solver: GMRES.");
     GMRES* solver = new GMRES();
-    if ( !monitor )
-      solver->setReport(false);
-    solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
+    solver->set("Krylov report", monitor);
+    solver->set("Krylov absolute tolerance", 0.01*tol); // FIXME: Is this a good choice?
     return solver;
   }
   else if ( choice == "direct" )
@@ -248,10 +247,9 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   {
     dolfin_info("Using iterative linear solver: GMRES (default).");
     GMRES* solver = new GMRES();
-    if ( !monitor )
-      solver->setReport(false);
-    solver->setRtol(0.01); // FIXME: Is this a good choice?
-    solver->setAtol(0.01*tol); // FIXME: Is this a good choice?
+    solver->set("Krylov report", monitor);
+    solver->set("Krylov relative tolerance", 0.01); // FIXME: Is this a good choice?
+    solver->set("Krylov absolute tolerance", 0.01*tol); // FIXME: Is this a good choice?
     return solver;
   }
   else
