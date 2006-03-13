@@ -260,12 +260,15 @@ def gmsh2xml(ifilename, ofilename):
             if line == "$ELM":
                 state += 1
         elif state == 4:
-            num_cells = int(line)
-            state += 1
+            num_cells  = int(line)
+            if num_cells == 0:
+                print "No cells found in gmsh file."
+                break
+            else:
+                state += 1
         elif state == 5:
             element = line.split()
             cell_type = int(element[1])
-
             if num_cells_read == 0:
                 write_header_cells(ofile, num_cells)
             if cell_type == 2:
@@ -301,8 +304,6 @@ def gmsh2xml(ifilename, ofilename):
     # Close files
     ifile.close()
     ofile.close()
-
-
 
 
 

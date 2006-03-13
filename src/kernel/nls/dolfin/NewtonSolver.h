@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-23
-// Last changed: 2006-02-24
+// Last changed: 2006-03-07
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -13,6 +13,7 @@
 #include <dolfin/BilinearForm.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/KrylovSolver.h>
+#include <dolfin/LU.h>
 
 namespace dolfin
 {
@@ -32,7 +33,7 @@ namespace dolfin
     NewtonSolver();
 
     /// Destructor
-    ~NewtonSolver();
+    virtual ~NewtonSolver();
 
     /// Solve abstract nonlinear problem F(x) = 0 for given vector F and 
     /// Jacobian dF/dx
@@ -43,14 +44,19 @@ namespace dolfin
 
   private:
 
+    /// Convergence test 
+    virtual bool converged(const Vector& b, const Vector& dx, 
+        const NonlinearProblem& nonlinear_problem);
+
     // Current number of Newton iterations
     uint newton_iteration;
 
-    // Residuals
-    real residual, relative_residual;
+    // Residual
+    real residual0;
 
     // Solver
-    KrylovSolver solver;
+//    KrylovSolver solver;
+    LU solver;
 
     // Jacobian matrix
     Matrix A;
