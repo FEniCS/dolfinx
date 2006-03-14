@@ -450,18 +450,8 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
       if ( bv.fixed )
       {
         int node = nodes[i];
-
         if ( !row_set[node] )
         {
-	  
-	  if ( point.y > (1.0 - DOLFIN_EPS) )
-	  {
-	    cout << "node = " << node
-		 << " bv = "  << bv.value
-		 << " i = " << components[i]
-		 << " p = " << point << endl;
-	  }
-	  
           rows[m++] = node;
           b(node) = bv.value;
           row_set[node] = true;

@@ -52,8 +52,6 @@ int main()
   Function P;
   pde.solve(U, P);
 
-  //U.vector().disp();
-
   // Save solution to file
   File ufile("velocity.pvd");
   File pfile("pressure.pvd");
