@@ -149,12 +149,6 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Read parameters
   readParameters();
 
-  // Set solver
-  setSolver();
-
-  // Set preconditioner
-  setPreconditioner();
-
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
@@ -196,12 +190,6 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   // Read parameters
   readParameters();
 
-  // Set solver
-  setSolver();
-
-  // Set preconditioner
-  setPreconditioner();
-  
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
@@ -239,14 +227,6 @@ void KrylovSolver::init(uint M, uint N)
   if ( ksp != 0 && M == this->M && N == this->N )
     return;
 
-  // Don't reinitialize on first solve
-  if ( ksp != 0 && this->M == 0 && this->N == 0 )
-  {
-    this->M = M;
-    this->N = N;
-    return;
-  }
-
   // Save size of system
   this->M = M;
   this->N = N;
@@ -259,6 +239,12 @@ void KrylovSolver::init(uint M, uint N)
   KSPCreate(PETSC_COMM_SELF, &ksp);
   KSPSetFromOptions(ksp);  
   //KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
+
+  // Set solver
+  setSolver();
+
+  // Set preconditioner
+  setPreconditioner();
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::readParameters()
