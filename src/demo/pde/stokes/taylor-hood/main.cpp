@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-03-01
+// Last changed: 2006-03-14
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -17,9 +17,12 @@ int main()
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
       // Pressure boundary condition, zero pressure at one point
-      if ( i == 2 && p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+      if ( i == 2 )
       {
-	value = 0.0;
+	if ( p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+	{
+	  value = 0.0;
+	}
 	return;
       }
       
@@ -45,11 +48,11 @@ int main()
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
-  pde.set("Krylov relative tolerance", 1e-14);
 
   // Compute solution
   Function U;
   Function P;
+  pde.set("solver", "direct");
   pde.solve(U, P);
 
   // Save solution to file
