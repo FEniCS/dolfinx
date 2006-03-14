@@ -17,9 +17,12 @@ int main()
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
       // Pressure boundary condition, zero pressure at one point
-      if ( i == 2 && p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+      if ( i == 2 )
       {
-	value = 0.0;
+	if ( p.x < DOLFIN_EPS && p.y < DOLFIN_EPS )
+	{
+	  value = 0.0;
+	}
 	return;
       }
       
@@ -50,6 +53,7 @@ int main()
   // Compute solution
   Function U;
   Function P;
+  pde.set("solver", "direct");
   pde.solve(U, P);
 
   // Save solution to file
