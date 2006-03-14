@@ -1,10 +1,11 @@
+ - Allow linear solver and preconditioner type to be passed to NewtonSolver 
  - Fix bug in Stokes demos (wrong boundary conditions)
  - Cleanup Krylov solver
  - Remove KrylovSolver::setPreconditioner() etc. and move to constructors
  - Remove KrylovSolver::setRtol() etc. and replace with parameters
  - Fix remaining name changes: noFoo() --> numFoo()
  - Add Cahn-Hilliard equation demo
- - NewtonSolver otion to use residual or incremnetal convergence criterion
+ - NewtonSolver option to use residual or incremental convergence criterion
  - Add separate function to nls to test for convergence of Newton iterations 
 0.6.0 [2006-03-01]
  - Fix bug in XML output format (writing multiple objects)
