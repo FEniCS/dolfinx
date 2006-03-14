@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-12-19
+// Last changed: 2006-03-14
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -28,7 +28,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), A(0), mpc(timeslab, method),
+  : TimeSlabSolver(timeslab), ts(timeslab), A(0),
+    mpc(timeslab, method), solver(mpc),
     f(0), num_elements(0), num_elements_mono(0),
     updated_jacobian(get("updated jacobian"))
 {
@@ -40,9 +41,6 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   solver.set("Krylov absolute tolerance", 0.01);
   solver.set("Krylov relative tolerance", 0.01*tol);
   
-  // Set preconditioner
-  solver.setPreconditioner(mpc);
-
   // Initialize Jacobian
   if ( updated_jacobian )
     A = new UpdatedMultiAdaptiveJacobian(*this, timeslab);

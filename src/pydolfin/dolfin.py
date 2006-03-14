@@ -460,8 +460,6 @@ class KrylovSolver(LinearSolver):
         except: pass
 
     def solve(*args): return _dolfin.KrylovSolver_solve(*args)
-    def setType(*args): return _dolfin.KrylovSolver_setType(*args)
-    def setPreconditioner(*args): return _dolfin.KrylovSolver_setPreconditioner(*args)
     def solver(*args): return _dolfin.KrylovSolver_solver(*args)
     def disp(*args): return _dolfin.KrylovSolver_disp(*args)
 

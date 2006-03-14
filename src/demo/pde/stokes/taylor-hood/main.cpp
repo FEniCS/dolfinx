@@ -45,11 +45,14 @@ int main()
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
   PDE pde(a, L, mesh, bc);
+  pde.set("Krylov relative tolerance", 1e-14);
 
   // Compute solution
   Function U;
   Function P;
   pde.solve(U, P);
+
+  //U.vector().disp();
 
   // Save solution to file
   File ufile("velocity.pvd");

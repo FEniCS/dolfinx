@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-13
+// Last changed: 2006-03-14
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -41,13 +41,19 @@ namespace dolfin
     KrylovSolver();
 
     /// Create Krylov solver for a particular method with default PETSc preconditioner
-    KrylovSolver(Type solvertype);
+    KrylovSolver(Type solver);
 
-    /// Create Krylov solver with PETSc default method and a particular preconditioner
-    KrylovSolver(Preconditioner::Type preconditionertype);
+    /// Create Krylov solver with default PETSc method and a particular preconditioner
+    KrylovSolver(Preconditioner::Type preconditioner);
+
+    /// Create Krylov solver with default PETSc method and a particular preconditioner
+    KrylovSolver(Preconditioner& preconditioner);
 
     /// Create Krylov solver for a particular method and preconditioner
-    KrylovSolver(Type solvertype, Preconditioner::Type preconditionertype);
+    KrylovSolver(Type solver, Preconditioner::Type preconditioner);
+
+    /// Create Krylov solver for a particular method and preconditioner
+    KrylovSolver(Type solver, Preconditioner& preconditioner);
 
     /// Destructor
     ~KrylovSolver();
@@ -58,15 +64,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
     
-    /// Set Krylov method type
-    void setType(const Type solvertype);
-
-    /// Set PETSc preconditioner type
-    void setPreconditioner(const Preconditioner::Type preconditionertype);
-
-    /// Set preconditioner
-    void setPreconditioner(Preconditioner &pc);
-
     /// Return PETSc solver pointer
     KSP solver();
 
@@ -80,27 +77,27 @@ namespace dolfin
 
     /// Read parameters from database
     void readParameters();
+    
+    /// Set solver
+    void setSolver();
 
-    /// Create preconditioner matrix for virtual matrix
-    void createVirtualPreconditioner(const VirtualMatrix& A);
+    /// Set preconditioner
+    void setPreconditioner();
+    
+    /// Report the number of iterations
+    void writeReport(int num_iterations);
 
     /// Get PETSc method identifier 
     KSPType getType(const Type type) const;
 
-    /// Set PETSC preconditioner
-    void setPreconditioner(PC& pc);
+    /// PETSc solver type
+    Type type;
 
-    /// Set PETSC Hypre preconditioner
-    void setPreconditionerHypre(PC& pc);
+    /// PETSc preconditioner
+    Preconditioner::Type pc_petsc;
 
-    /// True if PETSc preconditioner needs to be set or re-set
-    bool set_pc;
-    
-    /// Solver type
-    Type solver_type;
-
-    /// Preconditioner type
-    Preconditioner::Type preconditioner_type;
+    /// DOLFIN preconditioner
+    Preconditioner* pc_dolfin;
 
     /// PETSc solver pointer
     KSP ksp;
@@ -108,9 +105,6 @@ namespace dolfin
     /// Size of old system (need to reinitialize when changing)
     uint M;
     uint N;
-
-    // Optional DOLFIN preconditioner (can't be set with PCSetType yet)
-    Preconditioner* dolfin_pc;
     
   };
 

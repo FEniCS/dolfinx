@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-03-14
 
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
@@ -64,10 +64,10 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;       // The time slab;
     TimeSlabJacobian* A;             // Jacobian of time slab system
     MultiAdaptivePreconditioner mpc; // Preconditioner
+    GMRES solver;                    // GMRES solver
     real* f;                         // Values of right-hand side at quadrature points
     Vector dx;                       // Increment for Newton's method
     Vector b;                        // Right-hand side -F(x)
-    GMRES solver;                    // GMRES solver
     uint num_elements;               // Total number of elements
     real num_elements_mono;          // Estimated number of elements for mono-adaptive system
     bool updated_jacobian;           // Update Jacobian in each iteration
