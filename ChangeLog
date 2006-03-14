@@ -1,3 +1,6 @@
+ - Fix bug in Stokes demos (wrong boundary conditions)
+ - Cleanup Krylov solver
+ - Remove KrylovSolver::setPreconditioner() etc. and move to constructors
  - Remove KrylovSolver::setRtol() etc. and replace with parameters
  - Fix remaining name changes: noFoo() --> numFoo()
  - Add Cahn-Hilliard equation demo
