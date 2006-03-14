@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-23
-// Last changed: 2006-03-07
+// Last changed: 2006-03-14
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -29,8 +29,14 @@ namespace dolfin
   {
   public:
 
-    /// Initialise nonlinear solver
+    /// Initialise nonlinear solver and choose LU solver
     NewtonSolver();
+
+    /// Initialise nonlinear solver and choose Krylov solver
+    NewtonSolver(KrylovSolver::Type linear_solver);
+
+    /// Initialise nonlinear solver and choose Krylov solver
+    NewtonSolver(KrylovSolver::Type linear_solver, Preconditioner::Type preconditioner);
 
     /// Destructor
     virtual ~NewtonSolver();
@@ -48,25 +54,23 @@ namespace dolfin
     virtual bool converged(const Vector& b, const Vector& dx, 
         const NonlinearProblem& nonlinear_problem);
 
-    // Current number of Newton iterations
+    /// Current number of Newton iterations
     uint newton_iteration;
 
-    // Residual
+    /// Residual
     real residual0;
 
-    // Solver
-//    KrylovSolver solver;
-    LU solver;
+    /// Solver
+    LinearSolver* solver;
 
-    // Jacobian matrix
+    /// Jacobian matrix
     Matrix A;
 
-    // Resdiual vector
+    /// Resdiual vector
     Vector b;
 
-    // Solution vector
+    /// Solution vector
     Vector dx;
-
   };
 
 }

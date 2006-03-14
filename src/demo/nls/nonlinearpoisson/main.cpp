@@ -112,9 +112,8 @@ int main(int argc, char* argv[])
   // Create user-defined nonlinear problem
   MyNonlinearProblem nonlinear_problem(mesh, bc, U, f);
 
-
-  // Create nonlinear solver and set parameters
-  NewtonSolver nonlinear_solver;
+  // Create nonlinear solver (using BICGSTAB linear solver) and set parameters
+  NewtonSolver nonlinear_solver(KrylovSolver::bicgstab);
   nonlinear_solver.set("Newton maximum iterations", 50);
   nonlinear_solver.set("Newton relative tolerance", 1e-10);
   nonlinear_solver.set("Newton absolute tolerance", 1e-10);

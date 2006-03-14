@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-02-24
+// Last changed: 2006-03-14
 
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
@@ -15,11 +15,23 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver() : Parametrized()
 {
+  solver = new LU;
+}
+//-----------------------------------------------------------------------------
+NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
+{
+  solver = new KrylovSolver(linear_solver);
+}
+//-----------------------------------------------------------------------------
+NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
+    Preconditioner::Type preconditioner) : Parametrized()
+{
+  solver = new KrylovSolver(linear_solver, preconditioner);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
-  // Do nothing 
+  delete solver; 
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
@@ -44,7 +56,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       dolfin_log(false);
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += solver.solve(A, dx, b);
+      krylov_iterations += solver->solve(A, dx, b);
       dolfin_log(true);
 
       // Compute initial residual
