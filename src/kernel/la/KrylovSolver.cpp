@@ -2,12 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Anders Logg 2005-2006.
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-14
+// Last changed: 2006-03-15
 
 #include <petscpc.h>
+#include <petscconf.h>
 
 #if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
   #include <src/ksp/pc/pcimpl.h>
@@ -292,7 +293,7 @@ void KrylovSolver::setPreconditioner()
   // Treat special case Hypre AMG preconditioner
   if ( pc_petsc == Preconditioner::hypre_amg )
   {  
-#ifndef PETSC_HAVE_HYPRE
+#if PETSC_HAVE_HYPRE
     PCSetType(pc, PCHYPRE);
     PCHYPRESetType(pc, "boomeramg");
 #else
