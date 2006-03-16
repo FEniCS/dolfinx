@@ -8,8 +8,8 @@ all: dolfin-config dolfin-swig
 
 dolfin-config:
 	rm -f $(TMPFILE)
-	echo "COMPILER=\"libtool --silent --mode=compile $(CXX)\"" >> $(TMPFILE)
-	echo "LINKER=\"libtool --silent --mode=link $(CXX)\"" >> $(TMPFILE)
+	echo "COMPILER=\"libtool --silent --mode=compile --tag CXX $(CXX)\"" >> $(TMPFILE)
+	echo "LINKER=\"libtool --silent --mode=link --tag CXX $(CXX)\"" >> $(TMPFILE)
 	echo "CFLAGS=\"$(DOLFIN_CFLAGS)\"" >> $(TMPFILE)
 	echo "LIBS=\"$(DOLFIN_LIBS)\"" >> $(TMPFILE)
 	echo "PACKAGE=\"$(PACKAGE_NAME)\"" >> $(TMPFILE)
