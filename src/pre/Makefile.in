@@ -13,6 +13,10 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
+# Thins we need to do before building. Sort of a hack, but
+# easier than figuring out how to set the dependencies with
+# automake/autoconf
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -333,11 +337,13 @@ uninstall-am: uninstall-info-am
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
 
+
 all:
 	rm -f ../config/dolfin-config
 
 install:
-	mkdir -p $(prefix)/include/dolfin	
+	make -C ../lib clean all
+	mkdir -p $(prefix)/include/dolfin
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
