@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-03-13
+// Last changed: 2006-03-22
 
 //--- General parameters ---
 
@@ -77,6 +77,7 @@ add("Krylov relative tolerance", 1e-9);
 add("Krylov absolute tolerance", 1e-20);
 add("Krylov divergence limit",   1e4);
 add("Krylov maximum iterations", 10000);
+add("Krylov shift nonzero", 0.0);
 add("Krylov report", true);
 add("Krylov monitor convergence", false);
 

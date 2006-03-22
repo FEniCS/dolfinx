@@ -218,6 +218,14 @@ void KrylovSolver::readParameters()
 		   get("Krylov absolute tolerance"),
 		   get("Krylov divergence limit"),
 		   get("Krylov maximum iterations"));
+
+  // Set nonzero shift for preconditioner
+  if ( !pc_dolfin )
+  {
+    PC pc;
+    KSPGetPC(ksp, &pc);
+    PCFactorSetShiftNonzero(pc, get("Krylov shift nonzero"));
+  }
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::setSolver()
