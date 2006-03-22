@@ -1,3 +1,4 @@
+ - Fix bug in convection-diffusion demo (boundary condition for pressure), use direct solver
  - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
  - Set PETSc matrix type through Matrix constructor 
  - Allow linear solver and preconditioner type to be passed to NewtonSolver 
