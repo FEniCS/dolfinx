@@ -284,6 +284,10 @@ class Matrix(Variable):
     __getattr__ = lambda self, name: _swig_getattr(self, Matrix, name)
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::Matrix instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    default_matrix = _dolfin.Matrix_default_matrix
+    spooles = _dolfin.Matrix_spooles
+    superlu = _dolfin.Matrix_superlu
+    umfpack = _dolfin.Matrix_umfpack
     def __init__(self, *args):
         _swig_setattr(self, Matrix, 'this', _dolfin.new_Matrix(*args))
         _swig_setattr(self, Matrix, 'thisown', 1)
@@ -305,6 +309,7 @@ class Matrix(Variable):
     frobenius = _dolfin.Matrix_frobenius
     def norm(*args): return _dolfin.Matrix_norm(*args)
     def apply(*args): return _dolfin.Matrix_apply(*args)
+    def getMatrixType(*args): return _dolfin.Matrix_getMatrixType(*args)
     def mat(*args): return _dolfin.Matrix_mat(*args)
     def disp(*args): return _dolfin.Matrix_disp(*args)
     def __call__(*args): return _dolfin.Matrix___call__(*args)
@@ -460,7 +465,6 @@ class KrylovSolver(LinearSolver):
         except: pass
 
     def solve(*args): return _dolfin.KrylovSolver_solve(*args)
-    def solver(*args): return _dolfin.KrylovSolver_solver(*args)
     def disp(*args): return _dolfin.KrylovSolver_disp(*args)
 
 class KrylovSolverPtr(KrylovSolver):

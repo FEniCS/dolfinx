@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-14
+// Last changed: 2006-03-22
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
@@ -64,9 +64,6 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
     
-    /// Return PETSc solver pointer
-    KSP solver();
-
     /// Display solver data
     void disp() const;
      

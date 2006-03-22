@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-15
+// Last changed: 2006-03-22
 
 #include <petscpc.h>
 #include <petscconf.h>
@@ -40,12 +40,6 @@ KrylovSolver::KrylovSolver()
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // Initialize KSP solver
-  init(0, 0);
-
-  // Read parameters
-  readParameters();
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver)
@@ -55,12 +49,6 @@ KrylovSolver::KrylovSolver(Type solver)
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // Initialize KSP solver
-  init(0, 0);
-
-  // Read parameters
-  readParameters();
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner)
@@ -70,18 +58,6 @@ KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner)
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // FIXME: this is a temporary fix to avoid a PETSc error when deleting a PETSc
-  // Krylov solver prior to a linear solve in the case that the preconditioner 
-  // has been set to Hypre.
-  if(preconditioner != Preconditioner::hypre_amg)
-  {
-    // Initialize KSP solver
-    init(0, 0);
-
-    // Read parameters
-    readParameters();
-  }
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Preconditioner& preconditioner)
@@ -91,12 +67,6 @@ KrylovSolver::KrylovSolver(Preconditioner& preconditioner)
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // Initialize KSP solver
-  init(0, 0);
-
-  // Read parameters
-  readParameters();
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver, Preconditioner::Type preconditioner)
@@ -106,18 +76,6 @@ KrylovSolver::KrylovSolver(Type solver, Preconditioner::Type preconditioner)
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // FIXME: this is a temporary fix to avoid a PETSc error when deleting a PETSc
-  // Krylov solver prior to a linear solve in the case that the preconditioner 
-  // has been set to Hypre.
-  if(preconditioner != Preconditioner::hypre_amg)
-  {
-    // Initialize KSP solver
-    init(0, 0);
-
-    // Read parameters
-    readParameters();
-  }
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::KrylovSolver(Type solver, Preconditioner& preconditioner)
@@ -127,12 +85,6 @@ KrylovSolver::KrylovSolver(Type solver, Preconditioner& preconditioner)
 {
   // Initialize PETSc
   PETScManager::init();
-  
-  // Initialize KSP solver
-  init(0, 0);
-
-  // Read parameters
-  readParameters();
 }
 //-----------------------------------------------------------------------------
 KrylovSolver::~KrylovSolver()
@@ -221,12 +173,6 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   writeReport(num_iterations);
 
   return num_iterations;
-}
-//-----------------------------------------------------------------------------
-KSP KrylovSolver::solver()
-{
-  dolfin_assert(ksp);
-  return ksp;
 }
 //-----------------------------------------------------------------------------
 void KrylovSolver::disp() const
