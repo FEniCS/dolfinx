@@ -1,3 +1,5 @@
+ - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
+ - Set PETSc matrix type through Matrix constructor 
  - Allow linear solver and preconditioner type to be passed to NewtonSolver 
  - Fix bug in Stokes demos (wrong boundary conditions)
  - Cleanup Krylov solver
