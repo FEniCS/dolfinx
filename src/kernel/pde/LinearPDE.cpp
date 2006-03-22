@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2006-02-22
+// Last changed: 2006-03-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Matrix.h>
@@ -53,30 +53,39 @@ dolfin::uint LinearPDE::solve(Function& u)
   u.init(*_mesh, _a->trial());
   Vector& x = u.vector();
 
+  // Get solver type
+  const std::string solver_type = get("solver");
+
   // Assemble linear system
-  Matrix A;
   Vector b;
-  if ( _bc )
-    FEM::assemble(*_a, *_Lf, A, b, *_mesh, *_bc);
+  Matrix* A;
+  if ( solver_type == "direct" )
+    A = new Matrix(Matrix::umfpack);
   else
-    FEM::assemble(*_a, *_Lf, A, b, *_mesh);
+    A = new Matrix;
+
+  if ( _bc )
+    FEM::assemble(*_a, *_Lf, *A, b, *_mesh, *_bc);
+  else
+    FEM::assemble(*_a, *_Lf, *A, b, *_mesh);
   
   // Solve the linear system
-  const std::string solver_type = get("solver");
   if ( solver_type == "direct" )
   {
     LU solver;
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(*A, x, b);
   }
   else if ( solver_type == "iterative" || solver_type == "default" )
   {
     GMRES solver;
     solver.set("parent", *this);
-    solver.solve(A, x, b);
+    solver.solve(*A, x, b);
   }
   else
     dolfin_error1("Unknown solver type \"%s\".", solver_type.c_str());
+
+  delete A;
 
   return 0;
 }

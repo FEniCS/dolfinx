@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-23
-// Last changed: 2006-03-14
+// Last changed: 2006-03-22
 
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
@@ -64,7 +64,7 @@ namespace dolfin
     LinearSolver* solver;
 
     /// Jacobian matrix
-    Matrix A;
+    Matrix* A;
 
     /// Resdiual vector
     Vector b;

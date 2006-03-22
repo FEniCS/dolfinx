@@ -1,11 +1,11 @@
 // Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005,2006.
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2005-11-09
+// Last changed: 2006-03-22
 
 #include <iostream>
 #include <sstream>
@@ -18,22 +18,47 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix() : Variable("A", "a sparse matrix"), A(0)
+Matrix::Matrix() : Variable("A", "a sparse matrix"), A(0), type(default_matrix)
 {
   // Initialize PETSc
   PETScManager::init();
+}
+//-----------------------------------------------------------------------------
+Matrix::Matrix(Type type) : Variable("A", "a sparse matrix"), A(0), type(type)
+{
+  // Initialize PETSc
+  PETScManager::init();
+
+  // Check type
+  checkType();
 }
 //-----------------------------------------------------------------------------
 Matrix::Matrix(Mat A) : Variable("A", "a sparse matrix"), A(A)
 {
   // Initialize PETSc
   PETScManager::init();
+
+  // FIXME: get PETSc matrix type and set
+  type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(uint M, uint N) : Variable("A", "a sparse matrix"), A(0)
+Matrix::Matrix(uint M, uint N) : Variable("A", "a sparse matrix"), A(0), type(default_matrix)
 {
   // Initialize PETSc
   PETScManager::init();
+
+  // Create PETSc matrix
+  init(M, N);
+}
+//-----------------------------------------------------------------------------
+Matrix::Matrix(uint M, uint N, Type type) : Variable("A", "a sparse matrix"), A(0), 
+    type(type)
+{
+  // Initialize PETSc
+  PETScManager::init();
+
+  // Check type
+  checkType();
 
   // Create PETSc matrix
   init(M, N);
@@ -43,6 +68,9 @@ Matrix::Matrix(const Matrix& B) : Variable("A", "a sparse matrix"), A(0)
 {
   // Initialize PETSc
   PETScManager::init();
+
+  // Set PETSc matrix type (same as B)
+  type = B.getMatrixType();
 
   // Create PETSc matrix
   init(B.size(0), B.size(1));
@@ -95,9 +123,12 @@ void Matrix::init(uint M, uint N, uint nz)
     else
       MatDestroy(A);
   }
-  
+
   // Create a sparse matrix in compressed row format
-  MatCreateSeqAIJ(PETSC_COMM_SELF, M, N, nz, PETSC_NULL, &A);
+  MatCreate(PETSC_COMM_SELF, &A);
+  MatSetSizes(A,  PETSC_DECIDE,  PETSC_DECIDE, M, N);
+  setType();
+  MatSeqAIJSetPreallocation(A, nz, PETSC_NULL);
   MatSetFromOptions(A);
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
@@ -256,6 +287,11 @@ void Matrix::apply()
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
+const Matrix::Type Matrix::getMatrixType() const
+{
+  return type;
+}
+//-----------------------------------------------------------------------------
 Mat Matrix::mat()
 {
   return A;
@@ -291,7 +327,7 @@ void Matrix::disp(bool sparse, int precision) const
       MatGetRow(A, i, &ncols, &cols, &vals);
       for (int pos = 0; pos < ncols; pos++)
       {
-	line << " (" << i << ", " << cols[pos] << ", " << vals[pos] << ")";
+	       line << " (" << i << ", " << cols[pos] << ", " << vals[pos] << ")";
       }
       MatRestoreRow(A, i, &ncols, &cols, &vals);
     }
@@ -299,13 +335,13 @@ void Matrix::disp(bool sparse, int precision) const
     {
       for (uint j = 0; j < N; j++)
       {
-	real value = getval(i, j);
-	if ( fabs(value) < DOLFIN_EPS )
-	  value = 0.0;	
-	line << " " << value;
+        real value = getval(i, j);
+        if ( fabs(value) < DOLFIN_EPS )
+        value = 0.0;	
+        line << " " << value;
       }
     }
-    
+
     line << "|";
     cout << line.str().c_str() << endl;
   }
@@ -368,6 +404,59 @@ void Matrix::addval(uint i, uint j, const real a)
 
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+}
+//-----------------------------------------------------------------------------
+void Matrix::setType() 
+{
+  MatType mat_type = getType();
+  dolfin_log(true);
+  cout << "matrix type " << mat_type << endl; 
+  MatSetType(A, mat_type);
+}
+//-----------------------------------------------------------------------------
+void Matrix::checkType()
+{
+  switch (type)
+  {
+  case spooles:
+    #if !PETSC_HAVE_SPOOLES
+      dolfin_warning("PETSc has not been complied with Spooles. Using default matrix type");
+      type = default_matrix;
+    #endif
+    return;
+  case superlu:
+    #if !PETSC_HAVE_SUPERLU
+      dolfin_warning("PETSc has not been complied with Super LU. Using default matrix type");
+      type = default_matrix;
+    #endif
+    return;
+  case umfpack:
+    #if !PETSC_HAVE_UMFPACK
+      dolfin_warning("PETSc has not been complied with UMFPACK. Using default matrix type");
+      type = default_matrix;
+    #endif
+    return;
+  default:
+    dolfin_warning("Requested matrix type unknown. Using default.");
+    type = default_matrix;
+  }
+}
+//-----------------------------------------------------------------------------
+MatType Matrix::getType() const
+{
+  switch (type)
+  {
+  case default_matrix:
+    return MATSEQAIJ;
+  case spooles:
+      return MATSEQAIJSPOOLES;
+  case superlu:
+      return MATSUPERLU;
+  case umfpack:
+      return MATUMFPACK;
+  default:
+    return "default";
+  }
 }
 //-----------------------------------------------------------------------------
 // MatrixElement

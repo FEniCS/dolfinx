@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy R. Terrel, 2005.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2005-11-15
+// Last changed: 2006-03-22
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -30,14 +31,29 @@ namespace dolfin
   {
   public:
 
+    /// Matrix types
+    enum Type
+    { 
+      default_matrix, // Default matrix type 
+      spooles,        // Spooles
+      superlu,        // Super LU
+      umfpack         // UMFPACK
+    };
+
     /// Constructor
     Matrix();
+
+    /// Constructor (setting PETSc matrix type)
+    Matrix(Type type);
 
     /// Constructor
     Matrix(Mat A);
 
     /// Constructor
     Matrix(uint M, uint N);
+
+    /// Constructor (setting PETSc matrix type)
+    Matrix(uint M, uint N, Type type);
 
     /// Constructor (just for testing, will be removed)
     Matrix(const Matrix &B);
@@ -91,6 +107,9 @@ namespace dolfin
     /// Apply changes to matrix
     void apply();
 
+    /// Return matrix type 
+    const Type getMatrixType() const;
+
     /// Return PETSc Mat pointer
     Mat mat();
 
@@ -125,6 +144,18 @@ namespace dolfin
 
     // PETSc Mat pointer
     Mat A;
+
+    // PETSc matrix type
+    Type type;
+
+    // Set matrix type 
+    void setType();
+
+    // Check that requested type has been compiled into PETSc
+    void checkType();
+
+    // Return PETSc matrix type 
+    MatType getType() const;
 
   };
 

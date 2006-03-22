@@ -4,7 +4,7 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-03-14
+// Last changed: 2006-03-22
 
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
@@ -16,22 +16,26 @@ using namespace dolfin;
 NewtonSolver::NewtonSolver() : Parametrized()
 {
   solver = new LU;
+  A = new Matrix(Matrix::umfpack);
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
 {
   solver = new KrylovSolver(linear_solver);
+  A = new Matrix;
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
     Preconditioner::Type preconditioner) : Parametrized()
 {
   solver = new KrylovSolver(linear_solver, preconditioner);
+  A = new Matrix;
 }
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
   delete solver; 
+  delete A;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
@@ -44,7 +48,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
   // Compute F(u) and J
   dolfin_log(false);
-  nonlinear_problem.form(A, b, x);
+  nonlinear_problem.form(*A, b, x);
 
   uint krylov_iterations = 0;
   newton_iteration = 0;
@@ -56,7 +60,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
 
       dolfin_log(false);
       // Perform linear solve and update total number of Krylov iterations
-      krylov_iterations += solver->solve(A, dx, b);
+      krylov_iterations += solver->solve(*A, dx, b);
       dolfin_log(true);
 
       // Compute initial residual
@@ -71,7 +75,7 @@ dolfin::uint NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vector& x)
       dolfin_log(false);
       //FIXME: this step is not needed if residual is based on dx and this has converged.
       // Compute F(u) and J
-      nonlinear_problem.form(A, b, x);
+      nonlinear_problem.form(*A, b, x);
 
       dolfin_log(true);
 

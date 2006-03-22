@@ -356,7 +356,7 @@ KSPType KrylovSolver::getType(const Type type) const
   case gmres:
     return KSPGMRES;
   default:
-    dolfin_warning("Requested Krylov method unkown. Using GMRES.");
+    dolfin_warning("Requested Krylov method unknown. Using GMRES.");
     return KSPGMRES;
   }
 }
