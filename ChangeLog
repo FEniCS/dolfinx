@@ -1,3 +1,4 @@
+ - Remove KrylovSolver::solver()
  - Fix bug in convection-diffusion demo (boundary condition for pressure), use direct solver
  - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
  - Set PETSc matrix type through Matrix constructor 
@@ -9,7 +10,8 @@
  - Fix remaining name changes: noFoo() --> numFoo()
  - Add Cahn-Hilliard equation demo
  - NewtonSolver option to use residual or incremental convergence criterion
- - Add separate function to nls to test for convergence of Newton iterations 
+ - Add separate function to nls to test for convergence of Newton iterations
+ - Fix bug in dolfin-config (wrong version number)
 0.6.0 [2006-03-01]
  - Fix bug in XML output format (writing multiple objects)
  - Fix bug in XML matrix output format (handle zero rows)
