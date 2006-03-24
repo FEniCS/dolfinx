@@ -268,15 +268,16 @@ def gmsh2xml(ifilename, ofilename):
                 state += 1
         elif state == 5:
             element = line.split()
+            print element
             cell_type = int(element[1])
             if num_cells_read == 0:
                 write_header_cells(ofile, num_cells)
-            if cell_type == 2:
+            elif cell_type == 2:
                 n0 = nodelist[int(element[5])] 
                 n1 = nodelist[int(element[6])]
                 n2 = nodelist[int(element[7])]
                 write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
-            if cell_type == 4:
+            elif cell_type == 4:
                 n0 = nodelist[int(element[5])] 
                 n1 = nodelist[int(element[6])]
                 n2 = nodelist[int(element[7])]
