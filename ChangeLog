@@ -1,3 +1,5 @@
+ - Remove dolfin:: qualifier on output << in Parameter.h
+ - Don't use anonymous classes in demos, gives errors with some compilers
  - Remove KrylovSolver::solver()
  - Fix bug in convection-diffusion demo (boundary condition for pressure), use direct solver
  - LinearPDE and NewonSolver use umfpack LU solver by default (if available) when doing direct solve
