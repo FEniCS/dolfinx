@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-03-22
+// Last changed: 2006-03-24
 //
 // This demo first computes the flow around a dolphin by solving
 // the Stokes equations using a mixed formulation with Taylor-Hood
@@ -19,7 +19,7 @@ using namespace dolfin;
 void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -28,16 +28,9 @@ void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
       else if ( p.x != 0.0 && p.x != 1.0 && p.y != 0.0 && p.y != 1.0 )
 	value = 1.0;
     }
-  } bc;
+  };
 
-  // Source term
-  class : public Function
-  {
-    real eval(const Point& p, unsigned int i)
-    {
-      return 0.0;
-    }
-  } f;
+  MyBC bc;
 
   // Linear system and solver
   Matrix A;
@@ -50,6 +43,7 @@ void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
   Function U1(x, mesh, element);
 
   // Create forms
+  Function f = 0.0;
   ConvectionDiffusion::BilinearForm a(velocity);
   ConvectionDiffusion::LinearForm L(U0, velocity, f);
 
@@ -90,7 +84,7 @@ void solveConvectionDiffusion(Mesh& mesh, Function& velocity)
 int main()
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -118,7 +112,9 @@ int main()
       if ( p.x > DOLFIN_EPS )
         value = 0.0;
     }
-  } bc;
+  };
+
+  MyBC bc;
 
   // Set up problem
   Mesh mesh("dolfin-2.xml.gz");

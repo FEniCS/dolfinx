@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-03-01
+// Last changed: 2006-03-24
 //
 // This demo program solves Poisson's equation
 //
@@ -25,26 +25,28 @@ using namespace dolfin;
 int main()
 {
   // Right-hand side
-  class : public Function
+  class Source : public Function
   {
     real eval(const Point& p, unsigned int i)
     {
       return p.x*sin(p.y);
     }
-  } f;
-  
+  };
+
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
       if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
 	value = 0.0;
     }
-  } bc;
+  };
   
   // Set up problem
   UnitSquare mesh(16, 16);
+  Source f;
+  MyBC bc;
   Poisson::BilinearForm a;
   Poisson::LinearForm L(f);
   PDE pde(a, L, mesh, bc);

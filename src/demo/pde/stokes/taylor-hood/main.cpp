@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-03-14
+// Last changed: 2006-03-24
 
 #include <dolfin.h>
 #include "Stokes.h"
@@ -12,7 +12,7 @@ using namespace dolfin;
 int main()
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -40,11 +40,12 @@ int main()
       if ( p.x > DOLFIN_EPS )
 	value = 0.0;
     }
-  } bc;
+  };
 
   // Set up problem
   Mesh mesh("dolfin-2.xml.gz");
   Function f = 0.0;
+  MyBC bc;
   Stokes::BilinearForm a;
   Stokes::LinearForm L(f);
   PDE pde(a, L, mesh, bc);

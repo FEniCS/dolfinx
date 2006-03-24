@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-07
-// Last changed: 2006-03-01
+// Last changed: 2006-03-24
 //
 // This demo program solves the equations of static
 // linear elasticity for a gear clamped at two of its
@@ -17,7 +17,7 @@ using namespace dolfin;
 int main()
 {
   // Boundary condition
-  class : public BoundaryCondition
+  class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
@@ -48,7 +48,9 @@ int main()
 	  value = z - p.z;
       }
     }
-  } bc;
+  };
+
+  MyBC bc;
 
   // Set up problem
   Mesh mesh("gear.xml.gz");
