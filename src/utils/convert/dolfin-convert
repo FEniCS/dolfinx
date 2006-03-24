@@ -268,7 +268,6 @@ def gmsh2xml(ifilename, ofilename):
                 state += 1
         elif state == 5:
             element = line.split()
-            print element
             cell_type = int(element[1])
             if num_cells_read == 0:
                 write_header_cells(ofile, num_cells)
