@@ -73,9 +73,7 @@ enable_debug="yes"
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-#    CXXFLAGS='-DDEBUG=1 -g  -O2 -ansi -gcc-name=gcc-3.4 '
-#    CXXFLAGS='-DDEBUG=1 -g  -Werror -ansi -gcc-name=gcc-3.4 '
-    CXXFLAGS='-DDEBUG=1 -g -O2 -w1 -ansi -gcc-name=gcc-3.4 '
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98'
     # We should also add -pedantic, but then we get an error when we try
     # to include mpio.h (long long not supported by ISO C++)
 fi
