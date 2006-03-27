@@ -1,9 +1,12 @@
 // Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2002
-// Last changed: 2006-02-20
+// Last changed: 2006-03-27
 
+#include <algorithm>
 #include <dolfin/Mesh.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Edge.h>

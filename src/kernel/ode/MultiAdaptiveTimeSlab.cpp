@@ -1,10 +1,13 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2005-01-27
-// Last changed: 2005-12-19
+// Last changed: 2006-03-27
 
 #include <string>
+#include <algorithm>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
