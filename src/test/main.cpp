@@ -49,10 +49,9 @@ void testPreconditioner()
   Vector m;
   FEM::lump(M, m);
 
- 
-  GMRES solver;
-  MyPreconditioner pc(m);
-  solver.setPreconditioner(pc);
+
+  MyPreconditioner pc(m); 
+  GMRES solver(pc);
   solver.solve(M, x, b);
   
   x.disp();
@@ -91,7 +90,7 @@ void testOutputMesh()
 {
   dolfin_info("--- Testing output of mesh ---");
 
-  UnitCube mesh(16, 16, 16);
+  UnitCube mesh(8, 8, 8);
   File file("mesh.m");
   file << mesh;
 }
@@ -256,6 +255,30 @@ void testMakeElement()
   if ( P2 ) delete P2;
 }
 
+void testMeshRefinement()
+{
+  dolfin_info("--- Testing mesh refinement ---");
+  
+  UnitSquare mesh(2, 2);
+
+  File file0("mesh0.pvd");
+  File file1("mesh1.pvd");
+  File file2("mesh2.pvd");
+
+  //file0 << mesh;
+
+  // Mark one cell for refinement
+  //mesh.cell(0).mark();
+  //mesh.refine();
+  //file1 << mesh;
+
+  // Mark another cell in parent for refinement
+  //Mesh mesh1(mesh);
+  //parent.cell(7).mark();
+  // parent.refine();
+  //file2 << mesh;
+}
+
 int main(int argc, char* argv[])
 {
   testPreconditioner();
@@ -271,6 +294,7 @@ int main(int argc, char* argv[])
   testProgress();
   testParameters();
   testMakeElement();
+  testMeshRefinement();
 
   return 0;
 }

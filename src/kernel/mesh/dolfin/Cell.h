@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2006-02-20
+// Last changed: 2006-03-24
 //
 // A couple of comments:
 //
@@ -148,8 +148,8 @@ namespace dolfin
 
     ///--- Mesh refinement ---
 
-    /// Mark cell for refinement
-    void mark();
+    /// Mark cell for refinement (or coarsening)
+    void mark(bool refine = true);
     
     ///--- Output ---
 

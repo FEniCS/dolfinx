@@ -287,7 +287,7 @@ void MeshRefinement::refineMesh(Mesh& mesh)
   for (CellIterator c(mesh); !c.end(); ++c)
     if ( c->marker() == Cell::marked_for_coarsening )
       c->marker() = Cell::marked_for_no_ref;
-
+  
   // Refine cells which are not marked_according_to_ref
   for (CellIterator c(mesh); !c.end(); ++c) {
 

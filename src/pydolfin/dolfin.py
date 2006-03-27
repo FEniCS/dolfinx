@@ -846,11 +846,9 @@ class BilinearForm(Form):
     __swig_getmethods__ = {}
     for _s in [Form]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, BilinearForm, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::BilinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        _swig_setattr(self, BilinearForm, 'this', _dolfin.new_BilinearForm(*args))
-        _swig_setattr(self, BilinearForm, 'thisown', 1)
     def __del__(self, destroy=_dolfin.delete_BilinearForm):
         try:
             if self.thisown: destroy(self)
@@ -874,11 +872,9 @@ class LinearForm(Form):
     __swig_getmethods__ = {}
     for _s in [Form]: __swig_getmethods__.update(_s.__swig_getmethods__)
     __getattr__ = lambda self, name: _swig_getattr(self, LinearForm, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
     def __repr__(self):
         return "<%s.%s; proxy of C++ dolfin::LinearForm instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        _swig_setattr(self, LinearForm, 'this', _dolfin.new_LinearForm(*args))
-        _swig_setattr(self, LinearForm, 'thisown', 1)
     def __del__(self, destroy=_dolfin.delete_LinearForm):
         try:
             if self.thisown: destroy(self)

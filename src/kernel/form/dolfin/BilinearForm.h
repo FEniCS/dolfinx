@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2005-11-29
+// Last changed: 2006-03-27
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
@@ -27,10 +27,10 @@ namespace dolfin
     virtual ~BilinearForm();
     
     /// Compute element matrix (interior contribution)
-    virtual void eval(real block[], const AffineMap& map) const;
+    virtual void eval(real block[], const AffineMap& map) const = 0;
     
     /// Compute element matrix (boundary contribution)
-    virtual void eval(real block[], const AffineMap& map, uint segment) const;
+    virtual void eval(real block[], const AffineMap& map, uint segment) const = 0;
 
     /// Return finite element defining the test space
     FiniteElement& test();

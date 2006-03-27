@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2006-02-20
+// Last changed: 2006-03-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vertex.h>
@@ -232,10 +232,10 @@ bool Cell::operator!=(const Cell& cell) const
   return this != &cell;
 }
 //-----------------------------------------------------------------------------
-void Cell::mark()
+void Cell::mark(bool refine)
 {
   dolfin_assert(c);
-  c->mark();
+  c->mark(refine);
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<<(LogStream& stream, const Cell& cell)

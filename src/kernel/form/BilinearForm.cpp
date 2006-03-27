@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
@@ -20,16 +20,6 @@ BilinearForm::~BilinearForm()
 {
   if ( _test ) delete _test;
   if ( _trial ) delete _trial;
-}
-//-----------------------------------------------------------------------------
-void BilinearForm::eval(real block[], const AffineMap& map) const
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void BilinearForm::eval(real block[], const AffineMap& map, uint segment) const
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 FiniteElement& BilinearForm::test()

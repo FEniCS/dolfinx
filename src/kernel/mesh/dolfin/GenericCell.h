@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2006-02-20
+// Last changed: 2006-03-24
 
 #ifndef __GENERIC_CELL_H
 #define __GENERIC_CELL_H
@@ -60,7 +60,7 @@ namespace dolfin
     virtual uint edgeAlignment(uint i) const = 0;
     virtual uint faceAlignment(uint i) const = 0;
 
-    void mark();
+    void mark(bool refine);
 
     // Friends
     friend class Cell;

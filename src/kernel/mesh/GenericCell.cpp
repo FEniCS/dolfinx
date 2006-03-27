@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2006-02-20
+// Last changed: 2006-03-24
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -111,9 +111,12 @@ int GenericCell::faceID(int i) const
   return cf(i)->id();
 }
 //-----------------------------------------------------------------------------
-void GenericCell::mark()
+void GenericCell::mark(bool refine)
 {
-  marker() = Cell::marked_for_reg_ref;
+  if ( refine )
+    marker() = Cell::marked_for_reg_ref;
+  else
+    marker() = Cell::marked_for_coarsening;
 }
 //-----------------------------------------------------------------------------
 int GenericCell::setID(int id, Mesh& mesh)

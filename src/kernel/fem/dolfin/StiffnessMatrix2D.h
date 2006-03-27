@@ -241,6 +241,9 @@ public:
     block[8] = 4.999999999999996e-01*G0_1_1;
   }
 
+  // No contribution from the boundary
+  void eval(real block[], const AffineMap& map, unsigned int boundary) const {}   
+
 private:
 
   const real& c0;
