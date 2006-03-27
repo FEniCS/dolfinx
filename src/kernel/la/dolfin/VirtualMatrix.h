@@ -54,10 +54,7 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Return PETSc Mat pointer
-    Mat mat();
-
-    /// Return PETSc Mat pointer
-    const Mat mat() const;
+    Mat mat() const;
 
     /// Compute product y = Ax
     virtual void mult(const Vector& x, Vector& y) const = 0;

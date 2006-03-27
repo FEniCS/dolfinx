@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2003-02-06
-// Last changed: 2005
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Quadrature.h>
@@ -17,7 +19,7 @@ Quadrature::Quadrature(unsigned int n)
   points = new Point[n];
   weights = new real[n];
   
-  for (unsigned int i = 0; i < 0; i++)
+  for (unsigned int i = 0; i < n; i++)
     weights[i] = 0;
 
   m = 1.0;

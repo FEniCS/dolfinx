@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-03-22
+// Last changed: 2006-03-27
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
@@ -108,13 +108,10 @@ namespace dolfin
     void apply();
 
     /// Return matrix type 
-    const Type getMatrixType() const;
+    Type getMatrixType() const;
 
     /// Return PETSc Mat pointer
-    Mat mat();
-
-    /// Return PETSc Mat pointer
-    const Mat mat() const;
+    Mat mat() const;
 
     /// Display matrix (sparse output is default)
     void disp(bool sparse = true, int precision = 2) const;

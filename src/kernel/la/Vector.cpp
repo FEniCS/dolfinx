@@ -23,9 +23,6 @@ Vector::Vector() : Variable("x", "a vector"), x(0), copy(false)
 //-----------------------------------------------------------------------------
 Vector::Vector(uint size) : Variable("x", "a vector"), x(0), copy(false)
 {
-  if (size < 0)
-    dolfin_error("Size of vector must be non-negative.");
-
   // Initialize PETSc
   PETScManager::init();
 
@@ -131,12 +128,7 @@ dolfin::uint Vector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-Vec Vector::vec()
-{
-  return x;
-}
-//-----------------------------------------------------------------------------
-const Vec Vector::vec() const
+Vec Vector::vec() const
 {
   return x;
 }

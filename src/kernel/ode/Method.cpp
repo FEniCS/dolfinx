@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003
-// Last changed: 2005
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -14,7 +16,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Method::Method(unsigned int q, unsigned int nq, unsigned int nn)
 {
-  dolfin_assert(q >= 0);
   dolfin_assert(nq > 0);
   dolfin_assert(nn > 0);
 

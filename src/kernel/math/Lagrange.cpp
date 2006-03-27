@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003-06-12
-// Last changed: 2005-12-09
+// Last changed: 2006-03-27
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -13,9 +15,6 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(unsigned int q)
 {
-  if ( q < 0 )
-    dolfin_error("Degree for Lagrange polynomial must be non-negative.");
-
   this->q = q;
   n = q + 1;
   
@@ -29,8 +28,6 @@ Lagrange::Lagrange(unsigned int q)
 //-----------------------------------------------------------------------------
 Lagrange::Lagrange(const Lagrange& p)
 {
-  dolfin_assert(p.q >= 0);
-
   this->q = p.q;
   n = p.n;
 
@@ -55,7 +52,6 @@ Lagrange::~Lagrange()
 //-----------------------------------------------------------------------------
 void Lagrange::set(unsigned int i, real x)
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 
   points[i] = x;
@@ -74,7 +70,6 @@ unsigned int Lagrange::degree() const
 //-----------------------------------------------------------------------------
 real Lagrange::point(unsigned int i) const
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 
   return points[i];
@@ -87,7 +82,6 @@ real Lagrange::operator() (unsigned int i, real x)
 //-----------------------------------------------------------------------------
 real Lagrange::eval(unsigned int i, real x)
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
 
   real product(constants[i]);
@@ -100,7 +94,6 @@ real Lagrange::eval(unsigned int i, real x)
 //-----------------------------------------------------------------------------
 real Lagrange::ddx(unsigned int i, real x)
 {
-  dolfin_assert(i >= 0);
   dolfin_assert(i <= q);
   
   real sum(0);
@@ -119,8 +112,6 @@ real Lagrange::ddx(unsigned int i, real x)
 //-----------------------------------------------------------------------------
 real Lagrange::dqdx(unsigned int i)
 {
-  dolfin_assert(i >= 0);
-
   real product = constants[i];
   
   for (unsigned int j = 1; j <= q; j++)
