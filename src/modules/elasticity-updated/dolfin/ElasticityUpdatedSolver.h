@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2005
-// Last changed: 2005
+// Last changed: 2006-03-27
 
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
@@ -139,7 +141,11 @@ namespace dolfin
   public:
     ElasticityUpdatedODE(ElasticityUpdatedSolver& solver);
     real u0(unsigned int i);
-    /// Evaluate right-hand side (mono-adaptive version)
+    // Evaluate right-hand side (mono-adaptive version)
+
+    // Fix to avoid error with some compilers due to only partially overridden
+    // virtual functions
+    using ODE::f; 
     virtual void f(const real u[], real t, real y[]);
     virtual bool update(const real u[], real t, bool end);
 
