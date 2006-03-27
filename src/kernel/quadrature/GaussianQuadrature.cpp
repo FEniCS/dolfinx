@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2005
+// Last changed: 2006-03-27
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -58,6 +58,7 @@ void GaussianQuadrature::computeWeights()
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
   LU lu;
+  lu.set("LU report", false);
   lu.solve(A, x, b);
 
   // Save the weights

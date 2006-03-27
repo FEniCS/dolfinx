@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-02
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -178,6 +178,7 @@ void dGqMethod::computeWeights()
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     LU lu;
+    lu.set("LU report", false);
     lu.solve(A, w, b);
 
     // Save weights including quadrature
