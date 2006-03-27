@@ -54,10 +54,7 @@ namespace dolfin
     uint size() const;
 
     /// Return PETSc Vec pointer
-    Vec vec();
-
-    /// Return PETSc Vec pointer, const version
-    const Vec vec() const;
+    Vec vec() const;
 
     /// Return array containing this processor's portion of the data.
     /// After usage, the function restore() must be called.

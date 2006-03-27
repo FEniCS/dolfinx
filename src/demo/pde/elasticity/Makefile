@@ -14,7 +14,7 @@ clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
 $(DEST): $(OBJECTS)
-	 $(LINK) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+	 $(LINK) -o $@ $(OBJECTS) -gcc-name=gcc-3.4 $(CFLAGS) $(LIBS)
 
 .cpp.o:
-	$(CXX) $(CFLAGS) -c $<
+	$(CXX) -gcc-name=gcc-3.4 $(CFLAGS) -c $<

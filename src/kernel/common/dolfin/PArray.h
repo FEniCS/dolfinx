@@ -1,8 +1,10 @@
 // Copyright (C) 2002-2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006
+//
 // First added:  2002
-// Last changed: 2005-12-01
+// Last changed: 2006-03-27
 
 #ifndef __P_ARRAY_H
 #define __P_ARRAY_H
@@ -144,12 +146,36 @@ namespace dolfin
       /// Create an iterator positioned at the given position
       Iterator(const PArray<T>& array, Index index);
 
-      Iterator& operator++();
+      // This function is defined inside the class to avoid erros with some compilers
+      Iterator& operator++()
+      {
+        if ( _index == (size - 1) )
+          at_end = true;
+        else {
+          at_end = false;
+          _index++;
+        } 
+        element = array + _index;
 
-      Iterator& operator--();
+        return *this;
+      }
+
+      // This function is defined inside the class to avoid erros with some compilers
+      Iterator& operator--()
+      {
+        if ( _index == 0 )
+          at_end = true;
+        else {
+          at_end = false;
+          _index--;
+        }
+        element = array + _index;
+
+        return *this;
+      }
 
       bool end() const;
-      
+
       bool last() const;
 
       bool operator==(const Iterator& it);
@@ -439,36 +465,6 @@ namespace dolfin
 
     }      
 
-  }
-  //---------------------------------------------------------------------------      
-  template <class T> typename PArray<T>::Iterator::Iterator& 
-  PArray<T>::Iterator::operator++()
-  {
-    if ( _index == (size - 1) )
-      at_end = true;
-    else {
-      at_end = false;
-      _index++;
-    }
-    
-    element = array + _index;
-    
-    return *this;
-  }
-  //---------------------------------------------------------------------------      
-  template <class T> typename PArray<T>::Iterator::Iterator& 
-  PArray<T>::Iterator::operator--()
-  {
-    if ( _index == 0 )
-      at_end = true;
-    else {
-      at_end = false;
-      _index--;
-    }
-    
-    element = array + _index;
-    
-    return *this;
   }
   //---------------------------------------------------------------------------      
   template <class T> bool PArray<T>::Iterator::end() const

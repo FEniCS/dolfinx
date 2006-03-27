@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-03-22
+// Last changed: 2006-03-27
 
 #include <iostream>
 #include <sstream>
@@ -287,17 +287,12 @@ void Matrix::apply()
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-const Matrix::Type Matrix::getMatrixType() const
+Matrix::Type Matrix::getMatrixType() const
 {
   return type;
 }
 //-----------------------------------------------------------------------------
-Mat Matrix::mat()
-{
-  return A;
-}
-//-----------------------------------------------------------------------------
-const Mat Matrix::mat() const
+Mat Matrix::mat() const
 {
   return A;
 }

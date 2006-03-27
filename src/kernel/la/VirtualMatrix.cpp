@@ -115,12 +115,7 @@ dolfin::uint VirtualMatrix::size(uint dim) const
   return (dim == 0 ? static_cast<uint>(M) : static_cast<uint>(N));
 }
 //-----------------------------------------------------------------------------
-Mat VirtualMatrix::mat()
-{
-  return A;
-}
-//-----------------------------------------------------------------------------
-const Mat VirtualMatrix::mat() const
+Mat VirtualMatrix::mat() const
 {
   return A;
 }
