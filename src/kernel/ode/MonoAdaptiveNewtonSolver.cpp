@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2005-11-10
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -241,6 +241,7 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
   {
     dolfin_info("Using direct linear solver: LU.");
     LU* solver = new LU();
+    solver->set("LU report", monitor);
     return solver;
   }
   else if ( choice == "default" )

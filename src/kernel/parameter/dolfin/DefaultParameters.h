@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-03-22
+// Last changed: 2006-03-27
 
 //--- General parameters ---
 
@@ -81,3 +81,5 @@ add("Krylov shift nonzero", 0.0);
 add("Krylov report", true);
 add("Krylov monitor convergence", false);
 
+//--- Parameter for direct (LU) solver ---
+add("LU report", true);

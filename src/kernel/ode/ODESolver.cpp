@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-19
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -15,7 +15,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 void ODESolver::solve(ODE& ode)
 {
-  dolfin_begin("Solving ODE");  
+  dolfin_begin("Solving ODE on time interval (0,%g).", ode.endtime());
 
   // Temporary fix until we fix the dual problem again
   TimeStepper::solve(ode);

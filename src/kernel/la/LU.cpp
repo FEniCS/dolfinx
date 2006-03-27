@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-10-24
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -42,12 +42,16 @@ LU::~LU()
 //-----------------------------------------------------------------------------
 dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
 {
+  // Get parameters
+  const bool report = get("LU report");
+
   // Initialize solution vector (remains untouched if dimensions match)
   x.init(A.size(1));
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (LU solver).",
-	      A.size(0), A.size(1));
+  if ( report )
+    dolfin_info("Solving linear system of size %d x %d (LU solver).",
+		A.size(0), A.size(1));
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
@@ -58,6 +62,9 @@ dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
 //-----------------------------------------------------------------------------
 dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
 {
+  // Get parameters
+  const bool report = get("LU report");
+
   //cout << "LU got matrix:" << endl;
   //cout << "A = "; A.disp(false);
   //cout << "b = "; b.disp();
@@ -69,8 +76,9 @@ dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   x.init(A.size(1));
 
   // Write a message
-  dolfin_info("Solving linear system of size %d x %d (LU solver).",
-	      A.size(0), A.size(1));
+  if ( report )
+    dolfin_info("Solving linear system of size %d x %d (LU solver).",
+		A.size(0), A.size(1));
 
   // Solve linear system
   KSPSetOperators(ksp, B, B, DIFFERENT_NONZERO_PATTERN);
