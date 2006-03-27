@@ -1,8 +1,8 @@
 // Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2003
-// Last changed: 2005-12-19
+// First added:  2003-10-21
+// Last changed: 2006-03-27
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODESolver.h>
@@ -154,6 +154,16 @@ void ODE::save(Sample& sample)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+void ODE::sparse()
+{
+  dependencies.detect(*this);
+}
+//-----------------------------------------------------------------------------
+void ODE::sparse(const Matrix& A)
+{
+  dependencies.set(A);
+}
+//-----------------------------------------------------------------------------
 dolfin::uint ODE::size() const
 {
   return N;  
@@ -167,15 +177,5 @@ real ODE::endtime() const
 void ODE::solve()
 {
   ODESolver::solve(*this);
-}
-//-----------------------------------------------------------------------------
-void ODE::sparse()
-{
-  dependencies.detect(*this);
-}
-//-----------------------------------------------------------------------------
-void ODE::sparse(const Matrix& A)
-{
-  dependencies.set(A);
 }
 //-----------------------------------------------------------------------------

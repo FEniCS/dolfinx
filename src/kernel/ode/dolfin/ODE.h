@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// First added:  2003
-// Last changed: 2005-11-10
+// First added:  2003-10-21
+// Last changed: 2006-03-27
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -21,6 +21,21 @@ namespace dolfin
   ///     u(0)  = u0,
   ///
   /// where u(t) is a vector of length N.
+  ///
+  /// To define an ODE, a user must create a subclass of ODE
+  /// and define the function u0() containing the initial
+  /// condition, as well the function f() containing the
+  /// right-hand side.
+  ///
+  /// 
+  /// It is also possible to solve implicit systems of the form
+  ///
+  ///     M(u(t), t) u'(t) = f(u(t),t) on (0,T],
+  ///         
+  ///     u(0)  = u0,
+  ///
+  /// by setting the option "implicit" to true and defining the
+  /// function M().
 
   class ODE
   {
@@ -36,19 +51,18 @@ namespace dolfin
     virtual real u0(uint i) = 0;
 
     /// Evaluate right-hand side (multi-adaptive version)
-    // FIXME:: make this abstract?
     virtual real f(const real u[], real t, uint i);
 
     /// Evaluate right-hand side (mono-adaptive version)
     virtual void f(const real u[], real t, real y[]);
 
-    /// Compute product y = Mx for implicit system
+    /// Compute product y = Mx for implicit system (optional)
     virtual void M(const real x[], real y[], const real u[], real t);
 
-    /// Compute product y = Jx for Jacobian J
+    /// Compute product y = Jx for Jacobian J (optional)
     virtual void J(const real x[], real y[], const real u[], real t);
 
-    /// Jacobian (optional)
+    /// Compute entry of Jacobian (optional)
     virtual real dfdu(const real u[], real t, uint i, uint j);
 
     /// Time step to use for whole system (optional)
@@ -63,20 +77,20 @@ namespace dolfin
     /// Save sample (optional)
     virtual void save(Sample& sample);
 
-    /// Number of components N
+    /// Automatically detect sparsity (optional)
+    void sparse();
+
+    /// Compute sparsity from given matrix (optional)
+    void sparse(const Matrix& A);
+
+    /// Return number of components N
     uint size() const;
 
-    /// End time (final time)
+    /// Return end time (final time T)
     real endtime() const;
 
     /// Solve ODE
     void solve();
-
-    /// Automatically detect sparsity
-    void sparse();
-
-    /// Compute sparsity from given matrix
-    void sparse(const Matrix& A);
 
     /// Friends
     friend class Dual;
