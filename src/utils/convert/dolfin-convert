@@ -48,11 +48,11 @@ def main(argv):
     # Choose conversion
     if isuffix == "mesh" and osuffix == "xml":
         mesh2xml(ifilename, ofilename)
-    if isuffix == "gmsh" and osuffix == "xml":
+    if (isuffix == "gmsh" or isuffix == "msh") and osuffix == "xml":
         gmsh2xml(ifilename, ofilename)
     else:
         print "Sorry, cannot convert between .%s and .%s file formats." % (isuffix, osuffix)
-
+        
 def usage():
     "Display usage"
     print """\
@@ -82,7 +82,7 @@ def mesh2xml(ifilename, ofilename):
        
     """
     
-    print "Converting from Medit \".mesh\" to DOLFIN XML format"
+    print "Converting from Medit format (.mesh) to DOLFIN XML format"
 
     # Open files
     ifile = open(ifilename, "r")
@@ -201,7 +201,7 @@ def gmsh2xml(ifilename, ofilename):
        
     """
     
-    print "Converting from gmsh \".gmsh\" to DOLFIN XML format"
+    print "Converting from Gmsh format (.msh, .gmsh) to DOLFIN XML format"
 
     # Open files
     ifile = open(ifilename, "r")
