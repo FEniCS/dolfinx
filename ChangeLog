@@ -1,3 +1,4 @@
+ - Update for new FFC syntax: BasisFunction --> TestFunction, TrialFunction
  - Fixes for conversion script dolfin-convert
  - Initial cleanups and fixes for ODE solvers
  - Numerous small fixes to improve portability
