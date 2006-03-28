@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
   // Parameters
   set("method", "dg");
   set("order", 1);
-  set("maximum time step", 1.0);
+  set("maximum time step", 5.0);
   set("tolerance", 0.01);
   set("solver", "newton");
   set("linear solver", "direct");

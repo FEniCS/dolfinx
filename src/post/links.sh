@@ -22,6 +22,9 @@ link_plotslab() {
     ln -sf $TOPLEVEL/src/utils/matlab/plotslab.m $1
 }
 
+# Create links to plotslab script
+#link_plotslab src/demo/ode/stiff
+
 # Create links to Octave scripts
 link_octave src/demo/solvers/elasticity
 link_octave src/demo/solvers/wave
