@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) Anders Logg 2002-2006
+# Copyright (C) Anders Logg 2002-2006
 # Licensed under the GNU GPL Version 2
 #
 # This script creates a new release of DOLFIN
@@ -24,6 +24,10 @@ emacs -nw ChangeLog
 echo '--- Update version number in configure.ac'
 sleep 1
 emacs -nw configure.ac
+
+# Regenerate build system
+echo '--- Regenerating build system'
+scripts/preconfigure
 
 # Get the version number
 VERSION=`cat ./configure.ac | grep AC_INIT | cut -d ',' -f2 | cut -d' ' -f2`
