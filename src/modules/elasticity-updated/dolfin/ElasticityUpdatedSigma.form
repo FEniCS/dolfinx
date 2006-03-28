@@ -14,7 +14,7 @@ lmbda   = Constant() # Lame coefficient
 mu      = Constant() # Lame coefficient
 nuplast = Constant() # Plastic viscosity
 
-q = BasisFunction(element2)
+q = TestFunction(element2)
 v = Function(element1)
 sigma = Function(element2)
 sigmanorm = Function(element3)

@@ -1,15 +1,18 @@
 # Copyright (c) 2005 Johan Jansson (johanjan@math.chalmers.se)
 # Licensed under the GNU GPL Version 2
 #
-# Modified by Anders Logg, 2006
+# Modified by Anders Logg 2006
+#
+# First added:  2005
+# Last changed: 2006-03-28
 #
 # The bilinear form for classical linear elasticity (Navier).
 # Compile this form with FFC: ffc Elasticity.form.
 
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
-v = BasisFunction(element) # test function
-U = BasisFunction(element) # trial function
+v = TestFunction(element)  # test function
+U = TrialFunction(element) # trial function
 f = Function(element)      # external force
 
 E  = 10.0

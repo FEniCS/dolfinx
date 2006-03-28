@@ -1,6 +1,9 @@
 # Copyright (c) 2005-2006 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
+# First added:  2005
+# Last changed: 2006-03-28
+#
 # The bilinear form a(v, U) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (equal-order stabilized).
 #
@@ -10,8 +13,8 @@ scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = FiniteElement("Vector Lagrange", "triangle", 1)
 system = vector + scalar
 
-(v, q) = BasisFunctions(system)
-(U, P) = BasisFunctions(system)
+(v, q) = TestFunctions(system)
+(U, P) = TrialFunctions(system)
 
 f = Function(vector)
 h = Function(scalar)

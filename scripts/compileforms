@@ -28,6 +28,5 @@ for FORMFILE in $FORMFILES; do
     cd $DIRNAME
     ffc $FILENAME
     cd $TOPDIR
-    echo ""
 
 done

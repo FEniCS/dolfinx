@@ -1,6 +1,9 @@
 # Copyright (c) 2005-2006 Anders Logg (logg@tti-c.org)
 # Licensed under the GNU GPL Version 2
 #
+# First added:  2005
+# Last changed: 2006-03-28
+#
 # The bilinear form a(v, U) and Linear form L(v) for the Stokes
 # equations using a mixed formulation (Taylor-Hood elements).
 #
@@ -10,8 +13,8 @@ P1 = FiniteElement("Lagrange", "triangle", 1)
 P2 = FiniteElement("Vector Lagrange", "triangle", 2)
 TH = P2 + P1
 
-(v, q) = BasisFunctions(TH)
-(U, P) = BasisFunctions(TH)
+(v, q) = TestFunctions(TH)
+(U, P) = TrialFunctions(TH)
 
 f = Function(P2)
 

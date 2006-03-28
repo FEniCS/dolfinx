@@ -1,6 +1,9 @@
 # Copyright (C) 2006 Garth N Wells.
 # Licensed under the GNU GPL Version 2.
 #
+# First added:  2006
+# Last changed: 2006-03-28
+#
 # The linearised bilinear form a(v, U) and linear form L(v) for
 # the Cahn-Hilliard equation.
 #
@@ -11,8 +14,8 @@ P2 = FiniteElement("Lagrange", "triangle", 1)
 
 ME = P1 + P2
 
-(v, q)     = BasisFunctions(ME)
-(c, k)   = BasisFunctions(ME)  # concentration, potential
+(v, q)   = TestFunctions(ME)
+(c, k)   = TrialFunctions(ME)  # concentration, potential
 
 (c1, k1) = Functions(ME)      # current solution 
 
@@ -31,8 +34,6 @@ dt         = Constant()           # time step
 theta      = Constant()           # time stepping parameter 
 dt_inv     = Constant()           # 1/(time step) 
 theta_inv  = Constant()           # 1/(time stepping parameter) 
-
-
 
 # Compute current rate (this implies the predictor)
 DcDt = (c1-c0)*dt_inv*theta_inv - (1-theta)*DcDt0*theta_inv

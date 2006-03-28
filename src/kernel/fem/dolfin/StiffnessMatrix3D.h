@@ -230,15 +230,15 @@ public:
   void eval(real block[], const AffineMap& map) const
   {
     // Compute geometry tensors
-    const real G0_0_0 = map.det*c0*(map.g00*map.g00 + map.g01*map.g01 + map.g02*map.g02);
-    const real G0_0_1 = map.det*c0*(map.g00*map.g10 + map.g01*map.g11 + map.g02*map.g12);
-    const real G0_0_2 = map.det*c0*(map.g00*map.g20 + map.g01*map.g21 + map.g02*map.g22);
-    const real G0_1_0 = map.det*c0*(map.g10*map.g00 + map.g11*map.g01 + map.g12*map.g02);
-    const real G0_1_1 = map.det*c0*(map.g10*map.g10 + map.g11*map.g11 + map.g12*map.g12);
-    const real G0_1_2 = map.det*c0*(map.g10*map.g20 + map.g11*map.g21 + map.g12*map.g22);
-    const real G0_2_0 = map.det*c0*(map.g20*map.g00 + map.g21*map.g01 + map.g22*map.g02);
-    const real G0_2_1 = map.det*c0*(map.g20*map.g10 + map.g21*map.g11 + map.g22*map.g12);
-    const real G0_2_2 = map.det*c0*(map.g20*map.g20 + map.g21*map.g21 + map.g22*map.g22);
+    const real G0_0_0 = map.det*c0*map.g00*map.g00 + map.det*c0*map.g01*map.g01 + map.det*c0*map.g02*map.g02;
+    const real G0_0_1 = map.det*c0*map.g00*map.g10 + map.det*c0*map.g01*map.g11 + map.det*c0*map.g02*map.g12;
+    const real G0_0_2 = map.det*c0*map.g00*map.g20 + map.det*c0*map.g01*map.g21 + map.det*c0*map.g02*map.g22;
+    const real G0_1_0 = map.det*c0*map.g10*map.g00 + map.det*c0*map.g11*map.g01 + map.det*c0*map.g12*map.g02;
+    const real G0_1_1 = map.det*c0*map.g10*map.g10 + map.det*c0*map.g11*map.g11 + map.det*c0*map.g12*map.g12;
+    const real G0_1_2 = map.det*c0*map.g10*map.g20 + map.det*c0*map.g11*map.g21 + map.det*c0*map.g12*map.g22;
+    const real G0_2_0 = map.det*c0*map.g20*map.g00 + map.det*c0*map.g21*map.g01 + map.det*c0*map.g22*map.g02;
+    const real G0_2_1 = map.det*c0*map.g20*map.g10 + map.det*c0*map.g21*map.g11 + map.det*c0*map.g22*map.g12;
+    const real G0_2_2 = map.det*c0*map.g20*map.g20 + map.det*c0*map.g21*map.g21 + map.det*c0*map.g22*map.g22;
 
     // Compute element tensor
     block[0] = 1.666666666666664e-01*G0_0_0 + 1.666666666666664e-01*G0_0_1 + 1.666666666666664e-01*G0_0_2 + 1.666666666666664e-01*G0_1_0 + 1.666666666666665e-01*G0_1_1 + 1.666666666666665e-01*G0_1_2 + 1.666666666666664e-01*G0_2_0 + 1.666666666666665e-01*G0_2_1 + 1.666666666666665e-01*G0_2_2;

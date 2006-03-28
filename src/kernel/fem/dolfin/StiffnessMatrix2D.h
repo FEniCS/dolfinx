@@ -224,10 +224,10 @@ public:
   void eval(real block[], const AffineMap& map) const
   {
     // Compute geometry tensors
-    const real G0_0_0 = map.det*c0*(map.g00*map.g00 + map.g01*map.g01);
-    const real G0_0_1 = map.det*c0*(map.g00*map.g10 + map.g01*map.g11);
-    const real G0_1_0 = map.det*c0*(map.g10*map.g00 + map.g11*map.g01);
-    const real G0_1_1 = map.det*c0*(map.g10*map.g10 + map.g11*map.g11);
+    const real G0_0_0 = map.det*c0*map.g00*map.g00 + map.det*c0*map.g01*map.g01;
+    const real G0_0_1 = map.det*c0*map.g00*map.g10 + map.det*c0*map.g01*map.g11;
+    const real G0_1_0 = map.det*c0*map.g10*map.g00 + map.det*c0*map.g11*map.g01;
+    const real G0_1_1 = map.det*c0*map.g10*map.g10 + map.det*c0*map.g11*map.g11;
 
     // Compute element tensor
     block[0] = 4.999999999999998e-01*G0_0_0 + 4.999999999999997e-01*G0_0_1 + 4.999999999999997e-01*G0_1_0 + 4.999999999999996e-01*G0_1_1;

@@ -2,7 +2,7 @@
 # Licensed under the GNU GPL Version 2.
 #
 # First added:  2006-02-09
-# Last changed: 2006-03-01
+# Last changed: 2006-03-28
 #
 # The bilinear form a(v, U) and linear form L(v) for
 # convection-diffusion using cG(1)cG(1).
@@ -12,8 +12,8 @@
 scalar = FiniteElement("Lagrange", "triangle", 1)
 vector = FiniteElement("Vector Lagrange", "triangle", 2)
 
-v  = BasisFunction(scalar)
-U1 = BasisFunction(scalar)
+v  = TestFunction(scalar)
+U1 = TrialFunction(scalar)
 U0 = Function(scalar)
 b  = Function(vector)
 f  = Function(scalar)

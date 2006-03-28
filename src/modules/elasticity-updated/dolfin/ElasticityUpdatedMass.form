@@ -2,16 +2,17 @@
 # Licensed under the GNU GPL Version 2.
 #
 # First added:  2005
-# Last changed: 2005
+# Last changed: 2006-03-28
 
 name = "ElasticityUpdatedMass"
 element = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 element2 = FiniteElement("Lagrange", "tetrahedron", 1)
 
-u = BasisFunction(element)
-v = BasisFunction(element)
+v = TestFunction(element)
+U = TrialFunction(element)
+
 rho = Function(element2) # Density
 
 i = Index()
 
-a = rho * u[i] * v[i] * dx
+a = rho * v[i] * U[i] * dx

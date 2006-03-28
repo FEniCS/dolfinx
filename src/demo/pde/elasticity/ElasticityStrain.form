@@ -9,8 +9,8 @@ elementE = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 strain_element = elementE + elementE 
 
-(vn, vs) = BasisFunctions(strain_element) # test function
-(en, es) = BasisFunctions(strain_element) # trial function
+(vn, vs) = TestFunctions(strain_element)  # test function
+(en, es) = TrialFunctions(strain_element) # trial function
 
 u = Function(elementU)                    # displacemnt
 

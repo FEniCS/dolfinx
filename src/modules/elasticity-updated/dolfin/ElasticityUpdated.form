@@ -6,7 +6,7 @@ element2 = FiniteElement("Vector Lagrange", "tetrahedron", 1)
 
 nuv = Constant()	# viscosity coefficient
 
-v = BasisFunction(element2)
+v = TestFunction(element2)
 f = Function(element2)
 sigma = Function(element1)
 epsilon = Function(element1)

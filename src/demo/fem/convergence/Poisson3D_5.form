@@ -1,13 +1,16 @@
-# Copyright (C) 2005 Anders Logg.
+# Copyright (C) 2005-2006 Anders Logg.
 # Licensed under the GNU GPL Version 2.
+#
+# First added:  2005
+# Last changed: 2006-03-28
 #
 # Poisson's equation in 3D for q = 5
 
 element = FiniteElement("Lagrange", "tetrahedron", 5)
 
-v = BasisFunction(element)
-u = BasisFunction(element)
+v = TestFunction(element)
+U = TrialFunction(element)
 f = Function(element)
 
-a = v.dx(i)*u.dx(i)*dx
+a = v.dx(i)*U.dx(i)*dx
 L = v*f*dx
