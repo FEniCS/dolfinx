@@ -1,3 +1,4 @@
+ - Fixes for conversion script dolfin-convert
  - Initial cleanups and fixes for ODE solvers
  - Numerous small fixes to improve portability
  - Remove dolfin:: qualifier on output << in Parameter.h
