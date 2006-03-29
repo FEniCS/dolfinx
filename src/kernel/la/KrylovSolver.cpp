@@ -155,6 +155,14 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   // Read parameters
   readParameters();
 
+  // Don't use preconditioner that can't handle virtual (shell) matrix
+  if ( !pc_dolfin )
+  {
+    PC pc;
+    KSPGetPC(ksp, &pc);
+    PCSetType(pc, PCNONE);
+  }
+
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
   KSPSolve(ksp, b.vec(), x.vec());
