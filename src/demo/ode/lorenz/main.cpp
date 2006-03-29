@@ -13,7 +13,7 @@ class Lorenz : public ODE
 {
 public:
 
-  Lorenz() : ODE(3, 50.0)
+  Lorenz() : ODE(3, 500.0)
   {
     // Parameters
     s = 10.0;

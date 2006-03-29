@@ -29,12 +29,6 @@ ylabel('n2')
 figure(2)
 clf
 
-subplot(2, 1, 1)
-plot(t(1:1339), alpha(1:1339))
-xlabel('t')
-ylabel('n1 / n2')
-
-subplot(2, 1, 2)
 plot(t, alpha)
 xlabel('t')
 ylabel('n1 / n2')
