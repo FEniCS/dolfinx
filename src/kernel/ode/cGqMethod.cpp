@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-03-27
+// Last changed: 2006-03-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -179,7 +179,7 @@ void cGqMethod::computeWeights()
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
     LU lu;
-    lu.set("report", false);
+    lu.set("LU report", false);
     lu.solve(A, w, b);
 
     // Save weights including quadrature
