@@ -1,3 +1,4 @@
+ - Fix bug in conversion from Gmsh format
 0.6.1 [2006-03-28]
  - Regenerate build system in makedist script
  - Update for new FFC syntax: BasisFunction --> TestFunction, TrialFunction
