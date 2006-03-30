@@ -217,7 +217,7 @@ def gmsh2xml(ifilename, ofilename):
     write_header(ofile)
     
     # Initialise node list (gmsh does not export all vertexes in order)
-    nodelist = [0]
+    nodelist = {}
     
     # Current state
     state = 0
@@ -249,7 +249,7 @@ def gmsh2xml(ifilename, ofilename):
             state +=1
         elif state == 1:
             (node_no, x, y, z) = line.split()
-            nodelist.insert(int(node_no), num_vertices_read)
+            nodelist[int(node_no)] = num_vertices_read
             x = float(x)
             y = float(y)
             z = float(z)
@@ -278,28 +278,23 @@ def gmsh2xml(ifilename, ofilename):
             if num_cells_read == 0:
                 write_header_cells(ofile, num_cells)
             elif cell_type == 2:
-                nn0 = int(element[5])
-                nn1 = int(element[6])
-                nn2 = int(element[7])
-                nmax = max(nn0, nn1, nn2)
-                if nmax >= len(nodelist):
-                    error("Vertex %d of triangle %d not previously defined.\nMake sure to only export the physical mesh from Gmsh." % (nmax, num_cells_read))
-                n0 = nodelist[nn0] 
-                n1 = nodelist[nn1]
-                n2 = nodelist[nn2]
+                nn = [int(node) for node in element[5:8]]
+                for node in nn:
+                    if not node in nodelist:
+                        error("Vertex %d of triangle %d not previously defined." % (node, num_cells_read))
+                n0 = nodelist[nn[0]]
+                n1 = nodelist[nn[1]]
+                n2 = nodelist[nn[2]]
                 write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
             elif cell_type == 4:
-                nn0 = int(element[5])
-                nn1 = int(element[6])
-                nn2 = int(element[7])
-                nn3 = int(element[8])
-                nmax = max(nn0, nn1, nn2, nn3)
-                if nmax >= len(nodelist):
-                    error("Vertex %d of tetrahedron %d not previously defined.\nMake sure to only export the physical mesh from Gmsh." % (nmax, num_cells_read))
-                n0 = nodelist[nn0] 
-                n1 = nodelist[nn1]
-                n2 = nodelist[nn2]
-                n3 = nodelist[nn3]
+                nn = [int(node) for node in element[5:9]]
+                for node in nn:
+                    if not node in nodelist:
+                        error("Vertex %d of tetrahedron %d not previously defined." % (node, num_cells_read))
+                n0 = nodelist[nn[0]]
+                n1 = nodelist[nn[1]]
+                n2 = nodelist[nn[2]]
+                n3 = nodelist[nn[3]]
                 write_cell_tetrahedron(ofile, num_cells_read, n0, n1, n2, n3)
 
             num_cells_read +=1 
