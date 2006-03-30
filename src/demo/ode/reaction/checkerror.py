@@ -1,10 +1,10 @@
 #!/usr/bin/python
 
-from Scientific.IO.ArrayIO import *
+from scipy.io.array_import import *
 
 def checkerror(solution, reference):
-    U = readFloatArray(solution)
-    u = readFloatArray(reference)
+    U = read_array(solution)
+    u = read_array(reference)
     e = max(abs(U - u))
     return e
 
