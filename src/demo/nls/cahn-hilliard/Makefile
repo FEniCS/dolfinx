@@ -3,7 +3,7 @@ LIBS    = `dolfin-config --libs`
 CXX     = `dolfin-config --compiler`
 LINK    = `dolfin-config --linker`
 
-DEST    = dolfin-nonlinear-poisson
+DEST    = dolfin-cahn-hilliard
 OBJECTS = main.o
 
 all: $(DEST)
