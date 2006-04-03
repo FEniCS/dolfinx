@@ -67,8 +67,8 @@ if test x$enable_pydolfin = xyes; then
 fi
 
 # Make debug option default so developers don't forget it
-echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
-enable_debug="yes"
+#echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
+#enable_debug="yes"
 
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
