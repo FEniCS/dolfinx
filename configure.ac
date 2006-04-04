@@ -73,16 +73,16 @@ if test x$enable_pydolfin = xyes; then
 fi
 
 # Make debug option default so developers don't forget it
-echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
-enable_debug="yes"
+#echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
+#enable_debug="yes"
 
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -ansi -std=c++98'
+    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -Wno-long-long -ansi -std=c++98'
     # We should also add -pedantic, but then we get an error when we try
     # to include mpio.h (long long not supported by ISO C++)
-fi
+fi 
 
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
