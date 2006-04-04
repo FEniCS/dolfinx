@@ -1,3 +1,4 @@
+ - Add new classes DenseMatrix and DenseVector (wrappers for ublas)
  - Fix bug in conversion from Gmsh format
 0.6.1 [2006-03-28]
  - Regenerate build system in makedist script

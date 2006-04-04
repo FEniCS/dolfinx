@@ -43,6 +43,7 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
+* Add output for DenseMatrix and DenseVector
 * Cleanups and testing
 
 Function
