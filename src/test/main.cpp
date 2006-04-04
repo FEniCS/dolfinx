@@ -16,6 +16,7 @@
 
 using namespace dolfin;
 
+
 void testPreconditioner()
 {
   dolfin_info("--- Testing preconditioner ---");
@@ -279,8 +280,61 @@ void testMeshRefinement()
   //file2 << mesh;
 }
 
+void testDenseMatrix()
+{
+  dolfin_info("--- Testing dense matrices ---");
+  
+  const int size = 6;
+
+  // Create matrices
+  DenseMatrix A(size,size); 
+  DenseMatrix B(size, size);
+  DenseMatrix C(size, size);
+
+  // Create vectors
+  DenseVector b(size); 
+
+  A.clear();
+  for(int i=0; i < size; ++i)
+  {  
+    A(i,i) = 2.0;
+  }
+  cout << "Diagonal matrix A = " <<  endl;
+  std::cout << A <<  std::endl;
+
+  // Invert A
+  A.invert();
+
+  cout << "Inverse of matrix A = " <<  endl;
+  std::cout << A << std::endl;
+
+
+  // Set all matrix entries equal to 4
+  for(int i=0; i < size; ++i)
+    for(int j=0; j < size; ++j)
+        A(i,j) = 4.0;
+
+  // Create indentity matrix
+  B.clear();
+  for(int i=0; i < size; ++i)
+    B(i,i) = 1.0;
+
+  for(int i=0; i < size; ++i)
+    b(i) = 1.0;
+
+  // c = A b
+  DenseVector c(size);
+  c.assign(prod(A, b));
+  std::cout << c << std::endl;
+
+
+}
+
+
+
 int main(int argc, char* argv[])
 {
+/*
   testPreconditioner();
   testOutputVector();
   testOutputMatrix();
@@ -295,6 +349,8 @@ int main(int argc, char* argv[])
   testParameters();
   testMakeElement();
   testMeshRefinement();
+*/
+  testDenseMatrix();
 
   return 0;
 }

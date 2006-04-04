@@ -175,6 +175,8 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = dolfin_la.h \
+             DenseMatrix.h \
+             DenseVector.h \
              EigenvalueSolver.h \
              GMRES.h \
              KrylovSolver.h \

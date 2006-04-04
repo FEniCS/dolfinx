@@ -1,4 +1,6 @@
 EXTRA_DIST = dolfin_la.h \
+             DenseMatrix.h \
+             DenseVector.h \
              EigenvalueSolver.h \
              GMRES.h \
              KrylovSolver.h \

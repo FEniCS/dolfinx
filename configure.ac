@@ -38,6 +38,12 @@ AC_ARG_WITH(petsc-dir,
                            [Specify path to PETSc]),
             [PETSC_DIR=$with_petsc_dir],)
 
+# Option --with-boost-include
+AC_ARG_WITH(boost-include,
+            AC_HELP_STRING([--with-boost-include=<path>],
+                           [Specify path to Boost]),
+            [BOOST_DIR=$with_boost_include],)
+
 # Option --enable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--enable-pydolfin],
@@ -159,6 +165,19 @@ else
     echo "disabling MPI (might not work if PETSc uses MPI)"
 fi
 
+# Check for Boost headers
+have_boost=no
+AC_CHECK_HEADERS([boost/version.hpp], have_boost=yes)
+if test $have_boost = no; then
+  AC_CHECK_HEADERS([$BOOST_DIR/boost/version.hpp], have_boost=yes)
+  if test $have_boost = yes; then
+    BOOST_CFLAGS="-I$BOOST_DIR"
+  else
+    echo "*** Unable to find Boost."
+    exit 1
+  fi
+fi
+
 # Check for libxml2
 AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
 if test $libxml2_found = yes; then	  
@@ -181,7 +200,7 @@ KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
+KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules

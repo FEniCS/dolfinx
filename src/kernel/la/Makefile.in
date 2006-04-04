@@ -59,9 +59,10 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
-am_libdolfin_la_la_OBJECTS = EigenvalueSolver.lo KrylovSolver.lo \
-	GMRES.lo LinearSolver.lo LU.lo Matrix.lo PETScManager.lo \
-	Preconditioner.lo Vector.lo VirtualMatrix.lo
+am_libdolfin_la_la_OBJECTS = DenseMatrix.lo DenseVector.lo \
+	EigenvalueSolver.lo KrylovSolver.lo GMRES.lo LinearSolver.lo \
+	LU.lo Matrix.lo PETScManager.lo Preconditioner.lo Vector.lo \
+	VirtualMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -217,29 +218,33 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_la.h \
-                         dolfin/EigenvalueSolver.h \
-                         dolfin/KrylovSolver.h \
-                         dolfin/GMRES.h \
-                         dolfin/LinearSolver.h \
-                         dolfin/LU.h \
-                         dolfin/Matrix.h \
-                         dolfin/PETScManager.h \
-                         dolfin/Preconditioner.h \
-                         dolfin/Vector.h \
-                         dolfin/VirtualMatrix.h 
+                          dolfin/DenseMatrix.h \
+                          dolfin/DenseVector.h \
+                          dolfin/EigenvalueSolver.h \
+                          dolfin/KrylovSolver.h \
+                          dolfin/GMRES.h \
+                          dolfin/LinearSolver.h \
+                          dolfin/LU.h \
+                          dolfin/Matrix.h \
+                          dolfin/PETScManager.h \
+                          dolfin/Preconditioner.h \
+                          dolfin/Vector.h \
+                          dolfin/VirtualMatrix.h 
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-la.la
-libdolfin_la_la_SOURCES = EigenvalueSolver.cpp \
-                         KrylovSolver.cpp \
-                         GMRES.cpp \
-                         LinearSolver.cpp \
-                         LU.cpp \
-                         Matrix.cpp \
-                         PETScManager.cpp \
-                         Preconditioner.cpp \
-                         Vector.cpp \
-                         VirtualMatrix.cpp 
+libdolfin_la_la_SOURCES = DenseMatrix.cpp \
+                          DenseVector.cpp \
+                          EigenvalueSolver.cpp \
+                          KrylovSolver.cpp \
+                          GMRES.cpp \
+                          LinearSolver.cpp \
+                          LU.cpp \
+                          Matrix.cpp \
+                          PETScManager.cpp \
+                          Preconditioner.cpp \
+                          Vector.cpp \
+                          VirtualMatrix.cpp 
 
 libdolfin_la_la_LDFLAGS = -static
 all: all-recursive
@@ -311,6 +316,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KrylovSolver.Plo@am__quote@

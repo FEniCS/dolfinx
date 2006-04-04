@@ -3,6 +3,8 @@
 
 // DOLFIN linear algebra
 
+#include <dolfin/DenseMatrix.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/EigenvalueSolver.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/KrylovSolver.h>
