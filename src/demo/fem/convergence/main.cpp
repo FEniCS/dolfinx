@@ -59,8 +59,8 @@ real solve2D(int q, int n)
   BC bc;
 
   // Choose forms
-  BilinearForm* a;
-  LinearForm* L;
+  BilinearForm* a = 0;
+  LinearForm* L = 0;
   switch ( q )
   {
   case 1:
@@ -129,8 +129,8 @@ real solve3D(int q, int n)
   BC bc;
 
   // Choose forms
-  BilinearForm* a;
-  LinearForm* L;
+  BilinearForm* a = 0;
+  LinearForm* L = 0;
   switch ( q )
   {
   case 1:
@@ -190,8 +190,8 @@ real solve3D(int q, int n)
 
 int main()
 {
-  int qmax = 5;
-  int num_meshes = 3;
+  const int qmax = 5;
+  const int num_meshes = 3;
   real e2D[qmax][num_meshes];
   real e3D[qmax][num_meshes];
 

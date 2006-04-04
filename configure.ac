@@ -80,8 +80,9 @@ fi
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
     CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -Wno-long-long -ansi -std=c++98'
-    # We should also add -pedantic, but then we get an error when we try
-    # to include mpio.h (long long not supported by ISO C++)
+    # Try adding -pedantic and -Wno-long-long (Garth)
+      # We should also add -pedantic, but then we get an error when we try
+      # to include mpio.h (long long not supported by ISO C++)
 fi 
 
 # Handle option --enable-optimization

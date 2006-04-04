@@ -82,16 +82,16 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Destructor 
     ~CahnHilliardEquation()
     {
-      delete mobility, d_mobility;
-      delete mu, dmu_dc;
-      delete a, L;
+      delete mobility; delete d_mobility;
+      delete mu; delete dmu_dc;
+      delete a; delete L;
     }
  
     // Compute chemical potential mu = df/dc (f =chemical free-energy)
     void computeMu(Function& mu, Function& dmu, const Vector& x)
     {
       // parameters for the logarithmic free energy
-      real g1 = 0.0; real g2 = 0.0; real g3 = 1000.0; real g4 = 1000.0; real g5 = 3000.0;
+      real g3 = 1000.0; real g4 = 1000.0; real g5 = 3000.0;
       // factor on quartic free energy
       real factor = 100.0;
 
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 
   // Randomly perturbed intitial conditions
   dolfin::seed(2);
-  for(dolfin::uint i=0; i < mesh.numVertices(); ++i)
+  for(int i=0; i < mesh.numVertices(); ++i)
      x(i) = 0.63 + 0.02*(0.5-dolfin::rand());
 
   // Save initial condition to file

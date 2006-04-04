@@ -27,8 +27,6 @@ class Source : public Function
 {
   real eval(const Point& p, unsigned int i)
   {
-    int id = cell().id();
-
     if(i == 1)
       return 0.0;
     else

@@ -42,9 +42,8 @@ public:
       const real* vals = 0;
       MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
       dependencies.setsize(i + offset, ncols);
-      real rowsum = 0.0;
-      for (unsigned int j = 0; j < ncols; j++)
-	dependencies.set(i + offset, cols[j]);
+      for (int j = 0; j < ncols; j++)
+	      dependencies.set(i + offset, cols[j]);
       MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
     }
 
@@ -183,10 +182,10 @@ private:
   Mesh& mesh;          // The mesh
   StiffnessMatrix A;   // Stiffness matrix
   Vector m;            // Lumped mass matrix
+  unsigned int offset; // N/2, number of vertices
   Array<real> h;       // Local mesh size
   real hmin;           // Minimum mesh size
   real w;              // Width of initial wave
-  unsigned int offset; // N/2, number of vertices
 
 };
 
