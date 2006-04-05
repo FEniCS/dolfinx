@@ -284,8 +284,123 @@ void testDenseMatrix()
 {
   dolfin_info("--- Testing dense matrices ---");
   
+  const int kk   = 10000000;
   const int size = 6;
 
+  real time;
+
+  cout << "Assemble a "<< size << "x" << size << " matrix " << kk << " times." << endl;
+
+  dolfin_begin("Setting values");
+  tic();
+  boost::numeric::ublas::matrix<real> A(size, size); 
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        A(i,j) = 1.0;
+
+  time = toc();
+  cout << "ublas time to set values = " << time << endl;
+
+  tic();
+  DenseMatrix B(size, size); 
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        B(i,j) = 1.0;
+  time = toc();
+  cout << "Dense matrix time to set values = " << time << endl;
+
+  tic();
+  DenseMatrixDerived C(size, size); 
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        C(i,j) = 1.0;
+  time = toc();
+  cout << "Wrapped Dense matrix time to set values = " << time << endl;
+
+  tic();
+  NewMatrix D(size, size); 
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        D(i,j) = 1.0;
+  time = toc();
+  cout << "Dense matrix (letter envelope) time to set values = " << time << endl;
+
+
+  dolfin_end();
+
+  dolfin_begin("Retrieving values");
+  real temp;
+
+  tic();
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        temp = A(i,j);
+
+  time = toc();
+  cout << "ublas time to retrieve values = " << time << endl;
+
+  tic();
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        temp = B(i,j);
+  time = toc();
+  cout << "Dense matrix time to retrieve values = " << time << endl;
+
+  tic();
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        temp = C(i,j);
+  time = toc();
+  cout << "Wrapped Dense matrix time to retrieve values = " << time << endl;
+
+  tic();
+  for(int k=0; k < kk; ++k) 
+   for(int i=0; i < size; ++i)
+      for(int j=0; j < size; ++j)
+        temp = D(i,j);
+  time = toc();
+  cout << "Wrapped Dense matrix (letter envelope) time to set values = " << time << endl;
+
+
+  dolfin_end();
+
+  dolfin_begin("Assigning blocks of values");
+  const int kk2   = 1000000;
+
+  tic();
+  boost::numeric::ublas::matrix<real> A2; 
+  for(int k=0; k < kk2; ++k) 
+    A2 = A;
+  time = toc();
+  cout << "ublas time = " << time << endl;
+
+
+  tic();
+  DenseMatrixDerived C2;
+  for(int k=0; k < kk2; ++k) 
+    C2 = C;
+  time = toc();
+  cout << "Wrapped Dense matrix time  = " << time << endl;
+
+  tic();
+  DenseMatrix B2;
+  for(int k=0; k < kk2; ++k) 
+    B2 = B;
+  time = toc();
+  cout << "Dense matrix time  = " << time << endl;
+
+
+  dolfin_end();
+
+/*
+  const int size = 6;
   // Create matrices
   DenseMatrix A(size,size); 
   DenseMatrix B(size, size);
@@ -324,10 +439,15 @@ void testDenseMatrix()
 
   // c = A b
   DenseVector c(size);
+//  c = prod(A, b);
   c.assign(prod(A, b));
+//  DenseVector cc(size);
+//  cc = prod(A, b);
+  boost::numeric::ublas::vector<real> dd;
+  dd  = prod(A, b);
   std::cout << c << std::endl;
 
-
+*/
 }
 
 
