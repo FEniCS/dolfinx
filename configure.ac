@@ -88,7 +88,7 @@ fi
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS='-O3 -Wall -Werror -ansi -std=c++98'
+    CXXFLAGS='-O3 -Wall -ansi -std=c++98'
 fi
 
 # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
