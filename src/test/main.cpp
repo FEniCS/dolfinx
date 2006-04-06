@@ -284,7 +284,7 @@ void testDenseMatrix()
 {
   dolfin_info("--- Testing dense matrices ---");
   
-  const int kk   = 10000000;
+  const int kk   = 1000000;
   const int size = 6;
 
   real time;
@@ -300,7 +300,7 @@ void testDenseMatrix()
         A(i,j) = 1.0;
 
   time = toc();
-  cout << "ublas time to set values = " << time << endl;
+  cout << "Plain ublas time to set values = " << time << endl;
 
   tic();
   DenseMatrix B(size, size); 
@@ -312,25 +312,17 @@ void testDenseMatrix()
   cout << "Dense matrix time to set values = " << time << endl;
 
   tic();
-  DenseMatrixDerived C(size, size); 
+  NewMatrix<DenseMatrix> D(size, size); 
   for(int k=0; k < kk; ++k) 
    for(int i=0; i < size; ++i)
       for(int j=0; j < size; ++j)
-        C(i,j) = 1.0;
+        D(i,j) = 1.7;
   time = toc();
-  cout << "Wrapped Dense matrix time to set values = " << time << endl;
-
-  tic();
-  NewMatrix D(size, size); 
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        D(i,j) = 1.0;
-  time = toc();
-  cout << "Dense matrix (letter envelope) time to set values = " << time << endl;
-
-
+  cout << "Template NewMatrix time to set values = " << time << endl;
+   
   dolfin_end();
+
+
 
   dolfin_begin("Retrieving values");
   real temp;
@@ -340,9 +332,8 @@ void testDenseMatrix()
    for(int i=0; i < size; ++i)
       for(int j=0; j < size; ++j)
         temp = A(i,j);
-
   time = toc();
-  cout << "ublas time to retrieve values = " << time << endl;
+  cout << "Plain ublas time to retrieve values = " << time << endl;
 
   tic();
   for(int k=0; k < kk; ++k) 
@@ -352,13 +343,6 @@ void testDenseMatrix()
   time = toc();
   cout << "Dense matrix time to retrieve values = " << time << endl;
 
-  tic();
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        temp = C(i,j);
-  time = toc();
-  cout << "Wrapped Dense matrix time to retrieve values = " << time << endl;
 
   tic();
   for(int k=0; k < kk; ++k) 
@@ -366,88 +350,8 @@ void testDenseMatrix()
       for(int j=0; j < size; ++j)
         temp = D(i,j);
   time = toc();
-  cout << "Wrapped Dense matrix (letter envelope) time to set values = " << time << endl;
+  cout << "Template NewMatrix time to retrieve values = " << time << endl;
 
-
-  dolfin_end();
-
-  dolfin_begin("Assigning blocks of values");
-  const int kk2   = 1000000;
-
-  tic();
-  boost::numeric::ublas::matrix<real> A2; 
-  for(int k=0; k < kk2; ++k) 
-    A2 = A;
-  time = toc();
-  cout << "ublas time = " << time << endl;
-
-
-  tic();
-  DenseMatrixDerived C2;
-  for(int k=0; k < kk2; ++k) 
-    C2 = C;
-  time = toc();
-  cout << "Wrapped Dense matrix time  = " << time << endl;
-
-  tic();
-  DenseMatrix B2;
-  for(int k=0; k < kk2; ++k) 
-    B2 = B;
-  time = toc();
-  cout << "Dense matrix time  = " << time << endl;
-
-
-  dolfin_end();
-
-/*
-  const int size = 6;
-  // Create matrices
-  DenseMatrix A(size,size); 
-  DenseMatrix B(size, size);
-  DenseMatrix C(size, size);
-
-  // Create vectors
-  DenseVector b(size); 
-
-  A.clear();
-  for(int i=0; i < size; ++i)
-  {  
-    A(i,i) = 2.0;
-  }
-  cout << "Diagonal matrix A = " <<  endl;
-  std::cout << A <<  std::endl;
-
-  // Invert A
-  A.invert();
-
-  cout << "Inverse of matrix A = " <<  endl;
-  std::cout << A << std::endl;
-
-
-  // Set all matrix entries equal to 4
-  for(int i=0; i < size; ++i)
-    for(int j=0; j < size; ++j)
-        A(i,j) = 4.0;
-
-  // Create indentity matrix
-  B.clear();
-  for(int i=0; i < size; ++i)
-    B(i,i) = 1.0;
-
-  for(int i=0; i < size; ++i)
-    b(i) = 1.0;
-
-  // c = A b
-  DenseVector c(size);
-//  c = prod(A, b);
-  c.assign(prod(A, b));
-//  DenseVector cc(size);
-//  cc = prod(A, b);
-  boost::numeric::ublas::vector<real> dd;
-  dd  = prod(A, b);
-  std::cout << c << std::endl;
-
-*/
 }
 
 

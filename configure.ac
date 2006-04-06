@@ -86,9 +86,10 @@ if test x$enable_debug = xyes; then
 fi 
 
 # Handle option --enable-optimization
+# Flag -DNDEBUG is for Boost
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS='-O3 -Wall -ansi -std=c++98'
+    CXXFLAGS='-O3 -DNDEBUG -Wall -ansi -std=c++98'
 fi
 
 # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.

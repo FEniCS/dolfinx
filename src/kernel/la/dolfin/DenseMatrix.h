@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-03-04
-// Last changed: 
+// Last changed: 2006-03-06
 
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
@@ -15,37 +15,15 @@
 namespace dolfin
 {
 
-  /// This class is a wrapper for the matrix template from uBlas, which is
+  /// This class is based on the matrix template from uBlas, which is
   /// part of the freely available Boost C++ library (www.boost.org). 
+  /// Some wrappers are provided to provide a uniform interface to different
+  /// DOLFIN matrix classes.
+  ///
   /// DenseMatrix is intended to operate together with DenseVector. Further 
   /// information and a listing of member functions can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-
-  // Test base class to examine overhead 
-  class GenericMatrix 
-  {
-  public:
- 
-    /// Constructor
-    GenericMatrix(){};
-
-    /// Destructor
-    virtual ~GenericMatrix(){};
-
-    /// Access elements
-//    virtual real& operator() (uint i, uint j) = 0; 
-    virtual real& operator() (uint i, uint j)
-     {
-        dolfin_error("Shouldn;t be in GenericMatrix virtual function");
-        real temp=0.0; real& junk = temp; return junk;
-     }; 
-
-  private:
-
-  };
-
-  // This class operates indepently of other DOLFIN matrix classes
   class DenseMatrix : public boost::numeric::ublas::matrix<real>, public Variable
   {
   public:
@@ -59,85 +37,25 @@ namespace dolfin
     /// Destructor
     ~DenseMatrix();
 
-    // Compute inverse of matrix
-    void invert();
+    //Important that the defintion of this function is in the header file for efficiency
+    /// Return address of matrix component
+    real& operator() (uint i, uint j) 
+      { return boost::numeric::ublas::matrix<real>::operator() (i, j); }; 
 
 //    boost::numeric::ublas::matrix<real>& operator= (DenseMatrix& A)
 //    { 
 //      return boost::numeric::ublas::matrix<real>::operator = (A) ; 
 //    }; 
 
-  private:
-
-
-  };
-
-  // Test class which derives from GenericMatrix
-  class DenseMatrixDerived : public GenericMatrix, public boost::numeric::ublas::matrix<real>,  public Variable
-  {
-  public:
-
-    using boost::numeric::ublas::matrix<real>::operator();
-    
-    /// Constructor
-    DenseMatrixDerived();
-    
-    /// Constructor
-    DenseMatrixDerived(uint i, uint j);
-
-    /// Destructor
-    ~DenseMatrixDerived();
-
-    // Compute inverse of matrix
+    /// Compute inverse of matrix
     void invert();
 
-    /// Return address of an element 
-      // This is necessary if real& operator() (uint i, uint j) is a pure virtual 
-      // function in GenericMatrix, but has a cost of factor 2    
-    real& operator() (uint i, uint j)
-      { return boost::numeric::ublas::matrix<real>::operator() (i, j); }; 
-
-    void copy(DenseMatrixDerived& A)
-      { this->assign(A); }; 
-
-    // Wrapping this function makes things faster. Why??
-//    boost::numeric::ublas::matrix<real>& operator= (DenseMatrixDerived& A)
-//    { 
-//     return boost::numeric::ublas::matrix<real>::operator = (A) ; 
-//    }; 
+    /// Return number of rows (dim = 0) or columns (dim = 1) 
+    uint size(uint dim) const;
 
   private:
 
-
   };
-  // Test base class to examine overhead for envelope-letter design 
-  class NewMatrix 
-  {
-  public:
- 
-    /// Constructor
-    NewMatrix(){ matrix = new DenseMatrixDerived; };
-
-    /// Constructor
-    NewMatrix(uint i, uint j){ matrix = new DenseMatrixDerived(i,j); };
-
-    /// Destructor
-    virtual ~NewMatrix(){};
-
-    /// Access elements
-//    virtual real& operator() (uint i, uint j) = 0; 
-    real& operator() (uint i, uint j)
-     {
-        return (*matrix)(i,j);
-     }; 
-
-  private:
-    
-    GenericMatrix* matrix;
-
-  };
-
-
 }
 
 #endif
