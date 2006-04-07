@@ -66,14 +66,14 @@ using namespace dolfin;
 }
 
 
-
-
+%include "pointer.i"
 %include "typemaps.i"
 %include "std_string.i"
 
 %include "carrays.i"
 
 %array_functions(dolfin::real, realArray);
+%array_functions(int, intArray);
 
 
 

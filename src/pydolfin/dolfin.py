@@ -52,6 +52,14 @@ realArray_getitem = _dolfin.realArray_getitem
 
 realArray_setitem = _dolfin.realArray_setitem
 
+new_intArray = _dolfin.new_intArray
+
+delete_intArray = _dolfin.delete_intArray
+
+intArray_getitem = _dolfin.intArray_getitem
+
+intArray_setitem = _dolfin.intArray_setitem
+
 dolfin_init = _dolfin.dolfin_init
 
 sqr = _dolfin.sqr
@@ -1981,10 +1989,10 @@ class ODE(_object):
     def timestep(*args): return _dolfin.ODE_timestep(*args)
     def update(*args): return _dolfin.ODE_update(*args)
     def save(*args): return _dolfin.ODE_save(*args)
+    def sparse(*args): return _dolfin.ODE_sparse(*args)
     def size(*args): return _dolfin.ODE_size(*args)
     def endtime(*args): return _dolfin.ODE_endtime(*args)
     def solve(*args): return _dolfin.ODE_solve(*args)
-    def sparse(*args): return _dolfin.ODE_sparse(*args)
     def __disown__(self):
         self.thisown = 0
         _dolfin.disown_ODE(self)
