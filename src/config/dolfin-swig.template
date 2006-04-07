@@ -42,11 +42,11 @@ cat > $swigfile <<EOF
 %module $modulename
 
 %{
-#include "$name.h"
-
 #include <dolfin.h>
 #include <string>
-  
+
+#include "$name.h"
+
 using namespace dolfin;
 %}
 
@@ -112,7 +112,7 @@ EOF
 
 echo Building the Python module
 
-swig -python -c++ -nodefault -dirprot `dolfin-config --cflags` -o ${modulename}_wrap.cpp $swigfile
+swig -python -c++ -nodefault -dirprot `dolfin-config --includes` -o ${modulename}_wrap.cpp $swigfile
 
 # FIXME:
 # Compilation still not compiler-independent

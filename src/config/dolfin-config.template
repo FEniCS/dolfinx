@@ -6,6 +6,7 @@ Usage: dolfin-config [options]
        --version  (get version number)
        --cflags   (get compiler flags)
        --libs     (get libraries for linking)
+       --includes (get include paths only)
        --compiler (get compiler)
        --linker   (get linker)
 
@@ -28,6 +29,9 @@ case $1 in
       ;;
 	--libs)
 		echo $LIBS
+      ;;
+	--includes)
+		echo $INCLUDES
       ;;
 	--compiler)
 		echo $COMPILER
