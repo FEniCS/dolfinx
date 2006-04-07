@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-03-04
-// Last changed: 2006-03-06
+// Last changed: 2006-03-07
 
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
@@ -37,7 +37,15 @@ namespace dolfin
     /// Destructor
     ~DenseMatrix();
 
-    //Important that the defintion of this function is in the header file for efficiency
+    /// Initialize M x N matrix
+    void init(uint M, uint N);
+
+    /// Initialize M x N matrix with given maximum number of nonzeros in each row
+    /// nzmax is a dummy argument ans is passed for compatibility with sparse matrces
+    void init(uint M, uint N, uint nzmax);
+
+
+    // Important that this function is inlined for efficiency
     /// Return address of matrix component
     real& operator() (uint i, uint j) 
       { return boost::numeric::ublas::matrix<real>::operator() (i, j); }; 
@@ -47,12 +55,24 @@ namespace dolfin
 //      return boost::numeric::ublas::matrix<real>::operator = (A) ; 
 //    }; 
 
+    /// Return number of rows (dim = 0) or columns (dim = 1) 
+    inline uint size(uint dim) const;
+
+    /// Add block of values
+    void add(const real block[], const int rows[], int m, const int cols[], int n);
+
     /// Compute inverse of matrix
     void invert();
 
-    /// Return number of rows (dim = 0) or columns (dim = 1) 
-    uint size(uint dim) const;
+    /// Dummy function for compatibility with sparse matrix
+    inline void apply(){};
 
+    /// Display matrix
+    void disp(uint precision = 2) const;
+
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const DenseMatrix& A);
+    
   private:
 
   };
