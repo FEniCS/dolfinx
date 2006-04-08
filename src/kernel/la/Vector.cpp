@@ -104,6 +104,11 @@ void Vector::add(const real block[], const int cols[], int n)
   VecSetValues(x, n, cols, block, ADD_VALUES); 
 }
 //-----------------------------------------------------------------------------
+void Vector::get(real block[], const int cols[], int n) const
+{
+  VecGetValues(x, n, cols, block); 
+}
+//-----------------------------------------------------------------------------
 void Vector::apply()
 {
   VecAssemblyBegin(x);

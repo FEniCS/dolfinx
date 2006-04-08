@@ -1,9 +1,9 @@
-# This file was created automatically by SWIG 1.3.27.
+# This file was created automatically by SWIG.
 # Don't modify this file, modify the SWIG interface instead.
+# This file is compatible with both classic and new-style classes.
 
 import _dolfin
 
-# This file is compatible with both classic and new-style classes.
 def _swig_setattr_nondynamic(self,class_type,name,value,static=1):
     if (name == "this"):
         if isinstance(value, class_type):
@@ -37,8 +37,7 @@ del types
 
 
 try:
-    import weakref
-    weakref_proxy = weakref.proxy
+    from weakref import proxy as weakref_proxy
 except:
     weakref_proxy = lambda x: x
 
@@ -89,7 +88,7 @@ class TimeDependentPtr(TimeDependent):
     def __init__(self, this):
         _swig_setattr(self, TimeDependent, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, TimeDependent, 'thisown', 0)
-        self.__class__ = TimeDependent
+        _swig_setattr(self, TimeDependent,self.__class__,TimeDependent)
 _dolfin.TimeDependent_swigregister(TimeDependentPtr)
 
 class Variable(_object):
@@ -111,7 +110,7 @@ class VariablePtr(Variable):
     def __init__(self, this):
         _swig_setattr(self, Variable, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Variable, 'thisown', 0)
-        self.__class__ = Variable
+        _swig_setattr(self, Variable,self.__class__,Variable)
 _dolfin.Variable_swigregister(VariablePtr)
 
 
@@ -167,7 +166,7 @@ class ParameterPtr(Parameter):
     def __init__(self, this):
         _swig_setattr(self, Parameter, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Parameter, 'thisown', 0)
-        self.__class__ = Parameter
+        _swig_setattr(self, Parameter,self.__class__,Parameter)
 _dolfin.Parameter_swigregister(ParameterPtr)
 
 dolfin_begin = _dolfin.dolfin_begin
@@ -205,7 +204,7 @@ class FilePtr(File):
     def __init__(self, this):
         _swig_setattr(self, File, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, File, 'thisown', 0)
-        self.__class__ = File
+        _swig_setattr(self, File,self.__class__,File)
 _dolfin.File_swigregister(FilePtr)
 
 class Vector(Variable):
@@ -235,6 +234,7 @@ class Vector(Variable):
     def div(*args): return _dolfin.Vector_div(*args)
     def mult(*args): return _dolfin.Vector_mult(*args)
     def add(*args): return _dolfin.Vector_add(*args)
+    def get(*args): return _dolfin.Vector_get(*args)
     def apply(*args): return _dolfin.Vector_apply(*args)
     def __call__(*args): return _dolfin.Vector___call__(*args)
     def copy(*args): return _dolfin.Vector_copy(*args)
@@ -259,7 +259,7 @@ class VectorPtr(Vector):
     def __init__(self, this):
         _swig_setattr(self, Vector, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Vector, 'thisown', 0)
-        self.__class__ = Vector
+        _swig_setattr(self, Vector,self.__class__,Vector)
 _dolfin.Vector_swigregister(VectorPtr)
 
 class VectorElement(_object):
@@ -280,7 +280,7 @@ class VectorElementPtr(VectorElement):
     def __init__(self, this):
         _swig_setattr(self, VectorElement, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, VectorElement, 'thisown', 0)
-        self.__class__ = VectorElement
+        _swig_setattr(self, VectorElement,self.__class__,VectorElement)
 _dolfin.VectorElement_swigregister(VectorElementPtr)
 
 class Matrix(Variable):
@@ -329,7 +329,7 @@ class MatrixPtr(Matrix):
     def __init__(self, this):
         _swig_setattr(self, Matrix, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Matrix, 'thisown', 0)
-        self.__class__ = Matrix
+        _swig_setattr(self, Matrix,self.__class__,Matrix)
 _dolfin.Matrix_swigregister(MatrixPtr)
 
 class MatrixElement(_object):
@@ -350,7 +350,7 @@ class MatrixElementPtr(MatrixElement):
     def __init__(self, this):
         _swig_setattr(self, MatrixElement, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MatrixElement, 'thisown', 0)
-        self.__class__ = MatrixElement
+        _swig_setattr(self, MatrixElement,self.__class__,MatrixElement)
 _dolfin.MatrixElement_swigregister(MatrixElementPtr)
 
 class VirtualMatrix(_object):
@@ -376,7 +376,7 @@ class VirtualMatrixPtr(VirtualMatrix):
     def __init__(self, this):
         _swig_setattr(self, VirtualMatrix, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, VirtualMatrix, 'thisown', 0)
-        self.__class__ = VirtualMatrix
+        _swig_setattr(self, VirtualMatrix,self.__class__,VirtualMatrix)
 _dolfin.VirtualMatrix_swigregister(VirtualMatrixPtr)
 
 class GMRES(_object):
@@ -399,7 +399,7 @@ class GMRESPtr(GMRES):
     def __init__(self, this):
         _swig_setattr(self, GMRES, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, GMRES, 'thisown', 0)
-        self.__class__ = GMRES
+        _swig_setattr(self, GMRES,self.__class__,GMRES)
 _dolfin.GMRES_swigregister(GMRESPtr)
 
 class LinearSolver(_object):
@@ -421,7 +421,7 @@ class LinearSolverPtr(LinearSolver):
     def __init__(self, this):
         _swig_setattr(self, LinearSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, LinearSolver, 'thisown', 0)
-        self.__class__ = LinearSolver
+        _swig_setattr(self, LinearSolver,self.__class__,LinearSolver)
 _dolfin.LinearSolver_swigregister(LinearSolverPtr)
 
 class LU(LinearSolver):
@@ -448,7 +448,7 @@ class LUPtr(LU):
     def __init__(self, this):
         _swig_setattr(self, LU, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, LU, 'thisown', 0)
-        self.__class__ = LU
+        _swig_setattr(self, LU,self.__class__,LU)
 _dolfin.LU_swigregister(LUPtr)
 
 class KrylovSolver(LinearSolver):
@@ -479,7 +479,7 @@ class KrylovSolverPtr(KrylovSolver):
     def __init__(self, this):
         _swig_setattr(self, KrylovSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, KrylovSolver, 'thisown', 0)
-        self.__class__ = KrylovSolver
+        _swig_setattr(self, KrylovSolver,self.__class__,KrylovSolver)
 _dolfin.KrylovSolver_swigregister(KrylovSolverPtr)
 
 class EigenvalueSolver(_object):
@@ -503,7 +503,7 @@ class EigenvalueSolverPtr(EigenvalueSolver):
     def __init__(self, this):
         _swig_setattr(self, EigenvalueSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, EigenvalueSolver, 'thisown', 0)
-        self.__class__ = EigenvalueSolver
+        _swig_setattr(self, EigenvalueSolver,self.__class__,EigenvalueSolver)
 _dolfin.EigenvalueSolver_swigregister(EigenvalueSolverPtr)
 
 class Preconditioner(_object):
@@ -534,7 +534,7 @@ class PreconditionerPtr(Preconditioner):
     def __init__(self, this):
         _swig_setattr(self, Preconditioner, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Preconditioner, 'thisown', 0)
-        self.__class__ = Preconditioner
+        _swig_setattr(self, Preconditioner,self.__class__,Preconditioner)
 _dolfin.Preconditioner_swigregister(PreconditionerPtr)
 
 Preconditioner_setup = _dolfin.Preconditioner_setup
@@ -554,7 +554,7 @@ class PETScManagerPtr(PETScManager):
     def __init__(self, this):
         _swig_setattr(self, PETScManager, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, PETScManager, 'thisown', 0)
-        self.__class__ = PETScManager
+        _swig_setattr(self, PETScManager,self.__class__,PETScManager)
 _dolfin.PETScManager_swigregister(PETScManagerPtr)
 
 PETScManager_init = _dolfin.PETScManager_init
@@ -604,7 +604,7 @@ class FunctionPtr(Function):
     def __init__(self, this):
         _swig_setattr(self, Function, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Function, 'thisown', 0)
-        self.__class__ = Function
+        _swig_setattr(self, Function,self.__class__,Function)
 _dolfin.Function_swigregister(FunctionPtr)
 
 class FEM(_object):
@@ -632,7 +632,7 @@ class FEMPtr(FEM):
     def __init__(self, this):
         _swig_setattr(self, FEM, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, FEM, 'thisown', 0)
-        self.__class__ = FEM
+        _swig_setattr(self, FEM,self.__class__,FEM)
 _dolfin.FEM_swigregister(FEMPtr)
 
 FEM_assemble = _dolfin.FEM_assemble
@@ -677,7 +677,7 @@ class FiniteElementPtr(FiniteElement):
     def __init__(self, this):
         _swig_setattr(self, FiniteElement, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, FiniteElement, 'thisown', 0)
-        self.__class__ = FiniteElement
+        _swig_setattr(self, FiniteElement,self.__class__,FiniteElement)
 _dolfin.FiniteElement_swigregister(FiniteElementPtr)
 
 FiniteElement_makeElement = _dolfin.FiniteElement_makeElement
@@ -762,7 +762,7 @@ class AffineMapPtr(AffineMap):
     def __init__(self, this):
         _swig_setattr(self, AffineMap, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, AffineMap, 'thisown', 0)
-        self.__class__ = AffineMap
+        _swig_setattr(self, AffineMap,self.__class__,AffineMap)
 _dolfin.AffineMap_swigregister(AffineMapPtr)
 
 class BoundaryValue(_object):
@@ -786,7 +786,7 @@ class BoundaryValuePtr(BoundaryValue):
     def __init__(self, this):
         _swig_setattr(self, BoundaryValue, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryValue, 'thisown', 0)
-        self.__class__ = BoundaryValue
+        _swig_setattr(self, BoundaryValue,self.__class__,BoundaryValue)
 _dolfin.BoundaryValue_swigregister(BoundaryValuePtr)
 
 class BoundaryCondition(TimeDependent):
@@ -820,7 +820,7 @@ class BoundaryConditionPtr(BoundaryCondition):
     def __init__(self, this):
         _swig_setattr(self, BoundaryCondition, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryCondition, 'thisown', 0)
-        self.__class__ = BoundaryCondition
+        _swig_setattr(self, BoundaryCondition,self.__class__,BoundaryCondition)
 _dolfin.BoundaryCondition_swigregister(BoundaryConditionPtr)
 
 class Form(_object):
@@ -844,7 +844,7 @@ class FormPtr(Form):
     def __init__(self, this):
         _swig_setattr(self, Form, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Form, 'thisown', 0)
-        self.__class__ = Form
+        _swig_setattr(self, Form,self.__class__,Form)
 _dolfin.Form_swigregister(FormPtr)
 
 class BilinearForm(Form):
@@ -870,7 +870,7 @@ class BilinearFormPtr(BilinearForm):
     def __init__(self, this):
         _swig_setattr(self, BilinearForm, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, BilinearForm, 'thisown', 0)
-        self.__class__ = BilinearForm
+        _swig_setattr(self, BilinearForm,self.__class__,BilinearForm)
 _dolfin.BilinearForm_swigregister(BilinearFormPtr)
 
 class LinearForm(Form):
@@ -895,7 +895,7 @@ class LinearFormPtr(LinearForm):
     def __init__(self, this):
         _swig_setattr(self, LinearForm, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, LinearForm, 'thisown', 0)
-        self.__class__ = LinearForm
+        _swig_setattr(self, LinearForm,self.__class__,LinearForm)
 _dolfin.LinearForm_swigregister(LinearFormPtr)
 
 class Mesh(Variable):
@@ -948,7 +948,7 @@ class MeshPtr(Mesh):
     def __init__(self, this):
         _swig_setattr(self, Mesh, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Mesh, 'thisown', 0)
-        self.__class__ = Mesh
+        _swig_setattr(self, Mesh,self.__class__,Mesh)
 _dolfin.Mesh_swigregister(MeshPtr)
 
 class Boundary(_object):
@@ -974,7 +974,7 @@ class BoundaryPtr(Boundary):
     def __init__(self, this):
         _swig_setattr(self, Boundary, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Boundary, 'thisown', 0)
-        self.__class__ = Boundary
+        _swig_setattr(self, Boundary,self.__class__,Boundary)
 _dolfin.Boundary_swigregister(BoundaryPtr)
 
 class Point(_object):
@@ -1012,7 +1012,7 @@ class PointPtr(Point):
     def __init__(self, this):
         _swig_setattr(self, Point, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Point, 'thisown', 0)
-        self.__class__ = Point
+        _swig_setattr(self, Point,self.__class__,Point)
 _dolfin.Point_swigregister(PointPtr)
 
 class Vertex(_object):
@@ -1059,7 +1059,7 @@ class VertexPtr(Vertex):
     def __init__(self, this):
         _swig_setattr(self, Vertex, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Vertex, 'thisown', 0)
-        self.__class__ = Vertex
+        _swig_setattr(self, Vertex,self.__class__,Vertex)
 _dolfin.Vertex_swigregister(VertexPtr)
 
 class Edge(_object):
@@ -1096,7 +1096,7 @@ class EdgePtr(Edge):
     def __init__(self, this):
         _swig_setattr(self, Edge, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Edge, 'thisown', 0)
-        self.__class__ = Edge
+        _swig_setattr(self, Edge,self.__class__,Edge)
 _dolfin.Edge_swigregister(EdgePtr)
 
 class Triangle(_object):
@@ -1124,7 +1124,7 @@ class TrianglePtr(Triangle):
     def __init__(self, this):
         _swig_setattr(self, Triangle, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Triangle, 'thisown', 0)
-        self.__class__ = Triangle
+        _swig_setattr(self, Triangle,self.__class__,Triangle)
 _dolfin.Triangle_swigregister(TrianglePtr)
 
 class Tetrahedron(_object):
@@ -1152,7 +1152,7 @@ class TetrahedronPtr(Tetrahedron):
     def __init__(self, this):
         _swig_setattr(self, Tetrahedron, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Tetrahedron, 'thisown', 0)
-        self.__class__ = Tetrahedron
+        _swig_setattr(self, Tetrahedron,self.__class__,Tetrahedron)
 _dolfin.Tetrahedron_swigregister(TetrahedronPtr)
 
 class Cell(_object):
@@ -1210,7 +1210,7 @@ class CellPtr(Cell):
     def __init__(self, this):
         _swig_setattr(self, Cell, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Cell, 'thisown', 0)
-        self.__class__ = Cell
+        _swig_setattr(self, Cell,self.__class__,Cell)
 _dolfin.Cell_swigregister(CellPtr)
 
 class Face(_object):
@@ -1245,7 +1245,7 @@ class FacePtr(Face):
     def __init__(self, this):
         _swig_setattr(self, Face, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Face, 'thisown', 0)
-        self.__class__ = Face
+        _swig_setattr(self, Face,self.__class__,Face)
 _dolfin.Face_swigregister(FacePtr)
 
 class VertexIterator(_object):
@@ -1298,7 +1298,7 @@ class VertexIteratorPtr(VertexIterator):
     def __init__(self, this):
         _swig_setattr(self, VertexIterator, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, VertexIterator, 'thisown', 0)
-        self.__class__ = VertexIterator
+        _swig_setattr(self, VertexIterator,self.__class__,VertexIterator)
 _dolfin.VertexIterator_swigregister(VertexIteratorPtr)
 
 class CellIterator(_object):
@@ -1357,7 +1357,7 @@ class CellIteratorPtr(CellIterator):
     def __init__(self, this):
         _swig_setattr(self, CellIterator, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, CellIterator, 'thisown', 0)
-        self.__class__ = CellIterator
+        _swig_setattr(self, CellIterator,self.__class__,CellIterator)
 _dolfin.CellIterator_swigregister(CellIteratorPtr)
 
 class EdgeIterator(_object):
@@ -1402,7 +1402,7 @@ class EdgeIteratorPtr(EdgeIterator):
     def __init__(self, this):
         _swig_setattr(self, EdgeIterator, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, EdgeIterator, 'thisown', 0)
-        self.__class__ = EdgeIterator
+        _swig_setattr(self, EdgeIterator,self.__class__,EdgeIterator)
 _dolfin.EdgeIterator_swigregister(EdgeIteratorPtr)
 
 class FaceIterator(_object):
@@ -1444,7 +1444,7 @@ class FaceIteratorPtr(FaceIterator):
     def __init__(self, this):
         _swig_setattr(self, FaceIterator, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, FaceIterator, 'thisown', 0)
-        self.__class__ = FaceIterator
+        _swig_setattr(self, FaceIterator,self.__class__,FaceIterator)
 _dolfin.FaceIterator_swigregister(FaceIteratorPtr)
 
 class MeshIterator(_object):
@@ -1501,7 +1501,7 @@ class MeshIteratorPtr(MeshIterator):
     def __init__(self, this):
         _swig_setattr(self, MeshIterator, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MeshIterator, 'thisown', 0)
-        self.__class__ = MeshIterator
+        _swig_setattr(self, MeshIterator,self.__class__,MeshIterator)
 _dolfin.MeshIterator_swigregister(MeshIteratorPtr)
 
 class UnitSquare(Mesh):
@@ -1521,7 +1521,7 @@ class UnitSquarePtr(UnitSquare):
     def __init__(self, this):
         _swig_setattr(self, UnitSquare, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, UnitSquare, 'thisown', 0)
-        self.__class__ = UnitSquare
+        _swig_setattr(self, UnitSquare,self.__class__,UnitSquare)
 _dolfin.UnitSquare_swigregister(UnitSquarePtr)
 
 class UnitCube(Mesh):
@@ -1541,7 +1541,7 @@ class UnitCubePtr(UnitCube):
     def __init__(self, this):
         _swig_setattr(self, UnitCube, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, UnitCube, 'thisown', 0)
-        self.__class__ = UnitCube
+        _swig_setattr(self, UnitCube,self.__class__,UnitCube)
 _dolfin.UnitCube_swigregister(UnitCubePtr)
 
 class Dependencies(_object):
@@ -1570,7 +1570,7 @@ class DependenciesPtr(Dependencies):
     def __init__(self, this):
         _swig_setattr(self, Dependencies, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Dependencies, 'thisown', 0)
-        self.__class__ = Dependencies
+        _swig_setattr(self, Dependencies,self.__class__,Dependencies)
 _dolfin.Dependencies_swigregister(DependenciesPtr)
 
 class Homotopy(_object):
@@ -1601,7 +1601,7 @@ class HomotopyPtr(Homotopy):
     def __init__(self, this):
         _swig_setattr(self, Homotopy, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Homotopy, 'thisown', 0)
-        self.__class__ = Homotopy
+        _swig_setattr(self, Homotopy,self.__class__,Homotopy)
 _dolfin.Homotopy_swigregister(HomotopyPtr)
 
 class HomotopyJacobian(VirtualMatrix):
@@ -1627,7 +1627,7 @@ class HomotopyJacobianPtr(HomotopyJacobian):
     def __init__(self, this):
         _swig_setattr(self, HomotopyJacobian, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, HomotopyJacobian, 'thisown', 0)
-        self.__class__ = HomotopyJacobian
+        _swig_setattr(self, HomotopyJacobian,self.__class__,HomotopyJacobian)
 _dolfin.HomotopyJacobian_swigregister(HomotopyJacobianPtr)
 
 class HomotopyODE(_object):
@@ -1658,7 +1658,7 @@ class HomotopyODEPtr(HomotopyODE):
     def __init__(self, this):
         _swig_setattr(self, HomotopyODE, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, HomotopyODE, 'thisown', 0)
-        self.__class__ = HomotopyODE
+        _swig_setattr(self, HomotopyODE,self.__class__,HomotopyODE)
 _dolfin.HomotopyODE_swigregister(HomotopyODEPtr)
 
 class Method(_object):
@@ -1699,7 +1699,7 @@ class MethodPtr(Method):
     def __init__(self, this):
         _swig_setattr(self, Method, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Method, 'thisown', 0)
-        self.__class__ = Method
+        _swig_setattr(self, Method,self.__class__,Method)
 _dolfin.Method_swigregister(MethodPtr)
 
 class MonoAdaptiveFixedPointSolver(_object):
@@ -1722,7 +1722,7 @@ class MonoAdaptiveFixedPointSolverPtr(MonoAdaptiveFixedPointSolver):
     def __init__(self, this):
         _swig_setattr(self, MonoAdaptiveFixedPointSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MonoAdaptiveFixedPointSolver, 'thisown', 0)
-        self.__class__ = MonoAdaptiveFixedPointSolver
+        _swig_setattr(self, MonoAdaptiveFixedPointSolver,self.__class__,MonoAdaptiveFixedPointSolver)
 _dolfin.MonoAdaptiveFixedPointSolver_swigregister(MonoAdaptiveFixedPointSolverPtr)
 
 class MonoAdaptiveJacobian(_object):
@@ -1746,7 +1746,7 @@ class MonoAdaptiveJacobianPtr(MonoAdaptiveJacobian):
     def __init__(self, this):
         _swig_setattr(self, MonoAdaptiveJacobian, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MonoAdaptiveJacobian, 'thisown', 0)
-        self.__class__ = MonoAdaptiveJacobian
+        _swig_setattr(self, MonoAdaptiveJacobian,self.__class__,MonoAdaptiveJacobian)
 _dolfin.MonoAdaptiveJacobian_swigregister(MonoAdaptiveJacobianPtr)
 
 class MonoAdaptiveNewtonSolver(_object):
@@ -1769,7 +1769,7 @@ class MonoAdaptiveNewtonSolverPtr(MonoAdaptiveNewtonSolver):
     def __init__(self, this):
         _swig_setattr(self, MonoAdaptiveNewtonSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MonoAdaptiveNewtonSolver, 'thisown', 0)
-        self.__class__ = MonoAdaptiveNewtonSolver
+        _swig_setattr(self, MonoAdaptiveNewtonSolver,self.__class__,MonoAdaptiveNewtonSolver)
 _dolfin.MonoAdaptiveNewtonSolver_swigregister(MonoAdaptiveNewtonSolverPtr)
 
 class MonoAdaptiveTimeSlab(_object):
@@ -1801,7 +1801,7 @@ class MonoAdaptiveTimeSlabPtr(MonoAdaptiveTimeSlab):
     def __init__(self, this):
         _swig_setattr(self, MonoAdaptiveTimeSlab, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MonoAdaptiveTimeSlab, 'thisown', 0)
-        self.__class__ = MonoAdaptiveTimeSlab
+        _swig_setattr(self, MonoAdaptiveTimeSlab,self.__class__,MonoAdaptiveTimeSlab)
 _dolfin.MonoAdaptiveTimeSlab_swigregister(MonoAdaptiveTimeSlabPtr)
 
 class MonoAdaptivity(_object):
@@ -1826,7 +1826,7 @@ class MonoAdaptivityPtr(MonoAdaptivity):
     def __init__(self, this):
         _swig_setattr(self, MonoAdaptivity, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MonoAdaptivity, 'thisown', 0)
-        self.__class__ = MonoAdaptivity
+        _swig_setattr(self, MonoAdaptivity,self.__class__,MonoAdaptivity)
 _dolfin.MonoAdaptivity_swigregister(MonoAdaptivityPtr)
 
 class MultiAdaptiveFixedPointSolver(_object):
@@ -1849,7 +1849,7 @@ class MultiAdaptiveFixedPointSolverPtr(MultiAdaptiveFixedPointSolver):
     def __init__(self, this):
         _swig_setattr(self, MultiAdaptiveFixedPointSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MultiAdaptiveFixedPointSolver, 'thisown', 0)
-        self.__class__ = MultiAdaptiveFixedPointSolver
+        _swig_setattr(self, MultiAdaptiveFixedPointSolver,self.__class__,MultiAdaptiveFixedPointSolver)
 _dolfin.MultiAdaptiveFixedPointSolver_swigregister(MultiAdaptiveFixedPointSolverPtr)
 
 class MultiAdaptivePreconditioner(Preconditioner):
@@ -1875,7 +1875,7 @@ class MultiAdaptivePreconditionerPtr(MultiAdaptivePreconditioner):
     def __init__(self, this):
         _swig_setattr(self, MultiAdaptivePreconditioner, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MultiAdaptivePreconditioner, 'thisown', 0)
-        self.__class__ = MultiAdaptivePreconditioner
+        _swig_setattr(self, MultiAdaptivePreconditioner,self.__class__,MultiAdaptivePreconditioner)
 _dolfin.MultiAdaptivePreconditioner_swigregister(MultiAdaptivePreconditionerPtr)
 
 class MultiAdaptiveNewtonSolver(_object):
@@ -1898,7 +1898,7 @@ class MultiAdaptiveNewtonSolverPtr(MultiAdaptiveNewtonSolver):
     def __init__(self, this):
         _swig_setattr(self, MultiAdaptiveNewtonSolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MultiAdaptiveNewtonSolver, 'thisown', 0)
-        self.__class__ = MultiAdaptiveNewtonSolver
+        _swig_setattr(self, MultiAdaptiveNewtonSolver,self.__class__,MultiAdaptiveNewtonSolver)
 _dolfin.MultiAdaptiveNewtonSolver_swigregister(MultiAdaptiveNewtonSolverPtr)
 
 class MultiAdaptiveTimeSlab(_object):
@@ -1931,7 +1931,7 @@ class MultiAdaptiveTimeSlabPtr(MultiAdaptiveTimeSlab):
     def __init__(self, this):
         _swig_setattr(self, MultiAdaptiveTimeSlab, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MultiAdaptiveTimeSlab, 'thisown', 0)
-        self.__class__ = MultiAdaptiveTimeSlab
+        _swig_setattr(self, MultiAdaptiveTimeSlab,self.__class__,MultiAdaptiveTimeSlab)
 _dolfin.MultiAdaptiveTimeSlab_swigregister(MultiAdaptiveTimeSlabPtr)
 
 class MultiAdaptivity(_object):
@@ -1958,7 +1958,7 @@ class MultiAdaptivityPtr(MultiAdaptivity):
     def __init__(self, this):
         _swig_setattr(self, MultiAdaptivity, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, MultiAdaptivity, 'thisown', 0)
-        self.__class__ = MultiAdaptivity
+        _swig_setattr(self, MultiAdaptivity,self.__class__,MultiAdaptivity)
 _dolfin.MultiAdaptivity_swigregister(MultiAdaptivityPtr)
 
 class ODE(_object):
@@ -2002,7 +2002,7 @@ class ODEPtr(ODE):
     def __init__(self, this):
         _swig_setattr(self, ODE, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, ODE, 'thisown', 0)
-        self.__class__ = ODE
+        _swig_setattr(self, ODE,self.__class__,ODE)
 _dolfin.ODE_swigregister(ODEPtr)
 
 class ODESolver(_object):
@@ -2020,7 +2020,7 @@ class ODESolverPtr(ODESolver):
     def __init__(self, this):
         _swig_setattr(self, ODESolver, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, ODESolver, 'thisown', 0)
-        self.__class__ = ODESolver
+        _swig_setattr(self, ODESolver,self.__class__,ODESolver)
 _dolfin.ODESolver_swigregister(ODESolverPtr)
 
 ODESolver_solve = _dolfin.ODESolver_solve
@@ -2061,7 +2061,7 @@ class ParticleSystemPtr(ParticleSystem):
     def __init__(self, this):
         _swig_setattr(self, ParticleSystem, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, ParticleSystem, 'thisown', 0)
-        self.__class__ = ParticleSystem
+        _swig_setattr(self, ParticleSystem,self.__class__,ParticleSystem)
 _dolfin.ParticleSystem_swigregister(ParticleSystemPtr)
 
 class Partition(_object):
@@ -2088,7 +2088,7 @@ class PartitionPtr(Partition):
     def __init__(self, this):
         _swig_setattr(self, Partition, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Partition, 'thisown', 0)
-        self.__class__ = Partition
+        _swig_setattr(self, Partition,self.__class__,Partition)
 _dolfin.Partition_swigregister(PartitionPtr)
 
 class ReducedModel(ODE):
@@ -2115,7 +2115,7 @@ class ReducedModelPtr(ReducedModel):
     def __init__(self, this):
         _swig_setattr(self, ReducedModel, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, ReducedModel, 'thisown', 0)
-        self.__class__ = ReducedModel
+        _swig_setattr(self, ReducedModel,self.__class__,ReducedModel)
 _dolfin.ReducedModel_swigregister(ReducedModelPtr)
 
 class Sample(Variable):
@@ -2145,7 +2145,7 @@ class SamplePtr(Sample):
     def __init__(self, this):
         _swig_setattr(self, Sample, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, Sample, 'thisown', 0)
-        self.__class__ = Sample
+        _swig_setattr(self, Sample,self.__class__,Sample)
 _dolfin.Sample_swigregister(SamplePtr)
 
 class TimeSlab(_object):
@@ -2179,7 +2179,7 @@ class TimeSlabPtr(TimeSlab):
     def __init__(self, this):
         _swig_setattr(self, TimeSlab, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, TimeSlab, 'thisown', 0)
-        self.__class__ = TimeSlab
+        _swig_setattr(self, TimeSlab,self.__class__,TimeSlab)
 _dolfin.TimeSlab_swigregister(TimeSlabPtr)
 
 class TimeSlabJacobian(VirtualMatrix):
@@ -2204,7 +2204,7 @@ class TimeSlabJacobianPtr(TimeSlabJacobian):
     def __init__(self, this):
         _swig_setattr(self, TimeSlabJacobian, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, TimeSlabJacobian, 'thisown', 0)
-        self.__class__ = TimeSlabJacobian
+        _swig_setattr(self, TimeSlabJacobian,self.__class__,TimeSlabJacobian)
 _dolfin.TimeSlabJacobian_swigregister(TimeSlabJacobianPtr)
 
 class TimeStepper(_object):
@@ -2231,7 +2231,7 @@ class TimeStepperPtr(TimeStepper):
     def __init__(self, this):
         _swig_setattr(self, TimeStepper, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, TimeStepper, 'thisown', 0)
-        self.__class__ = TimeStepper
+        _swig_setattr(self, TimeStepper,self.__class__,TimeStepper)
 _dolfin.TimeStepper_swigregister(TimeStepperPtr)
 
 TimeStepper_solve = _dolfin.TimeStepper_solve
@@ -2258,7 +2258,7 @@ class cGqMethodPtr(cGqMethod):
     def __init__(self, this):
         _swig_setattr(self, cGqMethod, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, cGqMethod, 'thisown', 0)
-        self.__class__ = cGqMethod
+        _swig_setattr(self, cGqMethod,self.__class__,cGqMethod)
 _dolfin.cGqMethod_swigregister(cGqMethodPtr)
 
 class dGqMethod(Method):
@@ -2283,12 +2283,11 @@ class dGqMethodPtr(dGqMethod):
     def __init__(self, this):
         _swig_setattr(self, dGqMethod, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, dGqMethod, 'thisown', 0)
-        self.__class__ = dGqMethod
+        _swig_setattr(self, dGqMethod,self.__class__,dGqMethod)
 _dolfin.dGqMethod_swigregister(dGqMethodPtr)
 
 
 get = _dolfin.get
-
 
 set = _dolfin.set
 

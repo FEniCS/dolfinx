@@ -82,6 +82,9 @@ namespace dolfin
     /// Add block of values to vector
     void add(const real block[], const int cols[], int n); 
 
+    /// Get block of values from vector
+    void get(real block[], const int cols[], int n) const;
+
     /// Apply changes to vector
     void apply();
 
