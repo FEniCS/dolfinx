@@ -34,6 +34,8 @@
 #include <dolfin/BoundaryData.h>
 #include <dolfin/BoundaryInit.h>
 
+#include <dolfin/BoundaryIterator.h>
+
 #include <dolfin/UnitCube.h>
 #include <dolfin/UnitSquare.h>
 

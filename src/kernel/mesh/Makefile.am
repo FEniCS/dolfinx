@@ -3,6 +3,7 @@ nobase_include_HEADERS   = dolfin/dolfin_mesh.h \
                            dolfin/Boundary.h \
                            dolfin/BoundaryData.h \
                            dolfin/BoundaryInit.h \
+                           dolfin/BoundaryIterator.h \
                            dolfin/Cell.h \
                            dolfin/CellIterator.h \
                            dolfin/CellRefData.h \
