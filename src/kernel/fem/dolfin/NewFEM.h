@@ -1,7 +1,7 @@
 // Copyright (C) 2004-2005 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells
+// Modified by Garth N. Wells, 2006
 //
 // First added:  2004-05-19
 // Last changed: 2006-04-11
@@ -34,14 +34,6 @@ namespace dolfin
   class NewFEM
   {
   public:
-
-    /// Apply boundary conditions
-    enum BCApply
-    {
-      matrix_and_vector, // Apply BC to vector and matrix
-      matrix_only,   // Apply BC to a matrix
-      vector_only    // Apply BC to a vector
-    };
 
     /// Assemble bilinear form
     static void assemble(BilinearForm& a, Matrix& A, Mesh& mesh);
@@ -87,11 +79,14 @@ namespace dolfin
       
   private:
 
+    /// Assemble form(s)
+    static void assemble_test(BilinearForm* a, LinearForm* L, Matrix& A, 
+        Vector& b, Mesh& mesh);
+
     /// Apply boundary conditions on triangular mesh
     template<class U, class V>
-    static void applyBC(Matrix& A, Vector& b, Mesh& mesh, FiniteElement& element, 
-         BoundaryCondition& bc, BoundaryIterator<U,V>& boundary_entity,
-         BCApply bc_apply);
+    static void applyBC(Matrix* A, Vector* b, Mesh& mesh, FiniteElement& element, 
+         BoundaryCondition& bc, BoundaryIterator<U,V>& boundary_entity);
 
     /// Assemble boundary conditions into residual vector on triangular mesh. 
     template<class U, class V>
@@ -117,9 +112,8 @@ namespace dolfin
 // Definitions
 //-----------------------------------------------------------------------------
   template<class U, class V>
-  void NewFEM::applyBC(Matrix& A, Vector& b, Mesh& mesh, FiniteElement& element, 
-          BoundaryCondition& bc, BoundaryIterator<U,V>& boundary_entity,
-          BCApply bc_apply)
+  void NewFEM::applyBC(Matrix* A, Vector* b, Mesh& mesh, FiniteElement& element, 
+          BoundaryCondition& bc, BoundaryIterator<U,V>& boundary_entity)
   {
     // Create boundary value
     BoundaryValue bv;
@@ -129,10 +123,10 @@ namespace dolfin
 
     // Allocate list of rows
     uint size = 0;
-    if(bc_apply == matrix_only)
-      size = A.size(0);
+    if( A )
+      size = A->size(0);
     else
-      size = b.size();
+      size = b->size();
     uint m = 0;
     int* rows = new int[size];
     bool* row_set = new bool[size];
@@ -182,8 +176,8 @@ namespace dolfin
           {
             rows[m++] = node;
             // FIXME: Entries into b should be done block-wise  
-            if(bc_apply != matrix_only) 
-              b(node) = bv.value;
+            if( b ) 
+              (*b)(node) = bv.value;
             row_set[node] = true;
           }
         }
@@ -193,8 +187,8 @@ namespace dolfin
     dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
 
     // Set rows of matrix to the identity matrix
-    if(bc_apply != vector_only)
-      A.ident(rows, m);
+    if( A )
+      A->ident(rows, m);
 
     // Delete data
     delete [] nodes;
