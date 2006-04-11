@@ -82,7 +82,7 @@ class MyNonlinearProblem : public NonlinearProblem
     {
       dolfin_log(false);
       FEM::assemble(*a, *L, A, b, *_mesh);
-      FEM::applyBC(A, *_mesh, a->test(), *_bc);
+      NewFEM::applyBC(A, *_mesh, a->test(), *_bc);
       FEM::assembleBCresidual(b, x, *_mesh, a->test(), *_bc);
       dolfin_log(true);
     }

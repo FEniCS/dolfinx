@@ -16,6 +16,7 @@
 #include <dolfin/FiniteElementSpec.h>
 #include <dolfin/LoadVector.h>
 #include <dolfin/MassMatrix.h>
+#include <dolfin/NewFEM.h>
 #include <dolfin/P1tet.h>
 #include <dolfin/P1tri.h>
 #include <dolfin/P2tet.h>

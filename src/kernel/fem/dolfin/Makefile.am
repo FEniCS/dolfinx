@@ -7,6 +7,7 @@ EXTRA_DIST = dolfin_fem.h \
              FiniteElementSpec.h \
              LoadVector.h \
              MassMatrix.h \
+             NewFEM.h \
              P1tet.h \
              P1tri.h \
              P2tet.h \

@@ -8,6 +8,7 @@ nobase_include_HEADERS   = dolfin/dolfin_fem.h \
                            dolfin/FiniteElementSpec.h \
                            dolfin/LoadVector.h \
                            dolfin/MassMatrix.h \
+                           dolfin/NewFEM.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -29,5 +30,6 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            FiniteElementSpec.cpp \
                            LoadVector.cpp \
                            MassMatrix.cpp \
+                           NewFEM.cpp \
                            StiffnessMatrix.cpp
 libdolfin_fem_la_LDFLAGS = -static

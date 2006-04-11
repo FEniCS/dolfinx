@@ -30,6 +30,7 @@ namespace dolfin
     
     /// Friends
     friend class FEM;
+    friend class NewFEM;
 
   private:
 
