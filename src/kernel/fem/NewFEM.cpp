@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-04-11
+// Last changed: 2006-04-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/timing.h>
@@ -51,24 +51,10 @@ void NewFEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
 {
   dolfin_info("Applying Dirichlet boundary conditions.");
 
-  // Create boundary
-  Boundary boundary(mesh);
+  // Null pointer to a dummy vector
+  Vector* x = 0; 
 
-  // Choose type of mesh
-  if( mesh.type() == Mesh::triangles )
-  {
-    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-    applyBC(&A, &b, mesh, element, bc, boundary_entity);
-  }
-  else if( mesh.type() == Mesh::tetrahedra )
-  {
-    BoundaryIterator<FaceIterator,Face> boundary_boundary_entity(boundary);
-    applyBC(&A, &b, mesh, element, bc, boundary_boundary_entity);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
+  applyBC(&A, &b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void NewFEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
@@ -76,28 +62,11 @@ void NewFEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element,
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
 
-  // Dummy pointer to a vector
+  // Null pointer to dummy vectors
   Vector* b = 0; 
+  Vector* x = 0; 
 
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Choose type of mesh
-  if( mesh.type() == Mesh::triangles )
-  {
-    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-    applyBC(&A, b, mesh, element, bc, boundary_entity);
-  }
-  else if( mesh.type() == Mesh::tetrahedra )
-  {
-    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
-    applyBC(&A, b, mesh, element, bc, boundary_entity);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
-
+  applyBC(&A, b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void NewFEM::applyBC(Vector& b, Mesh& mesh, FiniteElement& element, 
@@ -105,28 +74,11 @@ void NewFEM::applyBC(Vector& b, Mesh& mesh, FiniteElement& element,
 {
   dolfin_info("Applying Dirichlet boundary conditions to vector.");
   
-  // Dummy pointer to a matrix
+  // Null pointer to a matrix and vector
   Matrix* A = 0; 
+  Vector* x = 0; 
 
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Choose type of mesh
-  if( mesh.type() == Mesh::triangles)
-  {
-    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-    applyBC(A, &b, mesh, element, bc, boundary_entity);
-  }
-  else if(mesh.type() == Mesh::tetrahedra)
-  {
-    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
-    applyBC(A, &b, mesh, element, bc, boundary_entity);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
-
+  applyBC(A, &b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void NewFEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
@@ -134,24 +86,18 @@ void NewFEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
 {
   dolfin_info("Assembling boundary condtions into residual vector.");
 
-  // Create boundary
-  Boundary boundary(mesh);
+  // Null pointer to a matrix
+  Matrix* A = 0; 
 
-  // Choose type of mesh
-  if( mesh.type() == Mesh::triangles)
-  {
-    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-    assembleBCresidual(b, x, mesh, element, bc, boundary_entity);
-  }
-  else if(mesh.type() == Mesh::tetrahedra)
-  {
-    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
-    assembleBCresidual(b, x, mesh, element, bc, boundary_entity);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
+  applyBC(A, &b, &x, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void NewFEM::assembleBCresidual(Matrix& A, Vector& b, const Vector& x, 
+      Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Assembling boundary condtions into residual vector.");
+
+  applyBC(&A, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewFEM::size(const Mesh& mesh, const FiniteElement& element)
@@ -288,7 +234,6 @@ void NewFEM::assemble_test(BilinearForm* a, LinearForm* L, Matrix& A, Vector& b,
     b.init(M);
     b = 0.0;
   }
-  dolfin_log(true);
   // Start a progress session
   if( a && L)
     dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
@@ -347,14 +292,34 @@ void NewFEM::assemble_test(BilinearForm* a, LinearForm* L, Matrix& A, Vector& b,
   }
 
   // Delete data
-  if ( block_A )
-    delete [] block_A;
-  if ( block_b )
-    delete [] block_b;
-  if( trial_nodes )
-    delete [] trial_nodes;
+  delete [] block_A;
+  delete [] block_b;
+  delete [] trial_nodes;
   delete [] test_nodes;
 
+}
+//-----------------------------------------------------------------------------
+void NewFEM::applyBC(Matrix* A, Vector* b, const Vector* x, Mesh& mesh, 
+          FiniteElement& element, BoundaryCondition& bc)
+{
+  // Create boundary
+  Boundary boundary(mesh);
+
+  // Choose type of mesh
+  if( mesh.type() == Mesh::triangles)
+  {
+    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
+    applyBC(A, b, x, mesh, element, bc, boundary_entity);
+  }
+  else if(mesh.type() == Mesh::tetrahedra)
+  {
+    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
+    applyBC(A, b, x, mesh, element, bc, boundary_entity);
+  }
+  else
+  {
+    dolfin_error("Unknown mesh type.");  
+  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint NewFEM::nzsize(const Mesh& mesh, const FiniteElement& element)
