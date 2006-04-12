@@ -141,11 +141,11 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   uint N = A.size(1);
   if ( N != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
-
+  
   // Write a message
   if ( get("Krylov report") )
     dolfin_info("Solving virtual linear system of size %d x %d (Krylov solver).", M, N);
-
+ 
   // Reinitialize KSP solver if necessary
   init(M, N);
 
@@ -165,14 +165,15 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), DIFFERENT_NONZERO_PATTERN);
-  KSPSolve(ksp, b.vec(), x.vec());
+  KSPSolve(ksp, b.vec(), x.vec());  
+
 
   // Check if the solution converged
   KSPConvergedReason reason;
   KSPGetConvergedReason(ksp, &reason);
   if ( reason < 0 )
     dolfin_error("Krylov solver did not converge.");
-  
+
   // Get the number of iterations
   int num_iterations = 0;
   KSPGetIterationNumber(ksp, &num_iterations);
@@ -219,7 +220,7 @@ void KrylovSolver::readParameters()
   // Set monitor
   if ( get("Krylov monitor convergence") )
     KSPSetMonitor(ksp, monitor, 0, 0);
-  
+
   // Set tolerances
   KSPSetTolerances(ksp,
 		   get("Krylov relative tolerance"),

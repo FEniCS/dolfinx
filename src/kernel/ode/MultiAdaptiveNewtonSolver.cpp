@@ -100,11 +100,10 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   
   // Solve linear system, seems like we need to scale the right-hand
   // side to make it work with the PETSc GMRES solver
-  
-  //const real r = b.norm(Vector::linf) + DOLFIN_EPS;
-  //b /= r;
+  const real r = b.norm(Vector::linf) + DOLFIN_EPS;
+  b /= r;
   num_local_iterations += solver.solve(*A, dx, b);
-  //dx *= r;
+  dx *= r;
 
   //cout << "A = "; A.disp(true, 10);
   //cout << "dx = "; dx.disp();
