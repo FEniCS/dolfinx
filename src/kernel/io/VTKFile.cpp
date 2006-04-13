@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-04-12
+// Last changed: 2006-04-13
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -143,8 +143,21 @@ void VTKFile::ResultsWrite(Function& u) const
   const FiniteElement& finite_element = u.element();
   const Mesh& mesh = u.mesh();
 
+  // Determine whether data is cell based (constant on cells) or vertex based
+  bool cell_data = false;
+  if ( u.vectordim() == 1 )
+  {
+    if ( finite_element.spacedim() == 1 )
+      cell_data = true;
+  }
+  else
+  {
+    if ( finite_element.spacedim() == finite_element.tensordim(0) )
+      cell_data = true;
+  }
+  
   //Write cell data (for constant functions on elements)
-	if ( finite_element.spacedim() == finite_element.tensordim(0) )
+	if ( cell_data )
   {
     const uint m = finite_element.spacedim();
     int* nodes = new int[m];

@@ -37,7 +37,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& U, Function& rate1, Function& U0, 
         Function& rate0, real& theta, real& dt, real& theta_inv, real& dt_inv) 
-        : NonlinearProblem(), Parametrized(), _mesh(&mesh), U0(&U0), _dt(&dt), 
+        : NonlinearProblem(), Parametrized(), _mesh(&mesh), _dt(&dt), 
         _theta(&theta), _dt_inv(&dt_inv), _theta_inv(&theta_inv)
     {
 
@@ -199,10 +199,10 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Mobility and its derivative 
     Function *mobility, *d_mobility;
+
     // Chemical potential and its derivative 
     Function *mu, *dmu_dc;
-    // Solutions and rates 
-    Function *U0;
+ 
     real *_dt, *_theta, *_dt_inv, *_theta_inv;
     // Surface parameter
     real lambda;
@@ -239,13 +239,15 @@ int main(int argc, char* argv[])
   Vector& x = U.vector();
 
   // Randomly perturbed intitial conditions
+  dolfin::uint size = FEM::size(mesh, U.element()[0]);
   dolfin::seed(2);
-  for(int i=0; i < mesh.numVertices(); ++i)
+  for(int i=0; i < size; ++i)
      x(i) = 0.63 + 0.02*(0.5-dolfin::rand());
 
   // Save initial condition to file
   File file("cahn_hilliard.pvd");
   Function c = U[0];
+  c = U[0];
   file << c;
 
   Vector& r  = rate1.vector();
