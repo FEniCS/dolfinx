@@ -1,3 +1,5 @@
+ - Small fixes for Intel C++ compiler version 9.1
+ - Test for Intel C++ compiler and configure appropriately
  - Add new classes DenseMatrix and DenseVector (wrappers for ublas)
  - Fix bug in conversion from Gmsh format
 0.6.1 [2006-03-28]
