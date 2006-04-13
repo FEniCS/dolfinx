@@ -80,28 +80,28 @@ fi
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS="$CXXFLAGS -DDEBUG=1 -g -O2 -Wall -Werror -ansi"
+    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
 fi 
 
 # Handle option --enable-optimization
 # Flag -DNDEBUG is for Boost
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="$CXXFLAGS -O3 -DNDEBUG -Wall -ansi -std=c++98"
+    CXXFLAGS="-O3 -DNDEBUG -Wall -ansi"
 fi
 
 # Add compiler specific flags
 case "${ax_cv_c_compiler_vendor}" in
    gnu) 
-        CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long  -std=c++98"
+        CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long -std=c++98"
         ;;
    intel)
         echo "WARNING: Intel C++ compiler version <= 9.0 is incompatible with 
         echo "header files gcc version <= 4.0". You can specify the version of 
         echo "gcc header files to be used by setting the compiler option 
         echo "-gcc-name=<name> through the environment variables"
-        echo "e.g. setenv CXXFLAGS -gcc-name=gcc-3.4"
-        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599"
+        echo "e.g. setenv INTEL_CXXFLAGS -gcc-name=gcc-3.4"
+        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599 $INTEL_CXXFLAGS"
         ;;
 esac
 
