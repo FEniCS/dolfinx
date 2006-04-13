@@ -101,7 +101,7 @@ case "${ax_cv_c_compiler_vendor}" in
         echo "gcc header files to be used by setting the compiler option 
         echo "-gcc-name=<name> through the environment variables"
         echo "e.g. setenv CXXFLAGS -gcc-name=gcc-3.4"
-        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1572 -wd1599"
+        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1419 -wd1572 -wd1599"
         ;;
 esac
 

@@ -172,24 +172,24 @@ bool MultiAdaptiveTimeSlab::check(bool first)
     
     // Get element data
     const uint s = es[e];
-    const uint j = e * method->nsize();
-    const real a = sa[s];
+//    const uint j = e * method->nsize();
+//    const real a = sa[s];
     const real b = sb[s];
-    const real k = b - a;
+//    const real k = b - a;
     
     // Get initial value for element (only necessary for cG)
-    const int ep = ee[e];
-    const uint jp = ep * method->nsize();
-    const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
+//    const int ep = ee[e];
+//    const uint jp = ep * method->nsize();
+//    const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
     
     // Evaluate right-hand side at end-point (u is already updated)
     const real f = ode.f(u, b, i);
 
     // Compute residual
-    real r = method->residual(x0, jx + j, f, k);
+//    real r = method->residual(x0, jx + j, f, k);
     
-    // FIXME: r is not needed anymore
-    r = rmax[i];
+//    // FIXME: r is not needed anymore
+//    r = rmax[i];
 
     // Update adaptivity
     adaptivity.updateComponent(i, kmax[i], kmin, rmax[i], rmaxall, krmax[i],

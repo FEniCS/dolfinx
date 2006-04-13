@@ -322,14 +322,15 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
   // This function is only temporary: initial velocity 
   // should be possible to set in the main-file. 
 
-  real x,y,z;
+
+//  real x,y,z;
 
   for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
   {
     // Get coordinates of the vertex 
-    x = (*vertex).coord().x;
-    y = (*vertex).coord().y;
-    z = (*vertex).coord().z;
+//    real x = (*vertex).coord().x;
+//    real y = (*vertex).coord().y;
+//    real z = (*vertex).coord().z;
     
     // Specify the initial velocity using (x,y,z) 
     //

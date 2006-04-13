@@ -44,7 +44,7 @@ void MatlabFile::operator<<(Matrix& A)
     MatGetRow(A_mat, i, &ncols, &cols, &vals);
     for (int pos = 0; pos < ncols; pos++)
     {
-      fprintf(fp, " %i %i %.15g", i + 1, cols[pos] + 1, vals[pos]);
+      fprintf(fp, " %u %i %.15g", i + 1, cols[pos] + 1, vals[pos]);
       if ( i == (A.size(0) - 1) && (pos + 1 == ncols) )
 	fprintf(fp, "];\n");
       else {

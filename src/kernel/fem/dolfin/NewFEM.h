@@ -172,7 +172,6 @@ namespace dolfin
           continue;
 
         // Get boundary condition
-        BoundaryValue bv;
         bc.eval(bv, point, components[i]);
     
         // Set boundary condition if Dirichlet

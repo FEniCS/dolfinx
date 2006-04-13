@@ -137,10 +137,10 @@ void XMLFile::operator<<(Vector& x)
   real* xx = x.array();
 
   // Write vector in XML format
-  fprintf(fp, "  <vector size=\" %i \"> \n", x.size() );
+  fprintf(fp, "  <vector size=\" %u \"> \n", x.size() );
   
   for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "    <entry row=\"%i\" value=\"%.15g\"/>\n", i, xx[i]);
+    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, xx[i]);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
@@ -161,7 +161,7 @@ void XMLFile::operator<<(Matrix& A)
   FILE *fp = openFile();
   
   // Write matrix in XML format
-  fprintf(fp, "  <matrix rows=\"%i\" columns=\"%i\">\n", A.size(0), A.size(1));
+  fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
   // Get PETSc Mat pointer
   Mat A_mat = A.mat();
@@ -172,12 +172,12 @@ void XMLFile::operator<<(Matrix& A)
   {
     MatGetRow(A_mat, i, &ncols, &cols, &vals);
     if ( ncols > 0 )
-      fprintf(fp, "    <row row=\"%i\" size=\"%i\">\n", i, ncols);
+      fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)
     {
       unsigned int j = cols[pos];
       real aij = vals[pos];
-      fprintf(fp, "      <entry column=\"%i\" value=\"%.15g\"/>\n", j, aij);
+      fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
     if ( ncols > 0 )
       fprintf(fp, "    </row>\n");
@@ -285,7 +285,7 @@ void XMLFile::operator<<(FiniteElementSpec& spec)
   FILE *fp = openFile();
   
   // Write element in XML format
-  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%d\" vectordim=\"%d\"/>\n",
+  fprintf(fp, "  <finiteelement type=\"%s\" shape=\"%s\" degree=\"%u\" vectordim=\"%u\"/>\n",
   	  spec.type().c_str(), spec.shape().c_str(), spec.degree(), spec.vectordim());
   
   // Close file

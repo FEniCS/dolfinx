@@ -77,8 +77,8 @@ void TecplotFile::operator<<(Function& u)
 	  // Write header
     fprintf(fp, "TITLE = \"Dolfin output\"  \n");
     fprintf(fp, "VARIABLES = ");
-    for (uint i=0; i<u.element().shapedim(); ++i)   fprintf(fp, " X%d  ", i+1);	  
-    for (uint i=0; i<u.vectordim(); ++i)  fprintf(fp, " U%d  ", i+1);	  
+    for (uint i = 0; i < u.element().shapedim(); ++i)   fprintf(fp, " X%u  ", i+1);	  
+    for (uint i = 0; i < u.vectordim(); ++i)  fprintf(fp, " U%u  ", i+1);	  
     fprintf(fp, "\n");	  
     if ( u.mesh().type() == Mesh::tetrahedra )
 	     fprintf(fp, "ZONE T = \"%6d\" N = %8d, E = %8d, DATAPACKING = POINT, ZONETYPE=FETETRAHEDRON \n", 

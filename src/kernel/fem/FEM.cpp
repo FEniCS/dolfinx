@@ -443,7 +443,6 @@ void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
     
       // Set boundary condition if Dirichlet
@@ -523,7 +522,6 @@ void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet
@@ -602,7 +600,6 @@ void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
     
       // Set boundary condition if Dirichlet
@@ -679,7 +676,6 @@ void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet
@@ -760,7 +756,6 @@ void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet
@@ -839,7 +834,6 @@ void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet
@@ -915,7 +909,6 @@ void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteEl
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet
@@ -991,7 +984,6 @@ void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
         continue;
 
       // Get boundary condition
-      BoundaryValue bv;
       bc.eval(bv, point, components[i]);
 
       // Set boundary condition if Dirichlet

@@ -63,28 +63,28 @@ FiniteElement* FiniteElement::makeElement(const FiniteElementSpec& spec)
   }
   else if ( repr == "[ Lagrange finite element of degree 1 on a tetrahedron ]" )
   {
-    return new P1tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P1tet();
   }
   else if ( repr == "[ Lagrange finite element of degree 2 on a tetrahedron ]" )
   {
-    return new P2tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P2tet();
   }
   else if ( repr == "[ Lagrange finite element of degree 3 on a tetrahedron ]" )
   {
-    return new P3tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P3tet();
   }
   else if ( repr == "[ Lagrange finite element of degree 4 on a tetrahedron ]" )
   {
-    return new P4tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P4tet();
   }
   else if ( repr == "[ Lagrange finite element of degree 5 on a tetrahedron ]" )
   {
-    return new P5tet();
     dolfin_info("Creating finite element: %s.", repr.c_str());
+    return new P5tet();
   }
 
   dolfin_warning1("%s", repr.c_str());

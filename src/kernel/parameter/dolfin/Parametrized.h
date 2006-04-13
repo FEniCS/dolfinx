@@ -37,7 +37,7 @@ namespace dolfin
     Parametrized();
 
     /// Destructor
-    ~Parametrized();
+    virtual ~Parametrized();
 
     /// Add local parameter
     void add(std::string key, Parameter value);

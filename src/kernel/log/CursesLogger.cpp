@@ -28,7 +28,7 @@ using namespace dolfin;
 // A warning: don't use sleep(). Not a good idea to mix sleep() and alarm().
 
 // Signal handler, alarm every second as long as the computation is running
-void sigalarm(int i)
+void dolfin::sigalarm(int i)
 {
   // Update (will reach CursesLogger::update())
   dolfin_update();
@@ -39,7 +39,7 @@ void sigalarm(int i)
 }
 
 // Signal handler, ctrl-c
-void sigctrlc(int i)
+void dolfin::sigctrlc(int i)
 {
   // Quit (will reach CursesLogger::quit())
   dolfin_quit();
@@ -653,30 +653,28 @@ bool CursesLogger::getYesNo()
   nodelay(win, false);
 
   char c;
-  while ( true ) {
+  while ( true ) 
+  {
     c = getch();
-    switch ( c ) {
-    case 'y':
-      // Reset input state to normal
+    switch ( c ) 
+    {
+      case 'y':
+        // Reset input state to normal
+        nodelay(win, true);
+        waiting = false;
+        return true;
+        break;
+      case 'n':
+        // Reset input state to normal
       nodelay(win, true);
-      waiting = false;
-      return true;
-      break;
-    case 'n':
-      // Reset input state to normal
-      nodelay(win, true);
-      waiting = false;
-      return false;
-      break;
-    default:
-      // Ignore (seems like getch() stops waiting for input at alarm)
-      ;
+        waiting = false;
+        return false;
+        break;
+      default:
+        // Ignore (seems like getch() stops waiting for input at alarm)
+        ;
     }
   }
-
-  // Reset input state to normal
-  nodelay(win, true);
-  waiting = false;
 }
 //-----------------------------------------------------------------------------
 void CursesLogger::getAnyKey()

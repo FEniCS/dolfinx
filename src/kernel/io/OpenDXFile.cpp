@@ -207,7 +207,7 @@ void OpenDXFile::writeSeries(FILE* fp, Function& u)
   
   for (unsigned int i = 0; i < frames.size(); i++)
   {
-    fprintf(fp,"member %d value \"field %d\" position %f\n",
+    fprintf(fp,"member %u value \"field %u\" position %f\n",
 	    i, i, frames[i].time);
   }
   

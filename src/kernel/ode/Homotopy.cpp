@@ -112,7 +112,7 @@ void Homotopy::solve()
     dolfin_info("\nComputing path number %d out of %d.", m + 1, M);
 
     // Change name of output file for each path
-    sprintf(filename, "primal_%d.m", m);
+    sprintf(filename, "primal_%u.m", m);
     set("ode solution file name", filename);
 
     // Compute the component paths from global path number

@@ -18,6 +18,9 @@
 
 namespace dolfin {
   
+  void sigalarm(int i);
+  void sigctrlc(int i);
+
   class CursesLogger : public GenericLogger {
   public:
 

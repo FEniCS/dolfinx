@@ -83,7 +83,7 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"points = [");
   else
-    fprintf(fp,"points{%d} = [", counter + 1);
+    fprintf(fp,"points{%u} = [", counter + 1);
   for (VertexIterator n(mesh); !n.end(); ++n) {
     
     p = n->coord();
@@ -108,7 +108,7 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"cells = [");
   else
-    fprintf(fp,"cells{%d} = [", counter + 1);
+    fprintf(fp,"cells{%u} = [", counter + 1);
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     for (VertexIterator n(c); !n.end(); ++n)
@@ -126,7 +126,7 @@ void MFile::operator<<(Mesh& mesh)
   if ( counter == 0 )
     fprintf(fp,"edges = [1;2;0;0;0;0;0];\n\n");
   else
-    fprintf(fp,"edges{%d} = [1;2;0;0;0;0;0];\n\n", counter + 1);
+    fprintf(fp,"edges{%u} = [1;2;0;0;0;0;0];\n\n", counter + 1);
   
   // Close file
   fclose(fp);
@@ -175,7 +175,7 @@ void MFile::operator<<(Function& u)
   }
   else
   {
-    fprintf(fp, "%s{%d} = [", u.name().c_str(), counter1 + 1);
+    fprintf(fp, "%s{%u} = [", u.name().c_str(), counter1 + 1);
     for (unsigned int i = 0; i < u.vectordim(); i++)
     { 
       for (VertexIterator n(u.mesh()); !n.end(); ++n)

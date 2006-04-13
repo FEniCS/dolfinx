@@ -69,7 +69,7 @@ LogStream& LogStream::operator<<(int a)
 LogStream& LogStream::operator<<(unsigned int a)
 {
   char tmp[DOLFIN_WORDLENGTH];
-  sprintf(tmp, "%d", a);
+  sprintf(tmp, "%u", a);
   add(tmp);
   return *this;
 }
