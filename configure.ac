@@ -41,7 +41,7 @@ AC_ARG_WITH(petsc-dir,
 # Option --with-boost-include
 AC_ARG_WITH(boost-include,
             AC_HELP_STRING([--with-boost-include=<path>],
-                           [Specify path to Boost]),
+                           [Specify path to Boost include files]),
             [BOOST_DIR=$with_boost_include],)
 
 # Option --enable-pydolfin
@@ -53,6 +53,7 @@ AC_ARG_ENABLE(pydolfin,
 # Standard tests
 AC_PROG_CC
 AC_PROG_CXX
+AX_COMPILER_VENDOR
 AC_PROG_AWK
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -79,29 +80,41 @@ fi
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS='-DDEBUG=1 -g -O2 -Wall -Werror -pedantic -Wno-long-long -ansi -std=c++98'
-    # Try adding -pedantic and -Wno-long-long (Garth)
-      # We should also add -pedantic, but then we get an error when we try
-      # to include mpio.h (long long not supported by ISO C++)
+    CXXFLAGS="$CXXFLAGS -DDEBUG=1 -g -O2 -Wall -Werror -ansi"
 fi 
 
 # Handle option --enable-optimization
 # Flag -DNDEBUG is for Boost
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS='-O3 -DNDEBUG -Wall -ansi -std=c++98'
+    CXXFLAGS="$CXXFLAGS -O3 -DNDEBUG -Wall -ansi -std=c++98"
 fi
+
+# Add compiler specific flags
+case "${ax_cv_c_compiler_vendor}" in
+   gnu) 
+        CXXFLAGS="$CXXFLAGS -pedantic -Wno-long-long  -std=c++98"
+        ;;
+   intel)
+        echo "WARNING: Intel C++ compiler version <= 9.0 is incompatible with 
+        echo "header files gcc version <= 4.0". You can specify the version of 
+        echo "gcc header files to be used by setting the compiler option 
+        echo "-gcc-name=<name> through the environment variables"
+        echo "e.g. setenv CXXFLAGS -gcc-name=gcc-3.4"
+        CXXFLAGS="$CXXFLAGS -wd383 -wd810 -wd869 -wd981 -wd1418 -wd1572 -wd1599"
+        ;;
+esac
 
 # Add '-Wno-uninitialized' due to a Cygwin gcc 3.4 bug.
 if test `uname -o` = Cygwin; then
     echo "adding compiler flags for cygwin"
-    CXXFLAGS=$CXXFLAGS' -Wno-uninitialized '
+    CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
 fi
 
 # Add '-fPIC' for AMD 64 bit system
 if test `uname -m` = x86_64; then
     echo "adding -fPIC to compiler flags"
-    CXXFLAGS=$CXXFLAGS' -fPIC'
+    CXXFLAGS="$CXXFLAGS -fPIC"
 fi
 
 # Handle option --disable-curses
@@ -110,12 +123,12 @@ if test x$disable_curses = x; then
     AC_SEARCH_LIBS(wbkgdset, ncurses,,
                    echo "*** Unable to find ncurses on your system. "
                    echo "*** Try ./configure --disable-curses or install ncurses." ; exit 1)
-    CURSES_CFLAGS=''
-    CURSES_LIBS='-lncurses'
+    CURSES_CFLAGS=""
+    CURSES_LIBS="-lncurses"
 else
     echo "disabling curses"
-    CURSES_CFLAGS='-DNO_CURSES=1'
-    CURSES_LIBS=''
+    CURSES_CFLAGS="-DNO_CURSES=1"
+    CURSES_LIBS=""
 fi
 
 # Handle option --with-petsc-dir=<path>
