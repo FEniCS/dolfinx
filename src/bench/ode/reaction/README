@@ -1,0 +1,2 @@
+Reference solutions correct to within a tolerance of 2e-14.
+Computed with mono-adaptive cG(3) and fixed time step k = 0.00005.

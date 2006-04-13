@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<dolfin xmlns:dolfin="http://www.phi.chalmers.se/dolfin/">
+  <parameters>
+    <parameter name="order" type="int" value="1"/>
+    <parameter name="partitioning threshold" type="real" value="0.2"/>
+    <parameter name="initial time step" type="real" value="1e-5"/>
+    <parameter name="fixed time step" type="bool" value="false"/>
+    <parameter name="save solution" type="bool" value="false"/>
+    <parameter name="save final solution" type="bool" value="true"/>
+    <parameter name="ode solution file name" type="string" value="primal.py"/>
+    <parameter name="number of samples" type="int" value="100"/>
+  </parameters>
+</dolfin>
