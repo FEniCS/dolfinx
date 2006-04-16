@@ -1,2 +1,12 @@
-Reference solutions correct to within a tolerance of 2e-14.
-Computed with mono-adaptive cG(3) and fixed time step k = 0.00005.
+Reference solutions are correct to within a tolerance of 1e-13.
+
+Obtained with DOLFIN 0.6.1+ (1861:e059a2aac502, Wed Apr 12 23:08:37 2006 -0500).
+Computed with mono-adaptive cG(3) and fixed time step k = 0.00001.
+
+The following commands were used to obtain the reference solutions:
+
+  dolfin-ode-reaction cg fixed-point 0.1 0.1  1000  5.0 parameters-reference.xml
+  dolfin-ode-reaction cg fixed-point 0.1 0.1  2000 10.0 parameters-reference.xml
+  dolfin-ode-reaction cg fixed-point 0.1 0.1  4000 20.0 parameters-reference.xml
+  dolfin-ode-reaction cg fixed-point 0.1 0.1  8000 40.0 parameters-reference.xml
+  dolfin-ode-reaction cg fixed-point 0.1 0.1 16000 80.0 parameters-reference.xml

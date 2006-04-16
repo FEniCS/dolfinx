@@ -35,7 +35,7 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
 
             # Run program
             print "Running benchmark problem for %s/%s at tol = %.1e N = %d" % (method, solver, tol, N)
-            output = getoutput("./dolfin-ode-reaction %s %s %e %e %d %e" % \
+            output = getoutput("./dolfin-ode-reaction %s %s %e %e %d %e parameters-bench.xml" % \
                                (method, solver, tol, kmax, N, L))
 
             # Check if we got any solution

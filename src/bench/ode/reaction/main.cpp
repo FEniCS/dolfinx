@@ -80,24 +80,6 @@ public:
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }
 
-  /// Specify time step, mono-adaptive version (used for testing)
-  real timestep(real t, real k0) const
-  {
-    return 1e-5;
-  }
-
-  /// Specify time step, mono-adaptive version (used for testing)
-  real timestep(real t, unsigned int i, real k0) const
-  {
-    const real w  = 0.1;
-    const real v  = 2.22;
-    const real x  = static_cast<real>(i)*h;
-    if ( fabs(x - 1.0 - v*t) < w )
-      return 1e-5;
-    else
-      return 1e-3;
-  }
-
 public:
 
   real L;       // Length of domain
@@ -112,9 +94,9 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 7 )
+  if ( argc != 8 )
   {
-    dolfin_info("Usage: dolfin-reaction method solver tol kmax N L");
+    dolfin_info("Usage: dolfin-reaction method solver tol kmax N L params");
     dolfin_info("");
     dolfin_info("method - 'cg' or 'mcg'");
     dolfin_info("solver - 'fixed-point' or 'newton'");
@@ -122,6 +104,8 @@ int main(int argc, char* argv[])
     dolfin_info("kmax   - initial time step");
     dolfin_info("N      - number of components");
     dolfin_info("L      - length of domain");
+    dolfin_info("L      - length of domain");
+    dolfin_info("params - name of parameter file");
     return 1;
   }
   const char* method = argv[1];
@@ -130,9 +114,10 @@ int main(int argc, char* argv[])
   const real kmax = static_cast<real>(atof(argv[4]));
   const unsigned int N = static_cast<unsigned int>(atoi(argv[5]));
   const real L = static_cast<unsigned int>(atof(argv[6]));
+  const char* params = argv[7];
   
   // Load solver parameters from file
-  File file("parameters.xml");
+  File file(params);
   file >> ParameterSystem::parameters;
 
   // Set remaining solver parameters from command-line arguments

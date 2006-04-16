@@ -67,21 +67,18 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
 
   // Note: We use the maximum error, don't need to compute error here
   // Compute local error estimate
-//   const real error = method.error(k0, r);
-  
-  real used_tol = safety * tol;
+  // const real error = method.error(k0, r);
 
   // Conservative modification for "mid-components"
   // The parameters can likely be computed from existing parameters, such as
   // the partitioning threshold.
 
-  real cons = 0.01;
-
-  if(r < 0.1 * rmax)
+  const real used_tol = safety*tol;
+  if ( r < 0.1*rmax )
   {
-    used_tol = cons * used_tol;
+    const real cons = 0.01;
+    used_tol = cons*used_tol;
   }
-
 
   // Compute new time step
   real k = method.timestep(r, used_tol, k0, _kmax);

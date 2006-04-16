@@ -8,7 +8,5 @@
     <parameter name="fixed time step" type="bool" value="false"/>
     <parameter name="save solution" type="bool" value="false"/>
     <parameter name="save final solution" type="bool" value="true"/>
-    <parameter name="ode solution file name" type="string" value="primal.py"/>
-    <parameter name="number of samples" type="int" value="100"/>
   </parameters>
 </dolfin>
