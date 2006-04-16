@@ -73,7 +73,7 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
   // The parameters can likely be computed from existing parameters, such as
   // the partitioning threshold.
 
-  const real used_tol = safety*tol;
+  real used_tol = safety*tol;
   if ( r < 0.1*rmax )
   {
     const real cons = 0.01;

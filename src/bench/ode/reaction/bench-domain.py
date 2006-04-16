@@ -3,7 +3,7 @@
 # Copyright (C) 2005-2006 Anders Logg.
 # Licensed under the GNU GPL Version 2.
 #
-# Run benchmarks for test problem and collect results
+# Run benchmarks for varying size of domain
 
 from os import system
 from shutil import copy, move

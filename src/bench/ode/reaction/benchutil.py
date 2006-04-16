@@ -38,6 +38,8 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
             output = getoutput("./dolfin-ode-reaction %s %s %e %e %d %e parameters-bench.xml" % \
                                (method, solver, tol, kmax, N, L))
 
+            print output
+            
             # Check if we got any solution
             if len(output.split("Solution stopped")) > 1:
                 file.write("Unable to compute solution\n")
@@ -54,17 +56,12 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
             else:
                 index = 1.0
 
-            # FIXME: Need to compute reference solutions for these test cases
-            #copy("solution.data", "solution-%s-N-%d.data" % (method, N))
-            #error = check_error("solution-mcg-N-%d.data" % N, "solution-cg-N-%d.data" % N)
-
             # Compute error
-            #error = check_error("solution.data", "reference-1000.data")
+            error = check_error("solution.data", "reference_" + str(N) + ".data")
             
             # Write results to file
             file.write("%.1e\t%d\t%.3e\t%s\t\t%s (%s)\t%s (%s)\t%s\n" % \
                        (tol, N, error, cputime, steps, rejected, global_iter, local_iter, index))
-            
             file.flush()
                 
     # Close file
