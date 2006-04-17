@@ -44,7 +44,7 @@ public:
       MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
       dependencies.setsize(i + offset, ncols);
       for (int j = 0; j < ncols; j++)
-	      dependencies.set(i + offset, cols[j]);
+	dependencies.set(i + offset, cols[j]);
       MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
     }
 
@@ -89,19 +89,19 @@ public:
   }
 
   // Global time step
-  real timestep(real k)
+  real timestep(real t, real k0)
   {
-    return 0.05*hmin;
+    return 0.1*hmin;
   }
   
   // Local time step
-  real timestep(real k, unsigned int i)
+  real timestep(real t, unsigned int i, real k0) const
   {
-    return 0.05*h[i % offset];
+    return 0.1*h[i % offset];
   }
 
   // Right-hand side, mono-adaptive version
-  void f(const real u[], real t, real y[])
+  void f(const real u[], real t, real y[]) const
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)

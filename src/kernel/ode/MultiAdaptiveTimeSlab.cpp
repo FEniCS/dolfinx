@@ -143,7 +143,6 @@ bool MultiAdaptiveTimeSlab::check(bool first)
   real rmaxall = 0;
   rmaxall = *std::max_element(rmax, rmax + N);
 
-
   // Cover end time
   coverTime(_b);
 

@@ -19,10 +19,13 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
   // Initialize time steps
   real k0 = get("initial time step");
   timesteps = new real[ode.size()];
+
   if ( kfixed )
   {
     for (uint i = 0; i < ode.size(); i++)
+    {
       timesteps[i] = ode.timestep(0.0, i, k0);
+    }
   }
   else
   {
@@ -57,6 +60,7 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
 				      real rmax, real error,
 				      const Method& method, real t)
 {
+
   // Check if time step is fixed
   if ( kfixed )
   {
