@@ -5,7 +5,6 @@ SUBDIRS = bistable \
           mechanical \
           method-weights \
           modeling \
-          reaction \
           stiff \
           wave \
           test
