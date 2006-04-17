@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2005-12-19
+// Last changed: 2006-04-17
 
 #include <cmath>
 #include <dolfin/ParameterSystem.h>
@@ -21,7 +21,8 @@ TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   const real TOL = get("tolerance");
   const real alpha = get("discrete tolerance factor");
   tol = get("discrete tolerance");
-  tol = std::min(tol, alpha*TOL);
+  if ( !get("fixed time step") )
+    tol = std::min(tol, alpha*TOL);
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations

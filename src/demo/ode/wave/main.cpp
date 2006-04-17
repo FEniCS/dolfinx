@@ -23,7 +23,8 @@ public:
   WaveEquation(Mesh& mesh) : ODE(2*mesh.numVertices(), 1.0), mesh(mesh),
 			     A(mesh), offset(N/2), h(N/2)
   {
-    w = 0.25; // Width of initial wave
+    // Width of initial wave
+    w = 0.25;
 
     // Lump mass matrix
     MassMatrix M(mesh);
@@ -90,13 +91,13 @@ public:
   // Global time step
   real timestep(real k)
   {
-    return 0.1*hmin;
+    return 0.05*hmin;
   }
   
   // Local time step
   real timestep(real k, unsigned int i)
   {
-    return 0.1*h[i % offset];
+    return 0.05*h[i % offset];
   }
 
   // Right-hand side, mono-adaptive version
@@ -198,7 +199,7 @@ int main()
   set("partitioning threshold", 0.25);
   set("maximum local iterations", 2);
   
-  // Uncomment this to run benchmarks
+  // Uncomment this to save solution
   //set("save solution", false);
   
   Mesh mesh("slit.xml.gz");
