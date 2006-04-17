@@ -31,7 +31,7 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
         for tol in tols:
 
             # Length of domain
-            L = 5.0;
+            L = 5.0 * N / 1000.0
 
             # Run program
             print "Running benchmark problem for %s/%s at tol = %.1e N = %d" % (method, solver, tol, N)
@@ -39,7 +39,7 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
                                (method, solver, tol, kmax, N, L))
 
             print output
-            
+
             # Check if we got any solution
             if len(output.split("Solution stopped")) > 1:
                 file.write("Unable to compute solution\n")
