@@ -4,7 +4,5 @@ SUBDIRS = bistable \
           lorenz \
           mechanical \
           method-weights \
-          modeling \
           stiff \
-          wave \
           test

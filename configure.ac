@@ -314,7 +314,6 @@ AC_OUTPUT( Makefile \
            src/demo/fem/Makefile \
            src/demo/nls/Makefile \
            src/demo/ode/Makefile \
-           src/demo/ode/modeling/Makefile \
            src/demo/ode/homotopy/Makefile \
            src/demo/pde/Makefile \
            src/demo/pde/nonlinear/Makefile \
@@ -322,30 +321,32 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/scripting/Makefile \
+           src/bench/Makefile \
+           src/bench/ode/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
            src/utils/convert/Makefile \
            src/greeting/Makefile )
 
 # Display some configuration options
-echo '---------------------------------------------------------'
-echo 'Configuration of DOLFIN finished. Now type'
-echo ''
-echo '   make'
-echo '   make install'
-echo ''
-echo 'to install DOLFIN on your system. After DOLFIN has been'
-echo 'installed, you can compile all the demo programs in the'
-echo 'subdirectory src/demo by running'
-echo ''
-echo '   make demo'
-echo ''
-echo 'Note that you may need to be root in order to install.'
-echo 'To specify an alternative installation directory, rerun'
-echo 'configure with option --prefix=<path>. You may also run'
-echo './configure.local to configure for a local installation'
-echo 'in the DOLFIN source tree.'
-echo '---------------------------------------------------------'
+echo "---------------------------------------------------------"
+echo "Configuration of DOLFIN finished. Now type"
+echo ""
+echo "   make"
+echo "   make install"
+echo ""
+echo "to install DOLFIN on your system. After DOLFIN has been"
+echo "installed, you can compile all the demo programs in the"
+echo "subdirectory src/demo by running"
+echo ""
+echo "   make demo"
+echo ""
+echo "Note that you may need to be root in order to install."
+echo "To specify an alternative installation directory, rerun"
+echo "configure with option --prefix=<path>. You may also run"
+echo "./configure.local to configure for a local installation"
+echo "in the DOLFIN source tree."
+echo "---------------------------------------------------------"
 
 # Check that the installation directory is set up correctly
 __BINDIR=`echo $prefix/bin | sed -e 's/\//-/g'`

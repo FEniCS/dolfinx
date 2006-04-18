@@ -191,10 +191,7 @@ SUBDIRS = bistable \
           lorenz \
           mechanical \
           method-weights \
-          modeling \
-          reaction \
           stiff \
-          wave \
           test
 
 all: all-recursive
