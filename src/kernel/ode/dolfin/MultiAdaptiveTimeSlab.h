@@ -145,18 +145,19 @@ namespace dolfin
     
     int* de;  // Mapping d --> element e of dependency d
         
-    //--- Auxiliary data ---
+    //--- Size of time slab data ---
     
     Alloc size_s; // Allocation data for sub slabs s
     Alloc size_e; // Allocation data for elements e
     Alloc size_j; // Allocation data for dofs j
     Alloc size_d; // Allocation data for dependencies d
-    uint size_r;  // Allocation data for increments r
 
     uint ns; // Number of sub slabs
     uint ne; // Number of elements
     uint nj; // Number of dofs
     uint nd; // Number of dependencies
+
+    //-- Auxiliary data ---
 
     TimeSlabSolver* solver;     // The solver
     MultiAdaptivity adaptivity; // Adaptive time step regulation
@@ -166,6 +167,8 @@ namespace dolfin
     real* f0;                   // Right-hand side at left end-point for cG
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
+
+    // FIXME: Temporary data that we should get rid of
 
     // FIXME: Not needed, do propagation in shift(), fix later when working
     real* f0tmp;                // Temporary storage for f0 when copying
