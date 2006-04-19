@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-04-19
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -166,7 +166,6 @@ namespace dolfin
     real* u;                    // Interpolated solution vector
     real* f0;                   // Right-hand side at left end-point for cG
     uint emax;                  // Last covered element for sample
-    real kmin;                  // Minimum time step (exluding threshold modified)
 
     // FIXME: Temporary data that we should get rid of
     real* kmax;                 // Maximum time steps in the time slab

@@ -1,10 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2006-03-27
+// Last changed: 2006-04-19
 
 #include <string>
 #include <algorithm>
@@ -24,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), emax(0), kmin(0)
+  elast(0), u(0), f0(0), emax(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -94,7 +94,6 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
     elast[i] = -1;
 
   // Create time slab recursively
-  kmin = ode.endtime();
   b = createTimeSlab(a, b, 0);
 
   //cout << "de = "; Alloc::disp(de, nd);
@@ -189,7 +188,7 @@ bool MultiAdaptiveTimeSlab::check(bool first)
 //    r = rmax[i];
 
     // Update adaptivity
-    adaptivity.updateComponent(i, kmax[i], kmin, rmax[i], rmaxall, krmax[i],
+    adaptivity.updateComponent(i, kmax[i], rmax[i], rmaxall, krmax[i],
 			       *method, _b);
 
     // Save right-hand side at end-point for cG
@@ -639,9 +638,6 @@ real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& en
   if ( K < adaptivity.threshold() * (b - a) )
     b = a + K;
 
-  // Save minimum time step
-  kmin = std::min(kmin, b - a);
-  
   return b;
 }
 //-----------------------------------------------------------------------------

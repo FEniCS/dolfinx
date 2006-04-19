@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2005-12-19
+// Last changed: 2006-04-19
 
 #include <cmath>
 #include <dolfin/ParameterSystem.h>
@@ -56,7 +56,7 @@ void MultiAdaptivity::updateStart()
   _accept = true;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
+void MultiAdaptivity::updateComponent(uint i, real k0, real r,
 				      real rmax, real error,
 				      const Method& method, real t)
 {
