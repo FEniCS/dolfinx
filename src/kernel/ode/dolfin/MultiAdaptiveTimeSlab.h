@@ -169,10 +169,6 @@ namespace dolfin
     real kmin;                  // Minimum time step (exluding threshold modified)
 
     // FIXME: Temporary data that we should get rid of
-
-    // FIXME: Not needed, do propagation in shift(), fix later when working
-    real* f0tmp;                // Temporary storage for f0 when copying
-
     real* kmax;                 // Maximum time steps in the time slab
     real* rmax;                 // Maximum residuals in the time slab
     real* krmax;                // Maximum local error (k*r) in the time slab

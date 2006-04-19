@@ -24,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), emax(0), kmin(0), f0tmp(0)
+  elast(0), u(0), f0(0), emax(0), kmin(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -43,7 +43,6 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   if ( method->type() == Method::cG )
   {
     f0 = new real[N];
-    f0tmp = new real[N];
     for (uint i = 0; i < N; i++)
       f0[i] = ode.f(u0, 0.0, i);
   }
@@ -80,7 +79,6 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( elast ) delete [] elast;
   if ( u ) delete [] u;
   if ( f0 ) delete [] f0;
-  if ( f0tmp ) delete [] f0tmp;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
@@ -195,16 +193,25 @@ bool MultiAdaptiveTimeSlab::check(bool first)
 			       *method, _b);
 
     // Save right-hand side at end-point for cG
-    // We don't know if slab is acceptable, so don't overwrite f0
     if ( method->type() == Method::cG )
-      f0tmp[i] = f;
+      f0[i] = f;
   }
   
   // End time step update for system
   adaptivity.updateEnd(first);
 
   // Check if current solution can be accepted
-  return adaptivity.accept();
+  if ( adaptivity.accept() )
+    return true;
+
+  // If not accepted, we need to recompute f0 for cG
+  if ( method->type() == Method::cG )
+  {
+    for (uint i = 0; i < N; i++)
+      f0[i] = ode.f(u0, _a, i);
+  }
+
+  return false;
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::shift()
@@ -221,13 +228,8 @@ bool MultiAdaptiveTimeSlab::shift()
     return false;
 
   // Set initial value to end-time value (needs to be done last)
-  // Copy right-hand side at end-point for cG (the slab is accepted now)
   for (uint i = 0; i < N; i++)
-  {
     u0[i] = u[i];
-    if ( method->type() == Method::cG )
-      f0[i] = f0tmp[i];
-  }
 
   return true;
 }
