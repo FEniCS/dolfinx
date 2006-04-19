@@ -1,10 +1,10 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2006-04-19
+// Last changed: 2006-03-27
 
 #include <string>
 #include <algorithm>
@@ -24,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), emax(0)
+  elast(0), u(0), f0(0), emax(0), kmin(0), kmax(0), rmax(0), krmax(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -47,15 +47,15 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
       f0[i] = ode.f(u0, 0.0, i);
   }
 
-  // Initialize kmax, rmax
-  kmax = new real[N];
-  rmax = new real[N];
-  krmax = new real[N];
-
   // Initialize local array for quadrature
   ftmp = new real[method->qsize()];
   for (unsigned int i = 0; i < method->qsize(); i++)
     ftmp[i] = 0.0;
+
+  // Initialize kmax, rmax
+  kmax = new real[N];
+  rmax = new real[N];
+  krmax = new real[N];
 
   // Initialize transpose of dependencies if necessary
   dolfin_info("Computing transpose (inverse) of dependency pattern.");
@@ -79,6 +79,11 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( elast ) delete [] elast;
   if ( u ) delete [] u;
   if ( f0 ) delete [] f0;
+  if ( ftmp ) delete [] ftmp;
+
+  if ( kmax ) delete kmax;
+  if ( rmax ) delete rmax;
+  if ( krmax ) delete krmax;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptiveTimeSlab::build(real a, real b)
@@ -94,6 +99,7 @@ real MultiAdaptiveTimeSlab::build(real a, real b)
     elast[i] = -1;
 
   // Create time slab recursively
+  kmin = ode.endtime();
   b = createTimeSlab(a, b, 0);
 
   //cout << "de = "; Alloc::disp(de, nd);
@@ -638,6 +644,9 @@ real MultiAdaptiveTimeSlab::computeEndTime(real a, real b, uint offset, uint& en
   if ( K < adaptivity.threshold() * (b - a) )
     b = a + K;
 
+  // Save minimum time step
+  kmin = std::min(kmin, b - a);
+  
   return b;
 }
 //-----------------------------------------------------------------------------

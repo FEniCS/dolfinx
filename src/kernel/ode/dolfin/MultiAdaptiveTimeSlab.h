@@ -1,8 +1,8 @@
-// Copyright (C) 2005-2006 Anders Logg.
+// Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-04-19
+// Last changed: 2005-11-11
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -157,23 +157,23 @@ namespace dolfin
     uint nj; // Number of dofs
     uint nd; // Number of dependencies
 
-    //-- Auxiliary data ---
+    //--- Auxiliary data ---
 
     TimeSlabSolver* solver;     // The solver
-    MultiAdaptivity adaptivity; // Adaptive time step regulation
-    Partition partition;        // Time step partitioning 
-    int* elast;                 // Last element for each component
-    real* u;                    // Interpolated solution vector
-    real* f0;                   // Right-hand side at left end-point for cG
+    MultiAdaptivity adaptivity; // Adaptive time step regulation (size N)
+    Partition partition;        // Time step partitioning  (size N)
+    int* elast;                 // Last element for each component (size N)
+    real* u;                    // Interpolated solution vector (size N)
+    real* f0;                   // Right-hand side at left end-point for cG (size N)
+    real* ftmp;                 // Right-hand side values at quadrature points (size m)
     uint emax;                  // Last covered element for sample
+    real kmin;                  // Minimum time step (exluding threshold modified)
 
-    // FIXME: Temporary data that we should get rid of
-    real* kmax;                 // Maximum time steps in the time slab
-    real* rmax;                 // Maximum residuals in the time slab
-    real* krmax;                // Maximum local error (k*r) in the time slab
-
-    // Values of right-hand side at quadrature points
-    real* ftmp; 
+    //--- Auxiliary data for adaptivity that we might be able to get rid of
+    
+    real* kmax;   // Maximum component-wise time steps in the time slab
+    real* rmax;   // Maximum component-wise residuals in the time slab
+    real* krmax;  // Maximum component-wise local error (k*r) in the time slab
 
   };
 
