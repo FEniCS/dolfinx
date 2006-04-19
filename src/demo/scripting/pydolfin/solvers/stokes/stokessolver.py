@@ -74,7 +74,7 @@ FEM_assemble(a, L, A, b, mesh, bc)
 # Numeric for example.
 
 linearsolver = KrylovSolver()
-linearsolver.setRtol(1.0e-15);
+#linearsolver.setRtol(1.0e-15);
 linearsolver.solve(A, x, b)
 
 #print "x:"
