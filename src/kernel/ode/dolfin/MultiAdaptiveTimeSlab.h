@@ -159,7 +159,7 @@ namespace dolfin
 
     //--- Auxiliary data ---
 
-    TimeSlabSolver* solver;     // The solver
+    TimeSlabSolver* solver;     // The solver (size N if diagonally damped)
     MultiAdaptivity adaptivity; // Adaptive time step regulation (size N)
     Partition partition;        // Time step partitioning  (size N)
     int* elast;                 // Last element for each component (size N)

@@ -41,11 +41,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
 
   // Initialize f at left end-point for cG
   if ( method->type() == Method::cG )
-  {
     f0 = new real[N];
-    for (uint i = 0; i < N; i++)
-      f0[i] = ode.f(u0, 0.0, i);
-  }
 
   // Initialize local array for quadrature
   ftmp = new real[method->qsize()];
@@ -127,6 +123,13 @@ bool MultiAdaptiveTimeSlab::solve()
   for (unsigned int i = 0; i < N; i++)
     u[i] = u0[i];
 
+  // Compute f at left end-point for cG
+  if ( method->type() == Method::cG )
+  {
+    for (uint i = 0; i < N; i++)
+      f0[i] = ode.f(u0, _a, i);
+  }
+
   // Solve system
   return solver->solve();
 
@@ -165,41 +168,11 @@ bool MultiAdaptiveTimeSlab::check(bool first)
   // Start time step update for system
   adaptivity.updateStart();
   
-  // Compute residual and new time step for each component
+  // Compute new time step for each component
   for (uint i = 0; i < N; i++)
   {
-    // Get last element of component
-    const int e = elast[i];
-    dolfin_assert(e != -1);
-    
-    // Get element data
-    const uint s = es[e];
-//    const uint j = e * method->nsize();
-//    const real a = sa[s];
-    const real b = sb[s];
-//    const real k = b - a;
-    
-    // Get initial value for element (only necessary for cG)
-//    const int ep = ee[e];
-//    const uint jp = ep * method->nsize();
-//    const real x0 = ( ep != -1 ? jx[jp + method->nsize() - 1] : u0[i] );
-    
-    // Evaluate right-hand side at end-point (u is already updated)
-    const real f = ode.f(u, b, i);
-
-    // Compute residual
-//    real r = method->residual(x0, jx + j, f, k);
-    
-//    // FIXME: r is not needed anymore
-//    r = rmax[i];
-
-    // Update adaptivity
     adaptivity.updateComponent(i, kmax[i], rmax[i], rmaxall, krmax[i],
 			       *method, _b);
-
-    // Save right-hand side at end-point for cG
-    if ( method->type() == Method::cG )
-      f0[i] = f;
   }
   
   // End time step update for system
@@ -232,7 +205,7 @@ bool MultiAdaptiveTimeSlab::shift()
   if ( !ode.update(u, _b, end) )
     return false;
 
-  // Set initial value to end-time value (needs to be done last)
+  // Set initial value to end-time value
   for (uint i = 0; i < N; i++)
     u0[i] = u[i];
 
