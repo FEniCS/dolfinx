@@ -69,6 +69,9 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
     return;
   }
 
+  // Include dynamic safety factor
+  real used_tol = safety*tol;
+
   // Note: We use the maximum error, don't need to compute error here
   // Compute local error estimate
   // const real error = method.error(k0, r);
@@ -76,13 +79,19 @@ void MultiAdaptivity::updateComponent(uint i, real k0, real kmin, real r,
   // Conservative modification for "mid-components"
   // The parameters can likely be computed from existing parameters, such as
   // the partitioning threshold.
+  
 
-  real used_tol = safety*tol;
+
+  /*
   if ( r < 0.1*rmax )
   {
     const real cons = 0.01;
     used_tol = cons*used_tol;
   }
+  */
+
+  // Conservative modification for "mid-components"
+  r = pow(r/rmax, 0.25)*rmax;
 
   // Compute new time step
   real k = method.timestep(r, used_tol, k0, _kmax);
