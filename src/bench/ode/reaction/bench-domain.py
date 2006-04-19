@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2005-2006 Anders Logg.
 # Licensed under the GNU GPL Version 2.
