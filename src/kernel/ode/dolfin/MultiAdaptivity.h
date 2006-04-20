@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2006-04-19
+// Last changed: 2006-04-20
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
@@ -15,6 +15,7 @@ namespace dolfin
 {
   class ODE;
   class Method;
+  class MultiAdaptiveTimeSlab;
 
   /// This class controls the multi-adaptive time-stepping
 
@@ -31,20 +32,31 @@ namespace dolfin
     /// Return time step for given component
     real timestep(uint i) const;
 
-    /// Start time step update for system
-    void updateStart();
+    /// Return residual for given component
+    real residual(uint i) const;
 
-    /// Update time step for given component
-    void updateComponent(uint i, real k0, real r, real rmax,
-			 real error, const Method& method, real t);
-    
-    /// End time step update for system
-    void updateEnd(bool first);
+    /// Update time steps
+    void update(MultiAdaptiveTimeSlab& ts, real t, bool first);
 
   private:
 
-    // Multi-adaptive time steps
+    // Compute maximum residuals for components
+    void computeResiduals(MultiAdaptiveTimeSlab& ts);
+
+    // Multi-adaptive time steps (size N)
     real* timesteps;
+
+    // Multi-adaptive residuals (size N)
+    real* residuals;
+
+    // Values of right-hand side at quadrature points (size m)
+    real* f;
+
+    // Maximum local residual on time slab
+    real rmax;
+
+    // Maximum local error on time slab
+    real emax;
 
   };
 
