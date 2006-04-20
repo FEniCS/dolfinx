@@ -179,17 +179,7 @@ bool MultiAdaptiveTimeSlab::check(bool first)
   adaptivity.updateEnd(first);
 
   // Check if current solution can be accepted
-  if ( adaptivity.accept() )
-    return true;
-
-  // If not accepted, we need to recompute f0 for cG
-  if ( method->type() == Method::cG )
-  {
-    for (uint i = 0; i < N; i++)
-      f0[i] = ode.f(u0, _a, i);
-  }
-
-  return false;
+  return adaptivity.accept();
 }
 //-----------------------------------------------------------------------------
 bool MultiAdaptiveTimeSlab::shift()
