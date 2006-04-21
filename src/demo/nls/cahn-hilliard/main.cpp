@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
   // Randomly perturbed intitial conditions
   dolfin::uint size = FEM::size(mesh, U.element()[0]);
   dolfin::seed(2);
-  for(int i=0; i < size; ++i)
+  for(dolfin::uint i=0; i < size; ++i)
      x(i) = 0.63 + 0.02*(0.5-dolfin::rand());
 
   // Save initial condition to file
