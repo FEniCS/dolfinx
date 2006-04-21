@@ -81,9 +81,9 @@ class MyNonlinearProblem : public NonlinearProblem
     void form(Matrix& A, Vector& b, const Vector& x)
     {
       dolfin_log(false);
-      NewFEM::assemble(*a, *L, A, b, *_mesh);
-      NewFEM::applyBC(A, *_mesh, a->test(), *_bc);
-      NewFEM::assembleBCresidual(b, x, *_mesh, a->test(), *_bc);
+      FEM::assemble(*a, *L, A, b, *_mesh);
+      FEM::applyBC(A, *_mesh, a->test(), *_bc);
+      FEM::assembleBCresidual(b, x, *_mesh, a->test(), *_bc);
       dolfin_log(true);
     }
 

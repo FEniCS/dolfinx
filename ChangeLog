@@ -1,3 +1,4 @@
+ - FEM class cleaned up.
  - Fix multi-adaptive benchmark problem reaction
  - Small fixes for Intel C++ compiler version 9.1
  - Test for Intel C++ compiler and configure appropriately
