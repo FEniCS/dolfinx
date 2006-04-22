@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
@@ -15,11 +16,13 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
-  : Adaptivity(ode, method), timesteps(0), residuals(0), f(0), rmax(0), emax(0)
+  : Adaptivity(ode, method), 
+    timesteps(0), residuals(0), ktmp(0), f(0), rmax(0), emax(0)
 {
   // Initialize time steps and residuals
   timesteps = new real[ode.size()];
   residuals = new real[ode.size()];
+  ktmp = new real[ode.size()];
 
   // Initialize local array for quadrature
   f = new real[method.qsize()];
@@ -46,12 +49,20 @@ MultiAdaptivity::MultiAdaptivity(const ODE& ode, const Method& method)
     for (uint i = 0; i < ode.size(); i++)
       timesteps[i] = k;
   }
+
+  // Initialize arrays
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    residuals[i] = 0.0;
+    ktmp[i] = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 MultiAdaptivity::~MultiAdaptivity()
 {
   if ( timesteps ) delete [] timesteps;
   if ( residuals ) delete [] residuals;
+  if ( ktmp ) delete [] ktmp;
 }
 //-----------------------------------------------------------------------------
 real MultiAdaptivity::timestep(uint i) const
@@ -86,7 +97,7 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
     _accept = true;
 
   // Update time steps for all components
-  for (uint i = 0; i < ts.N; i++)
+  for (uint i = 0; i < ode.size(); i++)
   {
     // Previous time step
     const real k0 = timesteps[i];
@@ -94,16 +105,13 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
     // Include dynamic safety factor
     real used_tol = safety*tol;
     
-    // Conservative modification for "mid-components"
-    const real rr = pow(residuals[i]/rmax, 0.25)*rmax;
-    
     // Compute new time step
-    real k = method.timestep(rr, used_tol, k0, _kmax);
+    real k = method.timestep(residuals[i], used_tol, k0, _kmax);
 
     // Apply time step regulation
     k = Controller::updateHarmonic(k, timesteps[i], _kmax);
     
-    // Make sure to decrease the time step when if not accepted
+    // Make sure to decrease the time step if not accepted
     if ( !_accept )
     {
       k = std::min(k, 0.9*k0);
@@ -113,16 +121,8 @@ void MultiAdaptivity::update(MultiAdaptiveTimeSlab& ts, real t, bool first)
     timesteps[i] = k;
   }
 
-  // Reduce overall size of time slab if this is the first time slab
-  if ( first )
-  {
-    real K = 0.0;
-    for (uint i = 0; i < ode.size(); i++)
-      K = std::max(K, timesteps[i]);
-    
-    for (uint i = 0; i < ode.size(); i++)
-      timesteps[i] = std::min(K, timesteps[i]);
-  }
+  // Propagate time steps according to dependencies
+  propagateDependencies();
 }
 //-----------------------------------------------------------------------------
 void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
@@ -185,6 +185,37 @@ void MultiAdaptivity::computeResiduals(MultiAdaptiveTimeSlab& ts)
 
     // Step to next sub slab
     e0 = e1;
+  }
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptivity::propagateDependencies()
+{
+  // This is a poor man's dual weighting function. For each component,
+  // we look at all other components that the component in question
+  // depends on and tell these other components to reduce their time
+  // steps to the same level. A similar effect would be accomplished
+  // by weighting with the proper weight from the dual solution, but
+  // until we (re-)implement the solution of the dual, this seems to
+  // be a good solution.
+
+  // Don't propagate dependencies if not sparse
+  if ( !ode.dependencies.sparse() )
+    return;
+
+  // Copy time steps
+  for (uint i = 0; i < ode.size(); i++)
+    ktmp[i] = timesteps[i];
+
+  // Iterate over components
+  for (uint i = 0; i < ode.size(); i++)
+  {
+    // Get time step for current component
+    const real k = ktmp[i];
+
+    // Propagate time step to dependencies
+    const Array<uint>& deps = ode.dependencies[i];
+    for (uint pos = 0; pos < deps.size(); pos++)
+      timesteps[deps[pos]] = std::min(timesteps[deps[pos]], k);
   }
 }
 //-----------------------------------------------------------------------------

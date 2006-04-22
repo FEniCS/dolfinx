@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-29
-// Last changed: 2006-04-20
+// Last changed: 2006-04-21
 
 #ifndef __MULTI_ADAPTIVITY_H
 #define __MULTI_ADAPTIVITY_H
@@ -43,12 +43,18 @@ namespace dolfin
     // Compute maximum residuals for components
     void computeResiduals(MultiAdaptiveTimeSlab& ts);
 
+    // Propagate time steps according to dependencies
+    void propagateDependencies();
+
     // Multi-adaptive time steps (size N)
     real* timesteps;
 
     // Multi-adaptive residuals (size N)
     real* residuals;
 
+    // Array for storing temporary data during propagation of time steps (size N)
+    real* ktmp;
+    
     // Values of right-hand side at quadrature points (size m)
     real* f;
 

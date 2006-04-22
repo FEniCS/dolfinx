@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-04-20
+// Last changed: 2006-04-21
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
@@ -161,7 +161,7 @@ namespace dolfin
     //--- Auxiliary data, size N ---
 
     TimeSlabSolver* solver;     // The solver (size N if diagonally damped)
-    MultiAdaptivity adaptivity; // Adaptive time step regulation (size 2N)
+    MultiAdaptivity adaptivity; // Adaptive time step regulation (size 3N)
     Partition partition;        // Time step partitioning (size N)
     int* elast;                 // Last element for each component (size N)
     real* u;                    // Interpolated solution vector (size N)

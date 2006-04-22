@@ -23,9 +23,9 @@ except IOError:
     print "No previous log file, don't making backup..."
 
 # Run sets of benchmarks
-run_set("cg",  "newton",      1e-3, tols, sizes, logfile)
-run_set("cg",  "fixed-point", 1e-3, tols, sizes, logfile)
-run_set("mcg", "newton",      1e-3, tols, sizes, logfile)
+#run_set("cg",  "newton",      1e-3, tols, sizes, logfile)
+#run_set("cg",  "fixed-point", 1e-3, tols, sizes, logfile)
+#run_set("mcg", "newton",      1e-3, tols, sizes, logfile)
 run_set("mcg", "fixed-point", 1e-3, tols, sizes, logfile)
 
 # Print results

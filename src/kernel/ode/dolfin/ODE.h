@@ -101,6 +101,7 @@ namespace dolfin
     friend class MonoAdaptiveJacobian;
     friend class MultiAdaptiveTimeSlab;
     friend class MultiAdaptiveJacobian;
+    friend class MultiAdaptivity;
     friend class NewMultiAdaptiveJacobian;
     friend class MultiAdaptivePreconditioner;
     friend class ReducedModel;
