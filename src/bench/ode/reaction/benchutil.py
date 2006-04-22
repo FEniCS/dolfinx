@@ -15,7 +15,7 @@ def check_error(solution, reference):
     e = max(abs(U - u))
     return e
 
-def run_set(method, solver, kmax, tols, sizes, logfile):
+def run_set(method, solver, tols, sizes, logfile):
     "Run set of tests for given data."
 
     # Open file for storing benchmark results
@@ -35,10 +35,8 @@ def run_set(method, solver, kmax, tols, sizes, logfile):
 
             # Run program
             print "Running benchmark problem for %s/%s at tol = %.1e N = %d" % (method, solver, tol, N)
-            output = getoutput("./dolfin-ode-reaction %s %s %e %e %d %e parameters-bench.xml" % \
-                               (method, solver, tol, kmax, N, L))
-
-            print output
+            output = getoutput("./dolfin-ode-reaction %s %s %e %d %e parameters-bench.xml" % \
+                               (method, solver, tol, N, L))
 
             # Check if we got any solution
             if len(output.split("Solution stopped")) > 1:

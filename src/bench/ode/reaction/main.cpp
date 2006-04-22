@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-14
-// Last changed: 2006-04-12
+// Last changed: 2006-04-22
 
 #include <dolfin.h>
 
@@ -94,16 +94,14 @@ public:
 int main(int argc, char* argv[])
 {
   // Parse command line arguments
-  if ( argc != 8 )
+  if ( argc != 7 )
   {
     dolfin_info("Usage: dolfin-reaction method solver tol kmax N L params");
     dolfin_info("");
     dolfin_info("method - 'cg' or 'mcg'");
     dolfin_info("solver - 'fixed-point' or 'newton'");
     dolfin_info("tol    - tolerance");
-    dolfin_info("kmax   - initial time step");
     dolfin_info("N      - number of components");
-    dolfin_info("L      - length of domain");
     dolfin_info("L      - length of domain");
     dolfin_info("params - name of parameter file");
     return 1;
@@ -111,10 +109,9 @@ int main(int argc, char* argv[])
   const char* method = argv[1];
   const char* solver = argv[2];
   const real tol = static_cast<real>(atof(argv[3]));
-  const real kmax = static_cast<real>(atof(argv[4]));
-  const unsigned int N = static_cast<unsigned int>(atoi(argv[5]));
-  const real L = static_cast<unsigned int>(atof(argv[6]));
-  const char* params = argv[7];
+  const unsigned int N = static_cast<unsigned int>(atoi(argv[4]));
+  const real L = static_cast<unsigned int>(atof(argv[5]));
+  const char* params = argv[6];
   
   // Load solver parameters from file
   File file(params);
@@ -124,7 +121,6 @@ int main(int argc, char* argv[])
   set("method", method);
   set("solver", solver);
   set("tolerance", tol);
-  set("maximum time step", kmax);
 
   // Set fixed parameters for test problem
   const real T = 1.0;
