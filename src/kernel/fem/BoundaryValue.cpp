@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006
+//
 // First added:  2005-02-13
-// Last changed: 2005
+// Last changed: 2006-04-21
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/BoundaryValue.h>
@@ -30,5 +32,11 @@ void BoundaryValue::set(real value)
 {
   fixed = true;
   this->value = value;
+}
+//-----------------------------------------------------------------------------
+void BoundaryValue::reset()
+{
+  fixed = false;
+  value = 0.0;
 }
 //-----------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006
+//
 // First added:  2005-02-13
-// Last changed: 2005
+// Last changed: 2006-04-21
 
 #ifndef __BOUNDARY_VALUE_H
 #define __BOUNDARY_VALUE_H
@@ -28,9 +30,11 @@ namespace dolfin
     /// Set Dirichlet boundary value
     void set(real value);
     
+    /// Reset Dirichlet boundary value
+    void reset();
+
     /// Friends
     friend class FEM;
-    friend class NewFEM;
 
   private:
 

@@ -63,7 +63,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_fem_la_LIBADD =
 am_libdolfin_fem_la_OBJECTS = AffineMap.lo BoundaryCondition.lo \
 	BoundaryValue.lo FEM.lo FiniteElement.lo FiniteElementSpec.lo \
-	LoadVector.lo MassMatrix.lo NewFEM.lo StiffnessMatrix.lo
+	LoadVector.lo MassMatrix.lo StiffnessMatrix.lo
 libdolfin_fem_la_OBJECTS = $(am_libdolfin_fem_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -227,7 +227,6 @@ nobase_include_HEADERS = dolfin/dolfin_fem.h \
                            dolfin/FiniteElementSpec.h \
                            dolfin/LoadVector.h \
                            dolfin/MassMatrix.h \
-                           dolfin/NewFEM.h \
                            dolfin/P1tet.h \
                            dolfin/P1tri.h \
                            dolfin/P2tet.h \
@@ -250,7 +249,6 @@ libdolfin_fem_la_SOURCES = AffineMap.cpp \
                            FiniteElementSpec.cpp \
                            LoadVector.cpp \
                            MassMatrix.cpp \
-                           NewFEM.cpp \
                            StiffnessMatrix.cpp
 
 libdolfin_fem_la_LDFLAGS = -static
@@ -331,7 +329,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementSpec.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoadVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MassMatrix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFEM.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StiffnessMatrix.Plo@am__quote@
 
 .cpp.o:

@@ -2,296 +2,79 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy Terrel 2005.
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-03-10
+// Last changed: 2006-04-12
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/timing.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
-#include <dolfin/AffineMap.h>
-#include <dolfin/Mesh.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Boundary.h>
-#include <dolfin/BoundaryValue.h>
-#include <dolfin/BoundaryCondition.h>
-#include <dolfin/FiniteElement.h>
 #include <dolfin/FEM.h>
+
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
 {
-  // Check that the mesh matches the form
-  checkdims(a, mesh);
-
-  // Get finite elements
-  FiniteElement& test_element = a.test();
-  FiniteElement& trial_element = a.trial();
-
-  // Create affine map
-  AffineMap map;
-
-  // Initialize local data
-  const uint m = test_element.spacedim();
-  const uint n = trial_element.spacedim();
-  real* block = new real[m*n];
-  int* test_nodes = new int[m];
-  int* trial_nodes = new int[n];
-
-  // Initialize global matrix
-  const uint M = size(mesh, test_element);
-  const uint N = size(mesh, trial_element);
-  const uint nz = nzsize(mesh, trial_element);
-  A.init(M, N, nz);
-  A = 0.0;
-
-  // Start a progress session
-  dolfin_info("Assembling matrix of size %d x %d.", M, N);
-  Progress p("Assembling matrix (interior contribution)", mesh.numCells());
-
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update affine map
-    map.update(*cell);
-
-    // Update form
-    a.update(map);
-    
-    // Compute maps from local to global degrees of freedom
-    test_element.nodemap(test_nodes, *cell, mesh);
-    trial_element.nodemap(trial_nodes, *cell, mesh);
-
-
-    //tic();
-    //for (int i = 0; i < 100000; i++)
-    //{
-    
-    // Compute element matrix
-    a.eval(block, map);
-        
-    //}
-    //cout << "Time to assemble: " << toc() << endl;
-
-    // Add element matrix to global matrix
-    A.add(block, test_nodes, m, trial_nodes, n);
-
-    // Update progress
-    p++;
-  }
-  
-  // Complete assembly
-  A.apply();
-
-  // Check number of nonzeros
-  checknz(A, nz);
-
-  // Delete data
-  delete [] block;
-  delete [] test_nodes;
-  delete [] trial_nodes;
+  LinearForm* L = 0;
+  Vector* b = 0;
+  assemble_test(&a, L, A, *b, mesh);
 }
 //-----------------------------------------------------------------------------
 void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
 {
-  // Check that the mesh matches the form
-  checkdims(L, mesh);
-
-  // Get finite element
-  FiniteElement& test_element = L.test();
-
-  // Create affine map
-  AffineMap map;
-
-  // Initialize local data
-  const uint m = test_element.spacedim();
-  real* block = new real[m];
-  int* test_nodes = new int[m];
-
-  // Initialize global vector 
-  const uint M = size(mesh, test_element);
-  b.init(M);
-  b = 0.0;
-
-  // Start a progress session
-  dolfin_info("Assembling vector of size %d.", M);
-  Progress p("Assembling vector (interior contribution)", mesh.numCells());
-
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update affine map
-    map.update(*cell);
-
-    // Update form
-    L.update(map);
-
-    // Compute map from local to global degrees of freedom
-    test_element.nodemap(test_nodes, *cell, mesh);
-    
-    // Compute element matrix
-    L.eval(block, map);
-    
-    // Add element matrix to global matrix
-    b.add(block, test_nodes, m);
-
-    // Update progress
-    p++;
-  }
-  
-  // Complete assembly
-  b.apply();
-
-  // Delete data
-  delete [] block;
-  delete [] test_nodes;
+  BilinearForm* a = 0;
+  Matrix* A = 0;
+  assemble_test(a, &L, *A, b, mesh);
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(BilinearForm& a, LinearForm& L,
-		   Matrix& A, Vector& b, Mesh& mesh)
+void FEM::assemble(BilinearForm& a, LinearForm& L, Matrix& A, Vector& b, Mesh& mesh)
 {
-  // Check that the mesh matches the forms
-  checkdims(a, mesh);
-  checkdims(L, mesh);
- 
-  // Get finite elements
-  FiniteElement& test_element = a.test();
-  FiniteElement& trial_element = a.trial();
-
-  // Create affine map
-  AffineMap map;
-
-  // Initialize element matrix/vector data block
-  const uint m = test_element.spacedim();
-  const uint n = trial_element.spacedim();
-  real* block_A = new real[m*n];
-  real* block_b = new real[m];
-  int* test_nodes = new int[m];
-  int* trial_nodes = new int[n];
-
-  // Initialize global matrix
-  const uint M = size(mesh, test_element);
-  const uint N = size(mesh, trial_element);
-  const uint nz = nzsize(mesh, trial_element);
-  A.init(M, N, nz);
-  b.init(M);
-  A = 0.0;
-  b = 0.0;
- 
-  // Start a progress session
-  dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-  Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
- 
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update affine map
-    map.update(*cell);
-
-    // Update forms
-    a.update(map);
-    L.update(map);
-
-    // Compute maps from local to global degrees of freedom
-    test_element.nodemap(test_nodes, *cell, mesh);
-    trial_element.nodemap(trial_nodes, *cell, mesh);
-   
-    // Compute element matrix and vector 
-    a.eval(block_A, map);
-    L.eval(block_b, map);
-    
-    // Add element matrix to global matrix
-    A.add(block_A, test_nodes, m, trial_nodes, n);
-    
-    // Add element vector to global vector
-    b.add(block_b, test_nodes, m);
-
-    // Update progress
-    p++;
-  }
-  
-  // Complete assembly
-  A.apply();
-  b.apply();
-
-  // Check the number of nonzeros
-  checknz(A, nz);
-
-  // Delete data
-  delete [] block_A;
-  delete [] block_b;
-  delete [] test_nodes;
-  delete [] trial_nodes;
+  assemble_test(&a, &L, A, b, mesh);
 }
 //-----------------------------------------------------------------------------
-void FEM::assemble(BilinearForm& a, LinearForm& L,
-		   Matrix& A, Vector& b, Mesh& mesh,
-		   BoundaryCondition& bc)
+void FEM::assemble(BilinearForm& a, LinearForm& L, Matrix& A, Vector& b, 
+       Mesh& mesh, BoundaryCondition& bc)
 {
-  assemble(a, L, A, b, mesh);
+  assemble_test(&a, &L, A, b, mesh);
   applyBC(A, b, mesh, a.trial(), bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh,
-		  FiniteElement& element, BoundaryCondition& bc)
+void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh, FiniteElement& element, 
+       BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions.");
 
-  // Choose type of mesh
-  switch ( mesh.type() )
-  {
-  case Mesh::triangles:
-    applyBC_2D(A, b, mesh, element, bc);
-    break;
-  case Mesh::tetrahedra:
-    applyBC_3D(A, b, mesh, element, bc);
-    break;
-  default:
-    dolfin_error("Unknown mesh type.");
-  }
+  // Null pointer to a dummy vector
+  Vector* x = 0; 
+
+  applyBC(&A, &b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element, 
-		  BoundaryCondition& bc)
+void FEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element,  BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
 
-  // Choose type of mesh
-  switch ( mesh.type() )
-  {
-  case Mesh::triangles:
-    applyBC_2D(A, mesh, element, bc);
-    break;
-  case Mesh::tetrahedra:
-    applyBC_3D(A, mesh, element, bc);
-    break;
-  default:
-    dolfin_error("Unknown mesh type.");
-  }
+  // Null pointer to dummy vectors
+  Vector* b = 0; 
+  Vector* x = 0; 
+
+  applyBC(&A, b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC(Vector& b, Mesh& mesh, FiniteElement& element, 
-      BoundaryCondition& bc)
+void FEM::applyBC(Vector& b, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to vector.");
+  
+  // Null pointer to a matrix and vector
+  Matrix* A = 0; 
+  Vector* x = 0; 
 
-  // Choose type of mesh
-  switch ( mesh.type() )
-  {
-  case Mesh::triangles:
-    applyBC_2D(b, mesh, element, bc);
-    break;
-  case Mesh::tetrahedra:
-    applyBC_3D(b, mesh, element, bc);
-    break;
-  default:
-    dolfin_error("Unknown mesh type.");
-  }
+  applyBC(A, &b, x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
@@ -299,18 +82,18 @@ void FEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
 {
   dolfin_info("Assembling boundary condtions into residual vector.");
 
-  // Choose type of mesh
-  switch ( mesh.type() )
-  {
-  case Mesh::triangles:
-    assembleBCresidual_2D(b, x, mesh, element, bc);
-    break;
-  case Mesh::tetrahedra:
-    assembleBCresidual_3D(b, x, mesh, element, bc);
-    break;
-  default:
-    dolfin_error("Unknown mesh type.");
-  }
+  // Null pointer to a matrix
+  Matrix* A = 0; 
+
+  applyBC(A, &b, &x, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleBCresidual(Matrix& A, Vector& b, const Vector& x, 
+      Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Assembling boundary condtions into residual vector.");
+
+  applyBC(&A, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
@@ -393,621 +176,146 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   delete [] points;
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Matrix& A, Vector& b, Mesh& mesh,
-		     FiniteElement& element, BoundaryCondition& bc)
+void FEM::assemble_test(BilinearForm* a, LinearForm* L, Matrix& A, Vector& b, 
+      Mesh& mesh)
 {
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
+  // Check that the mesh matches the forms
+  if( a )
+    checkdims(*a, mesh);
+  if( L )
+    checkdims(*L, mesh);
+ 
+  // Get finite elements
+  FiniteElement* test_element  = 0;
+  FiniteElement* trial_element = 0;
+  if( a )
+  {
+    test_element  = &(a->test());
+    trial_element = &(a->trial());
+  }
+  else if( L ) 
+  {
+    test_element = &(L->test());
+  }  
 
   // Create affine map
   AffineMap map;
 
-  // Allocate list of rows
-  uint m = 0;
-  int* rows = new int[b.size()];
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
+  // Initialize element matrix/vector data block
+  real* block_A = 0;
+  real* block_b = 0;
+  int* test_nodes = 0;
+  int* trial_nodes = 0;
+  uint n  = 0;
+  uint N  = 0;
+  uint nz = 0;
 
-  // Iterate over all edges on the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  const uint m = test_element->spacedim();
+  const uint M = size(mesh, *test_element);
+  test_nodes = new int[m];
+
+  if( a )
   {
-    // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->numCellNeighbors() == 1);
-    Cell& cell = edge->cell(0);
-
+    n = trial_element->spacedim();
+    N = size(mesh, *trial_element);
+    block_A = new real[m*n];
+    trial_nodes = new int[m];
+    nz = nzsize(mesh, *trial_element);
+    A.init(M, N, nz);
+    A = 0.0;
+  }
+  if( L )
+  {
+    block_b = new real[m];  
+    b.init(M);
+    b = 0.0;
+  }
+  // Start a progress session
+  if( a && L)
+    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+  if( a && !L)
+    dolfin_info("Assembling matrix of size %d x %d.", M, N);
+  if( !a && L)
+    dolfin_info("Assembling vector of size %d.", M);
+  Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
+ 
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
     // Update affine map
-    map.update(cell);
+    map.update(*cell);
 
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
+    // Compute map from local to global degrees of freedom (test functions)
+    test_element->nodemap(test_nodes, *cell, mesh);
 
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
+    if( a )
     {
-      // Skip points that are not contained in edge
-      const Point& point = points[i];
-      if ( !(edge->contains(point)) )
-        continue;
+      // Update forms
+      a->update(map);
 
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
+      // Compute maps from local to global degrees of freedom (trial functions)
+      trial_element->nodemap(trial_nodes, *cell, mesh);
+      // Compute element matrix 
+      a->eval(block_A, map);
+
+      // Add element matrix to global matrix
+      A.add(block_A, test_nodes, m, trial_nodes, n);
+    }
+    if( L )
+    {
+      // Update forms
+      L->update(map);
     
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-        if ( !row_set[node] )
-        {
-          rows[m++] = node;
-          b(node) = bv.value;
-          row_set[node] = true;
-        }
-      }
+      // Compute element vector 
+      L->eval(block_b, map);
+
+      // Add element vector to global vector
+      b.add(block_b, test_nodes, m);
     }
+
+    // Update progress
+    p++;
+  }
+  
+  // Complete assembly
+  if( L )
+    b.apply();
+  if ( a )
+  {
+    A.apply();
+    // Check the number of nonzeros
+    checknz(A, nz);
   }
 
-  dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
-
-  // Set rows of matrix to the identity matrix
-  A.ident(rows, m);
-
   // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] rows;
-  delete [] row_set;
+  delete [] block_A;
+  delete [] block_b;
+  delete [] trial_nodes;
+  delete [] test_nodes;
+
 }
 //-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Matrix& A, Mesh& mesh, FiniteElement& element, 
-		     BoundaryCondition& bc)
+void FEM::applyBC(Matrix* A, Vector* b, const Vector* x, Mesh& mesh, 
+          FiniteElement& element, BoundaryCondition& bc)
 {
   // Create boundary
   Boundary boundary(mesh);
 
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  int* rows = new int[A.size(0)];
-  bool* row_set = new bool[A.size(0)];
-  for (unsigned int i = 0; i < A.size(0); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all edges on the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  // Choose type of mesh
+  if( mesh.type() == Mesh::triangles)
   {
-    // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->numCellNeighbors() == 1);
-    Cell& cell = edge->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in edge
-      const Point& point = points[i];
-      if ( !(edge->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          rows[m++] = node;
-          row_set[node] = true;
-        }
-      }
-    }
+    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
+    applyBC(A, b, x, mesh, element, bc, boundary_entity);
   }
-
-  dolfin_info("Boundary condition on matrix applied to %d degrees of freedom on the boundary.", m);
-
-  // Set rows of matrix to the identity matrix
-  A.ident(rows, m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] rows;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC_2D(Vector& b, Mesh& mesh, FiniteElement& element, 
-        BoundaryCondition& bc)
-{
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all edges on the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
+  else if(mesh.type() == Mesh::tetrahedra)
   {
-    // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->numCellNeighbors() == 1);
-    Cell& cell = edge->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in edge
-      const Point& point = points[i];
-      if ( !(edge->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-    
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          m++;
-          b(node) = bv.value;
-          row_set[node] = true;
-        }
-      }
-    }
+    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
+    applyBC(A, b, x, mesh, element, bc, boundary_entity);
   }
-
-  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC_3D(Matrix& A, Vector& b, Mesh& mesh,
-		     FiniteElement& element, BoundaryCondition& bc)
-{
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  int* rows = new int[b.size()];
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all faces on the boundary
-  for (FaceIterator face(boundary); !face.end(); ++face)
+  else
   {
-    // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->numCellNeighbors() == 1);
-    Cell& cell = face->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in face
-      const Point& point = points[i];
-      if ( !(face->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          rows[m++] = node;
-          b(node) = bv.value;
-          row_set[node] = true;
-        }
-      }
-    }
+    dolfin_error("Unknown mesh type.");  
   }
-
-  dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
-
-  // Set rows of matrix to the identity matrix
-  A.ident(rows, m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] rows;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC_3D(Matrix& A, Mesh& mesh, FiniteElement& element, 
-		     BoundaryCondition& bc)
-{
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  int* rows = new int[A.size(0)];
-  bool* row_set = new bool[A.size(0)];
-  for (unsigned int i = 0; i < A.size(0); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all faces on the boundary
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->numCellNeighbors() == 1);
-    Cell& cell = face->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in face
-      const Point& point = points[i];
-      if ( !(face->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          rows[m++] = node;
-          row_set[node] = true;
-        }
-      }
-    }
-  }
-
-  dolfin_info("Boundary condition on matrix applied to %d degrees of freedom on the boundary.", m);
-
-  // Set rows of matrix to the identity matrix
-  A.ident(rows, m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] rows;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC_3D(Vector& b, Mesh& mesh, FiniteElement& element, 
-          BoundaryCondition& bc)
-{  
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all faces on the boundary
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->numCellNeighbors() == 1);
-    Cell& cell = face->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in face
-      const Point& point = points[i];
-      if ( !(face->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          m++;
-          b(node) = bv.value;
-          row_set[node] = true;
-        }
-      }
-    }
-  }
-
-  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleBCresidual_2D(Vector& b, const Vector& x, Mesh& mesh, FiniteElement& element, 
-        BoundaryCondition& bc)
-{
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all edges on the boundary
-  for (EdgeIterator edge(boundary); !edge.end(); ++edge)
-  {
-    // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(edge->numCellNeighbors() == 1);
-    Cell& cell = edge->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in edge
-      const Point& point = points[i];
-      if ( !(edge->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          m++;
-          b(node) = bv.value - x(node);
-          row_set[node] = true;
-        }
-      }
-    }
-  }
-
-  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] row_set;
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleBCresidual_3D(Vector& b, const Vector& x, Mesh& mesh,
-		     FiniteElement& element, BoundaryCondition& bc)
-{  
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Create boundary value
-  BoundaryValue bv;
-
-  // Create affine map
-  AffineMap map;
-
-  // Allocate list of rows
-  uint m = 0;
-  bool* row_set = new bool[b.size()];
-  for (unsigned int i = 0; i < b.size(); i++)
-    row_set[i] = false;
-  
-  // Allocate local data
-  uint n = element.spacedim();
-  int* nodes = new int[n];
-  uint* components = new uint[n];
-  Point* points = new Point[n];
-
-  // Iterate over all faces on the boundary
-  for (FaceIterator face(boundary); !face.end(); ++face)
-  {
-    // Get cell containing the face (pick first, should only be one)
-    dolfin_assert(face->numCellNeighbors() == 1);
-    Cell& cell = face->cell(0);
-
-    // Update affine map
-    map.update(cell);
-
-    // Compute map from local to global degrees of freedom
-    element.nodemap(nodes, cell, mesh);
-
-    // Compute map from local to global coordinates
-    element.pointmap(points, components, map);
-
-    // Set boundary conditions for nodes on the boundary
-    for (uint i = 0; i < n; i++)
-    {
-      // Skip points that are not contained in face
-      const Point& point = points[i];
-      if ( !(face->contains(point)) )
-        continue;
-
-      // Get boundary condition
-      bc.eval(bv, point, components[i]);
-
-      // Set boundary condition if Dirichlet
-      if ( bv.fixed )
-      {
-        int node = nodes[i];
-
-        if ( !row_set[node] )
-        {
-          m++;
-          b(node) = bv.value - x(node);
-          row_set[node] = true;
-        }
-      }
-    }
-  }
-
-  dolfin_info("Boundary condition on vector applied to %d degrees of freedom on the boundary.", m);
-
-  // Delete data
-  delete [] nodes;
-  delete [] components;
-  delete [] points;
-  delete [] row_set;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)

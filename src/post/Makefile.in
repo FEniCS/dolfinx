@@ -256,7 +256,6 @@ check-am: all-am
 check: check-am
 all-am: Makefile
 installdirs:
-install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -335,6 +334,9 @@ uninstall-am: uninstall-info-am
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
+
+install:
+	sh post.sh
 
 all:
 	sh post.sh
