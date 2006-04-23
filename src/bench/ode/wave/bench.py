@@ -11,15 +11,21 @@ from time import time
 # Log file
 logfile = "bench.log"
 
-# Run benchmark
+# Run benchmark for cG(1)
 tic = time()
-system("./dolfin-ode-wave")
-toc = time() - tic
+system("./dolfin-ode-wave cg")
+tcg = time() - tic
+
+# Run benchmark for mcG(1)
+tic = time()
+system("./dolfin-ode-wave mcg")
+tmcg = time() - tic
 
 # Save timing to log file
 system("dolfin-config --version >> " + logfile)
 system("date >> " + logfile)
 file = open(logfile, "a")
-file.write("CPU time: %g\n" % toc)
+file.write("CPU time cG(1):  %g s\n" % tcg)
+file.write("CPU time mcG(1): %g s\n" % tmcg)
 file.write("----------------------------------------\n")
 file.close()

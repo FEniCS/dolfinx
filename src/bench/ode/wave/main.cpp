@@ -89,7 +89,7 @@ public:
   }
 
   // Global time step
-  real timestep(real t, real k0)
+  real timestep(real t, real k0) const
   {
     return 0.1*hmin;
   }
@@ -101,7 +101,7 @@ public:
   }
 
   // Right-hand side, mono-adaptive version
-  void f(const real u[], real t, real y[]) const
+  void f(const real u[], real t, real y[])
   {
     // First half of system
     for (unsigned int i = 0; i < offset; i++)
@@ -190,10 +190,20 @@ private:
 
 };
 
-int main()
+int main(int argc, char* argv[])
 {
+  // Parse command line arguments
+  if ( argc != 2 )
+  {
+    dolfin_info("Usage: dolfin-ode-reaction method");
+    dolfin_info("");
+    dolfin_info("method - 'cg' or 'mcg'");
+    return 1;
+  }
+  const char* method = argv[1];
+
   // Parameters
-  set("method", "mcg");
+  set("method", method);
   set("fixed time step", true);
   set("discrete tolerance", 0.01);
   set("partitioning threshold", 0.25);

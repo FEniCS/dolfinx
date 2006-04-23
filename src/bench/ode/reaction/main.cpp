@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   // Parse command line arguments
   if ( argc != 7 )
   {
-    dolfin_info("Usage: dolfin-reaction method solver tol kmax N L params");
+    dolfin_info("Usage: dolfin-ode-reaction method solver tol kmax N L params");
     dolfin_info("");
     dolfin_info("method - 'cg' or 'mcg'");
     dolfin_info("solver - 'fixed-point' or 'newton'");
