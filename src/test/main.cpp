@@ -284,7 +284,7 @@ void testDenseMatrix()
 {
   dolfin_info("--- Testing dense matrices ---");
   
-  const int kk   = 1000000;
+  const int kk   = 10000000;
   const int size = 6;
 
   real time;
@@ -351,6 +351,20 @@ void testDenseMatrix()
         temp = D(i,j);
   time = toc();
   cout << "Template NewMatrix time to retrieve values = " << time << endl;
+
+
+  // Assemble stiffness matrix into a dense and a sparse matrix
+  UnitSquare mesh(1, 1);
+  Poisson2D::BilinearForm a;
+  
+  DenseMatrix K;
+  FEM::assemble(a, K, mesh); 
+  K.disp();
+  
+  Matrix M;
+  FEM::assemble(a, M, mesh); 
+  M.disp();
+  
 
 }
 

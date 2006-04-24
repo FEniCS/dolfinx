@@ -50,6 +50,14 @@ void DenseMatrix::init(uint N, uint M, uint nz)
   init(N, M);
 }
 //-----------------------------------------------------------------------------
+DenseMatrix& DenseMatrix::operator= (real zero) 
+{ 
+  if ( zero != 0.0 )
+    dolfin_error("Argument must be zero.");
+  this->clear();
+  return *this;
+}
+//-----------------------------------------------------------------------------
 dolfin::uint DenseMatrix::size(uint dim) const
 {
   dolfin_assert( dim < 2 );
@@ -60,7 +68,7 @@ void DenseMatrix::add(const real block[], const int rows[], int m, const int col
 {
   for(int i = 0; i < m; ++i)    // loop over rows
     for(int j = 0; j < n; ++j)  // loop over columns
-      (*this)( rows[i] , cols[j] ) += *(block + i*n + j);
+      (*this)( rows[i] , cols[j] ) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::invert()
@@ -89,7 +97,7 @@ void DenseMatrix::invert()
 //-----------------------------------------------------------------------------
 void DenseMatrix::disp(uint precision) const
 {
-  std::cout.precision(precision);
+  std::cout.precision(precision+1);
   
   std::cout << *this << std::endl;
 }

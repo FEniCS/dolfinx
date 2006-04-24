@@ -9,6 +9,7 @@
 
 
 #include <dolfin/Variable.h>
+#include <dolfin/GenericMatrix.h>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
@@ -24,7 +25,8 @@ namespace dolfin
   /// information and a listing of member functions can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class DenseMatrix : public boost::numeric::ublas::matrix<real>, public Variable
+//  class DenseMatrix : public boost::numeric::ublas::matrix<real>, public Variable
+  class DenseMatrix : public GenericMatrix<DenseMatrix>, public boost::numeric::ublas::matrix<real>, public Variable
   {
   public:
  
@@ -44,11 +46,15 @@ namespace dolfin
     /// nzmax is a dummy argument ans is passed for compatibility with sparse matrces
     void init(uint M, uint N, uint nzmax);
 
-
-    // Important that this function is inlined for efficiency
-    /// Return address of matrix component
+    /// Return reference to matrix component
     real& operator() (uint i, uint j) 
       { return boost::numeric::ublas::matrix<real>::operator() (i, j); }; 
+
+    /// Set all entries to zero
+    DenseMatrix& operator= (real zero);
+
+    void clear()
+      { this->boost::numeric::ublas::matrix<real>::clear(); }
 
 //    boost::numeric::ublas::matrix<real>& operator= (DenseMatrix& A)
 //    { 
@@ -66,6 +72,9 @@ namespace dolfin
 
     /// Dummy function for compatibility with sparse matrix
     inline void apply(){};
+
+    uint nzmax() const
+      { return 0; }
 
     /// Display matrix
     void disp(uint precision = 2) const;

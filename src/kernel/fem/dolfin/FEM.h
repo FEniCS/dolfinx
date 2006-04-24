@@ -18,11 +18,12 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryIterator.h>
 #include <dolfin/FiniteElement.h>
+#include <dolfin/GenericMatrix.h>
+#include <dolfin/BilinearForm.h>
+#include <dolfin/LinearForm.h>
 
 namespace dolfin
 {
-  class BilinearForm;
-  class LinearForm;
 
   /// Automated assembly of a linear system from a given partial differential
   /// equation, specified as a variational problem: Find u in V such that
@@ -34,6 +35,17 @@ namespace dolfin
   class FEM
   {
   public:
+
+    /// Test assemble function for template-based matrices
+
+    template<class T>
+    static void assemble(BilinearForm& a, GenericMatrix<T>& A, Mesh& mesh)
+      { 
+          LinearForm* L = 0;
+          Vector* b = 0;
+          assemble_test(&a, L, A, *b, mesh);
+       }
+  
 
     /// Assemble bilinear form
     static void assemble(BilinearForm& a, Matrix& A, Mesh& mesh);
@@ -109,6 +121,14 @@ namespace dolfin
 
     /// Check number of nonzeros in each row
     static void checknz(const Matrix& A, uint nz);
+
+    template<class T>
+    static void assemble_test(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, Vector& b, 
+      Mesh& mesh);
+
+    /// Check number of nonzeros in each row
+    template<class T>
+    static void checknz(GenericMatrix<T>& A, uint nz);
 
   };
 
@@ -205,6 +225,138 @@ namespace dolfin
     delete [] row_set;
   }
 //-----------------------------------------------------------------------------
+template<class T>
+void FEM::assemble_test(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, Vector& b, 
+      Mesh& mesh)
+{
+  // Check that the mesh matches the forms
+  if( a )
+    checkdims(*a, mesh);
+  if( L )
+    checkdims(*L, mesh);
+ 
+  // Get finite elements
+  FiniteElement* test_element  = 0;
+  FiniteElement* trial_element = 0;
+  if( a )
+  {
+    test_element  = &(a->test());
+    trial_element = &(a->trial());
+  }
+  else if( L ) 
+  {
+    test_element = &(L->test());
+  }  
+
+  // Create affine map
+  AffineMap map;
+
+  // Initialize element matrix/vector data block
+  real* block_A = 0;
+  real* block_b = 0;
+  int* test_nodes = 0;
+  int* trial_nodes = 0;
+  uint n  = 0;
+  uint N  = 0;
+  uint nz = 0;
+
+  const uint m = test_element->spacedim();
+  const uint M = size(mesh, *test_element);
+  test_nodes = new int[m];
+
+  if( a )
+  {
+    n = trial_element->spacedim();
+    N = size(mesh, *trial_element);
+    block_A = new real[m*n];
+    trial_nodes = new int[m];
+    nz = nzsize(mesh, *trial_element);
+    A.init(M, N, nz);
+    A = 0.0;
+  }
+  if( L )
+  {
+    block_b = new real[m];  
+    b.init(M);
+    b = 0.0;
+  }
+  // Start a progress session
+  if( a && L)
+    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+  if( a && !L)
+    dolfin_info("Assembling matrix of size %d x %d.", M, N);
+  if( !a && L)
+    dolfin_info("Assembling vector of size %d.", M);
+  Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
+ 
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    // Compute map from local to global degrees of freedom (test functions)
+    test_element->nodemap(test_nodes, *cell, mesh);
+
+    if( a )
+    {
+      // Update forms
+      a->update(map);
+
+      // Compute maps from local to global degrees of freedom (trial functions)
+      trial_element->nodemap(trial_nodes, *cell, mesh);
+      // Compute element matrix 
+      a->eval(block_A, map);
+
+      // Add element matrix to global matrix
+      A.add(block_A, test_nodes, m, trial_nodes, n);
+    }
+    if( L )
+    {
+      // Update forms
+      L->update(map);
+    
+      // Compute element vector 
+      L->eval(block_b, map);
+
+      // Add element vector to global vector
+      b.add(block_b, test_nodes, m);
+    }
+
+    // Update progress
+    p++;
+  }
+  
+  // Complete assembly
+  if( L )
+    b.apply();
+  if ( a )
+  {
+    A.apply();
+    // Check the number of nonzeros
+    checknz(A, nz);
+  }
+
+  // Delete data
+  delete [] block_A;
+  delete [] block_b;
+  delete [] trial_nodes;
+  delete [] test_nodes;
+
+}
+//-----------------------------------------------------------------------------
+template <class T>
+void FEM::checknz(GenericMatrix<T>& A, uint nz)
+{
+  uint nz_actual = A.nzmax();
+  if ( nz_actual > nz )
+    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
+  else
+    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
+		nz_actual, nz);
+}
+//-----------------------------------------------------------------------------
+
 }
 
 #endif
