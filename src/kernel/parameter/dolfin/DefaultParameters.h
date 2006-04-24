@@ -26,7 +26,7 @@ add("ODE updated jacobian", false);        // only multi-adaptive Newton
 add("ODE diagonal newton damping", false); // only multi-adaptive fixed-point
 
 add("ODE order", 1);
-add("ODE number of samples", 101);
+add("ODE number of samples", 100);
 add("ODE sample density", 1);
 add("ODE maximum iterations", 100);
 add("ODE maximum local iterations", 2);

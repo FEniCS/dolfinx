@@ -132,8 +132,6 @@ public:
   
   void save(Sample& sample)
   {
-    /*
-
     cout << "Saving data at t = " << sample.t() << endl;
 
     // Create functions
@@ -174,8 +172,6 @@ public:
     vfile << v;
     kfile << k;
     rfile << r;
-
-    */
   }
 
 private:
@@ -202,19 +198,16 @@ int main(int argc, char* argv[])
   }
   const char* method = argv[1];
 
-  // Parameters
+  // Load solver parameters from file
+  File file("parameters-bench.xml");
+  file >> ParameterSystem::parameters;
+
+  // Set solution method
   set("ODE method", method);
-  set("ODE fixed time step", true);
-  set("ODE discrete tolerance", 0.01);
-  set("ODE partitioning threshold", 0.25);
-  set("ODE maximum local iterations", 2);
-  
-  // Uncomment this to save solution
-  //set("save solution", false);
-  
+
+  // Solve system of ODEs
   Mesh mesh("slit.xml.gz");
   WaveEquation ode(mesh);
-  
   ode.solve();
 
   return 0;
