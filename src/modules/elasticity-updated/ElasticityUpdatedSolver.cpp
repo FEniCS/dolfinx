@@ -314,7 +314,7 @@ void ElasticityUpdatedSolver::solve()
   cout << "lambda: " << lambda << endl;
   cout << "mu: " << mu << endl;
   
-  File         file("elasticity.m");
+  File         file("elasticity.pvd");
 
   // Synchronize f with time t
   f.sync(t);
@@ -346,23 +346,24 @@ void ElasticityUpdatedSolver::solve()
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::save(Mesh& mesh, File& solutionfile, real t)
 {
-    std::ostringstream fileid, filename;
-    fileid.fill('0');
-    fileid.width(6);
+//     std::ostringstream fileid, filename;
+//     fileid.fill('0');
+//     fileid.width(6);
     
-    fileid << counter;
+//     fileid << counter;
     
-    filename << "mesh" << fileid.str() << ".xml.gz";
+//     filename << "mesh" << fileid.str() << ".xml.gz";
     
-    cout << "writing: " << filename.str() << " at t: " << t << endl;
+//     cout << "writing: " << filename.str() << " at t: " << t << endl;
     
-    std::string foo = filename.str();
-    const char *fname = foo.c_str();
+//     std::string foo = filename.str();
+//     const char *fname = foo.c_str();
     
-    File meshfile(fname);
+//     File meshfile(fname);
     
-    meshfile << mesh;
+//     meshfile << mesh;
 
+  solutionfile << u1;
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::condsave(Mesh& mesh, File& solutionfile, real t)
