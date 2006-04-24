@@ -13,7 +13,7 @@ logfile = "bench.log"
 
 # Run benchmark
 tic = time()
-system("./dolfin-ode-reaction mcg fixed-point 1e-3 1e-3 2000 1.0 parameters-bench.xml")
+system("./dolfin-ode-reaction mcg fixed-point 1e-3 2000 1.0 parameters-bench.xml")
 toc = time() - tic
 
 # Save timing to log file
