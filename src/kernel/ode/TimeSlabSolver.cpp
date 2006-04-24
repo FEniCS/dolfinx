@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-05
-// Last changed: 2006-04-17
+// Last changed: 2006-04-20
 
 #include <cmath>
 #include <dolfin/ParameterSystem.h>
@@ -14,19 +14,19 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeSlabSolver::TimeSlabSolver(TimeSlab& timeslab)
   : ode(timeslab.ode), method(*timeslab.method), tol(0.0), maxiter(0),
-    monitor(get("monitor convergence")),
+    monitor(get("ODE monitor convergence")),
     num_timeslabs(0), num_global_iterations(0), num_local_iterations(0)
 {
   // Get tolerance
-  const real TOL = get("tolerance");
-  const real alpha = get("discrete tolerance factor");
-  tol = get("discrete tolerance");
-  if ( !get("fixed time step") )
+  const real TOL = get("ODE tolerance");
+  const real alpha = get("ODE discrete tolerance factor");
+  tol = get("ODE discrete tolerance");
+  if ( !get("ODE fixed time step") )
     tol = std::min(tol, alpha*TOL);
   cout << "Using discrete tolerance tol = " << tol << "." << endl;
 
   // Get maximum number of iterations
-  maxiter = get("maximum iterations");
+  maxiter = get("ODE maximum iterations");
 }
 //-----------------------------------------------------------------------------
 TimeSlabSolver::~TimeSlabSolver()

@@ -18,7 +18,7 @@
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryIterator.h>
 #include <dolfin/FiniteElement.h>
-#include <dolfin/GenericMatrix.h>
+//#include <dolfin/GenericMatrix.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
 
@@ -38,6 +38,7 @@ namespace dolfin
 
     /// Test assemble function for template-based matrices
 
+    /* GenericMatrix.h missing
     template<class T>
     static void assemble(BilinearForm& a, GenericMatrix<T>& A, Mesh& mesh)
       { 
@@ -45,6 +46,7 @@ namespace dolfin
           Vector* b = 0;
           assemble_test(&a, L, A, *b, mesh);
        }
+    */
   
 
     /// Assemble bilinear form
@@ -122,6 +124,7 @@ namespace dolfin
     /// Check number of nonzeros in each row
     static void checknz(const Matrix& A, uint nz);
 
+    /* GenericMatrix.h missing
     template<class T>
     static void assemble_test(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, Vector& b, 
       Mesh& mesh);
@@ -129,6 +132,9 @@ namespace dolfin
     /// Check number of nonzeros in each row
     template<class T>
     static void checknz(GenericMatrix<T>& A, uint nz);
+
+    */
+
 
   };
 
@@ -225,6 +231,8 @@ namespace dolfin
     delete [] row_set;
   }
 //-----------------------------------------------------------------------------
+
+/* GenericMatrix.h missing
 template<class T>
 void FEM::assemble_test(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, Vector& b, 
       Mesh& mesh)
@@ -356,6 +364,7 @@ void FEM::checknz(GenericMatrix<T>& A, uint nz)
 		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------
+*/
 
 }
 

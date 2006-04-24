@@ -47,7 +47,7 @@ void ODESolver::solve(ODE& ode, Function& u)
 void ODESolver::solve(ODE& ode)
 {
   // Check if we should solve the dual problem
-  bool solve_dual = get("solve dual problem");
+  bool solve_dual = get("ODE solve dual problem");
 
   dolfin_begin("Solving ODE");  
 
@@ -94,7 +94,7 @@ void ODESolver::solveDual(ODE& ode, Function& u, Function& phi)
   phi.rename("phi", "dual");
   
   // Solve dual problem
-  if ( get("use new ode solver") )
+  if ( get("ODE use new ode solver") )
     TimeStepper::solve(ode);
   else
     TimeStepper::solve(dual, phi);

@@ -134,15 +134,15 @@ int main()
 {
   dolfin_output("plain text");
 
-  set("number of samples", 500);
-  set("solve dual problem", false);
-  set("initial time step", 0.01);
-  set("fixed time step", true);
-  set("solver", "newton");
-  set("method", "cg");
-  set("order", 5);
-  set("discrete tolerance", 1e-12);
-  set("save solution", true);
+  set("ODE number of samples", 500);
+  set("ODE solve dual problem", false);
+  set("ODE initial time step", 0.01);
+  set("ODE fixed time step", true);
+  set("ODE nonlinear solver", "newton");
+  set("ODE method", "cg");
+  set("ODE order", 5);
+  set("ODE discrete tolerance", 1e-12);
+  set("ODE save solution", true);
  
   Lorenz lorenz;
   lorenz.solve();

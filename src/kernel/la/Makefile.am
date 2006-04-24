@@ -4,7 +4,6 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/DenseVector.h \
                           dolfin/EigenvalueSolver.h \
                           dolfin/KrylovSolver.h \
-                          dolfin/GenericMatrix.h \
                           dolfin/GMRES.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \

@@ -267,8 +267,8 @@ void MonoAdaptiveTimeSlab::feval(uint m)
 //-----------------------------------------------------------------------------
 TimeSlabSolver* MonoAdaptiveTimeSlab::chooseSolver()
 {
-  bool implicit = get("implicit");
-  std::string solver = get("solver");
+  bool implicit = get("ODE implicit");
+  std::string solver = get("ODE nonlinear solver");
 
   if ( solver == "fixed-point" )
   {

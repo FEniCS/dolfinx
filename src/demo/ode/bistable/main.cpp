@@ -78,11 +78,11 @@ private:
 int main()
 {
   // Parameters
-  set("solve dual problem", false);
-  set("maximum time step", 1.0);
-  set("tolerance", 0.001);
-  set("number of samples", 100);
-  set("solver", "newton");
+  set("ODE solve dual problem", false);
+  set("ODE maximum time step", 1.0);
+  set("ODE tolerance", 0.001);
+  set("ODE number of samples", 100);
+  set("ODE nonlinear solver", "newton");
   
   // Number of refinements
   unsigned int refinements = 4;

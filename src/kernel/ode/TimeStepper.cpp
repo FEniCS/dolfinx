@@ -21,18 +21,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 TimeStepper::TimeStepper(ODE& ode) :
   N(ode.size()), t(0), T(ode.endtime()),
-  ode(ode), timeslab(0), file(get("ode solution file name")),
+  ode(ode), timeslab(0), file(get("ODE solution file name")),
   p("Time-stepping"), stopped(false), _finished(false),
-  save_solution(get("save solution")),
-  solve_dual(get("solve dual problem")),
-  adaptive_samples(get("adaptive samples")),
-  no_samples(get("number of samples")),
-  sample_density(get("sample density"))
+  save_solution(get("ODE save solution")),
+  solve_dual(get("ODE solve dual problem")),
+  adaptive_samples(get("ODE adaptive samples")),
+  no_samples(get("ODE number of samples")),
+  sample_density(get("ODE sample density"))
 {
   dolfin_warning("ODE solver is EXPERIMENTAL.");
 
   // Create time slab
-  std::string method = get("method");
+  std::string method = get("ODE method");
   if ( method == "mcg" || method == "mdg" )
   {
     timeslab = new MultiAdaptiveTimeSlab(ode);
@@ -54,7 +54,7 @@ void TimeStepper::solve(ODE& ode)
   tic();  
   
   // Check if we should create a reduced model (automatic modeling)
-  if ( get("automatic modeling") )
+  if ( get("ODE automatic modeling") )
   {
     dolfin_info("Creating reduced model (automatic modeling).");
     dolfin_error("Automatic modeling temporarily broken.");

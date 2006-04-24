@@ -46,8 +46,8 @@ private:
 
 int main()
 {
-  set("tolerance", 0.01);
-  set("solver", "newton");
+  set("ODE tolerance", 0.01);
+  set("ODE nonlinear solver", "newton");
 
   Spring spring;
   spring.solve();

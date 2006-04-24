@@ -203,11 +203,11 @@ int main(int argc, char* argv[])
   const char* method = argv[1];
 
   // Parameters
-  set("method", method);
-  set("fixed time step", true);
-  set("discrete tolerance", 0.01);
-  set("partitioning threshold", 0.25);
-  set("maximum local iterations", 2);
+  set("ODE method", method);
+  set("ODE fixed time step", true);
+  set("ODE discrete tolerance", 0.01);
+  set("ODE partitioning threshold", 0.25);
+  set("ODE maximum local iterations", 2);
   
   // Uncomment this to save solution
   //set("save solution", false);

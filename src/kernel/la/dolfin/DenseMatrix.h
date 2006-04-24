@@ -9,7 +9,7 @@
 
 
 #include <dolfin/Variable.h>
-#include <dolfin/GenericMatrix.h>
+//#include <dolfin/GenericMatrix.h>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
@@ -25,8 +25,10 @@ namespace dolfin
   /// information and a listing of member functions can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-//  class DenseMatrix : public boost::numeric::ublas::matrix<real>, public Variable
-  class DenseMatrix : public GenericMatrix<DenseMatrix>, public boost::numeric::ublas::matrix<real>, public Variable
+
+//  class DenseMatrix : public GenericMatrix<DenseMatrix>, public boost::numeric::ublas::matrix<real>, public Variable
+  // Missing GenericMatrix.h
+  class DenseMatrix : public boost::numeric::ublas::matrix<real>, public Variable
   {
   public:
  

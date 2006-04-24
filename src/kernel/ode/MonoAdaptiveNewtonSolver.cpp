@@ -22,7 +22,7 @@ using namespace dolfin;
 MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
-    piecewise(get("matrix piecewise constant")),
+    piecewise(get("ODE matrix piecewise constant")),
     ts(timeslab), A(timeslab, implicit, piecewise), solver(0), Mu0(0)
 {
   // Initialize product M*u0 for implicit system
@@ -227,7 +227,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 //-----------------------------------------------------------------------------
 LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
 {
-  std::string choice = get("linear solver");
+  std::string choice = get("ODE linear solver");
 
   if ( choice == "iterative" )
   {

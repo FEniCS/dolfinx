@@ -101,14 +101,14 @@ int main(int argc, char* argv[])
   int n = atoi(argv[1]);
 
   // Parameters
-  set("method", "dg");
-  set("order", 1);
-  set("maximum time step", 5.0);
-  set("tolerance", 0.01);
-  set("solver", "newton");
-  set("linear solver", "direct");
-  set("adaptive samples", true);
-  set("solve dual problem", false);
+  set("ODE method", "dg");
+  set("ODE order", 1);
+  set("ODE maximum time step", 5.0);
+  set("ODE tolerance", 0.01);
+  set("ODE nonlinear solver", "newton");
+  set("ODE linear solver", "direct");
+  set("ODE adaptive samples", true);
+  set("ODE solve dual problem", false);
 
   // Choose test problem
   switch (n) {

@@ -47,7 +47,7 @@ Homotopy::Homotopy(uint n)
     dolfin_info("Using random initial system for homotopy.");
 
   // Get maximum number of iterations
-  maxiter = get("maximum iterations");
+  maxiter = get("ODE maximum iterations");
 
   // Get maximum number of paths
   maxpaths = get("homotopy maximum size");

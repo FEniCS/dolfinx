@@ -118,9 +118,9 @@ int main(int argc, char* argv[])
   file >> ParameterSystem::parameters;
 
   // Set remaining solver parameters from command-line arguments
-  set("method", method);
-  set("solver", solver);
-  set("tolerance", tol);
+  set("ODE method", method);
+  set("ODE nonlinear solver", solver);
+  set("ODE tolerance", tol);
 
   // Set fixed parameters for test problem
   const real T = 1.0;

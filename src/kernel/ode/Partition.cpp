@@ -19,7 +19,7 @@ using namespace dolfin;
 Partition::Partition(uint N) : indices(N)
 {
   // Get parameter for threshold
-  threshold = get("partitioning threshold");
+  threshold = get("ODE partitioning threshold");
 
   // Reset all indices
   for (uint i = 0; i < N; i++)

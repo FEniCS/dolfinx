@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Dependencies::Dependencies(uint N) :
-  N(N), increment(get("sparsity check increment")), _sparse(false)
+  N(N), increment(get("ODE sparsity check increment")), _sparse(false)
 {
   // Use dense dependency pattern by default
   ddep.reserve(N);

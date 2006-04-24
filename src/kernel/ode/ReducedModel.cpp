@@ -16,16 +16,16 @@ ReducedModel::ReducedModel(ODE& ode)
 {
   dolfin_warning("Automatic modeling is EXPERIMENTAL.");
 
-  tau     = get("average length");
-  samples = get("average samples");
-  tol     = get("average tolerance");
+  tau     = get("ODE average length");
+  samples = get("ODE average samples");
+  tol     = get("ODE average tolerance");
 
   // Copy the sparsity
   //sparsity = ode.sparsity;
 
   // Adjust the maximum allowed time step to the initial time step
-  real kmax = get("initial time step");
-  set("maximum time step", kmax);
+  real kmax = get("ODE initial time step");
+  set("ODE maximum time step", kmax);
 }
 //-----------------------------------------------------------------------------
 ReducedModel::~ReducedModel()

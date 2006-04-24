@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-03-27
+// Last changed: 2006-04-24
 
 //--- General parameters ---
 
@@ -13,44 +13,44 @@ add("save each mesh", false);
 
 //--- Parameters for ODE solvers ---
 
-add("fixed time step", false);
-add("solve dual problem", false);
-add("save solution", true);
-add("save final solution", false);
-add("adaptive samples", false);
-add("automatic modeling", false);
-add("implicit", false);
-add("matrix piecewise constant", true);
-add("monitor convergence", false);
-add("updated jacobian", false);        // only multi-adaptive Newton
-add("diagonal newton damping", false); // only multi-adaptive fixed-point
+add("ODE fixed time step", false);
+add("ODE solve dual problem", false);
+add("ODE save solution", true);
+add("ODE save final solution", false);
+add("ODE adaptive samples", false);
+add("ODE automatic modeling", false);
+add("ODE implicit", false);
+add("ODE matrix piecewise constant", true);
+add("ODE monitor convergence", false);
+add("ODE updated jacobian", false);        // only multi-adaptive Newton
+add("ODE diagonal newton damping", false); // only multi-adaptive fixed-point
 
-add("order", 1);
-add("number of samples", 101);
-add("sample density", 1);
-add("maximum iterations", 100);
-add("maximum local iterations", 2);
-add("average samples", 1000);
+add("ODE order", 1);
+add("ODE number of samples", 101);
+add("ODE sample density", 1);
+add("ODE maximum iterations", 100);
+add("ODE maximum local iterations", 2);
+add("ODE average samples", 1000);
 
-add("tolerance", 0.1);
-add("start time", 0.0);
-add("end time", 10.0);      
-add("discrete tolerance", 0.001);
-add("discrete tolerance factor", 0.001);
-add("initial time step", 0.01);
-add("maximum time step", 0.1);
-add("partitioning threshold", 0.1);
-add("interval threshold", 0.9);
-add("safety factor", 0.9);
-add("time step conservation", 5.0);
-add("sparsity check increment", 0.01);
-add("average length", 0.1);
-add("average tolerance", 0.1);
+add("ODE tolerance", 0.1);
+add("ODE start time", 0.0);
+add("ODE end time", 10.0);      
+add("ODE discrete tolerance", 0.001);
+add("ODE discrete tolerance factor", 0.001);
+add("ODE initial time step", 0.01);
+add("ODE maximum time step", 0.1);
+add("ODE partitioning threshold", 0.1);
+add("ODE interval threshold", 0.9);
+add("ODE safety factor", 0.9);
+add("ODE time step conservation", 5.0);
+add("ODE sparsity check increment", 0.01);
+add("ODE average length", 0.1);
+add("ODE average tolerance", 0.1);
 
-add("method", "cg");
-add("solver", "default");
-add("linear solver", "default");
-add("ode solution file name", "primal.m");
+add("ODE method", "cg");
+add("ODE nonlinear solver", "default");
+add("ODE linear solver", "default");
+add("ODE solution file name", "primal.m");
 
 //--- Parameters for homotopy solver ---
 

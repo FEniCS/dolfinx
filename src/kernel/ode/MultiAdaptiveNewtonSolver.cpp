@@ -31,7 +31,7 @@ MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
     mpc(timeslab, method), solver(mpc),
     f(0), num_elements(0), num_elements_mono(0),
-    updated_jacobian(get("updated jacobian"))
+    updated_jacobian(get("ODE updated jacobian"))
 {
   // Initialize local array
   f = new real[method.qsize()];

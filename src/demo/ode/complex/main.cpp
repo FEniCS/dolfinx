@@ -40,9 +40,9 @@ public:
 
 int main()
 {
-  set("solve dual problem", false);
-  set("method", "cg");
-  set("order", 1);
+  set("ODE solve dual problem", false);
+  set("ODE method", "cg");
+  set("ODE order", 1);
 
   Exponential exponential;
   exponential.solve();

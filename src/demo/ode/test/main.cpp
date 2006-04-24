@@ -1,4 +1,4 @@
-// Copyright (C) 2002 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
