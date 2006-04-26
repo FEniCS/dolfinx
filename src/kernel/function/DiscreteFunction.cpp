@@ -8,9 +8,9 @@
 #include <dolfin/Point.h>
 #include <dolfin/Vertex.h>
 #include <dolfin/Cell.h>
+#include <dolfin/FEM.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/Vector.h>
-#include <dolfin/FEM.h>
 #include <dolfin/AffineMap.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/DiscreteFunction.h>

@@ -5,96 +5,28 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-04-12
+// Last changed: 2006-04-25
 
-#include <dolfin/dolfin_log.h>
-#include <dolfin/timing.h>
-#include <dolfin/BilinearForm.h>
-#include <dolfin/LinearForm.h>
-#include <dolfin/Boundary.h>
 #include <dolfin/FEM.h>
-
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void FEM::assemble(BilinearForm& a, Matrix& A, Mesh& mesh)
-{
-  LinearForm* L = 0;
-  Vector* b = 0;
-  assemble_test(&a, L, A, *b, mesh);
-}
+  void FEM::lump(const Matrix& M, Vector& m)
+  {
+    m.init(M.size(0));
+    Vector one(m);
+    one = 1.0;
+    M.mult(one, m);
+  }
 //-----------------------------------------------------------------------------
-void FEM::assemble(LinearForm& L, Vector& b, Mesh& mesh)
-{
-  BilinearForm* a = 0;
-  Matrix* A = 0;
-  assemble_test(a, &L, *A, b, mesh);
-}
-//-----------------------------------------------------------------------------
-void FEM::assemble(BilinearForm& a, LinearForm& L, Matrix& A, Vector& b, Mesh& mesh)
-{
-  assemble_test(&a, &L, A, b, mesh);
-}
-//-----------------------------------------------------------------------------
-void FEM::assemble(BilinearForm& a, LinearForm& L, Matrix& A, Vector& b, 
-       Mesh& mesh, BoundaryCondition& bc)
-{
-  assemble_test(&a, &L, A, b, mesh);
-  applyBC(A, b, mesh, a.trial(), bc);
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix& A, Vector& b, Mesh& mesh, FiniteElement& element, 
-       BoundaryCondition& bc)
-{
-  dolfin_info("Applying Dirichlet boundary conditions.");
-
-  // Null pointer to a dummy vector
-  Vector* x = 0; 
-
-  applyBC(&A, &b, x, mesh, element, bc);
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix& A, Mesh& mesh, FiniteElement& element,  BoundaryCondition& bc)
-{
-  dolfin_info("Applying Dirichlet boundary conditions to matrix.");
-
-  // Null pointer to dummy vectors
-  Vector* b = 0; 
-  Vector* x = 0; 
-
-  applyBC(&A, b, x, mesh, element, bc);
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC(Vector& b, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
-{
-  dolfin_info("Applying Dirichlet boundary conditions to vector.");
-  
-  // Null pointer to a matrix and vector
-  Matrix* A = 0; 
-  Vector* x = 0; 
-
-  applyBC(A, &b, x, mesh, element, bc);
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleBCresidual(Vector& b, const Vector& x, Mesh& mesh,
-		  FiniteElement& element, BoundaryCondition& bc)
-{
-  dolfin_info("Assembling boundary condtions into residual vector.");
-
-  // Null pointer to a matrix
-  Matrix* A = 0; 
-
-  applyBC(A, &b, &x, mesh, element, bc);
-}
-//-----------------------------------------------------------------------------
-void FEM::assembleBCresidual(Matrix& A, Vector& b, const Vector& x, 
-      Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
-{
-  dolfin_info("Assembling boundary condtions into residual vector.");
-
-  applyBC(&A, &b, &x, mesh, element, bc);
-}
+  void FEM::lump(const DenseMatrix& M, DenseVector& m)
+  {
+    m.init(M.size(0));
+    DenseVector one(m);
+    one = 1.0;
+    M.mult(one, m);
+  }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 {
@@ -118,16 +50,6 @@ dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
   delete [] nodes;
 
   return static_cast<uint>(nodemax + 1);
-}
-//-----------------------------------------------------------------------------
-void FEM::lump(const Matrix& M, Vector& m)
-{
-  m.init(M.size(0));
-
-  Vector one(m);
-  one = 1.0;
-
-  M.mult(one, m);
 }
 //-----------------------------------------------------------------------------
 void FEM::disp(const Mesh& mesh, const FiniteElement& element)
@@ -174,148 +96,6 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   delete [] nodes;
   delete [] components;
   delete [] points;
-}
-//-----------------------------------------------------------------------------
-void FEM::assemble_test(BilinearForm* a, LinearForm* L, Matrix& A, Vector& b, 
-      Mesh& mesh)
-{
-  // Check that the mesh matches the forms
-  if( a )
-    checkdims(*a, mesh);
-  if( L )
-    checkdims(*L, mesh);
- 
-  // Get finite elements
-  FiniteElement* test_element  = 0;
-  FiniteElement* trial_element = 0;
-  if( a )
-  {
-    test_element  = &(a->test());
-    trial_element = &(a->trial());
-  }
-  else if( L ) 
-  {
-    test_element = &(L->test());
-  }  
-
-  // Create affine map
-  AffineMap map;
-
-  // Initialize element matrix/vector data block
-  real* block_A = 0;
-  real* block_b = 0;
-  int* test_nodes = 0;
-  int* trial_nodes = 0;
-  uint n  = 0;
-  uint N  = 0;
-  uint nz = 0;
-
-  const uint m = test_element->spacedim();
-  const uint M = size(mesh, *test_element);
-  test_nodes = new int[m];
-
-  if( a )
-  {
-    n = trial_element->spacedim();
-    N = size(mesh, *trial_element);
-    block_A = new real[m*n];
-    trial_nodes = new int[m];
-    nz = nzsize(mesh, *trial_element);
-    A.init(M, N, nz);
-    A = 0.0;
-  }
-  if( L )
-  {
-    block_b = new real[m];  
-    b.init(M);
-    b = 0.0;
-  }
-  // Start a progress session
-  if( a && L)
-    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-  if( a && !L)
-    dolfin_info("Assembling matrix of size %d x %d.", M, N);
-  if( !a && L)
-    dolfin_info("Assembling vector of size %d.", M);
-  Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
- 
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update affine map
-    map.update(*cell);
-
-    // Compute map from local to global degrees of freedom (test functions)
-    test_element->nodemap(test_nodes, *cell, mesh);
-
-    if( a )
-    {
-      // Update forms
-      a->update(map);
-
-      // Compute maps from local to global degrees of freedom (trial functions)
-      trial_element->nodemap(trial_nodes, *cell, mesh);
-      // Compute element matrix 
-      a->eval(block_A, map);
-
-      // Add element matrix to global matrix
-      A.add(block_A, test_nodes, m, trial_nodes, n);
-    }
-    if( L )
-    {
-      // Update forms
-      L->update(map);
-    
-      // Compute element vector 
-      L->eval(block_b, map);
-
-      // Add element vector to global vector
-      b.add(block_b, test_nodes, m);
-    }
-
-    // Update progress
-    p++;
-  }
-  
-  // Complete assembly
-  if( L )
-    b.apply();
-  if ( a )
-  {
-    A.apply();
-    // Check the number of nonzeros
-    checknz(A, nz);
-  }
-
-  // Delete data
-  delete [] block_A;
-  delete [] block_b;
-  delete [] trial_nodes;
-  delete [] test_nodes;
-
-}
-//-----------------------------------------------------------------------------
-void FEM::applyBC(Matrix* A, Vector* b, const Vector* x, Mesh& mesh, 
-          FiniteElement& element, BoundaryCondition& bc)
-{
-  // Create boundary
-  Boundary boundary(mesh);
-
-  // Choose type of mesh
-  if( mesh.type() == Mesh::triangles)
-  {
-    BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-    applyBC(A, b, x, mesh, element, bc, boundary_entity);
-  }
-  else if(mesh.type() == Mesh::tetrahedra)
-  {
-    BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
-    applyBC(A, b, x, mesh, element, bc, boundary_entity);
-  }
-  else
-  {
-    dolfin_error("Unknown mesh type.");  
-  }
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
@@ -365,15 +145,5 @@ void FEM::checkdims(LinearForm& L, const Mesh& mesh)
   default:
     dolfin_error("Unknown mesh type.");
   }
-}
-//-----------------------------------------------------------------------------
-void FEM::checknz(const Matrix& A, uint nz)
-{
-  uint nz_actual = A.nzmax();
-  if ( nz_actual > nz )
-    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
-  else
-    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
-		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------

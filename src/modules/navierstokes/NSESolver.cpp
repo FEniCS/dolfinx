@@ -8,11 +8,11 @@
 // Last changed: 2006-02-20
 
 #include <dolfin/timing.h>
+#include <dolfin/NSESolver.h>
 #include <dolfin/NSEMomentum3D.h>
 #include <dolfin/NSEMomentum2D.h>
 #include <dolfin/NSEContinuity3D.h>
 #include <dolfin/NSEContinuity2D.h>
-#include <dolfin/NSESolver.h>
 
 using namespace dolfin;
 

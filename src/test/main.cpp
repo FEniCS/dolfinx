@@ -284,7 +284,7 @@ void testDenseMatrix()
 {
   dolfin_info("--- Testing dense matrices ---");
   
-  const int kk   = 10000000;
+  const int kk   = 100000;
   const int size = 6;
 
   real time;
@@ -355,19 +355,46 @@ void testDenseMatrix()
 
   // Assemble stiffness matrix into a dense and a sparse matrix
   UnitSquare mesh(1, 1);
+  
+  Function f = 1.0;
   Poisson2D::BilinearForm a;
+  Poisson2D::LinearForm L(f);
   
+  class MyBC : public BoundaryCondition
+  {
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+	      value = 1.0;
+    }
+  };
+
+  MyBC bc;
+
+  // Assemble dense vectors and matrices
   DenseMatrix K;
+  DenseVector b;
   FEM::assemble(a, K, mesh); 
+  FEM::assemble(L, b, mesh); 
+  FEM::assemble(a, L, K, b, mesh); 
+//  FEM::assemble(a, L, K, b, mesh, bc); 
   K.disp();
-  
+  b.disp();  
+    
+  // Assemble sparse vectors and matrices
   Matrix M;
+  Vector g;
   FEM::assemble(a, M, mesh); 
+  FEM::assemble(L, g, mesh); 
+  FEM::assemble(a, L, M, g, mesh); 
+  FEM::assemble(a, L, M, g, mesh, bc); 
   M.disp();
+  g.disp();  
   
+  // Assemble mixture of sparse and dense vectors and matrices
+  FEM::assemble(a, L, K, g, mesh); 
+  FEM::assemble(a, L, M, b, mesh); 
 
 }
-
 
 
 int main(int argc, char* argv[])

@@ -37,15 +37,15 @@ int main()
       
       // Clamp at left end
       if ( p.x < w )
-	value = 0.0;
+	      value = 0.0;
       
       // Clamp at right end
       if ( p.x > (1.0 - w) )
       {
-	if ( i == 1 )
-	  value = y - p.y;
-	else if ( i == 2 )
-	  value = z - p.z;
+	    if ( i == 1 )
+	      value = y - p.y;
+	    else if ( i == 2 )
+	      value = z - p.z;
       }
     }
   };

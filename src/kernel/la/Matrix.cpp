@@ -18,13 +18,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Matrix::Matrix() : Variable("A", "a sparse matrix"), A(0), type(default_matrix)
+Matrix::Matrix() : GenericMatrix<Matrix>(), Variable("A", "a sparse matrix"), 
+    A(0), type(default_matrix)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(Type type) : Variable("A", "a sparse matrix"), A(0), type(type)
+Matrix::Matrix(Type type) : GenericMatrix<Matrix>(), 
+    Variable("A", "a sparse matrix"), A(0), type(type)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -33,7 +35,8 @@ Matrix::Matrix(Type type) : Variable("A", "a sparse matrix"), A(0), type(type)
   checkType();
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(Mat A) : Variable("A", "a sparse matrix"), A(A)
+Matrix::Matrix(Mat A) : GenericMatrix<Matrix>(), Variable("A", "a sparse matrix"), 
+    A(A)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -42,7 +45,8 @@ Matrix::Matrix(Mat A) : Variable("A", "a sparse matrix"), A(A)
   type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(uint M, uint N) : Variable("A", "a sparse matrix"), A(0), type(default_matrix)
+Matrix::Matrix(uint M, uint N) : GenericMatrix<Matrix>(), 
+    Variable("A", "a sparse matrix"), A(0), type(default_matrix)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -51,8 +55,8 @@ Matrix::Matrix(uint M, uint N) : Variable("A", "a sparse matrix"), A(0), type(de
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(uint M, uint N, Type type) : Variable("A", "a sparse matrix"), A(0), 
-    type(type)
+Matrix::Matrix(uint M, uint N, Type type) : GenericMatrix<Matrix>(), 
+    Variable("A", "a sparse matrix"), A(0),  type(type)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -64,28 +68,17 @@ Matrix::Matrix(uint M, uint N, Type type) : Variable("A", "a sparse matrix"), A(
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-Matrix::Matrix(const Matrix& B) : Variable("A", "a sparse matrix"), A(0)
+Matrix::Matrix(const Matrix& B) : GenericMatrix<Matrix>(), 
+  Variable("A", "a sparse matrix"), A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 
+  // Create new PETSc matrix which is a copy of B
+  MatDuplicate(B.A, MAT_COPY_VALUES, &A);  
+
   // Set PETSc matrix type (same as B)
   type = B.getMatrixType();
-
-  // Create PETSc matrix
-  init(B.size(0), B.size(1));
-  
-  uint M = B.size(0);
-  uint N = B.size(1);
-
-  // FIXME: Use PETSc function to copy
-  for(uint i = 0; i < M; i++)
-  {
-    for(uint j = 0; j < N; j++)
-    {
-      setval(i, j, B(i, j));
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 Matrix::~Matrix()

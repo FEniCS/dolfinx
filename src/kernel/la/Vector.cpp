@@ -15,13 +15,15 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Vector::Vector() : Variable("x", "a vector"), x(0), copy(false)
+Vector::Vector() : GenericVector<Vector>(), Variable("x", "a vector"), x(0), 
+      copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(uint size) : Variable("x", "a vector"), x(0), copy(false)
+Vector::Vector(uint size) : GenericVector<Vector>(), Variable("x", "a vector"), 
+      x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -30,13 +32,15 @@ Vector::Vector(uint size) : Variable("x", "a vector"), x(0), copy(false)
   init(size);
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(Vec x) : Variable("x", "a vector"), x(x), copy(true)
+Vector::Vector(Vec x) : GenericVector<Vector>(), Variable("x", "a vector"), x(x), 
+      copy(true)
 {
   // Initialize PETSc 
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector& v) : Variable("x", "a vector"), x(0), copy(false)
+Vector::Vector(const Vector& v) : GenericVector<Vector>(), 
+      Variable("x", "a vector"), x(0), copy(false)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -102,6 +106,11 @@ void Vector::mult(const Vector& x)
 void Vector::add(const real block[], const int cols[], int n)
 {
   VecSetValues(x, n, cols, block, ADD_VALUES); 
+}
+//-----------------------------------------------------------------------------
+void Vector::insert(const real block[], const int cols[], int n)
+{
+  VecSetValues(x, n, cols, block, INSERT_VALUES); 
 }
 //-----------------------------------------------------------------------------
 void Vector::get(real block[], const int cols[], int n) const

@@ -8,11 +8,13 @@
 #define __GENERIC_MATRIX_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
   /// This template provdies a uniform interface to both dense and sparse 
-  /// matrices.
+  /// matrices. It provides member functions that are required by functions 
+  /// that operate with both dense and sparse matrices. 
 
   template < class T >
   class GenericMatrix 
@@ -29,9 +31,9 @@ namespace dolfin
     T& matrix() 
       { return static_cast<T&>(*this); }
 
-    /// Return refernce to an entry
-    real& operator() (uint i, uint j)
-      { return matrix()(i,j); }
+    /// Return the "leaf" object (constant version)
+    const T& matrix() const
+      { return static_cast<const T&>(*this); }
 
     /// Initialize M x N matrix
     void init(uint M, uint N)
@@ -42,19 +44,19 @@ namespace dolfin
       { matrix().init(M, N, nzmax); }
 
     /// Return number of rows (dim = 0) or columns (dim = 1) along dimension dim
-    uint size(uint dim)
+    uint size(uint dim)  const
       { return matrix().size(dim); }
 
     /// Set all entries to zero (want to replace this with GenericMatrix::clear())
     GenericMatrix& operator= (real zero)
       { return matrix() = zero; }
 
-    /// Set all entries to zero (needs to be implemented for sparse matrices)
-    GenericMatrix& clear()
-      { return matrix().clear(); }
+    /// Set all entries to zero (meaning is different for sparse matrices)
+    void clear()
+      { matrix().clear(); }
 
     /// Return maximum number of nonzero entries
-    uint nzmax()
+    uint nzmax() const
       { return matrix().nzmax(); }
 
     /// Add block of values
@@ -64,6 +66,10 @@ namespace dolfin
     /// Apply changes to matrix (only needed for sparse matrices)
     void apply()
       { matrix().apply(); }
+
+    /// Set given rows to identity matrix
+    void ident(const int rows[], int m)
+      { matrix().ident(rows, m); }
 
   private:
 

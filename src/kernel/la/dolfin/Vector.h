@@ -1,10 +1,10 @@
 // Copyright (C) 2004-2006 Johan Hoffman, Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005,2006.
 //
 // First added:  2004
-// Last changed: 2006-02-13
+// Last changed: 2006-04-25
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
@@ -13,6 +13,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
+#include <dolfin/GenericVector.h>
 
 namespace dolfin
 {
@@ -25,7 +26,7 @@ namespace dolfin
 
   class VectorElement;
 
-  class Vector : public Variable
+  class Vector : public GenericVector<Vector>, public Variable
   {
   public:
 
@@ -81,6 +82,9 @@ namespace dolfin
 
     /// Add block of values to vector
     void add(const real block[], const int cols[], int n); 
+
+    /// Insert block of values to vector
+    void insert(const real block[], const int cols[], int n); 
 
     /// Get block of values from vector
     void get(real block[], const int cols[], int n) const;

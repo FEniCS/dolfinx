@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-04-03
-// Last changed: 2006-04-07
+// Last changed: 2006-04-24
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -15,19 +15,20 @@
 
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix() : boost::numeric::ublas::matrix<real>(), 
+DenseMatrix::DenseMatrix() : GenericMatrix<DenseMatrix>(), BaseMatrix(), 
     Variable("A", "a dense matrix")
 {
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(uint i, uint j) : 
-    boost::numeric::ublas::matrix<double>(i, j), Variable("A", "a dense matrix")
+DenseMatrix::DenseMatrix(uint i, uint j) : GenericMatrix<DenseMatrix>(),
+    BaseMatrix(i, j), Variable("A", "a dense matrix")
 {
   //Do nothing
 }
@@ -37,17 +38,17 @@ DenseMatrix::~DenseMatrix()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::init(uint N, uint M)
+void DenseMatrix::init(uint M, uint N)
 {
-  if( this->size(0) == N && this->size(1) == M )
+  if( this->size(0) == M && this->size(1) == N )
     return;
   
-  this->resize(N, M, false);
+  this->resize(M, N, false);
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::init(uint N, uint M, uint nz)
+void DenseMatrix::init(uint M, uint N, uint nz)
 {
-  init(N, M);
+  init(M, N);
 }
 //-----------------------------------------------------------------------------
 DenseMatrix& DenseMatrix::operator= (real zero) 
@@ -76,23 +77,37 @@ void DenseMatrix::invert()
   // This function does not check for singularity of the matrix
 
   uint m = this->size1();
-  uint n = this->size2();
-  dolfin_assert(m == n);
+  dolfin_assert(m == this->size2());
   
   // Create permutation matrix
-  boost::numeric::ublas::permutation_matrix<std::size_t> pmatrix(m); 
+  ublas::permutation_matrix<std::size_t> pmatrix(m); 
 
   // Set what will be the inverse inverse to identity matrix
   DenseMatrix inverse(m,m);
-  inverse.assign(boost::numeric::ublas::identity_matrix<real>(m));
+  inverse.assign(ublas::identity_matrix<real>(m));
 
   // Factorise 
-  boost::numeric::ublas::lu_factorize(*this, pmatrix);
+  ublas::lu_factorize(*this, pmatrix);
   
   // Back substitute 
-  boost::numeric::ublas::lu_substitute(*this, pmatrix, inverse);
+  ublas::lu_substitute(*this, pmatrix, inverse);
 
   *this = inverse;  
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::ident(const int rows[], int m)
+{
+  uint n = this->size(1);
+  for(int i=0; i < m; ++i)
+    ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::mult(const DenseVector& x, DenseVector& Ax) const
+{
+  ublas::axpy_prod(*this, x, Ax, false);
+
+//  axpy_prod() should be more efficient than this
+//  Ax = prod(*this, x);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::disp(uint precision) const

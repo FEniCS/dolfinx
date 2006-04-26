@@ -7,9 +7,9 @@
 // Last changed: 2006-03-22
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
-#include <dolfin/FEM.h>
 #include <dolfin/GMRES.h>
 #include <dolfin/LU.h>
 #include <dolfin/BilinearForm.h>

@@ -6,8 +6,8 @@
 // First added:  2005-11-01
 // Last changed: 2005-12-20
 
-#include <dolfin/Heat.h>
 #include <dolfin/HeatSolver.h>
+#include <dolfin/Heat.h>
 
 using namespace dolfin;
 

@@ -4,10 +4,10 @@
 // First added:  2005-09-20
 // Last changed: 2006-01-09
 
+#include <dolfin/StokesSolver.h>
 #include <dolfin/L2Error.h>
 #include <dolfin/Stokes2D.h>
 #include <dolfin/Stokes3D.h>
-#include <dolfin/StokesSolver.h>
 
 using namespace dolfin;
 
