@@ -235,3 +235,7 @@ using namespace dolfin;
 
 %include "SettingsGlue.h"
 %include "FEMGlue.h"
+
+/* modules */
+
+%include "dolfin/ElasticityUpdatedSolver.h"

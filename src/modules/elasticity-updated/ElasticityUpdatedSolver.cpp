@@ -13,6 +13,9 @@
 
 #include "dolfin/timing.h"
 #include "dolfin/ElasticityUpdatedSolver.h"
+#include "dolfin/ElasticityUpdated.h"
+#include "dolfin/ElasticityUpdatedSigma.h"
+#include "dolfin/ElasticityUpdatedMass.h"
 
 using namespace dolfin;
 
@@ -36,16 +39,27 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
     savesamplefreq(33.0),
     fevals(0),
     ode(0),
-    v1(x2_1, mesh, element1),
-    u0(x1_0, mesh, element1),
-    u1(x1_1, mesh, element1),
-    sigma0(xsigma0, mesh, element2),
-    sigma1(xsigma1, mesh, element2),
-    epsilon1(xepsilon1, mesh, element2),
-    sigmanorm(xsigmanorm, mesh, element3),
-    Lv(f, sigma1, epsilon1, nuv),
-    Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
+    element1(new ElasticityUpdated::LinearForm::TestElement),
+    element2(new ElasticityUpdatedSigma::LinearForm::TestElement),
+    element3(new ElasticityUpdatedSigma::LinearForm::FunctionElement_2),
+    v1(x2_1, mesh, *element1),
+    u0(x1_0, mesh, *element1),
+    u1(x1_1, mesh, *element1),
+    sigma0(xsigma0, mesh, *element2),
+    sigma1(xsigma1, mesh, *element2),
+    epsilon1(xepsilon1, mesh, *element2),
+    sigmanorm(xsigmanorm, mesh, *element3)
+//     Lv(f, sigma1, epsilon1, nuv),
+//     Lsigma(v1, sigma1, sigmanorm, lambda, mu, nuplast)
 {
+  element1 = new ElasticityUpdated::LinearForm::TestElement;
+  element2 = new ElasticityUpdatedSigma::LinearForm::TestElement;
+  element3 = new ElasticityUpdatedSigma::LinearForm::FunctionElement_2;
+
+  Lv = new ElasticityUpdated::LinearForm(f, sigma1, epsilon1, nuv);
+  Lsigma = new ElasticityUpdatedSigma::LinearForm(v1, sigma1, sigmanorm,
+						  lambda, mu, nuplast);
+
   cout << "nuv: " << nuv << endl;
   cout << "lambda: " << lambda << endl;
   cout << "mu: " << mu << endl;
@@ -55,13 +69,18 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
   ts = new TimeStepper(*ode);
 }
 //-----------------------------------------------------------------------------
+ElasticityUpdatedSolver& ElasticityUpdatedSolver::operator=(const ElasticityUpdatedSolver& solver)
+{
+  return *this;
+}
+//-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::init()
 {
   Matrix M;
 
-  Nv = FEM::size(mesh, element1);
-  Nsigma = FEM::size(mesh, element2);
-  Nsigmanorm = FEM::size(mesh, element3);
+  Nv = FEM::size(mesh, *element1);
+  Nsigma = FEM::size(mesh, *element2);
+  Nsigmanorm = FEM::size(mesh, *element3);
 
   x1_0.init(Nv);
   x1_1.init(Nv);
@@ -126,8 +145,8 @@ void ElasticityUpdatedSolver::init()
   AffineMap map;
 
   {
-  int *nodes = new int[element1.spacedim()];
-  real *coefficients = new real[element1.spacedim()];
+  int *nodes = new int[(*element1).spacedim()];
+  real *coefficients = new real[(*element1).spacedim()];
 
   for(CellIterator c(&mesh); !c.end(); ++c)
   {
@@ -136,10 +155,10 @@ void ElasticityUpdatedSolver::init()
     // Use DOLFIN's interpolation
 
     map.update(cell);
-    v0.interpolate(coefficients, map, element1);
-    element1.nodemap(nodes, cell, mesh);
+    v0.interpolate(coefficients, map, *element1);
+    (*element1).nodemap(nodes, cell, mesh);
 
-    for(uint i = 0; i < element1.spacedim(); i++)
+    for(uint i = 0; i < (*element1).spacedim(); i++)
     {
       x2_1(nodes[i]) = coefficients[i];
     }
@@ -149,7 +168,7 @@ void ElasticityUpdatedSolver::init()
   delete [] coefficients;
   }
 
-  FEM::applyBC(Dummy, x2_1, mesh, element1, bc);
+  FEM::applyBC(Dummy, x2_1, mesh, *element1, bc);
 
   cout << "x2_1:" << endl;
   x2_1.disp();
@@ -177,16 +196,16 @@ void ElasticityUpdatedSolver::init()
 
   // Compute mass vector (sigma)
   {
-  int *nodes = new int[element2.spacedim()];
+  int *nodes = new int[(*element2).spacedim()];
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
 
-    element2.nodemap(nodes, cell, mesh);
+    (*element2).nodemap(nodes, cell, mesh);
 
     real factor = 1.0 / cell.volume(); 
 
-    for(uint i = 0; i < element2.spacedim(); i++)
+    for(uint i = 0; i < (*element2).spacedim(); i++)
       msigma(nodes[i]) = factor;
   }
   delete [] nodes;
@@ -422,16 +441,16 @@ void ElasticityUpdatedSolver::fu()
   if(do_plasticity)
   {
     {
-      int *nodes = new int[element2.spacedim()];
+      int *nodes = new int[(*element2).spacedim()];
       for (CellIterator c(mesh); !c.end(); ++c)
       {
 	Cell& cell = *c;
 	
-	element2.nodemap(nodes, cell, mesh);
+	(*element2).nodemap(nodes, cell, mesh);
 	
 	real proj = 1;
 	real norm = 0;
-	for(uint i = 0; i < element2.spacedim(); i++)
+	for(uint i = 0; i < (*element2).spacedim(); i++)
 	{
 	  norm = std::max(norm, fabs(dotu_xsigma(nodes[i])));
 	}
@@ -459,7 +478,7 @@ void ElasticityUpdatedSolver::fu()
 
   // xsigma1
   dolfin_log(false);
-  FEM::assemble(Lsigma, xsigmatmp1, mesh);
+  FEM::assemble(*Lsigma, xsigmatmp1, mesh);
   dolfin_log(true);
   VecPointwiseMult(dotu_xsigma.vec(), xsigmatmp1.vec(), msigma.vec());
     
@@ -469,8 +488,8 @@ void ElasticityUpdatedSolver::fu()
 
   // Assemble v vector
   dolfin_log(false);
-  FEM::assemble(Lv, xtmp1, mesh);
-  FEM::applyBC(Dummy, xtmp1, mesh, element1, bc);
+  FEM::assemble(*Lv, xtmp1, mesh);
+  FEM::applyBC(Dummy, xtmp1, mesh, *element1, bc);
 
   VecPointwiseDivide(dotu_x2.vec(), xtmp1.vec(), m.vec());
   dotu_x2.apply();
@@ -493,6 +512,437 @@ void ElasticityUpdatedSolver::gather(Vector& x1, Vector& x2, VecScatter& x1sc)
 		  x1sc);
   VecScatterEnd(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
 		x1sc);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
+					  FiniteElement& element1, Mesh& mesh)
+{
+  xF = 0.0;
+
+  AffineMap map;
+  real* blockF0 = new real[9];
+  real* blockF1 = new real[9];
+  real* blockF = new real[9];
+  int* nodes = new int[9];
+
+  xF0.apply();
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    blockF1[0] = map.f00;
+    blockF1[1] = map.f01;
+    blockF1[2] = map.f02;
+    blockF1[3] = map.f10;
+    blockF1[4] = map.f11;
+    blockF1[5] = map.f12;
+    blockF1[6] = map.f20;
+    blockF1[7] = map.f21;
+    blockF1[8] = map.f22;
+
+    xF0.get(blockF0, nodes, 9);
+
+    multF(blockF0, blockF1, blockF);
+
+    xF.add(blockF, nodes, 9);
+  }
+
+  xF.apply();
+
+  delete blockF;
+  delete blockF0;
+  delete blockF1;
+  delete nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::computeJ(Vector& xJ0, Vector& xJ, Vector& xJinv,
+				     FiniteElement& element, Mesh& mesh)
+{
+  xJ = 0.0;
+  xJinv = 0.0;
+
+  AffineMap map;
+  real* blockJ0 = new real[1];
+  real* blockJ = new real[1];
+  real* blockJinv = new real[1];
+  int* nodes = new int[1];
+
+  xJ.apply();
+  xJinv.apply();
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element.nodemap(nodes, *cell, mesh);
+
+    xJ0.get(blockJ0, nodes, 1);
+
+    blockJ[0] = map.det * (1.0 / blockJ0[0]);
+    blockJinv[0] = 1.0 / blockJ[0];
+
+    xJ.add(blockJ, nodes, 1);
+    xJinv.add(blockJinv, nodes, 1);
+  }
+
+  xJ.apply();
+  xJinv.apply();
+
+  delete blockJ;
+  delete blockJ0;
+  delete blockJinv;
+  delete nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::computeFEuler(Vector& xF, Vector& xF0, Vector& xF1,
+					  FiniteElement& element1, Mesh& mesh)
+{
+  xF = 0.0;
+
+  AffineMap map;
+  real* blockF0 = new real[9];
+  real* blockF1 = new real[9];
+  real* blockF = new real[9];
+  int* nodes = new int[9];
+
+  xF0.apply();
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    blockF1[0] = map.g00;
+    blockF1[1] = map.g01;
+    blockF1[2] = map.g02;
+    blockF1[3] = map.g10;
+    blockF1[4] = map.g11;
+    blockF1[5] = map.g12;
+    blockF1[6] = map.g20;
+    blockF1[7] = map.g21;
+    blockF1[8] = map.g22;
+
+    xF0.get(blockF0, nodes, 9);
+
+    multF(blockF1, blockF0, blockF);
+
+    xF.add(blockF, nodes, 9);
+  }
+
+  xF.apply();
+
+  delete blockF;
+  delete blockF0;
+  delete blockF1;
+  delete nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::computeFBEuler(Vector& xF, Vector& xB,
+					   Vector& xF0, Vector& xF1,
+					   FiniteElement& element1, Mesh& mesh)
+{
+  xF = 0.0;
+  xB = 0.0;
+
+  AffineMap map;
+  real* blockF0 = new real[9];
+  real* blockF1 = new real[9];
+  real* blockF = new real[9];
+  real* blockB = new real[9];
+  int* nodes = new int[9];
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    blockF1[0] = map.g00;
+    blockF1[1] = map.g01;
+    blockF1[2] = map.g02;
+    blockF1[3] = map.g10;
+    blockF1[4] = map.g11;
+    blockF1[5] = map.g12;
+    blockF1[6] = map.g20;
+    blockF1[7] = map.g21;
+    blockF1[8] = map.g22;
+
+    xF0.get(blockF0, nodes, 9);
+
+    multF(blockF1, blockF0, blockF);
+
+//     xF.add(blockF, nodes, 9);
+
+    multB(blockF, blockB);
+
+    xB.add(blockB, nodes, 9);
+  }
+
+//   xF.apply();
+  xB.apply();
+
+  delete blockF;
+  delete blockB;
+  delete blockF0;
+  delete blockF1;
+  delete nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::computeBEuler(Vector& xF, Vector& xB,
+					  FiniteElement& element1, Mesh& mesh)
+{
+  xB = 0.0;
+
+  AffineMap map;
+  real* blockF = new real[9];
+  real* blockB = new real[9];
+  int* nodes = new int[9];
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    xF.get(blockF, nodes, 9);
+
+    multB(blockF, blockB);
+
+    xB.add(blockB, nodes, 9);
+  }
+
+  xB.apply();
+
+  delete blockF;
+  delete blockB;
+  delete nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::initF0Green(Vector& xF0,
+					FiniteElement& element1, Mesh& mesh)
+{
+  xF0 = 0.0;
+
+  AffineMap map;
+  int* nodes = new int[9];
+  real* blockF0 = new real[9];
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    blockF0[0] = map.g00;
+    blockF0[1] = map.g01;
+    blockF0[2] = map.g02;
+    blockF0[3] = map.g10;
+    blockF0[4] = map.g11;
+    blockF0[5] = map.g12;
+    blockF0[6] = map.g20;
+    blockF0[7] = map.g21;
+    blockF0[8] = map.g22;
+
+    xF0.add(blockF0, nodes, 9);
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::initF0Euler(Vector& xF0,
+					FiniteElement& element1, Mesh& mesh)
+{
+  xF0 = 0.0;
+
+  AffineMap map;
+  int* nodes = new int[9];
+  real* blockF0 = new real[9];
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element1.nodemap(nodes, *cell, mesh);
+
+    blockF0[0] = map.f00;
+    blockF0[1] = map.f01;
+    blockF0[2] = map.f02;
+    blockF0[3] = map.f10;
+    blockF0[4] = map.f11;
+    blockF0[5] = map.f12;
+    blockF0[6] = map.f20;
+    blockF0[7] = map.f21;
+    blockF0[8] = map.f22;
+
+    xF0.add(blockF0, nodes, 9);
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::multF(real* F0, real *F1, real* F)
+{
+  for(int i = 0; i < 3; i++)
+  {
+    for(int j = 0; j < 3; j++)
+    {
+      F[3 * i + j] =
+	F1[3 * i + 0] * F0[3 * 0 + j] +
+	F1[3 * i + 1] * F0[3 * 1 + j] +
+	F1[3 * i + 2] * F0[3 * 2 + j];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::multB(real* F, real *B)
+{
+  for(int i = 0; i < 3; i++)
+  {
+    for(int j = 0; j < 3; j++)
+    {
+      B[3 * i + j] =
+	F[3 * 0 + i] * F[3 * 0 + j] +
+	F[3 * 1 + i] * F[3 * 1 + j] +
+	F[3 * 2 + i] * F[3 * 2 + j];
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::deform(Mesh& mesh, Function& u)
+{
+  // Update the mesh
+  for (VertexIterator n(&mesh); !n.end(); ++n)
+  {
+    Vertex& vertex = *n;
+    
+    vertex.coord().x = u(vertex, 0);
+    vertex.coord().y = u(vertex, 1);
+    vertex.coord().z = u(vertex, 2);
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::plasticity(Vector& xsigma, Vector& xsigmanorm,
+				       real yield, FiniteElement& element2,
+				       Mesh& mesh)
+{
+  int *nodes = new int[element2.spacedim()];
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+    
+    element2.nodemap(nodes, cell, mesh);
+    
+    real proj = 1;
+    real norm = 0;
+    for(uint i = 0; i < element2.spacedim(); i++)
+    {
+      norm = std::max(norm, fabs(xsigma(nodes[i])));
+    }
+    
+    if(norm > yield)
+    {
+//       cout << "sigmanorm(" << cell.id() << "): " << norm << endl;
+      proj = 1.0 / norm;
+    }
+    
+    xsigmanorm(nodes[0]) = proj;
+  }
+  delete [] nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::finterpolate(Function& f1, Function& f2,
+						Mesh& mesh)
+{
+  FiniteElement& element = f2.element();
+  Vector& x = f2.vector();
+
+  AffineMap map;
+
+  int *nodes = new int[element.spacedim()];
+  real *coefficients = new real[element.spacedim()];
+
+  for(CellIterator c(&mesh); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+
+    // Use DOLFIN's interpolation
+
+    map.update(cell);
+    f1.interpolate(coefficients, map, element);
+    element.nodemap(nodes, cell, mesh);
+
+    for(unsigned int i = 0; i < element.spacedim(); i++)
+    {
+      x(nodes[i]) = coefficients[i];
+    }
+  }
+
+  delete [] nodes;
+  delete [] coefficients;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::initmsigma(Vector& msigma,
+				       FiniteElement& element2, Mesh& mesh)
+{
+  // Compute mass vector (sigma)
+  int *nodes = new int[element2.spacedim()];
+  for (CellIterator c(mesh); !c.end(); ++c)
+  {
+    Cell& cell = *c;
+
+    element2.nodemap(nodes, cell, mesh);
+
+    real factor = cell.volume(); 
+
+    for(unsigned int i = 0; i < element2.spacedim(); i++)
+      msigma(nodes[i]) = factor;
+  }
+  delete [] nodes;
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::initu0(Vector& x0,
+				   FiniteElement& element, Mesh& mesh)
+{
+  // The mesh points are the initial values of u
+  int offset = mesh.numVertices();
+  for (VertexIterator n(&mesh); !n.end(); ++n)
+  {
+    Vertex& vertex = *n;
+    int nid = vertex.id();
+
+    x0(0 * offset + nid) = vertex.coord().x;
+    x0(1 * offset + nid) = vertex.coord().y;
+    x0(2 * offset + nid) = vertex.coord().z;
+  }
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::initJ0(Vector& xJ0,
+	    FiniteElement& element, Mesh& mesh)
+{
+  xJ0 = 0.0;
+
+  AffineMap map;
+  int* nodes = new int[1];
+  real* blockJ0 = new real[1];
+
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+
+    element.nodemap(nodes, *cell, mesh);
+
+    blockJ0[0] = map.det;
+
+    xJ0.add(blockJ0, nodes, 1);
+  }
 }
 //-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :

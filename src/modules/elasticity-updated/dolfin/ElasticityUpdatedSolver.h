@@ -12,9 +12,6 @@
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/Solver.h>
-#include "dolfin/ElasticityUpdated.h"
-#include "dolfin/ElasticityUpdatedSigma.h"
-#include "dolfin/ElasticityUpdatedMass.h"
 
 namespace dolfin
 {
@@ -31,6 +28,8 @@ namespace dolfin
 			    real& E, real& nu, real& nuv, real& nuplast,
 			    BoundaryCondition& bc, real& k, real& T);
     
+    ElasticityUpdatedSolver& operator=(const ElasticityUpdatedSolver& solver);
+
     // Initialize data
     void init();
 
@@ -67,6 +66,54 @@ namespace dolfin
 		      real& E, real& nu, real& nuv, real& nuplast,
 		      BoundaryCondition& bc, real& k, real& T);
     
+
+    // Utility functions
+
+    static void finterpolate(Function& f1, Function& f2, Mesh& mesh);
+
+    static void plasticity(Vector& xsigma, Vector& xsigmanorm, real yield,
+			   FiniteElement& element2, Mesh& mesh);
+
+    static void initmsigma(Vector& msigma,
+			   FiniteElement& element2, Mesh& mesh);
+
+    static void initu0(Vector& x0,
+		       FiniteElement& element, Mesh& mesh);
+
+
+    static void initJ0(Vector& xJ0,
+		       FiniteElement& element, Mesh& mesh);
+
+    static void computeJ(Vector& xJ0, Vector& xJ, Vector& xJinv,
+			 FiniteElement& element, Mesh& mesh);
+
+    static void initF0Green(Vector& xF0,
+			    FiniteElement& element1, Mesh& mesh);
+
+    static void computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void initF0Euler(Vector& xF0,
+			    FiniteElement& element1, Mesh& mesh);
+
+    static void computeFEuler(Vector& xF, Vector& xF0, Vector& xF1,
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void computeFBEuler(Vector& xF, Vector& xB, Vector& xF0,
+			       Vector& xF1,
+			       FiniteElement& element1, Mesh& mesh);
+
+    static void computeBEuler(Vector& xF, Vector& xB, 
+			      FiniteElement& element1, Mesh& mesh);
+
+    static void multF(real* F0, real *F1, real* F);
+    
+    static void multB(real* F, real* B);
+    
+    static void deform(Mesh& mesh, Function& u);
+    
+    // Data
+
     Mesh& mesh;
     Function& f;
     Function& v0;
@@ -101,9 +148,13 @@ namespace dolfin
 
     // Elements
 
-    ElasticityUpdated::LinearForm::TestElement element1;
-    ElasticityUpdatedSigma::LinearForm::TestElement element2;
-    ElasticityUpdatedSigma::LinearForm::FunctionElement_2 element3;
+//     ElasticityUpdated::LinearForm::TestElement element1;
+//     ElasticityUpdatedSigma::LinearForm::TestElement element2;
+//     ElasticityUpdatedSigma::LinearForm::FunctionElement_2 element3;
+
+    FiniteElement* element1;
+    FiniteElement* element2;
+    FiniteElement* element3;
 
     Vector x1_0, x1_1, x2_0, x2_1, b, m, msigma, stepresidual;
     Vector xsigma0, xsigma1, xepsilon1, xsigmanorm, xjaumann1;
@@ -132,8 +183,11 @@ namespace dolfin
 
     // Forms
 
-    ElasticityUpdated::LinearForm Lv;
-    ElasticityUpdatedSigma::LinearForm Lsigma;
+    // ElasticityUpdated::LinearForm Lv;
+    // ElasticityUpdatedSigma::LinearForm Lsigma;
+
+    LinearForm* Lv;
+    LinearForm* Lsigma;
   };
 
   class ElasticityUpdatedODE : public ODE
@@ -153,6 +207,23 @@ namespace dolfin
     void toArray(real y[], Vector&x, uint offset, uint size);
 
     ElasticityUpdatedSolver& solver;
+  };
+
+  // Boundary condition
+  class UtilBC : public BoundaryCondition
+  {
+  public:
+    UtilBC()
+    {
+    }
+    
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+//       if(p.x == 0.0)
+// 	value = 0.0;
+          if(p.x < -0.8)
+            value = 0.0;
+    }
   };
 
 

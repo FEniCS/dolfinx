@@ -1903,11 +1903,355 @@ _dolfin.dGqMethod_swigregister(dGqMethod)
 
 
 get = _dolfin.get
-
+class ElasticityUpdatedSolver(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedSolver, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ElasticityUpdatedSolver instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_ElasticityUpdatedSolver(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def init(*args): return _dolfin.ElasticityUpdatedSolver_init(*args)
+    def step(*args): return _dolfin.ElasticityUpdatedSolver_step(*args)
+    def oldstep(*args): return _dolfin.ElasticityUpdatedSolver_oldstep(*args)
+    def fu(*args): return _dolfin.ElasticityUpdatedSolver_fu(*args)
+    def gather(*args): return _dolfin.ElasticityUpdatedSolver_gather(*args)
+    def preparestep(*args): return _dolfin.ElasticityUpdatedSolver_preparestep(*args)
+    def prepareiteration(*args): return _dolfin.ElasticityUpdatedSolver_prepareiteration(*args)
+    def save(*args): return _dolfin.ElasticityUpdatedSolver_save(*args)
+    def condsave(*args): return _dolfin.ElasticityUpdatedSolver_condsave(*args)
+    __swig_getmethods__["solve"] = lambda x: _dolfin.ElasticityUpdatedSolver_solve
+    if _newclass:solve = staticmethod(_dolfin.ElasticityUpdatedSolver_solve)
+    __swig_getmethods__["finterpolate"] = lambda x: _dolfin.ElasticityUpdatedSolver_finterpolate
+    if _newclass:finterpolate = staticmethod(_dolfin.ElasticityUpdatedSolver_finterpolate)
+    __swig_getmethods__["plasticity"] = lambda x: _dolfin.ElasticityUpdatedSolver_plasticity
+    if _newclass:plasticity = staticmethod(_dolfin.ElasticityUpdatedSolver_plasticity)
+    __swig_getmethods__["initmsigma"] = lambda x: _dolfin.ElasticityUpdatedSolver_initmsigma
+    if _newclass:initmsigma = staticmethod(_dolfin.ElasticityUpdatedSolver_initmsigma)
+    __swig_getmethods__["initu0"] = lambda x: _dolfin.ElasticityUpdatedSolver_initu0
+    if _newclass:initu0 = staticmethod(_dolfin.ElasticityUpdatedSolver_initu0)
+    __swig_getmethods__["initJ0"] = lambda x: _dolfin.ElasticityUpdatedSolver_initJ0
+    if _newclass:initJ0 = staticmethod(_dolfin.ElasticityUpdatedSolver_initJ0)
+    __swig_getmethods__["computeJ"] = lambda x: _dolfin.ElasticityUpdatedSolver_computeJ
+    if _newclass:computeJ = staticmethod(_dolfin.ElasticityUpdatedSolver_computeJ)
+    __swig_getmethods__["initF0Green"] = lambda x: _dolfin.ElasticityUpdatedSolver_initF0Green
+    if _newclass:initF0Green = staticmethod(_dolfin.ElasticityUpdatedSolver_initF0Green)
+    __swig_getmethods__["computeFGreen"] = lambda x: _dolfin.ElasticityUpdatedSolver_computeFGreen
+    if _newclass:computeFGreen = staticmethod(_dolfin.ElasticityUpdatedSolver_computeFGreen)
+    __swig_getmethods__["initF0Euler"] = lambda x: _dolfin.ElasticityUpdatedSolver_initF0Euler
+    if _newclass:initF0Euler = staticmethod(_dolfin.ElasticityUpdatedSolver_initF0Euler)
+    __swig_getmethods__["computeFEuler"] = lambda x: _dolfin.ElasticityUpdatedSolver_computeFEuler
+    if _newclass:computeFEuler = staticmethod(_dolfin.ElasticityUpdatedSolver_computeFEuler)
+    __swig_getmethods__["computeFBEuler"] = lambda x: _dolfin.ElasticityUpdatedSolver_computeFBEuler
+    if _newclass:computeFBEuler = staticmethod(_dolfin.ElasticityUpdatedSolver_computeFBEuler)
+    __swig_getmethods__["computeBEuler"] = lambda x: _dolfin.ElasticityUpdatedSolver_computeBEuler
+    if _newclass:computeBEuler = staticmethod(_dolfin.ElasticityUpdatedSolver_computeBEuler)
+    __swig_getmethods__["multF"] = lambda x: _dolfin.ElasticityUpdatedSolver_multF
+    if _newclass:multF = staticmethod(_dolfin.ElasticityUpdatedSolver_multF)
+    __swig_getmethods__["multB"] = lambda x: _dolfin.ElasticityUpdatedSolver_multB
+    if _newclass:multB = staticmethod(_dolfin.ElasticityUpdatedSolver_multB)
+    __swig_getmethods__["deform"] = lambda x: _dolfin.ElasticityUpdatedSolver_deform
+    if _newclass:deform = staticmethod(_dolfin.ElasticityUpdatedSolver_deform)
+    __swig_setmethods__["mesh"] = _dolfin.ElasticityUpdatedSolver_mesh_set
+    __swig_getmethods__["mesh"] = _dolfin.ElasticityUpdatedSolver_mesh_get
+    if _newclass:mesh = property(_dolfin.ElasticityUpdatedSolver_mesh_get, _dolfin.ElasticityUpdatedSolver_mesh_set)
+    __swig_setmethods__["f"] = _dolfin.ElasticityUpdatedSolver_f_set
+    __swig_getmethods__["f"] = _dolfin.ElasticityUpdatedSolver_f_get
+    if _newclass:f = property(_dolfin.ElasticityUpdatedSolver_f_get, _dolfin.ElasticityUpdatedSolver_f_set)
+    __swig_setmethods__["v0"] = _dolfin.ElasticityUpdatedSolver_v0_set
+    __swig_getmethods__["v0"] = _dolfin.ElasticityUpdatedSolver_v0_get
+    if _newclass:v0 = property(_dolfin.ElasticityUpdatedSolver_v0_get, _dolfin.ElasticityUpdatedSolver_v0_set)
+    __swig_setmethods__["rho"] = _dolfin.ElasticityUpdatedSolver_rho_set
+    __swig_getmethods__["rho"] = _dolfin.ElasticityUpdatedSolver_rho_get
+    if _newclass:rho = property(_dolfin.ElasticityUpdatedSolver_rho_get, _dolfin.ElasticityUpdatedSolver_rho_set)
+    __swig_setmethods__["E"] = _dolfin.ElasticityUpdatedSolver_E_set
+    __swig_getmethods__["E"] = _dolfin.ElasticityUpdatedSolver_E_get
+    if _newclass:E = property(_dolfin.ElasticityUpdatedSolver_E_get, _dolfin.ElasticityUpdatedSolver_E_set)
+    __swig_setmethods__["nu"] = _dolfin.ElasticityUpdatedSolver_nu_set
+    __swig_getmethods__["nu"] = _dolfin.ElasticityUpdatedSolver_nu_get
+    if _newclass:nu = property(_dolfin.ElasticityUpdatedSolver_nu_get, _dolfin.ElasticityUpdatedSolver_nu_set)
+    __swig_setmethods__["nuv"] = _dolfin.ElasticityUpdatedSolver_nuv_set
+    __swig_getmethods__["nuv"] = _dolfin.ElasticityUpdatedSolver_nuv_get
+    if _newclass:nuv = property(_dolfin.ElasticityUpdatedSolver_nuv_get, _dolfin.ElasticityUpdatedSolver_nuv_set)
+    __swig_setmethods__["nuplast"] = _dolfin.ElasticityUpdatedSolver_nuplast_set
+    __swig_getmethods__["nuplast"] = _dolfin.ElasticityUpdatedSolver_nuplast_get
+    if _newclass:nuplast = property(_dolfin.ElasticityUpdatedSolver_nuplast_get, _dolfin.ElasticityUpdatedSolver_nuplast_set)
+    __swig_setmethods__["bc"] = _dolfin.ElasticityUpdatedSolver_bc_set
+    __swig_getmethods__["bc"] = _dolfin.ElasticityUpdatedSolver_bc_get
+    if _newclass:bc = property(_dolfin.ElasticityUpdatedSolver_bc_get, _dolfin.ElasticityUpdatedSolver_bc_set)
+    __swig_setmethods__["k"] = _dolfin.ElasticityUpdatedSolver_k_set
+    __swig_getmethods__["k"] = _dolfin.ElasticityUpdatedSolver_k_get
+    if _newclass:k = property(_dolfin.ElasticityUpdatedSolver_k_get, _dolfin.ElasticityUpdatedSolver_k_set)
+    __swig_setmethods__["T"] = _dolfin.ElasticityUpdatedSolver_T_set
+    __swig_getmethods__["T"] = _dolfin.ElasticityUpdatedSolver_T_get
+    if _newclass:T = property(_dolfin.ElasticityUpdatedSolver_T_get, _dolfin.ElasticityUpdatedSolver_T_set)
+    __swig_setmethods__["counter"] = _dolfin.ElasticityUpdatedSolver_counter_set
+    __swig_getmethods__["counter"] = _dolfin.ElasticityUpdatedSolver_counter_get
+    if _newclass:counter = property(_dolfin.ElasticityUpdatedSolver_counter_get, _dolfin.ElasticityUpdatedSolver_counter_set)
+    __swig_setmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_set
+    __swig_getmethods__["lastsample"] = _dolfin.ElasticityUpdatedSolver_lastsample_get
+    if _newclass:lastsample = property(_dolfin.ElasticityUpdatedSolver_lastsample_get, _dolfin.ElasticityUpdatedSolver_lastsample_set)
+    __swig_setmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_set
+    __swig_getmethods__["_lambda"] = _dolfin.ElasticityUpdatedSolver__lambda_get
+    if _newclass:_lambda = property(_dolfin.ElasticityUpdatedSolver__lambda_get, _dolfin.ElasticityUpdatedSolver__lambda_set)
+    __swig_setmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_set
+    __swig_getmethods__["mu"] = _dolfin.ElasticityUpdatedSolver_mu_get
+    if _newclass:mu = property(_dolfin.ElasticityUpdatedSolver_mu_get, _dolfin.ElasticityUpdatedSolver_mu_set)
+    __swig_setmethods__["t"] = _dolfin.ElasticityUpdatedSolver_t_set
+    __swig_getmethods__["t"] = _dolfin.ElasticityUpdatedSolver_t_get
+    if _newclass:t = property(_dolfin.ElasticityUpdatedSolver_t_get, _dolfin.ElasticityUpdatedSolver_t_set)
+    __swig_setmethods__["rtol"] = _dolfin.ElasticityUpdatedSolver_rtol_set
+    __swig_getmethods__["rtol"] = _dolfin.ElasticityUpdatedSolver_rtol_get
+    if _newclass:rtol = property(_dolfin.ElasticityUpdatedSolver_rtol_get, _dolfin.ElasticityUpdatedSolver_rtol_set)
+    __swig_setmethods__["maxiters"] = _dolfin.ElasticityUpdatedSolver_maxiters_set
+    __swig_getmethods__["maxiters"] = _dolfin.ElasticityUpdatedSolver_maxiters_get
+    if _newclass:maxiters = property(_dolfin.ElasticityUpdatedSolver_maxiters_get, _dolfin.ElasticityUpdatedSolver_maxiters_set)
+    __swig_setmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_set
+    __swig_getmethods__["do_plasticity"] = _dolfin.ElasticityUpdatedSolver_do_plasticity_get
+    if _newclass:do_plasticity = property(_dolfin.ElasticityUpdatedSolver_do_plasticity_get, _dolfin.ElasticityUpdatedSolver_do_plasticity_set)
+    __swig_setmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_set
+    __swig_getmethods__["_yield"] = _dolfin.ElasticityUpdatedSolver__yield_get
+    if _newclass:_yield = property(_dolfin.ElasticityUpdatedSolver__yield_get, _dolfin.ElasticityUpdatedSolver__yield_set)
+    __swig_setmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_set
+    __swig_getmethods__["savesamplefreq"] = _dolfin.ElasticityUpdatedSolver_savesamplefreq_get
+    if _newclass:savesamplefreq = property(_dolfin.ElasticityUpdatedSolver_savesamplefreq_get, _dolfin.ElasticityUpdatedSolver_savesamplefreq_set)
+    __swig_setmethods__["fevals"] = _dolfin.ElasticityUpdatedSolver_fevals_set
+    __swig_getmethods__["fevals"] = _dolfin.ElasticityUpdatedSolver_fevals_get
+    if _newclass:fevals = property(_dolfin.ElasticityUpdatedSolver_fevals_get, _dolfin.ElasticityUpdatedSolver_fevals_set)
+    __swig_setmethods__["Nv"] = _dolfin.ElasticityUpdatedSolver_Nv_set
+    __swig_getmethods__["Nv"] = _dolfin.ElasticityUpdatedSolver_Nv_get
+    if _newclass:Nv = property(_dolfin.ElasticityUpdatedSolver_Nv_get, _dolfin.ElasticityUpdatedSolver_Nv_set)
+    __swig_setmethods__["Nsigma"] = _dolfin.ElasticityUpdatedSolver_Nsigma_set
+    __swig_getmethods__["Nsigma"] = _dolfin.ElasticityUpdatedSolver_Nsigma_get
+    if _newclass:Nsigma = property(_dolfin.ElasticityUpdatedSolver_Nsigma_get, _dolfin.ElasticityUpdatedSolver_Nsigma_set)
+    __swig_setmethods__["Nsigmanorm"] = _dolfin.ElasticityUpdatedSolver_Nsigmanorm_set
+    __swig_getmethods__["Nsigmanorm"] = _dolfin.ElasticityUpdatedSolver_Nsigmanorm_get
+    if _newclass:Nsigmanorm = property(_dolfin.ElasticityUpdatedSolver_Nsigmanorm_get, _dolfin.ElasticityUpdatedSolver_Nsigmanorm_set)
+    __swig_setmethods__["ode"] = _dolfin.ElasticityUpdatedSolver_ode_set
+    __swig_getmethods__["ode"] = _dolfin.ElasticityUpdatedSolver_ode_get
+    if _newclass:ode = property(_dolfin.ElasticityUpdatedSolver_ode_get, _dolfin.ElasticityUpdatedSolver_ode_set)
+    __swig_setmethods__["ts"] = _dolfin.ElasticityUpdatedSolver_ts_set
+    __swig_getmethods__["ts"] = _dolfin.ElasticityUpdatedSolver_ts_get
+    if _newclass:ts = property(_dolfin.ElasticityUpdatedSolver_ts_get, _dolfin.ElasticityUpdatedSolver_ts_set)
+    __swig_setmethods__["element1"] = _dolfin.ElasticityUpdatedSolver_element1_set
+    __swig_getmethods__["element1"] = _dolfin.ElasticityUpdatedSolver_element1_get
+    if _newclass:element1 = property(_dolfin.ElasticityUpdatedSolver_element1_get, _dolfin.ElasticityUpdatedSolver_element1_set)
+    __swig_setmethods__["element2"] = _dolfin.ElasticityUpdatedSolver_element2_set
+    __swig_getmethods__["element2"] = _dolfin.ElasticityUpdatedSolver_element2_get
+    if _newclass:element2 = property(_dolfin.ElasticityUpdatedSolver_element2_get, _dolfin.ElasticityUpdatedSolver_element2_set)
+    __swig_setmethods__["element3"] = _dolfin.ElasticityUpdatedSolver_element3_set
+    __swig_getmethods__["element3"] = _dolfin.ElasticityUpdatedSolver_element3_get
+    if _newclass:element3 = property(_dolfin.ElasticityUpdatedSolver_element3_get, _dolfin.ElasticityUpdatedSolver_element3_set)
+    __swig_setmethods__["x1_0"] = _dolfin.ElasticityUpdatedSolver_x1_0_set
+    __swig_getmethods__["x1_0"] = _dolfin.ElasticityUpdatedSolver_x1_0_get
+    if _newclass:x1_0 = property(_dolfin.ElasticityUpdatedSolver_x1_0_get, _dolfin.ElasticityUpdatedSolver_x1_0_set)
+    __swig_setmethods__["x1_1"] = _dolfin.ElasticityUpdatedSolver_x1_1_set
+    __swig_getmethods__["x1_1"] = _dolfin.ElasticityUpdatedSolver_x1_1_get
+    if _newclass:x1_1 = property(_dolfin.ElasticityUpdatedSolver_x1_1_get, _dolfin.ElasticityUpdatedSolver_x1_1_set)
+    __swig_setmethods__["x2_0"] = _dolfin.ElasticityUpdatedSolver_x2_0_set
+    __swig_getmethods__["x2_0"] = _dolfin.ElasticityUpdatedSolver_x2_0_get
+    if _newclass:x2_0 = property(_dolfin.ElasticityUpdatedSolver_x2_0_get, _dolfin.ElasticityUpdatedSolver_x2_0_set)
+    __swig_setmethods__["x2_1"] = _dolfin.ElasticityUpdatedSolver_x2_1_set
+    __swig_getmethods__["x2_1"] = _dolfin.ElasticityUpdatedSolver_x2_1_get
+    if _newclass:x2_1 = property(_dolfin.ElasticityUpdatedSolver_x2_1_get, _dolfin.ElasticityUpdatedSolver_x2_1_set)
+    __swig_setmethods__["b"] = _dolfin.ElasticityUpdatedSolver_b_set
+    __swig_getmethods__["b"] = _dolfin.ElasticityUpdatedSolver_b_get
+    if _newclass:b = property(_dolfin.ElasticityUpdatedSolver_b_get, _dolfin.ElasticityUpdatedSolver_b_set)
+    __swig_setmethods__["m"] = _dolfin.ElasticityUpdatedSolver_m_set
+    __swig_getmethods__["m"] = _dolfin.ElasticityUpdatedSolver_m_get
+    if _newclass:m = property(_dolfin.ElasticityUpdatedSolver_m_get, _dolfin.ElasticityUpdatedSolver_m_set)
+    __swig_setmethods__["msigma"] = _dolfin.ElasticityUpdatedSolver_msigma_set
+    __swig_getmethods__["msigma"] = _dolfin.ElasticityUpdatedSolver_msigma_get
+    if _newclass:msigma = property(_dolfin.ElasticityUpdatedSolver_msigma_get, _dolfin.ElasticityUpdatedSolver_msigma_set)
+    __swig_setmethods__["stepresidual"] = _dolfin.ElasticityUpdatedSolver_stepresidual_set
+    __swig_getmethods__["stepresidual"] = _dolfin.ElasticityUpdatedSolver_stepresidual_get
+    if _newclass:stepresidual = property(_dolfin.ElasticityUpdatedSolver_stepresidual_get, _dolfin.ElasticityUpdatedSolver_stepresidual_set)
+    __swig_setmethods__["xsigma0"] = _dolfin.ElasticityUpdatedSolver_xsigma0_set
+    __swig_getmethods__["xsigma0"] = _dolfin.ElasticityUpdatedSolver_xsigma0_get
+    if _newclass:xsigma0 = property(_dolfin.ElasticityUpdatedSolver_xsigma0_get, _dolfin.ElasticityUpdatedSolver_xsigma0_set)
+    __swig_setmethods__["xsigma1"] = _dolfin.ElasticityUpdatedSolver_xsigma1_set
+    __swig_getmethods__["xsigma1"] = _dolfin.ElasticityUpdatedSolver_xsigma1_get
+    if _newclass:xsigma1 = property(_dolfin.ElasticityUpdatedSolver_xsigma1_get, _dolfin.ElasticityUpdatedSolver_xsigma1_set)
+    __swig_setmethods__["xepsilon1"] = _dolfin.ElasticityUpdatedSolver_xepsilon1_set
+    __swig_getmethods__["xepsilon1"] = _dolfin.ElasticityUpdatedSolver_xepsilon1_get
+    if _newclass:xepsilon1 = property(_dolfin.ElasticityUpdatedSolver_xepsilon1_get, _dolfin.ElasticityUpdatedSolver_xepsilon1_set)
+    __swig_setmethods__["xsigmanorm"] = _dolfin.ElasticityUpdatedSolver_xsigmanorm_set
+    __swig_getmethods__["xsigmanorm"] = _dolfin.ElasticityUpdatedSolver_xsigmanorm_get
+    if _newclass:xsigmanorm = property(_dolfin.ElasticityUpdatedSolver_xsigmanorm_get, _dolfin.ElasticityUpdatedSolver_xsigmanorm_set)
+    __swig_setmethods__["xjaumann1"] = _dolfin.ElasticityUpdatedSolver_xjaumann1_set
+    __swig_getmethods__["xjaumann1"] = _dolfin.ElasticityUpdatedSolver_xjaumann1_get
+    if _newclass:xjaumann1 = property(_dolfin.ElasticityUpdatedSolver_xjaumann1_get, _dolfin.ElasticityUpdatedSolver_xjaumann1_set)
+    __swig_setmethods__["xtmp1"] = _dolfin.ElasticityUpdatedSolver_xtmp1_set
+    __swig_getmethods__["xtmp1"] = _dolfin.ElasticityUpdatedSolver_xtmp1_get
+    if _newclass:xtmp1 = property(_dolfin.ElasticityUpdatedSolver_xtmp1_get, _dolfin.ElasticityUpdatedSolver_xtmp1_set)
+    __swig_setmethods__["xtmp2"] = _dolfin.ElasticityUpdatedSolver_xtmp2_set
+    __swig_getmethods__["xtmp2"] = _dolfin.ElasticityUpdatedSolver_xtmp2_get
+    if _newclass:xtmp2 = property(_dolfin.ElasticityUpdatedSolver_xtmp2_get, _dolfin.ElasticityUpdatedSolver_xtmp2_set)
+    __swig_setmethods__["xsigmatmp1"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp1_set
+    __swig_getmethods__["xsigmatmp1"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp1_get
+    if _newclass:xsigmatmp1 = property(_dolfin.ElasticityUpdatedSolver_xsigmatmp1_get, _dolfin.ElasticityUpdatedSolver_xsigmatmp1_set)
+    __swig_setmethods__["xsigmatmp2"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp2_set
+    __swig_getmethods__["xsigmatmp2"] = _dolfin.ElasticityUpdatedSolver_xsigmatmp2_get
+    if _newclass:xsigmatmp2 = property(_dolfin.ElasticityUpdatedSolver_xsigmatmp2_get, _dolfin.ElasticityUpdatedSolver_xsigmatmp2_set)
+    __swig_setmethods__["fcontact"] = _dolfin.ElasticityUpdatedSolver_fcontact_set
+    __swig_getmethods__["fcontact"] = _dolfin.ElasticityUpdatedSolver_fcontact_get
+    if _newclass:fcontact = property(_dolfin.ElasticityUpdatedSolver_fcontact_get, _dolfin.ElasticityUpdatedSolver_fcontact_set)
+    __swig_setmethods__["Dummy"] = _dolfin.ElasticityUpdatedSolver_Dummy_set
+    __swig_getmethods__["Dummy"] = _dolfin.ElasticityUpdatedSolver_Dummy_get
+    if _newclass:Dummy = property(_dolfin.ElasticityUpdatedSolver_Dummy_get, _dolfin.ElasticityUpdatedSolver_Dummy_set)
+    __swig_setmethods__["dotu_x1"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_set
+    __swig_getmethods__["dotu_x1"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_get
+    if _newclass:dotu_x1 = property(_dolfin.ElasticityUpdatedSolver_dotu_x1_get, _dolfin.ElasticityUpdatedSolver_dotu_x1_set)
+    __swig_setmethods__["dotu_x2"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_set
+    __swig_getmethods__["dotu_x2"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_get
+    if _newclass:dotu_x2 = property(_dolfin.ElasticityUpdatedSolver_dotu_x2_get, _dolfin.ElasticityUpdatedSolver_dotu_x2_set)
+    __swig_setmethods__["dotu_xsigma"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_set
+    __swig_getmethods__["dotu_xsigma"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_get
+    if _newclass:dotu_xsigma = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigma_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigma_set)
+    __swig_setmethods__["dotu"] = _dolfin.ElasticityUpdatedSolver_dotu_set
+    __swig_getmethods__["dotu"] = _dolfin.ElasticityUpdatedSolver_dotu_get
+    if _newclass:dotu = property(_dolfin.ElasticityUpdatedSolver_dotu_get, _dolfin.ElasticityUpdatedSolver_dotu_set)
+    __swig_setmethods__["dotu_x1sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x1sc_set
+    __swig_getmethods__["dotu_x1sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x1sc_get
+    if _newclass:dotu_x1sc = property(_dolfin.ElasticityUpdatedSolver_dotu_x1sc_get, _dolfin.ElasticityUpdatedSolver_dotu_x1sc_set)
+    __swig_setmethods__["dotu_x2sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x2sc_set
+    __swig_getmethods__["dotu_x2sc"] = _dolfin.ElasticityUpdatedSolver_dotu_x2sc_get
+    if _newclass:dotu_x2sc = property(_dolfin.ElasticityUpdatedSolver_dotu_x2sc_get, _dolfin.ElasticityUpdatedSolver_dotu_x2sc_set)
+    __swig_setmethods__["dotu_xsigmasc"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_set
+    __swig_getmethods__["dotu_xsigmasc"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_get
+    if _newclass:dotu_xsigmasc = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigmasc_set)
+    __swig_setmethods__["dotu_x1is"] = _dolfin.ElasticityUpdatedSolver_dotu_x1is_set
+    __swig_getmethods__["dotu_x1is"] = _dolfin.ElasticityUpdatedSolver_dotu_x1is_get
+    if _newclass:dotu_x1is = property(_dolfin.ElasticityUpdatedSolver_dotu_x1is_get, _dolfin.ElasticityUpdatedSolver_dotu_x1is_set)
+    __swig_setmethods__["dotu_x2is"] = _dolfin.ElasticityUpdatedSolver_dotu_x2is_set
+    __swig_getmethods__["dotu_x2is"] = _dolfin.ElasticityUpdatedSolver_dotu_x2is_get
+    if _newclass:dotu_x2is = property(_dolfin.ElasticityUpdatedSolver_dotu_x2is_get, _dolfin.ElasticityUpdatedSolver_dotu_x2is_set)
+    __swig_setmethods__["dotu_xsigmais"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_set
+    __swig_getmethods__["dotu_xsigmais"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_get
+    if _newclass:dotu_xsigmais = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigmais_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigmais_set)
+    __swig_setmethods__["dotu_x1_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_set
+    __swig_getmethods__["dotu_x1_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_get
+    if _newclass:dotu_x1_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_x1_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_x1_indices_set)
+    __swig_setmethods__["dotu_x2_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_set
+    __swig_getmethods__["dotu_x2_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_get
+    if _newclass:dotu_x2_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_x2_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_x2_indices_set)
+    __swig_setmethods__["dotu_xsigma_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_set
+    __swig_getmethods__["dotu_xsigma_indices"] = _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_get
+    if _newclass:dotu_xsigma_indices = property(_dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_get, _dolfin.ElasticityUpdatedSolver_dotu_xsigma_indices_set)
+    __swig_setmethods__["v1"] = _dolfin.ElasticityUpdatedSolver_v1_set
+    __swig_getmethods__["v1"] = _dolfin.ElasticityUpdatedSolver_v1_get
+    if _newclass:v1 = property(_dolfin.ElasticityUpdatedSolver_v1_get, _dolfin.ElasticityUpdatedSolver_v1_set)
+    __swig_setmethods__["u0"] = _dolfin.ElasticityUpdatedSolver_u0_set
+    __swig_getmethods__["u0"] = _dolfin.ElasticityUpdatedSolver_u0_get
+    if _newclass:u0 = property(_dolfin.ElasticityUpdatedSolver_u0_get, _dolfin.ElasticityUpdatedSolver_u0_set)
+    __swig_setmethods__["u1"] = _dolfin.ElasticityUpdatedSolver_u1_set
+    __swig_getmethods__["u1"] = _dolfin.ElasticityUpdatedSolver_u1_get
+    if _newclass:u1 = property(_dolfin.ElasticityUpdatedSolver_u1_get, _dolfin.ElasticityUpdatedSolver_u1_set)
+    __swig_setmethods__["sigma0"] = _dolfin.ElasticityUpdatedSolver_sigma0_set
+    __swig_getmethods__["sigma0"] = _dolfin.ElasticityUpdatedSolver_sigma0_get
+    if _newclass:sigma0 = property(_dolfin.ElasticityUpdatedSolver_sigma0_get, _dolfin.ElasticityUpdatedSolver_sigma0_set)
+    __swig_setmethods__["sigma1"] = _dolfin.ElasticityUpdatedSolver_sigma1_set
+    __swig_getmethods__["sigma1"] = _dolfin.ElasticityUpdatedSolver_sigma1_get
+    if _newclass:sigma1 = property(_dolfin.ElasticityUpdatedSolver_sigma1_get, _dolfin.ElasticityUpdatedSolver_sigma1_set)
+    __swig_setmethods__["epsilon1"] = _dolfin.ElasticityUpdatedSolver_epsilon1_set
+    __swig_getmethods__["epsilon1"] = _dolfin.ElasticityUpdatedSolver_epsilon1_get
+    if _newclass:epsilon1 = property(_dolfin.ElasticityUpdatedSolver_epsilon1_get, _dolfin.ElasticityUpdatedSolver_epsilon1_set)
+    __swig_setmethods__["sigmanorm"] = _dolfin.ElasticityUpdatedSolver_sigmanorm_set
+    __swig_getmethods__["sigmanorm"] = _dolfin.ElasticityUpdatedSolver_sigmanorm_get
+    if _newclass:sigmanorm = property(_dolfin.ElasticityUpdatedSolver_sigmanorm_get, _dolfin.ElasticityUpdatedSolver_sigmanorm_set)
+    __swig_setmethods__["Lv"] = _dolfin.ElasticityUpdatedSolver_Lv_set
+    __swig_getmethods__["Lv"] = _dolfin.ElasticityUpdatedSolver_Lv_get
+    if _newclass:Lv = property(_dolfin.ElasticityUpdatedSolver_Lv_get, _dolfin.ElasticityUpdatedSolver_Lv_set)
+    __swig_setmethods__["Lsigma"] = _dolfin.ElasticityUpdatedSolver_Lsigma_set
+    __swig_getmethods__["Lsigma"] = _dolfin.ElasticityUpdatedSolver_Lsigma_get
+    if _newclass:Lsigma = property(_dolfin.ElasticityUpdatedSolver_Lsigma_get, _dolfin.ElasticityUpdatedSolver_Lsigma_set)
+_dolfin.ElasticityUpdatedSolver_swigregister(ElasticityUpdatedSolver)
 
 set = _dolfin.set
 
 assemble = _dolfin.assemble
 
 applyBC = _dolfin.applyBC
+
+ElasticityUpdatedSolver_solve = _dolfin.ElasticityUpdatedSolver_solve
+
+ElasticityUpdatedSolver_finterpolate = _dolfin.ElasticityUpdatedSolver_finterpolate
+
+ElasticityUpdatedSolver_plasticity = _dolfin.ElasticityUpdatedSolver_plasticity
+
+ElasticityUpdatedSolver_initmsigma = _dolfin.ElasticityUpdatedSolver_initmsigma
+
+ElasticityUpdatedSolver_initu0 = _dolfin.ElasticityUpdatedSolver_initu0
+
+ElasticityUpdatedSolver_initJ0 = _dolfin.ElasticityUpdatedSolver_initJ0
+
+ElasticityUpdatedSolver_computeJ = _dolfin.ElasticityUpdatedSolver_computeJ
+
+ElasticityUpdatedSolver_initF0Green = _dolfin.ElasticityUpdatedSolver_initF0Green
+
+ElasticityUpdatedSolver_computeFGreen = _dolfin.ElasticityUpdatedSolver_computeFGreen
+
+ElasticityUpdatedSolver_initF0Euler = _dolfin.ElasticityUpdatedSolver_initF0Euler
+
+ElasticityUpdatedSolver_computeFEuler = _dolfin.ElasticityUpdatedSolver_computeFEuler
+
+ElasticityUpdatedSolver_computeFBEuler = _dolfin.ElasticityUpdatedSolver_computeFBEuler
+
+ElasticityUpdatedSolver_computeBEuler = _dolfin.ElasticityUpdatedSolver_computeBEuler
+
+ElasticityUpdatedSolver_multF = _dolfin.ElasticityUpdatedSolver_multF
+
+ElasticityUpdatedSolver_multB = _dolfin.ElasticityUpdatedSolver_multB
+
+ElasticityUpdatedSolver_deform = _dolfin.ElasticityUpdatedSolver_deform
+
+class ElasticityUpdatedODE(ODE):
+    __swig_setmethods__ = {}
+    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedODE, name, value)
+    __swig_getmethods__ = {}
+    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, ElasticityUpdatedODE, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::ElasticityUpdatedODE instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_ElasticityUpdatedODE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def u0(*args): return _dolfin.ElasticityUpdatedODE_u0(*args)
+    def fmono(*args): return _dolfin.ElasticityUpdatedODE_fmono(*args)
+    def update(*args): return _dolfin.ElasticityUpdatedODE_update(*args)
+    def fromArray(*args): return _dolfin.ElasticityUpdatedODE_fromArray(*args)
+    def toArray(*args): return _dolfin.ElasticityUpdatedODE_toArray(*args)
+    __swig_setmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_set
+    __swig_getmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_get
+    if _newclass:solver = property(_dolfin.ElasticityUpdatedODE_solver_get, _dolfin.ElasticityUpdatedODE_solver_set)
+_dolfin.ElasticityUpdatedODE_swigregister(ElasticityUpdatedODE)
+
+class UtilBC(BoundaryCondition):
+    __swig_setmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC, name, value)
+    __swig_getmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::UtilBC instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_UtilBC(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args): return _dolfin.UtilBC_eval(*args)
+_dolfin.UtilBC_swigregister(UtilBC)
+
+
 
