@@ -2235,23 +2235,41 @@ class ElasticityUpdatedODE(ODE):
     if _newclass:solver = property(_dolfin.ElasticityUpdatedODE_solver_get, _dolfin.ElasticityUpdatedODE_solver_set)
 _dolfin.ElasticityUpdatedODE_swigregister(ElasticityUpdatedODE)
 
-class UtilBC(BoundaryCondition):
+class UtilBC1(BoundaryCondition):
     __swig_setmethods__ = {}
     for _s in [BoundaryCondition]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC1, name, value)
     __swig_getmethods__ = {}
     for _s in [BoundaryCondition]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC1, name)
     def __repr__(self):
         try: strthis = "at 0x%x" %( self.this, ) 
         except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::UtilBC instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+        return "<%s.%s; proxy of C++ dolfin::UtilBC1 instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
     def __init__(self, *args):
-        this = _dolfin.new_UtilBC(*args)
+        this = _dolfin.new_UtilBC1(*args)
         try: self.this.append(this)
         except: self.this = this
-    def eval(*args): return _dolfin.UtilBC_eval(*args)
-_dolfin.UtilBC_swigregister(UtilBC)
+    def eval(*args): return _dolfin.UtilBC1_eval(*args)
+_dolfin.UtilBC1_swigregister(UtilBC1)
+
+class UtilBC2(BoundaryCondition):
+    __swig_setmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, UtilBC2, name, value)
+    __swig_getmethods__ = {}
+    for _s in [BoundaryCondition]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, UtilBC2, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::UtilBC2 instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_UtilBC2(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args): return _dolfin.UtilBC2_eval(*args)
+_dolfin.UtilBC2_swigregister(UtilBC2)
 
 
 

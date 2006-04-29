@@ -209,11 +209,29 @@ namespace dolfin
     ElasticityUpdatedSolver& solver;
   };
 
-  // Boundary condition
-  class UtilBC : public BoundaryCondition
+  // Boundary conditions
+  // Temporary solution until BCs can be specified in forms
+
+  class UtilBC1 : public BoundaryCondition
   {
   public:
-    UtilBC()
+    UtilBC1()
+    {
+    }
+    
+    void eval(BoundaryValue& value, const Point& p, unsigned int i)
+    {
+      if(p.x == 0.0)
+	value = 0.0;
+//       if(p.x < -0.8)
+// 	value = 0.0;
+    }
+  };
+
+  class UtilBC2 : public BoundaryCondition
+  {
+  public:
+    UtilBC2()
     {
     }
     
@@ -221,8 +239,8 @@ namespace dolfin
     {
 //       if(p.x == 0.0)
 // 	value = 0.0;
-          if(p.x < -0.8)
-            value = 0.0;
+      if(p.x < -0.8)
+	value = 0.0;
     }
   };
 
