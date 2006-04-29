@@ -4,6 +4,7 @@
 #include <dolfin.h>
 
 #include "SettingsGlue.h"
+#include "FEMGlue.h"
 
 #include <string>
   
@@ -233,3 +234,4 @@ using namespace dolfin;
 /* glue */
 
 %include "SettingsGlue.h"
+%include "FEMGlue.h"
