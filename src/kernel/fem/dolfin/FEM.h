@@ -382,11 +382,14 @@ namespace dolfin
 
     // Allocate list of rows
     uint m = 0;
-    int*  rows = new int[size];
+    int*  rows = 0;
+    if ( A )
+      rows = new int[size];
+
     bool* row_set = new bool[size];
     for (unsigned int i = 0; i < size; i++)
       row_set[i] = false;
-  
+
     // Allocate local data
     uint n = element.spacedim();
     int* nodes = new int[n];
@@ -399,7 +402,7 @@ namespace dolfin
     {
       block_b   = new real[n];  
       node_list = new int[n];  
-    }      
+    }
 
     // Iterate over all edges/faces on the boundary
     for ( ; !boundary_entity.end(); ++boundary_entity)
@@ -430,7 +433,7 @@ namespace dolfin
         // Get boundary condition
         bv.reset();
         bc.eval(bv, point, components[i]);
-    
+
         // Set boundary condition if Dirichlet
         if ( bv.fixed )
         {
@@ -443,8 +446,11 @@ namespace dolfin
               block_b[k] = bv.value;
 
             row_set[node] = true;
-            node_list[k++] = node;
-            rows[m++] = node;
+
+            if ( b )
+              node_list[k++] = node;
+            if ( A )
+              rows[m++] = node;
           }
         }
       }
