@@ -54,7 +54,7 @@ dolfin::uint LinearPDE::solve(Function& u)
   Vector& x = u.vector();
 
   // Get solver type
-  const std::string solver_type = get("solver");
+  const std::string solver_type = get("PDE linear solver");
 
   // Assemble linear system
   Vector b;

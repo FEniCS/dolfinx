@@ -83,3 +83,6 @@ add("Krylov monitor convergence", false);
 
 //--- Parameter for direct (LU) solver ---
 add("LU report", true);
+
+//--- Parameter for PDE solver ---
+add("PDE linear solver", "direct");

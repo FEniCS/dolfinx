@@ -126,7 +126,6 @@ int main()
   // Compute solution
   Function U;
   Function P;
-  pde.set("solver", "direct");
   pde.solve(U, P);
 
   // Save solution to file
