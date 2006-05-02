@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006
+// Modified by Kristian Oelgaard, 2006
 //
 // First added:  2004-05-19
-// Last changed: 2006-04-25
+// Last changed: 2006-05-02
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -450,7 +451,9 @@ namespace dolfin
             if ( b )
               node_list[k++] = node;
             if ( A )
-              rows[m++] = node;
+              rows[m] = node;
+
+            m++;
           }
         }
       }
