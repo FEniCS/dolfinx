@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003
-// Last changed: 2006-03-10
+// Last changed: 2006-05-03
 
 #ifndef __FACE_H
 #define __FACE_H
@@ -47,6 +49,9 @@ namespace dolfin
 
     /// Return cell neighbor number i
     Cell& cell(int i) const;
+
+    /// Local id of face relative for neighbour cell i
+    int localID(int i) const;
 
     /// Return the mesh containing the face
     Mesh& mesh();
@@ -103,6 +108,9 @@ namespace dolfin
     
     // Connectivity
     PArray<Cell*> fc;
+
+    // Local face number for adjoining cells
+    PArray<int> f_local_id;
     
   };
 

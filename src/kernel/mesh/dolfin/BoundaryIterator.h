@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-04-10
-// Last changed: 2006
+// Last changed: 2006-05-03
 
 #ifndef __BOUNDARY_ITERATOR_H
 #define __BOUNDARY_ITERATOR_H
@@ -37,6 +37,12 @@ namespace dolfin {
 
     const uint numCellNeighbors() 
       { return iterator->numCellNeighbors(); } 
+
+    int id() 
+      { return iterator->id(); } 
+
+    int localID(int i) 
+      { return iterator->localID(i); } 
 
     Cell& cell(uint cell) 
       { return iterator->cell(cell); } 

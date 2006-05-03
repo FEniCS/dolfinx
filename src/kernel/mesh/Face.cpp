@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003
-// Last changed: 2006-03-10
+// Last changed: 2006-05-03
 
 #include <dolfin/Point.h>
 #include <dolfin/Vertex.h>
@@ -52,6 +54,11 @@ Edge& Face::edge(int i) const
 Cell& Face::cell(int i) const
 {
   return *fc(i);
+}
+//-----------------------------------------------------------------------------
+int Face::localID(int i) const
+{
+  return f_local_id(i);
 }
 //-----------------------------------------------------------------------------
 Mesh& Face::mesh()

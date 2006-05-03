@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003
-// Last changed: 2006-03-10
+// Last changed: 2006-05-03
 
 #ifndef __EDGE_H
 #define __EDGE_H
@@ -51,6 +53,9 @@ namespace dolfin
 
     /// Return cell neighbor number i
     Cell& cell(int i) const;
+
+    /// Local id of edge for neighbour cell i
+    int localID(int i) const;
 
     /// Return the mesh containing the edge
     Mesh& mesh();
@@ -143,6 +148,9 @@ namespace dolfin
     // Connectivity
     PArray<Cell*> ec;
     
+    // Local edge number for adjoining cells
+    PArray<int> e_local_id;
+
     // Mesh refinement data
     EdgeRefData* rd;
 

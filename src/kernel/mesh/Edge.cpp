@@ -1,8 +1,10 @@
 // Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2003  
-// Last changed: 2006-03-10
+// Last changed: 2006-05-03
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
@@ -68,6 +70,11 @@ Vertex& Edge::vertex(int i) const
 Cell& Edge::cell(int i) const
 {
   return *ec(i);
+}
+//-----------------------------------------------------------------------------
+int Edge::localID(int i) const
+{
+  return e_local_id(i);
 }
 //-----------------------------------------------------------------------------
 Mesh& Edge::mesh()

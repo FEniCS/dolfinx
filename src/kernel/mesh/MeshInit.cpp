@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2002
-// Last changed: 2006-03-27
+// Last changed: 2006-05-03
 
 #include <algorithm>
 #include <dolfin/Mesh.h>
@@ -274,9 +274,9 @@ void MeshInit::initVertexVertex(Mesh& mesh)
       Edge* e = n->ne(i);
 
       if ( &e->vertex(0) != n )
-	n->nn(i+1) = &e->vertex(0);
+        n->nn(i+1) = &e->vertex(0);
       else
-	n->nn(i+1) = &e->vertex(1);
+        n->nn(i+1) = &e->vertex(1);
     }
   }
 }
@@ -293,16 +293,24 @@ void MeshInit::initEdgeCell(Mesh& mesh)
   // Count the number of cells the edge appears in
   for (CellIterator c(mesh); !c.end(); ++c)
     for (EdgeIterator e(c); !e.end(); ++e)
+    {
       e->ec.setsize(e->ec.size()+1);
+      e->e_local_id.setsize(e->e_local_id.size()+1);
+    }
   
   // Allocate memory for the cell lists
   for (EdgeIterator e(mesh); !e.end(); ++e)
+  {
     e->ec.init();
-
+    e->e_local_id.init();
+  }
   // Add the cells to the cell lists
   for (CellIterator c(mesh); !c.end(); ++c)
-    for (EdgeIterator e(c); !e.end(); ++e)
+    for (EdgeIterator e(c); !e.end(); ++e) // i
+    {
       e->ec.add(c);
+      e->e_local_id.add(e.index());
+    }
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initFaceCell(Mesh& mesh)
@@ -318,11 +326,17 @@ void MeshInit::initFaceCell(Mesh& mesh)
   // Count the number of cells the face appears in
   for (CellIterator c(mesh); !c.end(); ++c)
     for (FaceIterator f(c); !f.end(); ++f)
+    {
       f->fc.setsize(f->fc.size()+1);
-  
+      f->f_local_id.setsize(f->f_local_id.size()+1);
+    }
+
   // Allocate memory for the cell lists
   for (FaceIterator f(mesh); !f.end(); ++f)
+  {
     f->fc.init();
+    f->f_local_id.init();
+  }
 
   for (FaceIterator f(mesh); !f.end(); ++f)
     if ( f->fc.size() > 2 )
@@ -331,7 +345,10 @@ void MeshInit::initFaceCell(Mesh& mesh)
   // Add the cells to the cell lists
   for (CellIterator c(mesh); !c.end(); ++c)
     for (FaceIterator f(c); !f.end(); ++f)
+    {
       f->fc.add(c);
+      f->f_local_id.add(f.index());
+    }
 }
 //-----------------------------------------------------------------------------
 void MeshInit::initEdgeBoundaryids(Mesh& mesh)
