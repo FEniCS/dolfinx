@@ -20,7 +20,7 @@
 #include <dolfin/Boundary.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/BoundaryCondition.h>
-#include <dolfin/BoundaryIterator.h>
+#include <dolfin/BoundaryFacetIterator.h>
 #include <dolfin/FiniteElement.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
@@ -115,7 +115,7 @@ namespace dolfin
     template<class T, class U, class V, class W>
     static void applyBC_common(GenericMatrix<T>* A, GenericVector<W>* b, 
         const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc, 
-         BoundaryIterator<U,V>& boundary_entity);
+         BoundaryFacetIterator<U,V>& facet);
 
     /// Estimate the maximum number of nonzeros in each row
     static uint nzsize(const Mesh& mesh, const FiniteElement& element);
@@ -349,13 +349,13 @@ namespace dolfin
     // Choose type of mesh
     if( mesh.type() == Mesh::triangles)
     {
-      BoundaryIterator<EdgeIterator,Edge> boundary_entity(boundary);
-      applyBC_common(A, b, x, mesh, element, bc, boundary_entity);
+      BoundaryFacetIterator<EdgeIterator,Edge> facet(boundary);
+      applyBC_common(A, b, x, mesh, element, bc, facet);
     }
     else if(mesh.type() == Mesh::tetrahedra)
     {
-      BoundaryIterator<FaceIterator,Face> boundary_entity(boundary);
-      applyBC_common(A, b, x, mesh, element, bc, boundary_entity);
+      BoundaryFacetIterator<FaceIterator,Face> facet(boundary);
+      applyBC_common(A, b, x, mesh, element, bc, facet);
     }
     else
     {
@@ -366,7 +366,7 @@ namespace dolfin
   template<class T, class U, class V, class W>
   void FEM::applyBC_common(GenericMatrix<T>* A, GenericVector<W>* b, 
         const Vector* x, Mesh& mesh, FiniteElement& element, 
-        BoundaryCondition& bc, BoundaryIterator<U,V>& boundary_entity)
+        BoundaryCondition& bc, BoundaryFacetIterator<U,V>& facet)
   {
     // Create boundary value
     BoundaryValue bv;
@@ -406,13 +406,13 @@ namespace dolfin
     }
 
     // Iterate over all edges/faces on the boundary
-    for ( ; !boundary_entity.end(); ++boundary_entity)
+    for ( ; !facet.end(); ++facet)
     {
       uint k = 0;
 
       // Get cell containing the edge (pick first, should only be one)
-      dolfin_assert(boundary_entity.numCellNeighbors() == 1);
-      Cell& cell = boundary_entity.cell(0);
+      dolfin_assert(facet.numCellNeighbors() == 1);
+      Cell& cell = facet.cell(0);
 
       // Update affine map
       map.update(cell);
@@ -428,7 +428,7 @@ namespace dolfin
       {
         // Skip points that are not contained in edge
         const Point& point = points[i];
-        if ( !(boundary_entity.contains(point)) )
+        if ( !(facet.contains(point)) )
           continue;
 
         // Get boundary condition

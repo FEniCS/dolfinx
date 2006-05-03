@@ -4,8 +4,8 @@
 // First added:  2006-04-10
 // Last changed: 2006-05-03
 
-#ifndef __BOUNDARY_ITERATOR_H
-#define __BOUNDARY_ITERATOR_H
+#ifndef __BOUNDARY_FACET_ITERATOR_H
+#define __BOUNDARY_FACET_ITERATOR_H
 
 #include <dolfin/PArray.h>
 #include <dolfin/PList.h>
@@ -14,17 +14,17 @@
 namespace dolfin {
 
   template <class T, class V>
-  class BoundaryIterator {
+  class BoundaryFacetIterator {
   public:
 	 
     /// Constructor
-    BoundaryIterator(Boundary& boundary) : iterator(boundary){}
+    BoundaryFacetIterator(Boundary& boundary) : iterator(boundary){}
 
     /// Constructor
-    BoundaryIterator(Boundary* boundary) : iterator(boundary){}
+    BoundaryFacetIterator(Boundary* boundary) : iterator(boundary){}
 
     /// Destructor
-    ~BoundaryIterator(){}
+    ~BoundaryFacetIterator(){}
 
     bool end()
       { return iterator.end(); }

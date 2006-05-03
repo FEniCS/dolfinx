@@ -1,8 +1,8 @@
 EXTRA_DIST = dolfin_mesh.h \
              Boundary.h \
              BoundaryData.h \
+             BoundaryFacetIterator.h \
              BoundaryInit.h \
-             BoundaryIterator.h \
              Cell.h \
              CellIterator.h \
              CellRefData.h \
