@@ -1,8 +1,10 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2005-05-17
-// Last changed: 2005-11-29
+// Last changed: 2006-05-03
 
 #ifndef __AFFINE_MAP_H
 #define __AFFINE_MAP_H
@@ -36,6 +38,9 @@ namespace dolfin
     /// Update map for current element
     void update(Cell& cell);
 
+    /// Update map for facet of current element
+    void update(Cell& cell, uint facet);
+
     /// Map given point from the reference element (2D)
     Point operator() (real X, real Y) const;
 
@@ -47,6 +52,9 @@ namespace dolfin
     
     // Determinant of Jacobian of map
     real det;
+
+    // Scale factor for mapping
+    real scale;
 
     // Jacobian of map
     real f00, f01, f02, f10, f11, f12, f20, f21, f22;

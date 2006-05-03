@@ -59,6 +59,9 @@ namespace dolfin
     /// Return the mesh containing the face (const version)
     const Mesh& mesh() const;
 
+    /// Return area of face
+    real area() const;
+
     /// Check if face consists of the given edges
     bool equals(const Edge& e0, const Edge& e1, const  Edge& e2) const;
     

@@ -71,6 +71,20 @@ const Mesh& Face::mesh() const
   return *_mesh;
 }
 //-----------------------------------------------------------------------------
+real Face::area() const
+{
+  dolfin_assert(fe.size() == 3);
+
+  const Edge* e0 = fe(0);
+  const Edge* e1 = fe(1);
+
+  Point v0 = e0->n1->coord() - e0->n0->coord();
+  Point v1 = e1->n1->coord() - e1->n0->coord();
+
+  return 0.5*v0.cross(v1).norm();
+
+}
+//-----------------------------------------------------------------------------
 bool Face::equals(const Edge& e0, const Edge& e1, const Edge& e2) const
 {
   dolfin_assert(fe.size() == 3);

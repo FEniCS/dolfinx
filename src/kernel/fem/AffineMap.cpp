@@ -1,10 +1,14 @@
 // Copyright (C) 2005 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells, 2006.
+//
 // First added:  2005-05-17
-// Last changed: 2005-11-29
+// Last changed: 2006-05-03
 
 #include <dolfin/Cell.h>
+#include <dolfin/Edge.h>
+#include <dolfin/Face.h>
 #include <dolfin/AffineMap.h>
 
 using namespace dolfin;
@@ -36,9 +40,34 @@ void AffineMap::update(Cell& cell)
   {
   case Cell::triangle:
     updateTriangle(cell);
+    scale = det;
     break;
   case Cell::tetrahedron:
     updateTetrahedron(cell);
+    scale = det;
+    break;
+  default:
+    dolfin_error("Unknown cell type for affine map.");
+  }
+  
+  _cell = &cell;
+}
+//-----------------------------------------------------------------------------
+void AffineMap::update(Cell& cell, uint facet)
+{
+  switch ( cell.type() )
+  {
+  case Cell::triangle:
+    updateTriangle(cell);
+    scale = cell.edge(facet).length();
+    //FIXME: Make change at FFC side
+    det = scale;
+    break;
+  case Cell::tetrahedron:
+    updateTetrahedron(cell);
+    scale = cell.face(facet).area();
+    //FIXME: Make change at FFC side
+    det = scale;
     break;
   default:
     dolfin_error("Unknown cell type for affine map.");
