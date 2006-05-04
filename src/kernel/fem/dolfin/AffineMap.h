@@ -53,8 +53,8 @@ namespace dolfin
     // Determinant of Jacobian of map
     real det;
 
-    // Scale factor for mapping
-    real scale;
+    // Scaling factor for mapping
+    real scaling;
 
     // Jacobian of map
     real f00, f01, f02, f10, f11, f12, f20, f21, f22;

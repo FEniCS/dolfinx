@@ -40,11 +40,11 @@ void AffineMap::update(Cell& cell)
   {
   case Cell::triangle:
     updateTriangle(cell);
-    scale = det;
+    scaling = det;
     break;
   case Cell::tetrahedron:
     updateTetrahedron(cell);
-    scale = det;
+    scaling = det;
     break;
   default:
     dolfin_error("Unknown cell type for affine map.");
@@ -59,15 +59,15 @@ void AffineMap::update(Cell& cell, uint facet)
   {
   case Cell::triangle:
     updateTriangle(cell);
-    scale = cell.edge(facet).length();
+    scaling = cell.edge(facet).length();
     //FIXME: Make change at FFC side
-    det = scale;
+    det = scaling;
     break;
   case Cell::tetrahedron:
     updateTetrahedron(cell);
-    scale = cell.face(facet).area();
+    scaling = cell.face(facet).area();
     //FIXME: Make change at FFC side
-    det = scale;
+    det = scaling;
     break;
   default:
     dolfin_error("Unknown cell type for affine map.");

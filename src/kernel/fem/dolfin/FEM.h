@@ -347,6 +347,14 @@ namespace dolfin
       p++;
     }
   
+    //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
+    if( a )
+      for (uint i = 0; i < m*n; ++i)
+        block_A[i] = 0.0;
+    if( L )
+      for (uint i = 0; i < m; ++i)
+        block_b[i] = 0.0;
+
     // Iterate over all facets on the boundary
     Boundary boundary(mesh);
     Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
@@ -373,9 +381,6 @@ namespace dolfin
         trial_element->nodemap(trial_nodes, cell, mesh);
 
         // Compute element matrix 
-        //FIXME: need to reinitiliase block_A in case no boudary terms are provided
-        for (uint i=0; i<m*n; ++i)
-          block_A[i] = 0.0;
         a->eval(block_A, map, facetID);
 
         // Add element matrix to global matrix
@@ -386,9 +391,6 @@ namespace dolfin
         // Update forms
         L->update(map);    
         // Compute element vector 
-        //FIXME: need to reinitiliase block_b in case no boudary terms are provided
-        for (uint i=0; i<m; ++i)
-          block_b[i] = 0.0;
         L->eval(block_b, map, facetID);
  
         // Add element vector to global vector
