@@ -46,6 +46,18 @@ int Boundary::numFaces() const
   return mesh->bd->numFaces();
 }
 //-----------------------------------------------------------------------------
+int Boundary::numFacets() const
+{
+  dolfin_assert(mesh);
+  if( mesh->type() == Mesh::tetrahedra )
+    return mesh->bd->numFaces();
+
+  if( mesh->type() == Mesh::triangles )
+    return mesh->bd->numEdges();
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
 void Boundary::init()
 {
   if ( mesh->bd->empty() )

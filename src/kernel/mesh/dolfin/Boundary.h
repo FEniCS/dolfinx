@@ -36,6 +36,9 @@ namespace dolfin
     /// Return number of faces on the boundary
     int numFaces() const;
 
+    /// Return number of facets on the boundary
+    int numFacets() const;
+
     /// Friends
     friend class VertexIterator::BoundaryVertexIterator;
     friend class EdgeIterator::BoundaryEdgeIterator;

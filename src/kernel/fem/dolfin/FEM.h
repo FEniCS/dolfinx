@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard, 2006
 //
 // First added:  2004-05-19
-// Last changed: 2006-05-02
+// Last changed: 2006-05-04
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -105,6 +105,11 @@ namespace dolfin
     template<class T, class U>
     static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
         GenericVector<U>& b, Mesh& mesh);
+
+    /// Create boundary facet interator amnd assemble form(s)
+    template<class T, class U, class V, class W>
+    static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
+        GenericVector<U>& b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet);
 
     /// Create iterator and call function to apply boundary conditions
     template<class T, class U>
@@ -226,6 +231,30 @@ namespace dolfin
   void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
         GenericVector<U>& b, Mesh& mesh)
   {
+    // Create boundary
+    Boundary boundary(mesh);
+
+    // Choose type of mesh
+    if( mesh.type() == Mesh::triangles )
+    {
+      BoundaryFacetIterator<EdgeIterator,Edge> facet(boundary);
+      assemble_common(a, L, A, b, mesh, facet);
+    }
+    else if( mesh.type() == Mesh::tetrahedra )
+    {
+      BoundaryFacetIterator<FaceIterator,Face> facet(boundary);
+      assemble_common(a, L, A, b, mesh, facet);
+    }
+    else
+    {
+      dolfin_error("Unknown mesh type.");  
+    }
+  }
+//-----------------------------------------------------------------------------
+  template<class T, class U, class V, class W>
+  void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
+        GenericVector<U>& b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet)
+  {
     // Check that the mesh matches the forms
     if( a )
       checkdims(*a, mesh);
@@ -282,7 +311,7 @@ namespace dolfin
       dolfin_info("Assembling matrix of size %d x %d.", M, N);
     if( !a && L)
       dolfin_info("Assembling vector of size %d.", M);
-    Progress p("Assembling matrix and vector (interior contributions)", mesh.numCells());
+    Progress p("Assembling interior contributions", mesh.numCells());
    
     // Iterate over all cells in the mesh
     for (CellIterator cell(mesh); !cell.end(); ++cell)
@@ -297,23 +326,19 @@ namespace dolfin
       {
         // Update forms
         a->update(map);
-  
         // Compute maps from local to global degrees of freedom (trial functions)
         trial_element->nodemap(trial_nodes, *cell, mesh);
         // Compute element matrix 
         a->eval(block_A, map);
-
         // Add element matrix to global matrix
         A.add(block_A, test_nodes, m, trial_nodes, n);
       }
       if( L )
       {
         // Update forms
-        L->update(map);
-    
+        L->update(map);    
         // Compute element vector 
         L->eval(block_b, map);
-  
         // Add element vector to global vector
         b.add(block_b, test_nodes, m);
       }
@@ -322,6 +347,57 @@ namespace dolfin
       p++;
     }
   
+    // Iterate over all facets on the boundary
+    Boundary boundary(mesh);
+    Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
+    for ( ; !facet.end(); ++facet)
+    {
+      // Get cell containing the edge (pick first, should only be one)
+      dolfin_assert(facet.numCellNeighbors() == 1);
+      Cell& cell = facet.cell(0);
+
+      // Get local facet ID
+      uint facetID = facet.localID(0);
+      
+      // Update affine map for facet 
+      map.update(cell, facetID);
+  
+      // Compute map from local to global degrees of freedom (test functions)
+      test_element->nodemap(test_nodes, cell, mesh);
+  
+      if( a )
+      {
+        // Update forms
+        a->update(map);  
+        // Compute maps from local to global degrees of freedom (trial functions)
+        trial_element->nodemap(trial_nodes, cell, mesh);
+
+        // Compute element matrix 
+        //FIXME: need to reinitiliase block_A in case no boudary terms are provided
+        for (uint i=0; i<m*n; ++i)
+          block_A[i] = 0.0;
+        a->eval(block_A, map, facetID);
+
+        // Add element matrix to global matrix
+        A.add(block_A, test_nodes, m, trial_nodes, n);
+      }
+      if( L )
+      {
+        // Update forms
+        L->update(map);    
+        // Compute element vector 
+        //FIXME: need to reinitiliase block_b in case no boudary terms are provided
+        for (uint i=0; i<m; ++i)
+          block_b[i] = 0.0;
+        L->eval(block_b, map, facetID);
+ 
+        // Add element vector to global vector
+        b.add(block_b, test_nodes, m);
+      }
+      // Update progress
+      p_boundary++;
+    }
+
     // Complete assembly
     if( L )
       b.apply();
@@ -331,7 +407,7 @@ namespace dolfin
       // Check the number of nonzeros
       checknz(A, nz);
     }
-
+    
     // Delete data
     delete [] block_A;
     delete [] block_b;
@@ -340,8 +416,8 @@ namespace dolfin
   }
 //-----------------------------------------------------------------------------
   template<class T, class U>
-  void FEM::applyBC_common(GenericMatrix<T>* A, GenericVector<U>* b, const Vector* x, 
-          Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+  void FEM::applyBC_common(GenericMatrix<T>* A, GenericVector<U>* b, 
+        const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
   {
     // Create boundary
     Boundary boundary(mesh);
@@ -416,10 +492,8 @@ namespace dolfin
 
       // Update affine map
       map.update(cell);
-
       // Compute map from local to global degrees of freedom
       element.nodemap(nodes, cell, mesh);
-
       // Compute map from local to global coordinates
       element.pointmap(points, components, map);
 

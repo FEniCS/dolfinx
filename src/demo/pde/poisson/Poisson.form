@@ -14,6 +14,7 @@ element = FiniteElement("Lagrange", "triangle", 1)
 v = TestFunction(element)
 U = TrialFunction(element)
 f = Function(element)
+h = Function(element)
 
 a = dot(grad(v), grad(U))*dx
-L = v*f*dx
+L = v*f*dx + v*h*ds
