@@ -189,6 +189,7 @@ if test $have_boost = no; then
     BOOST_CFLAGS="-I$BOOST_DIR"
   else
     echo "*** Unable to find Boost."
+    echo "*** Perhaps you need to install the package libboost-dev?"
     exit 1
   fi
 fi
