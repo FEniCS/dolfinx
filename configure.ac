@@ -20,17 +20,17 @@ AC_ARG_ENABLE(optimization,
                              [Turn on optimization]),
               enable_optimization=yes)
 
+# Option --enable-mpi
+AC_ARG_ENABLE(mpi,
+              AC_HELP_STRING([--enable-mpi],
+                             [Compile with MPI]),
+              enable_mpi=yes)
+
 # Option --disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
               disable_curses=yes)
-
-# Option --disable-mpi
-AC_ARG_ENABLE(mpi,
-              AC_HELP_STRING([--disable-mpi],
-                             [Compile without MPI (assuming PETSc does not use MPI)]),
-              disable_mpi=yes)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -147,6 +147,25 @@ else
     echo "disabling compilation of PyDOLFIN"
 fi
 
+# Handle option --enable-mpi
+if test x$enable_mpi = xyes; then
+    AC_CHECK_PROG(mpi_found, mpirun, yes, no)
+    if test $mpi_found = yes; then
+        DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
+        if [ test -d $DIR/mpi ]; then
+            MPI_CFLAGS="-I$DIR/mpi"
+        else
+	    MPI_CFLAGS="-I$DIR"
+        fi
+    else
+        echo "*** Unable to find MPI on your system."
+        echo "*** Perhaps you need to install the packages libmpich1.0-dev and mpich-bin?"
+        exit 1
+    fi
+else
+    echo "disabling MPI (might not work if PETSc uses MPI)"
+fi
+
 # Check for PETSc
 AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
 if test $petsc_found = yes; then
@@ -159,25 +178,6 @@ else
     echo "*** or set the environment variable PETSC_DIR to the correct path."
     echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
     exit 1
-fi
-
-# Check for MPI (needed by PETSc)
-if test x$disable_mpi = x; then
-    AC_CHECK_PROG(mpi_found, mpirun, yes, no)
-    if test $mpi_found = yes; then
-        DIR=`which mpirun | sed 's/bin\/mpirun/include/'`
-        if [ test -d $DIR/mpi ]; then
-            MPI_CFLAGS="-I$DIR/mpi"
-        else
-	    MPI_CFLAGS="-I$DIR"
-        fi
-    else
-        echo "*** Unable to find MPI on your system."
-        echo "*** Perhaps you need to install the package mpich?"
-        exit 1
-    fi
-else
-    echo "disabling MPI (might not work if PETSc uses MPI)"
 fi
 
 # Check for Boost headers
