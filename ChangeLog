@@ -1,3 +1,4 @@
+ - Add function to solve Ax = b for dense matrices and dense vectors
  - Make it possible to compile without PETSc (--disable-petsc)
  - Much improved ODE solvers
  - Complete multi-adaptive benchmarks reaction and wave

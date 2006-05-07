@@ -78,6 +78,12 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
+    /// Solve Ax = b out-of-place (A is not destroyed)
+    void solve(DenseVector& x, const DenseVector& b);
+
+    /// Solve Ax = b in-place (A is destroyed)
+    void solve_in_place(DenseVector& x, const DenseVector& b);
+
     /// Compute inverse of matrix
     void invert();
 

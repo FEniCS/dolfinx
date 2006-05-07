@@ -382,6 +382,24 @@ void testDenseMatrix()
 }
 
 
+void testDenseLUsolve()
+{
+  dolfin_info("--- Testing dense matrix LU solver ---");
+
+  DenseMatrix A(2,2);
+  DenseVector x(2);
+  DenseVector b(2);
+  
+  A(0,0) = 2.6; A(1,1) = 2;
+  A(1,0) = 1.5;
+  x(1) = 1.0;
+
+  A.solve(x, b);  
+  
+}
+
+
+
 int main(int argc, char* argv[])
 {
 /*
@@ -399,8 +417,9 @@ int main(int argc, char* argv[])
   testParameters();
   testMakeElement();
   testMeshRefinement();
-*/
   testDenseMatrix();
+*/
+  testDenseLUsolve();
 
   return 0;
 }

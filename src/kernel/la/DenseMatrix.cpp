@@ -34,13 +34,11 @@ DenseMatrix::DenseMatrix(uint M, uint N) : GenericMatrix<DenseMatrix>(),
 					   BaseMatrix(M, N), Variable("A", "a dense matrix")
 {
   // Clear matrix (not done by ublas)
-  dolfin_error("oops");
-//  clear();
+  clear();
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::~DenseMatrix()
 {
-  dolfin_error("oops");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
@@ -53,6 +51,7 @@ void DenseMatrix::init(uint M, uint N)
     return;
   }
   
+  // Resize matrix (entries are not preserved)
   this->resize(M, N, false);
 
   // Clear matrix (not done by ublas)
@@ -85,10 +84,38 @@ void DenseMatrix::add(const real block[], const int rows[], int m, const int col
       (*this)( rows[i] , cols[j] ) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
+void DenseMatrix::solve(DenseVector& x, const DenseVector& b)
+{    
+  // Make copy of matrix (factorisation is done in-place)
+  DenseMatrix Atemp = *this;
+
+  // Solve
+  Atemp.solve_in_place(x, b);
+}
+//-----------------------------------------------------------------------------
+void DenseMatrix::solve_in_place(DenseVector& x, const DenseVector& b)
+{
+  // This function does not check for singularity of the matrix
+  uint m = this->size1();
+  dolfin_assert(m == this->size2());
+  dolfin_assert(m == b.size());
+  
+  // Initialise solution vector
+  x = b;
+
+  // Create permutation matrix
+  ublas::permutation_matrix<std::size_t> pmatrix(m); 
+
+  // Factorise (with pivoting)
+  ublas::lu_factorize(*this, pmatrix);
+  
+  // Back substitute 
+  ublas::lu_substitute(*this, pmatrix, x);
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::invert()
 {
   // This function does not check for singularity of the matrix
-
   uint m = this->size1();
   dolfin_assert(m == this->size2());
   
