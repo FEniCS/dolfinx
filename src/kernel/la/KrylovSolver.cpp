@@ -5,7 +5,9 @@
 // Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-22
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <petscpc.h>
 #include <petscconf.h>
@@ -324,3 +326,5 @@ KSPType KrylovSolver::getType(const Type type) const
   }
 }
 //-----------------------------------------------------------------------------
+
+#endif

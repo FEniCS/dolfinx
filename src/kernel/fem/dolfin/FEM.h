@@ -76,7 +76,9 @@ namespace dolfin
 
     /// Assemble boundary conditions into residual vector.  For Dirichlet 
     /// boundary conditions, b = x - bc, and for Neumann boundary 
-    /// conditions, b = b - bc. 
+    /// conditions, b = b - bc.
+#ifdef HAVE_PETSC_H
+    // FIXME: Should this also be templated over the type for x?
     template<class T>
     static void assembleBCresidual(GenericVector<T>& b, const Vector& x, Mesh& mesh, 
       FiniteElement& element, BoundaryCondition& bc);
@@ -87,12 +89,16 @@ namespace dolfin
     template<class T, class U>
     static void assembleBCresidual(GenericMatrix<T>& A, GenericVector<U>& b, 
       const Vector& x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
+#endif
 
     /// Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
 
     /// Lump matrix
+#ifdef HAVE_PETSC_H
+    // FIXME: Why is this not templated like the rest?
     static void lump(const Matrix& M, Vector& m);
+#endif
 
     static void lump(const DenseMatrix& M, DenseVector& m);
 
@@ -103,13 +109,13 @@ namespace dolfin
 
     /// Assemble form(s)
     template<class T, class U>
-    static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
-        GenericVector<U>& b, Mesh& mesh);
+    static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
+        GenericVector<U>* b, Mesh& mesh);
 
     /// Create boundary facet interator amnd assemble form(s)
     template<class T, class U, class V, class W>
-    static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
-        GenericVector<U>& b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet);
+    static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
+        GenericVector<U>* b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet);
 
     /// Create iterator and call function to apply boundary conditions
     template<class T, class U>
@@ -137,103 +143,88 @@ namespace dolfin
 
   };
 
-//-----------------------------------------------------------------------------
-// Public member definitions
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+  // Public member definitions
+  //-----------------------------------------------------------------------------
   template<class T>
   void FEM::assemble(BilinearForm& a, GenericMatrix<T>& A, Mesh& mesh)
   {
-    LinearForm* L = 0;
-    Vector* b = 0;
-    assemble_common(&a, L, A, *b, mesh);
+    assemble_common(&a, 0, A, 0, mesh);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T>
   void FEM::assemble(LinearForm& L, GenericVector<T>& b, Mesh& mesh)
   {
-    BilinearForm* a = 0;
-    Matrix* A = 0;
     cout << "About to call assemble " << endl;
-    assemble_common(a, &L, *A, b, mesh);
+    assemble_common(0, &L, 0, b, mesh);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T, class U>
   void FEM::assemble(BilinearForm& a, LinearForm& L, GenericMatrix<T>& A, 
         GenericVector<U>& b, Mesh& mesh)
   {
-    assemble_common(&a, &L, A, b, mesh);
+    assemble_common(&a, &L, &A, &b, mesh);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T, class U>
   void FEM::assemble(BilinearForm& a, LinearForm& L, GenericMatrix<T>& A, 
-        GenericVector<U>& b, Mesh& mesh, BoundaryCondition& bc)
+		     GenericVector<U>& b, Mesh& mesh, BoundaryCondition& bc)
   {
     assemble_common(&a, &L, A, b, mesh);
     applyBC(A, b, mesh, a.trial(), bc);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T, class U>
   void FEM::applyBC(GenericMatrix<T>& A, GenericVector<U>& b, Mesh& mesh, 
-        FiniteElement& element, BoundaryCondition& bc)
+		    FiniteElement& element, BoundaryCondition& bc)
   {
     dolfin_info("Applying Dirichlet boundary conditions.");
-  
-    // Null pointer to a dummy vector
-    Vector* x = 0; 
-    applyBC_common(&A, &b, x, mesh, element, bc);
+    applyBC_common(&A, &b, 0, mesh, element, bc);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T>
   void FEM::applyBC(GenericMatrix<T>& A, Mesh& mesh, FiniteElement& element, 
-        BoundaryCondition& bc)
+		    BoundaryCondition& bc)
   {
     dolfin_info("Applying Dirichlet boundary conditions to matrix.");
-
-    // Null pointers to dummy vectors
-    Vector* b = 0; 
-    Vector* x = 0; 
-    applyBC_common(&A, b, x, mesh, element, bc);
+    applyBC_common(&A, 0, 0, mesh, element, bc);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T>
   void FEM::applyBC(GenericVector<T>& b, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
   {
     dolfin_info("Applying Dirichlet boundary conditions to vector.");
-  
-    // Null pointer to a matrix and vector
-    Matrix* A = 0; 
-    Vector* x = 0; 
-    applyBC_common(A, &b, x, mesh, element, bc);
+    applyBC_common(0, &b, 0, mesh, element, bc);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+    // FIXME: Should this also be templated over the type for x?
   template<class T, class U>
   void FEM::assembleBCresidual(GenericMatrix<T>& A, GenericVector<U>& b, 
-        const Vector& x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+			       const Vector& x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
   {
     dolfin_info("Assembling boundary condtions into residual vector.");
     applyBC_common(&A, &b, &x, mesh, element, bc);
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T>
   void FEM::assembleBCresidual(GenericVector<T>& b, const Vector& x, Mesh& mesh,
-	  	  FiniteElement& element, BoundaryCondition& bc)
+			       FiniteElement& element, BoundaryCondition& bc)
   {
     dolfin_info("Assembling boundary condtions into residual vector.");
-
-    // Null pointer to a matrix
-    Matrix* A = 0; 
-    applyBC_common(A, &b, &x, mesh, element, bc);
+    applyBC_common(0, &b, &x, mesh, element, bc);
   }
-//-----------------------------------------------------------------------------
-//  Private member definitions
-//-----------------------------------------------------------------------------
+#endif
+  //-----------------------------------------------------------------------------
+  //  Private member definitions
+  //-----------------------------------------------------------------------------
   template<class T, class U>
-  void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
-        GenericVector<U>& b, Mesh& mesh)
+  void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
+			    GenericVector<U>* b, Mesh& mesh)
   {
     // Create boundary
     Boundary boundary(mesh);
-
+    
     // Choose type of mesh
     if( mesh.type() == Mesh::triangles )
     {
@@ -250,10 +241,10 @@ namespace dolfin
       dolfin_error("Unknown mesh type.");  
     }
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T, class U, class V, class W>
-  void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>& A, 
-        GenericVector<U>& b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet)
+  void FEM::assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
+			    GenericVector<U>* b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet)
   {
     // Check that the mesh matches the forms
     if( a )
@@ -295,14 +286,14 @@ namespace dolfin
       block_A = new real[m*n];
       trial_nodes = new int[m];
       nz = nzsize(mesh, *trial_element);
-      A.init(M, N, nz);
-      A = 0.0;
+      A->init(M, N, nz);
+      *A = 0.0;
     }
     if( L )
     {
       block_b = new real[m];  
-      b.init(M);
-      b = 0.0;
+      b->init(M);
+      *b = 0.0;
     }
     // Start a progress session
     if( a && L)
@@ -331,7 +322,7 @@ namespace dolfin
         // Compute element matrix 
         a->eval(block_A, map);
         // Add element matrix to global matrix
-        A.add(block_A, test_nodes, m, trial_nodes, n);
+        A->add(block_A, test_nodes, m, trial_nodes, n);
       }
       if( L )
       {
@@ -340,7 +331,7 @@ namespace dolfin
         // Compute element vector 
         L->eval(block_b, map);
         // Add element vector to global vector
-        b.add(block_b, test_nodes, m);
+        b->add(block_b, test_nodes, m);
       }
 
       // Update progress
@@ -384,7 +375,7 @@ namespace dolfin
         a->eval(block_A, map, facetID);
 
         // Add element matrix to global matrix
-        A.add(block_A, test_nodes, m, trial_nodes, n);
+        A->add(block_A, test_nodes, m, trial_nodes, n);
       }
       if( L )
       {
@@ -394,7 +385,7 @@ namespace dolfin
         L->eval(block_b, map, facetID);
  
         // Add element vector to global vector
-        b.add(block_b, test_nodes, m);
+        b->add(block_b, test_nodes, m);
       }
       // Update progress
       p_boundary++;
@@ -402,10 +393,10 @@ namespace dolfin
 
     // Complete assembly
     if( L )
-      b.apply();
+      b->apply();
     if ( a )
     {
-      A.apply();
+      A->apply();
       // Check the number of nonzeros
       checknz(A, nz);
     }
@@ -416,10 +407,12 @@ namespace dolfin
     delete [] trial_nodes;
     delete [] test_nodes;
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+    // FIXME: Should this also be templated over the type for x?
   template<class T, class U>
   void FEM::applyBC_common(GenericMatrix<T>* A, GenericVector<U>* b, 
-        const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+			   const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
   {
     // Create boundary
     Boundary boundary(mesh);
@@ -440,11 +433,11 @@ namespace dolfin
       dolfin_error("Unknown mesh type.");  
     }
   }
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   template<class T, class U, class V, class W>
   void FEM::applyBC_common(GenericMatrix<T>* A, GenericVector<W>* b, 
-        const Vector* x, Mesh& mesh, FiniteElement& element, 
-        BoundaryCondition& bc, BoundaryFacetIterator<U,V>& facet)
+			   const Vector* x, Mesh& mesh, FiniteElement& element, 
+			   BoundaryCondition& bc, BoundaryFacetIterator<U,V>& facet)
   {
     // Create boundary value
     BoundaryValue bv;
@@ -554,7 +547,8 @@ namespace dolfin
     delete [] block_b;
     delete [] node_list;
   }
-//-----------------------------------------------------------------------------
+#endif
+  //-----------------------------------------------------------------------------
   template <class T>
   void FEM::checknz(GenericMatrix<T>& A, uint nz)
   {
@@ -565,8 +559,8 @@ namespace dolfin
       dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
   		nz_actual, nz);
   }
-//-----------------------------------------------------------------------------
-
+  //-----------------------------------------------------------------------------
+  
 }
 
 #endif

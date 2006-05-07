@@ -4,7 +4,9 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -439,3 +441,5 @@ const VectorElement& VectorElement::operator*=(const real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+
+#endif

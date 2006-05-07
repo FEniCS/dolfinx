@@ -1,10 +1,10 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson, 2003.
 //
 // First added:  2003-02-26
-// Last changed: 2005-11-15
+// Last changed: 2006-05-07
 
 // FIXME: Use streams rather than stdio
 #include <stdio.h>
@@ -28,6 +28,7 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void OctaveFile::operator<<(Matrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
@@ -73,3 +74,4 @@ void OctaveFile::operator<<(Matrix& A)
        << ") to file " << filename << " in Octave format." << endl;
 }
 //-----------------------------------------------------------------------------
+#endif

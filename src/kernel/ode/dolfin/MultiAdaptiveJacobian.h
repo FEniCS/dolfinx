@@ -1,11 +1,13 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-10
+// Last changed: 2006-05-07
 
 #ifndef __MULTI_ADAPTIVE_JACOBIAN_H
 #define __MULTI_ADAPTIVE_JACOBIAN_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
@@ -64,5 +66,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

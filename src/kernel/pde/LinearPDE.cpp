@@ -4,7 +4,9 @@
 // Modified by Garth N. Wells, 2006
 //
 // First added:  2004
-// Last changed: 2006-03-22
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FEM.h>
@@ -120,3 +122,5 @@ BoundaryCondition& LinearPDE::bc()
   return *_bc;
 }
 //-----------------------------------------------------------------------------
+
+#endif

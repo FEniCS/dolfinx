@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-09
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #include <dolfin/Vector.h>
 #include <dolfin/P1tri.h>
@@ -63,11 +63,13 @@ dolfin::uint ConstantFunction::vectordim() const
   return 0;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 Vector& ConstantFunction::vector()
 {
   dolfin_error("No vector associated with function (and none can be attached).");
   return *(new Vector()); // Code will not be reached, make compiler happy
 }
+#endif
 //-----------------------------------------------------------------------------
 Mesh& ConstantFunction::mesh()
 {
@@ -82,10 +84,12 @@ FiniteElement& ConstantFunction::element()
   return *(new P1tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void ConstantFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to constant functions.");
 }
+#endif
 //-----------------------------------------------------------------------------
 void ConstantFunction::attach(Mesh& mesh, bool local)
 {

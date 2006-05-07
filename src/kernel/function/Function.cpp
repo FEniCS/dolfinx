@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-11-28
-// Last changed: 2006-02-10
+// Last changed: 2006-05-07
 //
 // The class Function serves as the envelope class and holds a pointer
 // to a letter class that is a subclass of GenericFunction. All the
@@ -40,6 +40,7 @@ Function::Function(FunctionPointer fp, uint vectordim)
   f = new FunctionPointerFunction(fp, vectordim);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 Function::Function(Vector& x)
   : Variable("u", "no description"), TimeDependent(),
     f(0), _type(discrete), _cell(0)
@@ -67,6 +68,7 @@ Function::Function(Mesh& mesh, FiniteElement& element)
 {
   f = new DiscreteFunction(mesh, element);
 }
+#endif
 //-----------------------------------------------------------------------------
 Function::Function(const Function& f)
   : Variable("u", "no description"), TimeDependent(),
@@ -83,9 +85,11 @@ Function::Function(const Function& f)
   case functionpointer:
     this->f = new FunctionPointerFunction(*((FunctionPointerFunction *) f.f));
     break;
+#ifdef HAVE_PETSC_H
   case discrete:
     this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
     break;
+#endif
   default:
     dolfin_error("Unknown function type.");
   }
@@ -131,6 +135,7 @@ const Function& Function::operator= (const Function& f)
     delete this->f;
     this->f = new FunctionPointerFunction(*((FunctionPointerFunction *) f.f));
     break;
+#ifdef HAVE_PETSC_H
   case discrete:
     // Don't delete data if not necessary (don't want to recreate vector)
     if ( _type == discrete )
@@ -143,6 +148,7 @@ const Function& Function::operator= (const Function& f)
       this->f = new DiscreteFunction(*((DiscreteFunction *) f.f));
     }
     break;
+#endif
   default:
     dolfin_error("Unknown function type.");
   }
@@ -165,6 +171,7 @@ void Function::interpolate(real coefficients[], AffineMap& map,
   _cell = 0;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void Function::init(Mesh& mesh, FiniteElement& element)
 {
   if ( _type != discrete )
@@ -180,6 +187,7 @@ void Function::init(Mesh& mesh, FiniteElement& element)
   _type = discrete;
   _cell = 0;
 }
+#endif
 //-----------------------------------------------------------------------------
 Cell& Function::cell()
 {

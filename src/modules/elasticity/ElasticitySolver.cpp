@@ -4,7 +4,9 @@
 // Modified by Anders Logg 2004-2006.
 //
 // First added:  2004-02-26
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 //#include <iostream>
 #include <sstream>
@@ -272,3 +274,5 @@ void ElasticitySolver::solve(Mesh& mesh,
   solver.solve();
 }
 //-----------------------------------------------------------------------------
+
+#endif

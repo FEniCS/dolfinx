@@ -1,10 +1,12 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005-2006.
 //
 // First added:  2005-11-01
-// Last changed: 2005-12-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/HeatSolver.h>
 #include <dolfin/Heat.h>
@@ -131,3 +133,5 @@ void HeatODE::toArray(real y[], Vector& x, uint offset, uint size)
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
+
+#endif

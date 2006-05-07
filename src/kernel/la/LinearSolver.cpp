@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-06-19
-// Last changed: 2005
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/LinearSolver.h>
 
@@ -19,3 +21,5 @@ LinearSolver::~LinearSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+
+#endif

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #ifndef __GENERIC_FUNCTION_H
 #define __GENERIC_FUNCTION_H
@@ -48,8 +48,10 @@ namespace dolfin
     /// Return vector dimension of function
     virtual uint vectordim() const = 0;
 
+#ifdef HAVE_PETSC_H
     /// Return vector associated with function (if any)
     virtual Vector& vector() = 0;
+#endif
 
     /// Return mesh associated with function (if any)
     virtual Mesh& mesh() = 0;
@@ -57,8 +59,10 @@ namespace dolfin
     /// Return element associated with function (if any)
     virtual FiniteElement& element() = 0;
 
+#ifdef HAVE_PETSC_H
     /// Attach vector to function
     virtual void attach(Vector& x, bool local) = 0;
+#endif
 
     /// Attach mesh to function
     virtual void attach(Mesh& mesh, bool local) = 0;

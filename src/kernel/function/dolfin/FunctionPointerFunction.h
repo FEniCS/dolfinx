@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #ifndef __FUNCTION_POINTER_FUNCTION_H
 #define __FUNCTION_POINTER_FUNCTION_H
@@ -43,8 +43,10 @@ namespace dolfin
     /// Return vector dimension of function
     uint vectordim() const;
 
+#ifdef HAVE_PETSC_H
     /// Calling this function generates an error (no vector associated)
     Vector& vector();
+#endif
 
     /// Return mesh associated with function (if any)
     Mesh& mesh();
@@ -52,8 +54,10 @@ namespace dolfin
     /// Calling this function generates an error (no element associated)
     FiniteElement& element();
 
+#ifdef HAVE_PETSC_H
     /// Calling this function generates an error (no vector can be attached)
     void attach(Vector& x, bool local);
+#endif
 
     /// Attach mesh to function
     void attach(Mesh& mesh, bool local);

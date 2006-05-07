@@ -1,13 +1,15 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2005
+// Last changed: 2006-05-07
 
 #ifndef __VIRTUAL_MATRIX_H
 #define __VIRTUAL_MATRIX_H
+
+#ifdef HAVE_PETSC_H
 
 #include <petscmat.h>
 #include <dolfin/constants.h>
@@ -73,5 +75,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

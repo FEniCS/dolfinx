@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2006-04-13
+// Last changed: 2006-05-07
 
 #include <dolfin/Mesh.h>
 #include <dolfin/Function.h>
@@ -54,6 +54,7 @@ void VTKFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in VTK format." << endl;
 }
 //----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void VTKFile::operator<<(Function& u)
 {
   //dolfin_info("Writing Function to VTK file.");
@@ -84,6 +85,7 @@ void VTKFile::operator<<(Function& u)
   cout << "Saved function " << u.name() << " (" << u.label()
        << ") to file " << filename << " in VTK format." << endl;
 }
+#endif
 //----------------------------------------------------------------------------
 void VTKFile::MeshWrite(const Mesh& mesh) const
 {
@@ -135,6 +137,7 @@ void VTKFile::MeshWrite(const Mesh& mesh) const
 
 }
 //----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void VTKFile::ResultsWrite(Function& u) const
 {
   // Open file
@@ -239,6 +242,7 @@ void VTKFile::ResultsWrite(Function& u) const
   // Close file
   fclose(fp);
 }
+#endif
 //----------------------------------------------------------------------------
 void VTKFile::pvdFileWrite(int num)
 {

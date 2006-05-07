@@ -12,6 +12,8 @@
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
+#ifdef HAVE_PETSC_H
+
 #include <petscksp.h>
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
@@ -106,5 +108,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

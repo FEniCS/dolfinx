@@ -2,10 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/GenericFunction.h>
 
@@ -117,5 +119,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

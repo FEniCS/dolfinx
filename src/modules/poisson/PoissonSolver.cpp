@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-01-16
-// Last changed: 2006-01-09
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/PoissonSolver.h>
 #include <dolfin/Poisson2D.h>
@@ -64,3 +66,5 @@ void PoissonSolver::solve(Mesh& mesh, Function& f, BoundaryCondition& bc)
   solver.solve();
 }
 //-----------------------------------------------------------------------------
+
+#endif

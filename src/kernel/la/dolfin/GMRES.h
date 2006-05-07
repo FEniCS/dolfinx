@@ -4,10 +4,12 @@
 // Modified by Anders Logg 2006.
 // 
 // First added:  2005-12-02
-// Last changed: 2006-03-14
+// Last changed: 2006-05-07
 
 #ifndef __GMRES_H
 #define __GMRES_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/KrylovSolver.h>
 
@@ -35,5 +37,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

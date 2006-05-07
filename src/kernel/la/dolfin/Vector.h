@@ -4,10 +4,12 @@
 // Modified by Garth N. Wells 2005,2006.
 //
 // First added:  2004
-// Last changed: 2006-04-25
+// Last changed: 2006-05-07
 
 #ifndef __VECTOR_H
 #define __VECTOR_H
+
+#ifdef HAVE_PETSC_H
 
 #include <petscvec.h>
 #include <dolfin/constants.h>
@@ -180,5 +182,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

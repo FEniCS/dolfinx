@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005
 //
 // First added:  2003-05-06
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -29,6 +29,7 @@ MFile::~MFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void MFile::operator<<(Vector& x)
 {
   // Open file
@@ -52,6 +53,7 @@ void MFile::operator<<(Vector& x)
   dolfin_info("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
 }
+#endif
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
 {

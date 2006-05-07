@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-21
+// Last changed: 2006-05-07
 
 #include <cmath>
 #include <string>
@@ -39,7 +39,12 @@ TimeStepper::TimeStepper(ODE& ode) :
   }
   else    
   {
+#ifdef HAVE_PETSC_H
     timeslab = new MonoAdaptiveTimeSlab(ode);
+#else
+    dolfin_info("DOLFIN compiled without PETSC, using multi-adaptive solver.");
+    timeslab = new MultiAdaptiveTimeSlab(ode);
+#endif
   }
 }
 //-----------------------------------------------------------------------------

@@ -7,6 +7,8 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
+#ifdef HAVE_PETSC_H
+
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
@@ -74,5 +76,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

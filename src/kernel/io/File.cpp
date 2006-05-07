@@ -5,7 +5,7 @@
 // Modified by Haiko Etzel 2005.
 //
 // First added:  2002-11-12
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #include <string>
 #include <dolfin/dolfin_log.h>
@@ -35,10 +35,12 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
     file = new XMLFile(filename);
+#ifdef HAVE_PETSC_H
   else if ( filename.rfind(".mat") != filename.npos )
     file = new MTXFile(filename);
   else if ( filename.rfind(".mtx") != filename.npos )
     file = new MTXFile(filename);
+#endif
   else if ( filename.rfind(".msh") != filename.npos )
     file = new GiDFile(filename);
   else if ( filename.rfind(".res") != filename.npos )
@@ -69,9 +71,11 @@ File::File(const std::string& filename, Type type)
   case matlab:
     file = new MatlabFile(filename);
     break;
+#ifdef HAVE_PETSC_H
   case matrixmarket:
     file = new MTXFile(filename);
     break;
+#endif
   case octave:
     file = new OctaveFile(filename);
     break;

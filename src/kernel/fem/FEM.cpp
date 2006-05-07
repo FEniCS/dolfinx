@@ -11,14 +11,16 @@
 
 using namespace dolfin;
 
+#ifdef HAVE_PETSC_H
 //-----------------------------------------------------------------------------
-  void FEM::lump(const Matrix& M, Vector& m)
-  {
-    m.init(M.size(0));
-    Vector one(m);
-    one = 1.0;
-    M.mult(one, m);
-  }
+void FEM::lump(const Matrix& M, Vector& m)
+{
+  m.init(M.size(0));
+  Vector one(m);
+  one = 1.0;
+  M.mult(one, m);
+}
+#endif
 //-----------------------------------------------------------------------------
   void FEM::lump(const DenseMatrix& M, DenseVector& m)
   {

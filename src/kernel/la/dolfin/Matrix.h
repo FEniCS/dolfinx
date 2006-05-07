@@ -5,10 +5,12 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-04-25
+// Last changed: 2006-05-07
 
 #ifndef __MATRIX_H
 #define __MATRIX_H
+
+#ifdef HAVE_PETSC_H
 
 #include <petscmat.h>
 #include <dolfin/constants.h>
@@ -176,5 +178,7 @@ namespace dolfin
     };
 
 }
+
+#endif
 
 #endif

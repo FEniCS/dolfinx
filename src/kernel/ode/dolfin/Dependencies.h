@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2005
+// Last changed: 2006-05-07
 
 #ifndef __DEPENDENCIES_H
 #define __DEPENDENCIES_H
@@ -38,8 +38,10 @@ namespace dolfin
     /// Add dependency (component i depends on component j)
     void set(uint i, uint j, bool checknew = false);
     
+#ifdef HAVE_PETSC_H
     /// Set dependencies according to given sparse matrix
     void set(const Matrix& A);
+#endif
 
     /// Set dependencies to transpose of given dependencies
     void transp(const Dependencies& dependencies);

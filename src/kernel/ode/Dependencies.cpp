@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2005-12-19
+// Last changed: 2006-05-07
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -60,6 +60,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void Dependencies::set(const Matrix& A)
 {
   // Prepare sparse pattern if necessary
@@ -82,6 +83,7 @@ void Dependencies::set(const Matrix& A)
     MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
   }
 }
+#endif
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)
 {

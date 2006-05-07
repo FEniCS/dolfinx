@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Mesh.h>
 #include <dolfin/LoadVector.h>
@@ -16,3 +18,5 @@ LoadVector::LoadVector(Mesh& mesh) : Vector(mesh.numVertices())
   dolfin_error("Not implemented for new system.");
 }
 //-----------------------------------------------------------------------------
+
+#endif

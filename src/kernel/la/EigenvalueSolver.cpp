@@ -1,9 +1,12 @@
 // Copyright (C) 2005 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+// 
 // First added:  2005-08-31
-// Last changed: 
+// Last changed: 2006-05-07
 
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -74,3 +77,5 @@ void EigenvalueSolver::eigen(const Matrix& A, Vector& r,  Vector& c)
   delete [] block;
 }
 //-----------------------------------------------------------------------------
+
+#endif

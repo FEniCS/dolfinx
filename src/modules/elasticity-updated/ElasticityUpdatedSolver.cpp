@@ -5,7 +5,9 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 //#include <iostream>
 #include <sstream>
@@ -1009,3 +1011,5 @@ void ElasticityUpdatedODE::toArray(real y[], Vector& x, uint offset, uint size)
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
+
+#endif

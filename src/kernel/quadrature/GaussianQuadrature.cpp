@@ -2,13 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2006-03-27
+// Last changed: 2006-05-07
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Vector.h>
-#include <dolfin/Matrix.h>
-#include <dolfin/LU.h>
+#include <dolfin/DenseVector.h>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/Legendre.h>
 #include <dolfin/GaussianQuadrature.h>
 
@@ -43,8 +42,8 @@ void GaussianQuadrature::computeWeights()
     return;
   }
  
-  Matrix A(n, n);
-  Vector x(n), b(n);
+  DenseMatrix A(n, n);
+  DenseVector x(n), b(n);
 
   // Compute the matrix coefficients
   for (unsigned int i = 0; i < n; i++) {
@@ -57,9 +56,16 @@ void GaussianQuadrature::computeWeights()
     
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
-  LU lu;
-  lu.set("LU report", false);
-  lu.solve(A, x, b);
+  //LU lu;
+  //lu.set("LU report", false);
+  //lu.solve(A, x, b);
+  dolfin_info("----------");
+  A.disp();
+  A.invert();
+  A.disp();
+  b.disp();
+  A.mult(b, x);
+  x.disp();
 
   // Save the weights
   for (unsigned int i = 0; i < n; i++)

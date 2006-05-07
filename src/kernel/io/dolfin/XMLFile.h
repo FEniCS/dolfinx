@@ -31,11 +31,15 @@ namespace dolfin
     ~XMLFile();
     
     // Input
-    
+
+#ifdef HAVE_PETSC_H
     void operator>> (Vector& x);
     void operator>> (Matrix& A);
+#endif
     void operator>> (Mesh& mesh);
+#ifdef HAVE_PETSC_H
     void operator>> (Function& f);
+#endif
     void operator>> (FiniteElementSpec& spec);
     void operator>> (ParameterList& parameters);
     void operator>> (BLASFormData& blas);
@@ -44,10 +48,14 @@ namespace dolfin
     
     // Output
     
+#ifdef HAVE_PETSC_H
     void operator<< (Vector& x);
     void operator<< (Matrix& A);
+#endif
     void operator<< (Mesh& mesh);
+#ifdef HAVE_PETSC_H
     void operator<< (Function& f);
+#endif
     void operator<< (FiniteElementSpec& spec);
     void operator<< (ParameterList& parameters);
     

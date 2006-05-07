@@ -1,10 +1,12 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-03-27
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <stdio.h>
 #include <limits>
@@ -407,3 +409,5 @@ void Homotopy::feval(Vector& F, ComplexODE& ode)
   F.restore(FF);
 }
 //-----------------------------------------------------------------------------
+
+#endif

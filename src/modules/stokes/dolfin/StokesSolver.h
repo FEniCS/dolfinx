@@ -2,10 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2005-12-30
+// Last changed: 2006-05-07
 
 #ifndef __STOKES_SOLVER_H
 #define __STOKES_SOLVER_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Solver.h>
 
@@ -42,5 +44,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

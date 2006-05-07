@@ -4,10 +4,12 @@
 // Modified by Garth N. Wells 2006.
 //
 // First added:  2004
-// Last changed: 2006-02-24
+// Last changed: 2006-05-07
 
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/GenericPDE.h>
 
@@ -19,8 +21,6 @@ namespace dolfin
   class Mesh;
   class BoundaryCondition;
   class Function;
-  class Matrix;
-  class Vector;
 
   /// This class implements the solution functionality for linear PDEs.
 
@@ -66,5 +66,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

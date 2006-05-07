@@ -1,8 +1,10 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2007 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-12-09
-// Last changed: 2005
+// Last changed: 2006=05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <stdio.h>
 #include <petsc.h>
@@ -70,3 +72,5 @@ PETScManager::~PETScManager()
   }
 }
 //-----------------------------------------------------------------------------
+
+#endif

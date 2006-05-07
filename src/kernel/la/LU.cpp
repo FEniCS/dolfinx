@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-03-27
+// Last changed: 2006-05-27
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -164,3 +166,5 @@ real LU::copyToDense(const VirtualMatrix& A)
   return maxcolsum;
 }
 //-----------------------------------------------------------------------------
+
+#endif

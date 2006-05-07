@@ -6,6 +6,8 @@
 // First added:  2005-10-23
 // Last changed: 2006-03-22
 
+#ifdef HAVE_PETSC_H
+
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
 #include <iostream>
@@ -140,3 +142,5 @@ bool NewtonSolver::converged(const Vector& b, const Vector& dx,
   return false;
 }
 //-----------------------------------------------------------------------------
+
+#endif

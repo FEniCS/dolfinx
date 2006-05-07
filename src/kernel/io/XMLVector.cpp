@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-12-06
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
@@ -95,3 +97,5 @@ void XMLVector::readEntry(const xmlChar *name, const xmlChar **attrs)
   x(row) = value;
 }
 //-----------------------------------------------------------------------------
+
+#endif

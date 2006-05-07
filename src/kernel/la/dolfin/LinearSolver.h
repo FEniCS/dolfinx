@@ -1,11 +1,13 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-06-19
-// Last changed: 2005-10-24
+// Last changed: 2006-05-07
 
 #ifndef __LINEAR_SOLVER_H
 #define __LINEAR_SOLVER_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -35,5 +37,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

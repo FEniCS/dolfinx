@@ -2,10 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
 
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
+
+#ifdef HAVE_PETSC_H
 
 #include "XMLObject.h"
 
@@ -36,5 +38,7 @@ namespace dolfin
   };
   
 }
+
+#endif
 
 #endif

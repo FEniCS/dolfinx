@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-13
-// Last changed: 2005
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -13,7 +13,9 @@
 void dolfin::dolfin_init(int argc, char* argv[])
 {
   dolfin_info("Initializing DOLFIN version %s.", DOLFIN_VERSION);
-
+  
+#ifdef HAVE_PETSC_H
   PETScManager::init(argc, argv);
+#endif
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-26
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Point.h>
@@ -311,3 +313,5 @@ void DiscreteFunction::updateVectorDimension()
   }
 }
 //-----------------------------------------------------------------------------
+
+#endif

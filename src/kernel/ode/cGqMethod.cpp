@@ -2,14 +2,16 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-03-29
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/LobattoQuadrature.h>
-#include <dolfin/Vector.h>
+#include <dolfin/DenseVector.h>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
 #include <dolfin/LU.h>
 #include <dolfin/cGqMethod.h>
 
@@ -144,7 +146,7 @@ void cGqMethod::computeBasis()
 //-----------------------------------------------------------------------------
 void cGqMethod::computeWeights()
 {
-  Matrix A(q, q);
+  DenseMatrix A(q, q);
   
   // Compute matrix coefficients
   for (unsigned int i = 0; i < nn; i++)
@@ -163,8 +165,8 @@ void cGqMethod::computeWeights()
     }
   }
 
-  Vector b(q);
-  Vector w(q);
+  DenseVector b(q);
+  DenseVector w(q);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)
@@ -178,14 +180,15 @@ void cGqMethod::computeWeights()
     
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
-    LU lu;
-    lu.set("LU report", false);
-    lu.solve(A, w, b);
+    //LU lu;
+    //lu.set("LU report", false);
+    //lu.solve(A, w, b);
+    A.invert();
+    A.mult(b, w);
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)
       nweights[j][i] = qweights[i] * w(j);
   }
-
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-03-27
+// Last changed: 2006-05-07
 
 #ifndef __ODE_H
 #define __ODE_H
@@ -80,8 +80,10 @@ namespace dolfin
     /// Automatically detect sparsity (optional)
     void sparse();
 
+#ifdef HAVE_PETSC_H
     /// Compute sparsity from given matrix (optional)
     void sparse(const Matrix& A);
+#endif
 
     /// Return number of components N
     uint size() const;

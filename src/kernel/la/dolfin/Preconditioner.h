@@ -1,14 +1,16 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2005.
+// Modified by Anders Logg 2005-2006.
 // Modified Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2005-12-09
+// Last changed: 2006-05-07
 
 #ifndef __PRECONDITIONER_H
 #define __PRECONDITIONER_H
+
+#ifdef HAVE_PETSC_H
 
 #include <petscksp.h>
 #include <petscpc.h>
@@ -68,5 +70,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

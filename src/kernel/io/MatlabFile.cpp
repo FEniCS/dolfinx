@@ -1,11 +1,11 @@
-// Copyright (C) 2003-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2003-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson, 2003.
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2003-02-17
-// Last changed: 2005-12-30
+// Last changed: 2006-05-07
 
 #include <stdio.h>
 
@@ -26,6 +26,7 @@ MatlabFile::~MatlabFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void MatlabFile::operator<<(Matrix& A)
 {
   // Open file
@@ -62,3 +63,5 @@ void MatlabFile::operator<<(Matrix& A)
        << ") to file " << filename << " in sparse MATLAB format." << endl;
 }
 //-----------------------------------------------------------------------------
+#endif
+

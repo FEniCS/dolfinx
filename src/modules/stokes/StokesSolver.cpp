@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-09-20
-// Last changed: 2006-01-09
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/StokesSolver.h>
 #include <dolfin/L2Error.h>
@@ -101,3 +103,5 @@ void StokesSolver::checkError(Mesh& mesh, Function& U)
   dolfin_info("L2 error for velocity: %.3e", norm);
 }
 //-----------------------------------------------------------------------------
+
+#endif

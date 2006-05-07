@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-03-27
+// Last changed: 2006-05--7
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -298,3 +300,5 @@ void MonoAdaptiveNewtonSolver::debug()
   B.disp();
 }
 //-----------------------------------------------------------------------------
+
+#endif

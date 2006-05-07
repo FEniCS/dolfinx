@@ -1,13 +1,15 @@
-// Copyright (C) 2002-2005 Johan Hoffman and Anders Logg.
+// Copyright (C) 2002-2006 Johan Hoffman and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Johan Jansson 2005.
 //
 // First added:  2002
-// Last changed: 2005-09-21
+// Last changed: 2006-05-07
 
 #ifndef __HEAT_SOLVER_H
 #define __HEAT_SOLVER_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Solver.h>
 #include <dolfin/ODE.h>
@@ -84,5 +86,7 @@ namespace dolfin
 
 
 }
+
+#endif
 
 #endif

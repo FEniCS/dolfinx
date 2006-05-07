@@ -5,7 +5,9 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-03-27
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <iostream>
 #include <sstream>
@@ -499,3 +501,5 @@ const MatrixElement& MatrixElement::operator*=(const real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
+
+#endif

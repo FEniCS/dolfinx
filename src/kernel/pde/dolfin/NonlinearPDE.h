@@ -1,12 +1,13 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2005-02-24
+// Last changed: 2006-05-07
 
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
 
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/GenericPDE.h>
 #include <dolfin/NonlinearProblem.h>
@@ -80,5 +81,7 @@ namespace dolfin
 
   };
 }
+
+#endif
 
 #endif

@@ -1,8 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Vector.h>
 #include <dolfin/Method.h>
@@ -52,3 +54,5 @@ void MultiAdaptivePreconditioner::solve(Vector& x, const Vector& b)
   b.restore(bb);
 }
 //-----------------------------------------------------------------------------
+
+#endif

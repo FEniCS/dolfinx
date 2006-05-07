@@ -1,8 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-10
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
@@ -80,3 +82,5 @@ void UpdatedMultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
   y.restore(yy);
 }
 //-----------------------------------------------------------------------------
+
+#endif

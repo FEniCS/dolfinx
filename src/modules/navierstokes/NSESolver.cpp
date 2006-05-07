@@ -5,7 +5,9 @@
 // Modified by Anders Logg 2005-2006.
 //
 // First added:  2005
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/timing.h>
 #include <dolfin/NSESolver.h>
@@ -343,3 +345,4 @@ void NSESolver::SetInitialVelocity(Vector& xvel)
 }
 //-----------------------------------------------------------------------------
 
+#endif

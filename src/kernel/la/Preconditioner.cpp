@@ -1,10 +1,13 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified Garth N. Wells 2005
+// Modified by Garth N. Wells 2005.
+// Modified by Anders Logg 2006.
 //
 // First added:  2005
-// Last changed: 2005-12-07
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <petsc.h>
 #if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
@@ -100,3 +103,5 @@ PCType Preconditioner::getType(const Type type)
   }
 }
 //-----------------------------------------------------------------------------
+
+#endif

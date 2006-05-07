@@ -2,7 +2,9 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-17
-// Last changed: 2006-02-13
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Matrix.h>
 #include <dolfin/XMLMatrix.h>
@@ -126,3 +128,5 @@ void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
   A(row,column) = value;
 }
 //-----------------------------------------------------------------------------
+
+#endif

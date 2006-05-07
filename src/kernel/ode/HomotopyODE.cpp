@@ -1,8 +1,10 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2005-12-19
+// Last changed: 2006-05-07
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Homotopy.h>
@@ -171,3 +173,5 @@ void HomotopyODE::monitor(const complex z[], real t)
   dolfin_info("Homotopy: F = %e G = %e H = %e", Fnorm, Gnorm, Hnorm);
 }
 //-----------------------------------------------------------------------------
+
+#endif

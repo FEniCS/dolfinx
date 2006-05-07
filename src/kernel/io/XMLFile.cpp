@@ -4,7 +4,7 @@
 // Modified by Erik Svensson 2003.
 //
 // First added:  2002-12-03
-// Last changed: 2006-02-27
+// Last changed: 2006-05-07
 
 #include <stdarg.h>
 
@@ -45,6 +45,7 @@ XMLFile::~XMLFile()
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Vector& x)
 {
   if ( xmlObject )
@@ -60,6 +61,7 @@ void XMLFile::operator>>(Matrix& A)
   xmlObject = new XMLMatrix(A);
   parseFile();
 }
+#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Mesh& mesh)
 {
@@ -69,6 +71,7 @@ void XMLFile::operator>>(Mesh& mesh)
   parseFile();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Function& f)
 {
   // We are cheating here. Instead of actually parsing the XML for
@@ -103,6 +106,7 @@ void XMLFile::operator>>(Function& f)
   f.attach(*mesh, true);
   f.attach(*element, true);
 }
+#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(FiniteElementSpec& spec)
 {
@@ -128,6 +132,7 @@ void XMLFile::operator>>(BLASFormData& blas)
   parseFile();
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Vector& x)
 {
   // Open file
@@ -190,6 +195,7 @@ void XMLFile::operator<<(Matrix& A)
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
 }
+#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
@@ -241,6 +247,7 @@ void XMLFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Function& f)
 {
   // Can only write discrete functions
@@ -278,6 +285,7 @@ void XMLFile::operator<<(Function& f)
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
 }
+#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {

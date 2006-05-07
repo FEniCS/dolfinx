@@ -26,11 +26,23 @@ AC_ARG_ENABLE(mpi,
                              [Compile with MPI]),
               enable_mpi=yes)
 
+# Option --enable-pydolfin
+AC_ARG_ENABLE(pydolfin,
+              AC_HELP_STRING([--enable-pydolfin],
+                             [Turn on compilation of PyDOLFIN]),
+              enable_pydolfin=yes)
+
 # Option --disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
               disable_curses=yes)
+
+# Option --disable-petsc
+AC_ARG_ENABLE(petsc,
+              AC_HELP_STRING([--disable-petsc],
+                             [Compile without PETSc (some demos may not compile)]),
+              disable_petsc=yes)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -44,11 +56,6 @@ AC_ARG_WITH(boost-include,
                            [Specify path to Boost include files]),
             [BOOST_DIR=$with_boost_include],)
 
-# Option --enable-pydolfin
-AC_ARG_ENABLE(pydolfin,
-              AC_HELP_STRING([--enable-pydolfin],
-                             [Turn on compilation of PyDOLFIN]),
-              enable_pydolfin=yes)
 
 # Standard tests
 AC_PROG_CC
@@ -131,14 +138,6 @@ else
     CURSES_LIBS=""
 fi
 
-# Handle option --with-petsc-dir=<path>
-if test x$PETSC_DIR = x; then
-    echo "assuming path to PETSc is /usr/local/lib/petsc"
-    PETSC_DIR="/usr/local/lib/petsc/"
-else
-    echo "using PETSC_DIR=$PETSC_DIR"
-fi
-
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
 if test x$enable_pydolfin = xyes; then
@@ -166,18 +165,40 @@ else
     echo "disabling MPI (might not work if PETSc uses MPI)"
 fi
 
-# Check for PETSc
-AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
-if test $petsc_found = yes; then
-    # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-    PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
-    PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
+# Handle option --disable-petsc
+if test x$disable_petsc = x; then
+    
+    # Handle option --with-petsc-dir=<path>
+    if test x$PETSC_DIR = x; then
+	PETSC_DIR="/usr/local/lib/petsc/"
+        echo "assuming path to PETSc is $PETSC_DIR"
+    else
+        echo "using PETSC_DIR=$PETSC_DIR"
+    fi
+
+    # Check for PETSc
+    AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
+    if test $petsc_found = yes; then
+        # Extract PETSc variables from PETSC_DIR/bmake/common/variables
+        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
+	PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
+    else
+	echo "*** Unable to find PETSc 2.3.1 on your system."
+	echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
+	echo "*** or set the environment variable PETSC_DIR to the correct path."
+	echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
+	exit 1
+    fi
+
+    # Found PETSc, so set HAVE_PETSC_H
+    PETSC_CFLAGS="-DHAVE_PETSC_H=1 $PETSC_CFLAGS"
+
 else
-    echo "*** Unable to find PETSc 2.3.0 on your system."
-    echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-    echo "*** or set the environment variable PETSC_DIR to the correct path."
-    echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
-    exit 1
+
+    # Compile without PETSc
+    echo "disabling PETSc (some demos may not compile)"
+    PETSC_CFLAGS=""
+
 fi
 
 # Check for Boost headers

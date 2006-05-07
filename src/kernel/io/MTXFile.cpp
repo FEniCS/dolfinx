@@ -9,6 +9,8 @@
 // First added:  2005-10-18
 // Last changed: 2005-10-26
 
+#ifdef HAVE_PETSC_H
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -636,3 +638,5 @@ inline void MTXFile::mm_set_hermitian(MM_typecode* typecode)
   (*typecode)[3]=MM_HERMITIAN;
 }
 //-----------------------------------------------------------------------------
+
+#endif

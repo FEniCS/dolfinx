@@ -1,11 +1,13 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-03-13
+// Last changed: 2006-05-07
 
 #ifndef __LU_H
 #define __LU_H
+
+#ifdef HAVE_PETSC_H
 
 #include <petscksp.h>
 #include <petscmat.h>
@@ -55,5 +57,7 @@ namespace dolfin
   };
 
 }
+
+#endif
 
 #endif

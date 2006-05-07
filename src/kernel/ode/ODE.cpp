@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Johan Jansson and Anders Logg.
+// Copyright (C) 2003-2006 Johan Jansson and Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-03-27
+// Last changed: 2006-05-07
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODESolver.h>
@@ -159,10 +159,12 @@ void ODE::sparse()
   dependencies.detect(*this);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void ODE::sparse(const Matrix& A)
 {
   dependencies.set(A);
 }
+#endif
 //-----------------------------------------------------------------------------
 dolfin::uint ODE::size() const
 {

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-11-28
-// Last changed: 2006-02-20
+// Last changed: 2006-05-07
 
 #include <dolfin/Vertex.h>
 #include <dolfin/Vector.h>
@@ -90,11 +90,13 @@ dolfin::uint FunctionPointerFunction::vectordim() const
   return _vectordim;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 Vector& FunctionPointerFunction::vector()
 {
   dolfin_error("No vector associated with function (and none can be attached).");
   return *(new Vector()); // Code will not be reached, make compiler happy
 }
+#endif
 //-----------------------------------------------------------------------------
 Mesh& FunctionPointerFunction::mesh()
 {
@@ -109,10 +111,12 @@ FiniteElement& FunctionPointerFunction::element()
   return *(new P1tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void FunctionPointerFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to user-defined functions.");
 }
+#endif
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::attach(Mesh& mesh, bool local)
 {
