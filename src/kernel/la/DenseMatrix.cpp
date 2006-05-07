@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-04-03
-// Last changed: 2006-04-24
+// Last changed: 2006-05-07
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -24,26 +26,33 @@ using namespace dolfin;
 DenseMatrix::DenseMatrix() : GenericMatrix<DenseMatrix>(), BaseMatrix(), 
     Variable("A", "a dense matrix")
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(uint i, uint j) : GenericMatrix<DenseMatrix>(),
-    BaseMatrix(i, j), Variable("A", "a dense matrix")
+DenseMatrix::DenseMatrix(uint M, uint N) : GenericMatrix<DenseMatrix>(),
+					   BaseMatrix(M, N), Variable("A", "a dense matrix")
 {
-  //Do nothing
+  // Clear matrix (not done by ublas)
+  clear();
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::~DenseMatrix()
 {
-  //Do nothing
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::init(uint M, uint N)
 {
   if( this->size(0) == M && this->size(1) == N )
+  {
+    clear();
     return;
+  }
   
   this->resize(M, N, false);
+
+  // Clear matrix (not done by ublas)
+  clear();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::init(uint M, uint N, uint nz)

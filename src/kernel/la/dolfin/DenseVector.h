@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-03-04
-// Last changed: 
+// Last changed: 2006-05-07
 
 #ifndef __DENSE_VECTOR_H
 #define __DENSE_VECTOR_H
@@ -35,7 +37,7 @@ namespace dolfin
     DenseVector();
 
     /// Constructor
-    DenseVector(uint i);
+    DenseVector(uint N);
     
     /// Constructor from a uBlas vector_expression
     template <class E>

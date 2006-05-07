@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-05-27
+// Last changed: 2006-05-07
 
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
@@ -42,7 +42,7 @@ namespace dolfin
     DenseMatrix();
     
     /// Constructor
-    DenseMatrix(uint i, uint j);
+    DenseMatrix(uint M, uint N);
 
     /// Destructor
     ~DenseMatrix();
