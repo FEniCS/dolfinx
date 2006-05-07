@@ -84,7 +84,7 @@ void DenseMatrix::add(const real block[], const int rows[], int m, const int col
       (*this)( rows[i] , cols[j] ) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::solve(DenseVector& x, const DenseVector& b)
+void DenseMatrix::solve(DenseVector& x, const DenseVector& b) const
 {    
   // Make copy of matrix (factorisation is done in-place)
   DenseMatrix Atemp = *this;
