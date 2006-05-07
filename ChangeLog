@@ -1,3 +1,6 @@
+ - Make it possible to compile without PETSc (--disable-petsc)
+ - Much improved ODE solvers
+ - Complete multi-adaptive benchmarks reaction and wave
  - Assmeble boundary integrals
  - FEM class cleaned up.
  - Fix multi-adaptive benchmark problem reaction
