@@ -81,14 +81,14 @@ namespace dolfin
     // FIXME: Should this also be templated over the type for x?
     template<class T>
     static void assembleBCresidual(GenericVector<T>& b, const Vector& x, Mesh& mesh, 
-      FiniteElement& element, BoundaryCondition& bc);
-
+				   FiniteElement& element, BoundaryCondition& bc);
+    
     /// Assemble boundary conditions into residual vector.  For Dirichlet 
     /// boundary conditions, b = x - bc, and for Neumann boundary 
     /// conditions, b = b - bc. 
     template<class T, class U>
     static void assembleBCresidual(GenericMatrix<T>& A, GenericVector<U>& b, 
-      const Vector& x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
+				   const Vector& x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
 #endif
 
     /// Count the degrees of freedom
@@ -110,24 +110,24 @@ namespace dolfin
     /// Assemble form(s)
     template<class T, class U>
     static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
-        GenericVector<U>* b, Mesh& mesh);
+				GenericVector<U>* b, Mesh& mesh);
 
     /// Create boundary facet interator amnd assemble form(s)
     template<class T, class U, class V, class W>
     static void assemble_common(BilinearForm* a, LinearForm* L, GenericMatrix<T>* A, 
-        GenericVector<U>* b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet);
+				GenericVector<U>* b, Mesh& mesh, BoundaryFacetIterator<V,W>& facet);
 
     /// Create iterator and call function to apply boundary conditions
     template<class T, class U>
     static void applyBC_common(GenericMatrix<T>* A, GenericVector<U>* b, const Vector* x,
-         Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
+			       Mesh& mesh, FiniteElement& element, BoundaryCondition& bc);
 
     /// Apply boundary conditions
     template<class T, class U, class V, class W>
     static void applyBC_common(GenericMatrix<T>* A, GenericVector<W>* b, 
-        const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc, 
-         BoundaryFacetIterator<U,V>& facet);
-
+			       const Vector* x, Mesh& mesh, FiniteElement& element, BoundaryCondition& bc, 
+			       BoundaryFacetIterator<U,V>& facet);
+    
     /// Estimate the maximum number of nonzeros in each row
     static uint nzsize(const Mesh& mesh, const FiniteElement& element);
 
@@ -149,14 +149,13 @@ namespace dolfin
   template<class T>
   void FEM::assemble(BilinearForm& a, GenericMatrix<T>& A, Mesh& mesh)
   {
-    assemble_common(&a, 0, A, 0, mesh);
+    assemble_common(&a, 0, &A, (DenseVector*) 0, mesh);
   }
   //-----------------------------------------------------------------------------
   template<class T>
   void FEM::assemble(LinearForm& L, GenericVector<T>& b, Mesh& mesh)
   {
-    cout << "About to call assemble " << endl;
-    assemble_common(0, &L, 0, b, mesh);
+    assemble_common(0, &L, (DenseMatrix*) 0, &b, mesh);
   }
   //-----------------------------------------------------------------------------
   template<class T, class U>
@@ -170,7 +169,7 @@ namespace dolfin
   void FEM::assemble(BilinearForm& a, LinearForm& L, GenericMatrix<T>& A, 
 		     GenericVector<U>& b, Mesh& mesh, BoundaryCondition& bc)
   {
-    assemble_common(&a, &L, A, b, mesh);
+    assemble_common(&a, &L, &A, &b, mesh);
     applyBC(A, b, mesh, a.trial(), bc);
   }
   //-----------------------------------------------------------------------------
@@ -187,7 +186,7 @@ namespace dolfin
 		    BoundaryCondition& bc)
   {
     dolfin_info("Applying Dirichlet boundary conditions to matrix.");
-    applyBC_common(&A, 0, 0, mesh, element, bc);
+    applyBC_common(&A, (DenseVector*) 0, 0, mesh, element, bc);
   }
   //-----------------------------------------------------------------------------
   template<class T>
@@ -212,7 +211,7 @@ namespace dolfin
 			       FiniteElement& element, BoundaryCondition& bc)
   {
     dolfin_info("Assembling boundary condtions into residual vector.");
-    applyBC_common(0, &b, &x, mesh, element, bc);
+    applyBC_common((DenseMatrix*) 0, &b, &x, mesh, element, bc);
   }
 #endif
   //-----------------------------------------------------------------------------
@@ -398,7 +397,7 @@ namespace dolfin
     {
       A->apply();
       // Check the number of nonzeros
-      checknz(A, nz);
+      checknz(*A, nz);
     }
     
     // Delete data

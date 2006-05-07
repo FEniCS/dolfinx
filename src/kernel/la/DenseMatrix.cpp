@@ -92,7 +92,7 @@ void DenseMatrix::invert()
   // Back substitute 
   ublas::lu_substitute(*this, pmatrix, inverse);
 
-  *this = inverse;  
+  *this = inverse;
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::ident(const int rows[], int m)

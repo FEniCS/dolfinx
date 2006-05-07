@@ -42,7 +42,7 @@ namespace dolfin
     /// Return vector dimension of function
     uint vectordim() const;
 
-#ifdef HAVE_PETSC_Ha
+#ifdef HAVE_PETSC_H
 
     /// Calling this function generates an error (no vector associated)
     Vector& vector();
@@ -55,7 +55,7 @@ namespace dolfin
     /// Calling this function generates an error (no element associated)
     FiniteElement& element();
 
-#ifdef HAVE_PETSC_Ha
+#ifdef HAVE_PETSC_H
 
     /// Calling this function generates an error (no vector can be attached)
     void attach(Vector& x, bool local);

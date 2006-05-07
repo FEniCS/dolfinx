@@ -76,7 +76,8 @@ void cGqMethod::disp() const
   dolfin_info("----------------------------------------------------");
   
   for (unsigned int i = 0; i < nq; i++)
-    dolfin_info("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
+    dolfin_info("%2d   %.15e   %.15e", i, 0.0, 0.0);
+  //dolfin_info("%2d   %.15e   %.15e", i, qpoints[i], qweights[i]);
   dolfin_info("");
 
   for (unsigned int i = 0; i < nn; i++)
@@ -87,7 +88,8 @@ void cGqMethod::disp() const
     dolfin_info(" i   weights");
     dolfin_info("---------------------------");
     for (unsigned int j = 0; j < nq; j++)
-      dolfin_info("%2d   %.15e", j, nweights[i][j]);
+      dolfin_info("%2d   %.15e", j, 0.0);
+    //dolfin_info("%2d   %.15e", j, nweights[i][j]);
   }
   dolfin_info("");
   
@@ -99,7 +101,8 @@ void cGqMethod::disp() const
   for (unsigned int i = 0; i < nn; i++)
   {
     for (unsigned int j = 0; j < nq; j++)
-      cout << nweights[i][j] << " ";
+      cout << 0.0 << " ";
+    //cout << nweights[i][j] << " ";
     cout << endl;
   }
 }
