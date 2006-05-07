@@ -311,14 +311,6 @@ void testDenseMatrix()
   time = toc();
   cout << "Dense matrix time to set values = " << time << endl;
 
-  tic();
-  NewMatrix<DenseMatrix> D(size, size); 
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        D(i,j) = 1.7;
-  time = toc();
-  cout << "Template NewMatrix time to set values = " << time << endl;
    
   dolfin_end();
 
@@ -344,13 +336,6 @@ void testDenseMatrix()
   cout << "Dense matrix time to retrieve values = " << time << endl;
 
 
-  tic();
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        temp = D(i,j);
-  time = toc();
-  cout << "Template NewMatrix time to retrieve values = " << time << endl;
 
 
   // Assemble stiffness matrix into a dense and a sparse matrix

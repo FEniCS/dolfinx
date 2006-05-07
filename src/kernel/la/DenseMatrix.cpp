@@ -27,20 +27,24 @@ DenseMatrix::DenseMatrix() : GenericMatrix<DenseMatrix>(), BaseMatrix(),
     Variable("A", "a dense matrix")
 {
   // Do nothing
+  dolfin_error("oops");
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(uint M, uint N) : GenericMatrix<DenseMatrix>(),
 					   BaseMatrix(M, N), Variable("A", "a dense matrix")
 {
   // Clear matrix (not done by ublas)
-  clear();
+  dolfin_error("oops");
+//  clear();
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::~DenseMatrix()
 {
+  dolfin_error("oops");
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+
 void DenseMatrix::init(uint M, uint N)
 {
   if( this->size(0) == M && this->size(1) == N )
