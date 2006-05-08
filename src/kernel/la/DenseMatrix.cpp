@@ -27,7 +27,6 @@ DenseMatrix::DenseMatrix() : GenericMatrix<DenseMatrix>(), BaseMatrix(),
     Variable("A", "a dense matrix")
 {
   // Do nothing
-  dolfin_error("oops");
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(uint M, uint N) : GenericMatrix<DenseMatrix>(),
