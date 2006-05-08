@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-07
+// Last changed: 2006-05-08
 
 #ifdef HAVE_PETSC_H
 
@@ -399,8 +399,6 @@ void Matrix::addval(uint i, uint j, const real a)
 void Matrix::setType() 
 {
   MatType mat_type = getType();
-  dolfin_log(true);
-  cout << "matrix type " << mat_type << endl; 
   MatSetType(A, mat_type);
 }
 //-----------------------------------------------------------------------------

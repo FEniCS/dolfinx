@@ -30,7 +30,7 @@ namespace dolfin
   class Vector;
   class MatrixElement;
 
-  class Matrix : public GenericMatrix<Matrix>, public Variable
+  class Matrix : public GenericMatrix<Matrix>, public Variable, public GenericMatrixNoTemplate
   {
   public:
 

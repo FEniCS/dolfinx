@@ -12,6 +12,198 @@
 using namespace dolfin;
 
 #ifdef HAVE_PETSC_H
+
+// FIXME: For testing
+void FEM::assembleNoTemplate(BilinearForm& a, GenericMatrixNoTemplate& A, Mesh& mesh)
+{
+  assembleCommonNoTemplate(&a, 0, &A, 0, mesh);
+}
+
+// FIXME: For testing
+void FEM::assembleCommonNoTemplate(BilinearForm* a, LinearForm* L, 
+				   GenericMatrixNoTemplate* A, GenericVectorNoTemplate* b,
+				   Mesh& mesh)
+{
+  // Check that the mesh matches the forms
+  if( a )
+    checkdims(*a, mesh);
+  if( L )
+    checkdims(*L, mesh);
+  
+  // Get finite elements
+  FiniteElement* test_element  = 0;
+  FiniteElement* trial_element = 0;
+  if( a )
+  {
+    test_element  = &(a->test());
+    trial_element = &(a->trial());
+  }
+  else if( L ) 
+    test_element = &(L->test());
+  
+  // Create affine map
+  AffineMap map;
+  
+  // Initialize element matrix/vector data block
+  real* block_A = 0;
+  real* block_b = 0;
+  int* test_nodes = 0;
+  int* trial_nodes = 0;
+  uint n  = 0;
+  uint N  = 0;
+  uint nz = 0;
+  
+  const uint m = test_element->spacedim();
+  const uint M = size(mesh, *test_element);
+  test_nodes = new int[m];
+  
+  if( a )
+  {
+    n = trial_element->spacedim();
+    N = size(mesh, *trial_element);
+    block_A = new real[m*n];
+    trial_nodes = new int[m];
+    nz = nzsize(mesh, *trial_element);
+    A->init(M, N, nz);
+    *A = 0.0;
+  }
+  if( L )
+  {
+    block_b = new real[m];  
+    b->init(M);
+    *b = 0.0;
+  }
+  // Start a progress session
+  if( a && L)
+    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+  if( a && !L)
+    dolfin_info("Assembling matrix of size %d x %d.", M, N);
+  if( !a && L)
+    dolfin_info("Assembling vector of size %d.", M);
+  Progress p("Assembling interior contributions", mesh.numCells());
+  
+  // Iterate over all cells in the mesh
+  for (CellIterator cell(mesh); !cell.end(); ++cell)
+  {
+    // Update affine map
+    map.update(*cell);
+    
+    // Compute map from local to global degrees of freedom (test functions)
+    test_element->nodemap(test_nodes, *cell, mesh);
+    
+    if( a )
+    {
+      // Update forms
+      a->update(map);
+      // Compute maps from local to global degrees of freedom (trial functions)
+      trial_element->nodemap(trial_nodes, *cell, mesh);
+      // Compute element matrix 
+      a->eval(block_A, map);
+      // Add element matrix to global matrix
+      A->add(block_A, test_nodes, m, trial_nodes, n);
+    }
+    if( L )
+    {
+      // Update forms
+      L->update(map);    
+      // Compute element vector 
+      L->eval(block_b, map);
+      // Add element vector to global vector
+      b->add(block_b, test_nodes, m);
+    }
+    
+    // Update progress
+    p++;
+  }
+
+  /*
+  
+  //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
+  if( a )
+    for (uint i = 0; i < m*n; ++i)
+      block_A[i] = 0.0;
+  if( L )
+    for (uint i = 0; i < m; ++i)
+      block_b[i] = 0.0;
+  
+  // Iterate over all facets on the boundary
+  Boundary boundary(mesh);
+  Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
+  for ( ; !facet.end(); ++facet)
+  {
+    // Get cell containing the edge (pick first, should only be one)
+    dolfin_assert(facet.numCellNeighbors() == 1);
+    Cell& cell = facet.cell(0);
+    
+    // Get local facet ID
+    uint facetID = facet.localID(0);
+    
+    // Update affine map for facet 
+    map.update(cell, facetID);
+    
+    // Compute map from local to global degrees of freedom (test functions)
+    test_element->nodemap(test_nodes, cell, mesh);
+  
+    if( a )
+    {
+      // Update forms
+      a->update(map);  
+        // Compute maps from local to global degrees of freedom (trial functions)
+      trial_element->nodemap(trial_nodes, cell, mesh);
+      
+      // Compute element matrix 
+      a->eval(block_A, map, facetID);
+      
+      // Add element matrix to global matrix
+      A->add(block_A, test_nodes, m, trial_nodes, n);
+    }
+    if( L )
+    {
+      // Update forms
+      L->update(map);    
+      // Compute element vector 
+      L->eval(block_b, map, facetID);
+      
+      // Add element vector to global vector
+      b->add(block_b, test_nodes, m);
+    }
+    // Update progress
+    p_boundary++;
+  }
+
+  */
+  
+  // Complete assembly
+  if( L )
+    b->apply();
+  if ( a )
+  {
+    A->apply();
+    // Check the number of nonzeros
+    //checknz(*A, nz);
+  }
+  
+  // Delete data
+  delete [] block_A;
+  delete [] block_b;
+  delete [] trial_nodes;
+  delete [] test_nodes;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //-----------------------------------------------------------------------------
 void FEM::lump(const Matrix& M, Vector& m)
 {

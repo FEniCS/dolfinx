@@ -16,6 +16,45 @@ namespace dolfin
   /// matrices. It provides member functions that are required by functions 
   /// that operate with both dense and sparse matrices. 
 
+  // FIXME: For testing
+  class GenericVectorNoTemplate
+  {
+  public:
+ 
+    /// Constructor
+    GenericVectorNoTemplate(){}
+
+    /// Destructor
+    virtual ~GenericVectorNoTemplate(){}
+    
+    /// Initialize vector of length N
+    virtual void init(uint N) = 0;
+
+    /// Return size
+    virtual uint size() = 0;
+
+    /// Set all entries to a single scalar value
+    virtual const GenericVectorNoTemplate& operator= (real a) = 0;
+
+    /// Set all entries to zero
+    virtual void clear() = 0;
+
+    /// Add block of values
+    virtual void add(const real block[], const int pos[], int n) = 0;
+
+    /// Add block of values
+    virtual void insert(const real block[], const int pos[], int n) = 0;
+
+    /// Apply changes to matrix (only needed for sparse matrices)
+    virtual void apply() = 0;
+    
+  };  
+
+
+
+
+
+
   template < class T >
   class GenericVector 
   {

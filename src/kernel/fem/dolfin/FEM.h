@@ -41,6 +41,10 @@ namespace dolfin
   {
   public:
 
+    // FIXME: For testing
+    static void assembleNoTemplate(BilinearForm& a, GenericMatrixNoTemplate& A, Mesh& mesh);
+    static void assembleCommonNoTemplate(BilinearForm* a, LinearForm* L, GenericMatrixNoTemplate* A, GenericVectorNoTemplate* b, Mesh& mesh);
+
     /// Assemble bilinear form
     template<class T>
     static void assemble(BilinearForm& a, GenericMatrix<T>& A, Mesh& mesh);
@@ -336,6 +340,9 @@ namespace dolfin
       // Update progress
       p++;
     }
+
+    // FIXME: Commented out for testing
+    /*
   
     //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
     if( a )
@@ -390,14 +397,17 @@ namespace dolfin
       p_boundary++;
     }
 
+    */
+
     // Complete assembly
     if( L )
       b->apply();
     if ( a )
     {
       A->apply();
+      // FIXME: Commented out for testing
       // Check the number of nonzeros
-      checknz(*A, nz);
+      //checknz(*A, nz);
     }
     
     // Delete data

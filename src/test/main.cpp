@@ -280,6 +280,7 @@ void testMeshRefinement()
   //file2 << mesh;
 }
 
+/*
 void testDenseMatrix()
 {
   dolfin_info("--- Testing dense matrices ---");
@@ -380,7 +381,7 @@ void testDenseMatrix()
   FEM::assemble(a, L, M, b, mesh); 
 
 }
-
+*/
 
 void testDenseLUsolve()
 {
@@ -395,10 +396,32 @@ void testDenseLUsolve()
   x(1) = 1.0;
 
   A.solve(x, b);  
-  
 }
 
+void testGenericMatrix()
+{
+  UnitSquare mesh(128, 128);
+  Poisson2D::BilinearForm a;
+  Matrix A, B;
+  int n = 100;
 
+  // Assemble with template
+  tic();
+  dolfin_log(false);
+  for (int i = 0; i < n; i++)
+    FEM::assemble(a, A, mesh);
+  dolfin_log(true);
+  cout << "Time with template:    " << toc() << endl;
+
+  // Assemble without template
+  tic();
+  dolfin_log(false);
+  dolfin_info("This text should not be printed.");
+  for (int i = 0; i < n; i++)
+    FEM::assembleNoTemplate(a, B, mesh);
+  dolfin_log(true);
+  cout << "Time without template: " << toc() << endl;
+}
 
 int main(int argc, char* argv[])
 {
@@ -418,8 +441,10 @@ int main(int argc, char* argv[])
   testMakeElement();
   testMeshRefinement();
   testDenseMatrix();
-*/
   testDenseLUsolve();
+*/
+  
+  testGenericMatrix();
 
   return 0;
 }
