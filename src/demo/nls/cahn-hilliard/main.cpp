@@ -11,7 +11,7 @@
 // time step. It also requires fines meshes, and is often not well-suited to
 // iterative linear solvers.
 //
-// To see some interesting results, for a unit mesh, some recommned parameters are provided
+// To see some interesting results, for a unit mesh, some recommned parameters are provided.
 //   For quartic chemical free-energy:
 //     lambda = 5.0e02
 //     factor = 100
@@ -36,9 +36,8 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
 
     // Constructor 
     CahnHilliardEquation(Mesh& mesh, Function& U, Function& rate1, Function& U0, 
-        Function& rate0, real& theta, real& dt, real& theta_inv, real& dt_inv) 
-        : NonlinearProblem(), Parametrized(), _mesh(&mesh), _dt(&dt), 
-        _theta(&theta), _dt_inv(&dt_inv), _theta_inv(&theta_inv)
+        Function& rate0, real& theta, real& dt) : NonlinearProblem(), 
+        Parametrized(), _mesh(&mesh), _dt(&dt), _theta(&theta)
     {
 
       lambda = 1.0;
@@ -54,14 +53,12 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
       if(mesh.numSpaceDim() == 2)
       {
         a = new CahnHilliard2D::BilinearForm(U, *mu, *dmu_dc, *mobility, *d_mobility, lambda, *_dt, *_theta);
-        L = new CahnHilliard2D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta, *_dt_inv, 
-                                           *_theta_inv);
+        L = new CahnHilliard2D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta);
       }
       else if(mesh.numSpaceDim() == 3)
       {
         a = new CahnHilliard3D::BilinearForm(U, *mu, *dmu_dc, *mobility, *d_mobility, lambda, *_dt, *_theta);
-        L = new CahnHilliard3D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta, *_dt_inv, 
-                                           *_theta_inv);
+        L = new CahnHilliard3D::LinearForm(U, U0, rate0, *mu, *mobility, lambda, *_dt, *_theta);
       }
       else
         dolfin_error("Cahn-Hilliard model is programmed for 2D and 3D only");
@@ -203,7 +200,7 @@ class CahnHilliardEquation : public NonlinearProblem, public Parametrized
     // Chemical potential and its derivative 
     Function *mu, *dmu_dc;
  
-    real *_dt, *_theta, *_dt_inv, *_theta_inv;
+    real *_dt, *_theta;
     // Surface parameter
     real lambda;
 };
@@ -219,15 +216,12 @@ int main(int argc, char* argv[])
   // Set time stepping parameters
   real dt = 2.0e-7; real t  = 0.0; real T  = 500*dt;
   real theta = 0.5;
-  real theta_inv = 1.0/theta;
-  real dt_inv = 1.0/dt;
 
   Function U, U0;
   Function rate1, rate0;
 
   // Create user-defined nonlinear problem
-  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt, 
-                       theta_inv, dt_inv);
+  CahnHilliardEquation cahn_hilliard(mesh, U, rate1, U0, rate0, theta, dt);
 
   // Create nonlinear solver and set parameters
   NewtonSolver newton_solver;
