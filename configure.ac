@@ -177,13 +177,13 @@ if test x$disable_petsc = x; then
     fi
 
     # Check for PETSc
-    AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
-    if test $petsc_found = yes; then
+    MKFILE=$PETSC_DIR/bmake/common/base
+    if test -f $MKFILE; then
         # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
-	PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
+	PETSC_CFLAGS=`make -f $MKFILE getincludedirs PETSC_DIR=$PETSC_DIR`
+	PETSC_LIBS=`make -f $MKFILE getlinklibs PETSC_DIR=$PETSC_DIR`
     else
-	echo "*** Unable to find PETSc 2.3.1 on your system."
+	echo "*** Unable to find PETSc on your system."
 	echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
 	echo "*** or set the environment variable PETSC_DIR to the correct path."
 	echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"

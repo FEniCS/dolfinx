@@ -191,7 +191,6 @@ mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpi_found = @mpi_found@
 oldincludedir = @oldincludedir@
-petsc_found = @petsc_found@
 pkgpyexecdir = @pkgpyexecdir@
 pkgpythondir = @pkgpythondir@
 prefix = @prefix@
