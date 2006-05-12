@@ -170,7 +170,7 @@ if test x$disable_petsc = x; then
     
     # Handle option --with-petsc-dir=<path>
     if test x$PETSC_DIR = x; then
-	PETSC_DIR="/usr/local/lib/petsc/"
+        PETSC_DIR="/usr/local/lib/petsc/"
         echo "assuming path to PETSc is $PETSC_DIR"
     else
         echo "using PETSC_DIR=$PETSC_DIR"
@@ -180,18 +180,32 @@ if test x$disable_petsc = x; then
     MKFILE=$PETSC_DIR/bmake/common/base
     if test -f $MKFILE; then
         # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-	PETSC_CFLAGS=`make -f $MKFILE getincludedirs PETSC_DIR=$PETSC_DIR`
-	PETSC_LIBS=`make -f $MKFILE getlinklibs PETSC_DIR=$PETSC_DIR`
+        PETSC_CFLAGS=`make -f $MKFILE getincludedirs PETSC_DIR=$PETSC_DIR`
+        PETSC_LIBS=`make -f $MKFILE getlinklibs PETSC_DIR=$PETSC_DIR`
     else
-	echo "*** Unable to find PETSc on your system."
-	echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-	echo "*** or set the environment variable PETSC_DIR to the correct path."
-	echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
-	exit 1
+        echo "*** Unable to find PETSc on your system."
+        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
+        echo "*** or set the environment variable PETSC_DIR to the correct path."
+        echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
+        exit 1
     fi
 
     # Found PETSc, so set HAVE_PETSC_H
     PETSC_CFLAGS="-DHAVE_PETSC_H=1 $PETSC_CFLAGS"
+
+    # Check for eigenvalue solver extension SLEPC. Variable SLEPC_DIR must be set.
+    AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
+
+    if test $have_slepc = yes; then
+        PETSC_ARCH=`cat $PETSC_DIR/bmake/petscconf | sed -e "s/PETSC_ARCH=//" -e "2d"`
+        SLEPC_CFLAGS="-DHAVE_SLEPC_H=1 -I${SLEPC_DIR} -I${SLEPC_DIR}/include"
+        SLEPC_LIBS="-L${SLEPC_DIR}/lib/${PETSC_ARCH} -lslepc"
+        SLEPC_LIBS="-Wl,-rpath,${SLEPC_DIR}/lib/linux-gnu-cxx-real-debug $SLEPC_LIBS"
+    else
+        echo "SLEPc not found on your system."
+        echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
+        echo "  It is available at http://www.grycap.upv.es/slepc/SLEPc."
+    fi
 
 else
 
