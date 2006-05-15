@@ -21,9 +21,7 @@ namespace dolfin
 {
   class BoundaryCondition;
   class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   

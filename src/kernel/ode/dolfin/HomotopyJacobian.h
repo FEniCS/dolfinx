@@ -9,6 +9,7 @@
 #ifndef __HOMOTOPY_JACOBIAN_H
 #define __HOMOTOPY_JACOBIAN_H
 
+#include <dolfin/Vector.h>
 #include <dolfin/constants.h>
 #include <dolfin/VirtualMatrix.h>
 
@@ -16,7 +17,6 @@ namespace dolfin
 {
 
   class ComplexODE;
-  class Vector;
 
   /// This class implements a matrix-free Jacobian for a homotopy
   /// system. It uses the fact that the Jacobian is already

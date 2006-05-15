@@ -8,13 +8,14 @@
 #define __MATLAB_FILE_H
 
 #include <dolfin/constants.h>
-#include "MFile.h"
+#include <dolfin/Matrix.h>
+#include <dolfin/MFile.h>
 
-namespace dolfin {
+namespace dolfin
+{
   
-  class Matrix;
-  
-  class MatlabFile : public MFile {
+  class MatlabFile : public MFile
+  {
   public:
     
     MatlabFile(const std::string filename);

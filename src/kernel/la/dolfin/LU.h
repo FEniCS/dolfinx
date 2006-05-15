@@ -2,16 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-05-15
 
 #ifndef __LU_H
 #define __LU_H
 
 #ifdef HAVE_PETSC_H
 
-#include <petscksp.h>
-#include <petscmat.h>
-
+#include <dolfin/PETScManager.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
 
@@ -32,10 +30,10 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
-    uint solve(const Matrix& A, Vector& x, const Vector& b);
+    uint solve(const SparseMatrix& A, SparseVector& x, const SparseVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
+    uint solve(const VirtualMatrix& A, SparseVector& x, const SparseVector& b);
 
     /// Display LU solver data
     void disp() const;
@@ -51,8 +49,8 @@ namespace dolfin
     int* idxm;
     int* idxn;
 
-    Vector e;
-    Vector y;
+    SparseVector e;
+    SparseVector y;
 
   };
 

@@ -8,6 +8,7 @@
 #define __GENERIC_FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/LocalFunctionData.h>
 
 namespace dolfin
@@ -16,7 +17,6 @@ namespace dolfin
   class Point;
   class Vertex;
   class Mesh;
-  class Vector;
   class AffineMap;
   class FiniteElement;
 

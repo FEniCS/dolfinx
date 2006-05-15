@@ -9,7 +9,6 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/Dependencies.h>
 
 using namespace dolfin;

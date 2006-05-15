@@ -8,13 +8,14 @@
 #define __OCTAVE_FILE_H
 
 #include <dolfin/constants.h>
-#include "MFile.h"
+#include <dolfin/Matrix.h>
+#include <dolfin/MFile.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
-  class Matrix;
-  
-  class OctaveFile : public MFile {
+  class OctaveFile : public MFile
+  {
   public:
     
     OctaveFile(const std::string filename);

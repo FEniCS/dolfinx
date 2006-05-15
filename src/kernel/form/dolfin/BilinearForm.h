@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-03-27
+// Last changed: 2006-05-15
 
 #ifndef __BILINEAR_FORM_H
 #define __BILINEAR_FORM_H
@@ -35,8 +35,14 @@ namespace dolfin
     /// Return finite element defining the test space
     FiniteElement& test();
 
+    /// Return finite element defining the test space
+    const FiniteElement& test() const;
+
     /// Return finite element defining the trial space
     FiniteElement& trial();
+
+    /// Return finite element defining the trial space
+    const FiniteElement& trial() const;
 
   protected:
 

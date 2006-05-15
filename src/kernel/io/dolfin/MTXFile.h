@@ -15,12 +15,13 @@
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/GenericFile.h>
 
 namespace dolfin
 {
-  class Vector;
-  class Matrix;
+
   class Mesh;
   class ParameterList;
   

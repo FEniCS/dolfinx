@@ -18,7 +18,7 @@
 #include <dolfin/UpdatedMultiAdaptiveJacobian.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
 
-#include <petscpc.h>
+#include <dolfin/PETScManager.h>
 #if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
   #include <src/ksp/pc/pcimpl.h>
 #else

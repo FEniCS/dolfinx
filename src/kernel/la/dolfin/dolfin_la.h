@@ -13,9 +13,11 @@
 #include <dolfin/LinearSolver.h>
 #include <dolfin/LU.h>
 #include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/Preconditioner.h>
-#include <dolfin/Vector.h>
+#include <dolfin/SparseMatrix.h>
+#include <dolfin/SparseVector.h>
 #include <dolfin/VirtualMatrix.h>
 
 #endif

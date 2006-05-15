@@ -9,35 +9,34 @@
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
 
+// FIXME: boost first
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
-
-#include <dolfin/DenseVector.h>
 #include <dolfin/GenericMatrix.h>
 
 namespace dolfin
 {
 
-  /// This class is based on the matrix template from uBlas, which is
-  /// part of the freely available Boost C++ library (www.boost.org). 
-  /// Some wrappers are provided to provide a uniform interface to different
-  /// DOLFIN matrix classes.
+  class DenseVector;
+  namespace ublas = boost::numeric::ublas;
+  typedef ublas::matrix<double> ublas_matrix;
+
+  /// This class represents a dense matrix of dimension M x N.
+  /// It is a simple wrapper for a Boost ublas vector.
   ///
-  /// DenseMatrix is intended to operate together with DenseVector. Further 
-  /// information and a listing of member functions can be found at 
+  /// The interface is intentionally simple. For advanced usage,
+  /// refer to the documentation for ublas which can be found at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  namespace ublas = boost::numeric::ublas;
-
-  class DenseMatrix : public GenericMatrix<DenseMatrix>, 
-      public ublas::matrix<real>, public Variable
+  class DenseMatrix : public GenericMatrix,
+		      public Variable,
+		      public ublas_matrix
   {
-    typedef ublas::matrix<double> BaseMatrix;
-
   public:
-
+    
     /// Constructor
     DenseMatrix();
     
@@ -58,22 +57,19 @@ namespace dolfin
     template <class E>
     DenseMatrix& operator=(const ublas::matrix_expression<E>& A) const
     { 
-      BaseMatrix::operator=(A); 
+      ublas_matrix::operator=(A); 
       return *this;
     } 
 
     /// Return reference to matrix component
     real& operator() (uint i, uint j) 
-      { return BaseMatrix::operator() (i, j); }; 
-
-    /// Set all entries to zero (should really use DenseMatrix::clear())
-    DenseMatrix& operator= (real zero);
-
-    void clear()
-      { this->BaseMatrix::clear(); }
+      { return ublas_matrix::operator() (i, j); }; 
 
     /// Return number of rows (dim = 0) or columns (dim = 1) 
     uint size(uint dim) const;
+
+    /// Set block of values
+    void set(const real block[], const int rows[], int m, const int cols[], int n);
 
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
@@ -81,22 +77,27 @@ namespace dolfin
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(DenseVector& x, const DenseVector& b) const;
 
+    // FIXME: Rename to solveInPlace()
+
     /// Solve Ax = b in-place (A is destroyed)
     void solve_in_place(DenseVector& x, const DenseVector& b);
 
     /// Compute inverse of matrix
     void invert();
 
-    /// Dummy function for compatibility with sparse matrix
-    inline void apply(){};
+    /// Apply changes to matrix (dummy function for compatibility)
+    void apply();
+
+    /// Set all entries to zero
+    void zero();
+
+    /// Set given rows to identity matrix
+    void ident(const int rows[], int m);
 
     /// Maximum number of non-zero terms on a row. Not relevant for dense matrix
     /// so just return 0
     uint nzmax() const
       { return 0; }
-
-    /// Set given rows to identity matrix
-    void ident(const int rows[], int m);
 
     /// Compute A*x
     void mult(const DenseVector& x, DenseVector& Ax) const;
@@ -106,8 +107,6 @@ namespace dolfin
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const DenseMatrix& A);
-    
-  private:
 
   };
 }

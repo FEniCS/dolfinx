@@ -45,12 +45,12 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
     if(_bc) 
     { 
       FEM::applyBC(A, *_mesh, _a->test(), *_bc);
-      FEM::assembleBCresidual(b, x, *_mesh, _Lf->test(), *_bc);
+      FEM::assembleResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
     }
     else
     {
-      //FIXME: Deal with zero Neumann condition on entire boundary her. Need to fix FEM::assembleBCresidual 
-      // FEM::assembleBCresidual(b, x, *_mesh, _Lf->test());
+      //FIXME: Deal with zero Neumann condition on entire boundary her. Need to fix FEM::assembleResidual
+      // FEM::assembleResidualBC(b, x, *_mesh, _Lf->test());
       dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear PDE.");
     }
   }

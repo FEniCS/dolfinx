@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-27
+// Last changed: 2006-05-15
 
 #ifdef HAVE_PETSC_H
 
@@ -42,7 +42,8 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint LU::solve(const SparseMatrix& A,
+		       SparseVector& x, const SparseVector& b)
 {
   // Get parameters
   const bool report = get("LU report");
@@ -62,7 +63,8 @@ dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint LU::solve(const VirtualMatrix& A,
+		       SparseVector& x, const SparseVector& b)
 {
   // Get parameters
   const bool report = get("LU report");

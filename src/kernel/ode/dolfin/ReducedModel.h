@@ -8,12 +8,13 @@
 #define __REDUCED_MODEL_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 
 namespace dolfin
 {
-  class Vector;
+
   class Function;
 
   /// ReducedModel represents an averaged ODE of the form

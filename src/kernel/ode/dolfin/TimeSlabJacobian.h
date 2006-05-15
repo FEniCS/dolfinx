@@ -9,6 +9,7 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/Vector.h>
 #include <dolfin/VirtualMatrix.h>
 
 namespace dolfin

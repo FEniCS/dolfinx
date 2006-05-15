@@ -11,10 +11,12 @@
 
 #include <string>
 
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+
 namespace dolfin
 {
-  class Vector;
-  class Matrix;
+
   class Mesh;
   class Function;
   class Sample;
@@ -22,7 +24,6 @@ namespace dolfin
   class ParameterList;
   class BLASFormData;
   class GenericFile;
-
   class FiniteElement;
   
   /// A File represents a data file for reading and writing objects.

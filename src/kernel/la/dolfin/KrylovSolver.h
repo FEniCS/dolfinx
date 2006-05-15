@@ -7,16 +7,16 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-03-22
+// Last changed: 2006-05-15
 
 #ifndef __KRYLOV_SOLVER_H
 #define __KRYLOV_SOLVER_H
 
 #ifdef HAVE_PETSC_H
 
-#include <petscksp.h>
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/LinearSolver.h>
 

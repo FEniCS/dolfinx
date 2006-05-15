@@ -10,10 +10,11 @@
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/GenericFunction.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
-  class Vector;
+
   class Mesh;
   
   /// This class implements the functionality for a discrete function

@@ -9,11 +9,12 @@
 
 #include <string>
 
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+
 namespace dolfin
 {
   
-  class Vector;
-  class Matrix;
   class Mesh;
   class Function;
   class Sample;

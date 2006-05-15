@@ -11,5 +11,7 @@ EXTRA_DIST = dolfin_la.h \
              Matrix.h \
              PETScManager.h \
              Preconditioner.h \
+             SparseMatrix.h \
+             SparseVector.h \
              Vector.h \
              VirtualMatrix.h 

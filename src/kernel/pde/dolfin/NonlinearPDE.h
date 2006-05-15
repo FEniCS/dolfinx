@@ -9,6 +9,8 @@
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/GenericPDE.h>
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/NewtonSolver.h>
@@ -19,9 +21,7 @@ namespace dolfin
   class BoundaryCondition;
   class Function;
   class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
 
   /// This class acts as a base class for nonlinear PDE's and 
   /// the nonlinear function F(u) and its Jacobian J = dF(u)/du.

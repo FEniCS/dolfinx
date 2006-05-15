@@ -10,6 +10,7 @@
 #define __FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
 #include <dolfin/TimeDependent.h>
 #include <dolfin/FunctionPointer.h>
@@ -21,7 +22,6 @@ namespace dolfin
   class Vertex;
   class Cell;
   class Mesh;
-  class Vector;
   class AffineMap;
   class FiniteElement;
 

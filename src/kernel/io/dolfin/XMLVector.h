@@ -9,12 +9,11 @@
 
 #ifdef HAVE_PETSC_H
 
-#include "XMLObject.h"
+#include <dolfin/Vector.h>
+#include <dolfin/XMLObject.h>
 
 namespace dolfin
 {
-
-  class Vector;
   
   class XMLVector : public XMLObject
   {

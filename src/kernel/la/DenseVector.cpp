@@ -4,24 +4,27 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-04
-// Last changed: 2006-04-26
+// Last changed: 2006-05-15
 
 #include <dolfin/DenseVector.h>
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
 
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DenseVector::DenseVector() : GenericVector<DenseVector>(), BaseVector(), 
-    Variable("x", "a dense vector")
+DenseVector::DenseVector()
+  : GenericVector(),
+    Variable("x", "a dense vector"),
+    ublas_vector()
 {
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-DenseVector::DenseVector(uint N) : GenericVector<DenseVector>(), BaseVector(N),
-    Variable("x", "a dense vector")
+DenseVector::DenseVector(uint N)
+  : GenericVector(),
+    Variable("x", "a dense vector"),
+    ublas_vector(N)
 {
   // Clear matrix (not done by ublas)
   clear();
@@ -50,16 +53,28 @@ void DenseVector::init(uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
-void DenseVector::add(const real block[], const int pos[], int n)
+void DenseVector::set(const real block[], const int pos[], int n)
 {
-  for(int i = 0; i < n; ++i)
-    (*this)( pos[i] ) += block[i];
+  for(uint i = 0; i < n; ++i)
+    (*this)(pos[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void DenseVector::insert(const real block[], const int pos[], int n)
+void DenseVector::add(const real block[], const int pos[], int n)
 {
-  for(int i = 0; i < n; ++i)
-    (*this)( pos[i] ) = block[i];
+  for(uint i = 0; i < n; ++i)
+    (*this)(pos[i]) += block[i];
+}
+//-----------------------------------------------------------------------------
+void DenseVector::apply()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+void DenseVector::zero()
+{
+  uint N = this->size();
+  for (uint i = 0; i < N; ++i)
+    (*this)(i) = 0.0;
 }
 //-----------------------------------------------------------------------------
 const DenseVector& DenseVector::operator= (real a) 

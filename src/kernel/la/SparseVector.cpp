@@ -4,28 +4,34 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-07
+// Last changed: 2006-05-15
+
+// FIXME: Insert dolfin_assert() where appropriate
 
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/Vector.h>
+#include <dolfin/SparseVector.h>
 #include <cmath>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Vector::Vector() : GenericVector<Vector>(), Variable("x", "a vector"), x(0), 
-      copy(false)
+SparseVector::SparseVector()
+  : GenericVector(), 
+    Variable("x", "a sparse vector"),
+    x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(uint size) : GenericVector<Vector>(), Variable("x", "a vector"), 
-      x(0), copy(false)
+SparseVector::SparseVector(uint size)
+  : GenericVector(), 
+    Variable("x", "a sparse vector"), 
+    x(0), copy(false)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -34,15 +40,19 @@ Vector::Vector(uint size) : GenericVector<Vector>(), Variable("x", "a vector"),
   init(size);
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(Vec x) : GenericVector<Vector>(), Variable("x", "a vector"), x(x), 
-      copy(true)
+SparseVector::SparseVector(Vec x)
+  : GenericVector(),
+    Variable("x", "a vector"),
+    x(x), copy(true)
 {
   // Initialize PETSc 
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-Vector::Vector(const Vector& v) : GenericVector<Vector>(), 
-      Variable("x", "a vector"), x(0), copy(false)
+SparseVector::SparseVector(const SparseVector& v)
+  : GenericVector(), 
+    Variable("x", "a vector"),
+    x(0), copy(false)
 {
   // Initialize PETSc 
   PETScManager::init();
@@ -50,12 +60,12 @@ Vector::Vector(const Vector& v) : GenericVector<Vector>(),
   *this = v;
 }
 //-----------------------------------------------------------------------------
-Vector::~Vector()
+SparseVector::~SparseVector()
 {
   clear();
 }
 //-----------------------------------------------------------------------------
-void Vector::init(uint size)
+void SparseVector::init(uint size)
 {
   // Two cases:
   //
@@ -88,45 +98,54 @@ void Vector::init(uint size)
   VecSet(x, a);
 }
 //-----------------------------------------------------------------------------
-void Vector::axpy(const real a, const Vector& x) const
+void SparseVector::axpy(const real a, const SparseVector& x) const
 {
   VecAXPY(this->x, a, x.vec());
 }
 //-----------------------------------------------------------------------------
-void Vector::div(const Vector& x)
+void SparseVector::div(const SparseVector& x)
 {
   VecPointwiseDivide(this->x, this->x, x.vec());
   apply();
 }
 //-----------------------------------------------------------------------------
-void Vector::mult(const Vector& x)
+void SparseVector::mult(const SparseVector& x)
 {
   VecPointwiseMult(this->x, this->x, x.vec());
   apply();
 }
 //-----------------------------------------------------------------------------
-void Vector::add(const real block[], const int cols[], int n)
-{
-  VecSetValues(x, n, cols, block, ADD_VALUES); 
-}
-//-----------------------------------------------------------------------------
-void Vector::insert(const real block[], const int cols[], int n)
+void SparseVector::set(const real block[], const int cols[], int n)
 {
   VecSetValues(x, n, cols, block, INSERT_VALUES); 
 }
 //-----------------------------------------------------------------------------
-void Vector::get(real block[], const int cols[], int n) const
+void SparseVector::add(const real block[], const int cols[], int n)
 {
+  dolfin_assert(x);
+  VecSetValues(x, n, cols, block, ADD_VALUES); 
+}
+//-----------------------------------------------------------------------------
+void SparseVector::get(real block[], const int cols[], int n) const
+{
+  dolfin_assert(x);
   VecGetValues(x, n, cols, block); 
 }
 //-----------------------------------------------------------------------------
-void Vector::apply()
+void SparseVector::apply()
 {
   VecAssemblyBegin(x);
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
-void Vector::clear()
+void SparseVector::zero()
+{
+  dolfin_assert(x);
+  real a = 0.0;
+  VecSet(x, a);
+}
+//-----------------------------------------------------------------------------
+void SparseVector::clear()
 {
   if ( x && !copy )
   {
@@ -136,7 +155,7 @@ void Vector::clear()
   x = 0;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint Vector::size() const
+dolfin::uint SparseVector::size() const
 {
   int n = 0;
   VecGetSize(x, &n);
@@ -144,12 +163,12 @@ dolfin::uint Vector::size() const
   return static_cast<uint>(n);
 }
 //-----------------------------------------------------------------------------
-Vec Vector::vec() const
+Vec SparseVector::vec() const
 {
   return x;
 }
 //-----------------------------------------------------------------------------
-real* Vector::array()
+real* SparseVector::array()
 {
   dolfin_assert(x);
 
@@ -160,7 +179,7 @@ real* Vector::array()
   return data;
 }
 //-----------------------------------------------------------------------------
-const real* Vector::array() const
+const real* SparseVector::array() const
 {
   dolfin_assert(x);
 
@@ -170,14 +189,14 @@ const real* Vector::array() const
   return data;
 }
 //-----------------------------------------------------------------------------
-void Vector::restore(real data[])
+void SparseVector::restore(real data[])
 {
   dolfin_assert(x);
 
   VecRestoreArray(x, &data);
 }
 //-----------------------------------------------------------------------------
-void Vector::restore(const real data[]) const
+void SparseVector::restore(const real data[]) const
 {
   dolfin_assert(x);
 
@@ -186,18 +205,18 @@ void Vector::restore(const real data[]) const
   VecRestoreArray(x, &tmp);
 }
 //-----------------------------------------------------------------------------
-VectorElement Vector::operator() (uint i)
+SparseVectorElement SparseVector::operator() (uint i)
 {
-  VectorElement index(i, *this);
+  SparseVectorElement index(i, *this);
   return index;
 }
 //-----------------------------------------------------------------------------
-real Vector::operator() (uint i) const
+real SparseVector::operator() (uint i) const
 {
   return getval(i);
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator= (const Vector& x)
+const SparseVector& SparseVector::operator= (const SparseVector& x)
 {
   if ( !x.x )
   {
@@ -211,7 +230,7 @@ const Vector& Vector::operator= (const Vector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator= (real a)
+const SparseVector& SparseVector::operator= (real a)
 {
   dolfin_assert(x);
   VecSet(x, a);
@@ -219,7 +238,7 @@ const Vector& Vector::operator= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator+= (const Vector& x)
+const SparseVector& SparseVector::operator+= (const SparseVector& x)
 {
   dolfin_assert(x.x);
   dolfin_assert(this->x);
@@ -230,7 +249,7 @@ const Vector& Vector::operator+= (const Vector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator-= (const Vector& x)
+const SparseVector& SparseVector::operator-= (const SparseVector& x)
 {
   dolfin_assert(x.x);
   dolfin_assert(this->x);
@@ -241,7 +260,7 @@ const Vector& Vector::operator-= (const Vector& x)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator*= (real a)
+const SparseVector& SparseVector::operator*= (real a)
 {
   dolfin_assert(x);
   VecScale(x, a);
@@ -249,7 +268,7 @@ const Vector& Vector::operator*= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Vector& Vector::operator/= (real a)
+const SparseVector& SparseVector::operator/= (real a)
 {
   dolfin_assert(x);
   dolfin_assert(a != 0.0);
@@ -260,7 +279,7 @@ const Vector& Vector::operator/= (real a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-real Vector::operator*(const Vector& x)
+real SparseVector::operator*(const SparseVector& x)
 {
   dolfin_assert(x.x);
   dolfin_assert(this->x);
@@ -271,7 +290,7 @@ real Vector::operator*(const Vector& x)
   return a;
 }
 //-----------------------------------------------------------------------------
-real Vector::norm(NormType type) const
+real SparseVector::norm(NormType type) const
 {
   dolfin_assert(x);
 
@@ -291,7 +310,7 @@ real Vector::norm(NormType type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-real Vector::sum() const
+real SparseVector::sum() const
 {
   dolfin_assert(x);
 
@@ -302,7 +321,7 @@ real Vector::sum() const
   return value;
 }
 //-----------------------------------------------------------------------------
-real Vector::max() const
+real SparseVector::max() const
 {
   dolfin_assert(x);
 
@@ -314,7 +333,7 @@ real Vector::max() const
   return value;
 }
 //-----------------------------------------------------------------------------
-real Vector::min() const
+real SparseVector::min() const
 {
   dolfin_assert(x);
 
@@ -326,7 +345,7 @@ real Vector::min() const
   return value;
 }
 //-----------------------------------------------------------------------------
-void Vector::disp() const
+void SparseVector::disp() const
 {
   // FIXME: Maybe this could be an option?
   //VecView(x, PETSC_VIEWER_STDOUT_SELF);
@@ -338,7 +357,7 @@ void Vector::disp() const
   cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
+LogStream& dolfin::operator<< (LogStream& stream, const SparseVector& x)
 {
   // Check if matrix has been defined
   if ( !x.x )
@@ -352,7 +371,7 @@ LogStream& dolfin::operator<< (LogStream& stream, const Vector& x)
   return stream;
 }
 //-----------------------------------------------------------------------------
-real Vector::getval(uint i) const
+real SparseVector::getval(uint i) const
 {
   dolfin_assert(x);
 
@@ -368,7 +387,7 @@ real Vector::getval(uint i) const
   return val;
 }
 //-----------------------------------------------------------------------------
-void Vector::setval(uint i, const real a)
+void SparseVector::setval(uint i, const real a)
 {
   dolfin_assert(x);
 
@@ -378,7 +397,7 @@ void Vector::setval(uint i, const real a)
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
-void Vector::addval(uint i, const real a)
+void SparseVector::addval(uint i, const real a)
 {
   dolfin_assert(x);
 
@@ -388,52 +407,52 @@ void Vector::addval(uint i, const real a)
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
-// VectorElement
+// SparseVectorElement
 //-----------------------------------------------------------------------------
-VectorElement::VectorElement(uint i, Vector& x) : i(i), x(x)
+SparseVectorElement::SparseVectorElement(uint i, SparseVector& x) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-VectorElement::VectorElement(const VectorElement& e) : i(i), x(x)
+SparseVectorElement::SparseVectorElement(const SparseVectorElement& e) : i(i), x(x)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-VectorElement::operator real() const
+SparseVectorElement::operator real() const
 {
   return x.getval(i);
 }
 //-----------------------------------------------------------------------------
-const VectorElement& VectorElement::operator=(const VectorElement& e)
+const SparseVectorElement& SparseVectorElement::operator=(const SparseVectorElement& e)
 {
   x.setval(i, e.x.getval(i));
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const VectorElement& VectorElement::operator=(const real a)
+const SparseVectorElement& SparseVectorElement::operator=(const real a)
 {
   x.setval(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const VectorElement& VectorElement::operator+=(const real a)
+const SparseVectorElement& SparseVectorElement::operator+=(const real a)
 {
   x.addval(i, a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const VectorElement& VectorElement::operator-=(const real a)
+const SparseVectorElement& SparseVectorElement::operator-=(const real a)
 {
   x.addval(i, -a);
 
   return *this;
 }
 //-----------------------------------------------------------------------------
-const VectorElement& VectorElement::operator*=(const real a)
+const SparseVectorElement& SparseVectorElement::operator*=(const real a)
 {
   const real val = x.getval(i) * a;
   x.setval(i, val);
