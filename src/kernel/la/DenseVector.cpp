@@ -55,13 +55,13 @@ void DenseVector::init(uint N)
 //-----------------------------------------------------------------------------
 void DenseVector::set(const real block[], const int pos[], int n)
 {
-  for(uint i = 0; i < n; ++i)
+  for(int i = 0; i < n; ++i)
     (*this)(pos[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
 void DenseVector::add(const real block[], const int pos[], int n)
 {
-  for(uint i = 0; i < n; ++i)
+  for(int i = 0; i < n; ++i)
     (*this)(pos[i]) += block[i];
 }
 //-----------------------------------------------------------------------------

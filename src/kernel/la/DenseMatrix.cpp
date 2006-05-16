@@ -75,15 +75,15 @@ dolfin::uint DenseMatrix::size(uint dim) const
 //-----------------------------------------------------------------------------
 void DenseMatrix::set(const real block[], const int rows[], int m, const int cols[], int n)
 {
-  for (uint i = 0; i < m; ++i)
-    for (uint j = 0; j < n; ++j)
+  for (int i = 0; i < m; ++i)
+    for (int j = 0; j < n; ++j)
       (*this)(rows[i] , cols[j]) = block[i*n + j];
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::add(const real block[], const int rows[], int m, const int cols[], int n)
 {
-  for (uint i = 0; i < m; ++i)
-    for (uint j = 0; j < n; ++j)
+  for (int i = 0; i < m; ++i)
+    for (int j = 0; j < n; ++j)
       (*this)(rows[i] , cols[j]) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
