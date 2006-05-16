@@ -1,8 +1,9 @@
+ - Clean up assembly and linear algebra
  - Add function to solve Ax = b for dense matrices and dense vectors
  - Make it possible to compile without PETSc (--disable-petsc)
  - Much improved ODE solvers
  - Complete multi-adaptive benchmarks reaction and wave
- - Assmeble boundary integrals
+ - Assemble boundary integrals
  - FEM class cleaned up.
  - Fix multi-adaptive benchmark problem reaction
  - Small fixes for Intel C++ compiler version 9.1

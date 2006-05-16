@@ -4,6 +4,7 @@
 # Licensed under the GNU GPL Version 2
 #
 # Modified by Garth N. Wells (gmsh function)
+# Modified by Alexander H. Jarosch (gmsh fix)
 #
 # Script for converting between various data formats.
 #
@@ -271,13 +272,12 @@ def gmsh2xml(ifilename, ofilename):
                 print "No cells found in gmsh file."
                 break
             else:
+	    	write_header_cells(ofile, num_cells)   
                 state += 1
         elif state == 5:
             element = line.split()
-            cell_type = int(element[1])
-            if num_cells_read == 0:
-                write_header_cells(ofile, num_cells)
-            elif cell_type == 2:
+	    cell_type = int(element[1])
+            if cell_type == 2:
                 nn = [int(node) for node in element[5:8]]
                 for node in nn:
                     if not node in nodelist:
