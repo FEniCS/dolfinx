@@ -358,6 +358,7 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/scripting/Makefile \
            src/bench/Makefile \
+           src/bench/fem/Makefile \
            src/bench/ode/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
