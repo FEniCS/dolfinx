@@ -32,6 +32,9 @@ namespace dolfin
     /// Initialise nonlinear solver and choose LU solver
     NewtonSolver();
 
+    /// Initialise nonlinear solver and choose matrix type which defines LU solver
+    NewtonSolver(Matrix::Type matrix_type);
+
     /// Initialise nonlinear solver and choose Krylov solver
     NewtonSolver(KrylovSolver::Type linear_solver);
 

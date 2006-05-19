@@ -21,6 +21,12 @@ NewtonSolver::NewtonSolver() : Parametrized()
   A = new Matrix(Matrix::umfpack);
 }
 //-----------------------------------------------------------------------------
+NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
+{
+  solver = new LU;
+  A = new Matrix(matrix_type);
+}
+//-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
 {
   solver = new KrylovSolver(linear_solver);
