@@ -1,3 +1,4 @@
+ - Compute eigenvalues using SLEPc (an extension of PETSc)
  - Clean up assembly and linear algebra
  - Add function to solve Ax = b for dense matrices and dense vectors
  - Make it possible to compile without PETSc (--disable-petsc)
