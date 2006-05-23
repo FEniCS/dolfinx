@@ -26,4 +26,13 @@ EXTRA_DIST = dolfin_mesh.h \
              UnitCube.h \
              UnitSquare.h \
              Vertex.h \
-             VertexIterator.h
+             VertexIterator.h \
+             MeshConnectivity.h \
+             MeshEditor.h \
+             MeshEntity.h \
+             MeshEntityIterator.h \
+             MeshFunction.h \
+             MeshGeometry.h \
+             MeshTopology.h \
+             NewMesh.h \
+             NewMeshData.h

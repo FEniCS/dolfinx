@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-02-19
-// Last changed: 2006-02-19
+// Last changed: 2006-05-23
 
 #ifndef __XML_FINITE_ELEMENT_SPEC_H
 #define __XML_FINITE_ELEMENT_SPEC_H

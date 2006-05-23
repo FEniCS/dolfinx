@@ -1,28 +1,30 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-03-31
-// Last changed: 2005
+// Last changed: 2006-05-23
 
 #ifndef __XML_PARAMETER_LIST_H
 #define __XML_PARAMETER_LIST_H
 
 #include <dolfin/XMLObject.h>
 
-namespace dolfin {
+namespace dolfin
+{
 
   class ParameterList;
   
-  class XMLParameterList : public XMLObject {
+  class XMLParameterList : public XMLObject
+  {
   public:
 
     XMLParameterList(ParameterList& parameters);
     
-    void startElement (const xmlChar *name, const xmlChar **attrs);
-    void endElement   (const xmlChar *name);
+    void startElement(const xmlChar *name, const xmlChar **attrs);
+    void endElement  (const xmlChar *name);
     
-    void reading(std::string filename);
-    void done();
+    void open(std::string filename);
+    bool close();
     
   private:
     

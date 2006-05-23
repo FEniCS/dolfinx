@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-02-27
+// Last changed: 2006-05-23
 
 #ifndef __XML_FILE_H
 #define __XML_FILE_H
@@ -37,6 +37,7 @@ namespace dolfin
     void operator>> (Matrix& A);
 #endif
     void operator>> (Mesh& mesh);
+    void operator>> (NewMesh& mesh);
 #ifdef HAVE_PETSC_H
     void operator>> (Function& f);
 #endif
@@ -53,6 +54,7 @@ namespace dolfin
     void operator<< (Matrix& A);
 #endif
     void operator<< (Mesh& mesh);
+    void operator<< (NewMesh& mesh);
 #ifdef HAVE_PETSC_H
     void operator<< (Function& f);
 #endif

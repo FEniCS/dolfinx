@@ -15,6 +15,7 @@ nobase_include_HEADERS  = dolfin/dolfin_io.h \
                           dolfin/XMLFile.h \
                           dolfin/XMLFiniteElementSpec.h \
                           dolfin/XMLMesh.h \
+                          dolfin/NewXMLMesh.h \
                           dolfin/XMLMatrix.h \
                           dolfin/XMLObject.h \
                           dolfin/XMLParameterList.h \
@@ -37,6 +38,7 @@ libdolfin_io_la_SOURCES = File.cpp \
                           XMLFile.cpp \
                           XMLFiniteElementSpec.cpp \
                           XMLMesh.cpp \
+                          NewXMLMesh.cpp \
                           XMLMatrix.cpp \
                           XMLObject.cpp \
                           XMLParameterList.cpp \

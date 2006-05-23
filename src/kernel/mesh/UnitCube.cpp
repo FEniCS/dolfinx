@@ -46,8 +46,8 @@ UnitCube::UnitCube(uint nx, uint ny, uint nz)
 	const uint n7 = n3 + (nx + 1)*(ny + 1);
 
 	createCell(n0, n1, n3, n7);
-	createCell(n0, n1, n5, n7);
-	createCell(n0, n5, n4, n7);
+	createCell(n0, n1, n5, n7); // Not right-oriented, but will be sorted
+	createCell(n0, n5, n4, n7); // Not right-oriented, but will be sorted
 	createCell(n0, n3, n2, n7);
 	createCell(n0, n6, n4, n7);
 	createCell(n0, n2, n6, n7);

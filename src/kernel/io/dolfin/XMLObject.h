@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2005-10-03
+// Last changed: 2006-05-23
 
 #ifndef __XML_OBJECT_H
 #define __XML_OBJECT_H
@@ -19,40 +19,38 @@ namespace dolfin
   {
   public:
     
+    /// Constructor
     XMLObject();
     
-    virtual void startElement (const xmlChar* name, const xmlChar** attrs) = 0;
-    virtual void endElement   (const xmlChar* name) = 0;
+    /// Destructor
+    virtual ~XMLObject();
+
+    /// Callback for start of XML element
+    virtual void startElement(const xmlChar* name, const xmlChar** attrs) = 0;
+
+    /// Callback for end of XML element
+    virtual void endElement(const xmlChar* name) = 0;
     
-    // Write message before and after reading file
-    virtual void reading(std::string filename) {};
-    virtual void done() {};
-    virtual ~XMLObject() {};
-    
-    bool dataOK();
+    /// Callback for start of XML file (optional)
+    virtual void open(std::string filename);
+
+    /// Callback for end of XML file, should return true iff data is ok (optional)
+    virtual bool close();
     
   protected:
+
+    // Parse an integer value
+    int parseInt(const xmlChar* name, const xmlChar** attrs, const char *attribute);
+
+    // Parse an unsigned integer value
+    uint parseUnsignedInt(const xmlChar* name, const xmlChar** attrs, const char *attribute);
     
-    void parseIntegerRequired (const xmlChar* name, const xmlChar** attrs, 
-			       const char *attribute, int& value);
-
-    void parseIntegerOptional (const xmlChar* name, const xmlChar** attrs,
-			       const char* attribute, int& value);
-
-    void parseRealRequired    (const xmlChar* name, const xmlChar** attrs,
-			       const char* attribute, real& value);
-
-    void parseRealOptional    (const xmlChar* name, const xmlChar** attrs,
-			       const char* attribute, real& value);
-
-    void parseStringRequired  (const xmlChar* name, const xmlChar** attrs,
-			       const char* attribute, std::string& value);
-
-    void parseStringOptional  (const xmlChar* name, const xmlChar** attrs,
-			       const char* attribute, std::string& value);
+    // Parse a real value
+    real parseReal(const xmlChar* name, const xmlChar** attrs, const char* attribute);
     
-    bool ok;
-    
+    // Parse a string
+    std::string parseString(const xmlChar* name, const xmlChar** attrs, const char* attribute);
+
   };
   
 }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-02-17
-// Last changed: 2006-05-07
+// Last changed: 2006-05-23
 
 #ifdef HAVE_PETSC_H
 
@@ -52,18 +52,16 @@ void XMLMatrix::startElement(const xmlChar *name, const xmlChar **attrs)
   default:
     ;
   }
-  
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::endElement(const xmlChar *name)
 {
-  switch ( state ){
+  switch ( state )
+  {
   case INSIDE_MATRIX:
     
-    if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 ) {
-      ok = true;
+    if ( xmlStrcasecmp(name,(xmlChar *) "sparsematrix") == 0 )
       state = DONE;
-    }
     
     break;
     
@@ -77,22 +75,16 @@ void XMLMatrix::endElement(const xmlChar *name)
   default:
     ;
   }
-  
-  
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::readMatrix(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int rows = 0;
-  int columns = 0;
-
   // Parse values
-  parseIntegerRequired(name, attrs, "rows",    rows);
-  parseIntegerRequired(name, attrs, "columns", columns);
+  uint M = parseInt(name, attrs, "rows");
+  uint N = parseInt(name, attrs, "columns");
 
   // Set values
-  A.init(rows, columns);
+  A.init(M, N);
 }
 //-----------------------------------------------------------------------------
 void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
@@ -116,16 +108,12 @@ void XMLMatrix::readRow(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMatrix::readEntry(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int column = 0;
-  real value = 0.0;
-  
   // Parse values
-  parseIntegerRequired (name, attrs, "column", column);
-  parseRealRequired    (name, attrs, "value",  value);
+  uint column = parseUnsignedInt(name, attrs, "column");
+  real value  = parseReal(name, attrs, "value");
   
   // Set values
-  A(row,column) = value;
+  A(row, column) = value;
 }
 //-----------------------------------------------------------------------------
 

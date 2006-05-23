@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells, 2005
 //
 // First added:  2002-11-12
-// Last changed: 2006-02-20
+// Last changed: 2006-05-23
 
 #ifndef __FILE_H
 #define __FILE_H
@@ -16,6 +16,7 @@ namespace dolfin
   class Vector;
   class Matrix;
   class Mesh;
+  class NewMesh;
   class Function;
   class Sample;
   class FiniteElementSpec;
@@ -56,6 +57,9 @@ namespace dolfin
     /// Read mesh from file
     void operator>> (Mesh& mesh);
 
+    /// Read mesh from file
+    void operator>> (NewMesh& mesh);
+
     /// Read function from file
     void operator>> (Function& u);
 
@@ -81,6 +85,9 @@ namespace dolfin
 
     /// Write mesh to file
     void operator<< (Mesh& mesh);
+
+    /// Write mesh to file
+    void operator<< (NewMesh& mesh);
 
     /// Write function to file
     void operator<< (Function& u);

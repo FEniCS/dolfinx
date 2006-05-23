@@ -16,7 +16,6 @@
 
 using namespace dolfin;
 
-
 void testPreconditioner()
 {
   dolfin_info("--- Testing preconditioner ---");
@@ -423,6 +422,15 @@ void testGenericMatrix()
   cout << "Time without template: " << toc() << endl;
 }
 
+void testNewMesh()
+{
+  Mesh oldmesh("oldmesh.xml.gz");
+  oldmesh.disp();
+
+  NewMesh newmesh("newmesh.xml.gz");
+  newmesh.disp();
+}
+
 int main(int argc, char* argv[])
 {
 /*
@@ -442,9 +450,10 @@ int main(int argc, char* argv[])
   testMeshRefinement();
   testDenseMatrix();
   testDenseLUsolve();
+  testGenericMatrix();
 */
   
-  testGenericMatrix();
+  testNewMesh();
 
   return 0;
 }

@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-02
-// Last changed: 2005-10-03
+// Last changed: 2006-10-23
 
 #ifndef __XML_BLAS_FORM_DATA_H
 #define __XML_BLAS_FORM_DATA_H
@@ -24,8 +24,8 @@ namespace dolfin
     void startElement (const xmlChar *name, const xmlChar **attrs);
     void endElement   (const xmlChar *name);
     
-    void reading(std::string filename);
-    void done();
+    void open(std::string filename);
+    bool close();
     
   private:
     
@@ -36,13 +36,13 @@ namespace dolfin
 		       INSIDE_INTERIOR_REFTENSOR, INSIDE_BOUNDARY_REFTENSOR,
 		       DONE };
     
-    void readForm        (const xmlChar *name, const xmlChar **attrs);
-    void readInterior    (const xmlChar *name, const xmlChar **attrs);
-    void readBoundary    (const xmlChar *name, const xmlChar **attrs);
-    void readTerm        (const xmlChar *name, const xmlChar **attrs);
-    void readGeoTensor   (const xmlChar *name, const xmlChar **attrs);
-    void readRefTensor   (const xmlChar *name, const xmlChar **attrs);
-    void readEntry       (const xmlChar *name, const xmlChar **attrs);
+    void readForm     (const xmlChar *name, const xmlChar **attrs);
+    void readInterior (const xmlChar *name, const xmlChar **attrs);
+    void readBoundary (const xmlChar *name, const xmlChar **attrs);
+    void readTerm     (const xmlChar *name, const xmlChar **attrs);
+    void readGeoTensor(const xmlChar *name, const xmlChar **attrs);
+    void readRefTensor(const xmlChar *name, const xmlChar **attrs);
+    void readEntry    (const xmlChar *name, const xmlChar **attrs);
     
     void initForm();
 

@@ -1,8 +1,8 @@
-// Copyright (C) 2003-2005 Anders Logg.
+// Copyright (C) 2003-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2005-12-19
+// Last changed: 2006-05-23
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Mesh.h>
@@ -88,7 +88,6 @@ void XMLMesh::endElement(const xmlChar *name)
     
     if ( xmlStrcasecmp(name,(xmlChar *) "mesh") == 0 ) {
       initMesh();
-      ok = true;
       state = DONE;
     }
     
@@ -138,41 +137,21 @@ void XMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int size = 0;
-
-  // Parse values
-  parseIntegerRequired(name, attrs, "size", size);
-
-  // Set values
-  vertices = size;
+  vertices = parseInt(name, attrs, "size");
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readCells(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int size = 0;
-  
-  // Parse values
-  parseIntegerRequired(name, attrs, "size", size);
-
-  // Set values
-  cells = size;
+  cells = parseInt(name, attrs, "size");
 }
 //-----------------------------------------------------------------------------
 void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int id = 0;
-  real x = 0.0;
-  real y = 0.0;
-  real z = 0.0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "name", id);
-  parseRealRequired(name, attrs, "x", x);
-  parseRealRequired(name, attrs, "y", y);
-  parseRealRequired(name, attrs, "z", z);
+  //int id  = parseInt(name, attrs, "name");
+  real x  = parseReal(name, attrs, "x");
+  real y  = parseReal(name, attrs, "y");
+  real z  = parseReal(name, attrs, "z");
 
   // Set values
   Vertex &newvertex = mesh.createVertex(x, y, z);
@@ -184,11 +163,8 @@ void XMLMesh::readVertex(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int id = 0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "name", id);
+  int id = parseInt(name, attrs, "name");
 
   // Add Boundary ID to vertex
   vertex->nbids.insert(id);
@@ -199,17 +175,11 @@ void XMLMesh::readBoundaryID(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int id = 0;
-  int n0 = 0;
-  int n1 = 0;
-  int n2 = 0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "name", id);
-  parseIntegerRequired(name, attrs, "n0", n0);
-  parseIntegerRequired(name, attrs, "n1", n1);
-  parseIntegerRequired(name, attrs, "n2", n2);
+  //int id = parseInt(name, attrs, "name");
+  int n0 = parseInt(name, attrs, "n0");
+  int n1 = parseInt(name, attrs, "n1");
+  int n2 = parseInt(name, attrs, "n2");
 
   // Set values
   mesh.createCell(n0, n1, n2);
@@ -220,19 +190,12 @@ void XMLMesh::readTriangle(const xmlChar *name, const xmlChar **attrs)
 //-----------------------------------------------------------------------------
 void XMLMesh::readTetrahedron(const xmlChar *name, const xmlChar **attrs)
 {
-  // Set default values
-  int id = 0;
-  int n0 = 0;
-  int n1 = 0;
-  int n2 = 0;
-  int n3 = 0;
-  
   // Parse values
-  parseIntegerRequired(name, attrs, "name", id);
-  parseIntegerRequired(name, attrs, "n0", n0);
-  parseIntegerRequired(name, attrs, "n1", n1);
-  parseIntegerRequired(name, attrs, "n2", n2);
-  parseIntegerRequired(name, attrs, "n3", n3);
+  //int id = parseIntegerRequired(name, attrs, "name");
+  int n0 = parseInt(name, attrs, "n0");
+  int n1 = parseInt(name, attrs, "n1");
+  int n2 = parseInt(name, attrs, "n2");
+  int n3 = parseInt(name, attrs, "n3");
 
   // Set values
   mesh.createCell(n0, n1, n2, n3);

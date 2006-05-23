@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-20-20
+// Last changed: 2006-05-23
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -15,6 +15,7 @@ namespace dolfin
   class Vector;
   class Matrix;
   class Mesh;
+  class NewMesh;
   class Function;
   class Sample;
   class FiniteElementSpec;
@@ -35,6 +36,7 @@ namespace dolfin
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);
+    virtual void operator>> (NewMesh& mesh);
     virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
     virtual void operator>> (FiniteElementSpec& spec);
@@ -46,6 +48,7 @@ namespace dolfin
     virtual void operator<< (Vector& x);
     virtual void operator<< (Matrix& A);
     virtual void operator<< (Mesh& mesh);
+    virtual void operator<< (NewMesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
     virtual void operator<< (FiniteElementSpec& spec);

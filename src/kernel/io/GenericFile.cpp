@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-12
-// Last changed: 2006-02-20
+// Last changed: 2006-05-23
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -46,6 +46,11 @@ void GenericFile::operator>>(Mesh& mesh)
   read_not_impl("Mesh");
 }
 //-­---------------------------------------------------------------------------
+void GenericFile::operator>>(NewMesh& mesh)
+{
+  read_not_impl("NewMesh");
+}
+//-­---------------------------------------------------------------------------
 void GenericFile::operator>>(Function& f)
 {
   read_not_impl("Function");
@@ -84,6 +89,11 @@ void GenericFile::operator<<(Matrix& A)
 void GenericFile::operator<<(Mesh& mesh)
 {
   write_not_impl("Mesh");
+}
+//-­---------------------------------------------------------------------------
+void GenericFile::operator<<(NewMesh& mesh)
+{
+  write_not_impl("NewMesh");
 }
 //-­---------------------------------------------------------------------------
 void GenericFile::operator<<(Function& u)

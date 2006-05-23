@@ -1,7 +1,7 @@
 #ifndef __DOLFIN_MESH_H
 #define __DOLFIN_MESH_H
 
-// DOLFIN grid classes
+// DOLFIN mesh classes
 
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshData.h>
@@ -38,5 +38,17 @@
 
 #include <dolfin/UnitCube.h>
 #include <dolfin/UnitSquare.h>
+
+// New mesh classes
+
+#include <dolfin/MeshConnectivity.h>
+#include <dolfin/MeshEditor.h>
+#include <dolfin/MeshEntity.h>
+#include <dolfin/MeshEntityIterator.h>
+#include <dolfin/MeshGeometry.h>
+#include <dolfin/MeshTopology.h>
+#include <dolfin/NewMesh.h>
+#include <dolfin/NewMeshData.h>
+#include <dolfin/MeshFunction.h>
 
 #endif

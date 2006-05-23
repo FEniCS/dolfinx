@@ -66,7 +66,9 @@ am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
 	MeshInit.lo MeshIterator.lo MeshRefinement.lo Point.lo \
 	TetMeshRefinement.lo Tetrahedron.lo TriMeshRefinement.lo \
 	Triangle.lo UnitCube.lo UnitSquare.lo Vertex.lo \
-	VertexIterator.lo
+	VertexIterator.lo MeshConnectivity.lo MeshEditor.lo \
+	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
+	MeshTopology.lo NewMesh.lo NewMeshData.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -222,63 +224,80 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = dolfin
 nobase_include_HEADERS = dolfin/dolfin_mesh.h \
-                           dolfin/Boundary.h \
-                           dolfin/BoundaryData.h \
-                           dolfin/BoundaryFacetIterator.h \
-                           dolfin/BoundaryInit.h \
-                           dolfin/Cell.h \
-                           dolfin/CellIterator.h \
-                           dolfin/CellRefData.h \
-                           dolfin/Edge.h \
-                           dolfin/EdgeIterator.h \
-                           dolfin/EdgeRefData.h \
-                           dolfin/Face.h \
-                           dolfin/FaceIterator.h \
-                           dolfin/GenericCell.h \
-                           dolfin/Mesh.h \
-                           dolfin/MeshData.h \
-                           dolfin/MeshHierarchy.h \
-                           dolfin/MeshInit.h \
-                           dolfin/MeshIterator.h \
-                           dolfin/MeshRefinement.h \
-                           dolfin/Point.h \
-                           dolfin/TetMeshRefinement.h \
-                           dolfin/Tetrahedron.h \
-                           dolfin/TriMeshRefinement.h \
-                           dolfin/Triangle.h \
-                           dolfin/UnitCube.h \
-                           dolfin/UnitSquare.h \
-                           dolfin/Vertex.h \
-                           dolfin/VertexIterator.h
+                            dolfin/Boundary.h \
+                            dolfin/BoundaryData.h \
+                            dolfin/BoundaryFacetIterator.h \
+                            dolfin/BoundaryInit.h \
+                            dolfin/Cell.h \
+                            dolfin/CellIterator.h \
+                            dolfin/CellRefData.h \
+                            dolfin/Edge.h \
+                            dolfin/EdgeIterator.h \
+                            dolfin/EdgeRefData.h \
+                            dolfin/Face.h \
+                            dolfin/FaceIterator.h \
+                            dolfin/GenericCell.h \
+                            dolfin/Mesh.h \
+                            dolfin/MeshData.h \
+                            dolfin/MeshHierarchy.h \
+                            dolfin/MeshInit.h \
+                            dolfin/MeshIterator.h \
+                            dolfin/MeshRefinement.h \
+                            dolfin/Point.h \
+                            dolfin/TetMeshRefinement.h \
+                            dolfin/Tetrahedron.h \
+                            dolfin/TriMeshRefinement.h \
+                            dolfin/Triangle.h \
+                            dolfin/UnitCube.h \
+                            dolfin/UnitSquare.h \
+                            dolfin/Vertex.h \
+                            dolfin/VertexIterator.h \
+                            dolfin/MeshConnectivity.h \
+                            dolfin/MeshEditor.h \
+                            dolfin/MeshEntity.h \
+                            dolfin/MeshEntityIterator.h \
+                            dolfin/MeshFunction.h \
+                            dolfin/MeshGeometry.h \
+                            dolfin/MeshTopology.h \
+                            dolfin/NewMesh.h \
+                            dolfin/NewMeshData.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
 libdolfin_mesh_la_SOURCES = Boundary.cpp \
-                           BoundaryData.cpp \
-                           BoundaryInit.cpp \
-                           Cell.cpp \
-                           CellIterator.cpp \
-                           Edge.cpp \
-                           EdgeIterator.cpp \
-                           EdgeRefData.cpp \
-                           Face.cpp \
-                           FaceIterator.cpp \
-                           GenericCell.cpp \
-                           Mesh.cpp \
-                           MeshData.cpp \
-                           MeshHierarchy.cpp \
-                           MeshInit.cpp \
-                           MeshIterator.cpp \
-                           MeshRefinement.cpp \
-                           Point.cpp \
-                           TetMeshRefinement.cpp \
-                           Tetrahedron.cpp \
-                           TriMeshRefinement.cpp \
-                           Triangle.cpp \
-                           UnitCube.cpp \
-                           UnitSquare.cpp \
-                           Vertex.cpp \
-                           VertexIterator.cpp
+                            BoundaryData.cpp \
+                            BoundaryInit.cpp \
+                            Cell.cpp \
+                            CellIterator.cpp \
+                            Edge.cpp \
+                            EdgeIterator.cpp \
+                            EdgeRefData.cpp \
+                            Face.cpp \
+                            FaceIterator.cpp \
+                            GenericCell.cpp \
+                            Mesh.cpp \
+                            MeshData.cpp \
+                            MeshHierarchy.cpp \
+                            MeshInit.cpp \
+                            MeshIterator.cpp \
+                            MeshRefinement.cpp \
+                            Point.cpp \
+                            TetMeshRefinement.cpp \
+                            Tetrahedron.cpp \
+                            TriMeshRefinement.cpp \
+                            Triangle.cpp \
+                            UnitCube.cpp \
+                            UnitSquare.cpp \
+                            Vertex.cpp \
+                            VertexIterator.cpp \
+                            MeshConnectivity.cpp \
+                            MeshEditor.cpp \
+                            MeshEntity.cpp \
+                            MeshEntityIterator.cpp \
+                            MeshGeometry.cpp \
+                            MeshTopology.cpp \
+                            NewMesh.cpp \
+                            NewMeshData.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -362,11 +381,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FaceIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Mesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshConnectivity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEditor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEntity.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEntityIterator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshGeometry.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshHierarchy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshInit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshRefinement.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMeshData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TetMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@

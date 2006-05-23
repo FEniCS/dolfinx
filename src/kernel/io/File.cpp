@@ -128,6 +128,13 @@ void File::operator>>(Mesh& mesh)
   *file >> mesh;
 }
 //-----------------------------------------------------------------------------
+void File::operator>>(NewMesh& mesh)
+{
+  file->read();
+  
+  *file >> mesh;
+}
+//-----------------------------------------------------------------------------
 void File::operator>>(Function& f)
 {
   file->read();
@@ -178,6 +185,13 @@ void File::operator<<(Matrix& A)
 }
 //-----------------------------------------------------------------------------
 void File::operator<<(Mesh& mesh)
+{
+  file->write();
+  
+  *file << mesh;
+}
+//-----------------------------------------------------------------------------
+void File::operator<<(NewMesh& mesh)
 {
   file->write();
   
