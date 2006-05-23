@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-08-31
-// Last changed: 2005-05-12
+// Last changed: 2006-05-23
 
 #ifndef __EIGENVALUE_SOLVER_H
 #define __EIGENVALUE_SOLVER_H
@@ -44,25 +44,34 @@ namespace dolfin
     /// Destructor
     ~EigenvalueSolver();
 
-    /// Compute all eigenvalues of the matrix A
+    /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(const Matrix& A);
 
-    /// Compute largest n eigenvalues of the matrix A
+    /// Compute largest n eigenpairs of the matrix A (solve Ax = \lambda x)
     void solve(const Matrix& A, const uint n);
 
-    /// Get 0th eigenvalue/vector  
-    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c);
+    /// Compute all eigenpairs of the generalised problem Ax = \lambda Bx
+    void solve(const Matrix& A, const Matrix& B);
 
-    /// Get eigenvalue/vector i 
-    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c, const int i);
+    /// Compute largest n eigenpairs of the generalised problem Ax = \lambda Bx
+    void solve(const Matrix& A, const Matrix& B, const uint n);
 
-    /// Get  0th eigenvalue 
+    /// Get the 0th eigenvalue 
     void getEigenvalue(real& xr, real& xc);
+
+    /// Get 0th eigenpair  
+    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c);
 
     /// Get eigenvalue i 
     void getEigenvalue(real& xr, real& xc, const int i);
 
+    /// Get eigenpair i 
+    void getEigenpair(real& xr, real& xc, Vector& r, Vector& c, const int i);
+
   private:
+
+    /// Compute eigenvalues
+    void solve(const Matrix& A, const Matrix* B, const uint n);
 
     EPSType getType(const Type type) const;
 
