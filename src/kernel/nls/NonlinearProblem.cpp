@@ -7,6 +7,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NonlinearProblem.h>
 
+#ifdef HAVE_PETSC_H
+
 using namespace dolfin;
 
 NonlinearProblem::NonlinearProblem()
@@ -34,3 +36,5 @@ void NonlinearProblem::J(Matrix& A, const Vector& x)
   dolfin_error("Nonlinear problem update for Jacobian has not been supplied by user.");
 }
 //-----------------------------------------------------------------------------
+
+#endif

@@ -107,6 +107,7 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void File::operator>>(Vector& x)
 {
   file->read();
@@ -121,6 +122,7 @@ void File::operator>>(Matrix& A)
   *file >> A;
 }
 //-----------------------------------------------------------------------------
+#endif
 void File::operator>>(Mesh& mesh)
 {
   file->read();
@@ -163,6 +165,7 @@ void File::operator>>(BLASFormData& blas)
   *file >> blas;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void File::operator<<(Vector& x)
 {
   file->write();
@@ -177,6 +180,7 @@ void File::operator<<(Matrix& A)
   *file << A;
 }
 //-----------------------------------------------------------------------------
+#endif
 void File::operator<<(Mesh& mesh)
 {
   file->write();

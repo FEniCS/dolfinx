@@ -7,6 +7,8 @@
 
 using namespace dolfin;
 
+#ifdef HAVE_PETSC_H
+
 int main()
 {
   // Load reference mesh (just a simple tetrahedron)
@@ -50,3 +52,15 @@ int main()
   
   return 0;
 }
+
+#else
+
+int main()
+{
+  dolfin_error("DOLFIN compiled without PETSc, unable to run this demo.");
+
+  return 0;
+}
+
+#endif
+

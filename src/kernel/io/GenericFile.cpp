@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-12
-// Last changed: 2006-02-20
+// Last changed: 2006-05-24
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>
@@ -31,6 +31,7 @@ GenericFile::~GenericFile()
   // Do nothing
 }
 //-­---------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void GenericFile::operator>>(Vector& x)
 {
   read_not_impl("Vector");
@@ -41,6 +42,7 @@ void GenericFile::operator>>(Matrix& A)
   read_not_impl("Matrix");
 }
 //-­---------------------------------------------------------------------------
+#endif
 void GenericFile::operator>>(Mesh& mesh)
 {
   read_not_impl("Mesh");
@@ -71,6 +73,7 @@ void GenericFile::operator>>(BLASFormData& blas)
   read_not_impl("BLASFormData");
 }
 //-­---------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void GenericFile::operator<<(Vector& x)
 {
   write_not_impl("Vector");
@@ -81,6 +84,7 @@ void GenericFile::operator<<(Matrix& A)
   write_not_impl("Matrix");
 }
 //-­---------------------------------------------------------------------------
+#endif
 void GenericFile::operator<<(Mesh& mesh)
 {
   write_not_impl("Mesh");

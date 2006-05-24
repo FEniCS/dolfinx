@@ -48,11 +48,13 @@ namespace dolfin
 
     //--- Input ---
     
+#ifdef HAVE_PETSC_H
     /// Read vector from file
     void operator>> (Vector& x);
 
     /// Read matrix from file
     void operator>> (Matrix& A);
+#endif
 
     /// Read mesh from file
     void operator>> (Mesh& mesh);
@@ -74,11 +76,13 @@ namespace dolfin
 
     //--- Output ---
 
+#ifdef HAVE_PETSC_H
     /// Write vector to file
     void operator<< (Vector& x);
 
     /// Write matrix to file
     void operator<< (Matrix& A);
+#endif
 
     /// Write mesh to file
     void operator<< (Mesh& mesh);

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-20-20
+// Last changed: 2006-05-24
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
@@ -32,9 +32,11 @@ namespace dolfin
     virtual ~GenericFile();
     
     // Input
-    
+
+#ifdef HAVE_PETSC_H    
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
+#endif
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
@@ -44,8 +46,10 @@ namespace dolfin
     
     // Output
     
+#ifdef HAVE_PETSC_H
     virtual void operator<< (Vector& x);
     virtual void operator<< (Matrix& A);
+#endif
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);

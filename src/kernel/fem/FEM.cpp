@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-05-15
+// Last changed: 2006-05-24
 
 #include <dolfin/FEM.h>
 
@@ -74,6 +74,7 @@ void FEM::assembleResidualBC(GenericVector& b,
   applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 void FEM::lump(const SparseMatrix& M, SparseVector& m)
 {
   m.init(M.size(0));
@@ -82,6 +83,7 @@ void FEM::lump(const SparseMatrix& M, SparseVector& m)
   M.mult(one, m);
 }
 //-----------------------------------------------------------------------------
+#endif
 void FEM::lump(const DenseMatrix& M, DenseVector& m)
 {
   m.init(M.size(0));

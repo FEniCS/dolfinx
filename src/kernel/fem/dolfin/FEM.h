@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-06-15
+// Last changed: 2006-06-24
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -83,8 +83,10 @@ namespace dolfin
 				   const GenericVector& x, Mesh& mesh,
 				   FiniteElement& element, BoundaryCondition& bc);
 
+#ifdef HAVE_PETSC_H
     /// Lump matrix
     static void lump(const SparseMatrix& M, SparseVector& m);
+#endif
 
     /// Lump matrix
     static void lump(const DenseMatrix& M, DenseVector& m);

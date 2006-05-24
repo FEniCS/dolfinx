@@ -2,10 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-10-24
-// Last changed: 2006-02-24
+// Last changed: 2006-05-24
 
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
+
+#ifdef HAVE_PETSC_H
 
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
@@ -42,5 +44,7 @@ namespace dolfin
 
   };
 }
+
+#endif
 
 #endif
