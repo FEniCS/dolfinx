@@ -291,8 +291,9 @@ def gmsh2xml(ifilename, ofilename):
         elif state == 9:
             element = line.split()
             cell_type = int(element[1])
+            num_tags  = int(element[2])
             if cell_type == 2:
-                nn = [int(node) for node in element[5:8]]
+                nn = [int(node) for node in element[3 + num_tags:8]]
                 for node in nn:
                     if not node in nodelist:
                         error("Vertex %d of triangle %d not previously defined." % (node, num_cells_read))
@@ -301,7 +302,7 @@ def gmsh2xml(ifilename, ofilename):
                 n2 = nodelist[nn[2]]
                 write_cell_triangle(ofile, num_cells_read, n0, n1, n2)
             elif cell_type == 4:
-                nn = [int(node) for node in element[5:9]]
+                nn = [int(node) for node in element[3 + num_tags:9]]
                 for node in nn:
                     if not node in nodelist:
                         error("Vertex %d of tetrahedron %d not previously defined." % (node, num_cells_read))
