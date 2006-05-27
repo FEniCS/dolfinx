@@ -157,6 +157,23 @@ namespace dolfin
     // Add value to element
     void addval(uint i, const real a);
 
+    // Create Scatterer
+    static VecScatter* createScatterer(SparseVector& x1, SparseVector& x2,
+				       int offset, int size);
+
+    // Gather x1 (subvector) into x2
+    static void gather(SparseVector& x1, SparseVector& x2, VecScatter& x1sc);
+
+    // Scatter part of x2 into x1 (subvector)
+    static void scatter(SparseVector& x1, SparseVector& x2, VecScatter& x1sc);
+
+    // Copy values from array into vector
+    static void fromArray(const real u[], SparseVector& x, uint offset,
+			  uint size);
+
+    // Copy values from vector into array
+    static void toArray(real y[], SparseVector&x, uint offset, uint size);
+
   private:
 
     // PETSc Vec pointer

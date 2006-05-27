@@ -188,135 +188,6 @@ class File(_object):
     def __lshift__(*args): return _dolfin.File___lshift__(*args)
 _dolfin.File_swigregister(File)
 
-class Vector(Variable):
-    __swig_setmethods__ = {}
-    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, Vector, name, value)
-    __swig_getmethods__ = {}
-    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, Vector, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::Vector instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    def __init__(self, *args):
-        this = _dolfin.new_Vector(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    __swig_destroy__ = _dolfin.delete_Vector
-    __del__ = lambda self : None;
-    def init(*args): return _dolfin.Vector_init(*args)
-    def clear(*args): return _dolfin.Vector_clear(*args)
-    def size(*args): return _dolfin.Vector_size(*args)
-    def vec(*args): return _dolfin.Vector_vec(*args)
-    def array(*args): return _dolfin.Vector_array(*args)
-    def restore(*args): return _dolfin.Vector_restore(*args)
-    def axpy(*args): return _dolfin.Vector_axpy(*args)
-    def div(*args): return _dolfin.Vector_div(*args)
-    def mult(*args): return _dolfin.Vector_mult(*args)
-    def add(*args): return _dolfin.Vector_add(*args)
-    def insert(*args): return _dolfin.Vector_insert(*args)
-    def get(*args): return _dolfin.Vector_get(*args)
-    def apply(*args): return _dolfin.Vector_apply(*args)
-    def __call__(*args): return _dolfin.Vector___call__(*args)
-    def copy(*args): return _dolfin.Vector_copy(*args)
-    def __iadd__(*args): return _dolfin.Vector___iadd__(*args)
-    def __isub__(*args): return _dolfin.Vector___isub__(*args)
-    def __imul__(*args): return _dolfin.Vector___imul__(*args)
-    def __idiv__(*args): return _dolfin.Vector___idiv__(*args)
-    def __mul__(*args): return _dolfin.Vector___mul__(*args)
-    l1 = _dolfin.Vector_l1
-    l2 = _dolfin.Vector_l2
-    linf = _dolfin.Vector_linf
-    def norm(*args): return _dolfin.Vector_norm(*args)
-    def sum(*args): return _dolfin.Vector_sum(*args)
-    def max(*args): return _dolfin.Vector_max(*args)
-    def min(*args): return _dolfin.Vector_min(*args)
-    def disp(*args): return _dolfin.Vector_disp(*args)
-    def __getitem__(*args): return _dolfin.Vector___getitem__(*args)
-    def __setitem__(*args): return _dolfin.Vector___setitem__(*args)
-    def addval(*args): return _dolfin.Vector_addval(*args)
-_dolfin.Vector_swigregister(Vector)
-
-class VectorElement(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, VectorElement, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, VectorElement, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::VectorElement instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    def __init__(self, *args):
-        this = _dolfin.new_VectorElement(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    def __iadd__(*args): return _dolfin.VectorElement___iadd__(*args)
-    def __isub__(*args): return _dolfin.VectorElement___isub__(*args)
-    def __imul__(*args): return _dolfin.VectorElement___imul__(*args)
-_dolfin.VectorElement_swigregister(VectorElement)
-
-class Matrix(Variable):
-    __swig_setmethods__ = {}
-    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, Matrix, name, value)
-    __swig_getmethods__ = {}
-    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, Matrix, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::Matrix instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    default_matrix = _dolfin.Matrix_default_matrix
-    spooles = _dolfin.Matrix_spooles
-    superlu = _dolfin.Matrix_superlu
-    umfpack = _dolfin.Matrix_umfpack
-    def __init__(self, *args):
-        this = _dolfin.new_Matrix(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    __swig_destroy__ = _dolfin.delete_Matrix
-    __del__ = lambda self : None;
-    def init(*args): return _dolfin.Matrix_init(*args)
-    def size(*args): return _dolfin.Matrix_size(*args)
-    def nz(*args): return _dolfin.Matrix_nz(*args)
-    def nzsum(*args): return _dolfin.Matrix_nzsum(*args)
-    def nzmax(*args): return _dolfin.Matrix_nzmax(*args)
-    def add(*args): return _dolfin.Matrix_add(*args)
-    def ident(*args): return _dolfin.Matrix_ident(*args)
-    def mult(*args): return _dolfin.Matrix_mult(*args)
-    l1 = _dolfin.Matrix_l1
-    linf = _dolfin.Matrix_linf
-    frobenius = _dolfin.Matrix_frobenius
-    def norm(*args): return _dolfin.Matrix_norm(*args)
-    def apply(*args): return _dolfin.Matrix_apply(*args)
-    def getMatrixType(*args): return _dolfin.Matrix_getMatrixType(*args)
-    def mat(*args): return _dolfin.Matrix_mat(*args)
-    def disp(*args): return _dolfin.Matrix_disp(*args)
-    def __call__(*args): return _dolfin.Matrix___call__(*args)
-    def getval(*args): return _dolfin.Matrix_getval(*args)
-    def setval(*args): return _dolfin.Matrix_setval(*args)
-    def addval(*args): return _dolfin.Matrix_addval(*args)
-_dolfin.Matrix_swigregister(Matrix)
-
-class MatrixElement(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, MatrixElement, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, MatrixElement, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::MatrixElement instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    def __init__(self, *args):
-        this = _dolfin.new_MatrixElement(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    def __iadd__(*args): return _dolfin.MatrixElement___iadd__(*args)
-    def __isub__(*args): return _dolfin.MatrixElement___isub__(*args)
-    def __imul__(*args): return _dolfin.MatrixElement___imul__(*args)
-_dolfin.MatrixElement_swigregister(MatrixElement)
-
 class VirtualMatrix(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, VirtualMatrix, name, value)
@@ -414,24 +285,6 @@ class KrylovSolver(LinearSolver):
     def disp(*args): return _dolfin.KrylovSolver_disp(*args)
 _dolfin.KrylovSolver_swigregister(KrylovSolver)
 
-class EigenvalueSolver(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, EigenvalueSolver, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, EigenvalueSolver, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::EigenvalueSolver instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    def __init__(self, *args):
-        this = _dolfin.new_EigenvalueSolver(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    __swig_destroy__ = _dolfin.delete_EigenvalueSolver
-    __del__ = lambda self : None;
-    def eigen(*args): return _dolfin.EigenvalueSolver_eigen(*args)
-_dolfin.EigenvalueSolver_swigregister(EigenvalueSolver)
-
 class Preconditioner(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, Preconditioner, name, value)
@@ -526,17 +379,29 @@ class FEM(_object):
         try: strthis = "at 0x%x" %( self.this, ) 
         except: strthis = "" 
         return "<%s.%s; proxy of C++ dolfin::FEM instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
-    if _newclass:size = staticmethod(_dolfin.FEM_size)
+    __swig_getmethods__["assemble"] = lambda x: _dolfin.FEM_assemble
+    if _newclass:assemble = staticmethod(_dolfin.FEM_assemble)
+    __swig_getmethods__["applyBC"] = lambda x: _dolfin.FEM_applyBC
+    if _newclass:applyBC = staticmethod(_dolfin.FEM_applyBC)
+    __swig_getmethods__["assembleResidualBC"] = lambda x: _dolfin.FEM_assembleResidualBC
+    if _newclass:assembleResidualBC = staticmethod(_dolfin.FEM_assembleResidualBC)
     __swig_getmethods__["lump"] = lambda x: _dolfin.FEM_lump
     if _newclass:lump = staticmethod(_dolfin.FEM_lump)
+    __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
+    if _newclass:size = staticmethod(_dolfin.FEM_size)
     __swig_getmethods__["disp"] = lambda x: _dolfin.FEM_disp
     if _newclass:disp = staticmethod(_dolfin.FEM_disp)
 _dolfin.FEM_swigregister(FEM)
 
-FEM_size = _dolfin.FEM_size
+FEM_assemble = _dolfin.FEM_assemble
+
+FEM_applyBC = _dolfin.FEM_applyBC
+
+FEM_assembleResidualBC = _dolfin.FEM_assembleResidualBC
 
 FEM_lump = _dolfin.FEM_lump
+
+FEM_size = _dolfin.FEM_size
 
 FEM_disp = _dolfin.FEM_disp
 
@@ -589,6 +454,9 @@ class AffineMap(_object):
     __swig_setmethods__["det"] = _dolfin.AffineMap_det_set
     __swig_getmethods__["det"] = _dolfin.AffineMap_det_get
     if _newclass:det = property(_dolfin.AffineMap_det_get, _dolfin.AffineMap_det_set)
+    __swig_setmethods__["scaling"] = _dolfin.AffineMap_scaling_set
+    __swig_getmethods__["scaling"] = _dolfin.AffineMap_scaling_get
+    if _newclass:scaling = property(_dolfin.AffineMap_scaling_get, _dolfin.AffineMap_scaling_set)
     __swig_setmethods__["f00"] = _dolfin.AffineMap_f00_set
     __swig_getmethods__["f00"] = _dolfin.AffineMap_f00_get
     if _newclass:f00 = property(_dolfin.AffineMap_f00_get, _dolfin.AffineMap_f00_set)
@@ -812,6 +680,7 @@ class Boundary(_object):
     def numVertices(*args): return _dolfin.Boundary_numVertices(*args)
     def numEdges(*args): return _dolfin.Boundary_numEdges(*args)
     def numFaces(*args): return _dolfin.Boundary_numFaces(*args)
+    def numFacets(*args): return _dolfin.Boundary_numFacets(*args)
 _dolfin.Boundary_swigregister(Boundary)
 
 class Point(_object):
@@ -910,6 +779,7 @@ class Edge(_object):
     def numCellNeighbors(*args): return _dolfin.Edge_numCellNeighbors(*args)
     def vertex(*args): return _dolfin.Edge_vertex(*args)
     def cell(*args): return _dolfin.Edge_cell(*args)
+    def localID(*args): return _dolfin.Edge_localID(*args)
     def mesh(*args): return _dolfin.Edge_mesh(*args)
     def coord(*args): return _dolfin.Edge_coord(*args)
     def length(*args): return _dolfin.Edge_length(*args)
@@ -1044,7 +914,9 @@ class Face(_object):
     def numCellNeighbors(*args): return _dolfin.Face_numCellNeighbors(*args)
     def edge(*args): return _dolfin.Face_edge(*args)
     def cell(*args): return _dolfin.Face_cell(*args)
+    def localID(*args): return _dolfin.Face_localID(*args)
     def mesh(*args): return _dolfin.Face_mesh(*args)
+    def area(*args): return _dolfin.Face_area(*args)
     def equals(*args): return _dolfin.Face_equals(*args)
     def contains(*args): return _dolfin.Face_contains(*args)
     __swig_setmethods__["fbids"] = _dolfin.Face_fbids_set
@@ -1180,6 +1052,7 @@ class EdgeIterator(_object):
     def numCellNeighbors(*args): return _dolfin.EdgeIterator_numCellNeighbors(*args)
     def vertex(*args): return _dolfin.EdgeIterator_vertex(*args)
     def cell(*args): return _dolfin.EdgeIterator_cell(*args)
+    def localID(*args): return _dolfin.EdgeIterator_localID(*args)
     def mesh(*args): return _dolfin.EdgeIterator_mesh(*args)
     def coord(*args): return _dolfin.EdgeIterator_coord(*args)
     def length(*args): return _dolfin.EdgeIterator_length(*args)
@@ -1219,7 +1092,9 @@ class FaceIterator(_object):
     def numCellNeighbors(*args): return _dolfin.FaceIterator_numCellNeighbors(*args)
     def edge(*args): return _dolfin.FaceIterator_edge(*args)
     def cell(*args): return _dolfin.FaceIterator_cell(*args)
+    def localID(*args): return _dolfin.FaceIterator_localID(*args)
     def mesh(*args): return _dolfin.FaceIterator_mesh(*args)
+    def area(*args): return _dolfin.FaceIterator_area(*args)
     def equals(*args): return _dolfin.FaceIterator_equals(*args)
     def contains(*args): return _dolfin.FaceIterator_contains(*args)
     __swig_setmethods__["fbids"] = _dolfin.FaceIterator_fbids_set
@@ -1743,27 +1618,6 @@ class Partition(_object):
     def update(*args): return _dolfin.Partition_update(*args)
     def debug(*args): return _dolfin.Partition_debug(*args)
 _dolfin.Partition_swigregister(Partition)
-
-class ReducedModel(ODE):
-    __swig_setmethods__ = {}
-    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, ReducedModel, name, value)
-    __swig_getmethods__ = {}
-    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, ReducedModel, name)
-    def __repr__(self):
-        try: strthis = "at 0x%x" %( self.this, ) 
-        except: strthis = "" 
-        return "<%s.%s; proxy of C++ dolfin::ReducedModel instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
-    def __init__(self, *args):
-        this = _dolfin.new_ReducedModel(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    __swig_destroy__ = _dolfin.delete_ReducedModel
-    __del__ = lambda self : None;
-    def f(*args): return _dolfin.ReducedModel_f(*args)
-    def u0(*args): return _dolfin.ReducedModel_u0(*args)
-_dolfin.ReducedModel_swigregister(ReducedModel)
 
 class Sample(Variable):
     __swig_setmethods__ = {}

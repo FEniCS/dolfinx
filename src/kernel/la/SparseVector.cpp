@@ -407,6 +407,66 @@ void SparseVector::addval(uint i, const real a)
   VecAssemblyEnd(x);
 }
 //-----------------------------------------------------------------------------
+void SparseVector::gather(SparseVector& x1, SparseVector& x2, VecScatter& x1sc)
+{
+  VecScatterBegin(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		  x1sc);
+  VecScatterEnd(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
+		x1sc);
+}
+//-----------------------------------------------------------------------------
+void SparseVector::scatter(SparseVector& x1, SparseVector& x2,
+			   VecScatter& x1sc)
+{
+  VecScatterBegin(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
+		  x1sc);
+  VecScatterEnd(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
+		x1sc);
+}
+//-----------------------------------------------------------------------------
+VecScatter* SparseVector::createScatterer(SparseVector& x1, SparseVector& x2,
+					  int offset, int size)
+{
+  VecScatter* sc = new VecScatter;
+  IS* is = new IS;
+
+  ISCreateBlock(MPI_COMM_WORLD, size, 1, &offset, is);
+  VecScatterCreate(x1.vec(), PETSC_NULL, x2.vec(), *is,
+		   sc);
+
+  return sc;
+}
+//-----------------------------------------------------------------------------
+void SparseVector::fromArray(const real u[], SparseVector& x,
+			     unsigned int offset,
+			     unsigned int size)
+{
+  // Workaround to interface SparseVector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(unsigned int i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void SparseVector::toArray(real y[], SparseVector& x,
+			   unsigned int offset,
+			   unsigned int size)
+{
+  // Workaround to interface SparseVector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(unsigned int i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
 // SparseVectorElement
 //-----------------------------------------------------------------------------
 SparseVectorElement::SparseVectorElement(uint i, SparseVector& x) : i(i), x(x)
