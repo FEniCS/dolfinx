@@ -1,6 +1,5 @@
 %module(directors="1") dolfin
 
-
 %{
 #include <dolfin.h>
 
@@ -83,6 +82,8 @@ using namespace dolfin;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
+%feature("director") PDE;
+%feature("director") TimeDependentPDE;
 
 %ignore dolfin::dolfin_info;
 %ignore dolfin::dolfin_info_aptr;
@@ -237,6 +238,11 @@ using namespace dolfin;
 %include "dolfin/TimeStepper.h"
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
+
+
+/* pde */
+
+%include "dolfin/TimeDependentPDE.h"
 
 /* glue */
 

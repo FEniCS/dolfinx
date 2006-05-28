@@ -9,9 +9,11 @@
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
 
+#include <dolfin/Vector.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
 #include <dolfin/Solver.h>
+
 
 namespace dolfin
 {

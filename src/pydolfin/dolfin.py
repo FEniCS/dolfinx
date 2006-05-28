@@ -1914,6 +1914,72 @@ class dGqMethod(Method):
     def disp(*args): return _dolfin.dGqMethod_disp(*args)
 _dolfin.dGqMethod_swigregister(dGqMethod)
 
+class TimeDependentPDE(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, TimeDependentPDE, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, TimeDependentPDE, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::TimeDependentPDE instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        if self.__class__ == TimeDependentPDE:
+            args = (None,) + args
+        else:
+            args = (self,) + args
+        this = _dolfin.new_TimeDependentPDE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_TimeDependentPDE
+    __del__ = lambda self : None;
+    def solve(*args): return _dolfin.TimeDependentPDE_solve(*args)
+    def fu(*args): return _dolfin.TimeDependentPDE_fu(*args)
+    def init(*args): return _dolfin.TimeDependentPDE_init(*args)
+    def save(*args): return _dolfin.TimeDependentPDE_save(*args)
+    def preparestep(*args): return _dolfin.TimeDependentPDE_preparestep(*args)
+    def prepareiteration(*args): return _dolfin.TimeDependentPDE_prepareiteration(*args)
+    def elementdim(*args): return _dolfin.TimeDependentPDE_elementdim(*args)
+    def a(*args): return _dolfin.TimeDependentPDE_a(*args)
+    def L(*args): return _dolfin.TimeDependentPDE_L(*args)
+    def mesh(*args): return _dolfin.TimeDependentPDE_mesh(*args)
+    def bc(*args): return _dolfin.TimeDependentPDE_bc(*args)
+    __swig_setmethods__["x"] = _dolfin.TimeDependentPDE_x_set
+    __swig_getmethods__["x"] = _dolfin.TimeDependentPDE_x_get
+    if _newclass:x = property(_dolfin.TimeDependentPDE_x_get, _dolfin.TimeDependentPDE_x_set)
+    __swig_setmethods__["dotx"] = _dolfin.TimeDependentPDE_dotx_set
+    __swig_getmethods__["dotx"] = _dolfin.TimeDependentPDE_dotx_get
+    if _newclass:dotx = property(_dolfin.TimeDependentPDE_dotx_get, _dolfin.TimeDependentPDE_dotx_set)
+    __swig_setmethods__["k"] = _dolfin.TimeDependentPDE_k_set
+    __swig_getmethods__["k"] = _dolfin.TimeDependentPDE_k_get
+    if _newclass:k = property(_dolfin.TimeDependentPDE_k_get, _dolfin.TimeDependentPDE_k_set)
+    def __disown__(self):
+        self.this.disown()
+        _dolfin.disown_TimeDependentPDE(self)
+        return weakref_proxy(self)
+_dolfin.TimeDependentPDE_swigregister(TimeDependentPDE)
+
+class TimeDependentODE(ODE):
+    __swig_setmethods__ = {}
+    for _s in [ODE]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, TimeDependentODE, name, value)
+    __swig_getmethods__ = {}
+    for _s in [ODE]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, TimeDependentODE, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::TimeDependentODE instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_TimeDependentODE(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def u0(*args): return _dolfin.TimeDependentODE_u0(*args)
+    def timestep(*args): return _dolfin.TimeDependentODE_timestep(*args)
+    def fmono(*args): return _dolfin.TimeDependentODE_fmono(*args)
+    def update(*args): return _dolfin.TimeDependentODE_update(*args)
+_dolfin.TimeDependentODE_swigregister(TimeDependentODE)
+
 
 get = _dolfin.get
 

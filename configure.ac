@@ -87,7 +87,8 @@ fi
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
+#    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
+    CXXFLAGS="-DDEBUG=1 -g -O2 -ansi"
 fi 
 
 # Handle option --enable-optimization
