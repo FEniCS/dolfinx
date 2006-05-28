@@ -68,8 +68,38 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-# libtool
+
+# Test that the libtool executable is installed
+AC_CHECK_PROG(libtool_found, libtool, yes, no)
+if test $libtool_found = no; then
+    echo "*** Unable to find libtool."
+    echo "*** Perhaps you need to install the package libtool?"
+    exit 1	
+fi    
+
+# Configure libtool
 AC_PROG_LIBTOOL
+
+# Check for libxml2
+AM_PATH_XML2( ,libxml2_found=yes, libxml2_found=no)
+if test $libxml2_found = no; then
+    echo "*** Unable to find libxml2 development files on your system."
+    echo "*** Perhaps you need to install the packages libxml2 and libxml2-dev?"
+    exit 1
+fi
+
+# Check for Boost
+AC_CHECK_HEADER([boost/version.hpp], have_boost=yes, have_boost=no)
+if test $have_boost = no; then
+    AC_CHECK_HEADER([$BOOST_DIR/boost/version.hpp], have_boost=yes)
+    if test $have_boost = yes; then
+        BOOST_CFLAGS="-I$BOOST_DIR"
+    else
+        echo "*** Unable to find Boost."
+        echo "*** Perhaps you need set the include path --with-boost-include=<path> or to install the package libboost-dev?"
+        exit 1
+    fi
+fi
 
 # Test for PyDOLFIN
 if test x$enable_pydolfin = xyes; then
@@ -87,8 +117,7 @@ fi
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
-#    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
-    CXXFLAGS="-DDEBUG=1 -g -O2 -ansi"
+    CXXFLAGS="-DDEBUG=1 -g -O2 -Wall -Werror -ansi"
 fi 
 
 # Handle option --enable-optimization
@@ -155,7 +184,7 @@ if test x$enable_mpi = xyes; then
         if [ test -d $DIR/mpi ]; then
             MPI_CFLAGS="-I$DIR/mpi"
         else
-	    MPI_CFLAGS="-I$DIR"
+            MPI_CFLAGS="-I$DIR"
         fi
     else
         echo "*** Unable to find MPI on your system."
@@ -194,7 +223,7 @@ if test x$disable_petsc = x; then
     # Found PETSc, so set HAVE_PETSC_H
     PETSC_CFLAGS="-DHAVE_PETSC_H=1 $PETSC_CFLAGS"
 
-    # Check for eigenvalue solver extension SLEPC. Variable SLEPC_DIR must be set.
+    # Check for eigenvalue solver extension SLEPc. Variable SLEPC_DIR must be set.
     AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
 
     if test $have_slepc = yes; then
@@ -205,40 +234,12 @@ if test x$disable_petsc = x; then
     else
         echo "SLEPc not found on your system."
         echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
-        echo "  It is available at http://www.grycap.upv.es/slepc/SLEPc."
+        echo "  It is available at http://www.grycap.upv.es/slepc."
     fi
-
 else
-
     # Compile without PETSc
     echo "disabling PETSc (some demos may not compile)"
     PETSC_CFLAGS=""
-
-fi
-
-# Check for Boost headers
-have_boost=no
-AC_CHECK_HEADERS([boost/version.hpp], have_boost=yes)
-if test $have_boost = no; then
-  AC_CHECK_HEADERS([$BOOST_DIR/boost/version.hpp], have_boost=yes)
-  if test $have_boost = yes; then
-    BOOST_CFLAGS="-I$BOOST_DIR"
-  else
-    echo "*** Unable to find Boost."
-    echo "*** Perhaps you need to install the package libboost-dev?"
-    exit 1
-  fi
-fi
-
-# Check for libxml2
-AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
-if test $libxml2_found = yes; then	  
-    XML2_CFLAGS=`xml2-config --cflags`
-    XML2_LIBS=`xml2-config --libs`
-else
-    echo "*** Unable to find libxml2 development files on your system."
-    echo "*** Perhaps you need to install the package libxml2-dev?"
-    exit 1
 fi
 
 # List of DOLFIN module libraries
@@ -252,7 +253,7 @@ KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
+KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
@@ -268,7 +269,7 @@ DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML2_LIBS"
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against
@@ -403,3 +404,4 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo "  setenv PATH $prefix/bin:\${PATH}"
    echo ''
 fi
+
