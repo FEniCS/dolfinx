@@ -27,3 +27,9 @@ dolfin::Parameter glueget(std::string name)
 {
   return dolfin::get(name);
 }
+
+void load_parameters(std::string filename)
+{
+  dolfin::File file(filename);
+  file >> dolfin::ParameterSystem::parameters;
+}

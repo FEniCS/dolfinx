@@ -13,7 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Form::Form(uint num_functions)
-  : c(0), num_functions(num_functions)
+  : num_functions(num_functions), c(0)
 {
   // Initialize list of functions
   if ( num_functions > 0 )
@@ -86,5 +86,15 @@ void Form::updateCoefficients(AffineMap& map)
     dolfin_assert(functions[i]);
     functions[i]->interpolate(c[i], map, *elements[i]);
   }
+}
+//-----------------------------------------------------------------------------
+Function* Form::function(uint i)
+{
+  return functions[i];
+}
+//-----------------------------------------------------------------------------
+FiniteElement* Form::element(uint i)
+{
+  return elements[i];
 }
 //-----------------------------------------------------------------------------

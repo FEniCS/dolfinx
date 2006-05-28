@@ -188,6 +188,158 @@ class File(_object):
     def __lshift__(*args): return _dolfin.File___lshift__(*args)
 _dolfin.File_swigregister(File)
 
+class Vector(Variable):
+    __swig_setmethods__ = {}
+    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Vector, name, value)
+    __swig_getmethods__ = {}
+    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, Vector, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::SparseVector instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_Vector(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_Vector
+    __del__ = lambda self : None;
+    def init(*args): return _dolfin.Vector_init(*args)
+    def clear(*args): return _dolfin.Vector_clear(*args)
+    def size(*args): return _dolfin.Vector_size(*args)
+    def vec(*args): return _dolfin.Vector_vec(*args)
+    def array(*args): return _dolfin.Vector_array(*args)
+    def restore(*args): return _dolfin.Vector_restore(*args)
+    def axpy(*args): return _dolfin.Vector_axpy(*args)
+    def div(*args): return _dolfin.Vector_div(*args)
+    def mult(*args): return _dolfin.Vector_mult(*args)
+    def set(*args): return _dolfin.Vector_set(*args)
+    def add(*args): return _dolfin.Vector_add(*args)
+    def get(*args): return _dolfin.Vector_get(*args)
+    def apply(*args): return _dolfin.Vector_apply(*args)
+    def zero(*args): return _dolfin.Vector_zero(*args)
+    def __call__(*args): return _dolfin.Vector___call__(*args)
+    def copy(*args): return _dolfin.Vector_copy(*args)
+    def __iadd__(*args): return _dolfin.Vector___iadd__(*args)
+    def __isub__(*args): return _dolfin.Vector___isub__(*args)
+    def __imul__(*args): return _dolfin.Vector___imul__(*args)
+    def __idiv__(*args): return _dolfin.Vector___idiv__(*args)
+    def __mul__(*args): return _dolfin.Vector___mul__(*args)
+    l1 = _dolfin.Vector_l1
+    l2 = _dolfin.Vector_l2
+    linf = _dolfin.Vector_linf
+    def norm(*args): return _dolfin.Vector_norm(*args)
+    def sum(*args): return _dolfin.Vector_sum(*args)
+    def max(*args): return _dolfin.Vector_max(*args)
+    def min(*args): return _dolfin.Vector_min(*args)
+    def disp(*args): return _dolfin.Vector_disp(*args)
+    def getval(*args): return _dolfin.Vector_getval(*args)
+    def setval(*args): return _dolfin.Vector_setval(*args)
+    def addval(*args): return _dolfin.Vector_addval(*args)
+    __swig_getmethods__["createScatterer"] = lambda x: _dolfin.Vector_createScatterer
+    if _newclass:createScatterer = staticmethod(_dolfin.Vector_createScatterer)
+    __swig_getmethods__["gather"] = lambda x: _dolfin.Vector_gather
+    if _newclass:gather = staticmethod(_dolfin.Vector_gather)
+    __swig_getmethods__["scatter"] = lambda x: _dolfin.Vector_scatter
+    if _newclass:scatter = staticmethod(_dolfin.Vector_scatter)
+    __swig_getmethods__["fromArray"] = lambda x: _dolfin.Vector_fromArray
+    if _newclass:fromArray = staticmethod(_dolfin.Vector_fromArray)
+    __swig_getmethods__["toArray"] = lambda x: _dolfin.Vector_toArray
+    if _newclass:toArray = staticmethod(_dolfin.Vector_toArray)
+_dolfin.Vector_swigregister(Vector)
+
+Vector_createScatterer = _dolfin.Vector_createScatterer
+
+Vector_gather = _dolfin.Vector_gather
+
+Vector_scatter = _dolfin.Vector_scatter
+
+Vector_fromArray = _dolfin.Vector_fromArray
+
+Vector_toArray = _dolfin.Vector_toArray
+
+class SparseVectorElement(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, SparseVectorElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, SparseVectorElement, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::SparseVectorElement instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_SparseVectorElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args): return _dolfin.SparseVectorElement___iadd__(*args)
+    def __isub__(*args): return _dolfin.SparseVectorElement___isub__(*args)
+    def __imul__(*args): return _dolfin.SparseVectorElement___imul__(*args)
+_dolfin.SparseVectorElement_swigregister(SparseVectorElement)
+
+class Matrix(Variable):
+    __swig_setmethods__ = {}
+    for _s in [Variable]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Matrix, name, value)
+    __swig_getmethods__ = {}
+    for _s in [Variable]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, Matrix, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::SparseMatrix instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    default_matrix = _dolfin.Matrix_default_matrix
+    spooles = _dolfin.Matrix_spooles
+    superlu = _dolfin.Matrix_superlu
+    umfpack = _dolfin.Matrix_umfpack
+    def __init__(self, *args):
+        this = _dolfin.new_Matrix(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _dolfin.delete_Matrix
+    __del__ = lambda self : None;
+    def init(*args): return _dolfin.Matrix_init(*args)
+    def size(*args): return _dolfin.Matrix_size(*args)
+    def nz(*args): return _dolfin.Matrix_nz(*args)
+    def nzsum(*args): return _dolfin.Matrix_nzsum(*args)
+    def nzmax(*args): return _dolfin.Matrix_nzmax(*args)
+    def set(*args): return _dolfin.Matrix_set(*args)
+    def add(*args): return _dolfin.Matrix_add(*args)
+    def ident(*args): return _dolfin.Matrix_ident(*args)
+    def mult(*args): return _dolfin.Matrix_mult(*args)
+    l1 = _dolfin.Matrix_l1
+    linf = _dolfin.Matrix_linf
+    frobenius = _dolfin.Matrix_frobenius
+    def norm(*args): return _dolfin.Matrix_norm(*args)
+    def apply(*args): return _dolfin.Matrix_apply(*args)
+    def zero(*args): return _dolfin.Matrix_zero(*args)
+    def type(*args): return _dolfin.Matrix_type(*args)
+    def mat(*args): return _dolfin.Matrix_mat(*args)
+    def disp(*args): return _dolfin.Matrix_disp(*args)
+    def __call__(*args): return _dolfin.Matrix___call__(*args)
+    def getval(*args): return _dolfin.Matrix_getval(*args)
+    def setval(*args): return _dolfin.Matrix_setval(*args)
+    def addval(*args): return _dolfin.Matrix_addval(*args)
+_dolfin.Matrix_swigregister(Matrix)
+
+class SparseMatrixElement(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, SparseMatrixElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, SparseMatrixElement, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::SparseMatrixElement instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_SparseMatrixElement(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def __iadd__(*args): return _dolfin.SparseMatrixElement___iadd__(*args)
+    def __isub__(*args): return _dolfin.SparseMatrixElement___isub__(*args)
+    def __imul__(*args): return _dolfin.SparseMatrixElement___imul__(*args)
+_dolfin.SparseMatrixElement_swigregister(SparseMatrixElement)
+
 class VirtualMatrix(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, VirtualMatrix, name, value)
@@ -576,6 +728,11 @@ class Form(_object):
     __swig_destroy__ = _dolfin.delete_Form
     __del__ = lambda self : None;
     def update(*args): return _dolfin.Form_update(*args)
+    def function(*args): return _dolfin.Form_function(*args)
+    def element(*args): return _dolfin.Form_element(*args)
+    __swig_setmethods__["num_functions"] = _dolfin.Form_num_functions_set
+    __swig_getmethods__["num_functions"] = _dolfin.Form_num_functions_get
+    if _newclass:num_functions = property(_dolfin.Form_num_functions_get, _dolfin.Form_num_functions_set)
 _dolfin.Form_swigregister(Form)
 
 class BilinearForm(Form):
@@ -696,6 +853,8 @@ class Point(_object):
         this = _dolfin.new_Point(*args)
         try: self.this.append(this)
         except: self.this = this
+    __swig_destroy__ = _dolfin.delete_Point
+    __del__ = lambda self : None;
     def dist(*args): return _dolfin.Point_dist(*args)
     def norm(*args): return _dolfin.Point_norm(*args)
     def midpoint(*args): return _dolfin.Point_midpoint(*args)
@@ -1757,6 +1916,8 @@ _dolfin.dGqMethod_swigregister(dGqMethod)
 
 
 get = _dolfin.get
+
+load_parameters = _dolfin.load_parameters
 class ElasticityUpdatedSolver(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, ElasticityUpdatedSolver, name, value)

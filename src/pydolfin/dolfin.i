@@ -98,7 +98,10 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
-%rename(copy) dolfin::Vector::operator=;
+%rename(Vector) SparseVector;
+%rename(Matrix) SparseMatrix;
+
+%rename(copy) dolfin::SparseVector::operator=;
 %rename(__getitem__) dolfin::Vector::getval;
 %rename(__setitem__) dolfin::Vector::setval;
 
@@ -151,8 +154,11 @@ using namespace dolfin;
 
 /* la includes */
 
+
 %include "dolfin/Vector.h"
+%include "dolfin/SparseVector.h"
 %include "dolfin/Matrix.h"
+%include "dolfin/SparseMatrix.h"
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
 %include "dolfin/LinearSolver.h"

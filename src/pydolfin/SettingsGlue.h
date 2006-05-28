@@ -6,3 +6,5 @@ void glueset(std::string name, bool val);
 void glueset(std::string name, std::string val);
 
 dolfin::Parameter glueget(std::string name);
+
+void load_parameters(std::string filename);
