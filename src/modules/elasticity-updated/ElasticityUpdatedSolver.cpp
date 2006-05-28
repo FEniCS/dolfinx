@@ -5,9 +5,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-02-20
 
 //#include <iostream>
 #include <sstream>
@@ -26,17 +24,17 @@ ElasticityUpdatedSolver::ElasticityUpdatedSolver(Mesh& mesh,
 						 Function& f,
 						 Function& v0,
 						 Function& rho,
-						 real& E, real& nu, real& nuv,
-						 real& nuplast,
+						 real E, real nu, real nuv,
+						 real nuplast,
 						 BoundaryCondition& bc,
-						 real& k, real& T)
+						 real k, real T)
   : mesh(mesh), f(f), v0(v0), rho(rho), E(E), nu(nu), nuv(nuv),
     nuplast(nuplast), bc(bc), k(k),
     T(T), counter(0), lastsample(0),
     lambda(E * nu / ((1 + nu) * (1 - 2 * nu))),
     mu(E / (2 * (1 + nu))),
-    t(0.0), rtol(get("discrete tolerance")),
-    maxiters(get("maximum iterations")), do_plasticity(false),
+    t(0.0), rtol(get("ODE discrete tolerance")),
+    maxiters(get("ODE maximum iterations")), do_plasticity(false),
     yield(0.0),
     savesamplefreq(33.0),
     fevals(0),
@@ -412,10 +410,10 @@ void ElasticityUpdatedSolver::solve(Mesh& mesh,
 				    Function& f,
 				    Function& v0,
 				    Function& rho,
-				    real& E, real& nu, real& nuv,
-				    real& nuplast,
+				    real E, real nu, real nuv,
+				    real nuplast,
 				    BoundaryCondition& bc,
-				    real& k, real& T)
+				    real k, real T)
 {
   ElasticityUpdatedSolver solver(mesh, f, v0, rho, E, nu, nuv, nuplast,
 				 bc, k, T);
@@ -514,6 +512,27 @@ void ElasticityUpdatedSolver::gather(Vector& x1, Vector& x2, VecScatter& x1sc)
 		  x1sc);
   VecScatterEnd(x1.vec(), x2.vec(), INSERT_VALUES, SCATTER_FORWARD,
 		x1sc);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::scatter(Vector& x1, Vector& x2, VecScatter& x1sc)
+{
+  VecScatterBegin(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
+		  x1sc);
+  VecScatterEnd(x2.vec(), x1.vec(), INSERT_VALUES, SCATTER_REVERSE,
+		x1sc);
+}
+//-----------------------------------------------------------------------------
+VecScatter* ElasticityUpdatedSolver::createScatterer(Vector& x1, Vector& x2,
+						     int offset, int size)
+{
+  VecScatter* sc = new VecScatter;
+  IS* is = new IS;
+
+  ISCreateBlock(MPI_COMM_WORLD, size, 1, &offset, is);
+  VecScatterCreate(x1.vec(), PETSC_NULL, x2.vec(), *is,
+		   sc);
+
+  return sc;
 }
 //-----------------------------------------------------------------------------
 void ElasticityUpdatedSolver::computeFGreen(Vector& xF, Vector& xF0, Vector& xF1,
@@ -681,14 +700,14 @@ void ElasticityUpdatedSolver::computeFBEuler(Vector& xF, Vector& xB,
 
     multF(blockF1, blockF0, blockF);
 
-//     xF.add(blockF, nodes, 9);
+    xF.add(blockF, nodes, 9);
 
     multB(blockF, blockB);
 
     xB.add(blockB, nodes, 9);
   }
 
-//   xF.apply();
+  xF.apply();
   xB.apply();
 
   delete blockF;
@@ -894,7 +913,11 @@ void ElasticityUpdatedSolver::initmsigma(Vector& msigma,
 				       FiniteElement& element2, Mesh& mesh)
 {
   // Compute mass vector (sigma)
+
+  msigma = 0.0;
+
   int *nodes = new int[element2.spacedim()];
+  real* blockm = new real[9];
   for (CellIterator c(mesh); !c.end(); ++c)
   {
     Cell& cell = *c;
@@ -904,8 +927,14 @@ void ElasticityUpdatedSolver::initmsigma(Vector& msigma,
     real factor = cell.volume(); 
 
     for(unsigned int i = 0; i < element2.spacedim(); i++)
-      msigma(nodes[i]) = factor;
+//       msigma(nodes[i]) = factor;
+      blockm[i] = factor;
+
+    msigma.add(blockm, nodes, 9);
   }
+
+  msigma.apply();
+
   delete [] nodes;
 }
 //-----------------------------------------------------------------------------
@@ -947,6 +976,34 @@ void ElasticityUpdatedSolver::initJ0(Vector& xJ0,
   }
 }
 //-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::fromArray(const real u[], Vector& x, uint offset,
+				     uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    vals[i] = u[i + offset];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
+void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
+				      uint size)
+{
+  // Workaround to interface Vector and arrays
+
+  real* vals = 0;
+  vals = x.array();
+  for(uint i = 0; i < size; i++)
+  {
+    y[offset + i] = vals[i];
+  }
+  x.restore(vals);
+}
+//-----------------------------------------------------------------------------
 ElasticityUpdatedODE::ElasticityUpdatedODE(ElasticityUpdatedSolver& solver) :
   ODE(1, 1.0), solver(solver)
 {
@@ -962,9 +1019,9 @@ real ElasticityUpdatedODE::u0(unsigned int i)
 void ElasticityUpdatedODE::f(const real u[], real t, real y[])
 {
   // Copy values from ODE array
-  fromArray(u, solver.x1_1, 0, solver.Nv);
-  fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
-  fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+  solver.fromArray(u, solver.x1_1, 0, solver.Nv);
+  solver.fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
+  solver.fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
 
   solver.prepareiteration();
 
@@ -972,44 +1029,15 @@ void ElasticityUpdatedODE::f(const real u[], real t, real y[])
   solver.fu();
 
   // Copy values into ODE array
-  toArray(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
+  solver.toArray(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
 }
 //-----------------------------------------------------------------------------
 bool ElasticityUpdatedODE::update(const real u[], real t, bool end)
 {
-  fromArray(u, solver.x1_1, 0, solver.Nv);
-  fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
-  fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
+  solver.fromArray(u, solver.x1_1, 0, solver.Nv);
+  solver.fromArray(u, solver.x2_1, solver.Nv, solver.Nv);
+  solver.fromArray(u, solver.xsigma1, 2 * solver.Nv, solver.Nsigma);
 
   return true;
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedODE::fromArray(const real u[], Vector& x, uint offset,
-				     uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    vals[i] = u[i + offset];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-void ElasticityUpdatedODE::toArray(real y[], Vector& x, uint offset, uint size)
-{
-  // Workaround to interface Vector and arrays
-
-  real* vals = 0;
-  vals = x.array();
-  for(uint i = 0; i < size; i++)
-  {
-    y[offset + i] = vals[i];
-  }
-  x.restore(vals);
-}
-//-----------------------------------------------------------------------------
-
-#endif

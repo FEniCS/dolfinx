@@ -1935,7 +1935,16 @@ class ElasticityUpdatedSolver(_object):
     def step(*args): return _dolfin.ElasticityUpdatedSolver_step(*args)
     def oldstep(*args): return _dolfin.ElasticityUpdatedSolver_oldstep(*args)
     def fu(*args): return _dolfin.ElasticityUpdatedSolver_fu(*args)
-    def gather(*args): return _dolfin.ElasticityUpdatedSolver_gather(*args)
+    __swig_getmethods__["gather"] = lambda x: _dolfin.ElasticityUpdatedSolver_gather
+    if _newclass:gather = staticmethod(_dolfin.ElasticityUpdatedSolver_gather)
+    __swig_getmethods__["scatter"] = lambda x: _dolfin.ElasticityUpdatedSolver_scatter
+    if _newclass:scatter = staticmethod(_dolfin.ElasticityUpdatedSolver_scatter)
+    __swig_getmethods__["createScatterer"] = lambda x: _dolfin.ElasticityUpdatedSolver_createScatterer
+    if _newclass:createScatterer = staticmethod(_dolfin.ElasticityUpdatedSolver_createScatterer)
+    __swig_getmethods__["fromArray"] = lambda x: _dolfin.ElasticityUpdatedSolver_fromArray
+    if _newclass:fromArray = staticmethod(_dolfin.ElasticityUpdatedSolver_fromArray)
+    __swig_getmethods__["toArray"] = lambda x: _dolfin.ElasticityUpdatedSolver_toArray
+    if _newclass:toArray = staticmethod(_dolfin.ElasticityUpdatedSolver_toArray)
     def preparestep(*args): return _dolfin.ElasticityUpdatedSolver_preparestep(*args)
     def prepareiteration(*args): return _dolfin.ElasticityUpdatedSolver_prepareiteration(*args)
     def save(*args): return _dolfin.ElasticityUpdatedSolver_save(*args)
@@ -2193,6 +2202,16 @@ assemble = _dolfin.assemble
 
 applyBC = _dolfin.applyBC
 
+ElasticityUpdatedSolver_gather = _dolfin.ElasticityUpdatedSolver_gather
+
+ElasticityUpdatedSolver_scatter = _dolfin.ElasticityUpdatedSolver_scatter
+
+ElasticityUpdatedSolver_createScatterer = _dolfin.ElasticityUpdatedSolver_createScatterer
+
+ElasticityUpdatedSolver_fromArray = _dolfin.ElasticityUpdatedSolver_fromArray
+
+ElasticityUpdatedSolver_toArray = _dolfin.ElasticityUpdatedSolver_toArray
+
 ElasticityUpdatedSolver_solve = _dolfin.ElasticityUpdatedSolver_solve
 
 ElasticityUpdatedSolver_finterpolate = _dolfin.ElasticityUpdatedSolver_finterpolate
@@ -2243,8 +2262,6 @@ class ElasticityUpdatedODE(ODE):
     def u0(*args): return _dolfin.ElasticityUpdatedODE_u0(*args)
     def fmono(*args): return _dolfin.ElasticityUpdatedODE_fmono(*args)
     def update(*args): return _dolfin.ElasticityUpdatedODE_update(*args)
-    def fromArray(*args): return _dolfin.ElasticityUpdatedODE_fromArray(*args)
-    def toArray(*args): return _dolfin.ElasticityUpdatedODE_toArray(*args)
     __swig_setmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_set
     __swig_getmethods__["solver"] = _dolfin.ElasticityUpdatedODE_solver_get
     if _newclass:solver = property(_dolfin.ElasticityUpdatedODE_solver_get, _dolfin.ElasticityUpdatedODE_solver_set)
@@ -2285,6 +2302,24 @@ class UtilBC2(BoundaryCondition):
         except: self.this = this
     def eval(*args): return _dolfin.UtilBC2_eval(*args)
 _dolfin.UtilBC2_swigregister(UtilBC2)
+
+class Resistance(Function):
+    __swig_setmethods__ = {}
+    for _s in [Function]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, Resistance, name, value)
+    __swig_getmethods__ = {}
+    for _s in [Function]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, Resistance, name)
+    def __repr__(self):
+        try: strthis = "at 0x%x" %( self.this, ) 
+        except: strthis = "" 
+        return "<%s.%s; proxy of C++ dolfin::Resistance instance %s>" % (self.__class__.__module__, self.__class__.__name__, strthis,)
+    def __init__(self, *args):
+        this = _dolfin.new_Resistance(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    def eval(*args): return _dolfin.Resistance_eval(*args)
+_dolfin.Resistance_swigregister(Resistance)
 
 
 

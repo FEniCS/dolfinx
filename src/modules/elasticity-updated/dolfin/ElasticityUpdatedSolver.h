@@ -1,16 +1,13 @@
 // Copyright (C) 2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Garth N. Wells 2006.
-// Modified by Anders Logg 2006.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-03-27
 
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
-
-#ifdef HAVE_PETSC_H
 
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
@@ -21,6 +18,7 @@ namespace dolfin
   
   class ElasticityUpdatedODE;
 
+
   class ElasticityUpdatedSolver : public Solver
   {
   public:
@@ -28,8 +26,8 @@ namespace dolfin
     // Create ElasticityUpdated solver
     ElasticityUpdatedSolver(Mesh& mesh,
 			    Function& f, Function& v0, Function& rho,
-			    real& E, real& nu, real& nuv, real& nuplast,
-			    BoundaryCondition& bc, real& k, real& T);
+			    real E, real nu, real nuv, real nuplast,
+			    BoundaryCondition& bc, real k, real T);
     
     ElasticityUpdatedSolver& operator=(const ElasticityUpdatedSolver& solver);
 
@@ -48,12 +46,22 @@ namespace dolfin
     // Compute f(u) in dot(u) = f(u)
     void fu();
 
-    // Gather x1 (subector) into x2
-    void gather(Vector& x1, Vector& x2, VecScatter& x1sc);
+    // Gather x1 (subvector) into x2
+    static void gather(Vector& x1, Vector& x2, VecScatter& x1sc);
+
+    // Scatter part of x2 into x1 (subvector)
+    static void scatter(Vector& x1, Vector& x2, VecScatter& x1sc);
+
+    // Create Scatterer
+    static VecScatter* createScatterer(Vector& x1, Vector& x2, int offset,
+				       int size);
 
     // Scatter x2 into x1 (subvector)
 //     void scatter(Vector& x1, Vector& x2, VecScatter& x1sc);
-    
+
+    static void fromArray(const real u[], Vector& x, uint offset, uint size);
+    static void toArray(real y[], Vector&x, uint offset, uint size);
+
     // Prepare time step
     virtual void preparestep();
 
@@ -66,8 +74,8 @@ namespace dolfin
     // Solve ElasticityUpdated (static version)
     static void solve(Mesh& mesh,
 		      Function& f, Function& v0, Function& rho,
-		      real& E, real& nu, real& nuv, real& nuplast,
-		      BoundaryCondition& bc, real& k, real& T);
+		      real E, real nu, real nuv, real nuplast,
+		      BoundaryCondition& bc, real k, real T);
     
 
     // Utility functions
@@ -206,9 +214,6 @@ namespace dolfin
     virtual void f(const real u[], real t, real y[]);
     virtual bool update(const real u[], real t, bool end);
 
-    void fromArray(const real u[], Vector& x, uint offset, uint size);
-    void toArray(real y[], Vector&x, uint offset, uint size);
-
     ElasticityUpdatedSolver& solver;
   };
 
@@ -248,9 +253,26 @@ namespace dolfin
   };
 
 
-  
-}
+  // Resistance
+  class Resistance : public Function
+  {
+  public:
+    Resistance()
+    {
+    }
+    
+    real eval(const Point& p, unsigned int i)
+    {
+//       cout << "time: " << time() << endl;
 
-#endif
+      if(time() > 5.0 && time() < 5.4)
+	return 1000;
+      else
+	return 0.0;
+    }
+  };
+
+
+}
 
 #endif

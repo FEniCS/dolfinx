@@ -1,5 +1,6 @@
 %module(directors="1") dolfin
 
+
 %{
 #include <dolfin.h>
 
