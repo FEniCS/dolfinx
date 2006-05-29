@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2006-05-07
+// Last changed: 2006-05-29
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -59,8 +59,7 @@ void GaussianQuadrature::computeWeights()
   //LU lu;
   //lu.set("LU report", false);
   //lu.solve(A, x, b);
-  A.invert();
-  A.mult(b, x);
+  A.solve(x, b);
 
   // Save the weights
   for (unsigned int i = 0; i < n; i++)

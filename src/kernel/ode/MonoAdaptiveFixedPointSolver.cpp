@@ -61,6 +61,7 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
     {
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
+
       for (uint i = 0; i < ts.N; i++)
 	xx[noffset + i] += tmp * ts.f[moffset + i];
     }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-05-07
+// Last changed: 2006-05-29
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -179,8 +179,7 @@ void dGqMethod::computeWeights()
     //LU lu;
     //lu.set("LU report", false);
     //lu.solve(A, w, b);
-    A.invert();
-    A.mult(b, w);
+    A.solve(w, b);
 
     // Save weights including quadrature
     for (unsigned int j = 0; j < nn; j++)

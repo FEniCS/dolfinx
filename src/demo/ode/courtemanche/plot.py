@@ -19,5 +19,8 @@ grid(True)
 xlabel('t')
 ylabel('k(t)')
 
+# Display value at end time
+print "V(T) = " + str(u[len(u) - 1, 0])
+
 # Show plot
 show()

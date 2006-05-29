@@ -29,8 +29,6 @@ TimeStepper::TimeStepper(ODE& ode) :
   no_samples(get("ODE number of samples")),
   sample_density(get("ODE sample density"))
 {
-  dolfin_warning("ODE solver is EXPERIMENTAL.");
-
   // Create time slab
   std::string method = get("ODE method");
   if ( method == "mcg" || method == "mdg" )
@@ -113,7 +111,8 @@ real TimeStepper::step()
       stopped = true;
       break;
     }
-    
+    //timeslab->disp();
+
     // Check if solution can be accepted
     if ( timeslab->check(first) )
       break;

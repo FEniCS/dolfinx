@@ -306,9 +306,32 @@ private:
 
 int main()
 {
-  set("ODE nonlinear solver", "newton");
-  set("ODE maximum time step", 10.0);
 
+  /*
+
+  set("ODE method", "cg");
+  set("ODE order", 1);
+  set("ODE tolerance", 1e-2);
+  //set("ODE nonlinear solver", "newton");
+  set("ODE nonlinear solver", "fixed-point");
+  set("ODE fixed time step", true);
+  set("ODE initial time step", 1e-3);
+  //set("ODE maximum time step", 0.01);
+  set("ODE discrete tolerance", 1e-4);
+
+  */
+  
+  set("ODE tolerance", 0.1);
+  set("ODE method", "dg");
+  set("ODE order", 1);
+  set("ODE discrete tolerance", 1e-14);
+  //set("ODE nonlinear solver", "newton");
+  //set("ODE initial time step", 0.1);
+  //set("ODE maximum time step", 0.5);
+  //set("ODE fixed-point damping", 0.5);
+  set("ODE maximum time step", 0.001);
+  set("ODE save final solution", true);
+  
   Courtemanche ode;
   ode.solve();
 

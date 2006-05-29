@@ -46,6 +46,7 @@ add("ODE time step conservation", 5.0);
 add("ODE sparsity check increment", 0.01);
 add("ODE average length", 0.1);
 add("ODE average tolerance", 0.1);
+add("ODE fixed-point damping", 1.0);
 
 add("ODE method", "cg");
 add("ODE nonlinear solver", "default");
