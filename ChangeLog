@@ -1,3 +1,4 @@
+ - Use uBlas-based vector for Vector if PETSc disabled
  - Add wrappers for uBlas compressed_matrix class
  - Compute eigenvalues using SLEPc (an extension of PETSc)
  - Clean up assembly and linear algebra

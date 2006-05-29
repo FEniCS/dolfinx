@@ -88,10 +88,14 @@ namespace dolfin
     void apply();
 
     /// FIXME: needed for compatibility with PETSc vector
+    template< class E >
     real* array()
-      { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
+      { 
+        //dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
         real* a(0);
-        return a; }
+        E = data(); 
+        return a; 
+      }
 
     void restore(real* x)
       { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled"); }
@@ -106,10 +110,3 @@ namespace dolfin
 }
 
 #endif
-
-//    // test
-//    template <class E>
-//    void operator=(const ublas::vector_expression<double>& x)
-//    { 
-//      ublas::vector<double>::operator=(x); 
-//    } 
