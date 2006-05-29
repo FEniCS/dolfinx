@@ -87,16 +87,15 @@ namespace dolfin
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
 
-    /// FIXME: needed for compatibility with PETSc vector
-    template< class E >
+    /// FIXME: needed for compatibility with vertexeval() and PETSc vector
     real* array()
       { 
-        //dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
+        dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
         real* a(0);
-        E = data(); 
         return a; 
       }
 
+    /// FIXME: needed for compatibility with vertexeval() and PETSc vector
     void restore(real* x)
       { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled"); }
 
