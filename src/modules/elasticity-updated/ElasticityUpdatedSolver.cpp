@@ -7,6 +7,8 @@
 // First added:  2005
 // Last changed: 2006-02-20
 
+#ifdef HAVE_PETSC_H
+
 //#include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -1041,3 +1043,5 @@ bool ElasticityUpdatedODE::update(const real u[], real t, bool end)
   return true;
 }
 //-----------------------------------------------------------------------------
+
+#endif

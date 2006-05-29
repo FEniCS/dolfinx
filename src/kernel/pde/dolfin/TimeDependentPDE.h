@@ -9,6 +9,8 @@
 #ifndef __TIMEDEPENDENT_PDE_H
 #define __TIMEDEPENDENT_PDE_H
 
+#ifdef HAVE_PETSC_H
+
 #include <dolfin/GenericPDE.h>
 #include <dolfin/ODE.h>
 
@@ -101,5 +103,7 @@ namespace dolfin
 
 
 }
+
+#endif
 
 #endif

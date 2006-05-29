@@ -9,6 +9,8 @@
 #ifndef __ELASTICITYUPDATED_SOLVER_H
 #define __ELASTICITYUPDATED_SOLVER_H
 
+#ifdef HAVE_PETSC_H
+
 #include <dolfin/Vector.h>
 #include <dolfin/ODE.h>
 #include <dolfin/TimeStepper.h>
@@ -276,5 +278,7 @@ namespace dolfin
 
 
 }
+
+#endif
 
 #endif
