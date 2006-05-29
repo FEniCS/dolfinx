@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-04-24
+// Last changed: 2006-05-29
 
 //--- General parameters ---
 
@@ -50,7 +50,7 @@ add("ODE average tolerance", 0.1);
 add("ODE method", "cg");
 add("ODE nonlinear solver", "default");
 add("ODE linear solver", "default");
-add("ODE solution file name", "primal.m");
+add("ODE solution file name", "solution.py");
 
 //--- Parameters for homotopy solver ---
 
