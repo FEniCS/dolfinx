@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-08-31
-// Last changed: 2006-05-23 
+// Last changed: 2006-05-29
 
 #ifdef HAVE_SLEPC_H
 
@@ -46,22 +46,22 @@ EigenvalueSolver::~EigenvalueSolver()
     EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const Matrix& A)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A)
 {
   solve(A, 0, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const Matrix& A, const uint n)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const uint n)
 {
   solve(A, 0, n);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const Matrix& A, const Matrix& B)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B)
 {
   solve(A, &B, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const Matrix& A, const Matrix& B, const uint n)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B, const uint n)
 {
   solve(A, &B, n);
 }
@@ -100,7 +100,7 @@ void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, c
     dolfin_error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const Matrix& A, const Matrix* B, const uint n)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix* B, const uint n)
 {
   const std::string eigenvalues_compute = get("Eigenvalues to compute");
 

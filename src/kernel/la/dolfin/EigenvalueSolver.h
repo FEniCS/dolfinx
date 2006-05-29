@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-08-31
-// Last changed: 2006-05-23
+// Last changed: 2006-05-29
 
 #ifndef __EIGENVALUE_SOLVER_H
 #define __EIGENVALUE_SOLVER_H
@@ -11,7 +11,7 @@
 
 #include <slepceps.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/Matrix.h>
+#include <dolfin/PETScSparseMatrix.h>
 #include <dolfin/Vector.h>
 
 namespace dolfin
@@ -45,16 +45,16 @@ namespace dolfin
     ~EigenvalueSolver();
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const Matrix& A);
+    void solve(const PETScSparseMatrix& A);
 
     /// Compute largest n eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const Matrix& A, const uint n);
+    void solve(const PETScSparseMatrix& A, const uint n);
 
     /// Compute all eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const Matrix& A, const Matrix& B);
+    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B);
 
     /// Compute largest n eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const Matrix& A, const Matrix& B, const uint n);
+    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B, const uint n);
 
     /// Get the 0th eigenvalue 
     void getEigenvalue(real& xr, real& xc);
@@ -71,7 +71,7 @@ namespace dolfin
   private:
 
     /// Compute eigenvalues
-    void solve(const Matrix& A, const Matrix* B, const uint n);
+    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix* B, const uint n);
 
     EPSType getType(const Type type) const;
 
