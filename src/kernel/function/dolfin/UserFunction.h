@@ -47,9 +47,7 @@ namespace dolfin
     uint vectordim() const;
 
     /// Calling this function generates an error (no vector associated)
-#ifdef HAVE_PETSC_H
     Vector& vector();
-#endif
 
     /// Return mesh associated with function (if any)
     Mesh& mesh();
@@ -58,9 +56,7 @@ namespace dolfin
     FiniteElement& element();
 
     /// Calling this function generates an error (no vector can be attached)
-#ifdef HAVE_PETSC_H
     void attach(Vector& x, bool local);
-#endif
 
     /// Attach mesh to function
     void attach(Mesh& mesh, bool local);

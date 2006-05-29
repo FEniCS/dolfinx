@@ -7,8 +7,6 @@
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/GenericFunction.h>
 #include <dolfin/Vector.h>
 
@@ -120,7 +118,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif
