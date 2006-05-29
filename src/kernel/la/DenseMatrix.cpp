@@ -145,12 +145,7 @@ void DenseMatrix::apply()
 //-----------------------------------------------------------------------------
 void DenseMatrix::zero()
 {
-  const uint M = this->size1();
-  const uint N = this->size2();
-
-  for (uint i = 0; i < M; ++i)
-    for (uint j = 0; j < N; ++j)
-      (*this)(i, j) = 0.0;
+  clear();
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::ident(const int rows[], int m)

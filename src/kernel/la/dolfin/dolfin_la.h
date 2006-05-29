@@ -18,6 +18,7 @@
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/SparseVector.h>
+#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/VirtualMatrix.h>
 
 #endif

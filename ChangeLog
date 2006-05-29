@@ -1,3 +1,4 @@
+ - Add wrappers for uBlas compressed_matrix class
  - Compute eigenvalues using SLEPc (an extension of PETSc)
  - Clean up assembly and linear algebra
  - Add function to solve Ax = b for dense matrices and dense vectors

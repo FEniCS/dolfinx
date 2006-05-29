@@ -25,7 +25,7 @@ namespace dolfin
   typedef ublas::matrix<double> ublas_matrix;
 
   /// This class represents a dense matrix of dimension M x N.
-  /// It is a simple wrapper for a Boost ublas vector.
+  /// It is a simple wrapper for a Boost ublas matrix.
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// refer to the documentation for ublas which can be found at

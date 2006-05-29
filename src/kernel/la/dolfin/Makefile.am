@@ -13,5 +13,6 @@ EXTRA_DIST = dolfin_la.h \
              Preconditioner.h \
              SparseMatrix.h \
              SparseVector.h \
+             uBlasSparseMatrix.h \
              Vector.h \
              VirtualMatrix.h 

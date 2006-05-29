@@ -280,148 +280,63 @@ void testMeshRefinement()
   //file2 << mesh;
 }
 
-/*
-void testDenseMatrix()
+void testuBlasSparseMatrix()
 {
-  dolfin_info("--- Testing dense matrices ---");
+  dolfin_info("--- Testing sparse matrices ---");
   
-  const int kk   = 100000;
-  const int size = 6;
-
-  real time;
-
-  cout << "Assemble a "<< size << "x" << size << " matrix " << kk << " times." << endl;
-
-  dolfin_begin("Setting values");
-  tic();
-  boost::numeric::ublas::matrix<real> A(size, size); 
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        A(i,j) = 1.0;
-
-  time = toc();
-  cout << "Plain ublas time to set values = " << time << endl;
-
-  tic();
-  DenseMatrix B(size, size); 
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        B(i,j) = 1.0;
-  time = toc();
-  cout << "Dense matrix time to set values = " << time << endl;
-
-   
-  dolfin_end();
-
-
-
-  dolfin_begin("Retrieving values");
-  real temp;
-
-  tic();
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        temp = A(i,j);
-  time = toc();
-  cout << "Plain ublas time to retrieve values = " << time << endl;
-
-  tic();
-  for(int k=0; k < kk; ++k) 
-   for(int i=0; i < size; ++i)
-      for(int j=0; j < size; ++j)
-        temp = B(i,j);
-  time = toc();
-  cout << "Dense matrix time to retrieve values = " << time << endl;
-
-
-
-
-  // Assemble stiffness matrix into a dense and a sparse matrix
-  UnitSquare mesh(1, 1);
-  
-  Function f = 1.0;
-  Poisson2D::BilinearForm a;
-  Poisson2D::LinearForm L(f);
-  
+  // Boundary condition
   class MyBC : public BoundaryCondition
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-	      value = 1.0;
+      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+        value = 0.0;
     }
   };
 
+  UnitSquare mesh(2, 2);
+
+  Function f = 1.0;
+  Poisson2D::BilinearForm a;
+  Poisson2D::LinearForm L(f);
+  uBlasSparseMatrix A;
+  DenseVector bb;
+  DenseVector x;
+  Matrix B;
+  Vector y;
+
   MyBC bc;
-
-  // Assemble dense vectors and matrices
-  DenseMatrix K;
-  DenseVector b;
-  FEM::assemble(a, K, mesh); 
-  FEM::assemble(L, b, mesh); 
-  FEM::assemble(a, L, K, b, mesh); 
-//  FEM::assemble(a, L, K, b, mesh, bc); 
-  K.disp();
-  b.disp();  
-    
-  // Assemble sparse vectors and matrices
-  Matrix M;
-  Vector g;
-  FEM::assemble(a, M, mesh); 
-  FEM::assemble(L, g, mesh); 
-  FEM::assemble(a, L, M, g, mesh); 
-  FEM::assemble(a, L, M, g, mesh, bc); 
-  M.disp();
-  g.disp();  
   
-  // Assemble mixture of sparse and dense vectors and matrices
-  FEM::assemble(a, L, K, g, mesh); 
-  FEM::assemble(a, L, M, b, mesh); 
+  cout << "Start assembly (uBlas) " << endl;
+  tic();
+  FEM::assemble(a, L, A, bb, mesh, bc);
+  cout << "Finished assembly (1) " << toc() << endl;
+  A.solve(x, bb);
+  x.disp();
+  
+/*  cout << "Start assembly (uBlas) " << endl;
+  tic();
+  dolfin_log(false);
+  FEM::assemble(a, A, mesh);
+  dolfin_log(true);
+  cout << "Finished assembly (2) " << toc() << endl;
 
-}
+  cout << "Start assembly (PETSc) " << endl;
+  tic();
+  dolfin_log(false);
+  FEM::assemble(a, B, mesh);
+  dolfin_log(true);
+  cout << "Finished assembly(1) " << toc() << endl;
+  cout << "Start assembly (PETSc) " << endl;
+  tic();
+  dolfin_log(false);
+  FEM::assemble(a, B, mesh);
+  dolfin_log(true);
+  cout << "Finished assembly(2) " << toc() << endl;
 */
 
-void testDenseLUsolve()
-{
-  dolfin_info("--- Testing dense matrix LU solver ---");
-
-  DenseMatrix A(2,2);
-  DenseVector x(2);
-  DenseVector b(2);
-  
-  A(0,0) = 2.6; A(1,1) = 2;
-  A(1,0) = 1.5;
-  x(1) = 1.0;
-
-  A.solve(x, b);  
 }
 
-void testGenericMatrix()
-{
-  UnitSquare mesh(128, 128);
-  Poisson2D::BilinearForm a;
-  Matrix A, B;
-  int n = 100;
-
-  // Assemble with template
-  tic();
-  dolfin_log(false);
-  for (int i = 0; i < n; i++)
-    FEM::assemble(a, A, mesh);
-  dolfin_log(true);
-  cout << "Time with template:    " << toc() << endl;
-
-  // Assemble without template
-  tic();
-  dolfin_log(false);
-  dolfin_info("This text should not be printed.");
-  for (int i = 0; i < n; i++)
-    FEM::assembleNoTemplate(a, B, mesh);
-  dolfin_log(true);
-  cout << "Time without template: " << toc() << endl;
-}
 
 int main(int argc, char* argv[])
 {
@@ -444,7 +359,7 @@ int main(int argc, char* argv[])
   testDenseLUsolve();
 */
   
-  testGenericMatrix();
+  testuBlasSparseMatrix();
 
   return 0;
 }

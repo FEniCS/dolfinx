@@ -14,6 +14,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/SparseVector.h \
+                          dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
 INCLUDES                = @KERNEL_CFLAGS@
@@ -28,6 +29,7 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           PETScManager.cpp \
                           Preconditioner.cpp \
                           SparseMatrix.cpp \
+                          uBlasSparseMatrix.cpp \
                           SparseVector.cpp \
                           VirtualMatrix.cpp 
 libdolfin_la_la_LDFLAGS = -static

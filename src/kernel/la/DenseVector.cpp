@@ -72,9 +72,7 @@ void DenseVector::apply()
 //-----------------------------------------------------------------------------
 void DenseVector::zero()
 {
-  uint N = this->size();
-  for (uint i = 0; i < N; ++i)
-    (*this)(i) = 0.0;
+  clear();
 }
 //-----------------------------------------------------------------------------
 const DenseVector& DenseVector::operator= (real a) 
