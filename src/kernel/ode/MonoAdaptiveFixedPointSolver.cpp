@@ -2,11 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-05-29
 
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/dolfin_parameter.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
@@ -17,7 +18,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveFixedPointSolver::MonoAdaptiveFixedPointSolver
 (MonoAdaptiveTimeSlab& timeslab)
-  : TimeSlabSolver(timeslab), ts(timeslab), xold(0)
+  : TimeSlabSolver(timeslab), ts(timeslab), xold(0),
+    alpha(get("ODE fixed-point damping"))
 {
   // Initialize old values at right end-point
   xold = new real[ts.N];
@@ -54,19 +56,18 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      xx[noffset + i] = ts.u0[i];
-    
+      xx[noffset + i] += alpha*(ts.u0[i] - xx[noffset+i]);
+
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
     {
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
-
       for (uint i = 0; i < ts.N; i++)
-	xx[noffset + i] += tmp * ts.f[moffset + i];
+	xx[noffset + i] += alpha*tmp*ts.f[moffset + i];
     }
   }
-
+  
   // Compute size of increment
   real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)

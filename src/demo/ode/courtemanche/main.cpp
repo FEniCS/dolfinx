@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-24
-// Last changed: 2006-05-24
+// Last changed: 2006-05-29
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
@@ -322,15 +322,16 @@ int main()
   */
   
   set("ODE tolerance", 0.1);
-  set("ODE method", "dg");
+  set("ODE method", "cg");
   set("ODE order", 1);
-  set("ODE discrete tolerance", 1e-14);
+  //set("ODE discrete tolerance", 1e-14);
   //set("ODE nonlinear solver", "newton");
   //set("ODE initial time step", 0.1);
   //set("ODE maximum time step", 0.5);
   //set("ODE fixed-point damping", 0.5);
-  set("ODE maximum time step", 0.001);
+  //set("ODE maximum time step", 0.01);
   set("ODE save final solution", true);
+  set("ODE maximum time step", 0.01);
   
   Courtemanche ode;
   ode.solve();
