@@ -42,7 +42,7 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const SparseMatrix& A,
+dolfin::uint LU::solve(const PETScSparseMatrix& A,
 		       SparseVector& x, const SparseVector& b)
 {
   // Get parameters

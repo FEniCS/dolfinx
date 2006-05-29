@@ -30,7 +30,7 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
-    uint solve(const SparseMatrix& A, SparseVector& x, const SparseVector& b);
+    uint solve(const PETScSparseMatrix& A, SparseVector& x, const SparseVector& b);
 
     /// Solve linear system Ax = b
     uint solve(const VirtualMatrix& A, SparseVector& x, const SparseVector& b);

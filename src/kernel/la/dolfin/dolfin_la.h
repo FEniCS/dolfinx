@@ -15,6 +15,7 @@
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
 #include <dolfin/PETScManager.h>
+#include <dolfin/PETScSparseMatrix.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/SparseVector.h>

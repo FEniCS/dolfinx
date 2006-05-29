@@ -145,8 +145,8 @@ namespace dolfin
     friend LogStream& operator<< (LogStream& stream, const SparseVector& A);
 
     // Friends
-    friend class SparseMatrix;
-    friend class SparseVectorElement;
+    friend class PETScSparseMatrix;
+    friend class PETScSparseVectorElement;
 
     // Element access
     real getval(uint i) const;

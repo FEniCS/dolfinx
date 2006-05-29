@@ -11,6 +11,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/LU.h \
                           dolfin/Matrix.h \
                           dolfin/PETScManager.h \
+                          dolfin/PETScSparseMatrix.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/SparseVector.h \
@@ -27,8 +28,8 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           LinearSolver.cpp \
                           LU.cpp \
                           PETScManager.cpp \
+                          PETScSparseMatrix.cpp \
                           Preconditioner.cpp \
-                          SparseMatrix.cpp \
                           uBlasSparseMatrix.cpp \
                           SparseVector.cpp \
                           VirtualMatrix.cpp 

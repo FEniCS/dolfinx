@@ -5,7 +5,7 @@
 // Modified by Andy R. Terrel 2005.
 //
 // First added:  2004
-// Last changed: 2006-05-15
+// Last changed: 2006-05-29
 
 #ifdef HAVE_PETSC_H
 
@@ -20,7 +20,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix()
+PETScSparseMatrix::PETScSparseMatrix()
   : GenericMatrix(),
     Variable("A", "a sparse matrix"),
     A(0), _type(default_matrix)
@@ -29,7 +29,7 @@ SparseMatrix::SparseMatrix()
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(Type type)
+PETScSparseMatrix::PETScSparseMatrix(Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0), _type(type)
@@ -41,7 +41,7 @@ SparseMatrix::SparseMatrix(Type type)
   checkType();
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(Mat A)
+PETScSparseMatrix::PETScSparseMatrix(Mat A)
   : GenericMatrix(),
     Variable("A", "a sparse matrix"),
     A(A), _type(default_matrix)
@@ -53,7 +53,7 @@ SparseMatrix::SparseMatrix(Mat A)
   _type = default_matrix;
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(uint M, uint N)
+PETScSparseMatrix::PETScSparseMatrix(uint M, uint N)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0), _type(default_matrix)
@@ -65,7 +65,7 @@ SparseMatrix::SparseMatrix(uint M, uint N)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(uint M, uint N, Type type)
+PETScSparseMatrix::PETScSparseMatrix(uint M, uint N, Type type)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"),
     A(0),  _type(type)
@@ -80,7 +80,7 @@ SparseMatrix::SparseMatrix(uint M, uint N, Type type)
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::SparseMatrix(const SparseMatrix& B)
+PETScSparseMatrix::PETScSparseMatrix(const PETScSparseMatrix& B)
   : GenericMatrix(), 
     Variable("A", "a sparse matrix"), 
     A(0), _type(B._type)
@@ -92,13 +92,13 @@ SparseMatrix::SparseMatrix(const SparseMatrix& B)
   MatDuplicate(B.A, MAT_COPY_VALUES, &A);  
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::~SparseMatrix()
+PETScSparseMatrix::~PETScSparseMatrix()
 {
   // Free memory of matrix
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::init(uint M, uint N)
+void PETScSparseMatrix::init(uint M, uint N)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -118,7 +118,7 @@ void SparseMatrix::init(uint M, uint N)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::init(uint M, uint N, uint nz)
+void PETScSparseMatrix::init(uint M, uint N, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -138,7 +138,7 @@ void SparseMatrix::init(uint M, uint N, uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::init(uint M, uint N, uint bs, uint nz)
+void PETScSparseMatrix::init(uint M, uint N, uint bs, uint nz)
 {
   // Free previously allocated memory if necessary
   if ( A )
@@ -156,7 +156,7 @@ void SparseMatrix::init(uint M, uint N, uint bs, uint nz)
   MatSetOption(A, MAT_KEEP_ZEROED_ROWS);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint SparseMatrix::size(uint dim) const
+dolfin::uint PETScSparseMatrix::size(uint dim) const
 {
   int M = 0;
   int N = 0;
@@ -164,7 +164,7 @@ dolfin::uint SparseMatrix::size(uint dim) const
   return (dim == 0 ? M : N);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint SparseMatrix::nz(uint row) const
+dolfin::uint PETScSparseMatrix::nz(uint row) const
 {
   // FIXME: this can probably be done better
   int ncols = 0;
@@ -176,7 +176,7 @@ dolfin::uint SparseMatrix::nz(uint row) const
   return ncols;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint SparseMatrix::nzsum() const
+dolfin::uint PETScSparseMatrix::nzsum() const
 {
   uint M = size(0);
   uint sum = 0;
@@ -186,7 +186,7 @@ dolfin::uint SparseMatrix::nzsum() const
   return sum;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint SparseMatrix::nzmax() const
+dolfin::uint PETScSparseMatrix::nzmax() const
 {
   uint M = size(0);
   uint max = 0;
@@ -196,21 +196,21 @@ dolfin::uint SparseMatrix::nzmax() const
   return max;
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::set(const real block[],
+void PETScSparseMatrix::set(const real block[],
 		       const int rows[], int m,
 		       const int cols[], int n)
 {
   MatSetValues(A, m, rows, n, cols, block, INSERT_VALUES);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::add(const real block[],
+void PETScSparseMatrix::add(const real block[],
 		       const int rows[], int m,
 		       const int cols[], int n)
 {
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::ident(const int rows[], int m)
+void PETScSparseMatrix::ident(const int rows[], int m)
 {
   IS is = 0;
   ISCreateGeneral(PETSC_COMM_SELF, m, rows, &is);
@@ -219,12 +219,12 @@ void SparseMatrix::ident(const int rows[], int m)
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::mult(const SparseVector& x, SparseVector& Ax) const
+void PETScSparseMatrix::mult(const SparseVector& x, SparseVector& Ax) const
 {
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::mult(const SparseVector& x, uint row) const
+real PETScSparseMatrix::mult(const SparseVector& x, uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -245,7 +245,7 @@ real SparseMatrix::mult(const SparseVector& x, uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::mult(const real x[], uint row) const
+real PETScSparseMatrix::mult(const real x[], uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -263,7 +263,7 @@ real SparseMatrix::mult(const real x[], uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::norm(Norm type) const
+real PETScSparseMatrix::norm(Norm type) const
 {
   real value = 0.0;
 
@@ -285,28 +285,28 @@ real SparseMatrix::norm(Norm type) const
   return value;
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::apply()
+void PETScSparseMatrix::apply()
 {
   MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::zero()
+void PETScSparseMatrix::zero()
 {
   MatZeroEntries(A);
 }
 //-----------------------------------------------------------------------------
-SparseMatrix::Type SparseMatrix::type() const
+PETScSparseMatrix::Type PETScSparseMatrix::type() const
 {
   return _type;
 }
 //-----------------------------------------------------------------------------
-Mat SparseMatrix::mat() const
+Mat PETScSparseMatrix::mat() const
 {
   return A;
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::disp(bool sparse, int precision) const
+void PETScSparseMatrix::disp(bool sparse, int precision) const
 {
   // FIXME: Maybe this could be an option?
   //MatView(A, PETSC_VIEWER_STDOUT_SELF);
@@ -351,7 +351,7 @@ void SparseMatrix::disp(bool sparse, int precision) const
   }
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const SparseMatrix& A)
+LogStream& dolfin::operator<< (LogStream& stream, const PETScSparseMatrix& A)
 {
   // Check if matrix has been defined
   if ( !A.A )
@@ -370,19 +370,19 @@ LogStream& dolfin::operator<< (LogStream& stream, const SparseMatrix& A)
   return stream;
 }
 //-----------------------------------------------------------------------------
-SparseMatrixElement SparseMatrix::operator()(uint i, uint j)
+PETScSparseMatrixElement PETScSparseMatrix::operator()(uint i, uint j)
 {
-  SparseMatrixElement element(i, j, *this);
+  PETScSparseMatrixElement element(i, j, *this);
 
   return element;
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::operator() (uint i, uint j) const
+real PETScSparseMatrix::operator() (uint i, uint j) const
 {
   return getval(i, j);
 }
 //-----------------------------------------------------------------------------
-real SparseMatrix::getval(uint i, uint j) const
+real PETScSparseMatrix::getval(uint i, uint j) const
 {
   const int ii = static_cast<int>(i);
   const int jj = static_cast<int>(j);
@@ -394,7 +394,7 @@ real SparseMatrix::getval(uint i, uint j) const
   return val;
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::setval(uint i, uint j, const real a)
+void PETScSparseMatrix::setval(uint i, uint j, const real a)
 {
   MatSetValue(A, i, j, a, INSERT_VALUES);
 
@@ -402,7 +402,7 @@ void SparseMatrix::setval(uint i, uint j, const real a)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::addval(uint i, uint j, const real a)
+void PETScSparseMatrix::addval(uint i, uint j, const real a)
 {
   MatSetValue(A, i, j, a, ADD_VALUES);
 
@@ -410,13 +410,13 @@ void SparseMatrix::addval(uint i, uint j, const real a)
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::setType() 
+void PETScSparseMatrix::setType() 
 {
   MatType mat_type = getPETScType();
   MatSetType(A, mat_type);
 }
 //-----------------------------------------------------------------------------
-void SparseMatrix::checkType()
+void PETScSparseMatrix::checkType()
 {
   switch ( _type )
   {
@@ -444,7 +444,7 @@ void SparseMatrix::checkType()
   }
 }
 //-----------------------------------------------------------------------------
-MatType SparseMatrix::getPETScType() const
+MatType PETScSparseMatrix::getPETScType() const
 {
   switch ( _type )
   {
@@ -461,55 +461,52 @@ MatType SparseMatrix::getPETScType() const
   }
 }
 //-----------------------------------------------------------------------------
-// SparseMatrixElement
+// PETScSparseMatrixElement
 //-----------------------------------------------------------------------------
-SparseMatrixElement::SparseMatrixElement(uint i, uint j, SparseMatrix& A) : i(i), j(j), A(A)
+PETScSparseMatrixElement::PETScSparseMatrixElement(uint i, uint j, 
+      PETScSparseMatrix& A) : i(i), j(j), A(A)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SparseMatrixElement::SparseMatrixElement(const SparseMatrixElement& e) : i(i), j(j), A(A)
+PETScSparseMatrixElement::PETScSparseMatrixElement(const PETScSparseMatrixElement& e) 
+      : i(i), j(j), A(A)
 {
 }
 //-----------------------------------------------------------------------------
-SparseMatrixElement::operator real() const
+PETScSparseMatrixElement::operator real() const
 {
   return A.getval(i, j);
 }
 //-----------------------------------------------------------------------------
-const SparseMatrixElement& SparseMatrixElement::operator=(const real a)
+const PETScSparseMatrixElement& PETScSparseMatrixElement::operator=(const real a)
 {
   A.setval(i, j, a);
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-const SparseMatrixElement& SparseMatrixElement::operator=(const SparseMatrixElement& e)
+const PETScSparseMatrixElement& PETScSparseMatrixElement::operator=(const PETScSparseMatrixElement& e)
 {
   A.setval(i, j, e.A.getval(e.i, e.j));
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-const SparseMatrixElement& SparseMatrixElement::operator+=(const real a)
+const PETScSparseMatrixElement& PETScSparseMatrixElement::operator+=(const real a)
 {
   A.addval(i, j, a);
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-const SparseMatrixElement& SparseMatrixElement::operator-=(const real a)
+const PETScSparseMatrixElement& PETScSparseMatrixElement::operator-=(const real a)
 {
   A.addval(i, j, -a);
-
   return *this;
 }
 //-----------------------------------------------------------------------------
-const SparseMatrixElement& SparseMatrixElement::operator*=(const real a)
+const PETScSparseMatrixElement& PETScSparseMatrixElement::operator*=(const real a)
 {
   const real val = A.getval(i, j) * a;
   A.setval(i, j, val);
-  
   return *this;
 }
 //-----------------------------------------------------------------------------

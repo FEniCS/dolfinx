@@ -18,7 +18,7 @@
 namespace dolfin
 {
 
-  class SparseVector;
+  class PETScSparseVector;
   
   /// This class represents a matrix-free matrix of dimension m x m.
   /// It is a simple wrapper for a PETSc shell matrix. The interface

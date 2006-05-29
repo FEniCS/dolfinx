@@ -132,7 +132,7 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   uint M = size(0);
   uint N = size(1);
   SparseVector x(N), y(M);
-  SparseMatrix A(M, N);
+  PETScSparseMatrix A(M, N);
   
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
