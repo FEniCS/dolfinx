@@ -90,13 +90,11 @@ dolfin::uint FunctionPointerFunction::vectordim() const
   return _vectordim;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 Vector& FunctionPointerFunction::vector()
 {
   dolfin_error("No vector associated with function (and none can be attached).");
   return *(new Vector()); // Code will not be reached, make compiler happy
 }
-#endif
 //-----------------------------------------------------------------------------
 Mesh& FunctionPointerFunction::mesh()
 {
@@ -111,12 +109,10 @@ FiniteElement& FunctionPointerFunction::element()
   return *(new P1tri()); // Code will not be reached, make compiler happy
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void FunctionPointerFunction::attach(Vector& x, bool local)
 {
   dolfin_error("Cannot attach vectors to user-defined functions.");
 }
-#endif
 //-----------------------------------------------------------------------------
 void FunctionPointerFunction::attach(Mesh& mesh, bool local)
 {

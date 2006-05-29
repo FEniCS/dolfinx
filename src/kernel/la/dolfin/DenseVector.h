@@ -68,7 +68,7 @@ namespace dolfin
     
     /// Return size
     inline uint size() const
-    { return ublas::vector<real>::size(); };
+    { return ublas::vector<real>::size(); }
 
     /// Access given entry
     inline real& operator() (uint i)
@@ -86,6 +86,15 @@ namespace dolfin
 
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
+
+    /// FIXME: needed for compatibility with PETSc vector
+    real* array()
+      { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
+        real* a(0);
+        return a; }
+
+    void restore(real* x)
+      { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled"); }
 
     /// Set all entries to zero
     void zero();
