@@ -94,11 +94,16 @@ public:
 
     // Initial kick
     U0[0] = -25.0;
+
+    num_fevals = 0;
+    VT = 0.0;
   }
   
   ~Courtemanche()
   {
     delete [] U0;
+    dolfin_info("Function evaluations:  %d", num_fevals);
+    dolfin_info("Potential at end time: %.6f", VT);
   }
 
   real u0(unsigned int i)
@@ -132,6 +137,8 @@ public:
     y[18] = (I_tr - I_rel)/(1.0 + Csqn_max*K_mCsqn/((Ca_rel + K_mCsqn)*(Ca_rel + K_mCsqn)));
     y[19] = I_up - I_upleak - I_tr*(Vrel/Vup);
     y[20] = (2.0*I_NaK - I_K1 - I_to - I_Kur - I_Kr - I_Ks)/(F*Vi);
+
+    num_fevals++;
   }
 
   void computeCurrents(const real u[])
@@ -269,6 +276,12 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
   
+  bool update(const real u[], real t, bool end)
+  {
+    if ( end )
+      VT = u[0];
+  }
+  
 private:
   
   // State varibles
@@ -302,6 +315,12 @@ private:
   // Initial data
   real* U0;
   
+  // Number of function evaluations
+  unsigned int num_fevals;
+
+  // Value at end time
+  real VT;
+
 };
 
 int main()
