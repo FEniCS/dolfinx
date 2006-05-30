@@ -74,22 +74,9 @@ void FEM::assembleResidualBC(GenericVector& b,
   applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
-void FEM::lump(const SparseMatrix& M, SparseVector& m)
+void FEM::lump(const GenericMatrix& M, GenericVector& m)
 {
-  m.init(M.size(0));
-  SparseVector one(m);
-  one = 1.0;
-  M.mult(one, m);
-}
-//-----------------------------------------------------------------------------
-#endif
-void FEM::lump(const DenseMatrix& M, DenseVector& m)
-{
-  m.init(M.size(0));
-  DenseVector one(m);
-  one = 1.0;
-  M.mult(one, m);
+//  A.lump(m)
 }
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)

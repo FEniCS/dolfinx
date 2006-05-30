@@ -7,8 +7,6 @@
 #ifndef __MASS_MATRIX_H
 #define __MASS_MATRIX_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Matrix.h>
 
 namespace dolfin
@@ -29,4 +27,3 @@ namespace dolfin
 
 #endif
 
-#endif

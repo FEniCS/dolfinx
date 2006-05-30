@@ -7,8 +7,6 @@
 #ifndef __STIFFNESS_MATRIX_H
 #define __STIFFNESS_MATRIX_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/constants.h>
 #include <dolfin/Matrix.h>
 
@@ -28,7 +26,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

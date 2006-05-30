@@ -75,6 +75,9 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
+    /// Lump matrix into vector m
+    void lump(DenseVector& m) const;
+
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(DenseVector& x, const DenseVector& b) const;
 

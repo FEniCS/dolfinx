@@ -2,12 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-04-24
-// Last changed: 2006-05-15
+// Last changed: 2006-05-30
 
 #ifndef __GENERIC_MATRIX_H
 #define __GENERIC_MATRIX_H
 
 #include <dolfin/constants.h>
+#include <dolfin/GenericVector.h>
 
 namespace dolfin
 {
@@ -38,6 +39,10 @@ namespace dolfin
 
     /// Add block of values
     virtual void add(const real block[], const int rows[], int m, const int cols[], int n) = 0;
+
+    /// Lump matrix into vector m
+    virtual void lump(GenericVector& m) const
+      { dolfin_error("Cannot lump matrix. Do not mix matrix and vectors types when lumping"); }
 
     /// Apply changes to matrix (only needed for sparse matrices)
     virtual void apply() = 0;

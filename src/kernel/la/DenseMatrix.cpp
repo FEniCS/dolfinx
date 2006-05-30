@@ -87,16 +87,22 @@ void DenseMatrix::add(const real block[], const int rows[], int m, const int col
       (*this)(rows[i] , cols[j]) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
+void DenseMatrix::lump(DenseVector& m) const
+{
+  ublas::scalar_vector<double> one(size(1), 1.0);
+  ublas::axpy_prod(*this, one, m, false);
+}
+//-----------------------------------------------------------------------------
 void DenseMatrix::solve(DenseVector& x, const DenseVector& b) const
 {    
   // Make copy of matrix (factorisation is done in-place)
   DenseMatrix Atemp = *this;
 
   // Solve
-  Atemp.solve_in_place(x, b);
+  Atemp.solveInPlace(x, b);
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::solve_in_place(DenseVector& x, const DenseVector& b)
+void DenseMatrix::solveInPlace(DenseVector& x, const DenseVector& b)
 {
   // This function does not check for singularity of the matrix
   uint M = this->size1();

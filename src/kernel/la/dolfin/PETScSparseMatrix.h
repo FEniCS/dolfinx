@@ -5,7 +5,7 @@
 // Modified by Garth N. Wells, 2006.
 //
 // First added:  2004
-// Last changed: 2006-05-29
+// Last changed: 2006-05-30
 
 #ifndef __PETSC_SPARSE_MATRIX_H
 #define __PETSC_SPARSE_MATRIX_H
@@ -18,8 +18,6 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/GenericMatrix.h>
 
-// FIXME: Rename to SparseMatrix
-// FIXME: Make typedef
 // FIXME: implement lump()
 
 namespace dolfin
@@ -107,6 +105,9 @@ namespace dolfin
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
     real mult(const real x[], uint row) const;
+
+    /// Lump matrix into vector m
+    void lump(SparseVector& m) const;
 
     /// Compute given norm of matrix
     enum Norm { l1, linf, frobenius };

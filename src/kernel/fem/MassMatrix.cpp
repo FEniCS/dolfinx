@@ -4,8 +4,6 @@
 // First added:  2004-03-31
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/FEM.h>
 #include <dolfin/Mesh.h>
 #include <dolfin/MassMatrix2D.h>
@@ -33,5 +31,3 @@ MassMatrix::MassMatrix(Mesh& mesh) : Matrix(mesh.numVertices(), mesh.numVertices
   }
 }
 //-----------------------------------------------------------------------------
-
-#endif

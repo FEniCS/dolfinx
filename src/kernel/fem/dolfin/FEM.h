@@ -5,7 +5,7 @@
 // Modified by Kristian Oelgaard 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-06-24
+// Last changed: 2006-05-30
 
 #ifndef __FEM_H
 #define __FEM_H
@@ -83,13 +83,8 @@ namespace dolfin
 				   const GenericVector& x, Mesh& mesh,
 				   FiniteElement& element, BoundaryCondition& bc);
 
-#ifdef HAVE_PETSC_H
     /// Lump matrix
-    static void lump(const SparseMatrix& M, SparseVector& m);
-#endif
-
-    /// Lump matrix
-    static void lump(const DenseMatrix& M, DenseVector& m);
+    static void lump(const GenericMatrix& M, GenericVector& m);
 
     /// Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
@@ -132,20 +127,20 @@ namespace dolfin
     {
       // Check that the mesh matches the forms
       if( a )
-	checkDimensions(*a, mesh);
+        checkDimensions(*a, mesh);
       if( L )
-	checkDimensions(*L, mesh);
+        checkDimensions(*L, mesh);
  
       // Get finite elements
       FiniteElement* test_element  = 0;
       FiniteElement* trial_element = 0;
       if( a )
       {
-	test_element  = &(a->test());
-	trial_element = &(a->trial());
+        test_element  = &(a->test());
+        trial_element = &(a->trial());
       }
       else if( L ) 
-	test_element = &(L->test());
+        test_element = &(L->test());
 
       // Create affine map
       AffineMap map;
@@ -165,124 +160,124 @@ namespace dolfin
 
       if( a )
       {
-	n = trial_element->spacedim();
-	N = size(mesh, *trial_element);
-	block_A = new real[m*n];
-	trial_nodes = new int[m];
-	nz = estimateNonZeros(mesh, *trial_element);
-	A->init(M, N, nz);
-	A->zero();
+        n = trial_element->spacedim();
+        N = size(mesh, *trial_element);
+        block_A = new real[m*n];
+        trial_nodes = new int[m];
+        nz = estimateNonZeros(mesh, *trial_element);
+        A->init(M, N, nz);
+        A->zero();
       }
       if( L )
       {
-	block_b = new real[m];  
-	b->init(M);
-	b->zero();
+        block_b = new real[m];  
+        b->init(M);
+        b->zero();
       }
       // Start a progress session
       if( a && L)
-	dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
+        dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
       if( a && !L)
-	dolfin_info("Assembling matrix of size %d x %d.", M, N);
+        dolfin_info("Assembling matrix of size %d x %d.", M, N);
       if( !a && L)
-	dolfin_info("Assembling vector of size %d.", M);
+        dolfin_info("Assembling vector of size %d.", M);
       Progress p("Assembling interior contributions", mesh.numCells());
    
       // Iterate over all cells in the mesh
       for (CellIterator cell(mesh); !cell.end(); ++cell)
       {
-	// Update affine map
-	map.update(*cell);
+        // Update affine map
+        map.update(*cell);
   
-	// Compute map from local to global degrees of freedom (test functions)
-	test_element->nodemap(test_nodes, *cell, mesh);
+        // Compute map from local to global degrees of freedom (test functions)
+        test_element->nodemap(test_nodes, *cell, mesh);
   
-	if( a )
-	{
-	  // Update forms
-	  a->update(map);
-	  // Compute maps from local to global degrees of freedom (trial functions)
-	  trial_element->nodemap(trial_nodes, *cell, mesh);
-	  // Compute element matrix 
-	  a->eval(block_A, map);
-	  // Add element matrix to global matrix
-	  A->add(block_A, test_nodes, m, trial_nodes, n);
-	}
-	if( L )
-	{
-	  // Update forms
-	  L->update(map);    
-	  // Compute element vector 
-	  L->eval(block_b, map);
-	  // Add element vector to global vector
-	  b->add(block_b, test_nodes, m);
-	}
+        if( a )
+        {
+          // Update forms
+          a->update(map);
+          // Compute maps from local to global degrees of freedom (trial functions)
+          trial_element->nodemap(trial_nodes, *cell, mesh);
+          // Compute element matrix 
+          a->eval(block_A, map);
+          // Add element matrix to global matrix
+          A->add(block_A, test_nodes, m, trial_nodes, n);
+        }
+        if( L )
+        {
+          // Update forms
+          L->update(map);    
+          // Compute element vector 
+          L->eval(block_b, map);
+          // Add element vector to global vector
+          b->add(block_b, test_nodes, m);
+        }
 
-	// Update progress
-	p++;
+        // Update progress
+        p++;
       }
 
       //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
       if( a )
-	for (uint i = 0; i < m*n; ++i)
-	  block_A[i] = 0.0;
-      if( L )
-	for (uint i = 0; i < m; ++i)
-	  block_b[i] = 0.0;
+        for (uint i = 0; i < m*n; ++i)
+          block_A[i] = 0.0;
+        if( L )
+          for (uint i = 0; i < m; ++i)
+            block_b[i] = 0.0;
 
       // Iterate over all facets on the boundary
       Boundary boundary(mesh);
       Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
       for ( ; !facet.end(); ++facet)
       {
-	// Get cell containing the edge (pick first, should only be one)
-	dolfin_assert(facet.numCellNeighbors() == 1);
-	Cell& cell = facet.cell(0);
+        // Get cell containing the edge (pick first, should only be one)
+        dolfin_assert(facet.numCellNeighbors() == 1);
+        Cell& cell = facet.cell(0);
 
-	// Get local facet ID
-	uint facetID = facet.localID(0);
+        // Get local facet ID
+        uint facetID = facet.localID(0);
       
-	// Update affine map for facet 
-	map.update(cell, facetID);
+        // Update affine map for facet 
+        map.update(cell, facetID);
   
-	// Compute map from local to global degrees of freedom (test functions)
-	test_element->nodemap(test_nodes, cell, mesh);
+        // Compute map from local to global degrees of freedom (test functions)
+        test_element->nodemap(test_nodes, cell, mesh);
   
-	if( a )
-	{
-	  // Update forms
-	  a->update(map);  
-	  // Compute maps from local to global degrees of freedom (trial functions)
-	  trial_element->nodemap(trial_nodes, cell, mesh);
+        if( a )
+        {
+          // Update forms
+          a->update(map);  
+          // Compute maps from local to global degrees of freedom (trial functions)
+          trial_element->nodemap(trial_nodes, cell, mesh);
 
-	  // Compute element matrix 
-	  a->eval(block_A, map, facetID);
+          // Compute element matrix 
+          a->eval(block_A, map, facetID);
 
-	  // Add element matrix to global matrix
-	  A->add(block_A, test_nodes, m, trial_nodes, n);
-	}
-	if( L )
-	{
-	  // Update forms
-	  L->update(map);    
-	  // Compute element vector 
-	  L->eval(block_b, map, facetID);
+          // Add element matrix to global matrix
+          A->add(block_A, test_nodes, m, trial_nodes, n);
+        }
+        if( L )
+        {
+          // Update forms
+          L->update(map);    
+          // Compute element vector 
+          L->eval(block_b, map, facetID);
  
-	  // Add element vector to global vector
-	  b->add(block_b, test_nodes, m);
-	}
-	// Update progress
-	p_boundary++;
+          // Add element vector to global vector
+          b->add(block_b, test_nodes, m);
+        }
+        // Update progress
+        p_boundary++;
       }
 
       // Complete assembly
       if( L )
-	b->apply();
+        b->apply();
       if ( a )
       {
-	A->apply();
-	// Check the number of nonzeros
-	countNonZeros(*A, nz);
+        A->apply();
+        // Check the number of nonzeros
+        countNonZeros(*A, nz);
       }
       
       // Delete data
@@ -307,19 +302,19 @@ namespace dolfin
       // Compute problem size
       uint size = 0;
       if( A )
-	size = A->size(0);
+        size = A->size(0);
       else
-	size = b->size();
+        size = b->size();
       
       // Allocate list of rows
       uint m = 0;
       int*  rows = 0;
       if ( A )
-	rows = new int[size];
+        rows = new int[size];
       
       bool* row_set = new bool[size];
       for (unsigned int i = 0; i < size; i++)
-	row_set[i] = false;
+        row_set[i] = false;
       
       // Allocate local data
       uint n = element.spacedim();
@@ -331,71 +326,71 @@ namespace dolfin
       int* node_list = 0;
       if( b )
       {
-	block_b   = new real[n];  
-	node_list = new int[n];  
+        block_b   = new real[n];  
+        node_list = new int[n];  
       }
       
       // Iterate over all edges/faces on the boundary
       for ( ; !facet.end(); ++facet)
       {
-	uint k = 0;
+        uint k = 0;
 	
-	// Get cell containing the edge (pick first, should only be one)
-	dolfin_assert(facet.numCellNeighbors() == 1);
-	Cell& cell = facet.cell(0);
+        // Get cell containing the edge (pick first, should only be one)
+        dolfin_assert(facet.numCellNeighbors() == 1);
+        Cell& cell = facet.cell(0);
 
-	// Update affine map
-	map.update(cell);
-	// Compute map from local to global degrees of freedom
-	element.nodemap(nodes, cell, mesh);
-	// Compute map from local to global coordinates
-	element.pointmap(points, components, map);
+        // Update affine map
+        map.update(cell);
+        // Compute map from local to global degrees of freedom
+        element.nodemap(nodes, cell, mesh);
+        // Compute map from local to global coordinates
+        element.pointmap(points, components, map);
 
-	// Set boundary conditions for nodes on the boundary
-	for (uint i = 0; i < n; i++)
-	{
-	  // Skip points that are not contained in edge
-	  const Point& point = points[i];
-	  if ( !(facet.contains(point)) )
-	    continue;
+        // Set boundary conditions for nodes on the boundary
+        for (uint i = 0; i < n; i++)
+        {
+          // Skip points that are not contained in edge
+          const Point& point = points[i];
+          if ( !(facet.contains(point)) )
+            continue;
 
-	  // Get boundary condition
-	  bv.reset();
-	  bc.eval(bv, point, components[i]);
+          // Get boundary condition
+          bv.reset();
+          bc.eval(bv, point, components[i]);
 
-	  // Set boundary condition if Dirichlet
-	  if ( bv.fixed )
-	  {
-	    int node = nodes[i];
-	    if ( !row_set[node] )
-	    {
-	      if ( x ) // Compute "residual" 
-		block_b[k] = bv.value - (*x)(node);
-	      else if ( b ) 
-		block_b[k] = bv.value;
+          // Set boundary condition if Dirichlet
+          if ( bv.fixed )
+          {
+            int node = nodes[i];
+            if ( !row_set[node] )
+            {
+              if ( x ) // Compute "residual" 
+                block_b[k] = bv.value - (*x)(node);
+              else if ( b ) 
+                block_b[k] = bv.value;
 
-	      row_set[node] = true;
+              row_set[node] = true;
 
-	      if ( b )
-		node_list[k++] = node;
-	      if ( A )
-		rows[m] = node;
+              if ( b )
+                node_list[k++] = node;
+              if ( A )
+                rows[m] = node;
 
-	      m++;
-	    }
-	  }
-	}
-	if( b )
-	  b->set(block_b, node_list, k);
+              m++;
+            }
+          }
+        }
+        if( b )
+          b->set(block_b, node_list, k);
       }
       dolfin_info("Boundary condition applied to %d degrees of freedom on the boundary.", m);
 
       // Set rows of matrix to the identity matrix
       if( A )
-	A->ident(rows, m);
+        A->ident(rows, m);
 
       if( b )
-	b->apply();
+        b->apply();
 
       // Delete data
       delete [] nodes;

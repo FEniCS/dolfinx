@@ -81,6 +81,12 @@ void uBlasSparseMatrix::add(const real block[], const int rows[], int m, const i
       (*this)(rows[i] , cols[j]) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
+void uBlasSparseMatrix::lump(DenseVector& m) const
+{
+  ublas::scalar_vector<double> one(size(1), 1.0);
+  ublas::axpy_prod(*this, one, m, false);
+}
+//-----------------------------------------------------------------------------
 void uBlasSparseMatrix::solve(DenseVector& x, const DenseVector& b) const
 {    
   // Make copy of matrix (factorisation is done in-place)
