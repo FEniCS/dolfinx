@@ -329,6 +329,10 @@ int main()
   set("ODE maximum time step", 100.0);
   set("ODE nonlinear solver", "newton");
   set("ODE initial time step", 0.25);
+  
+  set("ODE discrete tolerance", 0.01);
+  set("ODE discrete tolerance factor", 0.1);
+  set("ODE discrete Krylov tolerance factor", 0.1);
 
   set("ODE save solution", false);
   

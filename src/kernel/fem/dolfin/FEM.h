@@ -217,7 +217,7 @@ namespace dolfin
         p++;
       }
 
-      //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
+      //FIXME: need to reinitiliase block_A and block_b in case no boundary terms are provided
       if( a )
         for (uint i = 0; i < m*n; ++i)
           block_A[i] = 0.0;
@@ -227,7 +227,7 @@ namespace dolfin
 
       // Iterate over all facets on the boundary
       Boundary boundary(mesh);
-      Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
+      Progress p_boundary("Assembling boundary contributions", boundary.numFacets());
       for ( ; !facet.end(); ++facet)
       {
         // Get cell containing the edge (pick first, should only be one)
