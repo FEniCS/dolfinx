@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-04
-// Last changed: 2006-05-15
+// Last changed: 2006-05-30
 
 #include <dolfin/DenseVector.h>
 #include <dolfin/dolfin_log.h>
@@ -63,6 +63,12 @@ void DenseVector::add(const real block[], const int pos[], int n)
 {
   for(int i = 0; i < n; ++i)
     (*this)(pos[i]) += block[i];
+}
+//-----------------------------------------------------------------------------
+void DenseVector::get(real block[], const int pos[], int n) const
+{
+  for(int i = 0; i < n; ++i)
+    block[i] = (*this)(pos[i]);
 }
 //-----------------------------------------------------------------------------
 void DenseVector::apply()

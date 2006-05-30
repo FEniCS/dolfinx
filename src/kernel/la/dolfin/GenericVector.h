@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-04-25
-// Last changed: 2006-05-15
+// Last changed: 2006-05-30
 
 #ifndef __GENERIC_VECTOR_H
 #define __GENERIC_VECTOR_H
@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  /// This class defines a common interface for sparse and dense vectors.b
+  /// This class defines a common interface for sparse and dense vectors.
 
   class GenericVector
   {
@@ -39,7 +39,10 @@ namespace dolfin
     /// Add block of values
     virtual void add(const real block[], const int pos[], int n) = 0;
 
-    /// Apply changes to vector (only needed for sparse vectors)
+    /// Get block of values
+    virtual void get(real block[], const int pos[], int n) const = 0;
+
+    /// Apply changes to vector (only needed for PETSc vectors)
     virtual void apply() = 0;
 
     /// Set all entries to zero

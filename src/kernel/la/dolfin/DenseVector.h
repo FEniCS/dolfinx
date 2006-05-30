@@ -84,9 +84,13 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int pos[], int n);
 
+    /// Get block of values
+    void get(real block[], const int pos[], int n) const;
+
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
 
+/*
     /// FIXME: needed for compatibility with vertexeval() and PETSc vector
     real* array()
       { 
@@ -98,7 +102,7 @@ namespace dolfin
     /// FIXME: needed for compatibility with vertexeval() and PETSc vector
     void restore(real* x)
       { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled"); }
-
+*/
     /// Set all entries to zero
     void zero();
     
