@@ -1,0 +1,26 @@
+# Copyright (c) 2006 Anders Logg (logg@tti-c.org)
+# Licensed under the GNU GPL Version 2
+#
+# The bilinear form a(v, U) and linear form L(v) for
+# tensor-weighted Poisson's equation.
+
+P1 = FiniteElement("Lagrange", "tetrahedron", 1)
+P0 = FiniteElement("Discontinuous Lagrange", "tetrahedron", 0)
+
+v = TestFunction(P1)
+U = TrialFunction(P1)
+f = Function(P1)
+
+M00 = Function(P0)
+M01 = Function(P0)
+M02 = Function(P0)
+M10 = Function(P0)
+M11 = Function(P0)
+M12 = Function(P0)
+M20 = Function(P0)
+M21 = Function(P0)
+M22 = Function(P0)
+
+Mi = [[M00, M01, M02], [M10, M11, M12], [M20, M21, M22]]
+
+a = dot(grad(v), mult(Mi, grad(U)))*dx
