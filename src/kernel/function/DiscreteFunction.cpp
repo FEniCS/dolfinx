@@ -97,19 +97,17 @@ real DiscreteFunction::operator() (const Vertex& vertex, uint i)
 {
   dolfin_assert(_x && _mesh && _element);
 
+  // This is a special hack for Lagrange elements, need to compute
+  // the L2 projection in general
+
   // Initialize local data (if not already initialized correctly)
   local.init(*_element);
 
-  // Get array of values (assumes uniprocessor case)
-  real* xx = _x->array();
+  // Get vertex nodes for all components
+  _element->vertexeval(local.vertex_nodes, vertex.id(), *_mesh);
 
-  // Evaluate all components at given vertex and pick given component
-  _element->vertexeval(local.values, vertex.id(), xx + mixed_offset, *_mesh);
-
-  // Restore array
-  _x->restore(xx);
-
-  return local.values[component + i];
+  // Pick value
+  return (*_x)(mixed_offset + local.vertex_nodes[component + i]);
 }
 //-----------------------------------------------------------------------------
 void DiscreteFunction::sub(uint i)

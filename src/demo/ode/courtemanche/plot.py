@@ -14,7 +14,7 @@ title('Courtemanche')
 
 # Plot time steps
 subplot(212)
-plot(t, k[:,0])
+semilogy(t, k[:,0])
 grid(True)
 xlabel('t')
 ylabel('k(t)')

@@ -52,8 +52,7 @@ namespace dolfin
 			  const AffineMap& map) const = 0;
 
     /// Compute map from vertex to function values at vertex
-    virtual void vertexeval(real values[], unsigned int vertex,
-			    const real x[], const Mesh& mesh) const = 0;
+    virtual void vertexeval(uint vertex_nodes[], unsigned int vertex, const Mesh& mesh) const = 0;
 
     /// Return given sub element of (mixed) element
     virtual FiniteElement& operator[] (unsigned int i) = 0;

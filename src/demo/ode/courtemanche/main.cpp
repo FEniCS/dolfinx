@@ -311,7 +311,7 @@ int main()
   set("ODE nonlinear solver", "newton");
   set("ODE initial time step", 0.25);
 
-  //set("ODE save solution", false);
+  set("ODE save solution", false);
   
   Courtemanche ode;
   ode.solve();
