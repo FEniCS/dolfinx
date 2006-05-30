@@ -81,6 +81,26 @@ void uBlasSparseMatrix::add(const real block[], const int rows[], int m, const i
       (*this)(rows[i] , cols[j]) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
+void uBlasSparseMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 
+    Array<real>& values) const
+{
+  // Reference to matrix row (through away const-ness and trust uBlas)
+  ublas::matrix_row<uBlasSparseMatrix> row(*(const_cast<uBlasSparseMatrix*>(this)), i);
+
+  // Iterator of components of row
+  ublas::matrix_row<uBlasSparseMatrix>::iterator component;
+
+  // Insert values into Arrays
+  columns.clear();
+  values.clear();
+  for (component=row.begin(); component != row.end(); ++component) 
+  {
+    columns.push_back( component.index() );
+    values.push_back( *component );
+  }
+  ncols = columns.size();
+}
+//-----------------------------------------------------------------------------
 void uBlasSparseMatrix::lump(DenseVector& m) const
 {
   ublas::scalar_vector<double> one(size(1), 1.0);
@@ -93,10 +113,10 @@ void uBlasSparseMatrix::solve(DenseVector& x, const DenseVector& b) const
   uBlasSparseMatrix Atemp = *this;
 
   // Solve
-  Atemp.solve_in_place(x, b);
+  Atemp.solveInPlace(x, b);
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::solve_in_place(DenseVector& x, const DenseVector& b)
+void uBlasSparseMatrix::solveInPlace(DenseVector& x, const DenseVector& b)
 {
   // This function does not check for singularity of the matrix
   uint M = this->size1();
@@ -123,7 +143,6 @@ void uBlasSparseMatrix::apply()
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::zero()
 {
-
   // Clear destroys non-zero structure of the matrix 
   clear();
 

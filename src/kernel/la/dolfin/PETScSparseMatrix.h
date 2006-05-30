@@ -15,6 +15,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
+#include <dolfin/Array.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/GenericMatrix.h>
 
@@ -93,6 +94,9 @@ namespace dolfin
 
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
+
+    /// Get non-zero values of row i
+    void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Set given rows to identity matrix
     void ident(const int rows[], int m);

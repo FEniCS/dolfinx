@@ -15,7 +15,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/SparseVector.h>
-#include <dolfin/SparseMatrix.h>
+#include <dolfin/PETScSparseMatrix.h>
 
 using namespace dolfin;
 
@@ -210,6 +210,20 @@ void PETScSparseMatrix::add(const real block[],
   MatSetValues(A, m, rows, n, cols, block, ADD_VALUES);
 }
 //-----------------------------------------------------------------------------
+void PETScSparseMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 
+    Array<real>& values) const
+{
+  const int *cols = 0;
+  const double *vals = 0;
+  MatGetRow(A, i, &ncols, &cols, &vals);
+  
+  // Assign values to Arrays
+  columns.assign(cols, cols+ncols);
+  values.assign(vals, vals+ncols);
+
+  MatRestoreRow(A, i, &ncols, &cols, &vals);
+}
+//-----------------------------------------------------------------------------
 void PETScSparseMatrix::ident(const int rows[], int m)
 {
   IS is = 0;
@@ -263,12 +277,12 @@ real PETScSparseMatrix::mult(const real x[], uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-void PETScSparseMatrix::lump(PETScSparseVector& m) const
+void PETScSparseMatrix::lump(SparseVector& m) const
 {
- m.init(M.size(0));
- PETScSparseVector one(m);
+ m.init(size(0));
+ SparseVector one(m);
  one = 1.0;
- M.mult(one, m);   
+ mult(one, m);   
 }
 //-----------------------------------------------------------------------------
 real PETScSparseMatrix::norm(Norm type) const

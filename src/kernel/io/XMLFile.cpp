@@ -2,13 +2,15 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2002-12-03
-// Last changed: 2006-05-07
+// Last changed: 2006-05-30
 
 #include <stdarg.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
@@ -168,20 +170,19 @@ void XMLFile::operator<<(Matrix& A)
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
-  // Get PETSc Mat pointer
-  Mat A_mat = A.mat();
   int ncols = 0;
-  const int *cols = 0;
-  const double *vals = 0;                                                                                                                     
+  Array<int> columns;
+  Array<real> values;
+
   for (unsigned int i = 0; i < A.size(0); i++)
   {
-    MatGetRow(A_mat, i, &ncols, &cols, &vals);
+    A.getRow(i, ncols, columns, values);
     if ( ncols > 0 )
       fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)
     {
-      unsigned int j = cols[pos];
-      real aij = vals[pos];
+      unsigned int j = columns[pos];
+      real aij = values[pos];
       fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
     if ( ncols > 0 )

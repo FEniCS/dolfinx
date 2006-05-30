@@ -72,6 +72,16 @@ void Dependencies::set(const Matrix& A)
   // Get data from PETSc
   for (uint i = 0; i < N; i++)
   {
+    // FIXME: Could add function to return sparsity pattern
+    Array<int> columns;
+    Array<real> values;
+    int ncols = 0;
+    A.getRow(i, ncols, columns, values); 
+    setsize(i, ncols);
+    for (uint j = 0; j < static_cast<uint>(ncols); j++)
+      set(i, columns[j]);
+  
+/*
     int ncols = 0;
     const int* cols = 0;
     const real* vals = 0;
@@ -80,6 +90,7 @@ void Dependencies::set(const Matrix& A)
     for (uint j = 0; j < static_cast<uint>(ncols); j++)
       set(i, cols[j]);
     MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
+*/
   }
 }
 #endif
@@ -92,7 +103,7 @@ void Dependencies::transp(const Dependencies& dependencies)
     if ( _sparse )
     {
       for (uint i = 0; i < N; i++)
-	sdep[i].clear();
+        sdep[i].clear();
       sdep.clear();
       
       _sparse = false;
@@ -147,7 +158,7 @@ void Dependencies::detect(ODE& ode)
     real f0 = ode.f(u, 0.0, i);
     for (uint j = 0; j < N; j++)
       if ( checkDependency(ode, u, f0, i, j) )
-	size++;
+        size++;
     
     // Compute total number of dependencies
     sum += size;
@@ -186,7 +197,7 @@ void Dependencies::disp() const
     {
       cout << i << ":";
       for (uint pos = 0; pos < sdep[i].size(); ++pos)
-	cout << " " << sdep[i][pos];
+        cout << " " << sdep[i][pos];
       cout << endl;
     }
   }

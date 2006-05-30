@@ -32,7 +32,7 @@ void testPreconditioner()
       dolfin_info("Calling preconditioner");
       for (unsigned int i = 0; i < x.size(); i++)
       {
-	x(i) = b(i) / m(i);
+        x(i) = b(i) / m(i);
       }
     }
     
@@ -294,7 +294,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(2, 2);
+  UnitSquare mesh(4, 4);
 
   Function f = 1.0;
   Poisson2D::BilinearForm a;
@@ -311,8 +311,26 @@ void testuBlasSparseMatrix()
   tic();
   FEM::assemble(a, L, A, bb, mesh, bc);
   cout << "Finished assembly (1) " << toc() << endl;
-  A.solve(x, bb);
-  x.disp();
+  
+//  File file("test.m", File::matlab);
+//  file << B;
+
+   Array<real> t1;
+   Array<int> t2;
+   int ncols =0;
+   A.getRow(1, ncols, t2, t1);
+   for (dolfin::uint i=0; i < t2.size(); ++i)
+   {
+    cout << "test I " << t2[i] << "  " << t1[i] << endl;
+   } 
+   A.getRow(1, ncols, t2, t1);
+   for (dolfin::uint i=0; i < t2.size(); ++i)
+   {
+    cout << "test II " << t2[i] << "  " << t1[i] << endl;
+   } 
+
+//  A.solve(x, bb);
+//  x.disp();
   
 /*  cout << "Start assembly (uBlas) " << endl;
   tic();

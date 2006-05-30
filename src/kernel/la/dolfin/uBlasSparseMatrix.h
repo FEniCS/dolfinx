@@ -8,6 +8,7 @@
 #define __UBLAS_SPARSE_MATRIX_H
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Variable.h>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -75,16 +76,17 @@ namespace dolfin
     /// Add block of values
     void add(const real block[], const int rows[], int m, const int cols[], int n);
 
+    /// Get non-zero values of row i
+    void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
+
     /// Lump matrix into vector m
     void lump(DenseVector& m) const;
 
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(DenseVector& x, const DenseVector& b) const;
 
-    // FIXME: Rename to solveInPlace()
-
     /// Solve Ax = b in-place (A is destroyed)
-    void solve_in_place(DenseVector& x, const DenseVector& b);
+    void solveInPlace(DenseVector& x, const DenseVector& b);
 
     /// Apply changes to matrix (dummy function for compatibility)
     void apply();
