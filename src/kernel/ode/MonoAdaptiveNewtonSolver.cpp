@@ -230,13 +230,15 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
 {
   std::string choice = get("ODE linear solver");
+  const real ktol = get("ODE discrete Krylov tolerance factor");
 
   if ( choice == "iterative" )
   {
     dolfin_info("Using iterative linear solver: GMRES.");
     GMRES* solver = new GMRES();
     solver->set("Krylov report", monitor);
-    solver->set("Krylov absolute tolerance", 0.01*tol); // FIXME: Is this a good choice?
+    solver->set("Krylov relative tolerance", ktol);
+    solver->set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
     return solver;
   }
   else if ( choice == "direct" )
@@ -251,8 +253,8 @@ LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
     dolfin_info("Using iterative linear solver: GMRES (default).");
     GMRES* solver = new GMRES();
     solver->set("Krylov report", monitor);
-    solver->set("Krylov relative tolerance", 0.01); // FIXME: Is this a good choice?
-    solver->set("Krylov absolute tolerance", 0.01*tol); // FIXME: Is this a good choice?
+    solver->set("Krylov relative tolerance", ktol);
+    solver->set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
     return solver;
   }
   else

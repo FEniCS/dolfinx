@@ -263,12 +263,12 @@ real PETScSparseMatrix::mult(const real x[], uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-void PETScSparseMatrix::lump(PETScSparseVector& m) const
+void PETScSparseMatrix::lump(SparseVector& m) const
 {
- m.init(M.size(0));
- PETScSparseVector one(m);
- one = 1.0;
- M.mult(one, m);   
+  m.init(size(0));
+  SparseVector one(m);
+  one = 1.0;
+  mult(one, m);   
 }
 //-----------------------------------------------------------------------------
 real PETScSparseMatrix::norm(Norm type) const
