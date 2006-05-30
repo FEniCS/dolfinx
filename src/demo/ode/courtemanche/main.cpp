@@ -280,6 +280,7 @@ public:
   {
     if ( end )
       VT = u[0];
+    return true;
   }
   
 private:

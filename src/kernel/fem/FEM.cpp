@@ -74,11 +74,6 @@ void FEM::assembleResidualBC(GenericVector& b,
   applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
-void FEM::lump(const GenericMatrix& M, GenericVector& m)
-{
-//  A.lump(m)
-}
-//-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 {
   // FIXME: This could be much more efficient. FFC could generate a

@@ -83,8 +83,10 @@ namespace dolfin
 				   const GenericVector& x, Mesh& mesh,
 				   FiniteElement& element, BoundaryCondition& bc);
 
-    /// Lump matrix
-    static void lump(const GenericMatrix& M, GenericVector& m);
+    /// Lump matrix (cannot mix matrix vector and matrix types when lumping)
+    template < class A, class X > 
+    static void lump(const A& M, X& m)
+      { M.lump(m); }
 
     /// Count the degrees of freedom
     static uint size(const Mesh& mesh, const FiniteElement& element);
