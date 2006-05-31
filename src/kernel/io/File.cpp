@@ -35,12 +35,10 @@ File::File(const std::string& filename)
     file = new XMLFile(filename);
   else if ( filename.rfind(".xml.gz") != filename.npos )
     file = new XMLFile(filename);
-#ifdef HAVE_PETSC_H
   else if ( filename.rfind(".mat") != filename.npos )
     file = new MTXFile(filename);
   else if ( filename.rfind(".mtx") != filename.npos )
     file = new MTXFile(filename);
-#endif
   else if ( filename.rfind(".msh") != filename.npos )
     file = new GiDFile(filename);
   else if ( filename.rfind(".res") != filename.npos )
@@ -71,11 +69,9 @@ File::File(const std::string& filename, Type type)
   case matlab:
     file = new MatlabFile(filename);
     break;
-#ifdef HAVE_PETSC_H
   case matrixmarket:
     file = new MTXFile(filename);
     break;
-#endif
   case octave:
     file = new OctaveFile(filename);
     break;
@@ -107,7 +103,6 @@ File::~File()
   file = 0;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void File::operator>>(Vector& x)
 {
   file->read();
@@ -122,7 +117,6 @@ void File::operator>>(Matrix& A)
   *file >> A;
 }
 //-----------------------------------------------------------------------------
-#endif
 void File::operator>>(Mesh& mesh)
 {
   file->read();
@@ -165,7 +159,6 @@ void File::operator>>(BLASFormData& blas)
   *file >> blas;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void File::operator<<(Vector& x)
 {
   file->write();
@@ -180,7 +173,6 @@ void File::operator<<(Matrix& A)
   *file << A;
 }
 //-----------------------------------------------------------------------------
-#endif
 void File::operator<<(Mesh& mesh)
 {
   file->write();

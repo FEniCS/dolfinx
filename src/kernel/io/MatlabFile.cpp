@@ -28,7 +28,6 @@ MatlabFile::~MatlabFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void MatlabFile::operator<<(Matrix& A)
 {
   // Open file
@@ -64,5 +63,4 @@ void MatlabFile::operator<<(Matrix& A)
        << ") to file " << filename << " in sparse MATLAB format." << endl;
 }
 //-----------------------------------------------------------------------------
-#endif
 

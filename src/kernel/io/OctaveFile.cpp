@@ -30,7 +30,6 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void OctaveFile::operator<<(Matrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
@@ -75,4 +74,3 @@ void OctaveFile::operator<<(Matrix& A)
        << ") to file " << filename << " in Octave format." << endl;
 }
 //-----------------------------------------------------------------------------
-#endif

@@ -7,8 +7,6 @@
 #ifndef __XML_VECTOR_H
 #define __XML_VECTOR_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Vector.h>
 #include <dolfin/XMLObject.h>
 
@@ -37,7 +35,5 @@ namespace dolfin
   };
   
 }
-
-#endif
 
 #endif

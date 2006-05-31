@@ -47,7 +47,6 @@ XMLFile::~XMLFile()
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Vector& x)
 {
   if ( xmlObject )
@@ -63,7 +62,6 @@ void XMLFile::operator>>(Matrix& A)
   xmlObject = new XMLMatrix(A);
   parseFile();
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Mesh& mesh)
 {
@@ -73,7 +71,6 @@ void XMLFile::operator>>(Mesh& mesh)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Function& f)
 {
   // We are cheating here. Instead of actually parsing the XML for
@@ -108,7 +105,6 @@ void XMLFile::operator>>(Function& f)
   f.attach(*mesh, true);
   f.attach(*element, true);
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(FiniteElementSpec& spec)
 {
@@ -134,26 +130,23 @@ void XMLFile::operator>>(BLASFormData& blas)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Vector& x)
 {
   // Open file
   FILE* fp = openFile();
   
-  // Get array (assumes uniprocessor case)
-  real* xx = x.array();
-
   // Write vector in XML format
   fprintf(fp, "  <vector size=\" %u \"> \n", x.size() );
   
-  for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, xx[i]);
+  for (unsigned int i = 0; i < x.size(); i++) 
+  {
+    // FIXME: This is a slow way to acces PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    real temp = x(i);
+    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, temp);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
-  
-  // Restore array
-  x.restore(xx);
   
   // Close file
   closeFile(fp);
@@ -196,7 +189,6 @@ void XMLFile::operator<<(Matrix& A)
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
@@ -248,7 +240,6 @@ void XMLFile::operator<<(Mesh& mesh)
        << ") to file " << filename << " in XML format." << endl;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Function& f)
 {
   // Can only write discrete functions
@@ -286,7 +277,6 @@ void XMLFile::operator<<(Function& f)
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {

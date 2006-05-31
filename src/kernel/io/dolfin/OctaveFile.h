@@ -25,9 +25,7 @@ namespace dolfin
     
     // Output
     
-#ifdef HAVE_PETSC_H
     void operator<< (Matrix& A);
-#endif
     
   };
   

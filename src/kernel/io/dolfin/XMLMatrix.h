@@ -7,8 +7,6 @@
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Matrix.h>
 #include <dolfin/XMLObject.h>
 
@@ -40,7 +38,5 @@ namespace dolfin
   };
   
 }
-
-#endif
 
 #endif

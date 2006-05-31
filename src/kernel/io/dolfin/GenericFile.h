@@ -33,10 +33,8 @@ namespace dolfin
     
     // Input
 
-#ifdef HAVE_PETSC_H    
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
-#endif
     virtual void operator>> (Mesh& mesh);
     virtual void operator>> (Function& mesh);
     virtual void operator>> (Sample& sample);
@@ -46,10 +44,8 @@ namespace dolfin
     
     // Output
     
-#ifdef HAVE_PETSC_H
     virtual void operator<< (Vector& x);
     virtual void operator<< (Matrix& A);
-#endif
     virtual void operator<< (Mesh& mesh);
     virtual void operator<< (Function& u);
     virtual void operator<< (Sample& sample);
