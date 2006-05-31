@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-12
-// Last changed: 2006-05-12
+// Last changed: 2006-05-31
 
 #include <dolfin/Mesh.h>
 #include <dolfin/MeshEntity.h>
@@ -12,43 +12,53 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEntityIterator::MeshEntityIterator(NewMesh& mesh, uint dim)
-  : entity(mesh, dim, 0), pos(0), pos_end(0)
+  : entity(mesh, dim, 0), pos(0), pos_end(mesh.size(dim)), index(0)
 {
-  // FIXME: Check special case iteration over entities that don't exist
-  
-  // Save end position
-  //pos_end = mesh.data.topology.size(dim);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshEntityIterator::MeshEntityIterator(const MeshEntityIterator& it)
-  : entity(it.entity), pos(it.pos), pos_end(it.pos_end)
+  : entity(it.entity), pos(it.pos), pos_end(it.pos_end), index(it.index)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 MeshEntityIterator::MeshEntityIterator(MeshEntity& entity, uint dim)
-  : entity(entity._mesh, dim, 0), pos(0), pos_end(0)
+  : entity(entity.mesh(), dim, 0), pos(0)
 {
-  // Set current position to start position
-  //pos = mesh.data.topology.first[entity.pos];
+  // Get connectivity
+  MeshConnectivity& c = entity.mesh().data.topology(entity.dim(), dim);
 
-  // FIXME: Check special case iteration over entities that don't exist
-
-  // FIXME: Initialize connections if necessary
-  
-  // FIXME: Check order of + and >=
-
-  // Save end position
+  // Get size and index map
+  pos_end = c.size(entity.index());
+  index = c(entity.index());
 }
 //-----------------------------------------------------------------------------
 MeshEntityIterator::MeshEntityIterator(MeshEntityIterator& it, uint dim)
-  : entity(it.entity._mesh, dim, 0), pos(0), pos_end(0)
+  : entity(it.entity._mesh, dim, 0), pos(0)
 {
-  // Do nothing
+  // Get connectivity
+  MeshConnectivity& c = it.entity.mesh().data.topology(it.entity.dim(), dim);
+
+  // Get size and index map
+  pos_end = c.size(it.entity.index());
+  index = c(it.entity.index());
 }
 //-----------------------------------------------------------------------------
 MeshEntityIterator::~MeshEntityIterator()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+dolfin::LogStream& dolfin::operator<< (LogStream& stream,
+				       const MeshEntityIterator& it)
+{
+  stream << "[ Mesh entity iterator at position "
+	 << it.pos
+	 << " stepping from 0 to "
+	 << it.pos_end - 1
+	 << " ]";
+  
+  return stream;
 }
 //-----------------------------------------------------------------------------

@@ -2,18 +2,17 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-05-22
+// Last changed: 2006-05-31
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/MeshConnectivity.h>
 
 namespace dolfin
 {
-
-  class MeshConnectivity;
   
   /// MeshTopology stores the topology of a mesh, consisting of mesh entities
   /// and connectivity (incidence relations for the mesh entities). Note that
@@ -39,7 +38,8 @@ namespace dolfin
     inline uint dim() const { return _dim; }
     
     /// Return number of entities for given dimension
-    inline uint size(uint dim) const { dolfin_assert(dim < _dim); return num_entities[dim]; }
+    inline uint size(uint dim) const
+    { dolfin_assert(dim < _dim); return num_entities[dim]; }
 
     /// Clear all data
     void clear();
@@ -47,11 +47,16 @@ namespace dolfin
     /// Initialize topology of given maximum dimension
     void init(uint dim);
 
-    /// Set size for given dimension (number of entities)
+    /// Set number of entities (size) for given topological dimension
     void init(uint dim, uint size);
 
-    /// Set connectivity for given pair of dimensions
-    void set(uint d0, uint d1, Array< Array<uint> >& connectivity);
+    /// Return connectivity for given pair of topological dimensions
+    inline MeshConnectivity& operator() (uint d0, uint d1)
+    { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
+
+    /// Return connectivity for given pair of topological dimensions
+    inline const MeshConnectivity& operator() (uint d0, uint d1) const
+    { dolfin_assert(d0 <= _dim && d1 <= _dim); return connectivity[d0][d1]; }
 
     /// Display data
     void disp() const;
@@ -64,7 +69,7 @@ namespace dolfin
     // Number of mesh entities for each topological dimension
     uint* num_entities;
 
-    // Connections for pairs of topological dimensions
+    // Connectivity for pairs of topological dimensions
     MeshConnectivity** connectivity;
    
   };

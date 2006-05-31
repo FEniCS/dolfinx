@@ -86,8 +86,8 @@ namespace dolfin
     // The mesh
     NewMesh* mesh;
 
-    // Temporary storage for cells
-    Array<Array<uint> > cells;
+    // Temporary storage for local cell data
+    Array<uint> vertices;
    
   };
 

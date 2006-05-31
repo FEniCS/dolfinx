@@ -424,11 +424,28 @@ void testGenericMatrix()
 
 void testNewMesh()
 {
-  Mesh oldmesh("oldmesh.xml.gz");
-  oldmesh.disp();
+  //Mesh oldmesh("oldmesh.xml.gz");
+  //oldmesh.disp();
 
   NewMesh newmesh("newmesh.xml.gz");
+  cout << newmesh << endl;
   newmesh.disp();
+
+  for (MeshEntityIterator e(newmesh, 0); !e.end(); ++e)
+  {
+    cout << e << endl;
+    cout << *e << endl;
+  }
+
+  cout << endl;
+
+  for (MeshEntityIterator e(newmesh, 2); !e.end(); ++e)
+  {
+    cout << *e << endl;
+    for (MeshEntityIterator f(e, 0); !f.end(); ++f)
+      cout << "  " << *f << endl;
+  }
+  
 }
 
 int main(int argc, char* argv[])

@@ -2,18 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-05-22
+// Last changed: 2006-05-31
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
 
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
+#include <dolfin/NewMesh.h>
+#include <dolfin/MeshEntity.h>
 
 namespace dolfin
 {
-
-  class NewMesh;
-  class MeshEntity;
 
   // FIXME: Consistent use of incidence relations, connectivity, connections
 
@@ -43,19 +43,17 @@ namespace dolfin
   class MeshEntityIterator
   {
   public:
-    
-    /// Create iterator for mesh entity over given topological dimension
+
+    /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(NewMesh& mesh, uint dim);
-
-    // FIXME: What about boundary or subset of mesh?
-
+    
     /// Copy constructor
     MeshEntityIterator(const MeshEntityIterator& it);
 
-    /// Iterator for entity of given dimension over given entity
+    /// Create iterator for entities of given dimension connected to given entity
     MeshEntityIterator(MeshEntity& entity, uint dim);
 
-    /// Iterator for entity of given dimension over given entity iterator
+    /// Create iterator for entities of given dimension connected to given entity
     MeshEntityIterator(MeshEntityIterator& entity, uint dim);
     
     /// Destructor
@@ -74,29 +72,33 @@ namespace dolfin
     // FIXME: Should it be const?
 
     /// Dereference operator
-    inline MeshEntity& operator*() { return entity; }
-
-    /// Dereference operator
-    inline const MeshEntity& operator*() const { return entity; }
+    inline MeshEntity& operator*()
+    { entity._index = (index ? index[pos] : pos); return entity; }
 
     // FIXME: Check what this should be called
 
     /// Member access operator
-    inline MeshEntity* operator->() { return &entity; }
+    //inline MeshEntity* operator->() { return &entity; }
 
     /// Member access operator
-    inline const MeshEntity* operator->() const { return &entity; }
+    //inline const MeshEntity* operator->() const { return &entity; }
+
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);
     
   private:
 
     // Mesh entity
     MeshEntity entity;
-    
+
     // Current position
     uint pos;
 
     // End position
     uint pos_end;
+
+    // Mapping from pos to index (if any)
+    uint* index;
     
   };
 

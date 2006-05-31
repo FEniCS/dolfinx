@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-05-23
+// Last changed: 2006-05-30
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/MeshConnectivity.h>
@@ -65,14 +65,6 @@ void MeshTopology::init(uint dim, uint size)
   dolfin_assert(dim <= _dim);
 
   num_entities[dim] = size;
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::set(uint d0, uint d1, Array< Array<uint> >& connectivity)
-{
-  dolfin_assert(d0 <= _dim);
-  dolfin_assert(d1 <= _dim);
-
-  this->connectivity[d0][d1].set(connectivity);
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::disp() const

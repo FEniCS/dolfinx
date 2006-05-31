@@ -16,6 +16,11 @@ namespace dolfin
   /// Mesh connectivity stores a sparse data structure of connections
   /// (incidence relations) between mesh entities for a fixed pair of
   /// topological dimensions.
+  ///
+  /// The connectivity can be specified either by first giving the
+  /// number of entities and the number of connections for each entity,
+  /// which may either be equal for all entities or different, or by
+  /// giving the entire (sparse) connectivity pattern.
 
   class MeshConnectivity
   {
@@ -31,15 +36,26 @@ namespace dolfin
     inline uint size() const { return _size; }
 
     /// Return number of connections for given entity
-    inline uint size(uint e) const { return offsets[e + 1] - offsets[e]; }
+    inline uint size(uint entity) const
+    { dolfin_assert(entity < num_entities); return offsets[entity + 1] - offsets[entity]; }
 
     /// Return array of connections for given entity
-    inline uint* connectivity(uint e) { return connections + offsets[e]; }
+    inline uint* operator() (uint entity)
+    { dolfin_assert(entity < num_entities); return connections + offsets[entity]; }
 
     /// Clear all data
     void clear();
 
-    /// Set connectivity
+    /// Initialize number of entities and number of connections (equal for all)
+    void init(uint num_entities, uint num_connections);
+
+    /// Initialize number of entities and number of connections (individually)
+    void init(uint num_entities, Array<uint>& num_connections);
+
+    /// Set connectivity for given entity
+    void set(uint entity, Array<uint>& connections);
+
+    /// Set connectivity for all entities
     void set(Array<Array<uint> >& connectivity);
 
     /// Display data

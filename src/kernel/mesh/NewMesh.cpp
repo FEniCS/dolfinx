@@ -44,8 +44,8 @@ dolfin::LogStream& dolfin::operator<< (LogStream& stream, const NewMesh& mesh)
 	 << mesh.numVertices()
 	 << " vertices and "
 	 << mesh.numCells()
-	 << " cells ";
-
+	 << " cells ]";
+  
   return stream;
 }
 //-----------------------------------------------------------------------------

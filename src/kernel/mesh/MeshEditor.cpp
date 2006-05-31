@@ -37,6 +37,11 @@ void MeshEditor::edit(NewMesh& mesh, uint dim)
 
   // Initialize topological dimension
   mesh.data.topology.init(dim);
+
+  // Initialize temporary storage for local cell data
+  vertices.reserve(dim + 1);
+  for (uint i = 0; i < dim + 1; i++)
+    vertices.push_back(0);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initVertices(uint num_vertices)
@@ -60,16 +65,7 @@ void MeshEditor::initCells(uint num_cells)
   // Initialize mesh data
   this->num_cells = num_cells;
   mesh->data.topology.init(dim, num_cells);
-
-  // Initialize temporary storage with illegal values, check later
-  cells.reserve(num_cells);
-  Array<uint> cell(dim + 1);
-  for (uint i = 0; i < num_cells; i++)
-  {
-    for (uint j = 0; j < dim + 1; j++)
-      cell[j] = num_vertices;
-    cells.push_back(cell);
-  }
+  mesh->data.topology(dim, 0).init(num_cells, dim + 1);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x)
@@ -108,8 +104,9 @@ void MeshEditor::addCell(uint c, uint v0, uint v1)
   addCellCommon(c, 1);
 
   // Set data
-  cells[c][0] = v0;
-  cells[c][1] = v1;
+  vertices[0] = v0;
+  vertices[1] = v1;
+  mesh->data.topology(dim, 0).set(c, vertices);
 }
 //--------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
@@ -118,9 +115,10 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
   addCellCommon(c, 2);
 
   // Set data
-  cells[c][0] = v0;
-  cells[c][1] = v1;
-  cells[c][2] = v2;
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  mesh->data.topology(dim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
@@ -129,24 +127,16 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
   addCellCommon(c, 3);
 
   // Set data
-  cells[c][0] = v0;
-  cells[c][1] = v1;
-  cells[c][2] = v2;
-  cells[c][3] = v3;
+  vertices[0] = v0;
+  vertices[1] = v1;
+  vertices[2] = v2;
+  vertices[3] = v3;
+  mesh->data.topology(dim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::close()
 {
   // FIXME: Init mesh?
-
-  // Check that everything was added
-  for (uint c = 0; c < num_cells; c++)
-    for (uint v = 0; v < dim + 1; v++)
-      if ( cells[c][v] >= num_vertices )
-	dolfin_error("Cell connectivity out of range or not completely specified.");
-  
-  // Set connectivity
-  mesh->data.topology.set(dim, 0, cells);
 
   // Clear data
   clear();
@@ -191,7 +181,7 @@ void MeshEditor::addCellCommon(uint c, uint dim)
     dolfin_error2("Illegal dimension for cell: %d (should be %d).",
 		  dim, this->dim);
 
-  // Check value of vertex index
+  // Check value of cell index
   if ( c >= num_cells )
     dolfin_error2("Cell index (%d) out of range [0, %d].",
 		  c, num_cells - 1);
@@ -212,9 +202,6 @@ void MeshEditor::clear()
   next_vertex = 0;
   next_cell = 0;
   mesh = 0;
-
-  for (uint i = 0; i < cells.size(); i++)
-    cells[i].clear();
-  cells.clear();
+  vertices.clear();
 }
 //-----------------------------------------------------------------------------

@@ -2,12 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-05-22
+// Last changed: 2006-05-31
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
 
 #include <dolfin/constants.h>
+#include <dolfin/dolfin_log.h>
 
 namespace dolfin
 {
@@ -42,12 +43,15 @@ namespace dolfin
     /// Return index of mesh entity
     inline uint index() const { return _index; }
 
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
+
   private:
 
     // Friends
     friend class MeshEntityIterator;
 
-    // Mesh containing the mesh entity
+    // The mesh
     NewMesh& _mesh;
 
     // Topological dimension
