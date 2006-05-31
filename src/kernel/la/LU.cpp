@@ -43,7 +43,7 @@ LU::~LU()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LU::solve(const PETScSparseMatrix& A,
-		       SparseVector& x, const SparseVector& b)
+		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
   const bool report = get("LU report");
@@ -64,7 +64,7 @@ dolfin::uint LU::solve(const PETScSparseMatrix& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint LU::solve(const VirtualMatrix& A,
-		       SparseVector& x, const SparseVector& b)
+		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
   const bool report = get("LU report");

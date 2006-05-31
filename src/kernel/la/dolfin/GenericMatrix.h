@@ -8,7 +8,6 @@
 #define __GENERIC_MATRIX_H
 
 #include <dolfin/constants.h>
-#include <dolfin/GenericVector.h>
 
 namespace dolfin
 {

@@ -30,10 +30,10 @@ namespace dolfin
     ~LU();
 
     /// Solve linear system Ax = b
-    uint solve(const PETScSparseMatrix& A, SparseVector& x, const SparseVector& b);
+    uint solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const VirtualMatrix& A, SparseVector& x, const SparseVector& b);
+    uint solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Display LU solver data
     void disp() const;
@@ -49,8 +49,8 @@ namespace dolfin
     int* idxm;
     int* idxn;
 
-    SparseVector e;
-    SparseVector y;
+    PETScVector e;
+    PETScVector y;
 
   };
 

@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/SparseVector.h>
+#include <dolfin/PETScVector.h>
 #include <dolfin/PETScSparseMatrix.h>
 
 using namespace dolfin;
@@ -233,12 +233,12 @@ void PETScSparseMatrix::ident(const int rows[], int m)
   ISDestroy(is);
 }
 //-----------------------------------------------------------------------------
-void PETScSparseMatrix::mult(const SparseVector& x, SparseVector& Ax) const
+void PETScSparseMatrix::mult(const PETScVector& x, PETScVector& Ax) const
 {
   MatMult(A, x.vec(), Ax.vec());
 }
 //-----------------------------------------------------------------------------
-real PETScSparseMatrix::mult(const SparseVector& x, uint row) const
+real PETScSparseMatrix::mult(const PETScVector& x, uint row) const
 {
   // FIXME: Temporary fix (assumes uniprocessor case)
 
@@ -277,10 +277,10 @@ real PETScSparseMatrix::mult(const real x[], uint row) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-void PETScSparseMatrix::lump(SparseVector& m) const
+void PETScSparseMatrix::lump(PETScVector& m) const
 {
   m.init(size(0));
-  SparseVector one(m);
+  PETScVector one(m);
   one = 1.0;
   mult(one, m);   
 }

@@ -26,7 +26,7 @@ namespace dolfin
   {
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    SparseVector xx(x), yy(y);
+    PETScVector xx(x), yy(y);
     ((VirtualMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
@@ -41,7 +41,7 @@ VirtualMatrix::VirtualMatrix()
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(const SparseVector& x, const SparseVector& y)
+VirtualMatrix::VirtualMatrix(const PETScVector& x, const PETScVector& y)
   : A(0)
 {
   // Initialize PETSc
@@ -57,7 +57,7 @@ VirtualMatrix::~VirtualMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(const SparseVector& x, const SparseVector& y)
+void VirtualMatrix::init(const PETScVector& x, const PETScVector& y)
 {
   // Get size and local size of given vector
   int m(0), n(0), M(0), N(0);
@@ -131,7 +131,7 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   
   uint M = size(0);
   uint N = size(1);
-  SparseVector x(N), y(M);
+  PETScVector x(N), y(M);
   PETScSparseMatrix A(M, N);
   
   x = 0.0;

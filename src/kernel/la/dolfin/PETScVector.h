@@ -4,10 +4,10 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004
-// Last changed: 2006-05-15
+// Last changed: 2006-05-31
 
-#ifndef __SPARSE_VECTOR_H
-#define __SPARSE_VECTOR_H
+#ifndef __PETSC_VECTOR_H
+#define __PETSC_VECTOR_H
 
 #ifdef HAVE_PETSC_H
 
@@ -20,33 +20,33 @@
 namespace dolfin
 {
   
-  class SparseVectorElement;
+  class PETScVectorElement;
 
-  /// This class represents a sparse vector of dimension N.
+  /// This class represents a vector of dimension N.
   /// It is a simple wrapper for a PETSc vector pointer (Vec).
   ///
   /// The interface is intentionally simple. For advanced usage,
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class SparseVector : public GenericVector, public Variable
+  class PETScVector : public GenericVector, public Variable
   {
   public:
 
     /// Empty vector
-    SparseVector();
+    PETScVector();
 
     /// Create vector of given size
-    SparseVector(uint size);
+    PETScVector(uint size);
 
     /// Create vector from given PETSc Vec pointer
-    SparseVector(Vec x);
+    PETScVector(Vec x);
 
     /// Copy constructor
-    SparseVector(const SparseVector& x);
+    PETScVector(const PETScVector& x);
     
     /// Destructor
-    ~SparseVector ();
+    ~PETScVector ();
 
     /// Initialize vector data
     void init(uint size);
@@ -75,13 +75,13 @@ namespace dolfin
     void restore(const real data[]) const;
 
     /// Addition (AXPY)
-    void axpy(const real a, const SparseVector& x) const;
+    void axpy(const real a, const PETScVector& x) const;
 
     /// Element-wise division
-    void div(const SparseVector& x);
+    void div(const PETScVector& x);
 
     /// Element-wise multiplication
-    void mult(const SparseVector& x);
+    void mult(const PETScVector& x);
 
     /// Set block of values
     void set(const real block[], const int pos[], int n);
@@ -99,31 +99,31 @@ namespace dolfin
     void zero();
 
     /// Element assignment/access operator
-    SparseVectorElement operator() (uint i);
+    PETScVectorElement operator() (uint i);
 
-    /// Element access operator for a const SparseVector
+    /// Element access operator for a const PETScVector
     real operator() (uint i) const;
 
     /// Assignment of vector
-    const SparseVector& operator= (const SparseVector& x);
+    const PETScVector& operator= (const PETScVector& x);
 
     /// Assignment of all elements to a single scalar value
-    const SparseVector& operator= (real a);
+    const PETScVector& operator= (real a);
 
     /// Add vector x
-    const SparseVector& operator+= (const SparseVector& x);
+    const PETScVector& operator+= (const PETScVector& x);
 
     /// Subtract vector x
-    const SparseVector& operator-= (const SparseVector& x);
+    const PETScVector& operator-= (const PETScVector& x);
 
     /// Multiply vector with scalar
-    const SparseVector& operator*= (real a);
+    const PETScVector& operator*= (real a);
 
     /// Divide vector by scalar
-    const SparseVector& operator/= (real a);
+    const PETScVector& operator/= (real a);
 
     /// Scalar product
-    real operator*(const SparseVector& x);
+    real operator*(const PETScVector& x);
 
     /// Compute norm of vector
     enum NormType { l1, l2, linf };
@@ -142,11 +142,11 @@ namespace dolfin
     void disp() const;
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const SparseVector& A);
+    friend LogStream& operator<< (LogStream& stream, const PETScVector& A);
 
     // Friends
     friend class PETScSparseMatrix;
-    friend class PETScSparseVectorElement;
+    friend class PETScVectorElement;
 
     // Element access
     real getval(uint i) const;
@@ -158,21 +158,21 @@ namespace dolfin
     void addval(uint i, const real a);
 
     // Create Scatterer
-    static VecScatter* createScatterer(SparseVector& x1, SparseVector& x2,
+    static VecScatter* createScatterer(PETScVector& x1, PETScVector& x2,
 				       int offset, int size);
 
     // Gather x1 (subvector) into x2
-    static void gather(SparseVector& x1, SparseVector& x2, VecScatter& x1sc);
+    static void gather(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
 
     // Scatter part of x2 into x1 (subvector)
-    static void scatter(SparseVector& x1, SparseVector& x2, VecScatter& x1sc);
+    static void scatter(PETScVector& x1, PETScVector& x2, VecScatter& x1sc);
 
     // Copy values from array into vector
-    static void fromArray(const real u[], SparseVector& x, uint offset,
+    static void fromArray(const real u[], PETScVector& x, uint offset,
 			  uint size);
 
     // Copy values from vector into array
-    static void toArray(real y[], SparseVector&x, uint offset, uint size);
+    static void toArray(real y[], PETScVector&x, uint offset, uint size);
 
   private:
 
@@ -186,20 +186,20 @@ namespace dolfin
 
   /// Reference to an element of the vector
   
-  class SparseVectorElement
+  class PETScVectorElement
   {
   public:
-    SparseVectorElement(uint i, SparseVector& x);
-    SparseVectorElement(const SparseVectorElement& e);
+    PETScVectorElement(uint i, PETScVector& x);
+    PETScVectorElement(const PETScVectorElement& e);
     operator real() const;
-    const SparseVectorElement& operator=(const SparseVectorElement& e);
-    const SparseVectorElement& operator=(const real a);
-    const SparseVectorElement& operator+=(const real a);
-    const SparseVectorElement& operator-=(const real a);
-    const SparseVectorElement& operator*=(const real a);
+    const PETScVectorElement& operator=(const PETScVectorElement& e);
+    const PETScVectorElement& operator=(const real a);
+    const PETScVectorElement& operator+=(const real a);
+    const PETScVectorElement& operator-=(const real a);
+    const PETScVectorElement& operator*=(const real a);
   protected:
     uint i;
-    SparseVector& x;
+    PETScVector& x;
   };
 
 }

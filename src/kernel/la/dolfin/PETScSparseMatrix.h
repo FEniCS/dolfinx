@@ -24,7 +24,7 @@
 namespace dolfin
 {
   
-  class SparseVector;
+  class PETScVector;
   class PETScSparseMatrixElement;
 
   /// This class represents a sparse matrix of dimension M x N.
@@ -102,16 +102,16 @@ namespace dolfin
     void ident(const int rows[], int m);
     
     /// Matrix-vector multiplication
-    void mult(const SparseVector& x, SparseVector& Ax) const;
+    void mult(const PETScVector& x, PETScVector& Ax) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
-    real mult(const SparseVector& x, uint row) const;
+    real mult(const PETScVector& x, uint row) const;
 
     /// Matrix-vector multiplication with given row (temporary fix, assumes uniprocessor case)
     real mult(const real x[], uint row) const;
 
     /// Lump matrix into vector m
-    void lump(SparseVector& m) const;
+    void lump(PETScVector& m) const;
 
     /// Compute given norm of matrix
     enum Norm { l1, linf, frobenius };

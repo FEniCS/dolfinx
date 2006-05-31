@@ -64,8 +64,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = DenseMatrix.lo DenseVector.lo \
 	EigenvalueSolver.lo KrylovSolver.lo GMRES.lo LinearSolver.lo \
-	LU.lo PETScManager.lo PETScSparseMatrix.lo Preconditioner.lo \
-	uBlasSparseMatrix.lo SparseVector.lo VirtualMatrix.lo
+	LU.lo PETScManager.lo PETScSparseMatrix.lo PETScVector.lo \
+	Preconditioner.lo uBlasSparseMatrix.lo VirtualMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -235,9 +235,9 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/Matrix.h \
                           dolfin/PETScManager.h \
                           dolfin/PETScSparseMatrix.h \
+                          dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
-                          dolfin/SparseVector.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
@@ -253,9 +253,9 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           LU.cpp \
                           PETScManager.cpp \
                           PETScSparseMatrix.cpp \
+                          PETScVector.cpp \
                           Preconditioner.cpp \
                           uBlasSparseMatrix.cpp \
-                          SparseVector.cpp \
                           VirtualMatrix.cpp 
 
 libdolfin_la_la_LDFLAGS = -static
@@ -337,8 +337,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScSparseMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Preconditioner.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SparseVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasSparseMatrix.Plo@am__quote@
 

@@ -12,17 +12,20 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/AffineMap.h>
+
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/SparseMatrix.h>
-#include <dolfin/SparseVector.h>
+#include <dolfin/Vector.h>
+
 #include <dolfin/Mesh.h>
 #include <dolfin/Boundary.h>
 #include <dolfin/BoundaryValue.h>
 #include <dolfin/BoundaryCondition.h>
 #include <dolfin/BoundaryFacetIterator.h>
+
 #include <dolfin/FiniteElement.h>
 #include <dolfin/BilinearForm.h>
 #include <dolfin/LinearForm.h>
