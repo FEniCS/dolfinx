@@ -377,7 +377,14 @@ int main(int argc, char* argv[])
   testDenseLUsolve();
 */
   
-  testuBlasSparseMatrix();
+  //testuBlasSparseMatrix();
+  
+  //testOutputMatrix();
+
+  Mesh mesh("finer.xml.gz");
+  StiffnessMatrix B(mesh);
+  File file("B.m");
+  file << B;
 
   return 0;
 }
