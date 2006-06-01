@@ -6,8 +6,6 @@
 // First added:  2004
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/dolfin_log.h>
 #include <dolfin/FEM.h>
 #include <dolfin/Matrix.h>
@@ -62,7 +60,11 @@ dolfin::uint LinearPDE::solve(Function& u)
   Vector b;
   Matrix* A;
   if ( solver_type == "direct" )
+#ifdef HAVE_PETSC_H
     A = new Matrix(Matrix::umfpack);
+#else
+    A = new Matrix;
+#endif
   else
     A = new Matrix;
 
@@ -122,5 +124,3 @@ BoundaryCondition& LinearPDE::bc()
   return *_bc;
 }
 //-----------------------------------------------------------------------------
-
-#endif
