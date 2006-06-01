@@ -71,6 +71,21 @@ void DenseVector::get(real block[], const int pos[], int n) const
     block[i] = (*this)(pos[i]);
 }
 //-----------------------------------------------------------------------------
+real DenseVector::norm(NormType type) const
+{
+  switch (type) {
+  case l1:
+    return norm_1(*this);
+  case l2:
+    return norm_2(*this);
+  case linf:
+    return norm_inf(*this);
+  default:
+    dolfin_error("Requested vector norm type for DenseVector unknown");
+  }
+  return norm_inf(*this);
+}
+//-----------------------------------------------------------------------------
 real DenseVector::sum() const
 {
   return sum();

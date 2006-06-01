@@ -87,25 +87,16 @@ namespace dolfin
     /// Get block of values
     void get(real block[], const int pos[], int n) const;
 
+    /// Compute norm of vector
+    enum NormType { l1, l2, linf };
+    real norm(NormType type = l2) const;
+
     /// Compute sum of vector
     real sum() const;
 
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
 
-/*
-    /// FIXME: needed for compatibility with vertexeval() and PETSc vector
-    real* array()
-      { 
-        dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled");
-        real* a(0);
-        return a; 
-      }
-
-    /// FIXME: needed for compatibility with vertexeval() and PETSc vector
-    void restore(real* x)
-      { dolfin_error("Cannot evaluate functions at vertexes with PETSc disabled"); }
-*/
     /// Set all entries to zero
     void zero();
     
