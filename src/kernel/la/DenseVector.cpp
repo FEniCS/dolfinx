@@ -71,6 +71,11 @@ void DenseVector::get(real block[], const int pos[], int n) const
     block[i] = (*this)(pos[i]);
 }
 //-----------------------------------------------------------------------------
+real DenseVector::sum() const
+{
+  return sum();
+}
+//-----------------------------------------------------------------------------
 void DenseVector::apply()
 {
   // Do nothing

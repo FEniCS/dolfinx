@@ -87,6 +87,9 @@ namespace dolfin
     /// Get block of values
     void get(real block[], const int pos[], int n) const;
 
+    /// Compute sum of vector
+    real sum() const;
+
     /// Apply changes to vector (dummy function for compatibility)
     void apply();
 

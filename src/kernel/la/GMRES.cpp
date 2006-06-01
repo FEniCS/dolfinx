@@ -6,7 +6,6 @@
 // First added:  2005-12-02
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
 
 #include <dolfin/GMRES.h>
 
@@ -18,6 +17,7 @@ GMRES::GMRES() : KrylovSolver(gmres)
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 GMRES::GMRES(Preconditioner::Type preconditioner) : KrylovSolver(gmres, preconditioner)
 {
   // Do nothing.
@@ -28,10 +28,10 @@ GMRES::GMRES(Preconditioner& preconditioner) : KrylovSolver(gmres, preconditione
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
+#endif
 GMRES::~GMRES()
 {
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
 
-#endif

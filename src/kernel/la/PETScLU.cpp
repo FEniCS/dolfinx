@@ -8,12 +8,12 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/LU.h>
+#include <dolfin/PETScLU.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+PETScLU::PETScLU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -34,7 +34,7 @@ LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
   PCASMSetUseInPlace(pc);
 }
 //-----------------------------------------------------------------------------
-LU::~LU()
+PETScLU::~PETScLU()
 {
   if ( ksp ) KSPDestroy(ksp);
   if ( B ) MatDestroy(B);
@@ -42,7 +42,7 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const PETScSparseMatrix& A,
+dolfin::uint PETScLU::solve(const PETScSparseMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
@@ -63,7 +63,7 @@ dolfin::uint LU::solve(const PETScSparseMatrix& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const VirtualMatrix& A,
+dolfin::uint PETScLU::solve(const VirtualMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
@@ -103,12 +103,12 @@ dolfin::uint LU::solve(const VirtualMatrix& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-void LU::disp() const
+void PETScLU::disp() const
 {
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-real LU::copyToDense(const VirtualMatrix& A)
+real PETScLU::copyToDense(const VirtualMatrix& A)
 {
   // Get size
   uint M = A.size(0);

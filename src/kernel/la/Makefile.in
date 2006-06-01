@@ -63,9 +63,10 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = DenseMatrix.lo DenseVector.lo \
-	EigenvalueSolver.lo KrylovSolver.lo GMRES.lo LinearSolver.lo \
-	LU.lo PETScManager.lo PETScSparseMatrix.lo PETScVector.lo \
-	Preconditioner.lo uBlasSparseMatrix.lo VirtualMatrix.lo
+	EigenvalueSolver.lo GMRES.lo LinearSolver.lo \
+	PETScKrylovSolver.lo PETScLU.lo PETScManager.lo \
+	PETScSparseMatrix.lo PETScVector.lo Preconditioner.lo \
+	uBlasKrylovSolver.lo uBlasSparseMatrix.lo VirtualMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -233,11 +234,15 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \
                           dolfin/Matrix.h \
+                          dolfin/PETScKrylovSolver.h \
+                          dolfin/PETScLU.h \
                           dolfin/PETScManager.h \
                           dolfin/PETScSparseMatrix.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
+                          dolfin/uBlasKrylovSolver.h \
+                          dolfin/uBlasLUSolver.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
@@ -247,14 +252,15 @@ lib_LTLIBRARIES = libdolfin-la.la
 libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           DenseVector.cpp \
                           EigenvalueSolver.cpp \
-                          KrylovSolver.cpp \
                           GMRES.cpp \
                           LinearSolver.cpp \
-                          LU.cpp \
+                          PETScKrylovSolver.cpp \
+                          PETScLU.cpp \
                           PETScManager.cpp \
                           PETScSparseMatrix.cpp \
                           PETScVector.cpp \
                           Preconditioner.cpp \
+                          uBlasKrylovSolver.cpp \
                           uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 
@@ -332,14 +338,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KrylovSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLU.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScManager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScSparseMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Preconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasSparseMatrix.Plo@am__quote@
 
 .cpp.o:

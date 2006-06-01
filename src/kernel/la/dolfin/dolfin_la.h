@@ -14,11 +14,15 @@
 #include <dolfin/LU.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
+#include <dolfin/PETScKrylovSolver.h>
+#include <dolfin/PETScLU.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScSparseMatrix.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparseMatrix.h>
+#include <dolfin/uBlasKrylovSolver.h>
+#include <dolfin/uBlasLUSolver.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/VirtualMatrix.h>
 

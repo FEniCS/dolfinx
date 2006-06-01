@@ -10,11 +10,15 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \
                           dolfin/Matrix.h \
+                          dolfin/PETScKrylovSolver.h \
+                          dolfin/PETScLU.h \
                           dolfin/PETScManager.h \
                           dolfin/PETScSparseMatrix.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
+                          dolfin/uBlasKrylovSolver.h \
+                          dolfin/uBlasLUSolver.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
@@ -23,14 +27,15 @@ lib_LTLIBRARIES         = libdolfin-la.la
 libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           DenseVector.cpp \
                           EigenvalueSolver.cpp \
-                          KrylovSolver.cpp \
                           GMRES.cpp \
                           LinearSolver.cpp \
-                          LU.cpp \
+                          PETScKrylovSolver.cpp \
+                          PETScLU.cpp \
                           PETScManager.cpp \
                           PETScSparseMatrix.cpp \
                           PETScVector.cpp \
                           Preconditioner.cpp \
+                          uBlasKrylovSolver.cpp \
                           uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 libdolfin_la_la_LDFLAGS = -static
