@@ -335,7 +335,7 @@ int main()
   set("ODE discrete tolerance factor", 0.1);
   set("ODE discrete Krylov tolerance factor", 0.1);
 
-  //set("ODE save solution", false);
+  set("ODE save solution", false);
   
   Courtemanche ode;
   ode.solve();

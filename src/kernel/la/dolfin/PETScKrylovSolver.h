@@ -7,7 +7,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2005-12-02
-// Last changed: 2006-05-15
+// Last changed: 2006-06-02
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -104,6 +104,9 @@ namespace dolfin
     /// Size of old system (need to reinitialize when changing)
     uint M;
     uint N;
+
+    /// True if we have read parameters
+    bool parameters_read;
     
   };
 

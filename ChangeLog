@@ -1,3 +1,4 @@
+ - Add Parametrized::readParameters() to trigger reading of values on set()
  - Remove output of zeros in Octave matrix file format
  - Use uBlas-based vector for Vector if PETSc disabled
  - Add wrappers for uBlas compressed_matrix class
