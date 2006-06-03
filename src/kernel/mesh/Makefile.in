@@ -68,7 +68,8 @@ am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
 	Triangle.lo UnitCube.lo UnitSquare.lo Vertex.lo \
 	VertexIterator.lo MeshConnectivity.lo MeshEditor.lo \
 	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
-	MeshTopology.lo NewMesh.lo NewMeshData.lo
+	MeshTopology.lo NewMesh.lo NewMeshData.lo NewVertex.lo \
+	NewEdge.lo NewFace.lo NewFacet.lo NewCell.lo MeshAlgorithms.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -260,7 +261,13 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/MeshGeometry.h \
                             dolfin/MeshTopology.h \
                             dolfin/NewMesh.h \
-                            dolfin/NewMeshData.h
+                            dolfin/NewMeshData.h \
+                            dolfin/NewVertex.h \
+                            dolfin/NewEdge.h \
+                            dolfin/NewFace.h \
+                            dolfin/NewFacet.h \
+                            dolfin/NewCell.h \
+                            dolfin/MeshAlgorithms.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
@@ -297,7 +304,13 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             MeshGeometry.cpp \
                             MeshTopology.cpp \
                             NewMesh.cpp \
-                            NewMeshData.cpp
+                            NewMeshData.cpp \
+                            NewVertex.cpp \
+                            NewEdge.cpp \
+                            NewFace.cpp \
+                            NewFacet.cpp \
+                            NewCell.cpp \
+                            MeshAlgorithms.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -381,6 +394,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FaceIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericCell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Mesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshAlgorithms.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshConnectivity.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshEditor.Plo@am__quote@
@@ -392,8 +406,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MeshTopology.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewCell.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewEdge.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFace.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFacet.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMeshData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewVertex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TetMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@

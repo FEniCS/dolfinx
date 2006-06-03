@@ -35,4 +35,10 @@ EXTRA_DIST = dolfin_mesh.h \
              MeshGeometry.h \
              MeshTopology.h \
              NewMesh.h \
-             NewMeshData.h
+             NewMeshData.h \
+             NewVertex.h \
+             NewEdge.h \
+             NewFace.h \
+             NewFacet.h \
+             NewCell.h \
+             MeshAlgoriths.h

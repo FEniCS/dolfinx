@@ -431,6 +431,7 @@ void testNewMesh()
   cout << newmesh << endl;
   newmesh.disp();
 
+  // Iterate over all entities of dimension 0 (vertices)
   for (MeshEntityIterator e(newmesh, 0); !e.end(); ++e)
   {
     cout << e << endl;
@@ -439,13 +440,40 @@ void testNewMesh()
 
   cout << endl;
 
-  for (MeshEntityIterator e(newmesh, 2); !e.end(); ++e)
+  // Same thing with named iterators
+  for (NewVertexIterator v(newmesh); !v.end(); ++v)
   {
-    cout << *e << endl;
-    for (MeshEntityIterator f(e, 0); !f.end(); ++f)
-      cout << "  " << *f << endl;
+    cout << v << endl;
+    cout << *v << endl;
   }
+
+  cout << endl;
+
+  // Nested iteration
+  for (MeshEntityIterator e2(newmesh, 2); !e2.end(); ++e2)
+  {
+    cout << *e2 << endl;
+    for (MeshEntityIterator e0(e2, 0); !e0.end(); ++e0)
+    {
+      cout << "  " << *e0 << endl;
+      for (MeshEntityIterator e1(e0, 0); !e1.end(); ++ e1)
+	cout << "    " << *e1 << endl;
+    }
+  }
+
+  cout << endl;
   
+  // Same thing with named iterators
+  for (NewCellIterator c(newmesh); !c.end(); ++c)
+  {
+    cout << *c << endl;
+    for (NewVertexIterator v(c); !v.end(); ++v)
+    {
+      cout << "  " << *v << endl;
+      for (NewEdgeIterator e(v); !e.end(); ++ e)
+	cout << "    " << *e << endl;
+    }
+  }
 }
 
 int main(int argc, char* argv[])

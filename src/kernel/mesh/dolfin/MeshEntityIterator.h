@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-05-31
+// Last changed: 2006-06-31
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -39,6 +39,7 @@ namespace dolfin
   ///
   /// In addition to the general iterator, a set of specific named iterators
   /// are provided for entities of type Vertex, Edge, Face, Facet and Cell.
+  /// These iterators are defined along with their respective classes.
 
   class MeshEntityIterator
   {
@@ -47,14 +48,11 @@ namespace dolfin
     /// Create iterator for mesh entities over given topological dimension
     MeshEntityIterator(NewMesh& mesh, uint dim);
     
-    /// Copy constructor
-    MeshEntityIterator(const MeshEntityIterator& it);
-
     /// Create iterator for entities of given dimension connected to given entity
     MeshEntityIterator(MeshEntity& entity, uint dim);
 
     /// Create iterator for entities of given dimension connected to given entity
-    MeshEntityIterator(MeshEntityIterator& entity, uint dim);
+    MeshEntityIterator(MeshEntityIterator& it, uint dim);
     
     /// Destructor
     ~MeshEntityIterator();
@@ -67,21 +65,14 @@ namespace dolfin
     /// Check if iterator has reached the end
     inline bool end() const { return pos >= pos_end; }
     
-    // FIXME: Check what this should be called
-
-    // FIXME: Should it be const?
-
     /// Dereference operator
-    inline MeshEntity& operator*()
-    { entity._index = (index ? index[pos] : pos); return entity; }
-
-    // FIXME: Check what this should be called
+    inline MeshEntity& operator*() { entity._index = (index ? index[pos] : pos); return entity; }
 
     /// Member access operator
-    //inline MeshEntity* operator->() { return &entity; }
+    inline MeshEntity* operator->() { return &entity; }
 
     /// Member access operator
-    //inline const MeshEntity* operator->() const { return &entity; }
+    inline const MeshEntity* operator->() const { return &entity; }
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);

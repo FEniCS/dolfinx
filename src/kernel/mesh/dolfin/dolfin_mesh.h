@@ -50,5 +50,10 @@
 #include <dolfin/NewMesh.h>
 #include <dolfin/NewMeshData.h>
 #include <dolfin/MeshFunction.h>
+#include <dolfin/NewVertex.h>
+#include <dolfin/NewEdge.h>
+#include <dolfin/NewFace.h>
+#include <dolfin/NewFacet.h>
+#include <dolfin/NewCell.h>
 
 #endif

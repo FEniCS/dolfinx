@@ -25,9 +25,6 @@ namespace dolfin
     /// Constructor
     MeshEntity(NewMesh& mesh, uint dim, uint index) : _mesh(mesh), _dim(dim), _index(index) {}
 
-    /// Copy constructor
-    MeshEntity(const MeshEntity& entity) : _mesh(entity._mesh), _dim(entity._dim), _index(entity._index) {}
-
     /// Destructor
     ~MeshEntity() {}
 
