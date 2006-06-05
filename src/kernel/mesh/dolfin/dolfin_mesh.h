@@ -55,5 +55,7 @@
 #include <dolfin/NewFace.h>
 #include <dolfin/NewFacet.h>
 #include <dolfin/NewCell.h>
+#include <dolfin/MeshAlgorithms.h>
+#include <dolfin/CellType.h>
 
 #endif

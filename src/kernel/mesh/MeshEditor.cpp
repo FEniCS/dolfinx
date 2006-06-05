@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-05-18
+// Last changed: 2006-06-05
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewMesh.h>
@@ -25,7 +25,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::edit(NewMesh& mesh, uint dim)
+void MeshEditor::edit(NewMesh& mesh, uint dim, std::string cell_type)
 {
   // Clear old mesh data
   mesh.data.clear();
@@ -34,6 +34,9 @@ void MeshEditor::edit(NewMesh& mesh, uint dim)
   // Save mesh and dimension
   this->mesh = &mesh;
   this->dim = dim;
+
+  // Set cell type
+  mesh.data.cell_type = CellType::create(cell_type);
 
   // Initialize topological dimension
   mesh.data.topology.init(dim);

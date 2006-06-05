@@ -69,10 +69,10 @@ namespace dolfin
     inline MeshEntity& operator*() { entity._index = (index ? index[pos] : pos); return entity; }
 
     /// Member access operator
-    inline MeshEntity* operator->() { return &entity; }
+    inline MeshEntity* operator->() { entity._index = (index ? index[pos] : pos); return &entity; }
 
     /// Member access operator
-    inline const MeshEntity* operator->() const { return &entity; }
+    //inline const MeshEntity* operator->() const { entity._index = (index ? index[pos] : pos); return &entity; }
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);

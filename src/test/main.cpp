@@ -456,7 +456,7 @@ void testNewMesh()
     for (MeshEntityIterator e0(e2, 0); !e0.end(); ++e0)
     {
       cout << "  " << *e0 << endl;
-      for (MeshEntityIterator e1(e0, 0); !e1.end(); ++ e1)
+      for (MeshEntityIterator e1(e0, 1); !e1.end(); ++ e1)
 	cout << "    " << *e1 << endl;
     }
   }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-05-18
+// Last changed: 2006-06-05
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -28,7 +28,7 @@ namespace dolfin
     ~MeshEditor();
 
     /// Edit given mesh
-    void edit(NewMesh& mesh, uint dim);
+    void edit(NewMesh& mesh, uint dim, std::string cell_type);
 
     /// Specify number of vertices
     void initVertices(uint num_vertices);

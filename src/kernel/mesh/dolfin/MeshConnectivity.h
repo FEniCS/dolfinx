@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-05-18
+// Last changed: 2006-06-05
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -50,12 +50,15 @@ namespace dolfin
     void init(uint num_entities, uint num_connections);
 
     /// Initialize number of entities and number of connections (individually)
-    void init(uint num_entities, Array<uint>& num_connections);
+    void init(Array<uint>& num_connections);
 
-    /// Set connectivity for given entity
+    /// Set given connection for given entity
+    void set(uint entity, uint connection, uint pos);
+
+    /// Set all connections for given entity
     void set(uint entity, Array<uint>& connections);
 
-    /// Set connectivity for all entities
+    /// Set all connections for all entities
     void set(Array<Array<uint> >& connectivity);
 
     /// Display data

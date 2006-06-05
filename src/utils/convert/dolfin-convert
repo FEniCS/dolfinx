@@ -335,8 +335,10 @@ def oldxml2newxml(ifilename, ofilename):
     tets = len(getoutput("grep tetrahedron " + ifilename))
     if tris > 0 and tets == 0:
         dim = 2
+        celltype = "triangle"
     elif tris == 0 and tets > 0:
         dim = 3
+        celltype = "tetrahedron"
     else:
         error("Inconsistent mesh file, not exactly one type of cells.")
 
@@ -355,7 +357,7 @@ def oldxml2newxml(ifilename, ofilename):
         if "xmlns" in line:
             line = "<dolfin xmlns:dolfin=\"http://www.fenics.org/dolfin/\">\n"
         if "<mesh>" in line:
-            line = "  <mesh dim=\"%d\">\n" % dim
+            line = "  <mesh dim=\"%d\" celltype=\"%s\">\n" % (dim, celltype)
         if dim == 2 and " z=\"0.0\"" in line:
             line = line.replace(" z=\"0.0\"", "")
         if " name=" in line:

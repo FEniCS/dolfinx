@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-05-22
+// Last changed: 2006-06-05
 
 #include <dolfin/MeshConnectivity.h>
 
@@ -54,32 +54,34 @@ void MeshConnectivity::init(uint num_entities, uint num_connections)
     offsets[e] = e*num_connections;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(uint num_entities, Array<uint>& num_connections)
+void MeshConnectivity::init(Array<uint>& num_connections)
 {
-  dolfin_assert(num_entities == num_connections.size());
-
   // Clear old data if any
   clear();
 
-  // Compute the total size  
-  _size = 0;
-  this->num_entities = num_entities;
-  for (uint e = 0; e < num_entities; e++)
-    _size += num_connections[e];
-  
-  // Allocate data
-  connections = new uint[_size];
+  // Initialize offsets and compute total size
+  num_entities = num_connections.size();
   offsets = new uint[num_entities + 1];
-  
-  // Initialize data
-  uint offset = 0;
+  _size = 0;
   for (uint e = 0; e < num_entities; e++)
   {
-    offsets[e] = offset;
-    for (uint i = 0; i < num_connections[i]; i++)
-      connections[offset++] = 0;
+    offsets[e] = _size;
+    _size += num_connections[e];
   }
-  offsets[num_entities] = offset;
+  offsets[num_entities] = _size;
+  
+  // Initialize connections
+  connections = new uint[_size];
+  for (uint i = 0; i < _size; i++)
+    connections[i] = 0;
+}
+//-----------------------------------------------------------------------------
+void MeshConnectivity::set(uint entity, uint connection, uint pos)
+{
+  dolfin_assert(entity < num_entities);
+  dolfin_assert(pos < offsets[entity + 1] - offsets[entity]);
+
+  connections[offsets[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(uint entity, Array<uint>& connections)
@@ -97,25 +99,22 @@ void MeshConnectivity::set(Array<Array<uint> >& connections)
   // Clear old data if any
   clear();
 
-  // Compute the total size
-  _size = 0;
+  // Initialize offsets and compute total size
   num_entities = connections.size();
-  for (uint e = 0; e < num_entities; e++)
-    _size += connections[e].size();
-
-  // Allocate data
-  this->connections = new uint[_size];
   offsets = new uint[num_entities + 1];
-
-  // Copy data
-  uint offset = 0;
+  _size = 0;
   for (uint e = 0; e < num_entities; e++)
   {
-    offsets[e] = offset;
-    for (uint c = 0; c < connections[e].size(); c++)
-      this->connections[offset++] = connections[e][c];
+    offsets[e] = _size;
+    _size += connections[e].size();
   }
-  offsets[num_entities] = offset;
+  offsets[num_entities] = _size;
+  
+  // Initialize connections
+  this->connections = new uint[_size];
+  for (uint e = 0; e < num_entities; e++)
+    for (uint i = 0; i < connections[e].size(); e++)
+      this->connections[offsets[e] + i] = connections[e][i];
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::disp() const

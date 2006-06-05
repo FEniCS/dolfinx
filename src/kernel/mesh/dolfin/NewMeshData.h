@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-05-31
+// Last changed: 2006-06-05
 
 #ifndef __NEW_MESH_DATA_H
 #define __NEW_MESH_DATA_H
 
 #include <dolfin/MeshTopology.h>
 #include <dolfin/MeshGeometry.h>
+#include <dolfin/CellType.h>
 
 namespace dolfin
 {
@@ -39,14 +40,18 @@ namespace dolfin
 
     // Friends
     friend class NewMesh;
-    friend class MeshEntityIterator;
     friend class MeshEditor;
+    friend class MeshAlgorithms;
+    friend class MeshEntityIterator;
     
     // Mesh topology
     MeshTopology topology;
 
     // Mesh geometry
     MeshGeometry geometry;
+
+    // Cell type
+    CellType* cell_type;
     
   };
 

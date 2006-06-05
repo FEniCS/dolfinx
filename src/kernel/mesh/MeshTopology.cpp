@@ -79,19 +79,41 @@ void MeshTopology::disp() const
   cout << "Topological dimension: " << _dim << endl << endl;
   
   // Display number of entities for each topological dimension
-  cout << "Number of entities" << endl << endl;
+  cout << "Number of entities:" << endl << endl;
   dolfin_begin();
   for (uint d = 0; d <= _dim; d++)
     cout << "dim = " << d << ": " << num_entities[d] << endl;
   dolfin_end();
   cout << endl;
   
+  // Display matrix of connectivities
+  cout << "Connectivity:" << endl << endl;
+  dolfin_begin();
+  cout << " ";
+  for (uint d1 = 0; d1 <= _dim; d1++)
+    cout << " " << d1;
+  cout << endl;
+  for (uint d0 = 0; d0 <= _dim; d0++)
+  {
+    cout << d0;
+    for (uint d1 = 0; d1 <= _dim; d1++)
+    {
+      if ( connectivity[d0][d1].size() > 0 )
+	cout << " x";
+      else
+	cout << " -";
+    }
+    cout << endl;
+  }
+  cout << endl;
+  dolfin_end();
+
   // Display connectivity for each topological dimension
   for (uint d0 = 0; d0 <= _dim; d0++)
   {
     for (uint d1 = 0; d1 <= _dim; d1++)
     {
-      cout << "Connectivity: " << d0 << " -- " << d1 << endl << endl;
+      cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl << endl;
       dolfin_begin();
       connectivity[d0][d1].disp();
       dolfin_end();

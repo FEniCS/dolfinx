@@ -76,6 +76,7 @@ namespace dolfin
  
     /// Friends
     friend class MeshEditor;
+    friend class MeshAlgorithms;
     friend class MeshEntityIterator;
 
     /// Mesh data

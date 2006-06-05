@@ -120,13 +120,14 @@ void NewXMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
 {
   // Parse values
   uint dim = parseUnsignedInt(name, attrs, "dim");
+  std::string cell_type = parseString(name, attrs, "celltype");
   
   // Check values
   if ( dim < 1 || dim > 3 )
     dolfin_error("Dimension of mesh must be 1, 2 or 3.");
 
   // Open mesh for editing
-  editor.edit(_mesh, dim);
+  editor.edit(_mesh, dim, cell_type);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)

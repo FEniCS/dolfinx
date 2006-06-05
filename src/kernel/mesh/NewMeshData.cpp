@@ -2,21 +2,21 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-05-18
+// Last changed: 2006-06-05
 
 #include <dolfin/NewMeshData.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-NewMeshData::NewMeshData()
+NewMeshData::NewMeshData() : cell_type(0)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 NewMeshData::~NewMeshData()
 {
-  // Do nothing
+  clear();
 }
 //-----------------------------------------------------------------------------
 void NewMeshData::clear()
@@ -26,6 +26,11 @@ void NewMeshData::clear()
 
   // Clear mesh geometry
   geometry.clear();
+
+  // Clear cell type
+  if ( cell_type )
+    delete cell_type;
+  cell_type = 0;
 }
 //-----------------------------------------------------------------------------
 void NewMeshData::disp() const
@@ -39,6 +44,17 @@ void NewMeshData::disp() const
   // Display topology and geometry
   topology.disp();
   geometry.disp();
+
+  // Display cell type
+  cout << "Cell type" << endl;
+  cout << "---------" << endl << endl;
+  dolfin_begin();
+  if ( cell_type )
+    cout << cell_type->description() << endl;
+  else
+    cout << "undefined" << endl;
+  dolfin_end();
+  cout << endl;
   
   // End indentation
   dolfin_end();
