@@ -7,8 +7,6 @@
 #ifndef __NONLINEAR_PROBLEM_H
 #define __NONLINEAR_PROBLEM_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 
@@ -44,7 +42,5 @@ namespace dolfin
 
   };
 }
-
-#endif
 
 #endif
