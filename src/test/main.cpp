@@ -21,6 +21,7 @@ void testPreconditioner()
 {
   dolfin_info("--- Testing preconditioner ---");
 
+/*
   class MyPreconditioner : public Preconditioner
   {
   public:
@@ -56,6 +57,7 @@ void testPreconditioner()
   solver.solve(M, x, b);
   
   x.disp();
+*/
 }
 
 void testOutputVector()
@@ -299,59 +301,29 @@ void testuBlasSparseMatrix()
   Function f = 1.0;
   Poisson2D::BilinearForm a;
   Poisson2D::LinearForm L(f);
-  uBlasSparseMatrix A;
-  DenseVector bb;
-  DenseVector x;
-  Matrix B;
-  Vector y;
+  uBlasSparseMatrix Ad;
+  DenseVector bd;
+  DenseVector xd;
+  Matrix As;
+  Vector bs;
+  Vector xs;
 
   MyBC bc;
   
-  cout << "Start assembly (uBlas) " << endl;
-  tic();
-  FEM::assemble(a, L, A, bb, mesh, bc);
-  cout << "Finished assembly (1) " << toc() << endl;
+  FEM::assemble(a, L, Ad, bd, mesh, bc);
+  FEM::assemble(a, L, As, bs, mesh, bc);
   
-//  File file("test.m", File::matlab);
-//  file << B;
+//  KrylovSolver solver;
+//  solver.solve(Ad, xd, bd);
+//  xd.disp();
+//  solver.solve(As, xs, bs);
+//  xs.disp();
 
-   Array<real> t1;
-   Array<int> t2;
-   int ncols =0;
-   A.getRow(1, ncols, t2, t1);
-   for (dolfin::uint i=0; i < t2.size(); ++i)
-   {
-    cout << "test I " << t2[i] << "  " << t1[i] << endl;
-   } 
-   A.getRow(1, ncols, t2, t1);
-   for (dolfin::uint i=0; i < t2.size(); ++i)
-   {
-    cout << "test II " << t2[i] << "  " << t1[i] << endl;
-   } 
+  LinearSolver* solver;
+  solver = new KrylovSolver;
+  solver->solve(As, xs, bs);
+  xs.disp();
 
-//  A.solve(x, bb);
-//  x.disp();
-  
-/*  cout << "Start assembly (uBlas) " << endl;
-  tic();
-  dolfin_log(false);
-  FEM::assemble(a, A, mesh);
-  dolfin_log(true);
-  cout << "Finished assembly (2) " << toc() << endl;
-
-  cout << "Start assembly (PETSc) " << endl;
-  tic();
-  dolfin_log(false);
-  FEM::assemble(a, B, mesh);
-  dolfin_log(true);
-  cout << "Finished assembly(1) " << toc() << endl;
-  cout << "Start assembly (PETSc) " << endl;
-  tic();
-  dolfin_log(false);
-  FEM::assemble(a, B, mesh);
-  dolfin_log(true);
-  cout << "Finished assembly(2) " << toc() << endl;
-*/
 
 }
 
@@ -377,14 +349,15 @@ int main(int argc, char* argv[])
   testDenseLUsolve();
 */
   
-  //testuBlasSparseMatrix();
+  testuBlasSparseMatrix();
   
   //testOutputMatrix();
 
+/*
   Mesh mesh("finer.xml.gz");
   StiffnessMatrix B(mesh);
   File file("B.m");
   file << B;
-
+*/
   return 0;
 }

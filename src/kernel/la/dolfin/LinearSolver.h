@@ -11,8 +11,8 @@
 
 #include <dolfin/dolfin_log.h>
 
-#include <dolfin/GenericMatrix.h>
-#include <dolfin/GenericVector.h>
+#include <dolfin/Matrix.h>
+#include <dolfin/Vector.h>
 
 #include <dolfin/VirtualMatrix.h>
 
@@ -38,19 +38,11 @@ namespace dolfin
     virtual ~LinearSolver();
 
     /// Solve linear system Ax = b
-    virtual uint solve(const GenericMatrix& A, GenericVector& x, const GenericVector& b)
-      {
-        dolfin_error("Solver not available for matrix/vector type.");
-        return 0;
-      }  
+    virtual uint solve(const Matrix& A, Vector& x, const Vector& b) = 0;
 
 #ifdef HAVE_PETSC_H
     /// Solve linear system Ax = b (matrix-free version)
-    virtual uint solve(const VirtualMatrix& A, GenericVector& x, const GenericVector& b)
-      {
-        dolfin_error("Solver not available for matrix/vector type.");
-        return 0;
-      }  
+    virtual uint solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b) = 0;
 #endif
 
   };

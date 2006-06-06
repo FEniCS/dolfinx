@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-31
-// Last changed:
+// Last changed: 2006-06-06
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
@@ -44,17 +44,7 @@ namespace dolfin
     ~uBlasKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations
-    template < class MAT >
-    uint solve(const MAT& A, DenseVector& x, const DenseVector& b)
-//    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b)
-      {
-        dolfin_warning("Krylov solvers for uBlas data types have not been implemented.");
-        dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
-        
-        // FIXME: implement renumbering scheme to speed up LU solve
-        A.solve(x, b);
-        return 1;
-      }
+    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b);
           
   private:
 

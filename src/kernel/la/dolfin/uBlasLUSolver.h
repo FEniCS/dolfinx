@@ -31,15 +31,7 @@ namespace dolfin
     ~uBlasLUSolver();
 
     /// Solve linear system Ax = b (A can be a dense or sparse uBlas matrix)
-    template < class MAT >
-    uint solve(const MAT& A, DenseVector& x, const DenseVector& b)
-      {
-        dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
-        
-        // FIXME: implement renumbering scheme to speed up LU solve
-        A.solve(x, b);
-        return 1;
-      }
+    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b);
 
   private:
     
