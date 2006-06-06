@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-05
+// Last changed: 2006-06-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewTetrahedron.h>
@@ -10,7 +10,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint NewTetrahedron::size(uint dim) const
+dolfin::uint NewTetrahedron::numEntities(uint dim) const
 {
   switch ( dim )
   {
@@ -27,6 +27,30 @@ dolfin::uint NewTetrahedron::size(uint dim) const
   }
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint NewTetrahedron::numVertices(uint dim) const
+{
+  switch ( dim )
+  {
+  case 0:
+    return 1; // vertices
+  case 1:
+    return 2; // edges
+  case 2:
+    return 3; // faces
+  case 3:
+    return 4; // cells
+  default:
+    dolfin_error1("Illegal topological dimension %d for tetrahedron.", dim);
+  }
+
+  return 0;
+}
+//-----------------------------------------------------------------------------
+void NewTetrahedron::createEntities(Array<Array<uint> >& vertices, uint dim)
+{
+  dolfin_error("Not implemented");
 }
 //-----------------------------------------------------------------------------
 std::string NewTetrahedron::description() const

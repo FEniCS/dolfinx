@@ -42,6 +42,7 @@ namespace dolfin
     friend class NewMesh;
     friend class MeshEditor;
     friend class MeshAlgorithms;
+    friend class MeshEntity;
     friend class MeshEntityIterator;
     
     // Mesh topology

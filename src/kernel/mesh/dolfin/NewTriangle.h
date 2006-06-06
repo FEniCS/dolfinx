@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-05
+// Last changed: 2006-06-06
 
 #ifndef __NEW_TRIANGLE_H
 #define __NEW_TRIANGLE_H
@@ -20,6 +20,15 @@ namespace dolfin
 
     /// Return number of entitites of given topological dimension
     uint size(uint dim) const;
+
+    /// Return number of entitites of given topological dimension
+    uint numEntities(uint dim) const;
+
+    /// Return number of vertices for entity of given topological dimension
+    uint numVertices(uint dim) const;
+
+    /// Create entities of given topological dimension
+    void createEntities(Array<Array<uint> >& entities, uint dim, uint vertices[]);
 
     /// Return description of cell type
     std::string description() const;

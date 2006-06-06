@@ -113,6 +113,8 @@ void MeshTopology::disp() const
   {
     for (uint d1 = 0; d1 <= _dim; d1++)
     {
+      if ( connectivity[d0][d1].size() == 0 )
+	continue;
       cout << "Connectivity " << d0 << " -- " << d1 << ":" << endl << endl;
       dolfin_begin();
       connectivity[d0][d1].disp();

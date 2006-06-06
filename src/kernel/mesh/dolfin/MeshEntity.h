@@ -2,18 +2,17 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-05-31
+// Last changed: 2006-06-06
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/NewMesh.h>
 
 namespace dolfin
 {
-
-  class NewMesh;
 
   /// A MeshEntity represents a mesh entity associated with
   /// a specific topological dimension of some mesh.
@@ -39,6 +38,14 @@ namespace dolfin
 
     /// Return index of mesh entity
     inline uint index() const { return _index; }
+
+    // FIXME: Maybe we should remove this?
+
+    /// Return array of connections to entities of given topological dimension
+    inline uint* connections(uint dim) { return _mesh.data.topology(_dim, dim)(_index); }
+
+    /// Return array of connections to entities of given topological dimension
+    inline const uint* connections(uint dim) const { return _mesh.data.topology(_dim, dim)(_index); }
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
