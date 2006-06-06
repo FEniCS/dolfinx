@@ -36,6 +36,7 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           PETScVector.cpp \
                           Preconditioner.cpp \
                           uBlasKrylovSolver.cpp \
+                          uBlasLUSolver.cpp \
                           uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 libdolfin_la_la_LDFLAGS = -static

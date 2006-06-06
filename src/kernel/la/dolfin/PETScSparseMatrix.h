@@ -19,8 +19,6 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/GenericMatrix.h>
 
-// FIXME: implement lump()
-
 namespace dolfin
 {
   

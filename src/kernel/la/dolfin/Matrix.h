@@ -11,8 +11,6 @@
 
 #include <dolfin/SparseMatrix.h>
 
-#include <dolfin/uBlasSparseMatrix.h>
-
 namespace dolfin
 {
 

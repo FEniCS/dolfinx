@@ -11,15 +11,17 @@
 #include <dolfin/Parametrized.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/LinearSolver.h>
 
 namespace dolfin
 {
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types. 
 
-  // FIXME: Decide whether to implement a KrylovSolver for this class
+  // FIXME: Decide whether to implement a KrylovSolver for this class or just
+  //        use LU solver.
   
-  class uBlasKrylovSolver : public Parametrized
+  class uBlasKrylovSolver : public LinearSolver, public Parametrized
   {
   public:
 
@@ -38,27 +40,18 @@ namespace dolfin
     /// Create Krylov solver for a particular method with default preconditioner
     uBlasKrylovSolver(Type solver);
 
-//    /// Create Krylov solver with default method and a particular preconditioner
-//    uBlasKrylovSolver(Preconditioner::Type preconditioner);
-
-//    /// Create Krylov solver with default method and a particular preconditioner
-//    uBlasKrylovSolver(Preconditioner& preconditioner);
-
-//    /// Create Krylov solver for a particular method and preconditioner
-//    uBlasKrylovSolver(Type solver, Preconditioner::Type preconditioner);
-
-//    /// Create Krylov solver for a particular method and preconditioner
-//    uBlasKrylovSolver(Type solver, Preconditioner& preconditioner);
-
     /// Destructor
     ~uBlasKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations
     template < class MAT >
     uint solve(const MAT& A, DenseVector& x, const DenseVector& b)
+//    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b)
       {
         dolfin_warning("Krylov solvers for uBlas data types have not been implemented.");
         dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
+        
+        // FIXME: implement renumbering scheme to speed up LU solve
         A.solve(x, b);
         return 1;
       }

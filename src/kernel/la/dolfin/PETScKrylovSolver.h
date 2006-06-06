@@ -4,10 +4,10 @@
 // Modified by Anders Logg 2005-2006.
 // Modified by Johan Hoffman 2005.
 // Modified by Andy R. Terrel 2005.
-// Modified by Garth N. Wells 2005.
+// Modified by Garth N. Wells 2005-2006.
 //
 // First added:  2005-12-02
-// Last changed: 2006-06-02
+// Last changed: 2006-06-06
 
 #ifndef __PETSC_KRYLOV_SOLVER_H
 #define __PETSC_KRYLOV_SOLVER_H
@@ -19,6 +19,8 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/LinearSolver.h>
+#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScVector.h>
 
 namespace dolfin
 {
@@ -61,10 +63,10 @@ namespace dolfin
     ~PETScKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const Matrix& A, Vector& x, const Vector& b);
+    uint solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b);
           
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const VirtualMatrix& A, Vector& x, const Vector& b);
+    uint solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b);
     
     /// Display solver data
     void disp() const;

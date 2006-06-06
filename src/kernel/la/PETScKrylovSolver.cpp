@@ -93,7 +93,7 @@ PETScKrylovSolver::~PETScKrylovSolver()
   if ( ksp ) KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScKrylovSolver::solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -135,7 +135,7 @@ dolfin::uint PETScKrylovSolver::solve(const Matrix& A, Vector& x, const Vector& 
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScKrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScKrylovSolver::solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);

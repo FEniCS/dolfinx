@@ -9,7 +9,6 @@
 #ifndef __GMRES_H
 #define __GMRES_H
 
-
 #include <dolfin/KrylovSolver.h>
 
 namespace dolfin

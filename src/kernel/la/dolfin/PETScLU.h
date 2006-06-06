@@ -12,6 +12,8 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScVector.h>
 
 namespace dolfin
 {

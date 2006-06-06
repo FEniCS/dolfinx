@@ -4,8 +4,6 @@
 // First added:  2004-06-19
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/LinearSolver.h>
 
 using namespace dolfin;
@@ -21,5 +19,3 @@ LinearSolver::~LinearSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-
-#endif

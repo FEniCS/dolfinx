@@ -11,6 +11,7 @@
 
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/LinearSolver.h>
 
 
 namespace dolfin
@@ -19,30 +20,24 @@ namespace dolfin
   /// linear systems of the form Ax = b using uBlas data types.
   
 //  class uBlasLUSolver : public LinearSolver, public Parametrized
-  class uBlasLUSolver : public Parametrized
+  class uBlasLUSolver : public LinearSolver, public Parametrized
   {
   public:
     
     /// Constructor
-    uBlasLUSolver() {}
+    uBlasLUSolver();
 
     /// Destructor
-    ~uBlasLUSolver(){}
+    ~uBlasLUSolver();
 
     /// Solve linear system Ax = b (A can be a dense or sparse uBlas matrix)
     template < class MAT >
     uint solve(const MAT& A, DenseVector& x, const DenseVector& b)
       {
-        // Get parameters
-        const bool report = get("LU report");
-
-        if ( report )
-        dolfin_info("Solving linear system of size %d x %d (uBlas LU solver).",
-		    A.size(0), A.size(1));
-
-        // Solve
+        dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
+        
+        // FIXME: implement renumbering scheme to speed up LU solve
         A.solve(x, b);
-
         return 1;
       }
 
