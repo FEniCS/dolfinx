@@ -19,7 +19,7 @@ using namespace dolfin;
 void MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
 {
   // Generating an entity of topological dimension dim is equivalent
-  // to generating the connectivity dim - 0 (connections to vertices)
+  // to generating the connectivity dim - 0 (connections to vertices).
   
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.data.topology;
@@ -36,8 +36,13 @@ void MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
 
   dolfin_info("Generating mesh entities of topological dimension %d.", dim);
 
+  // Compute connectivity dim - dim needed to generate entities
+  computeConnectivity(mesh, mesh.dim(), mesh.dim());
+
   // Count the number of entities
   uint num_entities = countEntities(mesh, dim);
+
+  cout << "Number of entities: " << num_entities << endl;
 
   // Add entities
   addEntities(mesh, dim, num_entities);
@@ -93,7 +98,7 @@ void MeshAlgorithms::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
     // Choose how to take intersection
     uint d = 0;
     if ( d0 == 0 && d1 == 0 )
-      d = topology.dim();
+      d = mesh.dim();
 
     // Compute connectivity d0 - d - d1 and take intersection
     computeConnectivity(mesh, d0, d);
@@ -108,13 +113,13 @@ void MeshAlgorithms::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
 {
   // The transpose is computed in three steps:
   //
-  //   1. Iterate over entities of dimension d0 and count the number
-  //      of connections for each entity of dimension d1
+  //   1. Iterate over entities of dimension d1 and count the number
+  //      of connections for each entity of dimension d0
   //
   //   2. Allocate memory / prepare data structures
   //
-  //   3. Iterate again over entities of dimension d0 and add connections
-  //      for each entity of dimension d1
+  //   3. Iterate again over entities of dimension d1 and add connections
+  //      for each entity of dimension d0
 
   dolfin_info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
   
@@ -134,7 +139,7 @@ void MeshAlgorithms::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
 
   // Count the number of connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(e1, d1); !e0.end(); ++e0)
+    for (MeshEntityIterator e0(e1, d0); !e0.end(); ++e0)
       tmp[e0->index()]++;
 
   // Initialize the number of connections
@@ -146,8 +151,10 @@ void MeshAlgorithms::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
   
   // Add the connections
   for (MeshEntityIterator e1(mesh, d1); !e1.end(); ++e1)
-    for (MeshEntityIterator e0(e1, d1); !e0.end(); ++e0)
+    for (MeshEntityIterator e0(e1, d0); !e0.end(); ++e0)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
+
+  cout << "Transpose computed" << endl;
 }
 //----------------------------------------------------------------------------
 void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
@@ -233,14 +240,87 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
   }
 }
 //----------------------------------------------------------------------------
-dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, uint dim)
+dolfin::uint MeshAlgorithms::findEntities(NewMesh& mesh, uint dim,
+					  bool only_count)
 {
-  // We count the number of entities by iterating over all cells and
-  // counting new entities only on their first occurence. Entities
-  // which also belong to a previously visited cell are not counted.
+  // We generate entities by iterating over all cells and generating a
+  // new entity only on its first occurence. Entities also contained
+  // in a previously visited cell are not generated. If only_count is
+  // set, then we just count the total number of entities.
 
-  // Need connectivity dim - 0
-  dolfin_assert(mesh.data.topology(mesh.dim(), 0).size() > 0);
+  // Get mesh topology and connectivity
+  MeshTopology& topology = mesh.data.topology;
+  MeshConnectivity& connectivity = topology(dim, d1);
+
+  // Need connectivity dim - dim
+  dolfin_assert(topology(mesh.dim(), mesh.dim()).size() > 0);
+
+  // Need data to be initialized when not counting
+  dolfin_assert(only_count || topology.size(dim) > 0);
+
+  // Get cell type
+  CellType* cell_type = mesh.data.cell_type;
+  dolfin_assert(cell_type);
+
+  // Initialize local array of entities
+  const uint m = cell_type->numEntities(dim);
+  const uint n = cell_type->numVertices(dim);
+  Array<Array<uint> > entities(m);
+  for (uint i = 0; i < m; i++)
+    for (uint j = 0; j < n; j++)
+      entities[i].push_back(0);
+
+  // Reset the number of entities
+  uint num_entities = 0;
+
+  // Iterate over all cells and count entities of given dimension
+  for (MeshEntityIterator c(mesh, mesh.dim()); !c.end(); ++c)
+  {
+    // Get vertices from cell
+    const uint* vertices = c->connections(0);
+    dolfin_assert(vertices);
+
+    // Create entities
+    cell_type->createEntities(entities, dim, vertices);
+
+    // Count only entities which have not previously been counted
+    for (uint i = 0; i < entities.size(); i++)
+    {
+      bool found = false;
+      for (MeshEntityIterator c1(c, mesh.dim()); !c1.end(); ++c1)
+      {
+	// Check only previously visited and connected cells
+	if ( c1->index() >= c->index() )
+	continue;
+      
+	// Check if entity contains all vertices in entity
+	if ( containsVertices(*c1, entities[i]) )
+	{
+	  found = true;
+	  break;
+	}
+      }
+
+      // Skip entities contained in previously visited cells
+      if ( found )
+	continue;
+
+      // Count or create entity
+      if ( only_count )
+	num_entities++;
+      else
+	cout << "Creating entity" << endl;
+    }
+  }
+
+  return num_entities;
+}
+//----------------------------------------------------------------------------
+void MeshAlgorithms::addEntities(NewMesh& mesh, uint dim, uint num_entities)
+{
+  // We repeat the same algorithm as in countEntitites() but count the number of entities by iterating over all cells and
+  // counting new entities only on their first occurence. Entities
+  // also contained in a previously visited cell are not counted.
 
   // Need connectivity dim - dim
   dolfin_assert(mesh.data.topology(mesh.dim(), mesh.dim()).size() > 0);
@@ -271,26 +351,30 @@ dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, uint dim)
     cell_type->createEntities(entities, dim, vertices);
 
     // Count only entities which have not previously been counted
-    for (MeshEntityIterator c1(c, mesh.dim()); !c1.end(); ++c1)
+    for (uint i = 0; i < entities.size(); i++)
     {
-      // Check only previously visited and connected cells
-      if ( c1->index() >= c->index() )
+      bool found = false;
+      for (MeshEntityIterator c1(c, mesh.dim()); !c1.end(); ++c1)
+      {
+	// Check only previously visited and connected cells
+	if ( c1->index() >= c->index() )
 	continue;
       
-      // Check if cell contains any of the entities
-      for (uint i = 0; i < entities.size(); i++)
-	if ( !containsVertices(*c1, entities[i]) )
-	  num_entities++;
+	// Check if entity contains all vertices in entity
+	if ( containsVertices(*c1, entities[i]) )
+	{
+	  found = true;
+	  break;
+	}
+      }
+
+      // Did not find entity so count it
+      if ( !found )
+	num_entities++;
     }
   }
 
   return num_entities;
-}
-//----------------------------------------------------------------------------
-void MeshAlgorithms::addEntities(NewMesh& mesh, uint dim, uint num_entities)
-{
-
-
 }
 //----------------------------------------------------------------------------
 bool MeshAlgorithms::containsVertices(MeshEntity& entity, Array<uint>& vertices)
@@ -310,7 +394,7 @@ bool MeshAlgorithms::containsVertices(MeshEntity& entity, Array<uint>& vertices)
     if ( !found )
       return false;
   }
-  
+
   return true;
 }
 //----------------------------------------------------------------------------

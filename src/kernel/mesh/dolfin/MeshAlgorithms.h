@@ -37,11 +37,8 @@ namespace dolfin
     /// Compute connectivity from intersection
     static void computeFromIntersection(NewMesh& mesh, uint d0, uint d1, uint d);
 
-    /// Count the number of entities of topological dimension dim
-    static uint countEntities(NewMesh& mesh, uint dim);
-
-    /// Add entities of topological dimension dim
-    static void addEntities(NewMesh& mesh, uint dim, uint num_entities);
+    /// Generate (or just count) the number of entities of topological dimension dim
+    static uint generateEntities(NewMesh& mesh, uint dim, bool only_count);
 
     /// Check if entity contains all given vertices
     static bool containsVertices(MeshEntity& entity, Array<uint>& vertices);

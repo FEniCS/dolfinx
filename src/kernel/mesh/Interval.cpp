@@ -40,7 +40,8 @@ dolfin::uint Interval::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void Interval::createEntities(Array<Array<uint> >& vertices, uint dim)
+void Interval::createEntities(Array<Array<uint> >& entities,
+			      uint dim, const uint vertices[])
 {
   dolfin_error("Not implemented");
 }

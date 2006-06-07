@@ -45,21 +45,18 @@ dolfin::uint NewTriangle::numVertices(uint dim) const
 }
 //-----------------------------------------------------------------------------
 void NewTriangle::createEntities(Array<Array<uint> >& entities,
-				 uint dim, uint vertices[])
+				 uint dim, const uint vertices[])
 {
   // We only need to know how to create edges
   if ( dim != 1 )
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 
-
-  /*
   dolfin_assert(entities.size() == 3);
 
   // Create the three edges
-  entities[0] = {vertices[0], vertices[2]};
-  entities[1] = {vertices[2], vertices[0]};
-  entities[2] = {vertices[0], vertices[1]};
-  */
+  entities[0][0] = vertices[1]; entities[0][1] = vertices[2];
+  entities[1][0] = vertices[2]; entities[1][1] = vertices[0];
+  entities[2][0] = vertices[0]; entities[2][1] = vertices[1];
 }
 //-----------------------------------------------------------------------------
 std::string NewTriangle::description() const

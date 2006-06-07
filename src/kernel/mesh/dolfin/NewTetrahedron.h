@@ -25,7 +25,7 @@ namespace dolfin
     uint numVertices(uint dim) const;
 
     /// Create entities of given topological dimension
-    void createEntities(Array<Array<uint> >& vertices, uint dim);
+    void createEntities(Array<Array<uint> >& entities, uint dim, const uint vertices[]);
 
     /// Return description of cell type
     std::string description() const;

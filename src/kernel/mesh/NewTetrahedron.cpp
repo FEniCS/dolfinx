@@ -48,7 +48,8 @@ dolfin::uint NewTetrahedron::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void NewTetrahedron::createEntities(Array<Array<uint> >& vertices, uint dim)
+void NewTetrahedron::createEntities(Array<Array<uint> >& entities,
+				    uint dim, const uint vertices[])
 {
   dolfin_error("Not implemented");
 }
