@@ -21,6 +21,7 @@
 #include <dolfin/LinearSolver.h>
 #include <dolfin/PETScSparseMatrix.h>
 #include <dolfin/PETScVector.h>
+#include <dolfin/VirtualMatrix.h>
 
 namespace dolfin
 {

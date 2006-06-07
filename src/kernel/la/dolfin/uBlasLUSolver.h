@@ -19,7 +19,6 @@ namespace dolfin
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b using uBlas data types.
   
-//  class uBlasLUSolver : public LinearSolver, public Parametrized
   class uBlasLUSolver : public LinearSolver, public Parametrized
   {
   public:

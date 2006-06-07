@@ -313,17 +313,19 @@ void testuBlasSparseMatrix()
   FEM::assemble(a, L, Ad, bd, mesh, bc);
   FEM::assemble(a, L, As, bs, mesh, bc);
   
-//  KrylovSolver solver;
-//  solver.solve(Ad, xd, bd);
-//  xd.disp();
-//  solver.solve(As, xs, bs);
-//  xs.disp();
+  uBlasKrylovSolver ublas_solver;
+  ublas_solver.solve(Ad, xd, bd);
+  xd.disp();
 
   LinearSolver* solver;
   solver = new KrylovSolver;
   solver->solve(As, xs, bs);
   xs.disp();
 
+  LinearSolver* solver2;
+  solver2 = new uBlasKrylovSolver;
+  solver2->solve(Ad, xd, bd);
+  xd.disp();
 
 }
 
