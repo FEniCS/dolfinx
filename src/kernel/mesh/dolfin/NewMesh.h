@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-05-23
+// Last changed: 2006-06-08
 
 #ifndef __NEW_MESH_H
 #define __NEW_MESH_H
@@ -28,6 +28,10 @@ namespace dolfin
   ///
   ///     Facet       -           1
   ///     Cell        -           0
+  ///
+  /// When working with mesh iterators, all entities and connectivity
+  /// are precomputed automatically the first time an iterator is
+  /// created over any given topological dimension or connectivity.
   
   class NewMesh
   {
@@ -65,7 +69,16 @@ namespace dolfin
 
     /// Return number of cells
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
- 
+
+    /// Compute entities of given topological dimension (automated for iterators)
+    void init(uint dim);
+
+    /// Compute connectivity between given pair of dimensions (automated for iterators)
+    void init(uint d0, uint d1);
+
+    /// Compute all entities and connectivity (automated for iterators)
+    void init();
+
     /// Display mesh
     void disp() const;
     

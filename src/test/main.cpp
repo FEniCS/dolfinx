@@ -431,6 +431,11 @@ void testNewMesh()
   cout << newmesh << endl;
   newmesh.disp();
 
+  // Compute all entities and connectivity, otherwise
+  // handled automatically by the mesh iterators.
+  newmesh.init();
+  newmesh.disp();
+
   // Iterate over all entities of dimension 0 (vertices)
   for (MeshEntityIterator e(newmesh, 0); !e.end(); ++e)
   {
