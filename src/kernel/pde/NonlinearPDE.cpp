@@ -6,8 +6,6 @@
 // First added:  2005-10-24
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
 #include <dolfin/BilinearForm.h>
@@ -111,5 +109,3 @@ BoundaryCondition& NonlinearPDE::bc()
   return *_bc;
 }
 //-----------------------------------------------------------------------------
-
-#endif

@@ -7,8 +7,6 @@
 #ifndef __NONLINEAR_PDE_H
 #define __NONLINEAR_PDE_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/GenericPDE.h>
@@ -81,7 +79,5 @@ namespace dolfin
 
   };
 }
-
-#endif
 
 #endif

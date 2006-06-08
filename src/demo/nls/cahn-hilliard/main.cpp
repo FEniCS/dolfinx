@@ -24,10 +24,14 @@
 //
 
 #include <dolfin.h>
+
+
 #include "CahnHilliard2D.h"
 #include "CahnHilliard3D.h"
 
 using namespace dolfin;
+
+#ifdef HAVE_PETSC_H 
 
 // User defined nonlinear problem 
 class CahnHilliardEquation : public NonlinearProblem, public Parametrized
@@ -271,3 +275,13 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+
+#else
+
+int main()
+{
+  cout << "This demo requires DOLFIN to be configured with PETSc. " << endl; 
+  return 0;
+}
+
+#endif
