@@ -6,6 +6,7 @@
 
 #include <set>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/CellType.h>
 #include <dolfin/NewMesh.h>
 #include <dolfin/MeshTopology.h>
@@ -55,10 +56,13 @@ void MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
   // Initialize local array of entities
   const uint m = cell_type->numEntities(dim);
   const uint n = cell_type->numVertices(dim);
-  Array<Array<uint> > entities(m);
+  uint** entities = new uint*[m];
   for (uint i = 0; i < m; i++)
+  {
+    entities[i] = new uint[n];
     for (uint j = 0; j < n; j++)
-      entities[i].push_back(0);
+      entities[i][j] = 0;
+  }
 
   // Count the number of entities
   uint num_entities = 0;
@@ -72,7 +76,7 @@ void MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
     cell_type->createEntities(entities, dim, vertices);
     
     // Count new entities
-    num_entities += countEntities(mesh, *c, entities);
+    num_entities += countEntities(mesh, *c, entities, m, n);
   }
 
   // Initialize the number of entities and connections
@@ -91,8 +95,13 @@ void MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
     cell_type->createEntities(entities, dim, vertices);
     
     // Count new entities
-    addEntities(mesh, *c, entities, connectivity, current_entity);
+    addEntities(mesh, *c, entities, m, n, connectivity, current_entity);
   }
+
+  // Delete temporary data
+  for (uint i = 0; i < m; i++)
+    delete [] entities[i];
+  delete [] entities;
 }
 //-----------------------------------------------------------------------------
 void MeshAlgorithms::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
@@ -217,6 +226,9 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
   MeshTopology& topology = mesh.data.topology;
   MeshConnectivity& connectivity = topology(d0, d1);
 
+  // Need d0 >= d1
+  dolfin_assert(d0 >= d1);
+
   // Need connectivity d0 - d and d - d1
   dolfin_assert(topology(d0, d).size() > 0);
   dolfin_assert(topology(d, d1).size() > 0);
@@ -246,8 +258,18 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
       // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(e, d1); !e1.end(); ++e1)
       {
-	if ( e0->index() != e1->index() )
-	  entities.insert(e1->index());
+	if ( d0 == d1 )
+	{
+	  // An entity is not a neighbor to itself
+	  if ( e0->index() != e1->index() )
+	    entities.insert(e1->index());
+	}
+	else
+	{
+	  // Entity e1 must be completely contained in e0
+	  if ( contains(*e0, *e1) )
+	    entities.insert(e1->index());
+	}
       }
     }
 
@@ -264,14 +286,24 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
     // Clear set of connected entities
     entities.clear();
 
-    // Iterate over all connected entities of dimension d1
+    // Iterate over all connected entities of dimension d
     for (MeshEntityIterator e(e0, d); !e.end(); ++e)
     {
-      // Iterate over all connected entities of dimension d
+      // Iterate over all connected entities of dimension d1
       for (MeshEntityIterator e1(e, d1); !e1.end(); ++e1)
       {
-	if ( e0->index() != e1->index() )
-	  entities.insert(e1->index());
+	if ( d0 == d1 )
+	{
+	  // An entity is not a neighbor to itself
+	  if ( e0->index() != e1->index() )
+	    entities.insert(e1->index());
+	}
+	else
+	{
+	  // Entity e1 must be completely contained in e0
+	  if ( contains(*e0, *e1) )
+	    entities.insert(e1->index());
+	}
       }
     }
 
@@ -283,7 +315,7 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
 }
 //----------------------------------------------------------------------------
 dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
-					   Array<Array<uint> >& entities)
+					   uint** entities, uint m, uint n)
 {
   // For each entity, we iterate over connected and previously visited
   // cells to see if the entity has already been counted.
@@ -293,7 +325,7 @@ dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
 
   // Count only entities which have not previously been counted
   uint num_entities = 0;
-  for (uint i = 0; i < entities.size(); i++)
+  for (uint i = 0; i < m; i++)
   {
     // Check if entity is contained in connected cells
     bool found = false;
@@ -304,7 +336,7 @@ dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
 	continue;
       
       // Check if entity contains all vertices in entity
-      if ( containsVertices(*c, entities[i]) )
+      if ( contains(c->connections(0), c->numConnections(0), entities[i], n) )
       {
 	found = true;
 	break;
@@ -323,7 +355,7 @@ dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
 }
 //----------------------------------------------------------------------------
 void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
-				 Array<Array<uint> >& entities,
+				 uint** entities, uint m, uint n,
 				 MeshConnectivity& connectivity,
 				 uint& current_entity)
 {
@@ -334,7 +366,7 @@ void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
   dolfin_assert(cell.dim() == mesh.dim());
   
   // Add only entities which have not previously been counted
-  for (uint i = 0; i < entities.size(); i++)
+  for (uint i = 0; i < m; i++)
   {
     // Check if entity is contained in connected cells
     bool found = false;
@@ -345,7 +377,7 @@ void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
 	continue;
       
       // Check if entity contains all vertices in entity
-      if ( containsVertices(*c, entities[i]) )
+      if ( contains(c->connections(0), c->numConnections(0), entities[i], n) )
       {
 	found = true;
 	break;
@@ -361,15 +393,24 @@ void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
   }
 }
 //----------------------------------------------------------------------------
-bool MeshAlgorithms::containsVertices(MeshEntity& entity, Array<uint>& vertices)
+bool MeshAlgorithms::contains(MeshEntity& e0, MeshEntity& e1)
 {
-  // Iterate over all vertices and check if it is contained
-  for (uint i = 0; i < vertices.size(); i++)
+  // Check vertices
+  return contains(e0.connections(0), e0.numConnections(0),
+		  e1.connections(0), e1.numConnections(0));
+}
+//----------------------------------------------------------------------------
+bool MeshAlgorithms::contains(uint* v0, uint n0, uint* v1, uint n1)
+{
+  dolfin_assert(v0);
+  dolfin_assert(v1);
+
+  for (uint i1 = 0; i1 < n1; i1++)
   {
     bool found = false;
-    for (MeshEntityIterator v(entity, 0); !v.end(); ++v)
+    for (uint i0 = 0; i0 < n0; i0++)
     {
-      if ( vertices[i] == v->index() )
+      if ( v0[i0] == v1[i1] )
       {
 	found = true;
 	break;

@@ -39,7 +39,8 @@ namespace dolfin
     /// Return index of mesh entity
     inline uint index() const { return _index; }
 
-    // FIXME: Maybe we should remove this?
+    /// Return number of connections
+    inline uint numConnections(uint dim) const { return _mesh.data.topology(_dim, dim).size(_index); }
 
     /// Return array of connections to entities of given topological dimension
     inline uint* connections(uint dim) { return _mesh.data.topology(_dim, dim)(_index); }

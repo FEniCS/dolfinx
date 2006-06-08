@@ -44,14 +44,11 @@ dolfin::uint NewTriangle::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void NewTriangle::createEntities(Array<Array<uint> >& entities,
-				 uint dim, const uint vertices[])
+void NewTriangle::createEntities(uint** entities, uint dim, const uint vertices[])
 {
   // We only need to know how to create edges
   if ( dim != 1 )
     dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
-
-  dolfin_assert(entities.size() == 3);
 
   // Create the three edges
   entities[0][0] = vertices[1]; entities[0][1] = vertices[2];

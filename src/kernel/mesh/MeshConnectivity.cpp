@@ -94,6 +94,17 @@ void MeshConnectivity::set(uint entity, Array<uint>& connections)
     this->connections[offsets[entity] + i] = connections[i];
 }
 //-----------------------------------------------------------------------------
+void MeshConnectivity::set(uint entity, uint* connections)
+{
+  dolfin_assert(entity < num_entities);
+  dolfin_assert(connections);
+
+  // Copy data
+  const uint num_connections = offsets[entity + 1] - offsets[entity];
+  for (uint i = 0; i < num_connections; i++)
+    this->connections[offsets[entity] + i] = connections[i];
+}
+//-----------------------------------------------------------------------------
 void MeshConnectivity::set(Array<Array<uint> >& connections)
 {
   // Clear old data if any

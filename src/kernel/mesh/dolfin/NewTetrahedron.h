@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-06
+// Last changed: 2006-06-08
 
 #ifndef __NEW_TETRAHEDRON_H
 #define __NEW_TETRAHEDRON_H
@@ -25,7 +25,7 @@ namespace dolfin
     uint numVertices(uint dim) const;
 
     /// Create entities of given topological dimension
-    void createEntities(Array<Array<uint> >& entities, uint dim, const uint vertices[]);
+    void createEntities(uint** entities, uint dim, const uint vertices[]);
 
     /// Return description of cell type
     std::string description() const;

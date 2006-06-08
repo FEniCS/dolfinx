@@ -7,7 +7,6 @@
 #ifndef __MESH_ALGORITHMS_H
 #define __MESH_ALGORITHMS_H
 
-#include <dolfin/Array.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -39,14 +38,17 @@ namespace dolfin
     static void computeFromIntersection(NewMesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
-    static uint countEntities(NewMesh& mesh, MeshEntity& cell, Array<Array<uint> >& entities);
+    static uint countEntities(NewMesh& mesh, MeshEntity& cell, uint** entities, uint m, uint n);
 
     /// Add entities that are new
-    static void addEntities(NewMesh& mesh, MeshEntity& cell, Array<Array<uint> >& entities, 
+    static void addEntities(NewMesh& mesh, MeshEntity& cell, uint** entities, uint m, uint n,
 			    MeshConnectivity& connectivity, uint& current_entity);
 
-    /// Check if entity contains all given vertices
-    static bool containsVertices(MeshEntity& entity, Array<uint>& vertices);
+    /// Check if mesh entity e0 contains mesh entity e1
+    static bool contains(MeshEntity& e0, MeshEntity& e1);
+
+    /// Check if array v0 contains array v1
+    static bool contains(uint* v0, uint n0, uint* v1, uint n1);
     
   };
 

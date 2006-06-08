@@ -58,6 +58,9 @@ namespace dolfin
     /// Set all connections for given entity
     void set(uint entity, Array<uint>& connections);
 
+    /// Set all connections for given entity
+    void set(uint entity, uint* connections);
+
     /// Set all connections for all entities
     void set(Array<Array<uint> >& connectivity);
 
