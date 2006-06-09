@@ -90,7 +90,7 @@ void DenseMatrix::add(const real block[], const int rows[], int m, const int col
 void DenseMatrix::lump(DenseVector& m) const
 {
   ublas::scalar_vector<double> one(size(1), 1.0);
-  ublas::axpy_prod(*this, one, m, false);
+  ublas::axpy_prod(*this, one, m, true);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::solve(DenseVector& x, const DenseVector& b) const
@@ -163,7 +163,7 @@ void DenseMatrix::ident(const int rows[], int m)
 //-----------------------------------------------------------------------------
 void DenseMatrix::mult(const DenseVector& x, DenseVector& Ax) const
 {
-  ublas::axpy_prod(*this, x, Ax, false);
+  ublas::axpy_prod(*this, x, Ax, true);
 
 //  axpy_prod() should be more efficient than this
 //  Ax = prod(*this, x);

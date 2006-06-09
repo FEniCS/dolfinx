@@ -104,7 +104,7 @@ void uBlasSparseMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
 void uBlasSparseMatrix::lump(DenseVector& m) const
 {
   ublas::scalar_vector<double> one(size(1), 1.0);
-  ublas::axpy_prod(*this, one, m, false);
+  ublas::axpy_prod(*this, one, m, true);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::solve(DenseVector& x, const DenseVector& b) const
@@ -159,7 +159,7 @@ void uBlasSparseMatrix::ident(const int rows[], int m)
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::mult(const DenseVector& x, DenseVector& Ax) const
 {
-  ublas::axpy_prod(*this, x, Ax, false);
+  ublas::axpy_prod(*this, x, Ax, true);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::disp(uint precision) const
