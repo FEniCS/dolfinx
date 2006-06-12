@@ -57,5 +57,10 @@
 #include <dolfin/NewCell.h>
 #include <dolfin/MeshAlgorithms.h>
 #include <dolfin/CellType.h>
+#include <dolfin/Interval.h>
+#include <dolfin/NewTriangle.h>
+#include <dolfin/NewTetrahedron.h>
+#include <dolfin/UniformMeshRefinement.h>
+#include <dolfin/NewPoint.h>
 
 #endif

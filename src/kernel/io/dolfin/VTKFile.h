@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2005-07-05
-// Last changed: 2005-09-15
+// Last changed: 2006-06-12
 
 #ifndef __VTK_FILE_H
 #define __VTK_FILE_H
@@ -25,6 +25,7 @@ namespace dolfin
     ~VTKFile();
     
     void operator<< (Mesh& mesh);
+    void operator<< (NewMesh& mesh);
 
 #ifdef HAVE_PETSC_H
     void operator<< (Function& u);
@@ -33,11 +34,13 @@ namespace dolfin
   private:
 
     void MeshWrite(const Mesh& mesh) const;
+    void MeshWrite(NewMesh& mesh) const;
 #ifdef HAVE_PETSC_H
     void ResultsWrite(Function& u) const;
 #endif
     void pvdFileWrite(int u);
     void VTKHeaderOpen(const Mesh& mesh) const;
+    void VTKHeaderOpen(NewMesh& mesh) const;
     void VTKHeaderClose() const;
     void vtuNameUpdate(const int counter);
     

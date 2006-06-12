@@ -5,6 +5,7 @@
 // Last changed: 2006-06-08
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/UniformMeshRefinement.h>
 #include <dolfin/Interval.h>
 
 using namespace dolfin;
@@ -43,6 +44,11 @@ dolfin::uint Interval::numVertices(uint dim) const
 void Interval::createEntities(uint** entities, uint dim, const uint vertices[])
 {
   dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void Interval::refineUniformly(NewMesh& mesh)
+{
+  UniformMeshRefinement::refineInterval(mesh);
 }
 //-----------------------------------------------------------------------------
 std::string Interval::description() const

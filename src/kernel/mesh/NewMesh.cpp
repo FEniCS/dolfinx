@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-05-23
+// Last changed: 2006-06-12
 
 #include <dolfin/File.h>
 #include <dolfin/MeshAlgorithms.h>
@@ -16,9 +16,9 @@ NewMesh::NewMesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-NewMesh::NewMesh(const NewMesh& mesh) : data(mesh.data)
+NewMesh::NewMesh(const NewMesh& mesh)
 {
-  // Do nothing
+  *this = mesh;
 }
 //-----------------------------------------------------------------------------
 NewMesh::NewMesh(std::string filename)
@@ -30,6 +30,12 @@ NewMesh::NewMesh(std::string filename)
 NewMesh::~NewMesh()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+const NewMesh& NewMesh::operator=(const NewMesh& mesh)
+{
+  data = mesh.data;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void NewMesh::init(uint dim)
@@ -57,6 +63,14 @@ void NewMesh::init()
 void NewMesh::disp() const
 {
   data.disp();
+}
+//-----------------------------------------------------------------------------
+void NewMesh::refine()
+{
+  dolfin_info("No cells marked for refinement, assuming uniform mesh refinement.");
+
+  dolfin_assert(data.cell_type);
+  data.cell_type->refineUniformly(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const NewMesh& mesh)

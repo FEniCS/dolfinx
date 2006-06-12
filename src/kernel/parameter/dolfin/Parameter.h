@@ -74,7 +74,7 @@ namespace dolfin
 
     /// Cast parameter to real
     operator real() const;
-
+    
     /// Cast parameter to bool
     operator bool() const;
 

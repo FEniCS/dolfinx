@@ -49,9 +49,14 @@ namespace dolfin
     inline const uint* connections(uint dim) const { return _mesh.data.topology(_dim, dim)(_index); }
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
+    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity)
+    {
+      stream << "[ Mesh entity " << entity.index()
+	     << " of topological dimension " << entity.dim() << " ]";
+      return stream;
+    }
 
-  private:
+  protected:
 
     // Friends
     friend class MeshEntityIterator;

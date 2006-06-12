@@ -45,4 +45,6 @@ EXTRA_DIST = dolfin_mesh.h \
              CellType.h \
              Interval.h \
              NewTriangle.h \
-             NewTetrahedron.h
+             NewTetrahedron.h \
+             UniformMeshRefinement.h \
+             NewPoint.h

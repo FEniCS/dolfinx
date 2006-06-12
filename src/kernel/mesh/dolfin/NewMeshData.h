@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-05
+// Last changed: 2006-06-12
 
 #ifndef __NEW_MESH_DATA_H
 #define __NEW_MESH_DATA_H
@@ -26,9 +26,15 @@ namespace dolfin
     
     /// Create empty mesh data
     NewMeshData();
+
+    /// Copy constructor
+    NewMeshData(const NewMeshData& data);
     
     /// Destructor
     ~NewMeshData();
+
+    /// Assignment
+    const NewMeshData& operator= (const NewMeshData& data);
 
     /// Clear all data
     void clear();
@@ -36,15 +42,6 @@ namespace dolfin
     /// Display data
     void disp() const;
 
-  private:
-
-    // Friends
-    friend class NewMesh;
-    friend class MeshEditor;
-    friend class MeshAlgorithms;
-    friend class MeshEntity;
-    friend class MeshEntityIterator;
-    
     // Mesh topology
     MeshTopology topology;
 

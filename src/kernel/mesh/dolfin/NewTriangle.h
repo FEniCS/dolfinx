@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-08
+// Last changed: 2006-06-12
 
 #ifndef __NEW_TRIANGLE_H
 #define __NEW_TRIANGLE_H
@@ -12,14 +12,14 @@
 namespace dolfin
 {
 
-  /// Documentation of class
+  /// This class implements functionality for triangular meshes.
 
   class NewTriangle : public CellType
   {
   public:
 
-    /// Return number of entitites of given topological dimension
-    uint size(uint dim) const;
+    /// Return type of cell
+    inline Type type() const { return triangle; }
 
     /// Return number of entitites of given topological dimension
     uint numEntities(uint dim) const;
@@ -29,6 +29,9 @@ namespace dolfin
 
     /// Create entities of given topological dimension
     void createEntities(uint** entities, uint dim, const uint vertices[]);
+
+    /// Refine mesh uniformly
+    void refineUniformly(NewMesh& mesh);
 
     /// Return description of cell type
     std::string description() const;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-05
+// Last changed: 2006-06-12
 
 #ifndef __MESH_CONNECTIVITY_H
 #define __MESH_CONNECTIVITY_H
@@ -29,8 +29,14 @@ namespace dolfin
     /// Create empty connectivity
     MeshConnectivity();
 
+    /// Copy constructor
+    MeshConnectivity(const MeshConnectivity& connectivity);
+
     /// Destructor
     ~MeshConnectivity();
+
+    /// Assignment
+    const MeshConnectivity& operator= (const MeshConnectivity& connectivity);
 
     /// Return total number of connections
     inline uint size() const { return _size; }

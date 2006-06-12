@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-03
+// Last changed: 2006-06-12
 
 #ifndef __MESH_TOPOLOGY_H
 #define __MESH_TOPOLOGY_H
@@ -30,9 +30,15 @@ namespace dolfin
     
     /// Create empty mesh topology
     MeshTopology();
+
+    /// Copy constructor
+    MeshTopology(const MeshTopology& topology);
     
     /// Destructor
     ~MeshTopology();
+
+    /// Assignment
+    const MeshTopology& operator= (const MeshTopology& topology);
  
     /// Return topological dimension
     inline uint dim() const { return _dim; }

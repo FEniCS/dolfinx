@@ -5,6 +5,7 @@
 // Last changed: 2006-06-06
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/UniformMeshRefinement.h>
 #include <dolfin/NewTriangle.h>
 
 using namespace dolfin;
@@ -56,9 +57,15 @@ void NewTriangle::createEntities(uint** entities, uint dim, const uint vertices[
   entities[2][0] = vertices[0]; entities[2][1] = vertices[1];
 }
 //-----------------------------------------------------------------------------
+void NewTriangle::refineUniformly(NewMesh& mesh)
+{
+  UniformMeshRefinement::refineTriangle(mesh);
+}
+//-----------------------------------------------------------------------------
 std::string NewTriangle::description() const
 {
   std::string s = "triangle (simplex of topological dimension 2)";
   return s;
 }
 //-----------------------------------------------------------------------------
+

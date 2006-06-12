@@ -14,9 +14,32 @@ NewMeshData::NewMeshData() : cell_type(0)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+NewMeshData::NewMeshData(const NewMeshData& data) : cell_type(0)
+{
+  *this = data;
+}
+//-----------------------------------------------------------------------------
 NewMeshData::~NewMeshData()
 {
   clear();
+}
+//-----------------------------------------------------------------------------
+const NewMeshData& NewMeshData::operator= (const NewMeshData& data)
+{
+  // Clear old data if any
+  clear();
+
+  // Assign data
+  topology = data.topology;
+  geometry = data.geometry;
+
+  // Create new cell type
+  if ( data.cell_type )
+    cell_type = CellType::create(data.cell_type->type());
+  else
+    cell_type = 0;
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void NewMeshData::clear()

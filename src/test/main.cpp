@@ -479,6 +479,13 @@ void testNewMesh()
 	cout << "    " << *e << endl;
     }
   }
+
+  newmesh.refine();
+  newmesh.refine();
+  newmesh.disp();
+
+  File file("refined_mesh.pvd");
+  file << newmesh;
 }
 
 int main(int argc, char* argv[])

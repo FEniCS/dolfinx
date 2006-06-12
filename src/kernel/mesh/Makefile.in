@@ -70,7 +70,8 @@ am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
 	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
 	MeshTopology.lo NewMesh.lo NewMeshData.lo NewVertex.lo \
 	NewEdge.lo NewFace.lo NewFacet.lo NewCell.lo MeshAlgorithms.lo \
-	Interval.lo NewTriangle.lo NewTetrahedron.lo CellType.lo
+	Interval.lo NewTriangle.lo NewTetrahedron.lo CellType.lo \
+	UniformMeshRefinement.lo NewPoint.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -272,7 +273,9 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
                             dolfin/NewTriangle.h \
-                            dolfin/NewTetrahedron.h
+                            dolfin/NewTetrahedron.h \
+                            dolfin/UniformMeshRefinement.h \
+                            dolfin/NewPoint.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
@@ -319,7 +322,9 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             Interval.cpp \
                             NewTriangle.cpp \
                             NewTetrahedron.cpp \
-                            CellType.cpp
+                            CellType.cpp \
+                            UniformMeshRefinement.cpp \
+                            NewPoint.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -423,6 +428,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewFacet.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewMeshData.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewPoint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTetrahedron.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTriangle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewVertex.Plo@am__quote@
@@ -431,6 +437,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tetrahedron.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TriMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Triangle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UniformMeshRefinement.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitCube.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnitSquare.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Vertex.Plo@am__quote@

@@ -5,6 +5,7 @@
 // Last changed: 2006-06-08
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/UniformMeshRefinement.h>
 #include <dolfin/NewTetrahedron.h>
 
 using namespace dolfin;
@@ -51,6 +52,11 @@ dolfin::uint NewTetrahedron::numVertices(uint dim) const
 void NewTetrahedron::createEntities(uint** entities, uint dim, const uint vertices[])
 {
   dolfin_error("Not implemented");
+}
+//-----------------------------------------------------------------------------
+void NewTetrahedron::refineUniformly(NewMesh& mesh)
+{
+  UniformMeshRefinement::refineTetrahedron(mesh);
 }
 //-----------------------------------------------------------------------------
 std::string NewTetrahedron::description() const

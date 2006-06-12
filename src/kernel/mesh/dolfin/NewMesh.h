@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-08
+// Last changed: 2006-06-12
 
 #ifndef __NEW_MESH_H
 #define __NEW_MESH_H
 
 #include <string>
 #include <dolfin/constants.h>
+#include <dolfin/Variable.h>
 #include <dolfin/NewMeshData.h>
 
 namespace dolfin
@@ -33,7 +34,7 @@ namespace dolfin
   /// are precomputed automatically the first time an iterator is
   /// created over any given topological dimension or connectivity.
   
-  class NewMesh
+  class NewMesh : public Variable
   {
   public:
     
@@ -48,6 +49,9 @@ namespace dolfin
     
     /// Destructor
     ~NewMesh();
+
+    /// Assignment
+    const NewMesh& operator=(const NewMesh& mesh);
 
     /// Return topological dimension
     inline uint dim() const { return data.topology.dim(); }
@@ -79,20 +83,15 @@ namespace dolfin
     /// Compute all entities and connectivity (automated for iterators)
     void init();
 
+    /// Refine mesh, either uniformly or according to cells marked for refinement
+    void refine();
+
     /// Display mesh
     void disp() const;
     
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMesh& mesh);
-
-  private:
- 
-    /// Friends
-    friend class MeshEditor;
-    friend class MeshAlgorithms;
-    friend class MeshEntity;
-    friend class MeshEntityIterator;
-
+    
     /// Mesh data
     NewMeshData data;
     

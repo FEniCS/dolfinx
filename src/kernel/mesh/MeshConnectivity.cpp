@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-05
+// Last changed: 2006-06-12
 
 #include <dolfin/MeshConnectivity.h>
 
@@ -15,9 +15,38 @@ MeshConnectivity::MeshConnectivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+MeshConnectivity::MeshConnectivity(const MeshConnectivity& connectivity)
+  : _size(0), num_entities(0), connections(0), offsets(0)
+{
+  *this = connectivity;
+}
+//-----------------------------------------------------------------------------
 MeshConnectivity::~MeshConnectivity()
 {
   clear();
+}
+//-----------------------------------------------------------------------------
+const MeshConnectivity& MeshConnectivity::operator= (const MeshConnectivity& connectivity)
+{
+  // Clear old data if any
+  clear();
+
+  // Allocate data
+  _size = connectivity._size;
+  num_entities = connectivity.num_entities;
+  connections = new uint[_size];
+  offsets = new uint[num_entities + 1];
+  
+  // Copy data
+  for (uint i = 0; i < _size; i++)
+    connections[i] = connectivity.connections[i];
+  if ( num_entities > 0 )
+  {
+    for (uint e = 0; e <= num_entities; e++)
+      offsets[e] = connectivity.offsets[e];
+  }
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
