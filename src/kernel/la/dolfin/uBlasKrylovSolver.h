@@ -8,10 +8,11 @@
 #define __UBLAS_KRYLOV_SOLVER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/Parametrized.h>
 #include <dolfin/DenseVector.h>
+#include <dolfin/DenseMatrix.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/LinearSolver.h>
+#include <dolfin/Parametrized.h>
 
 namespace dolfin
 {
@@ -46,6 +47,16 @@ namespace dolfin
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b);
           
+  private:
+
+    /// Solve linear system Ax = b using restarted GMRES
+    uint gmresSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
+                      bool& converged);
+
+    /// Solve linear system Ax = b using BiCGStab
+    uint bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
+                      bool& converged);
+
   private:
 
     /// Krylov solver type

@@ -16,7 +16,6 @@
 
 using namespace dolfin;
 
-
 void testPreconditioner()
 {
   dolfin_info("--- Testing preconditioner ---");
@@ -282,6 +281,7 @@ void testMeshRefinement()
   //file2 << mesh;
 }
 
+
 void testuBlasSparseMatrix()
 {
   dolfin_info("--- Testing sparse matrices ---");
@@ -291,41 +291,61 @@ void testuBlasSparseMatrix()
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+//      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
         value = 0.0;
     }
   };
 
-  UnitSquare mesh(4, 4);
+   class Source : public Function
+  {
+    real eval(const Point& p, unsigned int i)
+    {
+      return p.x*sin(p.y);
+    }
+  };
 
-  Function f = 1.0;
+  UnitSquare mesh(16, 16);
+
+  Source f;
+  MyBC bc;
   Poisson2D::BilinearForm a;
   Poisson2D::LinearForm L(f);
-  uBlasSparseMatrix Ad;
-  DenseVector bd;
-  DenseVector xd;
-  Matrix As;
-  Vector bs;
-  Vector xs;
 
-  MyBC bc;
+  uBlasSparseMatrix A;
+  DenseVector b;
+  DenseVector x;
+
+  PETScSparseMatrix As;
+  PETScVector bs;
+  PETScVector xs;
+
   
-  FEM::assemble(a, L, Ad, bd, mesh, bc);
+  // Assmeble and solve using PETSc
+  dolfin_log(false);
   FEM::assemble(a, L, As, bs, mesh, bc);
-  
-  uBlasKrylovSolver ublas_solver;
-  ublas_solver.solve(Ad, xd, bd);
-  xd.disp();
+  dolfin_log(true);
 
-  LinearSolver* solver;
-  solver = new KrylovSolver;
-  solver->solve(As, xs, bs);
-  xs.disp();
+  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab, Preconditioner::none);
+//  PETScKrylovSolver solver(PETScKrylovSolver::gmres, Preconditioner::none);
+  tic();
+  solver.solve(As, xs, bs);
+  real t_petsc = toc();  
+  cout << "PETSc Krylov solve time = " <<t_petsc << endl;  
 
-  LinearSolver* solver2;
-  solver2 = new uBlasKrylovSolver;
-  solver2->solve(Ad, xd, bd);
-  xd.disp();
+
+  dolfin_log(false);
+  FEM::assemble(a, L, A, b, mesh, bc);
+  dolfin_log(true);
+
+  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
+//  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
+  x = b;
+  x = 0.0;  
+  tic();
+  ublas_solver.solve(A, x, b);
+  real t_ublas = toc();  
+  cout << "uBlas Krylov solve time = " << t_ublas << "  " << t_ublas/t_petsc << endl;  
+  cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
 
 }
 

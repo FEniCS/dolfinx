@@ -79,6 +79,7 @@ add("Krylov relative tolerance", 1e-9);
 add("Krylov absolute tolerance", 1e-20);
 add("Krylov divergence limit",   1e4);
 add("Krylov maximum iterations", 10000);
+add("Krylov GMRES restart", 30);
 add("Krylov shift nonzero", 0.0);
 add("Krylov report", true);
 add("Krylov monitor convergence", false);
