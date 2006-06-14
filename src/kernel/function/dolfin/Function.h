@@ -121,7 +121,8 @@ namespace dolfin
 
   private:
     
-    // Pointer to current implementation (letter base class)
+    // Pointer to current implementation (letter base class)L = v*f*dx
+
     GenericFunction* f;
 
     // Current function type

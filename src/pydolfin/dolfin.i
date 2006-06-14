@@ -100,8 +100,8 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
-%rename(Vector) SparseVector;
-%rename(Matrix) SparseMatrix;
+%rename(Vector) PETScVector;
+%rename(Matrix) PETScSparseMatrix;
 
 %rename(copy) dolfin::SparseVector::operator=;
 %rename(__getitem__) dolfin::Vector::getval;
@@ -158,9 +158,9 @@ using namespace dolfin;
 
 
 %include "dolfin/Vector.h"
-%include "dolfin/SparseVector.h"
-%include "dolfin/Matrix.h"
-%include "dolfin/SparseMatrix.h"
+%include "dolfin/PETScVector.h"
+/* %include "dolfin/Matrix.h" */
+%include "dolfin/PETScSparseMatrix.h"
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
 %include "dolfin/LinearSolver.h"
@@ -251,4 +251,4 @@ using namespace dolfin;
 
 /* modules */
 
-%include "dolfin/ElasticityUpdatedSolver.h"
+/* %include "dolfin/ElasticityUpdatedSolver.h" */
