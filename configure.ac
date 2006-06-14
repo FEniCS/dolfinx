@@ -121,11 +121,14 @@ if test x$enable_debug = xyes; then
 fi 
 
 # Handle option --enable-optimization
-# Flag -DNDEBUG is for Boost
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="-O3 -DNDEBUG -Wall -ansi"
+    CXXFLAGS="-O3  -Wall -ansi"
 fi
+
+# Flag -DNDEBUG is for Boost
+CXXFLAGS="$CXXFLAGS -DNDEBUG"
+
 
 # Add compiler specific flags
 case "${ax_cv_c_compiler_vendor}" in
