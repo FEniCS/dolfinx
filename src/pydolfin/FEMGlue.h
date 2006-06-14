@@ -1,5 +1,16 @@
 #include <dolfin.h>
 
+// FIXME: Temporary, only works for PETSc data structures
+
+void assemble(dolfin::BilinearForm& a, dolfin::LinearForm& L,
+	      dolfin::PETScSparseMatrix& A, dolfin::PETScVector& b,
+	      dolfin::Mesh& mesh, dolfin::BoundaryCondition& bc)
+{
+  dolfin::FEM::assemble(a, L, A, b, mesh, bc);
+}
+
+/*
+
 void assemble(dolfin::LinearForm& L, dolfin::Vector& b, dolfin::Mesh& mesh)
 {
   dolfin::FEM::assemble(L, b, mesh);
@@ -8,13 +19,6 @@ void assemble(dolfin::LinearForm& L, dolfin::Vector& b, dolfin::Mesh& mesh)
 void assemble(dolfin::BilinearForm& a, dolfin::Matrix& A, dolfin::Mesh& mesh)
 {
   dolfin::FEM::assemble(a, A, mesh);
-}
-
-void assemble(dolfin::BilinearForm& a, dolfin::LinearForm& L,
-	      dolfin::Matrix& A, dolfin::Vector& b,
-	      dolfin::Mesh& mesh, dolfin::BoundaryCondition& bc)
-{
-  dolfin::FEM::assemble(a, L, A, b, mesh, bc);
 }
 
 void applyBC(dolfin::Vector& b, dolfin::Mesh& mesh,
@@ -28,3 +32,5 @@ void applyBC(dolfin::Matrix& A, dolfin::Mesh& mesh,
 {
   dolfin::FEM::applyBC(A, mesh, element, bc);
 }
+
+*/

@@ -428,6 +428,35 @@ class GMRESPtr(GMRES):
         self.__class__ = GMRES
 _dolfin.GMRES_swigregister(GMRESPtr)
 
+class KrylovSolver(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, KrylovSolver, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, KrylovSolver, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::PETScKrylovSolver instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    bicgstab = _dolfin.KrylovSolver_bicgstab
+    cg = _dolfin.KrylovSolver_cg
+    default_solver = _dolfin.KrylovSolver_default_solver
+    gmres = _dolfin.KrylovSolver_gmres
+    def __init__(self, *args):
+        _swig_setattr(self, KrylovSolver, 'this', _dolfin.new_KrylovSolver(*args))
+        _swig_setattr(self, KrylovSolver, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_KrylovSolver):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def solve(*args): return _dolfin.KrylovSolver_solve(*args)
+    def disp(*args): return _dolfin.KrylovSolver_disp(*args)
+
+class KrylovSolverPtr(KrylovSolver):
+    def __init__(self, this):
+        _swig_setattr(self, KrylovSolver, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, KrylovSolver, 'thisown', 0)
+        self.__class__ = KrylovSolver
+_dolfin.KrylovSolver_swigregister(KrylovSolverPtr)
+
 class LinearSolver(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, LinearSolver, name, value)
@@ -2301,10 +2330,8 @@ get = _dolfin.get
 
 load_parameters = _dolfin.load_parameters
 
-
-set = _dolfin.set
-
 assemble = _dolfin.assemble
 
-applyBC = _dolfin.applyBC
+
+set = _dolfin.set
 

@@ -100,8 +100,11 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
+/* FIXME: Temporary, only works for PETSc data structures */
+
 %rename(Vector) PETScVector;
 %rename(Matrix) PETScSparseMatrix;
+%rename(KrylovSolver) PETScKrylovSolver;
 
 %rename(copy) dolfin::SparseVector::operator=;
 %rename(__getitem__) dolfin::Vector::getval;
@@ -163,6 +166,7 @@ using namespace dolfin;
 %include "dolfin/PETScSparseMatrix.h"
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
+%include "dolfin/PETScKrylovSolver.h"
 %include "dolfin/LinearSolver.h"
 %include "dolfin/LU.h"
 %include "dolfin/KrylovSolver.h"
