@@ -8,41 +8,41 @@ AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 # This way the code can be installed on systems without automake installed.
 AM_MAINTAINER_MODE
 
-# Option --enable-debug
+# Option --enable/disable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
                              [Turn on debugging and warnings (this is the default)]),
-              enable_debug=yes)
+              enable_debug=$enableval, enable_debug=no)
 
-# Option --enable-optimization
+# Option --enable/disable-optimization
 AC_ARG_ENABLE(optimization,
               AC_HELP_STRING([--enable-optimization],
                              [Turn on optimization]),
-              enable_optimization=yes)
+              enable_optimization=$enableval, enable_optimization=no)
 
-# Option --enable-mpi
+# Option --enable/disable-mpi
 AC_ARG_ENABLE(mpi,
               AC_HELP_STRING([--enable-mpi],
                              [Compile with MPI]),
-              enable_mpi=yes)
+              enable_mpi=$enableval, enable_mpi=no)
 
-# Option --enable-pydolfin
+# Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--enable-pydolfin],
                              [Turn on compilation of PyDOLFIN]),
-              enable_pydolfin=yes)
+              enable_pydolfin=$enableval, enable_pydolfin=no)
 
-# Option --disable-curses
+# Option --enable/disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
-              disable_curses=yes)
+              enable_curses=$enableval, enable_curses=yes)
 
-# Option --disable-petsc
+# Option --enable/disable-petsc
 AC_ARG_ENABLE(petsc,
               AC_HELP_STRING([--disable-petsc],
                              [Compile without PETSc (some demos may not compile)]),
-              disable_petsc=yes)
+              disable_petsc=$enableval, enable_petsc=yes)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
