@@ -7,6 +7,8 @@
 #ifndef __GENERIC_PDE_H
 #define __GENERIC_PDE_H
 
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
 #include <dolfin/Parametrized.h>
 
 namespace dolfin
@@ -16,9 +18,7 @@ namespace dolfin
   class BoundaryCondition;
   class Function;
   class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
 
   /// This class serves as a base class/interface for specific PDE's.
 

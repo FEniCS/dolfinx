@@ -2,14 +2,16 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson, 2003.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2003-02-26
-// Last changed: 2006-05-07
+// Last changed: 2006-05-31
 
 // FIXME: Use streams rather than stdio
 #include <stdio.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/MatlabFile.h>
@@ -28,7 +30,6 @@ OctaveFile::~OctaveFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void OctaveFile::operator<<(Matrix& A)
 {
   // Octave file format for Matrix is not the same as the Matlab format,
@@ -39,32 +40,20 @@ void OctaveFile::operator<<(Matrix& A)
   real* row = new real[N];
   
   FILE *fp = fopen(filename.c_str(), "a");
-  fprintf(fp, "%s = [", A.name().c_str());
-
+  fprintf(fp, "%s = zeros(%d, %d);\n", A.name().c_str(), M, N);
+  
   for (uint i = 0; i < M; i++)
   {
-    // Reset entries on row
-    for (uint j = 0; j < N; j++)
-      row[j] = 0.0;
-
     // Get nonzero entries
     int ncols = 0;
-    const int* cols = 0;
-    const double* vals = 0;
-    MatGetRow(A.mat(), i, &ncols, &cols, &vals);
+    Array<int> columns;
+    Array<real> values;
+    A.getRow(i, ncols, columns, values);
+
+    // Write nonzero entries
     for (int pos = 0; pos < ncols; pos++)
-      row[cols[pos]] = vals[pos];
-    MatRestoreRow(A.mat(), i, &ncols, &cols, &vals);
-
-    // Write row
-    for (uint j = 0; j < N; j++)
-      fprintf(fp, " %.15e", row[j]);
-
-    // New line or end of matrix
-    if ( i == (M - 1) )
-      fprintf(fp, "];\n");
-    else
-      fprintf(fp, "\n");
+      fprintf(fp, "%s(%d, %d) = %.16e;\n",
+	      A.name().c_str(), i + 1, columns[pos] + 1, values[pos]);
   }
   
   fclose(fp);
@@ -74,4 +63,3 @@ void OctaveFile::operator<<(Matrix& A)
        << ") to file " << filename << " in Octave format." << endl;
 }
 //-----------------------------------------------------------------------------
-#endif

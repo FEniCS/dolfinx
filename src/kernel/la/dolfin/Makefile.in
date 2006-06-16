@@ -41,6 +41,7 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -126,6 +127,9 @@ SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+XML2_CONFIG = @XML2_CONFIG@
+XML_CPPFLAGS = @XML_CPPFLAGS@
+XML_LIBS = @XML_LIBS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -159,13 +163,12 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-libxml2_found = @libxml2_found@
+libtool_found = @libtool_found@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpi_found = @mpi_found@
 oldincludedir = @oldincludedir@
-petsc_found = @petsc_found@
 pkgpyexecdir = @pkgpyexecdir@
 pkgpythondir = @pkgpythondir@
 prefix = @prefix@
@@ -187,8 +190,16 @@ EXTRA_DIST = dolfin_la.h \
              LinearSolver.h \
              LU.h \
              Matrix.h \
+             PETScKrylovSolver.h \
+             PETScLU.h \
              PETScManager.h \
+             PETScSparseMatrix.h \
+             PETScVector.h \
              Preconditioner.h \
+             SparseMatrix.h \
+             uBlasKrylovSolver.h \
+             uBlasLUSolver.h \
+             uBlasSparseMatrix.h \
              Vector.h \
              VirtualMatrix.h 
 

@@ -1,8 +1,14 @@
+ - Add Parametrized::readParameters() to trigger reading of values on set()
+ - Remove output of zeros in Octave matrix file format
+ - Use uBlas-based vector for Vector if PETSc disabled
+ - Add wrappers for uBlas compressed_matrix class
+ - Compute eigenvalues using SLEPc (an extension of PETSc)
+ - Clean up assembly and linear algebra
  - Add function to solve Ax = b for dense matrices and dense vectors
  - Make it possible to compile without PETSc (--disable-petsc)
  - Much improved ODE solvers
  - Complete multi-adaptive benchmarks reaction and wave
- - Assmeble boundary integrals
+ - Assemble boundary integrals
  - FEM class cleaned up.
  - Fix multi-adaptive benchmark problem reaction
  - Small fixes for Intel C++ compiler version 9.1

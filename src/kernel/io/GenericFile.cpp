@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002-11-12
-// Last changed: 2006-05-23
+// Last changed: 2006-05-24
 
 // FIXME: Use streams instead of stdio
 #include <stdio.h>

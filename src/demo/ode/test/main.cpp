@@ -2,38 +2,17 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2002
-// Last changed: 2005-11-03
+// Last changed: 2006-05-29
 
-#include <stdio.h>
 #include <dolfin.h>
 
 using namespace dolfin;
-
-class Simple : public ODE
-{
-public:
-  
-  Simple() : ODE(1, 1.0)
-  {
-  }
-  
-  real u0(unsigned int i)
-  {
-    return 0.0;
-  }
-
-  real f(const real u[], real t, unsigned int i)
-  {
-    return 1.0;
-  }
-
-};
 
 class Harmonic : public ODE
 {
 public:
   
-  Harmonic() : ODE(2, 4.0 * DOLFIN_PI)
+  Harmonic() : ODE(2, 4.0 * DOLFIN_PI), e(0.0)
   {
     // Compute sparsity
     sparse();
@@ -43,7 +22,6 @@ public:
   {
     if ( i == 0 )
       return 0.0;
-
     return 1.0;
   }
 
@@ -51,8 +29,13 @@ public:
   {
     if ( i == 0 )
       return u[1];
-
     return -u[0];
+  }
+
+  void f(const real u[], real t, real y[])
+  {
+    y[0] = u[1];
+    y[1] = -u[0];
   }
 
   bool update(const real u[], real t, bool end)
@@ -62,87 +45,54 @@ public:
 
     real e0 = u[0] - 0.0;
     real e1 = u[1] - 1.0;
-    real e = std::max(fabs(e0), fabs(e1));
-    dolfin_info("Error: %.3e", e);
+    e = std::max(fabs(e0), fabs(e1));
 
     return true;
   }
   
-};
-
-class SpringSystem : public ODE
-{
-public:
+  real error()
+  {
+    return e;
+  }
   
-  SpringSystem(unsigned int N) : ODE(2*N, 5.0)
-  {
-    // Compute sparsity
-    sparse();
-  }
+private:
 
-  real u0(unsigned int i)
-  {
-    return 1.0;
-  }
-
-  real f(const real u[], real t, unsigned int i)
-  {
-    if ( i < N / 2 )
-      return u[i+N/2];
-    
-    real k = (real) (i+1);
-    return -k*u[i-N/2];
-  }
-
-};
-
-class TestSystem : public ODE
-{
-public:
-  
-  TestSystem() : ODE(3, 64.0)
-  {
-  }
-
-  real u0(unsigned int i)
-  {
-    switch ( i ) {
-    case 0:
-      return 0.0;
-    case 1:
-      return 1.0;
-    default:
-      return 2.0;
-    }
-  }
-
-  real f(const real u[], real t, unsigned int i)
-  {
-    switch ( i ) {
-    case 0:
-      return u[1] + 0.1*u[0] + 0.3*u[2];
-    case 1:
-      return -u[0] - 0.2*u[1] + 0.4*u[2];
-    default:
-      return cos(t) + 0.3*u[0] + 0.7*u[1] * 0.2*u[2];
-    }
-  }
+  real e;
 
 };
 
 int main()
 {
-  //Simple ode;
-  //ode.solve();
-  
-  //Harmonic ode;
-  //ode.solve();
-  
-  //SpringSystem ode(10);
-  //ode.solve();
+  set("ODE fixed time step", true);
+  set("ODE discrete tolerance", 1e-14);
 
-  TestSystem ode;
-  ode.solve();
+  for (int q = 1; q <= 5; q++)
+  {
+    dolfin_log(false);
+    set("ODE method", "cg");
+    set("ODE order", q);
+
+    Harmonic ode;
+    ode.solve();
+    dolfin_log(true);
+
+    dolfin_info("cG(%d): e = %g", q, ode.error());
+  }
+
+  cout << endl;
+
+  for (int q = 0; q <= 5; q++)
+  {
+    dolfin_log(false);
+    set("ODE method", "dg");
+    set("ODE order", q);
+
+    Harmonic ode;
+    ode.solve();
+    dolfin_log(true);
+
+    dolfin_info("dG(%d): e = %g", q, ode.error());
+  }
 
   return 0;
 }

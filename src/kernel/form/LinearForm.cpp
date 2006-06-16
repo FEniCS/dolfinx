@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-05-28
-// Last changed: 2006-03-27
+// Last changed: 2006-05-15
 
 #include <dolfin/LinearForm.h>
 
@@ -20,6 +20,12 @@ LinearForm::~LinearForm()
 }
 //-----------------------------------------------------------------------------
 FiniteElement& LinearForm::test()
+{
+  dolfin_assert(_test); // Should be created by child class
+  return *_test;
+}
+//-----------------------------------------------------------------------------
+const FiniteElement& LinearForm::test() const
 {
   dolfin_assert(_test); // Should be created by child class
   return *_test;

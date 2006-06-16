@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-05-29
 
 #ifndef __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
@@ -48,6 +48,9 @@ namespace dolfin
 
     // Old values at right end-point used to compute the increment
     real* xold;
+
+    // Damping (alpha = 1.0 for no damping)
+    real alpha;
 
   };
 

@@ -44,6 +44,7 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -60,7 +61,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_pde_la_LIBADD =
 am_libdolfin_pde_la_OBJECTS = GenericPDE.lo LinearPDE.lo \
-	NonlinearPDE.lo PDE.lo
+	NonlinearPDE.lo TimeDependentPDE.lo PDE.lo
 libdolfin_pde_la_OBJECTS = $(am_libdolfin_pde_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -164,6 +165,9 @@ SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+XML2_CONFIG = @XML2_CONFIG@
+XML_CPPFLAGS = @XML_CPPFLAGS@
+XML_LIBS = @XML_LIBS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -197,13 +201,12 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-libxml2_found = @libxml2_found@
+libtool_found = @libtool_found@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpi_found = @mpi_found@
 oldincludedir = @oldincludedir@
-petsc_found = @petsc_found@
 pkgpyexecdir = @pkgpyexecdir@
 pkgpythondir = @pkgpythondir@
 prefix = @prefix@
@@ -219,6 +222,7 @@ nobase_include_HEADERS = dolfin/dolfin_pde.h \
                            dolfin/GenericPDE.h \
                            dolfin/LinearPDE.h \
                            dolfin/NonlinearPDE.h \
+                           dolfin/TimeDependentPDE.h \
                            dolfin/PDE.h
 
 INCLUDES = @KERNEL_CFLAGS@
@@ -226,6 +230,7 @@ lib_LTLIBRARIES = libdolfin-pde.la
 libdolfin_pde_la_SOURCES = GenericPDE.cpp \
                            LinearPDE.cpp \
                            NonlinearPDE.cpp \
+                           TimeDependentPDE.cpp \
                            PDE.cpp
 
 libdolfin_pde_la_LDFLAGS = -static
@@ -302,6 +307,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonlinearPDE.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PDE.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TimeDependentPDE.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

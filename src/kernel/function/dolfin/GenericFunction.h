@@ -8,6 +8,7 @@
 #define __GENERIC_FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/LocalFunctionData.h>
 
 namespace dolfin
@@ -16,7 +17,6 @@ namespace dolfin
   class Point;
   class Vertex;
   class Mesh;
-  class Vector;
   class AffineMap;
   class FiniteElement;
 
@@ -48,10 +48,8 @@ namespace dolfin
     /// Return vector dimension of function
     virtual uint vectordim() const = 0;
 
-#ifdef HAVE_PETSC_H
     /// Return vector associated with function (if any)
     virtual Vector& vector() = 0;
-#endif
 
     /// Return mesh associated with function (if any)
     virtual Mesh& mesh() = 0;
@@ -59,10 +57,8 @@ namespace dolfin
     /// Return element associated with function (if any)
     virtual FiniteElement& element() = 0;
 
-#ifdef HAVE_PETSC_H
     /// Attach vector to function
     virtual void attach(Vector& x, bool local) = 0;
-#endif
 
     /// Attach mesh to function
     virtual void attach(Mesh& mesh, bool local) = 0;

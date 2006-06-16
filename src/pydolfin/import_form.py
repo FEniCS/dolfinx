@@ -2,8 +2,9 @@ def import_formfile(filename):
     """Generates and imports a module corresponding to the FFC form file.
     Returns the module."""
     from ffc.parser import simple
-    
     from ffc.common.constants import FFC_OPTIONS
+
+    print "Compiling form: " + filename
 
     options = FFC_OPTIONS
     language = "dolfin-swig"

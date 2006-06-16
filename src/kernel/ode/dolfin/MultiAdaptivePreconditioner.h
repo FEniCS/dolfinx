@@ -9,13 +9,12 @@
 
 #ifdef HAVE_PETSC_H
 
-
+#include <dolfin/Vector.h>
 #include <dolfin/Preconditioner.h>
 
 namespace dolfin
 {
   class ODE;
-  class Vector;
   class Method;
   class MultiAdaptiveTimeSlab;
   

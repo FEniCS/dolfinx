@@ -9,8 +9,6 @@
 #ifndef __PDE_H
 #define __PDE_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Parametrized.h>
 #include <dolfin/GenericPDE.h>
 
@@ -90,7 +88,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

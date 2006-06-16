@@ -1,5 +1,7 @@
-SUBDIRS = bistable \
+SUBDIRS = aliev-panfilov \
+          bistable \
           complex \
+          courtemanche \
           homotopy \
           lorenz \
           mechanical \

@@ -2,15 +2,20 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004-12-09
-// Last changed: 2006=05-07
+// Last changed: 2006-05-15
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/PETScManager.h>
+
 #include <stdio.h>
-#include <petsc.h>
+
+#ifdef HAVE_SLEPC_H
+#include <slepc.h>
+#endif
+
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/PETScManager.h>
 
 // Initialize static data
 dolfin::PETScManager dolfin::PETScManager::petsc;
@@ -35,6 +40,12 @@ void PETScManager::init()
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
 
+#ifdef HAVE_SLEPC_H
+  // Initialize SLEPc
+  SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+#endif
+
+
   // Cleanup
   delete [] argv[0];
   delete [] argv;
@@ -51,6 +62,11 @@ void PETScManager::init(int argc, char* argv[])
   
   // Initialize PETSc
   PetscInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+
+  #ifdef HAVE_SLEPC_H
+  // Initialize SLEPc
+  SlepcInitialize(&argc, &argv, PETSC_NULL, PETSC_NULL);
+  #endif
 
   petsc.initialized = true;
 }
@@ -69,6 +85,11 @@ PETScManager::~PETScManager()
     //dolfin_info("Finalizing PETSc.");
     //printf("Finalizing PETSc.\n");
     PetscFinalize();
+ 
+    #ifdef HAVE_SLEPC_H
+    SlepcFinalize();
+    #endif
+
   }
 }
 //-----------------------------------------------------------------------------

@@ -1,12 +1,10 @@
-// Copyright (C) 2005 Garth N. Wells.
+// Copyright (C) 2005-2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2006.
-// 
 // First added:  2005-08-31
-// Last changed: 2006-05-07
+// Last changed: 2006-05-29
 
-#ifdef HAVE_PETSC_H
+#ifdef HAVE_SLEPC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
@@ -15,66 +13,174 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EigenvalueSolver::EigenvalueSolver()
+EigenvalueSolver::EigenvalueSolver(): eps(0), type(default_solver)
 {
-  // Initialize PETSc
+  // Initialize PETSc/SLEPc
   PETScManager::init();
-  
+
   // Set up solver environment
-  KSPCreate(PETSC_COMM_SELF, &ksp);
+  EPSCreate(PETSC_COMM_SELF, &eps);
+
+  // Set which eigenvalues to compute
+  set("Eigenvalues to compute", "largest");
+
+}
+//-----------------------------------------------------------------------------
+EigenvalueSolver::EigenvalueSolver(Type solver): eps(0), type(solver)
+{
+  // Initialize PETSc/SLEPc
+  PETScManager::init();
+
+  // Set up solver environment
+  EPSCreate(PETSC_COMM_SELF, &eps);
+
+  // Set which eigenvalues to compute
+  set("Eigenvalues to compute", "largest");
+
 }
 //-----------------------------------------------------------------------------
 EigenvalueSolver::~EigenvalueSolver()
 {
   // Destroy solver environment
-  if ( ksp ) KSPDestroy(ksp);
-
+  if ( eps ) 
+    EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::eigen(const Matrix& A, Vector& r,  Vector& c)
+void EigenvalueSolver::solve(const PETScSparseMatrix& A)
 {
-  // Dummy vectors needed for solve before eigenvalues can be computed
-  Vector a, b;
+  solve(A, 0, A.size(0));
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const uint n)
+{
+  solve(A, 0, n);
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B)
+{
+  solve(A, &B, A.size(0));
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B, const uint n)
+{
+  solve(A, &B, n);
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::getEigenvalue(real& xr, real& xc)
+{
+  getEigenvalue(xr, xc, 0);
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c)
+{
+  getEigenpair(xr, xc, r, c, 0);
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
+{
+  // Get number of computed values
+  int num_computed_eigenvalues;
+  EPSGetConverged(eps, &num_computed_eigenvalues);
 
-  uint m = A.size(0);
-  uint n = A.size(1);
+  if( i < num_computed_eigenvalues )
+    EPSGetValue(eps, i, &xr, &xc);
+  else
+    dolfin_error("Requested eigenvalue has not been computed");
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, const int i)
+{
+  // Get number of computed eigenvectors/values
+  int num_computed_eigenvalues;
+  EPSGetConverged(eps, &num_computed_eigenvalues);
 
-  // Check that matrix A is square
-  if(m != n)
+  if( i < num_computed_eigenvalues )
+    EPSGetEigenpair(eps, i, &xr, &xc, r.vec(), c.vec());
+  else
+    dolfin_error("Requested eigenvalue/vector has not been computed");
+}
+//-----------------------------------------------------------------------------
+void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix* B, const uint n)
+{
+  const std::string eigenvalues_compute = get("Eigenvalues to compute");
+
+  dolfin_assert( A.size(0) == A.size(1) );
+
+  // Associate matrix (matrices) with eigenvalue solver
+  if ( B )
   {
-    dolfin_info("Matrix not square. Eigenvalues not being computed");
-    return; 
-	}
+    dolfin_assert( B->size(0) == B->size(1) && B->size(0) == A.size(0) );
+    EPSSetOperators(eps, A.mat(), B->mat());
+  }
+  else
+    EPSSetOperators(eps, A.mat(), PETSC_NULL);
+  
+  // Set number of eigenpairs to compute
+  dolfin_assert( n <= A.size(0));
+  EPSSetDimensions(eps, n, PETSC_DECIDE);
 
-  // Initialize vectors for eigenvalues and dummy vectors
-  r.init(n);
-  c.init(n);
-  a.init(n);
-  b.init(n);
+  // Compute n largest eigenpairs
+  if (eigenvalues_compute == "largest")
+    EPSSetWhichEigenpairs(eps, EPS_LARGEST_MAGNITUDE);
 
-  // Solve linear system with trivial RHS (needed for eigenvalue solve)
-  KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
-  KSPSolve(ksp, a.vec(), b.vec());
+// FIXME: Need to add some test here as most algorithms only compute largest eigenvalues
+//        Asking for smallest leads to a PETSc error.
+//  else if (eigenvalues_compute == "smallest")
+//    EPSSetWhichEigenpairs(eps, EPS_SMALLEST_MAGNITUDE);
+//  else
+//    dolfin_error("Invalid choice if which eigenvalues to compute (smallest/largest)");
+  
+  // Set algorithm type
+  EPSType eps_type = getType(type);
+  if(eps_type != "default")
+    EPSSetType(eps, eps_type);
 
-  // Allocate memory for eigenvalues
-  real* er    = new real[n];
-  real* ec    = new real[n];
-  int*  block = new int[n];
+//  // Set algorithm type (Hermitian matrix)
+//  EPSSetProblemType(eps, EPS_HEP);
 
-  // Compute n eigenvalues using explicit algorithm
-  dolfin_info("Computing all eigenvalues directly. Use only for small systems.");
-  KSPComputeEigenvaluesExplicitly(ksp, n, er, ec);  
+  // Set options
+  EPSSetFromOptions(eps);
 
-  // Add the computed real and complex eigenvalues into vectors 
-  r = 0.0;
-  c = 0.0;
-  for(uint i=0; i< n; ++i) *(block+i) = i; 
-  r.add(er, block, n);
-  c.add(ec, block, n);
- 
-  delete [] er;
-  delete [] ec;
-  delete [] block;
+  // Solve
+  EPSSolve(eps);  
+
+  // Check for convergence
+  EPSConvergedReason reason;
+  EPSGetConvergedReason(eps, &reason);
+  if( reason < 0 )
+    dolfin_warning("Eigenvalue solver did not converge"); 
+
+  // Get number of iterations
+  int num_iterations;
+  EPSGetIterationNumber(eps, &num_iterations);
+
+  // Get algorithm type
+  EPSGetType(eps, &eps_type);
+
+  dolfin_info("Eigenvalue solver (%s) converged in %d iterations.",
+	      eps_type, num_iterations);
+}
+//-----------------------------------------------------------------------------
+EPSType EigenvalueSolver::getType(const Type type) const
+{
+  switch (type)
+  {
+  case arnoldi:
+    return EPSARNOLDI;
+  case default_solver:
+    return "default";
+  case lanczos:
+    return EPSLANCZOS;
+  case lapack:
+    return EPSLAPACK;
+  case power:
+    return EPSPOWER;
+  case subspace:
+    return EPSSUBSPACE;
+  default:
+    dolfin_warning("Requested Krylov method unknown. Using GMRES.");
+    return KSPGMRES;
+  }
 }
 //-----------------------------------------------------------------------------
 

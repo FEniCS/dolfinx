@@ -82,6 +82,8 @@ using namespace dolfin;
 %feature("director") Function;
 %feature("director") BoundaryCondition;
 %feature("director") ODE;
+%feature("director") PDE;
+%feature("director") TimeDependentPDE;
 
 %ignore dolfin::dolfin_info;
 %ignore dolfin::dolfin_info_aptr;
@@ -98,7 +100,13 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
-%rename(copy) dolfin::Vector::operator=;
+/* FIXME: Temporary, only works for PETSc data structures */
+
+%rename(Vector) PETScVector;
+%rename(Matrix) PETScSparseMatrix;
+%rename(KrylovSolver) PETScKrylovSolver;
+
+%rename(copy) dolfin::SparseVector::operator=;
 %rename(__getitem__) dolfin::Vector::getval;
 %rename(__setitem__) dolfin::Vector::setval;
 
@@ -151,10 +159,14 @@ using namespace dolfin;
 
 /* la includes */
 
+
 %include "dolfin/Vector.h"
-%include "dolfin/Matrix.h"
+%include "dolfin/PETScVector.h"
+/* %include "dolfin/Matrix.h" */
+%include "dolfin/PETScSparseMatrix.h"
 %include "dolfin/VirtualMatrix.h"
 %include "dolfin/GMRES.h"
+%include "dolfin/PETScKrylovSolver.h"
 %include "dolfin/LinearSolver.h"
 %include "dolfin/LU.h"
 %include "dolfin/KrylovSolver.h"
@@ -231,6 +243,11 @@ using namespace dolfin;
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
 
+
+/* pde */
+
+%include "dolfin/TimeDependentPDE.h"
+
 /* glue */
 
 %include "SettingsGlue.h"
@@ -238,4 +255,4 @@ using namespace dolfin;
 
 /* modules */
 
-%include "dolfin/ElasticityUpdatedSolver.h"
+/* %include "dolfin/ElasticityUpdatedSolver.h" */

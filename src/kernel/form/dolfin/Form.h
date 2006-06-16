@@ -30,6 +30,12 @@ namespace dolfin
     /// Update map to current cell
     void update(AffineMap& map);
 
+    Function* function(uint i);
+    FiniteElement* element(uint i);
+
+    // Number of functions
+    uint num_functions;
+
     /// Friends
     friend class FEM;
 
@@ -49,9 +55,6 @@ namespace dolfin
     
     // Coefficients of functions projected to current element
     real** c;
-
-    // Number of functions
-    uint num_functions;
 
     // BLAS form data
     BLASFormData blas;

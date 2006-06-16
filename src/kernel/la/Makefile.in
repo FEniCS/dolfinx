@@ -44,6 +44,7 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ac_pkg_swig.m4 \
 	$(top_srcdir)/m4/ac_python_devel.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/libxml.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -60,8 +61,10 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdolfin_la_la_LIBADD =
 am_libdolfin_la_la_OBJECTS = DenseMatrix.lo DenseVector.lo \
-	EigenvalueSolver.lo KrylovSolver.lo GMRES.lo LinearSolver.lo \
-	LU.lo Matrix.lo PETScManager.lo Preconditioner.lo Vector.lo \
+	EigenvalueSolver.lo GMRES.lo LinearSolver.lo \
+	PETScKrylovSolver.lo PETScLU.lo PETScManager.lo \
+	PETScSparseMatrix.lo PETScVector.lo Preconditioner.lo \
+	uBlasKrylovSolver.lo uBlasLUSolver.lo uBlasSparseMatrix.lo \
 	VirtualMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -166,6 +169,9 @@ SWIG_LIB = @SWIG_LIB@
 SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
 SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+XML2_CONFIG = @XML2_CONFIG@
+XML_CPPFLAGS = @XML_CPPFLAGS@
+XML_LIBS = @XML_LIBS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -199,13 +205,12 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-libxml2_found = @libxml2_found@
+libtool_found = @libtool_found@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpi_found = @mpi_found@
 oldincludedir = @oldincludedir@
-petsc_found = @petsc_found@
 pkgpyexecdir = @pkgpyexecdir@
 pkgpythondir = @pkgpythondir@
 prefix = @prefix@
@@ -228,8 +233,16 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/LinearSolver.h \
                           dolfin/LU.h \
                           dolfin/Matrix.h \
+                          dolfin/PETScKrylovSolver.h \
+                          dolfin/PETScLU.h \
                           dolfin/PETScManager.h \
+                          dolfin/PETScSparseMatrix.h \
+                          dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
+                          dolfin/SparseMatrix.h \
+                          dolfin/uBlasKrylovSolver.h \
+                          dolfin/uBlasLUSolver.h \
+                          dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
 
@@ -238,14 +251,17 @@ lib_LTLIBRARIES = libdolfin-la.la
 libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           DenseVector.cpp \
                           EigenvalueSolver.cpp \
-                          KrylovSolver.cpp \
                           GMRES.cpp \
                           LinearSolver.cpp \
-                          LU.cpp \
-                          Matrix.cpp \
+                          PETScKrylovSolver.cpp \
+                          PETScLU.cpp \
                           PETScManager.cpp \
+                          PETScSparseMatrix.cpp \
+                          PETScVector.cpp \
                           Preconditioner.cpp \
-                          Vector.cpp \
+                          uBlasKrylovSolver.cpp \
+                          uBlasLUSolver.cpp \
+                          uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 
 libdolfin_la_la_LDFLAGS = -static
@@ -322,14 +338,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DenseVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EigenvalueSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GMRES.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KrylovSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LU.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearSolver.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Matrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScKrylovSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScLU.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScSparseMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PETScVector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Preconditioner.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Vector.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualMatrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasLUSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasSparseMatrix.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

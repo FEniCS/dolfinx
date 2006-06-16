@@ -4,9 +4,7 @@
 // Modified by Anders Logg, 2005-2006.
 //
 // First added:  2005-10-23
-// Last changed: 2006-03-22
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-06-06
 
 #include <dolfin/FEM.h>
 #include <dolfin/NewtonSolver.h>
@@ -18,8 +16,20 @@ using namespace dolfin;
 NewtonSolver::NewtonSolver() : Parametrized()
 {
   solver = new LU;
+#ifdef HAVE_PETSC_H
   A = new Matrix(Matrix::umfpack);
+#else
+  A = new Matrix;
+#endif
 }
+//-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
+NewtonSolver::NewtonSolver(Matrix::Type matrix_type) : Parametrized()
+{
+  solver = new LU;
+  A = new Matrix(matrix_type);
+}
+#endif
 //-----------------------------------------------------------------------------
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
 {
@@ -27,12 +37,14 @@ NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver) : Parametrized()
   A = new Matrix;
 }
 //-----------------------------------------------------------------------------
+#ifdef HAVE_PETSC_H
 NewtonSolver::NewtonSolver(KrylovSolver::Type linear_solver, 
     Preconditioner::Type preconditioner) : Parametrized()
 {
   solver = new KrylovSolver(linear_solver, preconditioner);
   A = new Matrix;
 }
+#endif
 //-----------------------------------------------------------------------------
 NewtonSolver::~NewtonSolver()
 {
@@ -143,4 +155,3 @@ bool NewtonSolver::converged(const Vector& b, const Vector& dx,
 }
 //-----------------------------------------------------------------------------
 
-#endif

@@ -2,18 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-27
+// Last changed: 2006-05-15
 
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/LU.h>
+#include <dolfin/PETScLU.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+PETScLU::PETScLU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -34,7 +34,7 @@ LU::LU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
   PCASMSetUseInPlace(pc);
 }
 //-----------------------------------------------------------------------------
-LU::~LU()
+PETScLU::~PETScLU()
 {
   if ( ksp ) KSPDestroy(ksp);
   if ( B ) MatDestroy(B);
@@ -42,7 +42,8 @@ LU::~LU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScLU::solve(const PETScSparseMatrix& A,
+		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
   const bool report = get("LU report");
@@ -62,7 +63,8 @@ dolfin::uint LU::solve(const Matrix& A, Vector& x, const Vector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScLU::solve(const VirtualMatrix& A,
+		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
   const bool report = get("LU report");
@@ -87,8 +89,8 @@ dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   KSPSolve(ksp, b.vec(), x.vec());
 
   // Estimate condition number for l1 norm
-  const real xnorm = x.norm(Vector::l1);
-  const real bnorm = b.norm(Vector::l1) + DOLFIN_EPS;
+  const real xnorm = x.norm(PETScVector::l1);
+  const real bnorm = b.norm(PETScVector::l1) + DOLFIN_EPS;
   const real kappa = Anorm * xnorm / bnorm;
   if ( kappa > 0.001 / DOLFIN_EPS )
   {
@@ -101,12 +103,12 @@ dolfin::uint LU::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
   return 1;
 }
 //-----------------------------------------------------------------------------
-void LU::disp() const
+void PETScLU::disp() const
 {
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-real LU::copyToDense(const VirtualMatrix& A)
+real PETScLU::copyToDense(const VirtualMatrix& A)
 {
   // Get size
   uint M = A.size(0);
@@ -151,7 +153,7 @@ real LU::copyToDense(const VirtualMatrix& A)
     e(j) = 0.0;
     
     // Compute l1 norm of matrix (maximum column sum)
-    const real colsum = y.norm(Vector::l1);
+    const real colsum = y.norm(PETScVector::l1);
     if ( colsum > maxcolsum )
       maxcolsum = colsum;
   }

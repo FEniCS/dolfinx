@@ -24,10 +24,8 @@ namespace dolfin
     
     // Output
 
-#ifdef HAVE_PETSC_H    
     void operator<< (Vector& x);
     virtual void operator<< (Matrix& A) = 0;
-#endif
     void operator<< (Mesh& mesh);
     void operator<< (Function& u);
     void operator<< (Sample& sample);

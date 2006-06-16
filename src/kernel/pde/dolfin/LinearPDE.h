@@ -9,8 +9,6 @@
 #ifndef __LINEAR_PDE_H
 #define __LINEAR_PDE_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/GenericPDE.h>
 
 namespace dolfin
@@ -66,7 +64,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

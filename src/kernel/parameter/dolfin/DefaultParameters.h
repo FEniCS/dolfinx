@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-04-24
+// Last changed: 2006-05-29
 
 //--- General parameters ---
 
@@ -37,6 +37,7 @@ add("ODE start time", 0.0);
 add("ODE end time", 10.0);      
 add("ODE discrete tolerance", 0.001);
 add("ODE discrete tolerance factor", 0.001);
+add("ODE discrete Krylov tolerance factor", 0.01);
 add("ODE initial time step", 0.01);
 add("ODE maximum time step", 0.1);
 add("ODE partitioning threshold", 0.1);
@@ -46,11 +47,12 @@ add("ODE time step conservation", 5.0);
 add("ODE sparsity check increment", 0.01);
 add("ODE average length", 0.1);
 add("ODE average tolerance", 0.1);
+add("ODE fixed-point damping", 1.0);
 
 add("ODE method", "cg");
 add("ODE nonlinear solver", "default");
 add("ODE linear solver", "default");
-add("ODE solution file name", "primal.m");
+add("ODE solution file name", "solution.py");
 
 //--- Parameters for homotopy solver ---
 
@@ -77,6 +79,7 @@ add("Krylov relative tolerance", 1e-9);
 add("Krylov absolute tolerance", 1e-20);
 add("Krylov divergence limit",   1e4);
 add("Krylov maximum iterations", 10000);
+add("Krylov GMRES restart", 30);
 add("Krylov shift nonzero", 0.0);
 add("Krylov report", true);
 add("Krylov monitor convergence", false);

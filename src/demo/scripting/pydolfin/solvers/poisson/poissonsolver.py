@@ -1,51 +1,42 @@
 from dolfin import *
-from math import *
 
+# Define right-hand side
 class Source(Function):
     def eval(self, point, i):
         return point.y + 1.0
 
+# Define boundary condition
 class SimpleBC(BoundaryCondition):
     def eval(self, value, point, i):
         if point.x == 0.0 or point.x == 1.0:
             value.set(0.0)
-        return value
-    
+
 f = Source()
 bc = SimpleBC()
+
+# Create a mesh of the unit square
 mesh = UnitSquare(10, 10)
 
-forms = import_formfile("Poisson2D.form")
+# Import forms (compiled just-in-time with FFC)
+forms = import_formfile("Poisson.form")
 
-a = forms.Poisson2DBilinearForm()
-L = forms.Poisson2DLinearForm(f)
+a = forms.PoissonBilinearForm()
+L = forms.PoissonLinearForm(f)
 
+# Assemble linear system
 A = Matrix()
-x = Vector()
 b = Vector()
+assemble(a, L, A, b, mesh, bc)
 
-FEM_assemble(a, L, A, b, mesh, bc)
+# Solve linear system
+x = Vector()
+solver = KrylovSolver()
+solver.solve(A, x, b)
 
-#print "A:"
-#A.disp(False)
+# Define a function from computed degrees of freedom
+trial_element = forms.PoissonBilinearFormTrialElement()
+u = Function(x, mesh, trial_element)
 
-#print "b:"
-#b.disp()
-
-# Linear algebra could in certain cases be handled by Python modules,
-# Numeric for example.
-
-linearsolver = KrylovSolver()
-linearsolver.solve(A, x, b)
-
-#print "x:"
-#x.disp()
-
-trialelement = forms.Poisson2DBilinearFormTrialElement()
-u = Function(x, mesh, trialelement)
-
-vtkfile = File("poisson.vtk", File.vtk)
-vtkfile << u
-
-# Plotting can also be handled by Python modules (Mayavi for example)
-
+# Save solution to file in VTK format
+file = File("poisson.pvd")
+file << u

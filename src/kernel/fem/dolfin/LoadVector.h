@@ -1,10 +1,13 @@
 // Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Garth N. Wells
+//
 // First added:  2004-03-31
-// Last changed: 2006-05-07
+// Last changed: 2006-05-30
 
-#ifdef HAVE_PETSC_H
+#ifndef __LAOD_VECTOR_H
+#define __LAOD_VECTOR_H
 
 #include <dolfin/Vector.h>
 

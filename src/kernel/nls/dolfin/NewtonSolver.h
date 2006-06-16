@@ -7,8 +7,6 @@
 #ifndef __NEWTON_SOLVER_H
 #define __NEWTON_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/NonlinearProblem.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Vector.h>
@@ -21,9 +19,7 @@ namespace dolfin
 {
   class BoundaryCondition;
   class LinearForm;
-  class Matrix;
   class Mesh;
-  class Vector;
 
   /// This class defines a Newton solver for equations of the form F(u) = 0.
   
@@ -34,11 +30,18 @@ namespace dolfin
     /// Initialise nonlinear solver and choose LU solver
     NewtonSolver();
 
+#ifdef HAVE_PETSC_H
+    /// Initialise nonlinear solver and choose matrix type which defines LU solver
+    NewtonSolver(Matrix::Type matrix_type);
+#endif
+
     /// Initialise nonlinear solver and choose Krylov solver
     NewtonSolver(KrylovSolver::Type linear_solver);
 
+#ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
     NewtonSolver(KrylovSolver::Type linear_solver, Preconditioner::Type preconditioner);
+#endif
 
     /// Destructor
     virtual ~NewtonSolver();
@@ -79,4 +82,3 @@ namespace dolfin
 
 #endif
 
-#endif

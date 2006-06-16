@@ -6,8 +6,6 @@
 // First added:  2006-02-21
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Function.h>
 #include <dolfin/PDE.h>
@@ -165,5 +163,3 @@ PDE::Type PDE::type() const
   return _type;
 }
 //-----------------------------------------------------------------------------
-
-#endif

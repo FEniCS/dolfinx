@@ -32,11 +32,9 @@ lmbda      = Constant()        # surface parameter
 
 dt         = Constant()           # time step
 theta      = Constant()           # time stepping parameter 
-dt_inv     = Constant()           # 1/(time step) 
-theta_inv  = Constant()           # 1/(time stepping parameter) 
 
 # Compute current rate (this implies the predictor)
-DcDt = (c1-c0)*dt_inv*theta_inv - (1-theta)*DcDt0*theta_inv
+DcDt = (c1-c0)*(1.0/dt)*(1.0/theta) - (1-theta)*DcDt0*(1/theta)
 
 a1 = v*c*dx + theta*dt*Mob*mu*dot(grad(v), grad(c))*dx \
             + theta*dt*dMob*mu*dot(grad(v), grad(c1))*c*dx \

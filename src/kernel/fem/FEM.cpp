@@ -5,222 +5,74 @@
 // Modified by Garth N. Wells 2005, 2006.
 //
 // First added:  2004-05-19
-// Last changed: 2006-04-25
+// Last changed: 2006-05-24
 
 #include <dolfin/FEM.h>
 
 using namespace dolfin;
 
-#ifdef HAVE_PETSC_H
-
-// FIXME: For testing
-void FEM::assembleNoTemplate(BilinearForm& a, GenericMatrixNoTemplate& A, Mesh& mesh)
-{
-  assembleCommonNoTemplate(&a, 0, &A, 0, mesh);
-}
-
-// FIXME: For testing
-void FEM::assembleCommonNoTemplate(BilinearForm* a, LinearForm* L, 
-				   GenericMatrixNoTemplate* A, GenericVectorNoTemplate* b,
-				   Mesh& mesh)
-{
-  // Check that the mesh matches the forms
-  if( a )
-    checkdims(*a, mesh);
-  if( L )
-    checkdims(*L, mesh);
-  
-  // Get finite elements
-  FiniteElement* test_element  = 0;
-  FiniteElement* trial_element = 0;
-  if( a )
-  {
-    test_element  = &(a->test());
-    trial_element = &(a->trial());
-  }
-  else if( L ) 
-    test_element = &(L->test());
-  
-  // Create affine map
-  AffineMap map;
-  
-  // Initialize element matrix/vector data block
-  real* block_A = 0;
-  real* block_b = 0;
-  int* test_nodes = 0;
-  int* trial_nodes = 0;
-  uint n  = 0;
-  uint N  = 0;
-  uint nz = 0;
-  
-  const uint m = test_element->spacedim();
-  const uint M = size(mesh, *test_element);
-  test_nodes = new int[m];
-  
-  if( a )
-  {
-    n = trial_element->spacedim();
-    N = size(mesh, *trial_element);
-    block_A = new real[m*n];
-    trial_nodes = new int[m];
-    nz = nzsize(mesh, *trial_element);
-    A->init(M, N, nz);
-    *A = 0.0;
-  }
-  if( L )
-  {
-    block_b = new real[m];  
-    b->init(M);
-    *b = 0.0;
-  }
-  // Start a progress session
-  if( a && L)
-    dolfin_info("Assembling system (matrix and vector) of size %d x %d.", M, N);
-  if( a && !L)
-    dolfin_info("Assembling matrix of size %d x %d.", M, N);
-  if( !a && L)
-    dolfin_info("Assembling vector of size %d.", M);
-  Progress p("Assembling interior contributions", mesh.numCells());
-  
-  // Iterate over all cells in the mesh
-  for (CellIterator cell(mesh); !cell.end(); ++cell)
-  {
-    // Update affine map
-    map.update(*cell);
-    
-    // Compute map from local to global degrees of freedom (test functions)
-    test_element->nodemap(test_nodes, *cell, mesh);
-    
-    if( a )
-    {
-      // Update forms
-      a->update(map);
-      // Compute maps from local to global degrees of freedom (trial functions)
-      trial_element->nodemap(trial_nodes, *cell, mesh);
-      // Compute element matrix 
-      a->eval(block_A, map);
-      // Add element matrix to global matrix
-      A->add(block_A, test_nodes, m, trial_nodes, n);
-    }
-    if( L )
-    {
-      // Update forms
-      L->update(map);    
-      // Compute element vector 
-      L->eval(block_b, map);
-      // Add element vector to global vector
-      b->add(block_b, test_nodes, m);
-    }
-    
-    // Update progress
-    p++;
-  }
-
-  /*
-  
-  //FIXME: need to reinitiliase block_A and block_b in case no boudary terms are provided
-  if( a )
-    for (uint i = 0; i < m*n; ++i)
-      block_A[i] = 0.0;
-  if( L )
-    for (uint i = 0; i < m; ++i)
-      block_b[i] = 0.0;
-  
-  // Iterate over all facets on the boundary
-  Boundary boundary(mesh);
-  Progress p_boundary("Assembling boudary contributions", boundary.numFacets());
-  for ( ; !facet.end(); ++facet)
-  {
-    // Get cell containing the edge (pick first, should only be one)
-    dolfin_assert(facet.numCellNeighbors() == 1);
-    Cell& cell = facet.cell(0);
-    
-    // Get local facet ID
-    uint facetID = facet.localID(0);
-    
-    // Update affine map for facet 
-    map.update(cell, facetID);
-    
-    // Compute map from local to global degrees of freedom (test functions)
-    test_element->nodemap(test_nodes, cell, mesh);
-  
-    if( a )
-    {
-      // Update forms
-      a->update(map);  
-        // Compute maps from local to global degrees of freedom (trial functions)
-      trial_element->nodemap(trial_nodes, cell, mesh);
-      
-      // Compute element matrix 
-      a->eval(block_A, map, facetID);
-      
-      // Add element matrix to global matrix
-      A->add(block_A, test_nodes, m, trial_nodes, n);
-    }
-    if( L )
-    {
-      // Update forms
-      L->update(map);    
-      // Compute element vector 
-      L->eval(block_b, map, facetID);
-      
-      // Add element vector to global vector
-      b->add(block_b, test_nodes, m);
-    }
-    // Update progress
-    p_boundary++;
-  }
-
-  */
-  
-  // Complete assembly
-  if( L )
-    b->apply();
-  if ( a )
-  {
-    A->apply();
-    // Check the number of nonzeros
-    //checknz(*A, nz);
-  }
-  
-  // Delete data
-  delete [] block_A;
-  delete [] block_b;
-  delete [] trial_nodes;
-  delete [] test_nodes;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //-----------------------------------------------------------------------------
-void FEM::lump(const Matrix& M, Vector& m)
+void FEM::assemble(BilinearForm& a, LinearForm& L,
+		   GenericMatrix& A, GenericVector& b,
+		   Mesh& mesh)
 {
-  m.init(M.size(0));
-  Vector one(m);
-  one = 1.0;
-  M.mult(one, m);
+  assembleCommon(&a, &L, &A, &b, mesh);
 }
-#endif
 //-----------------------------------------------------------------------------
-  void FEM::lump(const DenseMatrix& M, DenseVector& m)
-  {
-    m.init(M.size(0));
-    DenseVector one(m);
-    one = 1.0;
-    M.mult(one, m);
-  }
+void FEM::assemble(BilinearForm& a, LinearForm& L,
+		   GenericMatrix& A, GenericVector& b,
+		   Mesh& mesh, BoundaryCondition& bc)
+{
+  assembleCommon(&a, &L, &A, &b, mesh);
+  applyBC(A, b, mesh, a.trial(), bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::assemble(BilinearForm& a, GenericMatrix& A, Mesh& mesh)
+{
+  assembleCommon(&a, 0, &A, 0, mesh);
+}
+//-----------------------------------------------------------------------------
+void FEM::assemble(LinearForm& L, GenericVector& b, Mesh& mesh)
+{
+  assembleCommon(0, &L, (DenseMatrix*) 0, &b, mesh);
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC(GenericMatrix& A, GenericVector& b,
+		  Mesh& mesh, FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Applying Dirichlet boundary conditions.");
+  applyCommonBC(&A, &b, 0, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC(GenericMatrix& A, Mesh& mesh,
+		  FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Applying Dirichlet boundary conditions to matrix.");
+  applyCommonBC(&A, (DenseVector*) 0, 0, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::applyBC(GenericVector& b, Mesh& mesh,
+		  FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Applying Dirichlet boundary conditions to vector.");
+  applyCommonBC(0, &b, 0, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleResidualBC(GenericMatrix& A, GenericVector& b,
+			     const GenericVector& x, Mesh& mesh,
+			     FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Assembling boundary condtions into residual vector.");
+  applyCommonBC(&A, &b, &x, mesh, element, bc);
+}
+//-----------------------------------------------------------------------------
+void FEM::assembleResidualBC(GenericVector& b,
+			     const GenericVector& x, Mesh& mesh,
+			     FiniteElement& element, BoundaryCondition& bc)
+{
+  dolfin_info("Assembling boundary condtions into residual vector.");
+  applyCommonBC((DenseMatrix*) 0, &b, &x, mesh, element, bc);
+}
 //-----------------------------------------------------------------------------
 dolfin::uint FEM::size(const Mesh& mesh, const FiniteElement& element)
 {
@@ -292,31 +144,63 @@ void FEM::disp(const Mesh& mesh, const FiniteElement& element)
   delete [] points;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint FEM::nzsize(const Mesh& mesh, const FiniteElement& element)
+void FEM::assembleCommon(BilinearForm* a, LinearForm* L,
+			 GenericMatrix* A, GenericVector* b, Mesh& mesh)
 {
-  // Estimate the number of nonzeros in each row
-
-  uint nzmax = 0;
-  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
-    nzmax = std::max(nzmax, vertex->numVertexNeighbors() * element.spacedim());
-
-  return nzmax;
+  // Create boundary
+  Boundary boundary(mesh);
+  
+  // Choose type of mesh
+  if ( mesh.type() == Mesh::triangles )
+  {
+    BoundaryFacetIterator<EdgeIterator, Edge> facet(boundary);
+    assembleCommon(a, L, A, b, mesh, facet);
+  }
+  else if ( mesh.type() == Mesh::tetrahedra )
+  {
+    BoundaryFacetIterator<FaceIterator, Face> facet(boundary);
+    assembleCommon(a, L, A, b, mesh, facet);
+  }
+  else
+  {
+    dolfin_error("Unknown mesh type.");  
+  }
 }
 //-----------------------------------------------------------------------------
-void FEM::checkdims(BilinearForm& a, const Mesh& mesh)
+void FEM::applyCommonBC(GenericMatrix* A, GenericVector* b, 
+			const GenericVector* x, Mesh& mesh,
+			FiniteElement& element, BoundaryCondition& bc)
+{
+  // Create boundary
+  Boundary boundary(mesh);
+  
+  // Choose type of mesh
+  if ( mesh.type() == Mesh::triangles)
+  {
+    BoundaryFacetIterator<EdgeIterator, Edge> facet(boundary);
+    applyCommonBC(A, b, x, mesh, element, bc, facet);
+  }
+  else if ( mesh.type() == Mesh::tetrahedra )
+  {
+    BoundaryFacetIterator<FaceIterator, Face> facet(boundary);
+    applyCommonBC(A, b, x, mesh, element, bc, facet);
+  }
+  else
+  {
+    dolfin_error("Unknown mesh type.");  
+  }
+}
+//-----------------------------------------------------------------------------
+void FEM::checkDimensions(const BilinearForm& a, const Mesh& mesh)
 {
   switch ( mesh.type() )
   {
   case Mesh::triangles:
-    if ( a.test().shapedim() != 2 )
-      dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
-    if ( a.trial().shapedim() != 2 )
+    if ( a.test().shapedim() != 2 || a.trial().shapedim() != 2 )
       dolfin_error("Given mesh (triangular 2D) does not match shape dimension for form.");
     break;
   case Mesh::tetrahedra:
-    if ( a.test().shapedim() != 3 )
-      dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
-    if ( a.trial().shapedim() != 3 )
+    if ( a.test().shapedim() != 3 || a.trial().shapedim() != 3 )
       dolfin_error("Given mesh (tetrahedral 3D) does not match shape dimension for form.");
     break;
   default:
@@ -324,7 +208,7 @@ void FEM::checkdims(BilinearForm& a, const Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-void FEM::checkdims(LinearForm& L, const Mesh& mesh)
+void FEM::checkDimensions(const LinearForm& L, const Mesh& mesh)
 {
   switch ( mesh.type() )
   {
@@ -339,5 +223,25 @@ void FEM::checkdims(LinearForm& L, const Mesh& mesh)
   default:
     dolfin_error("Unknown mesh type.");
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::uint FEM::estimateNonZeros(const Mesh& mesh,
+				   const FiniteElement& element)
+{
+  uint nzmax = 0;
+  for (VertexIterator vertex(mesh); !vertex.end(); ++vertex)
+    nzmax = std::max(nzmax, vertex->numVertexNeighbors()*element.spacedim());
+
+  return nzmax;
+}
+//-----------------------------------------------------------------------------
+void FEM::countNonZeros(const GenericMatrix& A, uint nz)
+{
+  uint nz_actual = A.nzmax();
+  if ( nz_actual > nz )
+    dolfin_warning("Actual number of nonzero entries exceeds estimated number of nonzero entries.");
+  else
+    dolfin_info("Maximum number of nonzeros in each row is %d (estimated %d).",
+		nz_actual, nz);
 }
 //-----------------------------------------------------------------------------

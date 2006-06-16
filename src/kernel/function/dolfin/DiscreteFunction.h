@@ -7,13 +7,12 @@
 #ifndef __DISCRETE_FUNCTION_H
 #define __DISCRETE_FUNCTION_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/GenericFunction.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
-  class Vector;
+
   class Mesh;
   
   /// This class implements the functionality for a discrete function
@@ -119,7 +118,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

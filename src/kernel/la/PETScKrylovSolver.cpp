@@ -9,8 +9,7 @@
 
 #ifdef HAVE_PETSC_H
 
-#include <petscpc.h>
-#include <petscconf.h>
+#include <dolfin/PETScManager.h>
 
 #if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
   #include <src/ksp/pc/pcimpl.h>
@@ -19,8 +18,7 @@
 #endif
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/PETScManager.h>
-#include <dolfin/KrylovSolver.h>
+#include <dolfin/PETScKrylovSolver.h>
 
 using namespace dolfin;
 
@@ -35,67 +33,67 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver()
+PETScKrylovSolver::PETScKrylovSolver()
   : LinearSolver(),
     type(default_solver), pc_petsc(Preconditioner::default_pc), pc_dolfin(0), 
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver)
+PETScKrylovSolver::PETScKrylovSolver(Type solver)
   : LinearSolver(),
     type(solver), pc_petsc(Preconditioner::default_pc), pc_dolfin(0), 
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Preconditioner::Type preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Preconditioner::Type preconditioner)
   : LinearSolver(),
     type(default_solver), pc_petsc(preconditioner), pc_dolfin(0),
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Preconditioner& preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Preconditioner& preconditioner)
   : LinearSolver(),
     type(default_solver), pc_petsc(Preconditioner::default_pc), pc_dolfin(&preconditioner),
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver, Preconditioner::Type preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Type solver, Preconditioner::Type preconditioner)
   : LinearSolver(),
     type(solver), pc_petsc(preconditioner), pc_dolfin(0),
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::KrylovSolver(Type solver, Preconditioner& preconditioner)
+PETScKrylovSolver::PETScKrylovSolver(Type solver, Preconditioner& preconditioner)
   : LinearSolver(),
     type(solver), pc_petsc(Preconditioner::default_pc), pc_dolfin(&preconditioner),
-    ksp(0), M(0), N(0)
+    ksp(0), M(0), N(0), parameters_read(false)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-KrylovSolver::~KrylovSolver()
+PETScKrylovSolver::~PETScKrylovSolver()
 {
   // Destroy solver environment.
   if ( ksp ) KSPDestroy(ksp);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScKrylovSolver::solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -113,8 +111,9 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   // Reinitialize solution vector if necessary
   x.init(M);
 
-  // Read parameters
-  readParameters();
+  // Read parameters if not done
+  if ( !parameters_read )
+    readParameters();
 
   // Solve linear system
   KSPSetOperators(ksp, A.mat(), A.mat(), SAME_NONZERO_PATTERN);
@@ -136,7 +135,7 @@ dolfin::uint KrylovSolver::solve(const Matrix& A, Vector& x, const Vector& b)
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector& b)
+dolfin::uint PETScKrylovSolver::solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -154,8 +153,9 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   // Reinitialize solution vector if necessary
   x.init(M);
 
-  // Read parameters
-  readParameters();
+  // Read parameters if not done
+  if ( !parameters_read )
+    readParameters();
 
   // Don't use preconditioner that can't handle virtual (shell) matrix
   if ( !pc_dolfin )
@@ -186,12 +186,12 @@ dolfin::uint KrylovSolver::solve(const VirtualMatrix& A, Vector& x, const Vector
   return num_iterations;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::disp() const
+void PETScKrylovSolver::disp() const
 {
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::init(uint M, uint N)
+void PETScKrylovSolver::init(uint M, uint N)
 {
   // Check if we need to reinitialize
   if ( ksp != 0 && M == this->M && N == this->N )
@@ -217,8 +217,12 @@ void KrylovSolver::init(uint M, uint N)
   setPreconditioner();
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::readParameters()
+void PETScKrylovSolver::readParameters()
 {
+  // Don't do anything if not initialized
+  if ( !ksp )
+    return;
+
   // Set monitor
   if ( get("Krylov monitor convergence") )
     KSPSetMonitor(ksp, monitor, 0, 0);
@@ -237,12 +241,15 @@ void KrylovSolver::readParameters()
     KSPGetPC(ksp, &pc);
     PCFactorSetShiftNonzero(pc, get("Krylov shift nonzero"));
   }
+
+  // Remember that we have read parameters
+  parameters_read = true;
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setSolver()
+void PETScKrylovSolver::setSolver()
 {
   // Don't do anything for default method
-  if ( type == KrylovSolver::default_solver )
+  if ( type == PETScKrylovSolver::default_solver )
     return;
   
   // Set PETSc Krylov solver
@@ -250,7 +257,7 @@ void KrylovSolver::setSolver()
   KSPSetType(ksp, ksp_type);
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::setPreconditioner()
+void PETScKrylovSolver::setPreconditioner()
 {
   // Treat special case DOLFIN user-defined preconditioner
   if ( pc_dolfin )
@@ -286,7 +293,7 @@ void KrylovSolver::setPreconditioner()
   PCSetType(pc, Preconditioner::getType(pc_petsc));
 }
 //-----------------------------------------------------------------------------
-void KrylovSolver::writeReport(int num_iterations)
+void PETScKrylovSolver::writeReport(int num_iterations)
 {
   // Check if we should write the report
   bool report = get("Krylov report");
@@ -308,7 +315,7 @@ void KrylovSolver::writeReport(int num_iterations)
 	      ksp_type, pc_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-KSPType KrylovSolver::getType(const Type type) const
+KSPType PETScKrylovSolver::getType(const Type type) const
 {
   switch (type)
   {

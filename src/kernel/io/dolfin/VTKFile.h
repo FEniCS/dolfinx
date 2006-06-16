@@ -26,18 +26,13 @@ namespace dolfin
     
     void operator<< (Mesh& mesh);
     void operator<< (NewMesh& mesh);
-
-#ifdef HAVE_PETSC_H
     void operator<< (Function& u);
-#endif
     
   private:
 
     void MeshWrite(const Mesh& mesh) const;
     void MeshWrite(NewMesh& mesh) const;
-#ifdef HAVE_PETSC_H
     void ResultsWrite(Function& u) const;
-#endif
     void pvdFileWrite(int u);
     void VTKHeaderOpen(const Mesh& mesh) const;
     void VTKHeaderOpen(NewMesh& mesh) const;

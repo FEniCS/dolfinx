@@ -9,8 +9,6 @@
 #ifndef __GMRES_H
 #define __GMRES_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/KrylovSolver.h>
 
 namespace dolfin
@@ -25,11 +23,15 @@ namespace dolfin
     /// Create GMRES solver with default preconditioner
     GMRES();
 
+#ifdef HAVE_PETSC_H
+
     /// Create GMRES solver with a particular preconditioner
     GMRES(Preconditioner::Type preconditioner);
 
     /// Create GMRES solver with a particular preconditioner
     GMRES(Preconditioner& preconditioner);
+
+#endif
 
     /// Destructor
     ~GMRES();
@@ -40,4 +42,3 @@ namespace dolfin
 
 #endif
 
-#endif

@@ -4,7 +4,7 @@
 // Modified by Andy R. Terrel, 2005.
 //
 // First added:  2005-01-17
-// Last changed: 2006-05-07
+// Last changed: 2006-05-15
 
 #ifdef HAVE_PETSC_H
 
@@ -26,7 +26,7 @@ namespace dolfin
   {
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
-    Vector xx(x), yy(y);
+    PETScVector xx(x), yy(y);
     ((VirtualMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
@@ -34,13 +34,15 @@ namespace dolfin
 }
 
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix() : A(0)
+VirtualMatrix::VirtualMatrix()
+  : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(const Vector& x, const Vector& y) : A(0)
+VirtualMatrix::VirtualMatrix(const PETScVector& x, const PETScVector& y)
+  : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -55,7 +57,7 @@ VirtualMatrix::~VirtualMatrix()
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(const Vector& x, const Vector& y)
+void VirtualMatrix::init(const PETScVector& x, const PETScVector& y)
 {
   // Get size and local size of given vector
   int m(0), n(0), M(0), N(0);
@@ -129,8 +131,8 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   
   uint M = size(0);
   uint N = size(1);
-  Vector x(N), y(M);
-  Matrix A(M, N);
+  PETScVector x(N), y(M);
+  PETScSparseMatrix A(M, N);
   
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)

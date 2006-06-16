@@ -29,31 +29,28 @@ MFile::~MFile()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void MFile::operator<<(Vector& x)
 {
   // Open file
   FILE *fp = fopen(filename.c_str(), "a");
   
-  // Get array (assumes uniprocessor case)
-  real* xx = x.array();
-
   // Write vector
   fprintf(fp, "%s = [", x.name().c_str());
   for (unsigned int i = 0; i < x.size(); i++)
-    fprintf(fp, " %.15g", xx[i]);
+  {
+    // FIXME: This is a slow way to access PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    real temp = x(i);
+    fprintf(fp, " %.15g", temp);
+  }
   fprintf(fp, " ];\n");
   
-  // Restore array
-  x.restore(xx);
-
   // Close file
   fclose(fp);
 
   dolfin_info("Saved vector %s (%s) to file %s in Octave/MATLAB format.",
 	      x.name().c_str(), x.label().c_str(), filename.c_str());
 }
-#endif
 //-----------------------------------------------------------------------------
 void MFile::operator<<(Mesh& mesh)
 {

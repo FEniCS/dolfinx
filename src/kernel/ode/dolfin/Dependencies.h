@@ -9,12 +9,12 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/Matrix.h>
 
 namespace dolfin
 {
 
   class ODE;
-  class Matrix;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important

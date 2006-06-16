@@ -7,14 +7,11 @@
 #ifndef __XML_MATRIX_H
 #define __XML_MATRIX_H
 
-#ifdef HAVE_PETSC_H
-
-#include "XMLObject.h"
+#include <dolfin/Matrix.h>
+#include <dolfin/XMLObject.h>
 
 namespace dolfin
 {
-
-  class Matrix;
   
   class XMLMatrix : public XMLObject
   {
@@ -41,7 +38,5 @@ namespace dolfin
   };
   
 }
-
-#endif
 
 #endif

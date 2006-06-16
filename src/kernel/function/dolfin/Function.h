@@ -10,6 +10,7 @@
 #define __FUNCTION_H
 
 #include <dolfin/constants.h>
+#include <dolfin/Vector.h>
 #include <dolfin/Variable.h>
 #include <dolfin/TimeDependent.h>
 #include <dolfin/FunctionPointer.h>
@@ -21,7 +22,6 @@ namespace dolfin
   class Vertex;
   class Cell;
   class Mesh;
-  class Vector;
   class AffineMap;
   class FiniteElement;
 
@@ -48,8 +48,6 @@ namespace dolfin
     /// Create user-defined function from the given function pointer
     Function(FunctionPointer fp, uint vectordim = 1);
 
-#ifdef HAVE_PETSC_H
-
     /// Create discrete function (mesh and finite element chosen automatically)
     Function(Vector& x);
 
@@ -61,8 +59,6 @@ namespace dolfin
 
     /// Create discrete function (vector created automatically)
     Function(Mesh& mesh, FiniteElement& element);
-
-#endif
 
     /// Copy constructor
     Function(const Function& f);
@@ -91,10 +87,8 @@ namespace dolfin
     /// Return vector dimension of function
     inline uint vectordim() const { return f->vectordim(); }
 
-#ifdef HAVE_PETSC_H
     /// Return vector associated with function (if any)
     inline Vector& vector() { return f->vector(); }
-#endif
 
     /// Return mesh associated with function (if any)
     inline Mesh& mesh() { return f->mesh(); }
@@ -102,10 +96,8 @@ namespace dolfin
     /// Return element associated with function (if any)
     inline FiniteElement& element() { return f->element(); }
 
-#ifdef HAVE_PETSC_H
     /// Attach vector to function (data local if set, use with caution)
     inline void attach(Vector& x, bool local = false) { f->attach(x, local); }
-#endif
 
     /// Attach mesh to function (data local if set, use with caution)
     inline void attach(Mesh& mesh, bool local = false) { f->attach(mesh, local); }
@@ -115,10 +107,8 @@ namespace dolfin
 
     // FIXME: Maybe all constructors should have a corresponding init function?
 
-#ifdef HAVE_PETSC_H
     /// Reinitialize to discrete function (vector created automatically)
     void init(Mesh& mesh, FiniteElement& element);
-#endif
 
     /// Return current type of function
     enum Type { constant, user, functionpointer, discrete };
@@ -131,7 +121,8 @@ namespace dolfin
 
   private:
     
-    // Pointer to current implementation (letter base class)
+    // Pointer to current implementation (letter base class)L = v*f*dx
+
     GenericFunction* f;
 
     // Current function type

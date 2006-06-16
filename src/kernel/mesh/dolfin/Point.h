@@ -23,6 +23,8 @@ namespace dolfin
     Point(real x, real y, real z);
     Point(const Point& p);
 
+    ~Point();
+
     /// Return distance to given point p
     real dist(Point p) const;
 

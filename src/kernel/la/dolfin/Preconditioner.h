@@ -5,20 +5,18 @@
 // Modified Garth N. Wells 2005
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-05-15
 
 #ifndef __PRECONDITIONER_H
 #define __PRECONDITIONER_H
 
 #ifdef HAVE_PETSC_H
 
-#include <petscksp.h>
-#include <petscpc.h>
+#include <dolfin/PETScManager.h>
+#include <dolfin/Vector.h>
 
 namespace dolfin
 {
-
-  class Vector;
 
   /// This class specifies the interface for user-defined Krylov
   /// method preconditioners. A user wishing to implement her own
@@ -53,7 +51,7 @@ namespace dolfin
     virtual void solve(Vector& x, const Vector& b) = 0;
 
     /// Friends
-    friend class KrylovSolver;
+    friend class PETScKrylovSolver;
 
   protected:
 

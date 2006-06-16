@@ -8,41 +8,41 @@ AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
 # This way the code can be installed on systems without automake installed.
 AM_MAINTAINER_MODE
 
-# Option --enable-debug
+# Option --enable/disable-debug
 AC_ARG_ENABLE(debug,
               AC_HELP_STRING([--enable-debug],
                              [Turn on debugging and warnings (this is the default)]),
-              enable_debug=yes)
+              enable_debug=$enableval, enable_debug=no)
 
-# Option --enable-optimization
+# Option --enable/disable-optimization
 AC_ARG_ENABLE(optimization,
               AC_HELP_STRING([--enable-optimization],
                              [Turn on optimization]),
-              enable_optimization=yes)
+              enable_optimization=$enableval, enable_optimization=no)
 
-# Option --enable-mpi
+# Option --enable/disable-mpi
 AC_ARG_ENABLE(mpi,
               AC_HELP_STRING([--enable-mpi],
                              [Compile with MPI]),
-              enable_mpi=yes)
+              enable_mpi=$enableval, enable_mpi=no)
 
-# Option --enable-pydolfin
+# Option --enable/disable-pydolfin
 AC_ARG_ENABLE(pydolfin,
               AC_HELP_STRING([--enable-pydolfin],
                              [Turn on compilation of PyDOLFIN]),
-              enable_pydolfin=yes)
+              enable_pydolfin=$enableval, enable_pydolfin=no)
 
-# Option --disable-curses
+# Option --enable/disable-curses
 AC_ARG_ENABLE(curses,
               AC_HELP_STRING([--disable-curses],
                              [Compile without curses]),
-              disable_curses=yes)
+              enable_curses=$enableval, enable_curses=yes)
 
-# Option --disable-petsc
+# Option --enable/disable-petsc
 AC_ARG_ENABLE(petsc,
               AC_HELP_STRING([--disable-petsc],
                              [Compile without PETSc (some demos may not compile)]),
-              disable_petsc=yes)
+              disable_petsc=$enableval, enable_petsc=yes)
 
 # Option --with-petsc-dir
 AC_ARG_WITH(petsc-dir,
@@ -68,8 +68,38 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 
-# libtool
+
+# Test that the libtool executable is installed
+AC_CHECK_PROG(libtool_found, libtool, yes, no)
+if test $libtool_found = no; then
+    echo "*** Unable to find libtool."
+    echo "*** Perhaps you need to install the package libtool?"
+    exit 1	
+fi    
+
+# Configure libtool
 AC_PROG_LIBTOOL
+
+# Check for libxml2
+AM_PATH_XML2( ,libxml2_found=yes, libxml2_found=no)
+if test $libxml2_found = no; then
+    echo "*** Unable to find libxml2 development files on your system."
+    echo "*** Perhaps you need to install the packages libxml2 and libxml2-dev?"
+    exit 1
+fi
+
+# Check for Boost
+AC_CHECK_HEADER([boost/version.hpp], have_boost=yes, have_boost=no)
+if test $have_boost = no; then
+    AC_CHECK_HEADER([$BOOST_DIR/boost/version.hpp], have_boost=yes)
+    if test $have_boost = yes; then
+        BOOST_CFLAGS="-I$BOOST_DIR"
+    else
+        echo "*** Unable to find Boost."
+        echo "*** Perhaps you need set the include path --with-boost-include=<path> or to install the package libboost-dev?"
+        exit 1
+    fi
+fi
 
 # Test for PyDOLFIN
 if test x$enable_pydolfin = xyes; then
@@ -91,11 +121,14 @@ if test x$enable_debug = xyes; then
 fi 
 
 # Handle option --enable-optimization
-# Flag -DNDEBUG is for Boost
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="-O3 -DNDEBUG -Wall -ansi"
+    CXXFLAGS="-O3  -Wall -ansi"
 fi
+
+# Flag -DNDEBUG is for Boost
+CXXFLAGS="$CXXFLAGS -DNDEBUG"
+
 
 # Add compiler specific flags
 case "${ax_cv_c_compiler_vendor}" in
@@ -154,7 +187,7 @@ if test x$enable_mpi = xyes; then
         if [ test -d $DIR/mpi ]; then
             MPI_CFLAGS="-I$DIR/mpi"
         else
-	    MPI_CFLAGS="-I$DIR"
+            MPI_CFLAGS="-I$DIR"
         fi
     else
         echo "*** Unable to find MPI on your system."
@@ -170,60 +203,46 @@ if test x$disable_petsc = x; then
     
     # Handle option --with-petsc-dir=<path>
     if test x$PETSC_DIR = x; then
-	PETSC_DIR="/usr/local/lib/petsc/"
+        PETSC_DIR="/usr/local/lib/petsc/"
         echo "assuming path to PETSc is $PETSC_DIR"
     else
         echo "using PETSC_DIR=$PETSC_DIR"
     fi
 
     # Check for PETSc
-    AC_CHECK_PROG(petsc_found, configarch, yes, no, $PATH:$PETSC_DIR/bin)
-    if test $petsc_found = yes; then
+    MKFILE=$PETSC_DIR/bmake/common/base
+    if test -f $MKFILE; then
         # Extract PETSc variables from PETSC_DIR/bmake/common/variables
-        PETSC_CFLAGS=`make -s -C $PETSC_DIR getincludedirs PETSC_DIR=$PETSC_DIR`
-	PETSC_LIBS=`make -s -C $PETSC_DIR getlinklibs PETSC_DIR=$PETSC_DIR`
+        PETSC_CFLAGS=`make -f $MKFILE getincludedirs PETSC_DIR=$PETSC_DIR`
+        PETSC_LIBS=`make -f $MKFILE getlinklibs PETSC_DIR=$PETSC_DIR`
     else
-	echo "*** Unable to find PETSc 2.3.1 on your system."
-	echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
-	echo "*** or set the environment variable PETSC_DIR to the correct path."
-	echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
-	exit 1
+        echo "*** Unable to find PETSc on your system."
+        echo "*** Use --with-petsc-dir=<path> to specify the correct path for PETSc,"
+        echo "*** or set the environment variable PETSC_DIR to the correct path."
+        echo "*** PETSc is available at http://www-unix.mcs.anl.gov/petsc/petsc-2/"
+        exit 1
     fi
 
     # Found PETSc, so set HAVE_PETSC_H
     PETSC_CFLAGS="-DHAVE_PETSC_H=1 $PETSC_CFLAGS"
 
-else
+    # Check for eigenvalue solver extension SLEPc. Variable SLEPC_DIR must be set.
+    AC_CHECK_HEADER([$SLEPC_DIR/include/slepcversion.h], have_slepc=yes, have_slepc=no)
 
+    if test $have_slepc = yes; then
+        PETSC_ARCH=`cat $PETSC_DIR/bmake/petscconf | sed -e "s/PETSC_ARCH=//" -e "2d"`
+        SLEPC_CFLAGS="-DHAVE_SLEPC_H=1 -I${SLEPC_DIR} -I${SLEPC_DIR}/include"
+        SLEPC_LIBS="-L${SLEPC_DIR}/lib/${PETSC_ARCH} -lslepc"
+        SLEPC_LIBS="-Wl,-rpath,${SLEPC_DIR}/lib/linux-gnu-cxx-real-debug $SLEPC_LIBS"
+    else
+        echo "SLEPc not found on your system."
+        echo "  SLEPc is a PETSc extension that provides eigenvalue solvers."
+        echo "  It is available at http://www.grycap.upv.es/slepc."
+    fi
+else
     # Compile without PETSc
     echo "disabling PETSc (some demos may not compile)"
     PETSC_CFLAGS=""
-
-fi
-
-# Check for Boost headers
-have_boost=no
-AC_CHECK_HEADERS([boost/version.hpp], have_boost=yes)
-if test $have_boost = no; then
-  AC_CHECK_HEADERS([$BOOST_DIR/boost/version.hpp], have_boost=yes)
-  if test $have_boost = yes; then
-    BOOST_CFLAGS="-I$BOOST_DIR"
-  else
-    echo "*** Unable to find Boost."
-    echo "*** Perhaps you need to install the package libboost-dev?"
-    exit 1
-  fi
-fi
-
-# Check for libxml2
-AC_CHECK_PROG(libxml2_found, xml2-config, yes, no)
-if test $libxml2_found = yes; then	  
-    XML2_CFLAGS=`xml2-config --cflags`
-    XML2_LIBS=`xml2-config --libs`
-else
-    echo "*** Unable to find libxml2 development files on your system."
-    echo "*** Perhaps you need to install the package libxml2-dev?"
-    exit 1
 fi
 
 # List of DOLFIN module libraries
@@ -237,7 +256,7 @@ KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML2_CFLAGS"
+KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS"
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
@@ -253,7 +272,7 @@ DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $XML2_LIBS"
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS"
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against
@@ -344,6 +363,7 @@ AC_OUTPUT( Makefile \
            src/demo/solvers/navierstokes/Makefile \
            src/demo/scripting/Makefile \
            src/bench/Makefile \
+           src/bench/fem/Makefile \
            src/bench/ode/Makefile \
            src/utils/Makefile \
            src/utils/inp2dx/Makefile \
@@ -387,3 +407,4 @@ if test "$__PATH" = "`echo $__PATH | sed s/$__BINDIR//`"; then
    echo "  setenv PATH $prefix/bin:\${PATH}"
    echo ''
 fi
+

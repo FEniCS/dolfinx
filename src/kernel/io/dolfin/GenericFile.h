@@ -2,18 +2,19 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-15
-// Last changed: 2006-05-23
+// Last changed: 2006-05-24
 
 #ifndef __GENERIC_FILE_H
 #define __GENERIC_FILE_H
 
 #include <string>
 
+#include <dolfin/Vector.h>
+#include <dolfin/Matrix.h>
+
 namespace dolfin
 {
   
-  class Vector;
-  class Matrix;
   class Mesh;
   class NewMesh;
   class Function;
@@ -32,7 +33,7 @@ namespace dolfin
     virtual ~GenericFile();
     
     // Input
-    
+
     virtual void operator>> (Vector& x);
     virtual void operator>> (Matrix& A);
     virtual void operator>> (Mesh& mesh);

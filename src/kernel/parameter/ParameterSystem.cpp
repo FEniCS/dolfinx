@@ -18,7 +18,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 ParameterSystem::ParameterSystem() : ParameterList()
 {
-  dolfin_info("Initializing DOLFIN parameter system.");
+  // dolfin_info("Initializing DOLFIN parameter system.");
 
   // Include default values for parameters
 #include <dolfin/DefaultParameters.h>

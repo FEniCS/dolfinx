@@ -6,8 +6,6 @@
 // First added:  2005-10-24
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/FEM.h>
 #include <dolfin/NonlinearPDE.h>
 #include <dolfin/BilinearForm.h>
@@ -45,12 +43,12 @@ void NonlinearPDE::form(Matrix& A, Vector& b, const Vector& x)
     if(_bc) 
     { 
       FEM::applyBC(A, *_mesh, _a->test(), *_bc);
-      FEM::assembleBCresidual(b, x, *_mesh, _Lf->test(), *_bc);
+      FEM::assembleResidualBC(b, x, *_mesh, _Lf->test(), *_bc);
     }
     else
     {
-      //FIXME: Deal with zero Neumann condition on entire boundary her. Need to fix FEM::assembleBCresidual 
-      // FEM::assembleBCresidual(b, x, *_mesh, _Lf->test());
+      //FIXME: Deal with zero Neumann condition on entire boundary here. Need to
+      //fix FEM::assembleResidualFEM::assembleResidualBC(b, x, *_mesh, _Lf->test());
       dolfin_error("Pure zero Neumann boundary conditions not yet implemented for nonlinear PDE.");
     }
   }
@@ -111,5 +109,3 @@ BoundaryCondition& NonlinearPDE::bc()
   return *_bc;
 }
 //-----------------------------------------------------------------------------
-
-#endif

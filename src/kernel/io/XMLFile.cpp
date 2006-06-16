@@ -2,6 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // Modified by Erik Svensson 2003.
+// Modified by Garth N. Wells, 2006.
 //
 // First added:  2002-12-03
 // Last changed: 2006-05-23
@@ -9,6 +10,7 @@
 #include <stdarg.h>
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
 #include <dolfin/Mesh.h>
@@ -47,7 +49,6 @@ XMLFile::~XMLFile()
     delete xmlObject;
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Vector& x)
 {
   if ( xmlObject )
@@ -63,7 +64,6 @@ void XMLFile::operator>>(Matrix& A)
   xmlObject = new XMLMatrix(A);
   parseFile();
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(Mesh& mesh)
 {
@@ -81,7 +81,6 @@ void XMLFile::operator>>(NewMesh& mesh)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator>>(Function& f)
 {
   // We are cheating here. Instead of actually parsing the XML for
@@ -116,7 +115,6 @@ void XMLFile::operator>>(Function& f)
   f.attach(*mesh, true);
   f.attach(*element, true);
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator>>(FiniteElementSpec& spec)
 {
@@ -142,26 +140,23 @@ void XMLFile::operator>>(BLASFormData& blas)
   parseFile();
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Vector& x)
 {
   // Open file
   FILE* fp = openFile();
   
-  // Get array (assumes uniprocessor case)
-  real* xx = x.array();
-
   // Write vector in XML format
   fprintf(fp, "  <vector size=\" %u \"> \n", x.size() );
   
-  for (unsigned int i = 0; i < x.size(); i++) {
-    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, xx[i]);
+  for (unsigned int i = 0; i < x.size(); i++) 
+  {
+    // FIXME: This is a slow way to acces PETSc vectors. Need a fast way 
+    //        which is consistent for different vector types.
+    real temp = x(i);
+    fprintf(fp, "    <entry row=\"%u\" value=\"%.15g\"/>\n", i, temp);
     if ( i == (x.size() - 1))
       fprintf(fp, "  </vector>\n");
   }
-  
-  // Restore array
-  x.restore(xx);
   
   // Close file
   closeFile(fp);
@@ -178,20 +173,19 @@ void XMLFile::operator<<(Matrix& A)
   // Write matrix in XML format
   fprintf(fp, "  <matrix rows=\"%u\" columns=\"%u\">\n", A.size(0), A.size(1));
         
-  // Get PETSc Mat pointer
-  Mat A_mat = A.mat();
   int ncols = 0;
-  const int *cols = 0;
-  const double *vals = 0;                                                                                                                     
+  Array<int> columns;
+  Array<real> values;
+
   for (unsigned int i = 0; i < A.size(0); i++)
   {
-    MatGetRow(A_mat, i, &ncols, &cols, &vals);
+    A.getRow(i, ncols, columns, values);
     if ( ncols > 0 )
       fprintf(fp, "    <row row=\"%u\" size=\"%i\">\n", i, ncols);
     for (int pos = 0; pos < ncols; pos++)
     {
-      unsigned int j = cols[pos];
-      real aij = vals[pos];
+      unsigned int j = columns[pos];
+      real aij = values[pos];
       fprintf(fp, "      <entry column=\"%u\" value=\"%.15g\"/>\n", j, aij);
     }
     if ( ncols > 0 )
@@ -205,7 +199,6 @@ void XMLFile::operator<<(Matrix& A)
   dolfin_info("Saved vector %s (%s) to file %s in DOLFIN XML format.",
 	      A.name().c_str(), A.label().c_str(), filename.c_str());
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(Mesh& mesh)
 {
@@ -311,7 +304,6 @@ void XMLFile::operator<<(NewMesh& mesh)
        
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void XMLFile::operator<<(Function& f)
 {
   // Can only write discrete functions
@@ -349,7 +341,6 @@ void XMLFile::operator<<(Function& f)
   cout << "Saved function " << f.name() << " (" << f.label()
        << ") to file " << filename << " in XML format." << endl;
 }
-#endif
 //-----------------------------------------------------------------------------
 void XMLFile::operator<<(FiniteElementSpec& spec)
 {

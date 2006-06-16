@@ -9,7 +9,7 @@
 
 #ifdef HAVE_PETSC_H
 
-#include <petsc.h>
+#include <dolfin/PETScManager.h>
 #if PETSC_VERSION_MAJOR==2 && PETSC_VERSION_MINOR==3 && PETSC_VERSION_SUBMINOR==0
   #include <src/ksp/pc/pcimpl.h>
 #else
