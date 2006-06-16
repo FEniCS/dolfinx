@@ -2,10 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-05
+// Last changed: 2006-06-16
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewMesh.h>
+#include <dolfin/NewPoint.h>
 #include <dolfin/MeshEditor.h>
 
 using namespace dolfin;
@@ -25,7 +26,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::edit(NewMesh& mesh, uint dim, std::string cell_type)
+void MeshEditor::edit(NewMesh& mesh, uint dim, CellType::Type type)
 {
   // Clear old mesh data
   mesh.data.clear();
@@ -36,7 +37,7 @@ void MeshEditor::edit(NewMesh& mesh, uint dim, std::string cell_type)
   this->dim = dim;
 
   // Set cell type
-  mesh.data.cell_type = CellType::create(cell_type);
+  mesh.data.cell_type = CellType::create(type);
 
   // Initialize topological dimension
   mesh.data.topology.init(dim);
@@ -69,6 +70,16 @@ void MeshEditor::initCells(uint num_cells)
   this->num_cells = num_cells;
   mesh->data.topology.init(dim, num_cells);
   mesh->data.topology(dim, 0).init(num_cells, dim + 1);
+}
+//-----------------------------------------------------------------------------
+void MeshEditor::addVertex(uint v, const NewPoint& p)
+{
+  // Add vertex
+  addVertexCommon(v, mesh->dim());
+  
+  // Set coordinate
+  for (uint i = 0; i < mesh->dim(); i++)
+    mesh->data.geometry.set(v, i, p[i]);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, real x)
@@ -139,8 +150,6 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
 //-----------------------------------------------------------------------------
 void MeshEditor::close()
 {
-  // FIXME: Init mesh?
-
   // Clear data
   clear();
 }
@@ -166,9 +175,6 @@ void MeshEditor::addVertexCommon(uint v, uint dim)
     dolfin_error1("Vertex list is full, %d vertices already specified.",
 		  num_vertices);
   
-  // Store numbering
-  // FIXME: Don't know how to do this
-
   // Step to next vertex
   next_vertex++;
 }

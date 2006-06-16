@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-12
+// Last changed: 2006-06-16
 
 #ifndef __MESH_GEOMETRY_H
 #define __MESH_GEOMETRY_H
@@ -38,10 +38,10 @@ namespace dolfin
     inline uint size() const { return _size; }
     
     /// Return value of coordinate n in direction i
-    inline double& x(uint n, uint i) { return coordinates[i*_size + n]; }
+    inline real& x(uint n, uint i) { return coordinates[i*_size + n]; }
 
     /// Return value of coordinate n in direction i
-    inline double x(uint n, uint i) const { return coordinates[i*_size + n]; }
+    inline real x(uint n, uint i) const { return coordinates[i*_size + n]; }
 
     /// Clear all data
     void clear();

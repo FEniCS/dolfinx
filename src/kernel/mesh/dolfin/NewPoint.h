@@ -7,6 +7,7 @@
 #ifndef __NEW_POINT_H
 #define __NEW_POINT_H
 
+#include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 
 namespace dolfin
@@ -34,6 +35,9 @@ namespace dolfin
 
     /// Destructor
     ~NewPoint() {};
+
+    /// Return coordinate in direction i
+    inline real operator[] (uint i) const { dolfin_assert(i < 3); return _x[i]; }
 
     /// Return x-coordinate
     inline real x() const { return _x[0]; }

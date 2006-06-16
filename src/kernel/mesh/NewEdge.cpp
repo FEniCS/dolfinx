@@ -12,21 +12,18 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 NewPoint NewEdge::midpoint()
 {
-  // FIXME: Maybe this should be simplified?
-
-  dolfin_assert(numConnections(0) > 0);
   uint* vertices = connections(0);
   dolfin_assert(vertices);
 
-  NewVertex v0(_mesh, vertices[0]);
-  NewVertex v1(_mesh, vertices[1]);
+  const NewVertex v0(_mesh, vertices[0]);
+  const NewVertex v1(_mesh, vertices[1]);
+  
+  const NewPoint p0 = v0.point();
+  const NewPoint p1 = v1.point();
 
-  NewPoint p0 = v0.point();
-  NewPoint p1 = v1.point();
-
-  NewPoint p(0.5*(v0.x() + v1.x()),
-	     0.5*(v0.y() + v1.y()),
-	     0.5*(v0.z() + v1.z()));
+  NewPoint p(0.5*(p0.x() + p0.x()),
+	     0.5*(p0.y() + p0.y()),
+	     0.5*(p0.z() + p0.z()));
 
   return p;
 }

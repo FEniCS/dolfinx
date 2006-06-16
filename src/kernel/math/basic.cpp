@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells 2005.
 //
 // First added:  2003-02-06
-// Last changed: 2005-12-12
+// Last changed: 2006-06-16
 
 #include <time.h>
 #include <cstdlib>
@@ -23,6 +23,14 @@ namespace dolfin
 real dolfin::sqr(real x)
 {
   return x*x;
+}
+//-----------------------------------------------------------------------------
+dolfin::uint dolfin::ipow(uint a, uint n)
+{
+  uint p = a;
+  for (uint i = 1; i < n; i++)
+    p *= a;
+  return p;
 }
 //-----------------------------------------------------------------------------
 real dolfin::rand()

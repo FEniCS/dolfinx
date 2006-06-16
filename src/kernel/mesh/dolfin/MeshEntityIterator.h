@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-31
+// Last changed: 2006-06-16
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -12,16 +12,10 @@
 #include <dolfin/NewMesh.h>
 #include <dolfin/MeshEntity.h>
 
-
 #include <dolfin/MeshAlgorithms.h>
 
 namespace dolfin
 {
-
-
-  // FIXME: Move constructors and output to MeshEntityIterator.cpp
-
-  // FIXME: Consistent use of incidence relations, connectivity, connections
 
   /// MeshEntityIterator provides a common iterator for mesh entities
   /// over meshes, boundaries and incidence relations. The basic use
@@ -57,10 +51,7 @@ namespace dolfin
     {
       // Compute entities if empty
       if ( pos_end == 0 )
-      {
-	MeshAlgorithms::computeEntities(mesh, dim);
-	pos_end = mesh.size(dim);
-      }
+	pos_end = MeshAlgorithms::computeEntities(mesh, dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity    
@@ -117,8 +108,6 @@ namespace dolfin
     /// Destructor
     virtual ~MeshEntityIterator() {}
     
-    // FIXME: No bounds check, should be ok? Check what STL does.
-
     /// Step to next mesh entity
     MeshEntityIterator& operator++() { ++pos; return *this; }
 
@@ -131,19 +120,8 @@ namespace dolfin
     /// Member access operator
     inline MeshEntity* operator->() { entity._index = (index ? index[pos] : pos); return &entity; }
 
-    /// Member access operator
-    //inline const MeshEntity* operator->() const { entity._index = (index ? index[pos] : pos); return &entity; }
-
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it)
-    {
-      stream << "[ Mesh entity iterator at position "
-	     << it.pos
-	     << " stepping from 0 to "
-	     << it.pos_end - 1
-	     << " ]";
-      return stream;
-    }
+    friend LogStream& operator<< (LogStream& stream, const MeshEntityIterator& it);
     
   private:
 

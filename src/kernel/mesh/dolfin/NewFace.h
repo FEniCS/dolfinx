@@ -37,6 +37,12 @@ namespace dolfin
     NewFaceIterator(MeshEntity& entity) : MeshEntityIterator(entity, 2) {}
     NewFaceIterator(MeshEntityIterator& it) : MeshEntityIterator(it, 2) {}
 
+    inline NewFace& operator*()
+    { return static_cast<NewFace&>(*static_cast<MeshEntityIterator>(*this)); }
+
+    inline NewFace* operator->()
+    { return &static_cast<NewFace&>(*static_cast<MeshEntityIterator>(*this)); }
+
   };    
 
 }

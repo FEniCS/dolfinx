@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-12
+// Last changed: 2006-06-16
 
 #ifndef __NEW_TETRAHEDRON_H
 #define __NEW_TETRAHEDRON_H
@@ -27,11 +27,11 @@ namespace dolfin
     /// Return number of vertices for entity of given topological dimension
     uint numVertices(uint dim) const;
 
-    /// Create entities of given topological dimension
-    void createEntities(uint** entities, uint dim, const uint vertices[]);
+    /// Create entities e of given topological dimension from vertices v
+    void createEntities(uint** e, uint dim, const uint v[]);
 
-    /// Refine mesh uniformly
-    void refineUniformly(NewMesh& mesh);
+    /// Refine cell uniformly
+    void refineCell(NewCell& cell, MeshEditor& editor, uint& current_cell);
 
     /// Return description of cell type
     std::string description() const;

@@ -37,6 +37,12 @@ namespace dolfin
     NewCellIterator(MeshEntity& entity) : MeshEntityIterator(entity, entity.mesh().dim()) {}
     NewCellIterator(MeshEntityIterator& it) : MeshEntityIterator(it, it->mesh().dim()) {}
 
+    inline NewCell& operator*()
+    { return static_cast<NewCell&>(*static_cast<MeshEntityIterator>(*this)); }
+
+    inline NewCell* operator->()
+    { return &static_cast<NewCell&>(*static_cast<MeshEntityIterator>(*this)); }
+
   };    
 
 }

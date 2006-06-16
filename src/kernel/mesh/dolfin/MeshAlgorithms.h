@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-08
+// Last changed: 2006-06-16
 
 #ifndef __MESH_ALGORITHMS_H
 #define __MESH_ALGORITHMS_H
@@ -24,7 +24,7 @@ namespace dolfin
   public:
 
     /// Compute mesh entities of given topological dimension
-    static void computeEntities(NewMesh& mesh, uint dim);
+    static uint computeEntities(NewMesh& mesh, uint dim);
 
     /// Compute connectivity for given pair of topological dimensions
     static void computeConnectivity(NewMesh& mesh, uint d0, uint d1);
@@ -38,11 +38,14 @@ namespace dolfin
     static void computeFromIntersection(NewMesh& mesh, uint d0, uint d1, uint d);
 
     /// Count how many of the given entities that are new
-    static uint countEntities(NewMesh& mesh, MeshEntity& cell, uint** entities, uint m, uint n);
+    static uint countEntities(NewMesh& mesh, MeshEntity& cell, 
+			      uint** vertices, uint m, uint n, uint dim);
 
     /// Add entities that are new
-    static void addEntities(NewMesh& mesh, MeshEntity& cell, uint** entities, uint m, uint n,
-			    MeshConnectivity& connectivity, uint& current_entity);
+    static void addEntities(NewMesh& mesh, MeshEntity& cell,
+			    uint** vertices, uint m, uint n, uint dim,
+			    MeshConnectivity& ce, MeshConnectivity& ev,
+			    uint& current_entity);
 
     /// Check if mesh entity e0 contains mesh entity e1
     static bool contains(MeshEntity& e0, MeshEntity& e1);

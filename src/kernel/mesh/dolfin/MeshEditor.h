@@ -2,18 +2,20 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-05
+// Last changed: 2006-06-16
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
 
 #include <dolfin/constants.h>
+#include <dolfin/CellType.h>
 #include <dolfin/Array.h>
 
 namespace dolfin
 {
   
   class NewMesh;
+  class NewPoint;
   
   /// A simple mesh editor for creating simplicial meshes in 1D, 2D and 3D.
 
@@ -28,13 +30,16 @@ namespace dolfin
     ~MeshEditor();
 
     /// Edit given mesh
-    void edit(NewMesh& mesh, uint dim, std::string cell_type);
+    void edit(NewMesh& mesh, uint dim, CellType::Type type);
 
     /// Specify number of vertices
     void initVertices(uint num_vertices);
 
     /// Specify number of cells
     void initCells(uint num_cells);
+
+    /// Add vertex v at given point p
+    void addVertex(uint v, const NewPoint& p);
 
     /// Add vertex v at given coordinate x
     void addVertex(uint v, real x);

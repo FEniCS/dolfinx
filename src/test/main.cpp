@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-03-01
+// Last changed: 2006-06-16
 //
 // This file is used for testing out new features implemented in the
 // library, which means that the contents of this file is constantly
@@ -422,14 +422,100 @@ void testGenericMatrix()
   cout << "Time without template: " << toc() << endl;
 }
 
+void benchOldMesh()
+{
+  int num_reads = 1000;
+  int num_refinements = 8;
+  int num_iterations = 100;
+
+  dolfin_log(false);
+
+  tic();
+  for (int i = 0; i < num_reads; i++)
+  {
+    Mesh mesh("oldmesh.xml.gz");
+  }
+  real t0 = toc();
+
+  Mesh mesh("oldmesh.xml.gz");
+  tic();
+  for (int i = 0; i < num_refinements; i++)
+    mesh.refineUniformly();
+  real t1 = toc();
+
+  tic();
+  int sum = 0;
+  for (int i = 0; i < num_iterations; i++)
+  {
+
+    for (CellIterator c(mesh); !c.end(); ++c)
+      for (VertexIterator v(c); !v.end(); ++v)
+	sum += v->id();
+  }
+  cout << "sum = " << sum << endl;
+  real t2 = toc();
+
+  dolfin_log(true);
+
+  cout << mesh << endl;
+
+  dolfin_info("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
+  dolfin_info("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
+  dolfin_info("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
+
+  cout << "Sleeping so you have time to measure the memory usage of this process..." << endl;
+  delay(5.0);
+}
+
+void benchNewMesh()
+{
+  int num_reads = 1000;
+  int num_refinements = 8;
+  int num_iterations = 100;
+
+  dolfin_log(false);
+
+  tic();
+  for (int i = 0; i < num_reads; i++)
+  {
+    NewMesh mesh("newmesh.xml.gz");
+  }
+  real t0 = toc();
+
+  NewMesh mesh("newmesh.xml.gz");
+  tic();
+  for (int i = 0; i < num_refinements; i++)
+    mesh.refine();
+  real t1 = toc();
+
+  tic();
+  int sum = 0;
+  for (int i = 0; i < num_iterations; i++)
+  {
+
+    for (NewCellIterator c(mesh); !c.end(); ++c)
+      for (NewVertexIterator v(c); !v.end(); ++v)
+	sum += v->index();
+  }
+  cout << "sum = " << sum << endl;
+  real t2 = toc();
+
+  dolfin_log(true);
+
+  cout << mesh << endl;
+
+  dolfin_info("Reading and initializing mesh %d times:    %.3g s", num_reads, t0);
+  dolfin_info("Refining mesh uniformly %d times:            %.3g s", num_refinements, t1);
+  dolfin_info("Iterating over mesh connectivity %d times: %.3g s", num_iterations, t2);
+
+  cout << "Sleeping so you have time to measure the memory usage of this process..." << endl;
+  delay(5.0);
+}
+
 void testNewMesh()
 {
-  //Mesh oldmesh("oldmesh.xml.gz");
-  //oldmesh.disp();
-
   NewMesh newmesh("newmesh.xml.gz");
   cout << newmesh << endl;
-  newmesh.disp();
 
   // Compute all entities and connectivity, otherwise
   // handled automatically by the mesh iterators.
@@ -479,13 +565,6 @@ void testNewMesh()
 	cout << "    " << *e << endl;
     }
   }
-
-  newmesh.refine();
-  newmesh.refine();
-  newmesh.disp();
-
-  File file("refined_mesh.pvd");
-  file << newmesh;
 }
 
 int main(int argc, char* argv[])
@@ -510,7 +589,10 @@ int main(int argc, char* argv[])
   testGenericMatrix();
 */
   
-  testNewMesh();
+  //testNewMesh();
 
+  //benchOldMesh();
+  benchNewMesh();
+  
   return 0;
 }

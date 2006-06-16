@@ -2,9 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-12
+// Last changed: 2006-06-16
 
 #include <dolfin/File.h>
+#include <dolfin/UniformMeshRefinement.h>
 #include <dolfin/MeshAlgorithms.h>
 #include <dolfin/NewMesh.h>
 
@@ -68,9 +69,7 @@ void NewMesh::disp() const
 void NewMesh::refine()
 {
   dolfin_info("No cells marked for refinement, assuming uniform mesh refinement.");
-
-  dolfin_assert(data.cell_type);
-  data.cell_type->refineUniformly(*this);
+  UniformMeshRefinement::refine(*this);
 }
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const NewMesh& mesh)

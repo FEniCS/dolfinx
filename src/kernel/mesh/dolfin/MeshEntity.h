@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-11
-// Last changed: 2006-06-06
+// Last changed: 2006-06-16
 
 #ifndef __MESH_ENTITY_H
 #define __MESH_ENTITY_H
@@ -49,12 +49,7 @@ namespace dolfin
     inline const uint* connections(uint dim) const { return _mesh.data.topology(_dim, dim)(_index); }
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity)
-    {
-      stream << "[ Mesh entity " << entity.index()
-	     << " of topological dimension " << entity.dim() << " ]";
-      return stream;
-    }
+    friend LogStream& operator<< (LogStream& stream, const MeshEntity& entity);
 
   protected:
 
