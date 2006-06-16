@@ -54,8 +54,6 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
   editor.initVertices(num_vertices + num_edges);
   editor.initCells(ipow(2, mesh.dim())*num_cells);
 
-  cout << "Number of cells when refined: " << pow(2, mesh.dim()) << endl;
-
   // Add old vertices
   uint vertex = 0;
   for (NewVertexIterator v(mesh); !v.end(); ++v)

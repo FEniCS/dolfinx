@@ -20,8 +20,8 @@ namespace dolfin
   /// and the connectivity. Any numbering scheme for the mesh entities is
   /// stored separately in a MeshFunction over the entities.
   ///
-  /// A mesh entity may be identified globally as a pair (d, e), where d is
-  /// the topological dimension and e is the number of the entity within
+  /// A mesh entity e may be identified globally as a pair e = (dim, i), where
+  /// dim is the topological dimension and i is the index of the entity within
   /// that topological dimension.
   
   class MeshTopology

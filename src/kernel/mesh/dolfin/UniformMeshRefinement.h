@@ -26,17 +26,6 @@ namespace dolfin
     /// Refine simplicial mesh uniformly
     static void refineSimplex(NewMesh& mesh);
 
-
-
-    /// Uniform mesh refinement for interval meshes
-    static void refineInterval(NewMesh& mesh);
-
-    /// Uniform mesh refinement for triangular meshes
-    static void refineTriangle(NewMesh& mesh);
-
-    /// Uniform mesh refinement for tetrahedral meshes
-    static void refineTetrahedron(NewMesh& mesh);
-
   };
 
 }
