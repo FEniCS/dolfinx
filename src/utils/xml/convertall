@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Copyright (C) 2006 Anders Logg
+# Licensed under the GNU GPL Version 2
+#
+# Convert all DOLFIN XML files in a directory from
+# the old DOLFIN XML format to the new format
+
+# Unpack all .xml.gz files if any
+for f in *.xml.gz; do
+	echo "Unpacking $f..."
+	gunzip $f
+done
+
+# Convert all .xml files
+for f in *.xml; do
+	echo "Converting $f..."
+	mv $f $f.old
+	./dolfin-convert $f.old $f
+done
+
+# Pack all .xml files
+for f in *.xml; do
+	echo "Packing $f..."
+	gzip $f
+done
