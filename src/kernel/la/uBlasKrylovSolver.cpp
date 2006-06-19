@@ -80,15 +80,15 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasSparseMatrix& A, DenseVector& x
 dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVector& x, 
     const DenseVector& b, bool& converged)
 {
-
-  dolfin_warning("GMRES solver for uBlas data types has not been optimised.");
-  dolfin_warning("Preconditioning has not yet been implemented, so convergence may be poor.");
+  dolfin_warning("Preconditioning has not yet been implemented for the uBlas GMRES solver.");
 
   namespace ublas = boost::numeric::ublas;
+
   typedef ublas::vector<double> ublas_vector;
+  typedef ublas::vector_range<ublas_vector> ublas_vector_range;
+
   typedef ublas::matrix<double,ublas::column_major> ublas_matrix;
   typedef ublas::matrix_range<ublas_matrix> ublas_matrix_range;
-  typedef ublas::vector_range<ublas_vector> ublas_vector_range;
 
   // Get tolerances
   const real rtol    = get("Krylov relative tolerance");
@@ -105,12 +105,14 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
 
   // Create H matrix
   ublas_matrix H(restart+1, restart);
+//  ublas_triangular H(restart, restart);
+//  ublas_vector h(restart+1);
 
   // Create gamma vector
   ublas_vector gamma(restart+1);
 
   // Matrix containing v_k as columns    
-  ublas_matrix V(size, 1);
+  ublas_matrix V(size, restart+1);
 
   // w vector    
   ublas_vector w(size);
@@ -137,6 +139,8 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
     gamma.clear();
     c.clear();
     s.clear();
+
+//    h.clear();
 
     // Compute residual r = b -A*x
     noalias(r) = b;
@@ -169,15 +173,16 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
       for (uint i=0; i <= j; ++i) 
       {
         H(i,j)= inner_prod(w, column(V,i));
-        w -= H(i,j)*column(V,i);
+        noalias(w) -= H(i,j)*column(V,i);
       }
       H(j+1,j) = norm_2(w);
 
-      // Add column to V and insert v_(j+1)
-      V.resize(V.size1(), j+2, true);  
+      // Add column to V and insert v_(j+1) (this is an expensive step)
       noalias(column(V,j+1)) = w/H(j+1,j);
-
-      // Perform Givens rotations (this should be improved - use more uBlas functions)
+      
+      // Apply previous Givens rotations to the "new" column 
+      // (this should be improved - use more uBlas functions. 
+      //  The below has been taken from old DOLFIN code)
       for(uint i=0; i<j; ++i)
       {
         temp1 = H(i,j);        
@@ -185,6 +190,8 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
         H(i,j)   = c(i)*temp1 - s(i)*temp2;      
         H(i+1,j) = s(i)*temp1 + c(i)*temp2 ;     
       }
+
+      // Compute new c_i and s_i and  
       nu = sqrt( H(j,j)*H(j,j) + H(j+1,j)*H(j+1,j) );
       c(j) =  H(j,j)/nu; 
       s(j) = -H(j+1,j)/nu; 
@@ -226,7 +233,6 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
 dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, 
     const DenseVector& b, bool& converged)
 {
-
   dolfin_warning("Preconditioning has not yet been implemented for the uBlas BiCGStab solver.");
 
   namespace ublas = boost::numeric::ublas;

@@ -304,7 +304,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(192, 192);
 
   Source f;
   MyBC bc;
@@ -325,8 +325,8 @@ void testuBlasSparseMatrix()
   FEM::assemble(a, L, As, bs, mesh, bc);
   dolfin_log(true);
 
-  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab, Preconditioner::none);
-//  PETScKrylovSolver solver(PETScKrylovSolver::gmres, Preconditioner::none);
+//  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab, Preconditioner::none);
+  PETScKrylovSolver solver(PETScKrylovSolver::gmres, Preconditioner::none);
   tic();
   solver.solve(As, xs, bs);
   real t_petsc = toc();  
@@ -337,8 +337,8 @@ void testuBlasSparseMatrix()
   FEM::assemble(a, L, A, b, mesh, bc);
   dolfin_log(true);
 
-  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
-//  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
+//  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
+  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
   x = b;
   x = 0.0;  
   tic();
@@ -517,13 +517,13 @@ int main(int argc, char* argv[])
 */
 
   //testGenericMatrix();
-  //testuBlasSparseMatrix();
+  testuBlasSparseMatrix();
   //testOutputMatrix();
 
   //testNewMesh();
 
   //benchOldMesh();
-  benchNewMesh();
+//  benchNewMesh();
 
   return 0;
 }
