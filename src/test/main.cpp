@@ -304,7 +304,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(192, 192);
+  UnitSquare mesh(196, 196);
 
   Source f;
   MyBC bc;
@@ -330,6 +330,7 @@ void testuBlasSparseMatrix()
   tic();
   solver.solve(As, xs, bs);
   real t_petsc = toc();  
+  cout << "norm(x) " << xs.norm() << endl;  
   cout << "PETSc Krylov solve time = " <<t_petsc << endl;  
 
 
@@ -344,6 +345,7 @@ void testuBlasSparseMatrix()
   tic();
   ublas_solver.solve(A, x, b);
   real t_ublas = toc();  
+  cout << "norm(x) " << x.norm() << endl;  
   cout << "uBlas Krylov solve time = " << t_ublas << "  " << t_ublas/t_petsc << endl;  
   cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
 

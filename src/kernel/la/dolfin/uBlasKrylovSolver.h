@@ -2,15 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-31
-// Last changed: 2006-06-06
+// Last changed: 2006-06-20
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/DenseVector.h>
-#include <dolfin/DenseMatrix.h>
-#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
 
@@ -22,6 +19,9 @@ namespace dolfin
   // FIXME: Decide whether to implement a KrylovSolver for this class or just
   //        use LU solver.
   
+  class DenseVector;
+  class uBlasSparseMatrix;
+
   class uBlasKrylovSolver : public LinearSolver, public Parametrized
   {
   public:
@@ -57,10 +57,19 @@ namespace dolfin
     uint bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
                       bool& converged);
 
-  private:
+    /// Read solver parameters
+    void readParameters();
 
     /// Krylov solver type
     Type type;
+
+    /// Solver parameters
+    real rtol, atol, div_tol;
+    uint max_it, restart;
+    bool report;
+
+    /// True if we have read parameters
+    bool parameters_read;
 
   };
 
