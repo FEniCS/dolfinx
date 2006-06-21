@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-16
+// Last changed: 2006-06-21
 
 #include <set>
 #include <dolfin/dolfin_log.h>
@@ -13,12 +13,12 @@
 #include <dolfin/MeshConnectivity.h>
 #include <dolfin/MeshEntity.h>
 #include <dolfin/MeshEntityIterator.h>
-#include <dolfin/MeshAlgorithms.h>
+#include <dolfin/TopologyComputation.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-dolfin::uint MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
+dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
 {
   // Generating an entity of topological dimension dim is equivalent
   // to generating the connectivity dim - 0 (connections to vertices)
@@ -120,7 +120,7 @@ dolfin::uint MeshAlgorithms::computeEntities(NewMesh& mesh, uint dim)
   return num_entities;
 }
 //-----------------------------------------------------------------------------
-void MeshAlgorithms::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
+void TopologyComputation::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
 {
   // This is where all the logic takes place to find a stragety for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -178,7 +178,7 @@ void MeshAlgorithms::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
   }
 }
 //----------------------------------------------------------------------------
-void MeshAlgorithms::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
+void TopologyComputation::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
 {
   // The transpose is computed in three steps:
   //
@@ -224,7 +224,7 @@ void MeshAlgorithms::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
       connectivity.set(e0->index(), e1->index(), tmp[e0->index()]++);
 }
 //----------------------------------------------------------------------------
-void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
+void TopologyComputation::computeFromIntersection(NewMesh& mesh,
 					     uint d0, uint d1, uint d)
 {
   // The intersection is computed in three steps:
@@ -329,7 +329,7 @@ void MeshAlgorithms::computeFromIntersection(NewMesh& mesh,
   }
 }
 //----------------------------------------------------------------------------
-dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
+dolfin::uint TopologyComputation::countEntities(NewMesh& mesh, MeshEntity& cell,
 					   uint** entities, uint m, uint n,
 					   uint dim)
 {
@@ -366,7 +366,7 @@ dolfin::uint MeshAlgorithms::countEntities(NewMesh& mesh, MeshEntity& cell,
   return num_entities;
 }
 //----------------------------------------------------------------------------
-void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
+void TopologyComputation::addEntities(NewMesh& mesh, MeshEntity& cell,
 				 uint** entities, uint m, uint n, uint dim,
 				 MeshConnectivity& ce,
 				 MeshConnectivity& ev,
@@ -417,14 +417,14 @@ void MeshAlgorithms::addEntities(NewMesh& mesh, MeshEntity& cell,
   }
 }
 //----------------------------------------------------------------------------
-bool MeshAlgorithms::contains(MeshEntity& e0, MeshEntity& e1)
+bool TopologyComputation::contains(MeshEntity& e0, MeshEntity& e1)
 {
   // Check vertices
   return contains(e0.connections(0), e0.numConnections(0),
 		  e1.connections(0), e1.numConnections(0));
 }
 //----------------------------------------------------------------------------
-bool MeshAlgorithms::contains(uint* v0, uint n0, uint* v1, uint n1)
+bool TopologyComputation::contains(uint* v0, uint n0, uint* v1, uint n1)
 {
   dolfin_assert(v0);
   dolfin_assert(v1);

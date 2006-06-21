@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-12
+// Last changed: 2006-06-21
 
 #ifndef __NEW_MESH_H
 #define __NEW_MESH_H
@@ -74,13 +74,13 @@ namespace dolfin
     /// Return number of cells
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
 
-    /// Compute entities of given topological dimension (automated for iterators)
-    void init(uint dim);
+    /// Compute entities of given topological dimension and return number of entities
+    uint init(uint dim);
 
-    /// Compute connectivity between given pair of dimensions (automated for iterators)
+    /// Compute connectivity between given pair of dimensions
     void init(uint d0, uint d1);
 
-    /// Compute all entities and connectivity (automated for iterators)
+    /// Compute all entities and connectivity
     void init();
 
     /// Refine mesh, either uniformly or according to cells marked for refinement

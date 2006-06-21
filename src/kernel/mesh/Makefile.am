@@ -42,7 +42,7 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/NewFace.h \
                             dolfin/NewFacet.h \
                             dolfin/NewCell.h \
-                            dolfin/MeshAlgorithms.h \
+                            dolfin/TopologyComputation.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
                             dolfin/NewTriangle.h \
@@ -90,7 +90,7 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             NewFace.cpp \
                             NewFacet.cpp \
                             NewCell.cpp \
-                            MeshAlgorithms.cpp \
+                            TopologyComputation.cpp \
                             Interval.cpp \
                             NewTriangle.cpp \
                             NewTetrahedron.cpp \
