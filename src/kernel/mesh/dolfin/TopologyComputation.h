@@ -17,7 +17,7 @@ namespace dolfin
   class MeshConnectivity;
 
   /// This class implements a set of basic algorithms that automate
-  /// the computation of mesh entities and extraction of boundaries.
+  /// the computation of mesh entities and connectivity.
 
   class TopologyComputation
   {

@@ -73,7 +73,7 @@ am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
 	NewEdge.lo NewFace.lo NewFacet.lo NewCell.lo \
 	TopologyComputation.lo Interval.lo NewTriangle.lo \
 	NewTetrahedron.lo CellType.lo UniformMeshRefinement.lo \
-	NewPoint.lo
+	NewPoint.lo BoundaryComputation.lo BoundaryMesh.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -279,7 +279,9 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/NewTriangle.h \
                             dolfin/NewTetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
-                            dolfin/NewPoint.h
+                            dolfin/NewPoint.h \
+                            dolfin/BoundaryComputation.h \
+                            dolfin/BoundaryMesh.h
 
 INCLUDES = @KERNEL_CFLAGS@
 lib_LTLIBRARIES = libdolfin-mesh.la
@@ -328,7 +330,9 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             NewTetrahedron.cpp \
                             CellType.cpp \
                             UniformMeshRefinement.cpp \
-                            NewPoint.cpp
+                            NewPoint.cpp \
+                            BoundaryComputation.cpp \
+                            BoundaryMesh.cpp
 
 libdolfin_mesh_la_LDFLAGS = -static
 all: all-recursive
@@ -401,8 +405,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Boundary.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryComputation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryInit.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoundaryMesh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Cell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellIterator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CellType.Plo@am__quote@

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/CellType.h>
@@ -128,7 +128,7 @@ void NewXMLMesh::readMesh(const xmlChar *name, const xmlChar **attrs)
     dolfin_error("Dimension of mesh must be 1, 2 or 3.");
 
   // Open mesh for editing
-  editor.edit(_mesh, dim, CellType::type(cell_type));
+  editor.open(_mesh, CellType::type(cell_type), dim, dim);
 }
 //-----------------------------------------------------------------------------
 void NewXMLMesh::readVertices(const xmlChar *name, const xmlChar **attrs)

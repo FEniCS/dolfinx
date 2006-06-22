@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-05
+// Last changed: 2006-06-22
 
 #include <dolfin/NewMeshData.h>
 
@@ -35,7 +35,7 @@ const NewMeshData& NewMeshData::operator= (const NewMeshData& data)
 
   // Create new cell type
   if ( data.cell_type )
-    cell_type = CellType::create(data.cell_type->type());
+    cell_type = CellType::create(data.cell_type->cellType());
   else
     cell_type = 0;
 

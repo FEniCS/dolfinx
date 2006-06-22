@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-21
+// Last changed: 2006-06-22
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -57,7 +57,7 @@ namespace dolfin
       : entity(entity.mesh(), dim, 0), pos(0)
     {
       // Get connectivity
-      MeshConnectivity& c = entity.mesh().data.topology(entity.dim(), dim);
+      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
@@ -84,7 +84,7 @@ namespace dolfin
       MeshEntity& entity = *it;
       
       // Get connectivity
-      MeshConnectivity& c = entity.mesh().data.topology(entity.dim(), dim);
+      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       
       // Compute connectivity if empty
       if ( c.size() == 0 )

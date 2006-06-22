@@ -62,5 +62,7 @@
 #include <dolfin/NewTetrahedron.h>
 #include <dolfin/UniformMeshRefinement.h>
 #include <dolfin/NewPoint.h>
+#include <dolfin/BoundaryComputation.h>
+#include <dolfin/BoundaryMesh.h>
 
 #endif

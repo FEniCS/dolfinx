@@ -42,14 +42,14 @@ dolfin::uint Interval::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void Interval::createEntities(uint** e, uint dim, const uint v[])
+void Interval::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We don't need to create any entities
   dolfin_error1("Don't know how to create entities of topological dimension %d.", dim);
 }
 //-----------------------------------------------------------------------------
 void Interval::refineCell(NewCell& cell, MeshEditor& editor,
-			  uint& current_cell)
+			  uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.connections(0);

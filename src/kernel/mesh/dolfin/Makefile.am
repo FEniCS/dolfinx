@@ -47,4 +47,6 @@ EXTRA_DIST = dolfin_mesh.h \
              NewTriangle.h \
              NewTetrahedron.h \
              UniformMeshRefinement.h \
-             NewPoint.h
+             NewPoint.h \
+             BoundaryComputation.h \
+             MeshBoundary.h

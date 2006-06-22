@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-08
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/dolfin_log.h>
@@ -30,21 +30,21 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
 {
   dolfin_info("Refining simplicial mesh uniformly.");
   
-  // Generate cell-edge connectivity if not generated
-  mesh.init(2, 1);
+  // Generate cell - edge connectivity if not generated
+  mesh.init(mesh.dim(), 1);
   
-  // Generate edge-vertex connectivity if not generated
+  // Generate edge - vertex connectivity if not generated
   mesh.init(1, 0);
 
   // Get cell type
-  CellType* cell_type = mesh.data.cell_type;
-  dolfin_assert(cell_type);
+  const CellType& cell_type = mesh.type();
   
   // Create new mesh and open for editing
   NewMesh refined_mesh;
   MeshEditor editor;
-  editor.edit(refined_mesh, mesh.dim(), cell_type->type());
-
+  editor.open(refined_mesh, cell_type.cellType(),
+	      mesh.topology().dim(), mesh.geometry().dim());
+  
   // Get size of mesh
   const uint num_vertices = mesh.numVertices();
   const uint num_edges = mesh.numEdges();
@@ -66,10 +66,12 @@ void UniformMeshRefinement::refineSimplex(NewMesh& mesh)
   // Add cells
   uint current_cell = 0;
   for (NewCellIterator c(mesh); !c.end(); ++c)
-    cell_type->refineCell(*c, editor, current_cell);
+    cell_type.refineCell(*c, editor, current_cell);
 
   // Overwrite old mesh with refined mesh
   editor.close();
   mesh = refined_mesh;
+
+  cout << "Refined mesh: " << mesh << endl;
 }
 //-----------------------------------------------------------------------------

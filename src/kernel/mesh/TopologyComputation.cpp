@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-21
+// Last changed: 2006-06-22
 
 #include <set>
 #include <dolfin/dolfin_log.h>
@@ -36,7 +36,7 @@ dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
   //   3. Iterate over cells and add new entities
   
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.data.topology;
+  MeshTopology& topology = mesh.topology();
   MeshConnectivity& ce = topology(mesh.dim(), dim);
   MeshConnectivity& ev = topology(dim, 0);
 
@@ -61,12 +61,11 @@ dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
   computeConnectivity(mesh, mesh.dim(), mesh.dim());
 
   // Get cell type
-  CellType* cell_type = mesh.data.cell_type;
-  dolfin_assert(cell_type);
+  const CellType& cell_type = mesh.type();
 
   // Initialize local array of entities
-  const uint m = cell_type->numEntities(dim);
-  const uint n = cell_type->numVertices(dim);
+  const uint m = cell_type.numEntities(dim);
+  const uint n = cell_type.numVertices(dim);
   uint** entities = new uint*[m];
   for (uint i = 0; i < m; i++)
   {
@@ -84,7 +83,7 @@ dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
     dolfin_assert(vertices);
     
     // Create entities
-    cell_type->createEntities(entities, dim, vertices);
+    cell_type.createEntities(entities, dim, vertices);
     
     // Count new entities
     num_entities += countEntities(mesh, *c, entities, m, n, dim);
@@ -104,7 +103,7 @@ dolfin::uint TopologyComputation::computeEntities(NewMesh& mesh, uint dim)
     dolfin_assert(vertices);
     
     // Create entities
-    cell_type->createEntities(entities, dim, vertices);
+    cell_type.createEntities(entities, dim, vertices);
     
     // Add new entities to the mesh
     addEntities(mesh, *c, entities, m, n, dim, ce, ev, current_entity);
@@ -135,7 +134,7 @@ void TopologyComputation::computeConnectivity(NewMesh& mesh, uint d0, uint d1)
   // need to satisfy.
 
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.data.topology;
+  MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Check if connectivity has already been computed
@@ -193,7 +192,7 @@ void TopologyComputation::computeFromTranspose(NewMesh& mesh, uint d0, uint d1)
   dolfin_info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
   
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.data.topology;
+  MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Need connectivity d1 - d0
@@ -239,7 +238,7 @@ void TopologyComputation::computeFromIntersection(NewMesh& mesh,
 	      d0, d1, d0, d, d1);
 
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.data.topology;
+  MeshTopology& topology = mesh.topology();
   MeshConnectivity& connectivity = topology(d0, d1);
 
   // Need d0 >= d1

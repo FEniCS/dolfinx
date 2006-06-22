@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-12
+// Last changed: 2006-06-22
 
 #include <dolfin/MeshConnectivity.h>
 
@@ -113,7 +113,7 @@ void MeshConnectivity::set(uint entity, uint connection, uint pos)
   connections[offsets[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(uint entity, Array<uint>& connections)
+void MeshConnectivity::set(uint entity, const Array<uint>& connections)
 {
   dolfin_assert(entity < num_entities);
   dolfin_assert(connections.size() == offsets[entity + 1] - offsets[entity]);
@@ -134,7 +134,7 @@ void MeshConnectivity::set(uint entity, uint* connections)
     this->connections[offsets[entity] + i] = connections[i];
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(Array<Array<uint> >& connections)
+void MeshConnectivity::set(const Array<Array<uint> >& connections)
 {
   // Clear old data if any
   clear();

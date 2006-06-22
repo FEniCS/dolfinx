@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-08
-// Last changed: 2006-06-21
+// Last changed: 2006-06-22
 
 #ifndef __NEW_MESH_H
 #define __NEW_MESH_H
@@ -14,6 +14,10 @@
 
 namespace dolfin
 {
+  
+  class MeshTopology;
+  class MeshGeometry;
+  class CellType;
 
   /// A Mesh consists of a set of connected and numbered mesh entities.
   ///
@@ -74,6 +78,24 @@ namespace dolfin
     /// Return number of cells
     inline uint numCells() const { return data.topology.size(data.topology.dim()); }
 
+    /// Return mesh topology
+    inline MeshTopology& topology() { return data.topology; }
+
+    /// Return mesh topology
+    inline const MeshTopology& topology() const { return data.topology; }
+
+    /// Return mesh geometry
+    inline MeshGeometry& geometry() { return data.geometry; }
+
+    /// Return mesh geometry
+    inline const MeshGeometry& geometry() const { return data.geometry; }
+
+    /// Return mesh cell type
+    inline CellType& type() { dolfin_assert(data.cell_type); return *data.cell_type; }
+
+    /// Return mesh cell type
+    inline const CellType& type() const { dolfin_assert(data.cell_type); return *data.cell_type; }
+
     /// Compute entities of given topological dimension and return number of entities
     uint init(uint dim);
 
@@ -92,7 +114,12 @@ namespace dolfin
     /// Output
     friend LogStream& operator<< (LogStream& stream, const NewMesh& mesh);
     
-    /// Mesh data
+  private:
+
+    // Friends
+    friend class MeshEditor;
+
+    // Mesh data
     NewMeshData data;
     
   };
