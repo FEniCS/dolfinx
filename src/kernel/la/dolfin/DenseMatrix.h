@@ -12,8 +12,8 @@
 // FIXME: boost first
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/ublas.h>
 #include <dolfin/Variable.h>
-#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <dolfin/GenericMatrix.h>
 
@@ -22,7 +22,7 @@ namespace dolfin
 
   class DenseVector;
   namespace ublas = boost::numeric::ublas;
-  typedef ublas::matrix<double> ublas_matrix;
+//  typedef ublas::matrix<double> ublas_matrix;
 
   /// This class represents a dense matrix of dimension M x N.
   /// It is a simple wrapper for a Boost ublas matrix.

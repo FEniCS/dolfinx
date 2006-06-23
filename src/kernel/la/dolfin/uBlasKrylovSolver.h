@@ -2,23 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-31
-// Last changed: 2006-06-20
+// Last changed: 2006-06-23
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
 #include <dolfin/constants.h>
+#include <dolfin/ublas.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/uBlasPreconditioner.h>
+
 
 namespace dolfin
 {
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types. 
 
-  // FIXME: Decide whether to implement a KrylovSolver for this class or just
-  //        use LU solver.
-  
   class DenseVector;
   class uBlasSparseMatrix;
 
@@ -30,7 +30,7 @@ namespace dolfin
     enum Type
     { 
       bicgstab,       // Stabilised biconjugate gradient squared method 
-      cg,             // Conjugate gradient method
+      cg,             // Conjugate gradient method (no yet implemented)
       default_solver, // Default PETSc solver (use when setting solver from command line)
       gmres           // GMRES method
     };
@@ -51,14 +51,17 @@ namespace dolfin
 
     /// Solve linear system Ax = b using restarted GMRES
     uint gmresSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
-                      bool& converged);
+                     const uBlasPreconditioner& P, bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
     uint bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
-                      bool& converged);
+                        const uBlasPreconditioner& P, bool& converged) const;
 
     /// Read solver parameters
     void readParameters();
+
+    /// Preconditioner
+    uBlasPreconditioner P;
 
     /// Krylov solver type
     Type type;

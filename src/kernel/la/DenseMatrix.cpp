@@ -11,18 +11,6 @@
 #include <dolfin/DenseVector.h>
 #include <dolfin/DenseMatrix.h>
 
-// FIXME: Boost first
-
-// These two files must be included due to a bug in Boost version < 1.33.
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/triangular.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
-#include <boost/numeric/ublas/lu.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------

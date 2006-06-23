@@ -21,8 +21,10 @@
 #include <dolfin/PETScVector.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparseMatrix.h>
+#include <dolfin/ublas.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/uBlasPreconditioner.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/VirtualMatrix.h>
 

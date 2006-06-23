@@ -64,8 +64,8 @@ am_libdolfin_la_la_OBJECTS = DenseMatrix.lo DenseVector.lo \
 	EigenvalueSolver.lo GMRES.lo LinearSolver.lo \
 	PETScKrylovSolver.lo PETScLU.lo PETScManager.lo \
 	PETScSparseMatrix.lo PETScVector.lo Preconditioner.lo \
-	uBlasKrylovSolver.lo uBlasLUSolver.lo uBlasSparseMatrix.lo \
-	VirtualMatrix.lo
+	uBlasKrylovSolver.lo uBlasLUSolver.lo uBlasPreconditioner.lo \
+	uBlasSparseMatrix.lo VirtualMatrix.lo
 libdolfin_la_la_OBJECTS = $(am_libdolfin_la_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -240,8 +240,10 @@ nobase_include_HEADERS = dolfin/dolfin_la.h \
                           dolfin/PETScVector.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
+                          dolfin/ublas.h \
                           dolfin/uBlasKrylovSolver.h \
                           dolfin/uBlasLUSolver.h \
+                          dolfin/uBlasPreconditioner.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
@@ -261,6 +263,7 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           Preconditioner.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
+                          uBlasPreconditioner.cpp \
                           uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 
@@ -348,6 +351,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualMatrix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasKrylovSolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasLUSolver.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasPreconditioner.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uBlasSparseMatrix.Plo@am__quote@
 
 .cpp.o:

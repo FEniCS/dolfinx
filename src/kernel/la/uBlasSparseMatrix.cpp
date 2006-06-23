@@ -11,16 +11,6 @@
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
 
-// These two files must be included due to a bug in Boost version < 1.33.
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/triangular.hpp>
-#include <boost/numeric/ublas/operation.hpp>
-
-#include <boost/numeric/ublas/lu.hpp>
-#include <boost/numeric/ublas/io.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -35,8 +25,7 @@ uBlasSparseMatrix::uBlasSparseMatrix(uint M, uint N) : GenericMatrix(),
 					   Variable("A", "a sparse matrix"),
 					   ublas_sparse_matrix(M, N)
 {
-  // Clear matrix (not done by ublas)
-  clear();
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasSparseMatrix::~uBlasSparseMatrix()

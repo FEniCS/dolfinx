@@ -197,8 +197,10 @@ EXTRA_DIST = dolfin_la.h \
              PETScVector.h \
              Preconditioner.h \
              SparseMatrix.h \
+             ublas.h \
              uBlasKrylovSolver.h \
              uBlasLUSolver.h \
+             uBlasPreconditioner.h \
              uBlasSparseMatrix.h \
              Vector.h \
              VirtualMatrix.h 

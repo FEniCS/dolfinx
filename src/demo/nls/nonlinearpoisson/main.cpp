@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
   dolfin_init(argc, argv);
  
   // Set up problem
-  UnitSquare mesh(16, 16);
+  UnitSquare mesh(64, 64);
   MyFunction f;
   MyBC bc;
   Function U;

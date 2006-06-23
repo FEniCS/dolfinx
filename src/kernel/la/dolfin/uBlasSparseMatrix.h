@@ -10,12 +10,8 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
-#include <boost/numeric/ublas/matrix_sparse.hpp>
-#include <boost/numeric/ublas/io.hpp>
 #include <dolfin/GenericMatrix.h>
-
-#include <boost/numeric/ublas/operation.hpp>
-#include <boost/numeric/ublas/vector_of_vector.hpp>
+#include <dolfin/ublas.h>
 
 namespace dolfin
 {
@@ -23,12 +19,6 @@ namespace dolfin
   class DenseVector;
   namespace ublas = boost::numeric::ublas;
 
-  // Set type of underlying uBlas sparse matrix. As a rule, the faster the matrix
-  // type is for assembly, the slower it is for linear algerbra. 
-  // Compressed row storage
-  typedef ublas::compressed_matrix<double> ublas_sparse_matrix;
-  // Vecor-of-a-vector storage
-//  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, ublas::vector< ublas::compressed_vector<double> > >  ublas_sparse_matrix;
 
   /// This class represents a sparse matrix of dimension M x N.
   /// It is a simple wrapper for a Boost ublas sparse matrix.

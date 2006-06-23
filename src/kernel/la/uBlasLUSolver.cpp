@@ -6,6 +6,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/uBlasKrylovSolver.h>
 
 using namespace dolfin;
 
@@ -25,8 +26,10 @@ dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x,
 {
   dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
         
-  // FIXME: implement renumbering scheme to speed up LU solve
-  A.solve(x, b);
+  // FIXME: find solution for decent uBlas direct solve.
+  uBlasKrylovSolver solver;
+  solver.solve(A, x, b);
+//  A.solve(x, b);
   return 1;
 }
 //-----------------------------------------------------------------------------

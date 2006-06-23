@@ -291,7 +291,7 @@ void testuBlasSparseMatrix()
   {
     void eval(BoundaryValue& value, const Point& p, unsigned int i)
     {
-//      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
+      if ( std::abs(p.x - 1.0) < DOLFIN_EPS )
         value = 0.0;
     }
   };
@@ -304,7 +304,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(196, 196);
+  UnitSquare mesh(196,196);
 
   Source f;
   MyBC bc;
@@ -314,6 +314,8 @@ void testuBlasSparseMatrix()
   uBlasSparseMatrix A;
   DenseVector b;
   DenseVector x;
+
+#ifdef HAVE_PETSC_H
 
   PETScSparseMatrix As;
   PETScVector bs;
@@ -325,18 +327,21 @@ void testuBlasSparseMatrix()
   FEM::assemble(a, L, As, bs, mesh, bc);
   dolfin_log(true);
 
-//  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab, Preconditioner::none);
-  PETScKrylovSolver solver(PETScKrylovSolver::gmres, Preconditioner::none);
+//  PETScKrylovSolver solver(PETScKrylovSolver::bicgstab);
+  PETScKrylovSolver solver(PETScKrylovSolver::gmres);
   tic();
   solver.solve(As, xs, bs);
   real t_petsc = toc();  
   cout << "norm(x) " << xs.norm() << endl;  
   cout << "PETSc Krylov solve time = " <<t_petsc << endl;  
 
+#endif
 
   dolfin_log(false);
+  tic();
   FEM::assemble(a, L, A, b, mesh, bc);
   dolfin_log(true);
+  cout << "uBlas assembly time = " << toc() << endl;  
 
 //  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
   uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
@@ -346,8 +351,11 @@ void testuBlasSparseMatrix()
   ublas_solver.solve(A, x, b);
   real t_ublas = toc();  
   cout << "norm(x) " << x.norm() << endl;  
-  cout << "uBlas Krylov solve time = " << t_ublas << "  " << t_ublas/t_petsc << endl;  
+  cout << "uBlas Krylov solve time = " << t_ublas << endl;  
+
+#ifdef HAVE_PETSC_H
   cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
+#endif
 
 }
 
