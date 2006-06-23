@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #ifndef __MESH_EDITOR_H
 #define __MESH_EDITOR_H
@@ -29,8 +29,8 @@ namespace dolfin
     /// Destructor
     ~MeshEditor();
 
-    /// Edit given mesh
-    void edit(NewMesh& mesh, uint dim, CellType::Type type);
+    /// Open mesh of given cell type, topological and geometrical dimension
+    void open(NewMesh& mesh, CellType::Type type, uint tdim, uint gdim);
 
     /// Specify number of vertices
     void initVertices(uint num_vertices);
@@ -49,6 +49,9 @@ namespace dolfin
 
     /// Add vertex v at given coordinate (x, y, z)
     void addVertex(uint v, real x, real y, real z);
+
+    /// Add cell with given vertices
+    void addCell(uint c, const Array<uint>& v);
 
     /// Add cell (interval) with given vertices
     void addCell(uint c, uint v0, uint v1);
@@ -73,8 +76,11 @@ namespace dolfin
     // Clear all data
     void clear();
 
-    // Topological and Euclidean dimension (assumed equal here)
-    uint dim;
+    // Topological dimension
+    uint tdim;
+    
+    // Geometrical (Euclidean) dimension
+    uint gdim;
     
     // Number of vertices
     uint num_vertices;

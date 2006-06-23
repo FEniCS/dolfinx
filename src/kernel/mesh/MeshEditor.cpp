@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-16
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewMesh.h>
@@ -13,7 +13,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 MeshEditor::MeshEditor()
-  : dim(0),
+  : tdim(0), gdim(0),
     num_vertices(0), num_cells(0),
     next_vertex(0), next_cell(0),
     mesh(0)
@@ -26,7 +26,7 @@ MeshEditor::~MeshEditor()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::edit(NewMesh& mesh, uint dim, CellType::Type type)
+void MeshEditor::open(NewMesh& mesh, CellType::Type type, uint tdim, uint gdim)
 {
   // Clear old mesh data
   mesh.data.clear();
@@ -34,17 +34,18 @@ void MeshEditor::edit(NewMesh& mesh, uint dim, CellType::Type type)
 
   // Save mesh and dimension
   this->mesh = &mesh;
-  this->dim = dim;
+  this->gdim = gdim;
+  this->tdim = tdim;
 
   // Set cell type
   mesh.data.cell_type = CellType::create(type);
 
   // Initialize topological dimension
-  mesh.data.topology.init(dim);
+  mesh.data.topology.init(tdim);
 
   // Initialize temporary storage for local cell data
-  vertices.reserve(dim + 1);
-  for (uint i = 0; i < dim + 1; i++)
+  vertices.reserve(mesh.type().numVertices(tdim));
+  for (uint i = 0; i < mesh.type().numVertices(tdim); i++)
     vertices.push_back(0);
 }
 //-----------------------------------------------------------------------------
@@ -56,8 +57,8 @@ void MeshEditor::initVertices(uint num_vertices)
   
   // Initialize mesh data
   this->num_vertices = num_vertices;
-  mesh->data.topology.init(0,   num_vertices);
-  mesh->data.geometry.init(dim, num_vertices);
+  mesh->data.topology.init(0,    num_vertices);
+  mesh->data.geometry.init(gdim, num_vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::initCells(uint num_cells)
@@ -68,17 +69,17 @@ void MeshEditor::initCells(uint num_cells)
 
   // Initialize mesh data
   this->num_cells = num_cells;
-  mesh->data.topology.init(dim, num_cells);
-  mesh->data.topology(dim, 0).init(num_cells, dim + 1);
+  mesh->data.topology.init(tdim, num_cells);
+  mesh->data.topology(tdim, 0).init(num_cells, mesh->type().numVertices(tdim));
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addVertex(uint v, const NewPoint& p)
 {
   // Add vertex
-  addVertexCommon(v, mesh->dim());
+  addVertexCommon(v, mesh->geometry().dim());
   
   // Set coordinate
-  for (uint i = 0; i < mesh->dim(); i++)
+  for (uint i = 0; i < mesh->geometry().dim(); i++)
     mesh->data.geometry.set(v, i, p[i]);
 }
 //-----------------------------------------------------------------------------
@@ -112,6 +113,15 @@ void MeshEditor::addVertex(uint v, real x, real y, real z)
   mesh->data.geometry.set(v, 2, z);
 }
 //-----------------------------------------------------------------------------
+void MeshEditor::addCell(uint c, const Array<uint>& v)
+{
+  // Add cell
+  addCellCommon(c, tdim);
+
+  // Set data
+  mesh->data.topology(tdim, 0).set(c, v);
+}
+//-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1)
 {
   // Add cell
@@ -120,9 +130,9 @@ void MeshEditor::addCell(uint c, uint v0, uint v1)
   // Set data
   vertices[0] = v0;
   vertices[1] = v1;
-  mesh->data.topology(dim, 0).set(c, vertices);
+  mesh->data.topology(tdim, 0).set(c, vertices);
 }
-//--------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
 {
   // Add cell
@@ -132,7 +142,7 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2)
   vertices[0] = v0;
   vertices[1] = v1;
   vertices[2] = v2;
-  mesh->data.topology(dim, 0).set(c, vertices);
+  mesh->data.topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
@@ -145,7 +155,7 @@ void MeshEditor::addCell(uint c, uint v0, uint v1, uint v2, uint v3)
   vertices[1] = v1;
   vertices[2] = v2;
   vertices[3] = v3;
-  mesh->data.topology(dim, 0).set(c, vertices);
+  mesh->data.topology(tdim, 0).set(c, vertices);
 }
 //-----------------------------------------------------------------------------
 void MeshEditor::close()
@@ -154,16 +164,16 @@ void MeshEditor::close()
   clear();
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addVertexCommon(uint v, uint dim)
+void MeshEditor::addVertexCommon(uint v, uint gdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
     dolfin_error("No mesh opened, unable to edit.");
 
   // Check that the dimension matches
-  if ( dim != this->dim )
+  if ( gdim != this->gdim )
     dolfin_error2("Illegal dimension for vertex coordinate: %d (should be %d).",
-		  dim, this->dim);
+		  gdim, this->gdim);
 
   // Check value of vertex index
   if ( v >= num_vertices )
@@ -179,16 +189,16 @@ void MeshEditor::addVertexCommon(uint v, uint dim)
   next_vertex++;
 }
 //-----------------------------------------------------------------------------
-void MeshEditor::addCellCommon(uint c, uint dim)
+void MeshEditor::addCellCommon(uint c, uint tdim)
 {
   // Check if we are currently editing a mesh
   if ( !mesh )
     dolfin_error("No mesh opened, unable to edit.");
 
   // Check that the dimension matches
-  if ( dim != this->dim )
+  if ( tdim != this->tdim )
     dolfin_error2("Illegal dimension for cell: %d (should be %d).",
-		  dim, this->dim);
+		  tdim, this->tdim);
 
   // Check value of cell index
   if ( c >= num_cells )
@@ -205,7 +215,8 @@ void MeshEditor::addCellCommon(uint c, uint dim)
 //-----------------------------------------------------------------------------
 void MeshEditor::clear()
 {
-  dim = 0;
+  tdim = 0;
+  gdim = 0;
   num_vertices = 0;
   num_cells = 0;
   next_vertex = 0;

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewCell.h>
@@ -50,7 +50,7 @@ dolfin::uint NewTetrahedron::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void NewTetrahedron::createEntities(uint** e, uint dim, const uint v[])
+void NewTetrahedron::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges and faces
   switch ( dim )
@@ -75,7 +75,7 @@ void NewTetrahedron::createEntities(uint** e, uint dim, const uint v[])
 }
 //-----------------------------------------------------------------------------
 void NewTetrahedron::refineCell(NewCell& cell, MeshEditor& editor,
-				uint& current_cell)
+				uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.connections(0);

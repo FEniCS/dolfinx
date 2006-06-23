@@ -42,13 +42,15 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/NewFace.h \
                             dolfin/NewFacet.h \
                             dolfin/NewCell.h \
-                            dolfin/MeshAlgorithms.h \
+                            dolfin/TopologyComputation.h \
                             dolfin/CellType.h \
                             dolfin/Interval.h \
                             dolfin/NewTriangle.h \
                             dolfin/NewTetrahedron.h \
                             dolfin/UniformMeshRefinement.h \
-                            dolfin/NewPoint.h
+                            dolfin/NewPoint.h \
+                            dolfin/BoundaryComputation.h \
+                            dolfin/BoundaryMesh.h
 INCLUDES                  = @KERNEL_CFLAGS@
 lib_LTLIBRARIES           = libdolfin-mesh.la
 libdolfin_mesh_la_SOURCES = Boundary.cpp \
@@ -90,11 +92,13 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             NewFace.cpp \
                             NewFacet.cpp \
                             NewCell.cpp \
-                            MeshAlgorithms.cpp \
+                            TopologyComputation.cpp \
                             Interval.cpp \
                             NewTriangle.cpp \
                             NewTetrahedron.cpp \
                             CellType.cpp \
                             UniformMeshRefinement.cpp \
-                            NewPoint.cpp
+                            NewPoint.cpp \
+                            BoundaryComputation.cpp \
+                            BoundaryMesh.cpp
 libdolfin_mesh_la_LDFLAGS = -static

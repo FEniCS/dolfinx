@@ -2,10 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-02
-// Last changed: 2006-06-16
+// Last changed: 2006-06-21
 
-#ifndef __MESH_ALGORITHMS_H
-#define __MESH_ALGORITHMS_H
+#ifndef __TOPOLOGY_COMPUTATION_H
+#define __TOPOLOGY_COMPUTATION_H
 
 #include <dolfin/constants.h>
 
@@ -17,9 +17,9 @@ namespace dolfin
   class MeshConnectivity;
 
   /// This class implements a set of basic algorithms that automate
-  /// the computation of mesh entities and extraction of boundaries.
+  /// the computation of mesh entities and connectivity.
 
-  class MeshAlgorithms
+  class TopologyComputation
   {
   public:
 

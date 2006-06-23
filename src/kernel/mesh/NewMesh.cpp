@@ -2,11 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #include <dolfin/File.h>
 #include <dolfin/UniformMeshRefinement.h>
-#include <dolfin/MeshAlgorithms.h>
+#include <dolfin/TopologyComputation.h>
 #include <dolfin/NewMesh.h>
 
 using namespace dolfin;
@@ -39,14 +39,14 @@ const NewMesh& NewMesh::operator=(const NewMesh& mesh)
   return *this;
 }
 //-----------------------------------------------------------------------------
-void NewMesh::init(uint dim)
+dolfin::uint NewMesh::init(uint dim)
 {
-  MeshAlgorithms::computeEntities(*this, dim);
+  return TopologyComputation::computeEntities(*this, dim);
 }
 //-----------------------------------------------------------------------------
 void NewMesh::init(uint d0, uint d1)
 {
-  MeshAlgorithms::computeConnectivity(*this, d0, d1);
+  TopologyComputation::computeConnectivity(*this, d0, d1);
 }
 //-----------------------------------------------------------------------------
 void NewMesh::init()
@@ -74,7 +74,7 @@ void NewMesh::refine()
 //-----------------------------------------------------------------------------
 dolfin::LogStream& dolfin::operator<< (LogStream& stream, const NewMesh& mesh)
 {
-  stream << "[ Mesh of dimension "
+  stream << "[ Mesh of topological dimension "
 	 << mesh.dim()
 	 << " with "
 	 << mesh.numVertices()

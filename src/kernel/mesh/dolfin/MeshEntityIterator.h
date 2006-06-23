@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-09
-// Last changed: 2006-06-16
+// Last changed: 2006-06-22
 
 #ifndef __MESH_ENTITY_ITERATOR_H
 #define __MESH_ENTITY_ITERATOR_H
@@ -11,8 +11,6 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/NewMesh.h>
 #include <dolfin/MeshEntity.h>
-
-#include <dolfin/MeshAlgorithms.h>
 
 namespace dolfin
 {
@@ -51,7 +49,7 @@ namespace dolfin
     {
       // Compute entities if empty
       if ( pos_end == 0 )
-	pos_end = MeshAlgorithms::computeEntities(mesh, dim);
+	pos_end = mesh.init(dim);
     }
 
     /// Create iterator for entities of given dimension connected to given entity    
@@ -59,11 +57,11 @@ namespace dolfin
       : entity(entity.mesh(), dim, 0), pos(0)
     {
       // Get connectivity
-      MeshConnectivity& c = entity.mesh().data.topology(entity.dim(), dim);
+      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	MeshAlgorithms::computeConnectivity(entity.mesh(), entity.dim(), dim);
+	entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )
@@ -86,11 +84,11 @@ namespace dolfin
       MeshEntity& entity = *it;
       
       // Get connectivity
-      MeshConnectivity& c = entity.mesh().data.topology(entity.dim(), dim);
+      MeshConnectivity& c = entity.mesh().topology()(entity.dim(), dim);
       
       // Compute connectivity if empty
       if ( c.size() == 0 )
-	MeshAlgorithms::computeConnectivity(entity.mesh(), entity.dim(), dim);
+	entity.mesh().init(entity.dim(), dim);
       
       // Get size and index map
       if ( c.size() == 0 )

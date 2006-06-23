@@ -46,7 +46,7 @@ dolfin::uint NewTriangle::numVertices(uint dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void NewTriangle::createEntities(uint** e, uint dim, const uint v[])
+void NewTriangle::createEntities(uint** e, uint dim, const uint v[]) const
 {
   // We only need to know how to create edges
   if ( dim != 1 )
@@ -59,7 +59,7 @@ void NewTriangle::createEntities(uint** e, uint dim, const uint v[])
 }
 //-----------------------------------------------------------------------------
 void NewTriangle::refineCell(NewCell& cell, MeshEditor& editor,
-			     uint& current_cell)
+			     uint& current_cell) const
 {
   // Get vertices and edges
   const uint* v = cell.connections(0);

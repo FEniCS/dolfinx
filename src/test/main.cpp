@@ -407,7 +407,7 @@ void benchOldMesh()
 void benchNewMesh()
 {
   int num_reads = 1000;
-  int num_refinements = 8;
+  int num_refinements = 12;
   int num_iterations = 100;
 
   dolfin_log(false);
@@ -451,16 +451,16 @@ void benchNewMesh()
 
 void testNewMesh()
 {
-  NewMesh newmesh("newmesh.xml.gz");
-  cout << newmesh << endl;
+  NewMesh mesh("newmesh.xml.gz");
+  cout << mesh << endl;
 
   // Compute all entities and connectivity, otherwise
   // handled automatically by the mesh iterators.
-  newmesh.init();
-  newmesh.disp();
+  mesh.init();
+  mesh.disp();
 
   // Iterate over all entities of dimension 0 (vertices)
-  for (MeshEntityIterator e(newmesh, 0); !e.end(); ++e)
+  for (MeshEntityIterator e(mesh, 0); !e.end(); ++e)
   {
     cout << e << endl;
     cout << *e << endl;
@@ -469,7 +469,7 @@ void testNewMesh()
   cout << endl;
 
   // Same thing with named iterators
-  for (NewVertexIterator v(newmesh); !v.end(); ++v)
+  for (NewVertexIterator v(mesh); !v.end(); ++v)
   {
     cout << v << endl;
     cout << *v << endl;
@@ -478,7 +478,7 @@ void testNewMesh()
   cout << endl;
 
   // Nested iteration
-  for (MeshEntityIterator e2(newmesh, 2); !e2.end(); ++e2)
+  for (MeshEntityIterator e2(mesh, 2); !e2.end(); ++e2)
   {
     cout << *e2 << endl;
     for (MeshEntityIterator e0(e2, 0); !e0.end(); ++e0)
@@ -492,7 +492,7 @@ void testNewMesh()
   cout << endl;
   
   // Same thing with named iterators
-  for (NewCellIterator c(newmesh); !c.end(); ++c)
+  for (NewCellIterator c(mesh); !c.end(); ++c)
   {
     cout << *c << endl;
     for (NewVertexIterator v(c); !v.end(); ++v)
@@ -502,6 +502,13 @@ void testNewMesh()
 	cout << "    " << *e << endl;
     }
   }
+
+  // Test uniform mesh refinement
+  mesh.refine();
+  mesh.refine();
+  
+  // Test computation of boundary
+  BoundaryMesh boundary(mesh);
 }
 
 int main(int argc, char* argv[])
@@ -524,16 +531,15 @@ int main(int argc, char* argv[])
   testDenseMatrix();
   testDenseLUsolve();
   testGenericMatrix();
+  testGenericMatrix();
+  testuBlasSparseMatrix();
+  testOutputMatrix();
 */
 
-  //testGenericMatrix();
-  testuBlasSparseMatrix();
-  //testOutputMatrix();
-
-  //testNewMesh();
-
+  testNewMesh();
+  
   //benchOldMesh();
-//  benchNewMesh();
+  //benchNewMesh();
 
   return 0;
 }

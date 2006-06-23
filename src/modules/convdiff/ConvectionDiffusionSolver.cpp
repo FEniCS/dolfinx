@@ -6,8 +6,6 @@
 // First added:  2003
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include "dolfin/ConvectionDiffusionSolver.h"
 #include "dolfin/ConvectionDiffusion2D.h"
 //#include "dolfin/ConvectionDiffusion3D.h"
@@ -142,5 +140,3 @@ void ConvectionDiffusionSolver::ConvectionNormInv(Function& w, Vector& wnorm_vec
 
 }
 //-----------------------------------------------------------------------------
-
-#endif

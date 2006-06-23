@@ -2,9 +2,8 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-05-12
-// Last changed: 2006-06-16
+// Last changed: 2006-06-21
 
-#include <dolfin/MeshAlgorithms.h>
 #include <dolfin/MeshEntityIterator.h>
 
 using namespace dolfin;

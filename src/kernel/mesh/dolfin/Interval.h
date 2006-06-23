@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-12
+// Last changed: 2006-06-22
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
@@ -19,7 +19,10 @@ namespace dolfin
   public:
 
     /// Return type of cell
-    inline Type type() const { return interval; }
+    inline Type cellType() const { return interval; }
+
+    /// Return type of cell for facets
+    inline Type facetType() const { dolfin_error("Facets of interval are not defined."); return interval; }
 
     /// Return number of entitites of given topological dimension
     uint numEntities(uint dim) const;
@@ -28,10 +31,10 @@ namespace dolfin
     uint numVertices(uint dim) const;
 
     /// Create entities e of given topological dimension from vertices v
-    void createEntities(uint** e, uint dim, const uint v[]);
+    void createEntities(uint** e, uint dim, const uint v[]) const;
 
     /// Refine cell uniformly
-    void refineCell(NewCell& cell, MeshEditor& editor, uint& current_cell);
+    void refineCell(NewCell& cell, MeshEditor& editor, uint& current_cell) const;
 
     /// Return description of cell type
     std::string description() const;
