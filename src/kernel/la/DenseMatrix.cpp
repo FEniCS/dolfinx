@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-03
-// Last changed: 2006-05-15
+// Last changed: 2006-06-26
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -21,7 +21,7 @@ DenseMatrix::DenseMatrix() : GenericMatrix(),
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DenseMatrix::DenseMatrix(uint M, uint N) : GenericMatrix(),
+DenseMatrix::DenseMatrix(const uint M, const uint N) : GenericMatrix(),
 					   Variable("A", "a dense matrix"),
 					   ublas_matrix(M, N)
 {
@@ -35,7 +35,7 @@ DenseMatrix::~DenseMatrix()
 }
 //-----------------------------------------------------------------------------
 
-void DenseMatrix::init(uint M, uint N)
+void DenseMatrix::init(const uint M, const uint N)
 {
   if( this->size(0) == M && this->size(1) == N )
   {
@@ -50,25 +50,25 @@ void DenseMatrix::init(uint M, uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::init(uint M, uint N, uint nz)
+void DenseMatrix::init(const uint M, const uint N, const uint nz)
 {
   init(M, N);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint DenseMatrix::size(uint dim) const
+dolfin::uint DenseMatrix::size(const uint dim) const
 {
   dolfin_assert( dim < 2 );
   return (dim == 0 ? this->size1() : this->size2());  
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::set(const real block[], const int rows[], int m, const int cols[], int n)
+void DenseMatrix::set(const real block[], const int rows[], int m, const int cols[], const int n)
 {
   for (int i = 0; i < m; ++i)
     for (int j = 0; j < n; ++j)
       (*this)(rows[i] , cols[j]) = block[i*n + j];
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::add(const real block[], const int rows[], int m, const int cols[], int n)
+void DenseMatrix::add(const real block[], const int rows[], int m, const int cols[], const int n)
 {
   for (int i = 0; i < m; ++i)
     for (int j = 0; j < n; ++j)
@@ -93,18 +93,23 @@ void DenseMatrix::solve(DenseVector& x, const DenseVector& b) const
 void DenseMatrix::solveInPlace(DenseVector& x, const DenseVector& b)
 {
   // This function does not check for singularity of the matrix
-  uint M = this->size1();
+  const uint M = this->size1();
   dolfin_assert(M == this->size2());
   dolfin_assert(M == b.size());
   
+   if( x.size() != M )
+    x.init(M);
+
   // Initialise solution vector
-  x = b;
+  x.assign(b);
 
   // Create permutation matrix
   ublas::permutation_matrix<std::size_t> pmatrix(M);
 
   // Factorise (with pivoting)
-  ublas::lu_factorize(*this, pmatrix);
+  uint singular = ublas::lu_factorize(*this, pmatrix);
+  if( singular > 0)
+    dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
   
   // Back substitute 
   ublas::lu_substitute(*this, pmatrix, x);
@@ -113,7 +118,7 @@ void DenseMatrix::solveInPlace(DenseVector& x, const DenseVector& b)
 void DenseMatrix::invert()
 {
   // This function does not check for singularity of the matrix
-  uint M = this->size1();
+  const uint M = this->size1();
   dolfin_assert(M == this->size2());
   
   // Create permutation matrix
@@ -123,8 +128,10 @@ void DenseMatrix::invert()
   DenseMatrix inverse(M, M);
   inverse.assign(ublas::identity_matrix<real>(M));
 
-  // Factorise 
-  ublas::lu_factorize(*this, pmatrix);
+  // Factorise (with pivoting)
+  uint singular = ublas::lu_factorize(*this, pmatrix);
+  if( singular > 0)
+    dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
   
   // Back substitute 
   ublas::lu_substitute(*this, pmatrix, inverse);
@@ -142,9 +149,9 @@ void DenseMatrix::zero()
   clear();
 }
 //-----------------------------------------------------------------------------
-void DenseMatrix::ident(const int rows[], int m)
+void DenseMatrix::ident(const int rows[], const int m)
 {
-  uint n = this->size(1);
+  const uint n = this->size(1);
   for(int i=0; i < m; ++i)
     ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
 }
@@ -152,9 +159,6 @@ void DenseMatrix::ident(const int rows[], int m)
 void DenseMatrix::mult(const DenseVector& x, DenseVector& Ax) const
 {
   ublas::axpy_prod(*this, x, Ax, true);
-
-//  axpy_prod() should be more efficient than this
-//  Ax = prod(*this, x);
 }
 //-----------------------------------------------------------------------------
 void DenseMatrix::disp(uint precision) const

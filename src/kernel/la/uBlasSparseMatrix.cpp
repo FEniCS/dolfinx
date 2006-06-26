@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-03
-// Last changed: 2006-05-15
+// Last changed: 2006-06-26
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -16,14 +16,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 uBlasSparseMatrix::uBlasSparseMatrix() : GenericMatrix(),
 			     Variable("A", "a sparse matrix"),
-			     ublas_sparse_matrix()
+			     ublas_sparse_matrix(), assembled(true)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 uBlasSparseMatrix::uBlasSparseMatrix(uint M, uint N) : GenericMatrix(),
 					   Variable("A", "a sparse matrix"),
-					   ublas_sparse_matrix(M, N)
+					   ublas_sparse_matrix(M, N), assembled(true)
 {
   // Do nothing
 }
@@ -33,46 +33,69 @@ uBlasSparseMatrix::~uBlasSparseMatrix()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::init(uint M, uint N)
+void uBlasSparseMatrix::init(const uint M, const uint N)
 {
-  if( this->size(0) == M && this->size(1) == N )
-    return;
+  // Resize matrix
+  if( size(0) != M || size(1) != N )
+    resize(M, N, false);
   
-  // Resize matrix (entries are not preserved)
-  this->resize(M, N, false);
+  // Resize assembly matrix
+  if(Assembly_matrix.size1() != M && Assembly_matrix.size2() != N )
+    Assembly_matrix.resize(M, N, false);
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::init(uint M, uint N, uint nz)
+void uBlasSparseMatrix::init(const uint M, const uint N, const uint nz)
 {
   init(M, N);
 
-  uint total_nz = nz*(this->size(0));
+  // Reserve space for non-zeroes
+  const uint total_nz = nz*size(0);
   reserve(total_nz);
+
+  // This is not yet supported by the uBlas matrix type being used for assembly
+//  Assembly_matrix.reserve(total_nz);  
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasSparseMatrix::size(uint dim) const
+dolfin::uint uBlasSparseMatrix::size(const uint dim) const
 {
   dolfin_assert( dim < 2 );
-  return (dim == 0 ? this->size1() : this->size2());  
+  return (dim == 0 ? size1() : size2());  
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::set(const real block[], const int rows[], int m, const int cols[], int n)
+void uBlasSparseMatrix::set(const real block[], const int rows[], int m, 
+                            const int cols[], const int n)
 {
+  if( assembled )
+  {
+    Assembly_matrix.assign(*this);
+    assembled = false; 
+  }
+
   for (int i = 0; i < m; ++i)
     for (int j = 0; j < n; ++j)
-      (*this)(rows[i] , cols[j]) = block[i*n + j];
+        Assembly_matrix(rows[i] , cols[j]) = block[i*n + j];
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::add(const real block[], const int rows[], int m, const int cols[], int n)
+void uBlasSparseMatrix::add(const real block[], const int rows[], int m, 
+                            const int cols[], const int n)
 {
+  if( assembled )
+  {
+    Assembly_matrix.assign(*this);
+    assembled = false; 
+  }
+
   for (int i = 0; i < m; ++i)
     for (int j = 0; j < n; ++j)
-      (*this)(rows[i] , cols[j]) += block[i*n + j];
+      Assembly_matrix(rows[i] , cols[j]) += block[i*n + j];
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::getRow(const uint i, int& ncols, Array<int>& columns, 
     Array<real>& values) const
 {
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
   // Reference to matrix row (through away const-ness and trust uBlas)
   ublas::matrix_row<uBlasSparseMatrix> row(*(const_cast<uBlasSparseMatrix*>(this)), i);
 
@@ -92,13 +115,19 @@ void uBlasSparseMatrix::getRow(const uint i, int& ncols, Array<int>& columns,
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::lump(DenseVector& m) const
 {
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
   ublas::scalar_vector<double> one(size(1), 1.0);
   ublas::axpy_prod(*this, one, m, true);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::solve(DenseVector& x, const DenseVector& b) const
 {    
-  // Make copy of matrix (factorisation is done in-place)
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
+  // Make copy of matrix and vector (factorisation is done in-place)
   uBlasSparseMatrix Atemp = *this;
 
   // Solve
@@ -107,31 +136,51 @@ void uBlasSparseMatrix::solve(DenseVector& x, const DenseVector& b) const
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::solveInPlace(DenseVector& x, const DenseVector& b)
 {
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
   // This function does not check for singularity of the matrix
-  uint M = this->size1();
+  const uint M = this->size1();
   dolfin_assert(M == this->size2());
   dolfin_assert(M == b.size());
   
+  if( x.size() != M )
+    x.init(M);
+
   // Initialise solution vector
-  x = b;
+  x.assign(b);
 
   // Create permutation matrix
   ublas::permutation_matrix<std::size_t> pmatrix(M);
 
   // Factorise (with pivoting)
-  ublas::lu_factorize(*this, pmatrix);
-  
+  uint singular = ublas::lu_factorize(*this, pmatrix);
+  if( singular > 0)
+    dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+
   // Back substitute 
   ublas::lu_substitute(*this, pmatrix, x);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::apply()
 {
-  // Do nothing
+  // Assign temporary assembly matrix to the sparse matrix
+  if( !assembled )
+  {
+    // Assign temporary assembly matrix to the matrix
+    this->assign(Assembly_matrix);
+    assembled = true;
+  } 
+
+  // Free memory
+  Assembly_matrix.resize(0,0, false);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::zero()
 {
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
   // Clear destroys non-zero structure of the matrix 
   clear();
 
@@ -139,19 +188,25 @@ void uBlasSparseMatrix::zero()
 //  (*this) *= 0.0;
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::ident(const int rows[], int m)
+void uBlasSparseMatrix::ident(const int rows[], const int m)
 {
-  uint n = this->size(1);
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
+  const uint n = this->size(1);
   for(int i=0; i < m; ++i)
     ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
 }
 //-----------------------------------------------------------------------------
 void uBlasSparseMatrix::mult(const DenseVector& x, DenseVector& Ax) const
 {
+  if( !assembled )
+    dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+
   ublas::axpy_prod(*this, x, Ax, true);
 }
 //-----------------------------------------------------------------------------
-void uBlasSparseMatrix::disp(uint precision) const
+void uBlasSparseMatrix::disp(const uint precision) const
 {
   std::cout.precision(precision+1);
   std::cout << *this << std::endl;

@@ -4,12 +4,10 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-05-07
+// Last changed: 2006-06-26
 
 #ifndef __DENSE_MATRIX_H
 #define __DENSE_MATRIX_H
-
-// FIXME: boost first
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ublas.h>
@@ -41,17 +39,17 @@ namespace dolfin
     DenseMatrix();
     
     /// Constructor
-    DenseMatrix(uint M, uint N);
+    DenseMatrix(const uint M, const uint N);
 
     /// Destructor
     ~DenseMatrix();
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    void init(const uint M, const uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
     /// nzmax is a dummy argument ans is passed for compatibility with sparse matrces
-    void init(uint M, uint N, uint nzmax);
+    void init(const uint M, const uint N, const uint nzmax);
 
     /// Assignment from a matrix_expression
     template <class E>
@@ -69,10 +67,10 @@ namespace dolfin
     uint size(uint dim) const;
 
     /// Set block of values
-    void set(const real block[], const int rows[], int m, const int cols[], int n);
+    void set(const real block[], const int rows[], int m, const int cols[], const int n);
 
     /// Add block of values
-    void add(const real block[], const int rows[], int m, const int cols[], int n);
+    void add(const real block[], const int rows[], int m, const int cols[], const int n);
 
     /// Lump matrix into vector m
     void lump(DenseVector& m) const;
@@ -86,14 +84,14 @@ namespace dolfin
     /// Compute inverse of matrix
     void invert();
 
-    /// Apply changes to matrix (dummy function for compatibility)
+    /// Apply changes to matrix (dummy function for compatibility with sparse matrix types)
     void apply();
 
     /// Set all entries to zero
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], int m);
+    void ident(const int rows[], const int m);
 
     /// Maximum number of non-zero terms on a row. Not relevant for dense matrix
     /// so just return 0

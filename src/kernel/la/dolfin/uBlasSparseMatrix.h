@@ -43,11 +43,11 @@ namespace dolfin
     ~uBlasSparseMatrix();
 
     /// Initialize M x N matrix
-    void init(uint M, uint N);
+    void init(const uint M, const uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
     /// nzmax is a dummy argument ans is passed for compatibility with sparse matrces
-    void init(uint M, uint N, uint nzmax);
+    void init(const uint M, const uint N, const uint nzmax);
 
     /// Assignment from a matrix_expression
     template <class E>
@@ -58,13 +58,13 @@ namespace dolfin
     } 
 
     /// Return number of rows (dim = 0) or columns (dim = 1) 
-    uint size(uint dim) const;
+    uint size(const uint dim) const;
 
-    /// Set block of values
-    void set(const real block[], const int rows[], int m, const int cols[], int n);
+    /// Set block of values. The function apply() must be called to commit changes.
+    void set(const real block[], const int rows[], int m, const int cols[], const int n);
 
-    /// Add block of values
-    void add(const real block[], const int rows[], int m, const int cols[], int n);
+    /// Add block of values. The function apply() must be called to commit changes.
+    void add(const real block[], const int rows[], int m, const int cols[], const int n);
 
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
@@ -78,14 +78,14 @@ namespace dolfin
     /// Solve Ax = b in-place (A is destroyed)
     void solveInPlace(DenseVector& x, const DenseVector& b);
 
-    /// Apply changes to matrix (dummy function for compatibility)
+    /// Apply changes to matrix 
     void apply();
 
     /// Set all entries to zero
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], int m);
+    void ident(const int rows[], const int m);
 
     /// Average number of non-zero terms per row
     uint nzmax() const
@@ -95,10 +95,18 @@ namespace dolfin
     void mult(const DenseVector& x, DenseVector& Ax) const;
 
     /// Display matrix
-    void disp(uint precision = 2) const;
+    void disp(const uint precision = 2) const;
 
     /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasSparseMatrix& A);
+
+   private:
+  
+    /// Matrix used internally for assembly
+    ublas_assembly_matrix Assembly_matrix;
+
+    /// Matrix state
+    bool assembled;
 
   };
 }

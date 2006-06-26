@@ -9,6 +9,7 @@
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/vector_of_vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 
 // These two files must be included due to a bug in Boost version < 1.33.
@@ -30,6 +31,14 @@ namespace dolfin
 
   // Set type of underlying uBlas sparse matrix. 
   typedef ublas::compressed_matrix<double> ublas_sparse_matrix;
+//  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
+//            ublas::vector<ublas::compressed_vector<double> > > ublas_sparse_matrix;
+
+
+  // uBlas sparse matrix for temporoary assembly
+  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
+            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
+
 
   // uBlas column-major compressed matrix
   typedef ublas::compressed_matrix<double,ublas::column_major> ublas_sparse_matrix_cmajor;
