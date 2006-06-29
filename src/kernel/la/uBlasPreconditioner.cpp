@@ -4,6 +4,7 @@
 // First added:  2006-06-23
 // Last changed: 
 
+#include <dolfin/timing.h>
 #include <dolfin/uBlasPreconditioner.h>
 
 using namespace dolfin;
@@ -16,7 +17,7 @@ uBlasPreconditioner::uBlasPreconditioner()
 //-----------------------------------------------------------------------------
 uBlasPreconditioner::uBlasPreconditioner(const uBlasSparseMatrix& A)
 {
-  // Do nothing
+  // Do nothingc
 }
 //-----------------------------------------------------------------------------
 uBlasPreconditioner::~uBlasPreconditioner()
@@ -33,7 +34,6 @@ void uBlasPreconditioner::init(const uBlasSparseMatrix& A)
 void uBlasPreconditioner::solve(ublas_vector& x) const
 {
   dolfin_assert( x.size() == M.size2() );
-  const uint size = M.size1();
 
   // Let uBlas solve the systems. This is however very slow as uBlas
   // is not optimised for sparse storage, especially when using using
@@ -42,6 +42,7 @@ void uBlasPreconditioner::solve(ublas_vector& x) const
 
   // Perform substutions using uBlas sparse matrix iterators. This is 
   // relatively fast, but not that great.
+
 /*
   uBlasSparseMatrix::const_iterator1 row;
   uBlasSparseMatrix::const_iterator1 row_end = M.end1();
@@ -73,13 +74,14 @@ void uBlasPreconditioner::solve(ublas_vector& x) const
 */
 
   // Perform substutions for compressed row storage. This is the fastest.
+  const uint size = M.size1();
   for(uint i =0; i < size; ++i)
   {
     uint k;
     for(k = M.index1_data () [i]; k < diagonal[i]; ++k)
       x(i) -= ( M.value_data () [k] )*x( M.index2_data () [k] );
   } 
-  for(int i =size-2; i >= 0; --i)
+  for(int i =size-1; i >= 0; --i)
   {
     uint k;
     for(k = M.index1_data () [i+1]-1; k > diagonal[i]; --k)
@@ -100,8 +102,13 @@ void uBlasPreconditioner::solve(const ublas_vector& x, ublas_vector& y) const
 void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
 {
   const uint size = A.size(0); 
-  M.resize(size, size); 
-  M.assign(A);  
+  M.resize(size, size, false);
+  M.assign(A); 
+
+  // Add term to diagonal to avoid negative pivots
+  const real zero_shift = get("Krylov shift nonzero");
+  if(zero_shift > 0.0)
+    M.plus_assign( zero_shift*ublas::identity_matrix<double>(size) );  
 
 /*
   // Straightforward and very slow implementation. This is used for verification
@@ -124,10 +131,10 @@ void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
   }
 */
 
-/*
+
   // This approach using uBlas iterators is simple and quite fast.
   // Is it possible to remove the M(.,.) calls? This would speed it up a lot.
-
+/*
   // Sparse matrix iterators
   typedef uBlasSparseMatrix::iterator1 it1;
   typedef uBlasSparseMatrix::iterator2 it2;
@@ -148,6 +155,7 @@ void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
   // The below algorithm is based on that in the book
   // Y. Saad, "Iterative Methods for Sparse Linear Systems", p.276-278.
   // It is specific to compressed row storage
+
 
   // Initialise some data
   diagonal.resize(size);
@@ -179,7 +187,7 @@ void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
         break;
 
 //      t1 = (M.value_data() [j])*(M.value_data() [ diagonal[jrow] ]);
-      t1 = (M.value_data() [j])/(M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(k,k) 
+      t1 = (M.value_data() [j])/(M.value_data() [ diagonal[jrow] ]);  //M(k,j) = M(k,j)/M(j,j) 
       M.value_data() [j] = t1;
       for(uint jj = diagonal[jrow]+1; jj <= M.index1_data () [jrow+1]-1; ++jj)
       {
@@ -192,7 +200,8 @@ void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
     diagonal[k] = j;
 
     if( jrow != k || fabs( M.value_data() [j] ) < DOLFIN_EPS )
-      dolfin_error("Zero pivot detected in uBlas ILU preconditioner.");
+      dolfin_error1("Zero pivot detected in uBlas ILU preconditioner in row %u.", k);
+
 //    M.value_data() [j] = 1.0/( M.value_data() [j] );
     for(uint i=j0; i <= j1; ++i)
       iw[ M.index2_data () [i] ] = 0;        
@@ -201,5 +210,6 @@ void uBlasPreconditioner::create(const uBlasSparseMatrix& A)
   // Restore diagonal
 //  for (uint k = 0; k < size ; ++k)
 //    M.value_data() [ uptr[k] ] = 1.0/M.value_data() [ uptr[k] ];
+
 }
 //-----------------------------------------------------------------------------

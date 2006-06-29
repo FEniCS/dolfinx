@@ -126,6 +126,7 @@ int main()
   // Compute solution
   Function U;
   Function P;
+  set("Krylov shift nonzero", 1e-10);  
   pde.solve(U, P);
 
   // Save solution to file
@@ -135,5 +136,6 @@ int main()
   pfile << P;
 
   // Solve convection-diffusion with computed velocity field
+  set("Krylov shift nonzero", 0.0);
   solveConvectionDiffusion(mesh, U);
 }

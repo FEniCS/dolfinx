@@ -53,6 +53,7 @@ int main()
   // Compute solution
   Function U;
   Function P;
+  set("Krylov shift nonzero", 1e-10);
   pde.solve(U, P);
 
   // Save solution to file

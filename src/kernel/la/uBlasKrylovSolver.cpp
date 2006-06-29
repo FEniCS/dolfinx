@@ -10,8 +10,6 @@
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 
-
-
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -71,7 +69,7 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasSparseMatrix& A, DenseVector& x
     iterations = bicgstabSolver(A, x, b, P, converged);
     break;
   default:
-    dolfin_warning("Requested solver type unknown. USing BiCGStab.");
+    dolfin_warning("Requested solver type unknown. Using BiCGStab.");
     iterations = bicgstabSolver(A, x, b, P, converged);
   }
 
@@ -228,10 +226,10 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
   const uint size = A.size(0);
 
   // Allocate vectors
-  ublas_vector r(size), rstar(size), p(size), s(size), v(size), t(size), phat(size), shat(size);
-  ublas_vector vtemp(size);
+  ublas_vector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
 
-  real alpha = 0.0, beta = 0.0, omega = 0.0, r_norm = 0.0; 
+  real alpha = 1.0, beta = 0.0, omega = 1.0, r_norm = 0.0; 
+  real rho_old = 1.0, rho = 1.0;
 
   // Compute residual r = b -A*x
   r.assign(b);
@@ -244,66 +242,133 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
     return 0;
   }  
 
-  // Initialise p and apply preconditioner
-  p.assign(r);
-  phat.assign(p);
-  P.solve(phat);
-
-  // Initialise r^star?
+  // Initialise r^star, v and p
   rstar.assign(r);
-  
-  // Save inner products (r0, r*) and (r1, r*) 
-  real r_rstar0 = 0.0;
-  real r_rstar1 = ublas::inner_prod(r,rstar);
+  v.clear();
+  p.clear();
+
+  // Apply preconditioner to r^start. This is a trick to avoid problems in which 
+  // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous 
+  // Neumann bc's and no forcing/source term.
+  P.solve(rstar);
+
+  // Right-preconditioned Bi-CGSTAB
 
   // Start iterations
   converged = false;
   uint iteration = 0;
   while (iteration < max_it && !converged && r_norm/r0_norm < div_tol) 
   {
-    // Compute v = A*p
-    axpy_prod(A, phat, v, true);
+    // Set rho_n = rho_n+1
+    rho_old = rho; 
 
-    // alpha = (r1,r^star)/(v,r^star)
-    alpha = r_rstar1/ublas::inner_prod(v, rstar);
+    // Compute new rho
+    rho = ublas::inner_prod(r, rstar); 
+    if( fabs(rho) < 1e-25 )
+      dolfin_error1("BiCGStab breakdown. rho = %g", rho);
 
-    // s = r0 - alpha*A*p;
+    beta = (rho/rho_old)*(alpha/omega);
+
+    // p = r1 + beta*p - beta*omega*A*p
+    p *= beta;
+    noalias(p) += r - beta*omega*v;
+
+    // My = p
+    y.assign(p);
+    P.solve(y);
+
+    // v = A*y
+    axpy_prod(A, y, v, true);
+
+    // alpha = (r, rstart) / (v, rstar)
+    alpha = rho/ublas::inner_prod(v, rstar);
+
+    // s = r - alpha*v
     noalias(s) = r - alpha*v;
+    
+    // Mz = s
+    z.assign(s);
+    P.solve(z);
 
-    shat.assign(s);
-    P.solve(shat);
+    // t = A*z
+    axpy_prod(A, z, t, true);
 
-    // Compute t = A*s
-    axpy_prod(A, shat, t, true);
-
-    // omega = (t, s) / (t, t) 
+    // omega = (t, s) / (t,t)
     omega = ublas::inner_prod(t, s)/ublas::inner_prod(t, t);
 
-    // x = x + alpha*p + omega*s 
-    noalias(x) += alpha*phat + omega*shat;
-    
-    // r = s - omega*A*s
+    // x = x + alpha*p + omega*s
+    noalias(x) += alpha*y + omega*z;
+
+    // r = s - omega*t
     noalias(r) = s - omega*t;
 
     // Compute norm of the residual and check for convergence
     r_norm = norm_2(r);
     if( r_norm/r0_norm < rtol || r_norm < atol)
       converged = true;
-    else
-    {
-      r_rstar0 = r_rstar1; 
-      r_rstar1 = ublas::inner_prod(r, rstar); 
-      beta  = ( r_rstar1/ r_rstar0 )*(alpha/omega);
 
-      // p = r1 + beta*p - beta*omega*A*p
-      vtemp.assign(r+beta*p-beta*omega*t);      
-      p.assign( vtemp );    
-
-      phat.assign(p);
-      P.solve(phat);
-    }
     ++iteration;  
   }
+
+
+/*
+  // Left-conditioned Bi-CGSTAB
+  P.solve(r);
+  r0_norm = norm_2(r);
+  rstar.assign(r);
+  v.clear();
+  p.clear();
+
+  // Start iterations
+  converged = false;
+  uint iteration = 0;
+  while (iteration < max_it && !converged && r_norm/r0_norm < div_tol) 
+  {
+    // Set rho_n = rho_n+1
+    rho_old = rho; 
+
+    // Compute new rho
+    rho = ublas::inner_prod(r, rstar); 
+    if( fabs(rho) < 1e-25 )
+      dolfin_error1("BiCGStab breakdown (2). rho = %g", rho);
+
+    beta = (rho/rho_old)*(alpha/omega);
+
+    // p = r1 + beta*p - beta*omega*A*p
+    p *= beta;
+    noalias(p) += r - beta*omega*v;
+
+    // v = A*p
+    axpy_prod(A, p, v, true);
+    P.solve(v);
+
+    // alpha = (r, rstart) / (v, rstar)
+    alpha = rho/ublas::inner_prod(v, rstar);
+
+    // s = r - alpha*v
+    noalias(s) = r - alpha*v;
+    
+    // t = A*s
+    axpy_prod(A, s, t, true);
+    P.solve(t);
+
+    // omega = (t, s) / (t,t)
+    omega = ublas::inner_prod(t, s)/ublas::inner_prod(t, t);
+
+    // x = x + alpha*p + omega*s
+    noalias(x) += alpha*p + omega*s;
+
+    // r = s - omega*t
+    noalias(r) = s - omega*t;
+
+    // Compute norm of the residual and check for convergence
+    r_norm = norm_2(r);
+    if( r_norm/r0_norm < rtol || r_norm < atol)
+      converged = true;
+
+    ++iteration;  
+  }
+*/
   return iteration;
 }
 //-----------------------------------------------------------------------------

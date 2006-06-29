@@ -24,10 +24,9 @@ uBlasLUSolver::~uBlasLUSolver()
 dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x, 
     const DenseVector& b)
 {
-//  dolfin_warning("LU solver will be used. This may be slow and consume a lot of memory.");
-  dolfin_warning("Suitable LU solver for large uBlas matrices is not yet available. Krylov solver will be used.");
+  dolfin_warning("A suitable LU solver for large uBlas matrices is not yet available. A Krylov iterative solver will be used.");
         
-  // FIXME: find solution for decent uBlas direct solve.
+  // FIXME: find solution for decent uBlas direct solve. Could use uBlas bindings to UMFPACK?
 //  A.solve(x, b);
 
   // Use Krylov solver

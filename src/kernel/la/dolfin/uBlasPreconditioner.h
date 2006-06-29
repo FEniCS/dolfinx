@@ -9,6 +9,7 @@
 
 #include <dolfin/ublas.h>
 #include <dolfin/Array.h>
+#include <dolfin/Parametrized.h>
 #include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
@@ -22,7 +23,7 @@ namespace dolfin
 
   class DenseVector;
 
-  class uBlasPreconditioner
+  class uBlasPreconditioner : public Parametrized
   {
   public:
 
