@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-06-29
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H

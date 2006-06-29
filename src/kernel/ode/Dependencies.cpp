@@ -59,7 +59,6 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void Dependencies::set(const Matrix& A)
 {
   // Prepare sparse pattern if necessary
@@ -80,20 +79,8 @@ void Dependencies::set(const Matrix& A)
     setsize(i, ncols);
     for (uint j = 0; j < static_cast<uint>(ncols); j++)
       set(i, columns[j]);
-  
-/*
-    int ncols = 0;
-    const int* cols = 0;
-    const real* vals = 0;
-    MatGetRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
-    setsize(i, ncols);
-    for (uint j = 0; j < static_cast<uint>(ncols); j++)
-      set(i, cols[j]);
-    MatRestoreRow(A.mat(), static_cast<int>(i), &ncols, &cols, &vals);
-*/
   }
 }
-#endif
 //-----------------------------------------------------------------------------
 void Dependencies::transp(const Dependencies& dependencies)
 {

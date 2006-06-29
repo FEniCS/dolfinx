@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-05-07
+// Last changed: 2006-06-29
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODESolver.h>
@@ -159,12 +159,10 @@ void ODE::sparse()
   dependencies.detect(*this);
 }
 //-----------------------------------------------------------------------------
-#ifdef HAVE_PETSC_H
 void ODE::sparse(const Matrix& A)
 {
   dependencies.set(A);
 }
-#endif
 //-----------------------------------------------------------------------------
 dolfin::uint ODE::size() const
 {
