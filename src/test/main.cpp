@@ -511,6 +511,114 @@ void testNewMesh()
   BoundaryMesh boundary(mesh);
 }
 
+void testVectorAccess()
+{
+  // Check speed of accessing individual elements for
+  // different types of vectors
+
+  unsigned int N = 10000;
+  unsigned int num_repetitions = 0;
+  real t = 0.0;
+  real sum = 0.0;
+
+  PETScVector x1(N);      // PETSc vector
+  DenseVector x2(N);      // uBlas vector
+  Array<real> x3(N);      // STL vector
+  real* x4 = new real[N]; // Plain C array
+
+  // PETSc
+
+  num_repetitions = 50;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      x1(i) = 1.0;
+  }
+  t = toc();
+  dolfin_info("Setting values in PETSc vector:   %.3g", t / static_cast<real>(num_repetitions));
+
+  num_repetitions = 1000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      sum += x1(i);
+  }
+  t = toc();
+  dolfin_info("Accessing values in PETSc vector: %.3g", t / static_cast<real>(num_repetitions));
+
+  // uBlas
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      x2(i) = 1.0;
+  }
+  t = toc();
+  dolfin_info("Setting values in uBlas vector:   %.3g", t / static_cast<real>(num_repetitions));
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      sum += x2(i);
+  }
+  t = toc();
+  dolfin_info("Accessing values in uBlas vector: %.3g", t / static_cast<real>(num_repetitions));
+
+  // STL
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      x3[i] = 1.0;
+  }
+  t = toc();
+  dolfin_info("Setting values in STL vector:     %.3g", t / static_cast<real>(num_repetitions));
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      sum += x3[i];
+  }
+  t = toc();
+  dolfin_info("Accessing values in STL vector:   %.3g", t / static_cast<real>(num_repetitions));
+
+  // Plain C array
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      x4[i] = 1.0;
+  }
+  t = toc();
+  dolfin_info("Setting values in C array:        %.3g", t / static_cast<real>(num_repetitions));
+
+  num_repetitions = 100000;
+  tic();
+  for (unsigned int n = 0; n < num_repetitions; n++)
+  {
+    for (unsigned int i = 0; i < N; i++)
+      sum += x4[i];
+  }
+  t = toc();
+  dolfin_info("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
+
+  cout << "sum = " << sum << endl;
+
+  delete [] x4;
+}
+
 int main(int argc, char* argv[])
 {
 /*
@@ -536,10 +644,12 @@ int main(int argc, char* argv[])
   testOutputMatrix();
 */
 
-  testNewMesh();
+  //testNewMesh();
   
   //benchOldMesh();
   //benchNewMesh();
+
+  testVectorAccess();
 
   return 0;
 }
