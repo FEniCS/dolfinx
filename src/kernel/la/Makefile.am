@@ -18,6 +18,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/Preconditioner.h \
                           dolfin/SparseMatrix.h \
                           dolfin/ublas.h \
+                          dolfin/uBlasKrylovMatrix.h \
                           dolfin/uBlasKrylovSolver.h \
                           dolfin/uBlasLUSolver.h \
                           dolfin/uBlasPreconditioner.h \

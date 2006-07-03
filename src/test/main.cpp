@@ -281,7 +281,6 @@ void testMeshRefinement()
   //file2 << mesh;
 }
 
-
 void testuBlasSparseMatrix()
 {
   dolfin_info("--- Testing sparse matrices ---");
@@ -304,7 +303,8 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(196,196);
+  //UnitSquare mesh(196,196);
+  UnitSquare mesh(100, 100);
 
   Source f;
   MyBC bc;
@@ -343,7 +343,7 @@ void testuBlasSparseMatrix()
   dolfin_log(true);
   cout << "uBlas assembly time = " << toc() << endl;  
 
-//  uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
+  //uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
   uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
   x = b;
   x = 0.0;  
@@ -519,7 +519,7 @@ void testVectorAccess()
   unsigned int N = 10000;
   unsigned int num_repetitions = 0;
   real t = 0.0;
-  real sum = 0.0;
+  real tmp = 0.0;
 
   PETScVector x1(N);      // PETSc vector
   DenseVector x2(N);      // uBlas vector
@@ -543,7 +543,7 @@ void testVectorAccess()
   for (unsigned int n = 0; n < num_repetitions; n++)
   {
     for (unsigned int i = 0; i < N; i++)
-      sum += x1(i);
+      tmp = x1(i);
   }
   t = toc();
   dolfin_info("Accessing values in PETSc vector: %.3g", t / static_cast<real>(num_repetitions));
@@ -565,7 +565,7 @@ void testVectorAccess()
   for (unsigned int n = 0; n < num_repetitions; n++)
   {
     for (unsigned int i = 0; i < N; i++)
-      sum += x2(i);
+      tmp = x2(i);
   }
   t = toc();
   dolfin_info("Accessing values in uBlas vector: %.3g", t / static_cast<real>(num_repetitions));
@@ -587,7 +587,7 @@ void testVectorAccess()
   for (unsigned int n = 0; n < num_repetitions; n++)
   {
     for (unsigned int i = 0; i < N; i++)
-      sum += x3[i];
+      tmp = x3[i];
   }
   t = toc();
   dolfin_info("Accessing values in STL vector:   %.3g", t / static_cast<real>(num_repetitions));
@@ -609,14 +609,10 @@ void testVectorAccess()
   for (unsigned int n = 0; n < num_repetitions; n++)
   {
     for (unsigned int i = 0; i < N; i++)
-      sum += x4[i];
+      tmp = x4[i];
   }
   t = toc();
   dolfin_info("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
-
-  cout << "sum = " << sum << endl;
-
-  delete [] x4;
 }
 
 int main(int argc, char* argv[])
@@ -640,7 +636,6 @@ int main(int argc, char* argv[])
   testDenseLUsolve();
   testGenericMatrix();
   testGenericMatrix();
-  testuBlasSparseMatrix();
   testOutputMatrix();
 */
 
@@ -649,7 +644,9 @@ int main(int argc, char* argv[])
   //benchOldMesh();
   //benchNewMesh();
 
-  testVectorAccess();
+  //testVectorAccess();
+
+  testuBlasSparseMatrix();
 
   return 0;
 }

@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-03
-// Last changed: 2006-06-26
+// Last changed: 2006-06-30
 
 #include <iostream>
 #include <dolfin/dolfin_log.h>
@@ -14,16 +14,20 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasSparseMatrix::uBlasSparseMatrix() : GenericMatrix(),
-			     Variable("A", "a sparse matrix"),
-			     ublas_sparse_matrix(), assembled(true)
+uBlasSparseMatrix::uBlasSparseMatrix()
+  : Variable("A", "a sparse matrix"),
+    GenericMatrix(),
+    uBlasKrylovMatrix(),
+    ublas_sparse_matrix(), assembled(true)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasSparseMatrix::uBlasSparseMatrix(uint M, uint N) : GenericMatrix(),
-					   Variable("A", "a sparse matrix"),
-					   ublas_sparse_matrix(M, N), assembled(true)
+uBlasSparseMatrix::uBlasSparseMatrix(uint M, uint N)
+  : Variable("A", "a sparse matrix"),
+    GenericMatrix(),
+    uBlasKrylovMatrix(),
+    ublas_sparse_matrix(M, N), assembled(true)
 {
   // Do nothing
 }

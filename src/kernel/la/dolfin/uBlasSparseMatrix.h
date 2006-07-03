@@ -1,8 +1,10 @@
 // Copyright (C) 2006 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-05-29
-// Last changed: 
+// Last changed: 2006-06-29
 
 #ifndef __UBLAS_SPARSE_MATRIX_H
 #define __UBLAS_SPARSE_MATRIX_H
@@ -11,6 +13,7 @@
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/ublas.h>
 
 namespace dolfin
@@ -19,7 +22,6 @@ namespace dolfin
   class DenseVector;
   namespace ublas = boost::numeric::ublas;
 
-
   /// This class represents a sparse matrix of dimension M x N.
   /// It is a simple wrapper for a Boost ublas sparse matrix.
   ///
@@ -27,9 +29,10 @@ namespace dolfin
   /// refer to the documentation for ublas which can be found at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class uBlasSparseMatrix : public GenericMatrix,
-		      public Variable,
-		      public ublas_sparse_matrix
+  class uBlasSparseMatrix : public Variable,
+			    public GenericMatrix,
+			    public uBlasKrylovMatrix,
+			    public ublas_sparse_matrix
   {
   public:
     

@@ -33,6 +33,10 @@ void uBlasPreconditioner::init(const uBlasSparseMatrix& A)
 //-----------------------------------------------------------------------------
 void uBlasPreconditioner::solve(ublas_vector& x) const
 {
+  // Do nothing if not initialized
+  if ( M.size(0) == 0 )
+    return;
+
   dolfin_assert( x.size() == M.size2() );
 
   // Let uBlas solve the systems. This is however very slow as uBlas
@@ -93,6 +97,10 @@ void uBlasPreconditioner::solve(ublas_vector& x) const
 //-----------------------------------------------------------------------------
 void uBlasPreconditioner::solve(const ublas_vector& x, ublas_vector& y) const
 {
+  // Do nothing if not initialized
+  if ( M.size(0) == 0 )
+    return;
+
   // For efficiency, it is assumed here that y has been allocated 
   dolfin_assert( x.size() == y.size());
   y.assign(x);

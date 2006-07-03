@@ -1,28 +1,30 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-05-31
-// Last changed: 2006-06-23
+// Last changed: 2006-07-03
 
 #ifndef __UBLAS_KRYLOV_SOLVER_H
 #define __UBLAS_KRYLOV_SOLVER_H
 
 #include <dolfin/constants.h>
 #include <dolfin/ublas.h>
-#include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
+#include <dolfin/LinearSolver.h>
 #include <dolfin/uBlasPreconditioner.h>
-
 
 namespace dolfin
 {
-  /// This class implements Krylov methods for linear systems
-  /// of the form Ax = b using uBlas data types. 
 
   class DenseVector;
-  class uBlasSparseMatrix;
+  class uBlasKrylovMatrix;
 
-  class uBlasKrylovSolver : public LinearSolver, public Parametrized
+  /// This class implements Krylov methods for linear systems
+  /// of the form Ax = b using uBlas data types.
+
+  class uBlasKrylovSolver : public Parametrized, public LinearSolver
   {
   public:
 
@@ -45,16 +47,16 @@ namespace dolfin
     ~uBlasKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b);
+    uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b);
           
   private:
 
     /// Solve linear system Ax = b using restarted GMRES
-    uint gmresSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
+    uint gmresSolver(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
                      const uBlasPreconditioner& P, bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
-    uint bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b,
+    uint bicgstabSolver(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
                         const uBlasPreconditioner& P, bool& converged) const;
 
     /// Read solver parameters

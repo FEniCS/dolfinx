@@ -1,26 +1,29 @@
 // Copyright (C) 2006 Garth N. Wells.
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-05-31
-// Last changed: 2006-06-23
-
+// Last changed: 2006-07-03
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DenseVector.h>
-#include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver() : Parametrized(), type(default_solver),
-      report(false), parameters_read(false) 
+uBlasKrylovSolver::uBlasKrylovSolver()
+  : Parametrized(),
+    type(default_solver), report(false), parameters_read(false) 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-uBlasKrylovSolver::uBlasKrylovSolver(Type solver) : Parametrized(), type(solver),
-      report(false), parameters_read(false)
+uBlasKrylovSolver::uBlasKrylovSolver(Type solver)
+  : Parametrized(),
+    type(solver), report(false), parameters_read(false)
 {
   // Do nothing
 }
@@ -30,8 +33,8 @@ uBlasKrylovSolver::~uBlasKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::solve(const uBlasSparseMatrix& A, DenseVector& x, 
-    const DenseVector& b)
+dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
+				      DenseVector& x, const DenseVector& b)
 {
   // Check dimensions
   uint M = A.size(0);
@@ -40,7 +43,8 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasSparseMatrix& A, DenseVector& x
     dolfin_error("Non-matching dimensions for linear system.");
 
   // Initialise preconditioner
-  P.init(A);
+  // FIXME: Preconditioner temporarily disabled
+  //P.init(A);
   
   // Reinitialise x if necessary 
   // FIXME: this erases initial guess
@@ -82,8 +86,11 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasSparseMatrix& A, DenseVector& x
   return iterations; 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVector& x, 
-    const DenseVector& b, const uBlasPreconditioner& P, bool& converged) const
+dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
+					    DenseVector& x, 
+					    const DenseVector& b,
+					    const uBlasPreconditioner& P,
+					    bool& converged) const
 {
   // Get size of system
   const uint size = A.size(0);
@@ -115,10 +122,14 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
   while (iteration < max_it && !converged) 
   { 
     // Compute residual r = b -A*x
-    noalias(r) = b;
-    axpy_prod(A, -x, r, false); 
+    //noalias(r) = b;
+    //axpy_prod(A, -x, r, false); 
+    A.mult(x, static_cast<DenseVector&>(r));
+    r *= -1.0;
+    r += b;
 
     // Apply preconditioner
+    // FIXME: Preconditioner temporarily disabled
     P.solve(r);
 
     // L2 norm of residual (for most recent restart)
@@ -146,9 +157,13 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
     uint j = 0; 
     while (subiteration < restart && iteration < max_it && !converged && r_norm/beta < div_tol) 
     {
-      axpy_prod(A, column(V,j), w, true);    
+      // Compute product w = A*V_j (use r for temporary storage)
+      //axpy_prod(A, column(V, j), w, true);
+      noalias(r) = column(V, j);
+      A.mult(static_cast<DenseVector&>(r), static_cast<DenseVector&>(w));
 
       // Apply preconditioner
+      // FIXME: Preconditioner temporarily disabled
       P.solve(w);
 
       for (uint i=0; i <= j; ++i) 
@@ -215,12 +230,15 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasSparseMatrix& A, DenseVec
     // x_m = x_0 + V*y
     ublas_matrix_cmajor_range v( V, ublas::range(0,V.size1()), ublas::range(0,subiteration) );
     axpy_prod(v, g, x, false);
-  }  
+  }
   return iteration;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, DenseVector& x, 
-    const DenseVector& b, const uBlasPreconditioner& P, bool& converged) const
+dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
+					       DenseVector& x,
+					       const DenseVector& b,
+					       const uBlasPreconditioner& P,
+					       bool& converged) const
 {
   // Get size of system
   const uint size = A.size(0);
@@ -232,8 +250,11 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
   real rho_old = 1.0, rho = 1.0;
 
   // Compute residual r = b -A*x
-  r.assign(b);
-  axpy_prod(A, -x, r, false); 
+  //r.assign(b);
+  //axpy_prod(A, -x, r, false);
+  A.mult(x, static_cast<DenseVector&>(r));
+  r *= -1.0;
+  r += b;
 
   const real r0_norm = norm_2(r);
   if( r0_norm < atol )  
@@ -250,6 +271,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
   // Apply preconditioner to r^start. This is a trick to avoid problems in which 
   // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous 
   // Neumann bc's and no forcing/source term.
+  // FIXME: Preconditioner temporarily disabled
   P.solve(rstar);
 
   // Right-preconditioned Bi-CGSTAB
@@ -275,10 +297,12 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
 
     // My = p
     y.assign(p);
+    // FIXME: Preconditioner temporarily disabled
     P.solve(y);
 
     // v = A*y
-    axpy_prod(A, y, v, true);
+    //axpy_prod(A, y, v, true);
+    A.mult(static_cast<DenseVector&>(y), static_cast<DenseVector&>(v));
 
     // alpha = (r, rstart) / (v, rstar)
     alpha = rho/ublas::inner_prod(v, rstar);
@@ -291,7 +315,8 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasSparseMatrix& A, Dense
     P.solve(z);
 
     // t = A*z
-    axpy_prod(A, z, t, true);
+    //axpy_prod(A, z, t, true);
+    A.mult(static_cast<DenseVector&>(z), static_cast<DenseVector&>(t));
 
     // omega = (t, s) / (t,t)
     omega = ublas::inner_prod(t, s)/ublas::inner_prod(t, t);

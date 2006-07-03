@@ -38,19 +38,19 @@ namespace dolfin
     /// Constructor
     uBlasPreconditioner();
 
-    /// Initialise preconditioner 
+    /// Initialise preconditioner
     uBlasPreconditioner(const uBlasSparseMatrix& A);
 
     /// Destructor
     virtual ~uBlasPreconditioner();
 
-    /// Initialise preconditioner 
+    /// Initialise preconditioner
     void init(const uBlasSparseMatrix& A);
 
     /// Solve linear system (M^-1)Ax  (in-place)
     void solve(ublas_vector& x) const;
 
-    /// Solve linear system (M^-1)Ax = y  
+    /// Solve linear system (M^-1)Ax = y
     void solve(const ublas_vector& x, ublas_vector& y) const;
 
   private:
