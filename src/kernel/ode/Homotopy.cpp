@@ -32,10 +32,10 @@ Homotopy::Homotopy(uint n)
   dolfin_info("Creating homotopy for system of size %d.", n);
   
   // We should not solve the dual problem
-  set("solve dual problem", false);
+  set("ODE solve dual problem", false);
 
   // System is implicit
-  set("implicit", true);
+  set("ODE implicit", true);
 
   // Get divergence tolerance
   divtol = get("homotopy divergence tolerance");
@@ -115,7 +115,7 @@ void Homotopy::solve()
 
     // Change name of output file for each path
     sprintf(filename, "primal_%u.m", m);
-    set("ode solution file name", filename);
+    set("ODE solution file name", filename);
 
     // Compute the component paths from global path number
     computePath(m);
