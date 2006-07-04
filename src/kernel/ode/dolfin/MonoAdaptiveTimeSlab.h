@@ -82,9 +82,10 @@ namespace dolfin
     MonoAdaptivity adaptivity; // Adaptive time step regulation
     uint nj;                   // Number of dofs
     real* dofs;                // Local dofs for an element used for interpolation
-    real* f;                   // Values of right-hand side at all quadrature points
-    Vector x;                  // Degrees of freedom for the solution
+    real* fq;                  // Values of right-hand side at all quadrature points
     real rmax;                 // Previously computed maximum norm of residual
+
+    Vector x;                  // Degrees of freedom for the solution
     
   };
 

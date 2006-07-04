@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-07-04
 
 #ifdef HAVE_PETSC_H
 
@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : TimeSlab(ode), solver(0), adaptivity(ode, *method), nj(0), dofs(0), 
-    f(0), rmax(0)
+    fq(0), rmax(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -33,23 +33,26 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
 
   // Initialize values of right-hand side
   const uint fsize = method->qsize() * N;
-  f = new real[fsize];
+  fq = new real[fsize];
   for (uint j = 0; j < fsize; j++)
-    f[j] = 0.0;
+    fq[j] = 0.0;
 
   // Initialize solution
   x.init(nj);
 
   // Evaluate f at initial data for cG(q)
   if ( method->type() == Method::cG )
+  {
     ode.f(u0, 0.0, f);
+    copy(f, 0, fq, 0, N);
+  }
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::~MonoAdaptiveTimeSlab()
 {
   if ( solver ) delete solver;
   if ( dofs ) delete [] dofs;
-  if ( f ) delete [] f;
+  if ( fq ) delete [] fq;
 }
 //-----------------------------------------------------------------------------
 real MonoAdaptiveTimeSlab::build(real a, real b)
@@ -116,7 +119,7 @@ bool MonoAdaptiveTimeSlab::check(bool first)
       dofs[n] = xx[n*N + i];
 
     // Compute residual
-    const real r = fabs(method->residual(x0, dofs, f[foffset + i], k));
+    const real r = fabs(method->residual(x0, dofs, fq[foffset + i], k));
     
     // Compute maximum
     if ( r > rmax )
@@ -164,7 +167,7 @@ bool MonoAdaptiveTimeSlab::shift()
   if ( method->type() == Method::cG )
   {
     for (uint i = 0; i < N; i++)
-      f[i] = f[foffset + i];
+      fq[i] = fq[foffset + i];
   }
 
   // Restore array
@@ -218,7 +221,7 @@ real MonoAdaptiveTimeSlab::rsample(uint i, real t)
   // Compute residual
   const real k = length();
   const uint foffset = (method->qsize() - 1) * N;
-  const real r = method->residual(x0, dofs, f[foffset + i], k);
+  const real r = method->residual(x0, dofs, fq[foffset + i], k);
 
   return r;
 }
@@ -235,7 +238,7 @@ void MonoAdaptiveTimeSlab::disp() const
   x.restore(xx);
   cout << "f =";
   for (uint j = 0; j < (method->nsize() * N); j++)
-    cout << " " << f[j];
+    cout << " " << fq[j];
   cout << endl;
   cout << "----------------------------------------------------------" << endl;
 }
@@ -254,15 +257,19 @@ void MonoAdaptiveTimeSlab::feval(uint m)
     }
 
     const real t = _a + method->qpoint(m) * (_b - _a);    
-    real* xx = x.array();    
-    ode.f(xx + (m-1)*N, t, f + m*N);
+    real* xx = x.array();
+    copy(xx, (m - 1)*N, u, 0, N);
+    ode.f(u, t, f);
+    copy(f, 0, fq, m*N, N);
     x.restore(xx);
   }
   else
   {
     const real t = _a + method->qpoint(m) * (_b - _a);    
-    real* xx = x.array();    
-    ode.f(xx + m*N, t, f + m*N);    
+    real* xx = x.array();
+    copy(xx, m*N, u, 0, N);
+    ode.f(u, t, f);
+    copy(f, 0, fq, m*N, N);
     x.restore(xx);
   }
 }
@@ -323,9 +330,9 @@ real* MonoAdaptiveTimeSlab::tmp()
   // recompute the right-hand side at the first quadrature point.
 
   if ( method->type() == Method::cG )
-    return f + N;
+    return fq + N;
   else
-    return f;
+    return fq;
 }
 //-----------------------------------------------------------------------------
 

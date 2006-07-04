@@ -4,7 +4,7 @@
 // Modified by Garth N. Wells
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-07-04
 
 #include <string>
 #include <algorithm>
@@ -24,7 +24,7 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   TimeSlab(ode),
   sa(0), sb(0), ei(0), es(0), ee(0), ed(0), jx(0), de(0),
   ns(0), ne(0), nj(0), nd(0), solver(0), adaptivity(ode, *method), partition(N),
-  elast(0), u(0), f0(0), emax(0), kmin(0)
+  elast(0), f0(0), emax(0), kmin(0)
 {
   // Choose solver
   solver = chooseSolver();
@@ -33,11 +33,6 @@ MultiAdaptiveTimeSlab::MultiAdaptiveTimeSlab(ODE& ode) :
   elast = new int[N];
   for (uint i = 0; i < N; i++)
     elast[i] = -1;
-
-  // Initialize solution vector
-  u = new real[N];
-  for (uint i = 0; i < N; i++)
-    u[i] = 0.0;
 
   // Initialize f at left end-point for cG
   if ( method->type() == Method::cG )
@@ -63,7 +58,6 @@ MultiAdaptiveTimeSlab::~MultiAdaptiveTimeSlab()
   if ( solver ) delete solver;
 
   if ( elast ) delete [] elast;
-  if ( u ) delete [] u;
   if ( f0 ) delete [] f0;
 }
 //-----------------------------------------------------------------------------

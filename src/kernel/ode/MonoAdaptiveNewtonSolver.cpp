@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05--7
+// Last changed: 2006-07-04
 
 #ifdef HAVE_PETSC_H
 
@@ -157,7 +157,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.f[moffset + i];
+	F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
 
@@ -197,7 +197,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.f[moffset + i];
+	F[noffset + i] += tmp * ts.fq[moffset + i];
     }
   }
   

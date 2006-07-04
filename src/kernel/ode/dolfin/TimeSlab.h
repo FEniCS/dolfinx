@@ -75,6 +75,12 @@ namespace dolfin
     friend class TimeSlabSolver;
 
   protected:
+
+    // Write given solution to file
+    void write(const real u[]);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const real x[], uint xoffset, real y[], uint yoffset, uint n);
     
     uint N;  // Size of system
     real _a; // Start time of time slab
@@ -84,10 +90,10 @@ namespace dolfin
     const Method* method; // Method, mcG(q) or mdG(q)  
     real* u0;             // Initial values
 
+    real* u;              // The solution at a specific stage
+    real* f;              // The right-hand side at a specific stage
+    
     bool save_final; // True if we should save the solution at final time
-
-    // Write given solution to file
-    void write(const real u[]);
 
   };
 

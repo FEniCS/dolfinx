@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-12-19
+// Last changed: 2006-07-04
 
 #include <stdio.h>
 #include <string>
@@ -16,7 +16,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 TimeSlab::TimeSlab(ODE& ode) : 
-  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0),
+  N(ode.size()), _a(0.0), _b(0.0), ode(ode), method(0), u0(0), u(0), f(0),
   save_final(get("ODE save final solution"))
 {
   // Choose method
@@ -40,6 +40,10 @@ TimeSlab::TimeSlab(ODE& ode) :
   // Initialize initial data
   u0 = new real[N];
 
+  // Initialize vectors for u and f
+  u = new real[N];
+  f = new real[N];
+
   // Get initial data
   for (uint i = 0; i < N; i++)
   {
@@ -52,6 +56,8 @@ TimeSlab::~TimeSlab()
 {
   if ( method ) delete method;
   if ( u0 ) delete [] u0;
+  if ( u ) delete [] u;
+  if ( f ) delete [] f;
 }
 //-----------------------------------------------------------------------------
 dolfin::uint TimeSlab::size() const
@@ -98,5 +104,11 @@ void TimeSlab::write(const real u[])
   }
   fprintf(fp, "\n");
   fclose(fp);
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
