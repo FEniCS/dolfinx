@@ -25,6 +25,7 @@
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasPreconditioner.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/VirtualMatrix.h>

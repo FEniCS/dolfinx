@@ -303,8 +303,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  //UnitSquare mesh(196,196);
-  UnitSquare mesh(100, 100);
+  UnitSquare mesh(196,196);
 
   Source f;
   MyBC bc;
@@ -321,8 +320,7 @@ void testuBlasSparseMatrix()
   PETScVector bs;
   PETScVector xs;
 
-  
-  // Assmeble and solve using PETSc
+  // Assemble and solve using PETSc
   dolfin_log(false);
   FEM::assemble(a, L, As, bs, mesh, bc);
   dolfin_log(true);
@@ -345,10 +343,12 @@ void testuBlasSparseMatrix()
 
   //uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::bicgstab);
   uBlasKrylovSolver ublas_solver(uBlasKrylovSolver::gmres);
+  uBlasILUPreconditioner pc(A);
+
   x = b;
   x = 0.0;  
   tic();
-  ublas_solver.solve(A, x, b);
+  ublas_solver.solve(A, x, b, pc);
   real t_ublas = toc();  
   cout << "norm(x) " << x.norm() << endl;  
   cout << "uBlas Krylov solve time = " << t_ublas << endl;  

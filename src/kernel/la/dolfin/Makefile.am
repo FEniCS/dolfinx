@@ -20,6 +20,8 @@ EXTRA_DIST = dolfin_la.h \
              uBlasKrylovMatrix.h \
              uBlasKrylovSolver.h \
              uBlasLUSolver.h \
+             uBlasDummyPreconditioner.h \
+             uBlasILUPreconditioner.h \
              uBlasPreconditioner.h \
              uBlasSparseMatrix.h \
              Vector.h \

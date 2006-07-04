@@ -21,6 +21,8 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/uBlasKrylovMatrix.h \
                           dolfin/uBlasKrylovSolver.h \
                           dolfin/uBlasLUSolver.h \
+                          dolfin/uBlasDummyPreconditioner.h \
+                          dolfin/uBlasILUPreconditioner.h \
                           dolfin/uBlasPreconditioner.h \
                           dolfin/uBlasSparseMatrix.h \
                           dolfin/Vector.h \
@@ -40,7 +42,8 @@ libdolfin_la_la_SOURCES = DenseMatrix.cpp \
                           Preconditioner.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
-                          uBlasPreconditioner.cpp \
+                          uBlasDummyPreconditioner.cpp \
+                          uBlasILUPreconditioner.cpp \
                           uBlasSparseMatrix.cpp \
                           VirtualMatrix.cpp 
 libdolfin_la_la_LDFLAGS = -static

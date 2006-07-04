@@ -37,10 +37,10 @@ namespace dolfin
       gmres           // GMRES method
     };
 
-    /// Create Krylov solver with default method and preconditioner
+    /// Create Krylov solver with default method
     uBlasKrylovSolver();
 
-    /// Create Krylov solver for a particular method with default preconditioner
+    /// Create Krylov solver for a particular method
     uBlasKrylovSolver(Type solver);
 
     /// Destructor
@@ -48,22 +48,23 @@ namespace dolfin
 
     /// Solve linear system Ax = b and return number of iterations
     uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b);
+
+    /// Solve linear system Ax = b with preconditioning and return number of iterations
+    uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+	       const uBlasPreconditioner& pc);
           
   private:
 
     /// Solve linear system Ax = b using restarted GMRES
-    uint gmresSolver(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
-                     const uBlasPreconditioner& P, bool& converged) const;
+    uint solveGMRES(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+		    const uBlasPreconditioner& pc, bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
-    uint bicgstabSolver(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
-                        const uBlasPreconditioner& P, bool& converged) const;
-
+    uint solveBiCGStab(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+		       const uBlasPreconditioner& pc, bool& converged) const;
+    
     /// Read solver parameters
     void readParameters();
-
-    /// Preconditioner
-    uBlasPreconditioner P;
 
     /// Krylov solver type
     Type type;

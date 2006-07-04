@@ -113,3 +113,17 @@ void DenseVector::disp(uint precision) const
   std::cout << *this << std::endl;
 }
 //-----------------------------------------------------------------------------
+LogStream& dolfin::operator<< (LogStream& stream, const DenseVector& x)
+{
+  // Check if vector has been defined
+  if ( x.size() == 0 )
+  {
+    stream << "[ DenseVector (empty) ]";
+    return stream;
+  }
+
+  stream << "[ DenseVector of size " << x.size() << " ]";
+
+  return stream;
+}
+//-----------------------------------------------------------------------------

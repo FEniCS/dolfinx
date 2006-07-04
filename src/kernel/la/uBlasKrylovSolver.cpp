@@ -11,6 +11,9 @@
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 
+// FIXME: Temporary
+#include <dolfin/uBlasDummyPreconditioner.h>
+
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
@@ -36,16 +39,23 @@ uBlasKrylovSolver::~uBlasKrylovSolver()
 dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
 				      DenseVector& x, const DenseVector& b)
 {
+  // Create dummy preconditioner
+  uBlasDummyPreconditioner pc;
+
+  // Solve linear system
+  return solve(A, x, b, pc);
+}
+//-----------------------------------------------------------------------------
+dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
+				      DenseVector& x, const DenseVector& b,
+				      const uBlasPreconditioner& pc)
+{
   // Check dimensions
   uint M = A.size(0);
   uint N = A.size(1);
   if ( N != b.size() )
     dolfin_error("Non-matching dimensions for linear system.");
 
-  // Initialise preconditioner
-  // FIXME: Preconditioner temporarily disabled
-  //P.init(A);
-  
   // Reinitialise x if necessary 
   // FIXME: this erases initial guess
   x.init(b.size());
@@ -64,39 +74,39 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
   switch (type)
   { 
   case gmres:
-    iterations = gmresSolver(A, x, b, P, converged);
+    iterations = solveGMRES(A, x, b, pc, converged);
     break;
   case bicgstab:
-    iterations = bicgstabSolver(A, x, b, P, converged);
+    iterations = solveBiCGStab(A, x, b, pc, converged);
     break;
   case default_solver:
-    iterations = bicgstabSolver(A, x, b, P, converged);
+    iterations = solveBiCGStab(A, x, b, pc, converged);
     break;
   default:
     dolfin_warning("Requested solver type unknown. Using BiCGStab.");
-    iterations = bicgstabSolver(A, x, b, P, converged);
+    iterations = solveBiCGStab(A, x, b, pc, converged);
   }
-
+  
   // Check for convergence
   if( !converged )
     dolfin_warning("Krylov solver failed to converge.");
   else if ( report )
-      dolfin_info("Krylov solver converged in %d iterations.", iterations);
-
+    dolfin_info("Krylov solver converged in %d iterations.", iterations);
+  
   return iterations; 
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
-					    DenseVector& x, 
-					    const DenseVector& b,
-					    const uBlasPreconditioner& P,
-					    bool& converged) const
+dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
+					   DenseVector& x, 
+					   const DenseVector& b,
+					   const uBlasPreconditioner& pc,
+					   bool& converged) const
 {
   // Get size of system
   const uint size = A.size(0);
 
   // Create residual vector
-  ublas_vector r(size);
+  DenseVector r(size);
 
   // Create H matrix and h vector
   ublas_matrix_tri H(restart, restart);
@@ -109,7 +119,7 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
   ublas_matrix_cmajor V(size, restart+1);
 
   // w vector    
-  ublas_vector w(size);
+  DenseVector w(size);
 
   // Givens vectors
   ublas_vector c(restart), s(restart);
@@ -124,13 +134,13 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
     // Compute residual r = b -A*x
     //noalias(r) = b;
     //axpy_prod(A, -x, r, false); 
-    A.mult(x, static_cast<DenseVector&>(r));
+    A.mult(x, r);
     r *= -1.0;
     noalias(r) += b;
 
-    // Apply preconditioner
-    // FIXME: Preconditioner temporarily disabled
-    //P.solve(r);
+    // Apply preconditioner (use w for temporary storage)
+    w.assign(r);
+    pc.solve(r, w);
 
     // L2 norm of residual (for most recent restart)
     const real beta = norm_2(r);
@@ -160,11 +170,11 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
       // Compute product w = A*V_j (use r for temporary storage)
       //axpy_prod(A, column(V, j), w, true);
       noalias(r) = column(V, j);
-      A.mult(static_cast<DenseVector&>(r), static_cast<DenseVector&>(w));
+      A.mult(r, w);
 
-      // Apply preconditioner
-      // FIXME: Preconditioner temporarily disabled
-      //P.solve(w);
+      // Apply preconditioner (use r for temporary storage)
+      r.assign(w);
+      pc.solve(w, r);
 
       for (uint i=0; i <= j; ++i) 
       {
@@ -234,17 +244,17 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
   return iteration;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
-					       DenseVector& x,
-					       const DenseVector& b,
-					       const uBlasPreconditioner& P,
-					       bool& converged) const
+dolfin::uint uBlasKrylovSolver::solveBiCGStab(const uBlasKrylovMatrix& A,
+					      DenseVector& x,
+					      const DenseVector& b,
+					      const uBlasPreconditioner& pc,
+					      bool& converged) const
 {
   // Get size of system
   const uint size = A.size(0);
 
   // Allocate vectors
-  ublas_vector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
+  DenseVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
 
   real alpha = 1.0, beta = 0.0, omega = 1.0, r_norm = 0.0; 
   real rho_old = 1.0, rho = 1.0;
@@ -252,7 +262,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
   // Compute residual r = b -A*x
   //r.assign(b);
   //axpy_prod(A, -x, r, false);
-  A.mult(x, static_cast<DenseVector&>(r));
+  A.mult(x, r);
   r *= -1.0;
   noalias(r) += b;
 
@@ -271,9 +281,8 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
   // Apply preconditioner to r^start. This is a trick to avoid problems in which 
   // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous 
   // Neumann bc's and no forcing/source term.
-  // FIXME: Preconditioner temporarily disabled
-  //P.solve(rstar);
-
+  pc.solve(rstar, r);
+  
   // Right-preconditioned Bi-CGSTAB
 
   // Start iterations
@@ -296,13 +305,11 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
     noalias(p) += r - beta*omega*v;
 
     // My = p
-    y.assign(p);
-    // FIXME: Preconditioner temporarily disabled
-    //P.solve(y);
+    pc.solve(y, p);
 
     // v = A*y
     //axpy_prod(A, y, v, true);
-    A.mult(static_cast<DenseVector&>(y), static_cast<DenseVector&>(v));
+    A.mult(y, v);
 
     // alpha = (r, rstart) / (v, rstar)
     alpha = rho/ublas::inner_prod(v, rstar);
@@ -311,12 +318,11 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
     noalias(s) = r - alpha*v;
     
     // Mz = s
-    z.assign(s);
-    //P.solve(z);
+    pc.solve(z, s);
 
     // t = A*z
     //axpy_prod(A, z, t, true);
-    A.mult(static_cast<DenseVector&>(z), static_cast<DenseVector&>(t));
+    A.mult(z, t);
 
     // omega = (t, s) / (t,t)
     omega = ublas::inner_prod(t, s)/ublas::inner_prod(t, t);
@@ -334,7 +340,6 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
 
     ++iteration;  
   }
-
 
 /*
   // Left-conditioned Bi-CGSTAB

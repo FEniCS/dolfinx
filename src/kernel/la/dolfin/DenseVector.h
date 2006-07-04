@@ -4,7 +4,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-05-15
+// Last changed: 2006-07-04
 
 #ifndef __DENSE_VECTOR_H
 #define __DENSE_VECTOR_H
@@ -102,6 +102,9 @@ namespace dolfin
     
     /// Display vector
     void disp(uint precision = 2) const;
+
+    /// Output
+    friend LogStream& operator<< (LogStream& stream, const DenseVector& x);
 
   };
 }
