@@ -126,11 +126,11 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
     //axpy_prod(A, -x, r, false); 
     A.mult(x, static_cast<DenseVector&>(r));
     r *= -1.0;
-    r += b;
+    noalias(r) += b;
 
     // Apply preconditioner
     // FIXME: Preconditioner temporarily disabled
-    P.solve(r);
+    //P.solve(r);
 
     // L2 norm of residual (for most recent restart)
     const real beta = norm_2(r);
@@ -164,7 +164,7 @@ dolfin::uint uBlasKrylovSolver::gmresSolver(const uBlasKrylovMatrix& A,
 
       // Apply preconditioner
       // FIXME: Preconditioner temporarily disabled
-      P.solve(w);
+      //P.solve(w);
 
       for (uint i=0; i <= j; ++i) 
       {
@@ -254,7 +254,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
   //axpy_prod(A, -x, r, false);
   A.mult(x, static_cast<DenseVector&>(r));
   r *= -1.0;
-  r += b;
+  noalias(r) += b;
 
   const real r0_norm = norm_2(r);
   if( r0_norm < atol )  
@@ -272,7 +272,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
   // (r^start, r) = 0  after the first iteration (such as PDE's with homogeneous 
   // Neumann bc's and no forcing/source term.
   // FIXME: Preconditioner temporarily disabled
-  P.solve(rstar);
+  //P.solve(rstar);
 
   // Right-preconditioned Bi-CGSTAB
 
@@ -298,7 +298,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
     // My = p
     y.assign(p);
     // FIXME: Preconditioner temporarily disabled
-    P.solve(y);
+    //P.solve(y);
 
     // v = A*y
     //axpy_prod(A, y, v, true);
@@ -312,7 +312,7 @@ dolfin::uint uBlasKrylovSolver::bicgstabSolver(const uBlasKrylovMatrix& A,
     
     // Mz = s
     z.assign(s);
-    P.solve(z);
+    //P.solve(z);
 
     // t = A*z
     //axpy_prod(A, z, t, true);

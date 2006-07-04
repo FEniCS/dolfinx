@@ -112,6 +112,7 @@ namespace dolfin
     bool assembled;
 
   };
+
 }
 
 #endif
