@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2006-07-05
 
 #include <cmath>
 #include <dolfin.h>
@@ -17,11 +17,7 @@ public:
   {
     dolfin_info("Van der Pol's equation.");
 
-    // Parameters
     mu = 10.0;
-
-    // Compute sparsity
-    sparse();
   }
 
   real u0(unsigned int i)
@@ -34,14 +30,10 @@ public:
     }
   }
 
-  real f(const real u[], real t, unsigned int i)
+  void f(const DenseVector& u, real t, DenseVector& y)
   {
-    switch (i) {
-    case 0:
-      return u[1];
-    default:
-      return mu*(1.0 - u[0]*u[0])*u[1] - u[0];
-    }
+    y(0) = u(1);
+    y(1) = mu*(1.0 - u(0)*u(0))*u(1) - u(0);
   }
 
 private:

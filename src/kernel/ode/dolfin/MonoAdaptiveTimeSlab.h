@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-06-29
+// Last changed: 2006-07-05
 
 #ifndef __MONO_ADAPTIVE_TIME_SLAB_H
 #define __MONO_ADAPTIVE_TIME_SLAB_H
@@ -12,11 +12,13 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
 #include <dolfin/Vector.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/MonoAdaptivity.h>
 #include <dolfin/TimeSlab.h>
 
 namespace dolfin
 {  
+
   class ODE;
   class Method;
   class TimeSlabSolver;
@@ -86,6 +88,9 @@ namespace dolfin
     real rmax;                 // Previously computed maximum norm of residual
 
     Vector x;                  // Degrees of freedom for the solution
+
+    DenseVector u; // The solution at a given stage
+    DenseVector f; // The right-hand side at a given stage
     
   };
 

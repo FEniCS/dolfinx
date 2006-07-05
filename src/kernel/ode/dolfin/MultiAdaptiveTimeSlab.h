@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-04
+// Last changed: 2006-07-05
 
 #ifndef __MULTI_ADAPTIVE_TIME_SLAB_H
 #define __MULTI_ADAPTIVE_TIME_SLAB_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Partition.h>
 #include <dolfin/MultiAdaptivity.h>
@@ -169,6 +170,8 @@ namespace dolfin
     //--- Auxiliary data ---
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
+
+    DenseVector u; // The interpolated solution at a given time
 
   };
 

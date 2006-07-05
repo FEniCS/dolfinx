@@ -2,13 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-07-05
 
 #ifndef __MONO_ADAPTIVE_JACOBIAN_H
 #define __MONO_ADAPTIVE_JACOBIAN_H
 
 #ifdef HAVE_PETSC_H
 
+#include <dolfin/DenseVector.h>
 #include <dolfin/TimeSlabJacobian.h>
 
 namespace dolfin
@@ -35,11 +36,8 @@ namespace dolfin
 
   private:
 
-    // Compute product for mcG(q)
-    void cGmult(const real x[], real y[]) const;
-
-    // Compute product for mdG(q)
-    void dGmult(const real x[], real y[]) const;
+    /// Friends
+    friend class MonoAdaptiveNewtonSolver;
 
     // The time slab
     MonoAdaptiveTimeSlab& ts;
@@ -49,6 +47,12 @@ namespace dolfin
 
     // True if M is piecewise constant
     bool piecewise;
+
+    // FIXME: Maybe we can reuse some other vectors?
+
+    // Temporary vectors for storing multiplication
+    mutable DenseVector xx;
+    mutable DenseVector yy;
 
   };
 

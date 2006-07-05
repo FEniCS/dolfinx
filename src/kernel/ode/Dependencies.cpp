@@ -2,12 +2,14 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-06
-// Last changed: 2006-05-07
+// Last changed: 2006-07-05
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
 
@@ -59,7 +61,7 @@ void Dependencies::set(uint i, uint j, bool checknew)
   sdep[i].push_back(j);
 }
 //-----------------------------------------------------------------------------
-void Dependencies::set(const Matrix& A)
+void Dependencies::set(const uBlasSparseMatrix& A)
 {
   // Prepare sparse pattern if necessary
   makeSparse();
@@ -131,9 +133,9 @@ void Dependencies::detect(ODE& ode)
   makeSparse();
 
   // Randomize solution vector
-  real* u = new real[N];
+  DenseVector u(N);
   for (uint i = 0; i < N; i++)
-    u[i] = rand();
+    u(i) = rand();
   
   // Check dependencies for all components
   Progress p("Computing sparsity", N);
@@ -170,11 +172,6 @@ bool Dependencies::sparse() const
   return _sparse;
 }
 //-----------------------------------------------------------------------------
-const Array<dolfin::uint>& Dependencies::operator[] (uint i) const
-{
-  return ( _sparse ? sdep[i] : ddep );
-}
-//-----------------------------------------------------------------------------
 void Dependencies::disp() const
 {
   if ( _sparse )
@@ -192,18 +189,18 @@ void Dependencies::disp() const
     dolfin_info("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, real u[], real f0,
+bool Dependencies::checkDependency(ODE& ode, DenseVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value
-  real uj = u[j];
+  real uj = u(j);
 
   // Change value and compute new value for f_i
-  u[j] += increment;
+  u(j) += increment;
   real f = ode.f(u, 0.0, i);
 
   // Restore the value
-  u[j] = uj;
+  u(j) = uj;
 
   // Compare function values
   return fabs(f - f0) > DOLFIN_EPS;

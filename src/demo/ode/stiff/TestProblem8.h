@@ -1,7 +1,7 @@
 // Copyright (C) 2003-2005 Johan Jansson.
 // Licensed under the GNU GPL Version 2.
 //
-// Modified by Anders Logg 2003-2005.
+// Modified by Anders Logg 2003-2006.
 
 #include <dolfin.h>
 
@@ -15,9 +15,6 @@ public:
   {
     dolfin_info("System of fast and slow chemical reactions, taken from the book by");
     dolfin_info("Hairer and Wanner, page 3.");
-
-    // Compute sparsity
-    sparse();
   }
 
   real u0(unsigned int i)
@@ -28,15 +25,11 @@ public:
       return 0.0;
   }
   
-  real f(const real u[], real t, unsigned int i)
+  void f(const DenseVector& u, real t, DenseVector& y)
   {
-    if ( i == 0 )
-      return -0.04 * u[0] + 1.0e4 * u[1] * u[2];
-    
-    if ( i == 1 )
-      return 0.04 * u[0] - 1.0e4 * u[1] * u[2] - 3.0e7 * u[1] * u[1];
-    
-    return 3.0e7 * u[1] * u[1];
+    y(0) = -0.04 * u(0) + 1.0e4 * u(1) * u(2);
+    y(1) = 0.04 * u(0) - 1.0e4 * u(1) * u(2) - 3.0e7 * u(1) * u(1);
+    y(2) = 3.0e7 * u(1) * u(1);
   }
   
 };

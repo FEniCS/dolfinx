@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2006-03-29
+// Last changed: 2006-07-05
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -45,7 +45,8 @@ public:
 
   real u0(unsigned int i)
   {
-    switch (i) {
+    switch (i)
+    {
     case 0:
       return 1.0;
     case 1:
@@ -55,24 +56,24 @@ public:
     }
   }
 
-  void f(const real u[], real t, real y[])
+  void f(const DenseVector& u, real t, DenseVector& y)
   {
-    y[0] = s*(u[1] - u[0]);
-    y[1] = r*u[0] - u[1] - u[0]*u[2];
-    y[2] = u[0]*u[1] - b*u[2];
+    y(0) = s*(u(1) - u(0));
+    y(1) = r*u(0) - u(1) - u(0)*u(2);
+    y(2) = u(0)*u(1) - b*u(2);
   }
 
-  void J(const real x[], real y[], const real u[], real t)
+  void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t)
   {
-    y[0] = s*(x[1] - x[0]);
-    y[1] = (r - u[2])*x[0] - x[1] - u[0]*x[2];
-    y[2] = u[1]*x[0] + u[0]*x[1] - b*x[2];
+    y(0) = s*(x(1) - x(0));
+    y(1) = (r - u(2))*x(0) - x(1) - u(0)*x(2);
+    y(2) = u(1)*x(0) + u(0)*x(1) - b*x(2);
   }
 
-  bool update(const real u[], real t, bool end)
+  bool update(const DenseVector& u, real t, bool end)
   {
     // Check in which region the point is
-    Point p(u[0], u[1], u[2]);
+    Point p(u(0), u(1), u(2));
 
     if ( (p - p0) * v < 0 )
     {

@@ -70,8 +70,9 @@ void MultiAdaptiveJacobian::update()
   for (uint i = 0; i < ode.size(); i++)
   {
     const Array<uint>& deps = ode.dependencies[i];
+    ts.copy(ts.u0, 0, ts.u, 0, ts.N);
     for (uint pos = 0; pos < deps.size(); pos++)
-      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u0, t, i, deps[pos]);
+      Jvalues[Jindices[i] + pos] = ode.dfdu(ts.u, t, i, deps[pos]);
   }
 
   /*

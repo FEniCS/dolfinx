@@ -1,8 +1,8 @@
-// Copyright (C) 2004-2005 Anders Logg.
+// Copyright (C) 2004-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2004
-// Last changed: 2005
+// Last changed: 2006-07-05
 
 #include <dolfin.h>
 
@@ -22,9 +22,9 @@ public:
     return 1.0;
   }
   
-  real f(const real u[], real t, unsigned int i)
+  void f(const DenseVector& u, real t, DenseVector& y)
   {
-    return -1000.0 * u[0];
+    y(0) = -1000.0 * u(0);
   }
   
 };

@@ -2,18 +2,22 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-10-21
-// Last changed: 2006-06-29
+// Last changed: 2006-07-05
 
 #ifndef __ODE_H
 #define __ODE_H
 
 #include <dolfin/constants.h>
 #include <dolfin/Event.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Sample.h>
 
 namespace dolfin
 {
+  
+  class uBlasSparseMatrix;
+
   /// A ODE represents an initial value problem of the form
   ///
   ///     u'(t) = f(u(t),t) on (0,T],
@@ -50,20 +54,20 @@ namespace dolfin
     /// Return initial value for given component
     virtual real u0(uint i) = 0;
 
-    /// Evaluate right-hand side (multi-adaptive version)
-    virtual real f(const real u[], real t, uint i);
+    /// Evaluate right-hand side y = f(u, t), mono-adaptive version
+    virtual void f(const DenseVector& u, real t, DenseVector& y);
 
-    /// Evaluate right-hand side (mono-adaptive version)
-    virtual void f(const real u[], real t, real y[]);
+    /// Evaluate right-hand side f_i(u, t), multi-adaptive version
+    virtual real f(const DenseVector& u, real t, uint i);
 
     /// Compute product y = Mx for implicit system (optional)
-    virtual void M(const real x[], real y[], const real u[], real t);
+    virtual void M(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
 
     /// Compute product y = Jx for Jacobian J (optional)
-    virtual void J(const real x[], real y[], const real u[], real t);
+    virtual void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
 
     /// Compute entry of Jacobian (optional)
-    virtual real dfdu(const real u[], real t, uint i, uint j);
+    virtual real dfdu(const DenseVector& u, real t, uint i, uint j);
 
     /// Time step to use for whole system (optional)
     virtual real timestep(real t, real k0) const;
@@ -72,7 +76,7 @@ namespace dolfin
     virtual real timestep(real t, uint i, real k0) const;
 
     /// Update ODE, return false to stop (optional)
-    virtual bool update(const real u[], real t, bool end);
+    virtual bool update(const DenseVector& u, real t, bool end);
 
     /// Save sample (optional)
     virtual void save(Sample& sample);
@@ -81,7 +85,7 @@ namespace dolfin
     void sparse();
 
     /// Compute sparsity from given matrix (optional)
-    void sparse(const Matrix& A);
+    void sparse(const uBlasSparseMatrix& A);
 
     /// Return number of components N
     uint size() const;
@@ -126,8 +130,8 @@ namespace dolfin
 
   private:
 
-    // Temporary array
-    real* tmp;
+    // Temporary vector used for computing Jacobian
+    DenseVector tmp;
 
     // Events
     Event not_impl_f;

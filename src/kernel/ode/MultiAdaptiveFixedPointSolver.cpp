@@ -79,8 +79,9 @@ void MultiAdaptiveFixedPointSolver::start()
   // Update diagonal of Jacobian if used
   if ( diagonal_newton_damping )
   {
+    ts.copy(ts.u0, 0, ts.u, 0, ts.N);
     for (uint i = 0; i < ts.N; i++)
-      dfdu[i] = ts.ode.dfdu(ts.u0, ts._a, i, i);
+      dfdu[i] = ts.ode.dfdu(ts.u, ts._a, i, i);
   }
 }
 //-----------------------------------------------------------------------------

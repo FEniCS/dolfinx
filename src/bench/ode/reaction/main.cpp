@@ -46,36 +46,36 @@ public:
   }
 
   /// Right-hand side, mono-adaptive version
-  void f(const real u[], real t, real y[])
+  void f(const DenseVector& u, real t, DenseVector& y)
   {
     for (unsigned int i = 0; i < N; i++)
     {
-      const real ui = u[i];
+      const real ui = u(i);
 
       real sum = 0.0;
       if ( i == 0 )
-	sum = u[i + 1] - ui;
+	sum = u(i + 1) - ui;
       else if ( i == (N - 1) )
-	sum = u[i - 1] - ui;
+	sum = u(i - 1) - ui;
       else
-	sum = u[i + 1] - 2.0*ui + u[i - 1];
+	sum = u(i + 1) - 2.0*ui + u(i - 1);
 
-      y[i] = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
+      y(i) = epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
     }
   }
 
   /// Right-hand side, multi-adaptive version
-  real f(const real u[], real t, unsigned int i)
+  real f(const DenseVector& u, real t, unsigned int i)
   {
-    const real ui = u[i];
+    const real ui = u(i);
     
     real sum = 0.0;
     if ( i == 0 )
-      sum = u[i + 1] - ui;
+      sum = u(i + 1) - ui;
     else if ( i == (N - 1) )
-      sum = u[i - 1] - ui;
+      sum = u(i - 1) - ui;
     else
-      sum = u[i + 1] - 2.0*ui + u[i - 1];
+      sum = u(i + 1) - 2.0*ui + u(i - 1);
     
     return epsilon * sum / (h*h) + gamma * ui*ui * (1.0 - ui);
   }

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-04
+// Last changed: 2006-07-05
 
 #ifdef HAVE_PETSC_H
 
@@ -20,7 +20,7 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   : TimeSlab(ode), solver(0), adaptivity(ode, *method), nj(0), dofs(0), 
-    fq(0), rmax(0)
+    fq(0), rmax(0), u(N), f(N)
 {
   // Choose solver
   solver = chooseSolver();
@@ -43,7 +43,8 @@ MonoAdaptiveTimeSlab::MonoAdaptiveTimeSlab(ODE& ode)
   // Evaluate f at initial data for cG(q)
   if ( method->type() == Method::cG )
   {
-    ode.f(u0, 0.0, f);
+    copy(u0, 0, u, 0, N);
+    ode.f(u, 0.0, f);
     copy(f, 0, fq, 0, N);
   }
 }
@@ -85,7 +86,10 @@ real MonoAdaptiveTimeSlab::build(real a, real b)
 
   // Update at t = 0.0
   if ( a < DOLFIN_EPS )
-    ode.update(u0, a, false);
+  {
+    copy(u0, 0, u, 0, N);
+    ode.update(u, a, false);
+  }
 
   return b;
 }
@@ -150,10 +154,14 @@ bool MonoAdaptiveTimeSlab::shift()
 
   // Write solution at final time if we should
   if ( save_final && end )
-    write(xx + xoffset);
+  {
+    copy(xx, xoffset, u, 0, N);
+    write(u);
+  }
 
   // Let user update ODE
-  if ( !ode.update(xx + xoffset, _b, end) )
+  copy(xx, xoffset, u, 0, N);
+  if ( !ode.update(u, _b, end) )
   {
     x.restore(xx);
     return false;

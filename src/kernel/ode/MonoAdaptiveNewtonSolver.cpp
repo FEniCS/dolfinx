@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-04
+// Last changed: 2006-07-05
 
 #ifdef HAVE_PETSC_H
 
@@ -25,14 +25,13 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise), solver(0), Mu0(0)
+    ts(timeslab), A(timeslab, implicit, piecewise), solver(0)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
   {
-    Mu0 = new real[ts.N];
-    for (uint i = 0; i < ts.N; i++)
-       Mu0[i] = 0.0;
+    Mu0.init(ts.N);
+    Mu0 = 0.0;
   }
 
   // Choose linear solver
@@ -41,7 +40,6 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-  if ( Mu0 ) delete [] Mu0;
   if ( solver ) delete solver;
 }
 //-----------------------------------------------------------------------------
@@ -64,7 +62,10 @@ void MonoAdaptiveNewtonSolver::start()
 
   // Precompute product M*u0
   if ( implicit )
-    ode.M(ts.u0, Mu0, ts.u0, ts.starttime());
+  {
+    ts.copy(ts.u0, 0, ts.u, 0, ts.N);
+    ode.M(ts.u, Mu0, ts.u, ts.starttime());
+  }
 
   //debug();
   //A.disp(true, 10);
@@ -172,7 +173,11 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
 void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 {
   // Get arrays of values for x (assumes uniprocessor case)
-  real* xx = ts.x.array();
+  real* xxx = ts.x.array();
+
+  // Use vectors from Jacobian for storing multiplication
+  DenseVector& xx = A.xx;
+  DenseVector& yy = A.yy;
 
   // Compute size of time step
   const real a = ts.starttime();
@@ -189,7 +194,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      F[noffset + i] = Mu0[i];
+      F[noffset + i] = Mu0(i);
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -201,30 +206,34 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
     }
   }
   
-  // Temporary data array used to store multiplications
-  real* z = ts.tmp();
-
-  // Subtract current values (do this after f is used, otherwise
-  // we can't use z...)
+  // Subtract current values
   for (uint n = 0; n < method.nsize(); n++)
   {
     const uint noffset = n * ts.N;
+
+    // Copy values to xx
+    ts.copy(xxx, noffset, xx, 0, ts.N);
+
+    // Do multiplication
     if ( piecewise )
     {
-      ode.M(xx + noffset, z, ts.u0, a);
+      ts.copy(ts.u0, 0, ts.u, 0, ts.N);
+      ode.M(xx, yy, ts.u, a);
     }
     else
     {
       const real t = a + method.npoint(n) * k;
-      ode.M(xx + noffset, z, xx + noffset, t);
+      ts.copy(xxx, noffset, ts.u, 0, ts.N);
+      ode.M(xx, yy, xx, t);
     }
 
+    // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
-      F[noffset + i] -= z[i];
+      F[noffset + i] -= yy[i];
   }
 
   // Restore array
-  ts.x.restore(xx);
+  ts.x.restore(xxx);
 }
 //-----------------------------------------------------------------------------
 LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const

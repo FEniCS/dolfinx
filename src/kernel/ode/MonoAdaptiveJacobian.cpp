@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-07-05
 
 #ifdef HAVE_PETSC_H
 
@@ -19,7 +19,7 @@ using namespace dolfin;
 MonoAdaptiveJacobian::MonoAdaptiveJacobian(MonoAdaptiveTimeSlab& timeslab,
 					   bool implicit, bool piecewise)
   : TimeSlabJacobian(timeslab), ts(timeslab),
-    implicit(implicit), piecewise(piecewise)
+    implicit(implicit), piecewise(piecewise), xx(timeslab.N), yy(timeslab.N)
 {
   // Do nothing
 }
@@ -36,12 +36,9 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
     y = x;
 
   // Get data arrays (assumes uniprocessor case)
-  const real* xx = x.array();
-  real* yy = y.array();
+  const real* xxx = x.array();
+  real* yyy = y.array();
   const real* uu = ts.x.array();
-
-  // Temporary data array used to store multiplications
-  real* z = ts.tmp();
 
   // Compute size of time step
   const real a = ts.starttime();
@@ -55,20 +52,24 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
     {
       const uint noffset = n * ts.N;
 
+      // Copy values to xx
+      ts.copy(xxx, noffset, xx, 0, ts.N);
+
       // Do multiplication
       if ( piecewise )
       {
-	ode.M(xx + noffset, z, ts.u0, a);
+	ts.copy(ts.u0, 0, ts.u, 0, ts.N);
+	ode.M(xx, yy, ts.u, a);
       }
       else
       {
 	const real t = a + method.npoint(n) * k;
-	ode.M(xx + noffset, z, uu + noffset, t);
+	ts.copy(uu, noffset, ts.u, 0, ts.N);
+	ode.M(xx, yy, ts.u, t);
       }
       
-      // Copy values
-      for (uint i = 0; i < ts.N; i++)
-	yy[noffset + i] = z[i];
+      // Copy values from yy
+      ts.copy(yy, 0, yyy, noffset, ts.N);
     }
   }
 
@@ -79,7 +80,7 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
     const uint noffset = n * ts.N;
 
     /*
-    // Compute z = df/du * x for current stage
+    // Compute yy = df/du * x for current stage
     for (uint i = 0; i < ts.N; i++)
     {
       real sum = 0.0;
@@ -88,15 +89,19 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
       for (uint pos = 0; pos < deps.size(); pos++)
       {
 	const uint j = deps[pos];
-	sum += Jvalues[Joffset + pos] * xx[noffset + j];
+	sum += Jvalues[Joffset + pos] * xxx[noffset + j];
       }
-      z[i] = sum;
+      yy[i] = sum;
     }
     */
 
+    // Copy values to xx and u
+    ts.copy(xxx, noffset, xx, 0, ts.N);
+    ts.copy(uu, noffset, ts.u, 0, ts.N);
+
     // Compute z = df/du * x for current stage
-    ode.J(xx + noffset, z, uu + noffset, t);
-    
+    ode.J(xx, yy, ts.u, t);
+
     // Add z with correct weights to y
     for (uint m = 0; m < method.nsize(); m++)
     {
@@ -109,15 +114,15 @@ void MonoAdaptiveJacobian::mult(const Vector& x, Vector& y) const
       else
 	w = - k * method.nweight(m, n);
 
-      // Add w * z to y
+      // Add w*yy to y
       for (uint i = 0; i < ts.N; i++)
-	yy[moffset + i] += w * z[i];
+	yyy[moffset + i] += w * yy[i];
     }
   }
 
   // Restore data arrays
-  x.restore(xx);
-  y.restore(yy);
+  x.restore(xxx);
+  y.restore(yyy);
   ts.x.restore(uu);
 }
 //-----------------------------------------------------------------------------
