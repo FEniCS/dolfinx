@@ -357,6 +357,8 @@ void testuBlasSparseMatrix()
   cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
 #endif
 
+  uBlasSparseMatrix Atest(10,10);
+//  Atest.init(10,10);
 
 }
 

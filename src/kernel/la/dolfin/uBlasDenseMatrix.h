@@ -17,6 +17,13 @@ namespace dolfin
 
   public:
   
+    /// Constructor
+    uBlasDenseMatrix();
+
+    /// Constructor
+    uBlasDenseMatrix(const uint M, const uint N);  
+    
+    /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasDenseMatrix& A);
 
   };

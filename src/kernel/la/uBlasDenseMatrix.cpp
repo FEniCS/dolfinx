@@ -9,6 +9,17 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+uBlasDenseMatrix::uBlasDenseMatrix() : uBlasMatrix<ublas_dense_matrix>()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+uBlasDenseMatrix::uBlasDenseMatrix(const uint M, const uint N) 
+                  : uBlasMatrix<ublas_dense_matrix>(M, N)
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const uBlasDenseMatrix& A)
 {
   const uint M = A.size(0);

@@ -19,6 +19,12 @@ namespace dolfin
   {
   public:
     
+    /// Constructor
+    uBlasSparseMatrix();
+
+    /// Constructor
+    uBlasSparseMatrix(const uint M, const uint N);
+
     /// Output
     friend LogStream& operator<< (LogStream& stream, const uBlasSparseMatrix& A);
 

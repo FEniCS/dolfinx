@@ -7,6 +7,7 @@
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
+#include <typeinfo>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
@@ -47,14 +48,14 @@ namespace dolfin
     uBlasMatrix();
     
     /// Constructor
-    uBlasMatrix(uint M, uint N);
+    uBlasMatrix(const uint M, const uint N);
 
     /// Destructor
     ~uBlasMatrix();
 
     /// Assignment from a matrix_expression
     template <class E>
-    uBlasMatrix& operator=(const ublas::matrix_expression<E>& A) const
+    uBlasMatrix<Mat>& operator=(const ublas::matrix_expression<E>& A) const
     { 
       Mat::operator=(A); 
       return *this;
@@ -74,6 +75,9 @@ namespace dolfin
 
     /// Solve Ax = b in-place (A is destroyed)
     void solveInPlace(DenseVector& x, const DenseVector& b);
+
+    /// Compute inverse of matrix
+    void invert();
 
     /// Apply changes to matrix 
     void apply();
@@ -132,9 +136,9 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
-  uBlasMatrix<Mat>::uBlasMatrix(uint M, uint N) : Mat(N,M), assembled(true)
+  uBlasMatrix<Mat>::uBlasMatrix(const uint M, const uint N) : assembled(true)
   { 
-//    init(M,N); 
+    // Do nothing 
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
@@ -190,7 +194,7 @@ namespace dolfin
       dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     // Make copy of matrix and vector (factorisation is done in-place)
-    Mat Atemp = *this;
+    uBlasMatrix<Mat> Atemp(*this);
 
     // Solve
     Atemp.solveInPlace(x, b);
@@ -226,6 +230,30 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
+  void uBlasMatrix<Mat>::invert()
+  {
+    const uint M = this->size1();
+    dolfin_assert(M == this->size2());
+  
+    // Create permutation matrix
+    ublas::permutation_matrix<std::size_t> pmatrix(M);
+
+    // Set what will be the inverse inverse to identity matrix
+    Mat inverse(M, M);
+    inverse.assign(ublas::identity_matrix<real>(M));
+
+    // Factorise (with pivoting)
+    uint singular = ublas::lu_factorize(*this, pmatrix);
+    if( singular > 0)
+      dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+  
+    // Back substitute 
+    ublas::lu_substitute(*this, pmatrix, inverse);
+
+    this->assign_temporary(inverse);
+  }
+//-----------------------------------------------------------------------------
+  template <class Mat>
   void uBlasMatrix<Mat>::apply()
   {
     // Assign temporary assembly matrix to the sparse matrix

@@ -4,11 +4,21 @@
 // First added:  2006-04-03
 // Last changed: 2006-07-05
 
-
 #include <dolfin/uBlasSparseMatrix.h>
 
 using namespace dolfin;
 
+//-----------------------------------------------------------------------------
+uBlasSparseMatrix::uBlasSparseMatrix() : uBlasMatrix<ublas_sparse_matrix>()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+uBlasSparseMatrix::uBlasSparseMatrix(const uint M, const uint N) 
+                  : uBlasMatrix<ublas_sparse_matrix>(M, N)
+{
+  // Do nothing
+}
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const uBlasSparseMatrix& A)
 {

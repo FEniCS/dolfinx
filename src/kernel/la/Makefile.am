@@ -31,8 +31,7 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/VirtualMatrix.h 
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-la.la
-libdolfin_la_la_SOURCES = DenseMatrix.cpp \
-                          DenseVector.cpp \
+libdolfin_la_la_SOURCES = DenseVector.cpp \
                           EigenvalueSolver.cpp \
                           GMRES.cpp \
                           LinearSolver.cpp \
