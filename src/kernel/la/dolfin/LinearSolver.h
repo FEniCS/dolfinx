@@ -10,13 +10,13 @@
 #define __LINEAR_SOLVER_H
 
 #include <dolfin/dolfin_log.h>
+#include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
 {
   /// This class defines the interfaces for linear solvers for
   /// systems of the form Ax = b.
     
-  class uBlasSparseMatrix;
   class DenseVector;
 
 #ifdef HAVE_PETSC_H

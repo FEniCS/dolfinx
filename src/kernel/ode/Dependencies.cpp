@@ -9,7 +9,6 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/DenseVector.h>
-#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
 

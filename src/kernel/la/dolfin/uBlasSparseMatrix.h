@@ -7,28 +7,13 @@
 #ifndef __UBLAS_SPARSE_MATRIX_H
 #define __UBLAS_SPARSE_MATRIX_H
 
-#include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasMatrix.h>
 
 namespace dolfin
 {
 
-  /// This class represents a uBlas sparse matrix of dimension M x N.
+  typedef uBlasMatrix<ublas_sparse_matrix> uBlasSparseMatrix;
 
-  class uBlasSparseMatrix : public uBlasMatrix<ublas_sparse_matrix>
-  {
-  public:
-    
-    /// Constructor
-    uBlasSparseMatrix();
-
-    /// Constructor
-    uBlasSparseMatrix(const uint M, const uint N);
-
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const uBlasSparseMatrix& A);
-
-  };
 }
 
 #endif

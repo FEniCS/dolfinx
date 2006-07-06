@@ -9,13 +9,13 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
 {
 
   class ODE;
   class DenseVector;
-  class uBlasSparseMatrix;
 
   /// This class keeps track of the dependencies between different
   /// components of an ODE system. For a large ODE, it is important
