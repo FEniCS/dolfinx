@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-06-03
-// Last changed: 2006-05-29
+// Last changed: 2006-06-07
 
 #include <cmath>
 #include <dolfin/dolfin_log.h>
@@ -37,23 +37,25 @@ void GaussianQuadrature::computeWeights()
   // polynomials of degree n-1.
 
   // Special case n = 0
-  if ( n == 0 ) {
+  if ( n == 0 )
+  {
     weights[0] = 2.0;
     return;
   }
- 
+
   DenseMatrix A(n, n);
   DenseVector x(n), b(n);
 
   // Compute the matrix coefficients
-  for (unsigned int i = 0; i < n; i++) {
+  for (unsigned int i = 0; i < n; i++)
+  {
     Legendre p(i);
     for (unsigned int j = 0; j < n; j++)
       A(i, j) = p(points[j]);
     b(i) = 0.0;
   }
   b(0) = 2.0;
-    
+
   // Solve the system of equations
   // FIXME: Do we get high enough precision?
   //LU lu;

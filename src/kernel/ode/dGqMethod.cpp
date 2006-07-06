@@ -18,7 +18,7 @@ using namespace dolfin;
 dGqMethod::dGqMethod(unsigned int q) : Method(q, q + 1, q + 1)
 {
   dolfin_info("Initializing discontinous Galerkin method dG(%d).", q);
-  
+
   init();
 
   _type = Method::dG;
