@@ -138,7 +138,7 @@ namespace dolfin
   template <class Mat> 
   uBlasMatrix<Mat>::uBlasMatrix(const uint M, const uint N) : assembled(true)
   { 
-    // Do nothing 
+    init(M,N); 
   }
   //---------------------------------------------------------------------------
   template <class Mat> 
