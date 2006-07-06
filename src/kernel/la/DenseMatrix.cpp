@@ -16,14 +16,14 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix() : GenericMatrix(),
 			     Variable("A", "a dense matrix"),
-			     ublas_matrix()
+			     ublas_dense_matrix()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 DenseMatrix::DenseMatrix(const uint M, const uint N) : GenericMatrix(),
 					   Variable("A", "a dense matrix"),
-					   ublas_matrix(M, N)
+					   ublas_dense_matrix(M, N)
 {
   // Clear matrix (not done by ublas)
   clear();

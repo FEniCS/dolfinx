@@ -303,7 +303,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(196,196);
+  UnitSquare mesh(20,20);
 
   Source f;
   MyBC bc;
@@ -331,7 +331,7 @@ void testuBlasSparseMatrix()
   solver.solve(As, xs, bs);
   real t_petsc = toc();  
   cout << "norm(x) " << xs.norm() << endl;  
-  cout << "PETSc Krylov solve time = " <<t_petsc << endl;  
+  cout << "PETSc Krylov solve time = " << t_petsc << endl;  
 
 #endif
 
@@ -356,6 +356,7 @@ void testuBlasSparseMatrix()
 #ifdef HAVE_PETSC_H
   cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
 #endif
+
 
 }
 
@@ -615,6 +616,20 @@ void testVectorAccess()
   dolfin_info("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
 }
 
+/*
+void testSepcialization()
+{
+
+template<class T>
+class Testing
+  {
+    public:
+    
+  }
+}
+*/
+
+
 int main(int argc, char* argv[])
 {
 /*
@@ -636,17 +651,15 @@ int main(int argc, char* argv[])
   testDenseLUsolve();
   testGenericMatrix();
   testGenericMatrix();
-  testOutputMatrix();
 */
+  testuBlasSparseMatrix();
+//  testOutputMatrix();
 
   //testNewMesh();
   
   //benchOldMesh();
   //benchNewMesh();
-
   //testVectorAccess();
-
-  testuBlasSparseMatrix();
 
   return 0;
 }

@@ -27,35 +27,32 @@ namespace dolfin
 
   namespace ublas = boost::numeric::ublas;
 
-  // uBlas dense matrix
-  typedef ublas::matrix<double> ublas_matrix;
-
-  // Set type of underlying uBlas sparse matrix. 
-  typedef ublas::compressed_matrix<double> ublas_sparse_matrix;
-//  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
-//            ublas::vector<ublas::compressed_vector<double> > > ublas_sparse_matrix;
-
-
-  // uBlas sparse matrix for temporoary assembly
-  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
-            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
-
-
-  // uBlas column-major compressed matrix
-  typedef ublas::compressed_matrix<double,ublas::column_major> ublas_sparse_matrix_cmajor;
-
   // uBlas vector
   typedef ublas::vector<double> ublas_vector;
   typedef ublas::vector_range<ublas_vector> ublas_vector_range;
+
+  // uBlas dense matrix
+  typedef ublas::matrix< double, ublas::row_major, ublas::unbounded_array<double> > ublas_dense_matrix;
+  typedef ublas::matrix_range<ublas_dense_matrix> ublas_matrix_range;
 
   // uBlas dense matrix (column major format)
   typedef ublas::matrix<double,ublas::column_major> ublas_matrix_cmajor;
   typedef ublas::matrix_range<ublas_matrix_cmajor> ublas_matrix_cmajor_range;
 
-  // uBlas column major upper triangular matrix
-  typedef ublas::triangular_matrix<double, ublas::upper, ublas::column_major> ublas_matrix_tri;
-  typedef ublas::matrix_range<ublas_matrix_tri> ublas_matrix_range_tri;
-  typedef ublas::matrix_column<ublas_matrix_tri> ublas_matrix_col_tri;
+  // Set type of underlying uBlas sparse matrix. 
+  typedef ublas::compressed_matrix<double> ublas_sparse_matrix;
+
+  // uBlas sparse matrix for temporoary assembly
+  typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
+            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
+
+  // uBlas column-major compressed matrix
+  typedef ublas::compressed_matrix<double,ublas::column_major> ublas_sparse_matrix_cmajor;
+
+  // uBlas upper triangular matrix (column major format)
+  typedef ublas::triangular_matrix<double, ublas::upper, ublas::column_major> ublas_matrix_cmajor_tri;
+  typedef ublas::matrix_range<ublas_matrix_cmajor_tri> ublas_matrix_cmajor_tri_range;
+  typedef ublas::matrix_column<ublas_matrix_cmajor_tri> ublas_matrix_cmajor_tri_column;
 
 }
 

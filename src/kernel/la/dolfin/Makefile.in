@@ -198,9 +198,11 @@ EXTRA_DIST = dolfin_la.h \
              Preconditioner.h \
              SparseMatrix.h \
              ublas.h \
+             uBlasDenseMatrix.h \
              uBlasKrylovMatrix.h \
              uBlasKrylovSolver.h \
              uBlasLUSolver.h \
+             uBlasMatrix.h \
              uBlasDummyPreconditioner.h \
              uBlasILUPreconditioner.h \
              uBlasPreconditioner.h \

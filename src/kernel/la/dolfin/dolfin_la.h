@@ -22,9 +22,12 @@
 #include <dolfin/Preconditioner.h>
 #include <dolfin/SparseMatrix.h>
 #include <dolfin/ublas.h>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasDummyPreconditioner.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasLUSolver.h>
+#include <dolfin/uBlasMatrix.h>
 #include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasPreconditioner.h>
 #include <dolfin/uBlasSparseMatrix.h>

@@ -114,6 +114,9 @@ fi
 #echo "turning on debugging and warnings (use --enable-optimization to avoid this)."
 #enable_debug="yes"
 
+# Disable Boost debug mode for configure without debug/optimize options
+CXXFLAGS="$CXXFLAGS -DNDEBUG"
+
 # Handle option --enable-debug
 if test x$enable_debug = xyes; then
     echo "enabling debugging compiler flags"
@@ -123,12 +126,8 @@ fi
 # Handle option --enable-optimization
 if test x$enable_optimization = xyes; then
     echo "enabling optimizing compiler flags"
-    CXXFLAGS="-O3  -Wall -ansi"
+    CXXFLAGS="-O3  -Wall -ansi -DNDEBUG"
 fi
-
-# Flag -DNDEBUG is for Boost
-CXXFLAGS="$CXXFLAGS -DNDEBUG"
-
 
 # Add compiler specific flags
 case "${ax_cv_c_compiler_vendor}" in

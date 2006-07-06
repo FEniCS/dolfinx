@@ -21,7 +21,6 @@ namespace dolfin
 
   class DenseVector;
   namespace ublas = boost::numeric::ublas;
-//  typedef ublas::matrix<double> ublas_matrix;
 
   /// This class represents a dense matrix of dimension M x N.
   /// It is a simple wrapper for a Boost ublas matrix.
@@ -32,7 +31,7 @@ namespace dolfin
 
   class DenseMatrix : public GenericMatrix,
 		      public Variable,
-		      public ublas_matrix
+		      public ublas_dense_matrix
   {
   public:
     
@@ -56,13 +55,13 @@ namespace dolfin
     template <class E>
     DenseMatrix& operator=(const ublas::matrix_expression<E>& A) const
     { 
-      ublas_matrix::operator=(A); 
+      ublas_dense_matrix::operator=(A); 
       return *this;
     } 
 
     /// Return reference to matrix component
     real& operator() (uint i, uint j) 
-      { return ublas_matrix::operator() (i, j); }; 
+      { return ublas_dense_matrix::operator() (i, j); }; 
 
     /// Return number of rows (dim = 0) or columns (dim = 1) 
     uint size(uint dim) const;

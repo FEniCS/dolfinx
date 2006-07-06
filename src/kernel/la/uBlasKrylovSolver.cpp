@@ -109,7 +109,7 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
   DenseVector r(size);
 
   // Create H matrix and h vector
-  ublas_matrix_tri H(restart, restart);
+  ublas_matrix_cmajor_tri H(restart, restart);
   ublas_vector h(restart+1);
 
   // Create gamma vector
@@ -210,7 +210,7 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
 
       // Apply new rotation to last column   
       h(j)   = c(j)*h(j) - s(j)*h(j+1);
-//      h(j+1) = 0.0;
+      h(j+1) = 0.0;
 
       // Apply rotations to gamma
       temp1 = c(j)*gamma(j) - s(j)*gamma(j+1);
@@ -218,8 +218,14 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
       gamma(j) = temp1; 
       r_norm = fabs(gamma(j+1));
 
-      // Add h to H matrix 
-      noalias(column(H, j)) = subrange(h, 0, restart);
+      // Add h to H matrix. Would ne nice to use  
+      //   noalias(column(H, j)) = subrange(h, 0, restart);
+      // but this gives an error when uBlas debugging is turned onand H 
+      // is a triangular matrix
+      for(uint i=0; i<j+1; ++i)
+        H(i,j) = h(i);
+    
+    
 
       // Check for convergence
       if( r_norm/beta0 < rtol || r_norm < atol )
@@ -231,7 +237,7 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
     }
 
     // Eliminate extra rows and columns (this does not resize or copy, just addresses a range)
-    ublas_matrix_range_tri Htrunc(H, ublas::range(0,subiteration), ublas::range(0,subiteration) );
+    ublas_matrix_cmajor_tri_range Htrunc(H, ublas::range(0,subiteration), ublas::range(0,subiteration) );
     ublas_vector_range g(gamma, ublas::range(0,subiteration));
 
     // Solve triangular system H*g and return result in g 
