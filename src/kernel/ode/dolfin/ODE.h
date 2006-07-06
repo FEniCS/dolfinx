@@ -12,11 +12,10 @@
 #include <dolfin/DenseVector.h>
 #include <dolfin/Dependencies.h>
 #include <dolfin/Sample.h>
+#include <dolfin/uBlasSparseMatrix.h>
 
 namespace dolfin
 {
-  
-  class uBlasSparseMatrix;
 
   /// A ODE represents an initial value problem of the form
   ///

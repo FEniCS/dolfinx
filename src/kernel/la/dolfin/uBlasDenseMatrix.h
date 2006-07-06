@@ -8,25 +8,12 @@
 #define __UBLAS_DENSE_MATRIX_H
 
 #include <dolfin/uBlasMatrix.h>
-#include <dolfin/ublas.h>
 
 namespace dolfin
 {
-  class uBlasDenseMatrix : public uBlasMatrix<ublas_dense_matrix> 
-  {
 
-  public:
-  
-    /// Constructor
-    uBlasDenseMatrix();
+  typedef uBlasMatrix<ublas_dense_matrix> uBlasDenseMatrix;
 
-    /// Constructor
-    uBlasDenseMatrix(const uint M, const uint N);  
-    
-    /// Output
-    friend LogStream& operator<< (LogStream& stream, const uBlasDenseMatrix& A);
-
-  };
 }
 
 #endif
