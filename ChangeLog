@@ -1,3 +1,6 @@
+ - Add templated wrapper class for different uBlas matrix types
+ - Add ILU preconditioning for uBlas matrices
+ - Add Krylov solver for uBlas sparse matrices (GMRES and BICGSTAB)
  - Add first version of new mesh library (NewMesh, experimental)
  - Add Parametrized::readParameters() to trigger reading of values on set()
  - Remove output of zeros in Octave matrix file format
