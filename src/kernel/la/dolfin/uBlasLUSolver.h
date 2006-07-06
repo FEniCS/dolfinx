@@ -9,13 +9,14 @@
 
 #include <dolfin/Parametrized.h>
 
-#include <dolfin/DenseVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/LinearSolver.h>
 
 
 namespace dolfin
 {
+  class DenseVector;
+
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b using uBlas data types.
   
