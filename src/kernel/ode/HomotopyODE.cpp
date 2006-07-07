@@ -4,8 +4,6 @@
 // First added:  2005
 // Last changed: 2006-05-07
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Homotopy.h>
 #include <dolfin/HomotopyODE.h>
@@ -171,5 +169,3 @@ void HomotopyODE::monitor(const complex z[], real t)
   dolfin_info("Homotopy: F = %e G = %e H = %e", Fnorm, Gnorm, Hnorm);
 }
 //-----------------------------------------------------------------------------
-
-#endif

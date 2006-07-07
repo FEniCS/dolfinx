@@ -7,8 +7,6 @@
 #ifndef __HOMOTOPY_ODE_H
 #define __HOMOTOPY_ODE_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/constants.h>
 #include <dolfin/ComplexODE.h>
 
@@ -71,7 +69,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif
