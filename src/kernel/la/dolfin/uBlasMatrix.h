@@ -11,7 +11,6 @@
 
 #include <sstream>
 #include <iomanip>
-#include <typeinfo>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
 #include <dolfin/Variable.h>
@@ -163,7 +162,7 @@ namespace dolfin
 				  Array<real>& values) const
   {
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     // Reference to matrix row (throw away const-ness and trust uBlas)
     ublas::matrix_row< uBlasMatrix<Mat> > row( *(const_cast< uBlasMatrix<Mat>* >(this)) , i);
@@ -185,7 +184,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::lump(DenseVector& m) const
   {
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     ublas::scalar_vector<double> one(size(1), 1.0);
     ublas::axpy_prod(*this, one, m, true);
@@ -195,7 +194,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::solve(DenseVector& x, const DenseVector& b) const
   {    
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     // Make copy of matrix and vector (factorisation is done in-place)
     uBlasMatrix<Mat> Atemp(*this);
@@ -276,7 +275,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::zero()
   {
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     // Clear destroys non-zero structure of a sparse matrix 
     this->clear();
@@ -289,7 +288,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::ident(const int rows[], const int m) 
   {
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     const uint n = this->size(1);
     for(int i = 0; i < m; ++i)
@@ -300,7 +299,7 @@ namespace dolfin
   void uBlasMatrix<Mat>::mult(const DenseVector& x, DenseVector& y) const
   {
     if( !assembled )
-      dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     ublas::axpy_prod(*this, x, y, true);
   }
@@ -308,35 +307,22 @@ namespace dolfin
   template <class Mat>  
   void uBlasMatrix<Mat>::disp(const uint precision) const
   {
-    const uint M = size(0);
+    typename Mat::const_iterator1 it1;  // Iterator over rows
+    typename Mat::const_iterator2 it2;  // Iterator over entries
 
-    for (uint i = 0; i < M; i++)
+    for (it1 = this->begin1(); it1 != this->end1(); ++it1)
     {
       std::stringstream line;
       line << std::setiosflags(std::ios::scientific);
       line << std::setprecision(precision);
     
       line << "|";
-      
-      ublas::matrix_row< uBlasMatrix<Mat> > row(*(const_cast< uBlasMatrix<Mat>* >(this)) , i);
-      typename ublas::matrix_row< uBlasMatrix<Mat> >::const_iterator component;
-      
-      for (component = row.begin(); component != row.end(); ++component)
-	line << " (" << i << ", " << component.index() << ", " << *component << ")";
+      for (it2 = it1.begin(); it2 != it1.end(); ++it2)
+        line << " (" << it2.index1() << ", " << it2.index2() << ", " << *it2 << ")";
+      line << " |";
 
-      /*
-      for (uint j = 0; j < N; j++)
-      {
-        real value = getval(i, j);
-        if ( fabs(value) < DOLFIN_EPS )
-	  value = 0.0;    
-        line << " " << value;
-      }
-      */
-
-      line << "|";
       dolfin::cout << line.str().c_str() << dolfin::endl;
-    }
+    }  
   }
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)
