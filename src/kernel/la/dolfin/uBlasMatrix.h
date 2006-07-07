@@ -309,7 +309,6 @@ namespace dolfin
   void uBlasMatrix<Mat>::disp(const uint precision) const
   {
     const uint M = size(0);
-    const uint N = size(1);
 
     for (uint i = 0; i < M; i++)
     {
