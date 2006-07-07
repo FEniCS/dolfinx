@@ -117,14 +117,12 @@ bool HomotopyODE::update(const complex z[], real t, bool end)
     dolfin_info("Reached end of integration, saving solution.");
     _state = endgame;
     
-    real* xx = homotopy.x.array();
     for (uint i = 0; i < n; i++)
     {
       const complex zi = z[i];
-      xx[2*i] = zi.real();
-      xx[2*i + 1] = zi.imag();
+      homotopy.x(2*i) = zi.real();
+      homotopy.x(2*i + 1) = zi.imag();
     }
-    homotopy.x.restore(xx);
   }
   
   return true;

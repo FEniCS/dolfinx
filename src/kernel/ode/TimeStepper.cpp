@@ -37,12 +37,7 @@ TimeStepper::TimeStepper(ODE& ode) :
   }
   else    
   {
-#ifdef HAVE_PETSC_H
     timeslab = new MonoAdaptiveTimeSlab(ode);
-#else
-    dolfin_info("DOLFIN compiled without PETSC, using multi-adaptive solver.");
-    timeslab = new MultiAdaptiveTimeSlab(ode);
-#endif
   }
 }
 //-----------------------------------------------------------------------------

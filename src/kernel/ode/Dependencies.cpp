@@ -69,7 +69,7 @@ void Dependencies::set(const uBlasSparseMatrix& A)
   if ( A.size(0) != N )
     dolfin_error("Incorrect matrix dimensions for dependency pattern.");
 
-  // Get data from PETSc
+  // Get data from matrix
   for (uint i = 0; i < N; i++)
   {
     // FIXME: Could add function to return sparsity pattern

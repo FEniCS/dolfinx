@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-02-02
-// Last changed: 2005
+// Last changed: 2006-07-07
 
 #include <dolfin/Array.h>
 #include <dolfin/ComplexODE.h>
@@ -11,7 +11,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 ComplexODE::ComplexODE(uint n, real T) : ODE(2*n, T), n(n), j(0.0, 1.0),
-				 zvalues(0), fvalues(0), yvalues(0)
+					 zvalues(0), fvalues(0), yvalues(0)
 {
   dolfin_info("Creating complex ODE of size %d (%d complex components).", N, n);
   
@@ -34,7 +34,7 @@ ComplexODE::~ComplexODE()
 //-----------------------------------------------------------------------------
 complex ComplexODE::f(const complex z[], real t, uint i)
 {
-  dolfin_error("Not implemented.");
+  dolfin_error("Right-hand side for complex ODE not supplied by user.");
   
   complex zvalue;
   return zvalue;
@@ -52,7 +52,6 @@ void ComplexODE::f(const complex z[], real t, complex y[])
 void ComplexODE::M(const complex x[], complex y[], const complex z[], real t)
 {
   // Assume M is the identity if not supplied by user: y = x
-
   for (uint i = 0; i < n; i++)
     y[i] = x[i];
 }
@@ -83,7 +82,7 @@ real ComplexODE::u0(uint i)
   return ( i % 2 == 0 ? z.real() : z.imag() );
 }
 //-----------------------------------------------------------------------------
-real ComplexODE::f(const real u[], real t, uint i)
+real ComplexODE::f(const DenseVector& u, real t, uint i)
 {
   // Translate right-hand side from complex to real, assuming that if
   // u_i depends on u_j, then u_i depends on both the real and
@@ -100,7 +99,7 @@ real ComplexODE::f(const real u[], real t, uint i)
     const uint jz = ju / 2;
 
     // Update value
-    const complex zvalue(u[2*jz], u[2*jz + 1]);
+    const complex zvalue(u(2*jz), u(2*jz + 1));
     zvalues[jz] = zvalue;
   }
 
@@ -111,12 +110,12 @@ real ComplexODE::f(const real u[], real t, uint i)
   return ( i % 2 == 0 ? fvalue.real() : fvalue.imag() );
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::f(const real u[], real t, real y[])
+void ComplexODE::f(const DenseVector& u, real t, DenseVector& y)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex zvalue(u(2*i), u(2*i + 1));
     zvalues[i] = zvalue;
   }
 
@@ -127,18 +126,19 @@ void ComplexODE::f(const real u[], real t, real y[])
   for (uint i = 0; i < n; i++)
   {
     const complex fvalue = fvalues[i];
-    y[2*i] = fvalue.real();
-    y[2*i + 1] = fvalue.imag();
+    y(2*i) = fvalue.real();
+    y(2*i + 1) = fvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::M(const real x[], real y[], const real u[], real t)
+void ComplexODE::M(const DenseVector& x, DenseVector& y,
+		   const DenseVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u[2*i], u[2*i + 1]);
-    const complex xvalue(x[2*i], x[2*i + 1]);
+    const complex zvalue(u(2*i), u(2*i + 1));
+    const complex xvalue(x(2*i), x(2*i + 1));
     zvalues[i] = zvalue;
     fvalues[i] = xvalue; // Use fvalues for x
   }
@@ -158,18 +158,19 @@ void ComplexODE::M(const real x[], real y[], const real u[], real t)
   for (uint i = 0; i < n; i++)
   {
     const complex yvalue = yvalues[i];
-    y[2*i] = yvalue.real();
-    y[2*i + 1] = yvalue.imag();
+    y(2*i) = yvalue.real();
+    y(2*i + 1) = yvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
-void ComplexODE::J(const real x[], real y[], const real u[], real t)
+void ComplexODE::J(const DenseVector& x, DenseVector& y,
+		   const DenseVector& u, real t)
 {
   // Update zvalues and fvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u[2*i], u[2*i + 1]);
-    const complex xvalue(x[2*i], x[2*i + 1]);
+    const complex zvalue(u(2*i), u(2*i + 1));
+    const complex xvalue(x(2*i), x(2*i + 1));
     zvalues[i] = zvalue;
     fvalues[i] = xvalue; // Use fvalues for x
   }
@@ -189,8 +190,8 @@ void ComplexODE::J(const real x[], real y[], const real u[], real t)
   for (uint i = 0; i < n; i++)
   {
     const complex yvalue = yvalues[i];
-    y[2*i] = yvalue.real();
-    y[2*i + 1] = yvalue.imag();
+    y(2*i) = yvalue.real();
+    y(2*i + 1) = yvalue.imag();
   }
 }
 //-----------------------------------------------------------------------------
@@ -200,12 +201,12 @@ real ComplexODE::timestep(uint i)
   return k(i / 2);
 }
 //-----------------------------------------------------------------------------
-bool ComplexODE::update(const real u[], real t, bool end)
+bool ComplexODE::update(const DenseVector& u, real t, bool end)
 {
   // Update zvalues for all components
   for (uint i = 0; i < n; i++)
   {
-    const complex zvalue(u[2*i], u[2*i + 1]);
+    const complex zvalue(u(2*i), u(2*i + 1));
     zvalues[i] = zvalue;
   }
 

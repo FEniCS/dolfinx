@@ -2,19 +2,16 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ComplexODE.h>
-#include <dolfin/Vector.h>
 #include <dolfin/HomotopyJacobian.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, Vector& u) 
+HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, DenseVector& u) 
   : ode(ode), u(u)
 {
   // Do nothing
@@ -25,21 +22,15 @@ HomotopyJacobian::~HomotopyJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void HomotopyJacobian::mult(const Vector& x, Vector& y) const
+dolfin::uint HomotopyJacobian::size(const uint dim) const
 {
-  // Get arrays (assumes uniprocessor case)
-  const real* uu = u.array();
-  const real* xx = x.array();
-  real* yy = y.array();
-
+  return u.size();
+}
+//-----------------------------------------------------------------------------
+void HomotopyJacobian::mult(const DenseVector& x, DenseVector& y) const
+{
   // Compute y = A*x
-  ode.J(xx, yy, uu, 0.0);
-
-  // Restore arrays
-  u.restore(uu);
-  x.restore(xx);
-  y.restore(yy);
+  ode.J(x, y, u, 0.0);
 }
 //-----------------------------------------------------------------------------
 
-#endif

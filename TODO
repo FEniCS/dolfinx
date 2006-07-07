@@ -58,9 +58,10 @@ Input/Output
 Solvers
 -------
 
-Multi-adaptive solver
----------------------
+ODE solvers
+-----------
 
+o [jj, logg] Enable use of direct solver for linear system
 o [jj, logg] Is Newton working correctly for high-order methods?
 o [jj, logg] Save solution for new solver
 o [jj, logg] Save dual solution backwards

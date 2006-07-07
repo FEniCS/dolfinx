@@ -2,22 +2,18 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-07
+// Last changed: 2006-07-07
 
 #ifndef __HOMOTOPY_H
 #define __HOMOTOPY_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
-#include <dolfin/LU.h>
-#include <dolfin/Vector.h>
+#include <dolfin/uBlasKrylovSolver.h>
 
 namespace dolfin
 {
 
-  class LinearSolver;
   class HomotopyODE;
   class ComplexODE;
 
@@ -89,29 +85,27 @@ namespace dolfin
     void randomize();
 
     // Evaluate right-hand side
-    void feval(Vector& F, ComplexODE& ode);
+    void feval(DenseVector& F, ComplexODE& ode);
 
-    uint n;                // Size of system
-    uint M;                // Number of paths
-    uint maxiter;          // Maximum number of iterations
-    uint maxpaths;         // Maximum number of paths
-    uint maxdegree;        // Maximum degree for a single equation
-    real divtol;           // Tolerance for divergence of homotopy path
-    bool monitor;          // True if we should monitor the homotopy
-    bool random;           // True if we should choose random initial data
-    LinearSolver* solver;  // GMRES solver
-    std::string filename;  // Filename for saving solutions  
-    uint* mi;              // Array of local path numbers
-    complex* ci;           // Array of constants for system G(z) = 0
-    complex* tmp;          // Array used for temporary storage
-    Vector x;              // Real-valued vector x corresponding to solution z of F(z) = 0
-    Array<complex*> zs;    // Array of solutions
-    Event degree_adjusted; // Message if degree has to be adjusted
+    uint n;                   // Size of system
+    uint M;                   // Number of paths
+    uint maxiter;             // Maximum number of iterations
+    uint maxpaths;            // Maximum number of paths
+    uint maxdegree;           // Maximum degree for a single equation
+    real divtol;              // Tolerance for divergence of homotopy path
+    bool monitor;             // True if we should monitor the homotopy
+    bool random;              // True if we should choose random initial data
+    uBlasKrylovSolver solver; // Linear solver
+    std::string filename;     // Filename for saving solutions  
+    uint* mi;                 // Array of local path numbers
+    complex* ci;              // Array of constants for system G(z) = 0
+    complex* tmp;             // Array used for temporary storage
+    DenseVector x;            // Real-valued vector x corresponding to solution z of F(z) = 0
+    Array<complex*> zs;       // Array of solutions
+    Event degree_adjusted;    // Message if degree has to be adjusted
 
   };
 
 }
-
-#endif
 
 #endif

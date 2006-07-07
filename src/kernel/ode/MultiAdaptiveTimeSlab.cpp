@@ -1044,13 +1044,8 @@ TimeSlabSolver* MultiAdaptiveTimeSlab::chooseSolver()
   }
   else if ( solver == "newton" )
   {
-#ifdef HAVE_PETSC_H
     dolfin_info("Using multi-adaptive Newton solver.");
     return new MultiAdaptiveNewtonSolver(*this);
-#else
-    dolfin_info("DOLFIN compiled without PETSc, using multi-adaptive fixed-point solver.");
-    return new MultiAdaptiveFixedPointSolver(*this);
-#endif
   }
   else if ( solver == "default" )
   {

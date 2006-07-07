@@ -2,16 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-07
 
 #ifndef __HOMOTOPY_JACOBIAN_H
 #define __HOMOTOPY_JACOBIAN_H
 
-#include <dolfin/Vector.h>
 #include <dolfin/constants.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 
 namespace dolfin
 {
@@ -23,18 +20,21 @@ namespace dolfin
   /// implemented for the ODE system so we don't have to worry about
   /// the translation between real and complex vectors.
 
-  class HomotopyJacobian : public VirtualMatrix
+  class HomotopyJacobian : public uBlasKrylovMatrix
   {
   public:
 
     /// Constructor
-    HomotopyJacobian(ComplexODE& ode, Vector& u);
+    HomotopyJacobian(ComplexODE& ode, DenseVector& u);
 
     /// Destructor
     ~HomotopyJacobian();
 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
+
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const DenseVector& x, DenseVector& y) const;
 
   private:
     
@@ -42,12 +42,10 @@ namespace dolfin
     ComplexODE& ode;
 
     // Current solution to linearize around
-    Vector& u;
+    DenseVector& u;
 
   };
 
 }
-
-#endif
 
 #endif
