@@ -6,7 +6,6 @@
 
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveJacobian.h>

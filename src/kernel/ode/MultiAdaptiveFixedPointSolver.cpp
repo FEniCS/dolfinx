@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2005-11-11
+// Last changed: 2006-07-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -11,7 +11,6 @@
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveFixedPointSolver.h>
-#include <dolfin/Vector.h>
 
 using namespace dolfin;
 

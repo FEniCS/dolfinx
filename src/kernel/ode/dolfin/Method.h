@@ -1,8 +1,8 @@
-// Copyright (C) 2005 Anders Logg.
+// Copyright (C) 2005-2006 Anders Logg.
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2005-11-02
+// Last changed: 2006-07-07
 
 #ifndef __METHOD_H
 #define __METHOD_H
@@ -14,6 +14,7 @@ namespace dolfin
 {
 
   class Lagrange;
+  class DenseVector;
   
   /// Base class for cGqMethod and dGqMethod, which contain all numeric constants,
   /// such as nodal points and nodal weights, needed for the method.
@@ -72,11 +73,17 @@ namespace dolfin
     /// Evaluate solution at given point
     virtual real ueval(real x0, real values[], real tau) const = 0;
 
+    /// Evaluate solution at given point
+    virtual real ueval(real x0, DenseVector& values, uint offset, real tau) const = 0;
+
     /// Evaluate solution at given node
     virtual real ueval(real x0, real values[], uint i) const = 0;
 
     /// Compute residual at right end-point
     virtual real residual(real x0, real values[], real f, real k) const = 0;
+
+    /// Compute residual at right end-point
+    virtual real residual(real x0, DenseVector& values, uint offset, real f, real k) const = 0;
   
     /// Compute new time step based on the given residual
     virtual real timestep(real r, real tol, real k0, real kmax) const = 0;

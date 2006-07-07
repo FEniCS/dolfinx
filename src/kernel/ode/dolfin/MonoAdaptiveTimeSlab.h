@@ -9,7 +9,6 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/Vector.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/MonoAdaptivity.h>
 #include <dolfin/TimeSlab.h>
@@ -85,7 +84,7 @@ namespace dolfin
     real* fq;                  // Values of right-hand side at all quadrature points
     real rmax;                 // Previously computed maximum norm of residual
 
-    DenseVector x; // Degrees of freedom for the solution
+    DenseVector x; // Degrees of freedom for the solution on the time slab
     DenseVector u; // The solution at a given stage
     DenseVector f; // The right-hand side at a given stage
     

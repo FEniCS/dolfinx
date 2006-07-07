@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-05-29
+// Last changed: 2006-07-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -37,12 +37,33 @@ real dGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
+real dGqMethod::ueval(real x0, DenseVector& values, uint offset, real tau) const
+{
+  // Note: x0 is not used, maybe this can be done differently
+
+  real sum = 0.0;
+  for (unsigned int i = 0; i < nn; i++)
+    sum += values[offset + i] * trial->eval(i, tau);
+  
+  return sum;
+}
+//-----------------------------------------------------------------------------
 real dGqMethod::residual(real x0, real values[], real f, real k) const
 {
   // FIXME: Include jump term in residual
   real sum = 0.0;
   for (uint i = 0; i < nn; i++)
     sum += values[i] * derivatives[i];
+
+  return sum / k - f;
+}
+//-----------------------------------------------------------------------------
+real dGqMethod::residual(real x0, DenseVector& values, uint offset, real f, real k) const
+{
+  // FIXME: Include jump term in residual
+  real sum = 0.0;
+  for (uint i = 0; i < nn; i++)
+    sum += values[offset + i] * derivatives[i];
 
   return sum / k - f;
 }
@@ -176,9 +197,6 @@ void dGqMethod::computeWeights()
 
     // Solve for the weight functions at the nodal point
     // FIXME: Do we get high enough precision?
-    //LU lu;
-    //lu.set("LU report", false);
-    //lu.solve(A, w, b);
     A.solve(w, b);
 
     // Save weights including quadrature

@@ -2,12 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-07-07
 
 #ifndef __TIME_SLAB_JACOBIAN_H
 #define __TIME_SLAB_JACOBIAN_H
 
-#include <dolfin/Vector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 
 namespace dolfin

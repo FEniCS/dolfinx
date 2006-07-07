@@ -12,7 +12,6 @@
 // FIXME: BROKEN
 
 #include <dolfin/constants.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Array.h>
 #include <dolfin/ODE.h>
 
