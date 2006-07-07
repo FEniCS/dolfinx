@@ -2,9 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-06
 
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -30,5 +28,3 @@ void TimeSlabJacobian::update()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-
-#endif

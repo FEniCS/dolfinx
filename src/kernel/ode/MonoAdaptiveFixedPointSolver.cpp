@@ -2,9 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-29
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_parameter.h>
@@ -37,13 +35,9 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
   // Compute size of time step
   const real k = ts.length();
 
-  // Get array of values
-  real* xx = ts.x.array();
-
   // Save old values
   const uint xoffset = (method.nsize() - 1) * ts.N;
-  for (uint i = 0; i < ts.N; i++)
-    xold[i] = xx[xoffset + i];
+  ts.copy(ts.x, xoffset, xold, 0, ts.N);
 
   // Evaluate right-hand side at all quadrature points
   for (uint m = 0; m < method.qsize(); m++)
@@ -56,7 +50,7 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      xx[noffset + i] += alpha*(ts.u0[i] - xx[noffset+i]);
+      ts.x(noffset + i) += alpha*(ts.u0[i] - ts.x(noffset+i));
 
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -64,7 +58,7 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	xx[noffset + i] += alpha*tmp*ts.fq[moffset + i];
+	ts.x(noffset + i) += alpha*tmp*ts.fq[moffset + i];
     }
   }
   
@@ -72,13 +66,10 @@ real MonoAdaptiveFixedPointSolver::iteration(uint iter, real tol)
   real max_increment = 0.0;
   for (uint i = 0; i < ts.N; i++)
   {
-    const real increment = fabs(xx[xoffset + i] - xold[i]);
+    const real increment = fabs(ts.x(xoffset + i) - xold[i]);
     if ( increment > max_increment )
       max_increment = increment;
   }
-
-  // Restore array
-  ts.x.restore(xx);
 
   return max_increment;
 }
@@ -88,5 +79,3 @@ dolfin::uint MonoAdaptiveFixedPointSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-
-#endif

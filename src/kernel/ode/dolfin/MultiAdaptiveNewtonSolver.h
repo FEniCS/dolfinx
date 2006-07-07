@@ -2,22 +2,21 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-07-06
 
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/constants.h>
-#include <dolfin/GMRES.h>
-#include <dolfin/Vector.h>
+#include <dolfin/uBlasKrylovSolver.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/TimeSlabJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
 
 namespace dolfin
 {
+  
   class ODE;
   class MultiAdaptiveTimeSlab;
   class Method;
@@ -58,7 +57,7 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(real F[]);
+    void Feval(DenseVector& F);
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
@@ -66,10 +65,11 @@ namespace dolfin
     MultiAdaptiveTimeSlab& ts;       // The time slab;
     TimeSlabJacobian* A;             // Jacobian of time slab system
     MultiAdaptivePreconditioner mpc; // Preconditioner
-    GMRES solver;                    // GMRES solver
+    uBlasKrylovSolver solver;        // Linear solver
     real* f;                         // Values of right-hand side at quadrature points
-    Vector dx;                       // Increment for Newton's method
-    Vector b;                        // Right-hand side -F(x)
+    real* u;                         // Degrees of freedom on local element
+    DenseVector dx;                  // Increment for Newton's method
+    DenseVector b;                   // Right-hand side -F(x)
     uint num_elements;               // Total number of elements
     real num_elements_mono;          // Estimated number of elements for mono-adaptive system
     bool updated_jacobian;           // Update Jacobian in each iteration
@@ -77,7 +77,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

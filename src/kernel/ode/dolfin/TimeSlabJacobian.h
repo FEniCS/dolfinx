@@ -7,10 +7,8 @@
 #ifndef __TIME_SLAB_JACOBIAN_H
 #define __TIME_SLAB_JACOBIAN_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/Vector.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/uBlasKrylovMatrix.h>
 
 namespace dolfin
 {
@@ -22,7 +20,7 @@ namespace dolfin
   /// This is the base class for Jacobians defined on mono- or
   /// multi-adaptive time slabs.
 
-  class TimeSlabJacobian : public VirtualMatrix
+  class TimeSlabJacobian : public uBlasKrylovMatrix
   {
   public:
 
@@ -31,9 +29,12 @@ namespace dolfin
 
     /// Destructor
     ~TimeSlabJacobian();
-
+    
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    virtual uint size(const uint dim) const = 0;
+    
     /// Compute product y = Ax
-    virtual void mult(const Vector& x, Vector& y) const = 0;
+    virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
 
     /// Recompute Jacobian if necessary
     virtual void update();
@@ -49,7 +50,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

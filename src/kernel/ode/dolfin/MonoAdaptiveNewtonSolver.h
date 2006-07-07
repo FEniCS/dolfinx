@@ -2,25 +2,23 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-07
+// Last changed: 2006-07-06
 
 #ifndef __MONO_ADAPTIVE_NEWTON_SOLVER_H
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
 
-#ifdef HAVE_PETSC_H
-
 #include <dolfin/constants.h>
-#include <dolfin/Vector.h>
 #include <dolfin/DenseVector.h>
+#include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
 
 namespace dolfin
 {
+  
   class ODE;
   class MonoAdaptiveTimeSlab;
   class NewMethod;
-  class LinearSolver;
 
   /// This class implements Newton's method on mono-adaptive time
   /// slabs. In each iteration, the system F(x) is evaluated at the
@@ -51,17 +49,14 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(real F[]);
+    void Feval(DenseVector& F);
 
     // Evaluate -F(x) for explicit system: u' = f
-    void FevalExplicit(real F[]);
+    void FevalExplicit(DenseVector& F);
 
     // Evaluate -F(x) for implicit system: Mu' = f
-    void FevalImplicit(real F[]);
+    void FevalImplicit(DenseVector& F);
 	
-    // Choose linear solver
-    LinearSolver* chooseLinearSolver() const;
-
     // Numerical evaluation of the Jacobian used for testing
     void debug();
 
@@ -70,15 +65,13 @@ namespace dolfin
 
     MonoAdaptiveTimeSlab& ts; // The time slab;
     MonoAdaptiveJacobian A;   // Jacobian of time slab system
-    Vector dx;                // Increment for Newton's method
-    Vector b;                 // Right-hand side -F(x)
-    LinearSolver* solver;     // Linear solver
+    DenseVector dx;           // Increment for Newton's method
+    DenseVector b;            // Right-hand side -F(x)
+    uBlasKrylovSolver solver; // Linear solver
     DenseVector Mu0;          // Precomputed product M*u0 for implicit system
     
   };
 
 }
-
-#endif
 
 #endif

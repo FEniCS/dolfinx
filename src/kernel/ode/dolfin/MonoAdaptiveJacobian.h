@@ -2,14 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-05
+// Last changed: 2006-07-06
 
 #ifndef __MONO_ADAPTIVE_JACOBIAN_H
 #define __MONO_ADAPTIVE_JACOBIAN_H
 
-#ifdef HAVE_PETSC_H
-
-#include <dolfin/DenseVector.h>
 #include <dolfin/TimeSlabJacobian.h>
 
 namespace dolfin
@@ -31,8 +28,11 @@ namespace dolfin
     /// Destructor
     ~MonoAdaptiveJacobian();
 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
+
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const DenseVector& x, DenseVector& y) const;
 
   private:
 
@@ -57,7 +57,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

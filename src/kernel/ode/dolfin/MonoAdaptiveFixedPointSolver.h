@@ -2,12 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-05-29
+// Last changed: 2006-07-06
 
 #ifndef __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
 #define __MONO_ADAPTIVE_FIXED_POINT_SOLVER_H
-
-#ifdef HAVE_PETSC_H
 
 #include <dolfin/constants.h>
 #include <dolfin/TimeSlabSolver.h>
@@ -31,7 +29,7 @@ namespace dolfin
     ~MonoAdaptiveFixedPointSolver();
 
     /// Solve system
-//     bool solve();
+    //bool solve();
 
   protected:
 
@@ -55,7 +53,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

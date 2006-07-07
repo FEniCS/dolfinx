@@ -2,12 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-07-06
 
 #ifndef __MULTI_ADAPTIVE_JACOBIAN_H
 #define __MULTI_ADAPTIVE_JACOBIAN_H
-
-#ifdef HAVE_PETSC_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
@@ -30,9 +28,12 @@ namespace dolfin
 
     /// Destructor
     ~MultiAdaptiveJacobian();
+    
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const DenseVector& x, DenseVector& y) const;
 
     /// Recompute Jacobian if necessary
     void update();
@@ -43,10 +44,10 @@ namespace dolfin
   private:
 
     // Compute product for mcG(q)
-    void cGmult(const real x[], real y[]) const;
+    void cGmult(const DenseVector& x, DenseVector& y) const;
 
     // Compute product for mdG(q)
-    void dGmult(const real x[], real y[]) const;
+    void dGmult(const DenseVector& x, DenseVector& y) const;
 
     // The Newton solver
     MultiAdaptiveNewtonSolver& newton;
@@ -66,7 +67,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif

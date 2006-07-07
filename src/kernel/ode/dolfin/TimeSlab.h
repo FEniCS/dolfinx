@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-05-02
-// Last changed: 2006-07-05
+// Last changed: 2006-07-06
 
 #ifndef __TIME_SLAB_H
 #define __TIME_SLAB_H
@@ -89,6 +89,9 @@ namespace dolfin
 
     // Copy data of given size between vectors with given offsets
     static void copy(const real x[], uint xoffset, DenseVector& y, uint yoffset, uint n);
+
+    // Copy data of given size between vectors with given offsets
+    static void copy(const DenseVector& x, uint xoffset, DenseVector& y, uint yoffset, uint n);
     
     uint N;  // Size of system
     real _a; // Start time of time slab

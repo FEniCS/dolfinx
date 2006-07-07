@@ -2,12 +2,10 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-07-06
 
 #ifndef __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
 #define __UPDATED_MULTI_ADAPTIVE_JACOBIAN_H
-
-#ifdef HAVE_PETSC_H
 
 #include <dolfin/TimeSlabJacobian.h>
 
@@ -30,8 +28,11 @@ namespace dolfin
     /// Destructor
     ~UpdatedMultiAdaptiveJacobian();
 
+    /// Return number of rows (dim = 0) or columns (dim = 1)
+    uint size(const uint dim) const;
+
     /// Compute product y = Ax
-    void mult(const Vector& x, Vector& y) const;
+    void mult(const DenseVector& x, DenseVector& y) const;
 
     /// Recompute Jacobian if necessary
     void update();
@@ -47,19 +48,11 @@ namespace dolfin
     // The time slab
     MultiAdaptiveTimeSlab& ts;
 
-    // Temporary storage
-    real* tmp;
-
-    // Current size of system
-    uint nj;
-
     // Size of increment
     real h;
     
   };
 
 }
-
-#endif
 
 #endif

@@ -2,18 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-05
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-06
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
-#include <dolfin/GMRES.h>
-#include <dolfin/LU.h>
-#include <dolfin/Matrix.h>
 #include <dolfin/Method.h>
 #include <dolfin/MonoAdaptiveTimeSlab.h>
 #include <dolfin/MonoAdaptiveNewtonSolver.h>
@@ -25,7 +20,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise), solver(0)
+    ts(timeslab), A(timeslab, implicit, piecewise)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -34,13 +29,17 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
     Mu0 = 0.0;
   }
 
-  // Choose linear solver
-  solver = chooseLinearSolver();
+  // Initialize linear solver
+  const real ktol = get("ODE discrete Krylov tolerance factor");
+  dolfin_info("Using uBlas Krylov solver with no preconditioning.");
+  solver.set("Krylov report", monitor);
+  solver.set("Krylov relative tolerance", ktol);
+  solver.set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-  if ( solver ) delete solver;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -53,9 +52,6 @@ void MonoAdaptiveNewtonSolver::start()
 
   // Initialize right-hand side
   b.init(nj);
-
-  // Initialize Jacobian matrix
-  A.init(dx, dx);
 
   // Recompute Jacobian
   //A.update();
@@ -74,46 +70,27 @@ void MonoAdaptiveNewtonSolver::start()
 real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
 {
   // Evaluate b = -F(x) at current x
-  real* bb = b.array(); // Assumes uniprocessor case
-  Feval(bb);
-  b.restore(bb);
+  Feval(b);
 
-  //cout << "A = ";
-  //A.disp(false);
-  //cout << "b = ";
-  //b.disp();
+  // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
 
-  // Solve linear system, seems like we need to scale the right-hand
-  // side to make it work with the PETSc GMRES solver
-  const real r = b.norm(Vector::linf) + DOLFIN_EPS;
+  // Solve linear system
+  const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
   b /= r;
-  num_local_iterations += solver->solve(A, dx, b);
+  num_local_iterations += solver.solve(A, dx, b);
   dx *= r;
 
-  //cout << "A = "; A.disp(true, 10);
-  //cout << "b = "; b.disp();
-  //cout << "dx = "; dx.disp();
-   
-  // Get arrays of values for x and dx
-  real* xx = ts.x.array();
-  real* dxx = dx.array();
-
-  // Update solution x -> x - dx
-  for (uint j = 0; j < ts.nj; j++)
-    xx[j] += dxx[j];
+  // Update solution x <- x + dx (note: b = -F)
+  ts.x += dx;
   
   // Compute maximum increment
   real max_increment = 0.0;
   for (uint j = 0; j < ts.nj; j++)
   {
-    const real increment = fabs(dxx[j]);
+    const real increment = fabs(dx(j));
     if ( increment > max_increment )
       max_increment = increment;
   }
-
-  // Restore arrays
-  ts.x.restore(xx);
-  dx.restore(dxx);
 
   return max_increment;
 }
@@ -123,7 +100,7 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::Feval(real F[])
+void MonoAdaptiveNewtonSolver::Feval(DenseVector& F)
 {
   if ( implicit )
     FevalImplicit(F);
@@ -131,11 +108,8 @@ void MonoAdaptiveNewtonSolver::Feval(real F[])
     FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
+void MonoAdaptiveNewtonSolver::FevalExplicit(DenseVector& F)
 {
-  // Get arrays of values for x
-  real* xx = ts.x.array();
-
   // Compute size of time step
   const real k = ts.length();
 
@@ -150,7 +124,7 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      F[noffset + i] = ts.u0[i];
+      F(noffset + i) = ts.u0[i];
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -158,23 +132,16 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(real F[])
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.fq[moffset + i];
+	F(noffset + i) += tmp * ts.fq[moffset + i];
     }
   }
 
   // Subtract current values
-  for (uint j = 0; j < ts.nj; j++)
-    F[j] -= xx[j];
-
-  // Restore array
-  ts.x.restore(xx);
+  F -= ts.x;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
+void MonoAdaptiveNewtonSolver::FevalImplicit(DenseVector& F)
 {
-  // Get arrays of values for x (assumes uniprocessor case)
-  real* xxx = ts.x.array();
-
   // Use vectors from Jacobian for storing multiplication
   DenseVector& xx = A.xx;
   DenseVector& yy = A.yy;
@@ -194,7 +161,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
 
     // Reset values to initial data
     for (uint i = 0; i < ts.N; i++)
-      F[noffset + i] = Mu0(i);
+      F(noffset + i) = Mu0(i);
     
     // Add weights of right-hand side
     for (uint m = 0; m < method.qsize(); m++)
@@ -202,7 +169,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
       const real tmp = k * method.nweight(n, m);
       const uint moffset = m * ts.N;
       for (uint i = 0; i < ts.N; i++)
-	F[noffset + i] += tmp * ts.fq[moffset + i];
+	F(noffset + i) += tmp * ts.fq[moffset + i];
     }
   }
   
@@ -212,7 +179,7 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
     const uint noffset = n * ts.N;
 
     // Copy values to xx
-    ts.copy(xxx, noffset, xx, 0, ts.N);
+    ts.copy(ts.x, noffset, xx, 0, ts.N);
 
     // Do multiplication
     if ( piecewise )
@@ -223,62 +190,21 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(real F[])
     else
     {
       const real t = a + method.npoint(n) * k;
-      ts.copy(xxx, noffset, ts.u, 0, ts.N);
-      ode.M(xx, yy, xx, t);
+      ts.copy(ts.x, noffset, ts.u, 0, ts.N);
+      ode.M(xx, yy, ts.u, t);
     }
 
     // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
-      F[noffset + i] -= yy[i];
+      F(noffset + i) -= yy[i];
   }
-
-  // Restore array
-  ts.x.restore(xxx);
-}
-//-----------------------------------------------------------------------------
-LinearSolver* MonoAdaptiveNewtonSolver::chooseLinearSolver() const
-{
-  std::string choice = get("ODE linear solver");
-  const real ktol = get("ODE discrete Krylov tolerance factor");
-
-  if ( choice == "iterative" )
-  {
-    dolfin_info("Using iterative linear solver: GMRES.");
-    GMRES* solver = new GMRES();
-    solver->set("Krylov report", monitor);
-    solver->set("Krylov relative tolerance", ktol);
-    solver->set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
-    return solver;
-  }
-  else if ( choice == "direct" )
-  {
-    dolfin_info("Using direct linear solver: LU.");
-    LU* solver = new LU();
-    solver->set("LU report", monitor);
-    return solver;
-  }
-  else if ( choice == "default" )
-  {
-    dolfin_info("Using iterative linear solver: GMRES (default).");
-    GMRES* solver = new GMRES();
-    solver->set("Krylov report", monitor);
-    solver->set("Krylov relative tolerance", ktol);
-    solver->set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
-    return solver;
-  }
-  else
-  {
-    dolfin_error1("Uknown linear solver type: %s.", choice.c_str());
-  }
-
-  return 0;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
-  Matrix B(n, n);
-  Vector F1(n), F2(n);
+  uBlasSparseMatrix B(n, n);
+  DenseVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)
@@ -287,16 +213,10 @@ void MonoAdaptiveNewtonSolver::debug()
     real dx = std::max(DOLFIN_SQRT_EPS, DOLFIN_SQRT_EPS * std::abs(xj));
 		  
     ts.x(j) -= 0.5*dx;
-    real* F = b.array();
-    Feval(F);
-    b.restore(F);
-    F1 = b; // Should be -b
+    Feval(F1);
 
     ts.x(j) = xj + 0.5*dx;
-    F = b.array();
-    Feval(F);
-    b.restore(F);
-    F2 = b; // Should be -b
+    Feval(F2);
     
     ts.x(j) = xj;
 
@@ -311,5 +231,3 @@ void MonoAdaptiveNewtonSolver::debug()
   B.disp();
 }
 //-----------------------------------------------------------------------------
-
-#endif

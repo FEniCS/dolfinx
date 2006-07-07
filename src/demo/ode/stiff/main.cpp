@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003
-// Last changed: 2005-12-19
+// Last changed: 2006-07-07
 //
 // Stiff test problems for the ODE solver.
 
@@ -106,7 +106,6 @@ int main(int argc, char* argv[])
   set("ODE maximum time step", 5.0);
   set("ODE tolerance", 0.01);
   set("ODE nonlinear solver", "newton");
-  set("ODE linear solver", "direct");
   set("ODE adaptive samples", true);
   set("ODE solve dual problem", false);
 

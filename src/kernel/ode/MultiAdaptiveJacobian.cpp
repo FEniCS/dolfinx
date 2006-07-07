@@ -2,13 +2,11 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
-
-#ifdef HAVE_PETSC_H
+// Last changed: 2006-07-06
 
 #include <dolfin/dolfin_math.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/ODE.h>
-#include <dolfin/Vector.h>
 #include <dolfin/Method.h>
 #include <dolfin/MultiAdaptiveTimeSlab.h>
 #include <dolfin/MultiAdaptiveNewtonSolver.h>
@@ -60,6 +58,26 @@ MultiAdaptiveJacobian::~MultiAdaptiveJacobian()
   if ( Jlookup ) delete [] Jlookup;
 }
 //-----------------------------------------------------------------------------
+dolfin::uint MultiAdaptiveJacobian::size(const uint dim) const
+{
+  return ts.nj;
+}
+//-----------------------------------------------------------------------------
+void MultiAdaptiveJacobian::mult(const DenseVector& x, DenseVector& y) const
+{
+  // We iterate over all degrees of freedom j in the time slab and compute
+  // y_j = (Ax)_j for each degree of freedom of the system.
+
+  // Start with y = x, accounting for the derivative dF_j/dx_j = 1
+  y = x;
+
+  // Choose method
+  if ( method.type() == Method::cG )
+    cGmult(x, y);
+  else
+    dGmult(x, y);
+}
+//-----------------------------------------------------------------------------
 void MultiAdaptiveJacobian::update()
 {
   // Compute Jacobian at the beginning of the slab
@@ -90,32 +108,7 @@ void MultiAdaptiveJacobian::update()
   */
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::mult(const Vector& x, Vector& y) const
-{
-  // We iterate over all degrees of freedom j in the time slab and compute
-  // y_j = (Ax)_j for each degree of freedom of the system. Note that this
-  // implementation will probably not work with parallel vectors since we
-  // use VecGetArray to access the local arrays of the vectors
-
-  // Start with y = x, accounting for the derivative dF_j/dx_j = 1
-  y = x;
-
-  // Get data arrays (assumes uniprocessor case)
-  const real* xx = x.array();
-  real* yy = y.array();
-  
-  // Choose method
-  if ( method.type() == Method::cG )
-  cGmult(xx, yy);
-  else
-  dGmult(xx, yy);
-
-  // Restore data arrays
-  x.restore(xx);
-  y.restore(yy);
-}
-//-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
+void MultiAdaptiveJacobian::cGmult(const DenseVector& x, DenseVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -141,9 +134,9 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x[ep*method.nsize() + method.nsize() - 1];
+      const real xp = x(ep*method.nsize() + method.nsize() - 1);
       for (uint n = 0; n < method.nsize(); n++)
-	y[j0 + n] -= xp;
+	y(j0 + n) -= xp;
     }
 
     // Reset Jpos
@@ -175,9 +168,9 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 	Jlookup[Jpos++] = dfdu;
 
 	// Add dependency to initial value for all dofs
-	const real tmp = k0 * dfdu * x[e1 * method.nsize() + method.nsize() - 1];
+	const real tmp = k0 * dfdu * x(e1 * method.nsize() + method.nsize() - 1);
 	for (uint n = 0; n < method.nsize(); n++)
-	  y[j0 + n] -= tmp * method.nweight(n, 0);
+	  y(j0 + n) -= tmp * method.nweight(n, 0);
 
        	continue;
       }
@@ -193,9 +186,9 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 	const real tmp0 = k0 * dfdu;
 	if ( ep != -1 )
 	{
-	  const real tmp1 = tmp0 * x[ep * method.nsize() + method.nsize() - 1];
+	  const real tmp1 = tmp0 * x(ep * method.nsize() + method.nsize() - 1);
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y[j0 + n] -= tmp1 * method.nweight(n, 0);
+	    y(j0 + n) -= tmp1 * method.nweight(n, 0);
 	}
 	
 	// Add dependencies to internal dofs
@@ -203,8 +196,8 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 	{
 	  real sum = 0.0;
 	  for (uint m = 0; m < method.nsize(); m++)
-	    sum += method.nweight(n, m + 1) * x[j1 + m];
-	  y[j0 + n] -= tmp0 * sum;
+	    sum += method.nweight(n, m + 1) * x(j1 + m);
+	  y(j0 + n) -= tmp0 * sum;
 	}
       }
       else
@@ -229,17 +222,17 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 	    const int ep = ts.ee[e1];
 	    if ( ep != -1 )
 	    {
-	      const real x0 = x[ep * method.nsize() + method.nsize() - 1];
+	      const real x0 = x(ep * method.nsize() + method.nsize() - 1);
 	      sum += tmp1 * method.eval(0, tau) * x0;
 	    }
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l + 1, tau) * x[j1 + l];
+	      sum += tmp1 * method.eval(l + 1, tau) * x(j1 + l);
 	  }
 	    
 	  // Add dependencies
-	  y[j0 + n] -= tmp0 * sum;
+	  y(j0 + n) -= tmp0 * sum;
 	}
       }      
     }
@@ -295,17 +288,17 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
 	    if ( ep != -1 )
 	    {
 	      // Iterate over dofs of current element
-	      tmp1 *= x[ep*method.nsize() + method.nsize() - 1];
+	      tmp1 *= x(ep*method.nsize() + method.nsize() - 1);
 	      for (uint n = 0; n < method.nsize(); n++)
-		y[j0 + n] -= tmp1 * method.nweight(n, m);		
+		y(j0 + n) -= tmp1 * method.nweight(n, m);		
 	    }
 	  }
 	  else
 	  {
 	    // Iterate over dofs of current element
-	    tmp1 *= x[j1 + l - 1];
+	    tmp1 *= x(j1 + l - 1);
 	    for (uint n = 0; n < method.nsize(); n++)
-	      y[j0 + n] -= tmp1 * method.nweight(n, m);		
+	      y(j0 + n) -= tmp1 * method.nweight(n, m);		
 	  }
 	}
       }
@@ -313,7 +306,7 @@ void MultiAdaptiveJacobian::cGmult(const real x[], real y[]) const
   }
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
+void MultiAdaptiveJacobian::dGmult(const DenseVector& x, DenseVector& y) const
 {
   // Reset current sub slab
   int s0 = -1;
@@ -339,9 +332,9 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
     const int ep = ts.ee[e0];
     if ( ep != -1 )
     {
-      const real xp = x[ep*method.nsize() + method.nsize() - 1];
+      const real xp = x(ep*method.nsize() + method.nsize() - 1);
       for (uint n = 0; n < method.nsize(); n++)
-	y[j0 + n] -= xp;
+	y(j0 + n) -= xp;
     }
 
     // Reset Jpos
@@ -385,8 +378,8 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
 	{
 	  real sum = 0.0;
 	  for (uint m = 0; m < method.qsize(); m++)
-	    sum += method.nweight(n, m) * x[j1 + m];
-	  y[j0 + n] -= tmp * sum;
+	    sum += method.nweight(n, m) * x(j1 + m);
+	  y(j0 + n) -= tmp * sum;
 	}
       }
       else
@@ -407,11 +400,11 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
 	    
 	    // Iterate over dofs of other element and add dependencies
 	    for (uint l = 0; l < method.nsize(); l++)
-	      sum += tmp1 * method.eval(l, tau) * x[j1 + l];
+	      sum += tmp1 * method.eval(l, tau) * x(j1 + l);
 	  }
 	  
 	  // Add dependencies
-	  y[j0 + n] -= tmp0 * sum;
+	  y(j0 + n) -= tmp0 * sum;
 	}
       }
     }
@@ -460,14 +453,12 @@ void MultiAdaptiveJacobian::dGmult(const real x[], real y[]) const
 	const real tmp0 = k0 * dfdu;
 	for (uint l = 0; l < method.qsize(); l++)
 	{
-	  real tmp1 = tmp0 * method.eval(l, tau) * x[j1 + l];
+	  real tmp1 = tmp0 * method.eval(l, tau) * x(j1 + l);
 	  for (uint n = 0; n < method.nsize(); n++)
-	    y[j0 + n] -= tmp1 * method.nweight(n, m);
+	    y(j0 + n) -= tmp1 * method.nweight(n, m);
 	}
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
-
-#endif

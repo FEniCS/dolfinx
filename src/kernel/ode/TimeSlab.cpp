@@ -110,12 +110,18 @@ void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n
 void TimeSlab::copy(const DenseVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y[yoffset + i] = x[xoffset + i];
+    y[yoffset + i] = x(xoffset + i);
 }
 //-----------------------------------------------------------------------------
 void TimeSlab::copy(const real x[], uint xoffset, DenseVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
-    y[yoffset + i] = x[xoffset + i];
+    y(yoffset + i) = x[xoffset + i];
+}
+//-----------------------------------------------------------------------------
+void TimeSlab::copy(const DenseVector& x, uint xoffset, DenseVector& y, uint yoffset, uint n)
+{
+  for (uint i = 0; i < n; i++)
+    y(yoffset + i) = x(xoffset + i);
 }
 //-----------------------------------------------------------------------------

@@ -2,15 +2,12 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-07-07
 
 #ifndef __MULTI_ADAPTIVE_PRECONDITIONER_H
 #define __MULTI_ADAPTIVE_PRECONDITIONER_H
 
-#ifdef HAVE_PETSC_H
-
-#include <dolfin/Vector.h>
-#include <dolfin/Preconditioner.h>
+#include <dolfin/uBlasPreconditioner.h>
 
 namespace dolfin
 {
@@ -23,7 +20,7 @@ namespace dolfin
   /// does simple forward propagation of values on internal elements
   /// of the time slab (without so much as looking at the Jacobian).
 
-  class MultiAdaptivePreconditioner : public Preconditioner
+  class MultiAdaptivePreconditioner : public uBlasPreconditioner
   {
   public:
 
@@ -34,8 +31,8 @@ namespace dolfin
     ~MultiAdaptivePreconditioner();
     
     /// Solve linear system approximately for given right-hand side b
-    void solve(Vector& x, const Vector& b);
-
+    void solve(DenseVector& x, const DenseVector& b) const;
+    
   private:
 
     // The time slab
@@ -47,7 +44,5 @@ namespace dolfin
   };
 
 }
-
-#endif
 
 #endif
