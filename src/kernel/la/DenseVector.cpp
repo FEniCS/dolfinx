@@ -4,11 +4,11 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-04
-// Last changed: 2006-05-30
+// Last changed: 2006-07-07
 
-#include <dolfin/DenseVector.h>
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
+#include <dolfin/DenseVector.h>
 
 using namespace dolfin;
 
@@ -109,8 +109,10 @@ const DenseVector& DenseVector::operator= (real a)
 //-----------------------------------------------------------------------------
 void DenseVector::disp(uint precision) const
 {
-  std::cout.precision(precision+1);
-  std::cout << *this << std::endl;
+  dolfin::cout << "[ ";
+  for (uint i = 0; i < size(); i++)
+    cout << (*this)(i) << " ";
+  dolfin::cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
 LogStream& dolfin::operator<< (LogStream& stream, const DenseVector& x)
