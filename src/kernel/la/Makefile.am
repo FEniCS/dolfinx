@@ -41,6 +41,7 @@ libdolfin_la_la_SOURCES = DenseVector.cpp \
                           PETScSparseMatrix.cpp \
                           PETScVector.cpp \
                           Preconditioner.cpp \
+                          uBlasKrylovMatrix.cpp \
                           uBlasKrylovSolver.cpp \
                           uBlasLUSolver.cpp \
                           uBlasDummyPreconditioner.cpp \

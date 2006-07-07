@@ -1,12 +1,16 @@
 // Copyright (C) 2006 Garth N. Wells
 // Licensed under the GNU GPL Version 2.
 //
+// Modified by Anders Logg 2006.
+//
 // First added:  2006-07-05
-// Last changed: 
+// Last changed: 2006-07-07
 
 #ifndef __UBLAS_MATRIX_H
 #define __UBLAS_MATRIX_H
 
+#include <sstream>
+#include <iomanip>
 #include <typeinfo>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Array.h>
@@ -88,8 +92,8 @@ namespace dolfin
     /// Set given rows to identity matrix
     void ident(const int rows[], const int m);
 
-    /// Compute A*x
-    void mult(const DenseVector& x, DenseVector& Ax) const;
+    /// Compute product y = Ax
+    void mult(const DenseVector& x, DenseVector& y) const;
 
     /// Display matrix
     void disp(const uint precision = 2) const;
@@ -156,7 +160,7 @@ namespace dolfin
   //---------------------------------------------------------------------------
   template < class Mat >  
   void uBlasMatrix< Mat >::getRow(const uint i, int& ncols, Array<int>& columns, 
-          Array<real>& values) const
+				  Array<real>& values) const
   {
     if( !assembled )
       dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
@@ -288,24 +292,52 @@ namespace dolfin
       dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
 
     const uint n = this->size(1);
-    for(int i=0; i < m; ++i)
+    for(int i = 0; i < m; ++i)
       ublas::row(*this, rows[i]) = ublas::unit_vector<double> (n, rows[i]);
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::mult(const DenseVector& x, DenseVector& Ax) const
+  void uBlasMatrix<Mat>::mult(const DenseVector& x, DenseVector& y) const
   {
     if( !assembled )
       dolfin_error("Sparse matrix has not been assembled. Did you forget to call A.apply()?"); 
 
-    ublas::axpy_prod(*this, x, Ax, true);
+    ublas::axpy_prod(*this, x, y, true);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::disp(const uint precision) const
   {
-    std::cout.precision(precision+1);
-    std::cout << *this << std::endl;
+    const uint M = size(0);
+    const uint N = size(1);
+
+    for (uint i = 0; i < M; i++)
+    {
+      std::stringstream line;
+      line << std::setiosflags(std::ios::scientific);
+      line << std::setprecision(precision);
+    
+      line << "|";
+      
+      ublas::matrix_row< uBlasMatrix<Mat> > row(*(const_cast< uBlasMatrix<Mat>* >(this)) , i);
+      typename ublas::matrix_row< uBlasMatrix<Mat> >::const_iterator component;
+      
+      for (component = row.begin(); component != row.end(); ++component)
+	line << " (" << i << ", " << component.index() << ", " << *component << ")";
+
+      /*
+      for (uint j = 0; j < N; j++)
+      {
+        real value = getval(i, j);
+        if ( fabs(value) < DOLFIN_EPS )
+	  value = 0.0;    
+        line << " " << value;
+      }
+      */
+
+      line << "|";
+      dolfin::cout << line.str().c_str() << dolfin::endl;
+    }
   }
   //-----------------------------------------------------------------------------
   // Specialised member functions (must be inlined to avoid link errors)

@@ -74,11 +74,20 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
 
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
 
+  cout << "A = ";
+  A.disp(10);
+  cout << "b = ";
+  b.disp();
+
   // Solve linear system
   const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
   b /= r;
   num_local_iterations += solver.solve(A, dx, b);
   dx *= r;
+
+  cout << "A = "; A.disp(10);
+  cout << "b = "; b.disp();
+  cout << "dx = "; dx.disp();
 
   // Update solution x <- x + dx (note: b = -F)
   ts.x += dx;

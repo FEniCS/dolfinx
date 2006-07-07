@@ -33,8 +33,11 @@ namespace dolfin
     /// Return number of rows (dim = 0) or columns (dim = 1) 
     virtual uint size(const uint dim) const = 0;
 
-    /// Compute A*x
-    virtual void mult(const DenseVector& x, DenseVector& Ax) const = 0;
+    /// Compute product y = Ax
+    virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
+
+    /// Display matrix 
+    void disp(const int precision = 2) const;
 
   };
 
