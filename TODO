@@ -1,13 +1,12 @@
-This list functions as a project plan for the development of DOLFIN.
+This is the old TODO list for DOLFIN.
 
-It works as follows: Pick something from the list, notify one of the
-maintainers that you're working on it. When a task is done, it will
-be deleted from this list and moved to the ChangeLog.
+Items on the TODO list is currently being moved to the FEniCS Bugzilla
+database and should be flagged as "enhancement" if they are not bugs.
 
-Ideally, each task should be assigned to a developer, including an
-estimate of when the task should be ready.
+When this file is empty, we should remove it.
 
-Send suggestions, comments, and corrections to dolfin@fenics.org.
+----------------------------------------------------------------------
+
 
 Manual
 ------
