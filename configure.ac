@@ -56,10 +56,27 @@ AC_ARG_WITH(boost-include,
                            [Specify path to Boost include files]),
             [BOOST_DIR=$with_boost_include],)
 
+# Option --with-umfpack-include
+AC_ARG_WITH(umfpack-include,
+            AC_HELP_STRING([--with-umfpack-include=<path>],
+                           [Specify path to umfpack include files]),
+            [UMFPACK_INCLUDE_DIR=$with_umfpack_include],)
+
+# Option --with-umfpack-lib
+AC_ARG_WITH(umfpack-lib,
+            AC_HELP_STRING([--with-umfpack-lib=<path>],
+                           [Specify path to umfpack library]),
+            [UMFPACK_LIB_DIR=$with_umfpack_lib],)
+
+# Option --with-amd-lib
+AC_ARG_WITH(amd-lib,
+            AC_HELP_STRING([--with-amd-lib=<path>],
+                           [Specify path to amd library (part of umfpack)]),
+            [AMD_LIB_DIR=$with_amd_lib],)
 
 # Standard tests
-AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_CC
 AX_COMPILER_VENDOR
 AC_PROG_AWK
 AC_PROG_INSTALL
@@ -67,7 +84,6 @@ AC_PROG_LN_S
 AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
-
 
 # Test that the libtool executable is installed
 AC_CHECK_PROG(libtool_found, libtool, yes, no)
@@ -88,7 +104,10 @@ if test $libxml2_found = no; then
     exit 1
 fi
 
-# Check for Boost
+# Use C++ compiler for performing configure tests
+AC_LANG(C++)
+
+# Check for Boost FIXME: Check first user provided location, then default
 AC_CHECK_HEADER([boost/version.hpp], have_boost=yes, have_boost=no)
 if test $have_boost = no; then
     AC_CHECK_HEADER([$BOOST_DIR/boost/version.hpp], have_boost=yes)
@@ -98,6 +117,60 @@ if test $have_boost = no; then
         echo "*** Unable to find Boost."
         echo "*** Perhaps you need set the include path --with-boost-include=<path> or to install the package libboost-dev?"
         exit 1
+    fi
+fi
+
+
+# Check for umfpack
+have_umfpack_header=yes
+have_amd_lib=no
+have_umfpack_and_amd_lib=no
+# Check for amd library
+if test x$AMD_LIB_DIR != x; then
+    UMFPACK_LIBS="-L$AMD_LIB_DIR -lamd"
+    have_amd_lib=yes
+else
+   AC_CHECK_LIB(amd, amd_info, UMFPACK_LIBS="-lamd" have_amd_lib=yes)
+    if test $have_amd_lib != yes; then
+        echo "Cannot find amd library (part of umfpack). Umfpack will be disabled"
+    fi
+fi
+# Check for umfpack library if amd library has been found
+if test $have_amd_lib = yes; then
+    if test x$UMFPACK_LIB_DIR != x; then
+        UMFPACK_LIBS="$UMFPACK_LIBS -L$UMFPACK_LIB_DIR -lumfpack"
+        have_umfpack_and_amd_lib=yes
+    else
+        AC_CHECK_LIB(umfpack,umf_i_malloc, UMFPACK_LIBS="$UMFPACK_LIBS -lumfpack" have_umfpack_and_amd_lib=yes,,$UMFPACK_LIBS)
+        if test $have_umfpack_and_amd_lib != yes; then
+            echo "Cannot find umfpack library. Umfpack will be disabled"
+        fi
+    fi
+fi
+# Check for umfpack header files if umfpack and amd libraries have been found
+if test $have_umfpack_and_amd_lib = yes; then
+    if test x$UMFPACK_INCLUDE_DIR != x; then
+        UMFPACK_CFLAGS="-I$UMFPACK_INCLUDE_DIR"
+        AC_DEFINE(HAVE_UMFPACK_H,1)
+        have_umfpack_header=yes
+    else
+        # Check various default locations  
+        AC_CHECK_HEADER(umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+        if test $have_umfpack_header = yes; then
+            AC_DEFINE(HAVE_UMFPACK_H,1)
+        else
+            AC_CHECK_HEADER(umfpack/umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+            if test $have_umfpack_header = yes; then
+                AC_DEFINE(HAVE_UMFPACK_UMFPACK_H,1)
+            else
+                AC_CHECK_HEADER(ufsparse/umfpack.h, have_umfpack_header=yes, have_umfpack_header=no)
+                if test $have_umfpack_header = yes; then
+                    AC_DEFINE(HAVE_UFSPARSE_UMFPACK_H,1)    
+                else
+                    echo "Cannot find umfpack header files. Umfpack will be disabled"
+                fi
+            fi
+       fi
     fi
 fi
 
@@ -169,6 +242,8 @@ else
     CURSES_CFLAGS="-DNO_CURSES=1"
     CURSES_LIBS=""
 fi
+echo "curses libs $CURSES_LIBS"
+
 
 # Handle option --enable-pydolfin
 AM_CONDITIONAL(COMPILE_PYDOLFIN, test x$enable_pydolfin = xyes)
@@ -255,7 +330,7 @@ KERNEL_CFLAGS=""
 for f in $DOLFIN_KERNEL; do
     KERNEL_CFLAGS="$KERNEL_CFLAGS -I\$(top_builddir)/src/kernel/$f"
 done
-KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS"
+KERNEL_CFLAGS="$KERNEL_CFLAGS $CURSES_CFLAGS $PETSC_CFLAGS $SLEPC_CFLAGS $BOOST_CFLAGS $MPI_CFLAGS $XML_CPPFLAGS $UMFPACK_CFLAGS "
 AC_SUBST(KERNEL_CFLAGS)
 
 # Generate include path for modules
@@ -271,7 +346,7 @@ DOLFIN_CFLAGS="$KERNEL_CFLAGS $MAIN_CFLAGS $MODULE_CFLAGS"
 AC_SUBST(DOLFIN_CFLAGS)
 
 # External libraries which DOLFIN depends on
-DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS"
+DOLFIN_EXT_LIBS="$CURSES_LIBS $PETSC_LIBS $SLEPC_LIBS $XML_LIBS $UMFPACK_LIBS "
 AC_SUBST(DOLFIN_EXT_LIBS)
 
 # Library list which DOLFIN applications need to link against

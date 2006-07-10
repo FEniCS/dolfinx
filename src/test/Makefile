@@ -16,7 +16,7 @@ clean:
 	-rm -f *.o core *.core $(OBJECTS) $(DEST)
 
 $(DEST): $(OBJECTS)
-	 $(LINK) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS)
+	 $(LINK) -o $@ $(OBJECTS) $(CFLAGS) $(LIBS) 
 
 .cpp.o:
 	$(CXX) $(CFLAGS) -c $<
