@@ -263,7 +263,9 @@ namespace dolfin
     if( !assembled )
     {
       // Assign temporary assembly matrix to the matrix
+      cout << "Starting apply " << endl;
       this->assign(Assembly_matrix);
+      cout << "Finished apply " << endl;
       assembled = true;
 
       // Free memory

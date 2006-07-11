@@ -303,7 +303,7 @@ void testuBlasSparseMatrix()
     }
   };
 
-  UnitSquare mesh(10,10);
+  UnitSquare mesh(3,3);
 
   Source f;
   MyBC bc;
@@ -348,7 +348,7 @@ void testuBlasSparseMatrix()
   x = b;
   x = 0.0;  
   tic();
-//  ublas_solver.solve(A, x, b, pc);
+  ublas_solver.solve(A, x, b, pc);
   real t_ublas = toc();  
   cout << "norm(x) " << x.norm() << endl;  
   cout << "uBlas Krylov solve time = " << t_ublas << endl;  
@@ -356,6 +356,36 @@ void testuBlasSparseMatrix()
 #ifdef HAVE_PETSC_H
   cout << "Factor ( < 1 mean uBlas is faster ) " << t_ublas/t_petsc << endl;  
 #endif
+  
+
+  // Assemble Ad
+  uBlasDenseMatrix Ad;
+  dolfin_log(false);
+  tic();
+  FEM::assemble(a, L, Ad, b, mesh, bc);
+  DenseVector xd(Ad.size(0));
+  dolfin_log(true);
+
+  cout << "Testing direct solve " << endl;
+  const dolfin::uint repeat = 500;
+
+  uBlasLUSolver lu;
+  tic();
+  for(dolfin::uint i=0; i< repeat; ++i)
+    lu.solve(A, xd, b);
+  cout << "test umfpack " << xd.norm() << endl;
+  
+  real t_umfpack = toc();
+  tic();
+  for(dolfin::uint i=0; i< repeat; ++i)
+    lu.solve(Ad, xd, b);
+//    uBlasLUSolver::solve(Ad, xd, b);
+  cout << "test ublas " << xd.norm() << endl;
+
+  real t_ublas_lu = toc();
+  cout << "Times: " << endl;
+  cout << "UMFPACK =  " << t_umfpack << endl;
+  cout << "UBLAS =  " << t_ublas_lu << endl;
 
 }
 
@@ -510,7 +540,7 @@ void testNewMesh()
   // Test computation of boundary
   BoundaryMesh boundary(mesh);
 }
-
+/*
 void testVectorAccess()
 {
   // Check speed of accessing individual elements for
@@ -614,7 +644,7 @@ void testVectorAccess()
   t = toc();
   dolfin_info("Accessing values in C array:      %.3g", t / static_cast<real>(num_repetitions));
 }
-
+*/
 /*
 void testSepcialization()
 {

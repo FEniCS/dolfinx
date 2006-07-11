@@ -49,6 +49,10 @@ namespace dolfin
   typedef ublas::generalized_vector_of_vector< double, ublas::row_major, 
             ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix;
 
+  // uBlas sparse matrix for temporoary assembly (column major format)
+  typedef ublas::generalized_vector_of_vector< double, ublas::column_major, 
+            ublas::vector<ublas::compressed_vector<double> > > ublas_assembly_matrix_cmajor;
+
   // uBlas upper triangular matrix (column major format)
   typedef ublas::triangular_matrix<double, ublas::upper, ublas::column_major> ublas_matrix_cmajor_tri;
   typedef ublas::matrix_range<ublas_matrix_cmajor_tri> ublas_matrix_cmajor_tri_range;

@@ -8,6 +8,7 @@
 #define __UBLAS_LU_SOLVER_H
 
 #include <dolfin/Parametrized.h>
+#include <dolfin/uBlasDenseMatrix.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/LinearSolver.h>
 
@@ -29,9 +30,18 @@ namespace dolfin
     /// Destructor
     ~uBlasLUSolver();
 
-    /// Solve linear system Ax = b
+    /// Solve linear system Ax = b (A is dense)
+    static uint solve(const uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b);
+
+    /// Solve linear system Ax = b in place (A is dense)
+    static uint solveInPlace(uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b);
+
+    /// Compute the inverse of A (A is dense)
+    static void invert(uBlasDenseMatrix& A);
+
+    /// Solve linear system Ax = b (A is sparse)
     /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
-    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b);
+    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b) const;
 
   private:
     
