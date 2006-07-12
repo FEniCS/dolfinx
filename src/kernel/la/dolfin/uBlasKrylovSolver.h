@@ -13,13 +13,14 @@
 #include <dolfin/ublas.h>
 #include <dolfin/Parametrized.h>
 #include <dolfin/LinearSolver.h>
-#include <dolfin/uBlasPreconditioner.h>
 
 namespace dolfin
 {
 
+  /// Forward declarations
   class DenseVector;
   class uBlasKrylovMatrix;
+  class uBlasPreconditioner;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types.

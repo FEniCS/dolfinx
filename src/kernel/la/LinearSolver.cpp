@@ -21,7 +21,7 @@ LinearSolver::~LinearSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint LinearSolver::solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b)
+dolfin::uint LinearSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b)
 {
   dolfin_error("Linear solver not available through default interface for this matrix/vector type");
   return 0;

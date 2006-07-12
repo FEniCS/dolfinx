@@ -9,12 +9,14 @@
 #ifndef __UBLAS_ILU_PRECONDITIONER_H
 #define __UBLAS_ILU_PRECONDITIONER_H
 
+#include <dolfin/ublas.h>
 #include <dolfin/Array.h>
-#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasPreconditioner.h>
 
 namespace dolfin
 {
+  
+  template<class Mat> class uBlasMatrix;
 
   /// This class implements an incomplete LU factorization (ILU)
   /// preconditioner for the uBlas Krylov solver.
@@ -26,7 +28,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    uBlasILUPreconditioner(const uBlasSparseMatrix& A);
+    uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A);
 
     /// Destructor
     ~uBlasILUPreconditioner();
@@ -37,10 +39,10 @@ namespace dolfin
   private:
 
     // Initialize preconditioner
-    void init(const uBlasSparseMatrix& A);
+    void init(const uBlasMatrix<ublas_sparse_matrix>& A);
 
     // Preconditioner matrix
-    uBlasSparseMatrix M;
+    uBlasMatrix<ublas_sparse_matrix> M;
 
     // Diagonal
     Array<uint> diagonal;

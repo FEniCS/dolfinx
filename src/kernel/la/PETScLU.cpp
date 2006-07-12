@@ -8,6 +8,9 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
+#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScVector.h>
+#include <dolfin/VirtualMatrix.h>
 #include <dolfin/PETScLU.h>
 
 using namespace dolfin;

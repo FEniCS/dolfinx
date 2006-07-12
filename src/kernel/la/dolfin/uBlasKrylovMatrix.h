@@ -37,7 +37,7 @@ namespace dolfin
     virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
 
     /// Display matrix 
-    void disp(const int precision = 2) const;
+//    void disp(const int precision = 2) const;
 
   };
 

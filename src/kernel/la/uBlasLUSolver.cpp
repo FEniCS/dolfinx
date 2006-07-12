@@ -4,10 +4,12 @@
 // First added:  2006-06-01
 // Last changed: 2006-07-10
 
+#include <dolfin/timing.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/uBlasLUSolver.h>
 #include <dolfin/uBlasKrylovSolver.h>
-#include <dolfin/timing.h>
+#include <dolfin/uBlasDenseMatrix.h>
+#include <dolfin/uBlasSparseMatrix.h>
 
 extern "C" 
 {
@@ -34,70 +36,56 @@ uBlasLUSolver::~uBlasLUSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::solve(const uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b)
+dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
+                                  DenseVector& x, const DenseVector& b) const
 {    
-  // Make copy of matrix and vector (factorisation is done in-place)
-  uBlasDenseMatrix Atemp(A);
+  // Make copy of matrix and vector
+  ublas_dense_matrix Atemp(A);
+  x.resize(b.size());
+  x.assign(b);
 
   // Solve
-  solveInPlace(Atemp, x, b);
+  solveInPlace(Atemp, x);
 
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasLUSolver::solveInPlace(uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b)
+dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
+                                      DenseVector& x, const DenseVector& b) const
 {
-  // This function does not check for singularity of the matrix
   const uint M = A.size1();
-  dolfin_assert(M == A.size2());
   dolfin_assert(M == b.size());
   
   if( x.size() != M )
-    x.init(M);
+    x.resize(M);
 
   // Initialise solution vector
   x.assign(b);
 
-  // Create permutation matrix
-  ublas::permutation_matrix<std::size_t> pmatrix(M);
-
-  // Factorise (with pivoting)
-  uint singular = ublas::lu_factorize(A, pmatrix);
-  if( singular > 0)
-    dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
-
-  // Back substitute 
-  ublas::lu_substitute(A, pmatrix, x);
+  // Solve
+  solveInPlace(A, x);
 
   return 1;
 }
 //-----------------------------------------------------------------------------
-void uBlasLUSolver::invert(uBlasDenseMatrix& A)
+void uBlasLUSolver::invert(uBlasMatrix<ublas_dense_matrix>& A) const
 {
   const uint M = A.size1();
   dolfin_assert(M == A.size2());
   
-  // Create permutation matrix
-  ublas::permutation_matrix<std::size_t> pmatrix(M);
+  // Create indentity matrix
+  ublas_dense_matrix X(M, M);
+  X.assign(ublas::identity_matrix<real>(M));
 
-  // Set what will be the inverse inverse to identity matrix
-  uBlasDenseMatrix inverse(M, M);
-  inverse.assign(ublas::identity_matrix<real>(M));
+  // Solve
+  solveInPlace(A, X);
 
-  // Factorise (with pivoting)
-  uint singular = ublas::lu_factorize(A, pmatrix);
-  if( singular > 0)
-    dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
-  
-  // Back substitute 
-  ublas::lu_substitute(A, pmatrix, inverse);
-
-  A.assign_temporary(inverse);
+  A.assign_temporary(X);
 }
 //-----------------------------------------------------------------------------
 #if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
 
-dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x, 
+dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, 
     const DenseVector& b) const
 {
   // Check dimensions and get number of non-zeroes
@@ -112,7 +100,6 @@ dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x,
 
   dolfin_info("Solving linear system of size %d x %d (UMFPACK LU solver).", 
       M, N);
-
 
   double* dnull = (double *) NULL;
   int*    inull = (int *) NULL;
@@ -151,7 +138,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x,
 
 #else
 
-dolfin::uint uBlasLUSolver::solve(const uBlasSparseMatrix& A, DenseVector& x, 
+dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, 
     const DenseVector& b) const
 {
   dolfin_warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");

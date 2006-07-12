@@ -11,11 +11,12 @@
 
 #include <slepceps.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/PETScSparseMatrix.h>
-#include <dolfin/Vector.h>
 
 namespace dolfin
 {
+
+  class PETScVector
+  class PETScSparseMatrix
 
   /// This class computes eigenvalues of a matrix. It is 
 	/// a wrapper for the eigenvalue solver SLEPc.

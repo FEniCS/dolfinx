@@ -9,6 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
+#include <dolfin/DenseVector.h>
 #include <dolfin/uBlasKrylovSolver.h>
 
 namespace dolfin

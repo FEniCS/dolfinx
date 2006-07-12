@@ -7,21 +7,23 @@
 #ifndef __UBLAS_LU_SOLVER_H
 #define __UBLAS_LU_SOLVER_H
 
+#include <dolfin/ublas.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/uBlasDenseMatrix.h>
-#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/LinearSolver.h>
-
 
 namespace dolfin
 {
+
+  /// Forward declarations
   class DenseVector;
+  template<class Mat> class uBlasMatrix;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b using uBlas data types.
   
   class uBlasLUSolver : public LinearSolver, public Parametrized
   {
+
   public:
     
     /// Constructor
@@ -31,21 +33,49 @@ namespace dolfin
     ~uBlasLUSolver();
 
     /// Solve linear system Ax = b (A is dense)
-    static uint solve(const uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b);
+    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, DenseVector& x, const DenseVector& b) const;
 
     /// Solve linear system Ax = b in place (A is dense)
-    static uint solveInPlace(uBlasDenseMatrix& A, DenseVector& x, const DenseVector& b);
+    uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, DenseVector& x, const DenseVector& b) const;
 
     /// Compute the inverse of A (A is dense)
-    static void invert(uBlasDenseMatrix& A);
+    void invert(uBlasMatrix<ublas_dense_matrix>& A) const;
 
     /// Solve linear system Ax = b (A is sparse)
     /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
-    uint solve(const uBlasSparseMatrix& A, DenseVector& x, const DenseVector& b) const;
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b) const;
 
   private:
     
+    /// General uBlas LU solver which accepts both vector and matrix right-hand sides
+    template<class Mat, class B>
+    uint solveInPlace(Mat& A, B& z) const;
+
   };
+  //---------------------------------------------------------------------------
+  // Implementation of template functions
+  //---------------------------------------------------------------------------
+  template<class Mat, class B>
+  dolfin::uint uBlasLUSolver::solveInPlace(Mat& A, B& X) const
+  {
+    const uint M = A.size1();
+    dolfin_assert( M == A.size2() );
+  
+    // Create permutation matrix
+    ublas::permutation_matrix<std::size_t> pmatrix(M);
+
+    // Factorise (with pivoting)
+    uint singular = ublas::lu_factorize(A, pmatrix);
+    if( singular > 0)
+      dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
+
+    // Back substitute 
+    ublas::lu_substitute(A, pmatrix, X);
+
+    return 1;
+  }
+//-----------------------------------------------------------------------------
+
 
 }
 

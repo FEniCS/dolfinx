@@ -367,19 +367,20 @@ void testuBlasSparseMatrix()
   dolfin_log(true);
 
   cout << "Testing direct solve " << endl;
-  const dolfin::uint repeat = 500;
+  const dolfin::uint repeat = 500000;
 
   uBlasLUSolver lu;
   tic();
+  dolfin_log(false);
   for(dolfin::uint i=0; i< repeat; ++i)
     lu.solve(A, xd, b);
+  dolfin_log(true);
   cout << "test umfpack " << xd.norm() << endl;
   
   real t_umfpack = toc();
   tic();
   for(dolfin::uint i=0; i< repeat; ++i)
-    lu.solve(Ad, xd, b);
-//    uBlasLUSolver::solve(Ad, xd, b);
+    Ad.solve(xd, b);
   cout << "test ublas " << xd.norm() << endl;
 
   real t_ublas_lu = toc();

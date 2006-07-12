@@ -14,8 +14,8 @@
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/GenericVector.h>
+#include <dolfin/PETScManager.h>
 
 namespace dolfin
 {

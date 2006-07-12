@@ -13,10 +13,11 @@
 #ifdef HAVE_PETSC_H
 
 #include <dolfin/PETScManager.h>
-#include <dolfin/Vector.h>
 
 namespace dolfin
 {
+
+  class PETScVector;
 
   /// This class specifies the interface for user-defined Krylov
   /// method preconditioners. A user wishing to implement her own
@@ -48,7 +49,7 @@ namespace dolfin
     static void setup(const KSP ksp, Preconditioner &pc);
 
     /// Solve linear system approximately for given right-hand side b
-    virtual void solve(Vector& x, const Vector& b) = 0;
+    virtual void solve(PETScVector& x, const PETScVector& b) = 0;
 
     /// Friends
     friend class PETScKrylovSolver;

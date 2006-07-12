@@ -9,15 +9,19 @@
 
 #ifdef HAVE_PETSC_H
 
-#include <dolfin/PETScManager.h>
 #include <dolfin/LinearSolver.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
-#include <dolfin/VirtualMatrix.h>
 
 namespace dolfin
 {
+
+  /// Forward declarations
+  class PETScManager;
+  class PETScSparseMatrix;
+  class VirtualMatrix;
+
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.

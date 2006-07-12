@@ -1,3 +1,4 @@
+ - Use UMFPACK for LU solver with uBlas matrix types
  - Add templated wrapper class for different uBlas matrix types
  - Add ILU preconditioning for uBlas matrices
  - Add Krylov solver for uBlas sparse matrices (GMRES and BICGSTAB)

@@ -11,9 +11,9 @@
 
 #ifdef HAVE_PETSC_H
 
-#include <dolfin/PETScManager.h>
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/PETScManager.h>
 
 namespace dolfin
 {

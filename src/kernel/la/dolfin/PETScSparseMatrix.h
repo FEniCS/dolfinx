@@ -14,16 +14,19 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/dolfin_log.h>
-#include <dolfin/Variable.h>
-#include <dolfin/Array.h>
 #include <dolfin/PETScManager.h>
+#include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
 
 namespace dolfin
 {
   
+  /// Forward declarations
   class PETScVector;
   class PETScSparseMatrixElement;
+  
+  template<class M>
+  class Array;
 
   /// This class represents a sparse matrix of dimension M x N.
   /// It is a simple wrapper for a PETSc matrix pointer (Mat).

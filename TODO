@@ -39,8 +39,6 @@ Linear Algebra
 --------------
 
 * Fix default preconditioner in uBlasKrylovSolver
-* Move implementation of solver from uBlasMatrix, should be separate class
-* disp() in uBlasMatrix should not use std::cout
 * Cleanups and testing
 
 Function
@@ -119,11 +117,19 @@ users of PETSc to declare functions with that name.
 Dependencies
 ------------
 
-* SciPy
-* ParaView
-* MayaVi
+Required
+* Boost
+* libxml2
+
+Optional
 * PETSc
 * FFC
 * FIAT
-* libxml2
 * Hypre?
+* UMFPACK
+* curses
+
+Postprocessing
+* SciPy
+* ParaView
+* MayaVi

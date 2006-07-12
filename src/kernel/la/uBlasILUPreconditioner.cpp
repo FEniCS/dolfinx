@@ -7,12 +7,13 @@
 // Last changed: 2006-07-04
 
 #include <dolfin/DenseVector.h>
+#include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasILUPreconditioner.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasILUPreconditioner::uBlasILUPreconditioner(const uBlasSparseMatrix& A)
+uBlasILUPreconditioner::uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A)
   : uBlasPreconditioner()
 {
   // Initialize preconditioner
@@ -41,26 +42,26 @@ void uBlasILUPreconditioner::solve(DenseVector& x, const DenseVector& b) const
   // relatively fast, but not that great.
 
   /*
-  uBlasSparseMatrix::const_iterator1 row;
-  uBlasSparseMatrix::const_iterator1 row_end = M.end1();
+  uBlasMatrix<ublas_sparse_matrix>::const_iterator1 row;
+  uBlasMatrix<ublas_sparse_matrix>::const_iterator1 row_end = M.end1();
   for (row = M.begin1(); row != row_end; ++ row) 
   {
     uint n = row.index1();
-    uBlasSparseMatrix::const_iterator2 col = row.begin();
-    uBlasSparseMatrix::const_iterator2 col_end = row.end();
+    uBlasMatrix<ublas_sparse_matrix>::const_iterator2 col = row.begin();
+    uBlasMatrix<ublas_sparse_matrix>::const_iterator2 col_end = row.end();
     while ((col != col_end) && (col.index2() < n) ) 
     {
       x (n) -= *col * x (col.index2());
       ++ col;
     }
   }
-  uBlasSparseMatrix::const_reverse_iterator1 row_r;
-  uBlasSparseMatrix::const_reverse_iterator1 row_end_r = M.rend1();
+  uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator1 row_r;
+  uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator1 row_end_r = M.rend1();
   for (row_r = M.rbegin1(); row_r != row_end_r; ++ row_r) 
   {
     uint n = row_r.index1();
-    uBlasSparseMatrix::const_reverse_iterator2 col = row_r.rbegin();
-    uBlasSparseMatrix::const_reverse_iterator2 col_end = row_r.rend();
+    uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator2 col = row_r.rbegin();
+    uBlasMatrix<ublas_sparse_matrix>::const_reverse_iterator2 col_end = row_r.rend();
     while ((col != col_end) && (col.index2() > n) ) 
     {
       x (n) -= *col * x (col.index2());
@@ -87,7 +88,7 @@ void uBlasILUPreconditioner::solve(DenseVector& x, const DenseVector& b) const
   }
 }
 //-----------------------------------------------------------------------------
-void uBlasILUPreconditioner::init(const uBlasSparseMatrix& A)
+void uBlasILUPreconditioner::init(const uBlasMatrix<ublas_sparse_matrix>& A)
 {
   const uint size = A.size(0); 
   M.resize(size, size, false);
@@ -124,8 +125,8 @@ void uBlasILUPreconditioner::init(const uBlasSparseMatrix& A)
 
   /*
   // Sparse matrix iterators
-  typedef uBlasSparseMatrix::iterator1 it1;
-  typedef uBlasSparseMatrix::iterator2 it2;
+  typedef uBlasMatrix<ublas_sparse_matrix>::iterator1 it1;
+  typedef uBlasMatrix<ublas_sparse_matrix>::iterator2 it2;
   it2 ij;
   for (it1 i1 = M.begin1(); i1 != M.end1(); ++i1)  // iterate over rows  i=0 -> size
   {

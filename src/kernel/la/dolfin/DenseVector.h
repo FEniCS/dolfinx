@@ -13,10 +13,8 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#include <dolfin/ublas.h>
 #include <dolfin/GenericVector.h>
-#include <dolfin/DenseVector.h>
 
 namespace dolfin
 {

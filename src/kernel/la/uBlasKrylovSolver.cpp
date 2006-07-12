@@ -10,6 +10,7 @@
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
+#include <dolfin/uBlasPreconditioner.h>
 
 // FIXME: Temporary
 #include <dolfin/uBlasDummyPreconditioner.h>

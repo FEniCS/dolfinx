@@ -20,6 +20,11 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScKrylovSolver.h>
 
+#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScVector.h>
+#include <dolfin/VirtualMatrix.h>
+
+
 using namespace dolfin;
 
 // Monitor function

@@ -11,6 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+/*
 void uBlasKrylovMatrix::disp(const int precision) const
 {
   // Since we don't really have the matrix, we create the matrix by
@@ -19,7 +20,7 @@ void uBlasKrylovMatrix::disp(const int precision) const
   uint M = size(0);
   uint N = size(1);
   DenseVector x(N), y(M);
-  uBlasSparseMatrix A(M, N);
+  uBlasMatrix<ublas_sparse_matrix> A(M, N);
   
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
@@ -30,7 +31,7 @@ void uBlasKrylovMatrix::disp(const int precision) const
     {
       const real value = y(i);
       if ( fabs(value) > DOLFIN_EPS )
-	A(i, j) = value;
+        A(i, j) = value;
     }
     x(j) = 0.0;
   }
@@ -38,3 +39,4 @@ void uBlasKrylovMatrix::disp(const int precision) const
   A.disp(precision);
 }
 //-----------------------------------------------------------------------------
+*/

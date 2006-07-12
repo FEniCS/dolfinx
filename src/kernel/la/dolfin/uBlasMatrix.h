@@ -18,6 +18,7 @@
 #include <dolfin/ublas.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
+#include <dolfin/uBlasLUSolver.h>
 
 namespace dolfin
 {
@@ -29,7 +30,6 @@ namespace dolfin
   /// matrix data types. For advanced usage, refer to the documentation for 
   /// uBLAS which can be found at 
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
-
 
   /// Developer note: specialised member functions must be inlined to avoid link errors.
   template< class Mat > 
@@ -75,9 +75,6 @@ namespace dolfin
 
     /// Solve Ax = b out-of-place (A is not destroyed)
     void solve(DenseVector& x, const DenseVector& b) const;
-
-    /// Solve Ax = b in-place (A is destroyed)
-    void solveInPlace(DenseVector& x, const DenseVector& b);
 
     /// Compute inverse of matrix
     void invert();
@@ -196,64 +193,18 @@ namespace dolfin
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
-    // Make copy of matrix and vector (factorisation is done in-place)
-    uBlasMatrix<Mat> Atemp(*this);
-
-    // Solve
-    Atemp.solveInPlace(x, b);
-  }
-  //-----------------------------------------------------------------------------
-  template <class Mat>  
-  void uBlasMatrix<Mat>::solveInPlace(DenseVector& x, const DenseVector& b)
-  {
-    if( !assembled )
-      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
-
-    // This function does not check for singularity of the matrix
-    const uint M = this->size1();
-    dolfin_assert(M == this->size2());
-    dolfin_assert(M == b.size());
-  
-    if( x.size() != M )
-      x.init(M);
-
-    // Initialise solution vector
-    x.assign(b);
-
-    // Create permutation matrix
-    ublas::permutation_matrix<std::size_t> pmatrix(M);
-
-    // Factorise (with pivoting)
-    uint singular = ublas::lu_factorize(*this, pmatrix);
-    if( singular > 0)
-      dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
-
-    // Back substitute 
-    ublas::lu_substitute(*this, pmatrix, x);
+    uBlasLUSolver solver;
+    solver.solve(*this, x, b);
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
   void uBlasMatrix<Mat>::invert()
   {
-    const uint M = this->size1();
-    dolfin_assert(M == this->size2());
-  
-    // Create permutation matrix
-    ublas::permutation_matrix<std::size_t> pmatrix(M);
+    if( !assembled )
+      dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
 
-    // Set what will be the inverse inverse to identity matrix
-    Mat inverse(M, M);
-    inverse.assign(ublas::identity_matrix<real>(M));
-
-    // Factorise (with pivoting)
-    uint singular = ublas::lu_factorize(*this, pmatrix);
-    if( singular > 0)
-      dolfin_error1("Singularity detected in uBlas matrix factorization on line %u.", singular-1); 
-  
-    // Back substitute 
-    ublas::lu_substitute(*this, pmatrix, inverse);
-
-    this->assign_temporary(inverse);
+    uBlasLUSolver solver;
+    solver.invert(*this);
   }
 //-----------------------------------------------------------------------------
   template <class Mat>
@@ -263,9 +214,7 @@ namespace dolfin
     if( !assembled )
     {
       // Assign temporary assembly matrix to the matrix
-      cout << "Starting apply " << endl;
       this->assign(Assembly_matrix);
-      cout << "Finished apply " << endl;
       assembled = true;
 
       // Free memory
@@ -350,7 +299,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <> 
-  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, const uint nzmax)
+  inline void uBlasMatrix<ublas_dense_matrix>::init(const uint M, const uint N, 
+                                                    const uint nzmax)
   {
     init(M, N);
   }
@@ -366,8 +316,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::set(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n)
+  inline void uBlasMatrix<ublas_dense_matrix>::set(const real block[], 
+                 const int rows[], const int m, const int cols[], const int n)
   {
    for (int i = 0; i < m; ++i)
       for (int j = 0; j < n; ++j)
@@ -375,8 +325,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <>  
-  inline void uBlasMatrix<ublas_dense_matrix>::add(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n)
+  inline void uBlasMatrix<ublas_dense_matrix>::add(const real block[], 
+                 const int rows[], const int m, const int cols[], const int n)
   {
     for (int i = 0; i < m; ++i)
       for (int j = 0; j < n; ++j)
@@ -384,8 +334,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::add(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n)
+  inline void uBlasMatrix<Mat>::add(const real block[], const int rows[], 
+                                    const int m, const int cols[], const int n)
   {
     if( assembled )
     {
@@ -398,8 +348,8 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  inline void uBlasMatrix<Mat>::set(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n)
+  inline void uBlasMatrix<Mat>::set(const real block[], const int rows[], 
+                                    const int m, const int cols[], const int n)
   {
     if( assembled )
     {

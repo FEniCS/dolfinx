@@ -16,15 +16,18 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/PETScManager.h>
 #include <dolfin/Preconditioner.h>
 #include <dolfin/LinearSolver.h>
-#include <dolfin/PETScSparseMatrix.h>
-#include <dolfin/PETScVector.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/PETScManager.h>
 
 namespace dolfin
 {
+
+  /// Forward declarations
+  class PETScSparseMatrix;
+  class PETScVector;
+  class VirtualMatrix;
+
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.

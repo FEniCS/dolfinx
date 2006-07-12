@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iomanip>
 #include <dolfin/dolfin_log.h>
+#include <dolfin/Array.h>
 #include <dolfin/PETScManager.h>
 #include <dolfin/PETScVector.h>
 #include <dolfin/PETScSparseMatrix.h>
