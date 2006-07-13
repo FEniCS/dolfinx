@@ -82,7 +82,7 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // Solve linear system
   const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
   b /= r;
-  num_local_iterations += solver.solve(A, dx, b);
+  num_local_iterations += solver.solve(A, dx, b, pc);
   dx *= r;
 
   //cout << "A = "; A.disp(10);

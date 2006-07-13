@@ -38,7 +38,6 @@ o [jj] Schema for mesh XML format
 Linear Algebra
 --------------
 
-* Fix default preconditioner in uBlasKrylovSolver
 * Cleanups and testing
 
 Function

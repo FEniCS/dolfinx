@@ -296,11 +296,11 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     // Solve linear system
     r += DOLFIN_EPS;
     F /= r;
-    solver.solve(J, dx, F);
+    solver.solve(J, dx, F, pc);
     dx *= r;
     
     // Solve linear system
-    solver.solve(J, dx, F);
+    solver.solve(J, dx, F, pc);
 
     // Subtract increment
     x -= dx;

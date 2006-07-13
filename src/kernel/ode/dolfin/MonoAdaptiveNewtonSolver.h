@@ -9,6 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/DenseVector.h>
+#include <dolfin/uBlasDummyPreconditioner.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
@@ -63,12 +64,13 @@ namespace dolfin
     bool implicit;  // True if ODE is implicit
     bool piecewise; // True if M is piecewise constant
 
-    MonoAdaptiveTimeSlab& ts; // The time slab;
-    MonoAdaptiveJacobian A;   // Jacobian of time slab system
-    DenseVector dx;           // Increment for Newton's method
-    DenseVector b;            // Right-hand side -F(x)
-    uBlasKrylovSolver solver; // Linear solver
-    DenseVector Mu0;          // Precomputed product M*u0 for implicit system
+    MonoAdaptiveTimeSlab& ts;   // The time slab;
+    MonoAdaptiveJacobian A;     // Jacobian of time slab system
+    DenseVector dx;             // Increment for Newton's method
+    DenseVector b;              // Right-hand side -F(x)
+    uBlasDummyPreconditioner pc;// Preconditioner
+    uBlasKrylovSolver solver;   // Linear solver
+    DenseVector Mu0;            // Precomputed product M*u0 for implicit system
     
   };
 

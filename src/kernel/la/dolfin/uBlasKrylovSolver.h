@@ -21,6 +21,7 @@ namespace dolfin
   class DenseVector;
   class uBlasKrylovMatrix;
   class uBlasPreconditioner;
+  template< class Mat> class uBlasMatrix;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types.
@@ -47,8 +48,8 @@ namespace dolfin
     /// Destructor
     ~uBlasKrylovSolver();
 
-    /// Solve linear system Ax = b and return number of iterations
-    uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b);
+    /// Solve linear system Ax = b with default preconditioner and return number of iterations
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
 
     /// Solve linear system Ax = b with preconditioning and return number of iterations
     uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,

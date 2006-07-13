@@ -4,15 +4,17 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-31
-// Last changed: 2006-07-03
+// Last changed: 2006-07-13
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/DenseVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasPreconditioner.h>
+#include <dolfin/uBlasMatrix.h>
 
 // FIXME: Temporary
+#include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
 
 using namespace dolfin;
@@ -37,11 +39,11 @@ uBlasKrylovSolver::~uBlasKrylovSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
+dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
 				      DenseVector& x, const DenseVector& b)
 {
-  // Create dummy preconditioner
-  uBlasDummyPreconditioner pc;
+  // Create default ILU preconditioner
+  uBlasILUPreconditioner pc(A);
 
   // Solve linear system
   return solve(A, x, b, pc);
@@ -226,8 +228,6 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
       for(uint i=0; i<j+1; ++i)
         H(i,j) = h(i);
     
-    
-
       // Check for convergence
       if( r_norm/beta0 < rtol || r_norm < atol )
         converged = true;
