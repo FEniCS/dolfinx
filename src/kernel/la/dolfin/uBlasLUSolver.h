@@ -43,7 +43,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b (A is sparse)
     /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b) const;
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
 
   private:
     
