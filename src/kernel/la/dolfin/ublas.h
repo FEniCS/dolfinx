@@ -32,15 +32,27 @@ namespace dolfin
   typedef ublas::vector_range<ublas_vector> ublas_vector_range;
 
   // uBlas dense matrix
-  typedef ublas::matrix< double, ublas::row_major, ublas::unbounded_array<double> > ublas_dense_matrix;
-  typedef ublas::matrix_range<ublas_dense_matrix> ublas_matrix_range;
+  typedef ublas::matrix< double, ublas::row_major, ublas::unbounded_array<double> > ublas_dense_matrix_base;
+  class ublas_dense_matrix : public ublas_dense_matrix_base
+  {
+    public:
+      ublas_dense_matrix(){}
+      ublas_dense_matrix(const uint M, const uint N) : ublas_dense_matrix_base(M, N){}
+  };  
+  typedef ublas::matrix_range<ublas_dense_matrix_base> ublas_matrix_range;
 
   // uBlas dense matrix (column major format)
   typedef ublas::matrix<double,ublas::column_major> ublas_matrix_cmajor;
   typedef ublas::matrix_range<ublas_matrix_cmajor> ublas_matrix_cmajor_range;
 
   // uBlas sparse matrix
-  typedef ublas::compressed_matrix<double> ublas_sparse_matrix;
+  typedef ublas::compressed_matrix<double> ublas_sparse_matrix_base;
+  class ublas_sparse_matrix : public ublas_sparse_matrix_base
+  {
+    public:
+      ublas_sparse_matrix(){}
+      ublas_sparse_matrix(const uint M, const uint N) : ublas_sparse_matrix_base(M, N){}
+  };  
 
   // uBlas sparse matrix (column major format) 
   typedef ublas::compressed_matrix<double, ublas::column_major> ublas_sparse_matrix_cmajor;
