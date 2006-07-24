@@ -24,20 +24,14 @@ a = forms.PoissonBilinearForm()
 L = forms.PoissonLinearForm(f)
 
 # Assemble linear system
-#A = PETScSparseMatrix()
-#b = PETScVector()
-
-A = uBlasSparseMatrix()
-b = DenseVector()
+A = Matrix()
+b = Vector()
 
 assemble(a, L, A, b, mesh, bc)
 
 # Solve linear system
-#x = PETScVector()
-#solver = PETScKrylovSolver()
-
-x = DenseVector()
-solver = uBlasKrylovSolver()
+x = Vector()
+solver = KrylovSolver()
 
 solver.solve(A, x, b)
 

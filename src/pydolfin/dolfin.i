@@ -91,7 +91,6 @@ using namespace dolfin;
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
-/*
 #ifdef HAVE_PETSC_H
   %rename(Vector) PETScVector;
   %rename(Matrix) PETScSparseMatrix;
@@ -101,7 +100,6 @@ using namespace dolfin;
   %rename(Matrix) uBlasSparseMatrix;
   %rename(KrylovSolver) uBlasKrylovSolver;
 #endif
-*/
 
 
 %rename(set) glueset;
