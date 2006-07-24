@@ -92,6 +92,19 @@ using namespace dolfin;
 %import "dolfin.h"
 %import "dolfin/constants.h"
 
+/*
+#ifdef HAVE_PETSC_H
+  %rename(Vector) PETScVector;
+  %rename(Matrix) PETScSparseMatrix;
+  %rename(KrylovSolver) PETScKrylovSolver;
+#else
+  %rename(Vector) DenseVector;
+  %rename(Matrix) uBlasSparseMatrix;
+  %rename(KrylovSolver) uBlasKrylovSolver;
+#endif
+*/
+
+
 %rename(set) glueset;
 %rename(get) glueget;
 %rename(increment) dolfin::VertexIterator::operator++;
@@ -100,15 +113,13 @@ using namespace dolfin;
 %rename(fmono) dolfin::ODE::f(const real u[], real t, real y[]);
 %rename(fmulti) dolfin::ODE::f(const real u[], real t, uint i);
 
+%ignore dolfin::uBlasLUSolver::invert;
+
 /* FIXME: Temporary, only works for PETSc data structures */
 
-%rename(Vector) PETScVector;
-%rename(Matrix) PETScSparseMatrix;
-%rename(KrylovSolver) PETScKrylovSolver;
-
-%rename(copy) dolfin::SparseVector::operator=;
-%rename(__getitem__) dolfin::Vector::getval;
-%rename(__setitem__) dolfin::Vector::setval;
+/*%rename(copy) dolfin::SparseVector::operator=;*/
+/*%rename(__getitem__) dolfin::Vector::getval;*/
+/*%rename(__setitem__) dolfin::Vector::setval;*/
 
 %rename(__call__) dolfin::Function::operator();
 %rename(__getitem__) dolfin::Function::operator[];
@@ -159,20 +170,43 @@ using namespace dolfin;
 
 /* la includes */
 
+%inline %{
+namespace boost{ namespace numeric{ namespace ublas{}}}
 
-%include "dolfin/Vector.h"
+
+%}
+
+namespace dolfin {
+
+class ublas_dense_matrix {};
+
+class ublas_sparse_matrix {};
+
+}
+
+//%include "dolfin/ublas.h"
+%include "dolfin/GenericVector.h"
+%include "dolfin/GenericMatrix.h"
+%include "dolfin/uBlasMatrix.h"
+%include "dolfin/uBlasKrylovMatrix.h"
+%include "dolfin/uBlasSparseMatrix.h"
 %include "dolfin/PETScVector.h"
-/* %include "dolfin/Matrix.h" */
+%include "dolfin/DenseVector.h"
+%include "dolfin/Vector.h"
 %include "dolfin/PETScSparseMatrix.h"
-%include "dolfin/VirtualMatrix.h"
-%include "dolfin/GMRES.h"
-%include "dolfin/PETScKrylovSolver.h"
+%include "dolfin/Matrix.h"
+/*%include "dolfin/VirtualMatrix.h"*/
 %include "dolfin/LinearSolver.h"
-%include "dolfin/LU.h"
+%include "dolfin/PETScKrylovSolver.h"
+%include "dolfin/uBlasKrylovSolver.h"
+//%include "dolfin/LU.h"
 %include "dolfin/KrylovSolver.h"
+%include "dolfin/GMRES.h"
 %include "dolfin/EigenvalueSolver.h"
 %include "dolfin/Preconditioner.h"
 %include "dolfin/PETScManager.h"
+
+%template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
 
 /* function includes */
 

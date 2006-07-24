@@ -41,8 +41,8 @@ namespace dolfin
 
   template< class Mat >
   class uBlasMatrix : public Variable, 
-          public GenericMatrix,
-		      public uBlasKrylovMatrix,
+                      public GenericMatrix,
+                      public uBlasKrylovMatrix,
 		      public Mat
   {
   public:
@@ -65,7 +65,7 @@ namespace dolfin
     } 
 
     /// Return number of rows (dim = 0) or columns (dim = 1) 
-    uint size(const uint dim) const;
+    uint size(uint dim) const;
 
     /// Get non-zero values of row i
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
@@ -86,7 +86,7 @@ namespace dolfin
     void zero();
 
     /// Set given rows to identity matrix
-    void ident(const int rows[], const int m);
+    void ident(const int rows[], int m);
 
     /// Compute product y = Ax
     void mult(const DenseVector& x, DenseVector& y) const;
@@ -98,18 +98,18 @@ namespace dolfin
     /// In order to link correctly, they must be made inline functions.
 
     /// Initialize M x N matrix
-    void init(const uint M, const uint N);
+    void init(uint M, uint N);
 
     /// Initialize M x N matrix with given maximum number of nonzeros in each row
-    void init(const uint M, const uint N, const uint nzmax);
+    void init(uint M, uint N, uint nzmax);
 
     /// Set block of values. The function apply() must be called to commit changes.
-    void set(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
+    void set(const real block[], const int rows[], int m, 
+                            const int cols[], int n);
 
     /// Add block of values. The function apply() must be called to commit changes.
-    void add(const real block[], const int rows[], const int m, 
-                            const int cols[], const int n);
+    void add(const real block[], const int rows[], int m, 
+                            const int cols[], int n);
 
     /// Return average number of non-zeros per row
     uint nzmax() const;

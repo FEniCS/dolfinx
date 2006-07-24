@@ -24,13 +24,21 @@ a = forms.PoissonBilinearForm()
 L = forms.PoissonLinearForm(f)
 
 # Assemble linear system
-A = Matrix()
-b = Vector()
+A = PETScSparseMatrix()
+b = PETScVector()
+
+#A = uBlasSparseMatrix()
+#b = DenseVector()
+
 assemble(a, L, A, b, mesh, bc)
 
 # Solve linear system
-x = Vector()
-solver = KrylovSolver()
+x = PETScVector()
+solver = PETScKrylovSolver()
+
+#x = DenseVector()
+#solver = uBlasKrylovSolver()
+
 solver.solve(A, x, b)
 
 # Define a function from computed degrees of freedom

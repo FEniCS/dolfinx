@@ -41,6 +41,11 @@ namespace dolfin
     /// Compute the inverse of A (A is dense)
     void invert(uBlasMatrix<ublas_dense_matrix>& A) const;
 
+    /// Compute the inverse of A (A is sparse)
+    void invert(uBlasMatrix<ublas_sparse_matrix>& A) const
+      {
+      }
+
     /// Solve linear system Ax = b (A is sparse)
     /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
     uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
