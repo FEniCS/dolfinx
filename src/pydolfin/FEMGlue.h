@@ -3,7 +3,7 @@
 // FIXME: Temporary, only works for PETSc data structures
 
 void assemble(dolfin::BilinearForm& a, dolfin::LinearForm& L,
-	      dolfin::PETScSparseMatrix& A, dolfin::PETScVector& b,
+	      dolfin::GenericMatrix& A, dolfin::GenericVector& b,
 	      dolfin::Mesh& mesh, dolfin::BoundaryCondition& bc)
 {
   dolfin::FEM::assemble(a, L, A, b, mesh, bc);

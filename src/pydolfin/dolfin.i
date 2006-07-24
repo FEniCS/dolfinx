@@ -49,7 +49,6 @@ using namespace dolfin;
 }
 
 
-
 // Typemaps for dolfin::real array arguments in virtual methods
 // probably not very safe
 %typemap(directorin) dolfin::real [] {
