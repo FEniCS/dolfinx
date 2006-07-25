@@ -27,7 +27,8 @@ L = forms.PoissonLinearForm(f)
 A = Matrix()
 b = Vector()
 
-assemble(a, L, A, b, mesh, bc)
+FEM_assemble(a, L, A, b, mesh, bc)
+#FEM_assemble(L, b, mesh)
 
 # Solve linear system
 x = Vector()

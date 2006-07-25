@@ -4,7 +4,6 @@
 #include <dolfin.h>
 
 #include "SettingsGlue.h"
-#include "FEMGlue.h"
 
 #include <string>
   
@@ -123,6 +122,8 @@ using namespace dolfin;
 
 /* DOLFIN public interface */
 
+/* FIXME: Order matters, why? */
+
 /* main includes */
 
 %include "dolfin/constants.h"
@@ -133,8 +134,6 @@ using namespace dolfin;
 %include "dolfin/basic.h"
 
 /* common includes */
-
-/* System.h seems to be obsolete? */
 
 %include "dolfin/Array.h"
 %include "dolfin/List.h"
@@ -152,8 +151,6 @@ using namespace dolfin;
 
 %include "dolfin/Parameter.h"
 //%include "dolfin/ParameterSystem.h"
-
-
 //%include "dolfin/Parameter.h"
 //%include "dolfin/Settings.h"
 //%include "dolfin/ParameterList.h"
@@ -167,18 +164,15 @@ using namespace dolfin;
 
 /* la includes */
 
+// Declare dummy uBlas classes
+
 %inline %{
-namespace boost{ namespace numeric{ namespace ublas{}}}
-
-
+  namespace boost{ namespace numeric{ namespace ublas{}}}
 %}
 
 namespace dolfin {
-
-class ublas_dense_matrix {};
-
-class ublas_sparse_matrix {};
-
+  class ublas_dense_matrix {};
+  class ublas_sparse_matrix {};
 }
 
 //%include "dolfin/ublas.h"
@@ -187,6 +181,7 @@ class ublas_sparse_matrix {};
 %include "dolfin/uBlasMatrix.h"
 %include "dolfin/uBlasKrylovMatrix.h"
 %include "dolfin/uBlasSparseMatrix.h"
+%include "dolfin/uBlasDenseMatrix.h"
 %include "dolfin/PETScVector.h"
 %include "dolfin/DenseVector.h"
 %include "dolfin/Vector.h"
@@ -204,18 +199,11 @@ class ublas_sparse_matrix {};
 %include "dolfin/PETScManager.h"
 
 %template(uBlasSparseMatrix) dolfin::uBlasMatrix<dolfin::ublas_sparse_matrix>;
+%template(uBlasDenseMatrix) dolfin::uBlasMatrix<dolfin::ublas_dense_matrix>;
 
 /* function includes */
 
 %include "dolfin/Function.h"
-
-/* fem includes */
-
-%include "dolfin/FEM.h"
-%include "dolfin/FiniteElement.h"
-%include "dolfin/AffineMap.h"
-%include "dolfin/BoundaryValue.h"
-%include "dolfin/BoundaryCondition.h"
 
 /* form includes */
 
@@ -274,16 +262,23 @@ class ublas_sparse_matrix {};
 %include "dolfin/cGqMethod.h"
 %include "dolfin/dGqMethod.h"
 
-
 /* pde */
 
 %include "dolfin/TimeDependentPDE.h"
 
+/* fem includes */
+
+%include "dolfin/FEM.h"
+%include "dolfin/FiniteElement.h"
+%include "dolfin/AffineMap.h"
+%include "dolfin/BoundaryValue.h"
+%include "dolfin/BoundaryCondition.h"
+
 /* glue */
 
 %include "SettingsGlue.h"
-%include "FEMGlue.h"
 
 /* modules */
 
 /* %include "dolfin/ElasticityUpdatedSolver.h" */
+

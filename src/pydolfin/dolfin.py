@@ -734,6 +734,45 @@ class uBlasSparseMatrixPtr(uBlasSparseMatrix):
         _swig_setattr(self, uBlasSparseMatrix,self.__class__,uBlasSparseMatrix)
 _dolfin.uBlasSparseMatrix_swigregister(uBlasSparseMatrixPtr)
 
+class uBlasDenseMatrix(Variable,GenericMatrix,uBlasKrylovMatrix,ublas_dense_matrix):
+    __swig_setmethods__ = {}
+    for _s in [Variable,GenericMatrix,uBlasKrylovMatrix,ublas_dense_matrix]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, uBlasDenseMatrix, name, value)
+    __swig_getmethods__ = {}
+    for _s in [Variable,GenericMatrix,uBlasKrylovMatrix,ublas_dense_matrix]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, uBlasDenseMatrix, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::uBlasMatrix<dolfin::ublas_dense_matrix > instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __init__(self, *args):
+        _swig_setattr(self, uBlasDenseMatrix, 'this', _dolfin.new_uBlasDenseMatrix(*args))
+        _swig_setattr(self, uBlasDenseMatrix, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_uBlasDenseMatrix):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def size(*args): return _dolfin.uBlasDenseMatrix_size(*args)
+    def getRow(*args): return _dolfin.uBlasDenseMatrix_getRow(*args)
+    def lump(*args): return _dolfin.uBlasDenseMatrix_lump(*args)
+    def solve(*args): return _dolfin.uBlasDenseMatrix_solve(*args)
+    def invert(*args): return _dolfin.uBlasDenseMatrix_invert(*args)
+    def apply(*args): return _dolfin.uBlasDenseMatrix_apply(*args)
+    def zero(*args): return _dolfin.uBlasDenseMatrix_zero(*args)
+    def ident(*args): return _dolfin.uBlasDenseMatrix_ident(*args)
+    def mult(*args): return _dolfin.uBlasDenseMatrix_mult(*args)
+    def disp(*args): return _dolfin.uBlasDenseMatrix_disp(*args)
+    def init(*args): return _dolfin.uBlasDenseMatrix_init(*args)
+    def set(*args): return _dolfin.uBlasDenseMatrix_set(*args)
+    def add(*args): return _dolfin.uBlasDenseMatrix_add(*args)
+    def nzmax(*args): return _dolfin.uBlasDenseMatrix_nzmax(*args)
+
+class uBlasDenseMatrixPtr(uBlasDenseMatrix):
+    def __init__(self, this):
+        _swig_setattr(self, uBlasDenseMatrix, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, uBlasDenseMatrix, 'thisown', 0)
+        _swig_setattr(self, uBlasDenseMatrix,self.__class__,uBlasDenseMatrix)
+_dolfin.uBlasDenseMatrix_swigregister(uBlasDenseMatrixPtr)
+
 class Function(Variable,TimeDependent):
     __swig_setmethods__ = {}
     for _s in [Variable,TimeDependent]: __swig_setmethods__.update(_s.__swig_setmethods__)
@@ -781,222 +820,6 @@ class FunctionPtr(Function):
         if not hasattr(self,"thisown"): _swig_setattr(self, Function, 'thisown', 0)
         _swig_setattr(self, Function,self.__class__,Function)
 _dolfin.Function_swigregister(FunctionPtr)
-
-class FEM(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, FEM, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, FEM, name)
-    def __init__(self): raise RuntimeError, "No constructor defined"
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::FEM instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    __swig_getmethods__["assemble"] = lambda x: _dolfin.FEM_assemble
-    if _newclass:assemble = staticmethod(_dolfin.FEM_assemble)
-    __swig_getmethods__["applyBC"] = lambda x: _dolfin.FEM_applyBC
-    if _newclass:applyBC = staticmethod(_dolfin.FEM_applyBC)
-    __swig_getmethods__["assembleResidualBC"] = lambda x: _dolfin.FEM_assembleResidualBC
-    if _newclass:assembleResidualBC = staticmethod(_dolfin.FEM_assembleResidualBC)
-    __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
-    if _newclass:size = staticmethod(_dolfin.FEM_size)
-    __swig_getmethods__["disp"] = lambda x: _dolfin.FEM_disp
-    if _newclass:disp = staticmethod(_dolfin.FEM_disp)
-
-class FEMPtr(FEM):
-    def __init__(self, this):
-        _swig_setattr(self, FEM, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, FEM, 'thisown', 0)
-        _swig_setattr(self, FEM,self.__class__,FEM)
-_dolfin.FEM_swigregister(FEMPtr)
-
-FEM_assemble = _dolfin.FEM_assemble
-
-FEM_applyBC = _dolfin.FEM_applyBC
-
-FEM_assembleResidualBC = _dolfin.FEM_assembleResidualBC
-
-FEM_size = _dolfin.FEM_size
-
-FEM_disp = _dolfin.FEM_disp
-
-class FiniteElement(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, FiniteElement, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, FiniteElement, name)
-    def __init__(self): raise RuntimeError, "No constructor defined"
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::FiniteElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __del__(self, destroy=_dolfin.delete_FiniteElement):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def spacedim(*args): return _dolfin.FiniteElement_spacedim(*args)
-    def shapedim(*args): return _dolfin.FiniteElement_shapedim(*args)
-    def tensordim(*args): return _dolfin.FiniteElement_tensordim(*args)
-    def elementdim(*args): return _dolfin.FiniteElement_elementdim(*args)
-    def rank(*args): return _dolfin.FiniteElement_rank(*args)
-    def nodemap(*args): return _dolfin.FiniteElement_nodemap(*args)
-    def pointmap(*args): return _dolfin.FiniteElement_pointmap(*args)
-    def vertexeval(*args): return _dolfin.FiniteElement_vertexeval(*args)
-    def spec(*args): return _dolfin.FiniteElement_spec(*args)
-    __swig_getmethods__["makeElement"] = lambda x: _dolfin.FiniteElement_makeElement
-    if _newclass:makeElement = staticmethod(_dolfin.FiniteElement_makeElement)
-    def disp(*args): return _dolfin.FiniteElement_disp(*args)
-
-class FiniteElementPtr(FiniteElement):
-    def __init__(self, this):
-        _swig_setattr(self, FiniteElement, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, FiniteElement, 'thisown', 0)
-        _swig_setattr(self, FiniteElement,self.__class__,FiniteElement)
-_dolfin.FiniteElement_swigregister(FiniteElementPtr)
-
-FiniteElement_makeElement = _dolfin.FiniteElement_makeElement
-
-class AffineMap(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, AffineMap, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, AffineMap, name)
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::AffineMap instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        _swig_setattr(self, AffineMap, 'this', _dolfin.new_AffineMap(*args))
-        _swig_setattr(self, AffineMap, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_AffineMap):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def update(*args): return _dolfin.AffineMap_update(*args)
-    def __call__(*args): return _dolfin.AffineMap___call__(*args)
-    def cell(*args): return _dolfin.AffineMap_cell(*args)
-    __swig_setmethods__["det"] = _dolfin.AffineMap_det_set
-    __swig_getmethods__["det"] = _dolfin.AffineMap_det_get
-    if _newclass:det = property(_dolfin.AffineMap_det_get, _dolfin.AffineMap_det_set)
-    __swig_setmethods__["scaling"] = _dolfin.AffineMap_scaling_set
-    __swig_getmethods__["scaling"] = _dolfin.AffineMap_scaling_get
-    if _newclass:scaling = property(_dolfin.AffineMap_scaling_get, _dolfin.AffineMap_scaling_set)
-    __swig_setmethods__["f00"] = _dolfin.AffineMap_f00_set
-    __swig_getmethods__["f00"] = _dolfin.AffineMap_f00_get
-    if _newclass:f00 = property(_dolfin.AffineMap_f00_get, _dolfin.AffineMap_f00_set)
-    __swig_setmethods__["f01"] = _dolfin.AffineMap_f01_set
-    __swig_getmethods__["f01"] = _dolfin.AffineMap_f01_get
-    if _newclass:f01 = property(_dolfin.AffineMap_f01_get, _dolfin.AffineMap_f01_set)
-    __swig_setmethods__["f02"] = _dolfin.AffineMap_f02_set
-    __swig_getmethods__["f02"] = _dolfin.AffineMap_f02_get
-    if _newclass:f02 = property(_dolfin.AffineMap_f02_get, _dolfin.AffineMap_f02_set)
-    __swig_setmethods__["f10"] = _dolfin.AffineMap_f10_set
-    __swig_getmethods__["f10"] = _dolfin.AffineMap_f10_get
-    if _newclass:f10 = property(_dolfin.AffineMap_f10_get, _dolfin.AffineMap_f10_set)
-    __swig_setmethods__["f11"] = _dolfin.AffineMap_f11_set
-    __swig_getmethods__["f11"] = _dolfin.AffineMap_f11_get
-    if _newclass:f11 = property(_dolfin.AffineMap_f11_get, _dolfin.AffineMap_f11_set)
-    __swig_setmethods__["f12"] = _dolfin.AffineMap_f12_set
-    __swig_getmethods__["f12"] = _dolfin.AffineMap_f12_get
-    if _newclass:f12 = property(_dolfin.AffineMap_f12_get, _dolfin.AffineMap_f12_set)
-    __swig_setmethods__["f20"] = _dolfin.AffineMap_f20_set
-    __swig_getmethods__["f20"] = _dolfin.AffineMap_f20_get
-    if _newclass:f20 = property(_dolfin.AffineMap_f20_get, _dolfin.AffineMap_f20_set)
-    __swig_setmethods__["f21"] = _dolfin.AffineMap_f21_set
-    __swig_getmethods__["f21"] = _dolfin.AffineMap_f21_get
-    if _newclass:f21 = property(_dolfin.AffineMap_f21_get, _dolfin.AffineMap_f21_set)
-    __swig_setmethods__["f22"] = _dolfin.AffineMap_f22_set
-    __swig_getmethods__["f22"] = _dolfin.AffineMap_f22_get
-    if _newclass:f22 = property(_dolfin.AffineMap_f22_get, _dolfin.AffineMap_f22_set)
-    __swig_setmethods__["g00"] = _dolfin.AffineMap_g00_set
-    __swig_getmethods__["g00"] = _dolfin.AffineMap_g00_get
-    if _newclass:g00 = property(_dolfin.AffineMap_g00_get, _dolfin.AffineMap_g00_set)
-    __swig_setmethods__["g01"] = _dolfin.AffineMap_g01_set
-    __swig_getmethods__["g01"] = _dolfin.AffineMap_g01_get
-    if _newclass:g01 = property(_dolfin.AffineMap_g01_get, _dolfin.AffineMap_g01_set)
-    __swig_setmethods__["g02"] = _dolfin.AffineMap_g02_set
-    __swig_getmethods__["g02"] = _dolfin.AffineMap_g02_get
-    if _newclass:g02 = property(_dolfin.AffineMap_g02_get, _dolfin.AffineMap_g02_set)
-    __swig_setmethods__["g10"] = _dolfin.AffineMap_g10_set
-    __swig_getmethods__["g10"] = _dolfin.AffineMap_g10_get
-    if _newclass:g10 = property(_dolfin.AffineMap_g10_get, _dolfin.AffineMap_g10_set)
-    __swig_setmethods__["g11"] = _dolfin.AffineMap_g11_set
-    __swig_getmethods__["g11"] = _dolfin.AffineMap_g11_get
-    if _newclass:g11 = property(_dolfin.AffineMap_g11_get, _dolfin.AffineMap_g11_set)
-    __swig_setmethods__["g12"] = _dolfin.AffineMap_g12_set
-    __swig_getmethods__["g12"] = _dolfin.AffineMap_g12_get
-    if _newclass:g12 = property(_dolfin.AffineMap_g12_get, _dolfin.AffineMap_g12_set)
-    __swig_setmethods__["g20"] = _dolfin.AffineMap_g20_set
-    __swig_getmethods__["g20"] = _dolfin.AffineMap_g20_get
-    if _newclass:g20 = property(_dolfin.AffineMap_g20_get, _dolfin.AffineMap_g20_set)
-    __swig_setmethods__["g21"] = _dolfin.AffineMap_g21_set
-    __swig_getmethods__["g21"] = _dolfin.AffineMap_g21_get
-    if _newclass:g21 = property(_dolfin.AffineMap_g21_get, _dolfin.AffineMap_g21_set)
-    __swig_setmethods__["g22"] = _dolfin.AffineMap_g22_set
-    __swig_getmethods__["g22"] = _dolfin.AffineMap_g22_get
-    if _newclass:g22 = property(_dolfin.AffineMap_g22_get, _dolfin.AffineMap_g22_set)
-
-class AffineMapPtr(AffineMap):
-    def __init__(self, this):
-        _swig_setattr(self, AffineMap, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, AffineMap, 'thisown', 0)
-        _swig_setattr(self, AffineMap,self.__class__,AffineMap)
-_dolfin.AffineMap_swigregister(AffineMapPtr)
-
-class BoundaryValue(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, BoundaryValue, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, BoundaryValue, name)
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::BoundaryValue instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        _swig_setattr(self, BoundaryValue, 'this', _dolfin.new_BoundaryValue(*args))
-        _swig_setattr(self, BoundaryValue, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_BoundaryValue):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def set(*args): return _dolfin.BoundaryValue_set(*args)
-    def reset(*args): return _dolfin.BoundaryValue_reset(*args)
-
-class BoundaryValuePtr(BoundaryValue):
-    def __init__(self, this):
-        _swig_setattr(self, BoundaryValue, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryValue, 'thisown', 0)
-        _swig_setattr(self, BoundaryValue,self.__class__,BoundaryValue)
-_dolfin.BoundaryValue_swigregister(BoundaryValuePtr)
-
-class BoundaryCondition(TimeDependent):
-    __swig_setmethods__ = {}
-    for _s in [TimeDependent]: __swig_setmethods__.update(_s.__swig_setmethods__)
-    __setattr__ = lambda self, name, value: _swig_setattr(self, BoundaryCondition, name, value)
-    __swig_getmethods__ = {}
-    for _s in [TimeDependent]: __swig_getmethods__.update(_s.__swig_getmethods__)
-    __getattr__ = lambda self, name: _swig_getattr(self, BoundaryCondition, name)
-    def __repr__(self):
-        return "<%s.%s; proxy of C++ dolfin::BoundaryCondition instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
-    def __init__(self, *args):
-        if self.__class__ == BoundaryCondition:
-            args = (None,) + args
-        else:
-            args = (self,) + args
-        _swig_setattr(self, BoundaryCondition, 'this', _dolfin.new_BoundaryCondition(*args))
-        _swig_setattr(self, BoundaryCondition, 'thisown', 1)
-    def __del__(self, destroy=_dolfin.delete_BoundaryCondition):
-        try:
-            if self.thisown: destroy(self)
-        except: pass
-
-    def eval(*args): return _dolfin.BoundaryCondition_eval(*args)
-    def __disown__(self):
-        self.thisown = 0
-        _dolfin.disown_BoundaryCondition(self)
-        return weakref_proxy(self)
-
-class BoundaryConditionPtr(BoundaryCondition):
-    def __init__(self, this):
-        _swig_setattr(self, BoundaryCondition, 'this', this)
-        if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryCondition, 'thisown', 0)
-        _swig_setattr(self, BoundaryCondition,self.__class__,BoundaryCondition)
-_dolfin.BoundaryCondition_swigregister(BoundaryConditionPtr)
 
 class Form(_object):
     __swig_setmethods__ = {}
@@ -2524,12 +2347,226 @@ class TimeDependentODEPtr(TimeDependentODE):
         _swig_setattr(self, TimeDependentODE,self.__class__,TimeDependentODE)
 _dolfin.TimeDependentODE_swigregister(TimeDependentODEPtr)
 
+class FEM(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, FEM, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, FEM, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::FEM instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    __swig_getmethods__["assemble"] = lambda x: _dolfin.FEM_assemble
+    if _newclass:assemble = staticmethod(_dolfin.FEM_assemble)
+    __swig_getmethods__["applyBC"] = lambda x: _dolfin.FEM_applyBC
+    if _newclass:applyBC = staticmethod(_dolfin.FEM_applyBC)
+    __swig_getmethods__["assembleResidualBC"] = lambda x: _dolfin.FEM_assembleResidualBC
+    if _newclass:assembleResidualBC = staticmethod(_dolfin.FEM_assembleResidualBC)
+    __swig_getmethods__["size"] = lambda x: _dolfin.FEM_size
+    if _newclass:size = staticmethod(_dolfin.FEM_size)
+    __swig_getmethods__["disp"] = lambda x: _dolfin.FEM_disp
+    if _newclass:disp = staticmethod(_dolfin.FEM_disp)
+
+class FEMPtr(FEM):
+    def __init__(self, this):
+        _swig_setattr(self, FEM, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, FEM, 'thisown', 0)
+        _swig_setattr(self, FEM,self.__class__,FEM)
+_dolfin.FEM_swigregister(FEMPtr)
+
+FEM_assemble = _dolfin.FEM_assemble
+
+FEM_applyBC = _dolfin.FEM_applyBC
+
+FEM_assembleResidualBC = _dolfin.FEM_assembleResidualBC
+
+FEM_size = _dolfin.FEM_size
+
+FEM_disp = _dolfin.FEM_disp
+
+class FiniteElement(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, FiniteElement, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, FiniteElement, name)
+    def __init__(self): raise RuntimeError, "No constructor defined"
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::FiniteElement instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __del__(self, destroy=_dolfin.delete_FiniteElement):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def spacedim(*args): return _dolfin.FiniteElement_spacedim(*args)
+    def shapedim(*args): return _dolfin.FiniteElement_shapedim(*args)
+    def tensordim(*args): return _dolfin.FiniteElement_tensordim(*args)
+    def elementdim(*args): return _dolfin.FiniteElement_elementdim(*args)
+    def rank(*args): return _dolfin.FiniteElement_rank(*args)
+    def nodemap(*args): return _dolfin.FiniteElement_nodemap(*args)
+    def pointmap(*args): return _dolfin.FiniteElement_pointmap(*args)
+    def vertexeval(*args): return _dolfin.FiniteElement_vertexeval(*args)
+    def spec(*args): return _dolfin.FiniteElement_spec(*args)
+    __swig_getmethods__["makeElement"] = lambda x: _dolfin.FiniteElement_makeElement
+    if _newclass:makeElement = staticmethod(_dolfin.FiniteElement_makeElement)
+    def disp(*args): return _dolfin.FiniteElement_disp(*args)
+
+class FiniteElementPtr(FiniteElement):
+    def __init__(self, this):
+        _swig_setattr(self, FiniteElement, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, FiniteElement, 'thisown', 0)
+        _swig_setattr(self, FiniteElement,self.__class__,FiniteElement)
+_dolfin.FiniteElement_swigregister(FiniteElementPtr)
+
+FiniteElement_makeElement = _dolfin.FiniteElement_makeElement
+
+class AffineMap(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, AffineMap, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, AffineMap, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::AffineMap instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __init__(self, *args):
+        _swig_setattr(self, AffineMap, 'this', _dolfin.new_AffineMap(*args))
+        _swig_setattr(self, AffineMap, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_AffineMap):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def update(*args): return _dolfin.AffineMap_update(*args)
+    def __call__(*args): return _dolfin.AffineMap___call__(*args)
+    def cell(*args): return _dolfin.AffineMap_cell(*args)
+    __swig_setmethods__["det"] = _dolfin.AffineMap_det_set
+    __swig_getmethods__["det"] = _dolfin.AffineMap_det_get
+    if _newclass:det = property(_dolfin.AffineMap_det_get, _dolfin.AffineMap_det_set)
+    __swig_setmethods__["scaling"] = _dolfin.AffineMap_scaling_set
+    __swig_getmethods__["scaling"] = _dolfin.AffineMap_scaling_get
+    if _newclass:scaling = property(_dolfin.AffineMap_scaling_get, _dolfin.AffineMap_scaling_set)
+    __swig_setmethods__["f00"] = _dolfin.AffineMap_f00_set
+    __swig_getmethods__["f00"] = _dolfin.AffineMap_f00_get
+    if _newclass:f00 = property(_dolfin.AffineMap_f00_get, _dolfin.AffineMap_f00_set)
+    __swig_setmethods__["f01"] = _dolfin.AffineMap_f01_set
+    __swig_getmethods__["f01"] = _dolfin.AffineMap_f01_get
+    if _newclass:f01 = property(_dolfin.AffineMap_f01_get, _dolfin.AffineMap_f01_set)
+    __swig_setmethods__["f02"] = _dolfin.AffineMap_f02_set
+    __swig_getmethods__["f02"] = _dolfin.AffineMap_f02_get
+    if _newclass:f02 = property(_dolfin.AffineMap_f02_get, _dolfin.AffineMap_f02_set)
+    __swig_setmethods__["f10"] = _dolfin.AffineMap_f10_set
+    __swig_getmethods__["f10"] = _dolfin.AffineMap_f10_get
+    if _newclass:f10 = property(_dolfin.AffineMap_f10_get, _dolfin.AffineMap_f10_set)
+    __swig_setmethods__["f11"] = _dolfin.AffineMap_f11_set
+    __swig_getmethods__["f11"] = _dolfin.AffineMap_f11_get
+    if _newclass:f11 = property(_dolfin.AffineMap_f11_get, _dolfin.AffineMap_f11_set)
+    __swig_setmethods__["f12"] = _dolfin.AffineMap_f12_set
+    __swig_getmethods__["f12"] = _dolfin.AffineMap_f12_get
+    if _newclass:f12 = property(_dolfin.AffineMap_f12_get, _dolfin.AffineMap_f12_set)
+    __swig_setmethods__["f20"] = _dolfin.AffineMap_f20_set
+    __swig_getmethods__["f20"] = _dolfin.AffineMap_f20_get
+    if _newclass:f20 = property(_dolfin.AffineMap_f20_get, _dolfin.AffineMap_f20_set)
+    __swig_setmethods__["f21"] = _dolfin.AffineMap_f21_set
+    __swig_getmethods__["f21"] = _dolfin.AffineMap_f21_get
+    if _newclass:f21 = property(_dolfin.AffineMap_f21_get, _dolfin.AffineMap_f21_set)
+    __swig_setmethods__["f22"] = _dolfin.AffineMap_f22_set
+    __swig_getmethods__["f22"] = _dolfin.AffineMap_f22_get
+    if _newclass:f22 = property(_dolfin.AffineMap_f22_get, _dolfin.AffineMap_f22_set)
+    __swig_setmethods__["g00"] = _dolfin.AffineMap_g00_set
+    __swig_getmethods__["g00"] = _dolfin.AffineMap_g00_get
+    if _newclass:g00 = property(_dolfin.AffineMap_g00_get, _dolfin.AffineMap_g00_set)
+    __swig_setmethods__["g01"] = _dolfin.AffineMap_g01_set
+    __swig_getmethods__["g01"] = _dolfin.AffineMap_g01_get
+    if _newclass:g01 = property(_dolfin.AffineMap_g01_get, _dolfin.AffineMap_g01_set)
+    __swig_setmethods__["g02"] = _dolfin.AffineMap_g02_set
+    __swig_getmethods__["g02"] = _dolfin.AffineMap_g02_get
+    if _newclass:g02 = property(_dolfin.AffineMap_g02_get, _dolfin.AffineMap_g02_set)
+    __swig_setmethods__["g10"] = _dolfin.AffineMap_g10_set
+    __swig_getmethods__["g10"] = _dolfin.AffineMap_g10_get
+    if _newclass:g10 = property(_dolfin.AffineMap_g10_get, _dolfin.AffineMap_g10_set)
+    __swig_setmethods__["g11"] = _dolfin.AffineMap_g11_set
+    __swig_getmethods__["g11"] = _dolfin.AffineMap_g11_get
+    if _newclass:g11 = property(_dolfin.AffineMap_g11_get, _dolfin.AffineMap_g11_set)
+    __swig_setmethods__["g12"] = _dolfin.AffineMap_g12_set
+    __swig_getmethods__["g12"] = _dolfin.AffineMap_g12_get
+    if _newclass:g12 = property(_dolfin.AffineMap_g12_get, _dolfin.AffineMap_g12_set)
+    __swig_setmethods__["g20"] = _dolfin.AffineMap_g20_set
+    __swig_getmethods__["g20"] = _dolfin.AffineMap_g20_get
+    if _newclass:g20 = property(_dolfin.AffineMap_g20_get, _dolfin.AffineMap_g20_set)
+    __swig_setmethods__["g21"] = _dolfin.AffineMap_g21_set
+    __swig_getmethods__["g21"] = _dolfin.AffineMap_g21_get
+    if _newclass:g21 = property(_dolfin.AffineMap_g21_get, _dolfin.AffineMap_g21_set)
+    __swig_setmethods__["g22"] = _dolfin.AffineMap_g22_set
+    __swig_getmethods__["g22"] = _dolfin.AffineMap_g22_get
+    if _newclass:g22 = property(_dolfin.AffineMap_g22_get, _dolfin.AffineMap_g22_set)
+
+class AffineMapPtr(AffineMap):
+    def __init__(self, this):
+        _swig_setattr(self, AffineMap, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, AffineMap, 'thisown', 0)
+        _swig_setattr(self, AffineMap,self.__class__,AffineMap)
+_dolfin.AffineMap_swigregister(AffineMapPtr)
+
+class BoundaryValue(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, BoundaryValue, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, BoundaryValue, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::BoundaryValue instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __init__(self, *args):
+        _swig_setattr(self, BoundaryValue, 'this', _dolfin.new_BoundaryValue(*args))
+        _swig_setattr(self, BoundaryValue, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_BoundaryValue):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def set(*args): return _dolfin.BoundaryValue_set(*args)
+    def reset(*args): return _dolfin.BoundaryValue_reset(*args)
+
+class BoundaryValuePtr(BoundaryValue):
+    def __init__(self, this):
+        _swig_setattr(self, BoundaryValue, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryValue, 'thisown', 0)
+        _swig_setattr(self, BoundaryValue,self.__class__,BoundaryValue)
+_dolfin.BoundaryValue_swigregister(BoundaryValuePtr)
+
+class BoundaryCondition(TimeDependent):
+    __swig_setmethods__ = {}
+    for _s in [TimeDependent]: __swig_setmethods__.update(_s.__swig_setmethods__)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, BoundaryCondition, name, value)
+    __swig_getmethods__ = {}
+    for _s in [TimeDependent]: __swig_getmethods__.update(_s.__swig_getmethods__)
+    __getattr__ = lambda self, name: _swig_getattr(self, BoundaryCondition, name)
+    def __repr__(self):
+        return "<%s.%s; proxy of C++ dolfin::BoundaryCondition instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+    def __init__(self, *args):
+        if self.__class__ == BoundaryCondition:
+            args = (None,) + args
+        else:
+            args = (self,) + args
+        _swig_setattr(self, BoundaryCondition, 'this', _dolfin.new_BoundaryCondition(*args))
+        _swig_setattr(self, BoundaryCondition, 'thisown', 1)
+    def __del__(self, destroy=_dolfin.delete_BoundaryCondition):
+        try:
+            if self.thisown: destroy(self)
+        except: pass
+
+    def eval(*args): return _dolfin.BoundaryCondition_eval(*args)
+    def __disown__(self):
+        self.thisown = 0
+        _dolfin.disown_BoundaryCondition(self)
+        return weakref_proxy(self)
+
+class BoundaryConditionPtr(BoundaryCondition):
+    def __init__(self, this):
+        _swig_setattr(self, BoundaryCondition, 'this', this)
+        if not hasattr(self,"thisown"): _swig_setattr(self, BoundaryCondition, 'thisown', 0)
+        _swig_setattr(self, BoundaryCondition,self.__class__,BoundaryCondition)
+_dolfin.BoundaryCondition_swigregister(BoundaryConditionPtr)
+
 
 get = _dolfin.get
 
 load_parameters = _dolfin.load_parameters
-
-assemble = _dolfin.assemble
 
 set = _dolfin.set
 

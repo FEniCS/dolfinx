@@ -355,29 +355,6 @@ private:
 };
 
 
-class SwigDirector_BoundaryCondition : public dolfin::BoundaryCondition, public Swig::Director {
-
-public:
-    SwigDirector_BoundaryCondition(PyObject *self);
-    virtual ~SwigDirector_BoundaryCondition();
-    virtual void eval(dolfin::BoundaryValue &value, dolfin::Point const &p, dolfin::uint i);
-
-
-/* Internal Director utilities */
-public:
-    bool swig_get_inner(const char* name) const {
-      std::map<std::string, bool>::const_iterator iv = inner.find(name);
-      return (iv != inner.end() ? iv->second : false);
-    }
-
-    void swig_set_inner(const char* name, bool val) const
-    { inner[name] = val;}
-
-private:
-    mutable std::map<std::string, bool> inner;
-};
-
-
 class SwigDirector_ODE : public dolfin::ODE, public Swig::Director {
 
 public:
@@ -420,6 +397,29 @@ public:
     virtual void preparestep();
     virtual void fu(dolfin::Vector const &x, dolfin::Vector &dotx, dolfin::real t);
     virtual void prepareiteration();
+
+
+/* Internal Director utilities */
+public:
+    bool swig_get_inner(const char* name) const {
+      std::map<std::string, bool>::const_iterator iv = inner.find(name);
+      return (iv != inner.end() ? iv->second : false);
+    }
+
+    void swig_set_inner(const char* name, bool val) const
+    { inner[name] = val;}
+
+private:
+    mutable std::map<std::string, bool> inner;
+};
+
+
+class SwigDirector_BoundaryCondition : public dolfin::BoundaryCondition, public Swig::Director {
+
+public:
+    SwigDirector_BoundaryCondition(PyObject *self);
+    virtual ~SwigDirector_BoundaryCondition();
+    virtual void eval(dolfin::BoundaryValue &value, dolfin::Point const &p, dolfin::uint i);
 
 
 /* Internal Director utilities */
