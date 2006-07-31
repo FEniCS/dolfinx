@@ -66,6 +66,10 @@ namespace dolfin
     static void fromArray(const real u[], Vector& x, uint offset, uint size);
     static void toArray(real y[], Vector&x, uint offset, uint size);
 
+    static void fromDense(const DenseVector& u, Vector& x, uint offset,
+			  uint size);
+    static void toDense(DenseVector& y, Vector&x, uint offset, uint size);
+
     // Prepare time step
     virtual void preparestep();
 
@@ -188,6 +192,8 @@ namespace dolfin
     int* dotu_x2_indices;
     int* dotu_xsigma_indices;
 
+
+
     Function v1;
     Function u0;
     Function u1;
@@ -215,8 +221,8 @@ namespace dolfin
     // Fix to avoid error with some compilers due to only partially overridden
     // virtual functions
     using ODE::f; 
-    virtual void f(const real u[], real t, real y[]);
-    virtual bool update(const real u[], real t, bool end);
+    virtual void f(const DenseVector& u, real t, DenseVector& y);
+    virtual bool update(const DenseVector& u, real t, bool end);
 
     ElasticityUpdatedSolver& solver;
   };

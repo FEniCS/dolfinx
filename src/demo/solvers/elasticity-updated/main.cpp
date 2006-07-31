@@ -88,17 +88,17 @@ int main(int argc, char **argv)
   real T = 10.0;  // final time
   real k = 1.0e-2; // time step
 
-  set("method", "cg");
-  set("order", 1);
+  set("ODE method", "cg");
+  set("ODE order", 1);
 
-  set("save solution", true);
-  set("ode solution file name", "primal.py");
-  set("number of samples", 400);
+  set("ODE save solution", true);
+  set("ODE solution file name", "primal.py");
+  set("ODE number of samples", 400);
 
-  set("fixed time step", true);
-  set("initial time step", k);
-  set("maximum time step", k);
-  set("maximum iterations", 100);
+  set("ODE fixed time step", true);
+  set("ODE initial time step", k);
+  set("ODE maximum time step", k);
+  set("ODE maximum iterations", 100);
 //   set("solver", "newton");
 
 
