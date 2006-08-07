@@ -1,6 +1,5 @@
 EXTRA_DIST = dolfin_la.h \
              DenseMatrix.h \
-             EigenvalueSolver.h \
              GenericMatrix.h \
              GenericVector.h \
              GMRES.h \
@@ -8,17 +7,21 @@ EXTRA_DIST = dolfin_la.h \
              LinearSolver.h \
              LU.h \
              Matrix.h \
+             PETScEigenvalueSolver.h \
+             PETScLinearSolver.h \
+             PETScKrylovMatrix.h \
              PETScKrylovSolver.h \
-             PETScLU.h \
+             PETScLUSolver.h \
              PETScManager.h \
-             PETScSparseMatrix.h \
+             PETScMatrix.h \
+             PETScPreconditioner.h \
              PETScVector.h \
-             Preconditioner.h \
              SparseMatrix.h \
              ublas.h \
              uBlasDenseMatrix.h \
              uBlasKrylovMatrix.h \
              uBlasKrylovSolver.h \
+             uBlasLinearSolver.h \
              uBlasLUSolver.h \
              uBlasMatrix.h \
              uBlasDummyPreconditioner.h \
@@ -26,5 +29,4 @@ EXTRA_DIST = dolfin_la.h \
              uBlasPreconditioner.h \
              uBlasSparseMatrix.h \
              uBlasVector.h \
-             Vector.h \
-             VirtualMatrix.h 
+             Vector.h

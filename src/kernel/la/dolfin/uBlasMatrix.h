@@ -43,7 +43,7 @@ namespace dolfin
   class uBlasMatrix : public Variable, 
                       public GenericMatrix,
                       public uBlasKrylovMatrix,
-		      public Mat
+		                  public Mat
   {
   public:
     

@@ -18,12 +18,12 @@ GMRES::GMRES() : KrylovSolver(gmres)
 }
 //-----------------------------------------------------------------------------
 #ifdef HAVE_PETSC_H
-GMRES::GMRES(Preconditioner::Type preconditioner) : KrylovSolver(gmres, preconditioner)
+GMRES::GMRES(PETScPreconditioner::Type preconditioner) : KrylovSolver(gmres, preconditioner)
 {
   // Do nothing.
 }
 //-----------------------------------------------------------------------------
-GMRES::GMRES(Preconditioner& preconditioner) : KrylovSolver(gmres, preconditioner)
+GMRES::GMRES(PETScPreconditioner& preconditioner) : KrylovSolver(gmres, preconditioner)
 {
   // Do nothing.
 }

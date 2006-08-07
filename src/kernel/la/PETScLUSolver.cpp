@@ -8,15 +8,15 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScMatrix.h>
 #include <dolfin/PETScVector.h>
-#include <dolfin/VirtualMatrix.h>
-#include <dolfin/PETScLU.h>
+#include <dolfin/PETScKrylovMatrix.h>
+#include <dolfin/PETScLUSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-PETScLU::PETScLU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
+PETScLUSolver::PETScLUSolver() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
 {
   // Initialize PETSc
   PETScManager::init();
@@ -37,7 +37,7 @@ PETScLU::PETScLU() : LinearSolver(), ksp(0), B(0), idxm(0), idxn(0)
   PCASMSetUseInPlace(pc);
 }
 //-----------------------------------------------------------------------------
-PETScLU::~PETScLU()
+PETScLUSolver::~PETScLUSolver()
 {
   if ( ksp ) KSPDestroy(ksp);
   if ( B ) MatDestroy(B);
@@ -45,7 +45,7 @@ PETScLU::~PETScLU()
   if ( idxn ) delete [] idxn;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLU::solve(const PETScSparseMatrix& A,
+dolfin::uint PETScLUSolver::solve(const PETScMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
@@ -66,7 +66,7 @@ dolfin::uint PETScLU::solve(const PETScSparseMatrix& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-dolfin::uint PETScLU::solve(const VirtualMatrix& A,
+dolfin::uint PETScLUSolver::solve(const PETScKrylovMatrix& A,
 		       PETScVector& x, const PETScVector& b)
 {
   // Get parameters
@@ -106,12 +106,12 @@ dolfin::uint PETScLU::solve(const VirtualMatrix& A,
   return 1;
 }
 //-----------------------------------------------------------------------------
-void PETScLU::disp() const
+void PETScLUSolver::disp() const
 {
   KSPView(ksp, PETSC_VIEWER_STDOUT_WORLD);
 }
 //-----------------------------------------------------------------------------
-real PETScLU::copyToDense(const VirtualMatrix& A)
+real PETScLUSolver::copyToDense(const PETScKrylovMatrix& A)
 {
   // Get size
   uint M = A.size(0);

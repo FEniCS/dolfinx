@@ -14,7 +14,7 @@
 #include <dolfin/PETScManager.h>
 #include <dolfin/Vector.h>
 #include <dolfin/Matrix.h>
-#include <dolfin/VirtualMatrix.h>
+#include <dolfin/PETScKrylovMatrix.h>
 
 using namespace dolfin;
 
@@ -27,21 +27,21 @@ namespace dolfin
     void* ctx = 0;
     MatShellGetContext(A, &ctx);
     PETScVector xx(x), yy(y);
-    ((VirtualMatrix*) ctx)->mult(xx, yy);
+    ((PETScKrylovMatrix*) ctx)->mult(xx, yy);
     return 0;
   }
 
 }
 
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix()
+PETScKrylovMatrix::PETScKrylovMatrix()
   : A(0)
 {
   // Initialize PETSc
   PETScManager::init();
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::VirtualMatrix(const PETScVector& x, const PETScVector& y)
+PETScKrylovMatrix::PETScKrylovMatrix(const PETScVector& x, const PETScVector& y)
   : A(0)
 {
   // Initialize PETSc
@@ -51,13 +51,13 @@ VirtualMatrix::VirtualMatrix(const PETScVector& x, const PETScVector& y)
   init(x, y);
 }
 //-----------------------------------------------------------------------------
-VirtualMatrix::~VirtualMatrix()
+PETScKrylovMatrix::~PETScKrylovMatrix()
 {
   // Free memory of matrix
   if ( A ) MatDestroy(A);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(const PETScVector& x, const PETScVector& y)
+void PETScKrylovMatrix::init(const PETScVector& x, const PETScVector& y)
 {
   // Get size and local size of given vector
   int m(0), n(0), M(0), N(0);
@@ -86,7 +86,7 @@ void VirtualMatrix::init(const PETScVector& x, const PETScVector& y)
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::init(int M, int N)
+void PETScKrylovMatrix::init(int M, int N)
 {
   // Put here to set up arbitrary Shell of global size M,N.
   // Analagous to the matrix being on one processor. 
@@ -108,7 +108,7 @@ void VirtualMatrix::init(int M, int N)
   MatShellSetOperation(A, MATOP_MULT, (void (*)()) usermult);
 }
 //-----------------------------------------------------------------------------
-dolfin::uint VirtualMatrix::size(uint dim) const
+dolfin::uint PETScKrylovMatrix::size(uint dim) const
 {
   int M = 0;
   int N = 0;
@@ -119,12 +119,12 @@ dolfin::uint VirtualMatrix::size(uint dim) const
   return (dim == 0 ? static_cast<uint>(M) : static_cast<uint>(N));
 }
 //-----------------------------------------------------------------------------
-Mat VirtualMatrix::mat() const
+Mat PETScKrylovMatrix::mat() const
 {
   return A;
 }
 //-----------------------------------------------------------------------------
-void VirtualMatrix::disp(bool sparse, int precision) const
+void PETScKrylovMatrix::disp(bool sparse, int precision) const
 {
   // Since we don't really have the matrix, we create the matrix by
   // performing multiplication with unit vectors. Used only for debugging.
@@ -132,7 +132,7 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   uint M = size(0);
   uint N = size(1);
   PETScVector x(N), y(M);
-  PETScSparseMatrix A(M, N);
+  PETScMatrix A(M, N);
   
   x = 0.0;
   for (unsigned int j = 0; j < N; j++)
@@ -151,7 +151,7 @@ void VirtualMatrix::disp(bool sparse, int precision) const
   A.disp(sparse, precision);
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const VirtualMatrix& A)
+LogStream& dolfin::operator<< (LogStream& stream, const PETScKrylovMatrix& A)
 {
   MatType type = 0;
   MatGetType(A.mat(), &type);

@@ -8,12 +8,12 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/PETScManager.h>
-#include <dolfin/EigenvalueSolver.h>
+#include <dolfin/PETScEigenvalueSolver.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-EigenvalueSolver::EigenvalueSolver(): eps(0), type(default_solver)
+PETScEigenvalueSolver::PETScEigenvalueSolver(): eps(0), type(default_solver)
 {
   // Initialize PETSc/SLEPc
   PETScManager::init();
@@ -26,7 +26,7 @@ EigenvalueSolver::EigenvalueSolver(): eps(0), type(default_solver)
 
 }
 //-----------------------------------------------------------------------------
-EigenvalueSolver::EigenvalueSolver(Type solver): eps(0), type(solver)
+PETScEigenvalueSolver::PETScEigenvalueSolver(Type solver): eps(0), type(solver)
 {
   // Initialize PETSc/SLEPc
   PETScManager::init();
@@ -39,44 +39,44 @@ EigenvalueSolver::EigenvalueSolver(Type solver): eps(0), type(solver)
 
 }
 //-----------------------------------------------------------------------------
-EigenvalueSolver::~EigenvalueSolver()
+PETScEigenvalueSolver::~PETScEigenvalueSolver()
 {
   // Destroy solver environment
   if ( eps ) 
     EPSDestroy(eps);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const PETScSparseMatrix& A)
+void PETScEigenvalueSolver::solve(const PETScMatrix& A)
 {
   solve(A, 0, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const PETScSparseMatrix& A, const uint n)
+void PETScEigenvalueSolver::solve(const PETScMatrix& A, const uint n)
 {
   solve(A, 0, n);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B)
+void PETScEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix& B)
 {
   solve(A, &B, A.size(0));
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B, const uint n)
+void PETScEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix& B, const uint n)
 {
   solve(A, &B, n);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::getEigenvalue(real& xr, real& xc)
+void PETScEigenvalueSolver::getEigenvalue(real& xr, real& xc)
 {
   getEigenvalue(xr, xc, 0);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c)
+void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c)
 {
   getEigenpair(xr, xc, r, c, 0);
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
+void PETScEigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
 {
   // Get number of computed values
   int num_computed_eigenvalues;
@@ -88,7 +88,7 @@ void EigenvalueSolver::getEigenvalue(real& xr, real& xc, const int i)
     dolfin_error("Requested eigenvalue has not been computed");
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, const int i)
+void PETScEigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, const int i)
 {
   // Get number of computed eigenvectors/values
   int num_computed_eigenvalues;
@@ -100,7 +100,7 @@ void EigenvalueSolver::getEigenpair(real& xr, real& xc, Vector& r,  Vector& c, c
     dolfin_error("Requested eigenvalue/vector has not been computed");
 }
 //-----------------------------------------------------------------------------
-void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix* B, const uint n)
+void PETScEigenvalueSolver::solve(const PETScMatrix& A, const PETScMatrix* B, const uint n)
 {
   const std::string eigenvalues_compute = get("Eigenvalues to compute");
 
@@ -161,7 +161,7 @@ void EigenvalueSolver::solve(const PETScSparseMatrix& A, const PETScSparseMatrix
 	      eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-EPSType EigenvalueSolver::getType(const Type type) const
+EPSType PETScEigenvalueSolver::getType(const Type type) const
 {
   switch (type)
   {

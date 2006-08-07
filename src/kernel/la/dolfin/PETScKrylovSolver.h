@@ -16,23 +16,23 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/Preconditioner.h>
-#include <dolfin/LinearSolver.h>
+#include <dolfin/PETScPreconditioner.h>
+#include <dolfin/PETScLinearSolver.h>
 #include <dolfin/PETScManager.h>
 
 namespace dolfin
 {
 
   /// Forward declarations
-  class PETScSparseMatrix;
+  class PETScMatrix;
   class PETScVector;
-  class VirtualMatrix;
+  class PETScKrylovMatrix;
 
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b. It is a wrapper for the Krylov solvers
   /// of PETSc.
   
-  class PETScKrylovSolver : public LinearSolver, public Parametrized
+  class PETScKrylovSolver : public PETScLinearSolver, public Parametrized
   {
   public:
 
@@ -45,32 +45,32 @@ namespace dolfin
       gmres           // GMRES method
     };
 
-    /// Create Krylov solver with PETSc default method and preconditioner
+    /// Create Krylov solver with PETSc default method and PETScPreconditioner
     PETScKrylovSolver();
 
-    /// Create Krylov solver for a particular method with default PETSc preconditioner
+    /// Create Krylov solver for a particular method with default PETSc PETScPreconditioner
     PETScKrylovSolver(Type solver);
 
-    /// Create Krylov solver with default PETSc method and a particular preconditioner
-    PETScKrylovSolver(Preconditioner::Type preconditioner);
+    /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
+    PETScKrylovSolver(PETScPreconditioner::Type PETScPreconditioner);
 
-    /// Create Krylov solver with default PETSc method and a particular preconditioner
-    PETScKrylovSolver(Preconditioner& preconditioner);
+    /// Create Krylov solver with default PETSc method and a particular PETScPreconditioner
+    PETScKrylovSolver(PETScPreconditioner& PETScPreconditioner);
 
-    /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(Type solver, Preconditioner::Type preconditioner);
+    /// Create Krylov solver for a particular method and PETScPreconditioner
+    PETScKrylovSolver(Type solver, PETScPreconditioner::Type PETScPreconditioner);
 
-    /// Create Krylov solver for a particular method and preconditioner
-    PETScKrylovSolver(Type solver, Preconditioner& preconditioner);
+    /// Create Krylov solver for a particular method and PETScPreconditioner
+    PETScKrylovSolver(Type solver, PETScPreconditioner& PETScPreconditioner);
 
     /// Destructor
     ~PETScKrylovSolver();
 
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b);
+    uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
           
     /// Solve linear system Ax = b and return number of iterations
-    uint solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b);
+    uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
     
     /// Display solver data
     void disp() const;
@@ -86,8 +86,8 @@ namespace dolfin
     /// Set solver
     void setSolver();
 
-    /// Set preconditioner
-    void setPreconditioner();
+    /// Set PETScPreconditioner
+    void setPETScPreconditioner();
     
     /// Report the number of iterations
     void writeReport(int num_iterations);
@@ -98,11 +98,11 @@ namespace dolfin
     /// PETSc solver type
     Type type;
 
-    /// PETSc preconditioner
-    Preconditioner::Type pc_petsc;
+    /// PETSc PETScPreconditioner
+    PETScPreconditioner::Type pc_petsc;
 
-    /// DOLFIN preconditioner
-    Preconditioner* pc_dolfin;
+    /// DOLFIN PETScPreconditioner
+    PETScPreconditioner* pc_dolfin;
 
     /// PETSc solver pointer
     KSP ksp;

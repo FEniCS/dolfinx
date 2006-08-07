@@ -9,7 +9,7 @@
 
 #include <dolfin/ublas.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/LinearSolver.h>
+#include <dolfin/uBlasLinearSolver.h>
 
 namespace dolfin
 {
@@ -17,11 +17,12 @@ namespace dolfin
   /// Forward declarations
   class uBlasVector;
   template<class Mat> class uBlasMatrix;
+  class uBlasPreconditioner;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b using uBlas data types.
   
-  class uBlasLUSolver : public LinearSolver, public Parametrized
+  class uBlasLUSolver : public uBlasLinearSolver, public Parametrized
   {
 
   public:
@@ -35,12 +36,21 @@ namespace dolfin
     /// Solve linear system Ax = b (A is dense)
     uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
+    // FIXME: sort out uBlasLinearSolver interface
+    /// Solve linear system Ax = b (A is dense)
+//    uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b)
+//    { 
+//      dolfin_error("uBlas LU solver does not support virtual matrices"); 
+//      return 0;
+//    } 
+
     /// Solve linear system Ax = b in place (A is dense)
     uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
     /// Compute the inverse of A (A is dense)
     void invert(uBlasMatrix<ublas_dense_matrix>& A) const;
 
+    //FIXME: not sure what's happening here
     /// Compute the inverse of A (A is sparse)
     void invert(uBlasMatrix<ublas_sparse_matrix>& A) const
       {

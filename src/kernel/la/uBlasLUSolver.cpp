@@ -26,7 +26,7 @@ extern "C"
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-uBlasLUSolver::uBlasLUSolver() : LinearSolver()
+uBlasLUSolver::uBlasLUSolver() : uBlasLinearSolver()
 {
   // Do nothing
 }

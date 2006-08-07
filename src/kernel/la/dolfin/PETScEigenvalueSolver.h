@@ -4,8 +4,8 @@
 // First added:  2005-08-31
 // Last changed: 2006-05-29
 
-#ifndef __EIGENVALUE_SOLVER_H
-#define __EIGENVALUE_SOLVER_H
+#ifndef __PETSC_EIGENVALUE_SOLVER_H
+#define __PETSC_EIGENVALUE_SOLVER_H
 
 #ifdef HAVE_SLEPC_H
 
@@ -16,12 +16,12 @@ namespace dolfin
 {
 
   class PETScVector
-  class PETScSparseMatrix
+  class PETScMatrix
 
   /// This class computes eigenvalues of a matrix. It is 
 	/// a wrapper for the eigenvalue solver SLEPc.
   
-  class EigenvalueSolver: public Parametrized
+  class PETScEigenvalueSolver: public Parametrized
   {
   public:
 
@@ -37,25 +37,25 @@ namespace dolfin
     };
 
     /// Create eigenvalue solver (use default solver type)
-    EigenvalueSolver();
+    PETScEigenvalueSolver();
 
     /// Create eigenvalue solver (specify solver type)
-    EigenvalueSolver(Type solver);
+    PETScEigenvalueSolver(Type solver);
 
     /// Destructor
-    ~EigenvalueSolver();
+    ~PETScEigenvalueSolver();
 
     /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const PETScSparseMatrix& A);
+    void solve(const PETScMatrix& A);
 
     /// Compute largest n eigenpairs of the matrix A (solve Ax = \lambda x)
-    void solve(const PETScSparseMatrix& A, const uint n);
+    void solve(const PETScMatrix& A, const uint n);
 
     /// Compute all eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B);
+    void solve(const PETScMatrix& A, const PETScMatrix& B);
 
     /// Compute largest n eigenpairs of the generalised problem Ax = \lambda Bx
-    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix& B, const uint n);
+    void solve(const PETScMatrix& A, const PETScMatrix& B, const uint n);
 
     /// Get the 0th eigenvalue 
     void getEigenvalue(real& xr, real& xc);
@@ -72,7 +72,7 @@ namespace dolfin
   private:
 
     /// Compute eigenvalues
-    void solve(const PETScSparseMatrix& A, const PETScSparseMatrix* B, const uint n);
+    void solve(const PETScMatrix& A, const PETScMatrix* B, const uint n);
 
     EPSType getType(const Type type) const;
 
