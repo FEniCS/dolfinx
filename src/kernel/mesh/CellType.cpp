@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-16
+// Last changed: 2006-08-07
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Interval.h>
@@ -13,7 +13,8 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-CellType::CellType()
+CellType::CellType(Type cell_type, Type facet_type)
+  : cell_type(cell_type), facet_type(facet_type)
 {
   // Do nothing
 }

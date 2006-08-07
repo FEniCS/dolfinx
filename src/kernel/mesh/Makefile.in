@@ -66,14 +66,15 @@ am_libdolfin_mesh_la_OBJECTS = Boundary.lo BoundaryData.lo \
 	GenericCell.lo Mesh.lo MeshData.lo MeshHierarchy.lo \
 	MeshInit.lo MeshIterator.lo MeshRefinement.lo Point.lo \
 	TetMeshRefinement.lo Tetrahedron.lo TriMeshRefinement.lo \
-	Triangle.lo UnitCube.lo UnitSquare.lo Vertex.lo \
-	VertexIterator.lo MeshConnectivity.lo MeshEditor.lo \
-	MeshEntity.lo MeshEntityIterator.lo MeshGeometry.lo \
-	MeshTopology.lo NewMesh.lo NewMeshData.lo NewVertex.lo \
-	NewEdge.lo NewFace.lo NewFacet.lo NewCell.lo \
-	TopologyComputation.lo Interval.lo NewTriangle.lo \
-	NewTetrahedron.lo CellType.lo UniformMeshRefinement.lo \
-	NewPoint.lo BoundaryComputation.lo BoundaryMesh.lo
+	Triangle.lo UnitCube.lo UnitSquare.lo NewUnitCube.lo \
+	NewUnitSquare.lo Vertex.lo VertexIterator.lo \
+	MeshConnectivity.lo MeshEditor.lo MeshEntity.lo \
+	MeshEntityIterator.lo MeshGeometry.lo MeshTopology.lo \
+	NewMesh.lo NewMeshData.lo NewVertex.lo NewEdge.lo NewFace.lo \
+	NewFacet.lo NewCell.lo TopologyComputation.lo Interval.lo \
+	NewTriangle.lo NewTetrahedron.lo CellType.lo \
+	UniformMeshRefinement.lo NewPoint.lo BoundaryComputation.lo \
+	BoundaryMesh.lo
 libdolfin_mesh_la_OBJECTS = $(am_libdolfin_mesh_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -257,6 +258,8 @@ nobase_include_HEADERS = dolfin/dolfin_mesh.h \
                             dolfin/Triangle.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitSquare.h \
+                            dolfin/NewUnitCube.h \
+                            dolfin/NewUnitSquare.h \
                             dolfin/Vertex.h \
                             dolfin/VertexIterator.h \
                             dolfin/MeshConnectivity.h \
@@ -309,6 +312,8 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             Triangle.cpp \
                             UnitCube.cpp \
                             UnitSquare.cpp \
+                            NewUnitCube.cpp \
+                            NewUnitSquare.cpp \
                             Vertex.cpp \
                             VertexIterator.cpp \
                             MeshConnectivity.cpp \
@@ -440,6 +445,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewPoint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTetrahedron.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewTriangle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewUnitCube.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewUnitSquare.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewVertex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Point.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TetMeshRefinement.Plo@am__quote@

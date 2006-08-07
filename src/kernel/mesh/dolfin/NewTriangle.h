@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-22
+// Last changed: 2006-08-07
 
 #ifndef __NEW_TRIANGLE_H
 #define __NEW_TRIANGLE_H
@@ -18,11 +18,8 @@ namespace dolfin
   {
   public:
 
-    /// Return type of cell
-    inline Type cellType() const { return triangle; }
-
-    /// Return type of cell for facets
-    inline Type facetType() const { return interval; }
+    /// Specify cell type and facet type
+    NewTriangle() : CellType(triangle, interval) {}
 
     /// Return number of entitites of given topological dimension
     uint numEntities(uint dim) const;
@@ -38,8 +35,6 @@ namespace dolfin
 
     /// Return description of cell type
     std::string description() const;
-
-  private:
 
   };
 

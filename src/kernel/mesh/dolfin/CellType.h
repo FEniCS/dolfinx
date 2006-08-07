@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-22
+// Last changed: 2006-08-07
 
 #ifndef __CELL_TYPE_H
 #define __CELL_TYPE_H
@@ -26,10 +26,10 @@ namespace dolfin
   public:
 
     /// Enum for different cell types
-    enum Type { interval, triangle, tetrahedron };
+    enum Type { point, interval, triangle, tetrahedron };
 
     /// Constructor
-    CellType();
+    CellType(Type cell_type, Type facet_type);
 
     /// Destructor
     virtual ~CellType();
@@ -41,10 +41,10 @@ namespace dolfin
     static Type type(std::string type);
 
     /// Return type of cell
-    virtual Type cellType() const = 0;
+    inline Type cellType() const { return cell_type; }
 
     /// Return type of cell for facets
-    virtual Type facetType() const = 0;
+    inline Type facetType() const { return facet_type; }
 
     /// Return number of entitites of given topological dimension
     virtual uint numEntities(uint dim) const = 0;
@@ -60,6 +60,11 @@ namespace dolfin
 
     /// Return description of cell type
     virtual std::string description() const = 0;
+
+  protected:
+
+    Type cell_type;
+    Type facet_type;
     
   };
 

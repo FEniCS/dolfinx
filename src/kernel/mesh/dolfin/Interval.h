@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2006-06-05
-// Last changed: 2006-06-22
+// Last changed: 2006-08-07
 
 #ifndef __INTERVAL_H
 #define __INTERVAL_H
@@ -12,17 +12,14 @@
 namespace dolfin
 {
 
-  /// This class implements functionality for intervals meshes.
+  /// This class implements functionality for interval meshes.
 
   class Interval : public CellType
   {
   public:
 
-    /// Return type of cell
-    inline Type cellType() const { return interval; }
-
-    /// Return type of cell for facets
-    inline Type facetType() const { dolfin_error("Facets of interval are not defined."); return interval; }
+    /// Specify cell type and facet type
+    Interval() : CellType(interval, point) {}
 
     /// Return number of entitites of given topological dimension
     uint numEntities(uint dim) const;

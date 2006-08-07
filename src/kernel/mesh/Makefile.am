@@ -26,6 +26,8 @@ nobase_include_HEADERS    = dolfin/dolfin_mesh.h \
                             dolfin/Triangle.h \
                             dolfin/UnitCube.h \
                             dolfin/UnitSquare.h \
+                            dolfin/NewUnitCube.h \
+                            dolfin/NewUnitSquare.h \
                             dolfin/Vertex.h \
                             dolfin/VertexIterator.h \
                             dolfin/MeshConnectivity.h \
@@ -77,6 +79,8 @@ libdolfin_mesh_la_SOURCES = Boundary.cpp \
                             Triangle.cpp \
                             UnitCube.cpp \
                             UnitSquare.cpp \
+                            NewUnitCube.cpp \
+                            NewUnitSquare.cpp \
                             Vertex.cpp \
                             VertexIterator.cpp \
                             MeshConnectivity.cpp \

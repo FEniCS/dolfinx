@@ -64,5 +64,7 @@
 #include <dolfin/NewPoint.h>
 #include <dolfin/BoundaryComputation.h>
 #include <dolfin/BoundaryMesh.h>
+#include <dolfin/NewUnitCube.h>
+#include <dolfin/NewUnitSquare.h>
 
 #endif
