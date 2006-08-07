@@ -12,7 +12,7 @@
 namespace dolfin
 {
 
-  class DenseVector;
+  class uBlasVector;
 
   /// This class provides an interface for matrices that define linear
   /// systems for the uBlasKrylovSolver. This interface is implemented
@@ -34,7 +34,7 @@ namespace dolfin
     virtual uint size(uint dim) const = 0;
 
     /// Compute product y = Ax
-    virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
+    virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
 
     /// Display matrix 
 //    void disp(const int precision = 2) const;

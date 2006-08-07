@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Dependencies.h>
 
@@ -132,7 +132,7 @@ void Dependencies::detect(ODE& ode)
   makeSparse();
 
   // Randomize solution vector
-  DenseVector u(N);
+  uBlasVector u(N);
   for (uint i = 0; i < N; i++)
     u(i) = rand();
   
@@ -188,7 +188,7 @@ void Dependencies::disp() const
     dolfin_info("Dependency pattern: dense");
 }
 //-----------------------------------------------------------------------------
-bool Dependencies::checkDependency(ODE& ode, DenseVector& u, real f0,
+bool Dependencies::checkDependency(ODE& ode, uBlasVector& u, real f0,
 				   uint i, uint j)
 {
   // Save original value

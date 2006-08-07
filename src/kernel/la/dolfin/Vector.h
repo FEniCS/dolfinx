@@ -13,19 +13,19 @@
 #include <dolfin/PETScVector.h>
 #endif
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 
 
 namespace dolfin
 {
 
   /// Vector is a synonym for the default vector type which is PETScVector if
-  /// PETSc is enabled, otherwise it is DenseVector.
+  /// PETSc is enabled, otherwise it is uBlasVector.
 
 #ifdef HAVE_PETSC_H
   typedef PETScVector Vector;
 #else
-  typedef DenseVector Vector;
+  typedef uBlasVector Vector;
 #endif
 }
 

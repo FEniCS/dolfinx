@@ -4,16 +4,16 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-04-04
-// Last changed: 2006-07-07
+// Last changed: 2006-08-07
 
 #include <dolfin/dolfin_log.h>
 #include <boost/numeric/ublas/vector.hpp>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-DenseVector::DenseVector()
+uBlasVector::uBlasVector()
   : GenericVector(),
     Variable("x", "a dense vector"),
     ublas_vector()
@@ -21,7 +21,7 @@ DenseVector::DenseVector()
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-DenseVector::DenseVector(uint N)
+uBlasVector::uBlasVector(uint N)
   : GenericVector(),
     Variable("x", "a dense vector"),
     ublas_vector(N)
@@ -30,18 +30,12 @@ DenseVector::DenseVector(uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
-//DenseVector::DenseVector(const DenseVector& x) : GenericVector<DenseVector>(), 
-//    BaseVector(x), Variable("x", "a dense vector")
-//{
-//  //Do nothing
-//}
-//-----------------------------------------------------------------------------
-DenseVector::~DenseVector()
+uBlasVector::~uBlasVector()
 {
   //Do nothing
 }
 //-----------------------------------------------------------------------------
-void DenseVector::init(uint N)
+void uBlasVector::init(uint N)
 {
   if( this->size() == N)
   {
@@ -53,25 +47,25 @@ void DenseVector::init(uint N)
   clear();
 }
 //-----------------------------------------------------------------------------
-void DenseVector::set(const real block[], const int pos[], int n)
+void uBlasVector::set(const real block[], const int pos[], int n)
 {
   for(int i = 0; i < n; ++i)
     (*this)(pos[i]) = block[i];
 }
 //-----------------------------------------------------------------------------
-void DenseVector::add(const real block[], const int pos[], int n)
+void uBlasVector::add(const real block[], const int pos[], int n)
 {
   for(int i = 0; i < n; ++i)
     (*this)(pos[i]) += block[i];
 }
 //-----------------------------------------------------------------------------
-void DenseVector::get(real block[], const int pos[], int n) const
+void uBlasVector::get(real block[], const int pos[], int n) const
 {
   for(int i = 0; i < n; ++i)
     block[i] = (*this)(pos[i]);
 }
 //-----------------------------------------------------------------------------
-real DenseVector::norm(NormType type) const
+real uBlasVector::norm(NormType type) const
 {
   switch (type) {
   case l1:
@@ -81,33 +75,33 @@ real DenseVector::norm(NormType type) const
   case linf:
     return norm_inf(*this);
   default:
-    dolfin_error("Requested vector norm type for DenseVector unknown");
+    dolfin_error("Requested vector norm type for uBlasVector unknown");
   }
   return norm_inf(*this);
 }
 //-----------------------------------------------------------------------------
-real DenseVector::sum() const
+real uBlasVector::sum() const
 {
   return sum();
 }
 //-----------------------------------------------------------------------------
-void DenseVector::apply()
+void uBlasVector::apply()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void DenseVector::zero()
+void uBlasVector::zero()
 {
   clear();
 }
 //-----------------------------------------------------------------------------
-const DenseVector& DenseVector::operator= (real a) 
+const uBlasVector& uBlasVector::operator= (real a) 
 { 
   this->assign(ublas::scalar_vector<double> (this->size(), a));
   return *this;
 }
 //-----------------------------------------------------------------------------
-void DenseVector::disp(uint precision) const
+void uBlasVector::disp(uint precision) const
 {
   dolfin::cout << "[ ";
   for (uint i = 0; i < size(); i++)
@@ -115,16 +109,16 @@ void DenseVector::disp(uint precision) const
   dolfin::cout << "]" << endl;
 }
 //-----------------------------------------------------------------------------
-LogStream& dolfin::operator<< (LogStream& stream, const DenseVector& x)
+LogStream& dolfin::operator<< (LogStream& stream, const uBlasVector& x)
 {
   // Check if vector has been defined
   if ( x.size() == 0 )
   {
-    stream << "[ DenseVector (empty) ]";
+    stream << "[ uBlasVector (empty) ]";
     return stream;
   }
 
-  stream << "[ DenseVector of size " << x.size() << " ]";
+  stream << "[ uBlasVector of size " << x.size() << " ]";
 
   return stream;
 }

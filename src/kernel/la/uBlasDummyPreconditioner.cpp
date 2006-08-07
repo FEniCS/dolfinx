@@ -4,7 +4,7 @@
 // First added:  2006-07-04
 // Last changed: 2006-07-04
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
 
 using namespace dolfin;
@@ -20,7 +20,7 @@ uBlasDummyPreconditioner::~uBlasDummyPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasDummyPreconditioner::solve(DenseVector& x, const DenseVector& b) const
+void uBlasDummyPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
   x.assign(b);
 }

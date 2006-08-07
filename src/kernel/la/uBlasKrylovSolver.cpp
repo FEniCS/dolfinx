@@ -7,7 +7,7 @@
 // Last changed: 2006-07-13
 
 #include <dolfin/dolfin_log.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasPreconditioner.h>
@@ -40,7 +40,7 @@ uBlasKrylovSolver::~uBlasKrylovSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
-				      DenseVector& x, const DenseVector& b)
+				      uBlasVector& x, const uBlasVector& b)
 {
   // Create default ILU preconditioner
   uBlasILUPreconditioner pc(A);
@@ -50,7 +50,7 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
-				      DenseVector& x, const DenseVector& b,
+				      uBlasVector& x, const uBlasVector& b,
 				      const uBlasPreconditioner& pc)
 {
   // Check dimensions
@@ -100,8 +100,8 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
-					   DenseVector& x, 
-					   const DenseVector& b,
+					   uBlasVector& x, 
+					   const uBlasVector& b,
 					   const uBlasPreconditioner& pc,
 					   bool& converged) const
 {
@@ -109,7 +109,7 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
   const uint size = A.size(0);
 
   // Create residual vector
-  DenseVector r(size);
+  uBlasVector r(size);
 
   // Create H matrix and h vector
   ublas_matrix_cmajor_tri H(restart, restart);
@@ -122,7 +122,7 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
   ublas_matrix_cmajor V(size, restart+1);
 
   // w vector    
-  DenseVector w(size);
+  uBlasVector w(size);
 
   // Givens vectors
   ublas_vector c(restart), s(restart);
@@ -252,8 +252,8 @@ dolfin::uint uBlasKrylovSolver::solveGMRES(const uBlasKrylovMatrix& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasKrylovSolver::solveBiCGStab(const uBlasKrylovMatrix& A,
-					      DenseVector& x,
-					      const DenseVector& b,
+					      uBlasVector& x,
+					      const uBlasVector& b,
 					      const uBlasPreconditioner& pc,
 					      bool& converged) const
 {
@@ -261,7 +261,7 @@ dolfin::uint uBlasKrylovSolver::solveBiCGStab(const uBlasKrylovMatrix& A,
   const uint size = A.size(0);
 
   // Allocate vectors
-  DenseVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
+  uBlasVector r(size), rstar(size), p(size), s(size), v(size), t(size), y(size), z(size);
 
   real alpha = 1.0, beta = 0.0, omega = 1.0, r_norm = 0.0; 
   real rho_old = 1.0, rho = 1.0;

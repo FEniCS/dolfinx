@@ -80,7 +80,7 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   //b.disp();
 
   // Solve linear system
-  const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
+  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
   b /= r;
   num_local_iterations += solver.solve(A, dx, b, pc);
   dx *= r;
@@ -93,7 +93,7 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   ts.x += dx;
   
   // Return maximum increment
-  return dx.norm(DenseVector::linf);
+  return dx.norm(uBlasVector::linf);
 }
 //-----------------------------------------------------------------------------
 dolfin::uint MonoAdaptiveNewtonSolver::size() const
@@ -101,7 +101,7 @@ dolfin::uint MonoAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::Feval(DenseVector& F)
+void MonoAdaptiveNewtonSolver::Feval(uBlasVector& F)
 {
   if ( implicit )
     FevalImplicit(F);
@@ -109,7 +109,7 @@ void MonoAdaptiveNewtonSolver::Feval(DenseVector& F)
     FevalExplicit(F);
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalExplicit(DenseVector& F)
+void MonoAdaptiveNewtonSolver::FevalExplicit(uBlasVector& F)
 {
   // Compute size of time step
   const real k = ts.length();
@@ -141,11 +141,11 @@ void MonoAdaptiveNewtonSolver::FevalExplicit(DenseVector& F)
   F -= ts.x;
 }
 //-----------------------------------------------------------------------------
-void MonoAdaptiveNewtonSolver::FevalImplicit(DenseVector& F)
+void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
 {
   // Use vectors from Jacobian for storing multiplication
-  DenseVector& xx = A.xx;
-  DenseVector& yy = A.yy;
+  uBlasVector& xx = A.xx;
+  uBlasVector& yy = A.yy;
 
   // Compute size of time step
   const real a = ts.starttime();
@@ -205,7 +205,7 @@ void MonoAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
   uBlasSparseMatrix B(n, n);
-  DenseVector F1(n), F2(n);
+  uBlasVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

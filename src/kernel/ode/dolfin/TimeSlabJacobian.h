@@ -33,7 +33,7 @@ namespace dolfin
     virtual uint size(const uint dim) const = 0;
     
     /// Compute product y = Ax
-    virtual void mult(const DenseVector& x, DenseVector& y) const = 0;
+    virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
 
     /// Recompute Jacobian if necessary
     virtual void update();

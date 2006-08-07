@@ -267,7 +267,7 @@ void Homotopy::computePath(uint m)
 bool Homotopy::computeSolution(HomotopyODE& ode)
 {
   // Create right-hand side and increment vector
-  DenseVector F(2*n), dx(2*n);
+  uBlasVector F(2*n), dx(2*n);
 
   // Create matrix-free Jacobian
   HomotopyJacobian J(ode, x);
@@ -282,7 +282,7 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     feval(F, ode);
 
     // Check convergence
-    real r = F.norm(DenseVector::linf);
+    real r = F.norm(uBlasVector::linf);
     //cout << "r = " << r << ": x = "; x.disp();
     if ( r < tol )
     {
@@ -372,7 +372,7 @@ void Homotopy::randomize()
   fclose(fp);
 }
 //-----------------------------------------------------------------------------
-void Homotopy::feval(DenseVector& F, ComplexODE& ode)
+void Homotopy::feval(uBlasVector& F, ComplexODE& ode)
 {
   // Reuse the right-hand side of the ODE so we don't have to reimplement
   // the mapping from complex to real numbers

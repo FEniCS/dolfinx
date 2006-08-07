@@ -9,7 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/Array.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
 
@@ -87,7 +87,7 @@ namespace dolfin
     void randomize();
 
     // Evaluate right-hand side
-    void feval(DenseVector& F, ComplexODE& ode);
+    void feval(uBlasVector& F, ComplexODE& ode);
 
     uint n;                     // Size of system
     uint M;                     // Number of paths
@@ -103,7 +103,7 @@ namespace dolfin
     uint* mi;                   // Array of local path numbers
     complex* ci;                // Array of constants for system G(z) = 0
     complex* tmp;               // Array used for temporary storage
-    DenseVector x;              // Real-valued vector x corresponding to solution z of F(z) = 0
+    uBlasVector x;              // Real-valued vector x corresponding to solution z of F(z) = 0
     Array<complex*> zs;         // Array of solutions
     Event degree_adjusted;      // Message if degree has to be adjusted
 

@@ -32,7 +32,7 @@ namespace dolfin
     uint size(const uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const DenseVector& x, DenseVector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
   private:
 
@@ -51,8 +51,8 @@ namespace dolfin
     // FIXME: Maybe we can reuse some other vectors?
 
     // Temporary vectors for storing multiplication
-    mutable DenseVector xx;
-    mutable DenseVector yy;
+    mutable uBlasVector xx;
+    mutable uBlasVector yy;
 
   };
 

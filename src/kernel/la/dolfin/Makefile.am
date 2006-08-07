@@ -1,6 +1,5 @@
 EXTRA_DIST = dolfin_la.h \
              DenseMatrix.h \
-             DenseVector.h \
              EigenvalueSolver.h \
              GenericMatrix.h \
              GenericVector.h \
@@ -26,5 +25,6 @@ EXTRA_DIST = dolfin_la.h \
              uBlasILUPreconditioner.h \
              uBlasPreconditioner.h \
              uBlasSparseMatrix.h \
+             uBlasVector.h \
              Vector.h \
              VirtualMatrix.h 

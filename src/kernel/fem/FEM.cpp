@@ -48,7 +48,7 @@ void FEM::applyBC(GenericMatrix& A, Mesh& mesh,
 		  FiniteElement& element, BoundaryCondition& bc)
 {
   dolfin_info("Applying Dirichlet boundary conditions to matrix.");
-  applyCommonBC(&A, (DenseVector*) 0, 0, mesh, element, bc);
+  applyCommonBC(&A, (Vector*) 0, 0, mesh, element, bc);
 }
 //-----------------------------------------------------------------------------
 void FEM::applyBC(GenericVector& b, Mesh& mesh,

@@ -4,7 +4,7 @@
 // First added:  2006-07-07
 // Last changed: 2006-07-07
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 
@@ -19,7 +19,7 @@ void uBlasKrylovMatrix::disp(const int precision) const
   
   uint M = size(0);
   uint N = size(1);
-  DenseVector x(N), y(M);
+  uBlasVector x(N), y(M);
   uBlasMatrix<ublas_sparse_matrix> A(M, N);
   
   x = 0.0;

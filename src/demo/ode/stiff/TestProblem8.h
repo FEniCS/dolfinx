@@ -25,7 +25,7 @@ public:
       return 0.0;
   }
   
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = -0.04 * u(0) + 1.0e4 * u(1) * u(2);
     y(1) = 0.04 * u(0) - 1.0e4 * u(1) * u(2) - 3.0e7 * u(1) * u(1);

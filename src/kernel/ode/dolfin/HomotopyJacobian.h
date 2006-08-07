@@ -25,7 +25,7 @@ namespace dolfin
   public:
 
     /// Constructor
-    HomotopyJacobian(ComplexODE& ode, DenseVector& u);
+    HomotopyJacobian(ComplexODE& ode, uBlasVector& u);
 
     /// Destructor
     ~HomotopyJacobian();
@@ -34,7 +34,7 @@ namespace dolfin
     uint size(const uint dim) const;
 
     /// Compute product y = Ax
-    void mult(const DenseVector& x, DenseVector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
   private:
     
@@ -42,7 +42,7 @@ namespace dolfin
     ComplexODE& ode;
 
     // Current solution to linearize around
-    DenseVector& u;
+    uBlasVector& u;
 
   };
 

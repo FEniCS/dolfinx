@@ -46,7 +46,7 @@ public:
     }
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = -2.0*r1(u) + r2(u) - r3(u) - r4(u);
     y(1) = -0.5*r1(u) - r4(u) - 0.5*r5(u) + F(u);
@@ -58,32 +58,32 @@ public:
 
 private:
 
-  real r1(const DenseVector& u)
+  real r1(const uBlasVector& u)
   {
     return k1*pow(u(0), 4.0)*sqrt(u(1));
   }
   
-  real r2(const DenseVector& u)
+  real r2(const uBlasVector& u)
   {
     return k2*u(2)*u(3);
   }
 
-  real r3(const DenseVector& u)
+  real r3(const uBlasVector& u)
   {
     return (k2/K)*u(0)*u(4);
   }
 
-  real r4(const DenseVector& u)
+  real r4(const uBlasVector& u)
   {
     return k3*u(0)*pow(u(3), 2.0);
   }
 
-  real r5(const DenseVector& u)
+  real r5(const uBlasVector& u)
   {
     return k4*pow(u(5), 2.0)*sqrt(u(1));
   }
 
-  real F(const DenseVector& u)
+  real F(const uBlasVector& u)
   {
     return klA * (p/H - u(1));
   }

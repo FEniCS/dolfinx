@@ -4,7 +4,6 @@
 // DOLFIN linear algebra
 
 #include <dolfin/DenseMatrix.h>
-#include <dolfin/DenseVector.h>
 #include <dolfin/EigenvalueSolver.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/GenericVector.h>
@@ -31,6 +30,7 @@
 #include <dolfin/uBlasILUPreconditioner.h>
 #include <dolfin/uBlasPreconditioner.h>
 #include <dolfin/uBlasSparseMatrix.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/VirtualMatrix.h>
 
 #endif

@@ -8,7 +8,7 @@
 #define __MONO_ADAPTIVE_NEWTON_SOLVER_H
 
 #include <dolfin/constants.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasDummyPreconditioner.h>
 #include <dolfin/uBlasKrylovSolver.h>
 #include <dolfin/MonoAdaptiveJacobian.h>
@@ -50,13 +50,13 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(DenseVector& F);
+    void Feval(uBlasVector& F);
 
     // Evaluate -F(x) for explicit system: u' = f
-    void FevalExplicit(DenseVector& F);
+    void FevalExplicit(uBlasVector& F);
 
     // Evaluate -F(x) for implicit system: Mu' = f
-    void FevalImplicit(DenseVector& F);
+    void FevalImplicit(uBlasVector& F);
 	
     // Numerical evaluation of the Jacobian used for testing
     void debug();
@@ -66,11 +66,11 @@ namespace dolfin
 
     MonoAdaptiveTimeSlab& ts;   // The time slab;
     MonoAdaptiveJacobian A;     // Jacobian of time slab system
-    DenseVector dx;             // Increment for Newton's method
-    DenseVector b;              // Right-hand side -F(x)
+    uBlasVector dx;             // Increment for Newton's method
+    uBlasVector b;              // Right-hand side -F(x)
     uBlasDummyPreconditioner pc;// Preconditioner
     uBlasKrylovSolver solver;   // Linear solver
-    DenseVector Mu0;            // Precomputed product M*u0 for implicit system
+    uBlasVector Mu0;            // Precomputed product M*u0 for implicit system
     
   };
 

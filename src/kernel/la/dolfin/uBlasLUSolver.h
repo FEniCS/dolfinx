@@ -15,7 +15,7 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class DenseVector;
+  class uBlasVector;
   template<class Mat> class uBlasMatrix;
 
   /// This class implements the direct solution (LU factorization) for
@@ -33,10 +33,10 @@ namespace dolfin
     ~uBlasLUSolver();
 
     /// Solve linear system Ax = b (A is dense)
-    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, DenseVector& x, const DenseVector& b) const;
+    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
     /// Solve linear system Ax = b in place (A is dense)
-    uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, DenseVector& x, const DenseVector& b) const;
+    uint solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
 
     /// Compute the inverse of A (A is dense)
     void invert(uBlasMatrix<ublas_dense_matrix>& A) const;
@@ -48,7 +48,7 @@ namespace dolfin
 
     /// Solve linear system Ax = b (A is sparse)
     /// UMFPACK is used if it has been configured. Otherwise a Krylov is used.
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
   private:
     

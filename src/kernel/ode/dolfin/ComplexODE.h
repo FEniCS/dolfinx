@@ -68,22 +68,22 @@ namespace dolfin
     real u0(uint i);
 
     /// Return right-hand side for real-valued ODE
-    real f(const DenseVector& u, real t, uint i);
+    real f(const uBlasVector& u, real t, uint i);
 
     /// Evaluate right-hand side for real-valued ODE
-    void f(const DenseVector& u, real t, DenseVector& y);
+    void f(const uBlasVector& u, real t, uBlasVector& y);
 
     /// Compute product y = Mx for real-valued ODE
-    void M(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
+    void M(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Compute product y = Jx for real-valued ODE
-    void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t);
+    void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t);
 
     /// Return time step for real-valued ODE
     real timestep(uint i);
 
     /// Update for real-valued ODE
-    bool update(const DenseVector& u, real t, bool end);
+    bool update(const uBlasVector& u, real t, bool end);
 
   protected:
 

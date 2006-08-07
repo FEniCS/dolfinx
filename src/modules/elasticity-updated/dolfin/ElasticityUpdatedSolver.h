@@ -66,9 +66,9 @@ namespace dolfin
     static void fromArray(const real u[], Vector& x, uint offset, uint size);
     static void toArray(real y[], Vector&x, uint offset, uint size);
 
-    static void fromDense(const DenseVector& u, Vector& x, uint offset,
+    static void fromDense(const uBlasVector& u, Vector& x, uint offset,
 			  uint size);
-    static void toDense(DenseVector& y, Vector&x, uint offset, uint size);
+    static void toDense(uBlasVector& y, Vector&x, uint offset, uint size);
 
     // Prepare time step
     virtual void preparestep();
@@ -221,8 +221,8 @@ namespace dolfin
     // Fix to avoid error with some compilers due to only partially overridden
     // virtual functions
     using ODE::f; 
-    virtual void f(const DenseVector& u, real t, DenseVector& y);
-    virtual bool update(const DenseVector& u, real t, bool end);
+    virtual void f(const uBlasVector& u, real t, uBlasVector& y);
+    virtual bool update(const uBlasVector& u, real t, bool end);
 
     ElasticityUpdatedSolver& solver;
   };

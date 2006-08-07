@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/RadauQuadrature.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/dGqMethod.h>
 
@@ -37,7 +37,7 @@ real dGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::ueval(real x0, DenseVector& values, uint offset, real tau) const
+real dGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
 {
   // Note: x0 is not used, maybe this can be done differently
 
@@ -58,7 +58,7 @@ real dGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real dGqMethod::residual(real x0, DenseVector& values, uint offset, real f, real k) const
+real dGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real k) const
 {
   // FIXME: Include jump term in residual
   real sum = 0.0;
@@ -182,8 +182,8 @@ void dGqMethod::computeWeights()
     }
   }
 
-  DenseVector b(nn);
-  DenseVector w(nn);
+  uBlasVector b(nn);
+  uBlasVector w(nn);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)

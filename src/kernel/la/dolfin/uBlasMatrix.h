@@ -16,7 +16,7 @@
 #include <dolfin/Variable.h>
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/ublas.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasLUSolver.h>
 
@@ -71,10 +71,10 @@ namespace dolfin
     void getRow(const uint i, int& ncols, Array<int>& columns, Array<real>& values) const;
 
     /// Lump matrix into vector m
-    void lump(DenseVector& m) const;
+    void lump(uBlasVector& m) const;
 
     /// Solve Ax = b out-of-place (A is not destroyed)
-    void solve(DenseVector& x, const DenseVector& b) const;
+    void solve(uBlasVector& x, const uBlasVector& b) const;
 
     /// Compute inverse of matrix
     void invert();
@@ -89,7 +89,7 @@ namespace dolfin
     void ident(const int rows[], int m);
 
     /// Compute product y = Ax
-    void mult(const DenseVector& x, DenseVector& y) const;
+    void mult(const uBlasVector& x, uBlasVector& y) const;
 
     /// Display matrix
     void disp(const uint precision = 2) const;
@@ -178,7 +178,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::lump(DenseVector& m) const
+  void uBlasMatrix<Mat>::lump(uBlasVector& m) const
   {
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
@@ -188,7 +188,7 @@ namespace dolfin
   }
   //-----------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::solve(DenseVector& x, const DenseVector& b) const
+  void uBlasMatrix<Mat>::solve(uBlasVector& x, const uBlasVector& b) const
   {    
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 
@@ -247,7 +247,7 @@ namespace dolfin
   }
   //---------------------------------------------------------------------------
   template <class Mat>  
-  void uBlasMatrix<Mat>::mult(const DenseVector& x, DenseVector& y) const
+  void uBlasMatrix<Mat>::mult(const uBlasVector& x, uBlasVector& y) const
   {
     if( !assembled )
       dolfin_error("Matrix has not been assembled. Did you forget to call A.apply()?"); 

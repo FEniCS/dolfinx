@@ -21,7 +21,7 @@ namespace dolfin
   /// This class implements an incomplete LU factorization (ILU)
   /// preconditioner for the uBlas Krylov solver.
 
-  class DenseVector;
+  class uBlasVector;
 
   class uBlasILUPreconditioner : public uBlasPreconditioner
   {
@@ -34,7 +34,7 @@ namespace dolfin
     ~uBlasILUPreconditioner();
 
     /// Solve linear system Ax = b approximately
-    void solve(DenseVector& x, const DenseVector& b) const;
+    void solve(uBlasVector& x, const uBlasVector& b) const;
 
   private:
 

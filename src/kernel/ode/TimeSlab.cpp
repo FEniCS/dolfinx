@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 #include <string>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/ParameterSystem.h>
 #include <dolfin/ODE.h>
 #include <dolfin/cGqMethod.h>
@@ -85,7 +85,7 @@ dolfin::LogStream& dolfin::operator<<(LogStream& stream,
   return stream;
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::write(const DenseVector& u)
+void TimeSlab::write(const uBlasVector& u)
 {
   // FIXME: Make this a parameter?
   std::string filename = "solution.data";
@@ -107,19 +107,19 @@ void TimeSlab::copy(const real x[], uint xoffset, real y[], uint yoffset, uint n
     y[yoffset + i] = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const DenseVector& x, uint xoffset, real y[], uint yoffset, uint n)
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, real y[], uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y[yoffset + i] = x(xoffset + i);
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const real x[], uint xoffset, DenseVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const real x[], uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y(yoffset + i) = x[xoffset + i];
 }
 //-----------------------------------------------------------------------------
-void TimeSlab::copy(const DenseVector& x, uint xoffset, DenseVector& y, uint yoffset, uint n)
+void TimeSlab::copy(const uBlasVector& x, uint xoffset, uBlasVector& y, uint yoffset, uint n)
 {
   for (uint i = 0; i < n; i++)
     y(yoffset + i) = x(xoffset + i);

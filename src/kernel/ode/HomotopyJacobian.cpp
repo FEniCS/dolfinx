@@ -11,7 +11,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, DenseVector& u) 
+HomotopyJacobian::HomotopyJacobian(ComplexODE& ode, uBlasVector& u) 
   : ode(ode), u(u)
 {
   // Do nothing
@@ -27,7 +27,7 @@ dolfin::uint HomotopyJacobian::size(const uint dim) const
   return u.size();
 }
 //-----------------------------------------------------------------------------
-void HomotopyJacobian::mult(const DenseVector& x, DenseVector& y) const
+void HomotopyJacobian::mult(const uBlasVector& x, uBlasVector& y) const
 {
   // Compute y = A*x
   ode.J(x, y, u, 0.0);

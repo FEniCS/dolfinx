@@ -1,7 +1,6 @@
 SUBDIRS                 = dolfin
 nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/DenseMatrix.h \
-                          dolfin/DenseVector.h \
                           dolfin/EigenvalueSolver.h \
                           dolfin/KrylovSolver.h \
                           dolfin/GenericMatrix.h \
@@ -27,12 +26,12 @@ nobase_include_HEADERS  = dolfin/dolfin_la.h \
                           dolfin/uBlasILUPreconditioner.h \
                           dolfin/uBlasPreconditioner.h \
                           dolfin/uBlasSparseMatrix.h \
+                          dolfin/uBlasVector.h \
                           dolfin/Vector.h \
                           dolfin/VirtualMatrix.h 
 INCLUDES                = @KERNEL_CFLAGS@
 lib_LTLIBRARIES         = libdolfin-la.la
-libdolfin_la_la_SOURCES = DenseVector.cpp \
-                          EigenvalueSolver.cpp \
+libdolfin_la_la_SOURCES = EigenvalueSolver.cpp \
                           GMRES.cpp \
                           LinearSolver.cpp \
                           PETScKrylovSolver.cpp \
@@ -46,5 +45,6 @@ libdolfin_la_la_SOURCES = DenseVector.cpp \
                           uBlasLUSolver.cpp \
                           uBlasDummyPreconditioner.cpp \
                           uBlasILUPreconditioner.cpp \
+                          uBlasVector.cpp \
                           VirtualMatrix.cpp 
 libdolfin_la_la_LDFLAGS = -static

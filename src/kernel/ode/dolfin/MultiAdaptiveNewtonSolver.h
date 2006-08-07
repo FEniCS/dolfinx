@@ -9,7 +9,7 @@
 
 #include <dolfin/constants.h>
 #include <dolfin/uBlasKrylovSolver.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/MultiAdaptivePreconditioner.h>
 #include <dolfin/TimeSlabJacobian.h>
 #include <dolfin/TimeSlabSolver.h>
@@ -57,7 +57,7 @@ namespace dolfin
   private:
 
     // Evaluate -F(x) at current x
-    void Feval(DenseVector& F);
+    void Feval(uBlasVector& F);
 
     // Numerical evaluation of the Jacobian used for testing
     void debug();
@@ -68,8 +68,8 @@ namespace dolfin
     uBlasKrylovSolver solver;        // Linear solver
     real* f;                         // Values of right-hand side at quadrature points
     real* u;                         // Degrees of freedom on local element
-    DenseVector dx;                  // Increment for Newton's method
-    DenseVector b;                   // Right-hand side -F(x)
+    uBlasVector dx;                  // Increment for Newton's method
+    uBlasVector b;                   // Right-hand side -F(x)
     uint num_elements;               // Total number of elements
     real num_elements_mono;          // Estimated number of elements for mono-adaptive system
     bool updated_jacobian;           // Update Jacobian in each iteration

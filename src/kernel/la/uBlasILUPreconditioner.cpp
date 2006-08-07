@@ -6,7 +6,7 @@
 // First added:  2006-06-23
 // Last changed: 2006-07-04
 
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/uBlasSparseMatrix.h>
 #include <dolfin/uBlasILUPreconditioner.h>
 
@@ -25,7 +25,7 @@ uBlasILUPreconditioner::~uBlasILUPreconditioner()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void uBlasILUPreconditioner::solve(DenseVector& x, const DenseVector& b) const
+void uBlasILUPreconditioner::solve(uBlasVector& x, const uBlasVector& b) const
 {
   dolfin_assert( x.size() == M.size1() );
   dolfin_assert( x.size() == b.size());

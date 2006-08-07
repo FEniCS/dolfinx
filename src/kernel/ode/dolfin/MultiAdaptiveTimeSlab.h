@@ -9,7 +9,7 @@
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/constants.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/Partition.h>
 #include <dolfin/MultiAdaptivity.h>
@@ -171,7 +171,7 @@ namespace dolfin
     uint emax;                  // Last covered element for sample
     real kmin;                  // Minimum time step (exluding threshold modified)
 
-    DenseVector u; // The interpolated solution at a given time
+    uBlasVector u; // The interpolated solution at a given time
 
   };
 

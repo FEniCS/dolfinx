@@ -4,12 +4,10 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-03-04
-// Last changed: 2006-07-04
+// Last changed: 2006-08-07
 
-#ifndef __DENSE_VECTOR_H
-#define __DENSE_VECTOR_H
-
-// FIXME: ublas first
+#ifndef __UBLAS_VECTOR_H
+#define __UBLAS_VECTOR_H
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/Variable.h>
@@ -29,37 +27,34 @@ namespace dolfin
   /// refer to the documentation for ublas which can be found at
   /// http://www.boost.org/libs/numeric/ublas/doc/index.htm.
 
-  class DenseVector : public GenericVector,
+  class uBlasVector : public GenericVector,
 		      public Variable,
 		      public ublas_vector
   {
   public:
     
     /// Constructor
-    DenseVector();
+    uBlasVector();
     
     /// Constructor
-    DenseVector(uint N);
+    uBlasVector(uint N);
     
     /// Constructor from a uBlas vector_expression
     template <class E>
-    DenseVector(const ublas::vector_expression<E>& x) : ublas_vector(x) {}
-
-    /// Copy constructor
-    //DenseVector(const DenseVector& x);
+    uBlasVector(const ublas::vector_expression<E>& x) : ublas_vector(x) {}
 
     /// Destructor
-    ~DenseVector();
+    ~uBlasVector();
 
     /// Initialize a vector of length N
     void init(uint N);
 
     /// Set all entries to a single scalar value
-    const DenseVector& operator= (real a);
+    const uBlasVector& operator= (real a);
 
     /// Assignment from a vector_expression
     template <class E>
-    DenseVector& operator=(const ublas::vector_expression<E>& A)
+    uBlasVector& operator=(const ublas::vector_expression<E>& A)
     { 
       ublas::vector<double>::operator=(A); 
       return *this;
@@ -103,7 +98,7 @@ namespace dolfin
     void disp(uint precision = 2) const;
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const DenseVector& x);
+    friend LogStream& operator<< (LogStream& stream, const uBlasVector& x);
 
   };
 }

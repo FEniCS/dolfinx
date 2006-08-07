@@ -27,7 +27,7 @@ namespace dolfin
     real ueval(real x0, real values[], real tau) const;
 
     /// Evaluate solution at given point
-    real ueval(real x0, DenseVector& values, uint offset, real tau) const;
+    real ueval(real x0, uBlasVector& values, uint offset, real tau) const;
 
     /// Evaluate solution at given node (inline optimized)
     real ueval(real x0, real values[], uint i) const
@@ -37,7 +37,7 @@ namespace dolfin
     real residual(real x0, real values[], real f, real k) const;
 
     /// Compute residual at right end-point
-    real residual(real x0, DenseVector& values, uint offset, real f, real k) const;
+    real residual(real x0, uBlasVector& values, uint offset, real f, real k) const;
   
     /// Compute new time step based on the given residual
     real timestep(real r, real tol, real k0, real kmax) const;

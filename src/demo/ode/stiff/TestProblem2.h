@@ -25,7 +25,7 @@ public:
     return 1.0;
   }
   
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     A.mult(u, y);
   }

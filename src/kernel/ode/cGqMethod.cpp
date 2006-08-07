@@ -8,7 +8,7 @@
 #include <dolfin/dolfin_math.h>
 #include <dolfin/Lagrange.h>
 #include <dolfin/LobattoQuadrature.h>
-#include <dolfin/DenseVector.h>
+#include <dolfin/uBlasVector.h>
 #include <dolfin/DenseMatrix.h>
 #include <dolfin/cGqMethod.h>
 
@@ -35,7 +35,7 @@ real cGqMethod::ueval(real x0, real values[], real tau) const
   return sum;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::ueval(real x0, DenseVector& values, uint offset, real tau) const
+real cGqMethod::ueval(real x0, uBlasVector& values, uint offset, real tau) const
 {
   real sum = x0 * trial->eval(0, tau);
   for (uint i = 0; i < nn; i++)
@@ -53,7 +53,7 @@ real cGqMethod::residual(real x0, real values[], real f, real k) const
   return sum / k - f;
 }
 //-----------------------------------------------------------------------------
-real cGqMethod::residual(real x0, DenseVector& values, uint offset, real f, real k) const
+real cGqMethod::residual(real x0, uBlasVector& values, uint offset, real f, real k) const
 {
   real sum = x0 * derivatives[0];
   for (uint i = 0; i < nn; i++)
@@ -172,16 +172,16 @@ void cGqMethod::computeWeights()
       real integral = 0.0;
       for (unsigned int k = 0; k < nq; k++)
       {
-	real x = qpoints[k];
-	integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
+	      real x = qpoints[k];
+	      integral += qweights[k] * trial->ddx(j + 1, x) * test->eval(i, x);
       }
       
       A(i, j) = integral;
     }
   }
 
-  DenseVector b(q);
-  DenseVector w(q);
+  uBlasVector b(q);
+  uBlasVector w(q);
 
   // Compute nodal weights for each degree of freedom (loop over points)
   for (unsigned int i = 0; i < nq; i++)

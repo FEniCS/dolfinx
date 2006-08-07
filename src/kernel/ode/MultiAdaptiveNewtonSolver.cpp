@@ -90,7 +90,7 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
   
   // Solve linear system
-  const real r = b.norm(DenseVector::linf) + DOLFIN_EPS;
+  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
   b /= r;
   num_local_iterations += solver.solve(*A, dx, b, mpc);
   dx *= r;
@@ -116,7 +116,7 @@ dolfin::uint MultiAdaptiveNewtonSolver::size() const
   return ts.nj;
 }
 //-----------------------------------------------------------------------------
-void MultiAdaptiveNewtonSolver::Feval(DenseVector& F)
+void MultiAdaptiveNewtonSolver::Feval(uBlasVector& F)
 {
   // Reset dof
   uint j = 0;
@@ -167,7 +167,7 @@ void MultiAdaptiveNewtonSolver::debug()
 {
   const uint n = ts.nj;
   uBlasSparseMatrix B(n, n);
-  DenseVector F1(n), F2(n);
+  uBlasVector F1(n), F2(n);
 
   // Iterate over the columns of B
   for (uint j = 0; j < n; j++)

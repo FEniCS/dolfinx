@@ -23,7 +23,7 @@ public:
     return 0.0;
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     // Boundary values
     y(0)   = 0.0;

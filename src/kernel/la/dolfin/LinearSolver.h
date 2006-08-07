@@ -16,7 +16,7 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class DenseVector;  
+  class uBlasVector;  
   template<class Mat>
   class uBlasMatrix;
 
@@ -41,7 +41,7 @@ namespace dolfin
     virtual ~LinearSolver();
 
     /// Solve linear system Ax = b (uBlas sparse matrix version)
-    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
+    virtual uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
 #ifdef HAVE_PETSC_H
     /// Solve linear system Ax = b (PETSc sparse matrix version)

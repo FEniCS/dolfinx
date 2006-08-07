@@ -37,7 +37,7 @@ uBlasLUSolver::~uBlasLUSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
-                                  DenseVector& x, const DenseVector& b) const
+                                  uBlasVector& x, const uBlasVector& b) const
 {    
   // Make copy of matrix and vector
   ublas_dense_matrix Atemp(A);
@@ -51,7 +51,7 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A,
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solveInPlaceUBlas(uBlasMatrix<ublas_dense_matrix>& A, 
-                                      DenseVector& x, const DenseVector& b) const
+                                      uBlasVector& x, const uBlasVector& b) const
 {
   const uint M = A.size1();
   dolfin_assert(M == b.size());
@@ -85,8 +85,8 @@ void uBlasLUSolver::invert(uBlasMatrix<ublas_dense_matrix>& A) const
 //-----------------------------------------------------------------------------
 #if defined(HAVE_UMFPACK_H)|| defined(HAVE_UMFPACK_UMFPACK_H) || defined(HAVE_UFSPARSE_UMFPACK_H)
 
-dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, 
-    const DenseVector& b)
+dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
+    const uBlasVector& b)
 {
   // Check dimensions and get number of non-zeroes
   const uint M = A.size(0);
@@ -138,8 +138,8 @@ dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, Den
 
 #else
 
-dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, 
-    const DenseVector& b)
+dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, 
+    const uBlasVector& b)
 {
   dolfin_warning("UMFPACK must be installed to peform a LU solve for uBlas matrices. A Krylov iterative solver will be used instead.");
 

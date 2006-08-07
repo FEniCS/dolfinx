@@ -18,7 +18,7 @@ namespace dolfin
 {
 
   /// Forward declarations
-  class DenseVector;
+  class uBlasVector;
   class uBlasKrylovMatrix;
   class uBlasPreconditioner;
   template< class Mat> class uBlasMatrix;
@@ -49,20 +49,20 @@ namespace dolfin
     ~uBlasKrylovSolver();
 
     /// Solve linear system Ax = b with default preconditioner and return number of iterations
-    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, DenseVector& x, const DenseVector& b);
+    uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b with preconditioning and return number of iterations
-    uint solve(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+    uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
 	       const uBlasPreconditioner& pc);
           
   private:
 
     /// Solve linear system Ax = b using restarted GMRES
-    uint solveGMRES(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+    uint solveGMRES(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
 		    const uBlasPreconditioner& pc, bool& converged) const;
 
     /// Solve linear system Ax = b using BiCGStab
-    uint solveBiCGStab(const uBlasKrylovMatrix& A, DenseVector& x, const DenseVector& b,
+    uint solveBiCGStab(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,
 		       const uBlasPreconditioner& pc, bool& converged) const;
     
     /// Read solver parameters

@@ -30,7 +30,7 @@ public:
     }
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = u(1);
     y(1) = mu*(1.0 - u(0)*u(0))*u(1) - u(0);

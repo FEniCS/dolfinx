@@ -14,7 +14,7 @@
 namespace dolfin
 {
 
-  class DenseVector;
+  class uBlasVector;
 
   /// This class specifies the interface for preconditioners for the
   /// uBlas Krylov solver.
@@ -30,7 +30,7 @@ namespace dolfin
     virtual ~uBlasPreconditioner() {};
 
     /// Solve linear system (M^-1)Ax = y
-    virtual void solve(DenseVector& x, const DenseVector& b) const = 0;
+    virtual void solve(uBlasVector& x, const uBlasVector& b) const = 0;
 
   };
 

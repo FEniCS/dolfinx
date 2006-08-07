@@ -1006,10 +1006,10 @@ void ElasticityUpdatedSolver::toArray(real y[], Vector& x, uint offset,
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::fromDense(const DenseVector& u, Vector& x,
+void ElasticityUpdatedSolver::fromDense(const uBlasVector& u, Vector& x,
 					uint offset, uint size)
 {
-  // Workaround to interface Vector and DenseVector
+  // Workaround to interface Vector and uBlasVector
 
   real* vals = 0;
   vals = x.array();
@@ -1020,10 +1020,10 @@ void ElasticityUpdatedSolver::fromDense(const DenseVector& u, Vector& x,
   x.restore(vals);
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedSolver::toDense(DenseVector& y, Vector& x, uint offset,
+void ElasticityUpdatedSolver::toDense(uBlasVector& y, Vector& x, uint offset,
 				      uint size)
 {
-  // Workaround to interface Vector and DenseVector
+  // Workaround to interface Vector and uBlasVector
 
   real* vals = 0;
   vals = x.array();
@@ -1046,7 +1046,7 @@ real ElasticityUpdatedODE::u0(unsigned int i)
    return solver.dotu(i);
 }
 //-----------------------------------------------------------------------------
-void ElasticityUpdatedODE::f(const DenseVector& u, real t, DenseVector &y)
+void ElasticityUpdatedODE::f(const uBlasVector& u, real t, uBlasVector &y)
 {
   // Copy values from ODE array
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
@@ -1062,7 +1062,7 @@ void ElasticityUpdatedODE::f(const DenseVector& u, real t, DenseVector &y)
   solver.toDense(y, solver.dotu, 0, 2 * solver.Nv + solver.Nsigma);
 }
 //-----------------------------------------------------------------------------
-bool ElasticityUpdatedODE::update(const DenseVector& u, real t, bool end)
+bool ElasticityUpdatedODE::update(const uBlasVector& u, real t, bool end)
 {
   solver.fromDense(u, solver.x1_1, 0, solver.Nv);
   solver.fromDense(u, solver.x2_1, solver.Nv, solver.Nv);
