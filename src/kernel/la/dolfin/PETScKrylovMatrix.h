@@ -6,8 +6,8 @@
 // First added:  2005-01-17
 // Last changed: 2006-05-07
 
-#ifndef __VIRTUAL_MATRIX_H
-#define __VIRTUAL_MATRIX_H
+#ifndef __PETSC_KRYLOV_MATRIX_H
+#define __PETSC_KRYLOV_MATRIX_H
 
 #ifdef HAVE_PETSC_H
 
@@ -26,25 +26,25 @@ namespace dolfin
   /// Mat pointer using the function mat() and use the standard PETSc
   /// interface.
   ///
-  /// The class VirtualMatrix enables the use of Krylov subspace
+  /// The class PETScKrylovMatrix enables the use of Krylov subspace
   /// methods for linear systems Ax = b, without having to explicitly
   /// store the matrix A. All that is needed is that the user-defined
-  /// VirtualMatrix implements multiplication with vectors. Note that
+  /// PETScKrylovMatrix implements multiplication with vectors. Note that
   /// the multiplication operator needs to be defined in terms of
   /// PETSc data structures (Vec), since it will be called from PETSc.
 
-  class VirtualMatrix
+  class PETScKrylovMatrix
   {
   public:
 
     /// Constructor
-    VirtualMatrix();
+    PETScKrylovMatrix();
 
     /// Create a virtual matrix matching the given vectors
-    VirtualMatrix(const PETScVector& x, const PETScVector& y);
+    PETScKrylovMatrix(const PETScVector& x, const PETScVector& y);
 
     /// Destructor
-    virtual ~VirtualMatrix();
+    virtual ~PETScKrylovMatrix();
 
     /// Initialize virtual matrix matching the given vectors
     void init(const PETScVector& x, const PETScVector& y);
@@ -65,7 +65,7 @@ namespace dolfin
     void disp(bool sparse = true, int precision = 2) const;
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const VirtualMatrix& A);
+    friend LogStream& operator<< (LogStream& stream, const PETScKrylovMatrix& A);
 
   private:
 

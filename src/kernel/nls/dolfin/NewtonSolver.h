@@ -32,7 +32,7 @@ namespace dolfin
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose matrix type which defines LU solver
-    NewtonSolver(Matrix::Type matrix_type);
+    NewtonSolver(PETScMatrix::Type matrix_type);
 #endif
 
     /// Initialise nonlinear solver and choose Krylov solver
@@ -40,7 +40,7 @@ namespace dolfin
 
 #ifdef HAVE_PETSC_H
     /// Initialise nonlinear solver and choose Krylov solver
-    NewtonSolver(KrylovSolver::Type linear_solver, Preconditioner::Type preconditioner);
+    NewtonSolver(PETScKrylovSolver::Type linear_solver, PETScPreconditioner::Type preconditioner);
 #endif
 
     /// Destructor

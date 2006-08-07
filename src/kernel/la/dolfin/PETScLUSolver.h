@@ -4,8 +4,8 @@
 // First added:  2005
 // Last changed: 2006-05-15
 
-#ifndef __PETSC_LU_H
-#define __PETSC_LU_H
+#ifndef __PETSC_LU_SOLVER_H
+#define __PETSC_LU_SOLVER_H
 
 #ifdef HAVE_PETSC_H
 
@@ -19,28 +19,28 @@ namespace dolfin
 
   /// Forward declarations
   class PETScManager;
-  class PETScSparseMatrix;
-  class VirtualMatrix;
+  class PETScMatrix;
+  class PETScKrylovMatrix;
 
   /// This class implements the direct solution (LU factorization) for
   /// linear systems of the form Ax = b. It is a wrapper for the LU
   /// solver of PETSc.
   
-  class PETScLU : public LinearSolver, public Parametrized
+  class PETScLUSolver : public LinearSolver, public Parametrized
   {
   public:
     
     /// Constructor
-    PETScLU();
+    PETScLUSolver();
 
     /// Destructor
-    ~PETScLU();
+    ~PETScLUSolver();
 
     /// Solve linear system Ax = b
-    uint solve(const PETScSparseMatrix& A, PETScVector& x, const PETScVector& b);
+    uint solve(const PETScMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Solve linear system Ax = b
-    uint solve(const VirtualMatrix& A, PETScVector& x, const PETScVector& b);
+    uint solve(const PETScKrylovMatrix& A, PETScVector& x, const PETScVector& b);
 
     /// Display LU solver data
     void disp() const;
@@ -48,7 +48,7 @@ namespace dolfin
   private:
     
     // Create dense copy of virtual matrix
-    real copyToDense(const VirtualMatrix& A);
+    real copyToDense(const PETScKrylovMatrix& A);
 
     KSP ksp;
 

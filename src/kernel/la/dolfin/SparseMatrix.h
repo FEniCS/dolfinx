@@ -8,7 +8,7 @@
 #define __SPARSE_MATRIX_H
 
 #ifdef HAVE_PETSC_H
-#include <dolfin/PETScSparseMatrix.h>
+#include <dolfin/PETScMatrix.h>
 #endif
 
 #include <dolfin/uBlasSparseMatrix.h>
@@ -16,11 +16,11 @@
 namespace dolfin
 {
 
-  /// SparseMatrix is a synonym PETScSparseMatrix if PETSc is enabled, otherwise 
+  /// SparseMatrix is a synonym PETScMatrix if PETSc is enabled, otherwise 
   /// it's uBlasSparseMatrix.
 
 #ifdef HAVE_PETSC_H
-  typedef PETScSparseMatrix SparseMatrix;
+  typedef PETScMatrix SparseMatrix;
 #else
   typedef uBlasSparseMatrix SparseMatrix;
 #endif

@@ -73,7 +73,7 @@ void NSESolver::solve()
   residual_con = 1.0e3;
 
   // Initialize algebraic solvers 
-  GMRES solver_con(Preconditioner::hypre_amg);
+  GMRES solver_con(PETScPreconditioner::hypre_amg);
   GMRES solver_mom;
  
   // Create functions for the velocity and pressure 

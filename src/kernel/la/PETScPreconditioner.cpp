@@ -16,41 +16,41 @@
   #include <private/pcimpl.h>
 #endif
 
-#include <dolfin/Preconditioner.h>
+#include <dolfin/PETScPreconditioner.h>
 #include <dolfin/Vector.h>
 
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-Preconditioner::Preconditioner()
+PETScPreconditioner::PETScPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Preconditioner::~Preconditioner()
+PETScPreconditioner::~PETScPreconditioner()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Preconditioner::setup(const KSP ksp, Preconditioner &pc)
+void PETScPreconditioner::setup(const KSP ksp, PETScPreconditioner &pc)
 {
   PC petscpc;
   KSPGetPC(ksp, &petscpc);
 
-  Preconditioner::PCCreate(petscpc);
+  PETScPreconditioner::PCCreate(petscpc);
 
   petscpc->data = &pc;
-  petscpc->ops->apply = Preconditioner::PCApply;
-  petscpc->ops->applytranspose = Preconditioner::PCApply;
-  petscpc->ops->applysymmetricleft = Preconditioner::PCApply;
-  petscpc->ops->applysymmetricright = Preconditioner::PCApply;
+  petscpc->ops->apply = PETScPreconditioner::PCApply;
+  petscpc->ops->applytranspose = PETScPreconditioner::PCApply;
+  petscpc->ops->applysymmetricleft = PETScPreconditioner::PCApply;
+  petscpc->ops->applysymmetricright = PETScPreconditioner::PCApply;
 }
 //-----------------------------------------------------------------------------
-int Preconditioner::PCApply(PC pc, Vec x, Vec y)
+int PETScPreconditioner::PCApply(PC pc, Vec x, Vec y)
 {
   // Convert vectors to DOLFIN wrapper format and pass to DOLFIN preconditioner
 
-  Preconditioner* newpc = (Preconditioner*)pc->data;
+  PETScPreconditioner* newpc = (PETScPreconditioner*)pc->data;
 
   Vector dolfinx(x), dolfiny(y);
 
@@ -59,7 +59,7 @@ int Preconditioner::PCApply(PC pc, Vec x, Vec y)
   return 0;
 }
 //-----------------------------------------------------------------------------
-int Preconditioner::PCCreate(PC pc)
+int PETScPreconditioner::PCCreate(PC pc)
 {
   // Initialize function pointers to 0
 
@@ -79,7 +79,7 @@ int Preconditioner::PCCreate(PC pc)
   return 0;
 }
 //-----------------------------------------------------------------------------
-PCType Preconditioner::getType(const Type type)
+PCType PETScPreconditioner::getType(const Type type)
 {
   switch (type)
   {

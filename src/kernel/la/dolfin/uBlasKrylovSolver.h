@@ -12,7 +12,7 @@
 #include <dolfin/constants.h>
 #include <dolfin/ublas.h>
 #include <dolfin/Parametrized.h>
-#include <dolfin/LinearSolver.h>
+#include <dolfin/uBlasLinearSolver.h>
 
 namespace dolfin
 {
@@ -26,7 +26,7 @@ namespace dolfin
   /// This class implements Krylov methods for linear systems
   /// of the form Ax = b using uBlas data types.
 
-  class uBlasKrylovSolver : public Parametrized, public LinearSolver
+  class uBlasKrylovSolver : public Parametrized, public uBlasLinearSolver
   {
   public:
 
@@ -50,6 +50,9 @@ namespace dolfin
 
     /// Solve linear system Ax = b with default preconditioner and return number of iterations
     uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);
+
+//    /// Solve linear system Ax = b with preconditioning and return number of iterations
+//    uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b with preconditioning and return number of iterations
     uint solve(const uBlasKrylovMatrix& A, uBlasVector& x, const uBlasVector& b,

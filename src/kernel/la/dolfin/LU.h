@@ -8,7 +8,7 @@
 #define __LU_SOLVER_H
 
 #ifdef HAVE_PETSC_H
-#include <dolfin/PETScLU.h>
+#include <dolfin/PETScLUSolver.h>
 #endif
 
 #include <dolfin/uBlasLUSolver.h>
@@ -17,7 +17,7 @@ namespace dolfin
 {
 
 #ifdef HAVE_PETSC_H
-  typedef PETScLU LU;
+  typedef PETScLUSolver LU;
 #else
   typedef uBlasLUSolver LU;
 #endif

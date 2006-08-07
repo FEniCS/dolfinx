@@ -49,6 +49,16 @@ dolfin::uint uBlasKrylovSolver::solve(const uBlasMatrix<ublas_sparse_matrix>& A,
   return solve(A, x, b, pc);
 }
 //-----------------------------------------------------------------------------
+//dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
+//				      uBlasVector& x, const uBlasVector& b)
+//{
+//  // Create dummy preconditioner
+//  uBlasDummyPreconditioner pc;
+
+//  // Solve linear system
+//  return solve(A, x, b, pc);
+//}
+//-----------------------------------------------------------------------------
 dolfin::uint uBlasKrylovSolver::solve(const uBlasKrylovMatrix& A,
 				      uBlasVector& x, const uBlasVector& b,
 				      const uBlasPreconditioner& pc)

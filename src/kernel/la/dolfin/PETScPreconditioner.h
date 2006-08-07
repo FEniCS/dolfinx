@@ -7,8 +7,8 @@
 // First added:  2005
 // Last changed: 2006-05-15
 
-#ifndef __PRECONDITIONER_H
-#define __PRECONDITIONER_H
+#ifndef __PETSC_PRECONDITIONER_H
+#define __PETSC_PRECONDITIONER_H
 
 #ifdef HAVE_PETSC_H
 
@@ -20,18 +20,18 @@ namespace dolfin
   class PETScVector;
 
   /// This class specifies the interface for user-defined Krylov
-  /// method preconditioners. A user wishing to implement her own
-  /// preconditioner needs only supply a function that approximately
+  /// method PETScPreconditioners. A user wishing to implement her own
+  /// PETScPreconditioner needs only supply a function that approximately
   /// solves the linear system given a right-hand side.
 
-  class Preconditioner
+  class PETScPreconditioner
   {
   public:
 
-    // PETSC preconditioners
+    // PETSC PETScPreconditioners
     enum Type
     { 
-      default_pc, // Default PETSc preconditioner (use when setting solver from command line)
+      default_pc, // Default PETSc PETScPreconditioner (use when setting solver from command line)
       hypre_amg,  // Hypre algerbraic multigrid
       icc,        // Incomplete Cholesky
       ilu,        // Incomplete LU
@@ -41,12 +41,12 @@ namespace dolfin
     };
 
     /// Constructor
-    Preconditioner();
+    PETScPreconditioner();
 
     /// Destructor
-    virtual ~Preconditioner();
+    virtual ~PETScPreconditioner();
 
-    static void setup(const KSP ksp, Preconditioner &pc);
+    static void setup(const KSP ksp, PETScPreconditioner &pc);
 
     /// Solve linear system approximately for given right-hand side b
     virtual void solve(PETScVector& x, const PETScVector& b) = 0;
@@ -63,7 +63,7 @@ namespace dolfin
     static int PCApply(PC pc, Vec x, Vec y);
     static int PCCreate(PC pc);
 
-    /// Return PETSc preconditioner type
+    /// Return PETSc PETScPreconditioner type
     static PCType getType(const Type type);
 
   };

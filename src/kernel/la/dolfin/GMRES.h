@@ -26,10 +26,10 @@ namespace dolfin
 #ifdef HAVE_PETSC_H
 
     /// Create GMRES solver with a particular preconditioner
-    GMRES(Preconditioner::Type preconditioner);
+    GMRES(PETScPreconditioner::Type preconditioner);
 
     /// Create GMRES solver with a particular preconditioner
-    GMRES(Preconditioner& preconditioner);
+    GMRES(PETScPreconditioner& preconditioner);
 
 #endif
 

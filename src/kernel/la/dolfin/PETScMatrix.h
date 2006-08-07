@@ -7,8 +7,8 @@
 // First added:  2004
 // Last changed: 2006-05-30
 
-#ifndef __PETSC_SPARSE_MATRIX_H
-#define __PETSC_SPARSE_MATRIX_H
+#ifndef __PETSC_MATRIX_H
+#define __PETSC_MATRIX_H
 
 #ifdef HAVE_PETSC_H
 
@@ -23,7 +23,7 @@ namespace dolfin
   
   /// Forward declarations
   class PETScVector;
-  class PETScSparseMatrixElement;
+  class PETScMatrixElement;
   
   template<class M>
   class Array;
@@ -35,7 +35,7 @@ namespace dolfin
   /// access the PETSc Mat pointer using the function mat() and
   /// use the standard PETSc interface.
 
-  class PETScSparseMatrix : public GenericMatrix, public Variable
+  class PETScMatrix : public GenericMatrix, public Variable
   {
   public:
 
@@ -49,25 +49,25 @@ namespace dolfin
     };
 
     /// Constructor
-    PETScSparseMatrix();
+    PETScMatrix();
 
     /// Constructor (setting PETSc matrix type)
-    PETScSparseMatrix(Type type);
+    PETScMatrix(Type type);
 
     /// Constructor
-    PETScSparseMatrix(Mat A);
+    PETScMatrix(Mat A);
 
     /// Constructor
-    PETScSparseMatrix(uint M, uint N);
+    PETScMatrix(uint M, uint N);
 
     /// Constructor (setting PETSc matrix type)
-    PETScSparseMatrix(uint M, uint N, Type type);
+    PETScMatrix(uint M, uint N, Type type);
 
     /// Constructor (just for testing, will be removed)
-    PETScSparseMatrix(const PETScSparseMatrix &B);
+    PETScMatrix(const PETScMatrix &B);
 
     /// Destructor
-    ~PETScSparseMatrix();
+    ~PETScMatrix();
 
     /// Initialize M x N matrix
     void init(uint M, uint N);
@@ -134,16 +134,16 @@ namespace dolfin
     void disp(bool sparse = true, int precision = 2) const;
 
     /// Output
-    friend LogStream& operator<< (LogStream& stream, const PETScSparseMatrix& A);
+    friend LogStream& operator<< (LogStream& stream, const PETScMatrix& A);
     
     /// SparseMatrixElement access operator (needed for const objects)
     real operator() (uint i, uint j) const;
 
     /// SparseMatrixElement assignment operator
-    PETScSparseMatrixElement operator()(uint i, uint j);
+    PETScMatrixElement operator()(uint i, uint j);
 
     // Friends
-    friend class PETScSparseMatrixElement;
+    friend class PETScMatrixElement;
 
     // MatrixElement access
     real getval(uint i, uint j) const;
@@ -175,20 +175,20 @@ namespace dolfin
 
   /// Reference to an element of the matrix
 
-  class PETScSparseMatrixElement
+  class PETScMatrixElement
   {
   public:
-    PETScSparseMatrixElement(uint i, uint j, PETScSparseMatrix& A);
-    PETScSparseMatrixElement(const PETScSparseMatrixElement& e);
+    PETScMatrixElement(uint i, uint j, PETScMatrix& A);
+    PETScMatrixElement(const PETScMatrixElement& e);
     operator real() const;
-    const PETScSparseMatrixElement& operator=(const real a);
-    const PETScSparseMatrixElement& operator=(const PETScSparseMatrixElement& e); 
-    const PETScSparseMatrixElement& operator+=(const real a);
-    const PETScSparseMatrixElement& operator-=(const real a);
-    const PETScSparseMatrixElement& operator*=(const real a);
+    const PETScMatrixElement& operator=(const real a);
+    const PETScMatrixElement& operator=(const PETScMatrixElement& e); 
+    const PETScMatrixElement& operator+=(const real a);
+    const PETScMatrixElement& operator-=(const real a);
+    const PETScMatrixElement& operator*=(const real a);
   protected:
     uint i, j;
-    PETScSparseMatrix& A;
+    PETScMatrix& A;
   };
 
 }
