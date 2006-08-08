@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-07
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/ParameterSystem.h>
@@ -91,7 +91,8 @@ void MultiAdaptiveFixedPointSolver::end()
   num_elements_mono += ts.length() / ts.kmin * static_cast<real>(ts.ode.size());
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveFixedPointSolver::iteration(uint iter, real tol)
+real MultiAdaptiveFixedPointSolver::iteration(real tol, uint iter,
+					      real d0, real d1)
 {
   // Reset dof
   uint j = 0;

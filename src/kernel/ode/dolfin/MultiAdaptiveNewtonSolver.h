@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #ifndef __MULTI_ADAPTIVE_NEWTON_SOLVER_H
 #define __MULTI_ADAPTIVE_NEWTON_SOLVER_H
@@ -49,7 +49,7 @@ namespace dolfin
     void end();
     
     // Make an iteration
-    real iteration(uint iter, real tol);
+    real iteration(real tol, uint iter, real d0, real d1);
 
     /// Size of system
     uint size() const;
