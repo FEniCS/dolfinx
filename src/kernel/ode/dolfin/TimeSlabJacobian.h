@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-07
+// Last changed: 2006-08-08
 
 #ifndef __TIME_SLAB_JACOBIAN_H
 #define __TIME_SLAB_JACOBIAN_H
@@ -35,8 +35,11 @@ namespace dolfin
     /// Compute product y = Ax
     virtual void mult(const uBlasVector& x, uBlasVector& y) const = 0;
 
-    /// Recompute Jacobian if necessary
-    virtual void update();
+    /// (Re-)initialize computation of Jacobian
+    virtual void init();
+
+    /// Update dense copy of Jacobian
+    void update();
 
   protected:
     

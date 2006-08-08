@@ -53,8 +53,8 @@ void MonoAdaptiveNewtonSolver::start()
   // Initialize right-hand side
   b.init(nj);
 
-  // Recompute Jacobian
-  //A.update();
+  // Initialize computation of Jacobian
+  A.init();
 
   // Precompute product M*u0
   if ( implicit )

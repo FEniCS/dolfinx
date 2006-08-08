@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -23,8 +23,14 @@ TimeSlabJacobian::~TimeSlabJacobian()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void TimeSlabJacobian::update()
+void TimeSlabJacobian::init()
 {
   // Do nothing
+}
+//-----------------------------------------------------------------------------
+void TimeSlabJacobian::update()
+{
+  // Not implemented
+
 }
 //-----------------------------------------------------------------------------
