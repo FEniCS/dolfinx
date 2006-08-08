@@ -2,11 +2,13 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-28
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
 #include <dolfin/ParameterSystem.h>
+#include <dolfin/uBlasKrylovSolver.h>
+#include <dolfin/uBlasLUSolver.h>
 #include <dolfin/Alloc.h>
 #include <dolfin/ODE.h>
 #include <dolfin/Method.h>
@@ -20,7 +22,8 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise)
+    ts(timeslab), A(timeslab, implicit, piecewise),
+    krylov(0), lu(0)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -29,17 +32,16 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
     Mu0 = 0.0;
   }
 
-  // Initialize linear solver
-  const real ktol = get("ODE discrete Krylov tolerance factor");
-  dolfin_info("Using uBlas Krylov solver with no preconditioning.");
-  solver.set("Krylov report", monitor);
-  solver.set("Krylov relative tolerance", ktol);
-  solver.set("Krylov absolute tolerance", ktol*tol); // FIXME: Is this a good choice?
+  // Choose linear solver
+  chooseLinearSolver();
 }
 //-----------------------------------------------------------------------------
 MonoAdaptiveNewtonSolver::~MonoAdaptiveNewtonSolver()
 {
-  // Do nothing
+  if ( krylov )
+    delete krylov;
+  if ( lu )
+    delete lu;
 }
 //-----------------------------------------------------------------------------
 void MonoAdaptiveNewtonSolver::start()
@@ -67,12 +69,10 @@ void MonoAdaptiveNewtonSolver::start()
   //A.disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
+real MonoAdaptiveNewtonSolver::iteration(real tol, uint iter, real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);
-
-  // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
 
   //cout << "A = ";
   //A.disp(10);
@@ -80,10 +80,21 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   //b.disp();
 
   // Solve linear system
-  const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
-  b /= r;
-  num_local_iterations += solver.solve(A, dx, b, pc);
-  dx *= r;
+  if ( krylov )
+  {
+    // FIXME: Scaling needed for PETSc Krylov solver, but maybe not for uBlas?
+    const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
+    b /= r;
+    num_local_iterations += krylov->solve(A, dx, b, pc);
+    dx *= r;
+  }
+  else
+  {
+    // FIXME: Implement a better check
+    if ( d1 >= 0.5*d0 )
+      A.update();
+    lu->solve(A.matrix(), dx, b);
+  }
 
   //cout << "A = "; A.disp(10);
   //cout << "b = "; b.disp();
@@ -198,6 +209,50 @@ void MonoAdaptiveNewtonSolver::FevalImplicit(uBlasVector& F)
     // Copy values from yy
     for (uint i = 0; i < ts.N; i++)
       F(noffset + i) -= yy[i];
+  }
+}
+//-----------------------------------------------------------------------------
+void MonoAdaptiveNewtonSolver::chooseLinearSolver()
+{
+  const std::string linear_solver = get("ODE linear solver");
+  
+  // First determine if we should use a direct solver
+  bool direct = false;  
+  if ( linear_solver == "direct" )
+    direct = true;
+  else if ( linear_solver == "iterative" )
+    direct = false;
+  else if ( linear_solver == "auto" )
+  {
+    /*
+    const uint ode_size_threshold = get("ODE size threshold");
+    if ( ode.size() > ode_size_threshold )
+      direct = false;
+    else
+      direct = true;
+    */
+
+    // FIXME: Seems to be a bug (check stiff demo)
+    // so we go with the iterative solver for now
+    direct = false;
+  }
+
+  // Initialize linear solver
+  if ( direct )
+  {
+    dolfin_info("Using uBlas direct solver.");
+    lu = new uBlasLUSolver();
+  }
+  else
+  {
+    dolfin_info("Using uBlas Krylov solver with no preconditioning.");
+    const real ktol = get("ODE discrete Krylov tolerance factor");
+
+    // FIXME: Check choice of tolerances
+    krylov = new uBlasKrylovSolver();
+    krylov->set("Krylov report", monitor);
+    krylov->set("Krylov relative tolerance", ktol);
+    krylov->set("Krylov absolute tolerance", ktol*tol);
   }
 }
 //-----------------------------------------------------------------------------

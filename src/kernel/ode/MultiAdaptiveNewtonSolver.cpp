@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005-01-27
-// Last changed: 2006-05-07
+// Last changed: 2006-08-08
 
 #include <dolfin/dolfin_log.h>
 #include <dolfin/dolfin_math.h>
@@ -82,7 +82,8 @@ void MultiAdaptiveNewtonSolver::start()
   //A->disp(true, 10);
 }
 //-----------------------------------------------------------------------------
-real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
+real MultiAdaptiveNewtonSolver::iteration(real tol, uint iter,
+					  real d0, real d1)
 {
   // Evaluate b = -F(x) at current x
   Feval(b);

@@ -1,7 +1,7 @@
 // Default values for the DOLFIN parameter system.
 //
 // First added:  2005-12-19
-// Last changed: 2006-07-06
+// Last changed: 2006-08-08
 
 //--- General parameters ---
 
@@ -31,6 +31,7 @@ add("ODE sample density", 1);
 add("ODE maximum iterations", 100);
 add("ODE maximum local iterations", 2);
 add("ODE average samples", 1000);
+add("ODE size threshold", 50);
 
 add("ODE tolerance", 0.1);
 add("ODE start time", 0.0);
@@ -51,6 +52,7 @@ add("ODE fixed-point damping", 1.0);
 
 add("ODE method", "cg");
 add("ODE nonlinear solver", "default");
+add("ODE linear solver", "auto");
 add("ODE solution file name", "solution.py");
 
 //--- Parameters for homotopy solver ---
