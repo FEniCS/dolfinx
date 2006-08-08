@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2003-07-02
-// Last changed: 2006-07-05
+// Last changed: 2006-08-08
 
 #include <stdio.h>
 #include <dolfin.h>
@@ -56,21 +56,21 @@ public:
     }
   }
 
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     y(0) = s*(u(1) - u(0));
     y(1) = r*u(0) - u(1) - u(0)*u(2);
     y(2) = u(0)*u(1) - b*u(2);
   }
 
-  void J(const DenseVector& x, DenseVector& y, const DenseVector& u, real t)
+  void J(const uBlasVector& x, uBlasVector& y, const uBlasVector& u, real t)
   {
     y(0) = s*(x(1) - x(0));
     y(1) = (r - u(2))*x(0) - x(1) - u(0)*x(2);
     y(2) = u(1)*x(0) + u(0)*x(1) - b*x(2);
   }
 
-  bool update(const DenseVector& u, real t, bool end)
+  bool update(const uBlasVector& u, real t, bool end)
   {
     // Check in which region the point is
     Point p(u(0), u(1), u(2));

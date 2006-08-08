@@ -1,5 +1,4 @@
 SUBDIRS = aliev-panfilov \
-          bistable \
           complex \
           courtemanche \
           homotopy \

@@ -2,7 +2,7 @@
 // Licensed under the GNU GPL Version 2.
 //
 // First added:  2005
-// Last changed: 2006-06-16
+// Last changed: 2006-08-08
 //
 // This file is used for testing out new features implemented in the
 // library, which means that the contents of this file is constantly
@@ -311,8 +311,8 @@ void testuBlasSparseMatrix()
   Poisson2D::LinearForm L(f);
 
   uBlasSparseMatrix A;
-  DenseVector b;
-  DenseVector x;
+  uBlasVector b;
+  uBlasVector x;
 
 #ifdef HAVE_PETSC_H
 
@@ -363,7 +363,7 @@ void testuBlasSparseMatrix()
   dolfin_log(false);
   tic();
   FEM::assemble(a, L, Ad, b, mesh, bc);
-  DenseVector xd(Ad.size(0));
+  uBlasVector xd(Ad.size(0));
   dolfin_log(true);
 
   cout << "Testing direct solve " << endl;
@@ -553,7 +553,7 @@ void testVectorAccess()
   real tmp = 0.0;
 
   PETScVector x1(N);      // PETSc vector
-  DenseVector x2(N);      // uBlas vector
+  uBlasVector x2(N);      // uBlas vector
   Array<real> x3(N);      // STL vector
   real* x4 = new real[N]; // Plain C array
 

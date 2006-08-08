@@ -1,3 +1,5 @@
+ - Remove demo bistable
+ - Cleanup linear algebra
  - Use UMFPACK for LU solver with uBlas matrix types
  - Add templated wrapper class for different uBlas matrix types
  - Add ILU preconditioning for uBlas matrices

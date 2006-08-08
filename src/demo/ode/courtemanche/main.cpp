@@ -5,7 +5,7 @@
 // Modified by Anders Logg 2006.
 //
 // First added:  2006-05-24
-// Last changed: 2006-05-29
+// Last changed: 2006-08-08
 //
 // This demo solves the Courtemanche model for cardiac excitation.
 
@@ -111,7 +111,7 @@ public:
     return U0[i];
   }
   
-  void f(const DenseVector& u, real t, DenseVector& y)
+  void f(const uBlasVector& u, real t, uBlasVector& y)
   {
     computeCurrents(u);
     computeGateCoefficients(u);
@@ -141,7 +141,7 @@ public:
     num_fevals++;
   }
 
-  void computeCurrents(const DenseVector& u)
+  void computeCurrents(const uBlasVector& u)
   {
     V      = u(0);
     m      = u(1);
@@ -193,7 +193,7 @@ public:
     B2       = 1.0 + Trpn_max*K_mTrpn/((Ca_i + K_mTrpn)*(Ca_i + K_mTrpn)) + Cmdn_max*K_mCmdn/((Ca_i + K_mCmdn)*(Ca_i + K_mCmdn));
   }
   
-  void computeGateCoefficients(const DenseVector& u)
+  void computeGateCoefficients(const uBlasVector& u)
   {
     V = u(0);
     
@@ -276,7 +276,7 @@ public:
     w_inf    = 1.0 - 1.0/(1.0 + exp((V - 40.0)/-17.0));
   }
   
-  bool update(const DenseVector& u, real t, bool end)
+  bool update(const uBlasVector& u, real t, bool end)
   {
     if ( end )
       VT = u(0);

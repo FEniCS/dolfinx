@@ -29,9 +29,6 @@ link_plotslab() {
 link_octave src/demo/solvers/elasticity
 link_octave src/demo/solvers/wave
 
-# Create links to OpenDX programs
-link_dx src/demo/ode/bistable
-
 # Create links to meshes
 ln -sf $TOPLEVEL/data/meshes/gear.xml.gz     src/demo/pde/elasticity
 ln -sf $TOPLEVEL/data/meshes/dolfin-2.xml.gz src/demo/pde/stokes/taylor-hood
