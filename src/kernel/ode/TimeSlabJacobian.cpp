@@ -30,7 +30,27 @@ void TimeSlabJacobian::init()
 //-----------------------------------------------------------------------------
 void TimeSlabJacobian::update()
 {
-  // Not implemented
+  // Initialize matrix if not already done
+  const uint N = ode.size();
+  A.init(N, N);
+  ej.init(N);
+  Aj.init(N);
+ 
+  // Reset unit vector
+  ej = 0.0;
 
+  // Compute columns of Jacobian
+  for (uint j = 0; j < ode.size(); j++)
+  {
+    ej(j) = 1.0;
+    
+    // Compute product Aj = Aej
+    mult(ej, Aj);
+    
+    // Set column of A
+    column(A, j) = Aj;
+    
+    ej(j) = 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
