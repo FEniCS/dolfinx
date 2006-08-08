@@ -28,7 +28,7 @@ namespace dolfin
   {
   public:
 
-    // PETSC PETScPreconditioners
+    // PETSC preconditioners
     enum Type
     { 
       default_pc, // Default PETSc PETScPreconditioner (use when setting solver from command line)

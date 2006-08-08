@@ -17,15 +17,17 @@ namespace dolfin
 {
   
   template<class Mat> class uBlasMatrix;
+  class uBlasVector;
 
   /// This class implements an incomplete LU factorization (ILU)
   /// preconditioner for the uBlas Krylov solver.
 
-  class uBlasVector;
-
   class uBlasILUPreconditioner : public uBlasPreconditioner
   {
   public:
+
+    /// Constructor
+    uBlasILUPreconditioner();
 
     /// Constructor
     uBlasILUPreconditioner(const uBlasMatrix<ublas_sparse_matrix>& A);

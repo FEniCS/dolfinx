@@ -20,7 +20,7 @@ MonoAdaptiveNewtonSolver::MonoAdaptiveNewtonSolver
 (MonoAdaptiveTimeSlab& timeslab, bool implicit)
   : TimeSlabSolver(timeslab), implicit(implicit),
     piecewise(get("ODE matrix piecewise constant")),
-    ts(timeslab), A(timeslab, implicit, piecewise)
+    ts(timeslab), A(timeslab, implicit, piecewise), solver(uBlasPreconditioner::none)
 {
   // Initialize product M*u0 for implicit system
   if ( implicit )
@@ -82,7 +82,7 @@ real MonoAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // Solve linear system
   const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
   b /= r;
-  num_local_iterations += solver.solve(A, dx, b, pc);
+  num_local_iterations += solver.solve(A, dx, b);
   dx *= r;
 
   //cout << "A = "; A.disp(10);

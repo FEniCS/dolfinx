@@ -36,7 +36,7 @@ namespace dolfin
     ~uBlasLUSolver();
 
     /// Solve linear system Ax = b (A is dense)
-    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b) const;
+    uint solve(const uBlasMatrix<ublas_dense_matrix>& A, uBlasVector& x, const uBlasVector& b);
 
     /// Solve linear system Ax = b using UMFPACK if installed (A is sparse)
     uint solve(const uBlasMatrix<ublas_sparse_matrix>& A, uBlasVector& x, const uBlasVector& b);

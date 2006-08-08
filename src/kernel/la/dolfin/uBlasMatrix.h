@@ -17,7 +17,6 @@
 #include <dolfin/GenericMatrix.h>
 #include <dolfin/ublas.h>
 #include <dolfin/uBlasVector.h>
-#include <dolfin/uBlasKrylovMatrix.h>
 #include <dolfin/uBlasLUSolver.h>
 
 namespace dolfin
@@ -42,7 +41,6 @@ namespace dolfin
   template< class Mat >
   class uBlasMatrix : public Variable, 
                       public GenericMatrix,
-                      public uBlasKrylovMatrix,
 		                  public Mat
   {
   public:

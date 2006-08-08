@@ -37,7 +37,7 @@ uBlasLUSolver::~uBlasLUSolver()
 }
 //-----------------------------------------------------------------------------
 dolfin::uint uBlasLUSolver::solve(const uBlasMatrix<ublas_dense_matrix>& A, 
-                                  uBlasVector& x, const uBlasVector& b) const
+                                  uBlasVector& x, const uBlasVector& b)
 {    
   // Make copy of matrix and vector
   ublas_dense_matrix Atemp(A);

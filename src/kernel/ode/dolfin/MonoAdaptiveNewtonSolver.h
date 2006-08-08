@@ -68,7 +68,6 @@ namespace dolfin
     MonoAdaptiveJacobian A;     // Jacobian of time slab system
     uBlasVector dx;             // Increment for Newton's method
     uBlasVector b;              // Right-hand side -F(x)
-    uBlasDummyPreconditioner pc;// Preconditioner
     uBlasKrylovSolver solver;   // Linear solver
     uBlasVector Mu0;            // Precomputed product M*u0 for implicit system
     

@@ -15,6 +15,8 @@ namespace dolfin
 {
 
   class uBlasVector;
+  class uBlasKrylovMatrix;
+  template<class Mat> class uBlasMatrix;
 
   /// This class specifies the interface for preconditioners for the
   /// uBlas Krylov solver.
@@ -23,11 +25,28 @@ namespace dolfin
   {
   public:
 
+    // uBlas preconditioners
+    enum Type
+    { 
+      default_pc,   // Default
+      ilu,          // Incomplete LU
+      none          // None
+    };
+
     /// Constructor
     uBlasPreconditioner() {};
 
     /// Destructor
     virtual ~uBlasPreconditioner() {};
+
+    /// Initialise preconditioner (dense matrix)
+    virtual void init(const uBlasMatrix<ublas_dense_matrix>& A) {};
+
+    /// Initialise preconditioner (dense matrix)
+    virtual void init(const uBlasMatrix<ublas_sparse_matrix>& A) {};
+
+    /// Initialise preconditioner (virtual matrix)
+    virtual void init(const uBlasKrylovMatrix& A) {};
 
     /// Solve linear system (M^-1)Ax = y
     virtual void solve(uBlasVector& x, const uBlasVector& b) const = 0;

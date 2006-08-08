@@ -22,7 +22,7 @@ using namespace dolfin;
 MultiAdaptiveNewtonSolver::MultiAdaptiveNewtonSolver
 (MultiAdaptiveTimeSlab& timeslab)
   : TimeSlabSolver(timeslab), ts(timeslab), A(0),
-    mpc(timeslab, method), f(0), u(0), num_elements(0), num_elements_mono(0),
+    mpc(timeslab, method), solver(mpc), f(0), u(0), num_elements(0), num_elements_mono(0),
     updated_jacobian(get("ODE updated jacobian"))
 {
   // Initialize local arrays
@@ -92,7 +92,7 @@ real MultiAdaptiveNewtonSolver::iteration(uint iter, real tol)
   // Solve linear system
   const real r = b.norm(uBlasVector::linf) + DOLFIN_EPS;
   b /= r;
-  num_local_iterations += solver.solve(*A, dx, b, mpc);
+  num_local_iterations += solver.solve(*A, dx, b);
   dx *= r;
 
   // Update solution x -> x + dx (note: b = -F)

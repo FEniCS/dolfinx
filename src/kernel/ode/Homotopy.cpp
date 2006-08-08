@@ -21,8 +21,8 @@ using namespace dolfin;
 //-----------------------------------------------------------------------------
 Homotopy::Homotopy(uint n)
   : tol(0), n(n), M(0), maxiter(0), maxpaths(0), maxdegree(0),
-    divtol(0), monitor(false), random(false), filename(""),
-    mi(0), ci(0), tmp(0), x(2*n),
+    divtol(0), monitor(false), random(false), solver(uBlasPreconditioner::none), 
+    filename(""), mi(0), ci(0), tmp(0), x(2*n),
     degree_adjusted("Adjusting degree of equation, maximum reached.")
 {
   dolfin_info("Creating homotopy for system of size %d.", n);
@@ -296,11 +296,11 @@ bool Homotopy::computeSolution(HomotopyODE& ode)
     // Solve linear system
     r += DOLFIN_EPS;
     F /= r;
-    solver.solve(J, dx, F, pc);
+    solver.solve(J, dx, F);
     dx *= r;
     
     // Solve linear system
-    solver.solve(J, dx, F, pc);
+    solver.solve(J, dx, F);
 
     // Subtract increment
     x -= dx;
